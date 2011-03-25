@@ -89,9 +89,9 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
-if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
-if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
+      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -105,9 +105,9 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
-if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
-if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
+      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -128,9 +128,9 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
-if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
-if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
+      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -151,9 +151,9 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
-if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
-if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &amp;gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
+      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
