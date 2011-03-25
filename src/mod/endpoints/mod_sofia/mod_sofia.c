@@ -3497,12 +3497,12 @@ static void select_from_profile(sofia_profile_t *profile,
 
 	if (exclude_contact) {
 		sql = switch_mprintf("select contact, profile_name, '%q' "
-							 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%') "
-							 "and contact not like '%%%s%%'", (concat != NULL) ? concat : "", user, domain, domain, exclude_contact);
+							 "from sip_registrations where (sip_user='%q' or sip_username='%q') and (sip_host='%q' or presence_hosts like '%%%q%%') "
+							 "and contact not like '%%%s%%'", (concat != NULL) ? concat : "", user, user, domain, domain, exclude_contact);
 	} else {
 		sql = switch_mprintf("select contact, profile_name, '%q' "
-							 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
-							 (concat != NULL) ? concat : "", user, domain, domain);
+							 "from sip_registrations where (sip_user='%q' or sip_username='%q') and (sip_host='%q' or presence_hosts like '%%%q%%')",
+							 (concat != NULL) ? concat : "", user, user, domain, domain);
 	}
 
 	switch_assert(sql);
