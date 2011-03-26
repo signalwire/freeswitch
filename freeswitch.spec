@@ -31,9 +31,11 @@
 %define build_sng_isdn 0
 %define build_sng_ss7 0
 %define build_sng_tc 0
+%define build_py26_esl 0
 %{?with_sang_tc:%define build_sng_tc 1 }
 %{?with_sang_isdn:%define build_sng_isdn 1 }
 %{?with_sang_ss7:%define build_sng_ss7 1 }
+%{?with_py26_esl:%define build_py26_esl 1 }
 
 ######################################################################################################################
 #
@@ -121,6 +123,10 @@ BuildRequires: e2fsprogs-devel
 BuildRequires: libtheora-devel
 BuildRequires: libxml2-devel
 BuildRequires: bison
+%if %{build_py26_esl}
+BuildRequires: python26-devel
+Requires: python26
+%endif
 Requires: alsa-lib
 Requires: libogg
 Requires: libvorbis
@@ -568,6 +574,7 @@ fi
 cd libs/esl
 %{__make} pymod
 
+
 ######################################################################################################################
 #
 #				Install it and create some required dirs and links
@@ -585,6 +592,16 @@ cd libs/esl
 #install the esl stuff
 cd libs/esl
 %{__make} DESTDIR=%{buildroot} pymod-install
+
+%if %{build_py26_esl}
+#install esl for python 26
+%{__make} clean
+sed -i s/python\ /python26\ /g python/Makefile
+%{__make} pymod
+%{__mkdir} -p %{buildroot}/usr/lib/python2.6/site-packages
+%{__make} DESTDIR=%{buildroot} pymod-install
+%endif
+
 cd ../..
 
 %ifos linux

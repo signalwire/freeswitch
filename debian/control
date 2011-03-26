@@ -6,7 +6,8 @@ Uploaders: Michal Bielicki <michal.bielicki@seventhsignal.pl>, Gabriel Gunderson
 Build-Depends: debhelper (>= 7), wget, automake (>=1.9), autoconf, libtool,
  unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev,
  libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev,
- libdb-dev, libgnutls-dev, libtiff4-dev, python-dev, libx11-dev, uuid-dev
+ libdb-dev, libgnutls-dev, libtiff4-dev, python-dev, libx11-dev, uuid-dev,
+ libc6-dev
 Homepage: http://freeswitch.org/
 Standards-Version: 3.9.1
 Vcs-Git: git://git.freeswitch.org/freeswitch.git

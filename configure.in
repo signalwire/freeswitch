@@ -144,6 +144,8 @@ if test "${enable_optimizer}" = "yes" ; then
         AX_CC_MAXOPT
 fi
 
+AX_PATH_LIBGNUTLS()
+
 # set defaults for use on all platforms
 SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
@@ -461,7 +463,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs])
+AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs timerfd_create])
 AC_CHECK_FUNCS([sched_setscheduler setpriority setrlimit setgroups initgroups])
 AC_CHECK_FUNCS([wcsncmp setgroups asprintf setenv pselect gettimeofday localtime_r gmtime_r strcasecmp stricmp _stricmp])
 
@@ -922,7 +924,6 @@ AC_CONFIG_FILES([Makefile
 		build/Makefile
 		src/Makefile
 		src/mod/Makefile
-		src/mod/applications/mod_enum/Makefile
 		src/mod/applications/mod_expr/Makefile
 		src/mod/applications/mod_fax/Makefile
 		src/mod/applications/mod_spandsp/Makefile

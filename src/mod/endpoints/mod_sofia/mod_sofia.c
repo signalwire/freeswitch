@@ -3480,6 +3480,96 @@ SWITCH_STANDARD_API(sofia_count_reg_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(sofia_username_of_function)
+{
+	char *data;
+	char *user = NULL;
+	char *domain = NULL;
+	char *profile_name = NULL;
+	char *p;
+	char *reply = "";
+	sofia_profile_t *profile = NULL;
+
+	if (!cmd) {
+		stream->write_function(stream, "%s", "");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	data = strdup(cmd);
+	switch_assert(data);
+
+	if ((p = strchr(data, '/'))) {
+		profile_name = data;
+		*p++ = '\0';
+		user = p;
+	} else {
+		user = data;
+	}
+
+	if ((domain = strchr(user, '@'))) {
+		*domain++ = '\0';
+	}
+
+	if (!profile_name && domain) {
+		profile_name = domain;
+	}
+
+	if (user && profile_name) {
+		char *sql;
+
+		if (!(profile = sofia_glue_find_profile(profile_name))) {
+			profile_name = domain;
+			domain = NULL;
+		}
+
+		if (!profile && profile_name) {
+			profile = sofia_glue_find_profile(profile_name);
+		}
+
+		if (profile) {
+			struct cb_helper_sql2str cb;
+			char username[256] = "";
+
+			cb.buf = username;
+			cb.len = sizeof(username);
+
+			if (!domain || !strchr(domain, '.')) {
+				domain = profile->name;
+			}
+
+			switch_assert(!zstr(user));
+
+			sql = switch_mprintf("select sip_username "
+									"from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
+									user, domain, domain);
+
+			switch_assert(sql);
+
+			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
+			switch_safe_free(sql);
+			if (!zstr(username)) {
+				stream->write_function(stream, "%s", username);
+			} else {
+				stream->write_function(stream, "");
+			}
+			reply = NULL;
+
+		}
+	}
+
+	if (reply) {
+		stream->write_function(stream, "%s", reply);
+	}
+
+	switch_safe_free(data);
+
+	if (profile) {
+		sofia_glue_release_profile(profile);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static void select_from_profile(sofia_profile_t *profile, 
 								const char *user,
 								const char *domain,
@@ -4993,6 +5083,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_add_complete_func("::sofia::list_profile_gateway", list_profile_gateway);
 
 
+	SWITCH_ADD_API(api_interface, "sofia_username_of", "Sofia Username Lookup", sofia_username_of_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_API(api_interface, "sofia_contact", "Sofia Contacts", sofia_contact_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_API(api_interface, "sofia_count_reg", "Count Sofia registration", sofia_count_reg_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_API(api_interface, "sofia_dig", "SIP DIG", sip_dig_function, "<url>");

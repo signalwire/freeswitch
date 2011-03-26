@@ -606,16 +606,11 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	switch_assert(SWITCH_GLOBAL_dirs.temp_dir);
 }
 
-SWITCH_DECLARE(int32_t) set_high_priority(void)
+static int32_t set_priority(void)
 {
 #ifdef WIN32
-	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
 #else
-
-#ifdef USE_SETRLIMIT
-	struct rlimit lim = { RLIM_INFINITY, RLIM_INFINITY };
-#endif
-
 #ifdef USE_SCHED_SETSCHEDULER
 	/*
 	 * Try to use a round-robin scheduler
@@ -637,12 +632,38 @@ SWITCH_DECLARE(int32_t) set_high_priority(void)
 	 */
 	if (setpriority(PRIO_PROCESS, getpid(), -10) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
+		return -1;
 	}
 #else
 	if (nice(-10) != -10) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
+		return -1;
 	}
 #endif
+#endif
+	return 0;
+}
+
+
+SWITCH_DECLARE(int32_t) set_normal_priority(void)
+{
+	return set_priority();
+}
+
+SWITCH_DECLARE(int32_t) set_high_priority(void)
+{
+#ifdef WIN32
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+#else
+	int pri;
+
+#ifdef USE_SETRLIMIT
+	struct rlimit lim = { RLIM_INFINITY, RLIM_INFINITY };
+#endif
+	
+	if ((pri = set_priority())) {
+		return pri;
+	}
 
 #ifdef USE_SETRLIMIT
 	/*
@@ -1635,6 +1656,11 @@ static void switch_load_core_config(const char *file)
 					}
 				} else if (!strcasecmp(var, "enable-monotonic-timing")) {
 					switch_time_set_monotonic(switch_true(var));
+				} else if (!strcasecmp(var, "enable-softtimer-timerfd")) {
+					switch_time_set_timerfd(switch_true(var));
+					if (switch_true(val)) {
+						switch_clear_flag((&runtime), SCF_CALIBRATE_CLOCK);
+					}
 				} else if (!strcasecmp(var, "enable-clock-nanosleep")) {
 					switch_time_set_nanosleep(switch_true(var));
 				} else if (!strcasecmp(var, "enable-cond-yield")) {

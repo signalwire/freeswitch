@@ -2491,24 +2491,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 
 		rtp_session->stats.inbound.packet_count++;
-	}
 
-
-	if ((rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) || 
-		(*bytes < rtp_header_len && *bytes > 0) ||
-		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-
-	rtp_session->last_read_ts = ts;
-
-	
-	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
-		
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
 #ifdef ENABLE_ZRTP
-		/* ZRTP Recv */
-		if (*bytes) {
+			/* ZRTP Recv */
+			
 			unsigned int sbytes = (int) *bytes;
 			zrtp_status_t stat = 0;
 
@@ -2528,48 +2515,58 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			default:
 				break;
 			}
-		}
 #endif
 
-		if (*bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV)) {
-			int sbytes = (int) *bytes;
-			err_status_t stat = 0;
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV)) {
+				int sbytes = (int) *bytes;
+				err_status_t stat = 0;
 
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET)) {
-				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET);
-				srtp_dealloc(rtp_session->recv_ctx);
-				rtp_session->recv_ctx = NULL;
-				if ((stat = srtp_create(&rtp_session->recv_ctx, &rtp_session->recv_policy))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP RECV\n");
-					return SWITCH_STATUS_FALSE;
+				if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET)) {
+					switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET);
+					srtp_dealloc(rtp_session->recv_ctx);
+					rtp_session->recv_ctx = NULL;
+					if ((stat = srtp_create(&rtp_session->recv_ctx, &rtp_session->recv_policy))) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP RECV\n");
+						return SWITCH_STATUS_FALSE;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RE-Activating Secure RTP RECV\n");
+						rtp_session->srtp_errs = 0;
+					}
+				}
+
+				if (!(*flags & SFF_PLC)) {
+					stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg.header, &sbytes);
+				}
+
+				if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
+					if (++rtp_session->srtp_errs >= MAX_SRTP_ERRS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+										  "Error: SRTP unprotect failed with code %d%s\n", stat,
+										  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
+										  err_status_auth_fail ? " (auth check failed)" : "");
+						return SWITCH_STATUS_FALSE;
+					} else {
+						sbytes = 0;
+					}
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RE-Activating Secure RTP RECV\n");
 					rtp_session->srtp_errs = 0;
 				}
-			}
 
-			if (!(*flags & SFF_PLC)) {
-				stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg.header, &sbytes);
+				*bytes = sbytes;
 			}
-
-			if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
-				if (++rtp_session->srtp_errs >= MAX_SRTP_ERRS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-									  "Error: SRTP unprotect failed with code %d%s\n", stat,
-									  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
-									  err_status_auth_fail ? " (auth check failed)" : "");
-					return SWITCH_STATUS_FALSE;
-				} else {
-					sbytes = 0;
-				}
-			} else {
-				rtp_session->srtp_errs = 0;
-			}
-
-			*bytes = sbytes;
 		}
 	}
 
+
+	if ((rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) || 
+		(*bytes < rtp_header_len && *bytes > 0) ||
+		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
+	rtp_session->last_read_ts = ts;
+	
 	
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BYTESWAP) && rtp_session->recv_msg.header.pt == rtp_session->rpayload) {
 		switch_swap_linear((int16_t *)rtp_session->recv_msg.body, (int) *bytes - rtp_header_len);

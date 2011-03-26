@@ -1370,21 +1370,6 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 	ftdm_clear_flag (span, FTDM_SPAN_STOP_THREAD);
 	ftdm_clear_flag (span, FTDM_SPAN_IN_THREAD);
 
-	/* activate all the configured ss7 links */
-	if (ft_to_sngss7_activate_all()) {
-		SS7_CRITICAL ("Failed to activate LibSngSS7!\n");
-		return FTDM_FAIL;
-	}
-
-	/*start the span monitor thread */
-	if (ftdm_thread_create_detached (ftdm_sangoma_ss7_run, span) != FTDM_SUCCESS) {
-		SS7_CRITICAL ("Failed to start Span Monitor Thread!\n");
-		return FTDM_FAIL;
-	}
-
-	/* confirm the state of all isup interfaces*/
-	check_status_of_all_isup_intf();
-
 	/* throw the channels in pause */
 	for (x = 1; x < (span->chan_count + 1); x++) {
 		/* extract the channel structure and sngss7 channel data */
@@ -1397,14 +1382,14 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 		sngss7_span = ftdmchan->span->signal_data;
 		sngss7_intf = &g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId];
 
-		/* if this is a non-voice channel, move along */
+		/* flag the circuit as active so we can receieve events on it */
+		sngss7_set_flag(sngss7_info->circuit, SNGSS7_ACTIVE);
+
+		/* if this is a non-voice channel, move along cause we're done with it */
 		if (sngss7_info->circuit->type != VOICE) continue;
 
 		/* lock the channel */
 		ftdm_mutex_lock(ftdmchan->mutex);
-
-		/* flag the circuit as active */
-		sngss7_set_flag(sngss7_info->circuit, SNGSS7_ACTIVE);
 
 		/* check if the interface is paused or resumed */
 		if (sngss7_test_flag(sngss7_intf, SNGSS7_PAUSED)) {
@@ -1435,6 +1420,18 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 
 		/* unlock the channel */
 		ftdm_mutex_unlock(ftdmchan->mutex);
+	}
+
+	/* activate all the configured ss7 links */
+	if (ft_to_sngss7_activate_all()) {
+		SS7_CRITICAL ("Failed to activate LibSngSS7!\n");
+		return FTDM_FAIL;
+	}
+
+	/*start the span monitor thread */
+	if (ftdm_thread_create_detached (ftdm_sangoma_ss7_run, span) != FTDM_SUCCESS) {
+		SS7_CRITICAL ("Failed to start Span Monitor Thread!\n");
+		return FTDM_FAIL;
 	}
 
 	SS7_DEBUG ("Finished starting span %s:%u.\n", span->name, span->span_id);

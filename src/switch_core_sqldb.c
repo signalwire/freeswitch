@@ -606,6 +606,8 @@ SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t 
 
 	if (io_mutex) switch_mutex_lock(io_mutex);
 
+	memset(str, 0, len);
+
 	switch (dbh->type) {
 	case SCDB_TYPE_CORE_DB:
 		{

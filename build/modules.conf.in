@@ -112,6 +112,7 @@ say/mod_say_ru
 #say/mod_say_zh
 #say/mod_say_hu
 #say/mod_say_th
+#timers/mod_timerfd
 
 ## Experimental Modules (don't cry if they're broken)
 #../../contrib/mod/xml_int/mod_xml_odbc

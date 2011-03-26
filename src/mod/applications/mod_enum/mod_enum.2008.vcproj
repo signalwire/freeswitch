@@ -42,7 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\udns&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\ldns&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -106,7 +106,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\udns&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\ldns&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -171,7 +171,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\udns&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\ldns&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -235,7 +235,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\udns&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\ldns&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
