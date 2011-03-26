@@ -48,12 +48,6 @@
 #else 
 #define ESL_USE_POLL
 #endif
-#ifdef ESL_USE_POLL
-#include <poll.h>
-#endif
-
-
-
 
 #include <esl.h>
 #ifndef WIN32
@@ -64,6 +58,10 @@
 /* These warnings need to be ignored warning in sdk header */
 #include <Ws2tcpip.h>
 #pragma warning (default:6386)
+#endif
+
+#ifdef ESL_USE_POLL
+#include <poll.h>
 #endif
 
 
