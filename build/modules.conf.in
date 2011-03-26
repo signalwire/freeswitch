@@ -76,6 +76,7 @@ endpoints/mod_loopback
 #asr_tts/mod_tts_commandline
 #event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
+#event_handlers/mod_event_zmq
 event_handlers/mod_cdr_csv
 event_handlers/mod_cdr_sqlite
 #event_handlers/mod_cdr_pg_csv
