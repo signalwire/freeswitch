@@ -1449,8 +1449,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		/* Loopback special case */
 		if (other_loopback_leg_uuid) {
-			switch_core_session_t *other_loopback_session = switch_core_session_locate(other_loopback_leg_uuid);
-			if (other_loopback_session) {
+			switch_core_session_t *other_loopback_session = NULL;
+
+			switch_yield(20000); // Wait 20ms for the channel to be ready
+			if ((other_loopback_session = switch_core_session_locate(other_loopback_leg_uuid))) {
 				switch_channel_t *other_loopback_channel = switch_core_session_get_channel(other_loopback_session);
 				const char *real_uuid = switch_channel_get_variable(other_loopback_channel, SWITCH_SIGNAL_BOND_VARIABLE);
 
