@@ -646,6 +646,10 @@ ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
 
 
 #ifdef ESL_USE_SELECT
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 6262 ) /* warning C6262: Function uses '98348' bytes of stack: exceeds /analyze:stacksize'16384'. Consider moving some data to heap */
+#endif
 ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
 {
 	int s = 0, r = 0;
@@ -654,12 +658,15 @@ ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
 	fd_set efds;
 	struct timeval tv;
 
+	FD_ZERO(&rfds);
+	FD_ZERO(&wfds);
+	FD_ZERO(&efds);
+
 	/* Wouldn't you rather know?? */
 	assert(sock <= FD_SETSIZE);
 
 	
 	if ((flags & ESL_POLL_READ)) {
-		FD_ZERO(&rfds);
 
 #ifdef WIN32
 #pragma warning( push )
@@ -672,7 +679,6 @@ ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
 	}
 
 	if ((flags & ESL_POLL_WRITE)) {
-		FD_ZERO(&wfds);
 
 #ifdef WIN32
 #pragma warning( push )
@@ -685,7 +691,6 @@ ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
 	}
 
 	if ((flags & ESL_POLL_ERROR)) {
-		FD_ZERO(&efds);
 
 #ifdef WIN32
 #pragma warning( push )
@@ -721,6 +726,9 @@ ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
 	return r;
 
 }
+#ifdef WIN32
+#pragma warning( pop ) 
+#endif
 #endif
 
 #ifdef ESL_USE_POLL
