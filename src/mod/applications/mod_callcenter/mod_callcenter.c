@@ -1461,7 +1461,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 				/* Switch the agent session */
 				if (real_uuid) {
 					switch_core_session_rwunlock(agent_session);
-					agent_session = switch_core_session_locate(agent_uuid);
+					agent_session = switch_core_session_locate(real_uuid);
 					agent_uuid = switch_core_session_get_uuid(agent_session);
 					agent_channel = switch_core_session_get_channel(agent_session);
 
