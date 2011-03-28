@@ -134,7 +134,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+			while (x < (MAX_MTP_LINKS+1)) {
 				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
@@ -175,7 +175,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 			
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+			while (x < (MAX_MTP_LINKS+1)) {
 				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
@@ -198,7 +198,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 			
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+			while (x < (MAX_MTP_LINKS+1)) {
 				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
@@ -222,7 +222,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+			while (x < (MAX_MTP_LINKS+1)) {
 				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
@@ -248,7 +248,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+			while (x < (MAX_MTP_LINKS+1)) {
 				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
@@ -271,7 +271,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+			while (x < (MAX_MTP_LINKS+1)) {
 				if (g_ftdm_sngss7_data.cfg.mtp2Link[x].id == sta->t.usta.evntParm[0]) {
 					break;
 				}
@@ -366,7 +366,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 
 			/* find the name for the sap in question */
 			x = 1;
-			while (g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+			while (x < (MAX_MTP_LINKS+1)) {
 				if (g_ftdm_sngss7_data.cfg.mtp3Link[x].id == sta->hdr.elmId.elmntInst1) {
 					break;
 				}

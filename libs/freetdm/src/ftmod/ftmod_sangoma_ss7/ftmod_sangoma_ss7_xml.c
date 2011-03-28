@@ -1215,7 +1215,7 @@ static int ftmod_ss7_parse_mtp_linkset(ftdm_conf_node_t *mtp_linkset)
 
 	/* go through all the mtp3 links and fill in the apc */
 	i = 1;
-	while (g_ftdm_sngss7_data.cfg.mtp3Link[i].id != 0) {
+	while (i < (MAX_MTP_LINKS)) {
 		if (g_ftdm_sngss7_data.cfg.mtp3Link[i].linkSetId == mtpLinkSet.id) {
 			g_ftdm_sngss7_data.cfg.mtp3Link[i].apc = mtpLinkSet.apc;
 		}
@@ -1757,7 +1757,7 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	/**************************************************************************/
 		/* go through all the links and check if they belong to this linkset*/
 		i = 1;
-		while (g_ftdm_sngss7_data.cfg.mtp3Link[i].id != 0) {
+		while (i < (MAX_MTP_LINKS)) {
 			/* check if this link is in the linkset */
 			if (g_ftdm_sngss7_data.cfg.mtp3Link[i].linkSetId == lnkSet->lsId) {
 				/* fill in the spc */
@@ -2461,7 +2461,7 @@ static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, i
 {
 	int i = 1;
 
-	while (g_ftdm_sngss7_data.cfg.mtpRoute[i].id != 0) {
+	while (i < (MAX_MTP_ROUTES)) {
 		if (g_ftdm_sngss7_data.cfg.mtpRoute[i].dpc == spc) {
 			/* we have a match so break out of this loop */
 			break;
@@ -2471,6 +2471,16 @@ static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, i
 	}
 
 	if (g_ftdm_sngss7_data.cfg.mtpRoute[i].id == 0) {
+		/* this is a new route...find the first free spot */
+		i = 1;
+		while (i < (MAX_MTP_ROUTES)) {
+			if (g_ftdm_sngss7_data.cfg.mtpRoute[i].id == 0) {
+				/* we have a match so break out of this loop */
+				break;
+			}
+			/* move on to the next one */
+			i++;
+		}
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].id = i;
 		SS7_DEBUG("found new mtp3 self route\n");
 	} else {

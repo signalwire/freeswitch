@@ -1366,7 +1366,7 @@ static ftdm_status_t handle_status_mtp3link(ftdm_stream_handle_t *stream, char *
 	
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+	while(x < (MAX_MTP_LINKS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the status request */
@@ -1392,7 +1392,7 @@ static ftdm_status_t handle_status_mtp3link(ftdm_stream_handle_t *stream, char *
 		
 		/* move to the next link */
 		x++;
-	} /* while (id != 0) */
+	} /* while (x < (MAX_MTP_LINKS+1)) */
 
 	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
 
@@ -1408,7 +1408,7 @@ static ftdm_status_t handle_status_mtp2link(ftdm_stream_handle_t *stream, char *
 	
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtp2Link[x].id != 0) {
+	while(x < (MAX_MTP_LINKS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp2Link[x].name, name)) {
 
 			/* send the status request */
@@ -1436,7 +1436,7 @@ static ftdm_status_t handle_status_mtp2link(ftdm_stream_handle_t *stream, char *
 		
 		/* move to the next link */
 		x++;
-	} /* while (id != 0) */
+	} /* while (x < (MAX_MTP_LINKS+1)) */
 
 	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
 
@@ -1452,7 +1452,7 @@ static ftdm_status_t handle_status_linkset(ftdm_stream_handle_t *stream, char *n
 
 	/* find the linkset request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) {
+	while(x < (MAX_MTP_LINKSETS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name, name)) {
 
 			/* send the status request */
@@ -1487,7 +1487,7 @@ static ftdm_status_t handle_set_inhibit(ftdm_stream_handle_t *stream, char *name
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+	while(x < (MAX_MTP_LINKS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the inhibit request */
@@ -1504,7 +1504,7 @@ static ftdm_status_t handle_set_inhibit(ftdm_stream_handle_t *stream, char *name
  
 		/* move to the next linkset */
 		x++;
-	} /* while (id != 0) */
+	} /* while (x < (MAX_MTP_LINKS+1)) */
 
 	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
 
@@ -1519,7 +1519,7 @@ static ftdm_status_t handle_set_uninhibit(ftdm_stream_handle_t *stream, char *na
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+	while(x < (MAX_MTP_LINKS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the uninhibit request */
@@ -1536,7 +1536,7 @@ static ftdm_status_t handle_set_uninhibit(ftdm_stream_handle_t *stream, char *na
  
 		/* move to the next linkset */
 		x++;
-	} /* while (id != 0) */
+	} /* while (x < (MAX_MTP_LINKS+1)) */
 
 	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
 
@@ -1891,7 +1891,7 @@ static ftdm_status_t handle_bind_link(ftdm_stream_handle_t *stream, char *name)
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+	while(x < (MAX_MTP_LINKS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the uninhibit request */
@@ -1907,7 +1907,7 @@ static ftdm_status_t handle_bind_link(ftdm_stream_handle_t *stream, char *name)
  
 		/* move to the next link */
 		x++;
-	} /* while (id != 0) */
+	} /* while (x < (MAX_MTP_LINKS+1)) */
 
 	stream->write_function(stream, "Could not find link=%s\n", name);
 
@@ -1922,7 +1922,7 @@ static ftdm_status_t handle_unbind_link(ftdm_stream_handle_t *stream, char *name
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+	while(x < (MAX_MTP_LINKS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the uninhibit request */
@@ -1938,7 +1938,7 @@ static ftdm_status_t handle_unbind_link(ftdm_stream_handle_t *stream, char *name
  
 		/* move to the next link */
 		x++;
-	} /* while (id != 0) */
+	} /* while (x < (MAX_MTP_LINKS+1)) */
 
 	stream->write_function(stream, "Could not find link=%s\n", name);
 
@@ -1953,7 +1953,7 @@ static ftdm_status_t handle_activate_link(ftdm_stream_handle_t *stream, char *na
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+	while(x < (MAX_MTP_LINKS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the uninhibit request */
@@ -1969,7 +1969,7 @@ static ftdm_status_t handle_activate_link(ftdm_stream_handle_t *stream, char *na
  
 		/* move to the next link */
 		x++;
-	} /* while (id != 0) */
+	} /* while (x < (MAX_MTP_LINKS+1)) */
 
 	stream->write_function(stream, "Could not find link=%s\n", name);
 
@@ -1984,7 +1984,7 @@ static ftdm_status_t handle_deactivate_link(ftdm_stream_handle_t *stream, char *
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+	while(x < (MAX_MTP_LINKS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the deactivate request */
@@ -2000,7 +2000,7 @@ static ftdm_status_t handle_deactivate_link(ftdm_stream_handle_t *stream, char *
  
 		/* move to the next link */
 		x++;
-	} /* while (id != 0) */
+	} /* while (x < (MAX_MTP_LINKS+1)) */
 
 	stream->write_function(stream, "Could not find link=%s\n", name);
 
@@ -2015,7 +2015,7 @@ static ftdm_status_t handle_activate_linkset(ftdm_stream_handle_t *stream, char 
 
 	/* find the linkset request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) {
+	while(x < (MAX_MTP_LINKSETS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name, name)) {
 
 			/* send the activate request */
@@ -2046,7 +2046,7 @@ static ftdm_status_t handle_deactivate_linkset(ftdm_stream_handle_t *stream, cha
 
 	/* find the linkset request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) {
+	while(x < (MAX_MTP_LINKSETS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name, name)) {
 
 			/* send the deactivate request */
@@ -2078,7 +2078,7 @@ static ftdm_status_t handle_tx_lpo(ftdm_stream_handle_t *stream, char *name)
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+	while(x < (MAX_MTP_LINKS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the uninhibit request */
@@ -2094,7 +2094,7 @@ static ftdm_status_t handle_tx_lpo(ftdm_stream_handle_t *stream, char *name)
  
 		/* move to the next link */
 		x++;
-	} /* while (id != 0) */
+	} /* while (x < (MAX_MTP_LINKS+1)) */
 
 	stream->write_function(stream, "Could not find link=%s\n", name);
 
@@ -2109,7 +2109,7 @@ static ftdm_status_t handle_tx_lpr(ftdm_stream_handle_t *stream, char *name)
 
 	/* find the link request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.mtp3Link[x].id != 0) {
+	while(x < (MAX_MTP_LINKS+1)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
 
 			/* send the uninhibit request */
@@ -2125,7 +2125,7 @@ static ftdm_status_t handle_tx_lpr(ftdm_stream_handle_t *stream, char *name)
  
 		/* move to the next link */
 		x++;
-	} /* while (id != 0) */
+	} /* while (x < (MAX_MTP_LINKS+1)) */
 
 	stream->write_function(stream, "Could not find link=%s\n", name);
 
@@ -2144,7 +2144,7 @@ static ftdm_status_t handle_status_relay(ftdm_stream_handle_t *stream, char *nam
 
 	/* find the channel request by it's name */
 	x = 1;
-	while(g_ftdm_sngss7_data.cfg.relay[x].id != 0) {
+	while(x < (MAX_RELAY_CHANNELS)) {
 		if (!strcasecmp(g_ftdm_sngss7_data.cfg.relay[x].name, name)) {
 
 			if (ftmod_ss7_relay_status(g_ftdm_sngss7_data.cfg.relay[x].id, &sta)) {
@@ -2168,7 +2168,7 @@ static ftdm_status_t handle_status_relay(ftdm_stream_handle_t *stream, char *nam
 		/* move to the next link */
 		x++;
 
-	} /* g_ftdm_sngss7_data.cfg.relay[x].id */
+	} /* x < (MAX_RELAY_CHANNELS) */
 
 success:
 	return FTDM_SUCCESS;
