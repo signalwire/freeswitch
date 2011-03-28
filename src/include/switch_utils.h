@@ -151,7 +151,11 @@ static inline char *switch_strchr_strict(const char *in, char find, const char *
 #endif
 static inline int switch_string_has_escaped_data(const char *in)
 {
-	const char *i = strchr(in, '\\');
+	const char *i;
+
+	switch_assert(in);
+
+	i = strchr(in, '\\');
 
 	while (i && *i == '\\') {
 		i++;

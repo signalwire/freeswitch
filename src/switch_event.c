@@ -1565,6 +1565,10 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 	int nv = 0;
 	char *gvar = NULL;
 
+	if (zstr(in)) {
+		return (char *) in;
+	}
+
 	nv = switch_string_var_check_const(in) || switch_string_has_escaped_data(in);
 
 	if (!nv) {
