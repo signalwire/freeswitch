@@ -1516,7 +1516,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_NAPTR),
 									 NTATAG_USE_NAPTR(0)),
 							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
-							  NTATAG_SERVER_RPORT(profile->rport_level),
+							  NTATAG_SERVER_RPORT(profile->server_rport_level),
+							  NTATAG_CLIENT_RPORT(profile->client_rport_level),
 							  TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_SIPCOMPACT),
 									 NTATAG_SIPFLAGS(MSG_DO_COMPACT)),
@@ -1579,7 +1580,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		node->nua = nua_create(profile->s_root,	/* Event loop */
 							   sofia_event_callback,	/* Callback for processing events */
 							   profile,	/* Additional data to pass to callback */
-							   NTATAG_SERVER_RPORT(profile->rport_level), NUTAG_URL(node->url), TAG_END());	/* Last tag should always finish the sequence */
+							   NTATAG_SERVER_RPORT(profile->server_rport_level), NUTAG_URL(node->url), TAG_END());	/* Last tag should always finish the sequence */
 
 		nua_set_params(node->nua,
 					   NUTAG_APPL_METHOD("OPTIONS"),
@@ -2342,7 +2343,6 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 			}
 
 			/* you could change profile->foo here if it was a minor change like context or dialplan ... */
-			profile->rport_level = 1;	/* default setting */
 			profile->acl_count = 0;
 			profile->reg_acl_count = 0;
 			profile->proxy_acl_count = 0;
@@ -2492,12 +2492,6 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							profile->dtmf_type = DTMF_INFO;
 						} else {
 							profile->dtmf_type = DTMF_NONE;
-						}
-					} else if (!strcasecmp(var, "NDLB-force-rport")) {
-						if (val && !strcasecmp(val, "safe")) {
-							profile->rport_level = 3;
-						} else if (switch_true(val)) {
-							profile->rport_level = 2;
 						}
 					} else if (!strcasecmp(var, "caller-id-type")) {
 						profile->cid_type = sofia_cid_name2type(val);
@@ -3064,7 +3058,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->dtmf_duration = 100;
 				profile->tls_version = 0;
 				profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
-				profile->rport_level = 1;
+				profile->server_rport_level = 1;
+				profile->client_rport_level = 1;
 				sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
 				sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 				profile->auto_restart = 1;
@@ -3206,9 +3201,19 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "NDLB-force-rport")) {
 						if (val && !strcasecmp(val, "safe")) {
-							profile->rport_level = 3;
+							profile->server_rport_level = 3;
+							profile->client_rport_level = 1;
+						} else if (val && !strcasecmp(val, "disabled")) {
+							profile->server_rport_level = 0;
+							profile->client_rport_level = 0;
+						} else if (val && !strcasecmp(val, "client-only")) {
+							profile->client_rport_level = 1;
+						} else if (val && !strcasecmp(val, "server-only")) {
+							profile->client_rport_level = 0;
+							profile->client_rport_level = 1;
 						} else if (switch_true(val)) {
-							profile->rport_level = 2;
+							profile->server_rport_level = 2;
+							profile->client_rport_level = 1;
 						}
 					} else if (!strcasecmp(var, "auto-rtp-bugs")) {
 						sofia_glue_parse_rtp_bugs(&profile->auto_rtp_bugs, val);
