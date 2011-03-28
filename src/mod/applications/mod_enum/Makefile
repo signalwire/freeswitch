@@ -18,3 +18,4 @@ $(LDNS_LA): $(LDNS_BUILDDIR)/Makefile
 	cd $(LDNS_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
+$(MODNAME).lo: $(LDNS_LA)
