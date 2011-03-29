@@ -1891,28 +1891,6 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 				SS7_DEBUG("Found an ccSpan typeCntrl = %s\n", sng_cic_cntrl_type_map[ret].sng_type);
 			}
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "ssf")) {
-		/**********************************************************************/
-			ret = find_ssf_type_in_map(parm->val);
-			if (ret == -1) {
-				SS7_ERROR("Found an invalid ccSpan ssf = %s\n", parm->var);
-				return FTDM_FAIL;
-			} else {
-				sng_ccSpan.ssf = sng_ssf_type_map[ret].tril_type;
-				SS7_DEBUG("Found an ccSpan ssf = %s\n", sng_ssf_type_map[ret].sng_type);
-			}
-		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "switchType")) {
-		/**********************************************************************/
-			ret = find_switch_type_in_map(parm->val);
-			if (ret == -1) {
-				SS7_ERROR("Found an invalid ccSpan switchType = %s\n", parm->var);
-				return FTDM_FAIL;
-			} else {
-				sng_ccSpan.switchType = sng_switch_type_map[ret].tril_isup_type;
-				SS7_DEBUG("Found an ccSpan switchType = %s\n", sng_switch_type_map[ret].sng_type);
-			}
-		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "cicbase")) {
 		/**********************************************************************/
 			sng_ccSpan.cicbase = atoi(parm->val);
@@ -2033,6 +2011,10 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 		/* default the nadi value to national */
 		sng_ccSpan.clg_nadi = 0x03;
 	}
+
+	/* pull up the SSF and Switchtype from the isup interface */
+	sng_ccSpan.ssf = g_ftdm_sngss7_data.cfg.isupIntf[sng_ccSpan.isupInf].ssf;
+	sng_ccSpan.switchType = g_ftdm_sngss7_data.cfg.isupIntf[sng_ccSpan.isupInf].switchType;
 
 	/* add this span to our global listing */
 	ftmod_ss7_fill_in_ccSpan(&sng_ccSpan);
