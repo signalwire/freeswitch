@@ -503,6 +503,7 @@ typedef enum {
 	FLAG_GLARE				= (1 << 13),
 	FLAG_INFID_RESUME		= (1 << 14),
 	FLAG_INFID_PAUSED		= (1 << 15),
+	FLAG_SENT_ACM			= (1 << 16),
 	FLAG_RELAY_DOWN			= (1 << 30),
 	FLAG_CKT_RECONFIG		= (1 << 31)
 } sng_ckt_flag_t;
