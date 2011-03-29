@@ -515,7 +515,6 @@ typedef enum {
     SWITCH_RTP_FLAG_NOBLOCK       - Do not block
     SWITCH_RTP_FLAG_IO            - IO is ready
 	SWITCH_RTP_FLAG_USE_TIMER     - Timeout Reads and replace with a CNG Frame
-	SWITCH_RTP_FLAG_TIMER_RECLOCK - Resync the timer to the current clock on slips
 	SWITCH_RTP_FLAG_SECURE        - Secure RTP
 	SWITCH_RTP_FLAG_AUTOADJ       - Auto-Adjust the dest based on the source
 	SWITCH_RTP_FLAG_RAW_WRITE     - Try to forward packets unscathed
@@ -532,7 +531,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_NOBLOCK = (1 << 0),
 	SWITCH_RTP_FLAG_IO = (1 << 1),
 	SWITCH_RTP_FLAG_USE_TIMER = (1 << 2),
-	SWITCH_RTP_FLAG_TIMER_RECLOCK = (1 << 3),
+	SWITCH_RTP_FLAG_RTCP_PASSTHRU = (1 << 3),
 	SWITCH_RTP_FLAG_SECURE_SEND = (1 << 4),
 	SWITCH_RTP_FLAG_SECURE_RECV = (1 << 5),
 	SWITCH_RTP_FLAG_AUTOADJ = (1 << 6),
@@ -559,8 +558,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_DEBUG_RTP_READ = (1 << 27),
 	SWITCH_RTP_FLAG_DEBUG_RTP_WRITE = (1 << 28),
 	SWITCH_RTP_FLAG_VIDEO = (1 << 29),
-	SWITCH_RTP_FLAG_ENABLE_RTCP = (1 << 30),
-	SWITCH_RTP_FLAG_RTCP_PASSTHRU = (1 << 31)
+	SWITCH_RTP_FLAG_ENABLE_RTCP = (1 << 30)
 	/* don't add any more 31 is the limit! gotta chnge to an array to add more */
 } switch_rtp_flag_enum_t;
 typedef uint32_t switch_rtp_flag_t;
