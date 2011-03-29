@@ -88,7 +88,7 @@ static switch_status_t ja_say_general_count(switch_core_session_t *session, char
 	char digits[11];
 	int i;
 
-	if (!(tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
+	if (!(tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf)-1)) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
