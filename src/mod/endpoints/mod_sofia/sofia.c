@@ -1275,6 +1275,11 @@ static void sofia_perform_profile_start_failure(sofia_profile_t *profile, char *
 	}
 }
 
+/* not a static function so that it's still visible on stacktraces */
+void watchdog_triggered_abort(void) {
+	abort();
+}
+
 #define sofia_profile_start_failure(p, xp) sofia_perform_profile_start_failure(p, xp, __FILE__, __LINE__)
 
 
@@ -1390,10 +1395,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				}
 
 				if (event_fail || step_fail) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s: SIP STACK FAILURE DETECTED!\n"
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s: SIP STACK FAILURE DETECTED BY WATCHDOG!\n"
 									  "GOODBYE CRUEL WORLD, I'M LEAVING YOU TODAY....GOODBYE, GOODBYE, GOOD BYE\n", profile->name);
 					switch_yield(2000000);
-					abort();
+					watchdog_triggered_abort();
 				}
 			}
 

@@ -2240,6 +2240,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, c
 */
 SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force);
 
+
+SWITCH_DECLARE(char *) switch_say_file_handle_get_variable(switch_say_file_handle_t *sh, const char *var);
+SWITCH_DECLARE(char *) switch_say_file_handle_get_path(switch_say_file_handle_t *sh);
+SWITCH_DECLARE(char *) switch_say_file_handle_detach_path(switch_say_file_handle_t *sh);
+SWITCH_DECLARE(void) switch_say_file_handle_destroy(switch_say_file_handle_t **sh);
+SWITCH_DECLARE(switch_status_t) switch_say_file_handle_create(switch_say_file_handle_t **sh, const char *ext, switch_event_t **var_event);
+SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *fmt, ...);
+
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

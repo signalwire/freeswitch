@@ -291,7 +291,7 @@ typedef enum {
 	FTDM_USER_LAYER1_PROT_ALAW = 0x03,
 	FTDM_USER_LAYER1_PROT_INVALID
 } ftdm_user_layer1_prot_t;
-#define USER_LAYER1_PROT_STRINGS "V.110", "u-law", "a-law", "Invalid"
+#define USER_LAYER1_PROT_STRINGS "V.110", "ulaw", "alaw", "Invalid"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_usr_layer1_prot, ftdm_user_layer1_prot2str, ftdm_user_layer1_prot_t)
 
 /*! Calling Party Category */

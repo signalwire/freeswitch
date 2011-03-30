@@ -525,15 +525,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>MODLOCATION</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\formats\mod_file_string\mod_file_string.2010.vcxproj">
-      <Name>mod_file_string</Name>
-      <Project>{70564d74-199a-4452-9c60-19ed5f242f0d}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>
-      </DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>MODLOCATION</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\formats\mod_local_stream\mod_local_stream.2010.vcxproj">
       <Name>mod_local_stream</Name>
       <Project>{2ca40887-1622-46a1-a7f9-17fd7e7e545b}</Project>

@@ -155,7 +155,8 @@ typedef enum {
 	CFLAG_WAIT_MOD = (1 << 7),
 	CFLAG_VID_FLOOR = (1 << 8),
 	CFLAG_WASTE_BANDWIDTH = (1 << 9),
-	CFLAG_OUTCALL = (1 << 10)
+	CFLAG_OUTCALL = (1 << 10),
+	CFLAG_INHASH = (1 << 11)
 } conf_flag_t;
 
 typedef enum {
@@ -667,7 +668,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	lock_member(member);
 	switch_mutex_lock(conference->member_mutex);
 
-	switch_clear_flag(conference, CFLAG_DESTRUCT);
+
 	member->join_time = switch_epoch_time_now(NULL);
 	member->conference = conference;
 	member->next = conference->members;
@@ -1491,29 +1492,30 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 	}
 
-	if (switch_test_flag(conference, CFLAG_DESTRUCT)) {
-		switch_core_timer_destroy(&timer);
-		switch_mutex_lock(globals.hash_mutex);
+	
+	switch_core_timer_destroy(&timer);
+	switch_mutex_lock(globals.hash_mutex);
+	if (switch_test_flag(conference, CFLAG_INHASH)) {
 		switch_core_hash_delete(globals.conference_hash, conference->name);
-		switch_mutex_unlock(globals.hash_mutex);
+	}
+	switch_mutex_unlock(globals.hash_mutex);
 
-		/* Wait till everybody is out */
-		switch_clear_flag_locked(conference, CFLAG_RUNNING);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Lock ON\n");
-		switch_thread_rwlock_wrlock(conference->rwlock);
-		switch_thread_rwlock_unlock(conference->rwlock);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Lock OFF\n");
+	/* Wait till everybody is out */
+	switch_clear_flag_locked(conference, CFLAG_RUNNING);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Lock ON\n");
+	switch_thread_rwlock_wrlock(conference->rwlock);
+	switch_thread_rwlock_unlock(conference->rwlock);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Lock OFF\n");
 
-		if (conference->sh) {
-			switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-			switch_core_speech_close(&conference->lsh, &flags);
-			conference->sh = NULL;
-		}
+	if (conference->sh) {
+		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+		switch_core_speech_close(&conference->lsh, &flags);
+		conference->sh = NULL;
+	}
 
-		if (conference->pool) {
-			switch_memory_pool_t *pool = conference->pool;
-			switch_core_destroy_memory_pool(&pool);
-		}
+	if (conference->pool) {
+		switch_memory_pool_t *pool = conference->pool;
+		switch_core_destroy_memory_pool(&pool);
 	}
 
 	switch_mutex_lock(globals.hash_mutex);
@@ -6118,7 +6120,13 @@ static conference_obj_t *conference_find(char *name)
 	conference_obj_t *conference;
 
 	switch_mutex_lock(globals.hash_mutex);
-	conference = switch_core_hash_find(globals.conference_hash, name);
+	if ((conference = switch_core_hash_find(globals.conference_hash, name))) {
+		if (switch_test_flag(conference, CFLAG_DESTRUCT)) {
+			switch_core_hash_delete(globals.conference_hash, conference->name);
+			switch_clear_flag(conference, CFLAG_INHASH);
+			conference = NULL;
+		}
+	}
 	switch_mutex_unlock(globals.hash_mutex);
 
 	return conference;
@@ -6568,7 +6576,9 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_mutex_init(&conference->flag_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 	switch_thread_rwlock_create(&conference->rwlock, conference->pool);
 	switch_mutex_init(&conference->member_mutex, SWITCH_MUTEX_NESTED, conference->pool);
+
 	switch_mutex_lock(globals.hash_mutex);
+	switch_set_flag(conference, CFLAG_INHASH);
 	switch_core_hash_insert(globals.conference_hash, conference->name, conference);
 	switch_mutex_unlock(globals.hash_mutex);
 
