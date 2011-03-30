@@ -2456,8 +2456,8 @@ SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_INFO, "%s Flipping CID from \"%s\" <%s> to \"%s\" <%s>\n", 
 					  switch_channel_get_name(channel),
-					  switch_channel_get_variable(channel, "pre_transfer_caller_id_name"),
-					  switch_channel_get_variable(channel, "pre_transfer_caller_id_number"),
+					  switch_str_nil(switch_channel_get_variable(channel, "pre_transfer_caller_id_name")),
+					  switch_str_nil(switch_channel_get_variable(channel, "pre_transfer_caller_id_number")),
 					  channel->caller_profile->caller_id_name,
 					  channel->caller_profile->caller_id_number
 					  );
