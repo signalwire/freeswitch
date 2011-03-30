@@ -157,7 +157,7 @@ static switch_status_t ru_say_count(switch_core_session_t *session, char *tosay,
 	int in;
 	int x = 0;
 	int places[9] = { 0 };
-	char sbuf[13] = "";
+	char sbuf[128] = "";
 	int in_;
 
 	switch_status_t status;
