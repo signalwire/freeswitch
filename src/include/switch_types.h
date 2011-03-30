@@ -36,6 +36,7 @@
 #define SWITCH_TYPES_H
 
 #include <switch.h>
+
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENT_ORIGINATE_DELIM ":_:"
 #define SWITCH_BLANK_STRING ""
@@ -1735,6 +1736,7 @@ typedef switch_status_t (*switch_stream_handle_raw_write_function_t) (switch_str
 typedef switch_status_t (*switch_api_function_t) (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session,
 												  _In_ switch_stream_handle_t *stream);
 
+
 #define SWITCH_STANDARD_API(name) static switch_status_t name (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
 
 typedef switch_status_t (*switch_input_callback_function_t) (switch_core_session_t *session, void *input,
@@ -1772,16 +1774,31 @@ typedef struct {
 	switch_ivr_dmachine_t *dmachine;
 } switch_input_args_t;
 
+
 typedef struct {
 	switch_say_type_t type;
 	switch_say_method_t method;
 	switch_say_gender_t gender;
+	const char *ext;
 } switch_say_args_t;
+
 
 typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session,
 												  char *tosay,
 												  switch_say_args_t *say_args,
 												  switch_input_args_t *args);
+
+typedef switch_status_t (*switch_say_string_callback_t) (switch_core_session_t *session,
+														 char *tosay,
+														 switch_say_args_t *say_args, char **rstr);
+														 
+struct switch_say_file_handle;
+typedef struct switch_say_file_handle switch_say_file_handle_t;
+
+typedef switch_status_t (*switch_new_say_callback_t) (switch_say_file_handle_t *sh,
+													  char *tosay,
+													  switch_say_args_t *say_args);
+
 
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;

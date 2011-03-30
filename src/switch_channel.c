@@ -2943,7 +2943,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	char *data, *indup, *endof_indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
 	char *cloned_sub_val = NULL, *sub_val = NULL;
-	char *func_val = NULL;
+	char *func_val = NULL, *sb = NULL;
 	int nv = 0;
 
 	if (zstr(in)) {
@@ -3033,8 +3033,19 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				}
 				p = e > endof_indup ? endof_indup : e;
 
-				if ((vval = strchr(vname, '(')) || (vval = strchr(vname, ' '))) {
-					if (*vval == '(') br = 1;
+				vval = NULL;
+				for(sb = vname; sb && *sb; sb++) {
+					if (*sb == ' ') {
+						vval = sb;
+						break;
+					} else if (*sb == '(') {
+						vval = sb;
+						br = 1;
+						break;
+					}
+				}
+
+				if (vval) {
 					e = vval - 1;
 					*vval++ = '\0';
 					while (*e == ' ') {
