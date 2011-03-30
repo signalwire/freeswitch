@@ -505,7 +505,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			ptime = tech_pvt->read_codec.implementation->microseconds_per_packet / 1000;
 		}
 
-		
+
 		if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 		}
@@ -4754,6 +4754,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, te);
 					}
 				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Disable 2833 dtmf\n");
+				switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "none");
+				tech_pvt->dtmf_type = DTMF_NONE;
+				te = tech_pvt->recv_te = 0;
 			}
 
 			
