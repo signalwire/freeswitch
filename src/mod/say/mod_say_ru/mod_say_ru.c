@@ -496,10 +496,10 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 		ru_say_count(session, buf, male_h, genitivus, args);
 		say_file("time/h-year.wav");
 	}
-	if (say_month || say_year || say_date || say_dow) {
-		say_file("time/at.wav");
-	}
 	if (say_time) {
+		if (say_month || say_year || say_date || say_dow) {
+			say_file("time/at.wav");
+		}
 		switch_snprintf(buf, sizeof(buf), "%d:%d:%d", tm.tm_hour, tm.tm_min, tm.tm_sec);
 		say_args->type = SST_TIME_MEASUREMENT;
 		ru_say_time(session, buf, say_args, args);
