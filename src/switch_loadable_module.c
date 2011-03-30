@@ -1971,6 +1971,10 @@ SWITCH_DECLARE(switch_status_t) switch_say_file_handle_create(switch_say_file_ha
 {
 	switch_assert(sh);
 
+	if (zstr(ext)) {
+		ext = "wav";
+	}
+
 	*sh = malloc(sizeof(**sh));
 	memset(*sh, 0, sizeof(**sh));
 
