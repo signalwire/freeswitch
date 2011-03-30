@@ -47,8 +47,8 @@
         Sometimes, in extremely rare edge cases, the Sofia SIP stack may stop
         responding. These options allow you to enable and control a watchdog
         on the Sofia SIP stack so that if it stops responding for the
-        specified number of milliseconds, it will cause FreeSWITCH to shut
-        down immediately. This is useful if you run in an HA environment and
+        specified number of milliseconds, it will cause FreeSWITCH to crash
+        immediately. This is useful if you run in an HA environment and
         need to ensure automated recovery from such a condition. Note that if
         your server is idle a lot, the watchdog may fire due to not receiving
         any SIP messages. Thus, if you expect your system to be idle, you
@@ -57,6 +57,8 @@
         globally for all profiles. So, if you run in an HA environment with a
         master and slave, you should use the CLI to make sure the watchdog is
         only enabled on the master. 
+        If such crash occurs, FreeSWITCH will dump core if allowed. The
+        stacktrace will include function watchdog_triggered_abort().
     -->
     <param name="watchdog-enabled" value="no"/>
     <param name="watchdog-step-timeout" value="30000"/>
