@@ -29,6 +29,7 @@
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
+ * Cesar Cepeda <cesar@auronix.com>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -3525,6 +3526,164 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 	}
 }
 
+
+
+/* FILE STRING INTERFACE */
+
+/* for apr_pstrcat */
+#define DEFAULT_PREBUFFER_SIZE 1024 * 64
+
+struct file_string_source;
+
+struct file_string_context {
+	char *argv[128];
+	int argc;
+	int index;
+	int samples;
+	switch_file_handle_t fh;
+};
+
+typedef struct file_string_context file_string_context_t;
+
+
+static int next_file(switch_file_handle_t *handle)
+{
+	file_string_context_t *context = handle->private_info;
+	char *file;
+	const char *prefix = handle->prefix;
+
+  top:
+
+	context->index++;
+
+	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
+		switch_core_file_close(&context->fh);
+	}
+
+	if (context->index >= context->argc) {
+		return 0;
+	}
+
+
+	if (!prefix) {
+		if (!(prefix = switch_core_get_variable_pdup("sound_prefix", handle->memory_pool))) {
+			prefix = SWITCH_GLOBAL_dirs.sounds_dir;
+		}
+	}
+
+	if (!prefix || switch_is_file_path(context->argv[context->index])) {
+		file = context->argv[context->index];
+	} else {
+		file = switch_core_sprintf(handle->memory_pool, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, context->argv[context->index]);
+	}
+
+	if (switch_core_file_open(&context->fh,
+							  file, handle->channels, handle->samplerate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		goto top;
+	}
+
+	handle->samples = context->fh.samples;
+	handle->samplerate = context->fh.samplerate;
+	handle->channels = context->fh.channels;
+	handle->format = context->fh.format;
+	handle->sections = context->fh.sections;
+	handle->seekable = context->fh.seekable;
+	handle->speed = context->fh.speed;
+	handle->interval = context->fh.interval;
+
+	if (context->index == 0) {
+		context->samples = (handle->samplerate / 1000) * 250;
+	}
+
+	return 1;
+}
+
+
+static switch_status_t file_string_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
+{
+	file_string_context_t *context = handle->private_info;
+
+	if (samples == 0 && whence == SEEK_SET) {
+		context->index = -1;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (!handle->seekable) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
+		return SWITCH_STATUS_NOTIMPL;
+	}
+
+	return switch_core_file_seek(&context->fh, cur_sample, samples, whence);
+}
+
+static switch_status_t file_string_file_open(switch_file_handle_t *handle, const char *path)
+{
+	file_string_context_t *context;
+	char *file_dup;
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This format does not support writing!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
+
+	file_dup = switch_core_strdup(handle->memory_pool, path);
+	context->argc = switch_separate_string(file_dup, '!', context->argv, (sizeof(context->argv) / sizeof(context->argv[0])));
+	context->index = -1;
+
+	handle->private_info = context;
+
+	return next_file(handle) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+static switch_status_t file_string_file_close(switch_file_handle_t *handle)
+{
+	file_string_context_t *context = handle->private_info;
+
+	switch_core_file_close(&context->fh);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t file_string_file_read(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	file_string_context_t *context = handle->private_info;
+	switch_status_t status;
+	size_t llen = *len;
+
+	if (context->samples > 0) {
+		if (*len > (size_t) context->samples) {
+			*len = context->samples;
+		}
+
+		context->samples -= *len;
+		switch_generate_sln_silence((int16_t *) data, *len, 400);
+		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		status = switch_core_file_read(&context->fh, data, len);
+	}
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		if (!next_file(handle)) {
+			return SWITCH_STATUS_FALSE;
+		}
+		*len = llen;
+		status = switch_core_file_read(&context->fh, data, len);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/* Registration */
+
+static char *file_string_supported_formats[SWITCH_MAX_CODECS] = { 0 };
+
+
+/* /FILE STRING INTERFACE */
+
+
+
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -3546,9 +3705,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	switch_application_interface_t *app_interface;
 	switch_dialplan_interface_t *dp_interface;
 	switch_chat_interface_t *chat_interface;
+	switch_file_interface_t *file_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	file_string_supported_formats[0] = "file_string";
+
+	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens = file_string_supported_formats;
+	file_interface->file_open = file_string_file_open;
+	file_interface->file_close = file_string_file_close;
+	file_interface->file_read = file_string_file_read;
+	file_interface->file_seek = file_string_file_seek;
+
 
 	error_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	error_endpoint_interface->interface_name = "error";

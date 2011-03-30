@@ -93,7 +93,6 @@
     <!--For local streams (play all the files in a directory)-->
     <load module="mod_local_stream"/>
     <load module="mod_tone_stream"/>
-    <load module="mod_file_string"/>
 
     <!-- Timers -->
     <!-- <load module="mod_timerfd"/> -->
