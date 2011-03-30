@@ -473,7 +473,7 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_sqlite
 #					File and Audio Format Handlers
 #
 ######################################################################################################################
-FORMATS_MODULES="formats/mod_file_string formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
+FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
                  formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
 
 ######################################################################################################################
@@ -891,7 +891,6 @@ fi
 %{prefix}/mod/mod_event_socket.so* 
 %{prefix}/mod/mod_expr.so*
 %{prefix}/mod/mod_fifo.so*
-%{prefix}/mod/mod_file_string.so*
 %{prefix}/mod/mod_flite.so*
 %{prefix}/mod/mod_fsv.so*
 %{prefix}/mod/mod_hash.so*
@@ -1098,6 +1097,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Wed Mar 30 2011 - michal.bielicki@seventhsignal.de
+- removed mod_file_string since it has been merged into dptools
 * Wed Feb 16 2011 - michal.bielicki@seventhsignal.de
 - added mod_skinny
 - added sangoma libraries
