@@ -1207,8 +1207,8 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 							stream->write_function(stream, "r_hw=N|");
 						}
 	
-						if (sngss7_test_ckt_flag(ss7_info, FLAG_RELAY_DOWN)) {
-							stream->write_function(stream, "relay=Y");
+						if (sngss7_test_ckt_blk_flag(ss7_info, FLAG_RELAY_DOWN)) {
+							stream->write_function(stream, "relay=Y|");
 						}else {
 							stream->write_function(stream, "relay=N");
 						}
