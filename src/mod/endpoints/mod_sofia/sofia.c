@@ -4423,6 +4423,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					const char *r_sdp = NULL;
 					switch_core_session_message_t *msg;
 					private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+					switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 
 					if (sip->sip_payload && sip->sip_payload->pl_data &&
 						sip->sip_content_type && sip->sip_content_type->c_subtype && switch_stristr("sdp", sip->sip_content_type->c_subtype)) {
@@ -4433,9 +4434,14 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
 
-					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
+					if (status > 299) {
+						switch_channel_set_private(channel, "t38_options", NULL);
+						switch_channel_set_private(other_channel, "t38_options", NULL);
+						sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
+						sofia_clear_flag(other_tech_pvt, TFLAG_T38_PASSTHRU);
+					} else if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
 						switch_t38_options_t *t38_options = sofia_glue_extract_t38_options(session, sip->sip_payload->pl_data);
-
+						
 						if (!t38_options) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_WARNING, "%s Error parsing SDP:\n%s\n",
 											  switch_channel_get_name(tech_pvt->channel), sip->sip_payload->pl_data);
