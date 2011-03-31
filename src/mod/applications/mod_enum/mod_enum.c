@@ -153,20 +153,20 @@ static switch_status_t load_config(void)
 			"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters", 
 			0, KEY_QUERY_VALUE, &hKey);
 
-		RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, NULL, &data_sz);
-		if (globals.server) {
-			free(globals.server);
+		if (hKey) {
+			RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, NULL, &data_sz);
+			if (data_sz) {
+				buf = (char*)malloc(data_sz + 1);
+
+				RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, (LPBYTE)buf, &data_sz);
+				RegCloseKey(hKey);
+
+				if(buf[data_sz - 1] != 0) {
+					buf[data_sz] = 0;
+				}
+				globals.server = buf;
+			}
 		}
-		buf = (char*)malloc(data_sz + 1);
-
-		RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, (LPBYTE)buf, &data_sz);
-
-		RegCloseKey(hKey);
-
-		if(buf[data_sz - 1] != 0) {
-			buf[data_sz] = 0;
-		}
-		globals.server = buf;
 	}
 #endif
 
