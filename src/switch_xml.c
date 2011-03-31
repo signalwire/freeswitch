@@ -137,6 +137,7 @@ static switch_memory_pool_t *XML_MEMORY_POOL = NULL;
 static switch_thread_rwlock_t *B_RWLOCK = NULL;
 static switch_mutex_t *XML_LOCK = NULL;
 static switch_mutex_t *REFLOCK = NULL;
+static switch_mutex_t *FILE_LOCK = NULL;
 static switch_mutex_t *XML_GEN_LOCK = NULL;
 
 
@@ -1526,9 +1527,11 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	} else {
 		abs = file;
 	}
+	
+	switch_mutex_lock(FILE_LOCK);
 
 	if (!(new_file = switch_mprintf("%s%s%s.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
-		return NULL;
+		goto done;
 	}
 
 	if ((write_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
@@ -1549,13 +1552,19 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	}
 
   done:
+
+	switch_mutex_unlock(FILE_LOCK);
+
 	if (write_fd > -1) {
 		close(write_fd);
 	}
+
 	if (fd > -1) {
 		close(fd);
 	}
+
 	switch_safe_free(new_file);
+
 	return xml;
 }
 
@@ -2054,6 +2063,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 
 	switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&REFLOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
+	switch_mutex_init(&FILE_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&XML_GEN_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 
 	switch_thread_rwlock_create(&B_RWLOCK, XML_MEMORY_POOL);
@@ -2071,7 +2081,9 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
+
 	switch_mutex_lock(XML_LOCK);
+	switch_mutex_lock(REFLOCK);
 
 	if (MAIN_XML_ROOT) {
 		switch_xml_t xml = MAIN_XML_ROOT;
@@ -2081,6 +2093,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 	}
 
 	switch_mutex_unlock(XML_LOCK);
+	switch_mutex_unlock(REFLOCK);
 
 	return status;
 }
