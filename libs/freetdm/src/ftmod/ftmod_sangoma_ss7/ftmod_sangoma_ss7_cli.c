@@ -724,6 +724,9 @@ static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, "ftdm ss7 lpo link X\n");
 	stream->write_function(stream, "ftdm ss7 lpr link X\n");
 	stream->write_function(stream, "\n");
+	stream->write_function(stream, "Ftmod_sangoma_ss7 Relay status:\n");
+	stream->write_function(stream, "ftdm ss7 show status relay X\n");
+	stream->write_function(stream, "\n");
 
 	return FTDM_SUCCESS;
 }
