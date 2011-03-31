@@ -417,20 +417,17 @@ static switch_status_t en_say_money(switch_say_file_handle_t *sh, char *tosay, s
 		switch_say_file(sh, "currency/dollars");
 	}
 
-	/* Say "and" */
-	switch_say_file(sh, "currency/and");
-
 	/* Say cents */
 	if (cents) {
+		/* Say "and" */
+		switch_say_file(sh, "currency/and");
+
 		en_say_general_count(sh, cents, say_args);
 		if (atoi(cents) == 1) {
 			switch_say_file(sh, "currency/cent");
 		} else {
 			switch_say_file(sh, "currency/cents");
 		}
-	} else {
-		switch_say_file(sh, "digits/0");
-		switch_say_file(sh, "currency/cents");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
