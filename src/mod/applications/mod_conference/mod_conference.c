@@ -2607,7 +2607,7 @@ static void conference_loop_output(conference_member_t *member)
 			}
 
 			do {
-				switch_ivr_play_file(member->session, NULL, "tone_stream://%(500,0,640)", NULL);
+				switch_ivr_gentones(member->session, "%(1000,0,640)", 1, NULL);
 			} while(switch_channel_up(channel) && member->conference->originating);
 
 			if (!switch_channel_ready(channel)) {
