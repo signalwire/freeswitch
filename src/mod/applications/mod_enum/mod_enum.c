@@ -795,8 +795,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 	}
 
 	switch_safe_free(globals.root);
+	switch_safe_free(globals.server);
 	switch_safe_free(globals.isn_root);
-
+	
 	return SWITCH_STATUS_UNLOAD;
 }
 

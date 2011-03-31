@@ -118,11 +118,6 @@ struct switch_xml_root {		/* additional data for the root tag */
 	char ***pi;					/* processing instructions */
 	short standalone;			/* non-zero if <?xml standalone="yes"?> */
 	char err[SWITCH_XML_ERRL];	/* error string */
-	/*! is_main_xml_root */
-	switch_bool_t is_main_xml_root;	
-	/*! rwlock */
-	switch_thread_rwlock_t *rwlock;
-
 };
 
 char *SWITCH_XML_NIL[] = { NULL };	/* empty, null terminated array of strings */
@@ -138,11 +133,12 @@ struct switch_xml_binding {
 static switch_xml_binding_t *BINDINGS = NULL;
 static switch_xml_t MAIN_XML_ROOT = NULL;
 static switch_memory_pool_t *XML_MEMORY_POOL = NULL;
+
 static switch_thread_rwlock_t *B_RWLOCK = NULL;
-static switch_thread_rwlock_t *XML_RWLOCK = NULL;
+static switch_mutex_t *XML_LOCK = NULL;
+static switch_mutex_t *REFLOCK = NULL;
 static switch_mutex_t *XML_GEN_LOCK = NULL;
-static switch_mutex_t *XML_FREE_LOCK = NULL;
-static switch_mutex_t *XML_RWFILE_LOCK = NULL;
+
 
 struct xml_section_t {
 	const char *name;
@@ -1530,11 +1526,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	} else {
 		abs = file;
 	}
-	/* Protection against running this code twice on the same filename */
-	switch_mutex_lock(XML_RWFILE_LOCK);
 
 	if (!(new_file = switch_mprintf("%s%s%s.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
-		goto done;
+		return NULL;
 	}
 
 	if ((write_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
@@ -1561,7 +1555,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	if (fd > -1) {
 		close(fd);
 	}
-	switch_mutex_unlock(XML_RWFILE_LOCK);
 	switch_safe_free(new_file);
 	return xml;
 }
@@ -1924,16 +1917,14 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 {
-	switch_xml_root_t root = NULL;
+	switch_xml_t xml;
 
-	switch_thread_rwlock_rdlock(XML_RWLOCK);
-	if (MAIN_XML_ROOT) {
-		root = (switch_xml_root_t) MAIN_XML_ROOT;
-		switch_thread_rwlock_rdlock(root->rwlock);
-	}
-	switch_thread_rwlock_unlock(XML_RWLOCK);
-
-	return (switch_xml_t) root;
+	switch_mutex_lock(REFLOCK);
+	xml = MAIN_XML_ROOT;
+	xml->refs++;
+	switch_mutex_unlock(REFLOCK);
+	
+	return xml;
 }
 
 struct destroy_xml {
@@ -1977,14 +1968,15 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 {
 	char path_buf[1024];
 	uint8_t errcnt = 0;
-	switch_xml_t r = NULL, new_main;
+	switch_xml_t new_main, r = NULL;
 
-	if (!reload) {
-		r = switch_xml_root();
-	}
+	switch_mutex_lock(XML_LOCK);
 
-	if (r) {
-		goto done;
+	if (MAIN_XML_ROOT) {
+		if (!reload) {
+			r = switch_xml_root();
+			goto done;
+		}
 	}
 
 	switch_snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "freeswitch.xml");
@@ -1997,28 +1989,28 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 			new_main = NULL;
 			errcnt++;
 		} else {
-			switch_xml_t old_root = NULL;
-			switch_xml_root_t new_main_root = (switch_xml_root_t) new_main;
-
-			new_main_root->is_main_xml_root = SWITCH_TRUE;
-
+			switch_xml_t old_root;
 			*err = "Success";
 
-			old_root = switch_xml_root();
+			switch_mutex_lock(REFLOCK);
 
-			switch_set_flag(new_main, SWITCH_XML_ROOT);
-
-			switch_thread_rwlock_wrlock(XML_RWLOCK);
+			old_root = MAIN_XML_ROOT;
 			MAIN_XML_ROOT = new_main;
-			switch_thread_rwlock_unlock(XML_RWLOCK);
+			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
+			MAIN_XML_ROOT->refs++;
+			
+			if (old_root) {
+				if (old_root->refs) {
+					old_root->refs--;
+				}
 
-			if (old_root) { 
-				switch_clear_flag(old_root, SWITCH_XML_ROOT);
+				if (!old_root->refs) {
+					switch_xml_free(old_root);
+				}
 			}
 
-			switch_xml_free(old_root);
+			switch_mutex_unlock(REFLOCK);
 
-			/* switch_xml_free_in_thread(old_root); */
 		}
 	} else {
 		*err = "Cannot Open log directory or XML Root!";
@@ -2036,6 +2028,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	}
 
   done:
+
+	switch_mutex_unlock(XML_LOCK);
 
 	return r;
 }
@@ -2058,11 +2052,11 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 	XML_MEMORY_POOL = pool;
 	*err = "Success";
 
+	switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
+	switch_mutex_init(&REFLOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&XML_GEN_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
-	switch_mutex_init(&XML_FREE_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
-	switch_mutex_init(&XML_RWFILE_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
+
 	switch_thread_rwlock_create(&B_RWLOCK, XML_MEMORY_POOL);
-	switch_thread_rwlock_create(&XML_RWLOCK, XML_MEMORY_POOL);
 
 	assert(pool != NULL);
 
@@ -2077,7 +2071,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_thread_rwlock_wrlock(XML_RWLOCK);
+	switch_mutex_lock(XML_LOCK);
 
 	if (MAIN_XML_ROOT) {
 		switch_xml_t xml = MAIN_XML_ROOT;
@@ -2086,7 +2080,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_thread_rwlock_unlock(XML_RWLOCK);
+	switch_mutex_unlock(XML_LOCK);
 
 	return status;
 }
@@ -2372,35 +2366,25 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	int i, j;
 	char **a, *s;
 	switch_xml_t orig_xml;
+	int refs = 0;
 
+  tailrecurse:
 	root = (switch_xml_root_t) xml;
 	if (!xml) {
 		return;
 	}
 
-	/* If xml is currenly the MAIN_XML_ROOT, dont even bother to check to empty it */
 	if (switch_test_flag(xml, SWITCH_XML_ROOT)) {
-		switch_thread_rwlock_unlock(root->rwlock);
-		return;
-	}
+		switch_mutex_lock(REFLOCK);
 
-	/* This is a trick to find if the struct is still in use or not */
-	switch_mutex_lock(XML_FREE_LOCK);
-	if (xml->is_switch_xml_root_t == SWITCH_TRUE && root->is_main_xml_root == SWITCH_TRUE) {
-		switch_thread_rwlock_unlock(root->rwlock);
-		if (switch_thread_rwlock_trywrlock(root->rwlock) != SWITCH_STATUS_SUCCESS) {
-			/* XML Struct is still in used, person who free it will clean it */
-			switch_mutex_unlock(XML_FREE_LOCK);
-			return;
+		if (xml->refs) {
+			xml->refs--;
+			refs = xml->refs;
 		}
-		switch_thread_rwlock_unlock(root->rwlock);
-		switch_thread_rwlock_destroy(root->rwlock);
+		switch_mutex_unlock(REFLOCK);
 	}
-	switch_mutex_unlock(XML_FREE_LOCK);
 
- tailrecurse:
-	root = (switch_xml_root_t) xml;
-	if (!xml) {
+	if (refs) {
 		return;
 	}
 
@@ -2449,7 +2433,6 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	}
 
 	switch_xml_free_attr(xml->attr);	/* tag attributes */
-
 	if ((xml->flags & SWITCH_XML_TXTM))
 		free(xml->txt);			/* character content */
 	if ((xml->flags & SWITCH_XML_NAMEM))
@@ -2487,8 +2470,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 	root->ent = (char **) memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
 	root->attr = root->pi = (char ***) (root->xml.attr = SWITCH_XML_NIL);
 	root->xml.is_switch_xml_root_t = SWITCH_TRUE;
-	root->is_main_xml_root = SWITCH_FALSE;
-	switch_thread_rwlock_create(&root->rwlock, XML_MEMORY_POOL);
 	return &root->xml;
 }
 
