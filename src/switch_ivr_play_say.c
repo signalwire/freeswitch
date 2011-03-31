@@ -1060,9 +1060,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		l16++;
 	}
 
-
-
-
 	if (play_delimiter) {
 		file_dup = switch_core_session_strdup(session, file);
 		argc = switch_separate_string(file_dup, play_delimiter, argv, (sizeof(argv) / sizeof(argv[0])));
@@ -1071,6 +1068,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		argv[0] = (char *) file;
 	}
 
+	if (!fh) {
+		fh = &lfh;
+		memset(fh, 0, sizeof(lfh));
+	}
+	
+	if (fh->samples > 0) {
+		sample_start = fh->samples;
+		fh->samples = 0;
+	}
+	
 	for (cur = 0; switch_channel_ready(channel) && !done && cur < argc; cur++) {
 		file = argv[cur];
 		eof = 0;
@@ -1182,16 +1189,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					playback_vars = tfile+1;
 				}
 			}
-		}
-
-		if (!fh) {
-			fh = &lfh;
-			memset(fh, 0, sizeof(lfh));
-		}
-
-		if (fh->samples > 0) {
-			sample_start = fh->samples;
-			fh->samples = 0;
 		}
 
 		if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
