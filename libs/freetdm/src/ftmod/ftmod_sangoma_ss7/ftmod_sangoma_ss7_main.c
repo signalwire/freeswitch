@@ -1069,14 +1069,12 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
 				/* bring the sig status down */
-				sigev.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
-				sigev.ev_data.sigstatus.status = FTDM_SIG_STATE_DOWN;
-				ftdm_span_send_signal(ftdmchan->span, &sigev);
+				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
 			}
 		} /* if (sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED)) { */
 
 		/**********************************************************************/
-		if (sngss7_test_ckt_blk_flag (sngss7_info, FLAG_CKT_MN_BLOCK_RX))&&
+		if (sngss7_test_ckt_blk_flag (sngss7_info, FLAG_CKT_MN_BLOCK_RX) &&
 			!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN)) {
 
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_MN_BLOCK_RX flag %s\n", "");
