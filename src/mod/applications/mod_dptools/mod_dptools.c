@@ -2852,7 +2852,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	if ((domain = strchr(group, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable_pdup("domain", switch_core_session_get_pool(session));
+		domain = switch_core_get_variable_dup("domain");
 		dup_domain = domain;
 	}
 
