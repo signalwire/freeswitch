@@ -890,6 +890,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		/* clear any call related flags */
 		sngss7_clear_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
 		sngss7_clear_ckt_flag (sngss7_info, FLAG_LOCAL_REL);
+		sngss7_clear_ckt_flag (sngss7_info, FLAG_SENT_ACM);
 
 
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_OPEN)) {

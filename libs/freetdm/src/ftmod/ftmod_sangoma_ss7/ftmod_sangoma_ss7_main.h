@@ -525,6 +525,7 @@ typedef enum {
 	"GLARE", \
 	"INF_RESUME", \
 	"INF_PAUSED", \
+	"TX_ACM_SENT" \
 	"RELAY_DOWN", \
 	"CKT_RECONFIG"
 FTDM_STR2ENUM_P(ftmod_ss7_ckt_state2flag, ftmod_ss7_ckt_flag2str, sng_ckt_flag_t)
