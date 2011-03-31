@@ -2559,10 +2559,6 @@ static void conference_loop_output(conference_member_t *member)
 
 	write_frame.codec = &member->write_codec;
 
-	if (!switch_test_flag(member->conference, CFLAG_ANSWERED)) {
-		switch_channel_answer(channel);
-	}
-
 	if (!restarting) {
 		/* Start the input thread */
 		launch_conference_loop_input(member, switch_core_session_get_pool(member->session));
@@ -2609,7 +2605,21 @@ static void conference_loop_output(conference_member_t *member)
 				}
 				switch_safe_free(cpstr);
 			}
+
+			do {
+				switch_ivr_play_file(member->session, NULL, "tone_stream://%(500,0,640)", NULL);
+			} while(switch_channel_up(channel) && member->conference->originating);
+
+			if (!switch_channel_ready(channel)) {
+				member->conference->cancel_cause = SWITCH_CAUSE_ORIGINATOR_CANCEL;
+				goto end;
+			}
+			
 		}
+	}
+	
+	if (!switch_test_flag(member->conference, CFLAG_ANSWERED)) {
+		switch_channel_answer(channel);
 	}
 
 	if (restarting) {
@@ -2788,8 +2798,9 @@ static void conference_loop_output(conference_member_t *member)
 			switch_cond_next();
 		}
 
-	}							/* Rinse ... Repeat */
+	} /* Rinse ... Repeat */
 
+ end:
 
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 	switch_core_timer_destroy(&timer);
