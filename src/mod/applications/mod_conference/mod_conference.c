@@ -2823,6 +2823,9 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	uint32_t rlen;
 	switch_size_t data_buf_len;
 	switch_event_t *event;
+	int no_data = 0;
+	int lead_in = 20;
+	switch_size_t len = 0;
 
 	data_buf_len = samples * sizeof(int16_t);
 
@@ -2910,9 +2913,15 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		switch_event_fire(&event);
 	}
 
-
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(conference, CFLAG_RUNNING) && conference->count) {
-		switch_size_t len = 0;
+
+		len = 0;
+
+		if (lead_in) {
+			lead_in--;
+			goto loop;
+		}
+		
 		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
 
 		if (switch_test_flag(member, MFLAG_FLUSH_BUFFER)) {
@@ -2925,35 +2934,63 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 			switch_clear_flag_locked(member, MFLAG_FLUSH_BUFFER);
 		}
 
+	again:
+
 		if (switch_test_flag((&fh), SWITCH_FILE_PAUSE)) {
 			switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
-		} else {
-			if (mux_used) {
-				/* Flush the output buffer and write all the data (presumably muxed) to the file */
-				switch_mutex_lock(member->audio_out_mutex);
-				low_count = 0;
-
-				if ((rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data_buf, data_buf_len))) {
-					len = (switch_size_t) rlen / sizeof(int16_t);
-				}
-				switch_mutex_unlock(member->audio_out_mutex);
-			}
-
-			if (len < (switch_size_t) samples) {
-				memset(data_buf + (len * sizeof(int16_t)), 255, ((switch_size_t) samples - len) * sizeof(int16_t));
-				len = (switch_size_t) samples;
-			}
-
-			if (!len || switch_core_file_write(&fh, data_buf, &len) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Failed\n");
-				switch_clear_flag_locked(member, MFLAG_RUNNING);
-			}
+			goto loop;
 		}
+
+		if (mux_used >= data_buf_len) {
+			/* Flush the output buffer and write all the data (presumably muxed) to the file */
+			switch_mutex_lock(member->audio_out_mutex);
+			low_count = 0;
+
+			if ((rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data_buf, data_buf_len))) {
+				len = (switch_size_t) rlen / sizeof(int16_t);
+				no_data = 0;
+			}
+			switch_mutex_unlock(member->audio_out_mutex);
+		}
+
+		if (len == 0) {
+			mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
+				
+			if (mux_used >= data_buf_len) {
+				goto again;
+			}
+
+			if (++no_data < 2) {
+				goto loop;
+			}
+
+			memset(data_buf, 255, (switch_size_t) data_buf_len);
+			len = (switch_size_t) samples;
+		}
+
+		if (!len || switch_core_file_write(&fh, data_buf, &len) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Failed\n");
+			switch_clear_flag_locked(member, MFLAG_RUNNING);
+		}
+		
+	loop:
 
 		switch_core_timer_next(&timer);
 	}							/* Rinse ... Repeat */
 
   end:
+
+	for(;;) {
+		switch_mutex_lock(member->audio_out_mutex);                                                                                    
+		if ((rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data_buf, data_buf_len))) {
+			len = (switch_size_t) rlen / sizeof(int16_t);
+			switch_core_file_write(&fh, data_buf, &len);
+		} else {
+			break;
+		}                                                                                                                                         
+		switch_mutex_unlock(member->audio_out_mutex);
+	}
+
 
 	switch_safe_free(data_buf);
 	switch_core_timer_destroy(&timer);
