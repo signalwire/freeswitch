@@ -3548,8 +3548,17 @@ static int next_file(switch_file_handle_t *handle)
 	handle->speed = context->fh.speed;
 	handle->interval = context->fh.interval;
 
-	if (context->index == 0) {
-		context->samples = (handle->samplerate / 1000) * 250;
+	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
+		switch_set_flag(handle, SWITCH_FILE_NATIVE);
+	} else {
+		switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+	}
+
+
+	if (!switch_test_flag(handle, SWITCH_FILE_NATIVE)) {
+		if (context->index == 0) {
+			context->samples = (handle->samplerate / 1000) * 250;
+		}
 	}
 
 	return 1;

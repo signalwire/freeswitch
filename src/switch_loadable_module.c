@@ -1995,23 +1995,14 @@ SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *f
 	char buf[256] = "";
 	int ret;
 	va_list ap;
-	int native = !strcasecmp(sh->ext, "native");
 
 	va_start(ap, fmt);
 	
 	if ((ret = switch_vsnprintf(buf, sizeof(buf), fmt, ap)) > 0) {
 		if (!sh->cnt++) {
-			if (native) {
-				sh->stream.write_function(&sh->stream, "file_string://%s", buf);
-			} else {
-				sh->stream.write_function(&sh->stream, "file_string://%s.%s", buf, sh->ext);
-			}
+			sh->stream.write_function(&sh->stream, "file_string://%s.%s", buf, sh->ext);
 		} else {
-			if (native) {
-				sh->stream.write_function(&sh->stream, "!%s", buf);
-			} else {
-				sh->stream.write_function(&sh->stream, "!%s.%s", buf, sh->ext);
-			}
+			sh->stream.write_function(&sh->stream, "!%s.%s", buf, sh->ext);
 		}
 
 	}
