@@ -2588,8 +2588,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 																			 switch_ring_ready_t rv,
 																			 const char *file, const char *func, int line)
 {
-	const char *var;
-	char *app;
 	switch_event_t *event;
 
 	if (!switch_channel_test_flag(channel, CF_RING_READY) && 
@@ -2619,21 +2617,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 			switch_event_fire(&event);
 		}
 
-		var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE);
-		if (var) {
-			char *arg = NULL;
-			app = switch_core_session_strdup(channel->session, var);
-
-			if (strstr(app, "::")) {
-				switch_core_session_execute_application_async(channel->session, app, arg);
-			} else {
-				if ((arg = strchr(app, ' '))) {
-					*arg++ = '\0';
-				}
-				
-				switch_core_session_execute_application(channel->session, app, arg);
-			}
-		}
+		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE);
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -2645,7 +2629,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 {
 	switch_event_t *event;
 	const char *var = NULL;
-	char *app;
 
 	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 		const char *uuid;
@@ -2678,20 +2661,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 			switch_mutex_unlock(channel->profile_mutex);
 		}
 
-		if (((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE)) ||
-			 (var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE))) && !zstr(var)) {
-			char *arg = NULL;
-			app = switch_core_session_strdup(channel->session, var);
-
-
-			if (strstr(app, "::")) {
-				switch_core_session_execute_application_async(channel->session, app, arg);
-			} else {
-				if ((arg = strchr(app, ' '))) {
-					*arg++ = '\0';
-				}
-				
-				switch_core_session_execute_application(channel->session, app, arg);
+		if (switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE) != SWITCH_STATUS_SUCCESS) {
+			if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+				switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
 			}
 		}
 
@@ -2785,6 +2757,40 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready_value(switch_c
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix)
+{
+	switch_event_header_t *hi;
+	int x = 0;
+	
+	if ((hi = switch_channel_variable_first(channel))) {
+		for (; hi; hi = hi->next) {
+			char *var = hi->name;
+			char *val = hi->value;
+			char *app;
+			
+			if (!strncasecmp(var, variable_prefix, strlen(variable_prefix))) {
+				char *arg = NULL;
+				x++;
+
+				app = switch_core_session_strdup(channel->session, val);
+				
+				if (strstr(app, "::")) {
+					switch_core_session_execute_application_async(channel->session, app, arg);
+				} else {
+					if ((arg = strchr(app, ' '))) {
+						*arg++ = '\0';
+					}
+					
+					switch_core_session_execute_application(channel->session, app, arg);
+				}
+			}
+		}
+		switch_channel_variable_last(channel);
+	}
+
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	switch_event_t *event;
@@ -2852,21 +2858,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n",
 					  channel->name);
 
-	if (((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE)) ||
-		 (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && (var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE))))
-		&& !zstr(var)) {
-		char *arg = NULL;
 
-		app = switch_core_session_strdup(channel->session, var);
-
-		if (strstr(app, "::")) {
-			switch_core_session_execute_application_async(channel->session, app, arg);
-		} else {
-			if ((arg = strchr(app, ' '))) {
-				*arg++ = '\0';
-			}
-			
-			switch_core_session_execute_application(channel->session, app, arg);
+	if (switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE) != SWITCH_STATUS_SUCCESS) {
+		if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+			switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
 		}
 	}
 
