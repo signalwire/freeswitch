@@ -2078,7 +2078,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 							   prompt_audio_file, bad_input_audio_file, var_name, digit_buffer, sizeof(digit_buffer), digits_regex, digit_timeout);
 }
 
-#define SAY_SYNTAX "<module_name>:<lang> <say_type> <say_method> [<say_gender>] <text>"
+#define SAY_SYNTAX "<module_name>[:<lang>] <say_type> <say_method> [<say_gender>] <text>"
 SWITCH_STANDARD_APP(say_function)
 {
 	char *argv[5] = { 0 };
@@ -2093,6 +2093,11 @@ SWITCH_STANDARD_APP(say_function)
 		args.input_callback = on_dtmf;
 
 		switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
+
+		/* Set default langauge according to the <module_name> */
+		if (!strchr(argv[0], ':')) {
+			argv[0] = switch_core_session_sprintf(session, "%s:%s", argv[0], argv[0]);
+		}
 
 		switch_ivr_say(session, (argc == 4) ? argv[3] : argv[4], argv[0], argv[1], argv[2], (argc == 5) ? argv[3] : NULL ,&args);
 	} else {
