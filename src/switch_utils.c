@@ -2579,13 +2579,13 @@ SWITCH_DECLARE(int) switch_isxdigit(int c)
 	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char) c] & (_N | _X)));
 }
 static const char *DOW[] = {
-	"sat",
 	"sun",
 	"mon",
 	"tue",
 	"wed",
 	"thu",
-	"fri"
+	"fri",
+	"sat"
 };
 
 SWITCH_DECLARE(const char *) switch_dow_int2str(int val) {
@@ -2601,7 +2601,7 @@ SWITCH_DECLARE(int) switch_dow_str2int(const char *exp) {
 	
 	for (x = 0; x < switch_arraylen(DOW); x++) {
 		if (!strncasecmp(DOW[x], exp, 3)) {
-			ret = x;
+			ret = x + 1;
 			break;
 		}
 	}
@@ -2611,13 +2611,13 @@ SWITCH_DECLARE(int) switch_dow_str2int(const char *exp) {
 typedef enum {
 	DOW_ERR = -2,
 	DOW_EOF = -1,
-	DOW_SAT = 0,
-	DOW_SUN,
+	DOW_SUN = 1,
 	DOW_MON,
 	DOW_TUE,
 	DOW_WED,
 	DOW_THU,
 	DOW_FRI,
+	DOW_SAT,
 	DOW_HYPHEN = '-',
 	DOW_COMA = ','
 } dow_t;
@@ -2632,7 +2632,7 @@ static inline dow_t _dow_read_token(const char **s)
 	} else if (**s == ',') {
 		(*s)++;
 		return DOW_COMA;
-	} else if (**s >= '0' && **s <= '9') {
+	} else if (**s >= '1' && **s <= '7') {
 		dow_t r = **s - '0';
 		(*s)++;
 		return r;
@@ -2664,14 +2664,8 @@ SWITCH_DECLARE(switch_bool_t) switch_dow_cmp(const char *exp, int val)
 		} else {
 			/* Valid day found */
 			if (range_start != DOW_EOF) { /* Evaluating a range */
-				if (range_start < cur) {
-					if (val >= range_start && val <= cur) {
-						return SWITCH_TRUE;
-					}
-				} else {
-					if (val >= cur && val <= range_start) {
-						return SWITCH_TRUE;
-					}
+				if (val >= range_start && val <= cur) {
+					return SWITCH_TRUE;
 				}
 				range_start = DOW_EOF;
 			} else if (val == cur) {
