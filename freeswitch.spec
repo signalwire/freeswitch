@@ -506,7 +506,7 @@ PASSTHRU_CODEC_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_g723_1 codecs
 #						Phrase engine language modules
 #
 ######################################################################################################################
-SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_hu say/mod_say_ru"
+SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_he say/mod_say_ru"
 ######################################################################################################################
 #
 #							Timers
