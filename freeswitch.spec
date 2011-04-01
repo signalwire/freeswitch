@@ -283,18 +283,25 @@ Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
 Russian language phrases module and directory structure for say module and voicemail
 
 %package lang-fr
-Summary:        Provides french language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides french language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
 
 %description lang-fr
 French language phrases module and directory structure for say module and voicemail
 
 %package lang-de
-Summary:        Provides german language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides german language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
 
 %description lang-de
 German language phrases module and directory structure for say module and voicemail
+
+%package lang-he
+Summary:        Provides hebrew language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
+
+%description lang-he
+Hebrew language phrases module and directory structure for say module and voicemail
 
 
 %package freetdm
@@ -499,7 +506,7 @@ PASSTHRU_CODEC_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_g723_1 codecs
 #						Phrase engine language modules
 #
 ######################################################################################################################
-SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_ru"
+SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_hu say/mod_say_ru"
 ######################################################################################################################
 #
 #							Timers
@@ -1091,12 +1098,25 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/dir/*.xml
 %{prefix}/mod/mod_say_ru.so*
 
+%files lang-he
+%defattr(-, freeswitch, daemon)
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/he/
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/he/demo
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/he/vm
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/he/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/he/demo/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/he/vm/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/he/dir/*.xml
+%{prefix}/mod/mod_say_he.so*
+
 ######################################################################################################################
 #
 #						Changelog
 #
 ######################################################################################################################
 %changelog
+* Fri Apr 01 2011 - michal.bielicki@seventhsignal.de
+- added hebrew language stuff
 * Wed Mar 30 2011 - michal.bielicki@seventhsignal.de
 - removed mod_file_string since it has been merged into dptools
 * Wed Feb 16 2011 - michal.bielicki@seventhsignal.de
