@@ -108,10 +108,11 @@ say/mod_say_en
 #say/mod_say_it
 #say/mod_say_nl
 #say/mod_say_pt
-say/mod_say_ru
+#say/mod_say_ru
 #say/mod_say_zh
 #say/mod_say_hu
 #say/mod_say_th
+#say/mod_say_he
 #timers/mod_timerfd
 
 ## Experimental Modules (don't cry if they're broken)
