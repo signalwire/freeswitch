@@ -306,7 +306,12 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 	while ((state = switch_channel_get_state(session->channel)) != CS_DESTROY) {
 
-		switch_channel_wait_for_flag(session->channel, CF_BLOCK_STATE, SWITCH_FALSE, 0, NULL);
+		if (switch_channel_test_flag(session->channel, CF_BLOCK_STATE)) {
+			switch_channel_wait_for_flag(session->channel, CF_BLOCK_STATE, SWITCH_FALSE, 0, NULL);
+			if ((state = switch_channel_get_state(session->channel)) == CS_DESTROY) {
+				break;
+			}
+		}
 
 		midstate = state;
 		if (state != switch_channel_get_running_state(session->channel) || state >= CS_HANGUP) {
