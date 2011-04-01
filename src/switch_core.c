@@ -1398,7 +1398,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	}
 
 	if (switch_test_flag((&runtime), SCF_USE_AUTO_NAT)) {
-		switch_nat_init(runtime.memory_pool);
+		switch_nat_init(runtime.memory_pool, switch_test_flag((&runtime), SCF_USE_NAT_MAPPING));
 	}
 
 	switch_log_init(runtime.memory_pool, runtime.colorize_console);

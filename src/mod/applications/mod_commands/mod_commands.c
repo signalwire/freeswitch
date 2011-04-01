@@ -329,6 +329,7 @@ SWITCH_STANDARD_API(nat_map_function)
 	switch_port_t external_port = 0;
 	char *tmp = NULL;
 	switch_bool_t sticky = SWITCH_FALSE;
+	switch_bool_t mapping = SWITCH_TRUE;
 
 	if (!cmd) {
 		goto usage;
@@ -357,6 +358,24 @@ SWITCH_STANDARD_API(nat_map_function)
 		goto ok;
 	} else if (argv[0] && switch_stristr("reinit", argv[0])) {
 		switch_nat_reinit();
+		tmp = switch_nat_status();
+		stream->write_function(stream, tmp);
+		switch_safe_free(tmp);
+		goto ok;
+	}
+
+	if (argc < 2) {
+		goto usage;
+	}
+
+	if (argv[0] && switch_stristr("mapping", argv[0])) {
+		if (argv[1] && switch_stristr("enable", argv[1])) {
+			mapping = SWITCH_TRUE;
+		} else if (argv[1] && switch_stristr("disable", argv[1])) {
+			mapping = SWITCH_FALSE;
+		}
+
+		switch_nat_set_mapping(mapping);
 		tmp = switch_nat_status();
 		stream->write_function(stream, tmp);
 		switch_safe_free(tmp);
@@ -395,7 +414,7 @@ SWITCH_STANDARD_API(nat_map_function)
 	goto ok;
 
  usage:
-	stream->write_function(stream, "USAGE: nat_map [status|reinit|republish] | [add|del] <port> [tcp|udp] [sticky]");
+	stream->write_function(stream, "USAGE: nat_map [status|reinit|republish] | [add|del] <port> [tcp|udp] [sticky] | [mapping] <enable|disable>");
 
   ok:
 
