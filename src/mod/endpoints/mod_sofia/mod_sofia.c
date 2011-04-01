@@ -3980,6 +3980,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	const char *hval = NULL;
 	char *not_const = NULL;
 	int cid_locked = 0;
+	switch_channel_t *o_channel = NULL;
 
 	*new_session = NULL;
 
@@ -4007,6 +4008,11 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	profile_name = data;
 
 	nchannel = switch_core_session_get_channel(nsession);
+
+	if (session) {
+		o_channel = switch_core_session_get_channel(session);
+	}
+
 
 	if ((hval = switch_event_get_header(var_event, "sip_invite_to_uri"))) {
 		dest_to = switch_core_session_strdup(nsession, hval);
@@ -4114,7 +4120,15 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		gateway_ptr->ob_calls++;
 
 		if (!zstr(gateway_ptr->from_domain) && !switch_channel_get_variable(nchannel, "sip_invite_domain")) {
-			switch_channel_set_variable(nchannel, "sip_invite_domain", gateway_ptr->from_domain);
+			if (!strcasecmp(gateway_ptr->from_domain, "auto-aleg")) {
+				const char *sip_from_host = switch_channel_get_variable(o_channel, "sip_from_host");
+
+				if (!zstr(sip_from_host)) {
+					switch_channel_set_variable(nchannel, "sip_invite_domain", sip_from_host);
+				}
+			} else {
+				switch_channel_set_variable(nchannel, "sip_invite_domain", gateway_ptr->from_domain);
+			}
 		}
 
 		if (!zstr(gateway_ptr->outbound_sticky_proxy) && !switch_channel_get_variable(nchannel, "sip_route_uri")) {
@@ -4313,7 +4327,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	}
 
 	if (session) {
-		switch_channel_t *o_channel = switch_core_session_get_channel(session);
 		const char *vval = NULL;
 
 		if ((vval = switch_channel_get_variable(o_channel, "sip_auto_answer")) && switch_true(vval)) {
