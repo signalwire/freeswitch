@@ -2330,22 +2330,38 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 	const char *save_path = NULL, *chan_lang = NULL, *lang = NULL, *lname = NULL, *sound_path = NULL;
 	switch_event_t *hint_data;
 	switch_xml_t cfg, xml = NULL, language, macros;
-
+	char *p;
 
 	switch_assert(session);
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
 
-	lang = switch_channel_get_variable(channel, "language");
+	if (zstr(module_name)) {
+		module_name = "en";
+	}
 
-	if (!lang) {
-		chan_lang = switch_channel_get_variable(channel, "default_language");
-		if (!chan_lang) {
-			chan_lang = "en";
+	if (module_name) {
+		p = switch_core_session_strdup(session, module_name);
+		module_name = p;
+		
+		if ((p = strchr(module_name, ':'))) {
+			*p++ = '\0';
+			chan_lang = p;
 		}
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No language specified - Using [%s]\n", chan_lang);
-	} else {
-		chan_lang = lang;
+	}
+
+	if (!chan_lang) {
+		lang = switch_channel_get_variable(channel, "language");
+
+		if (!lang) {
+			chan_lang = switch_channel_get_variable(channel, "default_language");
+			if (!chan_lang) {
+				chan_lang = module_name;
+			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No language specified - Using [%s]\n", chan_lang);
+		} else {
+			chan_lang = lang;
+		}
 	}
 
 	switch_event_create(&hint_data, SWITCH_EVENT_REQUEST_PARAMS);
@@ -2399,8 +2415,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 
 	if (sound_path) {
 		switch_channel_set_variable(channel, "sound_prefix", sound_path);
+		p = switch_core_session_strdup(session, sound_path);
+		sound_path = p;
 	}
 
+	if (xml) {
+		switch_xml_free(xml);
+	}
+	
 	if ((si = switch_loadable_module_get_say_interface(module_name))) {
 		/* should go back and proto all the say mods to const.... */
 		switch_say_args_t say_args = {0};
@@ -2424,11 +2446,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 	if (save_path) {
 		switch_channel_set_variable(channel, "sound_prefix", save_path);
 	}
-
-	if (xml) {
-		switch_xml_free(xml);
-	}
-
+	
 	return status;
 }
 

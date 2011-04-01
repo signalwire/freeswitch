@@ -2078,7 +2078,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 							   prompt_audio_file, bad_input_audio_file, var_name, digit_buffer, sizeof(digit_buffer), digits_regex, digit_timeout);
 }
 
-#define SAY_SYNTAX "<module_name> <say_type> <say_method> [<say_gender>] <text>"
+#define SAY_SYNTAX "<module_name>:<lang> <say_type> <say_method> [<say_gender>] <text>"
 SWITCH_STANDARD_APP(say_function)
 {
 	char *argv[5] = { 0 };
