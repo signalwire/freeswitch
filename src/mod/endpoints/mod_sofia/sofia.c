@@ -4928,7 +4928,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						match = sofia_glue_negotiate_sdp(session, r_sdp);
 					}
 
-					if (match) {
+					if (!match) {
+						if (switch_channel_get_state(channel) != CS_NEW) {
+							nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+						}
+					} else {
 						nua_handle_t *bnh;
 						sip_replaces_t *replaces;
 						su_home_t *home = NULL;
@@ -4936,6 +4940,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						sofia_set_flag_locked(tech_pvt, TFLAG_READY);
 						if (switch_channel_get_state(channel) == CS_NEW) {
 							switch_channel_set_state(channel, CS_INIT);
+						} else {
+							nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
 						}
 						sofia_set_flag(tech_pvt, TFLAG_SDP);
 						if (replaces_str) {
