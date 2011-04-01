@@ -150,6 +150,7 @@
  *
  *  - Linux (x86 & x86_64)
  *  - Windows (MSVC 2008 & VC++ EE 2008)
+ *  - Windows (MSVC 2010 & VC++ EE 2010)
  *  - Mac OS X (intel & ppc )
  *  - FreeBSD 6
  *
@@ -175,6 +176,10 @@
  *
  *	mod_pocketsphinx
  *		- PocketSphinx (http://www.speech.cs.cmu.edu/pocketsphinx/)
+ *
+ *	mod_unimrcp
+ *		- MRCP (http://www.unimrcp.org/)
+ *
  *
  *  Codecs
  *	mod_speex

@@ -1183,7 +1183,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(_In_ switch_core_s
 ///\ingroup core1
 ///\{
 /*! 
-  \brief Initilize a hash table
+  \brief Initialize a hash table
   \param hash a NULL pointer to a hash table to aim at the new hash
   \param pool the pool to use for the new hash
   \return SWITCH_STATUS_SUCCESS if the hash is created
