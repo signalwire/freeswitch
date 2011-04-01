@@ -487,7 +487,7 @@ static switch_status_t say_spell(switch_say_file_handle_t *sh, char *tosay, swit
 	for (p = tosay; p && *p; p++) {
 		int a = tolower((int) *p);
 		if (a >= '0' && a <= '9') {
-			switch_say_file(sh, "digits/%d", a - '0');
+			switch_say_file(sh, "digits/%c", a);
 		} else {
 			if (say_args->type == SST_NAME_SPELLED) {
 				switch_say_file(sh, "ascii/%d", a);
