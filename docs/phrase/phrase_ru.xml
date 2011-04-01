@@ -318,9 +318,12 @@
 		<prompt phrase="Цент" filename="cent.wav"/>
 		<prompt phrase="центральный" filename="central.wav"/>
 		<prompt phrase="Центов в минуту" filename="cents-per-minute.wav"/>
+		<prompt phrase="Центов" filename="centov.wav"/>
 		<prompt phrase="Центы" filename="cents.wav"/>
 		<prompt phrase="Доллар" filename="dollar.wav"/>
 		<prompt phrase="Долларов" filename="dollars.wav"/>
+		<prompt phrase="Доллара" filename="dollara.wav"/>
+		<prompt phrase="Доллары" filename="dollari.wav"/>
 		<prompt phrase="Минус" filename="minus.wav"/>
 		<prompt phrase="Отрицательный" filename="negative.wav"/>
 		<prompt phrase="Копеек" filename="kopeck-i.wav"/>
@@ -395,6 +398,7 @@
 		<prompt phrase="срочное сообщение сохранено" filename="vm-urgent-saved.wav"/><!--urgent saved    -->
 		<prompt phrase="сохранено" filename="vm-saved.wav"/><!--saved    -->
 		<prompt phrase="сохранённых" filename="vm-savedx.wav"/><!--saved    -->
+		<prompt phrase="сохранное" filename="vm-save.wav"/><!--saved    -->
 		<prompt phrase="сообщение" filename="vm-message.wav"/><!--message    -->
 		<prompt phrase="сообщений" filename="vm-messagex.wav"/><!--messages    -->
 		<prompt phrase="сообщения" filename="vm-messages.wav"/><!-- message   -->
@@ -432,10 +436,10 @@
 		<prompt phrase="Неправильный добавочный номер" filename="vm-that_was_an_invalid_ext.wav"/><!--    -->
 		<prompt phrase="Почтовый ящик переполнен. Пожалуйста перезвоните позже" filename="vm-mailbox_full.wav"/><!--  That mailbox is full. Please try your call again later.  -->
 		<!-- Дописать-->
-		<prompt phrase="Ваш персональный номер, он же пин, используется для предотвращения доступа дригими к вашим голосовым мообщениям. Хотите сменить его сейчс?" filename="vm-tutorial_change_pin.wav"/><!--Your personal identification number, or 'pin', is used to prevent others from accessing your voicemail messages. Would you like to change it now? -->
+		<prompt phrase="Ваш персональный номер, он же пин, используется для предотвращения доступа другими к вашим голосовым сообщениям. Хотите сменить его сейчас?" filename="vm-tutorial_change_pin.wav"/><!--Your personal identification number, or 'pin', is used to prevent others from accessing your voicemail messages. Would you like to change it now? -->
 		<prompt phrase="Вызываемый абонент сейчас недоступен и не имеет голосовой почты" filename="vm-not_available_no_voicemail.wav"/> <!-- The person you are trying to reach is not available and does not have voicemail.-->
-		<prompt phrase="Добро пожаловать в Вашу новую голосовую почту. Для того, чобы прослушать инструкцию и настроить вашу голосовую почту, нажмие 1. Чтобы пропустить этот шаг, нажмите 2" filename="vm-tutorial_yes_no.wav"/><!-- Welcome to your new voicemail. To listen to a tutorial and setup your voice mail box, press 1. To skip, press 2.-->
-		<prompt phrase="Необходимо записать Ваше имя и фамилию.Эта запись используется системой, включая справочник организации" filename="vm-tutorial_record_name.wav"/><!--I need to record your first and last name. This recording is used throughout the system, including in the company directory.-->
+		<prompt phrase="Добро пожаловать в Вашу новую голосовую почту. Для того, что бы прослушать инструкцию и настроить вашу голосовую почту, нажмите 1. Чтобы пропустить этот шаг, нажмите 2" filename="vm-tutorial_yes_no.wav"/><!-- Welcome to your new voicemail. To listen to a tutorial and setup your voice mail box, press 1. To skip, press 2.-->
+		<prompt phrase="Необходимо записать Ваше имя и фамилию. Эта запись используется системой, включая справочник организации" filename="vm-tutorial_record_name.wav"/><!--I need to record your first and last name. This recording is used throughout the system, including in the company directory.-->
 		<!-- Дописать-->
 		
 	</voicemail>
@@ -615,7 +619,7 @@
                 <prompt phrase="Добрый день." filename="ivr-good_afternoon.wav"/> <!--  Good afternoon.  -->
                 <prompt phrase="Спасибо за звонок. Если вы знаете внутренний номер телефона, пожалуйста, введите его сейчас или набрать девять для каталога." filename="ivr-generic_greeting.wav"/> <!--  Thank you for calling. If you know your party's extension, please enter it now, or dial nine for a directory.  -->
                 <prompt phrase="Спасибо." filename="ivr-Thank_you.wav"/> <!--  Thank you.  -->
-                <prompt phrase="Ели это правильно нажмите один. Есле нет, нажмите 2" filename="ivr-if_correct_one_if_not_two.wav"/> <!--  If this is correct, press 1. If not, press 2.  -->
+                <prompt phrase="Если это правильно нажмите один. Если нет, нажмите 2" filename="ivr-if_correct_one_if_not_two.wav"/> <!--  If this is correct, press 1. If not, press 2.  -->
                 <!-- Дописать -->
 
 
