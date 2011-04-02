@@ -277,28 +277,32 @@ English language phrases module and directory structure for say module and voice
 
 %package lang-ru
 Summary:        Provides russian language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
-Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
 
 %description lang-ru
 Russian language phrases module and directory structure for say module and voicemail
 
 %package lang-fr
 Summary:        Provides french language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
-Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
 
 %description lang-fr
 French language phrases module and directory structure for say module and voicemail
 
 %package lang-de
 Summary:        Provides german language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
-Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
 
 %description lang-de
 German language phrases module and directory structure for say module and voicemail
 
 %package lang-he
 Summary:        Provides hebrew language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
-Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
 
 %description lang-he
 Hebrew language phrases module and directory structure for say module and voicemail
