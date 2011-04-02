@@ -2760,33 +2760,35 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready_value(switch_c
 SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix)
 {
 	switch_event_header_t *hi;
+	switch_event_t *event;
 	int x = 0;
-	
-	if ((hi = switch_channel_variable_first(channel))) {
-		for (; hi; hi = hi->next) {
-			char *var = hi->name;
-			char *val = hi->value;
-			char *app;
-			
-			if (!strncasecmp(var, variable_prefix, strlen(variable_prefix))) {
-				char *arg = NULL;
-				x++;
 
-				app = switch_core_session_strdup(channel->session, val);
+	switch_channel_get_variables(channel, &event);
+	
+	for (hi = event->headers; hi; hi = hi->next) {
+		char *var = hi->name;
+		char *val = hi->value;
+		char *app;
+			
+		if (!strncasecmp(var, variable_prefix, strlen(variable_prefix))) {
+			char *arg = NULL;
+			x++;
+
+			app = switch_core_session_strdup(channel->session, val);
 				
-				if (strstr(app, "::")) {
-					switch_core_session_execute_application_async(channel->session, app, arg);
-				} else {
-					if ((arg = strchr(app, ' '))) {
-						*arg++ = '\0';
-					}
-					
-					switch_core_session_execute_application(channel->session, app, arg);
+			if (strstr(app, "::")) {
+				switch_core_session_execute_application_async(channel->session, app, arg);
+			} else {
+				if ((arg = strchr(app, ' '))) {
+					*arg++ = '\0';
 				}
+				
+				switch_core_session_execute_application(channel->session, app, arg);
 			}
 		}
-		switch_channel_variable_last(channel);
 	}
+	
+	switch_event_destroy(&event);
 
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
