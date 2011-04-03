@@ -1893,6 +1893,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *invite_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_to");
 	const char *handle_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_handle_full_from");
 	const char *handle_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_handle_full_to");
+	const char *force_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_from");
+	const char *force_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_to");
 	char *mp = NULL, *mp_type = NULL;
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
@@ -2122,6 +2124,15 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		if (handle_full_to) {
 			to_str = (char *) handle_full_to;
+		}
+
+
+		if (force_full_from) {
+			from_str = (char *) force_full_from;
+		}
+
+		if (force_full_to) {
+			to_str = (char *) force_full_to;
 		}
 
 

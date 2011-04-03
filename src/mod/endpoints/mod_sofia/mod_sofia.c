@@ -4120,7 +4120,15 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		gateway_ptr->ob_calls++;
 
 		if (!zstr(gateway_ptr->from_domain) && !switch_channel_get_variable(nchannel, "sip_invite_domain")) {
-			if (!strcasecmp(gateway_ptr->from_domain, "auto-aleg")) {
+			
+			if (!strcasecmp(gateway_ptr->from_domain, "auto-aleg-full")) {
+				const char *sip_full_from = switch_channel_get_variable(o_channel, "sip_full_from");
+				
+				if (!zstr(sip_full_from)) {
+					switch_channel_set_variable(nchannel, "sip_force_full_from", sip_full_from);
+				}
+
+			} else if (!strcasecmp(gateway_ptr->from_domain, "auto-aleg-domain")) {
 				const char *sip_from_host = switch_channel_get_variable(o_channel, "sip_from_host");
 
 				if (!zstr(sip_from_host)) {
