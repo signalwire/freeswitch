@@ -3629,7 +3629,6 @@ static switch_status_t file_string_file_read(switch_file_handle_t *handle, void 
 		}
 
 		context->samples -= *len;
-		//switch_generate_sln_silence((int16_t *) data, *len, 400);
 		memset(data, 255, *len *2);
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
