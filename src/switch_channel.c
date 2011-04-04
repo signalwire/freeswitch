@@ -2771,17 +2771,27 @@ SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *chan
 			
 		if (!strncasecmp(var, variable_prefix, strlen(variable_prefix))) {
 			char *arg = NULL;
+			char *p;
+			int bg = 0;
 			x++;
 
 			app = switch_core_session_strdup(channel->session, val);
-				
-			if (strstr(app, "::")) {
+
+			for(p = app; p && *p; p++) {
+				if (*p == ' ') {
+					*p++ = '\0';
+					arg = p;
+					break;
+				} else if (*p == ':' && (*(p+1) == ':')) {
+					bg++;
+					break;
+				}
+			}
+
+			
+			if (bg) {
 				switch_core_session_execute_application_async(channel->session, app, arg);
 			} else {
-				if ((arg = strchr(app, ' '))) {
-					*arg++ = '\0';
-				}
-				
 				switch_core_session_execute_application(channel->session, app, arg);
 			}
 		}
