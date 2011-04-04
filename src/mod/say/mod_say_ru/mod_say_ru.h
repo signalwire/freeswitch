@@ -49,8 +49,10 @@ typedef enum {
 
 typedef enum {
 	ruble,
-	dollar
+	dollar,
+	euro
 } currency_t;
+
 
 
 typedef struct {
@@ -66,6 +68,29 @@ struct say_t {
 	char *million[14];
 	int all;
 };
+struct say_cur_t {
+	char *first[6];
+	say_gender_t first_gender;
+	cases_t first_cases;
+	char *second[6];
+	say_gender_t second_gender;
+	cases_t second_cases;
+	
+};
+
+// описываем как произносить валяюты от 0 до 5 дальше идёт номер рода и падежа (с нуля)
+//рубли
+#define c_0 {{"rubles","ruble","ruble-a","ruble-a","ruble-a","rubles"},male,nominativus,\
+	     {"kopecks","kopeck","kopeck-i","kopeck-i","kopeck-i","kopecks"},female,nominativus}
+
+#define c_1 {{"dollars","dollar","dollara","dollara","dollara","dollars"},male,nominativus,\
+	     {"centov","cent","centa","centa","centa","centov"},male,nominativus}
+
+#define c_2 {{"rubles","ruble","ruble-a","ruble-a","ruble-a","rubles"},male,nominativus,\
+	     {"kopecks","kopeck","kopeck-i","kopeck-i","kopeck-i","kopecks"},female,nominativus}
+
+
+
 
 typedef switch_status_t (*switch_new_say_callback_ru_t) (switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args,say_opt_t *say_opt);
 

@@ -316,6 +316,7 @@
 	<currency>
 		<prompt phrase="и" filename="and.wav"/>
 		<prompt phrase="Цент" filename="cent.wav"/>
+		<prompt phrase="Цента" filename="centa.wav"/>
 		<prompt phrase="центральный" filename="central.wav"/>
 		<prompt phrase="Центов в минуту" filename="cents-per-minute.wav"/>
 		<prompt phrase="Центов" filename="centov.wav"/>
@@ -326,9 +327,9 @@
 		<prompt phrase="Доллары" filename="dollari.wav"/>
 		<prompt phrase="Минус" filename="minus.wav"/>
 		<prompt phrase="Отрицательный" filename="negative.wav"/>
-		<prompt phrase="Копеек" filename="kopeck-i.wav"/>
+		<prompt phrase="Копейки" filename="kopeck-i.wav"/>
 		<prompt phrase="Копейка" filename="kopeck.wav"/>
-		<prompt phrase="Копейки" filename="kopecks.wav"/>
+		<prompt phrase="Копеек" filename="kopecks.wav"/>
 		<prompt phrase="Рубль" filename="ruble.wav"/>
 		<prompt phrase="Рубля" filename="ruble-a.wav"/>
 		<prompt phrase="Рублей" filename="rubles.wav"/>
