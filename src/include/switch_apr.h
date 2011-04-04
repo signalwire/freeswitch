@@ -145,6 +145,8 @@ SWITCH_DECLARE(int) switch_snprintf(_Out_z_cap_(len)
 
 SWITCH_DECLARE(int) switch_vasprintf(_Out_opt_ char **buf, _In_z_ _Printf_format_string_ const char *format, _In_ va_list ap);
 
+SWITCH_DECLARE(int) switch_vsnprintf(char *buf, switch_size_t len, const char *format, va_list ap);
+
 SWITCH_DECLARE(char *) switch_copy_string(_Out_z_cap_(dst_size)
 										  char *dst, _In_z_ const char *src, _In_ switch_size_t dst_size);
 

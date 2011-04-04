@@ -30,6 +30,9 @@
  */
 
 #include <switch.h>
+#ifdef _MSC_VER
+#define ssize_t int
+#endif
 #include <ldns/ldns.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load);
@@ -141,6 +144,32 @@ static switch_status_t load_config(void)
 	}
 
   done:
+#ifdef _MSC_VER
+	if (!globals.server) {
+		HKEY hKey;
+		DWORD data_sz;
+		char* buf;
+		RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
+			"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters", 
+			0, KEY_QUERY_VALUE, &hKey);
+
+		if (hKey) {
+			RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, NULL, &data_sz);
+			if (data_sz) {
+				buf = (char*)malloc(data_sz + 1);
+
+				RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, (LPBYTE)buf, &data_sz);
+				RegCloseKey(hKey);
+
+				if(buf[data_sz - 1] != 0) {
+					buf[data_sz] = 0;
+				}
+				globals.server = buf;
+			}
+		}
+	}
+#endif
+
 
 	if (xml) {
 		switch_xml_free(xml);
@@ -380,9 +409,7 @@ switch_status_t ldns_lookup(const char *number, const char *root, const char *se
 		goto end;
 	}
 	
-	domain = ldns_dname_new_frm_str(name);
-
-	if (!domain) {
+	if (!(domain = ldns_dname_new_frm_str(name))) {
 		goto end;
 	}
 
@@ -403,12 +430,6 @@ switch_status_t ldns_lookup(const char *number, const char *root, const char *se
 		goto end;
 	}
 
-	/* use the resolver to send a query for the naptr 
-	 * records of the domain given on the command line
-	 */
-
-
-
 	if ((p = ldns_resolver_query(res,
 								 domain,
 								 LDNS_RR_TYPE_NAPTR,
@@ -417,7 +438,7 @@ switch_status_t ldns_lookup(const char *number, const char *root, const char *se
 		/* retrieve the NAPTR records from the answer section of that
 		 * packet
 		 */
-		
+
 		if ((naptr = ldns_pkt_rr_list_by_type(p, LDNS_RR_TYPE_NAPTR, LDNS_SECTION_ANSWER))) {
 			size_t i;
 
@@ -472,11 +493,10 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 		root = globals.root;
 	}
 
-#if 0
+
 	if (!(server = switch_core_get_variable("enum-server"))) {
 		server = globals.server;
 	}
-#endif
 
 	ldns_lookup(mnum, root, server, results);
 
@@ -775,8 +795,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 	}
 
 	switch_safe_free(globals.root);
+	switch_safe_free(globals.server);
 	switch_safe_free(globals.isn_root);
-
+	
 	return SWITCH_STATUS_UNLOAD;
 }
 

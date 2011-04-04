@@ -1198,14 +1198,14 @@ static switch_status_t load_config(void)
 		if (globals.outdev > -1) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Switching to default output device\n");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find an input device\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find an output device\n");
 			status = SWITCH_STATUS_GENERR;
 		}
 	}
 
 	if (globals.ringdev < 0) {
 		if (globals.outdev > -1) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid ring device configured using output device\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid or no ring device configured, using output device as ring device\n");
 			globals.ringdev = globals.outdev;
 		}
 	}

@@ -662,7 +662,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 			}
 			break;
 		case FTDM_CHANNEL_STATE_RESET:
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Processing SETUP but channel in RESET state, ignoring\n");
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Processing RELEASE but channel in RESET state, ignoring\n");
 			break;
 		default:
 			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Received RELEASE in an invalid state (%s)\n",

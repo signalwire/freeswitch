@@ -263,6 +263,19 @@
 /js/nsprpub/pr/tests/dll/Makefile
 /js/src/jsautocfg.h
 /js/src/perlconnect/Makefile.PL
+/ldns/Makefile
+/ldns/doc/ldns_manpages
+/ldns/include/
+/ldns/ldns/config.h
+/ldns/ldns/net.h
+/ldns/ldns/util.h
+/ldns/lib
+/ldns/libtool
+/ldns/linktest
+/ldns/linktest.dSYM/
+/ldns/packaging/ldns-config
+/ldns/packaging/libldns.pc
+/ldns-1.6.9/
 /libdingaling/Makefile
 /libdingaling/Makefile.in
 /libdingaling/aclocal.m4
@@ -346,6 +359,7 @@
 /libg722_1/tests/Makefile
 /libg722_1/tests/Makefile.in
 /libg722_1/tests/regression_tests.sh
+/libg722_1/g722_1.pc
 /libsndfile/Cfg/compile
 /libsndfile/Cfg/config.guess
 /libsndfile/Cfg/config.sub
@@ -1126,3 +1140,6 @@ BuildLog*.htm
 /win32/celt/*/*/libcelt.log
 /win32/libg722_1/*/*/libg722_1.log
 /win32/libshout/*/*/libshout.log
+openssl_manifest.rc
+libeay32_manifest.rc
+ssleay32_manifest.rc

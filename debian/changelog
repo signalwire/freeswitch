@@ -1,3 +1,15 @@
+freeswitch (1.0.head-git.master.20110402.1-1) unstable; urgency=low
+
+  * Added Hebrew lang package
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Sat, 02 Apr 2011 03:12:02 +0200
+
+freeswitch (1.0.head-git.master.20110330.1-1) unstable; urgency=low
+
+  * removed mod_file_string since it has been merged into dptoolsa
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Wed, 30 Mar 2011 11:39:02 +0200
+
 freeswitch (1.0.head~git.master.20101222.1-1) unstable; urgency=low
 
   * cleaning work

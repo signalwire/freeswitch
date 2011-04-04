@@ -1319,7 +1319,7 @@ ftdm_status_t check_status_of_all_isup_intf(void)
 
 	/* go through all the isupIntfs and ask the stack to give their current state */
 	x = 1;
-	for (x = 1; x < (MAX_ISUP_INFS + 1); x++) {
+	for (x = 1; x < (MAX_ISUP_INFS); x++) {
 	/**************************************************************************/
 
 		if (g_ftdm_sngss7_data.cfg.isupIntf[x].id == 0) continue;
@@ -1376,7 +1376,7 @@ ftdm_status_t check_status_of_all_isup_intf(void)
 		} /* switch (status) */
 
 	/**************************************************************************/
-	} /* for (x = 1; x < MAX_ISUP_INFS + 1); i++) */
+	} /* for (x = 1; x < MAX_ISUP_INFS); i++) */
 
 	return FTDM_SUCCESS;
 }

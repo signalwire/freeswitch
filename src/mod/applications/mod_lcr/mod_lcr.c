@@ -153,6 +153,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown);
 SWITCH_MODULE_DEFINITION(mod_lcr, mod_lcr_load, mod_lcr_shutdown, NULL);
 
+static void lcr_destroy(lcr_route route)
+{
+	while(route) {
+		switch_event_destroy(&route->fields);
+		route=route->next;
+	}
+}
+
 static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const char *number, switch_core_session_t *session)
 {
 	switch_regex_t *re = NULL;
@@ -717,7 +725,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 
  end:
 
-	switch_event_destroy(&additional->fields);
+	/* event is freed in lcr_destroy() switch_event_destroy(&additional->fields); */
 
 	return r;
 
@@ -900,6 +908,7 @@ static switch_bool_t test_profile(char *lcr_profile)
 	
 	routes.lookup_number = "15555551212";
 	routes.cid = "18005551212";
+	lcr_destroy(routes.head);
 	return (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) ?
 	        SWITCH_TRUE : SWITCH_FALSE;
 }
@@ -1378,6 +1387,7 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 	if (mysession) {
 		switch_core_session_rwunlock(mysession);
 	}
+	lcr_destroy(routes.head);
 	switch_core_destroy_memory_pool(&pool);
 	switch_safe_free(dest);
 
@@ -1475,6 +1485,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	}
 
 end:
+	lcr_destroy(routes.head);
 	if (event) {
 		switch_event_destroy(&event);
 	}
@@ -1607,6 +1618,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	}
 	
 end:
+	lcr_destroy(routes.head);
 	if (routes.event) {
 		switch_event_destroy(&event);
 	}
@@ -1819,6 +1831,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	}
 
 end:
+	lcr_destroy(cb_struct.head);
 	if (!session) {
 		if (pool) {
 			switch_core_destroy_memory_pool(&pool);

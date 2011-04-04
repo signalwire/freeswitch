@@ -142,11 +142,6 @@ void Session::do_hangup_hook()
 		}
 
 		docall(L, arg_count, 1, 1);
-		err = lua_tostring(L, -1);
-
-		if (!zstr(err)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
-		}
 
 		if (channel) {
 			switch_channel_set_private(channel, "CoreSession", NULL);

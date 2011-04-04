@@ -429,6 +429,12 @@
       <!-- The following phrases still need to be recorded -->
 	  <prompt phrase="You are caller number one. Of course, *every* caller is number one in our book so you may be waiting a while." filename="ivr-youre_number_one.wav"/>
 	  <prompt phrase="...has called emergency services" filename="ivr-has_called_emergency_services.wav"/>
+	  <prompt phrase="There are..." filename="ivr-there_are.wav"/>
+	  <prompt phrase="Enter the number of listeners at this location, then press pound." filename="conf-number_of_listeners.wav"/>
+	  <prompt phrase="...listeners in this conference." filename="conf-listeners_in_conference.wav"/>
+	  <prompt phrase="...members in this conference." filename="conf-members_in_conference.wav"/>
+	  <prompt phrase="Please enter the source telephone number, then press pound." filename="ivr-enter_source_telephone_number.wav"/>
+	  <prompt phrase="Please enter the destination telephone number, then press pound." filename="ivr-enter_destination_telephone_number.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>

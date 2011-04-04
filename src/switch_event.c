@@ -1563,7 +1563,11 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 	char *cloned_sub_val = NULL;
 	char *func_val = NULL;
 	int nv = 0;
-	char *gvar = NULL;
+	char *gvar = NULL, *sb = NULL;
+
+	if (zstr(in)) {
+		return (char *) in;
+	}
 
 	nv = switch_string_var_check_const(in) || switch_string_has_escaped_data(in);
 
@@ -1647,10 +1651,22 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 				}
 				p = e > endof_indup ? endof_indup : e;
 
-				if ((vval = strchr(vname, '(')) || (vval = strchr(vname, ' '))) {
-					if (*vval == '(') br = 1;
+				vval = NULL;
+				for(sb = vname; sb && *sb; sb++) {
+					if (*sb == ' ') {
+						vval = sb;
+						break;
+					} else if (*sb == '(') {
+						vval = sb;
+						br = 1;
+						break;
+					}
+				}
+
+				if (vval) {
 					e = vval - 1;
 					*vval++ = '\0';
+
 					while (*e == ' ') {
 						*e-- = '\0';
 					}

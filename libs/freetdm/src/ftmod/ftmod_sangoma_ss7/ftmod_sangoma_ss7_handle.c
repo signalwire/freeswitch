@@ -1565,6 +1565,9 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* throw the unblock flag */
 	sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_RX);
 
+	/* clear the block flag */
+	sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+
 	/* set the channel to suspended state */
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 

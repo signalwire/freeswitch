@@ -58,63 +58,57 @@ struct say_t matrix[7][8] = { {m_00, m_01, m_02, m_03, m_04, m_05, m_06, m_07},
 {m_60, m_61, m_62, m_63, m_64, m_65, m_66, m_67}
 };
 
+
+struct say_cur_t matrix_currency[3] = {c_0, c_1, c_2};
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_say_ru_load);
 SWITCH_MODULE_DEFINITION(mod_say_ru, mod_say_ru_load, NULL, NULL);
 
-#define say_file(...) {\
-		char tmp[80];\
-		switch_status_t tstatus;\
-		switch_snprintf(tmp, sizeof(tmp), __VA_ARGS__);\
-		if ((tstatus = switch_ivr_play_file(session, NULL, tmp, args)) != SWITCH_STATUS_SUCCESS){ \
-			return tstatus;\
-		}\
-		if (!switch_channel_ready(switch_core_session_get_channel(session))) {\
-			return SWITCH_STATUS_FALSE;\
-		}}
 
-static switch_status_t play_group(say_type_t say_type, casus_t casus, int a, int b, int c,
-								  unit_t what, switch_core_session_t *session, switch_input_args_t *args)
+static switch_status_t play_group(say_gender_t gender, cases_t cases, int a, int b, int c, unit_t what,	switch_say_file_handle_t *sh)
 {
+//	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play_group ! %d%d%d  gender=%d  causes=%d\n",a,b,c,gender,cases);
 	if (a) {
-		if (((b == 0) && (c == 0)) || (matrix[casus][say_type].all == 1)) {	//если b и с равны 0 то сказать шестьсот, сестисотый, шестисотая
+		if (((b == 0) && (c == 0)) || (matrix[cases][gender].all == 1)) {	//если b и с равны 0 то сказать шестьсот, сестисотый, шестисотая
 			if (what == million) {	//префикс           число          окончание
-				say_file("digits/%s%d00%s.wav", matrix[casus][say_type].million[12], a, matrix[casus][say_type].million[13]);
-				say_file("digits/%s.wav", matrix[casus][say_type].million[11]);
+				switch_say_file(sh, "digits/%s%d00%s", matrix[cases][gender].million[12], a, matrix[cases][gender].million[13]);
+				switch_say_file(sh, "digits/%s", matrix[cases][gender].million[11]);
 			} else if (what == thousand) {
-				say_file("digits/%s%d00%s.wav", matrix[casus][say_type].thousand[12], a, matrix[casus][say_type].thousand[13]);
-				say_file("digits/%s.wav", matrix[casus][say_type].thousand[11]);
+				switch_say_file(sh, "digits/%s%d00%s", matrix[cases][gender].thousand[12], a, matrix[cases][gender].thousand[13]);
+				switch_say_file(sh, "digits/%s", matrix[cases][gender].thousand[11]);
 			} else {
-				say_file("digits/%s%d00%s.wav", matrix[casus][say_type].num[6], a, matrix[casus][say_type].num[7]);
+				switch_say_file(sh, "digits/%s%d00%s", matrix[cases][gender].num[6], a, matrix[cases][gender].num[7]);
 			}
 		} else {				//если дальше есть цифры то тысячи и миллионы не прозносить пока
-			say_file("digits/%d00.wav", a);
+			switch_say_file(sh, "digits/%d00", a);
 		}
 	}
 
 	if (b) {
 		if (b > 1) {			//если 20 и больше
-			if ((c == 0) || (matrix[casus][say_type].all == 1)) {	//если с равны 0 то сказать 20, двадцати, двадцатая
+			if ((c == 0) || (matrix[cases][gender].all == 1)) {	//если с равны 0 то сказать 20, двадцати, двадцатая
 				if (what == million) {	//префикс            число          окончание
-					say_file("digits/%s%d0%s.wav", matrix[casus][say_type].million[12], b, matrix[casus][say_type].million[13]);
-					say_file("digits/%s.wav", matrix[casus][say_type].million[11]);
+					switch_say_file(sh, "digits/%s%d0%s", matrix[cases][gender].million[12], b, matrix[cases][gender].million[13]);
+					switch_say_file(sh, "digits/%s", matrix[cases][gender].million[11]);
 				} else if (what == thousand) {
-					say_file("digits/%s%d0%s.wav", matrix[casus][say_type].thousand[12], b, matrix[casus][say_type].thousand[13]);
-					say_file("digits/%s.wav", matrix[casus][say_type].thousand[11]);
+					switch_say_file(sh, "digits/%s%d0%s", matrix[cases][gender].thousand[12], b, matrix[cases][gender].thousand[13]);
+					switch_say_file(sh, "digits/%s", matrix[cases][gender].thousand[11]);
 				} else {
-					say_file("digits/%s%d0%s.wav", matrix[casus][say_type].num[6], b, matrix[casus][say_type].num[7]);
+					switch_say_file(sh, "digits/%s%d0%s", matrix[cases][gender].num[6], b, matrix[cases][gender].num[7]);
 				}
 			} else {			//если есть дальше цифры
-				say_file("digits/%d0.wav", b);
+				switch_say_file(sh, "digits/%d0", b);
 			}
 		} else {				//от 10 до 19
 			if (what == million) {
-				say_file("digits/%s%d%d%s.wav", matrix[casus][say_type].million[12], b, c, matrix[casus][say_type].million[13]);
-				say_file("digits/%s.wav", matrix[casus][say_type].million[11]);
+				switch_say_file(sh, "digits/%s%d%d%s", matrix[cases][gender].million[12], b, c, matrix[cases][gender].million[13]);
+				switch_say_file(sh, "digits/%s", matrix[cases][gender].million[11]);
 			} else if (what == thousand) {
-				say_file("digits/%s%d%d%s.wav", matrix[casus][say_type].thousand[12], b, c, matrix[casus][say_type].thousand[13]);
-				say_file("digits/%s.wav", matrix[casus][say_type].thousand[11]);
+				switch_say_file(sh, "digits/%s%d%d%s", matrix[cases][gender].thousand[12], b, c, matrix[cases][gender].thousand[13]);
+				switch_say_file(sh, "digits/%s", matrix[cases][gender].thousand[11]);
 			} else {			//просто произнести цифры с префиксом и окончанием
-				say_file("digits/%s%d%d%s.wav", matrix[casus][say_type].num[6], b, c, matrix[casus][say_type].num[7]);
+				switch_say_file(sh, "digits/%s%d%d%s", matrix[cases][gender].num[6], b, c, matrix[cases][gender].num[7]);
 			}
 			c = 0;
 		}
@@ -123,28 +117,28 @@ static switch_status_t play_group(say_type_t say_type, casus_t casus, int a, int
 	if (c || what == zero) {
 		if (c <= 5) {
 			if (what == million) {
-				if ((strlen(matrix[casus][say_type].million[c * 2])) > 0) {	// не произносить если не заданно например 1 миллион а просто миллион
-					say_file("digits/%s.wav", matrix[casus][say_type].million[c * 2])
+				if ((strlen(matrix[cases][gender].million[c * 2])) > 0) {	// не произносить если не заданно например 1 миллион а просто миллион
+					switch_say_file(sh, "digits/%s", matrix[cases][gender].million[c * 2]);
 				}
-				say_file("digits/%s.wav", matrix[casus][say_type].million[c * 2 + 1]);
+				switch_say_file(sh, "digits/%s", matrix[cases][gender].million[c * 2 + 1]);
 			} else if (what == thousand) {
-				if ((strlen(matrix[casus][say_type].thousand[c * 2])) > 0) {	// не произносить если не заданно например одна тысячас  а просто тысяча
-					say_file("digits/%s.wav", matrix[casus][say_type].thousand[c * 2])
+				if ((strlen(matrix[cases][gender].thousand[c * 2])) > 0) {	// не произносить если не заданно например одна тысячас  а просто тысяча
+					switch_say_file(sh, "digits/%s", matrix[cases][gender].thousand[c * 2]);
 				}
-				say_file("digits/%s.wav", matrix[casus][say_type].thousand[c * 2 + 1]);
+				switch_say_file(sh, "digits/%s", matrix[cases][gender].thousand[c * 2 + 1]);
 			} else {			//просто произнести цифры с префиксом и окончанием
-				say_file("digits/%s.wav", matrix[casus][say_type].num[c]);
+				switch_say_file(sh, "digits/%s", matrix[cases][gender].num[c]);
 			}
 		} else {				/* больше 5 */
 
 			if (what == million) {
-				say_file("digits/%s%d%s.wav", matrix[casus][say_type].million[12], c, matrix[casus][say_type].million[13]);
-				say_file("digits/%s.wav", matrix[casus][say_type].million[11]);
+				switch_say_file(sh, "digits/%s%d%s", matrix[cases][gender].million[12], c, matrix[cases][gender].million[13]);
+				switch_say_file(sh, "digits/%s", matrix[cases][gender].million[11]);
 			} else if (what == thousand) {
-				say_file("digits/%s%d%s.wav", matrix[casus][say_type].thousand[12], c, matrix[casus][say_type].thousand[13]);
-				say_file("digits/%s.wav", matrix[casus][say_type].thousand[11]);
+				switch_say_file(sh, "digits/%s%d%s", matrix[cases][gender].thousand[12], c, matrix[cases][gender].thousand[13]);
+				switch_say_file(sh, "digits/%s", matrix[cases][gender].thousand[11]);
 			} else {			//просто произнести цифры с префиксом и окончанием
-				say_file("digits/%s%d%s.wav", matrix[casus][say_type].num[6], c, matrix[casus][say_type].num[7]);
+				switch_say_file(sh, "digits/%s%d%s", matrix[cases][gender].num[6], c, matrix[cases][gender].num[7]);
 			}
 		}
 	}
@@ -152,7 +146,7 @@ static switch_status_t play_group(say_type_t say_type, casus_t casus, int a, int
 }
 
 
-static switch_status_t ru_say_count(switch_core_session_t *session, char *tosay, say_type_t say_type, casus_t casus, switch_input_args_t *args)
+static switch_status_t ru_say_count(switch_say_file_handle_t *sh, char *tosay, say_gender_t gender, cases_t cases)
 {
 	int in;
 	int x = 0;
@@ -162,10 +156,10 @@ static switch_status_t ru_say_count(switch_core_session_t *session, char *tosay,
 
 	switch_status_t status;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say_count %s!\n", tosay);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say_count %s!   gender=%d  causes=%d\n", tosay,gender,cases);
 
-	if (!(tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+	if (!(tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf)-1)) || strlen(tosay) > 9) {
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -182,44 +176,40 @@ static switch_status_t ru_say_count(switch_core_session_t *session, char *tosay,
 
 		//миллионы      
 		if (places[8] || places[7] || places[6]) {
-			if ((in_ % 1000000 > 0) && (matrix[casus][say_type].all != 1)) {	// если поле миллионов  есть цифры поизнести как числительое именительного падежа
-				if ((status = play_group(male_c, nominativus, places[8], places[7], places[6], million, session, args)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d million! status=%d\n", places[8], places[7], places[6],
-									  status);
+			if ((in_ % 1000000 > 0) && (matrix[cases][gender].all != 1)) {	// если поле миллионов  есть цифры поизнести как числительое именительного падежа
+				if ((status = play_group(male, nominativus, places[8], places[7], places[6], million, sh)) != SWITCH_STATUS_SUCCESS) {
+					//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d million! status=%d\n", places[8], places[7], places[6], status);
 					return status;
 				}
 			} else {			// иначе произнести в нужном падеже
-				if ((status = play_group(say_type, casus, places[8], places[7], places[6], million, session, args)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d million! status=%d\n", places[8], places[7], places[6],
-									  status);
+				if ((status = play_group(gender, cases, places[8], places[7], places[6], million, sh)) != SWITCH_STATUS_SUCCESS) {
+					//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d million! status=%d\n", places[8], places[7], places[6],  status);
 					return status;
 				}
 			}
 		}
 		//тысячи      
 		if (places[5] || places[4] || places[3]) {
-			if ((in_ % 1000 > 0) && (matrix[casus][say_type].all != 1)) {	// если поле миллионов  есть цифры поизнести как числительое именительного падежа
-				if ((status = play_group(male_c, nominativus, places[5], places[4], places[3], thousand, session, args)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d thousand! status=%d\n", places[5], places[4], places[3],
-									  status);
+			if ((in_ % 1000 > 0) && (matrix[cases][gender].all != 1)) {	// если поле миллионов  есть цифры поизнести как числительое именительного падежа
+				if ((status = play_group(male, nominativus, places[5], places[4], places[3], thousand, sh)) != SWITCH_STATUS_SUCCESS) {
+					//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d thousand! status=%d\n", places[5], places[4], places[3],  status);
 					return status;
 				}
 			} else {			// иначе произнести в нужном падеже
-				if ((status = play_group(say_type, casus, places[5], places[4], places[3], thousand, session, args)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d thousand! status=%d\n", places[5], places[4], places[3],
-									  status);
+				if ((status = play_group(gender, cases, places[5], places[4], places[3], thousand, sh)) != SWITCH_STATUS_SUCCESS) {
+					//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d thousand! status=%d\n", places[5], places[4], places[3],  status);
 					return status;
 				}
 			}
 		}
 		// сотни
-		if ((status = play_group(say_type, casus, places[2], places[1], places[0], empty, session, args)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d thousand! status=%d\n", places[5], places[4], places[3], status);
+		if ((status = play_group(gender, cases, places[2], places[1], places[0], empty, sh)) != SWITCH_STATUS_SUCCESS) {
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d thousand! status=%d\n", places[5], places[4], places[3], status);
 			return status;
 		}
 	} else {
-		if ((status = play_group(say_type, casus, places[2], places[1], places[0], zero, session, args)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d other!\n", places[2], places[1], places[0]);
+		if ((status = play_group(gender, cases, places[2], places[1], places[0], zero, sh)) != SWITCH_STATUS_SUCCESS) {
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d other!\n", places[2], places[1], places[0]);
 			return status;
 		}
 	}
@@ -228,28 +218,37 @@ static switch_status_t ru_say_count(switch_core_session_t *session, char *tosay,
 }
 
 //дописать
-static switch_status_t ru_say_general_count(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
+static switch_status_t ru_say_general_count(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args,say_opt_t *say_opt)
 {
 	switch_status_t status;
-	casus_t casus;				//падеж
-	say_type_t say_type;		//тип произношения
+	cases_t cases;				//падеж
+	say_gender_t gender;		//тип произношения
 
 	switch (say_args->type) {
 	case SST_MESSAGES:
-		say_type = it_c;
-		casus = nominativus;
+		gender = it;
+		cases = nominativus;
 		break;
 	default:
-		say_type = male_c;
-		casus = nominativus;
+		gender = male;
+		cases = nominativus;
+		if (say_opt->gender>0) {
+		    gender=say_opt->gender;
+//		    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " opt_gender=%d type=%d   cases=%d\n", gender, cases,say_opt->gender);
+		}
+		if (say_opt->cases>0) {
+		    cases=say_opt->cases;
+//		    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " opt_gender=%d type=%d   cases=%d\n", gender, cases,say_opt->gender);
+
+		}
 		break;
 	};
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " type=%d   casus=%d\n", say_type, casus);
-	status = ru_say_count(session, tosay, say_type, casus, args);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " opt_gender=%d type=%d   cases=%d\n", gender, cases,say_opt->gender);
+	status = ru_say_count(sh, tosay, (say_gender_t)gender, (cases_t)cases);
 	return status;
 }
 
-static switch_status_t ru_say_money(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
+static switch_status_t ru_say_money(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args,say_opt_t *say_opt)
 {
 	char sbuf[16] = "";
 	char *rubles = NULL;
@@ -258,11 +257,10 @@ static switch_status_t ru_say_money(switch_core_session_t *session, char *tosay,
 	int iruble = 0;
 	int ikopecks = 0;
 	int ikopeck = 0;
+//	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " ru_say_money %s say_opt->currency=%d\n", tosay,say_opt->currency);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " ru_say_money %s\n", tosay);
-
-	if (strlen(tosay) > 15 || !(tosay = switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+	if (strlen(tosay) > 15 || !(tosay = switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1))) {
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -279,58 +277,66 @@ static switch_status_t ru_say_money(switch_core_session_t *session, char *tosay,
 	}
 
 	if (sbuf[0] == '-') {
-		say_file("currency/minus.wav");
+		switch_say_file(sh, "currency/minus");
 		rubles++;
 	}
 
-	ru_say_count(session, rubles, male_c, nominativus, args);
+
+	ru_say_count(sh, rubles, matrix_currency[say_opt->currency].first_gender,matrix_currency[say_opt->currency].first_cases);
 
 	if (rubles) {
 		irubles = atoi(rubles) % 100;
 		iruble = atoi(rubles) % 10;
 	}
-
-	if (irubles == 1 || (irubles > 20 && iruble == 1)) {	/* рубль */
-		say_file("currency/ruble.wav");
-	} else if ((irubles > 1 && irubles < 5) || (irubles > 20 && iruble > 1 && iruble < 5)) {	/*рубля */
-		say_file("currency/ruble-a.wav");
-	} else {					/*рублей */
-		say_file("currency/rubles.wav");
+	if (iruble<5) {
+	    if ((irubles>10)&&(irubles<15)) {
+		switch_say_file(sh, "currency/%s",matrix_currency->first[5]);
+	    }
+	    else {
+		switch_say_file(sh, "currency/%s",matrix_currency->first[iruble]);
+	    }
 	}
-
+	else {
+	    switch_say_file(sh, "currency/%s",matrix_currency->first[5]);
+	}
+	    
+	    
 	/* Say kopecks */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " %s\n", kopecks);
-	ru_say_count(session, kopecks, female_c, nominativus, args);
+	ru_say_count(sh, kopecks, matrix_currency[say_opt->currency].second_gender,matrix_currency[say_opt->currency].second_cases);
 
 	if (kopecks) {
 		ikopecks = atoi(kopecks) % 100;
 		ikopeck = atoi(kopecks) % 10;
 	}
 
-	if (ikopecks == 1 || (ikopecks > 20 && ikopeck == 1)) {
-		/* копейка */
-		say_file("currency/kopeck.wav");
-	} else if ((ikopecks > 1 && ikopecks < 5) || (ikopecks > 20 && ikopeck > 1 && ikopeck < 5)) {
-		/* копейки */
-		say_file("currency/kopeck-i.wav");
-	} else {
-		/* копеек */
-		say_file("currency/kopecks.wav");
+	if (ikopeck<5) {
+	    if ((ikopecks>10)&&(ikopecks<15)) {
+		switch_say_file(sh, "currency/%s",matrix_currency->second[5]);
+	    }
+	    else {
+    		switch_say_file(sh, "currency/%s",matrix_currency->second[ikopeck]);
+	    }
 	}
+	else {
+	    switch_say_file(sh, "currency/%s",matrix_currency->second[5]);
+	}
+
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
+static switch_status_t ru_say_time(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args,say_opt_t *say_opt)
 {
 	int32_t t;
 	char buf[80];
 	switch_time_t target = 0, target_now = 0;
 	switch_time_exp_t tm, tm_now;
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	const char *tz = switch_channel_get_variable(channel, "timezone");
+	const char *tz = NULL;
+	tz = switch_say_file_handle_get_variable(sh, "timezone");    
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " ru_say_time %s  type=%d method=%d\n", tosay, say_args->type, say_args->method);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " ru_say_time %s  type=%d method=%d\n", tosay, say_args->type, say_args->method);
 
 	if (say_args->type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
@@ -339,7 +345,7 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 		int64_t r = 0;
 
 		if (strchr(tosay, ':')) {
-			char *tme = switch_core_session_strdup(session, tosay);
+			char *tme = strdup(tosay);
 			char *p;
 
 			if ((p = strrchr(tme, ':'))) {
@@ -355,6 +361,7 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 					minutes = atoi(tme);
 				}
 			}
+			free(tme);
 		} else {
 			if ((seconds = atol(tosay)) <= 0) {
 				seconds = (int64_t) switch_epoch_time_now(NULL);
@@ -373,37 +380,37 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		switch_snprintf(buf, sizeof(buf), "%u", (unsigned) hours);
-		ru_say_count(session, buf, male_c, nominativus, args);
+		ru_say_count(sh, buf, male, nominativus);
 
 		if (((hours % 10) == 1) && (hours != 11)) {
 			/* час */
-			say_file("time/hour.wav");
+			switch_say_file(sh, "time/hour");
 		} else if (((hours % 10 > 1) && (hours % 10 < 5)) && ((hours < 12) || (hours > 14))) {
-			say_file("time/hours-a.wav");	/* часа */
+			switch_say_file(sh, "time/hours-a");	/* часа */
 		} else {
-			say_file("time/hours.wav");	/* часов */
+			switch_say_file(sh, "time/hours");	/* часов */
 		}
 
 		switch_snprintf(buf, sizeof(buf), "%u", (unsigned) minutes);	//перевести минуты в *char
-		ru_say_count(session, buf, female_c, nominativus, args);
+		ru_say_count(sh, buf, female, nominativus);
 
 		if (((minutes % 10) == 1) && (minutes != 11)) {
-			say_file("time/minute.wav");	//минута
+			switch_say_file(sh, "time/minute");	//минута
 		} else if (((minutes % 10 > 1) && (minutes % 10 < 5)) && ((minutes < 12) || (minutes > 14))) {
-			say_file("time/minutes-i.wav");	// минуты
+			switch_say_file(sh, "time/minutes-i");	// минуты
 		} else {
-			say_file("time/minutes.wav");	//минут
+			switch_say_file(sh, "time/minutes");	//минут
 		}
 
 		if (seconds != 0) {
 			switch_snprintf(buf, sizeof(buf), "%u", (unsigned) seconds);
-			ru_say_count(session, buf, female_c, nominativus, args);
+			ru_say_count(sh, buf, female, nominativus);
 			if (((seconds % 10) == 1) && (seconds != 11)) {
-				say_file("time/second.wav");	// секунда
+				switch_say_file(sh, "time/second");	// секунда
 			} else if (((seconds % 10 > 1) && (seconds % 10 < 5)) && ((seconds < 12) || (seconds > 14))) {
-				say_file("time/seconds-i.wav");	// секуны
+				switch_say_file(sh, "time/seconds-i");	// секуны
 			} else {
-				say_file("time/seconds.wav");	//секунд
+				switch_say_file(sh, "time/seconds");	//секунд
 			}
 		}
 		return SWITCH_STATUS_SUCCESS;
@@ -419,6 +426,7 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 
 	if (tz) {
 		int check = atoi(tz);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timezone is [%s]\n", tz);
 		if (check) {
 			switch_time_exp_tz(&tm, target, check);
 			switch_time_exp_tz(&tm_now, target_now, check);
@@ -472,13 +480,13 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 	}
 
 	if (say_today) {
-		say_file("time/today.wav");
+		switch_say_file(sh, "time/today");
 	}
 	if (say_yesterday) {
-		say_file("time/yesterday.wav");
+		switch_say_file(sh, "time/yesterday");
 	}
 	if (say_dow) {
-		say_file("time/day-%d.wav", tm.tm_wday);
+		switch_say_file(sh, "time/day-%d", tm.tm_wday);
 	}
 	if (say_date) {
 		say_year = say_month = say_day = say_dow = 1;
@@ -486,74 +494,103 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 	}
 	if (say_day) {
 		switch_snprintf(buf, sizeof(buf), "%u", (unsigned) tm.tm_mday);
-		ru_say_count(session, buf, male_h, genitivus, args);
+		ru_say_count(sh, buf, male_h, genitivus);
 	}
 	if (say_month) {
-		say_file("time/mon-%d.wav", tm.tm_mon);
+		switch_say_file(sh, "time/mon-%d", tm.tm_mon);
 	}
 	if (say_year) {
 		switch_snprintf(buf, sizeof(buf), "%u", (unsigned) (tm.tm_year + 1900));
-		ru_say_count(session, buf, male_h, genitivus, args);
-		say_file("time/h-year.wav");
-	}
-	if (say_month || say_year || say_date || say_dow) {
-		say_file("time/at.wav");
+		ru_say_count(sh, buf, male_h, genitivus);
+		switch_say_file(sh, "time/h-year");
 	}
 	if (say_time) {
+		if (say_month || say_year || say_date || say_dow) {
+			switch_say_file(sh, "time/at");
+		}
 		switch_snprintf(buf, sizeof(buf), "%d:%d:%d", tm.tm_hour, tm.tm_min, tm.tm_sec);
 		say_args->type = SST_TIME_MEASUREMENT;
-		ru_say_time(session, buf, say_args, args);
+		ru_say_time(sh, buf, say_args,say_opt);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t ru_ip(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
+static switch_status_t ru_ip(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args,say_opt_t *say_opt)
 {
 	char *a, *b, *c, *d;
-	if (!(a = switch_core_session_strdup(session, tosay))) {
-		return SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	if (!(a = strdup(tosay))) {
+    		abort();
+//		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!(b = strchr(a, '.'))) {
-		return SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
 	*b++ = '\0';
 
 	if (!(c = strchr(b, '.'))) {
-		return SWITCH_STATUS_FALSE;
+		 goto end;
 	}
 
 	*c++ = '\0';
 
 	if (!(d = strchr(c, '.'))) {
-		return SWITCH_STATUS_FALSE;
+		 goto end;
 	}
 
 	*d++ = '\0';
 
-	ru_say_count(session, a, male_c, nominativus, args);
-	say_file("digits/dot.wav");
+	ru_say_count(sh, a, male, nominativus);
+	switch_say_file(sh, "digits/dot");
 
-	ru_say_count(session, b, male_c, nominativus, args);
-	say_file("digits/dot.wav");
+	ru_say_count(sh, b, male, nominativus);
+	switch_say_file(sh, "digits/dot");
 
-	ru_say_count(session, c, male_c, nominativus, args);
-	say_file("digits/dot.wav");
+	ru_say_count(sh, c, male, nominativus);
+	switch_say_file(sh, "digits/dot");
 
-	ru_say_count(session, d, male_c, nominativus, args);
-	return SWITCH_STATUS_SUCCESS;
+	ru_say_count(sh, d, male, nominativus);
+end:
+	free(a);
+	return status;
 }
 
-static switch_status_t ru_say(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
-{
-	switch_say_callback_t say_cb = NULL;
 
+static switch_status_t ru_say_spell(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args,say_opt_t *say_opt)
+{
+        char *p;
+
+        for (p = tosay; p && *p; p++) {
+                int a = tolower((int) *p);
+                if (a >= '0' && a <= '9') {
+                        switch_say_file(sh, "digits/%c", a);
+                } else {
+                        if (say_args->type == SST_NAME_SPELLED) {
+                                switch_say_file(sh, "ascii/%d", a);
+                        } else if (say_args->type == SST_NAME_PHONETIC) {
+                                switch_say_file(sh, "phonetic-ascii/%d", a);
+                        }
+                }
+        }
+
+        return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+
+static switch_new_say_callback_ru_t choose_callback(switch_say_args_t *say_args)
+{
+
+	switch_new_say_callback_ru_t say_cb = NULL;
 	switch (say_args->type) {
 	case SST_NUMBER:
 	case SST_ITEMS:
 	case SST_PERSONS:
 	case SST_MESSAGES:
+	
 		say_cb = ru_say_general_count;
 		break;
 	case SST_TIME_MEASUREMENT:
@@ -576,22 +613,175 @@ static switch_status_t ru_say(switch_core_session_t *session, char *tosay, switc
 		break;
 	case SST_NAME_SPELLED:
 	case SST_NAME_PHONETIC:
-		return switch_ivr_say_spell(session, tosay, say_args, args);
+		say_cb = ru_say_spell;
 		break;
 	case SST_CURRENCY:
 		say_cb = ru_say_money;
 		break;
 	default:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);
 		break;
 	}
 
-	if (say_cb) {
-		return say_cb(session, tosay, say_args, args);
-	}
-
-	return SWITCH_STATUS_FALSE;
+	return say_cb;
 }
+
+
+                                                                                                
+
+
+static switch_status_t run_callback(switch_new_say_callback_ru_t say_cb, char *tosay, switch_say_args_t *say_args, switch_core_session_t *session, char **rstr)
+{
+        switch_say_file_handle_t *sh;
+        switch_status_t status = SWITCH_STATUS_FALSE;
+        switch_event_t *var_event = NULL;
+        const char *cases=NULL;
+        const char *gender=NULL;
+        const char *currency=NULL;
+	say_opt_t say_opt;
+	say_opt.cases=0;
+	say_opt.gender=0;
+	say_opt.currency=0;
+        if (session) {
+                switch_channel_t *channel = switch_core_session_get_channel(session);
+                switch_channel_get_variables(channel, &var_event);
+// проверяем не заданы ли канальные переменные род, падеж, валюта
+                gender = switch_channel_get_variable(channel, "gender");
+                cases = switch_channel_get_variable(channel, "cases");
+                currency = switch_channel_get_variable(channel, "currency");
+                //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s  %s   %s !\n",gender, cases,currency);
+                if (cases) {
+		    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!\n", cases);
+                
+		    if ((strcmp(cases,"nominativus")==0) || (strcmp(cases,"именительный")==0)) {
+			say_opt.cases=(cases_t)0;
+		    }
+		    if ((strcmp(cases,"genitivus")==0) || (strcmp(cases,"родительный")==0)) {
+			say_opt.cases=(cases_t)1;
+		    }
+		    if ((strcmp(cases,"dativus")==0) || (strcmp(cases,"дательный")==0)) {
+			say_opt.cases=(cases_t)2;
+		    }
+		    if ((strcmp(cases,"accusativus_a")==0) || (strcmp(cases,"винительный_о")==0)) {
+			say_opt.cases=(cases_t)3;
+		    }
+		    if ((strcmp(cases,"accusativus_i")==0) || (strcmp(cases,"винительный_н")==0)) {
+			say_opt.cases=(cases_t)4;
+		    }
+		    if ((strcmp(cases,"instrumentalis")==0) || (strcmp(cases,"творительный")==0)) {
+			say_opt.cases=(cases_t)5;
+		    }
+		    if ((strcmp(cases,"prepositive")==0) || (strcmp(cases,"предложный")==0)) {
+			say_opt.cases=(cases_t)6;
+		    }
+		}
+                if (gender) {
+		    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!\n", gender);
+                
+		    if ((strcmp(gender,"male")==0) || (strcmp(gender,"мужской")==0)) {
+			say_opt.gender=(say_gender_t)0;
+		    }
+		    if ((strcmp(gender,"it")==0) || (strcmp(gender,"средний")==0)) {
+			say_opt.gender=(say_gender_t)1;
+		    }
+		    if ((strcmp(gender,"female")==0) || (strcmp(gender,"женский")==0)) {
+			say_opt.gender=(say_gender_t)2;
+		    }
+		    if ((strcmp(gender,"plural")==0) || (strcmp(gender,"множественное")==0)) {
+			say_opt.gender=(say_gender_t)3;
+		    }
+		    if ((strcmp(gender,"male_h")==0) || (strcmp(gender,"мужской_порядковый")==0)) {
+			say_opt.gender=(say_gender_t)4;
+		    }
+		    if ((strcmp(gender,"it_h")==0) || (strcmp(gender,"средний_порядковый")==0)) {
+			say_opt.gender=(say_gender_t)5;
+		    }
+		    if ((strcmp(gender,"female_h")==0) || (strcmp(gender,"женский_порядковый")==0)) {
+			say_opt.gender=(say_gender_t)6;
+		    }
+		    if ((strcmp(gender,"plural_h")==0) || (strcmp(gender,"множественное_порядковый")==0)) {
+			say_opt.gender=(say_gender_t)7;
+		    }
+            
+    		}
+                if (currency) {
+		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!\n", currency);
+                
+		    if ((strcmp(currency,"ruble")==0) || (strcmp(currency,"рубль")==0)) {
+			say_opt.currency=(currency_t)0;
+//			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "rul!!!  \n");
+			
+		    }
+		    if ((strcmp(currency,"dollar")==0) || (strcmp(currency,"доллар")==0)) {
+//			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "dollar!!!  !\n");
+			say_opt.currency=(currency_t)1;
+		    }
+		}
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!   say_opt.gender=%d   say_opt.cases=%d\n", tosay,say_opt.gender,say_opt.cases);
+                                                                                
+	}
+        switch_say_file_handle_create(&sh, say_args->ext, &var_event);
+//запуск ru_ip,ru_say_money ...
+        status = say_cb(sh, tosay, say_args,&say_opt);
+
+        if ((*rstr = switch_say_file_handle_detach_path(sh))) {
+                status = SWITCH_STATUS_SUCCESS;
+        }
+
+        switch_say_file_handle_destroy(&sh);
+
+        return status;
+}
+
+
+
+static switch_status_t ru_say(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
+{
+
+        switch_new_say_callback_ru_t say_cb = NULL;
+        char *string = NULL;
+        switch_status_t status;
+        
+        status = SWITCH_STATUS_FALSE;
+        
+        say_cb = choose_callback(say_args);
+
+        if (say_cb) {
+                status = run_callback(say_cb, tosay, say_args, session, &string);
+                if (session && string) {
+                        status = switch_ivr_play_file(session, NULL, string, args);
+                }
+
+                switch_safe_free(string);
+        }
+
+        return status;
+}
+
+
+
+static switch_status_t ru_say_string(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, char **rstr)
+{
+
+        switch_new_say_callback_ru_t say_cb = NULL;
+        char *string = NULL;
+
+        switch_status_t status = SWITCH_STATUS_FALSE;
+
+        say_cb = choose_callback(say_args);
+
+        if (say_cb) {
+                status = run_callback(say_cb, tosay, say_args, session, &string);
+                if (string) {
+                        status = SWITCH_STATUS_SUCCESS;
+                        *rstr = string;
+                }
+        }
+
+        return status;
+}
+
+
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_say_ru_load)
 {
@@ -601,6 +791,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_say_ru_load)
 	say_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SAY_INTERFACE);
 	say_interface->interface_name = "ru";
 	say_interface->say_function = ru_say;
+	say_interface->say_string_function = ru_say_string;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
