@@ -1,0 +1,7 @@
+<include>
+  <language name="he" sound-path="$${sounds_dir}/he/daniel" tts-engine="cepstral" tts-voice="daniel">
+    <X-PRE-PROCESS cmd="include" data="demo/*.xml"/> <!-- Note: this now grabs whole subdir, previously grabbed only demo.xml -->
+    <X-PRE-PROCESS cmd="include" data="vm/sounds.xml"/>
+    <X-PRE-PROCESS cmd="include" data="dir/sounds.xml"/>
+  </language>
+</include>

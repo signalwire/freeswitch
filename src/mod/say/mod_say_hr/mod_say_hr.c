@@ -232,7 +232,7 @@ static switch_status_t hr_say_count(switch_core_session_t *session, char* gen,
 
 	strcpy(tgen, gen);
 	
-	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
+	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf)-1)) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -356,9 +356,22 @@ static switch_status_t hr_say_general_count(switch_core_session_t *session,	char
 	int in;
 	int x = 0;
 	int places[9] = { 0 };
-	char sbuf[13] = "";
+	char sbuf[128] = "";
 	int number;
 	switch_status_t status;
+
+	if (say_args->method == SSM_ITERATED) {
+		if ((tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf)-1))) {
+			char *p;
+			for (p = tosay; p && *p; p++) {
+				say_file("digits/%c.wav", *p);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+			return SWITCH_STATUS_GENERR;
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
@@ -389,14 +402,6 @@ static switch_status_t hr_say_general_count(switch_core_session_t *session,	char
 			}
 			if ((status = play_group(say_args->method, "", places[2], places[1], places[0], NULL, number, session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
-			}
-			break;
-		case SSM_ITERATED:
-			{
-				char *p;
-				for (p = tosay; p && *p; p++) {
-					say_file("digits/%c.wav", *p);
-				}
 			}
 			break;
 		default:
@@ -1016,7 +1021,7 @@ static switch_status_t hr_say_money(switch_core_session_t *session, char *tosay,
 	int zadnja_lipa = 0;
 	int predzadnja_lipa = 0;
 
-	if (strlen(tosay) > 15 || !(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) 
+	if (strlen(tosay) > 15 || !(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1))) 
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;

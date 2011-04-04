@@ -2762,23 +2762,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_channel_set_variable(originate_status[i].peer_channel, "originating_leg_uuid", switch_core_session_get_uuid(session));
 					}
 
-					if ((vvar = switch_channel_get_variable_dup(originate_status[i].peer_channel, "execute_on_originate", SWITCH_FALSE))) {
-						char *app = switch_core_session_strdup(originate_status[i].peer_session, vvar);
-						char *arg = NULL;
-
-						if (strstr(app, "::")) {
-							switch_core_session_execute_application_async(originate_status[i].peer_session, app, arg);
-						} else {
-							if ((arg = strchr(app, ' '))) {
-								*arg++ = '\0';
-							}
-							
-							switch_core_session_execute_application(originate_status[i].peer_session, app, arg);
-						}
-						
-					}
+					switch_channel_execute_on(originate_status[i].peer_channel, "execute_on_originate");
 				}
-
+				
 				if (table) {
 					switch_channel_add_state_handler(originate_status[i].peer_channel, table);
 				}

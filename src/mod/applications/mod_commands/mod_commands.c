@@ -116,6 +116,59 @@ static switch_status_t select_url(const char *user,
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#define SAY_STRING_SYNTAX "<module_name>[.<ext>] <lang>[.<ext>] <say_type> <say_method> [<say_gender>] <text>"
+SWITCH_STANDARD_API(say_string_function)
+{
+	char *argv[6] = { 0 };
+	int argc;
+	char *lbuf = NULL, *string = NULL;
+	int err = 1, par = 0;
+	char *p, *ext = "wav";
+	
+	if (cmd) {
+		lbuf = strdup(cmd);
+	}
+
+	if (lbuf && (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) && (argc == 5 || argc == 6)) {
+
+		if ((p = strchr(argv[0], '.'))) {
+			*p++ = '\0';
+			ext = p;
+			par++;
+		}
+
+		if (!par && (p = strchr(argv[1], '.'))) {
+			*p++ = '\0';
+			ext = p;
+		}
+		switch_ivr_say_string(session,
+							  argv[1],
+							  ext,
+							  (argc == 5) ? argv[4] : argv[5], 
+							  argv[0], 
+							  argv[2], 
+							  argv[3], 
+							  (argc == 6) ? argv[4] : NULL , 
+							  &string);
+		if (string) {
+			stream->write_function(stream, "%s", string);
+			free(string);
+			err = 0;
+		}
+	}
+
+	if (err) {
+		stream->write_function(stream, "-ERR Usage: %s\n", SAY_STRING_SYNTAX);
+	}
+
+	free(lbuf);
+
+	return SWITCH_STATUS_SUCCESS;
+	
+}
+
+
 SWITCH_STANDARD_API(reg_url_function)
 {
 	char *data;
@@ -276,6 +329,7 @@ SWITCH_STANDARD_API(nat_map_function)
 	switch_port_t external_port = 0;
 	char *tmp = NULL;
 	switch_bool_t sticky = SWITCH_FALSE;
+	switch_bool_t mapping = SWITCH_TRUE;
 
 	if (!cmd) {
 		goto usage;
@@ -304,6 +358,24 @@ SWITCH_STANDARD_API(nat_map_function)
 		goto ok;
 	} else if (argv[0] && switch_stristr("reinit", argv[0])) {
 		switch_nat_reinit();
+		tmp = switch_nat_status();
+		stream->write_function(stream, tmp);
+		switch_safe_free(tmp);
+		goto ok;
+	}
+
+	if (argc < 2) {
+		goto usage;
+	}
+
+	if (argv[0] && switch_stristr("mapping", argv[0])) {
+		if (argv[1] && switch_stristr("enable", argv[1])) {
+			mapping = SWITCH_TRUE;
+		} else if (argv[1] && switch_stristr("disable", argv[1])) {
+			mapping = SWITCH_FALSE;
+		}
+
+		switch_nat_set_mapping(mapping);
 		tmp = switch_nat_status();
 		stream->write_function(stream, tmp);
 		switch_safe_free(tmp);
@@ -342,7 +414,7 @@ SWITCH_STANDARD_API(nat_map_function)
 	goto ok;
 
  usage:
-	stream->write_function(stream, "USAGE: nat_map [status|reinit|republish] | [add|del] <port> [tcp|udp] [sticky]");
+	stream->write_function(stream, "USAGE: nat_map [status|reinit|republish] | [add|del] <port> [tcp|udp] [sticky] | [mapping] <enable|disable>");
 
   ok:
 
@@ -4843,6 +4915,87 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define LIMIT_SYNTAX "<uuid> <backend> <realm> <resource> [<max>[/interval]] [number [dialplan [context]]]"
+SWITCH_STANDARD_API(uuid_limit_function)
+{
+	int argc = 0;
+	char *argv[8] = { 0 };
+	char *mydata = NULL;
+	char *realm = NULL;
+	char *resource = NULL;
+	char *xfer_exten = NULL;
+	int max = -1;
+	int interval = 0;
+	switch_core_session_t *sess = NULL;
+	switch_status_t res = SWITCH_STATUS_SUCCESS;
+
+	if (!zstr(cmd)) {
+		mydata = strdup(cmd);
+		switch_assert(mydata);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+	
+	if (argc < 4) {
+		stream->write_function(stream, "USAGE: uuid_limit %s\n", LIMIT_SYNTAX);
+		goto end;
+	}
+
+	realm = argv[2];
+	resource = argv[3];
+
+	/* If max is omitted or negative, only act as a counter and skip maximum checks */
+	if (argc > 4) {
+		if (argv[4][0] == '-') {
+			max = -1;
+		} else {
+			char *szinterval = NULL;
+			if ((szinterval = strchr(argv[4], '/'))) {
+				*szinterval++ = '\0';
+				interval = atoi(szinterval);
+			}
+
+			max = atoi(argv[4]);
+
+			if (max < 0) {
+				max = 0;
+			}
+		}
+	}
+
+	if (argc > 5) {
+		xfer_exten = argv[5];
+	} else {
+		xfer_exten = LIMIT_DEF_XFER_EXTEN;
+	}
+
+	sess = switch_core_session_locate(argv[0]);
+	if (!sess) {
+		stream->write_function(stream, "-ERR did not find a session with uuid %s\n", argv[0]);
+		goto end;
+	}
+
+	res = switch_limit_incr(argv[1], sess, realm, resource, max, interval);
+
+	if (res != SWITCH_STATUS_SUCCESS) {
+		/* Limit exceeded */
+		if (*xfer_exten == '!') {
+			switch_channel_t *channel = switch_core_session_get_channel(sess);
+			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten + 1));
+		} else {
+			switch_ivr_session_transfer(sess, xfer_exten, argv[6], argv[7]);
+		}
+	}
+
+	switch_core_session_rwunlock(sess);
+
+	stream->write_function(stream, "+OK");
+
+end:
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define LIMIT_RELEASE_SYNTAX "<uuid> <backend> [realm] [resource]"
 SWITCH_STANDARD_API(uuid_limit_release_function)
 {
@@ -5024,6 +5177,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "reload", "Reload Module", reload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_xml_function, "");
 	SWITCH_ADD_API(commands_api_interface, "replace", "replace a string", replace_function, "<data>|<string1>|<string2>");
+	SWITCH_ADD_API(commands_api_interface, "say_string", "", say_string_function, SAY_STRING_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, SCHED_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_broadcast", "Schedule a broadcast event to a running call", sched_broadcast_function,
 				   SCHED_BROADCAST_SYNTAX);
@@ -5063,6 +5217,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_limit", "Increase limit resource", uuid_limit_function, LIMIT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_loglevel", "set loglevel on session", uuid_loglevel, UUID_LOGLEVEL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
@@ -5181,6 +5336,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_hold ::console::list_uuid");
 	switch_console_set_complete("add uuid_jitterbuffer ::console::list_uuid");
 	switch_console_set_complete("add uuid_kill ::console::list_uuid");
+	switch_console_set_complete("add uuid_limit ::console::list_uuid");
 	switch_console_set_complete("add uuid_limit_release ::console::list_uuid");
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid console");
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid alert");

@@ -21,3 +21,4 @@ $(CELT_LA): $(CELT_BUILDDIR)/Makefile
 	cd $(CELT_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
+$(MODNAME).lo: $(CELT_LA)

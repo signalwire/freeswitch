@@ -2456,8 +2456,8 @@ SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_INFO, "%s Flipping CID from \"%s\" <%s> to \"%s\" <%s>\n", 
 					  switch_channel_get_name(channel),
-					  switch_channel_get_variable(channel, "pre_transfer_caller_id_name"),
-					  switch_channel_get_variable(channel, "pre_transfer_caller_id_number"),
+					  switch_str_nil(switch_channel_get_variable(channel, "pre_transfer_caller_id_name")),
+					  switch_str_nil(switch_channel_get_variable(channel, "pre_transfer_caller_id_number")),
 					  channel->caller_profile->caller_id_name,
 					  channel->caller_profile->caller_id_number
 					  );
@@ -2588,8 +2588,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 																			 switch_ring_ready_t rv,
 																			 const char *file, const char *func, int line)
 {
-	const char *var;
-	char *app;
 	switch_event_t *event;
 
 	if (!switch_channel_test_flag(channel, CF_RING_READY) && 
@@ -2619,21 +2617,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 			switch_event_fire(&event);
 		}
 
-		var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE);
-		if (var) {
-			char *arg = NULL;
-			app = switch_core_session_strdup(channel->session, var);
-
-			if (strstr(app, "::")) {
-				switch_core_session_execute_application_async(channel->session, app, arg);
-			} else {
-				if ((arg = strchr(app, ' '))) {
-					*arg++ = '\0';
-				}
-				
-				switch_core_session_execute_application(channel->session, app, arg);
-			}
-		}
+		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE);
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -2645,7 +2629,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 {
 	switch_event_t *event;
 	const char *var = NULL;
-	char *app;
 
 	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 		const char *uuid;
@@ -2678,20 +2661,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 			switch_mutex_unlock(channel->profile_mutex);
 		}
 
-		if (((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE)) ||
-			 (var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE))) && !zstr(var)) {
-			char *arg = NULL;
-			app = switch_core_session_strdup(channel->session, var);
-
-
-			if (strstr(app, "::")) {
-				switch_core_session_execute_application_async(channel->session, app, arg);
-			} else {
-				if ((arg = strchr(app, ' '))) {
-					*arg++ = '\0';
-				}
-				
-				switch_core_session_execute_application(channel->session, app, arg);
+		if (switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE) != SWITCH_STATUS_SUCCESS) {
+			if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+				switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
 			}
 		}
 
@@ -2785,6 +2757,42 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready_value(switch_c
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix)
+{
+	switch_event_header_t *hi;
+	switch_event_t *event;
+	int x = 0;
+
+	switch_channel_get_variables(channel, &event);
+	
+	for (hi = event->headers; hi; hi = hi->next) {
+		char *var = hi->name;
+		char *val = hi->value;
+		char *app;
+			
+		if (!strncasecmp(var, variable_prefix, strlen(variable_prefix))) {
+			char *arg = NULL;
+			x++;
+
+			app = switch_core_session_strdup(channel->session, val);
+				
+			if (strstr(app, "::")) {
+				switch_core_session_execute_application_async(channel->session, app, arg);
+			} else {
+				if ((arg = strchr(app, ' '))) {
+					*arg++ = '\0';
+				}
+				
+				switch_core_session_execute_application(channel->session, app, arg);
+			}
+		}
+	}
+	
+	switch_event_destroy(&event);
+
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	switch_event_t *event;
@@ -2852,21 +2860,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n",
 					  channel->name);
 
-	if (((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE)) ||
-		 (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && (var = switch_channel_get_variable(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE))))
-		&& !zstr(var)) {
-		char *arg = NULL;
 
-		app = switch_core_session_strdup(channel->session, var);
-
-		if (strstr(app, "::")) {
-			switch_core_session_execute_application_async(channel->session, app, arg);
-		} else {
-			if ((arg = strchr(app, ' '))) {
-				*arg++ = '\0';
-			}
-			
-			switch_core_session_execute_application(channel->session, app, arg);
+	if (switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE) != SWITCH_STATUS_SUCCESS) {
+		if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+			switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
 		}
 	}
 
@@ -2943,7 +2940,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	char *data, *indup, *endof_indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
 	char *cloned_sub_val = NULL, *sub_val = NULL;
-	char *func_val = NULL;
+	char *func_val = NULL, *sb = NULL;
 	int nv = 0;
 
 	if (zstr(in)) {
@@ -3033,8 +3030,19 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				}
 				p = e > endof_indup ? endof_indup : e;
 
-				if ((vval = strchr(vname, '(')) || (vval = strchr(vname, ' '))) {
-					if (*vval == '(') br = 1;
+				vval = NULL;
+				for(sb = vname; sb && *sb; sb++) {
+					if (*sb == ' ') {
+						vval = sb;
+						break;
+					} else if (*sb == '(') {
+						vval = sb;
+						br = 1;
+						break;
+					}
+				}
+
+				if (vval) {
 					e = vval - 1;
 					*vval++ = '\0';
 					while (*e == ' ') {

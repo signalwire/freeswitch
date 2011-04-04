@@ -59,6 +59,7 @@
       <X-PRE-PROCESS cmd="include" data="lang/en/*.xml"/>
       <X-PRE-PROCESS cmd="include" data="lang/fr/*.xml"/>
       <X-PRE-PROCESS cmd="include" data="lang/ru/*.xml"/>
+      <X-PRE-PROCESS cmd="include" data="lang/he/*.xml"/>
     </macros>
   </section>
 </document>

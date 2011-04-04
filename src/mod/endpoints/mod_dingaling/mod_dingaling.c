@@ -65,19 +65,20 @@ typedef enum {
 	TFLAG_CODEC_READY = (1 << 8),
 	TFLAG_TRANSPORT = (1 << 9),
 	TFLAG_ANSWER = (1 << 10),
-	TFLAG_VAD_IN = (1 << 11),
-	TFLAG_VAD_OUT = (1 << 12),
-	TFLAG_VAD = (1 << 13),
-	TFLAG_DO_CAND = (1 << 14),
-	TFLAG_DO_DESC = (1 << 15),
-	TFLAG_LANADDR = (1 << 16),
-	TFLAG_AUTO = (1 << 17),
-	TFLAG_DTMF = (1 << 18),
-	TFLAG_TIMER = (1 << 19),
-	TFLAG_TERM = (1 << 20),
-	TFLAG_TRANSPORT_ACCEPT = (1 << 21),
-	TFLAG_READY = (1 << 22),
-	TFLAG_NAT_MAP = (1 << 22)
+	TFLAG_VAD_NONE = (1 << 11),
+	TFLAG_VAD_IN = (1 << 12),
+	TFLAG_VAD_OUT = (1 << 13),
+	TFLAG_VAD = (1 << 14),
+	TFLAG_DO_CAND = (1 << 15),
+	TFLAG_DO_DESC = (1 << 16),
+	TFLAG_LANADDR = (1 << 17),
+	TFLAG_AUTO = (1 << 18),
+	TFLAG_DTMF = (1 << 19),
+	TFLAG_TIMER = (1 << 20),
+	TFLAG_TERM = (1 << 21),
+	TFLAG_TRANSPORT_ACCEPT = (1 << 22),
+	TFLAG_READY = (1 << 23),
+	TFLAG_NAT_MAP = (1 << 24)
 } TFLAGS;
 
 typedef enum {
@@ -966,7 +967,7 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 	if (force || !switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
 		ldl_candidate_t cand[1];
 		char *advip = tech_pvt->profile->extip ? tech_pvt->profile->extip : tech_pvt->profile->ip;
-		char *err = NULL;
+		char *err = NULL, *address = NULL;
 
 		memset(cand, 0, sizeof(cand));
 		switch_stun_random_string(tech_pvt->local_user, 16, NULL);
@@ -975,10 +976,14 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 		if (switch_test_flag(tech_pvt, TFLAG_LANADDR)) {
 			advip = tech_pvt->profile->ip;
 		}
+		address = advip;
 
+		if(address && !strncasecmp(address, "host:", 5)) {
+			address = address + 5;
+		}
 
 		cand[0].port = tech_pvt->adv_local_port;
-		cand[0].address = advip;
+		cand[0].address = address;
 
 		if (!strncasecmp(advip, "stun:", 5)) {
 			char *stun_ip = advip + 5;
@@ -1568,22 +1573,8 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		channel_answer_channel(session);
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-		/*
-		   if (tech_pvt->rtp_session && switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
-		   switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-		   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
-		   //switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
-		   }
-		 */
 		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-		/*
-		   if (tech_pvt->rtp_session && switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
-		   switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-		   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
-		   //switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
-		   }
-		 */
 		break;
 	default:
 		break;
@@ -2110,8 +2101,10 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		} else if (!strcasecmp(val, "both")) {
 			switch_set_flag(profile, TFLAG_VAD_IN);
 			switch_set_flag(profile, TFLAG_VAD_OUT);
+		} else if (!strcasecmp(val, "none")) {
+			switch_set_flag(profile, TFLAG_VAD_NONE);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid option %s for VAD\n", val);
 		}
 	}
 }

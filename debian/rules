@@ -24,11 +24,11 @@ export DIALPLANS_MODULES= dialplans/mod_dialplan_asterisk dialplans/mod_dialplan
 export ENDPOINTS_MODULES= endpoints/mod_dingaling endpoints/mod_portaudio endpoints/mod_sofia endpoints/mod_loopback  \
  ../../libs/freetdm/mod_freetdm endpoints/mod_skypopen endpoints/mod_skinny 
 export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv
-export FORMATS_MODULES= formats/mod_file_string formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
+export FORMATS_MODULES= formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
  formats/mod_shout formats/mod_sndfile formats/mod_tone_stream 
 export LANGUAGES_MODULES=languages/mod_spidermonkey languages/mod_perl languages/mod_lua languages/mod_python
 export LOGGERS_MODULES=loggers/mod_console loggers/mod_logfile loggers/mod_syslog
-export SAY_MODULES=say/mod_say_en say/mod_say_it say/mod_say_de say/mod_say_fr say/mod_say_es say/mod_say_nl say/mod_say_ru
+export SAY_MODULES=say/mod_say_en say/mod_say_it say/mod_say_de say/mod_say_fr say/mod_say_es say/mod_say_nl say/mod_say_ru say/mod_say_he
 export XML_INT_MODULES=xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr
 export TIMER_MODULES=timers/mod_timerfd
 

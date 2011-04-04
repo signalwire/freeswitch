@@ -66,7 +66,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\udns;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\ldns;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -82,7 +82,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\udns;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\ldns;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -96,7 +96,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\udns;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\ldns;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -112,7 +112,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\udns;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\ldns;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -128,9 +128,8 @@
     <ClCompile Include="mod_enum.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\udns\libudns.2010.vcxproj">
-      <Project>{4043fc6a-9a30-4577-8ad5-9b233c9575d8}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    <ProjectReference Include="..\..\..\..\libs\win32\ldns\ldns-lib\ldns-lib.2010.vcxproj">
+      <Project>{23b4d303-79fc-49e0-89e2-2280e7e28940}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2010.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>

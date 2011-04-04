@@ -6,9 +6,9 @@ OPUS_DIR=$(switch_srcdir)/libs/$(OPUS)
 OPUS_BUILDDIR=$(switch_builddir)/libs/$(OPUS)
 LOCAL_CFLAGS=-I$(OPUS_DIR)/src -g -O2
 
-IETF_LA=$(OPUS_BUILDDIR)/src/.libs/libietfcodec.a
-CELT_LA=$(OPUS_BUILDDIR)/celt/libcelt/.libs/libcelt0.a
-SILK_LA=$(OPUS_BUILDDIR)/silk/.libs/libSKP_SILK_SDK.a
+IETF_LA=$(OPUS_BUILDDIR)/src/libietfcodec.la
+CELT_LA=$(OPUS_BUILDDIR)/celt/libcelt/libcelt0.la
+SILK_LA=$(OPUS_BUILDDIR)/silk/libSKP_SILK_SDK.la
 
 LOCAL_LIBADD=$(IETF_LA) $(CELT_LA) $(SILK_LA) -lm -lz
 
@@ -26,3 +26,7 @@ $(IETF_LA): $(OPUS_BUILDDIR)/Makefile
 	cd $(OPUS_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
+$(CELT_LA): $(IETF_LA)
+$(SILK_LA): $(IETF_LA)
+
+$(MODNAME).lo: $(IETF_LA) $(CELT_LA) $(SILK_LA)

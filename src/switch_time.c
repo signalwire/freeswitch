@@ -756,7 +756,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 	while (globals.RUNNING == 1) {
 		runtime.reference += STEP_MIC;
-		while ((ts = time_now(runtime.offset)) < runtime.reference) {
+
+		while (((ts = time_now(runtime.offset)) + 100) < runtime.reference) {
 			if (ts < last) {
 				if (MONO) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
@@ -770,6 +771,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 					runtime.initiated += diff;
 					rev_errs++;
 				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+								  "If you see this message many times try setting the param enable-clock-nanosleep to true in switch.conf.xml or consider a nicer machine to run me on. I AM *FREE* afterall.\n");
+
 			} else {
 				rev_errs = 0;
 			}

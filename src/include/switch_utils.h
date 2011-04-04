@@ -151,7 +151,11 @@ static inline char *switch_strchr_strict(const char *in, char find, const char *
 #endif
 static inline int switch_string_has_escaped_data(const char *in)
 {
-	const char *i = strchr(in, '\\');
+	const char *i;
+
+	switch_assert(in);
+
+	i = strchr(in, '\\');
 
 	while (i && *i == '\\') {
 		i++;
@@ -631,7 +635,7 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
 #define switch_time_from_sec(sec)   ((switch_time_t)(sec) * 1000000)
 
 /*!
-  \brief Declares a function designed to set a dymaic global string
+  \brief Declares a function designed to set a dynamic global string
   \param fname the function name to declare
   \param vname the name of the global pointer to modify with the new function
 */
@@ -639,9 +643,9 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
 		if (vname) {free(vname); vname = NULL;}vname = strdup(string);} static void fname(const char *string)
 
 /*!
-  \brief Separate a string into an array based on a character delimeter
+  \brief Separate a string into an array based on a character delimiter
   \param buf the string to parse
-  \param delim the character delimeter
+  \param delim the character delimiter
   \param array the array to split the values into
   \param arraylen the max number of elements in the array
   \return the number of elements added to the array

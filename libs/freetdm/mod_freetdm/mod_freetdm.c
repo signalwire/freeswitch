@@ -3818,7 +3818,7 @@ SWITCH_STANDARD_API(ft_function)
 										   "dial_regex: %s\n"
 										   "fail_dial_regex: %s\n"
 										   "hold_music: %s\n"
-										   "analog_options %s\n",
+										   "analog_options: %s\n",
 										   j,
 										   ftdm_span_get_name(SPAN_CONFIG[j].span),
 										   SPAN_CONFIG[j].type,
@@ -3844,7 +3844,7 @@ SWITCH_STANDARD_API(ft_function)
 										   "dial_regex: %s\n"
 										   "fail_dial_regex: %s\n"
 										   "hold_music: %s\n"
-										   "analog_options %s\n",
+										   "analog_options: %s\n",
 										   j,
 										   ftdm_span_get_name(SPAN_CONFIG[j].span),
 										   SPAN_CONFIG[j].type,
@@ -4298,7 +4298,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	SWITCH_ADD_API(commands_api_interface, "ftdm", "FreeTDM commands", ft_function, FT_SYNTAX);
 	switch_console_set_complete("add ftdm start");
 	switch_console_set_complete("add ftdm stop");
-	switch_console_set_complete("add ftdm retart");
+	switch_console_set_complete("add ftdm restart");
 	switch_console_set_complete("add ftdm dump");
 	switch_console_set_complete("add ftdm sigstatus get");
 	switch_console_set_complete("add ftdm sigstatus set");
