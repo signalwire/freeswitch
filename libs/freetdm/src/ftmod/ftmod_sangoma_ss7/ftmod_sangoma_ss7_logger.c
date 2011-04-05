@@ -149,24 +149,19 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 					
 
 			switch (sta->t.usta.alarm.cause) {
-			/******************************************************************/
-			case (LCM_CAUSE_UNKNOWN):
-				ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s\n",
-											buf,
-											DECODE_LSD_EVENT(sta->t.usta.alarm.event));
-				break;
-			/******************************************************************/
-			case (LCM_CAUSE_MGMT_INITIATED):
-				ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s[MGMT] %s\n",
-											buf,
-											DECODE_LSD_EVENT(sta->t.usta.alarm.event));
-				break;
-			/******************************************************************/
-			default:
-				ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s (***unknown cause***)\n",
-											buf,
-											DECODE_LSD_EVENT(sta->t.usta.alarm.event));
-				break;
+				case (LCM_CAUSE_MGMT_INITIATED):
+					ftdm_log(FTDM_LOG_DEBUG,"[MTP2]%s[MGMT] cause:%s event:%s\n",
+												buf,
+												DECODE_LCM_CAUSE(sta->t.usta.alarm.cause),
+												DECODE_LSD_EVENT(sta->t.usta.alarm.event));
+					break;			
+				case (LCM_CAUSE_UNKNOWN):
+				default:
+						ftdm_log(FTDM_LOG_DEBUG,"[MTP2]%s cause:%s event:%s\n",
+								buf,
+								DECODE_LCM_CAUSE(sta->t.usta.alarm.cause),
+								DECODE_LSD_EVENT(sta->t.usta.alarm.event));
+						break;
 			/******************************************************************/
 			} /* switch (sta->t.usta.alarm.cause) */
 			break;
@@ -211,7 +206,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %s\n",
+			ftdm_log(FTDM_LOG_DEBUG,"[MTP2]%s %s : %s\n",
 										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										DECODE_DISC_REASON(sta->t.usta.evntParm[1]));
@@ -402,7 +397,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 			break;
 		/**********************************************************************/
 		default:
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3]%s %s(%d) : %s(%d)\n",
+			ftdm_log(FTDM_LOG_DEBUG,"[MTP3]%s %s(%d) : %s(%d)\n",
 										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 										sta->t.usta.alarm.event,
@@ -421,7 +416,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 		break;
 	/**************************************************************************/
 	case (STLNKSET):
-		ftdm_log(FTDM_LOG_ERROR,"[MTP3][LNKSET:%d] %s : %s\n",
+		ftdm_log(FTDM_LOG_DEBUG,"[MTP3][LNKSET:%d] %s : %s\n",
 									sta->hdr.elmId.elmntInst1,
 									DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 									DECODE_LSN_CAUSE(sta->t.usta.alarm.cause));
