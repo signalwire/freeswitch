@@ -164,6 +164,7 @@ static switch_status_t load_config(void)
 				if(buf[data_sz - 1] != 0) {
 					buf[data_sz] = 0;
 				}
+				switch_replace_char(buf, ' ', 0, SWITCH_FALSE); /* only use the first entry ex "192.168.1.1 192.168.1.2" */
 				globals.server = buf;
 			}
 		}
