@@ -156,7 +156,9 @@ typedef enum {
 	CFLAG_VID_FLOOR = (1 << 8),
 	CFLAG_WASTE_BANDWIDTH = (1 << 9),
 	CFLAG_OUTCALL = (1 << 10),
-	CFLAG_INHASH = (1 << 11)
+	CFLAG_INHASH = (1 << 11),
+	CFLAG_EXIT_SOUND = (1 << 12),
+	CFLAG_ENTER_SOUND = (1 << 13)
 } conf_flag_t;
 
 typedef enum {
@@ -717,12 +719,14 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 			if (!switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ) && !zstr(conference->enter_sound)) {
                                 const char * enter_sound = switch_channel_get_variable(channel, "conference_enter_sound");
-				if (!zstr(enter_sound)) {
-				     conference_play_file(conference, (char *)enter_sound, CONF_DEFAULT_LEADIN,
-						     switch_core_session_get_channel(member->session), !switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
-			        } else {
-				     conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session),
-									 !switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+				if (switch_test_flag(conference, CFLAG_ENTER_SOUND)) {
+					if (!zstr(enter_sound)) {
+				     	conference_play_file(conference, (char *)enter_sound, CONF_DEFAULT_LEADIN,
+						     	switch_core_session_get_channel(member->session), !switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+			        } else {	
+				     		conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session),
+								!switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+					}
 				}
 			}
 		}
@@ -906,7 +910,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			|| (switch_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0)) {
 			switch_set_flag(conference, CFLAG_DESTRUCT);
 		} else {
-			if (conference->exit_sound) {
+			if (conference->exit_sound && switch_test_flag(conference, CFLAG_EXIT_SOUND)) {
 				conference_play_file(conference, conference->exit_sound, 0, switch_core_session_get_channel(member->session), 0);
 			}
 			if (conference->count == 1 && conference->alone_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
@@ -4023,7 +4027,7 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 	switch_snprintf(i, sizeof(i), "%u", conference->rate);
 	switch_xml_set_attr_d(x_conference, "rate", ival);
 	switch_xml_set_attr_d(x_conference, "uuid", conference->uuid_str);
-
+		
 	if (switch_test_flag(conference, CFLAG_LOCKED)) {
 		switch_xml_set_attr_d(x_conference, "locked", "true");
 	}
@@ -4056,6 +4060,14 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		switch_xml_set_attr_d(x_conference, "dynamic", "true");
 	}
 
+	if (switch_test_flag(conference, CFLAG_EXIT_SOUND)) {
+		switch_xml_set_attr_d(x_conference, "exit_sound", "true");
+	}
+	
+	if (switch_test_flag(conference, CFLAG_ENTER_SOUND)) {
+		switch_xml_set_attr_d(x_conference, "enter_sound", "true");
+	}
+	
 	if (conference->record_count > 0) {
 		switch_xml_set_attr_d(x_conference, "recording", "true");
 	}
@@ -4516,6 +4528,107 @@ static switch_status_t conf_api_sub_unlock(conference_obj_t *conference, switch_
 	return 0;
 }
 
+static switch_status_t conf_api_sub_exit_sound(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	switch_event_t *event;
+
+	switch_assert(conference != NULL);
+	switch_assert(stream != NULL);
+	
+	if (argc <= 2) {
+		stream->write_function(stream, "Not enough args\n");
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	if ( !strcasecmp(argv[2], "on") ) {
+		switch_set_flag_locked(conference, CFLAG_EXIT_SOUND);
+		stream->write_function(stream, "OK %s exit sounds on (%s)\n", argv[0], conference->exit_sound);
+		if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_data(conference, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "exit-sounds-on");
+			switch_event_fire(&event);
+		}
+	} else if ( !strcasecmp(argv[2], "off") || !strcasecmp(argv[2], "none") ) {
+		switch_clear_flag_locked(conference, CFLAG_EXIT_SOUND);
+		stream->write_function(stream, "OK %s exit sounds off (%s)\n", argv[0], conference->exit_sound);
+		if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_data(conference, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "exit-sounds-off");
+			switch_event_fire(&event);
+		}		
+	} else if ( !strcasecmp(argv[2], "file") ) {
+		if (! argv[3]) {
+			stream->write_function(stream, "No filename specified\n");
+		} else {
+			/* TODO: if possible, verify file exists before setting it */
+			stream->write_function(stream,"Old exit sound: [%s]\n", conference->exit_sound);
+			conference->exit_sound = switch_core_strdup(conference->pool, argv[3]);
+			stream->write_function(stream, "OK %s exit sound file set to %s\n", argv[0], conference->exit_sound);
+			if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+				conference_add_event_data(conference, event);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "exit-sound-file-changed");
+				switch_event_fire(&event);
+			}			
+		}
+	} else {
+		stream->write_function(stream, "Bad args\n");
+		return SWITCH_STATUS_GENERR;		
+	}
+	
+	return 0;
+}
+
+
+static switch_status_t conf_api_sub_enter_sound(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	switch_event_t *event;
+
+	switch_assert(conference != NULL);
+	switch_assert(stream != NULL);
+	
+	if (argc <= 2) {
+		stream->write_function(stream, "Not enough args\n");
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	if ( !strcasecmp(argv[2], "on") ) {
+		switch_set_flag_locked(conference, CFLAG_ENTER_SOUND);
+		stream->write_function(stream, "OK %s enter sounds on (%s)\n", argv[0], conference->enter_sound);
+		if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_data(conference, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "enter-sounds-on");
+			switch_event_fire(&event);
+		}
+	} else if ( !strcasecmp(argv[2], "off") || !strcasecmp(argv[2], "none") ) {
+		switch_clear_flag_locked(conference, CFLAG_ENTER_SOUND);
+		stream->write_function(stream, "OK %s enter sounds off (%s)\n", argv[0], conference->enter_sound);
+		if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_data(conference, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "enter-sounds-off");
+			switch_event_fire(&event);
+		}		
+	} else if ( !strcasecmp(argv[2], "file") ) {
+		if (! argv[3]) {
+			stream->write_function(stream, "No filename specified\n");
+		} else {
+			/* TODO: verify file exists before setting it */
+			conference->enter_sound = switch_core_strdup(conference->pool, argv[3]);
+			stream->write_function(stream, "OK %s enter sound file set to %s\n", argv[0], conference->enter_sound);
+			if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+				conference_add_event_data(conference, event);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "enter-sound-file-changed");
+				switch_event_fire(&event);
+			}			
+		}
+	} else {
+		stream->write_function(stream, "Bad args\n");
+		return SWITCH_STATUS_GENERR;		
+	}
+	
+	return 0;
+}
+
+
 static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	switch_call_cause_t cause;
@@ -4720,7 +4833,9 @@ typedef enum {
 	CONF_API_COMMAND_BGDIAL,
 	CONF_API_COMMAND_TRANSFER,
 	CONF_API_COMMAND_RECORD,
-	CONF_API_COMMAND_NORECORD
+	CONF_API_COMMAND_NORECORD,
+	CONF_API_COMMAND_EXIT_SOUND,
+	CONF_API_COMMAND_ENTER_SOUND,
 } api_command_type_t;
 
 /* API Interface Function sub-commands */
@@ -4750,6 +4865,8 @@ static api_command_t conf_api_sub_commands[] = {
 	{"transfer", (void_fn_t) & conf_api_sub_transfer, CONF_API_SUB_ARGS_SPLIT, "transfer", "<conference_name> <member id> [...<member id>]"},
 	{"record", (void_fn_t) & conf_api_sub_record, CONF_API_SUB_ARGS_SPLIT, "record", "<filename>"},
 	{"norecord", (void_fn_t) & conf_api_sub_norecord, CONF_API_SUB_ARGS_SPLIT, "norecord", "<[filename|all]>"},
+	{"exit_sound", (void_fn_t) & conf_api_sub_exit_sound, CONF_API_SUB_ARGS_SPLIT, "exit_sound", "on|off|none|file <filename>"},
+	{"enter_sound", (void_fn_t) & conf_api_sub_enter_sound, CONF_API_SUB_ARGS_SPLIT, "enter_sound", "on|off|none|file <filename>"},
 	{"pin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "pin", "<pin#>"},
 	{"nopin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "nopin", ""},
 };
@@ -5330,7 +5447,7 @@ static void set_cflags(const char *flags, uint32_t *f)
 			} else if (!strcasecmp(argv[i], "waste-bandwidth")) {
 				*f |= CFLAG_WASTE_BANDWIDTH;
 			}
-		}
+		}		
 
 		free(dup);
 	}
@@ -6620,7 +6737,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_uuid_format(uuid_str, &uuid);
 	conference->uuid_str = switch_core_strdup(conference->pool, uuid_str);
 
-
+	/* Set enter sound and exit sound flags so that default is on */
+	switch_set_flag(conference, CFLAG_ENTER_SOUND);
+	switch_set_flag(conference, CFLAG_EXIT_SOUND);
+	
 	/* Activate the conference mutex for exclusivity */
 	switch_mutex_init(&conference->mutex, SWITCH_MUTEX_NESTED, conference->pool);
 	switch_mutex_init(&conference->flag_mutex, SWITCH_MUTEX_NESTED, conference->pool);
