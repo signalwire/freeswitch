@@ -193,7 +193,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 
 		if (pattern) {
 			switch_regex_t *re = NULL;
-			int proceed = 0, ovector[30];
+			int proceed = 0, ovector[100];
 			char *substituted = NULL;
 			uint32_t len = 0;
 			char *odata = NULL;
