@@ -185,7 +185,16 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	/* copy down the calling number information */	
 	copy_cgPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cgPtyNum);
 
-
+	/* check if the user would like a custom NADI value for the calling Pty Num */
+	clg_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_clg_nadi");
+	if ((clg_nadi != NULL) && (*clg_nadi)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Calling NADI value \"%s\"\n", clg_nadi);
+		iam.cgPtyNum.natAddrInd.val	= atoi(clg_nadi);
+	} else {
+		iam.cgPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].clg_nadi;
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLG, using \"%d\"\n", iam.cgPtyNum.natAddrInd.val);
+	}
+	
 	cld_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cld_nadi");
 	if ((cld_nadi != NULL) && (*cld_nadi)) {
 		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called NADI value \"%s\"\n", cld_nadi);
