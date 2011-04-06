@@ -1264,6 +1264,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			caller_data.ani.plan = (uint8_t)atoi(sipvar);
 		}
 
+		/* Used by ftmod_sangoma_ss7 only */
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-ANI-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_clg_nadi", sipvar);
+		}
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-ANI2");
 		if (sipvar) {
 			ftdm_set_string(caller_data.aniII, sipvar);
@@ -1284,6 +1290,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			caller_data.dnis.plan = (uint8_t)atoi(sipvar);
 		}
 
+		/* Used by ftmod_sangoma_ss7 only */
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_clg_nadi", sipvar);
+		}
+		
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS");
 		if (sipvar) {
 			ftdm_set_string(caller_data.rdnis.digits, sipvar);
@@ -1299,6 +1311,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			caller_data.rdnis.plan = (uint8_t)atoi(sipvar);
 		}
 
+		/* Used by ftmod_sangoma_ss7 only */
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_nadi", sipvar);
+		}
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Screen");
 		if (sipvar) {
 			caller_data.screen = (uint8_t)atoi(sipvar);
@@ -1308,6 +1326,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (sipvar) {
 			caller_data.pres = (uint8_t)atoi(sipvar);
 		}
+
+
 	}
 
 	if (switch_test_flag(outbound_profile, SWITCH_CPF_SCREEN)) {
@@ -1568,7 +1588,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS", "%s", channel_caller_data->rdnis.digits);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-TON", "%d", channel_caller_data->rdnis.type);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Plan", "%d", channel_caller_data->rdnis.plan);
-
+		
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Screen", "%d", channel_caller_data->screen);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Presentation", "%d", channel_caller_data->pres);
 	}

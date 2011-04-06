@@ -122,6 +122,7 @@ typedef struct sng_ccSpan
 	uint32_t		ssf;
 	uint32_t		clg_nadi;
 	uint32_t		cld_nadi;
+	uint32_t		rdnis_nadi;
 	uint32_t		min_digits;
 	uint32_t		t3;
 	uint32_t		t12;
@@ -1841,6 +1842,7 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 	int						num_parms = cc_span->n_parameters;
 	int						flag_clg_nadi = 0;
 	int						flag_cld_nadi = 0;
+	int						flag_rdnis_nadi = 0;
 	int						i;
 	int						ret;
 
@@ -1912,16 +1914,17 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 			flag_clg_nadi = 1;
 			sng_ccSpan.clg_nadi = atoi(parm->val);
 			SS7_DEBUG("Found default CLG_NADI parm->value = %d\n", sng_ccSpan.clg_nadi);
-		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "cld_nadi")) {
-		/**********************************************************************/
 			/* throw the flag so that we know we got this optional parameter */
 			flag_cld_nadi = 1;
 			sng_ccSpan.cld_nadi = atoi(parm->val);
 			SS7_DEBUG("Found default CLD_NADI parm->value = %d\n", sng_ccSpan.cld_nadi);
-		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "rdnis_nadi")) {
+			/* throw the flag so that we know we got this optional parameter */
+			flag_rdnis_nadi = 1;
+			sng_ccSpan.rdnis_nadi = atoi(parm->val);
+			SS7_DEBUG("Found default RDNIS_NADI parm->value = %d\n", sng_ccSpan.rdnis_nadi);
 		} else if (!strcasecmp(parm->var, "obci_bita")) {
-		/**********************************************************************/
 			if (*parm->val == '1') {
 				sngss7_set_options(&sng_ccSpan, SNGSS7_ACM_OBCI_BITA);
 				SS7_DEBUG("Found Optional Backwards Indicator: Bit A (early media) enable option\n");
@@ -2010,6 +2013,11 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 	if (!flag_clg_nadi) {
 		/* default the nadi value to national */
 		sng_ccSpan.clg_nadi = 0x03;
+	}
+
+	if (!flag_rdnis_nadi) {
+		/* default the nadi value to national */
+		sng_ccSpan.rdnis_nadi = 0x03;
 	}
 
 	/* pull up the SSF and Switchtype from the isup interface */
@@ -2901,6 +2909,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		g_ftdm_sngss7_data.cfg.isupCkt[x].ssf			= ccSpan->ssf;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].cld_nadi		= ccSpan->cld_nadi;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].clg_nadi		= ccSpan->clg_nadi;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].rdnis_nadi	= ccSpan->rdnis_nadi;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].options		= ccSpan->options;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].switchType	= ccSpan->switchType;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].min_digits	= ccSpan->min_digits;

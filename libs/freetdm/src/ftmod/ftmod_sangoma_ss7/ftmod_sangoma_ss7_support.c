@@ -43,13 +43,6 @@ uint32_t sngss7_id;
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
-uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
-uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
-uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
-uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
-uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
-uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
-
 int check_for_state_change(ftdm_channel_t *ftdmchan);
 int check_cics_in_range(sngss7_chan_data_t *sngss7_info);
 int check_for_reset(sngss7_chan_data_t *sngss7_info);
@@ -134,11 +127,12 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 	cgPtyNum->niInd.val		 = 0x00;
 	/**************************************************************************/
 	cgPtyNum->addrSig.pres	  = PRSNT_NODEF;
-
+	
 	/* atoi will search through memory starting from the pointer it is given until
 	 * it finds the \0...since tmp is on the stack it will start going through the
 	 * possibly causing corruption.  Hard code a \0 to prevent this
 	 */
+	
 	tmp[1] = '\0';
 	k = 0;
 	j = 0;
@@ -334,8 +328,68 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 	return 0;
 }
 
-/******************************************************************************/
-uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
+
+ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum)
+{
+	const char* val = NULL;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;	
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+	uint8_t len = strlen(caller_data->rdnis.digits);
+	if (!len) {
+		return FTDM_SUCCESS;
+	}
+	SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number %s\n", caller_data->rdnis.digits);
+	
+	redirgNum->eh.pres = PRSNT_NODEF;
+
+	/* Nature of address indicator */
+	redirgNum->natAddr.pres = PRSNT_NODEF;
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdnis_nadi");
+	if (!ftdm_strlen_zero(val)) {
+		redirgNum->natAddr.val = atoi(val);
+	} else {		
+		redirgNum->natAddr.val = g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].rdnis_nadi;
+	}
+	SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number NADI:%d\n", redirgNum->natAddr.val);
+
+	/* Screening indicator */
+	redirgNum->scrInd.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdnis_screen_ind");
+	if (!ftdm_strlen_zero(val)) {
+		redirgNum->scrInd.val = atoi(val);
+	} else {
+		redirgNum->scrInd.val = FTDM_SCREENING_VERIFIED_PASSED;
+	}
+	SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Screening Ind:%d\n", redirgNum->scrInd.val);
+	
+	/* Address presentation restricted ind */
+	redirgNum->presRest.pres = PRSNT_NODEF;
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdnis_pres_ind");
+	if (!ftdm_strlen_zero(val)) {
+		redirgNum->presRest.val = atoi(val);
+	} else {
+		redirgNum->presRest.val =  FTDM_PRES_ALLOWED;
+	}
+	SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Address Presentation Restricted Ind:%d\n", redirgNum->presRest.val);
+
+	/* Numbering plan */
+	redirgNum->numPlan.pres = PRSNT_NODEF;
+
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdnis_plan");
+	if (!ftdm_strlen_zero(val)) {
+		redirgNum->numPlan.val = atoi(val);
+	} else {
+		redirgNum->numPlan.val = caller_data->rdnis.plan; 
+	}
+	
+	SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Numbering plan:%d\n", redirgNum->numPlan.val);
+
+	return copy_tknStr_to_sngss7(caller_data->rdnis.digits, &redirgNum->addrSig, &redirgNum->oddEven);
+}
+
+ftdm_status_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 {
 	uint8_t i;
 	uint8_t j;
@@ -362,14 +416,14 @@ uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 		
 	} else {
 		SS7_ERROR("Asked to copy tknStr that is not present!\n");
-		return 1;
+		return FTDM_FAIL;
 	}
 
-	return 0;
+	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
-uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
+ftdm_status_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 {
 	int i = 0;
 	int j = 0;
@@ -382,7 +436,7 @@ uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 		/* confirm that we found an acceptable length */
 		if ( j > 25 ) {
 			SS7_ERROR("string length exceeds maxium value...aborting append!\n");
-			return 1;
+			return FTDM_FAIL;
 		} /* if ( j > 25 ) */
 
 		/* copy in digits */
@@ -405,11 +459,99 @@ uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 		} /* if ((oddEven.pres == 1) && (oddEven.val == 1)) */
 	} else {
 		SS7_ERROR("Asked to copy tknStr that is not present!\n");
-		return 1;
+		return FTDM_FAIL;
 	} /* if (str.pres == 1) */
 
-	return 0;
+	return FTDM_SUCCESS;
 }
+
+
+ftdm_status_t copy_tknStr_to_sngss7(char* val, TknStr *tknStr, TknU8 *oddEven)
+{
+	char tmp[2];
+	int k = 0;
+	int j = 0;
+	uint8_t flag = 0;
+	uint8_t odd = 0;
+
+	uint8_t lower = 0x0;
+	uint8_t upper = 0x0;
+
+	tknStr->pres = PRSNT_NODEF;
+	
+	/* atoi will search through memory starting from the pointer it is given until
+	* it finds the \0...since tmp is on the stack it will start going through the
+	* possibly causing corruption.  Hard code a \0 to prevent this
+	*/
+	tmp[1] = '\0';
+
+	while (1) {
+		/* grab a digit from the ftdm digits */
+		tmp[0] = val[k];
+
+		/* check if the digit is a number and that is not null */
+		while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
+			/* move on to the next value */
+			k++;
+			tmp[0] = val[k];
+		} /* while(!(isdigit(tmp))) */
+
+		/* check if tmp is null or a digit */
+		if (tmp[0] != '\0') {
+			/* push it into the lower nibble */
+			lower = strtol(&tmp[0], (char **)NULL, 16);
+			/* move to the next digit */
+			k++;
+			/* grab a digit from the ftdm digits */
+			tmp[0] = val[k];
+
+			/* check if the digit is a number and that is not null */
+			while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
+				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
+				k++;
+				tmp[0] = val[k];
+			} /* while(!(isdigit(tmp))) */
+
+			/* check if tmp is null or a digit */
+			if (tmp[0] != '\0') {
+				/* push the digit into the upper nibble */
+				upper = (strtol(&tmp[0], (char **)NULL, 16)) << 4;
+			} else {
+				/* there is no upper ... fill in 0 */
+				upper = 0x0;
+				/* throw the odd flag */
+				odd = 1;
+				/* throw the end flag */
+				flag = 1;
+			} /* if (tmp != '\0') */
+		} else {
+			/* keep the odd flag down */
+			odd = 0;
+			/* break right away since we don't need to write the digits */
+			break;
+		}
+
+		/* push the digits into the trillium structure */
+		tknStr->val[j] = upper | lower;
+
+		/* increment the trillium pointer */
+		j++;
+
+		/* if the flag is up we're through all the digits */
+		if (flag) break;
+
+		/* move to the next digit */
+		k++;
+	} /* while(1) */
+	
+	tknStr->len = j;
+	oddEven->pres = PRSNT_NODEF;
+	oddEven->val = odd;
+	return FTDM_SUCCESS;
+}
+
+
 
 /******************************************************************************/
 int check_for_state_change(ftdm_channel_t *ftdmchan)
