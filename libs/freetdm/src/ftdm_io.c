@@ -3563,16 +3563,18 @@ static FIO_WRITE_FUNCTION(ftdm_raw_write)
 static FIO_READ_FUNCTION(ftdm_raw_read)
 {
 	ftdm_status_t  status = ftdmchan->fio->read(ftdmchan, data, datalen);
+
+	if (status == FTDM_SUCCESS && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_USE_RX_GAIN) 
+	   && (ftdmchan->native_codec == FTDM_CODEC_ALAW || ftdmchan->native_codec == FTDM_CODEC_ULAW)) {
+		int i = 0;
+		unsigned char *rdata = data;
+		for (i = 0; i < *datalen; i++) {
+			rdata[i] = ftdmchan->rxgain_table[rdata[i]];
+		}
+	}
+
 	if (status == FTDM_SUCCESS && ftdmchan->fds[FTDM_READ_TRACE_INDEX] > -1) {
 		ftdm_size_t dlen = *datalen;
-		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_USE_RX_GAIN) 
-			&& (ftdmchan->native_codec == FTDM_CODEC_ALAW || ftdmchan->native_codec == FTDM_CODEC_ULAW)) {
-			int i = 0;
-			unsigned char *rdata = data;
-			for (i = 0; i < *datalen; i++) {
-				rdata[i] = ftdmchan->rxgain_table[rdata[i]];
-			}
-		}
 		if ((ftdm_size_t)write(ftdmchan->fds[FTDM_READ_TRACE_INDEX], data, (int)dlen) != dlen) {
 			ftdm_log(FTDM_LOG_WARNING, "Raw input trace failed to write all of the %"FTDM_SIZE_FMT" bytes\n", dlen);
 		}
