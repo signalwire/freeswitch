@@ -451,6 +451,7 @@ static switch_status_t ru_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		break;
 	case SST_SHORT_DATE_TIME:
 		say_time = 1;
+		tm.tm_sec = 0; // В коротком варианте секунды не проговариваем
 		if (tm.tm_year != tm_now.tm_year) {
 			say_date = 1;
 			break;
@@ -619,7 +620,7 @@ static switch_new_say_callback_ru_t choose_callback(switch_say_args_t *say_args)
 		say_cb = ru_say_money;
 		break;
 	default:
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);
 		break;
 	}
 
