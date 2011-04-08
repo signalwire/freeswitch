@@ -1996,22 +1996,20 @@ static void conference_loop_fn_exec_app(conference_member_t *member, caller_cont
 		switch_event_fire(&event);
 	}
 
-	if ((mydata = switch_core_session_strdup(member->session, action->expanded_data))) {
-		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-			if (argc > 0) {
-				app = argv[0];
-			}
-			if (argc > 1) {
-				arg = argv[1];
-			}
+	mydata = strdup(action->expanded_data);
+	switch_assert(mydata);
 
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Empty execute app string [%s]\n", 
-							  (char *) action->expanded_data);
-			goto done;
+	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		if (argc > 0) {
+			app = argv[0];
 		}
+		if (argc > 1) {
+			arg = argv[1];
+		}
+
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Unable to allocate memory to duplicate execute_app data.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Empty execute app string [%s]\n", 
+						  (char *) action->expanded_data);
 		goto done;
 	}
 
@@ -2029,7 +2027,10 @@ static void conference_loop_fn_exec_app(conference_member_t *member, caller_cont
 	switch_core_session_execute_application(member->session, app, arg);
 	switch_core_session_set_read_codec(member->session, &member->read_codec);
 	switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
+
   done:
+
+	switch_safe_free(mydata);
 
 	return;
 }
