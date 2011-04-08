@@ -1444,7 +1444,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 static void handle_SIGQUIT(int sig)
 {
 	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Quit!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig Quit!\n");
 	return;
 }
 #endif
@@ -1453,7 +1453,7 @@ static void handle_SIGQUIT(int sig)
 static void handle_SIGPIPE(int sig)
 {
 	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Pipe!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig Pipe!\n");
 	return;
 }
 #endif
@@ -1462,7 +1462,7 @@ static void handle_SIGPIPE(int sig)
 static void handle_SIGPOLL(int sig)
 {
 	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Poll!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig Poll!\n");
 	return;
 }
 #endif
@@ -1471,7 +1471,7 @@ static void handle_SIGPOLL(int sig)
 static void handle_SIGIO(int sig)
 {
 	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig I/O!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig I/O!\n");
 	return;
 }
 #endif
@@ -1479,7 +1479,7 @@ static void handle_SIGIO(int sig)
 #ifdef TRAP_BUS
 static void handle_SIGBUS(int sig)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig BUS!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig BUS!\n");
 	return;
 }
 #endif
