@@ -945,6 +945,8 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	*new_module = module;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module_interface->module_name);
 
+	switch_core_set_signal_handlers();
+
 	return SWITCH_STATUS_SUCCESS;
 
 }

@@ -1772,27 +1772,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 
 	runtime.runlevel++;
 
-	/* set signal handlers */
-	signal(SIGINT, SIG_IGN);
-#ifdef SIGPIPE
-	signal(SIGPIPE, handle_SIGPIPE);
-#endif
-#ifdef SIGQUIT
-	signal(SIGQUIT, handle_SIGQUIT);
-#endif
-#ifdef SIGPOLL
-	signal(SIGPOLL, handle_SIGPOLL);
-#endif
-#ifdef SIGIO
-	signal(SIGIO, handle_SIGIO);
-#endif
-#ifdef TRAP_BUS
-	signal(SIGBUS, handle_SIGBUS);
-#endif
-#ifdef SIGUSR1
-	signal(SIGUSR1, handle_SIGHUP);
-#endif
-	signal(SIGHUP, handle_SIGHUP);
+	switch_core_set_signal_handlers();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
@@ -1805,6 +1785,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	switch_load_network_lists(SWITCH_FALSE);
 
 	switch_load_core_config("post_load_switch.conf");
+
+	switch_core_set_signal_handlers();
 
 	if (switch_event_create(&event, SWITCH_EVENT_STARTUP) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Ready");
@@ -1868,6 +1850,31 @@ static void win_shutdown(void)
 	}
 }
 #endif
+
+SWITCH_DECLARE(void) switch_core_set_signal_handlers(void)
+{
+	/* set signal handlers */
+	signal(SIGINT, SIG_IGN);
+#ifdef SIGPIPE
+	signal(SIGPIPE, handle_SIGPIPE);
+#endif
+#ifdef SIGQUIT
+	signal(SIGQUIT, handle_SIGQUIT);
+#endif
+#ifdef SIGPOLL
+	signal(SIGPOLL, handle_SIGPOLL);
+#endif
+#ifdef SIGIO
+	signal(SIGIO, handle_SIGIO);
+#endif
+#ifdef TRAP_BUS
+	signal(SIGBUS, handle_SIGBUS);
+#endif
+#ifdef SIGUSR1
+	signal(SIGUSR1, handle_SIGHUP);
+#endif
+	signal(SIGHUP, handle_SIGHUP);
+}
 
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void)
 {
