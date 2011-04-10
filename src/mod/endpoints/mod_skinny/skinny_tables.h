@@ -36,8 +36,8 @@
 /* SKINNY TABLES */
 /*****************************************************************************/
 struct skinny_table {
-    const char *name;
     uint32_t id;
+    const char *name;
 };
 
 #define SKINNY_DECLARE_ID2STR(func, TABLE, DEFAULT_STR) \
