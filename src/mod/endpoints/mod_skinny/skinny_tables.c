@@ -109,145 +109,146 @@ SKINNY_DECLARE_ID2STR(skinny_message_type2str, SKINNY_MESSAGE_TYPES, "UnknownMes
 SKINNY_DECLARE_STR2ID(skinny_str2message_type, SKINNY_MESSAGE_TYPES, -1)
 
 struct skinny_table SKINNY_DEVICE_TYPES[] = {
-    {"Cisco 30 SP+", 1},
-    {"Cisco 12 SP+", 2},
-    {"Cisco 12 SP", 3},
-    {"Cisco 12", 4},
-    {"Cisco 30 VIP", 5},
-    {"Cisco IP Phone 7910", 6},
-    {"Cisco IP Phone 7960", 7},
-    {"Cisco IP Phone 7940", 8},
-    {"Cisco IP Phone 7935", 9},
-    {"Cisco ATA 186", 12},
+	{"Cisco 30 SP+", 1},
+	{"Cisco 12 SP+", 2},
+	{"Cisco 12 SP", 3},
+	{"Cisco 12", 4},
+	{"Cisco 30 VIP", 5},
+	{"Cisco IP Phone 7910", 6},
+	{"Cisco IP Phone 7960", 7},
+	{"Cisco IP Phone 7940", 8},
+	{"Cisco IP Phone 7935", 9},
+	{"Cisco ATA 186", 12},
+	{"Cisco IP Phone CP-7921G", 365},
 	{"Cisco IP Phone CP-7962G", 404},
 	{"Cisco IP Phone CP-7965G", 436},
-    {"Cisco IP Phone CP-7961G", 30018},
-    {"Cisco IP Phone 7936", 30019},
-    {NULL, 0}
+	{"Cisco IP Phone CP-7961G", 30018},
+	{"Cisco IP Phone 7936", 30019},
+	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_device_type2str, SKINNY_DEVICE_TYPES, "UnknownDeviceType")
 SKINNY_DECLARE_STR2ID(skinny_str2device_type, SKINNY_DEVICE_TYPES, -1)
 
 struct skinny_table SKINNY_RING_TYPES[] = {
-    {"RingOff", SKINNY_RING_OFF},
-    {"RingInside", SKINNY_RING_INSIDE},
-    {"RingOutside", SKINNY_RING_OUTSIDE},
-    {"RingFeature", SKINNY_RING_FEATURE},
-    {NULL, 0}
+	{"RingOff", SKINNY_RING_OFF},
+	{"RingInside", SKINNY_RING_INSIDE},
+	{"RingOutside", SKINNY_RING_OUTSIDE},
+	{"RingFeature", SKINNY_RING_FEATURE},
+	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_ring_type2str, SKINNY_RING_TYPES, "RingTypeUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2ring_type, SKINNY_RING_TYPES, -1)
 
 struct skinny_table SKINNY_RING_MODES[] = {
-    {"RingForever", SKINNY_RING_FOREVER},
-    {"RingOnce", SKINNY_RING_ONCE},
-    {NULL, 0}
+	{"RingForever", SKINNY_RING_FOREVER},
+	{"RingOnce", SKINNY_RING_ONCE},
+	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_ring_mode2str, SKINNY_RING_MODES, "RingModeUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2ring_mode, SKINNY_RING_MODES, -1)
 
 struct skinny_table SKINNY_BUTTONS[] = {
-    {"Unknown", SKINNY_BUTTON_UNKNOWN},
-    {"LastNumberRedial", SKINNY_BUTTON_LAST_NUMBER_REDIAL},
-    {"SpeedDial", SKINNY_BUTTON_SPEED_DIAL},
-    {"Hold", SKINNY_BUTTON_HOLD},
-    {"Transfer", SKINNY_BUTTON_TRANSFER},
-    {"Line", SKINNY_BUTTON_LINE},
-    {"Voicemail", SKINNY_BUTTON_VOICEMAIL},
-    {"Privacy", SKINNY_BUTTON_PRIVACY},
-    {"ServiceUrl", SKINNY_BUTTON_SERVICE_URL},
-    {"Undefined", SKINNY_BUTTON_UNDEFINED},
-    {NULL, 0}
+	{"Unknown", SKINNY_BUTTON_UNKNOWN},
+	{"LastNumberRedial", SKINNY_BUTTON_LAST_NUMBER_REDIAL},
+	{"SpeedDial", SKINNY_BUTTON_SPEED_DIAL},
+	{"Hold", SKINNY_BUTTON_HOLD},
+	{"Transfer", SKINNY_BUTTON_TRANSFER},
+	{"Line", SKINNY_BUTTON_LINE},
+	{"Voicemail", SKINNY_BUTTON_VOICEMAIL},
+	{"Privacy", SKINNY_BUTTON_PRIVACY},
+	{"ServiceUrl", SKINNY_BUTTON_SERVICE_URL},
+	{"Undefined", SKINNY_BUTTON_UNDEFINED},
+	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_button2str, SKINNY_BUTTONS, "Unknown")
 SKINNY_DECLARE_STR2ID(skinny_str2button, SKINNY_BUTTONS, -1)
 
 struct skinny_table SKINNY_SOFT_KEY_EVENTS[] = {
-    {"SoftkeyRedial", SOFTKEY_REDIAL},
-    {"SoftkeyNewcall", SOFTKEY_NEWCALL},
-    {"SoftkeyHold", SOFTKEY_HOLD},
-    {"SoftkeyTransfer", SOFTKEY_TRANSFER},
-    {"SoftkeyCfwdall", SOFTKEY_CFWDALL},
-    {"SoftkeyCfwdbusy", SOFTKEY_CFWDBUSY},
-    {"SoftkeyCfwdnoanswer", SOFTKEY_CFWDNOANSWER},
-    {"SoftkeyBackspace", SOFTKEY_BACKSPACE},
-    {"SoftkeyEndcall", SOFTKEY_ENDCALL},
-    {"SoftkeyResume", SOFTKEY_RESUME},
-    {"SoftkeyAnswer", SOFTKEY_ANSWER },
-    {"SoftkeyInfo", SOFTKEY_INFO},
-    {"SoftkeyConfrm", SOFTKEY_CONFRM},
-    {"SoftkeyPark", SOFTKEY_PARK},
-    {"SoftkeyJoin", SOFTKEY_JOIN},
-    {"SoftkeyMeetmeconfrm", SOFTKEY_MEETMECONFRM},
-    {"SoftkeyCallpickup", SOFTKEY_CALLPICKUP},
-    {"SoftkeyGrpcallpickup", SOFTKEY_GRPCALLPICKUP},
-    {"SoftkeyDnd", SOFTKEY_DND},
-    {"SoftkeyIdivert", SOFTKEY_IDIVERT},
-    {NULL, 0}
+	{"SoftkeyRedial", SOFTKEY_REDIAL},
+	{"SoftkeyNewcall", SOFTKEY_NEWCALL},
+	{"SoftkeyHold", SOFTKEY_HOLD},
+	{"SoftkeyTransfer", SOFTKEY_TRANSFER},
+	{"SoftkeyCfwdall", SOFTKEY_CFWDALL},
+	{"SoftkeyCfwdbusy", SOFTKEY_CFWDBUSY},
+	{"SoftkeyCfwdnoanswer", SOFTKEY_CFWDNOANSWER},
+	{"SoftkeyBackspace", SOFTKEY_BACKSPACE},
+	{"SoftkeyEndcall", SOFTKEY_ENDCALL},
+	{"SoftkeyResume", SOFTKEY_RESUME},
+	{"SoftkeyAnswer", SOFTKEY_ANSWER },
+	{"SoftkeyInfo", SOFTKEY_INFO},
+	{"SoftkeyConfrm", SOFTKEY_CONFRM},
+	{"SoftkeyPark", SOFTKEY_PARK},
+	{"SoftkeyJoin", SOFTKEY_JOIN},
+	{"SoftkeyMeetmeconfrm", SOFTKEY_MEETMECONFRM},
+	{"SoftkeyCallpickup", SOFTKEY_CALLPICKUP},
+	{"SoftkeyGrpcallpickup", SOFTKEY_GRPCALLPICKUP},
+	{"SoftkeyDnd", SOFTKEY_DND},
+	{"SoftkeyIdivert", SOFTKEY_IDIVERT},
+	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_soft_key_event2str, SKINNY_SOFT_KEY_EVENTS, "SoftkeyUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2soft_key_event, SKINNY_SOFT_KEY_EVENTS, 0)
 
 struct skinny_table SKINNY_LAMP_MODES[] = {
-    {"Off", SKINNY_LAMP_OFF},
-    {"On", SKINNY_LAMP_ON},
-    {"Wink", SKINNY_LAMP_WINK},
-    {"Flash", SKINNY_LAMP_FLASH},
-    {"Blink", SKINNY_LAMP_BLINK},
-    {NULL, 0}
+	{"Off", SKINNY_LAMP_OFF},
+	{"On", SKINNY_LAMP_ON},
+	{"Wink", SKINNY_LAMP_WINK},
+	{"Flash", SKINNY_LAMP_FLASH},
+	{"Blink", SKINNY_LAMP_BLINK},
+	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_lamp_mode2str, SKINNY_LAMP_MODES, "Unknown")
 SKINNY_DECLARE_STR2ID(skinny_str2lamp_mode, SKINNY_LAMP_MODES, -1)
 
 struct skinny_table SKINNY_SPEAKER_MODES[] = {
-    {"SpeakerOn", SKINNY_SPEAKER_ON},
-    {"SpeakerOff", SKINNY_SPEAKER_OFF},
-    {NULL, 0}
+	{"SpeakerOn", SKINNY_SPEAKER_ON},
+	{"SpeakerOff", SKINNY_SPEAKER_OFF},
+	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_speaker_mode2str, SKINNY_SPEAKER_MODES, "Unknown")
 SKINNY_DECLARE_STR2ID(skinny_str2speaker_mode, SKINNY_SPEAKER_MODES, -1)
 
 struct skinny_table SKINNY_KEY_SETS[] = {
-    {"KeySetOnHook", SKINNY_KEY_SET_ON_HOOK},
-    {"KeySetConnected", SKINNY_KEY_SET_CONNECTED},
-    {"KeySetOnHold", SKINNY_KEY_SET_ON_HOLD},
-    {"KeySetRingIn", SKINNY_KEY_SET_RING_IN},
-    {"KeySetOffHook", SKINNY_KEY_SET_OFF_HOOK},
-    {"KeySetConnectedWithTransfer", SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER},
-    {"KeySetDigitsAfterDialingFirstDigit", SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT},
-    {"KeySetConnectedWithConference", SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE},
-    {"KeySetRingOut", SKINNY_KEY_SET_RING_OUT},
-    {"KeySetOffHookWithFeatures", SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES},
-    {"KeySetInUseHint", SKINNY_KEY_SET_IN_USE_HINT},
-    {NULL, 0}
+	{"KeySetOnHook", SKINNY_KEY_SET_ON_HOOK},
+	{"KeySetConnected", SKINNY_KEY_SET_CONNECTED},
+	{"KeySetOnHold", SKINNY_KEY_SET_ON_HOLD},
+	{"KeySetRingIn", SKINNY_KEY_SET_RING_IN},
+	{"KeySetOffHook", SKINNY_KEY_SET_OFF_HOOK},
+	{"KeySetConnectedWithTransfer", SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER},
+	{"KeySetDigitsAfterDialingFirstDigit", SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT},
+	{"KeySetConnectedWithConference", SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE},
+	{"KeySetRingOut", SKINNY_KEY_SET_RING_OUT},
+	{"KeySetOffHookWithFeatures", SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES},
+	{"KeySetInUseHint", SKINNY_KEY_SET_IN_USE_HINT},
+	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_soft_key_set2str, SKINNY_KEY_SETS, "UNKNOWN_SOFT_KEY_SET")
 SKINNY_DECLARE_STR2ID(skinny_str2soft_key_set, SKINNY_KEY_SETS, -1)
 
 struct skinny_table SKINNY_CALL_STATES[] = {
-    {"OffHook", SKINNY_OFF_HOOK},
-    {"OnHook", SKINNY_ON_HOOK},
-    {"RingOut", SKINNY_RING_OUT},
-    {"RingIn", SKINNY_RING_IN},
-    {"Connected", SKINNY_CONNECTED},
-    {"Busy", SKINNY_BUSY},
-    {"LineInUse", SKINNY_LINE_IN_USE},
-    {"Hold", SKINNY_HOLD},
-    {"CallWaiting", SKINNY_CALL_WAITING},
-    {"CallTransfer", SKINNY_CALL_TRANSFER},
-    {"CallPark", SKINNY_CALL_PARK},
-    {"Proceed", SKINNY_PROCEED},
-    {"InUseRemotely", SKINNY_IN_USE_REMOTELY},
-    {"InvalidNumber", SKINNY_INVALID_NUMBER},
-    {NULL, 0}
+	{"OffHook", SKINNY_OFF_HOOK},
+	{"OnHook", SKINNY_ON_HOOK},
+	{"RingOut", SKINNY_RING_OUT},
+	{"RingIn", SKINNY_RING_IN},
+	{"Connected", SKINNY_CONNECTED},
+	{"Busy", SKINNY_BUSY},
+	{"LineInUse", SKINNY_LINE_IN_USE},
+	{"Hold", SKINNY_HOLD},
+	{"CallWaiting", SKINNY_CALL_WAITING},
+	{"CallTransfer", SKINNY_CALL_TRANSFER},
+	{"CallPark", SKINNY_CALL_PARK},
+	{"Proceed", SKINNY_PROCEED},
+	{"InUseRemotely", SKINNY_IN_USE_REMOTELY},
+	{"InvalidNumber", SKINNY_INVALID_NUMBER},
+	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_call_state2str, SKINNY_CALL_STATES, "CallStateUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2call_state, SKINNY_CALL_STATES, -1)
 
 struct skinny_table SKINNY_DEVICE_RESET_TYPES[] = {
-    {"DeviceReset", SKINNY_DEVICE_RESET},
-    {"DeviceRestart", SKINNY_DEVICE_RESTART},
-    {NULL, 0}
+	{"DeviceReset", SKINNY_DEVICE_RESET},
+	{"DeviceRestart", SKINNY_DEVICE_RESTART},
+	{NULL, 0}
 };
 SKINNY_DECLARE_ID2STR(skinny_device_reset_type2str, SKINNY_DEVICE_RESET_TYPES, "DeviceResetTypeUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2device_reset_type, SKINNY_DEVICE_RESET_TYPES, -1)

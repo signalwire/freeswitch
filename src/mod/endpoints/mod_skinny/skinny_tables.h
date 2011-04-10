@@ -92,7 +92,7 @@ const char *skinny_message_type2str(uint32_t id);
 uint32_t skinny_str2message_type(const char *str);
 #define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)
 
-extern struct skinny_table SKINNY_DEVICE_TYPES[15];
+extern struct skinny_table SKINNY_DEVICE_TYPES[16];
 const char *skinny_device_type2str(uint32_t id);
 uint32_t skinny_str2device_type(const char *str);
 #define SKINNY_PUSH_DEVICE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_DEVICE_TYPES)
