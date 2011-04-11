@@ -58,6 +58,10 @@ struct say_t matrix[7][8] = { {m_00, m_01, m_02, m_03, m_04, m_05, m_06, m_07},
 {m_60, m_61, m_62, m_63, m_64, m_65, m_66, m_67}
 };
 
+
+struct say_cur_t matrix_currency[3] = {c_0, c_1, c_2};
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_say_ru_load);
 SWITCH_MODULE_DEFINITION(mod_say_ru, mod_say_ru_load, NULL, NULL);
 
@@ -253,8 +257,7 @@ static switch_status_t ru_say_money(switch_say_file_handle_t *sh, char *tosay, s
 	int iruble = 0;
 	int ikopecks = 0;
 	int ikopeck = 0;
-
-	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " ru_say_money %s\n", tosay);
+//	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " ru_say_money %s say_opt->currency=%d\n", tosay,say_opt->currency);
 
 	if (strlen(tosay) > 15 || !(tosay = switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1))) {
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
@@ -278,40 +281,48 @@ static switch_status_t ru_say_money(switch_say_file_handle_t *sh, char *tosay, s
 		rubles++;
 	}
 
-	ru_say_count(sh, rubles, male, nominativus);
+
+	ru_say_count(sh, rubles, matrix_currency[say_opt->currency].first_gender,matrix_currency[say_opt->currency].first_cases);
 
 	if (rubles) {
 		irubles = atoi(rubles) % 100;
 		iruble = atoi(rubles) % 10;
 	}
-
-	if (irubles == 1 || (irubles > 20 && iruble == 1)) {	/* рубль */
-		switch_say_file(sh, "currency/ruble");
-	} else if ((irubles > 1 && irubles < 5) || (irubles > 20 && iruble > 1 && iruble < 5)) {	/*рубля */
-		switch_say_file(sh, "currency/ruble-a");
-	} else {					/*рублей */
-		switch_say_file(sh, "currency/rubles");
+	if (iruble<5) {
+	    if ((irubles>10)&&(irubles<15)) {
+		switch_say_file(sh, "currency/%s",matrix_currency->first[5]);
+	    }
+	    else {
+		switch_say_file(sh, "currency/%s",matrix_currency->first[iruble]);
+	    }
 	}
-
+	else {
+	    switch_say_file(sh, "currency/%s",matrix_currency->first[5]);
+	}
+	    
+	    
 	/* Say kopecks */
-	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " %s\n", kopecks);
-	ru_say_count(sh, kopecks, female, nominativus);
+	ru_say_count(sh, kopecks, matrix_currency[say_opt->currency].second_gender,matrix_currency[say_opt->currency].second_cases);
 
 	if (kopecks) {
 		ikopecks = atoi(kopecks) % 100;
 		ikopeck = atoi(kopecks) % 10;
 	}
 
-	if (ikopecks == 1 || (ikopecks > 20 && ikopeck == 1)) {
-		/* копейка */
-		switch_say_file(sh, "currency/kopeck");
-	} else if ((ikopecks > 1 && ikopecks < 5) || (ikopecks > 20 && ikopeck > 1 && ikopeck < 5)) {
-		/* копейки */
-		switch_say_file(sh, "currency/kopeck-i");
-	} else {
-		/* копеек */
-		switch_say_file(sh, "currency/kopecks");
+	if (ikopeck<5) {
+	    if ((ikopecks>10)&&(ikopecks<15)) {
+		switch_say_file(sh, "currency/%s",matrix_currency->second[5]);
+	    }
+	    else {
+    		switch_say_file(sh, "currency/%s",matrix_currency->second[ikopeck]);
+	    }
 	}
+	else {
+	    switch_say_file(sh, "currency/%s",matrix_currency->second[5]);
+	}
+
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -440,6 +451,7 @@ static switch_status_t ru_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		break;
 	case SST_SHORT_DATE_TIME:
 		say_time = 1;
+		tm.tm_sec = 0; // В коротком варианте секунды не проговариваем
 		if (tm.tm_year != tm_now.tm_year) {
 			say_date = 1;
 			break;
@@ -593,7 +605,7 @@ static switch_new_say_callback_ru_t choose_callback(switch_say_args_t *say_args)
 	case SST_CURRENT_TIME:
 		say_cb = ru_say_time;
 		break;
-
+	case SST_SHORT_DATE_TIME:
 	case SST_CURRENT_DATE_TIME:
 		say_cb = ru_say_time;
 		break;
@@ -608,7 +620,7 @@ static switch_new_say_callback_ru_t choose_callback(switch_say_args_t *say_args)
 		say_cb = ru_say_money;
 		break;
 	default:
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);
 		break;
 	}
 
@@ -628,7 +640,9 @@ static switch_status_t run_callback(switch_new_say_callback_ru_t say_cb, char *t
         const char *gender=NULL;
         const char *currency=NULL;
 	say_opt_t say_opt;
-
+	say_opt.cases=0;
+	say_opt.gender=0;
+	say_opt.currency=0;
         if (session) {
                 switch_channel_t *channel = switch_core_session_get_channel(session);
                 switch_channel_get_variables(channel, &var_event);
@@ -692,12 +706,15 @@ static switch_status_t run_callback(switch_new_say_callback_ru_t say_cb, char *t
             
     		}
                 if (currency) {
-		    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!\n", currency);
+		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!\n", currency);
                 
-		    if (strcmp(currency,"rubl") || strcmp(currency,"рубль")) {
+		    if ((strcmp(currency,"ruble")==0) || (strcmp(currency,"рубль")==0)) {
 			say_opt.currency=(currency_t)0;
+//			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "rul!!!  \n");
+			
 		    }
-		    if (strcmp(gender,"dollar") || strcmp(gender,"доллар")) {
+		    if ((strcmp(currency,"dollar")==0) || (strcmp(currency,"доллар")==0)) {
+//			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "dollar!!!  !\n");
 			say_opt.currency=(currency_t)1;
 		    }
 		}

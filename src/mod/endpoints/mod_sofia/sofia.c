@@ -76,14 +76,15 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
-#if 0
+
 	if (status >= 300 && sip && sip->sip_call_id) {
 		char *sql;
 		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+		nua_handle_destroy(nh);
 	}
-#endif
+
 }
 
 #define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri", #varprefix "_params")
@@ -5710,6 +5711,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_core_event_hook_add_state_change(a_session, xfer_hanguphook);
 								switch_channel_set_variable(a_channel, "att_xfer_kill_uuid", switch_core_session_get_uuid(b_session));
 
+								if (profile->media_options & MEDIA_OPT_BYPASS_AFTER_ATT_XFER) {
+									switch_channel_set_flag(a_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+								}
+
+
 								if ((tmp = switch_channel_get_hold_music(a_channel))) {
 									moh = tmp;
 								}
@@ -5766,6 +5772,12 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								}
 
 								switch_channel_set_flag(tchannel, CF_ATTENDED_TRANSFER);
+								switch_core_session_rwunlock(tmp);
+							}
+
+							if ((profile->media_options & MEDIA_OPT_BYPASS_AFTER_ATT_XFER) && (tmp = switch_core_session_locate(br_a))) {
+								switch_channel_t *tchannel = switch_core_session_get_channel(tmp);
+								switch_channel_set_flag(tchannel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 								switch_core_session_rwunlock(tmp);
 							}
 

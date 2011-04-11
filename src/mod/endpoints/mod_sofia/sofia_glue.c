@@ -729,6 +729,8 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 		return;
 	}
 
+	tech_pvt->payload_space = 0;
+
 	switch_assert(tech_pvt->session != NULL);
 
 	if ((abs = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {

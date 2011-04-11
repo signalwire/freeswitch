@@ -1552,7 +1552,8 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 	int argc;
 	char *mydata = NULL;
 	time_t to = 0;
-	int hits = 1;
+	int hits = 0;
+	const char *hp = NULL;
 
 	if (zstr(data) || !(mydata = switch_core_session_strdup(session, data))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID ARGS!\n");
@@ -1582,10 +1583,16 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 		}
 	}
 
-	if (argv[6]) {
-		hits = atoi(argv[6]);
+	if (argv[4] && argv[5]) {
+		hp = argv[6];
+	} else if (argv[4] && !argv[6]) {
+		hp = argv[4];
+	}
+
+	if (hp) {
+		hits = atoi(hp);
 		if (hits < 0) {
-			hits = 1;
+			hits = 0;
 		}
 	}
 
@@ -3629,7 +3636,7 @@ static switch_status_t file_string_file_read(switch_file_handle_t *handle, void 
 		}
 
 		context->samples -= *len;
-		switch_generate_sln_silence((int16_t *) data, *len, 400);
+		memset(data, 255, *len *2);
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		status = switch_core_file_read(&context->fh, data, len);

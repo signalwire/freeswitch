@@ -480,9 +480,13 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	DWORD dwBufSize = BUFSIZE;
 	char base_dir[1024];
 	char *lastbacklash;
+
 	GetModuleFileName(NULL, base_dir, BUFSIZE);
 	lastbacklash = strrchr(base_dir, '\\');
 	base_dir[(lastbacklash - base_dir)] = '\0';
+	/* set base_dir as cwd, to be able to use relative paths in scripting languages (e.g. mod_lua) when FS is running as a service or while debugging FS using visual studio */
+	SetCurrentDirectory(base_dir);
+
 #else
 	char base_dir[1024] = SWITCH_PREFIX_DIR;
 #endif
@@ -1440,7 +1444,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 static void handle_SIGQUIT(int sig)
 {
 	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Quit!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig Quit!\n");
 	return;
 }
 #endif
@@ -1449,7 +1453,7 @@ static void handle_SIGQUIT(int sig)
 static void handle_SIGPIPE(int sig)
 {
 	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Pipe!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig Pipe!\n");
 	return;
 }
 #endif
@@ -1458,7 +1462,7 @@ static void handle_SIGPIPE(int sig)
 static void handle_SIGPOLL(int sig)
 {
 	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Poll!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig Poll!\n");
 	return;
 }
 #endif
@@ -1467,7 +1471,7 @@ static void handle_SIGPOLL(int sig)
 static void handle_SIGIO(int sig)
 {
 	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig I/O!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig I/O!\n");
 	return;
 }
 #endif
@@ -1475,7 +1479,7 @@ static void handle_SIGIO(int sig)
 #ifdef TRAP_BUS
 static void handle_SIGBUS(int sig)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig BUS!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig BUS!\n");
 	return;
 }
 #endif
@@ -1768,27 +1772,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 
 	runtime.runlevel++;
 
-	/* set signal handlers */
-	signal(SIGINT, SIG_IGN);
-#ifdef SIGPIPE
-	signal(SIGPIPE, handle_SIGPIPE);
-#endif
-#ifdef SIGQUIT
-	signal(SIGQUIT, handle_SIGQUIT);
-#endif
-#ifdef SIGPOLL
-	signal(SIGPOLL, handle_SIGPOLL);
-#endif
-#ifdef SIGIO
-	signal(SIGIO, handle_SIGIO);
-#endif
-#ifdef TRAP_BUS
-	signal(SIGBUS, handle_SIGBUS);
-#endif
-#ifdef SIGUSR1
-	signal(SIGUSR1, handle_SIGHUP);
-#endif
-	signal(SIGHUP, handle_SIGHUP);
+	switch_core_set_signal_handlers();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
@@ -1801,6 +1785,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	switch_load_network_lists(SWITCH_FALSE);
 
 	switch_load_core_config("post_load_switch.conf");
+
+	switch_core_set_signal_handlers();
 
 	if (switch_event_create(&event, SWITCH_EVENT_STARTUP) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Ready");
@@ -1864,6 +1850,31 @@ static void win_shutdown(void)
 	}
 }
 #endif
+
+SWITCH_DECLARE(void) switch_core_set_signal_handlers(void)
+{
+	/* set signal handlers */
+	signal(SIGINT, SIG_IGN);
+#ifdef SIGPIPE
+	signal(SIGPIPE, handle_SIGPIPE);
+#endif
+#ifdef SIGQUIT
+	signal(SIGQUIT, handle_SIGQUIT);
+#endif
+#ifdef SIGPOLL
+	signal(SIGPOLL, handle_SIGPOLL);
+#endif
+#ifdef SIGIO
+	signal(SIGIO, handle_SIGIO);
+#endif
+#ifdef TRAP_BUS
+	signal(SIGBUS, handle_SIGBUS);
+#endif
+#ifdef SIGUSR1
+	signal(SIGUSR1, handle_SIGHUP);
+#endif
+	signal(SIGHUP, handle_SIGHUP);
+}
 
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void)
 {

@@ -133,6 +133,7 @@ struct callback_obj {
 	profile_t *profile;
 	switch_core_session_t *session;
 	switch_event_t *event;
+	float sell_rate;
 };
 typedef struct callback_obj callback_t;
 
@@ -666,8 +667,11 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 		r = 0; goto end;
 	}
 
-	
+
 	for (current = cbt->head; current; current = current->next) {
+		if (cbt->sell_rate && cbt->sell_rate > current->rate) {
+			continue;
+		}
 	
 		key = switch_core_sprintf(pool, "%s:%s", additional->gw_prefix, additional->gw_suffix);
 		if (switch_core_hash_find(cbt->dedup_hash, key)) {
@@ -760,10 +764,14 @@ static switch_status_t is_intrastatelata(callback_t *cb_struct)
 	 */
 	if (!cb_struct->lookup_number || strlen(cb_struct->lookup_number) != 11 || *cb_struct->lookup_number != '1' || 
 		!switch_is_number(cb_struct->lookup_number)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, 
+						  "%s doesn't appear to be a NANP number\n", cb_struct->lookup_number);
 		/* dest doesn't appear to be NANP number */
 		return SWITCH_STATUS_GENERR;
 	}
 	if (!cb_struct->cid || strlen(cb_struct->cid) != 11 || *cb_struct->cid != '1' || !switch_is_number(cb_struct->cid)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, 
+						  "%s doesn't appear to be a NANP number\n", cb_struct->cid);
 		/* cid not NANP */
 		return SWITCH_STATUS_GENERR;
 	}
@@ -821,6 +829,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	
 	digits_expanded = expand_digits(cb_struct->pool, digits_copy, cb_struct->profile->quote_in_list);
 	
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "Has NPA NXX: [%u == %u]\n", profile->profile_has_npanxx, SWITCH_TRUE);
 	if (profile->profile_has_npanxx == SWITCH_TRUE) {
 		is_intrastatelata(cb_struct);
 	}
@@ -843,6 +852,10 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	if (cb_struct->session) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "we have a session\n");
 		if ((channel = switch_core_session_get_channel(cb_struct->session))) {
+			const char *sell_rate = switch_channel_get_variable(channel, "sell_rate");
+			if (!zstr(sell_rate)) {
+				cb_struct->sell_rate = atof(sell_rate);
+			}
 			switch_channel_set_variable_var_check(channel, "lcr_rate_field", rate_field, SWITCH_FALSE);
 			switch_channel_set_variable_var_check(channel, "lcr_user_rate_field", user_rate_field, SWITCH_FALSE);
 			switch_channel_set_variable_var_check(channel, "lcr_query_digits", digits_copy, SWITCH_FALSE);
@@ -1062,13 +1075,17 @@ static switch_status_t lcr_load_config()
 				if (zstr(custom_sql)) {
 					/* use default sql */
 					sql_stream.write_function(&sql_stream, 
-											  "SELECT l.digits AS lcr_digits, c.carrier_name AS lcr_carrier_name, l.${lcr_rate_field} AS lcr_rate_field, cg.prefix AS lcr_gw_prefix, cg.suffix AS lcr_gw_suffix, l.lead_strip AS lcr_lead_strip, l.trail_strip AS lcr_trail_strip, l.prefix AS lcr_prefix, l.suffix AS lcr_suffix "
+											  "SELECT l.digits AS lcr_digits, c.carrier_name AS lcr_carrier_name, l.${lcr_rate_field} AS lcr_rate_field, \
+                                                      cg.prefix AS lcr_gw_prefix, cg.suffix AS lcr_gw_suffix, l.lead_strip AS lcr_lead_strip, \
+                                                      l.trail_strip AS lcr_trail_strip, l.prefix AS lcr_prefix, l.suffix AS lcr_suffix "
 											  );
 					if (db_check("SELECT codec from carrier_gateway limit 1") == SWITCH_TRUE) {
 						sql_stream.write_function(&sql_stream, ", cg.codec AS lcr_codec ");
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "codec field defined.\n");
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "codec field not defined, please update your lcr carrier_gateway database schema.\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+										  "codec field not defined, please update your lcr carrier_gateway database schema.\n"
+										  );
 					}
 					if (db_check("SELECT cid from lcr limit 1") == SWITCH_TRUE) {
 						sql_stream.write_function(&sql_stream, ", l.cid AS lcr_cid ");
@@ -1076,12 +1093,15 @@ static switch_status_t lcr_load_config()
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "cid field not defined, please update your lcr database schema.\n");
 					}
-					sql_stream.write_function(&sql_stream, "FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (");
+					sql_stream.write_function(&sql_stream, "FROM lcr l JOIN carriers c ON l.carrier_id=c.id \
+                                                            JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE \
+                                                                 c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (");
 					sql_stream.write_function(&sql_stream, "${lcr_query_expanded_digits}");
 					sql_stream.write_function(&sql_stream, ") AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end ");
 					if (profile->id > 0) {
 						sql_stream.write_function(&sql_stream, "AND lcr_profile=%d ", profile->id);
 					}
+
 					sql_stream.write_function(&sql_stream, "ORDER BY digits DESC%s", 
 															profile->order_by);
 					if (db_random) {
@@ -1880,16 +1900,11 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 				stream->write_function(stream, " has intrastate:\t%s\n", profile->profile_has_intrastate ? "true" : "false");
 				stream->write_function(stream, " has intralata:\t%s\n", profile->profile_has_intralata ? "true" : "false");
 				stream->write_function(stream, " has npanxx:\t%s\n", profile->profile_has_npanxx ? "true" : "false");
-				stream->write_function(stream, " Reorder rate:\t%s\n", 
-										profile->reorder_by_rate ? "enabled" : "disabled");
-				stream->write_function(stream, " Info in headers:\t%s\n", 
-										profile->info_in_headers ? "enabled" : "disabled");
-				stream->write_function(stream, " Quote IN() List:\t%s\n", 
-										profile->quote_in_list ? "enabled" : "disabled");
-				stream->write_function(stream, " Sip Redirection Mode:\t%s\n", 
-										profile->enable_sip_redir ? "enabled" : "disabled");
-				stream->write_function(stream, " Import fields:\t%s\n", 
-					profile->export_fields_str ? profile->export_fields_str : "(null)");
+				stream->write_function(stream, " Reorder rate:\t%s\n", profile->reorder_by_rate ? "enabled" : "disabled");
+				stream->write_function(stream, " Info in headers:\t%s\n", profile->info_in_headers ? "enabled" : "disabled");
+				stream->write_function(stream, " Quote IN() List:\t%s\n", profile->quote_in_list ? "enabled" : "disabled");
+				stream->write_function(stream, " Sip Redirection Mode:\t%s\n", profile->enable_sip_redir ? "enabled" : "disabled");
+				stream->write_function(stream, " Import fields:\t%s\n", profile->export_fields_str ? profile->export_fields_str : "(null)");
 				stream->write_function(stream, " Limit type:\t%s\n", profile->limit_type);
 				stream->write_function(stream, "\n");
 			}

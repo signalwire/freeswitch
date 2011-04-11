@@ -1655,6 +1655,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			const char *ip = NULL, *port = NULL;
 
 			switch_channel_set_flag(channel, CF_PROXY_MODE);
+			if (tech_pvt->rm_encoding) {
+				tech_pvt->rm_encoding = NULL;
+			}
 			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))

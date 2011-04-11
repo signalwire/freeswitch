@@ -113,7 +113,7 @@
     
     <!-- Say -->
     <load module="mod_say_en"/>
-    <load module="mod_say_ru"/>
+    <!-- <load module="mod_say_ru"/> -->
     <!-- <load module="mod_say_zh"/> -->
 
     <!-- Third party modules -->

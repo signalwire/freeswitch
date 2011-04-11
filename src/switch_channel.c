@@ -2661,11 +2661,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 			switch_mutex_unlock(channel->profile_mutex);
 		}
 
-		if (switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE) != SWITCH_STATUS_SUCCESS) {
-			if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
-				switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
-			}
-		}
+		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE);
+		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
+
+
 
 		if ((var = switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
 			switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
@@ -2772,17 +2771,27 @@ SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *chan
 			
 		if (!strncasecmp(var, variable_prefix, strlen(variable_prefix))) {
 			char *arg = NULL;
+			char *p;
+			int bg = 0;
 			x++;
 
 			app = switch_core_session_strdup(channel->session, val);
-				
-			if (strstr(app, "::")) {
+
+			for(p = app; p && *p; p++) {
+				if (*p == ' ') {
+					*p++ = '\0';
+					arg = p;
+					break;
+				} else if (*p == ':' && (*(p+1) == ':')) {
+					bg++;
+					break;
+				}
+			}
+
+			
+			if (bg) {
 				switch_core_session_execute_application_async(channel->session, app, arg);
 			} else {
-				if ((arg = strchr(app, ' '))) {
-					*arg++ = '\0';
-				}
-				
 				switch_core_session_execute_application(channel->session, app, arg);
 			}
 		}
@@ -2861,10 +2870,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 					  channel->name);
 
 
-	if (switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE) != SWITCH_STATUS_SUCCESS) {
-		if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
-			switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
-		}
+	switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE);
+
+	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
 	}
 
 	if ((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE)) && !zstr(var)) {
