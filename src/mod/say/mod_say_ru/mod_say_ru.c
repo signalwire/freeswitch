@@ -605,7 +605,7 @@ static switch_new_say_callback_ru_t choose_callback(switch_say_args_t *say_args)
 	case SST_CURRENT_TIME:
 		say_cb = ru_say_time;
 		break;
-
+	case SST_SHORT_DATE_TIME:
 	case SST_CURRENT_DATE_TIME:
 		say_cb = ru_say_time;
 		break;
