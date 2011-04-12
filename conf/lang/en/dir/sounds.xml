@@ -99,7 +99,7 @@
 				<action function="play-file" data="directory/dir-for_next.wav"/>
 				<action function="play-file" data="directory/dir-press.wav"/>
 				<action function="say" data="$2" method="pronounced" type="name_spelled"/>
-				<action function="play-file" data="directory/dir-for_prev.wav"/>
+				<action function="play-file" data="directory/dir-for_previous.wav"/>
 				<action function="play-file" data="directory/dir-press.wav"/>
 				<action function="say" data="$3" method="pronounced" type="name_spelled"/>
 				<action function="play-file" data="directory/dir-start_new_search.wav"/>
