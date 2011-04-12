@@ -502,8 +502,9 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		private_info->roll = TIMER_MATRIX[timer->interval].roll;
 		private_info->ready = 1;
 
-		if (timer->interval > 0 && timer->interval < MS_PER_TICK) {
-			MS_PER_TICK = timer->interval;
+		if (timer->interval > 0 && (timer->interval < MS_PER_TICK || (timer->interval % 10) != 0)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Increasing global timer resolution to 1ms to handle interval %d\n", timer->interval);
+			MS_PER_TICK = 1;
 			switch_time_sync();
 		}
 
