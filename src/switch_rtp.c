@@ -2670,10 +2670,11 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 			break;
 		case zrtp_status_drop:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
-			bytes = 0;
+			*bytes = 0;
 			break;
 		case zrtp_status_fail:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+			*bytes = 0;
 			break;
 		default:
 			break;
