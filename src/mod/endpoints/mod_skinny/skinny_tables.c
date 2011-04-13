@@ -65,6 +65,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{FEATURE_STAT_REQ_MESSAGE, "FeatureStatReqMessage"},
 	{DEVICE_TO_USER_DATA_VERSION1_MESSAGE, "DeviceToUserDataVersion1Message"},
 	{DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE, "DeviceToUserDataResponseVersion1Message"},
+	{DIALED_PHONE_BOOK_MESSAGE, "DialedPhoneBookMessage"},
 	{REGISTER_ACK_MESSAGE, "RegisterAckMessage"},
 	{START_TONE_MESSAGE, "StartToneMessage"},
 	{STOP_TONE_MESSAGE, "StopToneMessage"},
@@ -102,6 +103,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{DISPLAY_PRI_NOTIFY_MESSAGE, "DisplayPriNotifyMessage"},
 	{SERVICE_URL_STAT_RES_MESSAGE, "ServiceUrlStatMessage"},
 	{USER_TO_DEVICE_DATA_VERSION1_MESSAGE, "UserToDeviceDataVersion1Message"},
+	{DIALED_PHONE_BOOK_ACK_MESSAGE, "DialedPhoneBookAckMessage"},
 	{XML_ALARM_MESSAGE, "XMLAlarmMessage"},
 	{0, NULL}
 };

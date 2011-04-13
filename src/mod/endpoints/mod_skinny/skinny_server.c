@@ -2012,6 +2012,22 @@ switch_status_t skinny_handle_extended_data_message(listener_t *listener, skinny
 
 	return SWITCH_STATUS_SUCCESS;
 }
+switch_status_t skinny_handle_dialed_phone_book_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_message_t *message;
+
+	skinny_check_data_length(request, sizeof(request->data.dialed_phone_book));
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.dialed_phone_book_ack));
+	message->type = DIALED_PHONE_BOOK_ACK_MESSAGE;
+	message->length = 4 + sizeof(message->data.dialed_phone_book_ack);
+	message->data.dialed_phone_book_ack.number_index = request->data.dialed_phone_book.number_index;
+	message->data.dialed_phone_book_ack.line_instance = request->data.dialed_phone_book.line_instance;
+	message->data.dialed_phone_book_ack.unknown = request->data.dialed_phone_book.unknown;
+	message->data.dialed_phone_book_ack.unknown2 = 0;
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 switch_status_t skinny_handle_xml_alarm(listener_t *listener, skinny_message_t *request)
 {
@@ -2106,6 +2122,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_extended_data_message(listener, request);
 		case DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE:
 			return skinny_handle_extended_data_message(listener, request);
+		case DIALED_PHONE_BOOK_MESSAGE:
+			return skinny_handle_dialed_phone_book_message(listener, request);
 		case XML_ALARM_MESSAGE:
 			return skinny_handle_xml_alarm(listener, request);
 		default:
