@@ -520,7 +520,7 @@ SWITCH_STANDARD_API(timer_test_function)
 		timer_name = argv[2];
 	}
 
-	if (mss != 10 && mss != 20 && mss != 30 && mss != 40 && mss != 60 && mss != 120) {
+	if (mss != 10 && mss != 20 && mss != 30 && mss != 32 && mss != 40 && mss != 60 && mss != 120) {
 		stream->write_function(stream, "parameter missing: %s\n", TIMER_TEST_SYNTAX);
 		goto end;
 	}

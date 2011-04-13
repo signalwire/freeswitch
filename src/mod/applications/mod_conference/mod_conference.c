@@ -2998,14 +2998,14 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
   end:
 
-	for(;;) {
-		switch_mutex_lock(member->audio_out_mutex);                                                                                    
+	while(!no_data) {
+		switch_mutex_lock(member->audio_out_mutex);
 		if ((rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data_buf, data_buf_len))) {
 			len = (switch_size_t) rlen / sizeof(int16_t);
 			switch_core_file_write(&fh, data_buf, &len);
 		} else {
-			break;
-		}                                                                                                                                         
+			no_data = 1;
+		}
 		switch_mutex_unlock(member->audio_out_mutex);
 	}
 
