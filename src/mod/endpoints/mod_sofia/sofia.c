@@ -7047,8 +7047,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 
 		if (!gateway && gw_param_name) {
-			gateway = sofia_reg_find_gateway(gw_param_name);
-			extension = gateway->real_extension;
+			if ((gateway = sofia_reg_find_gateway(gw_param_name))) {
+				extension = gateway->real_extension;
+			}
 		}
 
 		if (gateway) {
