@@ -1902,7 +1902,14 @@ switch_status_t skinny_headset_status_message(listener_t *listener, skinny_messa
 {
 	skinny_check_data_length(request, sizeof(request->data.headset_status));
 
-	/* Nothing to do */
+	switch(request->data.headset_status.mode) {
+		case 1:
+			listener->headset = SKINNY_ACCESSORY_STATE_OFFHOOK;
+			break;
+		default:
+			listener->headset = SKINNY_ACCESSORY_STATE_ONHOOK;
+			break;
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2028,6 +2035,24 @@ switch_status_t skinny_handle_dialed_phone_book_message(listener_t *listener, sk
 
 	return SWITCH_STATUS_SUCCESS;
 }
+switch_status_t skinny_handle_accessory_status_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_check_data_length(request, sizeof(request->data.accessory_status));
+
+	switch(request->data.accessory_status.accessory_id) {
+		case SKINNY_ACCESSORY_HEADSET:
+			listener->headset = request->data.accessory_status.accessory_status;
+			break;
+		case SKINNY_ACCESSORY_HANDSET:
+			listener->handset = request->data.accessory_status.accessory_status;
+			break;
+		case SKINNY_ACCESSORY_SPEAKER:
+			listener->speaker = request->data.accessory_status.accessory_status;
+			break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 switch_status_t skinny_handle_xml_alarm(listener_t *listener, skinny_message_t *request)
 {
@@ -2124,6 +2149,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_extended_data_message(listener, request);
 		case DIALED_PHONE_BOOK_MESSAGE:
 			return skinny_handle_dialed_phone_book_message(listener, request);
+		case ACCESSORY_STATUS_MESSAGE:
+			return skinny_handle_accessory_status_message(listener, request);
 		case XML_ALARM_MESSAGE:
 			return skinny_handle_xml_alarm(listener, request);
 		default:

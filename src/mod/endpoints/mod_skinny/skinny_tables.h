@@ -87,7 +87,7 @@ uint32_t func(const char *str)\
     }
 
 
-extern struct skinny_table SKINNY_MESSAGE_TYPES[71];
+extern struct skinny_table SKINNY_MESSAGE_TYPES[72];
 const char *skinny_message_type2str(uint32_t id);
 uint32_t skinny_str2message_type(const char *str);
 #define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)
@@ -247,6 +247,27 @@ extern struct skinny_table SKINNY_DEVICE_RESET_TYPES[3];
 const char *skinny_device_reset_type2str(uint32_t id);
 uint32_t skinny_str2device_reset_type(const char *str);
 #define SKINNY_PUSH_DEVICE_RESET_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_DEVICE_RESET_TYPES)
+
+enum skinny_accessory_types {
+	SKINNY_ACCESSORY_NONE = 0x00,
+	SKINNY_ACCESSORY_HEADSET = 0x01,
+	SKINNY_ACCESSORY_HANDSET = 0x02,
+	SKINNY_ACCESSORY_SPEAKER = 0x03
+};
+extern struct skinny_table SKINNY_ACCESSORY_TYPES[5];
+const char *skinny_accessory_type2str(uint32_t id);
+uint32_t skinny_str2accessory_type(const char *str);
+#define SKINNY_PUSH_ACCESSORY_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_ACCESSORY_TYPES)
+
+enum skinny_accessory_states {
+	SKINNY_ACCESSORY_STATE_NONE = 0x00,
+	SKINNY_ACCESSORY_STATE_OFFHOOK = 0x01,
+	SKINNY_ACCESSORY_STATE_ONHOOK = 0x02
+};
+extern struct skinny_table SKINNY_ACCESSORY_STATES[4];
+const char *skinny_accessory_state2str(uint32_t id);
+uint32_t skinny_str2accessory_state(const char *str);
+#define SKINNY_PUSH_ACCESSORY_STATES SKINNY_DECLARE_PUSH_MATCH(SKINNY_ACCESSORY_STATES)
 
 #endif /* _SKINNY_TABLES_H */
 

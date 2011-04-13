@@ -178,7 +178,7 @@ struct PACKED soft_key_event_message {
 /* HeadsetStatusMessage */
 #define HEADSET_STATUS_MESSAGE 0x002B
 struct PACKED headset_status_message {
-    uint32_t mode;
+    uint32_t mode; /* 1=HeadsetOn; 2=HeadsetOff */
 };
 
 /* RegisterAvailableLinesMessage */
@@ -241,6 +241,14 @@ struct PACKED dialed_phone_book_message {
 	uint32_t line_instance;
 	uint32_t unknown;
 	char phone_number[256];
+};
+
+/* AccessoryStatusMessage */
+#define ACCESSORY_STATUS_MESSAGE 0x0049
+struct PACKED accessory_status_message {
+	uint32_t accessory_id;
+	uint32_t accessory_status;
+	uint32_t unknown;
 };
 
 /* RegisterAckMessage */
@@ -633,6 +641,7 @@ union skinny_data {
 	/* see field "extended_data" for DEVICE_TO_USER_DATA_VERSION1_MESSAGE */
 	/* see field "extended_data" for DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE */
 	struct dialed_phone_book_message dialed_phone_book;
+	struct accessory_status_message accessory_status;
 	struct register_ack_message reg_ack;
 	struct start_tone_message start_tone;
 	struct stop_tone_message stop_tone;
