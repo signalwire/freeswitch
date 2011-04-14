@@ -289,6 +289,8 @@ SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t 
 		switch_mutex_lock(sql_manager.dbh_mutex);
 		(*dbh)->last_used = switch_epoch_time_now(NULL);
 
+		(*dbh)->io_mutex = NULL;
+		
 		if ((*dbh)->use_count) {
 			if (--(*dbh)->use_count == 0) {
 				(*dbh)->thread_hash = 1;
