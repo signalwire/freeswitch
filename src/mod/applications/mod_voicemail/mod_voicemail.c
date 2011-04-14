@@ -204,6 +204,36 @@ static switch_status_t vm_execute_sql(vm_profile_t *profile, char *sql, switch_m
 	return status;
 }
 
+char *vm_execute_sql2str(vm_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
+{
+	switch_cache_db_handle_t *dbh = NULL;
+
+	char *ret = NULL;
+
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+	if (!(dbh = vm_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
+	}
+
+	ret = switch_cache_db_execute_sql2str(dbh, sql, resbuf, len, NULL);
+
+end:
+
+	switch_cache_db_release_db_handle(&dbh);
+
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+
+	return ret;
+
+}
+
+
 static switch_bool_t vm_execute_sql_callback(vm_profile_t *profile, switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback,
 											 void *pdata)
 {
@@ -4480,6 +4510,704 @@ SWITCH_STANDARD_API(voicemail_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+struct msg_get_callback {
+	switch_event_t *my_params;
+};
+typedef struct msg_get_callback msg_get_callback_t;
+
+static int message_get_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	msg_get_callback_t *cbt = (msg_get_callback_t *) pArg;
+
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-Received-Epoch", "%s", argv[0]);
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-Read-Epoch", "%s", argv[1]);
+	/*	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, user, argv[2], 255); */
+	/*	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, domain, argv[3], 255); */
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-UUID", "%s", argv[4]);
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-Caller-Name", "%s", argv[5]);
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-Caller-Number", "%s", argv[6]);
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-Folder", "%s", argv[7]);
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-File-Path", "%s", argv[8]);
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-Duration", "%s", argv[9]);
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-Flags", "%s", argv[10]);
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-Read-Flags", "%s", argv[11]);
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, "VM-Message-Forwarded-By", "%s", argv[12]);
+
+	return 0;
+}
+
+struct msg_lst_callback {
+	char *buf;
+	size_t len;
+	switch_event_t *my_params;
+};
+typedef struct msg_lst_callback msg_lst_callback_t;
+
+static int message_list_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	msg_lst_callback_t *cbt = (msg_lst_callback_t *) pArg;
+	char *varname = NULL;
+	/* Message # never start with 0 */
+	varname = switch_mprintf("VM-List-Message-%ld-UUID", ++cbt->len);
+	switch_event_add_header(cbt->my_params, SWITCH_STACK_BOTTOM, varname, "%s", argv[0]);
+	switch_safe_free(varname);
+	return 0;
+}
+
+static int message_purge_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	const char *profile_name = argv[0];
+	const char *uuid = argv[1];
+	const char *id = argv[2];
+	const char *domain = argv[3];
+	const char *file_path = argv[4];
+	char *sql;
+	vm_profile_t *profile = get_profile(profile_name);
+
+	if (unlink(file_path) != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
+	} else {
+		sql = switch_mprintf("DELETE FROM voicemail_msgs WHERE username='%q' AND domain='%q' AND uuid = '%q'", id, domain, uuid);
+		vm_execute_sql(profile, sql, profile->mutex);
+		switch_safe_free(sql);
+	}
+	profile_rwunlock(profile);
+
+	return 0;
+}
+
+/* Preference API */
+#define VM_FSDB_PREF_GREETING_SET_USAGE "<profile> <domain> <user> <slot> [file-path]"
+SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
+{
+	int slot = -1;
+	const char *file_path = NULL;
+	char *sql = NULL;
+	char res[254] = "";
+
+	char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[0])
+		profile_name = argv[0];
+	if (argv[1])
+		domain = argv[1];
+	if (argv[2])
+		id = argv[2];
+	if (argv[3])
+		slot = atoi(argv[3]);
+	if (argv[4])
+		file_path = argv[4];
+
+	if (!profile_name || !domain || !id || !slot) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	} else {
+		char *dir_path = switch_core_sprintf(pool, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
+				SWITCH_PATH_SEPARATOR,
+				SWITCH_PATH_SEPARATOR,
+				profile->name, SWITCH_PATH_SEPARATOR, domain, SWITCH_PATH_SEPARATOR, id);
+		char *final_file_path = switch_core_sprintf(pool, "%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, slot, profile->file_ext);
+
+		if (file_path) {
+			if (switch_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
+				stream->write_function(stream, "-ERR Filename doesn't exist\n");
+				profile_rwunlock(profile);
+				goto done;
+			}
+
+			switch_file_rename(file_path, final_file_path, pool);
+		}
+
+		if (switch_file_exists(final_file_path, pool) == SWITCH_STATUS_SUCCESS) {
+
+			sql = switch_mprintf("SELECT count(*) FROM voicemail_prefs WHERE username = '%q' AND domain = '%q'", id, domain);
+			vm_execute_sql2str(profile, profile->mutex, sql, res, sizeof(res));
+			switch_safe_free(sql);
+
+			if (atoi(res) == 0) {
+				sql = switch_mprintf("INSERT INTO voicemail_prefs (username, domain, greeting_path) VALUES('%q', '%q', '%q')", id, domain, final_file_path);
+			} else {
+				sql = switch_mprintf("UPDATE voicemail_prefs SET greeting_path = '%q' WHERE username = '%q' AND domain = '%q'", final_file_path, id, domain);
+			}
+			vm_execute_sql(profile, sql, profile->mutex);
+			switch_safe_free(sql);
+		} else {
+			stream->write_function(stream, "-ERR Recording doesn't exist [%s]\n", final_file_path);
+		}
+		profile_rwunlock(profile);
+	}
+
+	stream->write_function(stream, "-OK\n");
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define VM_FSDB_PREF_RECNAME_SET_USAGE "<profile> <domain> <user> <file-path>"
+SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
+{
+	const char *file_path = NULL;
+
+	char *sql = NULL;
+	char res[254] = "";
+
+	char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[0])
+		profile_name = argv[0];
+	if (argv[1])
+		domain = argv[1];
+	if (argv[2])
+		id = argv[2];
+	if (argv[3])
+		file_path = argv[3];
+
+	if (!profile_name || !domain || !id || !file_path) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+
+	if (switch_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "-ERR Filename doesn't exist\n");
+		profile_rwunlock(profile);
+		goto done;
+	}
+
+	sql = switch_mprintf("SELECT count(*) FROM voicemail_prefs WHERE username = '%q' AND domain = '%q'", id, domain);
+	vm_execute_sql2str(profile, profile->mutex, sql, res, sizeof(res));
+	switch_safe_free(sql);
+
+	if (atoi(res) == 0) {
+		sql = switch_mprintf("INSERT INTO voicemail_prefs (username, domain, name_path) VALUES('%q', '%q', '%q')", id, domain, file_path);
+	} else {
+		sql = switch_mprintf("UPDATE voicemail_prefs SET name_path = '%q' WHERE username = '%q' AND domain = '%q'", file_path, id, domain);
+	}
+	vm_execute_sql(profile, sql, profile->mutex);
+	switch_safe_free(sql);
+	{
+		char *dir_path = switch_core_sprintf(pool, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
+				SWITCH_PATH_SEPARATOR,
+				SWITCH_PATH_SEPARATOR,
+				profile->name, SWITCH_PATH_SEPARATOR, domain, SWITCH_PATH_SEPARATOR, id);
+		char *final_file_path = switch_core_sprintf(pool, "%s%srecorded_name.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
+
+		if (switch_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "-ERR Filename doesn't exist\n");
+			profile_rwunlock(profile);
+			goto done;
+		}
+
+		switch_file_rename(file_path, final_file_path, pool);
+
+	}
+	profile_rwunlock(profile);
+	stream->write_function(stream, "-OK\n");
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define VM_FSDB_PREF_PASSWORD_SET_USAGE "<profile> <domain> <user> <password>"
+SWITCH_STANDARD_API(vm_fsdb_pref_password_set_function)
+{
+	const char *password = NULL;
+
+	char *sql = NULL;
+	char res[254] = "";
+
+	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[0])
+		profile_name = argv[0];
+	if (argv[1])
+		domain = argv[1];
+	if (argv[2])
+		id = argv[2];
+	if (argv[3])
+		password = argv[3];
+
+	if (!profile_name || !domain || !id || !password) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+
+	sql = switch_mprintf("SELECT count(*) FROM voicemail_prefs WHERE username = '%q' AND domain = '%q'", id, domain);
+	vm_execute_sql2str(profile, profile->mutex, sql, res, sizeof(res));
+	switch_safe_free(sql);
+
+	if (atoi(res) == 0) {
+		sql = switch_mprintf("INSERT INTO voicemail_prefs (username, domain, password) VALUES('%q', '%q', '%q')", id, domain, password);
+	} else {
+		sql = switch_mprintf("UPDATE voicemail_prefs SET password = '%q' WHERE username = '%q' AND domain = '%q'", password, id, domain);
+	}
+	vm_execute_sql(profile, sql, profile->mutex);
+	switch_safe_free(sql);
+	profile_rwunlock(profile);
+
+	stream->write_function(stream, "-OK\n");
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+/* Message API */
+
+#define VM_FSDB_MSG_LIST_USAGE "<format> <profile> <domain> <user>"
+SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
+{
+	char *sql;
+	msg_lst_callback_t cbt = { 0 };
+	char *ebuf = NULL;
+
+	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[1])
+		profile_name = argv[1];
+	if (argv[2])
+		domain = argv[2];
+	if (argv[3])
+		id = argv[3];
+
+	if (!profile_name || !domain || !id) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+	sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND read_epoch = 0 ORDER BY read_flags, created_epoch", id, domain);
+
+	memset(&cbt, 0, sizeof(cbt));
+
+	switch_event_create(&cbt.my_params, SWITCH_EVENT_REQUEST_PARAMS);
+
+	vm_execute_sql_callback(profile, profile->mutex, sql, message_list_callback, &cbt);
+
+	profile_rwunlock(profile);
+
+	switch_event_add_header(cbt.my_params, SWITCH_STACK_BOTTOM, "VM-List-Count", "%ld", cbt.len);
+	switch_event_serialize_json(cbt.my_params, &ebuf);
+	switch_event_destroy(&cbt.my_params);
+
+	switch_safe_free(sql);
+	stream->write_function(stream, "%s", ebuf);
+	switch_safe_free(ebuf);
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define VM_FSDB_MSG_PURGE_USAGE "<profile> <domain> <user>"
+SWITCH_STANDARD_API(vm_fsdb_msg_purge_function)
+{
+	char *sql;
+	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[0])
+		profile_name = argv[0];
+	if (argv[1])
+		domain = argv[1];
+	if (argv[2])
+		id = argv[2];
+
+	if (!profile_name || !domain || !id) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+
+	sql = switch_mprintf("SELECT '%q', uuid, username, domain, file_path FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND flags = 'delete'", profile_name, id, domain);
+	vm_execute_sql_callback(profile, profile->mutex, sql, message_purge_callback, NULL);
+	profile_rwunlock(profile);
+
+	stream->write_function(stream, "-OK\n");
+
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define VM_FSDB_MSG_DELETE_USAGE "<profile> <domain> <user> <uuid>"
+SWITCH_STANDARD_API(vm_fsdb_msg_delete_function)
+{
+	char *sql;
+	const char *uuid = NULL;
+
+	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[0])
+		profile_name = argv[0];
+	if (argv[1])
+		domain = argv[1];
+	if (argv[2])
+		id = argv[2];
+	if (argv[3])
+		uuid = argv[3];
+
+	if (!profile_name || !domain || !id || !uuid) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+
+	sql = switch_mprintf("UPDATE voicemail_msgs SET flags = 'delete' WHERE username = '%q' AND domain = '%q' AND uuid = '%q'", id, domain, uuid);
+	vm_execute_sql(profile, sql, profile->mutex);
+	profile_rwunlock(profile);
+
+	stream->write_function(stream, "-OK\n");
+
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define VM_FSDB_MSG_SAVE_USAGE "<profile> <domain> <user> <uuid>"
+SWITCH_STANDARD_API(vm_fsdb_msg_save_function)
+{
+	char *sql;
+	const char *uuid = NULL;
+
+	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[0])
+		profile_name = argv[0];
+	if (argv[1])
+		domain = argv[1];
+	if (argv[2])
+		id = argv[2];
+	if (argv[3])
+		uuid = argv[3];
+
+	if (!profile_name || !domain || !id || !uuid) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+
+	sql = switch_mprintf("UPDATE voicemail_msgs SET flags='save' WHERE username='%q' AND domain='%q' AND uuid = '%q'", id, domain, uuid);
+	vm_execute_sql(profile, sql, profile->mutex);
+	profile_rwunlock(profile);
+
+	stream->write_function(stream, "-OK\n");
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define VM_FSDB_MSG_UNDELETE_USAGE "<profile> <domain> <user> <uuid>"
+SWITCH_STANDARD_API(vm_fsdb_msg_undelete_function)
+{
+	char *sql;
+	const char *uuid = NULL;
+
+	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[0])
+		profile_name = argv[0];
+	if (argv[1])
+		domain = argv[1];
+	if (argv[2])
+		id = argv[2];
+	if (argv[3])
+		uuid = argv[3];
+
+	if (!profile_name || !domain || !id || !uuid) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+
+	sql = switch_mprintf("UPDATE voicemail_msgs SET flags='' WHERE username='%q' AND domain='%q' AND uuid = '%q'", id, domain, uuid);
+	vm_execute_sql(profile, sql, profile->mutex);
+	profile_rwunlock(profile);
+	
+	stream->write_function(stream, "-OK\n");
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define VM_FSDB_MSG_GET_USAGE "<format> <profile> <domain> <user> <uuid>"
+SWITCH_STANDARD_API(vm_fsdb_msg_get_function)
+{
+	char *sql;
+	msg_get_callback_t cbt = { 0 };
+	char *ebuf = NULL;
+	char *uuid = NULL;
+
+	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[1])
+		profile_name = argv[1];
+	if (argv[2])
+		domain = argv[2];
+	if (argv[3])
+		id = argv[3];
+	if (argv[4])
+		uuid = argv[4];
+
+	if (!profile_name || !domain || !id || !uuid) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+
+	sql = switch_mprintf("SELECT * FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND uuid = '%q' ORDER BY read_flags, created_epoch", id, domain, uuid);
+
+
+	memset(&cbt, 0, sizeof(cbt));
+
+	switch_event_create(&cbt.my_params, SWITCH_EVENT_REQUEST_PARAMS);
+
+	vm_execute_sql_callback(profile, profile->mutex, sql, message_get_callback, &cbt);
+
+	profile_rwunlock(profile);
+
+	switch_event_serialize_json(cbt.my_params, &ebuf);
+	switch_event_destroy(&cbt.my_params);
+
+	switch_safe_free(sql);
+	stream->write_function(stream, "%s", ebuf);
+	switch_safe_free(ebuf);
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define VM_FSDB_MSG_COUNT_USAGE "<format> <profile> <domain> <user>"
+SWITCH_STANDARD_API(vm_fsdb_msg_count_function)
+{
+	char *sql;
+	msg_cnt_callback_t cbt = { 0 };
+	switch_event_t *my_params = NULL;
+	char *ebuf = NULL;
+
+	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[1])
+		profile_name = argv[1];
+	if (argv[2])
+		domain = argv[2];
+	if (argv[3])
+		id = argv[3];
+
+	if (!profile_name || !domain || !id) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+
+	sql = switch_mprintf(
+			"SELECT 1, read_flags, count(read_epoch) FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND in_folder = '%q' AND read_epoch = 0 GROUP BY read_flags "
+			"UNION "
+			"SELECT 0, read_flags, count(read_epoch) FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND in_folder = '%q' AND read_epoch <> 0 GROUP BY read_flags;",
+			id, domain, "inbox",
+			id, domain, "inbox");
+
+
+	vm_execute_sql_callback(profile, profile->mutex, sql, message_count_callback, &cbt);
+
+	profile_rwunlock(profile);
+
+	switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_event_add_header(my_params, SWITCH_STACK_BOTTOM, "VM-Total-New-Messages", "%d", cbt.total_new_messages + cbt.total_new_urgent_messages);
+	switch_event_add_header(my_params, SWITCH_STACK_BOTTOM, "VM-Total-New-Urgent-Messages", "%d", cbt.total_new_urgent_messages);
+	switch_event_add_header(my_params, SWITCH_STACK_BOTTOM, "VM-Total-Saved-Messages", "%d", cbt.total_saved_messages + cbt.total_saved_urgent_messages);
+	switch_event_add_header(my_params, SWITCH_STACK_BOTTOM, "VM-Total-Saved-Urgent-Messages", "%d", cbt.total_saved_urgent_messages);
+	switch_event_serialize_json(my_params, &ebuf);
+	switch_event_destroy(&my_params);
+
+	switch_safe_free(sql);
+	stream->write_function(stream, "%s", ebuf);
+	switch_safe_free(ebuf);
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 {
 	switch_application_interface_t *app_interface;
@@ -4520,6 +5248,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 	SWITCH_ADD_API(commands_api_interface, "vm_delete", "vm_delete", voicemail_delete_api_function, VM_DELETE_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_read", "vm_read", voicemail_read_api_function, VM_READ_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_list", "vm_list", voicemail_list_api_function, VM_LIST_USAGE);
+
+	/* Message Targeted API */
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_count", "vm_fsdb_msg_count", vm_fsdb_msg_count_function, VM_FSDB_MSG_COUNT_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_list", "vm_fsdb_msg_list", vm_fsdb_msg_list_function, VM_FSDB_MSG_LIST_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_get", "vm_fsdb_msg_get", vm_fsdb_msg_get_function, VM_FSDB_MSG_GET_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_delete", "vm_fsdb_msg_delete", vm_fsdb_msg_delete_function, VM_FSDB_MSG_DELETE_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_undelete", "vm_fsdb_msg_undelete", vm_fsdb_msg_undelete_function, VM_FSDB_MSG_UNDELETE_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_purge", "vm_fsdb_msg_purge", vm_fsdb_msg_purge_function, VM_FSDB_MSG_PURGE_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_save", "vm_fsdb_msg_save", vm_fsdb_msg_save_function, VM_FSDB_MSG_SAVE_USAGE);
+
+	/* Preferences */
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_pref_greeting_set", "vm_fsdb_pref_greeting_set", vm_fsdb_pref_greeting_set_function, VM_FSDB_PREF_GREETING_SET_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_pref_recname_set", "vm_fsdb_pref_recname_set", vm_fsdb_pref_recname_set_function, VM_FSDB_PREF_RECNAME_SET_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_pref_password_set", "vm_fsdb_pref_password_set", vm_fsdb_pref_password_set_function, VM_FSDB_PREF_PASSWORD_SET_USAGE);
 
 	return SWITCH_STATUS_SUCCESS;
 }
