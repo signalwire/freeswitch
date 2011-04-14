@@ -2110,8 +2110,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if (!from_display && !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
 			from_str = switch_core_session_sprintf(session, "<%s>", use_from_str);
 		} else {
-			from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", from_display ? from_display :
-												   tech_pvt->caller_profile->caller_id_name, use_from_str);
+			char *name = switch_core_session_strdup(session, from_display ? from_display : tech_pvt->caller_profile->caller_id_name);
+			check_decode(name, session);
+			from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", name, use_from_str);
 		}
 
 		if (!(call_id = switch_channel_get_variable(channel, "sip_invite_call_id"))) {
