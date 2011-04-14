@@ -1320,6 +1320,9 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 	char *max_streams = argv[5];
 	char *port = argv[6];
 	char *codec_string = argv[7];
+	char *headset = argv[8];
+	char *handset = argv[9];
+	char *speaker = argv[10];
 
 	const char *line = "=================================================================================================";
 	stream->write_function(stream, "%s\n", line);
@@ -1332,6 +1335,12 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 	stream->write_function(stream, "MaxStreams    \t%s\n", max_streams);
 	stream->write_function(stream, "Port          \t%s\n", port);
 	stream->write_function(stream, "Codecs        \t%s\n", codec_string);
+	stream->write_function(stream, "HeadsetId     \t%s\n", headset);
+	stream->write_function(stream, "Headset       \t%s\n", skinny_accessory_state2str(atoi(headset)));
+	stream->write_function(stream, "HandsetId     \t%s\n", handset);
+	stream->write_function(stream, "Handset       \t%s\n", skinny_accessory_state2str(atoi(handset)));
+	stream->write_function(stream, "SpeakerId     \t%s\n", speaker);
+	stream->write_function(stream, "Speaker       \t%s\n", skinny_accessory_state2str(atoi(speaker)));
 	stream->write_function(stream, "%s\n", line);
 
 	return 0;
@@ -1340,7 +1349,7 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, switch_stream_handle_t *stream)
 {
 	char *sql;
-	if ((sql = switch_mprintf("SELECT name, user_id, instance, ip, type, max_streams, port, codec_string "
+	if ((sql = switch_mprintf("SELECT name, user_id, instance, ip, type, max_streams, port, codec_string, headset, handset, speaker "
 			"FROM skinny_devices WHERE name='%s'",
 			device_name))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql, dump_device_callback, stream);
