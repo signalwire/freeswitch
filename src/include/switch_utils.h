@@ -500,6 +500,23 @@ static inline char *switch_clean_string(char *s)
 }
 
 
+static inline char *switch_clean_name_string(char *s)
+{
+	char *p;
+	for (p = s; p && *p; p++) {
+		uint8_t x = (uint8_t) * p;
+		if ((x < 32) ||	x == '\'' || x == '"' || x == '<' || x == '>' || x == '\\' || x == ':' || x == '@' || x == '/') {
+			*p = ' ';
+		}
+		if ( (p == s) && (*p == ' ') ) {
+			s++;
+		}
+	}
+
+	return s;
+}
+
+
 
 /*!
   \brief Free a pointer and set it to NULL unless it already is NULL
