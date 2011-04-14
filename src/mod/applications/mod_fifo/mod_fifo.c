@@ -1238,7 +1238,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		struct call_helper *h = cbh->rows[i];
 		char *parsed = NULL;
 
-		switch_event_create_brackets(h->originate_string, '{', '}', ',', &ovars, &parsed);
+		switch_event_create_brackets(h->originate_string, '{', '}', ',', &ovars, &parsed, SWITCH_TRUE);
 		switch_event_del_header(ovars, "fifo_outbound_uuid");
 		
 		if (!h->timeout) h->timeout = node->ring_timeout;
@@ -3870,7 +3870,7 @@ static void extract_fifo_outbound_uuid(char *string, char *uuid, switch_size_t l
 	
 	switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
 	
-	switch_event_create_brackets(string, '{', '}', ',', &ovars, &parsed);
+	switch_event_create_brackets(string, '{', '}', ',', &ovars, &parsed, SWITCH_TRUE);
 	
 	if ((fifo_outbound_uuid = switch_event_get_header(ovars, "fifo_outbound_uuid"))) {
 		switch_snprintf(uuid, len, "%s", fifo_outbound_uuid);

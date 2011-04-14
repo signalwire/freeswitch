@@ -1075,17 +1075,21 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a, char b, char c, switch_event_t **event, char **new_data)
+SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a, char b, char c, switch_event_t **event, char **new_data, switch_bool_t dup)
 {
-	char *vdata, *vdatap;
+	char *vdata, *vdatap = NULL;
 	char *end, *check_a, *check_b;
 	switch_event_t *e = *event;
 	char *var_array[1024] = { 0 };
 	int var_count = 0;
 	char *next;
-	
-	vdatap = strdup(data);
-	vdata = vdatap;
+
+	if (dup) {
+		vdatap = strdup(data);
+		vdata = vdatap;
+	} else {
+		vdata = data;
+	}
 
 	end = switch_find_end_paren(vdata, a, b);
 	
@@ -1103,7 +1107,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 		vdata++;
 		*end++ = '\0';
 	} else {
-		free(vdatap);
+		if (dup) {
+			free(vdatap);
+		}
 		return SWITCH_STATUS_FALSE;
 	}
 	
@@ -1121,7 +1127,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 				next = pnext + 1;
 			}
 		}
-						
+			
+
+		if (vdata) {
+			if (*vdata == '^' && *(vdata + 1) == '^') {
+				vdata += 2;
+				c = *vdata++;
+			}
+		}
+			
 		if ((var_count = switch_separate_string(vdata, c, var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
 			int x = 0;
 			for (x = 0; x < var_count; x++) {
@@ -1130,6 +1144,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 
 				if ((inner_var_count = switch_separate_string(var_array[x], '=',
 															  inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing variable [%s]=[%s]\n", inner_var_array[0], inner_var_array[1]);
 					switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
 				}
 			}
@@ -1144,9 +1159,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 	}
 
 	*event = e;
-	*new_data = strdup(end);
-	free(vdatap);
 
+	if (dup) {
+		*new_data = strdup(end);
+		free(vdatap);
+	} else {
+		*new_data = end;
+	}
+	
 	return SWITCH_STATUS_SUCCESS;
 
 }
