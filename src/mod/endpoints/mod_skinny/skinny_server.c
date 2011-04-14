@@ -1900,16 +1900,20 @@ switch_status_t skinny_handle_soft_key_template_request(listener_t *listener, sk
 
 switch_status_t skinny_headset_status_message(listener_t *listener, skinny_message_t *request)
 {
+	char *sql;
+
 	skinny_check_data_length(request, sizeof(request->data.headset_status));
 
-	switch(request->data.headset_status.mode) {
-		case 1:
-			listener->headset = SKINNY_ACCESSORY_STATE_OFFHOOK;
-			break;
-		default:
-			listener->headset = SKINNY_ACCESSORY_STATE_ONHOOK;
-			break;
+	if ((sql = switch_mprintf(
+			"UPDATE skinny_devices SET headset=%d WHERE name='%s' and instance=%d",
+			(request->data.headset_status.mode==1) ? SKINNY_ACCESSORY_STATE_OFFHOOK : SKINNY_ACCESSORY_STATE_ONHOOK,
+			listener->device_name,
+			listener->device_instance
+			))) {
+		skinny_execute_sql(listener->profile, sql, listener->profile->sql_mutex);
+		switch_safe_free(sql);
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2037,17 +2041,43 @@ switch_status_t skinny_handle_dialed_phone_book_message(listener_t *listener, sk
 }
 switch_status_t skinny_handle_accessory_status_message(listener_t *listener, skinny_message_t *request)
 {
+	char *sql;
+
 	skinny_check_data_length(request, sizeof(request->data.accessory_status));
 
 	switch(request->data.accessory_status.accessory_id) {
 		case SKINNY_ACCESSORY_HEADSET:
-			listener->headset = request->data.accessory_status.accessory_status;
+			if ((sql = switch_mprintf(
+					"UPDATE skinny_devices SET headset=%d WHERE name='%s' and instance=%d",
+					request->data.accessory_status.accessory_status,
+					listener->device_name,
+					listener->device_instance
+					))) {
+				skinny_execute_sql(listener->profile, sql, listener->profile->sql_mutex);
+				switch_safe_free(sql);
+			}
 			break;
 		case SKINNY_ACCESSORY_HANDSET:
-			listener->handset = request->data.accessory_status.accessory_status;
+			if ((sql = switch_mprintf(
+					"UPDATE skinny_devices SET handset=%d WHERE name='%s' and instance=%d",
+					request->data.accessory_status.accessory_status,
+					listener->device_name,
+					listener->device_instance
+					))) {
+				skinny_execute_sql(listener->profile, sql, listener->profile->sql_mutex);
+				switch_safe_free(sql);
+			}
 			break;
 		case SKINNY_ACCESSORY_SPEAKER:
-			listener->speaker = request->data.accessory_status.accessory_status;
+			if ((sql = switch_mprintf(
+					"UPDATE skinny_devices SET speaker=%d WHERE name='%s' and instance=%d",
+					request->data.accessory_status.accessory_status,
+					listener->device_name,
+					listener->device_instance
+					))) {
+				skinny_execute_sql(listener->profile, sql, listener->profile->sql_mutex);
+				switch_safe_free(sql);
+			}
 			break;
 	}
 

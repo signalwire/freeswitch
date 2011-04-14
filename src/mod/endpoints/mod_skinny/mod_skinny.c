@@ -58,7 +58,10 @@ static char devices_sql[] =
 	"   type             INTEGER,\n"
 	"   max_streams      INTEGER,\n"
 	"   port             INTEGER,\n"
-	"   codec_string     VARCHAR(255)\n"
+	"   codec_string     VARCHAR(255),\n"
+	"   headset          INTEGER,\n"
+	"   handset          INTEGER,\n"
+	"   speaker          INTEGER\n"
 	");\n";
 
 static char lines_sql[] =
@@ -1916,10 +1919,10 @@ static switch_status_t load_skinny_config(void)
 					switch_odbc_handle_exec(profile->master_odbc, active_lines_sql, NULL, NULL);
 				} else {
 					if ((db = switch_core_db_open_file(profile->dbname))) {
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_devices", NULL, devices_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_lines", NULL, lines_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_buttons", NULL, buttons_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_active_lines", NULL, active_lines_sql);
+						switch_core_db_test_reactive(db, "SELECT headset FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_lines", "DROP TABLE skinny_lines", lines_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_buttons", "DROP TABLE skinny_buttons", buttons_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_active_lines", "DROP TABLE skinny_active_lines", active_lines_sql);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 						continue;

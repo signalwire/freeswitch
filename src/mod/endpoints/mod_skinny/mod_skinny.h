@@ -136,9 +136,6 @@ struct listener {
 	char device_name[16];
 	uint32_t device_instance;
 	uint32_t device_type;
-	uint32_t headset;
-	uint32_t handset;
-	uint32_t speaker;
 
 	char firmware_version[16];
 	char *soft_key_set_set;
