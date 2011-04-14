@@ -4860,7 +4860,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 
 	profile_rwunlock(profile);
 
-	switch_event_add_header(cbt.my_params, SWITCH_STACK_BOTTOM, "VM-List-Count", "%ld", cbt.len);
+	switch_event_add_header(cbt.my_params, SWITCH_STACK_BOTTOM, "VM-List-Count", "%"SWITCH_SIZE_T_FMT, cbt.len);
 	switch_event_serialize_json(cbt.my_params, &ebuf);
 	switch_event_destroy(&cbt.my_params);
 
