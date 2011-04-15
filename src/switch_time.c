@@ -433,7 +433,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 
 SWITCH_DECLARE(void) switch_cond_next(void)
 {
-	if (globals.timer_count >= runtime.tipping_point) {
+	if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
 		os_yield();
 		return;
 	}
@@ -510,7 +510,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 
 		switch_mutex_lock(globals.mutex);
 		globals.timer_count++;
-		if (globals.timer_count == (runtime.tipping_point + 1)) {
+		if (runtime.tipping_point && globals.timer_count == (runtime.tipping_point + 1)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Crossed tipping point of %u, shifting into high-gear.\n", runtime.tipping_point);
 		}
 		switch_mutex_unlock(globals.mutex);
@@ -593,7 +593,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
 
-		if (globals.timer_count >= runtime.tipping_point) {
+		if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
 			os_yield();
 			globals.use_cond_yield = 0;
 		} else {
@@ -660,7 +660,7 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 	switch_mutex_lock(globals.mutex);
 	if (globals.timer_count) {
 		globals.timer_count--;
-		if (globals.timer_count == (runtime.tipping_point - 1)) {
+		if (runtime.tipping_point && globals.timer_count == (runtime.tipping_point - 1)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Fell Below tipping point of %u, shifting into low-gear.\n", runtime.tipping_point);
 		}
 	}
@@ -780,7 +780,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				rev_errs = 0;
 			}
 
-			if (globals.timer_count >= runtime.tipping_point) {
+			if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
 				os_yield();
 			} else {
 				if (tfd > -1 && globals.RUNNING == 1) {
