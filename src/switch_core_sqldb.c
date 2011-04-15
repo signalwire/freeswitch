@@ -201,9 +201,11 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_CORE_DB, &options, file, func, line);
 	}
 
+	/* I *think* we can do without this now, if not let me know 
 	if (r == SWITCH_STATUS_SUCCESS && !(*dbh)->io_mutex) {
 		(*dbh)->io_mutex = sql_manager.io_mutex;
 	}
+	*/
 
 	return r;
 }

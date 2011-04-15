@@ -291,6 +291,7 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 	switch_queue_t *queue = (switch_queue_t *) obj;
 	uint32_t index = 0;
 	int my_id = 0;
+	int auto_pause = 0;
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
 	THREAD_COUNT++;
@@ -306,6 +307,14 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 		void *pop = NULL;
 		switch_event_t *event = NULL;
 		int loops = 0;
+
+		if (auto_pause) {
+			if (!--auto_pause) {
+				switch_core_session_ctl(SCSC_PAUSE_INBOUND, &auto_pause);
+			} else {
+				switch_cond_next();
+			}
+		}
 
 		if (switch_queue_pop(queue, &pop) != SWITCH_STATUS_SUCCESS) {
 			break;
@@ -323,8 +332,22 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 
 		while (event) {
 
+
 			if (++loops > 2) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event system overloading\n");
+				uint32_t last_sps = 0, sess_count = switch_core_session_count();
+				if (auto_pause) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event system *still* overloading.\n");
+				} else {
+					switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
+					last_sps = (uint32_t) (float) (last_sps * 0.75f);
+					sess_count = (uint32_t) (float) (sess_count * 0.75f);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+									  "Event system overloading. Taking a 10 second break, Reducing max_sessions to %d %dsps\n", sess_count, last_sps);
+					switch_core_session_limit(sess_count);
+					switch_core_session_ctl(SCSC_SPS, &last_sps);
+					auto_pause = 10;
+					switch_core_session_ctl(SCSC_PAUSE_INBOUND, &auto_pause);
+				}
 				switch_yield(1000000);
 			}
 
