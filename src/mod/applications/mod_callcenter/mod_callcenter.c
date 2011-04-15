@@ -656,8 +656,6 @@ static cc_queue_t *load_queue(const char *queue_name)
 	cc_queue_t *queue = NULL;
 	switch_xml_t x_queues, x_queue, cfg, xml;
 	switch_event_t *event = NULL;
-	switch_cache_db_handle_t *dbh = NULL;
-	char *sql = NULL;
 
 	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
@@ -700,30 +698,10 @@ static cc_queue_t *load_queue(const char *queue_name)
 		queue->last_agent_exist = 0;
 		queue->last_agent_exist_check = 0;
 
-		if (!(dbh = cc_get_db_handle())) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
-			goto end;
-		}
-
-		switch_cache_db_test_reactive(dbh, "select count(session_uuid) from members", "drop table members", members_sql);
-		switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", NULL, "alter table agents add ready_time integer not null default 0;"
-											"alter table agents add reject_delay_time integer not null default 0;"
-											"alter table agents add busy_delay_time  integer not null default 0;");
-		switch_cache_db_test_reactive(dbh, "select count(no_answer_delay_time) from agents", NULL, "alter table agents add no_answer_delay_time integer not null default 0;");
-		switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", "drop table agents", agents_sql);
-		switch_cache_db_test_reactive(dbh, "select count(queue) from tiers", "drop table tiers" , tiers_sql);
 		switch_mutex_init(&queue->mutex, SWITCH_MUTEX_NESTED, queue->pool);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added queue %s\n", queue->name);
 		switch_core_hash_insert(globals.queue_hash, queue->name, queue);
 
-		/* Reset a unclean shutdown */
-		sql = switch_mprintf("UPDATE agents SET state = 'Waiting', uuid = '' WHERE system = 'single_box';"
-				"UPDATE tiers SET state = 'Ready' WHERE agent IN (SELECT name FROM agents WHERE system = 'single_box');"
-				"UPDATE members SET state = '%q', session_uuid = '' WHERE system = 'single_box';",
-					cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
-
-		cc_execute_sql(NULL, sql, NULL);
-		switch_safe_free(sql);
 	}
 
 end:
@@ -1262,11 +1240,15 @@ end:
 
 static switch_status_t load_config(void)
 {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent, x_tiers, x_tier;
-
+	switch_cache_db_handle_t *dbh = NULL;
+	char *sql = NULL;
+	
 	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
-		return SWITCH_STATUS_TERM;
+		status = SWITCH_STATUS_TERM;
+		goto end;
 	}
 
 	switch_mutex_lock(globals.mutex);
@@ -1296,6 +1278,30 @@ static switch_status_t load_config(void)
 	if (!globals.dbname) {
 		globals.dbname = strdup(CC_SQLITE_DB_NAME);
 	}
+
+	/* Initialize database */
+	if (!(dbh = cc_get_db_handle())) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
+		status = SWITCH_STATUS_TERM;
+		goto end;
+	}
+	switch_cache_db_test_reactive(dbh, "select count(session_uuid) from members", "drop table members", members_sql);
+	switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", NULL, "alter table agents add ready_time integer not null default 0;"
+									   "alter table agents add reject_delay_time integer not null default 0;"
+									   "alter table agents add busy_delay_time  integer not null default 0;");
+	switch_cache_db_test_reactive(dbh, "select count(no_answer_delay_time) from agents", NULL, "alter table agents add no_answer_delay_time integer not null default 0;");
+	switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", "drop table agents", agents_sql);
+	switch_cache_db_test_reactive(dbh, "select count(queue) from tiers", "drop table tiers" , tiers_sql);
+
+	switch_cache_db_release_db_handle(&dbh);
+
+	/* Reset a unclean shutdown */
+	sql = switch_mprintf("update agents set state = 'Waiting', uuid = '' where system = 'single_box';"
+						 "update tiers set state = 'Ready' where agent IN (select name from agents where system = 'single_box');"
+						 "update members set state = '%q', session_uuid = '' where system = 'single_box';",
+						 cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
+	cc_execute_sql(NULL, sql, NULL);
+	switch_safe_free(sql);
 
 	/* Loading queue into memory struct */
 	if ((x_queues = switch_xml_child(cfg, "queues"))) {
@@ -1342,11 +1348,14 @@ static switch_status_t load_config(void)
 		}
 	}
 
+end:
 	switch_mutex_unlock(globals.mutex);
 
-	switch_xml_free(xml);
+	if (xml) {
+		switch_xml_free(xml);
+	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *thread, void *obj)
