@@ -943,7 +943,7 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 				cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 				switch_safe_free(sql);
 				if (!switch_strlen_zero(res)) {
-					switch_core_session_hupall_matching_var("cc_member_uuid", res, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+					switch_core_session_hupall_matching_var("cc_member_pre_answer_uuid", res, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 				}
 			}
 
@@ -2113,6 +2113,8 @@ struct member_thread_helper {
 	const char *queue_name;
 	const char *member_uuid;
 	const char *member_session_uuid;
+	const char *member_cid_name;
+	const char *member_cid_number;
 	switch_time_t t_member_called;
 	cc_member_cancel_reason_t member_cancel_reason;
 
@@ -2146,6 +2148,7 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 		}
 		/* Make the Caller Leave if he went over his max wait time */
 		if (queue->max_wait_time > 0 && queue->max_wait_time <= switch_epoch_time_now(NULL) - m->t_member_called) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait time\n", m->member_cid_name, m->member_cid_number, m->queue_name);
 			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_TIMEOUT;
 			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
 		}
@@ -2153,6 +2156,7 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 		/* Will drop the caller if no agent was found for more than X seconds */
 		if (queue->max_wait_time_with_no_agent > 0 && m->t_member_called < queue->last_agent_exist_check - queue->max_wait_time_with_no_agent_time_reached &&
 				queue->last_agent_exist_check - queue->last_agent_exist >= queue->max_wait_time_with_no_agent) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait with no agent time\n", m->member_cid_name, m->member_cid_number, m->queue_name);
 			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
 			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
 		}
@@ -2371,6 +2375,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 	h->pool = pool;
 	h->member_uuid = switch_core_strdup(h->pool, member_uuid);
 	h->member_session_uuid = switch_core_strdup(h->pool, member_session_uuid);
+	h->member_cid_name = switch_core_strdup(h->pool, switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
+	h->member_cid_number = switch_core_strdup(h->pool, switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
 	h->queue_name = switch_core_strdup(h->pool, queue_name);
 	h->t_member_called = t_member_called;
 	h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NONE;
@@ -2443,7 +2449,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_safe_free(sql);
 
 		/* Hangup any callback agents  */
-		switch_core_session_hupall_matching_var("cc_member_uuid", member_uuid, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+		switch_core_session_hupall_matching_var("cc_member_pre_answer_uuid", member_uuid, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 
 		/* Generate an event */
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
