@@ -187,7 +187,7 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 
 static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen, 
 					   switch_port_t port,
-					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map, int verbose_sdp)
+					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map, int verbose_sdp, int secure)
 {
 	int i = 0;
 	int rate;
@@ -195,7 +195,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	int ptime = 0, noptime = 0;
 	
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP", 
-					port, (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) ? "S" : "");
+					port, secure ? "S" : "");
 				
 	
 
@@ -312,6 +312,11 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
 
+	if (secure) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
+		//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
+	}
+
 	if (!cng_type) {
 		//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d CN/8000\n", cng_type);
 		//} else {
@@ -333,7 +338,6 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	if (sr) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=%s\n", sr);
 	}
-
 }
 
 void sofia_glue_check_dtmf_type(private_object_t *tech_pvt) 
@@ -529,7 +533,11 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		if (sr) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=%s\n", sr);
 		}
-		
+	
+		if (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
+			//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
+		}
 
 	} else if (tech_pvt->num_codecs) {
 		int i;
@@ -545,7 +553,15 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		}
 
 		if (!switch_true(switch_channel_get_variable(tech_pvt->channel, "sdp_m_per_ptime"))) {
-			generate_m(tech_pvt, buf, sizeof(buf), port, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp);
+			char *bp = buf;
+			
+			if ((!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE))) {
+				generate_m(tech_pvt, buf, sizeof(buf), port, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 1);
+				bp = (buf + strlen(buf));
+			}
+
+			generate_m(tech_pvt, bp, sizeof(buf) - strlen(buf), port, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 0);
+
 		} else {
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
@@ -558,8 +574,15 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 				this_ptime = imp->microseconds_per_packet / 1000;
 				
 				if (cur_ptime != this_ptime) {
-					cur_ptime = this_ptime;
-					generate_m(tech_pvt, buf, sizeof(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp);
+					char *bp = buf;
+					cur_ptime = this_ptime;			
+
+					if ((!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE))) {
+						generate_m(tech_pvt, buf, sizeof(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 1);
+						bp = (buf + strlen(buf));
+					}
+					
+					generate_m(tech_pvt, bp, sizeof(buf) - strlen(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 0);
 				}
 				
 			}
@@ -567,11 +590,6 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	}
 	
-	if (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
-		//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
-	}
-
 	if (sofia_test_flag(tech_pvt, TFLAG_VIDEO)) {
 		if (!tech_pvt->local_sdp_video_port) {
 			sofia_glue_tech_choose_video_port(tech_pvt, 0);
