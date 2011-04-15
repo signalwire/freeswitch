@@ -1576,6 +1576,8 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 		switch_channel_answer(rchannel);
 	}
 
+	switch_channel_mark_hold(rchannel, SWITCH_FALSE);
+
 	switch_channel_set_state_flag(rchannel, CF_TRANSFER);
 	switch_channel_set_state(rchannel, CS_PARK);
 

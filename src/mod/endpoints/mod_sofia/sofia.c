@@ -7150,7 +7150,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				const char *data = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE);
 
 				if (app && data && !strcasecmp(app, "conference")) {
-					destination_number = switch_core_session_sprintf(b_session, "answer,conference:%s", data);
+					destination_number = switch_core_session_sprintf(session, "answer,conference:%s", data);
 					dialplan = "inline";
 				} else {
 					if (switch_core_session_check_interface(b_session, sofia_endpoint_interface)) {
@@ -7188,7 +7188,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 							if (!one_leg &&
 								(!b_tech_pvt || !sofia_test_flag(b_tech_pvt, TFLAG_SIP_HOLD)) &&
 								(!c_tech_pvt || !sofia_test_flag(c_tech_pvt, TFLAG_SIP_HOLD))) {
-								char *ext = switch_core_session_sprintf(b_session, "answer,conference:%s@sla+flags{mintwo}", uuid);
+								char *ext = switch_core_session_sprintf(session, "answer,conference:%s@sla+flags{mintwo}", uuid);
 
 								switch_channel_set_flag(c_channel, CF_REDIRECT);
 								switch_ivr_session_transfer(b_session, ext, "inline", NULL);
@@ -7200,16 +7200,17 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 						}
 
 						if (do_conf) {
-							destination_number = switch_core_session_sprintf(b_session, "answer,conference:%s@sla+flags{mintwo}", uuid);
+							destination_number = switch_core_session_sprintf(session, "answer,conference:%s@sla+flags{mintwo}", uuid);
 						} else {
 							if (one_leg && c_app) {
 								if (c_data) {
-									destination_number = switch_core_session_sprintf(b_session, "answer,%s:%s", c_app, c_data);
+									destination_number = switch_core_session_sprintf(session, "answer,%s:%s", c_app, c_data);
 								} else {
-									destination_number = switch_core_session_sprintf(b_session, "answer,%s", c_app);
+									destination_number = switch_core_session_sprintf(session, "answer,%s", c_app);
 								}
 							} else {
-								destination_number = switch_core_session_sprintf(b_session, "answer,intercept:%s", uuid);
+								switch_channel_mark_hold(b_channel, SWITCH_FALSE);
+								destination_number = switch_core_session_sprintf(session, "answer,intercept:%s", uuid);
 							}
 						}
 

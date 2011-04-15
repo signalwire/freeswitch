@@ -634,6 +634,10 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 {
 	switch_event_t *event;
 
+	if (!!on == !!switch_channel_test_flag(channel, CF_LEG_HOLDING)) {
+		return;
+	}
+	
 	if (on) {
 		switch_channel_set_flag(channel, CF_LEG_HOLDING);
 	} else {
