@@ -1,0 +1,137 @@
+<configuration name="protovm.conf" description="ProtoVoicemailIVR">
+<profiles>
+	<profile name="default">
+		<apis>
+			<api name="auth_login" value="vm_fsdb_auth_login" />
+			<api name="msg_list" value="vm_fsdb_msg_list" />
+			<api name="msg_count" value="vm_fsdb_msg_count" />
+			<api name="msg_delete" value="vm_fsdb_msg_delete" />
+			<api name="msg_undelete" value="vm_fsdb_msg_undelete" />
+			<api name="msg_save" value="vm_fsdb_msg_save" />
+			<api name="msg_purge" value="vm_fsdb_msg_purge" />
+			<api name="msg_get" value="vm_fsdb_msg_get" />
+			<api name="pref_greeting_set" value="vm_fsdb_pref_greeting_set" />
+			<api name="pref_recname_set" value="vm_fsdb_pref_recname_set" />
+			<api name="pref_password_set" value="vm_fsdb_pref_password_set" />
+		</apis>
+		<menus>
+			<menu name="std_authenticate">
+			<phrases>
+				<phrase name="fail_auth" value="protovm_fail_auth" />
+			</phrases>
+			<keys>
+			</keys>
+			</menu>
+
+			<menu name="std_authenticate_ask_user">
+			<phrases>
+				<phrase name="instructions" value="protovm_enter_id" />
+			</phrases>
+			<keys>
+				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" /> <!-- TODO Make the ivrengine: parsed and the key configurable -->
+			</keys>
+			</menu>
+
+			<menu name="std_authenticate_ask_password">
+			<phrases>
+				<phrase name="instructions" value="protovm_enter_pass" />
+			</phrases>
+			<keys>
+				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" /> <!-- TODO Make the ivrengine: parsed and the key configurable -->
+			</keys>
+			</menu>
+
+			<menu name="std_navigator">
+			<phrases>
+				<phrase name="msg_count" value="protovm_message_count" />
+				<phrase name="say_date" value="protovm_say_date_event" />
+				<phrase name="say_msg_number" value="protovm_say_message_number" />
+				<phrase name="menu_options" value="protovm_listen_file_check" />
+				<phrase name="ack" value="protovm_ack" />
+				<phrase name="play_message" value="protovm_play_message" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="skip_intro" variable="VM-Key-Main-Listen-File" />
+				<key dtmf="6" action="next_msg" variable="VM-Key-Main-Next-Msg" />
+				<key dtmf="4" action="prev_msg" />
+				<key dtmf="7" action="delete_msg" variable="VM-Key-Main-Delete-File" /> <!-- Same key for undelete if it already deleted -->
+				<key dtmf="3" action="save_msg" variable="VM-Key-Main-Save-File" />
+				<key dtmf="5" action="menu:std_preference" />
+			</keys>
+			</menu>
+
+			<menu name="std_preference">
+			<phrases>
+				<phrase name="menu_options" value="protovm_config_menu" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="menu:std_record_greeting_with_slot" variable="VM-Key-Record-Greeting" />
+				<key dtmf="2" action="menu:std_select_greeting_slot" variable="VM-Key-Choose-Greeting" />
+				<key dtmf="3" action="menu:std_record_name" variable="VM-Key-Record-Name" />
+				<key dtmf="6" action="menu:std_set_password" variable="VM-Key-Change-Password" />
+				<key dtmf="0" action="return" variable="VM-Key-Main-Menu" />
+			</keys>
+			</menu>
+
+			<menu name="std_record_greeting">
+			<phrases>
+				<phrase name="instructions" value="voicemail_record_greeting" />
+				<phrase name="play_recording" value="protovm_play_recording" />
+				<phrase name="menu_options" value="protovm_record_file_check" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="listen" variable="VM-Key-Listen-File" />
+				<key dtmf="3" action="save" variable="VM-Key-Save-File" />
+				<key dtmf="4" action="rerecord" variable="VM-Key-ReRecord-File" />
+				<key dtmf="#" action="skip_instruction" />
+			</keys>
+			</menu>
+
+
+			<menu name="std_record_name">
+			<phrases>
+				<phrase name="instructions" value="protovm_record_name" />
+				<phrase name="play_recording" value="protovm_play_recording" />
+				<phrase name="menu_options" value="protovm_record_file_check" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="listen" variable="VM-Key-Listen-File" />
+				<key dtmf="3" action="save" variable="VM-Key-Save-File" />
+				<key dtmf="4" action="rerecord" variable="VM-Key-ReRecord-File" />
+				<key dtmf="#" action="skip_instruction" />
+			</keys>
+			</menu>
+
+		    
+
+			<menu name="std_select_greeting_slot">
+			<phrases>
+				<phrase name="instructions" value="protovm_choose_greeting" />
+				<phrase name="invalid_slot" value="protovm_choose_greeting_fail" />
+				<phrase name="selected_slot" value="protovm_greeting_selected" />
+			</phrases>
+			<keys>
+			</keys>
+			</menu>
+
+			<menu name="std_record_greeting_with_slot">
+			<phrases>
+				<phrase name="instructions" value="protovm_choose_greeting" />
+			</phrases>
+			<keys>
+			</keys>
+			</menu>
+
+			<menu name="std_set_password">
+			<phrases>
+				<phrase name="instructions" value="protovm_enter_pass" />
+			</phrases>
+			<keys>
+			</keys>
+			</menu>
+		</menus>
+	</profile>
+</profiles>
+</configuration>
+
+
