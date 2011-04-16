@@ -5074,6 +5074,109 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define VM_FSDB_AUTH_LOGIN_USAGE "<profile> <domain> <user> <password>"
+SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
+{
+	char *sql;
+	char *password = NULL;
+
+	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	char user_db_password[64] = { 0 };
+	const char *user_xml_password = NULL;
+
+	switch_event_t *params = NULL;
+	switch_xml_t x_user = NULL;
+	switch_bool_t vm_enabled = SWITCH_TRUE;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[0])
+		profile_name = argv[0];
+	if (argv[1])
+		domain = argv[1];
+	if (argv[2])
+		id = argv[2];
+	if (argv[3])
+		password = argv[3];
+
+	if (!profile_name || !domain || !id || !password) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+
+	switch_event_create(&params, SWITCH_EVENT_GENERAL);
+	if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, params) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain);
+		stream->write_function(stream, "-ERR User not found\n");
+	} else {
+		switch_xml_t x_param, x_params;
+	
+		x_params = switch_xml_child(x_user, "params");
+
+		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+			const char *var = switch_xml_attr_soft(x_param, "name");
+			const char *val = switch_xml_attr_soft(x_param, "value");
+			if (zstr(var) || zstr(val)) {
+				continue; /* Ignore empty entires */
+			}
+
+			if (!strcasecmp(var, "vm-enabled")) {
+				vm_enabled = !switch_false(val);
+			}					
+			if (!strcasecmp(var, "vm-password")) {
+				user_xml_password = val;
+			}  
+		}
+
+		sql = switch_mprintf("SELECT password FROM voicemail_prefs WHERE username = '%q' AND domain = '%q'", id, domain);
+		vm_execute_sql2str(profile, profile->mutex, sql, user_db_password, sizeof(user_db_password));
+		switch_safe_free(sql);
+	}
+
+	if (vm_enabled == SWITCH_FALSE) {
+		stream->write_function(stream, "%s", "-ERR Login Denied");
+	} else if (!zstr(user_db_password)) {
+		if (!strcasecmp(user_db_password, password)) {
+			stream->write_function(stream, "%s", "-OK");
+		} else {
+			stream->write_function(stream, "%s", "-ERR");
+		}
+	} else if (!zstr(user_xml_password)) {
+		if (!strcasecmp(user_xml_password, password)) {
+			stream->write_function(stream, "%s", "-OK");
+		} else {
+			stream->write_function(stream, "%s", "-ERR");
+		}
+	} else {
+		stream->write_function(stream, "%s", "-ERR");
+
+	}
+
+	switch_xml_free(x_user);
+	profile_rwunlock(profile);
+done:
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define VM_FSDB_MSG_GET_USAGE "<format> <profile> <domain> <user> <uuid>"
 SWITCH_STANDARD_API(vm_fsdb_msg_get_function)
 {
@@ -5118,7 +5221,6 @@ SWITCH_STANDARD_API(vm_fsdb_msg_get_function)
 	}
 
 	sql = switch_mprintf("SELECT * FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND uuid = '%q' ORDER BY read_flags, created_epoch", id, domain, uuid);
-
 
 	memset(&cbt, 0, sizeof(cbt));
 
@@ -5248,6 +5350,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 	SWITCH_ADD_API(commands_api_interface, "vm_delete", "vm_delete", voicemail_delete_api_function, VM_DELETE_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_read", "vm_read", voicemail_read_api_function, VM_READ_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_list", "vm_list", voicemail_list_api_function, VM_LIST_USAGE);
+
+	/* Auth API */
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_auth_login", "vm_fsdb_auth_login", vm_fsdb_auth_login_function, VM_FSDB_AUTH_LOGIN_USAGE);
 
 	/* Message Targeted API */
 	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_count", "vm_fsdb_msg_count", vm_fsdb_msg_count_function, VM_FSDB_MSG_COUNT_USAGE);
