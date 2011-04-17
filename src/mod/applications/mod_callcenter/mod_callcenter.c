@@ -1995,37 +1995,61 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	cbt.record_template = queue_record_template;
 	cbt.agent_found = SWITCH_FALSE;
 	
-	if (!strcasecmp(queue->strategy, "longest-idle-agent")) {
-		sql_order_by = switch_mprintf("level, agents.last_offered_call, position");
-	} else if (!strcasecmp(queue_strategy, "agent-with-least-talk-time")) {
-		sql_order_by = switch_mprintf("level, agents.talk_time, position");
-	} else if (!strcasecmp(queue_strategy, "agent-with-fewest-calls")) {
-		sql_order_by = switch_mprintf("level, agents.calls_answered, position");
-	} else if (!strcasecmp(queue_strategy, "ring-all")) {
-		sql = switch_mprintf("UPDATE members SET state = '%q' WHERE state = '%q' AND uuid = '%q' AND system = 'single_box'",
-				cc_member_state2str(CC_MEMBER_STATE_TRYING), cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid);
-		cc_execute_sql(NULL, sql, NULL);
-		switch_safe_free(sql);
-		sql_order_by = switch_mprintf("level, position");
-	} else if(!strcasecmp(queue_strategy, "sequentially-by-agent-order")) {
-		sql_order_by = switch_mprintf("level, position, agents.last_offered_call"); /* Default to last_offered_call, let add new strategy if needing it differently */
-	} else {
-		/* If the strategy doesn't exist, just fallback to the following */
-		sql_order_by = switch_mprintf("level, position, agents.last_offered_call");
-	}
+	if (!strcasecmp(queue->strategy, "sequentially-by-next-agent-order")) {
+		/* This is a quick attempt to continue to the last tried agent using the position order */
+		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level, agents.type, agents.uuid, tiers.position, agents.last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+				" WHERE tiers.queue = '%q'"
+				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
+				" AND tiers.position > (SELECT tiers.position FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) ORDER BY agents.last_offered_call WHERE tiers.queue = '%q' DESC LIMIT 1)"
+				" AND tiers.level = (SELECT tiers.level FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' ORDER BY agents.last_offered_call DESC LIMIT 1)"
+				" UNION "
+				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level, agents.type, agents.uuid, tiers.position, agents.last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+				" WHERE tiers.queue = '%q'"
+				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
+				" ORDER BY dyn_order asc, tiers.level, tiers.position, agents.last_offered_call",
+				queue_name,
+				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
+				queue_name,
+				queue_name,
+				queue_name,
+				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND)
+				);
 
-	sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level, agents.type, agents.uuid FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
-			" WHERE tiers.queue = '%q'"
-			" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
-			" ORDER BY %q",
-			queue_name,
-			cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
-			sql_order_by);
+	} else {
+
+		if (!strcasecmp(queue->strategy, "longest-idle-agent")) {
+			sql_order_by = switch_mprintf("level, agents.last_offered_call, position");
+		} else if (!strcasecmp(queue_strategy, "agent-with-least-talk-time")) {
+			sql_order_by = switch_mprintf("level, agents.talk_time, position");
+		} else if (!strcasecmp(queue_strategy, "agent-with-fewest-calls")) {
+			sql_order_by = switch_mprintf("level, agents.calls_answered, position");
+		} else if (!strcasecmp(queue_strategy, "ring-all")) {
+			sql = switch_mprintf("UPDATE members SET state = '%q' WHERE state = '%q' AND uuid = '%q' AND system = 'single_box'",
+					cc_member_state2str(CC_MEMBER_STATE_TRYING), cc_member_state2str(CC_MEMBER_STATE_WAITING), cbt.member_uuid);
+			cc_execute_sql(NULL, sql, NULL);
+			switch_safe_free(sql);
+			sql_order_by = switch_mprintf("level, position");
+		} else if(!strcasecmp(queue_strategy, "sequentially-by-agent-order")) {
+			sql_order_by = switch_mprintf("level, position, agents.last_offered_call"); /* Default to last_offered_call, let add new strategy if needing it differently */
+		} else {
+			/* If the strategy doesn't exist, just fallback to the following */
+			sql_order_by = switch_mprintf("level, position, agents.last_offered_call");
+		}
+
+		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level, agents.type, agents.uuid FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+				" WHERE tiers.queue = '%q'"
+				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
+				" ORDER BY %q",
+				queue_name,
+				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
+				sql_order_by);
+		switch_safe_free(sql_order_by);
+
+	}
 
 	cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, agents_callback, &cbt /* Call back variables */);
 
 	switch_safe_free(sql);
-	switch_safe_free(sql_order_by);
 
 	/* We update a field in the queue struct so we can kick caller out if waiting for too long with no agent */
 	if (!cbt.queue_name || !(queue = get_queue(cbt.queue_name))) {
