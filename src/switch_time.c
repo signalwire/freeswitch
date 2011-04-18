@@ -61,14 +61,20 @@ static int MONO = 1;
 static int MONO = 0;
 #endif
 
+/* clock_nanosleep works badly on some kernels but really well on others.
+   timerfd seems to work well as long as it exists so if you have timerfd we'll also enable clock_nanosleep by default.
+*/
 #if defined(HAVE_TIMERFD_CREATE)
-// We'll default this to 1 after we have had some positive feedback that it works well
-static int TFD = 0;
+static int TFD = 1;
+#if defined(HAVE_CLOCK_NANOSLEEP)
+static int NANO = 1;
+#else
+static int NANO = 0;
+#endif
 #else
 static int TFD = 0;
-#endif
-
 static int NANO = 0;
+#endif
 
 static int OFFSET = 0;
 
@@ -326,6 +332,7 @@ SWITCH_DECLARE(void) switch_time_set_timerfd(switch_bool_t enable)
 #if defined(HAVE_TIMERFD_CREATE)
 	TFD = enable ? 1 : 0;
 	switch_time_sync();
+
 #else
 	TFD = 0;
 #endif
@@ -1114,6 +1121,10 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 
 	if (switch_test_flag((&runtime), SCF_USE_HEAVY_TIMING)) {
 		switch_time_set_cond_yield(SWITCH_FALSE);
+	}
+
+	if (TFD) {
+		switch_clear_flag((&runtime), SCF_CALIBRATE_CLOCK);
 	}
 
 	if (switch_test_flag((&runtime), SCF_CALIBRATE_CLOCK)) {
