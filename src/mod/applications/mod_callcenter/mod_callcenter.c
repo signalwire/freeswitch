@@ -1997,16 +1997,16 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	
 	if (!strcasecmp(queue->strategy, "sequentially-by-next-agent-order")) {
 		/* This is a quick attempt to continue to the last tried agent using the position order */
-		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level, agents.type, agents.uuid, tiers.position, agents.last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level as tiers_level, agents.type, agents.uuid, tiers.position as tiers_position, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" AND tiers.position > (SELECT tiers.position FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' ORDER BY agents.last_offered_call DESC LIMIT 1)"
 				" AND tiers.level = (SELECT tiers.level FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' ORDER BY agents.last_offered_call DESC LIMIT 1)"
 				" UNION "
-				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level, agents.type, agents.uuid, tiers.position, agents.last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level as tiers_level, agents.type, agents.uuid, tiers.position as tiers_position, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
-				" ORDER BY dyn_order asc, tiers.level, tiers.position, agents.last_offered_call",
+				" ORDER BY dyn_order asc, tiers_level, tiers_position, agents_last_offered_call",
 				queue_name,
 				cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE), cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND),
 				queue_name,
