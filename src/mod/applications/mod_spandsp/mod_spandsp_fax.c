@@ -1784,8 +1784,8 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
         switch_channel_set_variable(channel, "t38_peer", switch_core_session_get_uuid(other_session));
         switch_channel_set_variable(other_channel, "t38_peer", switch_core_session_get_uuid(session));
 
-        switch_channel_set_variable(peer ? other_channel : channel, "t38_gateway_format", "audio");
-        switch_channel_set_variable(peer ? channel : other_channel, "t38_gateway_format", "udptl");
+        switch_channel_set_variable(peer ? other_channel : channel, "t38_gateway_format", "udptl");
+        switch_channel_set_variable(peer ? channel : other_channel, "t38_gateway_format", "audio");
 
 
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s starting gateway mode to %s\n", 
