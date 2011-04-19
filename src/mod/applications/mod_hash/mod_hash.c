@@ -531,16 +531,33 @@ SWITCH_STANDARD_API(hash_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define HASH_DUMP_SYNTAX "all|limit|db"
+#define HASH_DUMP_SYNTAX "all|limit|db [<realm>]"
 SWITCH_STANDARD_API(hash_dump_function) 
 {
 	int mode;
 	switch_hash_index_t *hi;
+	int argc = 0;
+	char *argv[4] = { 0 };
+	char *mydata = NULL;
+	int realm = 0;
+	char *realmvalue = NULL;
 	
-	if (zstr(cmd)) {
+	if (!zstr(cmd)) {
+		mydata = strdup(cmd);
+		switch_assert(mydata);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	} else {
+		realmvalue = "test";
+		realm = 0;
 		stream->write_function(stream, "Usage: "HASH_DUMP_SYNTAX"\n");
 		return SWITCH_STATUS_SUCCESS;
-	}
+	}	
+
+	cmd = strdup(argv[0]);
+	if (argc == 2) {
+		realm = 1;
+		realmvalue = switch_mprintf("%s_", argv[1]);
+	} 
 	
 	if (!strcmp(cmd, "all")) {
 		mode = 3;
@@ -552,7 +569,6 @@ SWITCH_STANDARD_API(hash_dump_function)
 		stream->write_function(stream, "Usage: "HASH_DUMP_SYNTAX"\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
 	
 	if (mode & 1) {
 		switch_thread_rwlock_rdlock(globals.limit_hash_rwlock);
@@ -577,8 +593,13 @@ SWITCH_STANDARD_API(hash_dump_function)
 			const void *key;
 			switch_ssize_t keylen;
 			switch_hash_this(hi, &key, &keylen, &val);
-
-			stream->write_function(stream, "D/%s/%s\n", key, (char*)val);
+			if (realm) {
+				if (strstr(key, realmvalue)) {
+					stream->write_function(stream, "D/%s/%s\n", key, (char*)val);
+				}
+			} else {
+				stream->write_function(stream, "D/%s/%s\n", key, (char*)val);
+			}
 		}
 		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
 	}
