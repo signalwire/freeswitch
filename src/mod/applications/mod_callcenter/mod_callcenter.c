@@ -2384,7 +2384,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_safe_free(sql);
 
 		/* Confirm we took that member in */
-		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q' AND session_uuid = '%q' AND state = '%q' AND queue = '%q'", member_session, member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), queue_name);
+		sql = switch_mprintf("SELECT abandoned_epoch FROM members WHERE uuid = '%q' AND session_uuid = '%q' AND state = '%q' AND queue = '%q'", member_uuid, member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), queue_name);
 		cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 		switch_safe_free(sql);
 
