@@ -456,6 +456,8 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
                 break;
             }
         }
+    } else {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID PACKETLEN: %d PASSED: %d:%d\n", r, len, count);
     }
 
     return r;
