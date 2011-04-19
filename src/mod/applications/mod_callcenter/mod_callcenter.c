@@ -2016,7 +2016,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 				position = atoi(last_agent_tier_position);
 			}
 			if ((last_agent_tier_level = switch_channel_get_variable(member_channel, "cc_last_agent_tier_level"))) {
-				position = atoi(last_agent_tier_level);
+				level = atoi(last_agent_tier_level);
 			}
 			switch_core_session_rwunlock(member_session);
 		}
