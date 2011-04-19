@@ -80,23 +80,34 @@ SWITCH_STANDARD_APP(t38_gateway_function)
     switch_channel_t *channel = switch_core_session_get_channel(session);
     time_t timeout = switch_epoch_time_now(NULL) + 20;
     const char *var;
+    int argc = 0;
+    char *argv[2] = { 0 };
+    char *dupdata;
+    const char *direction = argv[0], *flags = argv[1];
+    
+    dupdata = switch_core_session_strdup(session, data);
+    argc = switch_split(dupdata, ' ', argv);
 
-    if (zstr(data) || strcasecmp(data, "self")) {
-        data = "peer";
-    }
-
-    switch_channel_set_variable(channel, "t38_leg", data);
-
-    if ((var = switch_channel_get_variable(channel, "t38_gateway_detect_timeout"))) {
-        long to = atol(var);
-        if (to > -1) {
-            timeout = (time_t) (switch_epoch_time_now(NULL) + to);
-        } else {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s invalid timeout value.\n", switch_channel_get_name(channel));
-        }
+    if (zstr(direction) || strcasecmp(direction, "self")) {
+        direction = "peer";
     }
     
-	switch_ivr_tone_detect_session(session, "t38", "1100.0", "rw", timeout, 1, data, NULL, t38_gateway_start);
+    switch_channel_set_variable(channel, "t38_leg", direction);
+
+    if (!zstr(flags) && !strcasecmp(flags, "nocng")) {
+        t38_gateway_start(session, direction, NULL);
+    } else {
+        if ((var = switch_channel_get_variable(channel, "t38_gateway_detect_timeout"))) {
+            long to = atol(var);
+            if (to > -1) {
+                timeout = (time_t) (switch_epoch_time_now(NULL) + to);
+            } else {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s invalid timeout value.\n", switch_channel_get_name(channel));
+            }
+        }
+
+        switch_ivr_tone_detect_session(session, "t38", "1100.0", "rw", timeout, 1, direction, NULL, t38_gateway_start);        
+    }
 }
 
 /**
