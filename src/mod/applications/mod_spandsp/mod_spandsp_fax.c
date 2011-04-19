@@ -446,14 +446,15 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
     /* we need to build a real packet here and make write_frame.packet and write_frame.packetlen point to it */
     out_frame.flags = SFF_UDPTL_PACKET | SFF_PROXY_PACKET;
     out_frame.packet = pkt;
-    out_frame.packetlen = udptl_build_packet(pvt->udptl_state, pkt, buf, len);
-    
-    //switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "WRITE %d udptl bytes\n", out_frame.packetlen);
+    if ((r = udptl_build_packet(pvt->udptl_state, pkt, buf, len)) > 0) {
+        out_frame.packetlen = r;
+        //switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "WRITE %d udptl bytes\n", out_frame.packetlen);
 
-    for (x = 0; x < count; x++) {
-        if (switch_core_session_write_frame(session, &out_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-            r = -1;
-            break;
+        for (x = 0; x < count; x++) {
+            if (switch_core_session_write_frame(session, &out_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+                r = -1;
+                break;
+            }
         }
     }
 
