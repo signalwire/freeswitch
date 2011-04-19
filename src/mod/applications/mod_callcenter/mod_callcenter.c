@@ -1995,13 +1995,12 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	cbt.record_template = queue_record_template;
 	cbt.agent_found = SWITCH_FALSE;
 	
-	if (!strcasecmp(queue->strategy, "sequentially-by-next-agent-order")) {
-		/* This is a quick attempt to continue to the last tried agent using the position order */
+	if (!strcasecmp(queue->strategy, "round-robin")) {
 		sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level as tiers_level, agents.type, agents.uuid, tiers.position as tiers_position, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
-				" AND tiers.position > (SELECT tiers.position FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' ORDER BY agents.last_offered_call DESC LIMIT 1)"
-				" AND tiers.level = (SELECT tiers.level FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' ORDER BY agents.last_offered_call DESC LIMIT 1)"
+				" AND tiers.position > (SELECT tiers.position FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' AND agents.last_offered_call > 0 ORDER BY agents.last_offered_call DESC LIMIT 1)"
+				" AND tiers.level = (SELECT tiers.level FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' AND agents.last_offered_call > 0 ORDER BY agents.last_offered_call DESC LIMIT 1)"
 				" UNION "
 				"SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.level as tiers_level, agents.type, agents.uuid, tiers.position as tiers_position, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
@@ -2029,6 +2028,8 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 			cc_execute_sql(NULL, sql, NULL);
 			switch_safe_free(sql);
 			sql_order_by = switch_mprintf("level, position");
+		} else if(!strcasecmp(queue_strategy, "random")) {
+			sql_order_by = switch_mprintf("level, random()");
 		} else if(!strcasecmp(queue_strategy, "sequentially-by-agent-order")) {
 			sql_order_by = switch_mprintf("level, position, agents.last_offered_call"); /* Default to last_offered_call, let add new strategy if needing it differently */
 		} else {
