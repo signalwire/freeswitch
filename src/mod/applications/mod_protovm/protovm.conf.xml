@@ -17,7 +17,7 @@
 		<menus>
 			<menu name="std_authenticate">
 			<phrases>
-				<phrase name="fail_auth" value="protovm_fail_auth" />
+				<phrase name="fail_auth" value="fail_auth@protovm" />
 			</phrases>
 			<keys>
 			</keys>
@@ -25,7 +25,7 @@
 
 			<menu name="std_authenticate_ask_user">
 			<phrases>
-				<phrase name="instructions" value="protovm_enter_id" />
+				<phrase name="instructions" value="enter_id@protovm" />
 			</phrases>
 			<keys>
 				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" /> <!-- TODO Make the ivrengine: parsed and the key configurable -->
@@ -34,7 +34,7 @@
 
 			<menu name="std_authenticate_ask_password">
 			<phrases>
-				<phrase name="instructions" value="protovm_enter_pass" />
+				<phrase name="instructions" value="enter_pass@protovm" />
 			</phrases>
 			<keys>
 				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" /> <!-- TODO Make the ivrengine: parsed and the key configurable -->
@@ -43,12 +43,12 @@
 
 			<menu name="std_navigator">
 			<phrases>
-				<phrase name="msg_count" value="protovm_message_count" />
-				<phrase name="say_date" value="protovm_say_date_event" />
-				<phrase name="say_msg_number" value="protovm_say_message_number" />
-				<phrase name="menu_options" value="protovm_listen_file_check" />
-				<phrase name="ack" value="protovm_ack" />
-				<phrase name="play_message" value="protovm_play_message" />
+				<phrase name="msg_count" value="message_count@protovm" />
+				<phrase name="say_date" value="say_date_event@protovm" />
+				<phrase name="say_msg_number" value="say_message_number@protovm" />
+				<phrase name="menu_options" value="listen_file_check@protovm" />
+				<phrase name="ack" value="ack@protovm" />
+				<phrase name="play_message" value="play_message@protovm" />
 			</phrases>
 			<keys>
 				<key dtmf="1" action="skip_intro" variable="VM-Key-Main-Listen-File" />
@@ -62,7 +62,7 @@
 
 			<menu name="std_preference">
 			<phrases>
-				<phrase name="menu_options" value="protovm_config_menu" />
+				<phrase name="menu_options" value="config_menu@protovm" />
 			</phrases>
 			<keys>
 				<key dtmf="1" action="menu:std_record_greeting_with_slot" variable="VM-Key-Record-Greeting" />
@@ -75,9 +75,9 @@
 
 			<menu name="std_record_greeting">
 			<phrases>
-				<phrase name="instructions" value="voicemail_record_greeting" />
-				<phrase name="play_recording" value="protovm_play_recording" />
-				<phrase name="menu_options" value="protovm_record_file_check" />
+				<phrase name="instructions" value="record_greeting@protovm" />
+				<phrase name="play_recording" value="play_recording@protovm" />
+				<phrase name="menu_options" value="record_file_check@protovm" />
 			</phrases>
 			<keys>
 				<key dtmf="1" action="listen" variable="VM-Key-Listen-File" />
@@ -90,9 +90,9 @@
 
 			<menu name="std_record_name">
 			<phrases>
-				<phrase name="instructions" value="protovm_record_name" />
-				<phrase name="play_recording" value="protovm_play_recording" />
-				<phrase name="menu_options" value="protovm_record_file_check" />
+				<phrase name="instructions" value="record_name@protovm" />
+				<phrase name="play_recording" value="play_recording@protovm" />
+				<phrase name="menu_options" value="record_file_check@protovm" />
 			</phrases>
 			<keys>
 				<key dtmf="1" action="listen" variable="VM-Key-Listen-File" />
@@ -106,9 +106,9 @@
 
 			<menu name="std_select_greeting_slot">
 			<phrases>
-				<phrase name="instructions" value="protovm_choose_greeting" />
-				<phrase name="invalid_slot" value="protovm_choose_greeting_fail" />
-				<phrase name="selected_slot" value="protovm_greeting_selected" />
+				<phrase name="instructions" value="choose_greeting@protovm" />
+				<phrase name="invalid_slot" value="choose_greeting_fail@protovm" />
+				<phrase name="selected_slot" value="greeting_selected@protovm" />
 			</phrases>
 			<keys>
 			</keys>
@@ -116,7 +116,7 @@
 
 			<menu name="std_record_greeting_with_slot">
 			<phrases>
-				<phrase name="instructions" value="protovm_choose_greeting" />
+				<phrase name="instructions" value="choose_greeting@protovm" />
 			</phrases>
 			<keys>
 			</keys>
@@ -124,7 +124,7 @@
 
 			<menu name="std_set_password">
 			<phrases>
-				<phrase name="instructions" value="protovm_enter_pass" />
+				<phrase name="instructions" value="enter_pass@protovm" />
 			</phrases>
 			<keys>
 			</keys>
