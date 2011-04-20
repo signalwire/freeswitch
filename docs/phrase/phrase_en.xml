@@ -437,7 +437,10 @@
 	  <prompt phrase="Recording started." filename="ivr-recording_started.wav"/>
 	  <prompt phrase="Recording stopped." filename="ivr-recording_stopped.wav"/>
 	  <prompt phrase="Recording deleted." filename="ivr-recording_deleted.wav"/>
-	
+	  <prompt phrase="You are no longer in line." filename="ivr-no_longer_in_line.wav"/>
+	  <prompt phrase="question..." filename="ivr-question.wav"/>
+	  <prompt phrase="...has been answered." filename="ivr-has_been_answered.wav"/>
+	  <prompt phrase="...has been removed." filename="ivr=has_been_removed.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
