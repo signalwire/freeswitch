@@ -1642,15 +1642,9 @@ static char create_registrations_sql[] =
 SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
 															 const char *network_ip, const char *network_port, const char *network_proto)
 {
-	switch_cache_db_handle_t *dbh;
 	char *sql;
 
 	if (!switch_test_flag((&runtime), SCF_USE_SQL)) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1662,9 +1656,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, c
 							 user, realm, switch_core_get_hostname());
 	}
 
-	switch_cache_db_execute_sql(dbh, sql, NULL);
-	free(sql);
-
+	switch_queue_push(sql_manager.sql_queue[0], sql);
+	
 	sql = switch_mprintf("insert into registrations (reg_user,realm,token,url,expires,network_ip,network_port,network_proto,hostname) "
 						 "values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q')",
 						 switch_str_nil(user),
@@ -1677,27 +1670,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, c
 						 switch_str_nil(network_proto),
 						 switch_core_get_hostname()
 						 );
+
 	
-	switch_cache_db_execute_sql(dbh, sql, NULL);
-	switch_cache_db_release_db_handle(&dbh);
-
-	free(sql);
-
+	switch_queue_push(sql_manager.sql_queue[0], sql);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, const char *realm, const char *token)
 {
 
-	switch_cache_db_handle_t *dbh;
 	char *sql;
 
 	if (!switch_test_flag((&runtime), SCF_USE_SQL)) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1707,10 +1692,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, c
 		sql = switch_mprintf("delete from registrations where reg_user='%q' and realm='%q' and hostname='%q'", user, realm, switch_core_get_hostname());
 	}
 
-	switch_cache_db_execute_sql(dbh, sql, NULL);
-	switch_cache_db_release_db_handle(&dbh);
-
-	free(sql);
+	switch_queue_push(sql_manager.sql_queue[0], sql);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1718,16 +1700,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, c
 SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force)
 {
 	
-	switch_cache_db_handle_t *dbh;
 	char *sql;
 	time_t now;
 
 	if (!switch_test_flag((&runtime), SCF_USE_SQL)) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1739,10 +1715,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force)
 		sql = switch_mprintf("delete from registrations where expires > 0 and expires <= %ld and hostname='%q'", now, switch_core_get_hostname());
 	}
 
-	switch_cache_db_execute_sql(dbh, sql, NULL);
-	switch_cache_db_release_db_handle(&dbh);
-
-	free(sql);
+	switch_queue_push(sql_manager.sql_queue[0], sql);
 
 	return SWITCH_STATUS_SUCCESS;
 

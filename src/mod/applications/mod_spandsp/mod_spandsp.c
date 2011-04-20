@@ -70,33 +70,89 @@ SWITCH_STANDARD_APP(stop_dtmf_session_function)
 	spandsp_stop_inband_dtmf_session(session);
 }
 
+
+SWITCH_STANDARD_APP(spandsp_fax_detect_session_function)
+{
+    int argc = 0;
+    char *argv[3] = { 0 };
+    char *dupdata;
+    const char *app = NULL, *arg = NULL;
+    int timeout = 0;
+
+    if (!zstr(data) && (dupdata = switch_core_session_strdup(session, data))) {
+        if ((argc = switch_split(dupdata, ' ', argv)) == 3) {
+            app = argv[0];
+            arg = argv[1];
+            timeout = atoi(argv[2]);
+            if (timeout < 0) {
+                timeout = 0;
+            }
+        }
+    }
+    
+    if (app) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Enabling fax detection '%s' '%s'\n", argv[0], argv[1]);
+        spandsp_fax_detect_session(session, "rw", timeout, 1, app, arg, NULL);
+    } else {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot Enable fax detection '%s' '%s'\n", argv[0], argv[1]);
+    }
+}
+
+SWITCH_STANDARD_APP(spandsp_stop_fax_detect_session_function)
+{
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Disabling fax detection\n");
+    spandsp_fax_stop_detect_session(session);
+}
+
 static void event_handler(switch_event_t *event)
 {
 	mod_spandsp_fax_event_handler(event);
 }
+
 
 SWITCH_STANDARD_APP(t38_gateway_function)
 {
     switch_channel_t *channel = switch_core_session_get_channel(session);
     time_t timeout = switch_epoch_time_now(NULL) + 20;
     const char *var;
-
-    if (zstr(data) || strcasecmp(data, "self")) {
-        data = "peer";
-    }
-
-    switch_channel_set_variable(channel, "t38_leg", data);
-
-    if ((var = switch_channel_get_variable(channel, "t38_gateway_detect_timeout"))) {
-        long to = atol(var);
-        if (to > -1) {
-            timeout = (time_t) (switch_epoch_time_now(NULL) + to);
-        } else {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s invalid timeout value.\n", switch_channel_get_name(channel));
+    int argc = 0;
+    char *argv[2] = { 0 };
+    char *dupdata;
+    const char *direction = NULL, *flags = NULL;
+    
+    if (!zstr(data) && (dupdata = switch_core_session_strdup(session, data))) {
+        if ((argc = switch_split(dupdata, ' ', argv))) {
+            if (argc > 0) {
+                direction = argv[0];
+            }
+            
+            if (argc > 1) {
+                flags = argv[1];
+            }
         }
     }
+
+    if (zstr(direction) || strcasecmp(direction, "self")) {
+        direction = "peer";
+    }
     
-	switch_ivr_tone_detect_session(session, "t38", "1100.0", "rw", timeout, 1, data, NULL, t38_gateway_start);
+    switch_channel_set_variable(channel, "t38_leg", direction);
+
+    if (!zstr(flags) && !strcasecmp(flags, "nocng")) {
+        t38_gateway_start(session, direction, NULL);
+    } else {
+        if ((var = switch_channel_get_variable(channel, "t38_gateway_detect_timeout"))) {
+            long to = atol(var);
+            if (to > -1) {
+                timeout = (time_t) (switch_epoch_time_now(NULL) + to);
+            } else {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s invalid timeout value.\n", switch_channel_get_name(channel));
+            }
+        }
+
+        //switch_ivr_tone_detect_session(session, "t38", "1100.0", "rw", timeout, 1, direction, NULL, t38_gateway_start);        
+        spandsp_fax_detect_session(session, "rw", timeout, 1, direction, NULL, t38_gateway_start);
+    }
 }
 
 /**
@@ -197,6 +253,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 
 	SWITCH_ADD_APP(app_interface, "spandsp_stop_dtmf", "stop inband dtmf", "Stop detecting inband dtmf.", stop_dtmf_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "spandsp_start_dtmf", "Detect dtmf", "Detect inband dtmf on the session", dtmf_session_function, "", SAF_MEDIA_TAP);
+
+	SWITCH_ADD_APP(app_interface, "spandsp_start_fax_detect", "start fax detect", "start fax detect", spandsp_fax_detect_session_function, 
+                   "<app>[ <arg>][ <timeout>]", SAF_NONE);
+
+	SWITCH_ADD_APP(app_interface, "spandsp_stop_fax_detect", "stop fax detect", "stop fax detect", spandsp_stop_fax_detect_session_function, "", SAF_NONE);
+                   
 
 	mod_spandsp_fax_load(pool);
     mod_spandsp_codecs_load(module_interface, pool);
