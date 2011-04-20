@@ -1,6 +1,7 @@
 /*
  * skypopen.h -- definitions for the char module
  *
+ * Copyright (C) 2010 Giovanni Maruzzelli
  * Copyright (C) 2001 Alessandro Rubini and Jonathan Corbet
  * Copyright (C) 2001 O'Reilly & Associates
  *
@@ -20,20 +21,20 @@
 
 #include <linux/ioctl.h> /* needed for the _IOW etc stuff used later */
 
+#define CENTOS_5 /* define this ONLY if you're on CentOS 5.x (eg: undef on CentOS 6.x ) */
+#define WANT_HRTIMER /* undef this only if you don't want to use High Resolution Timers (why?) */
 #define SKYPOPEN_BLK 960
 #define SKYPOPEN_SLEEP 10
 
-#define CENTOS
 
-#ifndef SKYPOPEN_MAJOR
 #define SKYPOPEN_MAJOR 14   /* dynamic major by default */
-#endif
+#define SKYPOPEN_MINOR 3   /* dynamic major by default */
+#define SKYPOPEN_NR_DEVS 1    /* not useful, I'm too lazy to remove it */
 
-#ifndef SKYPOPEN_NR_DEVS
-#define SKYPOPEN_NR_DEVS 1    /* skypopen0 through skypopen3 */
-#endif
+#ifdef CENTOS_5
+#define HRTIMER_MODE_REL HRTIMER_REL
+#endif// CENTOS_5
 
-#define WANT_HRTIMER 
 struct skypopen_dev {
 	struct cdev cdev;	  /* Char device structure		*/
 	wait_queue_head_t inq; /* read and write queues */
@@ -55,17 +56,5 @@ struct skypopen_dev {
  */
 extern int skypopen_major;     /* main.c */
 extern int skypopen_nr_devs;
-
-
-/*
- * Prototypes for shared functions
- */
-
-//ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
-                   //loff_t *f_pos);
-//ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t count,
-                    //loff_t *f_pos);
-//int     skypopen_ioctl(struct inode *inode, struct file *filp,
-                    //unsigned int cmd, unsigned long arg);
 
 #endif /* _SKYPOPEN_H_ */
