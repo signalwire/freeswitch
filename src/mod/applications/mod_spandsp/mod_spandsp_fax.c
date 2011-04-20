@@ -459,6 +459,15 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
     } else {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID PACKETLEN: %d PASSED: %d:%d\n", r, len, count);
     }
+    
+    if (r < 0) {
+        t30_state_t *t30;
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "TERMINATING T30 STATE\n");
+        if (pvt->t38_state && (t30 = t38_terminal_get_t30_state(pvt->t38_state))) {
+            t30_terminate(t30);
+        }
+    }
+
 
     return r;
 }
@@ -1953,7 +1962,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 	return rval;
 }
 
-SWITCH_DECLARE(switch_status_t) spandsp_fax_stop_detect_session(switch_core_session_t *session)
+switch_status_t spandsp_fax_stop_detect_session(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	spandsp_fax_tone_container_t *cont = switch_channel_get_private(channel, "_fax_tone_detect_");
@@ -1967,7 +1976,7 @@ SWITCH_DECLARE(switch_status_t) spandsp_fax_stop_detect_session(switch_core_sess
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) spandsp_fax_detect_session(switch_core_session_t *session,
+switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 														   const char *flags, time_t timeout,
 														   int hits, const char *app, const char *data, switch_tone_detect_callback_t callback)
 {

@@ -133,7 +133,7 @@ struct callback_obj {
 	profile_t *profile;
 	switch_core_session_t *session;
 	switch_event_t *event;
-	float sell_rate;
+	float max_rate;
 };
 typedef struct callback_obj callback_t;
 
@@ -622,6 +622,9 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 		} else if (CF("lcr_carrier_name")) {
 			additional->carrier_name = switch_core_strdup(pool, switch_str_nil(argv[i]));
 		} else if (CF("lcr_rate_field")) {
+			if (!argv[i] || zstr(argv[i])) {
+				goto end;
+			}
 			additional->rate = (float)atof(switch_str_nil(argv[i]));
 			additional->rate_str = switch_core_sprintf(pool, "%0.5f", additional->rate);
 		} else if (CF("lcr_gw_prefix")) {
@@ -669,10 +672,12 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 
 
 	for (current = cbt->head; current; current = current->next) {
-		if (cbt->sell_rate && cbt->sell_rate > current->rate) {
-			continue;
+		if (cbt->max_rate && (cbt->max_rate < additional->rate)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Skipping [%s] because [%f] is higher than the max_rate of [%f]\n", 
+							  additional->carrier_name, additional->rate, cbt->max_rate);
+			break;
 		}
-	
+		
 		key = switch_core_sprintf(pool, "%s:%s", additional->gw_prefix, additional->gw_suffix);
 		if (switch_core_hash_find(cbt->dedup_hash, key)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
@@ -852,9 +857,9 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	if (cb_struct->session) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "we have a session\n");
 		if ((channel = switch_core_session_get_channel(cb_struct->session))) {
-			const char *sell_rate = switch_channel_get_variable(channel, "sell_rate");
-			if (!zstr(sell_rate)) {
-				cb_struct->sell_rate = atof(sell_rate);
+			const char *max_rate = switch_channel_get_variable(channel, "max_rate");
+			if (!zstr(max_rate)) {
+				cb_struct->max_rate = atof(max_rate);
 			}
 			switch_channel_set_variable_var_check(channel, "lcr_rate_field", rate_field, SWITCH_FALSE);
 			switch_channel_set_variable_var_check(channel, "lcr_user_rate_field", user_rate_field, SWITCH_FALSE);
