@@ -316,8 +316,11 @@ typedef struct sng_isup_ckt {
 	uint32_t		typeCntrl;
 	uint32_t		ssf;
 	uint32_t		switchType;
+	
 	uint32_t		clg_nadi;
 	uint32_t		cld_nadi;
+	uint8_t			rdnis_nadi;
+			
 	uint32_t		min_digits;
 	void			*obj;
 	uint16_t		t3;
@@ -503,6 +506,7 @@ typedef enum {
 	FLAG_GLARE				= (1 << 13),
 	FLAG_INFID_RESUME		= (1 << 14),
 	FLAG_INFID_PAUSED		= (1 << 15),
+	FLAG_SENT_ACM			= (1 << 16),
 	FLAG_RELAY_DOWN			= (1 << 30),
 	FLAG_CKT_RECONFIG		= (1 << 31)
 } sng_ckt_flag_t;
@@ -524,6 +528,7 @@ typedef enum {
 	"GLARE", \
 	"INF_RESUME", \
 	"INF_PAUSED", \
+	"TX_ACM_SENT" \
 	"RELAY_DOWN", \
 	"CKT_RECONFIG"
 FTDM_STR2ENUM_P(ftmod_ss7_ckt_state2flag, ftmod_ss7_ckt_flag2str, sng_ckt_flag_t)
@@ -784,8 +789,12 @@ uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum
 uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
 uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
 uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
-uint8_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
-uint8_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum);
+
+
+ftdm_status_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+ftdm_status_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
+ftdm_status_t copy_tknStr_to_sngss7(char* str, TknStr *tknStr, TknU8 *oddEven);
 
 int check_for_state_change(ftdm_channel_t *ftdmchan);
 int check_cics_in_range(sngss7_chan_data_t *sngss7_info);

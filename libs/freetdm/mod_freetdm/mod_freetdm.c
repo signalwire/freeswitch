@@ -1264,6 +1264,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			caller_data.ani.plan = (uint8_t)atoi(sipvar);
 		}
 
+		/* Used by ftmod_sangoma_ss7 only */
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-ANI-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_clg_nadi", sipvar);
+		}
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-ANI2");
 		if (sipvar) {
 			ftdm_set_string(caller_data.aniII, sipvar);
@@ -1284,6 +1290,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			caller_data.dnis.plan = (uint8_t)atoi(sipvar);
 		}
 
+		/* Used by ftmod_sangoma_ss7 only */
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_clg_nadi", sipvar);
+		}
+		
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS");
 		if (sipvar) {
 			ftdm_set_string(caller_data.rdnis.digits, sipvar);
@@ -1299,6 +1311,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			caller_data.rdnis.plan = (uint8_t)atoi(sipvar);
 		}
 
+		/* Used by ftmod_sangoma_ss7 only */
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_nadi", sipvar);
+		}
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Screen");
 		if (sipvar) {
 			caller_data.screen = (uint8_t)atoi(sipvar);
@@ -1308,6 +1326,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (sipvar) {
 			caller_data.pres = (uint8_t)atoi(sipvar);
 		}
+
+
 	}
 
 	if (switch_test_flag(outbound_profile, SWITCH_CPF_SCREEN)) {
@@ -1568,7 +1588,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS", "%s", channel_caller_data->rdnis.digits);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-TON", "%d", channel_caller_data->rdnis.type);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Plan", "%d", channel_caller_data->rdnis.plan);
-
+		
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Screen", "%d", channel_caller_data->screen);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Presentation", "%d", channel_caller_data->pres);
 	}
@@ -3615,7 +3635,7 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 "--------------------------------------------------------------------------------\n" \
 "ftdm list\n" \
 "ftdm start|stop <span_name|span_id>\n" \
-"ftdm restart <span_id|span_name> <chan_id>\n" \
+"ftdm restart <span_id|span_name> [<chan_id>]\n" \
 "ftdm dump <span_id|span_name> [<chan_id>]\n" \
 "ftdm sigstatus get|set [<span_id|span_name>] [<channel>] [<sigstatus>]\n" \
 "ftdm trace <path> <span_id|span_name> [<chan_id>]\n" \
@@ -4141,10 +4161,11 @@ SWITCH_STANDARD_API(ft_function)
 		stream->write_function(stream, "+OK queue sizes set to Rx %d and Tx %d\n", rxsize, txsize);
 	} else if (!strcasecmp(argv[0], "restart")) {
 		uint32_t chan_id = 0;
+		uint32_t ccount = 0;
 		ftdm_channel_t *chan;
 		ftdm_span_t *span = NULL;
-		if (argc < 3) {
-			stream->write_function(stream, "-ERR Usage: ftdm restart <span_id> <chan_id>\n");
+		if (argc < 2) {
+			stream->write_function(stream, "-ERR Usage: ftdm restart <span_id> [<chan_id>]\n");
 			goto end;
 		}
 		ftdm_span_find_by_name(argv[1], &span);
@@ -4152,15 +4173,32 @@ SWITCH_STANDARD_API(ft_function)
 			stream->write_function(stream, "-ERR invalid span\n");
 			goto end;
 		}
-		
-		chan_id = atoi(argv[2]);
-		chan = ftdm_span_get_channel(span, chan_id);
-		if (!chan) {
-			stream->write_function(stream, "-ERR Could not find chan\n");
-			goto end;
+
+		if (argc > 2) {
+			chan_id = atoi(argv[2]);
+			if (chan_id > ftdm_span_get_chan_count(span)) {
+				stream->write_function(stream, "-ERR invalid chan\n");
+				goto end;
+			}
 		}
-		stream->write_function(stream, "Resetting channel %s:%s\n", argv[2], argv[3]);
-		ftdm_channel_reset(chan);
+		if (chan_id) {
+			chan = ftdm_span_get_channel(span, chan_id);
+			if (!chan) {
+				stream->write_function(stream, "-ERR Could not find chan\n");
+				goto end;
+			}
+			stream->write_function(stream, "Resetting channel %s:%s\n", argv[1], argv[2]);
+			ftdm_channel_reset(chan);
+		} else {
+			uint32_t i = 0;
+			ccount = ftdm_span_get_chan_count(span);
+			for (i = 1; i < ccount; i++) {
+				chan = ftdm_span_get_channel(span, i);
+				stream->write_function(stream, "Resetting channel %s:%d\n", argv[1], i);
+				ftdm_channel_reset(chan);
+			}
+		}
+
 	} else {
 
 		char *rply = ftdm_api_execute(cmd);
