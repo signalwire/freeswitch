@@ -51,6 +51,7 @@ typedef struct {
 	char *descURL;
 	char pub_addr[IP_LEN];
 	char pvt_addr[IP_LEN];
+	switch_bool_t mapping;
 } nat_globals_t;
 
 static nat_globals_t nat_globals;
@@ -207,9 +208,14 @@ static int init_pmp(void)
 	return get_pmp_pubaddr(nat_globals.pub_addr);
 }
 
+SWITCH_DECLARE(void) switch_nat_set_mapping(switch_bool_t mapping)
+{
+	nat_globals.mapping = mapping;
+}
+
 SWITCH_DECLARE(void) switch_nat_reinit(void)
 {
-	switch_nat_init(nat_globals_perm.pool);
+	switch_nat_init(nat_globals_perm.pool, nat_globals.mapping);
 }
 
 switch_status_t init_nat_monitor(switch_memory_pool_t *pool)
@@ -392,7 +398,7 @@ SWITCH_DECLARE(void) switch_nat_thread_stop(void)
 }
 
 
-SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
+SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool, switch_bool_t mapping)
 {
 	/* try free dynamic data structures prior to resetting to 0 */
 	FreeUPNPUrls(&nat_globals.urls);
@@ -404,6 +410,8 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 		memset(&nat_globals_perm, 0, sizeof(nat_globals_perm));
 		nat_globals_perm.pool = pool;
 	}
+
+	nat_globals.mapping = mapping;
 
 	switch_find_local_ip(nat_globals.pvt_addr, sizeof(nat_globals.pvt_addr), NULL, AF_INET);
 
@@ -577,6 +585,11 @@ SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping_internal(switch_port_t po
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event = NULL;
 
+	if (!nat_globals.mapping) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "NAT port mapping disabled\n");
+		return status;
+	}
+
 	switch (nat_globals.nat_type) {
 	case SWITCH_NAT_TYPE_PMP:
 		status = switch_nat_add_mapping_pmp(port, proto, external_port);
@@ -709,6 +722,12 @@ SWITCH_DECLARE(char *) switch_nat_status(void)
 	stream.write_function(&stream, "Nat Type: %s, ExtIP: %s\n",
 						  (nat_globals.nat_type == SWITCH_NAT_TYPE_UPNP) ? "UPNP" : (nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "NAT-PMP" : "UNKNOWN"),
 						  nat_globals.pub_addr);
+
+	if (nat_globals.mapping) {
+		stream.write_function(&stream, "NAT port mapping enabled.\n");
+	} else {
+		stream.write_function(&stream, "NAT port mapping disabled.\n");
+	}
 
 	switch_api_execute("show", "nat_map", NULL, &stream);
 

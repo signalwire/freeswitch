@@ -1183,7 +1183,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(_In_ switch_core_s
 ///\ingroup core1
 ///\{
 /*! 
-  \brief Initilize a hash table
+  \brief Initialize a hash table
   \param hash a NULL pointer to a hash table to aim at the new hash
   \param pool the pool to use for the new hash
   \return SWITCH_STATUS_SUCCESS if the hash is created
@@ -2239,6 +2239,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, c
  \param [out] err - Error if it exists
 */
 SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force);
+
+
+SWITCH_DECLARE(char *) switch_say_file_handle_get_variable(switch_say_file_handle_t *sh, const char *var);
+SWITCH_DECLARE(char *) switch_say_file_handle_get_path(switch_say_file_handle_t *sh);
+SWITCH_DECLARE(char *) switch_say_file_handle_detach_path(switch_say_file_handle_t *sh);
+SWITCH_DECLARE(void) switch_say_file_handle_destroy(switch_say_file_handle_t **sh);
+SWITCH_DECLARE(switch_status_t) switch_say_file_handle_create(switch_say_file_handle_t **sh, const char *ext, switch_event_t **var_event);
+SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *fmt, ...);
+
 
 SWITCH_END_EXTERN_C
 #endif

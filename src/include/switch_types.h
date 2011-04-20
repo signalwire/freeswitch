@@ -36,6 +36,7 @@
 #define SWITCH_TYPES_H
 
 #include <switch.h>
+
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENT_ORIGINATE_DELIM ":_:"
 #define SWITCH_BLANK_STRING ""
@@ -264,7 +265,8 @@ typedef enum {
 	SCF_VERBOSE_EVENTS = (1 << 11),
 	SCF_USE_WIN32_MONOTONIC = (1 << 12),
 	SCF_AUTO_SCHEMAS = (1 << 13),
-	SCF_MINIMAL = (1 << 14)
+	SCF_MINIMAL = (1 << 14),
+	SCF_USE_NAT_MAPPING = (1 << 15)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -515,7 +517,6 @@ typedef enum {
     SWITCH_RTP_FLAG_NOBLOCK       - Do not block
     SWITCH_RTP_FLAG_IO            - IO is ready
 	SWITCH_RTP_FLAG_USE_TIMER     - Timeout Reads and replace with a CNG Frame
-	SWITCH_RTP_FLAG_TIMER_RECLOCK - Resync the timer to the current clock on slips
 	SWITCH_RTP_FLAG_SECURE        - Secure RTP
 	SWITCH_RTP_FLAG_AUTOADJ       - Auto-Adjust the dest based on the source
 	SWITCH_RTP_FLAG_RAW_WRITE     - Try to forward packets unscathed
@@ -532,7 +533,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_NOBLOCK = (1 << 0),
 	SWITCH_RTP_FLAG_IO = (1 << 1),
 	SWITCH_RTP_FLAG_USE_TIMER = (1 << 2),
-	SWITCH_RTP_FLAG_TIMER_RECLOCK = (1 << 3),
+	SWITCH_RTP_FLAG_RTCP_PASSTHRU = (1 << 3),
 	SWITCH_RTP_FLAG_SECURE_SEND = (1 << 4),
 	SWITCH_RTP_FLAG_SECURE_RECV = (1 << 5),
 	SWITCH_RTP_FLAG_AUTOADJ = (1 << 6),
@@ -559,8 +560,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_DEBUG_RTP_READ = (1 << 27),
 	SWITCH_RTP_FLAG_DEBUG_RTP_WRITE = (1 << 28),
 	SWITCH_RTP_FLAG_VIDEO = (1 << 29),
-	SWITCH_RTP_FLAG_ENABLE_RTCP = (1 << 30),
-	SWITCH_RTP_FLAG_RTCP_PASSTHRU = (1 << 31)
+	SWITCH_RTP_FLAG_ENABLE_RTCP = (1 << 30)
 	/* don't add any more 31 is the limit! gotta chnge to an array to add more */
 } switch_rtp_flag_enum_t;
 typedef uint32_t switch_rtp_flag_t;
@@ -1737,6 +1737,7 @@ typedef switch_status_t (*switch_stream_handle_raw_write_function_t) (switch_str
 typedef switch_status_t (*switch_api_function_t) (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session,
 												  _In_ switch_stream_handle_t *stream);
 
+
 #define SWITCH_STANDARD_API(name) static switch_status_t name (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
 
 typedef switch_status_t (*switch_input_callback_function_t) (switch_core_session_t *session, void *input,
@@ -1774,16 +1775,31 @@ typedef struct {
 	switch_ivr_dmachine_t *dmachine;
 } switch_input_args_t;
 
+
 typedef struct {
 	switch_say_type_t type;
 	switch_say_method_t method;
 	switch_say_gender_t gender;
+	const char *ext;
 } switch_say_args_t;
+
 
 typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session,
 												  char *tosay,
 												  switch_say_args_t *say_args,
 												  switch_input_args_t *args);
+
+typedef switch_status_t (*switch_say_string_callback_t) (switch_core_session_t *session,
+														 char *tosay,
+														 switch_say_args_t *say_args, char **rstr);
+														 
+struct switch_say_file_handle;
+typedef struct switch_say_file_handle switch_say_file_handle_t;
+
+typedef switch_status_t (*switch_new_say_callback_t) (switch_say_file_handle_t *sh,
+													  char *tosay,
+													  switch_say_args_t *say_args);
+
 
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;

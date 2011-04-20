@@ -1000,7 +1000,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_file_handle_t lfh;
 	const char *p;
 	char *title = "", *copyright = "", *software = "", *artist = "", *comment = "", *date = "";
-	uint8_t asis = 0;
 	char *ext;
 	const char *prefix;
 	const char *timer_name;
@@ -1024,6 +1023,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int more_data = 0;
 	char *playback_vars, *tmp;
 	switch_event_t *event;
+	uint32_t test_native = 0, last_native = 0;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -1060,9 +1060,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		l16++;
 	}
 
-
-
-
 	if (play_delimiter) {
 		file_dup = switch_core_session_strdup(session, file);
 		argc = switch_separate_string(file_dup, play_delimiter, argv, (sizeof(argv) / sizeof(argv[0])));
@@ -1071,9 +1068,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		argv[0] = (char *) file;
 	}
 
+	if (!fh) {
+		fh = &lfh;
+		memset(fh, 0, sizeof(lfh));
+	}
+	
+	if (fh->samples > 0) {
+		sample_start = fh->samples;
+		fh->samples = 0;
+	}
+	
 	for (cur = 0; switch_channel_ready(channel) && !done && cur < argc; cur++) {
 		file = argv[cur];
-		asis = 0;
 		eof = 0;
 
 		if (cur) {
@@ -1168,7 +1174,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			} else {
 				ext = read_impl.iananame;
 				file = switch_core_session_sprintf(session, "%s.%s", file, ext);
-				asis = 1;
 			}
 		}
 
@@ -1184,16 +1189,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					playback_vars = tfile+1;
 				}
 			}
-		}
-
-		if (!fh) {
-			fh = &lfh;
-			memset(fh, 0, sizeof(lfh));
-		}
-
-		if (fh->samples > 0) {
-			sample_start = fh->samples;
-			fh->samples = 0;
 		}
 
 		if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
@@ -1221,9 +1216,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_channel_set_private(channel, "__fh", fh);
 		switch_core_session_io_rwunlock(session);
 
-		if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
-			asis = 1;
-		}
 
 		if (!abuf) {
 			switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf));
@@ -1275,43 +1267,46 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_assert(fh->audio_buffer);
 		}
 
-		if (asis) {
+		codec_name = "L16";
+		
+		if (!switch_core_codec_ready((&codec))) {
+			if (switch_core_codec_init(&codec,
+									   codec_name,
+									   NULL,
+									   fh->samplerate,
+									   interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+								  SWITCH_LOG_DEBUG, "Codec Activated %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
+				
+				
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+								  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
+				switch_core_session_io_write_lock(session);
+				switch_channel_set_private(channel, "__fh", NULL);
+				switch_core_session_io_rwunlock(session);
+				
+				switch_core_file_close(fh);
+				
+				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
+				status = SWITCH_STATUS_GENERR;
+				continue;
+			}
+		}
+
+		test_native = switch_test_flag(fh, SWITCH_FILE_NATIVE);
+
+		if (test_native) {
 			write_frame.codec = switch_core_session_get_read_codec(session);
 			samples = read_impl.samples_per_packet;
 			framelen = read_impl.encoded_bytes_per_packet;
 		} else {
-			codec_name = "L16";
-
-			if (!switch_core_codec_ready((&codec))) {
-				if (switch_core_codec_init(&codec,
-										   codec_name,
-										   NULL,
-										   fh->samplerate,
-										   interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-									  SWITCH_LOG_DEBUG, "Codec Activated %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
-
-
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-									  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
-					switch_core_session_io_write_lock(session);
-					switch_channel_set_private(channel, "__fh", NULL);
-					switch_core_session_io_rwunlock(session);
-
-					switch_core_file_close(fh);
-
-					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
-					status = SWITCH_STATUS_GENERR;
-					continue;
-				}
-			}
-
 			write_frame.codec = &codec;
-
 			samples = codec.implementation->samples_per_packet;
 			framelen = codec.implementation->decoded_bytes_per_packet;
 		}
+		
+		last_native = test_native;
 
 		if (timer_name && !timer.samplecount) {
 			uint32_t len;
@@ -1429,7 +1424,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					memset(abuf + bread, 255, framelen - bread);
 				}
 
-				olen = asis ? framelen : ilen;
+				olen = switch_test_flag(fh, SWITCH_FILE_NATIVE) ? framelen : ilen;
 				do_speed = 0;
 			} else if (fh->audio_buffer && (eof || (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t) (framelen)))) {
 				if (!(bread = switch_buffer_read(fh->audio_buffer, abuf, framelen))) {
@@ -1440,30 +1435,48 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					}
 				}
 
-				fh->offset_pos += asis ? bread : bread / 2;
+				fh->offset_pos += switch_test_flag(fh, SWITCH_FILE_NATIVE) ? bread : bread / 2;
 
 				if (bread < framelen) {
 					memset(abuf + bread, 255, framelen - bread);
 				}
 
-				olen = asis ? framelen : ilen;
+				olen = switch_test_flag(fh, SWITCH_FILE_NATIVE) ? framelen : ilen;
 			} else {
 				if (eof) {
 					break;
 				}
 				olen = FILE_STARTSAMPLES;
-				if (!asis) {
+				if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 					olen /= 2;
 				}
 				if (switch_core_file_read(fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
 					eof++;
 					continue;
 				}
-				switch_buffer_write(fh->audio_buffer, abuf, asis ? olen : olen * 2);
+				
+				test_native = switch_test_flag(fh, SWITCH_FILE_NATIVE);
+
+				if (test_native != last_native) {
+					if (test_native) {
+						write_frame.codec = switch_core_session_get_read_codec(session);
+						samples = read_impl.samples_per_packet;
+						framelen = read_impl.encoded_bytes_per_packet;						
+					} else {
+						write_frame.codec = &codec;
+						samples = codec.implementation->samples_per_packet;
+						framelen = codec.implementation->decoded_bytes_per_packet;
+					}
+					switch_buffer_zero(fh->audio_buffer);
+				}
+
+				last_native = test_native;
+
+				switch_buffer_write(fh->audio_buffer, abuf, switch_test_flag(fh, SWITCH_FILE_NATIVE) ? olen : olen * 2);
 				olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
 				fh->offset_pos += olen / 2;
 
-				if (!asis) {
+				if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 					olen /= 2;
 				}
 
@@ -1473,7 +1486,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				break;
 			}
 
-			if (!asis) {
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 				if (fh->speed > 2) {
 					fh->speed = 2;
 				} else if (fh->speed < -2) {
@@ -1481,7 +1494,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 			}
 
-			if (!asis && fh->audio_buffer && last_speed > -1 && last_speed != fh->speed) {
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->audio_buffer && last_speed > -1 && last_speed != fh->speed) {
 				switch_buffer_zero(fh->sp_audio_buffer);
 			}
 
@@ -1492,7 +1505,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 
 
-			if (!asis && fh->speed && do_speed) {
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->speed && do_speed) {
 				float factor = 0.25f * abs(fh->speed);
 				switch_size_t newlen, supplement, step;
 				short *bp = write_frame.data;
@@ -1583,7 +1596,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			more_data = 0;
 			write_frame.samples = (uint32_t) olen;
 
-			if (asis) {
+			if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 				write_frame.datalen = (uint32_t) olen;
 			} else {
 				write_frame.datalen = write_frame.samples * 2;
@@ -1596,12 +1609,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 #ifndef WIN32
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-			if (!asis && l16) {
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && l16) {
 				switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
 			}
 #endif
 #endif
-			if (!asis && fh->vol) {
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->vol) {
 				switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
 			}
 

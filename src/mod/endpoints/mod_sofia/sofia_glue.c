@@ -505,7 +505,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			ptime = tech_pvt->read_codec.implementation->microseconds_per_packet / 1000;
 		}
 
-		
+
 		if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 		}
@@ -728,6 +728,8 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 	if (tech_pvt->num_codecs) {
 		return;
 	}
+
+	tech_pvt->payload_space = 0;
 
 	switch_assert(tech_pvt->session != NULL);
 
@@ -1893,6 +1895,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *invite_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_to");
 	const char *handle_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_handle_full_from");
 	const char *handle_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_handle_full_to");
+	const char *force_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_from");
+	const char *force_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_to");
 	char *mp = NULL, *mp_type = NULL;
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
@@ -2122,6 +2126,15 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		if (handle_full_to) {
 			to_str = (char *) handle_full_to;
+		}
+
+
+		if (force_full_from) {
+			from_str = (char *) force_full_from;
+		}
+
+		if (force_full_to) {
+			to_str = (char *) force_full_to;
 		}
 
 
@@ -4754,6 +4767,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, te);
 					}
 				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Disable 2833 dtmf\n");
+				switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "none");
+				tech_pvt->dtmf_type = DTMF_NONE;
+				te = tech_pvt->recv_te = 0;
 			}
 
 			
@@ -5210,12 +5228,14 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 		}
 
 		for (gp = profile->gateways; gp; gp = gp->next) {
+			char *pkey = switch_mprintf("%s::%s", profile->name, gp->name);
+
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_from);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_contact);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "deleted gateway %s\n", gp->name);
-			profile->gateways = NULL;
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
+			switch_safe_free(pkey);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "deleted gateway %s from profile %s\n", gp->name, profile->name);
 		}
+		profile->gateways = NULL;
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }

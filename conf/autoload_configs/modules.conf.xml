@@ -22,6 +22,7 @@
     <!-- <load module="mod_cdr_sqlite"/> -->
     <!-- <load module="mod_event_multicast"/> -->
     <load module="mod_event_socket"/>
+    <!-- <load module="mod_event_zmq"/> -->
     <!-- <load module="mod_zeroconf"/> -->
     <!-- <load module="mod_erlang_event"/> -->
     <!-- <load module="mod_snmp"/> -->
@@ -92,7 +93,6 @@
     <!--For local streams (play all the files in a directory)-->
     <load module="mod_local_stream"/>
     <load module="mod_tone_stream"/>
-    <load module="mod_file_string"/>
 
     <!-- Timers -->
     <!-- <load module="mod_timerfd"/> -->

@@ -1506,9 +1506,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			stream.write_function(&stream,
 								  "<?xml version=\"1.0\"?>\n"
 								  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
-								  "version=\"%s\" state=\"%s\" entity=\"%s\">\n",
-								  version,
-								  zstr(uuid) ? "partial" : "full", clean_id);
+								  "version=\"%s\" state=\"partial\" entity=\"%s\">\n", version, clean_id);
+								  
+								  
 		}
 
 		//if (strcasecmp(event_status, "Registered")) {

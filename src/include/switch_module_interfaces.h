@@ -103,29 +103,9 @@ struct switch_stream_handle {
 };
 
 struct switch_io_event_hooks;
+struct switch_say_file_handle;
 
-
-
-typedef switch_call_cause_t (*switch_io_outgoing_channel_t)
- 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+typedef switch_call_cause_t (*switch_io_outgoing_channel_t)	
 	(switch_core_session_t *, switch_event_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t,
 	 switch_call_cause_t *);
 typedef switch_status_t (*switch_io_read_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
@@ -490,6 +470,7 @@ struct switch_say_interface {
 	const char *interface_name;
 	/*! function to pass down to the module */
 	switch_say_callback_t say_function;
+	switch_say_string_callback_t say_string_function;
 	switch_thread_rwlock_t *rwlock;
 	int refs;
 	switch_mutex_t *reflock;

@@ -31,6 +31,24 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+/* Use select on windows and poll everywhere else.
+   Select is the devil.  Especially if you are doing a lot of small socket connections.
+   If your FD number is bigger than 1024 you will silently create memory corruption.
+
+   If you have build errors on your platform because you don't have poll find a way to detect it and #define ESL_USE_SELECT and #undef ESL_USE_POLL
+   All of this will be upgraded to autoheadache eventually.
+*/
+
+/* TBD for win32 figure out how to tell if you have WSAPoll (vista or higher) and use it when available by #defining ESL_USE_WSAPOLL (see below) */
+
+#ifdef _MSC_VER
+#define FD_SETSIZE 8192
+#define ESL_USE_SELECT
+#else 
+#define ESL_USE_POLL
+#endif
+
 #include <esl.h>
 #ifndef WIN32
 #define closesocket(x) close(x)
@@ -40,6 +58,10 @@
 /* These warnings need to be ignored warning in sdk header */
 #include <Ws2tcpip.h>
 #pragma warning (default:6386)
+#endif
+
+#ifdef ESL_USE_POLL
+#include <poll.h>
 #endif
 
 
@@ -614,6 +636,143 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 
 }
 
+
+/* USE WSAPoll on vista or higher */
+#ifdef ESL_USE_WSAPOLL
+ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
+{
+}
+#endif
+
+
+#ifdef ESL_USE_SELECT
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 6262 ) /* warning C6262: Function uses '98348' bytes of stack: exceeds /analyze:stacksize'16384'. Consider moving some data to heap */
+#endif
+ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
+{
+	int s = 0, r = 0;
+	fd_set rfds;
+	fd_set wfds;
+	fd_set efds;
+	struct timeval tv;
+
+	FD_ZERO(&rfds);
+	FD_ZERO(&wfds);
+	FD_ZERO(&efds);
+
+	/* Wouldn't you rather know?? */
+	assert(sock <= FD_SETSIZE);
+
+	
+	if ((flags & ESL_POLL_READ)) {
+
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	FD_SET(sock, &rfds);
+#pragma warning( pop ) 
+#else
+	FD_SET(sock, &rfds);
+#endif
+	}
+
+	if ((flags & ESL_POLL_WRITE)) {
+
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	FD_SET(sock, &wfds);
+#pragma warning( pop ) 
+#else
+	FD_SET(sock, &wfds);
+#endif
+	}
+
+	if ((flags & ESL_POLL_ERROR)) {
+
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	FD_SET(sock, &efds);
+#pragma warning( pop ) 
+#else
+	FD_SET(sock, &efds);
+#endif
+	}
+
+	tv.tv_sec = ms / 1000;
+	tv.tv_usec = (ms % 1000) * ms;
+	
+	s = select(sock + 1, (flags & ESL_POLL_READ) ? &rfds : NULL, (flags & ESL_POLL_WRITE) ? &wfds : NULL, (flags & ESL_POLL_ERROR) ? &efds : NULL, &tv);
+
+	if (s < 0) {
+		r = s;
+	} else if (s > 0) {
+		if ((flags & ESL_POLL_READ) && FD_ISSET(sock, &rfds)) {
+			r |= ESL_POLL_READ;
+		}
+
+		if ((flags & ESL_POLL_WRITE) && FD_ISSET(sock, &wfds)) {
+			r |= ESL_POLL_WRITE;
+		}
+
+		if ((flags & ESL_POLL_ERROR) && FD_ISSET(sock, &efds)) {
+			r |= ESL_POLL_ERROR;
+		}
+	}
+
+	return r;
+
+}
+#ifdef WIN32
+#pragma warning( pop ) 
+#endif
+#endif
+
+#ifdef ESL_USE_POLL
+ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
+{
+	struct pollfd pfds[2] = { { 0 } };
+	int s = 0, r = 0;
+	
+	pfds[0].fd = sock;
+
+	if ((flags & ESL_POLL_READ)) {
+		pfds[0].events |= POLLIN;
+	}
+
+	if ((flags & ESL_POLL_WRITE)) {
+		pfds[0].events |= POLLOUT;
+	}
+
+	if ((flags & ESL_POLL_ERROR)) {
+		pfds[0].events |= POLLERR;
+	}
+	
+	s = poll(pfds, 1, ms);
+
+	if (s < 0) {
+		r = s;
+	} else if (s > 0) {
+		if ((pfds[0].revents & POLLIN)) {
+			r |= ESL_POLL_READ;
+		}
+		if ((pfds[0].revents & POLLOUT)) {
+			r |= ESL_POLL_WRITE;
+		}
+		if ((pfds[0].revents & POLLERR)) {
+			r |= ESL_POLL_ERROR;
+		}
+	}
+
+	return r;
+
+}
+#endif
+
+
 ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password, uint32_t timeout)
 {
 	char sendbuf[256];
@@ -681,30 +840,17 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	rval = connect(handle->sock, (struct sockaddr*)&handle->sockaddr, sizeof(handle->sockaddr));
 	
 	if (timeout) {
-		fd_set wfds;
-		struct timeval tv;
 		int r;
 
-		tv.tv_sec = timeout / 1000;
-		tv.tv_usec = (timeout % 1000) * 1000;
-		FD_ZERO(&wfds);
-#ifdef WIN32
-#pragma warning( push )
-#pragma warning( disable : 4127 )
-	FD_SET(handle->sock, &wfds);
-#pragma warning( pop ) 
-#else
-        FD_SET(handle->sock, &wfds);
-#endif
 
-        r = select(handle->sock + 1, NULL, &wfds, NULL, &tv);
+		r = esl_wait_sock(handle->sock, timeout, ESL_POLL_WRITE);
 		
 		if (r <= 0) {
 			snprintf(handle->err, sizeof(handle->err), "Connection timed out");
 			goto fail;
 		}
 
-		if (!FD_ISSET(handle->sock, &wfds)) {
+		if (!(r & ESL_POLL_WRITE)) {
 			snprintf(handle->err, sizeof(handle->err), "Connection timed out");
 			goto fail;
 		}
@@ -823,9 +969,7 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 
 ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, int check_q, esl_event_t **save_event)
 {
-	fd_set rfds, efds;
-	struct timeval tv = { 0 };
-	int max, activity;
+	int activity;
 	esl_status_t status = ESL_SUCCESS;
 	
 	if (!ms) {
@@ -845,55 +989,24 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 		esl_mutex_unlock(handle->mutex);
 	}
 
-	tv.tv_usec = ms * 1000;
-
-	FD_ZERO(&rfds);
-	FD_ZERO(&efds);
-
-#ifdef WIN32
-#pragma warning( push )
-#pragma warning( disable : 4127 )
-	FD_SET(handle->sock, &rfds);
-	FD_SET(handle->sock, &efds);
-#pragma warning( pop ) 
-#else
-	FD_SET(handle->sock, &rfds);
-	FD_SET(handle->sock, &efds);
-#endif
-
-	max = handle->sock + 1;
+	activity = esl_wait_sock(handle->sock, ms, ESL_POLL_READ|ESL_POLL_ERROR);
 	
-	if ((activity = select(max, &rfds, NULL, &efds, &tv)) < 0) {
+	if (activity < 0) {
 		handle->connected = 0;
 		return ESL_FAIL;
 	}
 
-	if (activity == 0 || !FD_ISSET(handle->sock, &rfds) || (esl_mutex_trylock(handle->mutex) != ESL_SUCCESS)) {
+	if (activity == 0 || !(activity & ESL_POLL_READ) || (esl_mutex_trylock(handle->mutex) != ESL_SUCCESS)) {
 		return ESL_BREAK;
 	}
 
-	tv.tv_usec = 0;
+	activity = esl_wait_sock(handle->sock, ms, ESL_POLL_READ|ESL_POLL_ERROR);
 
-	FD_ZERO(&rfds);
-	FD_ZERO(&efds);
-
-#ifdef WIN32
-#pragma warning( push )
-#pragma warning( disable : 4127 )
-	FD_SET(handle->sock, &rfds);
-	FD_SET(handle->sock, &efds);
-#pragma warning( pop ) 
-#else
-	FD_SET(handle->sock, &rfds);
-	FD_SET(handle->sock, &efds);
-#endif
-
-	activity = select(max, &rfds, NULL, &efds, &tv);
 
 	if (activity < 0) { 
 		handle->connected = 0;
 		status = ESL_FAIL;
-	} else if (activity > 0 && FD_ISSET(handle->sock, &rfds)) {
+	} else if (activity > 0 && (activity & ESL_POLL_READ)) {
 		if (esl_recv_event(handle, check_q, save_event)) {
 			status = ESL_FAIL;
 		}

@@ -56,7 +56,7 @@ SWITCH_DECLARE(const char *) switch_nat_get_type(void);
   \param pool the memory pool to use for long term allocations
   \note Generally called by the core_init
 */
-SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool);
+SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool, switch_bool_t mapping);
 
 /*! 
   \brief Initilize the rest of the NAT Traversal System
@@ -85,6 +85,11 @@ SWITCH_DECLARE(void) switch_nat_republish(void);
  \brief re-initializes NAT subsystem
 */
 SWITCH_DECLARE(void) switch_nat_reinit(void);
+
+/*!
+ \brief Update the setting if port mapping will be created
+*/
+SWITCH_DECLARE(void) switch_nat_set_mapping(switch_bool_t mapping);
 
 /*!
  \brief Maps a port through the NAT Traversal System

@@ -144,6 +144,8 @@ if test "${enable_optimizer}" = "yes" ; then
         AX_CC_MAXOPT
 fi
 
+AX_PATH_LIBGNUTLS()
+
 # set defaults for use on all platforms
 SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"

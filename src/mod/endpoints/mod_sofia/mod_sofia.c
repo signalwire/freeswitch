@@ -1655,6 +1655,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			const char *ip = NULL, *port = NULL;
 
 			switch_channel_set_flag(channel, CF_PROXY_MODE);
+			if (tech_pvt->rm_encoding) {
+				tech_pvt->rm_encoding = NULL;
+			}
 			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
@@ -3480,6 +3483,96 @@ SWITCH_STANDARD_API(sofia_count_reg_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(sofia_username_of_function)
+{
+	char *data;
+	char *user = NULL;
+	char *domain = NULL;
+	char *profile_name = NULL;
+	char *p;
+	char *reply = "";
+	sofia_profile_t *profile = NULL;
+
+	if (!cmd) {
+		stream->write_function(stream, "%s", "");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	data = strdup(cmd);
+	switch_assert(data);
+
+	if ((p = strchr(data, '/'))) {
+		profile_name = data;
+		*p++ = '\0';
+		user = p;
+	} else {
+		user = data;
+	}
+
+	if ((domain = strchr(user, '@'))) {
+		*domain++ = '\0';
+	}
+
+	if (!profile_name && domain) {
+		profile_name = domain;
+	}
+
+	if (user && profile_name) {
+		char *sql;
+
+		if (!(profile = sofia_glue_find_profile(profile_name))) {
+			profile_name = domain;
+			domain = NULL;
+		}
+
+		if (!profile && profile_name) {
+			profile = sofia_glue_find_profile(profile_name);
+		}
+
+		if (profile) {
+			struct cb_helper_sql2str cb;
+			char username[256] = "";
+
+			cb.buf = username;
+			cb.len = sizeof(username);
+
+			if (!domain || !strchr(domain, '.')) {
+				domain = profile->name;
+			}
+
+			switch_assert(!zstr(user));
+
+			sql = switch_mprintf("select sip_username "
+									"from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
+									user, domain, domain);
+
+			switch_assert(sql);
+
+			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
+			switch_safe_free(sql);
+			if (!zstr(username)) {
+				stream->write_function(stream, "%s", username);
+			} else {
+				stream->write_function(stream, "");
+			}
+			reply = NULL;
+
+		}
+	}
+
+	if (reply) {
+		stream->write_function(stream, "%s", reply);
+	}
+
+	switch_safe_free(data);
+
+	if (profile) {
+		sofia_glue_release_profile(profile);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static void select_from_profile(sofia_profile_t *profile, 
 								const char *user,
 								const char *domain,
@@ -3890,6 +3983,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	const char *hval = NULL;
 	char *not_const = NULL;
 	int cid_locked = 0;
+	switch_channel_t *o_channel = NULL;
 
 	*new_session = NULL;
 
@@ -3917,6 +4011,11 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	profile_name = data;
 
 	nchannel = switch_core_session_get_channel(nsession);
+
+	if (session) {
+		o_channel = switch_core_session_get_channel(session);
+	}
+
 
 	if ((hval = switch_event_get_header(var_event, "sip_invite_to_uri"))) {
 		dest_to = switch_core_session_strdup(nsession, hval);
@@ -4024,7 +4123,23 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		gateway_ptr->ob_calls++;
 
 		if (!zstr(gateway_ptr->from_domain) && !switch_channel_get_variable(nchannel, "sip_invite_domain")) {
-			switch_channel_set_variable(nchannel, "sip_invite_domain", gateway_ptr->from_domain);
+			
+			if (!strcasecmp(gateway_ptr->from_domain, "auto-aleg-full")) {
+				const char *sip_full_from = switch_channel_get_variable(o_channel, "sip_full_from");
+				
+				if (!zstr(sip_full_from)) {
+					switch_channel_set_variable(nchannel, "sip_force_full_from", sip_full_from);
+				}
+
+			} else if (!strcasecmp(gateway_ptr->from_domain, "auto-aleg-domain")) {
+				const char *sip_from_host = switch_channel_get_variable(o_channel, "sip_from_host");
+
+				if (!zstr(sip_from_host)) {
+					switch_channel_set_variable(nchannel, "sip_invite_domain", sip_from_host);
+				}
+			} else {
+				switch_channel_set_variable(nchannel, "sip_invite_domain", gateway_ptr->from_domain);
+			}
 		}
 
 		if (!zstr(gateway_ptr->outbound_sticky_proxy) && !switch_channel_get_variable(nchannel, "sip_route_uri")) {
@@ -4223,7 +4338,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	}
 
 	if (session) {
-		switch_channel_t *o_channel = switch_core_session_get_channel(session);
 		const char *vval = NULL;
 
 		if ((vval = switch_channel_get_variable(o_channel, "sip_auto_answer")) && switch_true(vval)) {
@@ -4993,6 +5107,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_add_complete_func("::sofia::list_profile_gateway", list_profile_gateway);
 
 
+	SWITCH_ADD_API(api_interface, "sofia_username_of", "Sofia Username Lookup", sofia_username_of_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_API(api_interface, "sofia_contact", "Sofia Contacts", sofia_contact_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_API(api_interface, "sofia_count_reg", "Count Sofia registration", sofia_count_reg_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_API(api_interface, "sofia_dig", "SIP DIG", sip_dig_function, "<url>");

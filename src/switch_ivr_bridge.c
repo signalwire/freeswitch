@@ -357,11 +357,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			}
 
 
-			if ((bypass_media_after_bridge || switch_channel_test_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE)) && switch_channel_test_flag(chan_a, CF_ANSWERED)
+			if ((bypass_media_after_bridge || switch_channel_test_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE)) && switch_channel_test_flag(chan_a, CF_ANSWERED)
 				&& switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 				switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 				bypass_media_after_bridge = 0;
-				switch_channel_clear_flag(chan_a, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+				switch_channel_clear_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 				goto end_of_bridge_loop;
 			}
 		}
@@ -1367,6 +1367,8 @@ static void cleanup_proxy_mode_a(switch_core_session_t *session)
 		const char *sbv = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 		if (!zstr(sbv) && (sbsession = switch_core_session_locate(sbv))) {
 			switch_channel_t *sbchannel = switch_core_session_get_channel(sbsession);
+			/* Clear this now, otherwise will cause the one we're interested in to hang up too...*/
+			switch_channel_set_variable(sbchannel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 			switch_channel_hangup(sbchannel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 			switch_core_session_rwunlock(sbsession);
 		}

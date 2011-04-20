@@ -316,16 +316,20 @@
 	<currency>
 		<prompt phrase="и" filename="and.wav"/>
 		<prompt phrase="Цент" filename="cent.wav"/>
+		<prompt phrase="Цента" filename="centa.wav"/>
 		<prompt phrase="центральный" filename="central.wav"/>
 		<prompt phrase="Центов в минуту" filename="cents-per-minute.wav"/>
+		<prompt phrase="Центов" filename="centov.wav"/>
 		<prompt phrase="Центы" filename="cents.wav"/>
 		<prompt phrase="Доллар" filename="dollar.wav"/>
 		<prompt phrase="Долларов" filename="dollars.wav"/>
+		<prompt phrase="Доллара" filename="dollara.wav"/>
+		<prompt phrase="Доллары" filename="dollari.wav"/>
 		<prompt phrase="Минус" filename="minus.wav"/>
 		<prompt phrase="Отрицательный" filename="negative.wav"/>
-		<prompt phrase="Копеек" filename="kopeck-i.wav"/>
+		<prompt phrase="Копейки" filename="kopeck-i.wav"/>
 		<prompt phrase="Копейка" filename="kopeck.wav"/>
-		<prompt phrase="Копейки" filename="kopecks.wav"/>
+		<prompt phrase="Копеек" filename="kopecks.wav"/>
 		<prompt phrase="Рубль" filename="ruble.wav"/>
 		<prompt phrase="Рубля" filename="ruble-a.wav"/>
 		<prompt phrase="Рублей" filename="rubles.wav"/>
@@ -395,6 +399,7 @@
 		<prompt phrase="срочное сообщение сохранено" filename="vm-urgent-saved.wav"/><!--urgent saved    -->
 		<prompt phrase="сохранено" filename="vm-saved.wav"/><!--saved    -->
 		<prompt phrase="сохранённых" filename="vm-savedx.wav"/><!--saved    -->
+		<prompt phrase="сохранное" filename="vm-save.wav"/><!--saved    -->
 		<prompt phrase="сообщение" filename="vm-message.wav"/><!--message    -->
 		<prompt phrase="сообщений" filename="vm-messagex.wav"/><!--messages    -->
 		<prompt phrase="сообщения" filename="vm-messages.wav"/><!-- message   -->
@@ -431,26 +436,39 @@
 		<prompt phrase="пожалуйста, введите добавочный номер для отправки сообщения" filename="vm-forward_enter_ext.wav"/><!--please, enter the extention to forward this message to    -->
 		<prompt phrase="Неправильный добавочный номер" filename="vm-that_was_an_invalid_ext.wav"/><!--    -->
 		<prompt phrase="Почтовый ящик переполнен. Пожалуйста перезвоните позже" filename="vm-mailbox_full.wav"/><!--  That mailbox is full. Please try your call again later.  -->
+		<!-- Дописать-->
+		<prompt phrase="Ваш персональный номер, он же пин, используется для предотвращения доступа другими к вашим голосовым сообщениям. Хотите сменить его сейчас?" filename="vm-tutorial_change_pin.wav"/><!--Your personal identification number, or 'pin', is used to prevent others from accessing your voicemail messages. Would you like to change it now? -->
+		<prompt phrase="Вызываемый абонент сейчас недоступен и не имеет голосовой почты" filename="vm-not_available_no_voicemail.wav"/> <!-- The person you are trying to reach is not available and does not have voicemail.-->
+		<prompt phrase="Добро пожаловать в Вашу новую голосовую почту. Для того, что бы прослушать инструкцию и настроить вашу голосовую почту, нажмите 1. Чтобы пропустить этот шаг, нажмите 2" filename="vm-tutorial_yes_no.wav"/><!-- Welcome to your new voicemail. To listen to a tutorial and setup your voice mail box, press 1. To skip, press 2.-->
+		<prompt phrase="Необходимо записать Ваше имя и фамилию. Эта запись используется системой, включая справочник организации" filename="vm-tutorial_record_name.wav"/><!--I need to record your first and last name. This recording is used throughout the system, including in the company directory.-->
+		<!-- Дописать-->
+		
 	</voicemail>
 	<directory>
 		<!-- The following phrases still need to be recorded -->
-    		<prompt phrase="Пожалуйста, введите первые буквы имени абонента" filename="dir-enter-person.wav"/> <!--Please enter the first few letters of the persons-->
+    		<prompt phrase="Пожалуйста, введите первые буквы имени абонента" filename="dir-enter_person.wav"/> <!--Please enter the first few letters of the persons--> 
         	<prompt phrase="Фамилии" filename="dir-last_name.wav"/> <!--last name.-->
                 <prompt phrase="Искать по ..." filename="dir-to_search_by.wav"/><!--To search by-->
                 <prompt phrase="Имени" filename="dir-first_name.wav"/><!--first name.-->
-                <prompt phrase="По Вашему запросу ничего не найдено, попробуйте еще раз" filename="dir-no_match_entry.wav"/><!--Your search matched no results, try again.-->
+                <prompt phrase="По Вашему запросу ничего не найдено" filename="dir-no_match_entry.wav"/><!--Your search matched no results.-->
                 <prompt phrase="результаты Вашего запроса" filename="dir-result_match.wav"/><!--results matched your search.-->
-                <prompt phrase="По Вашему запросу найдено слишком много вариантов, пожалуйста, попробуйте уточнить запрос" filename="dir-to_many_result.wav"/><!--Your search returned too many results, please try again.-->
-                <prompt phrase="нет больше вариантов" filename="dir-no_more_result.wav"/><!--No more results.-->
+                <prompt phrase="По Вашему запросу найдено слишком много вариантов, пожалуйста, попробуйте уточнить запрос" filename="dir-too_many_result.wav"/><!--Your search returned too many results, please try again.-->
+                <prompt phrase="нет больше вариантов" filename="dir-no_more_results.wav"/><!--No more results.-->
                 <prompt phrase="Номер варианта" filename="dir-result_number.wav"/><!--Result number.-->
                 <prompt phrase="добавочный номер" filename="dir-at_extension.wav"/><!--at extension-->
                 <prompt phrase="Для выбора этой записи" filename="dir-to_select_entry.wav"/><!--To select this entry-->
                 <prompt phrase="Для выбора следующей записи" filename="dir-for_next.wav"/><!--For the next entry-->
                 <prompt phrase="Для выбора предыдущей записи" filename="dir-for_prev.wav"/><!--For the previous entry-->
-                <prompt phrase="Для начала нового поиска" filename="dir-to_make_new_search.wav"/><!--To start a new search-->
-                <prompt phrase="Вам необходимо указать минимум ..." filename="dir-specify_mininum_first.wav"/><!--You need to specify a minimum of-->
-                <prompt phrase="букв имени абонента, попробуйте снова" filename="dir-letters_of_person_name.wav"/><!--letters of the person name, try again.-->
+                <prompt phrase="Для начала нового поиска" filename="dir-start_new_search.wav"/><!--To start a new search-->
+                <prompt phrase="Вам необходимо указать минимум ..." filename="dir-specify_mininum.wav"/><!--You need to specify a minimum of-->
+                <prompt phrase="букв имени абонента" filename="dir-letters_of_person_name.wav"/><!--letters of the person name.-->
                 <prompt phrase="нажмите" filename="dir-press.wav"/> <!--press  vm-press.wav-->
+                <prompt phrase="Попробуйте снова" filename="dir-please_try_again.wav"/>^<!--  Please try again.   ivr-please_try_again.wav-->
+    		<!--дописать-->
+    		<prompt phrase="Пожалуйста, введите первые буквы имени или фамилии абонента" filename="dir-enter_person_first_or_last.wav"/><!-- Please enter the first few letters of the person's first or last name-->
+    		<prompt phrase="нет результатов по запросу." filename="dir-no_matching_results.wav"/><!-- There were no matching results.-->
+    		<!--дописать-->
+                
         </directory>
                                                                                                       
 
@@ -460,7 +478,7 @@
 		<prompt phrase="Ваш микрофон отключен" filename="conf-muted.wav"/><!-- You are now muted.   -->
 		<prompt phrase="Ваш микрофон включён" filename="conf-unmuted.wav"/><!-- You are now unmuted.   -->
 		<prompt phrase="Вы единственный участник конференции" filename="conf-alone.wav"/><!-- You are currently the only person in this conference.   -->
-		<prompt phrase="NULL" filename="conf-perpetual.wav" type="tone"/><!--    -->
+		<prompt phrase="NULL" filename="conf-perpetual.wav" type="music"/>
 		<prompt phrase="NULL" filename="conf-enter.wav" type="tone"/><!--    -->
 		<prompt phrase="NULL" filename="conf-exit.wav" type="tone"/><!--    -->
 		<prompt phrase="Вы были отключены от конференции" filename="conf-kicked.wav"/><!--  You have been kicked from this conference.  -->
@@ -471,6 +489,15 @@
 		<prompt phrase="Неправильный пин-код, попробуйте снова" filename="conf-bad-pin.wav"/><!-- Invalid pin number, try again.   -->
 		<prompt phrase="До свидания" filename="conf-goodbye.wav"/><!-- goodbye   -->
 		<prompt phrase="Добро пожаловать в конференцию" filename="conf-welcome.wav"/><!--Welcome to the conference.    -->
+		<!-- дописать -->
+		<prompt phrase="Пожалуйста, введите номер конференции, завершив нажатием на клавишу решетка" filename="conf-enter_conf_number.wav"/> <!--  Please enter the conference number, followed by the pound key  -->
+		<prompt phrase="Ваш микрофон уже выключен." filename="conf-you_are_already_muted.wav"/> <!--  You are already muted.  -->
+		<prompt phrase="Звук и микрофон сейчас выключены." filename="conf-you_are_now_bidirectionally_muted.wav"/> <!--  You are now bi-directionally muted.  -->
+		<prompt phrase="...Вошёл в конференцию." filename="conf-has_joined.wav"/> <!--  ...has entered the conference.  -->
+		<prompt phrase="Введите ПИН код конференции, завершив нажатием  на клавишу решётка." filename="conf-enter_conf_pin.wav"/> <!--  Enter the conference PIN number, followed by the pound key.  -->
+    		<prompt phrase="...Покинул конференцию." filename="conf-has_left.wav"/> <!--  ...has left the conference.  -->
+		<!-- дописать -->
+     		
 	</conference>
 	<ivr>
 		<prompt phrase="Номер счета" filename="ivr-account_number.wav"/><!-- Account number   -->
@@ -479,11 +506,11 @@
 		<prompt phrase="Пожалуйста, введите добавочный номер абонента завершив нажатием на клавишу решётка" filename="ivr-enter_ext.wav"/><!-- Please enter an extension followed by the pound sign-->
 		<prompt phrase="Для этого абонента" filename="ivr-for_this_person.wav"/><!-- For this person   -->
 		<prompt phrase="Пожалуйста, оставайтесь на линии, идет соединение" filename="ivr-hold_connect_call.wav"/><!-- Please hold while I connect your call   -->
-		<prompt phrase="Извините" filename="ivr-im_sorry.wav"/><!-- I'm sorry   -->
-		<prompt phrase="Пожалуйста" filename="ivr-please.wav"/><!--  Please  -->
-		<prompt phrase="Пожалуйста, перезвоните нам в …" filename="ivr-please_return_our_call_at.wav"/><!--  Please return our call at  -->
-		<prompt phrase="относительно номера ссылки" filename="ivr-regarding_reference_number.wav"/><!-- Regarding reference number   -->
-		<prompt phrase="Это пример голосового подменю" filename="ivr-sample_submenu.wav"/><!-- This is a sample IVR submenu...   -->
+		<prompt phrase="Извините" filename="ivr-im_sorry.wav"/> <!-- I'm sorry   -->
+		<prompt phrase="Пожалуйста" filename="ivr-please.wav"/><!--  Please  -->
+		<prompt phrase="Пожалуйста, перезвоните нам в …" filename="ivr-please_return_our_call_at.wav"/><!--  Please return our call at  -->
+		<prompt phrase="относительно номера ссылки" filename="ivr-regarding_reference_number.wav"/><!-- Regarding reference number   -->
+		<prompt phrase="Это пример голосового подменю" filename="ivr-sample_submenu.wav"/><!-- This is a sample IVR submenu...   -->
 		<prompt phrase="Пожалуйста, представьтесь после сигнала" filename="ivr-say_name.wav"/><!-- Please say your name after the tone   -->
 		<prompt phrase="Перенаправить на голосовую почту" filename="ivr-send_to_voicemail.wav"/><!--  Send this caller to voicemail  -->
 		<prompt phrase="Для разговора с представителем по обслуживанию клиентов" filename="ivr-speak_to_a_customer_service_representative.wav"/><!-- To speak to a customer service representative   -->
@@ -508,7 +535,7 @@
 		<prompt phrase="Вызов" filename="ivr-call.wav"/><!-- call   -->
 		<prompt phrase="Вы можете" filename="ivr-you_may.wav"/><!-- You may   -->
 		<prompt phrase="Здравствуйте" filename="ivr-hello.wav"/><!-- hello   -->
-		<prompt phrase="Используя клавиатуру телефона…" filename="ivr-use_telephone_keypad.wav"/><!-- Using your telephone keypad...   -->
+		<prompt phrase="Используя клавиатуру телефона…" filename="ivr-using_telephone_keypad.wav"/><!-- Using your telephone keypad...  переименовать ivr-use_telephone_keypad.wav -->
 		<prompt phrase="Пожалуйста, назовите имя сотрудника, которому пытаетесь дозвониться" filename="ivr-spell_name.wav"/><!-- please spell the name of the person you are trying to reach.   -->
 		<prompt phrase="Сначала фамилия" filename="ivr-last_name_first.wav"/><!--Last name firs    -->
 		<prompt phrase="Сначала имя" filename="ivr-first_name_first.wav"/><!--First name first    -->
@@ -545,7 +572,7 @@
                 <prompt phrase="Меньше чем..." filename="ivr-less_than.wav" attr="Needs_to_be_recorded!"/><!-- "Less than..."-->
                 <prompt phrase="Начать запись" filename="ivr-begin_recording.wav " attr="Needs_to_be_recorded!"/><!--"Begin recording." -->
                 <prompt phrase="Переадресация звонков была отменена" filename="ivr-call_forwarding_has_been_cancelled.wav" attr="Needs_to_be_recorded!"/><!--"Call forwarding has been cancelled."  -->
-                <prompt phrase="Переадресация звонков была настроена" filename="ivr-call_forwarding_has_been_set.wav " attr="Needs_to_be_recorded!"/><!--"Call forwarding has been set." -->
+                <prompt phrase="Переадресация звонков была настроена" filename="ivr-call_forwarding_has_been_set.wav" attr="Needs_to_be_recorded!"/><!--"Call forwarding has been set." -->
                 <prompt phrase="Пожалуйста, введите номер телефона" filename="ivr-please_enter_the_phone_number.wav" attr="Needs_to_be_recorded!"/><!--"Please enter the phone number." -->
                 <prompt phrase="Пожалуйста, назовите свое имя и цель Вашего звонка" filename="ivr-please_state_your_name_and_reason_for_calling.wav " attr="Needs_to_be_recorded!"/><!--"Please state your name and the reason for your call." -->
                 <prompt phrase="Что бы принять звонок нажмите 1, чтобы отклонить звонок нажмите 2. Для отправки голосовой почты нажмите 3" filename="ivr-accept_reject_voicemail.wav" attr="Needs_to_be_recorded!"/><!--"To accept, press 1. To reject, press 2. To send to voicemail, press 3." -->
@@ -554,17 +581,66 @@
                 <prompt phrase="Пожалуйста, оставайтесь на линии. Ваш звонок будет принят немедленно" filename="ivr-stay_on_line_call_answered_momentarily.wav" attr="Needs_to_be_recorded!"/><!--"Please stay on the line. You call will be answered momentarily." -->
                 <prompt phrase="Ваш звонок был переведен" filename="ivr-call_being_transferred.wav" attr="Needs_to_be_recorded!"/><!--"Your call is being transferred." filename="ivr-call_being_transferred.wav" -->
                 <prompt phrase="Пожалуйста, наслаждайтесь музыкой, пока Ваш вонок переводится" filename="ivr-enjoy_music_while_transfer.wav" attr="Needs_to_be_recorded!"/> <!--"Please enjoy the music while your call is being transferred." -->
+                
+                
+                <!-- Дописать -->
+		<prompt phrase="...покинул здание." filename="ivr-has_left_the_building.wav"/> <!--  ...has left the building.  -->
+		<prompt phrase="Добро пожаловать в..." filename="ivr-welcome_to.wav"/> <!--  Welcome to...  -->
+		<prompt phrase="У вас есть звонок от..." filename="ivr-call_from.wav"/> <!--  You have a call from...  -->
+		<prompt phrase="Подождите, пожалуйста." filename="ivr-one_moment_please.wav"/> <!--  One moment please.  -->
+		<prompt phrase="Режим не беспокоить был отменён." filename="ivr-dnd_cancelled.wav"/> <!--  Do not disturb has been cancelled.  -->
+		<prompt phrase="Доброе утро." filename="ivr-good_morning.wav"/> <!--  Good morning.  -->
+		<prompt phrase="Если нет, нажмите..." filename="ivr-if_not_press.wav"/> <!--  If not, press...  -->
+		<prompt phrase="Для справочника, нажмите..." filename="ivr-for_directory_press.wav"/> <!--  For a directory, press...  -->
+		<prompt phrase="Добрый вечер." filename="ivr-good_evening.wav"/> <!--  Good evening.  -->
+		<prompt phrase="Нажмите любую другую цифру..." filename="ivr-any_other_digit.wav"/> <!--  Press any other digit...  -->
+		<prompt phrase="Введите первые буквы имени абонента." filename="ivr-enter_letters_first_or_last_name.wav"/> <!--  Enter the first few letters of the person's first or last name. dir-enter_person.wav --> 
+		<prompt phrase="Пожалуйста введите..." filename="ivr-please_enter_the.wav"/> <!--  Please enter the...  -->
+		<prompt phrase="Пожалуйста, введите первые буквы фамилии абонента" filename="ivr-enter_letters_last_name.wav"/> <!--  Enter the first few letters of the person's last name.  -->
+		<prompt phrase="Вы вошли..." filename="ivr-you_entered.wav"/> <!--  You entered...  -->
+		<prompt phrase="для..." filename="ivr-for.wav"/> <!--  For... не нужно -->
+		<prompt phrase="Внутренний номер..." filename="ivr-extension_number.wav"/> <!--  Extension number...  -->
+                <prompt phrase="Остаток на счёте составляет..." filename="ivr-account_balance_is.wav"/> <!--  The account balance is...  -->
+                <prompt phrase="Когда закончите нажмите клавишу решётка." filename="ivr-finished_pound_hash_key.wav"/> <!--  When you are finished, press the pound or hash key.  -->
+                <prompt phrase="...вызвал аварийные службы" filename="ivr-has_called_emergency_services.wav"/> <!--  ...has called emergency services  -->
+                <prompt phrase="Пожалуйста, укажите ваше имя и причину вашего звонка." filename="ivr-please_state_your_name_and_reason_for_calling.wav"/> <!--  Please state your name and the reason for your call.  -->
+                <prompt phrase="Если это правильно, нажмите..." filename="ivr-if_correct_press.wav"/> <!--  If this is correct, press...  -->
+                <prompt phrase="Добро пожаловать." filename="ivr-welcome.wav"/> <!--  Welcome.  -->
+                <prompt phrase="Пожалуйста введите номер очереди,завершив нажатием на клавишу решетка." filename="ivr-enter_queue_number.wav"/> <!--  Please enter the queue number, followed by the pound or hash sign.  -->
+                <prompt phrase="...завершив нажатием на клавишу решетка." filename="ivr-followed_by_pound.wav"/> <!--  ...followed by the pound or hash key.  -->
+                <prompt phrase="Этот телефон не предназначен для совершения внешних звонков." filename="ivr-phone_is_unassigned.wav"/> <!--  This phone is unassigned and may not be used to make external calls.  -->
+                <prompt phrase="Номер." filename="ivr-number.wav"/> <!--  Number.  -->
+                <prompt phrase="Нету вызовов ожидающих в этой очереди." filename="ivr-no_calls_waiting_in_queue.wav"/> <!--  There are no calls waiting in this queue.  -->
+                <prompt phrase="...Файлы..." filename="ivr-files-.wav"/> <!--  ...files...  -->
+                <prompt phrase="...файл..." filename="ivr-file.wav"/> <!--  ...file...  -->
+                <prompt phrase="Нажмите один для ДА. Нажмите два для НЕТ." filename="ivr-one_yes_two_no.wav"/> <!--  Press one for yes. Press two for no.  -->
+                <prompt phrase="Это меню не содержит никаких элементов. Пожалуйста, обратитесь к администратору." filename="ivr-no_menu_items.wav"/> <!--  This menu has no items. Please contact the administrator.  -->
+                <prompt phrase="Поздравляем! Этот телефон настроен правильно и теперь могут быть установлен пользователю." filename="ivr-phone_is_configured_properly.wav"/> <!--  Congratulations! This phone is configured properly and may now be assigned to a user.  -->
+                <prompt phrase="Этот телефон не правильно настроен." filename="ivr-phone_not_configured.wav"/> <!--  This phone is not configured properly.  -->
+                <prompt phrase="Добрый день." filename="ivr-good_afternoon.wav"/> <!--  Good afternoon.  -->
+                <prompt phrase="Спасибо за звонок. Если вы знаете внутренний номер телефона, пожалуйста, введите его сейчас или набрать девять для каталога." filename="ivr-generic_greeting.wav"/> <!--  Thank you for calling. If you know your party's extension, please enter it now, or dial nine for a directory.  -->
+                <prompt phrase="Спасибо." filename="ivr-Thank_you.wav"/> <!--  Thank you.  -->
+                <prompt phrase="Если это правильно нажмите один. Если нет, нажмите 2" filename="ivr-if_correct_one_if_not_two.wav"/> <!--  If this is correct, press 1. If not, press 2.  -->
+                <!-- Дописать -->
+
+
+
+                
 	</ivr>
 	<misc>
 		<prompt phrase="Этот звонок шифруется" filename="call_secured.wav"/><!-- This call has been secured   -->
-		<prompt phrase="завершаемый нажатием на клавишу решетка" filename="vm-followed_by.wav"/><!-- Followed by pound   -->
+		<prompt phrase="завершаемый нажатием на клавишу решетка" filename="followed.wav"/><!-- Followed by pound   -->
 		<prompt phrase="Если вы этот человек" filename="if_you_are_this_person.wav"/><!--  If you are this person  -->
 		<prompt phrase="Если вы хотите" filename="if_you_would_like_to.wav"/><!--   If you would like to -->
 		<prompt phrase="Предоставьте номер ссылки" filename="provide_reference_number.wav"/><!--  Provide reference number  -->
 		<prompt phrase="Пожалуйста, введите добавочный номер на который хотите перевести звонок" filename="transfer1.wav"/><!--  Please enter extension you want to transfer to  -->
 		<prompt phrase="Перевод" filename="transfer2.wav"/><!--  Transfer  -->
-		<prompt phrase="Мы пытаемся связаться" filename="we_are_trying_to_reach.wav"/><!-- We are trying to reach   -->
+		<prompt phrase="Мы пытаемся связаться..." filename="we_are_trying_to_reach.wav"/><!-- We are trying to reach   -->
 		<prompt phrase="Произошла ошибка, пожалуйста обратитесь к администратору" filename="error.wav"/><!-- An error has occurred please contact the administrator   -->
+		<!-- Записать-->
+    		<prompt phrase="Ваш звонок будет завершен через" filename="misc-your_call_will_be_terminated_in.wav"/>
+		<prompt phrase="Ваш звонок был завершён" filename="misc-your_call_has_been_terminated.wav"/>
+		<!-- Записать-->
 	</misc>
     	<base256>
       		<!-- base256 prompts for SAS -->

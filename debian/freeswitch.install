@@ -129,7 +129,6 @@ opt/freeswitch/mod/mod_esf.so*
 opt/freeswitch/mod/mod_event_*.so*
 opt/freeswitch/mod/mod_expr.so*
 opt/freeswitch/mod/mod_fifo.so*
-opt/freeswitch/mod/mod_file_string.so*
 opt/freeswitch/mod/mod_flite.so*
 opt/freeswitch/mod/mod_fsv.so*
 opt/freeswitch/mod/mod_hash.so*
