@@ -2945,6 +2945,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static string switch_clean_name_string(string s) {
+    string ret = freeswitchPINVOKE.switch_clean_name_string(s);
+    return ret;
+  }
+
   public static string switch_safe_strdup(string it) {
     string ret = freeswitchPINVOKE.switch_safe_strdup(it);
     return ret;
@@ -3970,8 +3975,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_event_create_brackets(string data, char a, char b, char c, SWIGTYPE_p_p_switch_event arg4, ref string new_data) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_create_brackets(data, a, b, c, SWIGTYPE_p_p_switch_event.getCPtr(arg4), ref new_data);
+  public static switch_status_t switch_event_create_brackets(string data, char a, char b, char c, SWIGTYPE_p_p_switch_event arg4, ref string new_data, switch_bool_t dup) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_create_brackets(data, a, b, c, SWIGTYPE_p_p_switch_event.getCPtr(arg4), ref new_data, (int)dup);
     return ret;
   }
 
@@ -8827,6 +8832,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_clean_string")]
   public static extern string switch_clean_string(string jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_clean_name_string")]
+  public static extern string switch_clean_name_string(string jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_safe_strdup")]
   public static extern string switch_safe_strdup(string jarg1);
 
@@ -12017,7 +12025,7 @@ class freeswitchPINVOKE {
   public static extern int switch_event_create_json(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_create_brackets")]
-  public static extern int switch_event_create_brackets(string jarg1, char jarg2, char jarg3, char jarg4, HandleRef jarg5, ref string jarg6);
+  public static extern int switch_event_create_brackets(string jarg1, char jarg2, char jarg3, char jarg4, HandleRef jarg5, ref string jarg6, int jarg7);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_running")]
   public static extern int switch_event_running();
