@@ -85,9 +85,10 @@ int ft_to_sngss7_activate_all(void)
 	int x;
 
 	x = 1;
-	while (g_ftdm_sngss7_data.cfg.isap[x].id != 0) {
+	while (x < (MAX_ISAPS)) {
 		/* check if this link has already been actived */
-		if (!(g_ftdm_sngss7_data.cfg.isap[x].flags & SNGSS7_ACTIVE)) {
+		if ((g_ftdm_sngss7_data.cfg.isap[x].id != 0) &&
+			(!(g_ftdm_sngss7_data.cfg.isap[x].flags & SNGSS7_ACTIVE))) {
 
 			if (ftmod_ss7_enable_isap(x)) {	
 				SS7_CRITICAL("ISAP %d Enable: NOT OK\n", x);
@@ -101,12 +102,13 @@ int ft_to_sngss7_activate_all(void)
 		} /* if !SNGSS7_ACTIVE */
 		
 		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.isap[x].id != 0) */
+	} /* while (x < (MAX_ISAPS)) */
 
 	x = 1;
-	while (g_ftdm_sngss7_data.cfg.nsap[x].id != 0) {
+	while (x < (MAX_NSAPS)) {
 		/* check if this link has already been actived */
-		if (!(g_ftdm_sngss7_data.cfg.nsap[x].flags & SNGSS7_ACTIVE)) {
+		if ((g_ftdm_sngss7_data.cfg.nsap[x].id != 0) &&
+			(!(g_ftdm_sngss7_data.cfg.nsap[x].flags & SNGSS7_ACTIVE))) {
 
 			if (ftmod_ss7_enable_nsap(x)) {	
 				SS7_CRITICAL("NSAP %d Enable: NOT OK\n", x);
@@ -120,13 +122,14 @@ int ft_to_sngss7_activate_all(void)
 		} /* if !SNGSS7_ACTIVE */
 		
 		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.nsap[x].id != 0) */
+	} /* while (x < (MAX_NSAPS)) */
 
 	if (g_ftdm_sngss7_data.cfg.mtpRoute[1].id != 0) {
 		x = 1;
-		while (g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) {
+		while (x < (MAX_MTP_LINKSETS+1)) {
 			/* check if this link has already been actived */
-			if (!(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].flags & SNGSS7_ACTIVE)) {
+		if ((g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) &&
+			(!(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].flags & SNGSS7_ACTIVE))) {
 	
 				if (ftmod_ss7_enable_mtpLinkSet(x)) {	
 					SS7_CRITICAL("LinkSet \"%s\" Enable: NOT OK\n", g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name);
@@ -140,7 +143,7 @@ int ft_to_sngss7_activate_all(void)
 			} /* if !SNGSS7_ACTIVE */
 			
 			x++;
-		} /* while (g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) */
+		} /* while (x < (MAX_MTP_LINKSETS+1)) */
 	}
 
 	return 0;
