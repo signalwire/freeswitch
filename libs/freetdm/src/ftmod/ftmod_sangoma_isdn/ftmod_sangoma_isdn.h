@@ -213,6 +213,8 @@ typedef struct sngisdn_span_data {
 	int8_t			facility_timeout;
 	uint8_t			num_local_numbers;
 	uint8_t 		ignore_cause_value;
+	uint8_t			trace_q931; /* TODO: combine with trace_flags */
+	uint8_t			trace_q921; /* TODO: combine with trace_flags */
 	uint8_t			raw_trace_q931; /* TODO: combine with trace_flags */
 	uint8_t			raw_trace_q921; /* TODO: combine with trace_flags */
 	uint8_t			timer_t3;
