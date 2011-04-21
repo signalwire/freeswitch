@@ -3566,7 +3566,7 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 
 	if (status == FTDM_SUCCESS && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_USE_RX_GAIN) 
 	   && (ftdmchan->native_codec == FTDM_CODEC_ALAW || ftdmchan->native_codec == FTDM_CODEC_ULAW)) {
-		int i = 0;
+		ftdm_size_t i = 0;
 		unsigned char *rdata = data;
 		for (i = 0; i < *datalen; i++) {
 			rdata[i] = ftdmchan->rxgain_table[rdata[i]];
