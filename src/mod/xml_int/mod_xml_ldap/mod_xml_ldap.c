@@ -50,7 +50,8 @@ typedef enum {
 	XML_LDAP_CONFIG = 0,
 	XML_LDAP_DIRECTORY,
 	XML_LDAP_DIALPLAN,
-	XML_LDAP_PHRASE
+	XML_LDAP_PHRASE,
+	XML_LDAP_LANGUAGE
 } xml_ldap_query_type_t;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_ldap_load);
@@ -247,6 +248,8 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 		query_type = XML_LDAP_DIALPLAN;
 	} else if (!strcmp(section, "phrases")) {
 		query_type = XML_LDAP_PHRASE;
+	} else if (!strcmp(section, "languages")) {
+		query_type = XML_LDAP_LANGUAGE;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid section\n");
 		return NULL;
@@ -269,6 +272,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 
 				case XML_LDAP_DIALPLAN:
 				case XML_LDAP_PHRASE:
+				case XML_LDAP_LANGUAGE:
 					break;
 				}
 			}
@@ -326,6 +330,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 				break;
 
 			case XML_LDAP_PHRASE:
+			case XML_LDAP_LANGUAGE:
 				break;
 			}
 		} else {

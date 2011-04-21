@@ -12688,6 +12688,18 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_clean_string(char * jarg1) {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_clean_name_string(char * jarg1) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (char *)switch_clean_name_string(arg1);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_switch_safe_strdup(char * jarg1) {
   char * jresult ;
   char *arg1 = (char *) 0 ;
@@ -25903,7 +25915,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_create_json(void * jarg1, char * 
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_create_brackets(char * jarg1, char jarg2, char jarg3, char jarg4, void * jarg5, void * jarg6) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_create_brackets(char * jarg1, char jarg2, char jarg3, char jarg4, void * jarg5, void * jarg6, int jarg7) {
   int jresult ;
   char *arg1 = (char *) 0 ;
   char arg2 ;
@@ -25911,6 +25923,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_create_brackets(char * jarg1, cha
   char arg4 ;
   switch_event_t **arg5 = (switch_event_t **) 0 ;
   char **arg6 = (char **) 0 ;
+  switch_bool_t arg7 ;
   switch_status_t result;
   
   arg1 = (char *)jarg1; 
@@ -25919,7 +25932,8 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_create_brackets(char * jarg1, cha
   arg4 = (char)jarg4; 
   arg5 = (switch_event_t **)jarg5; 
   arg6 = (char **)jarg6; 
-  result = (switch_status_t)switch_event_create_brackets(arg1,arg2,arg3,arg4,arg5,arg6);
+  arg7 = (switch_bool_t)jarg7; 
+  result = (switch_status_t)switch_event_create_brackets(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
   jresult = result; 
   return jresult;
 }

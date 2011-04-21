@@ -28,6 +28,7 @@
  * Neal Horman <neal at wanlink dot com>
  * Matt Klein <mklein@nmedia.net>
  * Michael Jerris <mike@jerris.com>
+ * Marc Olivier Chouinard <mochouinard@moctel.com>
  *
  * switch_ivr_play_say.c -- IVR Library (functions to play or say audio)
  *
@@ -39,8 +40,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 														switch_input_args_t *args)
 {
 	switch_event_t *hint_data;
-	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
-	char *lname = NULL, *mname = NULL;
+	switch_xml_t cfg, xml = NULL, language = NULL, macros = NULL, phrases = NULL, macro, input, action;
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	const char *old_sound_prefix = NULL, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
 	const char *module_name = NULL, *chan_lang = NULL;
@@ -49,6 +49,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 	int matches = 0;
 	const char *pause_val;
 	int pause = 100;
+	const char *group_macro_name = NULL;
+	const char *local_macro_name = macro_name;
+	switch_bool_t sound_prefix_enforced = switch_true(switch_channel_get_variable(channel, "sound_prefix_enforced"));
+	switch_bool_t local_sound_prefix_enforced = SWITCH_FALSE;
 
 	if (!macro_name) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No phrase macro specified.\n");
@@ -65,8 +69,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		chan_lang = lang;
 	}
 
-	module_name = chan_lang;
-
 	switch_event_create(&hint_data, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(hint_data);
 
@@ -82,40 +84,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 	}
 	switch_channel_event_set_data(channel, hint_data);
 
-	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Open of phrases failed.\n");
+	if (switch_xml_locate_language(&xml, &cfg, hint_data, &language, &phrases, &macros, chan_lang) != SWITCH_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (!(macros = switch_xml_child(cfg, "macros"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macros tag.\n");
-		goto done;
+	if ((module_name = switch_xml_attr(language, "say-module"))) {
+	} else if ((module_name = switch_xml_attr(language, "module"))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Deprecated usage of module attribute. Use say-module instead\n");
+	} else {
+		module_name = chan_lang;
 	}
 
-	if (!(language = switch_xml_child(macros, "language"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language tag.\n");
-		goto done;
-	}
-
-	while (language) {
-		if ((lname = (char *) switch_xml_attr(language, "name")) && !strcasecmp(lname, chan_lang)) {
-			const char *tmp;
-
-			if ((tmp = switch_xml_attr(language, "module"))) {
-				module_name = tmp;
-			}
-			break;
+	if (!(sound_path = (char *) switch_xml_attr(language, "sound-prefix"))) {
+		if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {
+			sound_path = (char *) switch_xml_attr(language, "sound_path");
 		}
-		language = language->next;
-	}
-
-	if (!language) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language %s.\n", chan_lang);
-		goto done;
-	}
-
-	if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {
-		sound_path = (char *) switch_xml_attr(language, "sound_path");
 	}
 
 	if (!(tts_engine = (char *) switch_xml_attr(language, "tts-engine"))) {
@@ -126,29 +109,46 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		tts_voice = (char *) switch_xml_attr(language, "tts_voice");
 	}
 
-	if (sound_path) {
+	/* If we use the new structure, check for a group name */
+	if (language != macros) {
+		char *p;
+		char *macro_name_dup = switch_core_session_strdup(session, macro_name);
+		const char *group_sound_path;
+		const char *sound_prefix_enforced_str;
+
+		if ((p = strchr(macro_name_dup, '@'))) {
+			*p++ = '\0';
+			local_macro_name = macro_name_dup;
+			group_macro_name = p;
+
+			if (!(macros = switch_xml_find_child(phrases, "macros", "name", group_macro_name))) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macros group %s.\n", group_macro_name);
+				goto done;
+			}
+		}
+		/* Support override of certain language attribute */
+		if ((group_sound_path = (char *) switch_xml_attr(macros, "sound-prefix")) || (group_sound_path = (char *) switch_xml_attr(macros, "sound-path")) || (group_sound_path = (char *) switch_xml_attr(macros, "sound_path"))) {
+			sound_path = group_sound_path;
+		}
+
+		if (sound_prefix_enforced == SWITCH_FALSE && (sound_prefix_enforced_str = switch_xml_attr(macros, "sound-prefix-enforced"))
+				&& (local_sound_prefix_enforced = switch_true(sound_prefix_enforced_str)) == SWITCH_TRUE) {
+			switch_channel_set_variable(channel, "sound_prefix_enforced", sound_prefix_enforced_str);
+		}
+
+	}
+
+	if (!(macro = switch_xml_find_child(macros, "macro", "name", local_macro_name))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macro %s.\n", macro_name);
+		goto done;
+	}
+
+	if (sound_path && sound_prefix_enforced == SWITCH_FALSE) {
 		char *p;
 		old_sound_prefix = switch_str_nil(switch_channel_get_variable(channel, "sound_prefix"));
 		p = switch_core_session_strdup(session, old_sound_prefix);
 		old_sound_prefix = p;
 		switch_channel_set_variable(channel, "sound_prefix", sound_path);
-	}
-
-	if (!(macro = switch_xml_child(language, "macro"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find any macro tags.\n");
-		goto done;
-	}
-
-	while (macro) {
-		if ((mname = (char *) switch_xml_attr(macro, "name")) && !strcasecmp(mname, macro_name)) {
-			break;
-		}
-		macro = macro->next;
-	}
-
-	if (!macro) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macro %s.\n", macro_name);
-		goto done;
 	}
 
 	if ((pause_val = switch_xml_attr(macro, "pause"))) {
@@ -342,6 +342,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 	if (old_sound_prefix) {
 		switch_channel_set_variable(channel, "sound_prefix", old_sound_prefix);
 	}
+	if (local_sound_prefix_enforced == SWITCH_TRUE) {
+		switch_channel_set_variable(channel, "sound_prefix_enforced", NULL);
+	}
+
 	if (xml) {
 		switch_xml_free(xml);
 	}

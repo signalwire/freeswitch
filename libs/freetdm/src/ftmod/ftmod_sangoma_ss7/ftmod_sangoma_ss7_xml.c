@@ -122,6 +122,7 @@ typedef struct sng_ccSpan
 	uint32_t		ssf;
 	uint32_t		clg_nadi;
 	uint32_t		cld_nadi;
+	uint32_t		rdnis_nadi;
 	uint32_t		min_digits;
 	uint32_t		t3;
 	uint32_t		t12;
@@ -1215,7 +1216,7 @@ static int ftmod_ss7_parse_mtp_linkset(ftdm_conf_node_t *mtp_linkset)
 
 	/* go through all the mtp3 links and fill in the apc */
 	i = 1;
-	while (g_ftdm_sngss7_data.cfg.mtp3Link[i].id != 0) {
+	while (i < (MAX_MTP_LINKS)) {
 		if (g_ftdm_sngss7_data.cfg.mtp3Link[i].linkSetId == mtpLinkSet.id) {
 			g_ftdm_sngss7_data.cfg.mtp3Link[i].apc = mtpLinkSet.apc;
 		}
@@ -1757,7 +1758,7 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 	/**************************************************************************/
 		/* go through all the links and check if they belong to this linkset*/
 		i = 1;
-		while (g_ftdm_sngss7_data.cfg.mtp3Link[i].id != 0) {
+		while (i < (MAX_MTP_LINKS)) {
 			/* check if this link is in the linkset */
 			if (g_ftdm_sngss7_data.cfg.mtp3Link[i].linkSetId == lnkSet->lsId) {
 				/* fill in the spc */
@@ -1841,6 +1842,7 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 	int						num_parms = cc_span->n_parameters;
 	int						flag_clg_nadi = 0;
 	int						flag_cld_nadi = 0;
+	int						flag_rdnis_nadi = 0;
 	int						i;
 	int						ret;
 
@@ -1891,28 +1893,6 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 				SS7_DEBUG("Found an ccSpan typeCntrl = %s\n", sng_cic_cntrl_type_map[ret].sng_type);
 			}
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "ssf")) {
-		/**********************************************************************/
-			ret = find_ssf_type_in_map(parm->val);
-			if (ret == -1) {
-				SS7_ERROR("Found an invalid ccSpan ssf = %s\n", parm->var);
-				return FTDM_FAIL;
-			} else {
-				sng_ccSpan.ssf = sng_ssf_type_map[ret].tril_type;
-				SS7_DEBUG("Found an ccSpan ssf = %s\n", sng_ssf_type_map[ret].sng_type);
-			}
-		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "switchType")) {
-		/**********************************************************************/
-			ret = find_switch_type_in_map(parm->val);
-			if (ret == -1) {
-				SS7_ERROR("Found an invalid ccSpan switchType = %s\n", parm->var);
-				return FTDM_FAIL;
-			} else {
-				sng_ccSpan.switchType = sng_switch_type_map[ret].tril_isup_type;
-				SS7_DEBUG("Found an ccSpan switchType = %s\n", sng_switch_type_map[ret].sng_type);
-			}
-		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "cicbase")) {
 		/**********************************************************************/
 			sng_ccSpan.cicbase = atoi(parm->val);
@@ -1934,16 +1914,17 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 			flag_clg_nadi = 1;
 			sng_ccSpan.clg_nadi = atoi(parm->val);
 			SS7_DEBUG("Found default CLG_NADI parm->value = %d\n", sng_ccSpan.clg_nadi);
-		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "cld_nadi")) {
-		/**********************************************************************/
 			/* throw the flag so that we know we got this optional parameter */
 			flag_cld_nadi = 1;
 			sng_ccSpan.cld_nadi = atoi(parm->val);
 			SS7_DEBUG("Found default CLD_NADI parm->value = %d\n", sng_ccSpan.cld_nadi);
-		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "rdnis_nadi")) {
+			/* throw the flag so that we know we got this optional parameter */
+			flag_rdnis_nadi = 1;
+			sng_ccSpan.rdnis_nadi = atoi(parm->val);
+			SS7_DEBUG("Found default RDNIS_NADI parm->value = %d\n", sng_ccSpan.rdnis_nadi);
 		} else if (!strcasecmp(parm->var, "obci_bita")) {
-		/**********************************************************************/
 			if (*parm->val == '1') {
 				sngss7_set_options(&sng_ccSpan, SNGSS7_ACM_OBCI_BITA);
 				SS7_DEBUG("Found Optional Backwards Indicator: Bit A (early media) enable option\n");
@@ -2033,6 +2014,15 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 		/* default the nadi value to national */
 		sng_ccSpan.clg_nadi = 0x03;
 	}
+
+	if (!flag_rdnis_nadi) {
+		/* default the nadi value to national */
+		sng_ccSpan.rdnis_nadi = 0x03;
+	}
+
+	/* pull up the SSF and Switchtype from the isup interface */
+	sng_ccSpan.ssf = g_ftdm_sngss7_data.cfg.isupIntf[sng_ccSpan.isupInf].ssf;
+	sng_ccSpan.switchType = g_ftdm_sngss7_data.cfg.isupIntf[sng_ccSpan.isupInf].switchType;
 
 	/* add this span to our global listing */
 	ftmod_ss7_fill_in_ccSpan(&sng_ccSpan);
@@ -2461,7 +2451,7 @@ static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, i
 {
 	int i = 1;
 
-	while (g_ftdm_sngss7_data.cfg.mtpRoute[i].id != 0) {
+	while (i < (MAX_MTP_ROUTES)) {
 		if (g_ftdm_sngss7_data.cfg.mtpRoute[i].dpc == spc) {
 			/* we have a match so break out of this loop */
 			break;
@@ -2471,6 +2461,16 @@ static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, i
 	}
 
 	if (g_ftdm_sngss7_data.cfg.mtpRoute[i].id == 0) {
+		/* this is a new route...find the first free spot */
+		i = 1;
+		while (i < (MAX_MTP_ROUTES)) {
+			if (g_ftdm_sngss7_data.cfg.mtpRoute[i].id == 0) {
+				/* we have a match so break out of this loop */
+				break;
+			}
+			/* move on to the next one */
+			i++;
+		}
 		g_ftdm_sngss7_data.cfg.mtpRoute[i].id = i;
 		SS7_DEBUG("found new mtp3 self route\n");
 	} else {
@@ -2909,6 +2909,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		g_ftdm_sngss7_data.cfg.isupCkt[x].ssf			= ccSpan->ssf;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].cld_nadi		= ccSpan->cld_nadi;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].clg_nadi		= ccSpan->clg_nadi;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].rdnis_nadi	= ccSpan->rdnis_nadi;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].options		= ccSpan->options;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].switchType	= ccSpan->switchType;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].min_digits	= ccSpan->min_digits;

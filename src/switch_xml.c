@@ -25,7 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Simon Capper <skyjunky@sbcglobal.net>
- *
+ * Marc Olivier Chouinard <mochouinard@moctel.com>
  *
  * switch_xml.c -- XML PARSER
  *
@@ -2785,6 +2785,62 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 	return time_match;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_language(switch_xml_t *root, switch_xml_t *node, switch_event_t *params, switch_xml_t *language, switch_xml_t *phrases, switch_xml_t *macros, const char *str_language) {
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (switch_xml_locate("languages", NULL, NULL, NULL, root, node, params, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
+		switch_xml_t sub_macros;
+
+		if (switch_xml_locate("phrases", NULL, NULL, NULL, root, node, params, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of languages and phrases failed.\n");
+			goto done;
+		}
+		if (!(sub_macros = switch_xml_child(*node, "macros"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find macros tag.\n");
+			switch_xml_free(*root);
+			*root = NULL;
+			*node = NULL;
+			goto done;
+		}
+		if (!(*language = switch_xml_find_child(sub_macros, "language", "name", str_language))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find language %s.\n", str_language);
+			switch_xml_free(*root);
+			*root = NULL;
+			*node = NULL;
+			goto done;
+		}
+		*macros = *language;
+	} else {
+		if (!(*language = switch_xml_find_child(*node, "language", "name", str_language))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find language %s.\n", str_language);
+			switch_xml_free(*root);
+			*root = NULL;
+			goto done;
+		}
+		if (!(*phrases = switch_xml_child(*language, "phrases"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find phrases tag.\n");
+			switch_xml_free(*root);
+			*root = NULL;
+			*node = NULL;
+			*language = NULL;
+			goto done;
+		}
+
+		if (!(*macros = switch_xml_child(*phrases, "macros"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find macros tag.\n");
+			switch_xml_free(*root);
+			*root = NULL;
+			*node = NULL;
+			*language = NULL;
+			*phrases = NULL;
+			goto done;
+		}
+	}
+	status = SWITCH_STATUS_SUCCESS;
+
+done:
+	return status;
+}
 
 #ifdef WIN32
 /* 

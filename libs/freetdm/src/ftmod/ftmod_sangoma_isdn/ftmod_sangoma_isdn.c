@@ -996,11 +996,15 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 	ftdm_clear_flag(span, FTDM_SPAN_STOP_THREAD);
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
 
-	if (signal_data->raw_trace_q921 == SNGISDN_OPT_TRUE) {
+	if (signal_data->trace_q921 == SNGISDN_OPT_TRUE ||
+		signal_data->raw_trace_q921 == SNGISDN_OPT_TRUE) {
+		
 		sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
 	}
 	
-	if (signal_data->raw_trace_q931 == SNGISDN_OPT_TRUE) {
+	if (signal_data->trace_q931 == SNGISDN_OPT_TRUE ||
+		signal_data->raw_trace_q931 == SNGISDN_OPT_TRUE) {
+
 		sngisdn_activate_trace(span, SNGISDN_TRACE_Q931);
 	}
 
