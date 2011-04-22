@@ -899,13 +899,13 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 		if (cc_agent_str2status(value) != CC_AGENT_STATUS_UNKNOWN) {
 			/* Reset values on available only */
 			if (cc_agent_str2status(value) == CC_AGENT_STATUS_AVAILABLE) {
-				sql = switch_mprintf("UPDATE agents SET status = '%q', last_status_change = '%ld', talk_time = 0, calls_answered = 0, no_answer_count = 0"
+				sql = switch_mprintf("UPDATE agents SET status = '%q', last_status_change = '%" TIME_T_FMT "', talk_time = 0, calls_answered = 0, no_answer_count = 0"
 						" WHERE name = '%q' AND NOT status = '%q'",
-						value, (long) switch_epoch_time_now(NULL),
+						value, switch_epoch_time_now(NULL),
 						agent, value);
 			} else {
-				sql = switch_mprintf("UPDATE agents SET status = '%q', last_status_change = '%ld' WHERE name = '%q'",
-						value, (long) switch_epoch_time_now(NULL), agent);
+				sql = switch_mprintf("UPDATE agents SET status = '%q', last_status_change = '%" TIME_T_FMT "' WHERE name = '%q'",
+						value, switch_epoch_time_now(NULL), agent);
 			}
 			cc_execute_sql(NULL, sql, NULL);
 			switch_safe_free(sql);
@@ -940,8 +940,8 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 			if (cc_agent_str2state(value) != CC_AGENT_STATE_RECEIVING) {
 				sql = switch_mprintf("UPDATE agents SET state = '%q' WHERE name = '%q'", value, agent);
 			} else {
-				sql = switch_mprintf("UPDATE agents SET state = '%q', last_offered_call = '%ld' WHERE name = '%q'",
-						value, (long) switch_epoch_time_now(NULL), agent);
+				sql = switch_mprintf("UPDATE agents SET state = '%q', last_offered_call = '%" TIME_T_FMT "' WHERE name = '%q'",
+						value, switch_epoch_time_now(NULL), agent);
 			}
 			cc_execute_sql(NULL, sql, NULL);
 			switch_safe_free(sql);
@@ -1379,8 +1379,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Member %s <%s> with uuid %s in queue %s is gone just before we assigned an agent\n", h->member_cid_name, h->member_cid_number, h->member_session_uuid, h->queue_name);
 	
 	
-		 sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q' AND state != '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), (long) switch_epoch_time_now(NULL), h->member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
+		 sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%" TIME_T_FMT "' WHERE system = 'single_box' AND uuid = '%q' AND state != '%q'",
+				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), switch_epoch_time_now(NULL), h->member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
 
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
@@ -1524,9 +1524,9 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%ld",  (long) t_agent_called);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%ld",  (long) t_agent_answered);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%ld",  (long) t_member_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" TIME_T_FMT, t_agent_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%" TIME_T_FMT, t_agent_answered);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" TIME_T_FMT, t_member_called);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
@@ -1535,12 +1535,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		}
 		/* for xml_cdr needs */
 		switch_channel_set_variable(member_channel, "cc_agent", h->agent_name);
-		switch_channel_set_variable_printf(member_channel, "cc_queue_answered_epoch", "%ld", (long) switch_epoch_time_now(NULL)); 
+		switch_channel_set_variable_printf(member_channel, "cc_queue_answered_epoch", "%" TIME_T_FMT, switch_epoch_time_now(NULL)); 
 
 		/* Set UUID of the Agent channel */
-		sql = switch_mprintf("UPDATE agents SET uuid = '%q', last_bridge_start = '%ld', calls_answered = calls_answered + 1, no_answer_count = 0"
+		sql = switch_mprintf("UPDATE agents SET uuid = '%q', last_bridge_start = '%" TIME_T_FMT "', calls_answered = calls_answered + 1, no_answer_count = 0"
 				" WHERE name = '%q' AND system = '%q'",
-				agent_uuid, (long) switch_epoch_time_now(NULL),
+				agent_uuid, switch_epoch_time_now(NULL),
 				h->agent_name, h->agent_system);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
@@ -1582,10 +1582,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%ld",  (long) t_agent_called);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%ld",  (long) t_agent_answered);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%ld",  (long) t_member_called);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Bridge-Terminated-Time", "%ld",  (long) switch_epoch_time_now(NULL));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" TIME_T_FMT, t_agent_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%" TIME_T_FMT, t_agent_answered);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" TIME_T_FMT,  t_member_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Bridge-Terminated-Time", "%" TIME_T_FMT, switch_epoch_time_now(NULL));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
@@ -1593,12 +1593,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_fire(&event);
 		}
 		/* for xml_cdr needs */
-		switch_channel_set_variable_printf(member_channel, "cc_queue_terminated_epoch", "%ld", (long) switch_epoch_time_now(NULL));
+		switch_channel_set_variable_printf(member_channel, "cc_queue_terminated_epoch", "%" TIME_T_FMT, switch_epoch_time_now(NULL));
 
 		/* Update Agents Items */
 		/* Do not remove uuid of the agent if we are a standby agent */
-		sql = switch_mprintf("UPDATE agents SET %s last_bridge_end = %ld, talk_time = talk_time + (%ld-last_bridge_start) WHERE name = '%q' AND system = '%q';"
-				, (strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)?"uuid = '',":""),  (long) switch_epoch_time_now(NULL), (long) switch_epoch_time_now(NULL), h->agent_name, h->agent_system);
+		sql = switch_mprintf("UPDATE agents SET %s last_bridge_end = %" TIME_T_FMT ", talk_time = talk_time + (%" TIME_T_FMT "-last_bridge_start) WHERE name = '%q' AND system = '%q';"
+				, (strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)?"uuid = '',":""), switch_epoch_time_now(NULL), switch_epoch_time_now(NULL), h->agent_name, h->agent_system);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -1617,10 +1617,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%ld",  (long) t_agent_called);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%ld",  (long) t_agent_answered);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Leaving-Time", "%ld",  (long) switch_epoch_time_now(NULL));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%ld",  (long) t_member_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" TIME_T_FMT, t_agent_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%" TIME_T_FMT, t_agent_answered);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Leaving-Time", "%" TIME_T_FMT,  switch_epoch_time_now(NULL));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" TIME_T_FMT, t_member_called);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
@@ -1980,7 +1980,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		}
 		/* Once we pass a certain point, we want to get rid of the abandoned call */
 		if (abandoned_epoch + discard_abandoned_after < (long) switch_epoch_time_now(NULL)) {
-			sql = switch_mprintf("DELETE FROM members WHERE system = 'single_box' AND uuid = '%q' AND (abandoned_epoch = '%ld' OR joined_epoch = '%q')", cbt.member_uuid, abandoned_epoch, cbt.member_joined_epoch);
+			sql = switch_mprintf("DELETE FROM members WHERE system = 'single_box' AND uuid = '%q' AND (abandoned_epoch = '%" TIME_T_FMT "' OR joined_epoch = '%q')", cbt.member_uuid, abandoned_epoch, cbt.member_joined_epoch);
 			cc_execute_sql(NULL, sql, NULL);
 			switch_safe_free(sql);
 		}
@@ -2140,9 +2140,9 @@ void *SWITCH_THREAD_FUNC cc_agent_dispatch_thread_run(switch_thread_t *thread, v
 
 	while (globals.running == 1) {
 		char *sql = NULL;
-		sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,(%ld-joined_epoch)+base_score+skill_score AS score, state, abandoned_epoch FROM members"
+		sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,(%" TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score, state, abandoned_epoch FROM members"
 				" WHERE state = '%q' OR state = '%q' OR (serving_agent = 'ring-all' AND state = '%q') ORDER BY score DESC",
-				(long) switch_epoch_time_now(NULL),
+				switch_epoch_time_now(NULL),
 				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), cc_member_state2str(CC_MEMBER_STATE_TRYING));
 
 		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, members_callback, NULL /* Call back variables */);
@@ -2399,7 +2399,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_event_fire(&event);
 	}
 	/* for xml_cdr needs */
-	switch_channel_set_variable_printf(member_channel, "cc_queue_joined_epoch", "%ld", (long) switch_epoch_time_now(NULL));
+	switch_channel_set_variable_printf(member_channel, "cc_queue_joined_epoch", "%" TIME_T_FMT, switch_epoch_time_now(NULL));
 	switch_channel_set_variable(member_channel, "cc_queue", queue_name);
 
 	if (abandoned_epoch == 0) {
@@ -2408,12 +2408,12 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		sql = switch_mprintf("INSERT INTO members"
 				" (queue,system,uuid,session_uuid,system_epoch,joined_epoch,base_score,skill_score,cid_number,cid_name,serving_agent,serving_system,state)"
-				" VALUES('%q','single_box','%q','%q','%q','%ld','%d','%d','%q','%q','%q','','%q')", 
+				" VALUES('%q','single_box','%q','%q','%q','%" TIME_T_FMT "','%d','%d','%q','%q','%q','','%q')", 
 				queue_name,
 				member_uuid,
 				member_session_uuid,
 				start_epoch,
-				(long) switch_epoch_time_now(NULL),
+				switch_epoch_time_now(NULL),
 				cc_base_score_int,
 				0 /*TODO SKILL score*/,
 				switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")),
@@ -2428,8 +2428,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> restoring it previous position in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
 
 		/* Update abandoned member */
-		sql = switch_mprintf("UPDATE members SET session_uuid = '%q', state = '%q', rejoined_epoch = '%ld' WHERE uuid = '%q' AND state = '%q'",
-				member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), (long) switch_epoch_time_now(NULL), member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED)); 
+		sql = switch_mprintf("UPDATE members SET session_uuid = '%q', state = '%q', rejoined_epoch = '%" TIME_T_FMT "' WHERE uuid = '%q' AND state = '%q'",
+				member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), switch_epoch_time_now(NULL), member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED)); 
 		cc_execute_sql(queue, sql, NULL);
 		switch_safe_free(sql);
 
@@ -2531,8 +2531,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> abandoned waiting in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
 
 		/* Update member state */
-		sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), (long) switch_epoch_time_now(NULL), member_uuid);
+		sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%" TIME_T_FMT "' WHERE system = 'single_box' AND uuid = '%q'",
+				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), switch_epoch_time_now(NULL), member_uuid);
 				cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -2544,8 +2544,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 			switch_channel_event_set_data(member_channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Leaving-Time", "%ld",  (long) switch_epoch_time_now(NULL));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%ld",  (long) t_member_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Leaving-Time", "%" TIME_T_FMT, switch_epoch_time_now(NULL));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" TIME_T_FMT, t_member_called);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Cancel");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cancel-Reason", cc_member_cancel_reason2str(h->member_cancel_reason));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", member_uuid);
@@ -2556,7 +2556,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		}
 
 		/* Update some channel variables for xml_cdr needs */
-		switch_channel_set_variable_printf(member_channel, "cc_queue_canceled_epoch", "%ld", (long) switch_epoch_time_now(NULL));
+		switch_channel_set_variable_printf(member_channel, "cc_queue_canceled_epoch", "%" TIME_T_FMT, switch_epoch_time_now(NULL));
 		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", "cancel");
 		switch_channel_set_variable_printf(member_channel, "cc_cancel_reason", "%s", cc_member_cancel_reason2str(h->member_cancel_reason));
 
@@ -2570,8 +2570,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> is answered by an agent in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
 
 		/* Update member state */
-		sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), (long) switch_epoch_time_now(NULL), member_uuid);
+		sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%" TIME_T_FMT "' WHERE system = 'single_box' AND uuid = '%q'",
+				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), switch_epoch_time_now(NULL), member_uuid);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
