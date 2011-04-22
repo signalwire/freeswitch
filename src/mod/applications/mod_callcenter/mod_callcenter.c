@@ -1563,8 +1563,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 				h->agent_name, h->member_cid_name, h->member_cid_number, h->queue_name, (h->record_template?" (Recorded)":""));
 		switch_ivr_uuid_bridge(h->member_session_uuid, switch_core_session_get_uuid(agent_session));
 
-		/* This is used for the waiting caller to quit waiting for a agent */
 		switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
+
+		/* This is used for the waiting caller to quit waiting for a agent */
+		switch_channel_set_variable(member_channel, "cc_agent_found", "true");
 
 		/* Wait until the member hangup or the agent hangup.  This will quit also if the agent transfer the call */
 		while(switch_channel_up(member_channel) && switch_channel_up(agent_channel) && globals.running) {
@@ -2320,9 +2322,9 @@ SWITCH_STANDARD_APP(callcenter_function)
 	switch_event_t *event;
 	switch_time_t t_member_called = switch_epoch_time_now(NULL);
 	long abandoned_epoch = 0;
-	const char *agent_uuid = NULL;
 	switch_uuid_t smember_uuid;
 	char member_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
+	switch_bool_t agent_found = SWITCH_FALSE;
 
 	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(member_session, data);
@@ -2479,6 +2481,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	while (switch_channel_ready(member_channel)) {
 		switch_input_args_t args = { 0 };
 		struct moh_dtmf_helper ht;
+		const char *p;
 
 		ht.dtmf = '\0';
 		args.input_callback = moh_on_dtmf;
@@ -2486,7 +2489,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		args.buflen = sizeof(h);
 
 		/* An agent was found, time to exit and let the bridge do it job */
-		if ((agent_uuid = switch_channel_get_variable(member_channel, "cc_agent_uuid"))) {
+		if ((p = switch_channel_get_variable(member_channel, "cc_agent_found")) && (agent_found = switch_true(p))) {
 			break;
 		}
 		/* If the member thread set a different reason, we monitor it so we can quit the wait */
@@ -2517,10 +2520,12 @@ SWITCH_STANDARD_APP(callcenter_function)
 	}
 
 	/* Check if we were removed be cause FS Core(BREAK) asked us too */
-	if (h->member_cancel_reason == CC_MEMBER_CANCEL_REASON_NONE && !switch_channel_get_variable(member_channel, "cc_agent_uuid")) {
+	if (h->member_cancel_reason == CC_MEMBER_CANCEL_REASON_NONE && !agent_found) {
+
 		h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_BREAK_OUT;
 	}
 
+	switch_channel_set_variable(member_channel, "cc_agent_found", NULL);
 	/* Canceled for some reason */
 	if (!switch_channel_up(member_channel) || h->member_cancel_reason != CC_MEMBER_CANCEL_REASON_NONE) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> abandoned waiting in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
