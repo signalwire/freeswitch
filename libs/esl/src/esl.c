@@ -323,7 +323,7 @@ static void default_logger(const char *file, const char *func, int line, int lev
 	ret = esl_vasprintf(&data, fmt, ap);
 
 	if (ret != -1) {
-		fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], file, line, func, data);
+		fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], fp, line, func, data);
 		free(data);
 	}
 

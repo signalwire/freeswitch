@@ -2414,7 +2414,6 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	char *vm_email = NULL;
 	char *vm_email_from = NULL;
 	char *vm_notify_email = NULL;
-	char *email_addr = NULL;
 	char *vm_timezone = NULL;
 	int send_mail = 0;
 	int send_main = 0;
@@ -2479,8 +2478,6 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			vm_notify_email = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-mailfrom")) {
 			vm_email_from = switch_core_strdup(pool, val);
-		} else if (!strcasecmp(var, "email-addr")) {
-			email_addr = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-email-all-messages") && (send_main = switch_true(val))) {
 			send_mail++;
 		} else if (!strcasecmp(var, "vm-notify-email-all-messages") && (send_notify = switch_true(val))) {
@@ -2987,8 +2984,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	int send_mail = 0;
 	cc_t cc = { 0 };
 	char *read_flags = NORMAL_FLAG_STRING;
-	int priority = 3;
-	int email_attach = 1;
 	char *operator_ext = NULL;
 	char buf[2];
 	char key_buf[80];
@@ -3003,7 +2998,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	char *record_macro = VM_RECORD_MESSAGE_MACRO;
 	int send_main = 0;
 	int send_notify = 0;
-	int insert_db = 1;
 	const char *read_id = NULL;
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
@@ -3060,10 +3054,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						vm_storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-notify-email-all-messages") && (send_notify = switch_true(val))) {
 						send_mail++;
-					} else if (!strcasecmp(var, "vm-keep-local-after-email")) {
-						insert_db = switch_true(val);
-					} else if (!strcasecmp(var, "vm-attach-file")) {
-						email_attach = switch_true(val);
 					} else if (!strcasecmp(var, "vm-disk-quota")) {
 						disk_quota = atoi(val);
 					} else if (!strcasecmp(var, "vm-alternate-greet-id")) {
@@ -3103,11 +3093,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 								  "Falling back to leaving message locally due to too many misconfiguration.\n");
 				send_mail = 0;
-				insert_db = 1;
-			}
-
-			if (send_notify && !send_main) {
-				insert_db = 1;
 			}
 
 		} else {
@@ -3289,7 +3274,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		(void) vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
 		if (*profile->urgent_key == *input) {
 			read_flags = URGENT_FLAG_STRING;
-			priority = 1;
 			(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL);
 		} else {
 			(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL);
@@ -3331,7 +3315,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 SWITCH_STANDARD_APP(voicemail_function)
 {
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mydata = NULL;
 	vm_profile_t *profile = NULL;
@@ -3345,7 +3328,7 @@ SWITCH_STANDARD_APP(voicemail_function)
 
 	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
-		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	for (;;) {
@@ -4359,7 +4342,6 @@ SWITCH_STANDARD_API(voicemail_list_api_function)
 #define VOICEMAIL_SYNTAX "rss [<host> <port> <uri> <user> <domain>] | [load|unload|reload] <profile> [reloadxml]"
 SWITCH_STANDARD_API(voicemail_api_function)
 {
-	int argc = 0;
 	char *mydata = NULL, *argv[6];
 	char *host = NULL, *port = NULL, *uri = NULL;
 	char *user = NULL, *domain = NULL;
@@ -4371,7 +4353,7 @@ SWITCH_STANDARD_API(voicemail_api_function)
 	void *val = NULL;
 	switch_xml_t xml_root;
 	const char *err;
-
+	int argc = 0;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -4588,7 +4570,6 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 	char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -4598,7 +4579,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[0])
@@ -4673,7 +4654,6 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 	char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -4683,7 +4663,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[0])
@@ -4756,7 +4736,6 @@ SWITCH_STANDARD_API(vm_fsdb_pref_password_set_function)
 	const char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -4766,7 +4745,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_password_set_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[0])
@@ -4821,7 +4800,6 @@ SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 	const char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -4831,7 +4809,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[1])
@@ -4879,7 +4857,6 @@ SWITCH_STANDARD_API(vm_fsdb_msg_purge_function)
 	const char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -4889,7 +4866,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_purge_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[0])
@@ -4929,7 +4906,6 @@ SWITCH_STANDARD_API(vm_fsdb_msg_delete_function)
 	const char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -4939,7 +4915,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_delete_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[0])
@@ -4981,7 +4957,6 @@ SWITCH_STANDARD_API(vm_fsdb_msg_save_function)
 	const char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -4991,7 +4966,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_save_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[0])
@@ -5032,7 +5007,6 @@ SWITCH_STANDARD_API(vm_fsdb_msg_undelete_function)
 	const char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -5042,7 +5016,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_undelete_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[0])
@@ -5083,7 +5057,6 @@ SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
 	const char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -5100,7 +5073,7 @@ SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[0])
@@ -5188,7 +5161,6 @@ SWITCH_STANDARD_API(vm_fsdb_msg_get_function)
 	const char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -5198,7 +5170,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_get_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[1])
@@ -5252,7 +5224,6 @@ SWITCH_STANDARD_API(vm_fsdb_msg_count_function)
 	const char *id = NULL, *domain = NULL, *profile_name = NULL;
 	vm_profile_t *profile = NULL;
 
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mycmd = NULL;
 
@@ -5262,7 +5233,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_count_function)
 
 	if (!zstr(cmd)) {
 		mycmd = switch_core_strdup(pool, cmd);
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[1])

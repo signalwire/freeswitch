@@ -611,7 +611,7 @@ SWITCH_STANDARD_API(hash_dump_function)
 #define HASH_REMOTE_SYNTAX "list|kill [name]|rescan"
 SWITCH_STANDARD_API(hash_remote_function) 
 {
-	int argc;
+	//int argc;
 	char *argv[10];
 	char *dup = NULL;
 	
@@ -622,7 +622,7 @@ SWITCH_STANDARD_API(hash_remote_function)
 	
 	dup = strdup(cmd);
 	
-	argc = switch_split(dup, ' ', argv);
+	switch_split(dup, ' ', argv);
 	if (argv[0] && !strcmp(argv[0], "list")) {
 		switch_hash_index_t *hi;
 		stream->write_function(stream, "Remote connections:\nName\t\t\tState\n");

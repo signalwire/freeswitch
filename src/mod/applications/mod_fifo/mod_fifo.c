@@ -1167,7 +1167,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
     char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	switch_call_cause_t cancel_cause = 0;
 	char *uuid_list = NULL;
-	int connected = 0, total = 0;
+	int total = 0;
 	const char *codec;
 	struct call_helper *rows[MAX_ROWS] = { 0 };
 	int rowcount = 0;
@@ -1417,8 +1417,6 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		goto end;
 	}
 
-	connected = 1;
-
 	channel = switch_core_session_get_channel(session);
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
@@ -1513,7 +1511,6 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event = NULL;
 	char *sql = NULL;
-	int connected = 0;
 
 	if (!globals.running) return NULL;	
 
@@ -1591,8 +1588,6 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 
 		goto end;
 	}
-
-	connected = 1;
 
 	channel = switch_core_session_get_channel(session);
 

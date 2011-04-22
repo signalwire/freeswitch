@@ -794,6 +794,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 					uint64_t exp;
 					int r;
 					r = read(tfd, &exp, sizeof(exp));
+					r++;
 				} else {
 					do_sleep(1000);
 				}

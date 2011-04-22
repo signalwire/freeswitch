@@ -208,10 +208,10 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 
 		if (!zstr(remote_ip) && sofia_glue_check_nat(profile, remote_ip)) {
 			char *ptr = NULL;
-			const char *transport_str = NULL;
+			//const char *transport_str = NULL;
 			if ((ptr = sofia_glue_find_parameter(dst->contact, "transport="))) {
 				sofia_transport_t transport = sofia_glue_str2transport(ptr);
-				transport_str = sofia_glue_transport2str(transport);
+				//transport_str = sofia_glue_transport2str(transport);
 				switch (transport) {
 				case SOFIA_TRANSPORT_TCP:
 					contact_str = profile->tcp_public_contact;
@@ -2059,7 +2059,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 										   tagi_t tags[])
 {
 
-	long exp_abs, exp_delta;
+	long exp_delta;
 	char exp_delta_str[30] = "";
 	sip_to_t const *to;
 	const char *from_user = NULL, *from_host = NULL;
@@ -2080,7 +2080,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	int sent_reply = 0;
 	sip_contact_t const *contact;
 	const char *ipv6;
-	const char *contact_host, *contact_user;
+	const char *contact_user;
 	sofia_nat_parse_t np = { { 0 } };
 
 	if (!sip) {
@@ -2095,7 +2095,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		return;
 	}
 
-	contact_host = sip->sip_contact->m_url->url_host;
+	//contact_host = sip->sip_contact->m_url->url_host;
 	contact_user = sip->sip_contact->m_url->url_user;
 
 	tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
@@ -2142,10 +2142,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		}
 	}
 
-	if (exp_delta) {
-		exp_abs = (long) switch_epoch_time_now(NULL) + exp_delta;
-	} else {
-		exp_abs = 0;
+	if (!exp_delta) {
 		sub_state = nua_substate_terminated;
 	}
 
@@ -2773,9 +2770,7 @@ void sofia_presence_handle_sip_i_message(int status,
 		sip_to_t const *to = sip->sip_to;
 		const char *to_user = NULL;
 		const char *to_host = NULL;
-		sip_subject_t const *sip_subject = sip->sip_subject;
 		sip_payload_t *payload = sip->sip_payload;
-		const char *subject = "n/a";
 		char *msg = NULL;
 
 		if (sip->sip_content_type && sip->sip_content_type->c_subtype) {
@@ -2802,14 +2797,9 @@ void sofia_presence_handle_sip_i_message(int status,
 			msg = payload->pl_data;
 		}
 
-		if (sip_subject) {
-			subject = sip_subject->g_value;
-		}
-
 		if (nh) {
 			char hash_key[512];
 			private_object_t *tech_pvt;
-			switch_channel_t *channel;
 			switch_event_t *event;
 			char *to_addr;
 			char *from_addr;
@@ -2840,7 +2830,6 @@ void sofia_presence_handle_sip_i_message(int status,
 			}
 
 			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT) && (tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
-				channel = switch_core_session_get_channel(tech_pvt->session);
 				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);

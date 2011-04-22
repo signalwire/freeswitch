@@ -862,10 +862,9 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 	switch_core_session_message_t msg = { 0 };
 	switch_channel_t *channel = NULL;
 	switch_event_t *event;
-	switch_channel_state_t state;
 
 	channel = switch_core_session_get_channel(session);
-	state = switch_channel_get_state(channel);
+
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	msg.from = __FILE__;

@@ -433,7 +433,6 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 {
     switch_frame_t out_frame = { 0 };
     switch_core_session_t *session;
-    switch_channel_t *channel;
     pvt_t *pvt;
     uint8_t pkt[LOCAL_FAX_MAX_DATAGRAM];
     int x;
@@ -441,7 +440,6 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 
     pvt = (pvt_t *) user_data;
     session = pvt->session;
-    channel = switch_core_session_get_channel(session);
 
     /* we need to build a real packet here and make write_frame.packet and write_frame.packetlen point to it */
     out_frame.flags = SFF_UDPTL_PACKET | SFF_PROXY_PACKET;

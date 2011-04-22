@@ -2662,9 +2662,7 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
 			return SWITCH_STATUS_FALSE;
 		} else {
-			int ms;
 			tech_pvt->video_read_frame.rate = tech_pvt->video_rm_rate;
-			ms = tech_pvt->video_write_codec.implementation->microseconds_per_packet / 1000;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set VIDEO Codec %s %s/%ld %d ms\n",
 							  switch_channel_get_name(tech_pvt->channel), tech_pvt->video_rm_encoding, tech_pvt->video_rm_rate, tech_pvt->video_codec_ms);
 			tech_pvt->video_read_frame.codec = &tech_pvt->video_read_codec;
@@ -2689,7 +2687,6 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 
 switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 {
-	int ms;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int resetting = 0;
 
@@ -2782,7 +2779,6 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 	}
 
 	tech_pvt->read_frame.rate = tech_pvt->rm_rate;
-	ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
 
 	if (!switch_core_codec_ready(&tech_pvt->read_codec)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
@@ -2865,7 +2861,6 @@ switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, s
 switch_status_t sofia_glue_add_crypto(private_object_t *tech_pvt, const char *key_str, switch_rtp_crypto_direction_t direction)
 {
 	unsigned char key[SWITCH_RTP_MAX_CRYPTO_LEN];
-	int index;
 	switch_rtp_crypto_key_type_t type;
 	char *p;
 
@@ -2873,8 +2868,6 @@ switch_status_t sofia_glue_add_crypto(private_object_t *tech_pvt, const char *ke
 	if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 		goto bad;
 	}
-
-	index = atoi(key_str);
 
 	p = strchr(key_str, ' ');
 
@@ -2922,7 +2915,6 @@ switch_status_t sofia_glue_add_crypto(private_object_t *tech_pvt, const char *ke
 
 switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_flag_t myflags)
 {
-	int bw, ms;
 	const char *err = NULL;
 	const char *val = NULL;
 	switch_rtp_flag_t flags;
@@ -2962,9 +2954,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	if ((status = sofia_glue_tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 		goto end;
 	}
-
-	bw = tech_pvt->read_impl.bits_per_second;
-	ms = tech_pvt->read_impl.microseconds_per_packet;
 
 	if (myflags) {
 		flags = myflags;
@@ -4095,7 +4084,7 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 	sdp_session_t *sdp;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	sdp_attribute_t *attr;
-	int ptime = 0, dptime = 0, dmaxptime = 0, maxptime = 0;
+	int ptime = 0, dptime = 0;
 
 	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 		return;
@@ -4116,8 +4105,6 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 
 		if (!strcasecmp(attr->a_name, "ptime")) {
 			dptime = atoi(attr->a_value);
-		} else if (!strcasecmp(attr->a_name, "maxptime")) {
-			dmaxptime = atoi(attr->a_value);
 		}
 	}
 
@@ -4125,7 +4112,7 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 
 		ptime = dptime;
-		maxptime = dmaxptime;
+		//maxptime = dmaxptime;
 
 		if (m->m_proto == sdp_proto_rtp) {
 			sdp_rtpmap_t *map;
@@ -4133,7 +4120,7 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
-					maxptime = atoi(attr->a_value);		
+					//maxptime = atoi(attr->a_value);		
 				}
 			}
 
@@ -4803,7 +4790,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		} else if (m->m_type == sdp_media_video && m->m_port) {
 			sdp_rtpmap_t *map;
 			const char *rm_encoding;
-			int framerate = 0;
 			const switch_codec_implementation_t *mimp = NULL;
 			int vmatch = 0, i;
 			switch_channel_set_variable(tech_pvt->channel, "video_possible", "true");
@@ -4823,7 +4809,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 				for (attr = m->m_attributes; attr; attr = attr->a_next) {
 					if (!strcasecmp(attr->a_name, "framerate") && attr->a_value) {
-						framerate = atoi(attr->a_value);
+						//framerate = atoi(attr->a_value);
 					}
 					if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 						switch_channel_set_variable(tech_pvt->channel, "sip_remote_video_rtcp_port", attr->a_value);
@@ -6253,7 +6239,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	contact = sofia_glue_get_url_from_contact((char *) o_contact, 1);
 	if (!zstr(network_ip) && sofia_glue_check_nat(profile, network_ip)) {
 		char *ptr = NULL;
-		const char *transport_str = NULL;
+		//const char *transport_str = NULL;
 
 
 		id = switch_mprintf("sip:%s@%s", user, profile->extsipip);
@@ -6261,7 +6247,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 
 		if ((ptr = sofia_glue_find_parameter(o_contact, "transport="))) {
 			sofia_transport_t transport = sofia_glue_str2transport(ptr);
-			transport_str = sofia_glue_transport2str(transport);
+			//transport_str = sofia_glue_transport2str(transport);
 			switch (transport) {
 			case SOFIA_TRANSPORT_TCP:
 				contact_str = profile->tcp_public_contact;
@@ -6469,7 +6455,7 @@ void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str)
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_nat_parse_t *np)
 {
 	char *contact_str = NULL;
-	const char *contact_host, *contact_user;
+	const char *contact_host;//, *contact_user;
 	sip_contact_t const *contact;
 	char *port;
 	const char *display = "\"user\"";
@@ -6497,7 +6483,7 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sof
 
 	port = (char *) contact->m_url->url_port;
 	contact_host = sip->sip_contact->m_url->url_host;
-	contact_user = sip->sip_contact->m_url->url_user;
+	//contact_user = sip->sip_contact->m_url->url_user;
 
 	display = contact->m_display;
 

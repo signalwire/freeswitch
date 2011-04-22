@@ -1457,7 +1457,7 @@ switch_thread_t *launch_sofia_worker_thread(sofia_profile_t *profile)
 void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void *obj)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
-	switch_memory_pool_t *pool;
+	//switch_memory_pool_t *pool;
 	sip_alias_node_t *node;
 	switch_event_t *s_event;
 	int use_100rel = !sofia_test_pflag(profile, PFLAG_DISABLE_100REL);
@@ -1717,7 +1717,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	su_home_unref(profile->home);
 	su_root_destroy(profile->s_root);
-	pool = profile->pool;
+	//pool = profile->pool;
 
 	sofia_glue_del_profile(profile);
 	switch_core_hash_destroy(&profile->chat_hash);
@@ -5581,7 +5581,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 {
 	/* Incoming refer */
 	sip_from_t const *from;
-	sip_to_t const *to;
+	//sip_to_t const *to;
 	sip_refer_to_t const *refer_to;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	char *etmp = NULL, *exten = NULL;
@@ -5604,7 +5604,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	}
 
 	from = sip->sip_from;
-	to = sip->sip_to;
+	//to = sip->sip_to;
 
 	home = su_home_new(sizeof(*home));
 	switch_assert(home != NULL);
@@ -6374,7 +6374,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	const char *displayname = NULL;
 	const char *destination_number = NULL;
 	const char *from_user = NULL, *from_host = NULL;
-	const char *referred_by_user = NULL, *referred_by_host = NULL;
+	const char *referred_by_user = NULL;//, *referred_by_host = NULL;
 	const char *context = NULL;
 	const char *dialplan = NULL;
 	char network_ip[80];
@@ -6905,7 +6905,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (sip->sip_referred_by) {
 		referred_by_user = sip->sip_referred_by->b_url->url_user;
-		referred_by_host = sip->sip_referred_by->b_url->url_host;
+		//referred_by_host = sip->sip_referred_by->b_url->url_host;
 		channel_name = url_set_chanvars(session, sip->sip_referred_by->b_url, sip_referred_by);
 
 		check_decode(referred_by_user, session);

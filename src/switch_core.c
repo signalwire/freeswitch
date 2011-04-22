@@ -1280,6 +1280,7 @@ static void switch_core_set_serial(void)
 
 		if ((write_fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) >= 0) {
 			bytes = write(write_fd, buf, sizeof(buf));
+			bytes++;
 			close(write_fd);
 			write_fd = -1;
 		}

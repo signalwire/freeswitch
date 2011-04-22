@@ -1851,7 +1851,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   switch_xml_t *domain, switch_xml_t *user, switch_xml_t *ingroup, switch_event_t *params)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_event_t *my_params = NULL, *search_params = NULL;
+	switch_event_t *my_params = NULL;
 	switch_xml_t group = NULL, groups = NULL, users = NULL;
 
 	*root = NULL;
@@ -1887,10 +1887,6 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 	}
 
 	status = SWITCH_STATUS_FALSE;
-
-	if (params != my_params) {
-		search_params = params;
-	}
 
 	if ((groups = switch_xml_child(*domain, "groups"))) {
 		for (group = switch_xml_child(groups, "group"); group; group = group->next) {

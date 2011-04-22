@@ -1193,16 +1193,10 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state)
 {
-	switch_channel_state_t state, mystate;
 
 	for (;;) {
-		if (other_channel) {
-			state = switch_channel_get_running_state(other_channel);
-		}
-		mystate = switch_channel_get_running_state(channel);
-
 		if ((channel->state == channel->running_state && channel->running_state == want_state) ||
-			(other_channel && other_channel->state >= CS_HANGUP) || channel->state >= CS_HANGUP) {
+			switch_channel_down(other_channel) || switch_channel_down(channel)) {
 			break;
 		}
 		switch_yield(20000);
@@ -1212,11 +1206,10 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *channel, switch_channel_state_t want_state, uint32_t timeout)
 {
-	switch_channel_state_t state;
+
 	uint32_t count = 0;
 
 	for (;;) {
-		state = switch_channel_get_running_state(channel);
 
 		if ((channel->state == channel->running_state && channel->running_state == want_state) || channel->state >= CS_HANGUP) {
 			break;
@@ -3360,7 +3353,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_time_t answerusec = 0;
 	switch_time_t uduration = 0, legbillusec = 0, billusec = 0, progresssec = 0, progressusec = 0, progress_mediasec = 0, progress_mediausec = 0;
 	time_t tt_created = 0, tt_answered = 0, tt_resurrected = 0,
-		tt_progress = 0, tt_progress_media = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_resurrected = 0,
+		tt_progress = 0, tt_progress_media = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0,
 		mtt_hungup = 0, tt_prof_created, mtt_prof_created, mtt_progress = 0, mtt_progress_media = 0;
 	void *pop;
 	char dtstr[SWITCH_DTMF_LOG_LEN + 1] = "";
@@ -3476,7 +3469,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_channel_set_variable(channel, "answer_uepoch", tmp);
 
 		tt_resurrected = (time_t) (caller_profile->times->resurrected / 1000000);
-		mtt_resurrected = (time_t) (caller_profile->times->resurrected / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_resurrected);
 		switch_channel_set_variable(channel, "resurrect_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->resurrected);

@@ -239,6 +239,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 #endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
+				wrote++;
 				close(fd);
 				fd = -1;
 			} else {
@@ -393,6 +394,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 #endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
+				wrote++;
 				close(fd);
 				fd = -1;
 			} else {

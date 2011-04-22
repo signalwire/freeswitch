@@ -1681,11 +1681,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	switch_mutex_lock(loadable_modules.mutex);
 
 	for (x = 0; x < preflen; x++) {
-		char *cur, *last = NULL, *next = NULL, *name, *p, buf[256];
+		char *cur, *next = NULL, *name, *p, buf[256];
 		uint32_t interval = 0, rate = 0, bit = 0;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
-		last = name = next = cur = buf;
+		name = next = cur = buf;
 
 		for (;;) {
 			if (!next) {

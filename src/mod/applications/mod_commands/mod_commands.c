@@ -2601,7 +2601,6 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
-	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -2635,7 +2634,7 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 			flags = SMF_ECHO_ALEG | SMF_HOLD_BLEG;
 		}
 
-		status = switch_ivr_broadcast(argv[0], argv[1], flags);
+		switch_ivr_broadcast(argv[0], argv[1], flags);
 		stream->write_function(stream, "+OK Message Sent\n");
 	}
 
@@ -2648,7 +2647,6 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
-	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -2678,7 +2676,7 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 			flags |= SMF_ECHO_ALEG;
 		}
 
-		status = switch_ivr_schedule_broadcast(when, argv[1], argv[2], flags);
+		switch_ivr_schedule_broadcast(when, argv[1], argv[2], flags);
 		stream->write_function(stream, "+OK Message Scheduled\n");
 	}
 
@@ -2763,8 +2761,6 @@ SWITCH_STANDARD_API(uuid_buglist_function)
 	char *mydata = NULL, *argv[2] = { 0 };
 	int argc = 0;
 
-	switch_status_t status = SWITCH_STATUS_FALSE;
-
 	if (zstr(cmd)) {
 		goto error;
 	}
@@ -2781,7 +2777,7 @@ SWITCH_STANDARD_API(uuid_buglist_function)
 		switch_core_session_t *lsession = NULL;
 
 		if ((lsession = switch_core_session_locate(argv[0]))) {
-			status = switch_core_media_bug_enumerate(lsession, stream);
+			switch_core_media_bug_enumerate(lsession, stream);
 			switch_core_session_rwunlock(lsession);
 		}
 		goto ok;
@@ -3863,7 +3859,6 @@ SWITCH_STANDARD_API(show_function)
 	struct holder holder = { 0 };
 	int help = 0;
 	char *mydata = NULL, *argv[6] = { 0 };
-	int argc;
 	char *command = NULL, *as = NULL;
 	switch_core_flag_t cflags = switch_core_flags();
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -3884,7 +3879,7 @@ SWITCH_STANDARD_API(show_function)
 	holder.justcount = 0;
 
 	if (cmd && (mydata = strdup(cmd))) {
-		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		command = argv[0];
 		if (argv[2] && !strcasecmp(argv[1], "as")) {
 			as = argv[2];
@@ -4378,10 +4373,10 @@ SWITCH_STANDARD_API(uuid_fileman_function)
 			char *cmd = argv[1];
 
 			if ((psession = switch_core_session_locate(uuid))) {
-				switch_channel_t *channel;
+				//switch_channel_t *channel;
 				switch_file_handle_t *fh = NULL;
 				
-				channel = switch_core_session_get_channel(psession);
+				//channel = switch_core_session_get_channel(psession);
 				
 				if (switch_ivr_get_file_handle(psession, &fh) == SWITCH_STATUS_SUCCESS) {
 					switch_ivr_process_fh(psession, cmd, fh);
@@ -4689,13 +4684,12 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 SWITCH_STANDARD_API(hupall_api_function)
 {
 	char *mycmd = NULL, *argv[3] = { 0 };
-	int argc = 0;
 	char *var = NULL;
 	char *val = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_MANAGER_REQUEST;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		switch_assert(argv[0]);
 		if ((cause = switch_channel_str2cause(argv[0])) == SWITCH_CAUSE_NONE) {
 			cause = SWITCH_CAUSE_MANAGER_REQUEST;

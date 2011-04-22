@@ -217,7 +217,7 @@ int go(int i)
 int vgo(int i, switch_core_session_t *session)
 {
 	int x;
-	int sleep_len = 40000;
+	//int sleep_len = 40000;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_frame_t *read_frame;
 	switch_status_t status;
@@ -233,9 +233,9 @@ int vgo(int i, switch_core_session_t *session)
 
 	printf("%s", SWITCH_SEQ_CLEARSCR);
 
-	if (i > 0) {
-		sleep_len = i;
-	}
+	//if (i > 0) {
+		//sleep_len = i;
+	//}
 
 	initscr();
 	signal(SIGINT, SIG_IGN);
