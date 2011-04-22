@@ -2205,16 +2205,16 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 	switch_core_session_t *member_session = switch_core_session_locate(m->member_session_uuid);
 	switch_channel_t *member_channel = NULL;
 
-	switch_mutex_lock(globals.mutex);
-	globals.threads++;
-	switch_mutex_unlock(globals.mutex);
-
 	if (member_session) {
 		member_channel = switch_core_session_get_channel(member_session);
 	} else {
 		switch_core_destroy_memory_pool(&m->pool);
 		return NULL;
 	}
+
+	switch_mutex_lock(globals.mutex);
+	globals.threads++;
+	switch_mutex_unlock(globals.mutex);
 
 	while(switch_channel_ready(member_channel) && m->running && globals.running) {
 		cc_queue_t *queue = NULL;
