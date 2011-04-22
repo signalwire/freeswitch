@@ -7158,8 +7158,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					}
 
 					if ((uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-						switch_channel_set_variable(b_channel, "presence_call_info", NULL);
-						switch_channel_set_variable(b_channel, "presence_call_info_full", NULL);
 						one_leg = 0;
 					} else {
 						uuid = switch_core_session_get_uuid(b_session);
