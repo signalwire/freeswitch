@@ -37,10 +37,6 @@
 #define CC_AGENT_TYPE_UUID_STANDBY "uuid-standby"
 #define CC_SQLITE_DB_NAME "callcenter"
 
-/* TODO
-   drop caller if no agent login
-   dont allow new caller
- */
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_callcenter_runtime);
@@ -1380,6 +1376,9 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 	/* member is gone before we could process it */
 	if (!member_session) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Member %s <%s> with uuid %s in queue %s is gone just before we assigned an agent\n", h->member_cid_name, h->member_cid_number, h->member_session_uuid, h->queue_name);
+	
+	
 		 sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q' AND state != '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), (long) switch_epoch_time_now(NULL), h->member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED));
 
@@ -1449,7 +1448,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			cc_agent_update("uuid", "", h->agent_name);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid agent type '%s' for agent '%s', aborting member offering", h->agent_type, h->agent_name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Invalid agent type '%s' for agent '%s', aborting member offering", h->agent_type, h->agent_name);
 		status = SWITCH_CAUSE_USER_NOT_REGISTERED;
 	}
 
@@ -1560,7 +1559,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			}					
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" <%s> from queue %s%s\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" <%s> from queue %s%s\n",
 				h->agent_name, h->member_cid_name, h->member_cid_number, h->queue_name, (h->record_template?" (Recorded)":""));
 		switch_ivr_uuid_bridge(h->member_session_uuid, switch_core_session_get_uuid(agent_session));
 
@@ -1638,7 +1637,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s Origination Canceled : %s\n", h->agent_name, switch_channel_cause2str(cause));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s Origination Canceled : %s\n", h->agent_name, switch_channel_cause2str(cause));
 
 		switch (cause) {
 			/* When we hang-up agents that did not answer in ring-all strategy */
@@ -1667,7 +1666,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 				/* Put Agent on break because he didn't answer often */
 				if (h->max_no_answer > 0 && (h->no_answer_count + 1) >= h->max_no_answer) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s reach maximum no answer of %d, Putting agent on break\n",
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s reach maximum no answer of %d, Putting agent on break\n",
 							h->agent_name, h->max_no_answer);
 					cc_agent_update("status", cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK), h->agent_name);
 				}
@@ -1679,7 +1678,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			char ready_epoch[64];
 			switch_snprintf(ready_epoch, sizeof(ready_epoch), "%" SWITCH_TIME_T_FMT, switch_epoch_time_now(NULL) + delay_next_agent_call);
 			cc_agent_update("ready_time", ready_epoch , h->agent_name);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Agent %s sleeping for %d seconds\n", h->agent_name, delay_next_agent_call);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s sleeping for %d seconds\n", h->agent_name, delay_next_agent_call);
 		}
 
 		/* Fire up event when contact agent fails */
@@ -2220,12 +2219,12 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 		cc_queue_t *queue = NULL;
 
 		if (!m->queue_name || !(queue = get_queue(m->queue_name))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found\n", m->queue_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Queue %s not found\n", m->queue_name);
 			break;
 		}
 		/* Make the Caller Leave if he went over his max wait time */
 		if (queue->max_wait_time > 0 && queue->max_wait_time <= switch_epoch_time_now(NULL) - m->t_member_called) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait time\n", m->member_cid_name, m->member_cid_number, m->queue_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait time\n", m->member_cid_name, m->member_cid_number, m->queue_name);
 			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_TIMEOUT;
 			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
 		}
@@ -2233,7 +2232,7 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 		/* Will drop the caller if no agent was found for more than X seconds */
 		if (queue->max_wait_time_with_no_agent > 0 && m->t_member_called < queue->last_agent_exist_check - queue->max_wait_time_with_no_agent_time_reached &&
 				queue->last_agent_exist_check - queue->last_agent_exist >= queue->max_wait_time_with_no_agent) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait with no agent time\n", m->member_cid_name, m->member_cid_number, m->queue_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait with no agent time\n", m->member_cid_name, m->member_cid_number, m->queue_name);
 			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
 			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
 		}
@@ -2329,7 +2328,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		mydata = switch_core_session_strdup(member_session, data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Queue name provided\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "No Queue name provided\n");
 		goto end;
 	}
 
@@ -2338,7 +2337,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	}
 
 	if (!queue_name || !(queue = get_queue(queue_name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found\n", queue_name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Queue %s not found\n", queue_name);
 		goto end;
 	}
 
@@ -2403,6 +2402,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	if (abandoned_epoch == 0) {
 		/* Add the caller to the member queue */
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> joining queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
+
 		sql = switch_mprintf("INSERT INTO members"
 				" (queue,system,uuid,session_uuid,system_epoch,joined_epoch,base_score,skill_score,cid_number,cid_name,serving_agent,serving_system,state)"
 				" VALUES('%q','single_box','%q','%q','%q','%ld','%d','%d','%q','%q','%q','','%q')", 
@@ -2421,6 +2422,9 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_safe_free(sql);
 	} else {
 		char res[256];
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> restoring it previous position in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
+
 		/* Update abandoned member */
 		sql = switch_mprintf("UPDATE members SET session_uuid = '%q', state = '%q', rejoined_epoch = '%ld' WHERE uuid = '%q' AND state = '%q'",
 				member_session_uuid, cc_member_state2str(CC_MEMBER_STATE_WAITING), (long) switch_epoch_time_now(NULL), member_uuid, cc_member_state2str(CC_MEMBER_STATE_ABANDONED)); 
@@ -2435,7 +2439,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		if (atol(res) == 0) {
 			/* Failed to get the member !!! */
 			/* TODO Loop back to just create a uuid and add the member as a new member */
-			/* TODO ERROR MSG */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_ERROR, "Member %s <%s> restoring action failed in queue %s, exiting\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
 			queue_rwunlock(queue);
 			goto end;
 		}
@@ -2519,6 +2523,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	/* Canceled for some reason */
 	if (!switch_channel_up(member_channel) || h->member_cancel_reason != CC_MEMBER_CANCEL_REASON_NONE) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> abandoned waiting in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
+
 		/* Update member state */
 		sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), (long) switch_epoch_time_now(NULL), member_uuid);
@@ -2550,12 +2556,14 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_channel_set_variable_printf(member_channel, "cc_cancel_reason", "%s", cc_member_cancel_reason2str(h->member_cancel_reason));
 
 		/* Print some debug log information */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member \"%s\" <%s> exit queue %s due to %s\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member \"%s\" <%s> exit queue %s due to %s\n",
 						  switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")),
 						  switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")),
 						  queue_name, cc_member_cancel_reason2str(h->member_cancel_reason));
 
 	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> is answered by an agent in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
+
 		/* Update member state */
 		sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%ld' WHERE system = 'single_box' AND uuid = '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), (long) switch_epoch_time_now(NULL), member_uuid);
