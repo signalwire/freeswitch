@@ -462,7 +462,6 @@ uint32_t skinny_line_get_state(listener_t *listener, uint32_t line_instance, uin
 
 switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 {
-	int ms;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int resetting = 0;
 
@@ -542,7 +541,7 @@ switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 	}
 
 	tech_pvt->read_frame.rate = tech_pvt->rm_rate;
-	ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
+	//ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
 
 	if (!switch_core_codec_ready(&tech_pvt->read_codec)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
@@ -880,7 +879,6 @@ switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_t *tech_pvt = switch_core_session_get_private(session);
-	int payload = 0;
 
 	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
 		if (switch_channel_ready(channel)) {
@@ -908,7 +906,7 @@ switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_
 				return SWITCH_STATUS_FALSE;
 			}
 
-			payload = tech_pvt->read_frame.payload;
+			//payload = tech_pvt->read_frame.payload;
 
 			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
 				switch_dtmf_t dtmf = { 0 };

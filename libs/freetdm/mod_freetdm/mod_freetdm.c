@@ -720,7 +720,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	ftdm_size_t len;
 	unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 	ftdm_wait_flag_t wflags = FTDM_WRITE;
-	ftdm_status_t status;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -755,7 +754,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 
 	wflags = FTDM_WRITE;	
-	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 10);
+	ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 10);
 	
 	if (!(wflags & FTDM_WRITE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write not ready)\n");

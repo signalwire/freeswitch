@@ -248,14 +248,13 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 	size_t  tstrip;
 	char *data = NULL;
 	char *destination_number = NULL;
-	char *orig_destination_number = NULL; 
 	char *codec = NULL;
 	char *cid = NULL;
 	char *header = NULL;
 	char *user_rate = NULL;
 	char *export_fields = NULL;
 
-	orig_destination_number = destination_number = switch_core_strdup(pool, dialed_number);
+	destination_number = switch_core_strdup(pool, dialed_number);
 	
 	tstrip = ((cur_route->digit_len - cur_route->tstrip) + 1);
 	lstrip = cur_route->lstrip;
@@ -1263,7 +1262,6 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 	const char *intralata = NULL;
 	switch_core_session_t *mysession = NULL;
 	switch_channel_t *channel = NULL;
-	switch_caller_profile_t *caller_profile = NULL;
 	
 	dest = strdup(outbound_profile->destination_number);
 	
@@ -1290,7 +1288,6 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 			timelimit = atoi(var);
 		}
 		routes.session = session;
-		caller_profile = switch_channel_get_caller_profile(channel);
 		intrastate = switch_channel_get_variable(channel, "intrastate");
 		intralata = switch_channel_get_variable(channel, "intralata");
 		cid_name_override = switch_channel_get_variable(channel, "origination_caller_id_name");
@@ -1670,7 +1667,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	char *argv[4] = { 0 };
 	int argc;
 	char *mydata = NULL;
-	char *dialstring = NULL;
+	//char *dialstring = NULL;
 	char *lcr_profile = NULL;
 	lcr_route current = NULL;
 	max_obj_t maximum_lengths = { 0 };
@@ -1792,7 +1789,8 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 			current = cb_struct.head;
 			while (current) {
 
-				dialstring = get_bridge_data(pool, cb_struct.lookup_number, cb_struct.cid, current, cb_struct.profile, cb_struct.session);
+				//dialstring = 
+				get_bridge_data(pool, cb_struct.lookup_number, cb_struct.cid, current, cb_struct.profile, cb_struct.session);
 				rowcount++;
 
 				if (as_xml) {

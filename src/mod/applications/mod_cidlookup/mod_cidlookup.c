@@ -729,6 +729,9 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	if (!session && pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
+	/* This is so compile doesn't failed because status is never used */
+	if (status) {
+	}
 }
 
 SWITCH_STANDARD_API(cidlookup_function)
