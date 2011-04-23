@@ -576,7 +576,7 @@ int nea_server_shutdown(nea_server_t *nes,
 		   TAG_IF(!retry_after, NEATAG_REASON("deactivated")),
 		   TAG_IF(retry_after, NEATAG_RETRY_AFTER(retry_after)),
 		   TAG_END());
-    else
+    //else
       //status = 180;
   }
 
