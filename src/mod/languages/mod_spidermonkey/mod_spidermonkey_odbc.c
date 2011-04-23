@@ -513,12 +513,12 @@ static JSBool odbc_setProperty(JSContext * cx, JSObject * obj, jsval id, jsval *
 
 static JSBool odbc_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
-	int param;
+	//int param;
 	char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
 
 	/* numbers are our props anything else is a method */
 	if (name[0] >= 48 && name[0] <= 57) {
-		param = atoi(name);
+		// param = atoi(name);
 	} else {
 		return JS_TRUE;
 	}
