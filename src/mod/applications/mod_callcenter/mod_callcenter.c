@@ -1937,7 +1937,6 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	switch_bool_t tier_rule_wait_multiply_level;
 	switch_bool_t tier_rule_no_agent_no_wait;
 	uint32_t discard_abandoned_after;
-	switch_bool_t abandoned_resume_allowed;
 	agent_callback_t cbt;
 	const char *member_state = NULL;
 	const char *member_abandoned_epoch = NULL;
@@ -1964,7 +1963,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		tier_rule_wait_multiply_level = queue->tier_rule_wait_multiply_level;
 		tier_rule_no_agent_no_wait = queue->tier_rule_no_agent_no_wait;
 		discard_abandoned_after = queue->discard_abandoned_after;
-		abandoned_resume_allowed = queue->abandoned_resume_allowed;
+
 		if (queue->record_template) {
 			queue_record_template = strdup(queue->record_template);
 		}
@@ -2300,7 +2299,6 @@ static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, 
 
 SWITCH_STANDARD_APP(callcenter_function)
 {
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mydata = NULL;
 	cc_queue_t *queue = NULL;
@@ -2328,7 +2326,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(member_session, data);
-		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "No Queue name provided\n");
 		goto end;
