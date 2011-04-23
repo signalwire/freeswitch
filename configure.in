@@ -583,16 +583,20 @@ if test x"$ac_cv_gcc_declaration_after_statement" = xyes; then
 fi
 CFLAGS="$saved_CFLAGS"
 
-saved_CFLAGS="$CFLAGS"
-AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
-CFLAGS="$CFLAGS -Wunused-but-set-variable"
-AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
-])
-AC_MSG_RESULT($ac_cv_gcc_unused_but_set_variable)
-if test x"$ac_cv_gcc_unused_but_set_variable" = xyes; then
-    APR_ADDTO(SWITCH_ANSI_CFLAGS, -Wunused-but-set-variable)
-fi
-CFLAGS="$saved_CFLAGS"
+# Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
+# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_dingaling mod_opal mod_skypopen mod_h323 mod_khomp 
+#                    mod_unimrcp mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
+#
+#saved_CFLAGS="$CFLAGS"
+#AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
+#CFLAGS="$CFLAGS -Wunused-but-set-variable"
+#AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
+#])
+#AC_MSG_RESULT($ac_cv_gcc_unused_but_set_variable)
+#if test x"$ac_cv_gcc_unused_but_set_variable" = xyes; then
+#    APR_ADDTO(SWITCH_ANSI_CFLAGS, -Wunused-but-set-variable)
+#fi
+#CFLAGS="$saved_CFLAGS"
 
 AC_C_BIGENDIAN(AC_DEFINE([SWITCH_BYTE_ORDER],__BIG_ENDIAN,[Big Endian]),AC_DEFINE([SWITCH_BYTE_ORDER],__LITTLE_ENDIAN,[Little Endian]))
 
