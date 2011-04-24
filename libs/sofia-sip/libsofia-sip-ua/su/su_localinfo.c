@@ -194,7 +194,8 @@ static void li_sort(su_localinfo_t *i, su_localinfo_t **rresult);
 int su_getlocalinfo(su_localinfo_t const *hints,
 		    su_localinfo_t **return_localinfo)
 {
-  int error = 0, ip4 = 0, ip6 = 0;
+  int error = 0, ip4 = 0;
+  int ip6 = 0;
   su_localinfo_t *result = NULL, **rr = &result;
   su_localinfo_t hh[1] = {{ 0 }};
 
@@ -231,7 +232,11 @@ int su_getlocalinfo(su_localinfo_t const *hints,
     break;
 
   case 0:
-    ip6 = ip4 = 1;
+    ip4 = 1;
+#if SU_HAVE_IN6  
+    ip6 = 1;
+#endif
+
     break;
 
   default:
@@ -260,6 +265,9 @@ int su_getlocalinfo(su_localinfo_t const *hints,
   }
 #endif
 
+  if (ip6) {
+    /* Required to make compiler happy */  
+  }
   if (!result)
     error = ELI_NOADDRESS;
 
