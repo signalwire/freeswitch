@@ -2333,6 +2333,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	switch_uuid_t smember_uuid;
 	char member_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
 	switch_bool_t agent_found = SWITCH_FALSE;
+	switch_bool_t moh_valid = SWITCH_TRUE;
 
 	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(member_session, data);
@@ -2507,10 +2508,14 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		switch_core_session_flush_private_events(member_session);
 
-		if (cur_moh) {
+		if (moh_valid && cur_moh) {
 			switch_status_t status = switch_ivr_play_file(member_session, NULL, cur_moh, &args);
 
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
+			if (status == SWITCH_STATUS_FALSE /* Invalid Recording */) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Couldn't play file '%s', continuing wait with no audio\n", cur_moh);
+				moh_valid = SWITCH_FALSE;
+
+			} else if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
 
@@ -2529,7 +2534,6 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	/* Check if we were removed be cause FS Core(BREAK) asked us too */
 	if (h->member_cancel_reason == CC_MEMBER_CANCEL_REASON_NONE && !agent_found) {
-
 		h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_BREAK_OUT;
 	}
 
