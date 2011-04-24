@@ -2514,12 +2514,26 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		goto failed;
 	}
 
-	file_path = switch_mprintf("%s%smsg_%s_broadcast_%s", dir_path, SWITCH_PATH_SEPARATOR, use_uuid, filename);
-
 	if (copy) {
+		file_path = switch_mprintf("%s%smsg_%s_broadcast_%s", dir_path, SWITCH_PATH_SEPARATOR, use_uuid, filename);
+
+		if (strlen(file_path) >= 250 /* Max size of the SQL field */) {
+			char *ext;
+			switch_safe_free(file_path);
+
+			if (!(ext = strrchr(filename, '.'))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Filename doesn't include a file format %s\n", filename);
+				ret = SWITCH_STATUS_FALSE;
+				goto failed;
+			}
+
+			ext++;
+
+			file_path = switch_mprintf("%s%smsg_%s_broadcast_%" SWITCH_TIME_T_FMT ".%s", dir_path, SWITCH_PATH_SEPARATOR, use_uuid, switch_micro_time_now(), ext);
+		}
+
 		switch_file_copy(path, file_path, SWITCH_FPROT_FILE_SOURCE_PERMS, pool);
 	} else {
-		switch_safe_free(file_path);
 		file_path = (char *) path;
 	}
 
