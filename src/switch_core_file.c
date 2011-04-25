@@ -571,8 +571,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 #else
 		command = switch_mprintf("/bin/mv %s %s", fh->spool_path, fh->file_path);
 #endif
-		system(command);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Copy spooled file [%s] to [%s]\n", fh->spool_path, fh->file_path);
+		if (system(command) == -1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to copy spooled file [%s] to [%s] because of a command error : %s\n", fh->spool_path, fh->file_path, command);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Copy spooled file [%s] to [%s]\n", fh->spool_path, fh->file_path);
+		}
 		free(command);
 	}
 
