@@ -23,8 +23,8 @@
 
 #define CENTOS_5 /* define this ONLY if you're on CentOS 5.x (eg: undef on CentOS 6.x ) */
 #define WANT_HRTIMER /* undef this only if you don't want to use High Resolution Timers (why?) */
-#define SKYPOPEN_BLK 960
-#define SKYPOPEN_SLEEP 10
+#define SKYPOPEN_BLK 1920
+#define SKYPOPEN_SLEEP 20
 
 
 #define SKYPOPEN_MAJOR 14   /* dynamic major by default */
