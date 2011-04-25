@@ -3632,10 +3632,14 @@ sres_decode_msg(sres_resolver_t *res,
    * for the side effects in m */
   for (i = 0; i < m->m_qdcount; i++) {
     char name[1024];
-    //uint16_t qtype, qclass;
+    uint16_t qtype, qclass;
     m_get_domain(name, sizeof(name), m, 0); /* Query domain */
-    //qtype = m_get_uint16(m);  /* Query type */
-    //qclass = m_get_uint16(m); /* Query class */
+    qtype = m_get_uint16(m);  /* Query type */
+    qclass = m_get_uint16(m); /* Query class */
+    if (qtype && qclass) {
+      /* XXX: never mind these useless check, this is done to make compiler happy about unused value */
+    }
+
   }
 
   if (m->m_error) {
