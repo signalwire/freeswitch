@@ -19,10 +19,18 @@
 #ifndef _SKYPOPEN_H_
 #define _SKYPOPEN_H_
 
+#include <linux/version.h>
 #include <linux/ioctl.h> /* needed for the _IOW etc stuff used later */
 
-#define CENTOS_5 /* define this ONLY if you're on CentOS 5.x (eg: undef on CentOS 6.x ) */
+#if LINUX_VERSION_CODE == KERNEL_VERSION(2, 6, 18)
+#define CENTOS_5 
 #define WANT_HRTIMER /* undef this only if you don't want to use High Resolution Timers (why?) */
+#endif /* CentOS 5.x */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#define WANT_HRTIMER 
+#endif /* HRTIMER */
+
 #define SKYPOPEN_BLK 1920
 #define SKYPOPEN_SLEEP 20
 
