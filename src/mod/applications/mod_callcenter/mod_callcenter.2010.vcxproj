@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>mod_callcenter</ProjectName>
-    <ProjectGuid>{11C9BC3D-45E9-46E3-BE84-B8CEE4685E39}</ProjectGuid>
+    <ProjectGuid>{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}</ProjectGuid>
     <RootNamespace>mod_callcenter</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -63,10 +63,6 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

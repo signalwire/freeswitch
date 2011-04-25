@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="mod_callcenter"
-	ProjectGUID="{11C9BC3D-45E9-46E3-BE84-B8CEE4685E39}"
+	ProjectGUID="{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}"
 	RootNamespace="mod_callcenter"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
