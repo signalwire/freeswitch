@@ -436,12 +436,24 @@
       <!-- The following phrases still need to be recorded -->
 	  <prompt phrase="Recording started." filename="ivr-recording_started.wav"/>
 	  <prompt phrase="Recording stopped." filename="ivr-recording_stopped.wav"/>
+	  <prompt phrase="Recording paused." filename="ivr-recording_paused.wav"/>
 	  <prompt phrase="Recording deleted." filename="ivr-recording_deleted.wav"/>
 	  <prompt phrase="You are no longer in line." filename="ivr-no_longer_in_line.wav"/>
 	  <prompt phrase="question..." filename="ivr-question.wav"/>
+	  <prompt phrase="questions." filename="ivr-questions.wav"/>
 	  <prompt phrase="...has been answered." filename="ivr-has_been_answered.wav"/>
-	  <prompt phrase="...has been removed." filename="ivr=has_been_removed.wav"/>
+	  <prompt phrase="...has been removed." filename="ivr-has_been_removed.wav"/>
+	  <prompt phrase="No questions in queue." filename="ivr-no_questions_in_queue.wav"/>
+	  <prompt phrase="This conference is in Q&A mode." filename="conference/conf-conference_is_in_qna_mode.wav"/>
+	  <prompt phrase="Q&A mode..." filename="conference/conf-qna_mode.wav"/>
+	  <prompt phrase="...is on" filename="ivr/ivr_is_on.wav"/>
+	  <prompt phrase="...is off" filename="ivr/ivr_is_off.wav"/>
+	  <prompt phrase="Entry sound..." filename="conference/conf-entry_sound.wav"/>
+	  <prompt phrase="Exit sound..." filename="conference/conf-exit_sound.wav"/>
+	  <prompt phrase="The PIN you entered is below the minimum length." filename="voicemail/vm-pin_below_minimum_length.wav"/>
+	  <prompt phrase="The minimum PIN length is..." filename="voicemail/vm-minimum_pin_length_is.wav"/>
     </ivr>
+
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
       <prompt phrase="Followed by pound" filename="followed.wav"/>
