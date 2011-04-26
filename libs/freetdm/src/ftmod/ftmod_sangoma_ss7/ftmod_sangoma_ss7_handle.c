@@ -185,17 +185,7 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 				SS7_INFO_CHAN(ftdmchan,"No Called party (DNIS) information in IAM!%s\n", " ");
 			}
 
-			/* fill in rdnis information*/
-			if (siConEvnt->redirgNum.eh.pres) {
-				if (siConEvnt->redirgNum.addrSig.pres) {
-					/* fill in the rdnis digits */
-					copy_tknStr_from_sngss7(siConEvnt->redirgNum.addrSig, 
-											ftdmchan->caller_data.rdnis.digits, 
-											siConEvnt->cgPtyNum.oddEven);
-				}
-			}   else {
-				SS7_DEBUG_CHAN(ftdmchan,"No RDNIS party information in IAM!%s\n", " ");
-			}
+			copy_redirgNum_from_sngss7(ftdmchan, &siConEvnt->redirgNum);
 
 			/* fill in the TMR/bearer capability */
 			if (siConEvnt->txMedReq.eh.pres) {

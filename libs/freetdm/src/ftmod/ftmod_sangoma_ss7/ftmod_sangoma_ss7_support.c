@@ -389,13 +389,56 @@ ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *red
 	return copy_tknStr_to_sngss7(caller_data->rdnis.digits, &redirgNum->addrSig, &redirgNum->oddEven);
 }
 
+ftdm_status_t copy_redirgNum_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum)
+{
+	char val[20];
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+
+	if (redirgNum->eh.pres != PRSNT_NODEF || redirgNum->addrSig.pres != PRSNT_NODEF) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Redirecting Number available\n");
+		return FTDM_SUCCESS;
+	}
+
+	copy_tknStr_from_sngss7(redirgNum->addrSig, ftdmchan->caller_data.rdnis.digits, redirgNum->oddEven);
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number:%s\n", ftdmchan->caller_data.rdnis.digits);
+
+	if (redirgNum->natAddr.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->natAddr.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number NADI:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_nadi", val);
+		caller_data->rdnis.type = redirgNum->natAddr.val;
+	}
+
+	if (redirgNum->scrInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->scrInd.val);
+		SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Screening Ind:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_screen_ind", val);
+	}
+
+	if (redirgNum->presRest.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->presRest.val);
+		SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Presentation Ind:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_pres_ind", val);		
+	}
+
+	if (redirgNum->numPlan.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->numPlan.val);
+		SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Numbering plan:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_plan", val);
+		caller_data->rdnis.plan = redirgNum->numPlan.val;
+	}
+
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 {
 	uint8_t i;
 	uint8_t j;
 
 	/* check if the token string is present */
-
 	if (str.pres == 1) {
 		j = 0;
 
