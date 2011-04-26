@@ -1324,12 +1324,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Screen");
 		if (sipvar) {
-			caller_data.screen = (uint8_t)atoi(sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_screen_ind", sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Presentation");
 		if (sipvar) {
-			caller_data.pres = (uint8_t)atoi(sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_pres_ind", sipvar);
 		}
 
 
@@ -1348,19 +1348,19 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 	
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_layer1"))) {
-			caller_data.bearer_layer1 = (uint8_t)atoi(var);
+		caller_data.bearer_layer1 = (uint8_t)atoi(var);
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_screening_ind"))) {
-			ftdm_set_screening_ind(var, &caller_data.screen);
+		ftdm_set_screening_ind(var, &caller_data.screen);
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_presentation_ind"))) {
-			ftdm_set_presentation_ind(var, &caller_data.pres);
+		ftdm_set_presentation_ind(var, &caller_data.pres);
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_outbound_ton"))) {
-			ftdm_set_ton(var, &caller_data.dnis.type);
+		ftdm_set_ton(var, &caller_data.dnis.type);
 	} else {
 		caller_data.dnis.type = outbound_profile->destination_number_ton;
 	}
