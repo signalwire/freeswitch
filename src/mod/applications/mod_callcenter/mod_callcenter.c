@@ -1572,12 +1572,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" <%s> from queue %s%s\n",
 				h->agent_name, h->member_cid_name, h->member_cid_number, h->queue_name, (h->record_template?" (Recorded)":""));
 
-		/* TODO Temp fix so it continue the dialplan after hangup... Not sure of the reason why the order make a difference */
-		if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_UUID_STANDBY)) {
-			switch_ivr_uuid_bridge(switch_core_session_get_uuid(agent_session), h->member_session_uuid);
-		} else {
-			switch_ivr_uuid_bridge(h->member_session_uuid, switch_core_session_get_uuid(agent_session));
-		}
+		switch_ivr_uuid_bridge(h->member_session_uuid, switch_core_session_get_uuid(agent_session));
 
 		switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
 
