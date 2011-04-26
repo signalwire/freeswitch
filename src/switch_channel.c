@@ -1194,9 +1194,11 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state)
 {
 
+	switch_assert(channel);
+	
 	for (;;) {
 		if ((channel->state == channel->running_state && channel->running_state == want_state) ||
-			switch_channel_down(other_channel) || switch_channel_down(channel)) {
+			(other_channel && !switch_channel_ready(other_channel)) || !switch_channel_ready(channel)) {
 			break;
 		}
 		switch_yield(20000);
