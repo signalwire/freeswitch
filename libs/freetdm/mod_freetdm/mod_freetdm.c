@@ -1303,7 +1303,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-Plan");
 		if (sipvar) {
-			ftdm_call_add_var(&caller_data, "ss7_rdnis_plan", sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_plan", sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-NADI");
@@ -1313,12 +1313,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-Screen");
 		if (sipvar) {
-			ftdm_call_add_var(&caller_data, "ss7_rdnis_screen_ind", sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_screen_ind", sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-Presentation");
 		if (sipvar) {
-			ftdm_call_add_var(&caller_data, "ss7_rdnis_pres_ind", sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_pres_ind", sipvar);
 		}
 
 
