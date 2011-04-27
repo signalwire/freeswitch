@@ -778,7 +778,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		}
 
 		switch_channel_clear_app_flag_key("conf_silent", channel, CONF_SILENT_REQ);
-
+		switch_channel_set_app_flag_key("conf_silent", channel, CONF_SILENT_DONE);
 
 		switch_ivr_dmachine_create(&member->dmachine, "mod_conference", NULL, 500, 0, NULL, NULL, NULL);
 
