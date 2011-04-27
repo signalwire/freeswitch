@@ -1623,7 +1623,7 @@ static void conference_loop_fn_energy_up(conference_member_t *member, caller_con
 	if (member == NULL)
 		return;
 
-	lock_member(member);
+
 	member->energy_level += 200;
 	if (member->energy_level > 1800) {
 		member->energy_level = 1800;
@@ -1636,7 +1636,6 @@ static void conference_loop_fn_energy_up(conference_member_t *member, caller_con
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
-	unlock_member(member);
 
 	//switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
 	//conference_member_say(member, msg, 0);
@@ -1660,7 +1659,6 @@ static void conference_loop_fn_energy_equ_conf(conference_member_t *member, call
 	if (member == NULL)
 		return;
 
-	lock_member(member);
 	member->energy_level = member->conference->energy_level;
 
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
@@ -1670,7 +1668,6 @@ static void conference_loop_fn_energy_equ_conf(conference_member_t *member, call
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
-	unlock_member(member);
 
 	//switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
 	//conference_member_say(member, msg, 0);
@@ -1691,7 +1688,6 @@ static void conference_loop_fn_energy_dn(conference_member_t *member, caller_con
 	if (member == NULL)
 		return;
 
-	lock_member(member);
 	member->energy_level -= 200;
 	if (member->energy_level < 0) {
 		member->energy_level = 0;
@@ -1704,7 +1700,6 @@ static void conference_loop_fn_energy_dn(conference_member_t *member, caller_con
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
-	unlock_member(member);
 
 	//switch_snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
 	//conference_member_say(member, msg, 0);
@@ -1725,7 +1720,6 @@ static void conference_loop_fn_volume_talk_up(conference_member_t *member, calle
 	if (member == NULL)
 		return;
 
-	lock_member(member);
 	member->volume_out_level++;
 	switch_normalize_volume(member->volume_out_level);
 
@@ -1736,7 +1730,6 @@ static void conference_loop_fn_volume_talk_up(conference_member_t *member, calle
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 		switch_event_fire(&event);
 	}
-	unlock_member(member);
 
 	//switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 	//conference_member_say(member, msg, 0);
@@ -1759,7 +1752,6 @@ static void conference_loop_fn_volume_talk_zero(conference_member_t *member, cal
 	if (member == NULL)
 		return;
 
-	lock_member(member);
 	member->volume_out_level = 0;
 
 	if (test_eflag(member->conference, EFLAG_VOLUME_LEVEL) &&
@@ -1769,7 +1761,6 @@ static void conference_loop_fn_volume_talk_zero(conference_member_t *member, cal
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 		switch_event_fire(&event);
 	}
-	unlock_member(member);
 
 	//switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 	//conference_member_say(member, msg, 0);
@@ -1792,7 +1783,6 @@ static void conference_loop_fn_volume_talk_dn(conference_member_t *member, calle
 	if (member == NULL)
 		return;
 
-	lock_member(member);
 	member->volume_out_level--;
 	switch_normalize_volume(member->volume_out_level);
 
@@ -1803,7 +1793,6 @@ static void conference_loop_fn_volume_talk_dn(conference_member_t *member, calle
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 		switch_event_fire(&event);
 	}
-	unlock_member(member);
 
 	//switch_snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 	//conference_member_say(member, msg, 0);
@@ -1825,7 +1814,6 @@ static void conference_loop_fn_volume_listen_up(conference_member_t *member, cal
 	if (member == NULL)
 		return;
 
-	lock_member(member);
 	member->volume_in_level++;
 	switch_normalize_volume(member->volume_in_level);
 
@@ -1836,7 +1824,6 @@ static void conference_loop_fn_volume_listen_up(conference_member_t *member, cal
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 		switch_event_fire(&event);
 	}
-	unlock_member(member);
 
 	//switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 	//conference_member_say(member, msg, 0);
@@ -1859,7 +1846,6 @@ static void conference_loop_fn_volume_listen_zero(conference_member_t *member, c
 	if (member == NULL)
 		return;
 
-	lock_member(member);
 	member->volume_in_level = 0;
 
 	if (test_eflag(member->conference, EFLAG_GAIN_LEVEL) &&
@@ -1869,7 +1855,6 @@ static void conference_loop_fn_volume_listen_zero(conference_member_t *member, c
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 		switch_event_fire(&event);
 	}
-	unlock_member(member);
 
 	//switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 	//conference_member_say(member, msg, 0);
@@ -1892,7 +1877,6 @@ static void conference_loop_fn_volume_listen_dn(conference_member_t *member, cal
 	if (member == NULL)
 		return;
 
-	lock_member(member);
 	member->volume_in_level--;
 	switch_normalize_volume(member->volume_in_level);
 
@@ -1903,7 +1887,6 @@ static void conference_loop_fn_volume_listen_dn(conference_member_t *member, cal
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 		switch_event_fire(&event);
 	}
-	unlock_member(member);
 
 	//switch_snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 	//conference_member_say(member, msg, 0);
@@ -3785,18 +3768,18 @@ static switch_status_t conf_api_sub_kick(conference_member_t *member, switch_str
 {
 	switch_event_t *event;
 
-	if (member == NULL)
+	if (member == NULL) {
 		return SWITCH_STATUS_GENERR;
-
-	lock_member(member);
+	}
+	
 	switch_clear_flag(member, MFLAG_RUNNING);
 	switch_set_flag_locked(member, MFLAG_KICKED);
-
 	switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
-	unlock_member(member);
+
 	if (stream != NULL) {
 		stream->write_function(stream, "OK kicked %u\n", member->id);
 	}
+
 	if (member->conference && test_eflag(member->conference, EFLAG_KICK_MEMBER)) {
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_member_data(member, event);
@@ -3804,6 +3787,7 @@ static switch_status_t conf_api_sub_kick(conference_member_t *member, switch_str
 			switch_event_fire(&event);
 		}
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
