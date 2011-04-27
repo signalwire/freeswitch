@@ -1198,7 +1198,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 	
 	for (;;) {
 		if ((channel->state == channel->running_state && channel->running_state == want_state) ||
-			(other_channel && !switch_channel_ready(other_channel)) || !switch_channel_ready(channel)) {
+			(other_channel && switch_channel_down(other_channel)) || switch_channel_down(channel)) {
 			break;
 		}
 		switch_yield(20000);
