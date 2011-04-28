@@ -2500,20 +2500,10 @@ static void conference_loop_output(conference_member_t *member)
 	uint32_t flush_len;
 	uint32_t low_count, bytes;
 	call_list_t *call_list, *cp;
-	int restarting = -1;
 	switch_codec_implementation_t read_impl = { 0 };
-
-  top:
 
 	switch_core_session_get_read_impl(member->session, &read_impl);
 
-	restarting++;
-
-	if (switch_test_flag(member, MFLAG_RESTART)) {
-		switch_clear_flag(member, MFLAG_RESTART);
-		switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
-		switch_core_timer_destroy(&timer);
-	}
 
 	channel = switch_core_session_get_channel(member->session);
 	interval = read_impl.microseconds_per_packet / 1000;
@@ -2540,80 +2530,75 @@ static void conference_loop_output(conference_member_t *member)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Setup timer %s success interval: %u  samples: %u\n",
 					  member->conference->timer_name, interval, tsamples);
 
-	if (!restarting) {
-		write_frame.data = data = switch_core_session_alloc(member->session, SWITCH_RECOMMENDED_BUFFER_SIZE);
-		write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-	}
+	
+	write_frame.data = data = switch_core_session_alloc(member->session, SWITCH_RECOMMENDED_BUFFER_SIZE);
+	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+
 
 	write_frame.codec = &member->write_codec;
 
-	if (!restarting) {
-		/* Start the input thread */
-		launch_conference_loop_input(member, switch_core_session_get_pool(member->session));
+	/* Start the input thread */
+	launch_conference_loop_input(member, switch_core_session_get_pool(member->session));
 
-		if ((call_list = switch_channel_get_private(channel, "_conference_autocall_list_"))) {
-			const char *cid_name = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_name");
-			const char *cid_num = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_number");
-			const char *toval = switch_channel_get_variable(channel, "conference_auto_outcall_timeout");
-			const char *flags = switch_channel_get_variable(channel, "conference_auto_outcall_flags");
-			const char *profile = switch_channel_get_variable(channel, "conference_auto_outcall_profile");
-			const char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
-			const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
-			int to = 60;
+	if ((call_list = switch_channel_get_private(channel, "_conference_autocall_list_"))) {
+		const char *cid_name = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_name");
+		const char *cid_num = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_number");
+		const char *toval = switch_channel_get_variable(channel, "conference_auto_outcall_timeout");
+		const char *flags = switch_channel_get_variable(channel, "conference_auto_outcall_flags");
+		const char *profile = switch_channel_get_variable(channel, "conference_auto_outcall_profile");
+		const char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
+		const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
+		int to = 60;
 
-			if (ann && !switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ)) {
-				member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
-			}
-
-			switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
-
-			switch_set_flag(member->conference, CFLAG_OUTCALL);
-
-			if (toval) {
-				to = atoi(toval);
-				if (to < 10 || to > 500) {
-					to = 60;
-				}
-			}
-
-			for (cp = call_list; cp; cp = cp->next) {
-				int argc;
-				char *argv[512] = { 0 };
-				char *cpstr = strdup(cp->string);
-				int x = 0;
-
-				switch_assert(cpstr);
-				argc = switch_separate_string(cpstr, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-				for (x = 0; x < argc; x++) {
-					char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
-					switch_assert(dial_str);
-					conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num, NULL, 
-										  profile, &member->conference->cancel_cause);
-					switch_safe_free(dial_str);
-				}
-				switch_safe_free(cpstr);
-			}
-
-			do {
-				switch_ivr_sleep(member->session, 500, SWITCH_TRUE, NULL);
-			} while(switch_channel_up(channel) && member->conference->originating);
-
-			if (!switch_channel_ready(channel)) {
-				member->conference->cancel_cause = SWITCH_CAUSE_ORIGINATOR_CANCEL;
-				goto end;
-			}
-			
-			conference_member_play_file(member, "tone_stream://%(500,0,640)", 0);
-
+		if (ann && !switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ)) {
+			member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
 		}
+
+		switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
+
+		switch_set_flag(member->conference, CFLAG_OUTCALL);
+
+		if (toval) {
+			to = atoi(toval);
+			if (to < 10 || to > 500) {
+				to = 60;
+			}
+		}
+
+		for (cp = call_list; cp; cp = cp->next) {
+			int argc;
+			char *argv[512] = { 0 };
+			char *cpstr = strdup(cp->string);
+			int x = 0;
+
+			switch_assert(cpstr);
+			argc = switch_separate_string(cpstr, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+			for (x = 0; x < argc; x++) {
+				char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
+				switch_assert(dial_str);
+				conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num, NULL, 
+									  profile, &member->conference->cancel_cause);
+				switch_safe_free(dial_str);
+			}
+			switch_safe_free(cpstr);
+		}
+
+		switch_channel_set_app_flag(channel, CF_APP_TAGGED);
+		do {
+			switch_ivr_sleep(member->session, 500, SWITCH_TRUE, NULL);
+		} while(switch_channel_up(channel) && member->conference->originating);
+		switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
+
+		if (!switch_channel_ready(channel)) {
+			member->conference->cancel_cause = SWITCH_CAUSE_ORIGINATOR_CANCEL;
+			goto end;
+		}
+			
+		conference_member_play_file(member, "tone_stream://%(500,0,640)", 0);
 	}
 	
 	if (!switch_test_flag(member->conference, CFLAG_ANSWERED)) {
 		switch_channel_answer(channel);
-	}
-
-	if (restarting) {
-		switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
 	}
 
 	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be processed,      */
@@ -2627,11 +2612,6 @@ static void conference_loop_output(conference_member_t *member)
 		uint32_t mux_used = 0;
 
 		switch_mutex_lock(member->write_mutex);
-
-		if (switch_test_flag(member, MFLAG_RESTART)) {
-			switch_mutex_unlock(member->write_mutex);
-			goto top;
-		}
 
 		if (switch_core_session_dequeue_event(member->session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			if (event->event_id == SWITCH_EVENT_MESSAGE) {
