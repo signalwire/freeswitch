@@ -201,7 +201,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 	chan_a = switch_core_session_get_channel(session_a);
 	chan_b = switch_core_session_get_channel(session_b);
-
+	
+	switch_channel_set_bridge_time(chan_a);
+ 
 	if ((exec_app = switch_channel_get_variable(chan_a, "bridge_pre_execute_app"))) {
 		exec_data = switch_channel_get_variable(chan_a, "bridge_pre_execute_data");
 	}
@@ -1067,6 +1069,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
 		switch_event_fire(&event);
 	}
+
+	switch_channel_set_bridge_time(caller_channel);
+	switch_channel_set_bridge_time(peer_channel);
 	
 	switch_channel_set_state_flag(caller_channel, CF_RESET);
 	switch_channel_set_state_flag(peer_channel, CF_RESET);

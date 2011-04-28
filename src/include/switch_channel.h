@@ -49,6 +49,7 @@ SWITCH_BEGIN_EXTERN_C struct switch_channel_timetable {
 	switch_time_t hungup;
 	switch_time_t transferred;
 	switch_time_t resurrected;
+	switch_time_t bridged;
 	struct switch_channel_timetable *next;
 };
 
@@ -597,7 +598,7 @@ SWITCH_DECLARE(int) switch_channel_test_app_flag_key(const char *app, switch_cha
 #define switch_channel_clear_app_flag(_c, _f) switch_channel_clear_app_flag_key(__FILE__, _c, _f)
 #define switch_channel_test_app_flag(_c, _f) switch_channel_test_app_flag_key(__FILE__, _c, _f)
 
-
+SWITCH_DECLARE(void) switch_channel_set_bridge_time(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel);
 SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_t *channel);
 SWITCH_DECLARE(switch_core_session_t *) switch_channel_get_session(switch_channel_t *channel);
