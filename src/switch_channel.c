@@ -2527,7 +2527,7 @@ SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel)
 {
 	if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->bridged) {
 		switch_mutex_lock(channel->profile_mutex);
-		channel->caller_profile->times->bridged = switch_micro_time_now();
+		channel->caller_profile->times->hungup = switch_micro_time_now();
 		switch_mutex_unlock(channel->profile_mutex);
 	}
 }
