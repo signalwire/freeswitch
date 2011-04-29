@@ -509,7 +509,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 			runtime.microseconds_per_tick = 10000;
 		}
 
-		if (timer->interval > 0 && (timer->interval < (runtime.microseconds_per_tick / 1000) || (timer->interval % 10) != 0)) {
+		if (timer->interval > 0 && (timer->interval < (int)(runtime.microseconds_per_tick / 1000) || (timer->interval % 10) != 0)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Increasing global timer resolution to 1ms to handle interval %d\n", timer->interval);
 			runtime.microseconds_per_tick = 1000;
 			switch_time_sync();
