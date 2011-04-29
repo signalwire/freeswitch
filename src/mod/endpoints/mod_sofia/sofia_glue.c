@@ -1279,7 +1279,9 @@ int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip)
 {
 	switch_assert(network_ip);
 
-	return (profile->extsipip && !switch_check_network_list_ip(network_ip, profile->local_network));
+	return (profile->extsipip && 
+			!switch_check_network_list_ip(network_ip, "loopback.auto") && 
+			!switch_check_network_list_ip(network_ip, profile->local_network));
 }
 
 int sofia_glue_transport_has_tls(const sofia_transport_t tp)
