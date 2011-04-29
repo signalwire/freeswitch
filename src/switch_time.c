@@ -88,11 +88,6 @@ static DWORD win32_last_get_time_tick = 0;
 CRITICAL_SECTION  timer_section;
 #endif
 
-static int STEP_MS = 1;
-static int STEP_MIC = 1000;
-static uint32_t TICK_PER_SEC = 1000;
-static int MS_PER_TICK = 10;
-
 static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
@@ -219,7 +214,7 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 						  "Timer resolution of %ld microseconds detected!\n"
 						  "Do you have your kernel timer frequency set to lower than 1,000Hz? "
-						  "You may experience audio problems. Step MS %d\n", ts.tv_nsec / 1000, STEP_MS);
+						  "You may experience audio problems. Step MS %d\n", ts.tv_nsec / 1000, runtime.microseconds_per_tick / 1000);
 		do_sleep(5000000);
 		switch_time_set_cond_yield(SWITCH_TRUE);
 		return;
@@ -509,9 +504,14 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		private_info->roll = TIMER_MATRIX[timer->interval].roll;
 		private_info->ready = 1;
 
-		if (timer->interval > 0 && (timer->interval < MS_PER_TICK || (timer->interval % 10) != 0)) {
+		if ((timer->interval == 10 || timer->interval == 30) && runtime.microseconds_per_tick > 10000) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Increasing global timer resolution to 10ms to handle interval %d\n", timer->interval);
+			runtime.microseconds_per_tick = 10000;
+		}
+
+		if (timer->interval > 0 && (timer->interval < (runtime.microseconds_per_tick / 1000) || (timer->interval % 10) != 0)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Increasing global timer resolution to 1ms to handle interval %d\n", timer->interval);
-			MS_PER_TICK = 1;
+			runtime.microseconds_per_tick = 1000;
 			switch_time_sync();
 		}
 
@@ -678,7 +678,7 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 
 SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 {
-	switch_time_t too_late = STEP_MIC * 1000;
+	switch_time_t too_late = runtime.microseconds_per_tick * 1000;
 	uint32_t current_ms = 0;
 	uint32_t x, tick = 0;
 	switch_time_t ts = 0, last = 0;
@@ -687,6 +687,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	int tfd = -1;
 
 #ifdef HAVE_TIMERFD_CREATE
+	int last_MICROSECONDS_PER_TICK = runtime.microseconds_per_tick;
+
 	struct itimerspec spec = { { 0 } };
 
 	if (MONO && TFD) {
@@ -694,7 +696,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 		if (tfd > -1) {
 			spec.it_interval.tv_sec = 0;
-			spec.it_interval.tv_nsec = 1000000;
+			spec.it_interval.tv_nsec = runtime.microseconds_per_tick * 1000;
 			spec.it_value.tv_sec = spec.it_interval.tv_sec;
 			spec.it_value.tv_nsec = spec.it_interval.tv_nsec;
 		
@@ -740,7 +742,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				runtime.initiated = runtime.reference;
 				break;
 			}
-			do_sleep(STEP_MIC);
+			do_sleep(runtime.microseconds_per_tick);
 			last = ts;
 		}
 	}
@@ -763,7 +765,17 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	globals.RUNNING = 1;
 
 	while (globals.RUNNING == 1) {
-		runtime.reference += STEP_MIC;
+
+#ifdef HAVE_TIMERFD_CREATE
+		if (last_MICROSECONDS_PER_TICK != runtime.microseconds_per_tick) {
+			spec.it_interval.tv_nsec = runtime.microseconds_per_tick * 1000;
+			timerfd_settime(tfd, TFD_TIMER_ABSTIME, &spec, NULL);
+		}
+		
+		last_runtime.microseconds_per_tick = runtime.microseconds_per_tick;
+#endif
+
+		runtime.reference += runtime.microseconds_per_tick;
 
 		while (((ts = time_now(runtime.offset)) + 100) < runtime.reference) {
 			if (ts < last) {
@@ -796,7 +808,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 					r = read(tfd, &exp, sizeof(exp));
 					r++;
 				} else {
-					do_sleep(1000);
+					do_sleep(runtime.microseconds_per_tick);
 				}
 			}
 
@@ -808,7 +820,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
 				switch_time_sync();
 			} else {
-				switch_time_t diff = ts - runtime.reference - STEP_MIC;
+				switch_time_t diff = ts - runtime.reference - runtime.microseconds_per_tick;
 #ifndef WIN32
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Forward Clock Skew Detected!\n");
 #endif
@@ -829,10 +841,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		}
 
 		runtime.timestamp = ts;
-		current_ms += STEP_MS;
-		tick += STEP_MS;
+		current_ms += (runtime.microseconds_per_tick / 1000);
+		tick += (runtime.microseconds_per_tick / 1000);
 
-		if (tick >= TICK_PER_SEC) {
+		if (tick >= (1000000 / runtime.microseconds_per_tick)) {
 			if (++profile_tick == 1) {
 				switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
 				profile_tick = 0;
@@ -860,8 +872,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 #endif
 
 
-		if (MATRIX && (current_ms % MS_PER_TICK) == 0) {
-			for (x = MS_PER_TICK; x <= MAX_ELEMENTS; x += MS_PER_TICK) {
+		if (MATRIX && (current_ms % (runtime.microseconds_per_tick / 1000)) == 0) {
+			for (x = (runtime.microseconds_per_tick / 1000); x <= MAX_ELEMENTS; x += (runtime.microseconds_per_tick / 1000)) {
 				if ((current_ms % x) == 0) {
 					if (TIMER_MATRIX[x].count) {
 						TIMER_MATRIX[x].tick++;
@@ -887,8 +899,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	}
 
 	globals.use_cond_yield = 0;
-
-	for (x = MS_PER_TICK; x <= MAX_ELEMENTS; x += MS_PER_TICK) {
+	
+	for (x = (runtime.microseconds_per_tick / 1000); x <= MAX_ELEMENTS; x += (runtime.microseconds_per_tick / 1000)) {
 		if (TIMER_MATRIX[x].mutex && switch_mutex_trylock(TIMER_MATRIX[x].mutex) == SWITCH_STATUS_SUCCESS) {
 			switch_thread_cond_broadcast(TIMER_MATRIX[x].cond);
 			switch_mutex_unlock(TIMER_MATRIX[x].mutex);

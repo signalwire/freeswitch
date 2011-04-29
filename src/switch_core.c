@@ -1419,7 +1419,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 													   
 	runtime.tipping_point = 0;
 	runtime.timer_affinity = -1;
-	
+	runtime.microseconds_per_tick = 20000;
+
 	switch_load_core_config("switch.conf");
 
 	switch_core_state_machine_init(runtime.memory_pool);
@@ -1689,6 +1690,8 @@ static void switch_load_core_config(const char *file)
 					switch_core_min_idle_cpu(atof(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
 					runtime.tipping_point = atoi(val);
+				} else if (!strcasecmp(var, "1ms-timer") && switch_true(val)) {
+					runtime.microseconds_per_tick = 1000;
 				} else if (!strcasecmp(var, "timer-affinity") && !zstr(val)) {
 					if (!strcasecmp(val, "disabled")) {
 						runtime.timer_affinity = -1;

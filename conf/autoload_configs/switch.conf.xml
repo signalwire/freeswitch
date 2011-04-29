@@ -24,6 +24,9 @@
     <!--Colorize the Console -->
     <param name="colorize-console" value="true"/>
 
+    <!-- Run the timer at 20ms by default and drop down as needed unless you set 1m-timer=true which was previous default -->
+    <!-- <param name="1ms-timer" value="true"/> -->
+
     <!--
     Set the Switch Name for HA environments.
     When setting the switch name, it will override the system hostname for all DB and CURL requests
