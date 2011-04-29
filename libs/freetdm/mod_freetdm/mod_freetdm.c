@@ -87,7 +87,7 @@ static struct {
 	analog_option_t analog_options;
 	switch_hash_t *ss7_configs;
 	int sip_headers;
-	uint8_t crash_on_assert;
+	int crash_on_assert;
 } globals;
 
 /* private data attached to each fs session */
