@@ -519,6 +519,14 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 		cause = sofia_glue_sip_cause_to_freeswitch(status);
 	}
 
+	if (sip->sip_content_type && sip->sip_content_type->c_type) {
+		switch_channel_set_variable(channel, "sip_bye_content_type", sip->sip_content_type->c_type);
+	}
+
+	if (sip->sip_payload && sip->sip_payload->pl_data) {
+		switch_channel_set_variable(channel, "sip_bye_payload", sip->sip_payload->pl_data);
+	}
+
 	switch_snprintf(st, sizeof(st), "%d", status);
 	switch_channel_set_variable(channel, "sip_term_status", st);
 	switch_snprintf(st, sizeof(st), "sip:%d", status);
