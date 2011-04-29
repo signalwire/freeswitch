@@ -24,6 +24,14 @@
     <!--Colorize the Console -->
     <param name="colorize-console" value="true"/>
 
+    <!--
+    Set the Switch Name for HA environments.
+    When setting the switch name, it will override the system hostname for all DB and CURL requests
+    allowing cluster environments such as RHCS to have identical FreeSWITCH configurations but run
+    as different hostnames.
+    -->
+    <!-- <param name="switchname" value="freeswitch"/>-->
+
     <!-- maximum number of simo db handles open -->
     <param name="max-db-handles" value="50"/>
     <!-- maximum number of seconds to wait for a new db handle before failing -->

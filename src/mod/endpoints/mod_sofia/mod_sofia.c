@@ -4956,7 +4956,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), &mod_sofia_globals.guess_mask, AF_INET);
 	in.s_addr = mod_sofia_globals.guess_mask;
 	switch_set_string(mod_sofia_globals.guess_mask_str, inet_ntoa(in));
-	gethostname(mod_sofia_globals.hostname, sizeof(mod_sofia_globals.hostname));
+
+	strcpy(mod_sofia_globals.hostname, switch_core_get_switchname());
 
 
 	switch_core_hash_init(&mod_sofia_globals.profile_hash, mod_sofia_globals.pool);

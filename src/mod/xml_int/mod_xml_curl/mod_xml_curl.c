@@ -155,7 +155,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	char *uri = NULL;
 	char *dynamic_url = NULL;
 
-	gethostname(hostname, sizeof(hostname));
+    strncpy(hostname, switch_core_get_switchname(), sizeof(hostname));
 
 	if (!binding) {
 		return NULL;

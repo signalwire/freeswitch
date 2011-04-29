@@ -66,7 +66,6 @@ struct switch_event_subclass {
 #define MAX_DISPATCH_VAL 20
 static unsigned int MAX_DISPATCH = MAX_DISPATCH_VAL;
 static unsigned int SOFT_MAX_DISPATCH = 0;
-static char hostname[128] = "";
 static char guess_ip_v4[80] = "";
 static char guess_ip_v6[80] = "";
 static switch_event_node_t *EVENT_NODES[SWITCH_EVENT_ALL + 1] = { NULL };
@@ -647,7 +646,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
 	switch_threadattr_create(&thd_attr, pool);
-	gethostname(hostname, sizeof(hostname));
 	switch_find_local_ip(guess_ip_v4, sizeof(guess_ip_v4), NULL, AF_INET);
 	switch_find_local_ip(guess_ip_v6, sizeof(guess_ip_v6), NULL, AF_INET6);
 
@@ -1359,7 +1357,8 @@ SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, c
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name(event->event_id));
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Core-UUID", switch_core_get_uuid());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", hostname);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", switch_core_get_hostname());
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Switchname", switch_core_get_switchname());
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", guess_ip_v4);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
 

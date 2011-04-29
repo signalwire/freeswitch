@@ -598,7 +598,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_db_load)
 	switch_limit_interface_t *limit_interface;
 
 	memset(&globals, 0, sizeof(&globals));
-	gethostname(globals.hostname, sizeof(globals.hostname));
+	strncpy(globals.hostname, switch_core_get_switchname(), sizeof(globals.hostname));
 	globals.pool = pool;
 
 

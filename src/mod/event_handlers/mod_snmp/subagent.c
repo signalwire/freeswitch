@@ -140,7 +140,7 @@ int channelList_load(netsnmp_cache *cache, void *vmagic)
 
 	idx = 1;
 
-	sprintf(sql, "SELECT * FROM channels WHERE hostname='%s' ORDER BY created_epoch", switch_core_get_hostname());
+	sprintf(sql, "SELECT * FROM channels WHERE hostname='%s' ORDER BY created_epoch", switch_core_get_switchname());
 	switch_cache_db_execute_sql_callback(dbh, sql, channelList_callback, NULL, NULL);
 
 	switch_cache_db_release_db_handle(&dbh);
@@ -237,14 +237,13 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 		case SS_CURRENT_CALLS:
 			{
 			switch_cache_db_handle_t *dbh;
-			char sql[1024] = "", hostname[256] = "";
+			char sql[1024] = "";
 
 			if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
 				return SNMP_ERR_GENERR;
 			}
 
-			gethostname(hostname, sizeof(hostname));
-			sprintf(sql, "SELECT COUNT(*) FROM calls WHERE hostname='%s'", hostname);
+			sprintf(sql, "SELECT COUNT(*) FROM calls WHERE hostname='%s'", switch_core_get_switchname());
 			switch_cache_db_execute_sql_callback(dbh, sql, sql_count_callback, &int_val, NULL);
 			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
 			switch_cache_db_release_db_handle(&dbh);

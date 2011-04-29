@@ -249,9 +249,13 @@ SWITCH_STANDARD_API(banner_function)
 
 SWITCH_STANDARD_API(hostname_api_function)
 {
-	char hostname[256] = "";
-	gethostname(hostname, sizeof(hostname));
-	stream->write_function(stream, "%s", hostname);
+	stream->write_function(stream, "%s", switch_core_get_hostname());
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(switchname_api_function)
+{
+	stream->write_function(stream, "%s", switch_core_get_switchname());
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -3862,9 +3866,7 @@ SWITCH_STANDARD_API(show_function)
 	char *command = NULL, *as = NULL;
 	switch_core_flag_t cflags = switch_core_flags();
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char hostname[256] = "";
-	gethostname(hostname, sizeof(hostname));
-
+    const char *hostname = switch_core_get_switchname();
 
 	if (!(cflags & SCF_USE_SQL)) {
 		stream->write_function(stream, "-ERR SQL DISABLED NO DATA AVAILABLE!\n");
@@ -5150,6 +5152,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "help", "Show help for all the api commands", help_function, "");
 	SWITCH_ADD_API(commands_api_interface, "host_lookup", "host_lookup", host_lookup_function, "<hostname>");
 	SWITCH_ADD_API(commands_api_interface, "hostname", "Returns the system hostname", hostname_api_function, "");
+	SWITCH_ADD_API(commands_api_interface, "switchname", "Returns the switch name", switchname_api_function, "");
 	SWITCH_ADD_API(commands_api_interface, "hupall", "hupall", hupall_api_function, "<cause> [<var> <value>]");
 	SWITCH_ADD_API(commands_api_interface, "in_group", "determine if a user is in a group", in_group_function, "<user>[@<domain>] <group_name>");
 	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "see if an ip is a lan addr", lan_addr_function, "<ip>");

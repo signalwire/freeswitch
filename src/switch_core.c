@@ -265,6 +265,13 @@ SWITCH_DECLARE(const char *) switch_core_get_hostname(void)
 	return runtime.hostname;
 }
 
+SWITCH_DECLARE(const char *) switch_core_get_switchname(void)
+{
+    if (!zstr(runtime.switchname)) return runtime.switchname;
+	return runtime.hostname;
+}
+
+
 SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
 	char *val;
@@ -1716,6 +1723,9 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "rtp-enable-zrtp")) {
 					switch_core_set_variable("zrtp_enabled", val);
 #endif
+                } else if (!strcasecmp(var, "switchname") && !zstr(val)) {
+					runtime.switchname = switch_core_strdup(runtime.memory_pool, val);
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Set switchname to %s\n", runtime.switchname);
 				}
 			}
 		}
