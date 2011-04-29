@@ -322,6 +322,7 @@ typedef struct sng_isup_ckt {
 	uint8_t			rdnis_nadi;
 			
 	uint32_t		min_digits;
+	uint8_t			itx_auto_reply;
 	void			*obj;
 	uint16_t		t3;
 	uint16_t		t12;
@@ -728,6 +729,9 @@ void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_itx (ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_txa (ftdm_channel_t * ftdmchan);
+
 
 /* in ftmod_sangoma_ss7_in.c */
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
