@@ -772,7 +772,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			timerfd_settime(tfd, TFD_TIMER_ABSTIME, &spec, NULL);
 		}
 		
-		last_runtime.microseconds_per_tick = runtime.microseconds_per_tick;
+		last_MICROSECONDS_PER_TICK = runtime.microseconds_per_tick;
 #endif
 
 		runtime.reference += runtime.microseconds_per_tick;
