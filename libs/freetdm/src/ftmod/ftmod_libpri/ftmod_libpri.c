@@ -854,7 +854,6 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 {
 	ftdm_span_t *span = spri->span;
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->hangup.channel);
-/*	q931_call *call = NULL; */
 
 	if (!chan) {
 		ftdm_log(FTDM_LOG_CRIT, "-- Hangup on channel %d:%d %s but it's not in use?\n", ftdm_span_get_id(spri->span), pevent->hangup.channel);
@@ -868,25 +867,13 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 		goto done;
 	}
 
-/*
- * Make sure we can really tear-down a call, simply ignore the missing call_data and
- * use the call handle from the event
- *
-	if (!chan->call_data) {
-		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Ignoring remote hangup in state %s with no call data\n", ftdm_channel_get_state_str(chan));
-		goto done;
-	}
-
-	call = (q931_call *)chan->call_data;
-*/
 	ftdm_log(FTDM_LOG_DEBUG, "-- Hangup on channel %d:%d\n", ftdm_span_get_id(spri->span), pevent->hangup.channel);
 
-	pri_release(spri->pri, pevent->hangup.call, 0);
-	pri_destroycall(spri->pri, pevent->hangup.call);
+	pri_hangup(spri->pri, pevent->hangup.call, -1);
 
 	chan->caller_data.hangup_cause = pevent->hangup.cause;
 	chan->call_data = NULL;
-	ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
+	ftdm_set_state(chan, FTDM_CHANNEL_STATE_TERMINATING);
 done:
 	ftdm_channel_unlock(chan);
 	return 0;
