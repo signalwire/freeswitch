@@ -178,11 +178,14 @@ printf("directory for Skype clients configs:\n'$skype_config_dir'\n");
 printf("directory for Skype clients startup script:\n'$skype_startup_dir'\n");
 printf("directory for Skype clients symlinks:\n'$skype_symlinks_dir'\n");
 printf("how many Skype clients to launch: '$skype_clients_to_be_launched'\n");
-#printf("Skype login: '$skype_username'\n");
-#printf("Skype password: '$skype_password'\n");
-for($count=1; $count <= $skype_clients_to_be_launched ; $count++){
-	$skype_client_extension = $skype_clients_starting_number + $count ;
-	printf("channel='skype$skype_client_extension' Skype login='$skype_username_array[$count]' Skype password='$skype_password_array[$count]'\n");
+if($multi_skypeusername eq "one"){
+	printf("Skype login: '$skype_username'\n");
+	printf("Skype password: '$skype_password'\n");
+}else {
+	for($count=1; $count <= $skype_clients_to_be_launched ; $count++){
+		$skype_client_extension = $skype_clients_starting_number + $count ;
+		printf("channel='skype$skype_client_extension' Skype login='$skype_username_array[$count]' Skype password='$skype_password_array[$count]'\n");
+	}
 }
 
 $sure = &promptUser("Are you sure you like the values? Write 'sure' for yes ", "$sure");
