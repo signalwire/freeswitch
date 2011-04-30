@@ -831,6 +831,8 @@ static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_
 	}
 
 	endpoint->read_frame.data = endpoint->read_buf;
+	endpoint->read_frame.buflen = sizeof(endpoint->read_buf);
+	endpoint->read_frame.source = __FILE__;
 	samples = ReadAudioStream(endpoint->in_stream->stream, 
 			endpoint->read_frame.data, STREAM_SAMPLES_PER_PACKET(endpoint->in_stream), 
 			endpoint->inchan, &endpoint->read_timer);
