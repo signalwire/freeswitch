@@ -13,8 +13,11 @@ my $skype_startup_dir = "/usr/local/freeswitch/skypopen/skype-clients-startup-di
 my $skype_symlinks_dir = "/usr/local/freeswitch/skypopen/skype-clients-symlinks-dir";
 my $skype_clients_to_be_launched = "5";
 my $skype_clients_starting_number = "100";
+my $multi_skypeusername = "one";
 my $skype_username = "your_own_skype_username";
 my $skype_password = "your_own_skype_password";
+my @skype_username_array;
+my @skype_password_array;
 my $sure = "nope";
 
 ### PRESENTATION ###
@@ -95,29 +98,73 @@ printf("To accept the default, just press Enter\n");
 $skype_symlinks_dir = &promptUser("Enter the directory full path for Skype clients symlinks ", "$skype_symlinks_dir");
 system("clear");
 printf("\n");
-printf("I need the Skype username which will be used by the Skype clients to be launched\n");
-printf("(That's the one-word you registered as login to the Skype network)\n");
-printf("This installer will create the needed files to launch concurrently many (or one) instances of it\n");
-printf("\n");
-printf("NB: DON'T ACCEPT the DEFAULT, write YOUR OWN\n");
-$skype_username = &promptUser("Enter the Skype clients username ", "$skype_username");
-system("clear");
-printf("\n");
-printf("I need the Skype password which will be used by the Skype clients to be launched\n");
-printf("(That's the one-word you registered as password to the Skype network)\n");
-printf("\n");
-printf("NB: DON'T ACCEPT the DEFAULT, write YOUR OWN\n");
-$skype_password = &promptUser("Enter the Skype clients password ", "$skype_password");
-system("clear");
-printf("\n");
-printf("How many Skype clients do you want to launch?\n");
-printf("Each Skype client will use approx 70MB of ram\n");
+printf("How many Skype clients (channels) do you want to launch?\n");
+printf("Each Skype client will be one channel to FreeSWITCH and use approx 70MB of ram\n");
 printf("A quad core CPU can very easily support 20 or more Skype clients\n");
 printf("Each Skype client allows one concurrent call\n");
 printf("Eg: if you plan to have a max of 10 concurrent (outbound and/or inbound) Skype calls then enter 10\n");
 printf("To accept the default, just press Enter\n");
 $skype_clients_to_be_launched = &promptUser("Enter how many Skype clients will be launched ", "$skype_clients_to_be_launched");
 system("clear");
+printf("\n");
+
+
+while(1){
+	printf("You want all of the Skype clients to use the same Skype login (skypeusername)?\n");
+	printf("eg: you want all of your skypopen channels to be Bob on the Skype network, or you want channel skype01 to be Bob, channel skype02 to be Alice, etc?\n");
+	printf("Please answer 'one' for all channels using the same Skype login (you'll be asked just one time for Skype login and password) or 'multi' for being asked for each channel\n");
+	printf("\n");
+	$multi_skypeusername = &promptUser("Enter 'one' or 'multi' ", "$multi_skypeusername");
+	system("clear");
+	printf("\n");
+	if($multi_skypeusername eq "one" or $multi_skypeusername eq "multi"){
+		last;
+	}
+}
+
+
+if($multi_skypeusername eq "one"){
+	printf("I need the Skype username which will be used by ALL the Skype clients to be launched\n");
+	printf("(That's the one-word you registered as login to the Skype network)\n");
+	printf("This installer will create the needed files to launch concurrently many (or one) instances of it\n");
+	printf("\n");
+	printf("NB: DON'T ACCEPT the DEFAULT, write YOUR OWN\n");
+	$skype_username = &promptUser("Enter the Skype clients username ", "$skype_username");
+	for($count=1; $count <= $skype_clients_to_be_launched ; $count++){
+		$skype_username_array[$count] = $skype_username;
+	}
+	system("clear");
+	printf("\n");
+	printf("I need the Skype password which will be used by ALL the Skype clients to be launched\n");
+	printf("(That's the one-word you registered as password to the Skype network)\n");
+	printf("\n");
+	printf("NB: DON'T ACCEPT the DEFAULT, write YOUR OWN\n");
+	$skype_password = &promptUser("Enter the Skype clients password ", "$skype_password");
+	for($count=1; $count <= $skype_clients_to_be_launched ; $count++){
+		$skype_password_array[$count] = $skype_password;
+	}
+	system("clear");
+} else {
+	for($count=1; $count <= $skype_clients_to_be_launched ; $count++){
+		$skype_client_extension = $skype_clients_starting_number + $count ;
+		printf("I need the Skype username which will be used by the Skype client for channel 'skype$skype_client_extension'\n");
+		printf("(That's the one-word you registered as login to the Skype network)\n");
+		printf("\n");
+		printf("NB: DON'T ACCEPT the DEFAULT, write YOUR OWN\n");
+		$skype_username = &promptUser("Enter the Skype username for channel 'skype$skype_client_extension'", "$skype_username");
+		$skype_username_array[$count] = $skype_username;
+		system("clear");
+		printf("\n");
+		printf("I need the Skype password which will be used by the Skype client 'skype$skype_client_extension'\n");
+		printf("(That's the one-word you registered as password to the Skype network)\n");
+		printf("\n");
+		printf("NB: DON'T ACCEPT the DEFAULT, write YOUR OWN\n");
+		$skype_password = &promptUser("Enter the Skype password for '$skype_username'", "$skype_password");
+		$skype_password_array[$count] = $skype_password;
+		system("clear");
+	}
+
+}
 
 ### GETTING FINAL APPROVAL ###
 printf("\n");
@@ -131,8 +178,12 @@ printf("directory for Skype clients configs:\n'$skype_config_dir'\n");
 printf("directory for Skype clients startup script:\n'$skype_startup_dir'\n");
 printf("directory for Skype clients symlinks:\n'$skype_symlinks_dir'\n");
 printf("how many Skype clients to launch: '$skype_clients_to_be_launched'\n");
-printf("Skype login: '$skype_username'\n");
-printf("Skype password: '$skype_password'\n");
+#printf("Skype login: '$skype_username'\n");
+#printf("Skype password: '$skype_password'\n");
+for($count=1; $count <= $skype_clients_to_be_launched ; $count++){
+	$skype_client_extension = $skype_clients_starting_number + $count ;
+	printf("channel='skype$skype_client_extension' Skype login='$skype_username_array[$count]' Skype password='$skype_password_array[$count]'\n");
+}
 
 $sure = &promptUser("Are you sure you like the values? Write 'sure' for yes ", "$sure");
 if($sure ne "sure"){
@@ -148,7 +199,7 @@ printf("\n");
 #### EXECUTION ###
 
 system("mkdir -p $skype_download_dir");
-system("cd $skype_download_dir ; wget $skype_download_url");
+system("cd $skype_download_dir ; wget -c $skype_download_url");
 system("cd $skype_download_dir ; tar -xzf $skype_download_pkg");
 
 system("mkdir -p $skype_binary_dir");
@@ -165,7 +216,7 @@ system("mkdir -p $skype_config_dir");
 system("mkdir -p $skype_startup_dir");
 system("mkdir -p $skype_symlinks_dir");
 
-system("echo \"<configuration name=\\\"skypopen.conf\\\" description=\\\"Skypopen Configuration\\\">\" >> $freeswitch_modules_config_dir/skypopen.conf.xml");
+system("echo \"<configuration name=\\\"skypopen.conf\\\" description=\\\"Skypopen Configuration\\\">\" > $freeswitch_modules_config_dir/skypopen.conf.xml");
 system("echo \"<global_settings>\" >> $freeswitch_modules_config_dir/skypopen.conf.xml");
 system("echo \"  <param name=\\\"dialplan\\\" value=\\\"XML\\\"/>\" >> $freeswitch_modules_config_dir/skypopen.conf.xml");
 system("echo \"  <param name=\\\"context\\\" value=\\\"default\\\"/>\" >> $freeswitch_modules_config_dir/skypopen.conf.xml");
@@ -179,7 +230,7 @@ system("echo \"<!-- one entry follows per each skypopen interface -->\" >> $free
 system("echo \"<per_interface_settings>\" >> $freeswitch_modules_config_dir/skypopen.conf.xml");
 
 
-system("echo \"#!/bin/sh\" >> $skype_startup_dir/start_skype_clients.sh");
+system("echo \"#!/bin/sh\" > $skype_startup_dir/start_skype_clients.sh");
 system("echo \"#Unload possible ALSA sound modules that would conflict with our OSS fake module\" >> $skype_startup_dir/start_skype_clients.sh");
 system("echo \"rmmod snd_pcm_oss\" >> $skype_startup_dir/start_skype_clients.sh");
 system("echo \"rmmod snd_mixer_oss\" >> $skype_startup_dir/start_skype_clients.sh");
@@ -195,12 +246,17 @@ system("echo >> $skype_startup_dir/start_skype_clients.sh");
 
 for ($count = 1; $count <= $skype_clients_to_be_launched; $count++) {
 	$skype_client_extension = $skype_clients_starting_number + $count ;
+	$skype_login=$skype_username_array[$count];
+	$skype_passwd=$skype_password_array[$count];
 	system("ln -s $skype_binary_dir/skype $skype_symlinks_dir/skype$skype_client_extension");
 	system("mkdir -p $skype_config_dir/skype$skype_client_extension");
 	system("cp -a ../configs/skype-client-configuration-dir-template/skypeclient01/shared.* $skype_config_dir/skype$skype_client_extension");
-	system("cp -a ../configs/skype-client-configuration-dir-template/skypeclient01/skypenameA $skype_config_dir/skype$skype_client_extension/$skype_username");
+	system("cp -a ../configs/skype-client-configuration-dir-template/skypeclient01/skypenameA $skype_config_dir/skype$skype_client_extension/$skype_login");
 
 	system("echo \" <interface id=\\\"$count\\\" name=\\\"skype$skype_client_extension\\\">\" >> $freeswitch_modules_config_dir/skypopen.conf.xml");
+	if($multi_skypeusername ne "one"){
+		system("echo \" <param name=\\\"skype_user\\\" value=\\\"$skype_login\\\"/>\" >> $freeswitch_modules_config_dir/skypopen.conf.xml");
+	}
 	system("echo \" <param name=\\\"X11-display\\\" value=\\\":$skype_client_extension\\\"/>\" >> $freeswitch_modules_config_dir/skypopen.conf.xml");
 	system("echo \" </interface>\" >> $freeswitch_modules_config_dir/skypopen.conf.xml");
 
@@ -208,7 +264,7 @@ for ($count = 1; $count <= $skype_clients_to_be_launched; $count++) {
 	system("echo \"/usr/bin/Xvfb :$skype_client_extension -ac -nolisten tcp -screen 0 640x480x8 &\" >> $skype_startup_dir/start_skype_clients.sh");
 	system("echo \"sleep 3\" >> $skype_startup_dir/start_skype_clients.sh");
 	system("echo \"# start a Skype client instance that will connect to the X server above, and will login to the Skype network using the 'username password' you send to it on stdin.\" >> $skype_startup_dir/start_skype_clients.sh");
-	system("echo \"su root -c \\\"/bin/echo '$skype_username $skype_password'| DISPLAY=:$skype_client_extension  $skype_symlinks_dir/skype$skype_client_extension --dbpath=$skype_config_dir/skype$skype_client_extension --pipelogin &\\\"\" >> $skype_startup_dir/start_skype_clients.sh");
+	system("echo \"su root -c \\\"/bin/echo '$skype_login $skype_passwd'| DISPLAY=:$skype_client_extension  $skype_symlinks_dir/skype$skype_client_extension --dbpath=$skype_config_dir/skype$skype_client_extension --pipelogin &\\\"\" >> $skype_startup_dir/start_skype_clients.sh");
 	system("echo \"sleep 7\" >> $skype_startup_dir/start_skype_clients.sh");
 	system("echo >> $skype_startup_dir/start_skype_clients.sh");
 }
