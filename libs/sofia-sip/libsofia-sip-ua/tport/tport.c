@@ -1595,7 +1595,7 @@ int tport_bind_server(tport_master_t *mr,
 {
   char hostname[TPORT_HOSTPORTSIZE];
   char const *canon = NULL, *host, *service;
-  int error = 0, not_supported, family = 0;
+  int error = 0, family = 0;
   tport_primary_t *pri = NULL, **tbf;
   su_addrinfo_t *ai, *res = NULL;
   unsigned port, port0, port1, old;
@@ -1690,8 +1690,6 @@ int tport_bind_server(tport_master_t *mr,
 	}
 	break;
       }
-
-      not_supported = 0;
 
       if (port0 == 0 && port == 0) {
 	port = port1 = ntohs(su->su_port);

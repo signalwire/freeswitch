@@ -433,7 +433,6 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 {
     switch_frame_t out_frame = { 0 };
     switch_core_session_t *session;
-    switch_channel_t *channel;
     pvt_t *pvt;
     uint8_t pkt[LOCAL_FAX_MAX_DATAGRAM];
     int x;
@@ -441,21 +440,32 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 
     pvt = (pvt_t *) user_data;
     session = pvt->session;
-    channel = switch_core_session_get_channel(session);
 
     /* we need to build a real packet here and make write_frame.packet and write_frame.packetlen point to it */
     out_frame.flags = SFF_UDPTL_PACKET | SFF_PROXY_PACKET;
     out_frame.packet = pkt;
-    out_frame.packetlen = udptl_build_packet(pvt->udptl_state, pkt, buf, len);
-    
-    //switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "WRITE %d udptl bytes\n", out_frame.packetlen);
+    if ((r = udptl_build_packet(pvt->udptl_state, pkt, buf, len)) > 0) {
+        out_frame.packetlen = r;
+        //switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "WRITE %d udptl bytes\n", out_frame.packetlen);
 
-    for (x = 0; x < count; x++) {
-        if (switch_core_session_write_frame(session, &out_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-            r = -1;
-            break;
+        for (x = 0; x < count; x++) {
+            if (switch_core_session_write_frame(session, &out_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+                r = -1;
+                break;
+            }
+        }
+    } else {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID PACKETLEN: %d PASSED: %d:%d\n", r, len, count);
+    }
+    
+    if (r < 0) {
+        t30_state_t *t30;
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "TERMINATING T30 STATE\n");
+        if (pvt->t38_state && (t30 = t38_terminal_get_t30_state(pvt->t38_state))) {
+            t30_terminate(t30);
         }
     }
+
 
     return r;
 }
@@ -1772,8 +1782,8 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
         switch_channel_set_variable(channel, "t38_peer", switch_core_session_get_uuid(other_session));
         switch_channel_set_variable(other_channel, "t38_peer", switch_core_session_get_uuid(session));
 
-        switch_channel_set_variable(peer ? other_channel : channel, "t38_gateway_format", "audio");
-        switch_channel_set_variable(peer ? channel : other_channel, "t38_gateway_format", "udptl");
+        switch_channel_set_variable(peer ? other_channel : channel, "t38_gateway_format", "udptl");
+        switch_channel_set_variable(peer ? channel : other_channel, "t38_gateway_format", "audio");
 
 
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s starting gateway mode to %s\n", 
@@ -1802,6 +1812,250 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
     
     return SWITCH_FALSE;
 }
+
+typedef struct {
+	char *app;
+	char *data;
+	char *key;
+	int up;
+	int total_hits;
+	int hits;
+	int sleep;
+	int expires;
+	int default_sleep;
+	int default_expires;
+	switch_tone_detect_callback_t callback;	
+	modem_connect_tones_rx_state_t rx_tones;
+
+	switch_media_bug_t *bug;
+	switch_core_session_t *session;
+	int bug_running;
+	
+} spandsp_fax_tone_container_t;
+
+static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	spandsp_fax_tone_container_t *cont = switch_channel_get_private(channel, "_fax_tone_detect_");
+	
+
+	if (!cont || dtmf->digit != 'f') {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (cont->callback) {
+		cont->callback(cont->session, cont->app, cont->data);
+	} else {
+		switch_channel_execute_on(switch_core_session_get_channel(cont->session), "execute_on_fax_detect");
+		if (cont->app) {
+			switch_core_session_execute_application_async(cont->session, cont->app, cont->data);
+		}
+	}
+		
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
+static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	spandsp_fax_tone_container_t *cont = (spandsp_fax_tone_container_t *) user_data;
+	switch_frame_t *frame = NULL;
+	switch_bool_t rval = SWITCH_TRUE;
+
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT:
+		if (cont) {
+			cont->bug_running = 1;
+			modem_connect_tones_rx_init(&cont->rx_tones, MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE, NULL, NULL);
+		}
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		break;
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+		{
+			int skip = 0;
+			
+			if (type == SWITCH_ABC_TYPE_READ_REPLACE) {
+				frame = switch_core_media_bug_get_read_replace_frame(bug);
+			} else {
+				frame = switch_core_media_bug_get_write_replace_frame(bug);
+			}
+			
+			if (cont->sleep) {
+				cont->sleep--;
+				if (cont->sleep) {
+					skip = 1;
+				}
+			}
+
+			if (cont->expires) {
+				cont->expires--;
+				if (!cont->expires) {
+					cont->hits = 0;
+					cont->sleep = 0;
+					cont->expires = 0;
+				}
+			}
+
+			if (!cont->up) {
+				skip = 1;
+			}
+
+			if (skip) {
+				return SWITCH_TRUE;
+			}
+
+			cont->hits = 0;
+			modem_connect_tones_rx(&cont->rx_tones, frame->data, frame->samples);
+			cont->hits = modem_connect_tones_rx_get(&cont->rx_tones);
+
+			if (cont->hits) {
+				switch_event_t *event;
+				
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG,
+								  "Fax Tone Detected. [%s][%s]\n", cont->app, switch_str_nil(cont->data));
+
+				if (cont->callback) {
+					cont->callback(cont->session, cont->app, cont->data);
+				} else {
+					switch_channel_execute_on(switch_core_session_get_channel(cont->session), "execute_on_fax_detect");
+					if (cont->app) {
+						switch_core_session_execute_application_async(cont->session, cont->app, cont->data);
+					}
+				}
+				
+
+				if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
+					switch_event_t *dup;
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Fax-Tone", "true");
+				
+					if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
+						switch_event_fire(&dup);
+					}
+
+					if (switch_core_session_queue_event(cont->session, &event) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR,
+										  "Event queue failed!\n");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+						switch_event_fire(&event);
+					}
+				}
+
+				rval = SWITCH_FALSE;
+			}
+			
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE:
+	default:
+		break;
+	}
+
+	if (rval == SWITCH_FALSE) {
+		cont->bug_running = 0;
+	}
+
+	return rval;
+}
+
+switch_status_t spandsp_fax_stop_detect_session(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	spandsp_fax_tone_container_t *cont = switch_channel_get_private(channel, "_fax_tone_detect_");
+
+	if (cont) {
+		switch_channel_set_private(channel, "_fax_tone_detect_", NULL);
+		cont->up = 0;
+		switch_core_media_bug_remove(session, &cont->bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
+														   const char *flags, time_t timeout,
+														   int hits, const char *app, const char *data, switch_tone_detect_callback_t callback)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status;
+	spandsp_fax_tone_container_t *cont = switch_channel_get_private(channel, "_fax_tone_detect_");
+	switch_media_bug_flag_t bflags = 0;
+	const char *var;
+	switch_codec_implementation_t read_impl = { 0 };
+	switch_core_session_get_read_impl(session, &read_impl);
+
+	if (cont) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Max Tones Reached!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!cont && !(cont = switch_core_session_alloc(session, sizeof(*cont)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	if (app) {
+		cont->app = switch_core_session_strdup(session, app);
+	}
+
+	if (data) {
+		cont->data = switch_core_session_strdup(session, data);
+	}
+
+	cont->callback = callback;
+	cont->up = 1;
+	cont->session = session;
+
+	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	cont->default_sleep = 25;
+	cont->default_expires = 250;
+
+	if ((var = switch_channel_get_variable(channel, "fax_tone_detect_sleep"))) {
+		int tmp = atoi(var);
+		if (tmp > 0) {
+			cont->default_sleep = tmp;
+		}
+	}
+
+	if ((var = switch_channel_get_variable(channel, "fax_tone_detect_expires"))) {
+		int tmp = atoi(var);
+		if (tmp > 0) {
+			cont->default_expires = tmp;
+		}
+	}
+
+	if (zstr(flags)) {
+		bflags = SMBF_READ_REPLACE;
+	} else {
+		if (strchr(flags, 'r')) {
+			bflags |= SMBF_READ_REPLACE;
+		} else if (strchr(flags, 'w')) {
+			bflags |= SMBF_WRITE_REPLACE;
+		}
+	}
+
+	bflags |= SMBF_NO_PAUSE;
+
+
+	switch_core_event_hook_add_send_dtmf(session, tone_on_dtmf);
+	switch_core_event_hook_add_recv_dtmf(session, tone_on_dtmf);
+
+
+	if ((status = switch_core_media_bug_add(session, "fax_tone_detect", "",
+											tone_detect_callback, cont, timeout, bflags, &cont->bug)) != SWITCH_STATUS_SUCCESS) {
+		cont->bug_running = 0;
+		return status;
+	}
+
+	switch_channel_set_private(channel, "_fax_tone_detect_", cont);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 
 

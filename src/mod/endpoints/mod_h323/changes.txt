@@ -1,3 +1,4 @@
+fix race condition on destroying signaling thread in h323 library
 Adds an extra switch_rtp_destroy or switch_rtp_release_port when a session ends 
     - to make sure the port is returned to FS. thx to Peter Olsson.
 fix issues with Progress message type if pre_answer enabled

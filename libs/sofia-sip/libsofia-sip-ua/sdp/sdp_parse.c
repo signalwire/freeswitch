@@ -1883,12 +1883,11 @@ static char *next(char **message, const char *sep, const char *strip)
 
 static int parsing_error(sdp_parser_t *p, char const *fmt, ...)
 {
-  int n;
   va_list ap;
   va_start(ap, fmt);
 
   memset(p->pr_error, 0, sizeof(p->pr_error));
-  n = vsnprintf(p->pr_error, sizeof(p->pr_error), fmt, ap);
+  vsnprintf(p->pr_error, sizeof(p->pr_error), fmt, ap);
   va_end(ap);
 
   p->pr_ok = 0;

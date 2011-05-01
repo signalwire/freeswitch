@@ -758,7 +758,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	char *mycmd = NULL, *argv[8] = { 0 };
 	char *local_stream_name = NULL, *path = NULL, *timer_name = NULL;
 	uint32_t prebuf = 1;
-	int rate = 8000, shuffle = 1, interval = 20;
+	int rate = 8000, interval = 20;
 	uint8_t channels = 1;
 	int argc = 0;
 	char *cf = "local_stream.conf";
@@ -790,7 +790,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 		}
 	}
 
-	shuffle = argv[3] ? switch_true(argv[3]) : 1;
+	//shuffle = argv[3] ? switch_true(argv[3]) : 1;
 	prebuf = argv[4] ? atoi(argv[4]) : DEFAULT_PREBUFFER_SIZE;
 
 	if (argv[5]) {
@@ -833,8 +833,8 @@ SWITCH_STANDARD_API(start_local_stream_function)
 						if (tmp == 8000 || tmp == 16000 || tmp == 32000) {
 							rate = tmp;
 						}
-					} else if (!strcasecmp(var, "shuffle")) {
-						shuffle = switch_true(val);
+						//} else if (!strcasecmp(var, "shuffle")) {
+						//shuffle = switch_true(val);
 					} else if (!strcasecmp(var, "prebuf")) {
 						tmp = atoi(val);
 						if (tmp > 0) {

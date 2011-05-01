@@ -1,0 +1,11 @@
+<include> <!--This line will be ignored it's here to validate the xml and is optional -->
+	<macro name="queue_position">
+		<input pattern="^(\d+)$">
+			<match>
+				<action function="play-file" data="ivr/ivr-you_are_number.wav"/>
+				<action function="say" data="$1" method="pronounced" type="items"/>
+				<action function="play-file" data="ivr/ivr-in_line.wav"/>
+			</match>
+		</input>
+	</macro>
+</include>

@@ -182,7 +182,7 @@ int time_d(char const **ss,
 issize_t msg_date_d(char const **ss, msg_time_t *date)
 {
   char const *s = *ss;
-  char const *wkday;
+  //char const *wkday;
   char const *tz;
   unsigned long day, year, hour, min, sec;
   int mon;
@@ -190,7 +190,8 @@ issize_t msg_date_d(char const **ss, msg_time_t *date)
   if (!IS_TOKEN(*s) || !date)
     return -1;
 
-  wkday = s; skip_token(&s); if (*s == ',') s++;
+  //wkday = s; 
+  skip_token(&s); if (*s == ',') s++;
   while (IS_LWS(*s)) s++;
 
   if (is_digit(*s)) {

@@ -77,13 +77,11 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	char *dupargs = NULL;
 	char *argv[2] = { 0 };
 	int argc;
-	int lead = 0;
 	char *script = NULL;
 	PyObject *module = NULL, *sp = NULL, *stp = NULL, *eve = NULL;
 	PyObject *function = NULL;
 	PyObject *arg = NULL;
 	PyObject *result = NULL;
-	switch_channel_t *channel = NULL;
 	char *p;
 
 	if (str) {
@@ -104,8 +102,6 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	}
 
 	script = strdup(switch_str_nil(argv[0]));
-
-	lead = 1;
 
 	if ((p = strstr(script, "::"))) {
 		*p = '\0';
@@ -157,7 +153,6 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	}
 
 	if (session) {
-		channel = switch_core_session_get_channel(session);
 		sp = mod_python_conjure_session(module, session);
 	}
 

@@ -182,8 +182,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	/* copy down the called number information */
 	copy_cdPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cdPtyNum);
 	
-	/* copy down the calling number information */
-	
+	/* copy down the calling number information */	
 	copy_cgPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cgPtyNum);
 
 	/* check if the user would like a custom NADI value for the calling Pty Num */
@@ -195,7 +194,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		iam.cgPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].clg_nadi;
 		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLG, using \"%d\"\n", iam.cgPtyNum.natAddrInd.val);
 	}
-
+	
 	cld_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cld_nadi");
 	if ((cld_nadi != NULL) && (*cld_nadi)) {
 		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called NADI value \"%s\"\n", cld_nadi);
@@ -244,6 +243,8 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		} /* if (subAddrIE[0] != '0') */
 	}
 
+	copy_redirgNum_to_sngss7(ftdmchan, &iam.redirgNum);
+	
 	/* check if the user would like us to send a cld_sub-address */
 	cld_subAddr = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cld_subaddr");
 	if ((cld_subAddr != NULL) && (*cld_subAddr)) {

@@ -511,7 +511,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *session)
 {
 	switch_media_bug_t *bp = NULL, *last = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
 	int ttl = 0;
 
 
@@ -540,7 +539,7 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *sess
 	switch_thread_rwlock_unlock(session->bug_rwlock);
 
 	if (bp) {
-		status = switch_core_media_bug_close(&bp);
+		switch_core_media_bug_close(&bp);
 		ttl++;
 		goto top;
 	}

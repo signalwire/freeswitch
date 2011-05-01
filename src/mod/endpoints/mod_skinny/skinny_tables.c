@@ -65,6 +65,8 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{FEATURE_STAT_REQ_MESSAGE, "FeatureStatReqMessage"},
 	{DEVICE_TO_USER_DATA_VERSION1_MESSAGE, "DeviceToUserDataVersion1Message"},
 	{DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE, "DeviceToUserDataResponseVersion1Message"},
+	{DIALED_PHONE_BOOK_MESSAGE, "DialedPhoneBookMessage"},
+	{ACCESSORY_STATUS_MESSAGE, "AccessoryStatusMessage"},
 	{REGISTER_ACK_MESSAGE, "RegisterAckMessage"},
 	{START_TONE_MESSAGE, "StartToneMessage"},
 	{STOP_TONE_MESSAGE, "StopToneMessage"},
@@ -102,6 +104,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{DISPLAY_PRI_NOTIFY_MESSAGE, "DisplayPriNotifyMessage"},
 	{SERVICE_URL_STAT_RES_MESSAGE, "ServiceUrlStatMessage"},
 	{USER_TO_DEVICE_DATA_VERSION1_MESSAGE, "UserToDeviceDataVersion1Message"},
+	{DIALED_PHONE_BOOK_ACK_MESSAGE, "DialedPhoneBookAckMessage"},
 	{XML_ALARM_MESSAGE, "XMLAlarmMessage"},
 	{0, NULL}
 };
@@ -252,6 +255,25 @@ struct skinny_table SKINNY_DEVICE_RESET_TYPES[] = {
 };
 SKINNY_DECLARE_ID2STR(skinny_device_reset_type2str, SKINNY_DEVICE_RESET_TYPES, "DeviceResetTypeUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2device_reset_type, SKINNY_DEVICE_RESET_TYPES, -1)
+
+struct skinny_table SKINNY_ACCESSORY_TYPES[] = {
+	{SKINNY_ACCESSORY_NONE, "AccessoryNone"},
+	{SKINNY_ACCESSORY_HEADSET, "Headset"},
+	{SKINNY_ACCESSORY_HANDSET, "Handset"},
+	{SKINNY_ACCESSORY_SPEAKER, "Speaker"},
+	{0, NULL}
+};
+SKINNY_DECLARE_ID2STR(skinny_accessory_type2str, SKINNY_ACCESSORY_TYPES, "AccessoryUnknown")
+SKINNY_DECLARE_STR2ID(skinny_str2accessory_type, SKINNY_ACCESSORY_TYPES, -1)
+
+struct skinny_table SKINNY_ACCESSORY_STATES[] = {
+	{SKINNY_ACCESSORY_STATE_NONE, "AccessoryNoState"},
+	{SKINNY_ACCESSORY_STATE_OFFHOOK, "OffHook"},
+	{SKINNY_ACCESSORY_STATE_ONHOOK, "OnHook"},
+	{0, NULL}
+};
+SKINNY_DECLARE_ID2STR(skinny_accessory_state2str, SKINNY_ACCESSORY_STATES, "AccessoryStateUnknown")
+SKINNY_DECLARE_STR2ID(skinny_str2accessory_state, SKINNY_ACCESSORY_STATES, -1)
 
 /* For Emacs:
  * Local Variables:

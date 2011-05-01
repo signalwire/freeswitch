@@ -399,7 +399,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	const char *billrate;
 	const char *billaccount;
 	float nobal_amt = globals.nobal_amt;
-	float lowbal_amt = globals.lowbal_amt;
+	//float lowbal_amt = globals.lowbal_amt;
 	float balance;
 
 	if (!session) {
@@ -421,10 +421,11 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	if (!zstr(switch_channel_get_variable(channel, "nobal_amt"))) {
 		nobal_amt = (float)atof(switch_channel_get_variable(channel, "nobal_amt"));
 	}
+	/*
 	if (!zstr(switch_channel_get_variable(channel, "lowbal_amt"))) {
 		lowbal_amt = (float)atof(switch_channel_get_variable(channel, "lowbal_amt"));
 	}
-
+	*/
 	/* Return if there's no billing information on this session */
 	if (!billrate || !billaccount) {
 		return SWITCH_STATUS_SUCCESS;
@@ -802,9 +803,6 @@ SWITCH_STANDARD_API(nibblebill_api_function)
 		if ((argc == 2 || argc == 3) && !zstr(argv[0])) {
 			char *uuid = argv[0];
 			if ((psession = switch_core_session_locate(uuid))) {
-				switch_channel_t *channel;
-				channel = switch_core_session_get_channel(psession);
-
 				if (!strcasecmp(argv[1], "adjust") && argc == 3) {
 					nibblebill_adjust(psession, (float) atof(argv[2]));
 				} else if (!strcasecmp(argv[1], "flush")) {

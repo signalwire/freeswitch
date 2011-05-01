@@ -104,7 +104,6 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 
 	CURL *curl_handle = NULL;
 	long httpRes = 0;
-	char hostname[256] = "";
 
 	http_data_t *http_data = NULL;
 
@@ -114,8 +113,6 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 
 	http_data->max_bytes = 64000;
 	SWITCH_STANDARD_STREAM(http_data->stream);
-
-	gethostname(hostname, sizeof(hostname));
 
 	if (!method) {
 		method = "get";

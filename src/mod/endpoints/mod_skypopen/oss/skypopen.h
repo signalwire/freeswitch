@@ -1,6 +1,7 @@
 /*
  * skypopen.h -- definitions for the char module
  *
+ * Copyright (C) 2010 Giovanni Maruzzelli
  * Copyright (C) 2001 Alessandro Rubini and Jonathan Corbet
  * Copyright (C) 2001 O'Reilly & Associates
  *
@@ -18,22 +19,30 @@
 #ifndef _SKYPOPEN_H_
 #define _SKYPOPEN_H_
 
+#include <linux/version.h>
 #include <linux/ioctl.h> /* needed for the _IOW etc stuff used later */
 
-#define SKYPOPEN_BLK 960
-#define SKYPOPEN_SLEEP 10
+#if LINUX_VERSION_CODE == KERNEL_VERSION(2, 6, 18)
+#define CENTOS_5 
+#define WANT_HRTIMER /* undef this only if you don't want to use High Resolution Timers (why?) */
+#endif /* CentOS 5.x */
 
-#define CENTOS
-
-#ifndef SKYPOPEN_MAJOR
-#define SKYPOPEN_MAJOR 14   /* dynamic major by default */
-#endif
-
-#ifndef SKYPOPEN_NR_DEVS
-#define SKYPOPEN_NR_DEVS 1    /* skypopen0 through skypopen3 */
-#endif
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 #define WANT_HRTIMER 
+#endif /* HRTIMER */
+
+#define SKYPOPEN_BLK 1920
+#define SKYPOPEN_SLEEP 20
+
+
+#define SKYPOPEN_MAJOR 14   /* dynamic major by default */
+#define SKYPOPEN_MINOR 3   /* dynamic major by default */
+#define SKYPOPEN_NR_DEVS 1    /* not useful, I'm too lazy to remove it */
+
+#ifdef CENTOS_5
+#define HRTIMER_MODE_REL HRTIMER_REL
+#endif// CENTOS_5
+
 struct skypopen_dev {
 	struct cdev cdev;	  /* Char device structure		*/
 	wait_queue_head_t inq; /* read and write queues */
@@ -55,17 +64,5 @@ struct skypopen_dev {
  */
 extern int skypopen_major;     /* main.c */
 extern int skypopen_nr_devs;
-
-
-/*
- * Prototypes for shared functions
- */
-
-//ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
-                   //loff_t *f_pos);
-//ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t count,
-                    //loff_t *f_pos);
-//int     skypopen_ioctl(struct inode *inode, struct file *filp,
-                    //unsigned int cmd, unsigned long arg);
 
 #endif /* _SKYPOPEN_H_ */

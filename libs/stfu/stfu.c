@@ -506,9 +506,9 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
     i->diff_total += i->diff;
 
     if ((i->period_packet_in_count > i->period_time)) {
-        uint32_t avg;
+        //uint32_t avg;
 
-        avg = i->diff_total / least1(i->period_packet_in_count);
+        //avg = i->diff_total / least1(i->period_packet_in_count);
 
         i->period_packet_in_count = 0;
 
@@ -904,7 +904,7 @@ static void default_logger(const char *file, const char *func, int line, int lev
 	ret = stfu_vasprintf(&data, fmt, ap);
 
 	if (ret != -1) {
-		fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], file, line, func, data);
+		fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], fp, line, func, data);
 		free(data);
 	}
 

@@ -164,7 +164,6 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				int argc;
 				char *argv[3] = { 0 };
 				char *pattern = NULL;
-				char *pri = NULL;
 				char *app = NULL;
 				char *argument = NULL;
 				char *expression = NULL, expression_buf[1024] = "";
@@ -242,7 +241,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				switch_channel_set_variable(channel, "CHANNEL", switch_channel_get_name(channel));
 				switch_channel_set_variable(channel, "UNIQUEID", switch_core_session_get_uuid(session));
 
-				pri = argv[1];
+				//pri = argv[1];
 				app = argv[2];
 
 				if ((argument = strchr(app, '('))) {

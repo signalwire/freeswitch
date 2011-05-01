@@ -240,6 +240,7 @@ struct switch_runtime {
 	uint32_t debug_level;
 	uint32_t runlevel;
 	uint32_t tipping_point;
+	uint32_t microseconds_per_tick;
 	int32_t timer_affinity;
 	switch_profile_timer_t *profile_timer;
 	double profile_time;
@@ -248,6 +249,7 @@ struct switch_runtime {
 	int max_sql_buffer_len;
 	switch_dbtype_t odbc_dbtype;
 	char hostname[256];
+	char *switchname;
 	int multiple_registrations;
 	uint32_t max_db_handles;
 	uint32_t db_handle_timeout;

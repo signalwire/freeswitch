@@ -990,19 +990,19 @@ SWITCH_STANDARD_API(event_sink_function)
 		stream->write_function(stream, "<events>\n");
 
 		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-			char *etype;
+			//char *etype;
 			pevent = (switch_event_t *) pop;
 
 			if (listener->format == EVENT_FORMAT_PLAIN) {
-				etype = "plain";
+				//etype = "plain";
 				switch_event_serialize(pevent, &listener->ebuf, SWITCH_TRUE);
 				stream->write_function(stream, "<event type=\"plain\">\n%s</event>", listener->ebuf);
 			} else if (listener->format == EVENT_FORMAT_JSON) {
-				etype = "json";
+				//etype = "json";
 				switch_event_serialize_json(pevent, &listener->ebuf);
 			} else {
 				switch_xml_t xml;
-				etype = "xml";
+				//etype = "xml";
 
 				if ((xml = switch_event_xmlize(pevent, SWITCH_VA_NONE))) {
 					listener->ebuf = switch_xml_toxml(xml, SWITCH_FALSE);

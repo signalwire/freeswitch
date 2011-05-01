@@ -265,6 +265,13 @@ SWITCH_DECLARE(const char *) switch_core_get_hostname(void)
 	return runtime.hostname;
 }
 
+SWITCH_DECLARE(const char *) switch_core_get_switchname(void)
+{
+    if (!zstr(runtime.switchname)) return runtime.switchname;
+	return runtime.hostname;
+}
+
+
 SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
 	char *val;
@@ -1280,6 +1287,7 @@ static void switch_core_set_serial(void)
 
 		if ((write_fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) >= 0) {
 			bytes = write(write_fd, buf, sizeof(buf));
+			bytes++;
 			close(write_fd);
 			write_fd = -1;
 		}
@@ -1409,9 +1417,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	if (flags & SCF_MINIMAL) return SWITCH_STATUS_SUCCESS;
 													   
-	runtime.tipping_point = 5000;
+	runtime.tipping_point = 0;
 	runtime.timer_affinity = -1;
-	
+	runtime.microseconds_per_tick = 20000;
+
 	switch_load_core_config("switch.conf");
 
 	switch_core_state_machine_init(runtime.memory_pool);
@@ -1662,9 +1671,6 @@ static void switch_load_core_config(const char *file)
 					switch_time_set_monotonic(switch_true(val));
 				} else if (!strcasecmp(var, "enable-softtimer-timerfd")) {
 					switch_time_set_timerfd(switch_true(val));
-					if (switch_true(val)) {
-						switch_clear_flag((&runtime), SCF_CALIBRATE_CLOCK);
-					}
 				} else if (!strcasecmp(var, "enable-clock-nanosleep")) {
 					switch_time_set_nanosleep(switch_true(val));
 				} else if (!strcasecmp(var, "enable-cond-yield")) {
@@ -1684,6 +1690,8 @@ static void switch_load_core_config(const char *file)
 					switch_core_min_idle_cpu(atof(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
 					runtime.tipping_point = atoi(val);
+				} else if (!strcasecmp(var, "1ms-timer") && switch_true(val)) {
+					runtime.microseconds_per_tick = 1000;
 				} else if (!strcasecmp(var, "timer-affinity") && !zstr(val)) {
 					if (!strcasecmp(val, "disabled")) {
 						runtime.timer_affinity = -1;
@@ -1718,6 +1726,9 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "rtp-enable-zrtp")) {
 					switch_core_set_variable("zrtp_enabled", val);
 #endif
+                } else if (!strcasecmp(var, "switchname") && !zstr(val)) {
+					runtime.switchname = switch_core_strdup(runtime.memory_pool, val);
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Set switchname to %s\n", runtime.switchname);
 				}
 			}
 		}
