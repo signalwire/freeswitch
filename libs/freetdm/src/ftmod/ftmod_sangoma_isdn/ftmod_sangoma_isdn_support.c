@@ -43,8 +43,6 @@ SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_progind_descr, ftdm_sngisdn_progind_descr
 SNGISDN_ENUM_NAMES(SNGISDN_PROGIND_LOC_NAMES, SNGISDN_PROGIND_LOC_STRINGS)
 SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str, ftdm_sngisdn_progind_loc_t, SNGISDN_PROGIND_LOC_NAMES, SNGISDN_PROGIND_LOC_INVALID)
 
-ftdm_status_t sngisdn_check_free_ids(void);
-
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
 void get_memory_info(void);
 
@@ -1131,7 +1129,7 @@ ftdm_user_layer1_prot_t sngisdn_get_usrInfoLyr1Prot_from_stack(uint8_t layer1_pr
 	return FTDM_USER_LAYER1_PROT_ULAW;
 }
 
-void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span)
+ftdm_status_t sngisdn_show_l1_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span)
 {
 	L1Mngmt sts;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
@@ -1169,11 +1167,11 @@ void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span)
 	stream->write_function(stream, "   TX Errors Details");
 	stream->write_function(stream, "\n---------------------------------------------------------------------\n");
 	stream->write_function(stream, "Aborted:\t%u\tFifo:\t\t%u\tCarrier:\t%u\n", sts.t.sts.tx_aborted_errors, sts.t.sts.tx_fifo_errors, sts.t.sts.tx_carrier_errors);
-	return;
+	return FTDM_SUCCESS;
 }
 
 
-void sngisdn_print_span(ftdm_stream_handle_t *stream, ftdm_span_t *span)
+ftdm_status_t sngisdn_show_span(ftdm_stream_handle_t *stream, ftdm_span_t *span)
 {
 	ftdm_signaling_status_t sigstatus;
 	ftdm_alarm_flag_t alarmbits;
@@ -1188,18 +1186,18 @@ void sngisdn_print_span(ftdm_stream_handle_t *stream, ftdm_span_t *span)
 	stream->write_function(stream, "span:%s physical:%s signalling:%s\n",
 										span->name, alarmbits ? "ALARMED" : "OK",
 										ftdm_signaling_status2str(sigstatus));
-	return;
+	return FTDM_SUCCESS;
 }
 
-void sngisdn_print_spans(ftdm_stream_handle_t *stream)
+ftdm_status_t sngisdn_show_spans(ftdm_stream_handle_t *stream)
 {
 	int i;	
 	for(i=1;i<=MAX_L1_LINKS;i++) {		
 		if (g_sngisdn_data.spans[i]) {
-			sngisdn_print_span(stream, g_sngisdn_data.spans[i]->ftdm_span);
+			sngisdn_show_span(stream, g_sngisdn_data.spans[i]->ftdm_span);
 		}
 	}
-	return;
+	return FTDM_SUCCESS;
 }
 
 ftdm_status_t sngisdn_add_var(sngisdn_chan_data_t *sngisdn_info, const char* var, const char* val)

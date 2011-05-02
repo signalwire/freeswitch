@@ -471,9 +471,9 @@ ftdm_status_t sngisdn_stack_start(ftdm_span_t *span);
 ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span);
 ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span);
 
-void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
-void sngisdn_print_spans(ftdm_stream_handle_t *stream);
-void sngisdn_print_span(ftdm_stream_handle_t *stream, ftdm_span_t *span);
+ftdm_status_t sngisdn_show_l1_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
+ftdm_status_t sngisdn_show_spans(ftdm_stream_handle_t *stream);
+ftdm_status_t sngisdn_show_span(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 
 #endif /* __FTMOD_SNG_ISDN_H__ */
 
