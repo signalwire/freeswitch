@@ -89,7 +89,7 @@ vocallo_codec_t g_codec_map[] =
 	{ SNGTC_CODEC_PCMA,      IANA_PCMA_A_8000_1,  "PCMA",    "Sangoma PCMA",      40, 64000,  10000, 80,  160, 80,  8000,  8000,  1 },
 	{ SNGTC_CODEC_L16_1,     IANA_L16_A_8000_1,   "L16",     "Sangoma L16",       40, 120000, 10000, 80,  160, 160, 8000,  8000,  0 },
 	{ SNGTC_CODEC_L16_2,     IANA_L16_A_16000_1,  "L16",     "Sangoma L16 2",     40, 320000, 10000, 160, 320, 320, 16000, 16000, 0 },
-	{ SNGTC_CODEC_G729AB,    IANA_G729_AB_8000_1, "G729",    "Sangoma G729",      40, 8000,   10000, 80,  160, 10,  8000,  8000,  1 },
+	{ SNGTC_CODEC_G729AB,    IANA_G729_AB_8000_1, "G729",    "Sangoma G729",      100, 8000,   10000, 80,  160, 10,  8000,  8000,  1 },
 	{ SNGTC_CODEC_G726_32,   IANA_G726_32_8000_1, "G726-32", "Sangoma G.726 32k", 40, 32000,  10000, 80,  160, 40,  8000,  8000,  1 },
 	{ SNGTC_CODEC_G722,      IANA_G722_A_8000_1,  "G722",    "Sangoma G722",      20, 64000,  10000, 80,  160, 80,  8000,  8000, 1  },
 
