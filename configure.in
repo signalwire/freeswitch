@@ -347,6 +347,11 @@ AC_ARG_ENABLE(cpp,
 
 AM_CONDITIONAL([ENABLE_CPP],[test "${enable_cpp}" = "yes"])
 
+AC_ARG_ENABLE(srtp,
+[AC_HELP_STRING([--disable-srtp],[build without srtp support])],[enable_srtp="$enableval"],[enable_srtp="yes"])
+
+AM_CONDITIONAL([ENABLE_SRTP],[test "${enable_srtp}" = "yes"])
+
 AC_ARG_ENABLE(zrtp,
 	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
 if test "x$enable_zrtp" = "xyes" ; then
