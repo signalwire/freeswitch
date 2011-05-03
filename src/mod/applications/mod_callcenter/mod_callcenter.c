@@ -2342,6 +2342,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	char member_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
 	switch_bool_t agent_found = SWITCH_FALSE;
 	switch_bool_t moh_valid = SWITCH_TRUE;
+	const char *p;
 
 	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(member_session, data);
@@ -2498,7 +2499,6 @@ SWITCH_STANDARD_APP(callcenter_function)
 	while (switch_channel_ready(member_channel)) {
 		switch_input_args_t args = { 0 };
 		struct moh_dtmf_helper ht;
-		const char *p;
 
 		ht.dtmf = '\0';
 		args.input_callback = moh_on_dtmf;
@@ -2519,7 +2519,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 		if (moh_valid && cur_moh) {
 			switch_status_t status = switch_ivr_play_file(member_session, NULL, cur_moh, &args);
 
-			if (status == SWITCH_STATUS_FALSE /* Invalid Recording */) {
+			if (status == SWITCH_STATUS_FALSE /* Invalid Recording */ && SWITCH_READ_ACCEPTABLE(status)) { 
+				/* Sadly, there doesn't seem to be a return to switch_ivr_play_file that tell you the file wasn't found.  FALSE also mean that the channel got switch to BRAKE state, so we check for read acceptable */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Couldn't play file '%s', continuing wait with no audio\n", cur_moh);
 				moh_valid = SWITCH_FALSE;
 
@@ -2533,6 +2534,11 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 		switch_yield(1000);
 
+	}
+
+	/* Make sure that an agent was not found, since we could have break out before settign it previously */
+	if (!agent_found && (p = switch_channel_get_variable(member_channel, "cc_agent_found"))) {
+		agent_found = switch_true(p);
 	}
 
 	/* Stop Member Thread */
