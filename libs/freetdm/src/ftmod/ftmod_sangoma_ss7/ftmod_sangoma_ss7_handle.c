@@ -599,6 +599,7 @@ ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 		break;
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_RING:
+	case FTDM_CHANNEL_STATE_RINGING:
 	case FTDM_CHANNEL_STATE_PROGRESS:
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 	case FTDM_CHANNEL_STATE_UP:
