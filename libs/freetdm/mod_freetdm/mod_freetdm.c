@@ -3518,6 +3518,12 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   "physical_span_id: %u\n"
 						   "physical_chan_id: %u\n"
 						   "physical_status: %s\n"
+						   "physical_status_red: $d\n"
+						   "physical_status_yellow: $d\n"
+						   "physical_status_rai: $d\n"
+						   "physical_status_blue: $d\n"
+						   "physical_status_ais: $d\n"
+						   "physical_status_general: $d\n"
 						   "signaling_status: %s\n"
 						   "type: %s\n"
 						   "state: %s\n"
@@ -3538,7 +3544,13 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   phspan_id,
 						   phchan_id,
 					  	   alarmflag ? "alarmed" : "ok",
-					           ftdm_signaling_status2str(sigstatus),
+					  	   (alarmflag & FTDM_ALARM_RED) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_YELLOW) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_RAI) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_BLUE) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_AIS) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_GENERAL) ? 1 : 0,
+						   ftdm_signaling_status2str(sigstatus),
 						   chan_type,
 						   state,
 						   last_state,
@@ -3594,6 +3606,12 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   "  <physical-span-id>%u</physical-span-id>\n"
 						   "  <physical-chan-id>%u</physical-chan-id>\n"
 						   "  <physical-status>%s</physical-status>\n"
+						   "  <physical-status-red>%d</physical-status-red>\n"
+						   "  <physical-status-yellow>%d</physical-status-yellow>\n"
+						   "  <physical-status-rai>%d</physical-status-rai>\n"
+						   "  <physical-status-blue>%d</physical-status-blue>\n"
+						   "  <physical-status-ais>%d</physical-status-ais>\n"
+						   "  <physical-status-general>%d</physical-status-general>\n"
 						   "  <signaling-status>%s</signaling-status>\n"
 						   "  <type>%s</type>\n"
 						   "  <state>%s</state>\n"
@@ -3614,7 +3632,13 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   phspan_id,
 						   phchan_id,
 						   alarmflag ? "alarmed" : "ok",
-					     	   ftdm_signaling_status2str(sigstatus),
+					  	   (alarmflag & FTDM_ALARM_RED) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_YELLOW) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_RAI) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_BLUE) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_AIS) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_GENERAL) ? 1 : 0,
+						   ftdm_signaling_status2str(sigstatus),
 						   chan_type,
 						   state,
 						   last_state,
