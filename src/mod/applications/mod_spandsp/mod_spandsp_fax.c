@@ -220,7 +220,7 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
         }
 
         for (pvt = t38_state_list.head; pvt; pvt = pvt->next) {
-            if (pvt->udptl_state) {
+            if (pvt->udptl_state && pvt->session && switch_channel_ready(switch_core_session_get_channel(pvt->session))) {
                 t38_terminal_send_timeout(pvt->t38_state, samples);
             }
         }
@@ -451,6 +451,7 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 
         for (x = 0; x < count; x++) {
             if (switch_core_session_write_frame(session, &out_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID WRITE: %d:%d\n", out_frame.packetlen, count);
                 r = -1;
                 break;
             }
@@ -461,14 +462,16 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
     
     if (r < 0) {
         t30_state_t *t30;
+
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "TERMINATING T30 STATE\n");
+
         if (pvt->t38_state && (t30 = t38_terminal_get_t30_state(pvt->t38_state))) {
             t30_terminate(t30);
         }
+        switch_yield(10000);
     }
 
-
-    return r;
+    return r < 0 ? r : 0;
 }
 
 static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
