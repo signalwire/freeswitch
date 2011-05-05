@@ -59,6 +59,7 @@
 #define PW_FS_CALLTRANSFERDATE	22
 #define PW_FS_CALLENDDATE	23
 #define PW_FS_DIRECTION	24
+#define PW_FS_OTHER_LEG_ID 25
 
 
 #endif
