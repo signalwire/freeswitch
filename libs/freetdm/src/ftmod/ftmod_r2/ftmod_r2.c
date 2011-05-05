@@ -1702,6 +1702,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	r2data->allow_collect_calls = r2conf.allow_collect_calls;
 	r2data->flags = 0;
 	r2data->charge_calls = r2conf.charge_calls;
+	r2data->forced_release = r2conf.forced_release;
 	spanpvt->r2context = r2data->r2context;
 
 	/* just the value must be freed by the hash */
@@ -1859,6 +1860,10 @@ static ftdm_status_t ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 			{
 				if (!r2call->disconnect_rcvd) {
 					openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
+					/* overwrite the hangup cause if this is an incoming call and forced_release is set */
+					if (openr2_chan_get_direction(r2chan) == OR2_DIR_BACKWARD && r2data->forced_release) {
+						disconnect_cause = OR2_CAUSE_FORCED_RELEASE;
+					}
 					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Clearing call, cause = %s\n", openr2_proto_get_disconnect_string(disconnect_cause));
 					/* this will disconnect the call, but need to wait for the call end before moving to DOWN */
 					openr2_chan_disconnect_call(r2chan, disconnect_cause);
