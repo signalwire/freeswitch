@@ -921,7 +921,10 @@ int main(int argc, char *argv[])
 	switch_file_write(fd, pid_buffer, &pid_len);
 
 	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Cannot Initialize [%s]\n", err);
+		fprintf(stderr, "Cannot Initialize [%s], deleting pid file [%s]\n", err, pid_path);
+		if (unlink(pid_path) != 0) {
+			fprintf(stderr, "Failed to delete pid file [%s]\n", pid_path);
+		}
 		return 255;
 	}
 
