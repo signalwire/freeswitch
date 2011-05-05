@@ -7257,6 +7257,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_get_hostname() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_core_get_switchname() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_core_get_switchname();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_set_variable(char * jarg1, char * jarg2) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -12105,6 +12115,42 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_free(void * jarg1) {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_is_number(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_bool_t result;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_bool_t)switch_is_number((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_true(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  result = (int)switch_true((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_false(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  result = (int)switch_false((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_resolve_host(char * jarg1, char * jarg2, unsigned long jarg3) {
   int jresult ;
   char *arg1 = (char *) 0 ;
@@ -12468,18 +12514,6 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_switch_separate_string_string(char * 
   arg3 = (char **)jarg3; 
   arg4 = (unsigned int)jarg4; 
   result = (unsigned int)switch_separate_string_string(arg1,arg2,arg3,arg4);
-  jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_is_number(char * jarg1) {
-  int jresult ;
-  char *arg1 = (char *) 0 ;
-  switch_bool_t result;
-  
-  arg1 = (char *)jarg1; 
-  result = (switch_bool_t)switch_is_number((char const *)arg1);
   jresult = result; 
   return jresult;
 }
@@ -22614,6 +22648,34 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_timetable_resurrected_get(vo
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_timetable_bridged_set(void * jarg1, void * jarg2) {
+  switch_channel_timetable *arg1 = (switch_channel_timetable *) 0 ;
+  switch_time_t arg2 ;
+  switch_time_t *argp2 ;
+  
+  arg1 = (switch_channel_timetable *)jarg1; 
+  argp2 = (switch_time_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_time_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->bridged = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_timetable_bridged_get(void * jarg1) {
+  void * jresult ;
+  switch_channel_timetable *arg1 = (switch_channel_timetable *) 0 ;
+  switch_time_t result;
+  
+  arg1 = (switch_channel_timetable *)jarg1; 
+  result =  ((arg1)->bridged);
+  jresult = new switch_time_t((const switch_time_t &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_timetable_next_set(void * jarg1, void * jarg2) {
   switch_channel_timetable *arg1 = (switch_channel_timetable *) 0 ;
   switch_channel_timetable *arg2 = (switch_channel_timetable *) 0 ;
@@ -23990,6 +24052,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_test_app_flag_key(char * jarg1,
   result = (int)switch_channel_test_app_flag_key((char const *)arg1,arg2,arg3);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_bridge_time(void * jarg1) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  switch_channel_set_bridge_time(arg1);
 }
 
 
@@ -30655,6 +30725,30 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_std_datetime_check(void * jarg1) {
   
   arg1 = (switch_xml_t)jarg1; 
   result = (int)switch_xml_std_datetime_check(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_locate_language(void * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6, char * jarg7) {
+  int jresult ;
+  switch_xml_t *arg1 = (switch_xml_t *) 0 ;
+  switch_xml_t *arg2 = (switch_xml_t *) 0 ;
+  switch_event_t *arg3 = (switch_event_t *) 0 ;
+  switch_xml_t *arg4 = (switch_xml_t *) 0 ;
+  switch_xml_t *arg5 = (switch_xml_t *) 0 ;
+  switch_xml_t *arg6 = (switch_xml_t *) 0 ;
+  char *arg7 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_xml_t *)jarg1; 
+  arg2 = (switch_xml_t *)jarg2; 
+  arg3 = (switch_event_t *)jarg3; 
+  arg4 = (switch_xml_t *)jarg4; 
+  arg5 = (switch_xml_t *)jarg5; 
+  arg6 = (switch_xml_t *)jarg6; 
+  arg7 = (char *)jarg7; 
+  result = (switch_status_t)switch_xml_locate_language(arg1,arg2,arg3,arg4,arg5,arg6,(char const *)arg7);
   jresult = result; 
   return jresult;
 }
