@@ -91,15 +91,16 @@ FTDM_ENUM_NAMES(BLK_FLAGS_NAMES, BLK_FLAGS_STRING)
 FTDM_STR2ENUM(ftmod_ss7_blk_state2flag, ftmod_ss7_blk_flag2str, sng_ckt_block_flag_t, BLK_FLAGS_NAMES, 31)
 
 /* FUNCTIONS ******************************************************************/
-uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
+ftdm_status_t copy_cgPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPtyNum)
 {
 
-	return 0;
+	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
-uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
+ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPtyNum)
 {
+	const char *val;	
 	int k;
 	int j;
 	int flag;
@@ -108,24 +109,38 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 	uint8_t lower;
 	uint8_t upper;
 
-	/**************************************************************************/
+	ftdm_caller_data_t *ftdm = &ftdmchan->caller_data;
+
 	cgPtyNum->eh.pres		   = PRSNT_NODEF;
-	/**************************************************************************/
+	
 	cgPtyNum->natAddrInd.pres   = PRSNT_NODEF;
 	cgPtyNum->natAddrInd.val	= 0x03;
-	/**************************************************************************/
+
+	
 	cgPtyNum->scrnInd.pres	  = PRSNT_NODEF;
-	cgPtyNum->scrnInd.val	   = ftdm->screen;
-	/**************************************************************************/
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_screen_ind");
+	if (!ftdm_strlen_zero(val)) {
+		cgPtyNum->scrnInd.val	= atoi(val);
+	} else {
+		cgPtyNum->scrnInd.val	= ftdm->screen;
+	}
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Screening Ind %d\n", cgPtyNum->scrnInd.val);
+	
 	cgPtyNum->presRest.pres	 = PRSNT_NODEF;
-	cgPtyNum->presRest.val	  = ftdm->pres;
-	/**************************************************************************/
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_pres_ind");
+	if (!ftdm_strlen_zero(val)) {
+		cgPtyNum->presRest.val	= atoi(val);
+	} else {
+		cgPtyNum->presRest.val	= ftdm->pres;
+	}
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Presentation Ind %d\n", cgPtyNum->presRest.val);
+
 	cgPtyNum->numPlan.pres	  = PRSNT_NODEF;
 	cgPtyNum->numPlan.val	   = 0x01;
-	/**************************************************************************/
+
 	cgPtyNum->niInd.pres		= PRSNT_NODEF;
 	cgPtyNum->niInd.val		 = 0x00;
-	/**************************************************************************/
+
 	cgPtyNum->addrSig.pres	  = PRSNT_NODEF;
 	
 	/* atoi will search through memory starting from the pointer it is given until
@@ -207,18 +222,18 @@ uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
 	cgPtyNum->oddEven.pres	  = PRSNT_NODEF;
 	cgPtyNum->oddEven.val	   = odd;
 	/**************************************************************************/
-	return 0;
+	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
-uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
+ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum)
 {
 
-	return 0;
+	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
-uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
+ftdm_status_t copy_cdPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum)
 {
 	int k;
 	int j;
@@ -227,6 +242,8 @@ uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
 	char tmp[2];
 	uint8_t lower;
 	uint8_t upper;
+
+	ftdm_caller_data_t *ftdm = &ftdmchan->caller_data;
 
 	/**************************************************************************/
 	cdPtyNum->eh.pres		   = PRSNT_NODEF;
@@ -389,13 +406,56 @@ ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *red
 	return copy_tknStr_to_sngss7(caller_data->rdnis.digits, &redirgNum->addrSig, &redirgNum->oddEven);
 }
 
+ftdm_status_t copy_redirgNum_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum)
+{
+	char val[20];
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+
+	if (redirgNum->eh.pres != PRSNT_NODEF || redirgNum->addrSig.pres != PRSNT_NODEF) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Redirecting Number available\n");
+		return FTDM_SUCCESS;
+	}
+
+	copy_tknStr_from_sngss7(redirgNum->addrSig, ftdmchan->caller_data.rdnis.digits, redirgNum->oddEven);
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number:%s\n", ftdmchan->caller_data.rdnis.digits);
+
+	if (redirgNum->natAddr.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->natAddr.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number NADI:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_nadi", val);
+		caller_data->rdnis.type = redirgNum->natAddr.val;
+	}
+
+	if (redirgNum->scrInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->scrInd.val);
+		SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Screening Ind:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_screen_ind", val);
+	}
+
+	if (redirgNum->presRest.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->presRest.val);
+		SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Presentation Ind:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_pres_ind", val);		
+	}
+
+	if (redirgNum->numPlan.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->numPlan.val);
+		SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Numbering plan:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_plan", val);
+		caller_data->rdnis.plan = redirgNum->numPlan.val;
+	}
+
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 {
 	uint8_t i;
 	uint8_t j;
 
 	/* check if the token string is present */
-
 	if (str.pres == 1) {
 		j = 0;
 

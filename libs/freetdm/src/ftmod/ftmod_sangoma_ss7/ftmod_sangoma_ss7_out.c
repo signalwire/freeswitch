@@ -180,10 +180,10 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	} /* if ANSI */
 
 	/* copy down the called number information */
-	copy_cdPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cdPtyNum);
+	copy_cdPtyNum_to_sngss7 (ftdmchan, &iam.cdPtyNum);
 	
 	/* copy down the calling number information */	
-	copy_cgPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cgPtyNum);
+	copy_cgPtyNum_to_sngss7 (ftdmchan, &iam.cgPtyNum);
 
 	/* check if the user would like a custom NADI value for the calling Pty Num */
 	clg_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_clg_nadi");

@@ -1301,30 +1301,35 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			ftdm_set_string(caller_data.rdnis.digits, sipvar);
 		}
 
-		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-TON");
-		if (sipvar) {
-			caller_data.rdnis.type = (uint8_t)atoi(sipvar);
-		}
-
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-Plan");
 		if (sipvar) {
-			caller_data.rdnis.plan = (uint8_t)atoi(sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_plan", sipvar);
 		}
 
-		/* Used by ftmod_sangoma_ss7 only */
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-NADI");
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_nadi", sipvar);
 		}
 
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-Screen");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_screen_ind", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-Presentation");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_pres_ind", sipvar);
+		}
+
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Screen");
 		if (sipvar) {
-			caller_data.screen = (uint8_t)atoi(sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_screen_ind", sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Presentation");
 		if (sipvar) {
-			caller_data.pres = (uint8_t)atoi(sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_pres_ind", sipvar);
 		}
 
 
@@ -1343,19 +1348,19 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 	
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_layer1"))) {
-			caller_data.bearer_layer1 = (uint8_t)atoi(var);
+		caller_data.bearer_layer1 = (uint8_t)atoi(var);
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_screening_ind"))) {
-			ftdm_set_screening_ind(var, &caller_data.screen);
+		ftdm_set_screening_ind(var, &caller_data.screen);
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_presentation_ind"))) {
-			ftdm_set_presentation_ind(var, &caller_data.pres);
+		ftdm_set_presentation_ind(var, &caller_data.pres);
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_outbound_ton"))) {
-			ftdm_set_ton(var, &caller_data.dnis.type);
+		ftdm_set_ton(var, &caller_data.dnis.type);
 	} else {
 		caller_data.dnis.type = outbound_profile->destination_number_ton;
 	}
@@ -1586,8 +1591,18 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%d", channel_caller_data->dnis.plan);
 
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS", "%s", channel_caller_data->rdnis.digits);
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-TON", "%d", channel_caller_data->rdnis.type);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-NADI", "%d", channel_caller_data->rdnis.type);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Plan", "%d", channel_caller_data->rdnis.plan);
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdnis_screen_ind");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Screen", "%d", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdnis_pres_ind");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Presentation", "%d", channel_caller_data->rdnis.plan);
+		}
 		
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Screen", "%d", channel_caller_data->screen);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Presentation", "%d", channel_caller_data->pres);
