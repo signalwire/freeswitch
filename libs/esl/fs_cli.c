@@ -8,7 +8,7 @@
 #include <signal.h>
 
 #define CMD_BUFLEN 1024
-#define PROMPT_PREFIX "sangoma-media-gateway"
+#define PROMPT_PREFIX "netborder-ss7"
 static int WARN_STOP = 0;
 
 #ifdef WIN32
@@ -854,7 +854,7 @@ static void print_banner(FILE *stream)
 
 			"\n"
 			"*******************************************************\n"
-			"* Sangoma Media Gateway                               *\n"
+			"* Netborder SS7 Gateway                               *\n"
 			"* Powered by FreeSWITCH (http://www.freeswitch.org)   *\n"
 			"*******************************************************\n"
 			"\n"
@@ -1002,13 +1002,13 @@ int main(int argc, char *argv[])
 	int rv = 0;
 
 #ifndef WIN32
-	char hfile[512] = "/etc/smg_cli_history";
-	char cfile[512] = "/etc/smg_cli.conf";
-	char dft_cfile[512] = "/etc/smg_cli.conf";
+	char hfile[512] = "/etc/nbess7_cli_history";
+	char cfile[512] = "/etc/nbess7_cli.conf";
+	char dft_cfile[512] = "/etc/nbess7_cli.conf";
 #else
-	char hfile[512] = "smg_cli_history";
-	char cfile[512] = "smg_cli.conf";
-	char dft_cfile[512] = "smg_cli.conf";
+	char hfile[512] = "nbess7_cli_history";
+	char cfile[512] = "nbess7_cli.conf";
+	char dft_cfile[512] = "nbess7_cli.conf";
 #endif
 	char *home = getenv("HOME");
 	/* Vars for optargs */
@@ -1054,8 +1054,8 @@ int main(int argc, char *argv[])
 
 
 	if (home) {
-		snprintf(hfile, sizeof(hfile), "%s/.smg_cli_history", home);
-		snprintf(cfile, sizeof(cfile), "%s/.smg_cli_conf", home);
+		snprintf(hfile, sizeof(hfile), "%s/.nbess7_cli_history", home);
+		snprintf(cfile, sizeof(cfile), "%s/.nbess7_cli_conf", home);
 	}
 	
 	signal(SIGINT, handle_SIGINT);
@@ -1368,7 +1368,7 @@ int main(int argc, char *argv[])
 
 	print_banner(stdout);
 
-	esl_log(ESL_LOG_INFO, "Sangoma Media Gateway CLI Ready.\nenter /help for a list of commands.\n");
+	esl_log(ESL_LOG_INFO, "Netborder SS7 CLI Ready.\nenter /help for a list of commands.\n");
 	printf("%s\n", handle.last_sr_reply);
 
 	while (running > 0) {

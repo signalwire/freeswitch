@@ -90,7 +90,7 @@ typedef struct private_object private_object_t;
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
-#define SOFIA_USER_AGENT "SangomaMediaGateway/" SWITCH_VERSION_MAJOR "." SWITCH_VERSION_MINOR "." SWITCH_VERSION_MICRO "-" SWITCH_VERSION_REVISION
+#define SOFIA_USER_AGENT "NetborderSS7/" SWITCH_VERSION_MAJOR "." SWITCH_VERSION_MINOR "." SWITCH_VERSION_MICRO "-" SWITCH_VERSION_REVISION
 #define SOFIA_CHAT_PROTO "sip"
 #define SOFIA_MULTIPART_PREFIX "sip_mp_"
 #define SOFIA_MULTIPART_PREFIX_T "~sip_mp_"
