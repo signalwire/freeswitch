@@ -360,11 +360,15 @@ static void ft_r2_clean_call(ftdm_r2_call_t *call)
 static void ft_r2_accept_call(ftdm_channel_t *ftdmchan)
 {
 	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
-	// FIXME: not always accept as no charge, let the user decide that
-	// also we should check the return code from openr2_chan_accept_call and handle error condition
+	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
+
+	// FIXME: we should check the return code from openr2_chan_accept_call and handle error condition
 	// hanging up the call with protocol error as the reason, this openr2 API will fail only when there something
 	// wrong at the I/O layer or the library itself
-	openr2_chan_accept_call(r2chan, OR2_CALL_NO_CHARGE);
+	if (r2data->charge_calls)
+		openr2_chan_accept_call(r2chan, OR2_CALL_WITH_CHARGE);
+	else
+		openr2_chan_accept_call(r2chan, OR2_CALL_NO_CHARGE);
 }
 
 static void ft_r2_answer_call(ftdm_channel_t *ftdmchan)
@@ -1697,6 +1701,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	r2data->category = r2conf.category;
 	r2data->allow_collect_calls = r2conf.allow_collect_calls;
 	r2data->flags = 0;
+	r2data->charge_calls = r2conf.charge_calls;
 	spanpvt->r2context = r2data->r2context;
 
 	/* just the value must be freed by the hash */
