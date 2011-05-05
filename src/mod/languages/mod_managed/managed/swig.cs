@@ -1399,6 +1399,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static string switch_core_get_switchname() {
+    string ret = freeswitchPINVOKE.switch_core_get_switchname();
+    return ret;
+  }
+
   public static void switch_core_set_variable(string varname, string value) {
     freeswitchPINVOKE.switch_core_set_variable(varname, value);
   }
@@ -2862,6 +2867,21 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_bool_t switch_is_number(string str) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_is_number(str);
+    return ret;
+  }
+
+  public static int switch_true(string expr) {
+    int ret = freeswitchPINVOKE.switch_true(expr);
+    return ret;
+  }
+
+  public static int switch_false(string expr) {
+    int ret = freeswitchPINVOKE.switch_false(expr);
+    return ret;
+  }
+
   public static switch_status_t switch_resolve_host(string host, string buf, uint buflen) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_resolve_host(host, buf, buflen);
     return ret;
@@ -2982,11 +3002,6 @@ public class freeswitch {
 
   public static uint switch_separate_string_string(string buf, string delim, ref string array, uint arraylen) {
     uint ret = freeswitchPINVOKE.switch_separate_string_string(buf, delim, ref array, arraylen);
-    return ret;
-  }
-
-  public static switch_bool_t switch_is_number(string str) {
-    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_is_number(str);
     return ret;
   }
 
@@ -3695,6 +3710,10 @@ public class freeswitch {
   public static int switch_channel_test_app_flag_key(string app, SWIGTYPE_p_switch_channel channel, uint flags) {
     int ret = freeswitchPINVOKE.switch_channel_test_app_flag_key(app, SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
     return ret;
+  }
+
+  public static void switch_channel_set_bridge_time(SWIGTYPE_p_switch_channel channel) {
+    freeswitchPINVOKE.switch_channel_set_bridge_time(SWIGTYPE_p_switch_channel.getCPtr(channel));
   }
 
   public static void switch_channel_set_hangup_time(SWIGTYPE_p_switch_channel channel) {
@@ -5280,6 +5299,11 @@ public class freeswitch {
 
   public static int switch_xml_std_datetime_check(switch_xml xcond) {
     int ret = freeswitchPINVOKE.switch_xml_std_datetime_check(switch_xml.getCPtr(xcond));
+    return ret;
+  }
+
+  public static switch_status_t switch_xml_locate_language(SWIGTYPE_p_p_switch_xml root, SWIGTYPE_p_p_switch_xml node, switch_event arg2, SWIGTYPE_p_p_switch_xml language, SWIGTYPE_p_p_switch_xml phrases, SWIGTYPE_p_p_switch_xml macros, string str_language) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_locate_language(SWIGTYPE_p_p_switch_xml.getCPtr(root), SWIGTYPE_p_p_switch_xml.getCPtr(node), switch_event.getCPtr(arg2), SWIGTYPE_p_p_switch_xml.getCPtr(language), SWIGTYPE_p_p_switch_xml.getCPtr(phrases), SWIGTYPE_p_p_switch_xml.getCPtr(macros), str_language);
     return ret;
   }
 
@@ -7683,6 +7707,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_get_hostname")]
   public static extern string switch_core_get_hostname();
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_get_switchname")]
+  public static extern string switch_core_get_switchname();
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_set_variable")]
   public static extern void switch_core_set_variable(string jarg1, string jarg2);
 
@@ -8784,6 +8811,15 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_free")]
   public static extern int switch_frame_free(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_is_number")]
+  public static extern int switch_is_number(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_true")]
+  public static extern int switch_true(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_false")]
+  public static extern int switch_false(string jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_resolve_host")]
   public static extern int switch_resolve_host(string jarg1, string jarg2, uint jarg3);
 
@@ -8855,9 +8891,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_separate_string_string")]
   public static extern uint switch_separate_string_string(string jarg1, string jarg2, ref string jarg3, uint jarg4);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_is_number")]
-  public static extern int switch_is_number(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_strip_spaces")]
   public static extern string switch_strip_spaces(string jarg1, int jarg2);
@@ -11439,6 +11472,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_timetable_resurrected_get")]
   public static extern IntPtr switch_channel_timetable_resurrected_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_timetable_bridged_set")]
+  public static extern void switch_channel_timetable_bridged_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_timetable_bridged_get")]
+  public static extern IntPtr switch_channel_timetable_bridged_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_timetable_next_set")]
   public static extern void switch_channel_timetable_next_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -11747,6 +11786,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_test_app_flag_key")]
   public static extern int switch_channel_test_app_flag_key(string jarg1, HandleRef jarg2, uint jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_bridge_time")]
+  public static extern void switch_channel_set_bridge_time(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_hangup_time")]
   public static extern void switch_channel_set_hangup_time(HandleRef jarg1);
@@ -13169,6 +13211,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_std_datetime_check")]
   public static extern int switch_xml_std_datetime_check(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_locate_language")]
+  public static extern int switch_xml_locate_language(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5, HandleRef jarg6, string jarg7);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_io_event_hook_outgoing_channel_outgoing_channel_set")]
   public static extern void switch_io_event_hook_outgoing_channel_outgoing_channel_set(HandleRef jarg1, HandleRef jarg2);
@@ -22041,6 +22086,18 @@ public class switch_channel_timetable : IDisposable {
     } 
     get {
       SWIGTYPE_p_switch_time_t ret = new SWIGTYPE_p_switch_time_t(freeswitchPINVOKE.switch_channel_timetable_resurrected_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_time_t bridged {
+    set {
+      freeswitchPINVOKE.switch_channel_timetable_bridged_set(swigCPtr, SWIGTYPE_p_switch_time_t.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_switch_time_t ret = new SWIGTYPE_p_switch_time_t(freeswitchPINVOKE.switch_channel_timetable_bridged_get(swigCPtr), true);
       if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
       return ret;
     } 
