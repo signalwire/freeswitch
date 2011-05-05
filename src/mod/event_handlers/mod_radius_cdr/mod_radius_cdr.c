@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Chris Parker <cparker@segv.org>
+ * Mathieu Rene <mrene@avgs.ca>
  *
  *
  * mod_radius_cdr.c -- RADIUS CDR Module
@@ -628,6 +629,17 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				rc_destroy(rad_config);
 				goto end;
 			}
+			
+			{
+				const char *direction_str = profile->direction == SWITCH_CALL_DIRECTION_INBOUND ? "inbound" : "outbound";
+				
+				if (rc_avpair_add(rad_config, &send, PW_FS_DIRECTION, (void *) direction_str, -1, PW_FS_PEC) == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed adding Freeswitch-Direction: %s\n", direction_str);
+					rc_destroy(rad_config);
+					goto end;
+				}
+			}
+			
 		} else {				/* no profile, can't create data to send */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "profile == NULL\n");
 		}
