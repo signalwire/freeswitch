@@ -894,14 +894,16 @@ void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan)
 /* No one calls this function yet, but it has been implemented to complement TXA messages */
 void ft_to_sngss7_itx (ftdm_channel_t * ftdmchan)
 {
-	const char* var = NULL;
-	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 #ifndef SANGOMA_SPIROU
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "ITX message not supported!, please update your libsng_ss7\n");
 #else
+	const char* var = NULL;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	SiCnStEvnt itx;
 	
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+
 	memset (&itx, 0x0, sizeof (itx));
 
 	itx.msgNum.eh.pres = PRSNT_NODEF;
