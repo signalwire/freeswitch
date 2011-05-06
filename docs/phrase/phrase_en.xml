@@ -438,20 +438,57 @@
 	  <prompt phrase="Recording stopped." filename="ivr-recording_stopped.wav"/>
 	  <prompt phrase="Recording paused." filename="ivr-recording_paused.wav"/>
 	  <prompt phrase="Recording deleted." filename="ivr-recording_deleted.wav"/>
-	  <prompt phrase="You are no longer in line." filename="ivr-no_longer_in_line.wav"/>
+	  <prompt phrase="You are no longer in queue." filename="ivr-no_longer_in_queue.wav"/>
+	  <prompt phrase="...withdrawn." filename="ivr-withdrawn.wav"/>
 	  <prompt phrase="question..." filename="ivr-question.wav"/>
-	  <prompt phrase="questions." filename="ivr-questions.wav"/>
+	  <prompt phrase="...questions." filename="ivr-questions.wav"/>
 	  <prompt phrase="...has been answered." filename="ivr-has_been_answered.wav"/>
 	  <prompt phrase="...has been removed." filename="ivr-has_been_removed.wav"/>
 	  <prompt phrase="No questions in queue." filename="ivr-no_questions_in_queue.wav"/>
-	  <prompt phrase="This conference is in Q&A mode." filename="conference/conf-conference_is_in_qna_mode.wav"/>
-	  <prompt phrase="Q&A mode..." filename="conference/conf-qna_mode.wav"/>
-	  <prompt phrase="...is on" filename="ivr/ivr_is_on.wav"/>
-	  <prompt phrase="...is off" filename="ivr/ivr_is_off.wav"/>
+	  <prompt phrase="This conference is in Q and A mode." filename="conference/conf-conference_is_in_qna_mode.wav"/>
+	  <prompt phrase="Q and A mode..." filename="conference/conf-qna_mode.wav"/>
+	  <prompt phrase="...is now on." filename="ivr/ivr_is_now_on.wav"/>
+	  <prompt phrase="...is now off." filename="ivr/ivr_is_now_off.wav"/>
 	  <prompt phrase="Entry sound..." filename="conference/conf-entry_sound.wav"/>
 	  <prompt phrase="Exit sound..." filename="conference/conf-exit_sound.wav"/>
 	  <prompt phrase="The PIN you entered is below the minimum length." filename="voicemail/vm-pin_below_minimum_length.wav"/>
 	  <prompt phrase="The minimum PIN length is..." filename="voicemail/vm-minimum_pin_length_is.wav"/>
+	  <prompt phrase="This phone is not allowed to make external calls." filename="ivr-phone_not_make_external_calls.wav"/>
+	  <prompt phrase="I.D. number..." filename="ivr-id_number.wav"/>
+	  <prompt phrase="To skip these instructions..." filename="ivr-skip_instructions.wav"/>
+	  <prompt phrase="Hang up the call without pressing a key to discard the recording." filename="ivr-hangup_to_discard.wav"/>
+	  <prompt phrase="...or press..." filename="ivr-or_press.wav"/>
+	  <prompt phrase="For English, press..." filename="ivr-for_english_press.wav"/>
+	  <prompt phrase="Hyphen" filename="ascii/45.wav"/>
+	  <prompt phrase="Exclamation point" filename="ascii/33.wav"/>
+	  <prompt phrase="At" filename="ascii/64.wav"/>
+	  <prompt phrase="Dollar sign" filename="ascii/36.wav"/>
+	  <prompt phrase="Percent" filename="ascii/37.wav"/>
+	  <prompt phrase="Ampersand" filename="ascii/38.wav"/>
+	  <prompt phrase="Double quote" filename="ascii/34.wav"/>
+	  <prompt phrase="Single quote" filename="ascii/39.wav"/>
+	  <prompt phrase="Forward slash" filename="ascii/47.wav"/>
+	  <prompt phrase="Underscore" filename="ascii/95.wav"/>
+	  <prompt phrase="Backslash" filename="ascii/92.wav"/>
+	  <prompt phrase="Tilde" filename="ascii/126.wav"/>
+	  <prompt phrase="Equal sign" filename="ascii/61.wav"/>
+	  <prompt phrase="Colon" filename="ascii/58.wav"/>
+	  <prompt phrase="Semicolon" filename="ascii/59.wav"/>
+	  <prompt phrase="Caret" filename="ascii/94.wav"/>
+	  <prompt phrase="Pipe" filename="ascii/124.wav"/>
+	  <prompt phrase="Your call cannot be completed as dialed." filename="ivr-call_cannot_be_completed_as_dialed.wav"/>
+	  <prompt phrase="Please check the number and try again." filename="ivr-please_check_number_try_again.wav"/>
+	  <prompt phrase="Failure reason is..." filename="ivr-failure_reason_is.wav"/>
+	  <prompt phrase="Unallocated number" filename="ivr-unallocated_number.wav"/>
+	  <prompt phrase="No user response" filename="ivr-no_user_response.wav"/>
+	  <prompt phrase="Invalid number format" filename="ivr-invalid_number_format.wav"/>
+	  <prompt phrase="Gateway down" filename="ivr-gateway_down.wav"/>
+	  <prompt phrase="No route to destination" filename="ivr-no_route_destination.wav"/>
+	  <prompt phrase="User busy" filename="ivr-user_busy.wav"/>
+	  <prompt phrase="Call rejected" filename="ivr-call_rejected.wav"/>
+	  <prompt phrase="Normal unspecified" filename="ivr-normal_unspecified.wav"/>
+	  <prompt phrase="Incompatible destination" filename="ivr-incompatible_destination.wav"/>
+	  <prompt phrase="Normal clearing" filename="ivr-normal_clearing.wav"/>
     </ivr>
 
     <misc>
