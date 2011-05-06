@@ -249,7 +249,59 @@ ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
 
 ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
 {
-	/* TODO: Implement me */
+	char val[64];
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+
+	memset(val, 0, sizeof(val));
+
+	if (genNmb->eh.pres != PRSNT_NODEF || genNmb->addrSig.pres != PRSNT_NODEF) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Generic Number available\n");
+		return FTDM_SUCCESS;
+	}
+
+	copy_tknStr_from_sngss7(genNmb->addrSig, val, genNmb->oddEven);
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number:%s\n", val);
+	sngss7_add_var(sngss7_info, "ss7_gn_digits", val);
+
+	if (genNmb->nmbQual.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->nmbQual.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"number qualifier\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_numqual", val);
+	}
+
+	if (genNmb->natAddrInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->natAddrInd.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"nature of address\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_nadi", val);
+	}
+
+	if (genNmb->scrnInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->scrnInd.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"screening indicator\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_screen_ind", val);
+	}
+	
+	if (genNmb->presRest.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->presRest.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"presentation indicator\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_pres_ind", val);
+	}
+
+	if (genNmb->numPlan.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->numPlan.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"numbering plan\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_npi", val);
+	}
+
+	if (genNmb->niInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->niInd.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"number incomplete indicator\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_num_inc_ind", val);
+	}
+	
+	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
 }
 
