@@ -97,19 +97,11 @@ ftdm_status_t copy_cgPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cg
 	return FTDM_SUCCESS;
 }
 
-/******************************************************************************/
 ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPtyNum)
 {
 	const char *val;	
-	int k;
-	int j;
-	int flag;
-	int odd;
-	char tmp[2];
-	uint8_t lower;
-	uint8_t upper;
 
-	ftdm_caller_data_t *ftdm = &ftdmchan->caller_data;
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 
 	cgPtyNum->eh.pres		   = PRSNT_NODEF;
 	
@@ -122,7 +114,7 @@ ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPt
 	if (!ftdm_strlen_zero(val)) {
 		cgPtyNum->scrnInd.val	= atoi(val);
 	} else {
-		cgPtyNum->scrnInd.val	= ftdm->screen;
+		cgPtyNum->scrnInd.val	= caller_data->screen;
 	}
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Screening Ind %d\n", cgPtyNum->scrnInd.val);
 	
@@ -131,7 +123,7 @@ ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPt
 	if (!ftdm_strlen_zero(val)) {
 		cgPtyNum->presRest.val	= atoi(val);
 	} else {
-		cgPtyNum->presRest.val	= ftdm->pres;
+		cgPtyNum->presRest.val	= caller_data->pres;
 	}
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Presentation Ind %d\n", cgPtyNum->presRest.val);
 
@@ -141,210 +133,125 @@ ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPt
 	cgPtyNum->niInd.pres		= PRSNT_NODEF;
 	cgPtyNum->niInd.val		 = 0x00;
 
-	cgPtyNum->addrSig.pres	  = PRSNT_NODEF;
-	
-	/* atoi will search through memory starting from the pointer it is given until
-	 * it finds the \0...since tmp is on the stack it will start going through the
-	 * possibly causing corruption.  Hard code a \0 to prevent this
-	 */
-	
-	tmp[1] = '\0';
-	k = 0;
-	j = 0;
-	flag = 0;
-	odd = 0;
-	upper = 0x0;
-	lower = 0x0;
-
-	while (1) {
-		/* grab a digit from the ftdm digits */
-		tmp[0] = ftdm->cid_num.digits[k];
-
-		/* check if the digit is a number and that is not null */
-		while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-			/* move on to the next value */
-			k++;
-			tmp[0] = ftdm->cid_num.digits[k];
-		} /* while(!(isdigit(tmp))) */
-
-		/* check if tmp is null or a digit */
-		if (tmp[0] != '\0') {
-			/* push it into the lower nibble */
-			lower = strtol(&tmp[0], (char **)NULL, 16);
-			/* move to the next digit */
-			k++;
-			/* grab a digit from the ftdm digits */
-			tmp[0] = ftdm->cid_num.digits[k];
-
-			/* check if the digit is a number and that is not null */
-			while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-				k++;
-				tmp[0] = ftdm->cid_num.digits[k];
-			} /* while(!(isdigit(tmp))) */
-
-			/* check if tmp is null or a digit */
-			if (tmp[0] != '\0') {
-				/* push the digit into the upper nibble */
-				upper = (strtol(&tmp[0], (char **)NULL, 16)) << 4;
-			} else {
-				/* there is no upper ... fill in 0 */
-				upper = 0x0;
-				/* throw the odd flag */
-				odd = 1;
-				/* throw the end flag */
-				flag = 1;
-			} /* if (tmp != '\0') */
-		} else {
-			/* keep the odd flag down */
-			odd = 0;
-			/* break right away since we don't need to write the digits */
-			break;
-		}
-
-		/* push the digits into the trillium structure */
-		cgPtyNum->addrSig.val[j] = upper | lower;
-
-		/* increment the trillium pointer */
-		j++;
-
-		/* if the flag is up we're through all the digits */
-		if (flag) break;
-
-		/* move to the next digit */
-		k++;
-	} /* while(1) */
-
-	cgPtyNum->addrSig.len = j;
-
-	/**************************************************************************/
-	cgPtyNum->oddEven.pres	  = PRSNT_NODEF;
-	cgPtyNum->oddEven.val	   = odd;
-	/**************************************************************************/
-	return FTDM_SUCCESS;
+	return copy_tknStr_to_sngss7(caller_data->cid_num.digits, &cgPtyNum->addrSig, &cgPtyNum->oddEven);
 }
 
-/******************************************************************************/
 ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum)
 {
-
+	/* TODO: Implement me */
 	return FTDM_SUCCESS;
 }
 
-/******************************************************************************/
+
 ftdm_status_t copy_cdPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum)
 {
-	int k;
-	int j;
-	int flag;
-	int odd;
-	char tmp[2];
-	uint8_t lower;
-	uint8_t upper;
+	const char	*cld_nadi = NULL;
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 
-	ftdm_caller_data_t *ftdm = &ftdmchan->caller_data;
-
-	/**************************************************************************/
 	cdPtyNum->eh.pres		   = PRSNT_NODEF;
-	/**************************************************************************/
+
 	cdPtyNum->natAddrInd.pres   = PRSNT_NODEF;
-	cdPtyNum->natAddrInd.val	= 0x03;
-	/**************************************************************************/
+	cld_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cld_nadi");
+	if (!ftdm_strlen_zero(cld_nadi)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called NADI value \"%s\"\n", cld_nadi);
+		cdPtyNum->natAddrInd.val	= atoi(cld_nadi);
+	} else {
+		cdPtyNum->natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].cld_nadi;
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLD, using \"%d\"\n", cdPtyNum->natAddrInd.val);
+	}
+
 	cdPtyNum->numPlan.pres	  = PRSNT_NODEF;
 	cdPtyNum->numPlan.val	   = 0x01;
-	/**************************************************************************/
+
 	cdPtyNum->innInd.pres	   = PRSNT_NODEF;
 	cdPtyNum->innInd.val		= 0x01;
-	/**************************************************************************/
-	cdPtyNum->addrSig.pres	  = PRSNT_NODEF;
-
-	/* atoi will search through memory starting from the pointer it is given until
-	 * it finds the \0...since tmp is on the stack it will start going through the
-	 * possibly causing corruption.  Hard code a \0 to prevent this
-	 */ /* dnis */
-	tmp[1] = '\0';
-	k = 0;
-	j = 0;
-	flag = 0;
-	odd = 0;
-	upper = 0x0;
-	lower = 0x0;
-
-	while (1) {
-		/* grab a digit from the ftdm digits */
-		tmp[0] = ftdm->dnis.digits[k];
-
-		/* check if the digit is a number and that is not null */
-		while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-			/* move on to the next value */
-			k++;
-			tmp[0] = ftdm->dnis.digits[k];
-		} /* while(!(isdigit(tmp))) */
-
-		/* check if tmp is null or a digit */
-		if (tmp[0] != '\0') {
-			/* push it into the lower nibble */
-			lower = strtol(&tmp[0], (char **)NULL, 16);
-			/* move to the next digit */
-			k++;
-			/* grab a digit from the ftdm digits */
-			tmp[0] = ftdm->dnis.digits[k];
-
-			/* check if the digit is a number and that is not null */
-			while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-				k++;
-				tmp[0] = ftdm->dnis.digits[k];
-			} /* while(!(isdigit(tmp))) */
-
-			/* check if tmp is null or a digit */
-			if (tmp[0] != '\0') {
-				/* push the digit into the upper nibble */
-				upper = (strtol(&tmp[0], (char **)NULL, 16)) << 4;
-			} else {
-				/* there is no upper ... fill in ST */
-				upper = 0xF0;
-				/* keep the odd flag down */
-				odd = 0;
-				/* throw the end flag */
-				flag = 1;
-			} /* if (tmp != '\0') */
-		} else {
-			/* throw the odd flag */
-			odd = 1;
-			/* need to add the ST */
-			lower = 0xF;
-			upper = 0x0;
-			/* throw the flag */
-			flag = 1;
-		}
-
-		/* push the digits into the trillium structure */
-		cdPtyNum->addrSig.val[j] = upper | lower;
-
-		/* increment the trillium pointer */
-		j++;
-
-		/* if the flag is up we're through all the digits */
-		if (flag) break;
-
-		/* move to the next digit */
-		k++;
-	} /* while(1) */
-
-	cdPtyNum->addrSig.len = j;
-
-	/**************************************************************************/
-	cdPtyNum->oddEven.pres	  = PRSNT_NODEF;
-
-	cdPtyNum->oddEven.val	   = odd;
-
-	/**************************************************************************/
-	return 0;
+	
+	return copy_tknStr_to_sngss7(caller_data->dnis.digits, &cdPtyNum->addrSig, &cdPtyNum->oddEven);
 }
 
+ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
+{	
+	const char *val = NULL;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_digits");
+	if (!ftdm_strlen_zero(val)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Generic Number qualifier \"%s\"\n", val);
+		if (copy_tknStr_to_sngss7((char*)val, &genNmb->addrSig, &genNmb->oddEven) != FTDM_SUCCESS) {
+			return FTDM_FAIL;
+		}
+	} else {
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied Generic Number qualifier \"%s\"\n", val);
+		return FTDM_SUCCESS;
+	}
+	genNmb->eh.pres = PRSNT_NODEF;
+	genNmb->addrSig.pres = PRSNT_NODEF;
+	
+	genNmb->nmbQual.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_numqual");
+	if (!ftdm_strlen_zero(val)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Generic Number \"number qualifier\" \"%s\"\n", val);
+		genNmb->nmbQual.val	= atoi(val);
+	} else {
+		genNmb->nmbQual.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_nmbqual;
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied Generic Number \"number qualifier\" \"%d\"\n", genNmb->nmbQual.val);
+	}
+	genNmb->natAddrInd.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_nadi");
+	if (!ftdm_strlen_zero(val)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Generic Number \"nature of address\" \"%s\"\n", val);
+		genNmb->natAddrInd.val	= atoi(val);
+	} else {
+		genNmb->natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_nadi;
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied Generic Number \"nature of address\" \"%d\"\n", genNmb->natAddrInd.val);
+	}
+	genNmb->scrnInd.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_screen_ind");
+	if (!ftdm_strlen_zero(val)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Generic Number \"screening indicator\" \"%s\"\n", val);
+		genNmb->scrnInd.val	= atoi(val);
+	} else {
+		genNmb->natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_screen_ind;
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied Generic Number \"screening indicator\" \"%d\"\n", genNmb->natAddrInd.val);
+	}
+	genNmb->presRest.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_pres_ind");
+	if (!ftdm_strlen_zero(val)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Generic Number \"presentation indicator\" \"%s\"\n", val);
+		genNmb->presRest.val	= atoi(val);
+	} else {
+		genNmb->presRest.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_pres_ind;
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied Generic Number \"presentation indicator\" \"%d\"\n", genNmb->presRest.val);
+	}
+	genNmb->numPlan.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_npi");
+	if (!ftdm_strlen_zero(val)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Generic Number \"numbering plan\" \"%s\"\n", val);
+		genNmb->numPlan.val	= atoi(val);
+	} else {
+	genNmb->numPlan.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_npi;
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied Generic Number \"numbering plan\" \"%d\"\n", genNmb->numPlan.val);
+	}
+	genNmb->niInd.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_num_inc_ind");
+	if (!ftdm_strlen_zero(val)) {
+		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Generic Number \"number incomplete indicator\" \"%s\"\n", val);
+		genNmb->niInd.val	= atoi(val);
+	} else {
+		genNmb->niInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_num_inc_ind;
+		SS7_DEBUG_CHAN(ftdmchan,"No user supplied Generic Number \"number incomplete indicator\" \"%d\"\n", genNmb->niInd.val);
+	}
+	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
+{
+	/* TODO: Implement me */
+	return FTDM_SUCCESS;
+}
 
 ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum)
 {
