@@ -320,6 +320,15 @@ typedef struct sng_isup_ckt {
 	uint32_t		clg_nadi;
 	uint32_t		cld_nadi;
 	uint8_t			rdnis_nadi;
+
+	/* Generic Number defaults */
+	uint8_t			gn_nmbqual;			/* Number Qualifier */
+	uint8_t			gn_nadi;			/* Nature of Address indicator */
+	uint8_t 		gn_screen_ind;		/* Screening Indicator */
+	uint8_t			gn_pres_ind;		/* Presentation Indicator */
+	uint8_t			gn_npi;				/* Numbering Plan Indicator */
+	uint8_t			gn_num_inc_ind;		/* Number Incomplete Indicator */
+	/* END - Generic Number defaults */
 			
 	uint32_t		min_digits;
 	uint8_t			itx_auto_reply;
@@ -795,7 +804,8 @@ ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cd
 ftdm_status_t copy_cdPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum);
 ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum);
 ftdm_status_t copy_redirgNum_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum);
-
+ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb);
+ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb);
 
 ftdm_status_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
 ftdm_status_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);

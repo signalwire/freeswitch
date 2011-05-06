@@ -74,8 +74,6 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
-	const char			*clg_nadi = NULL;
-	const char			*cld_nadi = NULL;
 	const char			*clg_subAddr = NULL;
 	const char			*cld_subAddr = NULL;
 	char 				subAddrIE[MAX_SIZEOF_SUBADDR_IE];
@@ -185,25 +183,10 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	/* copy down the calling number information */	
 	copy_cgPtyNum_to_sngss7 (ftdmchan, &iam.cgPtyNum);
 
-	/* check if the user would like a custom NADI value for the calling Pty Num */
-	clg_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_clg_nadi");
-	if (!ftdm_strlen_zero(clg_nadi)) {
-		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Calling NADI value \"%s\"\n", clg_nadi);
-		iam.cgPtyNum.natAddrInd.val	= atoi(clg_nadi);
-	} else {
-		iam.cgPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].clg_nadi;
-		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLG, using \"%d\"\n", iam.cgPtyNum.natAddrInd.val);
-	}
+	/* copy down the generic number information */
+	copy_genNmb_to_sngss7(ftdmchan, &iam.genNmb);
 	
-	cld_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cld_nadi");
-	if (!ftdm_strlen_zero(cld_nadi)) {
-		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called NADI value \"%s\"\n", cld_nadi);
-		iam.cdPtyNum.natAddrInd.val	= atoi(cld_nadi);
-	} else {
-		iam.cdPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].cld_nadi;
-		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLD, using \"%d\"\n", iam.cdPtyNum.natAddrInd.val);
-	}
-
+	/* TODO - move this to copy_clg_subAddr_to_sngss7 function */
 	/* check if the user would like us to send a clg_sub-address */
 	clg_subAddr = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_clg_subaddr");
 	if (!ftdm_strlen_zero(clg_subAddr)) {
@@ -912,7 +895,7 @@ void ft_to_sngss7_itx (ftdm_channel_t * ftdmchan)
 	if (!ftdm_strlen_zero(var)) {
 		itx.msgNum.msgNum.val = atoi(var);
 	} else {
-		itx.msgNum.msgNum.val = 0x0;
+		itx.msgNum.msgNum.val = 0x1;
 	}
 	
 	itx.chargUnitNum.eh.pres = PRSNT_NODEF;
@@ -921,7 +904,7 @@ void ft_to_sngss7_itx (ftdm_channel_t * ftdmchan)
 	if (!ftdm_strlen_zero(var)) {
 		itx.chargUnitNum.chargUnitNum.val = atoi(var);
 	} else {
-		itx.chargUnitNum.chargUnitNum.val = 0x0;
+		itx.chargUnitNum.chargUnitNum.val = 0x1;
 	}
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "ITX Charging Unit:%d Msg Num:%d\n", itx.chargUnitNum.chargUnitNum.val, itx.msgNum.msgNum.val);
