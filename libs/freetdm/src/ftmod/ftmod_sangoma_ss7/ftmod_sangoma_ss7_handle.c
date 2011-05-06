@@ -187,6 +187,8 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 			copy_redirgNum_from_sngss7(ftdmchan, &siConEvnt->redirgNum);
 
+			copy_genNmb_from_sngss7(ftdmchan, &siConEvnt->genNmb);
+
 			/* fill in the TMR/bearer capability */
 			if (siConEvnt->txMedReq.eh.pres) {
 				if (siConEvnt->txMedReq.trMedReq.pres) {
@@ -480,6 +482,47 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	case (SUBDIRNUM):
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx SUB-DIR\n", sngss7_info->circuit->cic);
 		break;
+#ifdef SANGOMA_SPIROU
+	case (CHARGE_ACK):
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx TXA\n", sngss7_info->circuit->cic);		
+		break;
+	case (CHARGE_UNIT):
+		{			
+			uint32_t charging_unit = 0;
+			uint32_t msg_num = 0;
+			char	val[3];			
+			
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ITX\n", sngss7_info->circuit->cic);
+
+			memset(val, '\0', sizeof(val));
+
+			if (siCnStEvnt->chargUnitNum.eh.pres == PRSNT_NODEF &&
+				siCnStEvnt->chargUnitNum.chargUnitNum.pres == PRSNT_NODEF) {
+
+				charging_unit = siCnStEvnt->chargUnitNum.chargUnitNum.val;
+			}
+
+			if (siCnStEvnt->msgNum.eh.pres == PRSNT_NODEF &&
+				siCnStEvnt->msgNum.msgNum.pres == PRSNT_NODEF) {
+
+				msg_num = siCnStEvnt->msgNum.msgNum.val;
+			}
+
+			ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Charging Unit:%d Msg Num:%d\n", charging_unit, msg_num);
+			
+			sprintf(val, "%d", charging_unit);
+			sngss7_add_var(sngss7_info, "ss7_itx_charge_unit", val);
+			
+			sprintf(val, "%d", msg_num);
+			sngss7_add_var(sngss7_info, "ss7_itx_msg_num", val);
+			
+			if (sngss7_info->circuit->itx_auto_reply) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "Auto-reply with TXA msg\n");
+				ft_to_sngss7_txa (ftdmchan);
+			}
+		}
+		break;
+#endif
 	/**************************************************************************/
 	default:
 	   	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Unknown Msg\n", sngss7_info->circuit->cic);
@@ -522,7 +565,7 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* go to UP */
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
-
+		
 		break;
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_DIALING:
