@@ -489,6 +489,7 @@ typedef struct {
 	switch_size_t dtmf_packet_count;
 	switch_size_t cng_packet_count;
 	switch_size_t flush_packet_count;
+	switch_size_t largest_jb_size;
 } switch_rtp_numbers_t;
 
 

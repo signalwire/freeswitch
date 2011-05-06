@@ -4138,6 +4138,10 @@ SWITCH_DECLARE(switch_rtp_stats_t *) switch_rtp_get_stats(switch_rtp_t *rtp_sess
 		s = &rtp_session->stats;
 	}
 
+	if (rtp_session->jb) {
+		s->inbound.largest_jb_size = stfu_n_get_most_qlen(rtp_session->jb);
+	}
+
 	return s;
 }
 
