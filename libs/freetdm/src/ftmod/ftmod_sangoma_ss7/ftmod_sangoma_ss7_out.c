@@ -74,8 +74,6 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
-	const char			*clg_nadi = NULL;
-	const char			*cld_nadi = NULL;
 	const char			*clg_subAddr = NULL;
 	const char			*cld_subAddr = NULL;
 	char 				subAddrIE[MAX_SIZEOF_SUBADDR_IE];
@@ -180,33 +178,18 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	} /* if ANSI */
 
 	/* copy down the called number information */
-	copy_cdPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cdPtyNum);
+	copy_cdPtyNum_to_sngss7 (ftdmchan, &iam.cdPtyNum);
 	
 	/* copy down the calling number information */	
-	copy_cgPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cgPtyNum);
+	copy_cgPtyNum_to_sngss7 (ftdmchan, &iam.cgPtyNum);
 
-	/* check if the user would like a custom NADI value for the calling Pty Num */
-	clg_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_clg_nadi");
-	if ((clg_nadi != NULL) && (*clg_nadi)) {
-		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Calling NADI value \"%s\"\n", clg_nadi);
-		iam.cgPtyNum.natAddrInd.val	= atoi(clg_nadi);
-	} else {
-		iam.cgPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].clg_nadi;
-		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLG, using \"%d\"\n", iam.cgPtyNum.natAddrInd.val);
-	}
+	/* copy down the generic number information */
+	copy_genNmb_to_sngss7(ftdmchan, &iam.genNmb);
 	
-	cld_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cld_nadi");
-	if ((cld_nadi != NULL) && (*cld_nadi)) {
-		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called NADI value \"%s\"\n", cld_nadi);
-		iam.cdPtyNum.natAddrInd.val	= atoi(cld_nadi);
-	} else {
-		iam.cdPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].cld_nadi;
-		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLD, using \"%d\"\n", iam.cdPtyNum.natAddrInd.val);
-	}
-
+	/* TODO - move this to copy_clg_subAddr_to_sngss7 function */
 	/* check if the user would like us to send a clg_sub-address */
 	clg_subAddr = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_clg_subaddr");
-	if ((clg_subAddr != NULL) && (*clg_subAddr)) {
+	if (!ftdm_strlen_zero(clg_subAddr)) {
 		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Calling Sub-Address value \"%s\"\n", clg_subAddr);
 		
 		/* clean out the subAddrIE */
@@ -302,7 +285,6 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	return;
 }
 
-/******************************************************************************/
 void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
@@ -382,7 +364,6 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	return;
 }
 
-/******************************************************************************/
 void ft_to_sngss7_anm (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
@@ -892,6 +873,69 @@ void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan)
 	return;
 }
 
+/* French SPIROU send Charge Unit */
+/* No one calls this function yet, but it has been implemented to complement TXA messages */
+void ft_to_sngss7_itx (ftdm_channel_t * ftdmchan)
+{
+#ifndef SANGOMA_SPIROU
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "ITX message not supported!, please update your libsng_ss7\n");
+#else
+	const char* var = NULL;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	SiCnStEvnt itx;
+	
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+
+	memset (&itx, 0x0, sizeof (itx));
+
+	itx.msgNum.eh.pres = PRSNT_NODEF;
+	itx.msgNum.msgNum.pres = PRSNT_NODEF;
+	var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_itx_msg_num");
+	if (!ftdm_strlen_zero(var)) {
+		itx.msgNum.msgNum.val = atoi(var);
+	} else {
+		itx.msgNum.msgNum.val = 0x1;
+	}
+	
+	itx.chargUnitNum.eh.pres = PRSNT_NODEF;
+	itx.chargUnitNum.chargUnitNum.pres = PRSNT_NODEF;
+	var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_itx_charge_unit");
+	if (!ftdm_strlen_zero(var)) {
+		itx.chargUnitNum.chargUnitNum.val = atoi(var);
+	} else {
+		itx.chargUnitNum.chargUnitNum.val = 0x1;
+	}
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "ITX Charging Unit:%d Msg Num:%d\n", itx.chargUnitNum.chargUnitNum.val, itx.msgNum.msgNum.val);
+	sng_cc_con_status  (1, sngss7_info->suInstId, sngss7_info->spInstId, sngss7_info->circuit->id, &itx, CHARGE_UNIT);
+
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx ITX\n", sngss7_info->circuit->cic);
+#endif
+	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
+	return;
+}
+
+/* French SPIROU send Charging Acknowledgement */
+void ft_to_sngss7_txa (ftdm_channel_t * ftdmchan)
+{	
+#ifndef SANGOMA_SPIROU
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "TXA message not supported!, please update your libsng_ss7\n");	
+#else
+	SiCnStEvnt txa;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+		
+	memset (&txa, 0x0, sizeof(txa));
+
+	sng_cc_con_status(1, sngss7_info->suInstId, sngss7_info->spInstId, sngss7_info->circuit->id, &txa, CHARGE_ACK);
+	
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx TXA\n", sngss7_info->circuit->cic);
+#endif
+	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
+	return;
+}
 
 /******************************************************************************/
 /* For Emacs:

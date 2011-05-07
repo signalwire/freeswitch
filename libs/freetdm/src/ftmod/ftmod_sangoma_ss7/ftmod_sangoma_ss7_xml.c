@@ -124,6 +124,7 @@ typedef struct sng_ccSpan
 	uint32_t		cld_nadi;
 	uint32_t		rdnis_nadi;
 	uint32_t		min_digits;
+	uint32_t		itx_auto_reply;
 	uint32_t		t3;
 	uint32_t		t12;
 	uint32_t		t13;
@@ -1892,7 +1893,9 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 				sng_ccSpan.typeCntrl = sng_cic_cntrl_type_map[ret].tril_type;
 				SS7_DEBUG("Found an ccSpan typeCntrl = %s\n", sng_cic_cntrl_type_map[ret].sng_type);
 			}
-		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "itx_auto_reply")) {
+			sng_ccSpan.itx_auto_reply = ftdm_true(parm->val);
+			SS7_DEBUG("Found itx_auto_reply %d\n", sng_ccSpan.itx_auto_reply);
 		} else if (!strcasecmp(parm->var, "cicbase")) {
 		/**********************************************************************/
 			sng_ccSpan.cicbase = atoi(parm->val);
@@ -2913,6 +2916,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		g_ftdm_sngss7_data.cfg.isupCkt[x].options		= ccSpan->options;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].switchType	= ccSpan->switchType;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].min_digits	= ccSpan->min_digits;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].itx_auto_reply	= ccSpan->itx_auto_reply;
 
 		if (ccSpan->t3 == 0) {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t3			= 1200;
