@@ -1269,7 +1269,7 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 			ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_LINK_STATUS, &sangoma_status);
 			ftdmchan->alarm_flags = sangoma_status == FTDM_HW_LINK_DISCONNECTED ? FTDM_ALARM_RED : FTDM_ALARM_NONE;
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Link status is %d\n", sangoma_status);
-		}
+		} 
 	}
 
 	if (alarms) {
@@ -1293,6 +1293,7 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 	switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_type) {
 	case WP_API_EVENT_LINK_STATUS:
 		{
+			if (FTDM_IS_DIGITAL_CHANNEL(fchan)) {
 			switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
 			case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
 				/* *event_id = FTDM_OOB_ALARM_CLEAR; */
@@ -1305,6 +1306,22 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 			};
 			/* The WP_API_EVENT_ALARM event should be used to clear alarms */
 			*event_id = FTDM_OOB_NOOP;
+                    } else {
+			switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
+			case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
+				/* *event_id = FTDM_OOB_ALARM_CLEAR; */
+				ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "Using analog link connected event as alarm clear\n");
+				*event_id = FTDM_OOB_ALARM_CLEAR;
+				fchan->alarm_flags = FTDM_ALARM_NONE;
+				break;
+			default:
+				/* *event_id = FTDM_OOB_ALARM_TRAP; */
+				ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "Using analog link disconnected event as alarm trap\n");
+				*event_id = FTDM_OOB_ALARM_TRAP;
+				fchan->alarm_flags = FTDM_ALARM_RED;
+				break;
+			};
+			}
 		}
 		break;
 
