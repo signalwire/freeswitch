@@ -1132,6 +1132,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	int sample_rate = 0;
 	audio_endpoint_t *endpoint = NULL;
 	char *endpoint_name = NULL;
+	const char *endpoint_answer = NULL;
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -1227,7 +1228,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			goto error;
 		}
 		switch_snprintf(name, sizeof(name), "portaudio/endpoint-%s", endpoint_name);
-		switch_set_flag(tech_pvt, TFLAG_AUTO_ANSWER);
+		if (var_event && (endpoint_answer = (switch_event_get_header(var_event, "endpoint_answer")))) {
+			if (switch_true(endpoint_answer)) {
+				switch_set_flag(tech_pvt, TFLAG_AUTO_ANSWER);
+			}
+		} else {
+			switch_set_flag(tech_pvt, TFLAG_AUTO_ANSWER);
+		}
 		endpoint->master = tech_pvt;
 		tech_pvt->audio_endpoint = endpoint;
 		switch_mutex_unlock(endpoint->mutex);
@@ -1751,7 +1758,7 @@ static switch_status_t load_config(void)
 
 	if (globals.ringdev < 0) {
 		if (globals.outdev > -1) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid ring device configured using output device\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No ring device configured, using output device\n");
 			globals.ringdev = globals.outdev;
 		}
 	}
