@@ -318,15 +318,11 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && !switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
+		if (!tech_pvt->audio_endpoint &&
+		    switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && 
+		    !switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
 
 			add_pvt(tech_pvt, PA_SLAVE);
-
-			/* endpoints do not ring (yet) */
-			if (tech_pvt->audio_endpoint) {
-				ring_file = NULL;
-				goto endpoint_noring;
-			}
 
 			ring_file = globals.ring_file;
 			if ((val = switch_channel_get_variable(channel, "pa_ring_file"))) {
@@ -356,20 +352,23 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 				}
 			}
 		}
-endpoint_noring:
 
-		if (switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
+		if (tech_pvt->audio_endpoint || switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
 			switch_mutex_lock(globals.pvt_lock);
 			add_pvt(tech_pvt, PA_MASTER);
-			switch_channel_mark_answered(channel);
-			switch_set_flag(tech_pvt, TFLAG_ANSWER);
+			if (switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
+				switch_channel_mark_answered(channel);
+				switch_set_flag(tech_pvt, TFLAG_ANSWER);
+			}
 			switch_mutex_unlock(globals.pvt_lock);
 			switch_yield(1000000);
 		} else {
 			switch_channel_mark_ring_ready(channel);
 		}
 
-		while (switch_channel_get_state(channel) == CS_ROUTING && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
+		while (switch_channel_get_state(channel) == CS_ROUTING && 
+		       !switch_channel_test_flag(channel, CF_ANSWERED) &&
+		       !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 			switch_size_t olen = globals.readfile_timer.samples;
 
 			if (switch_micro_time_now() - last >= waitsec) {
@@ -416,10 +415,12 @@ endpoint_noring:
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-		if (!switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
+		if (!switch_test_flag(tech_pvt, TFLAG_ANSWER) &&
+		    !switch_channel_test_flag(channel, CF_ANSWERED)) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_NO_ANSWER);
 			return SWITCH_STATUS_SUCCESS;
 		}
+		switch_set_flag(tech_pvt, TFLAG_ANSWER);
 	}
 
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
