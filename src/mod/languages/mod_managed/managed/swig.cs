@@ -6597,6 +6597,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_numbers_t_flush_packet_count_get")]
   public static extern IntPtr switch_rtp_numbers_t_flush_packet_count_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_numbers_t_largest_jb_size_set")]
+  public static extern void switch_rtp_numbers_t_largest_jb_size_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_numbers_t_largest_jb_size_get")]
+  public static extern IntPtr switch_rtp_numbers_t_largest_jb_size_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_rtp_numbers_t")]
   public static extern IntPtr new_switch_rtp_numbers_t();
 
@@ -29217,6 +29223,18 @@ public class switch_rtp_numbers_t : IDisposable {
     } 
     get {
       SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_rtp_numbers_t_flush_packet_count_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_size_t largest_jb_size {
+    set {
+      freeswitchPINVOKE.switch_rtp_numbers_t_largest_jb_size_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_rtp_numbers_t_largest_jb_size_get(swigCPtr), true);
       if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
       return ret;
     } 
