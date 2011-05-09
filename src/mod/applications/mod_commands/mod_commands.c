@@ -2050,7 +2050,7 @@ SWITCH_STANDARD_API(kill_function)
 #define OUTGOING_ANSWER_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(outgoing_answer_function)
 {
-	switch_core_session_t *asession = NULL;
+	switch_core_session_t *outgoing_session = NULL;
 	char *mycmd = NULL;
 
 	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
@@ -2058,17 +2058,17 @@ SWITCH_STANDARD_API(outgoing_answer_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (zstr(mycmd) || !(asession = switch_core_session_locate(mycmd))) {
+	if (zstr(mycmd) || !(outgoing_session = switch_core_session_locate(mycmd))) {
 		stream->write_function(stream, "-ERR No Such Channel!\n");
 	} else {
-		switch_channel_t *channel = switch_core_session_get_channel(asession);
+		switch_channel_t *channel = switch_core_session_get_channel(outgoing_session);
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			switch_channel_mark_answered(channel);
 			stream->write_function(stream, "+OK\n");
 		} else {
 			stream->write_function(stream, "-ERR Not an outbound channel!\n");
 		}
-		switch_core_session_rwunlock(session);
+		switch_core_session_rwunlock(outgoing_session);
 	}
 
 	switch_safe_free(mycmd);
@@ -5210,6 +5210,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_hold ::console::list_uuid");
 	switch_console_set_complete("add uuid_jitterbuffer ::console::list_uuid");
 	switch_console_set_complete("add uuid_kill ::console::list_uuid");
+	switch_console_set_complete("add uuid_outgoing_answer ::console::list_uuid");
 	switch_console_set_complete("add uuid_limit_release ::console::list_uuid");
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid console");
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid alert");
