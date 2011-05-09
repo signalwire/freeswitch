@@ -1664,7 +1664,7 @@ static void write_data(switch_stream_handle_t *stream, switch_bool_t as_xml, con
 
 SWITCH_STANDARD_API(dialplan_lcr_function)
 {
-	char *argv[4] = { 0 };
+	char *argv[9] = { 0 };
 	int argc;
 	char *mydata = NULL;
 	//char *dialstring = NULL;
