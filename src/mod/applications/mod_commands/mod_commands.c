@@ -2047,6 +2047,34 @@ SWITCH_STANDARD_API(kill_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define OUTGOING_ANSWER_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(outgoing_answer_function)
+{
+	switch_core_session_t *asession = NULL;
+	char *mycmd = NULL;
+
+	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
+		stream->write_function(stream, "-USAGE: %s\n", OUTGOING_ANSWER_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (zstr(mycmd) || !(asession = switch_core_session_locate(mycmd))) {
+		stream->write_function(stream, "-ERR No Such Channel!\n");
+	} else {
+		switch_channel_t *channel = switch_core_session_get_channel(asession);
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_mark_answered(channel);
+			stream->write_function(stream, "+OK\n");
+		} else {
+			stream->write_function(stream, "-ERR Not an outbound channel!\n");
+		}
+		switch_core_session_rwunlock(session);
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define PREPROCESS_SYNTAX "<>"
 SWITCH_STANDARD_API(preprocess_function)
 {
@@ -5063,6 +5091,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_outgoing_answer", "Answer Outgoing Channel", outgoing_answer_function, OUTGOING_ANSWER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_loglevel", "set loglevel on session", uuid_loglevel, UUID_LOGLEVEL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);

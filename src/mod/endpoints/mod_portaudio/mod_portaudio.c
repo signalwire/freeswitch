@@ -319,7 +319,14 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && !switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
+
 			add_pvt(tech_pvt, PA_SLAVE);
+
+			/* endpoints do not ring (yet) */
+			if (tech_pvt->audio_endpoint) {
+				ring_file = NULL;
+				goto endpoint_noring;
+			}
 
 			ring_file = globals.ring_file;
 			if ((val = switch_channel_get_variable(channel, "pa_ring_file"))) {
@@ -349,6 +356,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 				}
 			}
 		}
+endpoint_noring:
 
 		if (switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
 			switch_mutex_lock(globals.pvt_lock);
