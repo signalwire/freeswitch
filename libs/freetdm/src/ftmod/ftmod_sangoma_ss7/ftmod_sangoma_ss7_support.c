@@ -467,7 +467,7 @@ ftdm_status_t copy_cgPtyCat_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyCat *cgPt
 	cgPtyCat->eh.pres 			= PRSNT_NODEF;
 	cgPtyCat->cgPtyCat.pres 	= PRSNT_NODEF;
 	
-	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cpc");
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "calling_party_category");
 	if (!ftdm_strlen_zero(val)) {
 		cgPtyCat->cgPtyCat.val = get_trillium_val(cpc_codes, ftdm_str2ftdm_calling_party_category(val), CAT_ORD);
 	} else {
@@ -482,7 +482,7 @@ ftdm_status_t copy_cgPtyCat_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyCat *cg
 	if (cgPtyCat->eh.pres == PRSNT_NODEF &&
 		cgPtyCat->cgPtyCat.pres 	== PRSNT_NODEF) {
 
-		sngss7_add_var((sngss7_chan_data_t*)ftdmchan->call_data, "ss7_cpc",
+		sngss7_add_var((sngss7_chan_data_t*)ftdmchan->call_data, "calling_party_category",
 							ftdm_calling_party_category2str(get_ftdm_val(cpc_codes, cgPtyCat->cgPtyCat.val, FTDM_CPC_UNKNOWN)));
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Category:0x%x\n", cgPtyCat->cgPtyCat.val);
 	}

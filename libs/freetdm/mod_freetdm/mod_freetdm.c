@@ -1369,7 +1369,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-CPC");
 		if (sipvar) {
-			ftdm_usrmsg_add_var(&usrmsg, "ss7_cpc", sipvar);
+			ftdm_set_calling_party_category(var, (uint8_t *)&caller_data.cpc);
 		}
 	}
 
@@ -1677,7 +1677,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 			}
 		} /* End - var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_digits"); */
 
-		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_cpc");
+		var_value = ftdm_sigmsg_get_var(sigmsg, "freetdm_calling_party_category");
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CPC", "%d", var_value);
 		}
