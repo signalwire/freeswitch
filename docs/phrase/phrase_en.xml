@@ -5,6 +5,23 @@
       <prompt phrase="Pound" filename="35.wav"/>
       <prompt phrase="Star" filename="42.wav"/>
       <prompt phrase="Dot" filename="46.wav"/>
+	  <prompt phrase="Hyphen" filename="45.wav"/>
+	  <prompt phrase="Exclamation point" filename="33.wav"/>
+	  <prompt phrase="At" filename="64.wav"/>
+	  <prompt phrase="Dollar sign" filename="36.wav"/>
+	  <prompt phrase="Percent" filename="37.wav"/>
+	  <prompt phrase="Ampersand" filename="38.wav"/>
+	  <prompt phrase="Double quote" filename="34.wav"/>
+	  <prompt phrase="Single quote" filename="39.wav"/>
+	  <prompt phrase="Forward slash" filename="47.wav"/>
+	  <prompt phrase="Underscore" filename="95.wav"/>
+	  <prompt phrase="Backslash" filename="92.wav"/>
+	  <prompt phrase="Tilde" filename="126.wav"/>
+	  <prompt phrase="Equal sign" filename="61.wav"/>
+	  <prompt phrase="Colon" filename="58.wav"/>
+	  <prompt phrase="Semicolon" filename="59.wav"/>
+	  <prompt phrase="Caret" filename="94.wav"/>
+	  <prompt phrase="Pipe" filename="124.wav"/>
       <prompt phrase="A" filename="97.wav"/>
       <prompt phrase="B" filename="98.wav"/>
       <prompt phrase="C" filename="99.wav"/>
@@ -222,6 +239,8 @@
       <prompt phrase="I need to record your first and last name. This recording is used throughout the system, including in the company directory." filename="vm-tutorial_record_name.wav"/>
       <prompt phrase="Your personal identification number, or 'pin', is used to prevent others from accessing your voicemail messages. Would you like to change it now?" filename="vm-tutorial_change_pin.wav"/>
       <prompt phrase="The person you are trying to reach is not available and does not have voicemail." filename="vm-not_available_no_voicemail.wav"/>
+	  <prompt phrase="The PIN you entered is below the minimum length." filename="voicemail/vm-pin_below_minimum_length.wav"/>
+	  <prompt phrase="The minimum PIN length is..." filename="voicemail/vm-minimum_pin_length_is.wav"/>
     </voicemail>
     <directory>
 	  <prompt phrase="Please enter the first few letters of the persons" filename="dir-enter_person.wav"/>
@@ -270,7 +289,13 @@
       <prompt phrase="You are now bi-directionally muted." filename="conf-you_are_now_bidirectionally_muted.wav"/>
 	  <prompt phrase="Enter the number of listeners at this location, then press pound." filename="conf-number_of_listeners.wav"/>
 	  <prompt phrase="...listeners in this conference." filename="conf-listeners_in_conference.wav"/>
-	  <prompt phrase="...members in this conference." filename="conf-members_in_conference.wav"/>    </conference>
+	  <prompt phrase="...listener in this conference." filename="conf-listener_in_conference.wav"/>
+	  <prompt phrase="...members in this conference." filename="conf-members_in_conference.wav"/>
+	  <prompt phrase="This conference is in Q and A mode." filename="conference/conf-conference_is_in_qna_mode.wav"/>
+	  <prompt phrase="Q and A mode..." filename="conference/conf-qna_mode.wav"/>
+	  <prompt phrase="Entry sound..." filename="conference/conf-entry_sound.wav"/>
+	  <prompt phrase="Exit sound..." filename="conference/conf-exit_sound.wav"/>
+    </conference>
     <ivr>
       <prompt phrase="Account number" filename="ivr-account_number.wav"/>
       <prompt phrase="Connect to caller" filename="ivr-connect_to_caller.wav"/>
@@ -432,8 +457,6 @@
 	  <prompt phrase="There are..." filename="ivr-there_are.wav"/>
 	  <prompt phrase="Please enter the source telephone number, then press pound." filename="ivr-enter_source_telephone_number.wav"/>
 	  <prompt phrase="Please enter the destination telephone number, then press pound." filename="ivr-enter_destination_telephone_number.wav"/>
-
-      <!-- The following phrases still need to be recorded -->
 	  <prompt phrase="Recording started." filename="ivr-recording_started.wav"/>
 	  <prompt phrase="Recording stopped." filename="ivr-recording_stopped.wav"/>
 	  <prompt phrase="Recording paused." filename="ivr-recording_paused.wav"/>
@@ -445,37 +468,14 @@
 	  <prompt phrase="...has been answered." filename="ivr-has_been_answered.wav"/>
 	  <prompt phrase="...has been removed." filename="ivr-has_been_removed.wav"/>
 	  <prompt phrase="No questions in queue." filename="ivr-no_questions_in_queue.wav"/>
-	  <prompt phrase="This conference is in Q and A mode." filename="conference/conf-conference_is_in_qna_mode.wav"/>
-	  <prompt phrase="Q and A mode..." filename="conference/conf-qna_mode.wav"/>
 	  <prompt phrase="...is now on." filename="ivr/ivr_is_now_on.wav"/>
 	  <prompt phrase="...is now off." filename="ivr/ivr_is_now_off.wav"/>
-	  <prompt phrase="Entry sound..." filename="conference/conf-entry_sound.wav"/>
-	  <prompt phrase="Exit sound..." filename="conference/conf-exit_sound.wav"/>
-	  <prompt phrase="The PIN you entered is below the minimum length." filename="voicemail/vm-pin_below_minimum_length.wav"/>
-	  <prompt phrase="The minimum PIN length is..." filename="voicemail/vm-minimum_pin_length_is.wav"/>
 	  <prompt phrase="This phone is not allowed to make external calls." filename="ivr-phone_not_make_external_calls.wav"/>
 	  <prompt phrase="I.D. number..." filename="ivr-id_number.wav"/>
 	  <prompt phrase="To skip these instructions..." filename="ivr-skip_instructions.wav"/>
 	  <prompt phrase="Hang up the call without pressing a key to discard the recording." filename="ivr-hangup_to_discard.wav"/>
 	  <prompt phrase="...or press..." filename="ivr-or_press.wav"/>
 	  <prompt phrase="For English, press..." filename="ivr-for_english_press.wav"/>
-	  <prompt phrase="Hyphen" filename="ascii/45.wav"/>
-	  <prompt phrase="Exclamation point" filename="ascii/33.wav"/>
-	  <prompt phrase="At" filename="ascii/64.wav"/>
-	  <prompt phrase="Dollar sign" filename="ascii/36.wav"/>
-	  <prompt phrase="Percent" filename="ascii/37.wav"/>
-	  <prompt phrase="Ampersand" filename="ascii/38.wav"/>
-	  <prompt phrase="Double quote" filename="ascii/34.wav"/>
-	  <prompt phrase="Single quote" filename="ascii/39.wav"/>
-	  <prompt phrase="Forward slash" filename="ascii/47.wav"/>
-	  <prompt phrase="Underscore" filename="ascii/95.wav"/>
-	  <prompt phrase="Backslash" filename="ascii/92.wav"/>
-	  <prompt phrase="Tilde" filename="ascii/126.wav"/>
-	  <prompt phrase="Equal sign" filename="ascii/61.wav"/>
-	  <prompt phrase="Colon" filename="ascii/58.wav"/>
-	  <prompt phrase="Semicolon" filename="ascii/59.wav"/>
-	  <prompt phrase="Caret" filename="ascii/94.wav"/>
-	  <prompt phrase="Pipe" filename="ascii/124.wav"/>
 	  <prompt phrase="Your call cannot be completed as dialed." filename="ivr-call_cannot_be_completed_as_dialed.wav"/>
 	  <prompt phrase="Please check the number and try again." filename="ivr-please_check_number_try_again.wav"/>
 	  <prompt phrase="Failure reason is..." filename="ivr-failure_reason_is.wav"/>
@@ -489,6 +489,8 @@
 	  <prompt phrase="Normal unspecified" filename="ivr-normal_unspecified.wav"/>
 	  <prompt phrase="Incompatible destination" filename="ivr-incompatible_destination.wav"/>
 	  <prompt phrase="Normal clearing" filename="ivr-normal_clearing.wav"/>
+
+      <!-- The following phrases still need to be recorded -->
     </ivr>
 
     <misc>
