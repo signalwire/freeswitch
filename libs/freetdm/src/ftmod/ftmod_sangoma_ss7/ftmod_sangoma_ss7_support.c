@@ -91,9 +91,50 @@ FTDM_ENUM_NAMES(BLK_FLAGS_NAMES, BLK_FLAGS_STRING)
 FTDM_STR2ENUM(ftmod_ss7_blk_state2flag, ftmod_ss7_blk_flag2str, sng_ckt_block_flag_t, BLK_FLAGS_NAMES, 31)
 
 /* FUNCTIONS ******************************************************************/
+static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val);
+static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val);
+
+
+
+/* Maps generic FreeTDM CPC codes to SS7 CPC codes */
+ftdm2trillium_t cpc_codes[] = {
+	{FTDM_CPC_UNKNOWN,			CAT_UNKNOWN},
+	{FTDM_CPC_OPERATOR_FRENCH,	CAT_OPLANGFR},
+	{FTDM_CPC_OPERATOR_ENGLISH,	CAT_OPLANGENG},
+	{FTDM_CPC_OPERATOR_GERMAN,	CAT_OPLANGGER},
+	{FTDM_CPC_OPERATOR_RUSSIAN,	CAT_OPLANGRUS},
+	{FTDM_CPC_OPERATOR_SPANISH,	CAT_OPLANGSP},
+	{FTDM_CPC_ORDINARY,			CAT_ORD},
+	{FTDM_CPC_PRIORITY,			CAT_PRIOR},
+	{FTDM_CPC_DATA,				CAT_DATA},
+	{FTDM_CPC_TEST,				CAT_TEST},
+	{FTDM_CPC_PAYPHONE,			CAT_PAYPHONE},
+};
+
+static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val)
+{
+	ftdm2trillium_t *val = vals;
+	while(val++) {
+		if (val->ftdm_val == ftdm_val) {
+			return val->trillium_val;
+		}
+	}
+	return default_val;
+}
+
+static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val)
+{
+	ftdm2trillium_t *val = vals;
+	while(val++) {
+		if (val->trillium_val == trillium_val) {
+			return val->ftdm_val;
+		}
+	}
+	return default_val;
+}
+
 ftdm_status_t copy_cgPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPtyNum)
 {
-
 	return FTDM_SUCCESS;
 }
 
@@ -174,7 +215,6 @@ ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
 {	
 	const char *val = NULL;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 	
 	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_digits");
 	if (!ftdm_strlen_zero(val)) {
@@ -183,9 +223,9 @@ ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
 			return FTDM_FAIL;
 		}
 	} else {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Generic Number qualifier \"%s\"\n", val);
 		return FTDM_SUCCESS;
 	}
+	
 	genNmb->eh.pres = PRSNT_NODEF;
 	genNmb->addrSig.pres = PRSNT_NODEF;
 	
@@ -243,7 +283,6 @@ ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
 		genNmb->niInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_num_inc_ind;
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Generic Number \"number incomplete indicator\" \"%d\"\n", genNmb->niInd.val);
 	}
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
 }
 
@@ -251,7 +290,6 @@ ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb
 {
 	char val[64];
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	memset(val, 0, sizeof(val));
 
@@ -301,7 +339,6 @@ ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb
 		sngss7_add_var(sngss7_info, "ss7_gn_num_inc_ind", val);
 	}
 	
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
 }
 
@@ -420,6 +457,35 @@ ftdm_status_t copy_redirgNum_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *r
 		caller_data->rdnis.plan = redirgNum->numPlan.val;
 	}
 
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_cgPtyCat_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyCat *cgPtyCat)
+{
+	const char* val = NULL;
+	
+	cgPtyCat->eh.pres 			= PRSNT_NODEF;
+	cgPtyCat->cgPtyCat.pres 	= PRSNT_NODEF;
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cpc");
+	if (!ftdm_strlen_zero(val)) {
+		cgPtyCat->cgPtyCat.val = get_trillium_val(cpc_codes, ftdm_str2ftdm_calling_party_category(val), CAT_ORD);
+	} else {
+		cgPtyCat->cgPtyCat.val = CAT_ORD;	/* ordinary suscriber */
+	}
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Category:0x%x\n", cgPtyCat->cgPtyCat.val);
+	return FTDM_SUCCESS;	
+}
+
+ftdm_status_t copy_cgPtyCat_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyCat *cgPtyCat)
+{
+	if (cgPtyCat->eh.pres == PRSNT_NODEF &&
+		cgPtyCat->cgPtyCat.pres 	== PRSNT_NODEF) {
+
+		sngss7_add_var((sngss7_chan_data_t*)ftdmchan->call_data, "ss7_cpc",
+							ftdm_calling_party_category2str(get_ftdm_val(cpc_codes, cgPtyCat->cgPtyCat.val, FTDM_CPC_UNKNOWN)));
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Category:0x%x\n", cgPtyCat->cgPtyCat.val);
+	}
 	return FTDM_SUCCESS;
 }
 
@@ -648,8 +714,6 @@ int check_cics_in_range(sngss7_chan_data_t *sngss7_info)
 /******************************************************************************/
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan)
 {
-	/*SS7_FUNC_TRACE_ENTER(__FUNCTION__);*/
-
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj == NULL) {
 		SS7_ERROR("sngss7_info is Null for circuit #%d\n", circuit);
 		return FTDM_FAIL;
@@ -662,7 +726,6 @@ ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_in
 	ftdm_assert_return((*sngss7_info)->ftdmchan, FTDM_FAIL, "received message on signalling link or non-configured cic\n");
 	*ftdmchan = (*sngss7_info)->ftdmchan;
 
-	/*SS7_FUNC_TRACE_EXIT(__FUNCTION__);*/
 	return FTDM_SUCCESS;
 }
 

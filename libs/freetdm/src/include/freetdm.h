@@ -298,6 +298,11 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_usr_layer1_prot, ftdm_user_layer1_prot2str, ftdm_u
 typedef enum {
 	FTDM_CPC_UNKNOWN,
 	FTDM_CPC_OPERATOR,
+	FTDM_CPC_OPERATOR_FRENCH,
+	FTDM_CPC_OPERATOR_ENGLISH,
+	FTDM_CPC_OPERATOR_GERMAN,
+	FTDM_CPC_OPERATOR_RUSSIAN,
+	FTDM_CPC_OPERATOR_SPANISH,
 	FTDM_CPC_ORDINARY,
 	FTDM_CPC_PRIORITY,
 	FTDM_CPC_DATA,
@@ -305,7 +310,7 @@ typedef enum {
 	FTDM_CPC_PAYPHONE,
 	FTDM_CPC_INVALID
 } ftdm_calling_party_category_t;
-#define CALLING_PARTY_CATEGORY_STRINGS "unknown", "operator", "ordinary", "priority", "data-call", "test-call", "payphone", "invalid"
+#define CALLING_PARTY_CATEGORY_STRINGS "unknown", "operator", "operator-french", "operator-english", "operator-german", "operator-russian", "operator-spanish", "ordinary", "priority", "data-call", "test-call", "payphone", "invalid"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_calling_party_category, ftdm_calling_party_category2str, ftdm_calling_party_category_t)
 
 /*! \brief Digit limit used in DNIS/ANI */

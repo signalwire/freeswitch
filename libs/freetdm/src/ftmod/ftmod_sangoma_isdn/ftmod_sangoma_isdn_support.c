@@ -743,7 +743,7 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 	int loc = prog_ind.loc;
 	
 	str = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.prog_ind.descr");
-	if (str && *str) {
+	if (!ftdm_strlen_zero(str)) {
 		/* User wants to override progress indicator */
 		descr = ftdm_str2ftdm_sngisdn_progind_descr(str);
 	}
@@ -754,7 +754,7 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 	}
 
 	str = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.prog_ind.loc");
-	if (str && *str) {
+	if (!ftdm_strlen_zero(str)) {
 		loc = ftdm_str2ftdm_sngisdn_progind_loc(str);
 	}
 	if (loc == SNGISDN_PROGIND_LOC_INVALID) {

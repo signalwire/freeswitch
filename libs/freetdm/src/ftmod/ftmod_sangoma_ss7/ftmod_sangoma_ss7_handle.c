@@ -189,6 +189,8 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 			copy_genNmb_from_sngss7(ftdmchan, &siConEvnt->genNmb);
 
+			copy_cgPtyCat_from_sngss7(ftdmchan, &siConEvnt->cgPtyCat);
+
 			/* fill in the TMR/bearer capability */
 			if (siConEvnt->txMedReq.eh.pres) {
 				if (siConEvnt->txMedReq.trMedReq.pres) {

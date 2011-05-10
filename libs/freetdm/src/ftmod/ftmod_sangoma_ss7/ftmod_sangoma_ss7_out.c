@@ -112,12 +112,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	iam.fwdCallInd.isdnAccInd.val 		= ISDNACC_ISDN;
 	iam.fwdCallInd.sccpMethInd.pres 	= PRSNT_NODEF;
 	iam.fwdCallInd.sccpMethInd.val 		= SCCPMTH_NOIND;
-	
-	/* copy down the calling number information */
-	iam.cgPtyCat.eh.pres 				= PRSNT_NODEF;
-	iam.cgPtyCat.cgPtyCat.pres 			= PRSNT_NODEF;
-	iam.cgPtyCat.cgPtyCat.val 			= CAT_ORD;	/* ordinary suscriber */
-	
+		
 	/* copy down the transmission medium requirements */
 	iam.txMedReq.eh.pres 				= PRSNT_NODEF;
 	iam.txMedReq.trMedReq.pres 			= PRSNT_NODEF;
@@ -185,6 +180,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 
 	/* copy down the generic number information */
 	copy_genNmb_to_sngss7(ftdmchan, &iam.genNmb);
+
+	/* copy down the calling party category */
+	copy_cgPtyCat_to_sngss7(ftdmchan, &iam.cgPtyCat);
 	
 	/* TODO - move this to copy_clg_subAddr_to_sngss7 function */
 	/* check if the user would like us to send a clg_sub-address */
