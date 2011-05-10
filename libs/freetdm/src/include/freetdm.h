@@ -241,12 +241,12 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_ton, ftdm_ton2str, ftdm_ton_t)
 /*! Numbering Plan Identification (NPI) */
 typedef enum {
 	FTDM_NPI_UNKNOWN = 0,
-	FTDM_NPI_ISDN = 1,
-	FTDM_NPI_DATA = 3,
-	FTDM_NPI_TELEX = 4,
-	FTDM_NPI_NATIONAL = 8,
-	FTDM_NPI_PRIVATE = 9,
-	FTDM_NPI_RESERVED = 10,
+	FTDM_NPI_ISDN,
+	FTDM_NPI_DATA,
+	FTDM_NPI_TELEX,
+	FTDM_NPI_NATIONAL,
+	FTDM_NPI_PRIVATE,
+	FTDM_NPI_RESERVED,
 	FTDM_NPI_INVALID
 } ftdm_npi_t;
 #define NPI_STRINGS "unknown", "ISDN", "data", "telex", "national", "private", "reserved", "invalid"
