@@ -1681,7 +1681,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		
 		var_value = ftdm_sigmsg_get_var(sigmsg, "freetdm_calling_party_category");
 		if (!ftdm_strlen_zero(var_value)) {
-			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CPC", "%d", var_value);
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CPC", "%s", var_value);
 		}
 
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Screen", "%d", channel_caller_data->screen);
