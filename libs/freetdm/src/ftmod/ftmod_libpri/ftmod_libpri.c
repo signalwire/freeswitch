@@ -1965,6 +1965,10 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 	assert(isdn_data != NULL);
 	memset(isdn_data, 0, sizeof(*isdn_data));
 
+	/* set some default values */
+	isdn_data->mode = PRI_CPE;
+	isdn_data->ton  = PRI_UNKNOWN;
+
 	switch (ftdm_span_get_trunk_type(span)) {
 	case FTDM_TRUNK_BRI:
 	case FTDM_TRUNK_BRI_PTMP:
@@ -1975,12 +1979,14 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 #endif
 	case FTDM_TRUNK_E1:
 		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ALAW since this is an E1/BRI/BRI PTMP trunk\n");
-		isdn_data->layer1 = PRI_LAYER_1_ALAW;
+		isdn_data->layer1  = PRI_LAYER_1_ALAW;
+		isdn_data->dialect = PRI_SWITCH_EUROISDN_E1;
 		break;
 	case FTDM_TRUNK_T1:
 	case FTDM_TRUNK_J1:
 		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ULAW since this is a T1/J1 trunk\n");
-		isdn_data->layer1 = PRI_LAYER_1_ULAW;
+		isdn_data->layer1  = PRI_LAYER_1_ULAW;
+		isdn_data->dialect = PRI_SWITCH_LUCENT5E;
 		break;
 	default:
 		ftdm_log(FTDM_LOG_ERROR, "Invalid trunk type: '%s'\n", ftdm_span_get_trunk_type_str(span));
