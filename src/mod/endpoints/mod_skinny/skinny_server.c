@@ -238,8 +238,8 @@ found:
 
 			extension->current_application = extension->current_application->next;
 
-			if (!strcmp(current_application->application_name, "skinny-route")) {
-				action = SKINNY_ACTION_ROUTE;
+			if (!strcmp(current_application->application_name, "skinny-route") || !strcmp(current_application->application_name, "skinny-process")) {
+				action = SKINNY_ACTION_PROCESS;
 			} else if (!strcmp(current_application->application_name, "skinny-drop")) {
 				action = SKINNY_ACTION_DROP;
 			} else if (!strcmp(current_application->application_name, "skinny-wait")) {

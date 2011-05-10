@@ -117,7 +117,7 @@ struct skinny_device_type_params {
 typedef struct skinny_device_type_params skinny_device_type_params_t;
 
 typedef enum {
-	SKINNY_ACTION_ROUTE,
+	SKINNY_ACTION_PROCESS,
 	SKINNY_ACTION_DROP,
 	SKINNY_ACTION_WAIT
 } skinny_action_t;
@@ -174,12 +174,12 @@ typedef enum {
 
 struct private_object {
 	unsigned int flags;
+	switch_mutex_t *flag_mutex;
 	switch_frame_t read_frame;
 	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_core_session_t *session;
 	switch_caller_profile_t *caller_profile;
 	switch_mutex_t *mutex;
-	switch_mutex_t *flag_mutex;
 
 	/* identification */
 	skinny_profile_t *profile;

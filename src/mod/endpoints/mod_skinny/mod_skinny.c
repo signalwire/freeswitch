@@ -673,12 +673,12 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 		struct channel_on_routing_helper helper = {0};
 
 		if(switch_test_flag(tech_pvt, TFLAG_FORCE_ROUTE)) {
-			action = SKINNY_ACTION_ROUTE;
+			action = SKINNY_ACTION_PROCESS;
 		} else {
 			action = skinny_session_dest_match_pattern(session, &data);
 		}
 		switch(action) {
-			case SKINNY_ACTION_ROUTE:
+			case SKINNY_ACTION_PROCESS:
 				skinny_profile_find_listener_by_device_name_and_instance(tech_pvt->profile,
 					switch_channel_get_variable(channel, "skinny_device_name"),
 					atoi(switch_channel_get_variable(channel, "skinny_device_instance")), &listener);
