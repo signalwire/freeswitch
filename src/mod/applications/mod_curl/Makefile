@@ -1,6 +1,5 @@
 json-c=json-c-0.9
 BASE=../../../..
-WANT_CURL=yes
 
 JSON_DIR=$(switch_srcdir)/libs/$(json-c)
 JSON_BUILDDIR=$(switch_builddir)/libs/$(json-c)

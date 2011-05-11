@@ -1300,6 +1300,7 @@ static void switch_core_set_serial(void)
 	switch_core_set_variable("switch_serial", buf);
 }
 
+
 SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_uuid_t uuid;
@@ -1444,6 +1445,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(runtime.uuid_str, &uuid);
+
+#ifndef WIN32
+	switch_curl_init(runtime.memory_pool);
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2115,6 +2120,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 
 	switch_loadable_module_shutdown();
+#ifndef WIN32
+	switch_curl_destroy();
+#endif
 
 	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
 		switch_core_sqldb_stop();

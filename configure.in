@@ -790,6 +790,11 @@ if test "$ac_cv_use_system_curl" != "yes" ; then
  LIBCURL_DEPS='${switch_builddir}/libs/curl/lib/libcurl.la'
  LIBCURL='${switch_builddir}/libs/curl/lib/libcurl.la'
  LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'
+else
+ AC_CHECK_LIB(curl, curl_global_init, have_curl=yes, have_curl=no)
+ if test "x$have_curl" = "xyes"  ; then
+  APR_ADDTO(SWITCH_AM_LDFLAGS, -lcurl)
+ fi
 fi
 
 AC_SUBST(LIBCURL_DEPS)
