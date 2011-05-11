@@ -294,10 +294,7 @@ static void cycle_foreground(ftdm_channel_t *ftdmchan, int flash, const char *bc
 	}
 }
 
-
-
-
-static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, ftdm_channel_t *ftdmchan)
+static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, ftdm_channel_t *ftdmchan, ftdm_caller_data_t *caller_data)
 {
 	const char *dname = NULL;
 	uint32_t interval = 0, srate = 8000;
@@ -319,6 +316,14 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	if (FTDM_SUCCESS != ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_INTERVAL, &interval)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to retrieve channel interval.\n");
 		return SWITCH_STATUS_GENERR;
+	}
+
+	if (caller_data->bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initializing digital call.\n");
+		/* temporary hack, this will be configurable */
+		dname = "G722";
+		srate = 16000;
+		goto init_codecs;
 	}
 
 	if (FTDM_SUCCESS != ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_CODEC, &codec)) {
@@ -349,6 +354,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		}
 	}
 
+init_codecs:
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   dname,
@@ -1093,7 +1099,7 @@ static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t 
 	span_id = ftdm_channel_get_span_id(fchan);
 	chan_id = ftdm_channel_get_id(fchan);
 
-	tech_init(hdata->tech_pvt, hdata->new_session, fchan);
+	tech_init(hdata->tech_pvt, hdata->new_session, fchan, caller_data);
 
 	snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", span_id, chan_id, caller_data->dnis.digits);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
@@ -1542,7 +1548,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t));
 	assert(tech_pvt != NULL);
 	channel = switch_core_session_get_channel(session);
-	if (tech_init(tech_pvt, session, sigmsg->channel) != SWITCH_STATUS_SUCCESS) {
+	if (tech_init(tech_pvt, session, sigmsg->channel, channel_caller_data) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Initilization Error!\n");
 		switch_core_session_destroy(&session);
 		return FTDM_FAIL;
