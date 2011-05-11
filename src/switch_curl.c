@@ -28,8 +28,9 @@
  *
  */
 
-
 #include <switch.h>
+
+#ifdef CORE_USE_CURL
 #include <openssl/crypto.h>
 #include <curl/curl.h>
 
@@ -79,16 +80,29 @@ static void switch_curl_destroy_ssl_locks()
 }
 
 
-void switch_curl_init(switch_memory_pool_t *pool)
+SWITCH_DECLARE(void) switch_curl_init(switch_memory_pool_t *pool)
 {
 	curl_global_init(CURL_GLOBAL_ALL);
 	switch_curl_init_ssl_locks(pool);
 }
-void switch_curl_destroy()
+
+SWITCH_DECLARE(void) switch_curl_destroy()
 {
 	switch_curl_destroy_ssl_locks();
 	curl_global_cleanup();
 }
+
+#else
+SWITCH_DECLARE(void) switch_curl_init(switch_memory_pool_t *pool)
+{
+	return;
+}
+
+SWITCH_DECLARE(void) switch_curl_destroy()
+{
+	return;
+}
+#endif
 
 /* For Emacs:
  * Local Variables:
