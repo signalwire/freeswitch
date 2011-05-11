@@ -746,7 +746,7 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	cfg.t.cfg.s.inDLSAP.tmr.t301.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t301.val = 180;
 
-	/* It looks like ETSI is the only variant that supports Overlap */s
+	/* It looks like ETSI is the only variant that supports Overlap */
 	if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN) {
 		cfg.t.cfg.s.inDLSAP.tmr.t302.enb = TRUE;
 		cfg.t.cfg.s.inDLSAP.tmr.t302.val = 15;
