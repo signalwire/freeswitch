@@ -22,6 +22,9 @@ typedef struct {
 } mongo_connection_pool_t;
 
 
+switch_status_t mongo_connection_create(DBClientConnection **connection, const char *host);
+void mongo_connection_destroy(DBClientConnection **conn);
+
 switch_status_t mongo_connection_pool_create(mongo_connection_pool_t **conn_pool, switch_size_t min_connections, switch_size_t max_connections,
 					     const char *host);
 void mongo_connection_pool_destroy(mongo_connection_pool_t **conn_pool);

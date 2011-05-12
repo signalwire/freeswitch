@@ -27,17 +27,26 @@ SWITCH_STANDARD_API(mongo_find_one_function)
 
   if (!zstr(ns) && !zstr(json_query) && !zstr(json_fields)) {
 
+	  DBClientConnection *conn = NULL;
+
 	  try {
 		  BSONObj query = fromjson(json_query);
 		  BSONObj fields = fromjson(json_fields);
 
-		  DBClientConnection *conn = mongo_connection_pool_get(globals.conn_pool);	  
-		  BSONObj res = conn->findOne(ns, Query(query), &fields);
-		  mongo_connection_pool_put(globals.conn_pool, conn);
+		  conn = mongo_connection_pool_get(globals.conn_pool);
+		  if (conn) {
+			  BSONObj res = conn->findOne(ns, Query(query), &fields);
+			  mongo_connection_pool_put(globals.conn_pool, conn);
 
-		  stream->write_function(stream, "-OK\n%s\n", res.toString().c_str());
-	  } catch (MsgAssertionException &e) {
-		  stream->write_function(stream, "-ERR\n%s\n", e.what());
+			  stream->write_function(stream, "-OK\n%s\n", res.toString().c_str());
+		  } else {
+			  stream->write_function(stream, "-ERR\nNo connection\n");
+		  }
+	  } catch (DBException &e) {
+		  if (conn) {
+			  mongo_connection_destroy(&conn);
+		  }
+		  stream->write_function(stream, "-ERR\n%s\n", e.toString().c_str());
 	  }
 
 
