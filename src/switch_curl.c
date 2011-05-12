@@ -30,7 +30,7 @@
 
 #include <switch.h>
 
-#ifdef CORE_USE_CURL
+#if defined(CORE_USE_CURL) && defined(HAVE_OPENSSL)
 #include <openssl/crypto.h>
 #include <curl/curl.h>
 

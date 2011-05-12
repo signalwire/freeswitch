@@ -103,7 +103,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-3.8.2/libtiff
-CORE_CFLAGS += $(LIBCURL_CPPFLAGS)
+CORE_CFLAGS += $(LIBCURL_CPPFLAGS) $(openssl_CFLAGS)
 
 if ENABLE_CORE_CURL
 CORE_CFLAGS += -DCORE_USE_CURL
