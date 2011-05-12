@@ -48,66 +48,66 @@
 #define SKINNY_EVENT_DEVICE_TO_USER "skinny::device_to_user"
 
 struct skinny_globals {
-    int running;
-    switch_memory_pool_t *pool;
-    switch_mutex_t *mutex;
-    switch_hash_t *profile_hash;
-    switch_event_node_t *user_to_device_node;
-    switch_event_node_t *call_state_node;
-    switch_event_node_t *message_waiting_node;
-    switch_event_node_t *trap_node;
-    int auto_restart;
+	int running;
+	switch_memory_pool_t *pool;
+	switch_mutex_t *mutex;
+	switch_hash_t *profile_hash;
+	switch_event_node_t *user_to_device_node;
+	switch_event_node_t *call_state_node;
+	switch_event_node_t *message_waiting_node;
+	switch_event_node_t *trap_node;
+	int auto_restart;
 };
 typedef struct skinny_globals skinny_globals_t;
 
 extern skinny_globals_t globals;
 
 typedef enum {
-    PFLAG_LISTENER_READY = (1 << 0),
-    PFLAG_SHOULD_RESPAWN = (1 << 1),
-    PFLAG_RESPAWN = (1 << 2),
+	PFLAG_LISTENER_READY = (1 << 0),
+	PFLAG_SHOULD_RESPAWN = (1 << 1),
+	PFLAG_RESPAWN = (1 << 2),
 } profile_flag_t;
 
 struct skinny_profile {
-    /* prefs */
-    char *name;
-    char *domain;
-    char *ip;
-    unsigned int port;
-    char *dialplan;
-    char *context;
-    char *patterns_dialplan;
-    char *patterns_context;
-    uint32_t keep_alive;
-    char date_format[6];
-    int debug;
+	/* prefs */
+	char *name;
+	char *domain;
+	char *ip;
+	unsigned int port;
+	char *dialplan;
+	char *context;
+	char *patterns_dialplan;
+	char *patterns_context;
+	uint32_t keep_alive;
+	char date_format[6];
+	int debug;
 	int auto_restart;
-    switch_hash_t *soft_key_set_sets_hash;
-    switch_hash_t *device_type_params_hash;
-    /* db */
-    char *dbname;
-    char *odbc_dsn;
-    char *odbc_user;
-    char *odbc_pass;
-    switch_odbc_handle_t *master_odbc;
-    switch_mutex_t *sql_mutex;	
-    /* stats */
-    uint32_t ib_calls;
-    uint32_t ob_calls;
-    uint32_t ib_failed_calls;
-    uint32_t ob_failed_calls;	
-    /* listener */
-    int listener_threads;
-    switch_mutex_t *listener_mutex;	
-    switch_socket_t *sock;
-    switch_mutex_t *sock_mutex;
-    struct listener *listeners;
-    int flags;
-    switch_mutex_t *flag_mutex;
-    /* call id */
-    uint32_t next_call_id;
-    /* others */
-    switch_memory_pool_t *pool;
+	switch_hash_t *soft_key_set_sets_hash;
+	switch_hash_t *device_type_params_hash;
+	/* db */
+	char *dbname;
+	char *odbc_dsn;
+	char *odbc_user;
+	char *odbc_pass;
+	switch_odbc_handle_t *master_odbc;
+	switch_mutex_t *sql_mutex;	
+	/* stats */
+	uint32_t ib_calls;
+	uint32_t ob_calls;
+	uint32_t ib_failed_calls;
+	uint32_t ob_failed_calls;	
+	/* listener */
+	int listener_threads;
+	switch_mutex_t *listener_mutex;	
+	switch_socket_t *sock;
+	switch_mutex_t *sock_mutex;
+	struct listener *listeners;
+	int flags;
+	switch_mutex_t *flag_mutex;
+	/* call id */
+	uint32_t next_call_id;
+	/* others */
+	switch_memory_pool_t *pool;
 };
 typedef struct skinny_profile skinny_profile_t;
 
@@ -127,7 +127,7 @@ typedef enum {
 /*****************************************************************************/
 
 typedef enum {
-    LFLAG_RUNNING = (1 << 0),
+	LFLAG_RUNNING = (1 << 0),
 } listener_flag_t;
 
 #define SKINNY_MAX_LINES 42
@@ -161,15 +161,15 @@ typedef switch_status_t (*skinny_listener_callback_func_t) (listener_t *listener
 /* CHANNEL TYPES */
 /*****************************************************************************/
 typedef enum {
-    TFLAG_FORCE_ROUTE = (1 << 0),
-    TFLAG_EARLY_MEDIA = (1 << 1),
-    TFLAG_IO = (1 << 2),
-    TFLAG_READING = (1 << 3),
-    TFLAG_WRITING = (1 << 4)
+	TFLAG_FORCE_ROUTE = (1 << 0),
+	TFLAG_EARLY_MEDIA = (1 << 1),
+	TFLAG_IO = (1 << 2),
+	TFLAG_READING = (1 << 3),
+	TFLAG_WRITING = (1 << 4)
 } TFLAGS;
 
 typedef enum {
-    GFLAG_MY_CODEC_PREFS = (1 << 0)
+	GFLAG_MY_CODEC_PREFS = (1 << 0)
 } GFLAGS;
 
 struct private_object {
@@ -236,7 +236,7 @@ void profile_walk_listeners(skinny_profile_t *profile, skinny_listener_callback_
 switch_cache_db_handle_t *skinny_get_db_handle(skinny_profile_t *profile);
 switch_status_t skinny_execute_sql(skinny_profile_t *profile, char *sql, switch_mutex_t *mutex);
 switch_bool_t skinny_execute_sql_callback(skinny_profile_t *profile,
-										      switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata);
+		switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata);
 
 /*****************************************************************************/
 /* LISTENER FUNCTIONS */
@@ -261,8 +261,8 @@ switch_status_t channel_on_routing(switch_core_session_t *session);
 switch_status_t channel_on_exchange_media(switch_core_session_t *session);
 switch_status_t channel_on_soft_execute(switch_core_session_t *session);
 switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
-												    switch_caller_profile_t *outbound_profile,
-												    switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
+		switch_caller_profile_t *outbound_profile,
+		switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
 switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
