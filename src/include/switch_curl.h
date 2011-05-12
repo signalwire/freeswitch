@@ -40,8 +40,8 @@
 
 SWITCH_BEGIN_EXTERN_C
 
-void switch_curl_init(switch_memory_pool_t *pool);
-void switch_curl_destroy(void);
+SWITCH_DECLARE(void) switch_curl_init(switch_memory_pool_t *pool);
+SWITCH_DECLARE(void) switch_curl_destroy(void);
 
 SWITCH_END_EXTERN_C
 

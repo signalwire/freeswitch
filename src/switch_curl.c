@@ -64,7 +64,7 @@ static void switch_curl_init_ssl_locks(switch_memory_pool_t *pool)
 	}
 
 	CRYPTO_set_id_callback(switch_curl_ssl_thread_id);
-	CRYPTO_set_locking_callback((void (*)())switch_curl_ssl_lock_callback);
+	CRYPTO_set_locking_callback((void (*)(int, int, const char*, int))switch_curl_ssl_lock_callback);
 }
 
 static void switch_curl_destroy_ssl_locks()
