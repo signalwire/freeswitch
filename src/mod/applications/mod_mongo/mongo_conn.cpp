@@ -67,7 +67,7 @@ switch_status_t mongo_connection_pool_create(mongo_connection_pool_t **conn_pool
 
   for (cpool->size = 0; cpool->size < min_connections; cpool->size++) {
 
-    if ((status = mongo_connection_create(&conn, host)) == SWITCH_STATUS_SUCCESS) {
+    if (mongo_connection_create(&conn, host) == SWITCH_STATUS_SUCCESS) {
       mongo_connection_pool_put(cpool, conn);
     } else {
       break;
@@ -154,7 +154,7 @@ switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DB
   switch_mutex_unlock(conn_pool->mutex);
 
 #ifdef MONGO_POOL_DEBUG
-  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "POOL put: size %d conn: %p\n", (int) switch_queue_size(conn_pool->connections), conn);
+  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "POOL: put size %d conn: %p\n", (int) switch_queue_size(conn_pool->connections), conn);
 #endif
 
   return status;
