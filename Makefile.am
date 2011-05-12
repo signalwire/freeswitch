@@ -103,6 +103,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-3.8.2/libtiff
+CORE_CFLAGS += $(LIBCURL_CPPFLAGS)
 
 if ENABLE_CORE_CURL
 CORE_CFLAGS += -DCORE_USE_CURL
@@ -117,7 +118,7 @@ endif
 
 MOD_LINK      = $(switch_srcdir)/libfreeswitch.la
 CLEANFILES    = src/include/switch_version.h src/include/switch_swigable_cpp.h
-BUILT_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h
+BUILT_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h $(LIBCURL_DEPS)
 
 if HAVE_ODBC
 CORE_CFLAGS += -DSWITCH_HAVE_ODBC $(ODBC_INC_FLAGS)
@@ -441,6 +442,9 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
 
+libs/curl/lib/libcurl.la:
+	@cd $libs/curl && $(MAKE)
+	@$(TOUCH_TARGET)
 
 ##
 ## helper targets
