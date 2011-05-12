@@ -1241,6 +1241,7 @@ static void start_udptl(private_object_t *tech_pvt, switch_t38_options_t *t38_op
 		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
 		const char *err, *val;
 
+		sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 		switch_rtp_udptl_mode(tech_pvt->rtp_session);
 
 		if (!t38_options || !t38_options->remote_ip) {
@@ -1527,8 +1528,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 			
 			if (sofia_test_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE)) {
-				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+				if (!switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_UDPTL) && 
+					!switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+				}
 				sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 			}
 
@@ -2153,6 +2157,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							if (t38_options) {
 								sofia_glue_set_image_sdp(tech_pvt, t38_options, 0);
 								if (switch_rtp_ready(tech_pvt->rtp_session)) {
+									sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 									switch_rtp_udptl_mode(tech_pvt->rtp_session);
 								}
 							}

@@ -1262,9 +1262,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 	READ_INC(rtp_session);
 	WRITE_INC(rtp_session);
 
-	if (rtp_session->timer.timer_interface) {
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || rtp_session->timer.timer_interface) {
 		switch_core_timer_destroy(&rtp_session->timer);
 		memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
+		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 	}
 
 	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP);
@@ -1293,9 +1294,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_UDPTL);
 	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
 	switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, FALSE);
-
-	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+	switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 		
 	WRITE_DEC(rtp_session);
 	READ_DEC(rtp_session);
@@ -3850,7 +3849,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 		} else {
-			rtp_session->last_write_timestamp = (uint32_t) switch_micro_time_now();
+			rtp_session->last_write_timestamp = switch_micro_time_now();
 		}
 
 		rtp_session->last_write_ts = this_ts;
