@@ -242,7 +242,7 @@ static void default_logger(char *file, const char *func, int line, int level, ch
 
 	vsnprintf(data, sizeof(data), fmt, ap);
 
-	fprintf(globals.log_stream, "%s:%d %s() %s", file, line, func, data);
+	fprintf(globals.log_stream, "%s:%d %s() %s", fp, line, func, data);
 
 	va_end(ap);
 
@@ -997,9 +997,9 @@ static int on_commands(void *user_data, ikspak *pak)
 	uint8_t is_result = strcasecmp(type, "result") ? 0 : 1;
 	uint8_t is_error = strcasecmp(type, "error") ? 0 : 1;
 	iks *xml, *xsession, *xerror = NULL, *xredir = NULL;
-  struct iks_tag* tmp;
+
 	xml = iks_child (pak->x);
-  tmp = (struct iks_tag*) xml;
+
 	if (is_error) {
 		if ((xerror = working_find(xml, "error"))) {
 			char *code = iks_find_attrib(xerror, "code");

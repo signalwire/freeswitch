@@ -211,6 +211,20 @@ SWITCH_DECLARE(int) switch_core_curl_count(int *val)
 
 }
 
+
+SWITCH_DECLARE(int) switch_core_ssl_count(int *val)
+{
+	if (!val) {
+		switch_mutex_lock(runtime.global_mutex);
+		return runtime.ssl_count;
+	}
+
+	runtime.ssl_count = *val;
+	switch_mutex_unlock(runtime.global_mutex);
+	return 0;
+
+}
+
 SWITCH_DECLARE(void) switch_core_remove_state_handler(const switch_state_handler_table_t *state_handler)
 {
 	int index, tmp_index = 0;
