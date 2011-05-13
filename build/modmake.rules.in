@@ -80,9 +80,9 @@ TOUCH_TARGET=@TOUCH_TARGET@
 MAKE_OPTS = `test -n "$(VERBOSE)" || echo -s`
 RECURSE_MODNAME=`pwd | sed -e 's|^.*/||'`
 RECURSE_SOURCEFILE=`if test -f "$$modname.cpp" -o  -f "$(MODDIR)/$$modname.cpp"; then echo "$$modname.cpp"; else echo "$$modname.c"; fi`
-RECURSE_OUR_DEPS=`test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi `
-RECURSE_OUR_CFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS) ; $(LOCAL_INSERT_CFLAGS) `
-RECURSE_OUR_LDFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL) ; $(LOCAL_INSERT_LDFLAGS) `
+RECURSE_OUR_DEPS=
+RECURSE_OUR_CFLAGS=`$(LOCAL_INSERT_CFLAGS)`
+RECURSE_OUR_LDFLAGS=`$(LOCAL_INSERT_LDFLAGS)`
 RECURSE_MODDIR=`if test -z $(MODDIR); then pwd | sed -e 's|$(switch_builddir)|$(switch_srcdir)|'; else echo $(MODDIR); fi`
 RECURSE_MAKE=+modname="$(RECURSE_MODNAME)" ; \
 		sourcefile="$(RECURSE_SOURCEFILE)" ; \

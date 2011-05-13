@@ -902,7 +902,7 @@ switch_state_handler_table_t nibble_state_handler = {
 	/* on_hibernate */ NULL,
 	/* on_reset */ NULL,
 	/* on_park */ NULL,
-	/* on_reporting */ process_hangup, /* force billing event on b-leg if we can */
+	/* on_reporting */ NULL, 
 	/* on_destroy */ NULL
 };
 

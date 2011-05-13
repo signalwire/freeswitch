@@ -137,6 +137,7 @@
 #include "switch_odbc.h"
 #include "switch_json.h"
 #include "switch_limit.h"
+#include "switch_curl.h"
 
 #include <libteletone.h>
 

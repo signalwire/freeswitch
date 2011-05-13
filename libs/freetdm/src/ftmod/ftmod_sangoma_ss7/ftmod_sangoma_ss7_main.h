@@ -320,8 +320,18 @@ typedef struct sng_isup_ckt {
 	uint32_t		clg_nadi;
 	uint32_t		cld_nadi;
 	uint8_t			rdnis_nadi;
+
+	/* Generic Number defaults */
+	uint8_t			gn_nmbqual;			/* Number Qualifier */
+	uint8_t			gn_nadi;			/* Nature of Address indicator */
+	uint8_t 		gn_screen_ind;		/* Screening Indicator */
+	uint8_t			gn_pres_ind;		/* Presentation Indicator */
+	uint8_t			gn_npi;				/* Numbering Plan Indicator */
+	uint8_t			gn_num_inc_ind;		/* Number Incomplete Indicator */
+	/* END - Generic Number defaults */
 			
 	uint32_t		min_digits;
+	uint8_t			itx_auto_reply;
 	void			*obj;
 	uint16_t		t3;
 	uint16_t		t12;
@@ -728,6 +738,9 @@ void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_itx (ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_txa (ftdm_channel_t * ftdmchan);
+
 
 /* in ftmod_sangoma_ss7_in.c */
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
@@ -785,12 +798,14 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
 
 /* in ftmod_sangoma_ss7_support.c */
-uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
-uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
-uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
-uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
+ftdm_status_t copy_cgPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPtyNum);
+ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPtyNum);
+ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum);
+ftdm_status_t copy_cdPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum);
 ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum);
-
+ftdm_status_t copy_redirgNum_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum);
+ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb);
+ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb);
 
 ftdm_status_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
 ftdm_status_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);

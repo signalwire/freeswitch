@@ -1480,8 +1480,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	supported_formats[0] = "shout";
 	supported_formats[1] = "mp3";
 
-	curl_global_init(CURL_GLOBAL_ALL);
-
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
@@ -1507,7 +1505,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown)
 {
-	curl_global_cleanup();
 	mpg123_exit();
 	return SWITCH_STATUS_SUCCESS;
 }

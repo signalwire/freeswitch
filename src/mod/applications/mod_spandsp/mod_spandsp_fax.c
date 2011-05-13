@@ -220,7 +220,7 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
         }
 
         for (pvt = t38_state_list.head; pvt; pvt = pvt->next) {
-            if (pvt->udptl_state) {
+            if (pvt->udptl_state && pvt->session && switch_channel_ready(switch_core_session_get_channel(pvt->session))) {
                 t38_terminal_send_timeout(pvt->t38_state, samples);
             }
         }
@@ -414,18 +414,19 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	/* Fire event */
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXRESULT : SPANDSP_EVENT_RXFAXRESULT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-success", (result == T30_ERR_OK) ? "1" : "0");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-code", fax_result_code);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-text", t30_completion_code_to_str(result));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-transferred-pages", fax_document_transferred_pages);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-total-pages", fax_document_total_pages);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_image_resolution);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-size", fax_image_size);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-bad-rows", fax_bad_rows);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-transfer-rate", fax_transfer_rate);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-code", fax_result_code);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-text", t30_completion_code_to_str(result));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t.error_correcting_mode) ? "on" : "off");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-local-station-id", local_ident);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
-		switch_core_session_queue_private_event(session, &event, SWITCH_FALSE);
+		switch_event_fire(&event);
 	}
 }
 
@@ -450,6 +451,7 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 
         for (x = 0; x < count; x++) {
             if (switch_core_session_write_frame(session, &out_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID WRITE: %d:%d\n", out_frame.packetlen, count);
                 r = -1;
                 break;
             }
@@ -460,14 +462,16 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
     
     if (r < 0) {
         t30_state_t *t30;
+
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "TERMINATING T30 STATE\n");
+
         if (pvt->t38_state && (t30 = t38_terminal_get_t30_state(pvt->t38_state))) {
             t30_terminate(t30);
         }
+        switch_yield(10000);
     }
 
-
-    return r;
+    return r < 0 ? r : 0;
 }
 
 static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)

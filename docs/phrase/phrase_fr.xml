@@ -219,14 +219,14 @@
         <prompt phrase="urgent" filename="vm-urgent.wav"/>
     </voicemail>
 	<directory>
-		<prompt phrase="Veuillez entrer les premiere lettre du" filename="dir-enter-person.wav"/>
+		<prompt phrase="Veuillez entrer les premiere lettre du" filename="dir-enter_person.wav"/>
 		<prompt phrase="nom de famille." filename="dir-last_name.wav"/>
 		<prompt phrase="Pour chercher par" filename="dir-to_search_by.wav"/>
 		<prompt phrase="prénom." filename="dir-first_name.wav"/>
 		<prompt phrase="Votre recherche a retourner aucune résultat, essayer de nouveaux." filename="dir-no_match_entry.wav"/>
 		<prompt phrase="résultats correspond a votre recherche." filename="dir-result_match.wav"/>
-		<prompt phrase="Votre recherche retourne trop de résultat, essayer de nouveaux." filename="dir-to_many_result.wav"/>
-		<prompt phrase="Fin des résultats." filename="dir-no_more_result.wav"/>
+		<prompt phrase="Votre recherche retourne trop de résultat, essayer de nouveaux." filename="dir-too_many_result.wav"/>
+		<prompt phrase="Fin des résultats." filename="dir-no_more_results.wav"/>
 		<prompt phrase="Résultat numéro" filename="dir-result_number.wav"/>
 		<prompt phrase="aux poste" filename="dir-at_extension.wav"/>
 		<prompt phrase="Pour selectionner ce nom" filename="dir-to_select_entry.wav"/>

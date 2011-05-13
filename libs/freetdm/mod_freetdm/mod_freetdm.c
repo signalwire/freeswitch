@@ -294,10 +294,7 @@ static void cycle_foreground(ftdm_channel_t *ftdmchan, int flash, const char *bc
 	}
 }
 
-
-
-
-static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, ftdm_channel_t *ftdmchan)
+static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, ftdm_channel_t *ftdmchan, ftdm_caller_data_t *caller_data)
 {
 	const char *dname = NULL;
 	uint32_t interval = 0, srate = 8000;
@@ -319,6 +316,14 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	if (FTDM_SUCCESS != ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_INTERVAL, &interval)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to retrieve channel interval.\n");
 		return SWITCH_STATUS_GENERR;
+	}
+
+	if (caller_data->bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initializing digital call.\n");
+		/* temporary hack, this will be configurable */
+		dname = "G722";
+		srate = 16000;
+		goto init_codecs;
 	}
 
 	if (FTDM_SUCCESS != ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_CODEC, &codec)) {
@@ -349,6 +354,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		}
 	}
 
+init_codecs:
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   dname,
@@ -1093,7 +1099,7 @@ static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t 
 	span_id = ftdm_channel_get_span_id(fchan);
 	chan_id = ftdm_channel_get_id(fchan);
 
-	tech_init(hdata->tech_pvt, hdata->new_session, fchan);
+	tech_init(hdata->tech_pvt, hdata->new_session, fchan, caller_data);
 
 	snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", span_id, chan_id, caller_data->dnis.digits);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
@@ -1298,32 +1304,72 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS");
 		if (sipvar) {
 			ftdm_set_string(caller_data.rdnis.digits, sipvar);
-		}
-
-		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-TON");
-		if (sipvar) {
-			caller_data.rdnis.type = (uint8_t)atoi(sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_digits", sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-Plan");
 		if (sipvar) {
-			caller_data.rdnis.plan = (uint8_t)atoi(sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_plan", sipvar);
 		}
 
-		/* Used by ftmod_sangoma_ss7 only */
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-NADI");
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_nadi", sipvar);
 		}
 
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-Screen");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_screen_ind", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS-Presentation");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdnis_pres_ind", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-GN");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_gn_digits", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-GN-NumQual");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_gn_numqual", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-GN-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_gn_nadi", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-GN-Screen");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_gn_screen_ind", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-GN-Presentation");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_gn_pres_ind", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-GN-Plan");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_gn_npi", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-GN-NumInComp");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_gn_num_inc_ind", sipvar);
+		}
+		
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Screen");
 		if (sipvar) {
-			caller_data.screen = (uint8_t)atoi(sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_screen_ind", sipvar);
 		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Presentation");
 		if (sipvar) {
-			caller_data.pres = (uint8_t)atoi(sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_pres_ind", sipvar);
 		}
 
 
@@ -1342,19 +1388,19 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 	
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_layer1"))) {
-			caller_data.bearer_layer1 = (uint8_t)atoi(var);
+		caller_data.bearer_layer1 = (uint8_t)atoi(var);
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_screening_ind"))) {
-			ftdm_set_screening_ind(var, &caller_data.screen);
+		ftdm_set_screening_ind(var, &caller_data.screen);
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_presentation_ind"))) {
-			ftdm_set_presentation_ind(var, &caller_data.pres);
+		ftdm_set_presentation_ind(var, &caller_data.pres);
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_outbound_ton"))) {
-			ftdm_set_ton(var, &caller_data.dnis.type);
+		ftdm_set_ton(var, &caller_data.dnis.type);
 	} else {
 		caller_data.dnis.type = outbound_profile->destination_number_ton;
 	}
@@ -1502,7 +1548,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t));
 	assert(tech_pvt != NULL);
 	channel = switch_core_session_get_channel(session);
-	if (tech_init(tech_pvt, session, sigmsg->channel) != SWITCH_STATUS_SUCCESS) {
+	if (tech_init(tech_pvt, session, sigmsg->channel, channel_caller_data) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Initilization Error!\n");
 		switch_core_session_destroy(&session);
 		return FTDM_FAIL;
@@ -1585,8 +1631,53 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%d", channel_caller_data->dnis.plan);
 
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS", "%s", channel_caller_data->rdnis.digits);
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-TON", "%d", channel_caller_data->rdnis.type);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-NADI", "%d", channel_caller_data->rdnis.type);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Plan", "%d", channel_caller_data->rdnis.plan);
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdnis_screen_ind");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Screen", "%d", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdnis_pres_ind");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Presentation", "%d", channel_caller_data->rdnis.plan);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_digits");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN", "%d", var_value);
+
+			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_numqual");
+			if (!ftdm_strlen_zero(var_value)) {
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumQual", "%d", var_value);
+			}
+
+			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_nadi");
+			if (!ftdm_strlen_zero(var_value)) {
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NADI", "%d", var_value);
+			}
+
+			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_screen_ind");
+			if (!ftdm_strlen_zero(var_value)) {
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Screen", "%d", var_value);
+			}
+
+			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_pres_ind");
+			if (!ftdm_strlen_zero(var_value)) {
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Presentation", "%d", var_value);
+			}
+
+			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_npi");
+			if (!ftdm_strlen_zero(var_value)) {
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Plan", "%d", var_value);
+			}
+
+			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_num_inc_ind");
+			if (!ftdm_strlen_zero(var_value)) {
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumInComp", "%d", var_value);
+			}
+		} /* End - var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_digits"); */
 		
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Screen", "%d", channel_caller_data->screen);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Presentation", "%d", channel_caller_data->pres);
@@ -3518,6 +3609,12 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   "physical_span_id: %u\n"
 						   "physical_chan_id: %u\n"
 						   "physical_status: %s\n"
+						   "physical_status_red: %d\n"
+						   "physical_status_yellow: %d\n"
+						   "physical_status_rai: %d\n"
+						   "physical_status_blue: %d\n"
+						   "physical_status_ais: %d\n"
+						   "physical_status_general: %d\n"
 						   "signaling_status: %s\n"
 						   "type: %s\n"
 						   "state: %s\n"
@@ -3538,7 +3635,13 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   phspan_id,
 						   phchan_id,
 					  	   alarmflag ? "alarmed" : "ok",
-					           ftdm_signaling_status2str(sigstatus),
+					  	   (alarmflag & FTDM_ALARM_RED) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_YELLOW) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_RAI) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_BLUE) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_AIS) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_GENERAL) ? 1 : 0,
+						   ftdm_signaling_status2str(sigstatus),
 						   chan_type,
 						   state,
 						   last_state,
@@ -3594,6 +3697,12 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   "  <physical-span-id>%u</physical-span-id>\n"
 						   "  <physical-chan-id>%u</physical-chan-id>\n"
 						   "  <physical-status>%s</physical-status>\n"
+						   "  <physical-status-red>%d</physical-status-red>\n"
+						   "  <physical-status-yellow>%d</physical-status-yellow>\n"
+						   "  <physical-status-rai>%d</physical-status-rai>\n"
+						   "  <physical-status-blue>%d</physical-status-blue>\n"
+						   "  <physical-status-ais>%d</physical-status-ais>\n"
+						   "  <physical-status-general>%d</physical-status-general>\n"
 						   "  <signaling-status>%s</signaling-status>\n"
 						   "  <type>%s</type>\n"
 						   "  <state>%s</state>\n"
@@ -3614,7 +3723,13 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   phspan_id,
 						   phchan_id,
 						   alarmflag ? "alarmed" : "ok",
-					     	   ftdm_signaling_status2str(sigstatus),
+					  	   (alarmflag & FTDM_ALARM_RED) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_YELLOW) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_RAI) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_BLUE) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_AIS) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_GENERAL) ? 1 : 0,
+						   ftdm_signaling_status2str(sigstatus),
 						   chan_type,
 						   state,
 						   last_state,

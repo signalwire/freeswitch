@@ -1443,6 +1443,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	struct record_helper *rh = NULL;
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 	switch_bool_t hangup_on_error = SWITCH_FALSE;
+	char *file_path = NULL;
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_HANGUP_ON_ERROR"))) {
 		hangup_on_error = switch_true(p);
@@ -1534,9 +1535,30 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 			} else {
 				tfile = NULL;
 			}
+		} else {
+			file_path = switch_core_session_sprintf(session, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
 		}
 
 		file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+	} else {
+		file_path = switch_core_session_strdup(session, file);
+	}
+
+	if (file_path) {
+		char *p;
+		char *path = switch_core_session_strdup(session, file_path);
+
+		if ((p = strrchr(path, *SWITCH_PATH_SEPARATOR))) {
+			*p = '\0';
+			if (switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error creating %s\n", path);
+				return SWITCH_STATUS_GENERR;
+			}
+
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error finding the folder path section in '%s'\n", path);
+			path = NULL;
+		}
 	}
 
 	if (switch_core_file_open(fh, file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {

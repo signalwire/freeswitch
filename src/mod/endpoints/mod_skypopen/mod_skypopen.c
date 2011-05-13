@@ -462,6 +462,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	   left in the initial state, nothing will happen. */
 	switch_channel_set_state(channel, CS_ROUTING);
 	DEBUGA_SKYPE("%s CHANNEL INIT %s\n", SKYPOPEN_P_LOG, tech_pvt->name, switch_core_session_get_uuid(session));
+	switch_copy_string(tech_pvt->session_uuid_str, switch_core_session_get_uuid(session), sizeof(tech_pvt->session_uuid_str));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1733,6 +1734,7 @@ static switch_status_t load_config(int reload_type)
 				switch_threadattr_create(&skypopen_api_thread_attr, skypopen_module_pool);
 				switch_threadattr_detach_set(skypopen_api_thread_attr, 0);
 				switch_threadattr_stacksize_set(skypopen_api_thread_attr, SWITCH_THREAD_STACKSIZE);
+				//switch_threadattr_priority_increase(skypopen_api_thread_attr);
 				switch_thread_create(&globals.SKYPOPEN_INTERFACES[interface_id].skypopen_api_thread,
 									 skypopen_api_thread_attr, skypopen_do_skypeapi_thread, &globals.SKYPOPEN_INTERFACES[interface_id],
 									 skypopen_module_pool);
@@ -1742,6 +1744,7 @@ static switch_status_t load_config(int reload_type)
 				switch_threadattr_create(&skypopen_signaling_thread_attr, skypopen_module_pool);
 				switch_threadattr_detach_set(skypopen_signaling_thread_attr, 0);
 				switch_threadattr_stacksize_set(skypopen_signaling_thread_attr, SWITCH_THREAD_STACKSIZE);
+				//switch_threadattr_priority_increase(skypopen_signaling_thread_attr);
 				switch_thread_create(&globals.SKYPOPEN_INTERFACES[interface_id].
 									 skypopen_signaling_thread, skypopen_signaling_thread_attr,
 									 skypopen_signaling_thread_func, &globals.SKYPOPEN_INTERFACES[interface_id], skypopen_module_pool);
@@ -2168,7 +2171,8 @@ int dtmf_received(private_t *tech_pvt, char *value)
 
 int start_audio_threads(private_t *tech_pvt)
 {
-	switch_threadattr_t *thd_attr = NULL;
+	switch_threadattr_t *tcp_srv_thread_thd_attr = NULL;
+	switch_threadattr_t *tcp_cli_thread_thd_attr = NULL;
 
 	tech_pvt->begin_to_write = 0;
 	tech_pvt->begin_to_read = 0;
@@ -2194,12 +2198,13 @@ int start_audio_threads(private_t *tech_pvt)
 
 	switch_core_timer_sync(&tech_pvt->timer_write);
 
-	switch_threadattr_create(&thd_attr, skypopen_module_pool);
-	switch_threadattr_detach_set(thd_attr, 0);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_create(&tcp_srv_thread_thd_attr, skypopen_module_pool);
+	switch_threadattr_detach_set(tcp_srv_thread_thd_attr, 0);
+	switch_threadattr_stacksize_set(tcp_srv_thread_thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(tcp_srv_thread_thd_attr);
 	switch_mutex_lock(tech_pvt->mutex_thread_audio_srv);
 	//DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
-	if (switch_thread_create(&tech_pvt->tcp_srv_thread, thd_attr, skypopen_do_tcp_srv_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
+	if (switch_thread_create(&tech_pvt->tcp_srv_thread, tcp_srv_thread_thd_attr, skypopen_do_tcp_srv_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_srv_thread thread.\n", SKYPOPEN_P_LOG);
 	} else {
 		ERRORA("failed to start tcp_srv_thread thread.\n", SKYPOPEN_P_LOG);
@@ -2210,12 +2215,13 @@ int start_audio_threads(private_t *tech_pvt)
 	switch_mutex_unlock(tech_pvt->mutex_thread_audio_srv);
 	//DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
 
-	switch_threadattr_create(&thd_attr, skypopen_module_pool);
-	switch_threadattr_detach_set(thd_attr, 0);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_create(&tcp_cli_thread_thd_attr, skypopen_module_pool);
+	switch_threadattr_detach_set(tcp_cli_thread_thd_attr, 0);
+	switch_threadattr_stacksize_set(tcp_cli_thread_thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(tcp_cli_thread_thd_attr);
 	switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
 	//DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
-	if (switch_thread_create(&tech_pvt->tcp_cli_thread, thd_attr, skypopen_do_tcp_cli_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
+	if (switch_thread_create(&tech_pvt->tcp_cli_thread, tcp_cli_thread_thd_attr, skypopen_do_tcp_cli_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_cli_thread thread.\n", SKYPOPEN_P_LOG);
 	} else {
 		ERRORA("failed to start tcp_cli_thread thread.\n", SKYPOPEN_P_LOG);

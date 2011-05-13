@@ -2171,6 +2171,15 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			if (!strncasecmp(url_str, "sips:", 5)) {
 				s = url_str + 5;
 			}
+
+			/* tel: patch from jaybinks, added by MC
+               It compiles but I don't have a way to test it
+			*/
+			if (!strncasecmp(url_str, "tel:", 4)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session),
+								  SWITCH_LOG_ERROR, "URL Error! tel: uri's not supported at this time\n");
+				return SWITCH_STATUS_FALSE;
+			}
 			if (!s) {
 				s = url_str;
 			}
@@ -2554,6 +2563,7 @@ static void set_stats(switch_rtp_t *rtp_session, private_object_t *tech_pvt, con
 		add_stat(stats->inbound.dtmf_packet_count, "in_dtmf_packet_count");
 		add_stat(stats->inbound.cng_packet_count, "in_cng_packet_count");
 		add_stat(stats->inbound.flush_packet_count, "in_flush_packet_count");
+		add_stat(stats->inbound.largest_jb_size, "in_largest_jb_size");
 
 		add_stat(stats->outbound.raw_bytes, "out_raw_bytes");
 		add_stat(stats->outbound.media_bytes, "out_media_bytes");
@@ -3435,9 +3445,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
-				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
+				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
 			} else {
-				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
+				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
 			}
 
 			if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {

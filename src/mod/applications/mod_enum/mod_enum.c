@@ -109,6 +109,8 @@ static switch_status_t load_config(void)
 		goto done;
 	}
 
+	globals.timeout = 5000;
+	
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			const char *var = switch_xml_attr_soft(param, "name");
@@ -120,6 +122,8 @@ static switch_status_t load_config(void)
 			} else if (!strcasecmp(var, "auto-reload")) {
 				globals.auto_reload = switch_true(val);
 			} else if (!strcasecmp(var, "query-timeout")) {
+				globals.timeout = atoi(val) * 1000;
+			} else if (!strcasecmp(var, "query-timeout-ms")) {
 				globals.timeout = atoi(val);
 			} else if (!strcasecmp(var, "default-isn-root")) {
 				set_global_isn_root(val);
@@ -404,6 +408,7 @@ switch_status_t ldns_lookup(const char *number, const char *root, const char *se
 	ldns_rdf *serv_rdf;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *name = NULL;
+	struct timeval to = { 0, 0};
 
 	if (!(name = reverse_number(number, root))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parse Error!\n");
@@ -430,6 +435,11 @@ switch_status_t ldns_lookup(const char *number, const char *root, const char *se
 	if (s != LDNS_STATUS_OK) {
 		goto end;
 	}
+
+	to.tv_sec = globals.timeout / 1000;
+	to.tv_usec = (globals.timeout % 1000) * 1000;
+
+	ldns_resolver_set_timeout(res, to);
 
 	if ((p = ldns_resolver_query(res,
 								 domain,

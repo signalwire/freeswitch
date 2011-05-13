@@ -562,14 +562,18 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 	sig.chan_id = ftdm_channel_get_id(chan);
 	sig.span_id = ftdm_channel_get_span_id(chan);
 	sig.channel = chan;
-	
+
 	ftdm_channel_complete_state(chan);
 
 	switch (ftdm_channel_get_state(chan)) {
 	case FTDM_CHANNEL_STATE_DOWN:
 		{
 			ftdm_channel_t *chtmp = chan;
-			chan->call_data = NULL;
+
+			if (call) {
+				pri_destroycall(isdn_data->spri.pri, call);
+				chan->call_data = NULL;
+			}
 
 			if (ftdm_channel_close(&chtmp) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_WARNING, "-- Failed to close channel %d:%d\n",
@@ -776,8 +780,7 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 
 				pri_hangup(isdn_data->spri.pri, call, caller_data->hangup_cause);
 //				pri_destroycall(isdn_data->spri.pri, call);
-
-				chan->call_data = NULL;
+//				chan->call_data = NULL;
 			}
 			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
@@ -785,10 +788,10 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 
 	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
 		{
-			if (call) {
-				pri_destroycall(isdn_data->spri.pri, call);
-				chan->call_data = NULL;
-			}
+//			if (call) {
+//				pri_destroycall(isdn_data->spri.pri, call);
+//				chan->call_data = NULL;
+//			}
 			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
@@ -862,18 +865,61 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 
 	ftdm_channel_lock(chan);
 
-	if (ftdm_channel_get_state(chan) >= FTDM_CHANNEL_STATE_TERMINATING) {
-		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Ignoring remote hangup in state %s\n", ftdm_channel_get_state_str(chan));
-		goto done;
+	switch (event_type) {
+	case LPWRAP_PRI_EVENT_HANGUP_REQ:	/* DISCONNECT */
+		if (ftdm_channel_get_state(chan) >= FTDM_CHANNEL_STATE_TERMINATING) {
+			ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Ignoring remote hangup in state %s\n",
+				ftdm_channel_get_state_str(chan));
+			goto done;
+		}
+		ftdm_log(FTDM_LOG_DEBUG, "-- Hangup REQ on channel %d:%d\n",
+			ftdm_span_get_id(spri->span), pevent->hangup.channel);
+
+		pri_hangup(spri->pri, pevent->hangup.call, pevent->hangup.cause);
+
+		chan->caller_data.hangup_cause = pevent->hangup.cause;
+		ftdm_set_state(chan, FTDM_CHANNEL_STATE_TERMINATING);
+		break;
+
+	case LPWRAP_PRI_EVENT_HANGUP_ACK:	/* */
+		ftdm_log(FTDM_LOG_DEBUG, "-- Hangup ACK on channel %d:%d\n",
+			ftdm_span_get_id(spri->span), pevent->hangup.channel);
+
+		pri_hangup(spri->pri, pevent->hangup.call, pevent->hangup.cause);
+
+		ftdm_set_state(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+		break;
+
+	case LPWRAP_PRI_EVENT_HANGUP:	/* "RELEASE/RELEASE_COMPLETE/other" */
+		ftdm_log(FTDM_LOG_DEBUG, "-- Hangup on channel %d:%d\n",
+			ftdm_span_get_id(spri->span), pevent->hangup.channel);
+
+		switch (ftdm_channel_get_state(chan)) {
+		case FTDM_CHANNEL_STATE_DIALING:
+		case FTDM_CHANNEL_STATE_RINGING:
+		case FTDM_CHANNEL_STATE_PROGRESS:
+		case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
+		case FTDM_CHANNEL_STATE_PROCEED:
+		case FTDM_CHANNEL_STATE_UP:
+			chan->caller_data.hangup_cause = pevent->hangup.cause;
+			ftdm_set_state(chan, FTDM_CHANNEL_STATE_TERMINATING);
+			break;
+		case FTDM_CHANNEL_STATE_HANGUP:
+			chan->caller_data.hangup_cause = pevent->hangup.cause;
+			ftdm_set_state(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+			break;
+//		case FTDM_CHANNEL_STATE_TERMINATING:
+//			ftdm_set_state(chan, FTDM_CHANNEL_STATE_HANGUP);
+//			break;
+//		case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+//			ftdm_set_state(chan, FTDM_CHANNEL_STATE_DOWN);
+//			break;
+		}
+		break;
+	default:
+		break;
 	}
 
-	ftdm_log(FTDM_LOG_DEBUG, "-- Hangup on channel %d:%d\n", ftdm_span_get_id(spri->span), pevent->hangup.channel);
-
-	pri_hangup(spri->pri, pevent->hangup.call, -1);
-
-	chan->caller_data.hangup_cause = pevent->hangup.cause;
-	chan->call_data = NULL;
-	ftdm_set_state(chan, FTDM_CHANNEL_STATE_TERMINATING);
 done:
 	ftdm_channel_unlock(chan);
 	return 0;
@@ -1644,6 +1690,7 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_DCHAN_UP, on_dchan_up);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_DCHAN_DOWN, on_dchan_down);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_HANGUP_REQ, on_hangup);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_HANGUP_ACK, on_hangup);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_HANGUP, on_hangup);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_INFO_RECEIVED, on_info);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART, on_restart);
@@ -1918,6 +1965,10 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 	assert(isdn_data != NULL);
 	memset(isdn_data, 0, sizeof(*isdn_data));
 
+	/* set some default values */
+	isdn_data->mode = PRI_CPE;
+	isdn_data->ton  = PRI_UNKNOWN;
+
 	switch (ftdm_span_get_trunk_type(span)) {
 	case FTDM_TRUNK_BRI:
 	case FTDM_TRUNK_BRI_PTMP:
@@ -1928,12 +1979,14 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 #endif
 	case FTDM_TRUNK_E1:
 		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ALAW since this is an E1/BRI/BRI PTMP trunk\n");
-		isdn_data->layer1 = PRI_LAYER_1_ALAW;
+		isdn_data->layer1  = PRI_LAYER_1_ALAW;
+		isdn_data->dialect = PRI_SWITCH_EUROISDN_E1;
 		break;
 	case FTDM_TRUNK_T1:
 	case FTDM_TRUNK_J1:
 		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ULAW since this is a T1/J1 trunk\n");
-		isdn_data->layer1 = PRI_LAYER_1_ULAW;
+		isdn_data->layer1  = PRI_LAYER_1_ULAW;
+		isdn_data->dialect = PRI_SWITCH_LUCENT5E;
 		break;
 	default:
 		ftdm_log(FTDM_LOG_ERROR, "Invalid trunk type: '%s'\n", ftdm_span_get_trunk_type_str(span));

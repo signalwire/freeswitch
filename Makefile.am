@@ -103,14 +103,22 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-3.8.2/libtiff
+CORE_CFLAGS += $(LIBCURL_CPPFLAGS) $(openssl_CFLAGS)
+
+if ENABLE_CORE_CURL
+CORE_CFLAGS += -DCORE_USE_CURL
+endif
 
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
+if ENABLE_SRTP
+CORE_CFLAGS += -DENABLE_SRTP
 CORE_LIBS += libs/srtp/libsrtp.la
+endif
 
 MOD_LINK      = $(switch_srcdir)/libfreeswitch.la
 CLEANFILES    = src/include/switch_version.h src/include/switch_swigable_cpp.h
-BUILT_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h
+BUILT_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h $(LIBCURL_DEPS)
 
 if HAVE_ODBC
 CORE_CFLAGS += -DSWITCH_HAVE_ODBC $(ODBC_INC_FLAGS)
@@ -127,7 +135,7 @@ endif
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_DEPLIBS)
-libfreeswitch_la_LIBADD  = $(CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(LIBCURL)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_ODBC
@@ -177,7 +185,8 @@ library_include_HEADERS = \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
 	src/include/switch_limit.h \
-	src/include/switch_odbc.h
+	src/include/switch_odbc.h \
+	src/include/switch_curl.h
 
 nodist_libfreeswitch_la_SOURCES = \
 	src/include/switch_frame.h \
@@ -237,6 +246,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_pcm.c \
 	src/switch_profile.c \
 	src/switch_json.c \
+	src/switch_curl.c \
 	libs/stfu/stfu.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
@@ -432,6 +442,9 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
 
+libs/curl/lib/libcurl.la:
+	@cd $libs/curl && $(MAKE)
+	@$(TOUCH_TARGET)
 
 ##
 ## helper targets

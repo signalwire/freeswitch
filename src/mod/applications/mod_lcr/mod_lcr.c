@@ -1664,7 +1664,7 @@ static void write_data(switch_stream_handle_t *stream, switch_bool_t as_xml, con
 
 SWITCH_STANDARD_API(dialplan_lcr_function)
 {
-	char *argv[4] = { 0 };
+	char *argv[9] = { 0 };
 	int argc;
 	char *mydata = NULL;
 	//char *dialstring = NULL;
@@ -1825,7 +1825,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 				if (as_xml) {
 					event_xml = switch_event_xmlize(current->fields, SWITCH_VA_NONE);
 					event_str = switch_xml_toxml(event_xml, SWITCH_FALSE);
-					stream->write_function(stream, event_str);
+					stream->write_function(stream, "%s", event_str);
 					switch_xml_free(event_xml);
 					switch_safe_free(event_str);
 				}

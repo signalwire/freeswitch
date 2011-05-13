@@ -508,13 +508,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan,
 {
 	ftdm_status_t err = FTDM_SUCCESS;
 	if (!ftdmchan) {
-		ftdm_log(FTDM_LOG_CRIT, "Error: trying to set caller data, but no ftdmchan!\n");
+		ftdm_log(FTDM_LOG_CRIT, "trying to set caller data, but no ftdmchan!\n");
 		return FTDM_FAIL;
 	}
 	if ((err = ftdm_set_caller_data(ftdmchan->span, caller_data)) != FTDM_SUCCESS) {
 		return err; 
 	}
 	ftdmchan->caller_data = *caller_data;
+	if (ftdmchan->caller_data.bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA);
+	}
 	return FTDM_SUCCESS;
 }
 
@@ -2628,6 +2631,7 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_MEDIA);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_ANSWERED);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_USER_HANGUP);
+	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA);
 	ftdm_mutex_lock(ftdmchan->pre_buffer_mutex);
 	ftdm_buffer_destroy(&ftdmchan->pre_buffer);
 	ftdmchan->pre_buffer_size = 0;
@@ -3780,6 +3784,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 
 	handle_tone_generation(ftdmchan);
 
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA)) {
+		goto done;
+	}
+
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE) && ftdmchan->effective_codec != ftdmchan->native_codec) {
 		if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
 			codec_func = fio_ulaw2slin;
@@ -3994,6 +4002,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 		status = FTDM_FAIL;
 		goto done;
 	}
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA)) {
+		goto do_write;
+	}
 	
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE) && ftdmchan->effective_codec != ftdmchan->native_codec) {
 		if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
@@ -4024,6 +4036,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 			wdata[i] = ftdmchan->txgain_table[wdata[i]];
 		}
 	}
+
+do_write:
 
 	if (ftdmchan->span->sig_write) {
 		status = ftdmchan->span->sig_write(ftdmchan, data, *datalen);
@@ -5374,10 +5388,12 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED);
 			ftdm_call_set_call_id(sigmsg->channel, &sigmsg->channel->caller_data);
 			/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
-			* doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
-			* is needed at all?
-			* */
+			 * doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
+			 * is needed at all? */
 			ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
+			if (sigmsg->channel->caller_data.bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+				ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_DIGITAL_MEDIA);
+			}
 		}
 		break;
 
