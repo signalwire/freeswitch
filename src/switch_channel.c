@@ -1638,11 +1638,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 																				const char *file, const char *func, int line)
 {
 	int x;
-	switch_mutex_lock(channel->state_mutex);
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_DEBUG, "(%s) Running State Change %s\n",
-					  channel->name, state_names[state]);
-	channel->running_state = state;
 
+	switch_mutex_lock(channel->flag_mutex);
 	if (channel->state_flags[0]) {
 		for (x = 1; x < CF_FLAG_MAX; x++) {
 			if (channel->state_flags[x]) {
@@ -1652,8 +1649,18 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 		}
 		channel->state_flags[0] = 0;
 	}
+	switch_mutex_unlock(channel->flag_mutex);
 
 	switch_channel_clear_flag(channel, CF_TAGGED);
+	
+
+
+	switch_mutex_lock(channel->state_mutex);
+
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_DEBUG, "(%s) Running State Change %s\n",
+					  channel->name, state_names[state]);
+
+	channel->running_state = state;
 
 	if (channel->state == CS_ROUTING || channel->state == CS_HANGUP) {
 		switch_channel_presence(channel, "unknown", (const char *) state_names[state], NULL);
