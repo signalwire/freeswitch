@@ -1446,8 +1446,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_uuid_get(&uuid);
 	switch_uuid_format(runtime.uuid_str, &uuid);
 
-	switch_curl_init(runtime.memory_pool);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2118,7 +2116,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 
 	switch_loadable_module_shutdown();
-	switch_curl_destroy();
 
 	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
 		switch_core_sqldb_stop();

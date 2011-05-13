@@ -2551,6 +2551,7 @@ static JSBool js_fetchurl_file(JSContext * cx, JSObject * obj, uintN argc, jsval
 		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		filename = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 
+		curl_global_init(CURL_GLOBAL_ALL);
 		curl_handle = curl_easy_init();
 		if (!strncasecmp(url, "https", 5)) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -2599,6 +2600,7 @@ static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 			JS_ValueToInt32(cx, argv[1], &buffer_size);
 		}
 
+		curl_global_init(CURL_GLOBAL_ALL);
 		curl_handle = curl_easy_init();
 		if (!strncasecmp(url, "https", 5)) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -3801,6 +3803,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]",
 				   SAF_SUPPORT_NOMEDIA);
 
+	curl_global_init(CURL_GLOBAL_ALL);
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
 }
@@ -3809,6 +3813,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown)
 {
 	// this causes a crash
 	//JS_DestroyRuntime(globals.rt);
+
+	curl_global_cleanup();
 
 	switch_core_hash_destroy(&module_manager.mod_hash);
 	switch_core_hash_destroy(&module_manager.load_hash);

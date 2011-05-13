@@ -1,6 +1,8 @@
 MEMCACHED=libmemcached-0.32
 BASE=../../../..
 
+WANT_CURL=yes
+
 MEMCACHED_DIR=$(switch_srcdir)/libs/$(MEMCACHED)
 MEMCACHED_BUILDDIR=$(switch_builddir)/libs/$(MEMCACHED)
 

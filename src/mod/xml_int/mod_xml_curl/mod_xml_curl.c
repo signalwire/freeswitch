@@ -547,7 +547,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 	globals.hash_root = NULL;
 	globals.hash_tail = NULL;
 
-	if (do_config() != SWITCH_STATUS_SUCCESS) {
+	if (do_config() == SWITCH_STATUS_SUCCESS) {
+		curl_global_init(CURL_GLOBAL_ALL);
+	} else {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -571,6 +573,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown)
 	}
 
 	switch_xml_unbind_search_function_ptr(xml_url_fetch);
+	curl_global_cleanup();
 	return SWITCH_STATUS_SUCCESS;
 }
 
