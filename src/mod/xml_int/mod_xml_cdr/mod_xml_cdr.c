@@ -32,7 +32,7 @@
  */
 #include <sys/stat.h>
 #include <switch.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
 #define MAX_URLS 20
 
 #define ENCODING_NONE 0
@@ -610,6 +610,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	set_xml_cdr_log_dirs();
 
 	switch_xml_free(xml);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_curl_init();
+	}
+
 	return status;
 }
 
@@ -625,6 +630,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown)
 	switch_core_remove_state_handler(&state_handlers);
 
 	switch_thread_rwlock_destroy(globals.log_path_lock);
+
+	switch_curl_destroy();
 
 	return SWITCH_STATUS_SUCCESS;
 }
