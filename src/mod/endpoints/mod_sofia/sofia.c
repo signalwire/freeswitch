@@ -5559,13 +5559,6 @@ nua_handle_t *sofia_global_nua_handle_by_replaces(sip_replaces_t *replaces)
 	const void *var;
 	void *val;
 	sofia_profile_t *profile;
-	switch_xml_t xml_root;
-	const char *err;
-
-	if ((xml_root = switch_xml_open_root(1, &err))) {
-		switch_xml_free(xml_root);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Reload XML [%s]\n", err);
-	}
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
