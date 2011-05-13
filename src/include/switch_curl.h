@@ -32,7 +32,7 @@
 #define __SWITCH_CURL_H
 
 #include <curl/curl.h>
-#include "switch_ssl.h"
+#include <switch_ssl.h>
 
 static inline void switch_curl_init(void)
 {
@@ -41,7 +41,7 @@ static inline void switch_curl_init(void)
 	if (curl_count == 0) {
 		curl_global_init(CURL_GLOBAL_ALL);
 #if defined(HAVE_OPENSSL)
-		switch_curl_init_ssl_locks();
+		switch_ssl_init_ssl_locks();
 #endif
 	}
 
@@ -58,7 +58,7 @@ static inline void switch_curl_destroy()
 	if (curl_count == 0) {
 
 #if defined(HAVE_OPENSSL)
-		switch_curl_destroy_ssl_locks();
+		switch_ssl_destroy_ssl_locks();
 #endif
 		curl_global_cleanup();
 	}
