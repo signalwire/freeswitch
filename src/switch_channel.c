@@ -877,7 +877,20 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t 
 	} else if (!strcasecmp(name, "chan_name")) {
 		channel->caller_profile->chan_name = v;
 	} else {
-		status = SWITCH_STATUS_FALSE;
+		profile_node_t *pn, *n = switch_core_alloc(channel->caller_profile->pool, sizeof(*n));
+		
+		n->var = switch_core_strdup(channel->caller_profile->pool, name);
+		n->val = v;
+
+		if (!channel->caller_profile->soft) {
+			channel->caller_profile->soft = n;
+		} else {
+			for(pn = channel->caller_profile->soft; pn && pn->next; pn = pn->next);
+			
+			if (pn) {
+				pn->next = n;
+			}
+		}
 	}
 	switch_mutex_unlock(channel->profile_mutex);
 

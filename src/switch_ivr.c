@@ -1964,6 +1964,21 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	}
 	switch_xml_set_txt_d(param, caller_profile->chan_name);
 
+
+	if (caller_profile->soft) {
+		profile_node_t *pn;
+
+		for (pn = caller_profile->soft; pn; pn = pn->next) {
+
+			if (!(param = switch_xml_add_child_d(xml, pn->var, off++))) {
+				return -1;
+			}
+			switch_xml_set_txt_d(param, pn->val);
+		}
+
+	}
+
+
 	return off;
 }
 
