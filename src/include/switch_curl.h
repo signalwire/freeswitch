@@ -1,6 +1,6 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -22,30 +22,100 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
- * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
- * switch_curl.h -- Core cURL
+ * switch_curl.h
  *
  */
-/*! \file switch_core.h
-  \brief Core Library
 
-  This module is the main core library and is the intended location of all fundamental operations.
-*/
 
-#ifndef SWITCH_CURL_H
-#define SWITCH_CURL_H
+#include <curl/curl.h>
 
-SWITCH_BEGIN_EXTERN_C
+#if defined(HAVE_OPENSSL)
+#include <openssl/crypto.h>
 
-SWITCH_DECLARE(void) switch_curl_init(switch_memory_pool_t *pool);
-SWITCH_DECLARE(void) switch_curl_destroy(void);
+static switch_mutex_t **ssl_mutexes;
+static switch_memory_pool_t *ssl_pool = NULL;
 
-SWITCH_END_EXTERN_C
 
+static inline void switch_curl_ssl_lock_callback(int mode, int type, char *file, int line)
+{
+	if (mode & CRYPTO_LOCK) {
+		switch_mutex_lock(ssl_mutexes[type]);
+	}
+	else {
+		switch_mutex_unlock(ssl_mutexes[type]);
+	}
+}
+
+static inline unsigned long switch_curl_ssl_thread_id(void)
+{
+	return (unsigned long) switch_thread_self();
+}
+
+static inline void switch_curl_init_ssl_locks(void)
+{
+	int i, num = CRYPTO_num_locks();
+
+	ssl_mutexes = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(switch_mutex_t*));
+	switch_assert(ssl_mutexes != NULL);
+
+	switch_core_new_memory_pool(&ssl_pool);
+
+	for (i = 0; i < num; i++) {
+		switch_mutex_init(&(ssl_mutexes[i]), SWITCH_MUTEX_NESTED, ssl_pool);
+		switch_assert(ssl_mutexes[i] != NULL);
+	}
+
+	CRYPTO_set_id_callback(switch_curl_ssl_thread_id);
+	CRYPTO_set_locking_callback((void (*)(int, int, const char*, int))switch_curl_ssl_lock_callback);
+}
+
+static inline void switch_curl_destroy_ssl_locks()
+{
+	int i;
+
+	CRYPTO_set_locking_callback(NULL);
+	for (i = 0; i < CRYPTO_num_locks(); i++) {
+		switch_mutex_destroy(ssl_mutexes[i]);
+	}
+
+	OPENSSL_free(ssl_mutexes);
+}
 #endif
+
+static inline void switch_curl_init(void)
+{
+	int curl_count = switch_core_curl_count(NULL);
+
+	if (curl_count == 0) {
+		curl_global_init(CURL_GLOBAL_ALL);
+#if defined(HAVE_OPENSSL)
+		switch_curl_init_ssl_locks();
+#endif
+	}
+
+	curl_count++;
+	switch_core_curl_count(&curl_count);
+}
+
+static inline void switch_curl_destroy()
+{
+	int curl_count = switch_core_curl_count(NULL);
+	
+	curl_count--;
+
+	if (curl_count == 0) {
+
+#if defined(HAVE_OPENSSL)
+		switch_curl_destroy_ssl_locks();
+#endif
+		curl_global_cleanup();
+	}
+	switch_core_curl_count(&curl_count);
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c
@@ -56,3 +126,4 @@ SWITCH_END_EXTERN_C
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */
+

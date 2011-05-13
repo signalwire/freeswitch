@@ -199,9 +199,6 @@
     <ClCompile Include="..\..\libs\miniupnpc\upnpreplyparse.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\switch_curl.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libs\miniupnpc\declspec.h">
@@ -319,9 +316,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\switch_ivr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\switch_curl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -253,6 +253,7 @@ struct switch_runtime {
 	int multiple_registrations;
 	uint32_t max_db_handles;
 	uint32_t db_handle_timeout;
+	int curl_count;
 };
 
 extern struct switch_runtime runtime;
