@@ -674,9 +674,6 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		} else {
 			/*INBOUND...so FS told us it was going to answer...tell the stack */
 			ft_to_sngss7_anm(ftdmchan);
-#if 1 /* DAVIDY */
-			ft_to_sngss7_itx(ftdmchan);
-#endif
 		}
 
 		break;
