@@ -950,7 +950,6 @@ static void wanpipe_read_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_rx_hdr_t *rx
 static FIO_READ_FUNCTION(wanpipe_read)
 {
 	int rx_len = 0;
-	int myerrno = 0;
 	wp_tdm_api_rx_hdr_t hdrframe;
 
 	memset(&hdrframe, 0, sizeof(hdrframe));
@@ -964,7 +963,6 @@ static FIO_READ_FUNCTION(wanpipe_read)
 	}
 
 	if (rx_len < 0) {
-		myerrno = errno;
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Failed to read from sangoma device: %s (%d)\n", strerror(errno), rx_len);
 		return FTDM_FAIL;
