@@ -426,7 +426,6 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	uint32_t state_counter = 0, elapsed = 0, collecting = 0, interval = 0, last_digit = 0, indicate = 0, dial_timeout = analog_data->wait_dialtone_timeout;
 	uint32_t answer_on_polarity_counter = 0;
 	ftdm_sigmsg_t sig;
-	ftdm_status_t status;
 	
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "ANALOG CHANNEL thread starting.\n");
 
@@ -916,7 +915,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 			}
 
 			if (codec_func) {
-				status = codec_func(frame, sizeof(frame), &rlen);
+				codec_func(frame, sizeof(frame), &rlen);
 			} else {
 				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
 				goto done;

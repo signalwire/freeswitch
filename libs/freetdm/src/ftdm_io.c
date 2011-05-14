@@ -310,21 +310,6 @@ FTDM_STR2ENUM(ftdm_str2channel_indication, ftdm_channel_indication2str, ftdm_cha
 
 static ftdm_status_t ftdm_group_add_channels(ftdm_span_t* span, int currindex, const char* name);
 
-static const char *cut_path(const char *in)
-{
-	const char *p, *ret = in;
-	char delims[] = "/\\";
-	char *i;
-
-	for (i = delims; *i; i++) {
-		p = in;
-		while ((p = strchr(p, *i)) != 0) {
-			ret = ++p;
-		}
-	}
-	return ret;
-}
-
 static void null_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
 	if (file && func && line && level && fmt) {
@@ -350,7 +335,6 @@ static int ftdm_log_level = FTDM_LOG_LEVEL_DEBUG;
 
 static void default_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
-	const char *fp;
 	char data[1024];
 	va_list ap;
 
@@ -360,13 +344,10 @@ static void default_logger(const char *file, const char *func, int line, int lev
 	if (level > ftdm_log_level) {
 		return;
 	}
-	
-	fp = cut_path(file);
 
 	va_start(ap, fmt);
 
 	vsnprintf(data, sizeof(data), fmt, ap);
-
 
 	fprintf(stderr, "[%s] %s:%d %s() %s", FTDM_LEVEL_NAMES[level], file, line, func, data);
 
