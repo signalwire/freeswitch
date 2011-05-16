@@ -2078,7 +2078,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			switch_xml_set_attr_d(x_application, "app_data", ap->arg);
 
 			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, ap->stamp);
-			switch_xml_set_attr_d(x_application, "app_stamp", tmp);
+			switch_xml_set_attr_d_buf(x_application, "app_stamp", tmp);
 		}
 	}
 
