@@ -2010,6 +2010,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 			log->arg = switch_core_session_strdup(session, expanded);
 		}
 
+		log->stamp = switch_time_now();
+
 		for (lp = session->app_log; lp && lp->next; lp = lp->next);
 
 		if (lp) {

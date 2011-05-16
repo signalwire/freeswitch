@@ -2068,6 +2068,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			goto error;
 		}
 		for (ap = app_log; ap; ap = ap->next) {
+			char tmp[128];
 
 			if (!(x_application = switch_xml_add_child_d(x_apps, "application", app_off++))) {
 				goto error;
@@ -2075,6 +2076,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 			switch_xml_set_attr_d(x_application, "app_name", ap->app);
 			switch_xml_set_attr_d(x_application, "app_data", ap->arg);
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, ap->stamp);
+			switch_xml_set_attr_d(x_application, "app_stamp", tmp);
 		}
 	}
 

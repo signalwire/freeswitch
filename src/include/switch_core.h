@@ -57,6 +57,7 @@ SWITCH_BEGIN_EXTERN_C
 struct switch_app_log {
 	char *app;
 	char *arg;
+	switch_time_t stamp;
 	struct switch_app_log *next;
 };
 
