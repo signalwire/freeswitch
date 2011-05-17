@@ -276,12 +276,16 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_screening, ftdm_screening2str, ftdm_screening_t)
 
 /*! \brief bearer capability */
 typedef enum {
-	FTDM_BEARER_CAP_SPEECH = 0x00,
-	FTDM_BEARER_CAP_64K_UNRESTRICTED = 0x02,
-	FTDM_BEARER_CAP_3_1KHZ_AUDIO = 0x03,
+	FTDM_BEARER_CAP_SPEECH = 0x00,	/* Speech */
+	FTDM_BEARER_CAP_UNRESTRICTED,	/* Unrestricted Digital */
+	FTDM_BEARER_CAP_RESTRICTED,	/* Restricted Digital */
+	FTDM_BEARER_CAP_3_1KHZ_AUDIO,	/* 3.1 Khz Audio */
+	FTDM_BEARER_CAP_7KHZ_AUDIO,	/* 7 Khz Audio or Unrestricted digital w tones */
+	FTDM_BEARER_CAP_15KHZ_AUDIO,	/* 15 Khz Audio */
+	FTDM_BEARER_CAP_VIDEO,		/* Video */
 	FTDM_BEARER_CAP_INVALID
 } ftdm_bearer_cap_t;
-#define BEARER_CAP_STRINGS "speech", "unrestricted-digital-information", "3.1-Khz-audio", "invalid"
+#define BEARER_CAP_STRINGS "speech", "unrestricted-digital-information", "restricted-digital-information", "3.1-Khz-audio", "7-Khz-audio", "15-Khz-audio", "video", "invalid"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_bearer_cap, ftdm_bearer_cap2str, ftdm_bearer_cap_t)
 
 /*! \brief user information layer 1 protocol */
@@ -298,6 +302,11 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_usr_layer1_prot, ftdm_user_layer1_prot2str, ftdm_u
 typedef enum {
 	FTDM_CPC_UNKNOWN,
 	FTDM_CPC_OPERATOR,
+	FTDM_CPC_OPERATOR_FRENCH,
+	FTDM_CPC_OPERATOR_ENGLISH,
+	FTDM_CPC_OPERATOR_GERMAN,
+	FTDM_CPC_OPERATOR_RUSSIAN,
+	FTDM_CPC_OPERATOR_SPANISH,
 	FTDM_CPC_ORDINARY,
 	FTDM_CPC_PRIORITY,
 	FTDM_CPC_DATA,
@@ -305,7 +314,7 @@ typedef enum {
 	FTDM_CPC_PAYPHONE,
 	FTDM_CPC_INVALID
 } ftdm_calling_party_category_t;
-#define CALLING_PARTY_CATEGORY_STRINGS "unknown", "operator", "ordinary", "priority", "data-call", "test-call", "payphone", "invalid"
+#define CALLING_PARTY_CATEGORY_STRINGS "unknown", "operator", "operator-french", "operator-english", "operator-german", "operator-russian", "operator-spanish", "ordinary", "priority", "data-call", "test-call", "payphone", "invalid"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_calling_party_category, ftdm_calling_party_category2str, ftdm_calling_party_category_t)
 
 /*! \brief Digit limit used in DNIS/ANI */

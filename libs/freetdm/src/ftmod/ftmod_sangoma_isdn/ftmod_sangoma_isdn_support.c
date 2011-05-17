@@ -766,7 +766,7 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 	int loc = prog_ind.loc;
 	
 	str = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.prog_ind.descr");
-	if (str && *str) {
+	if (!ftdm_strlen_zero(str)) {
 		/* User wants to override progress indicator */
 		descr = ftdm_str2ftdm_sngisdn_progind_descr(str);
 	}
@@ -777,7 +777,7 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 	}
 
 	str = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.prog_ind.loc");
-	if (str && *str) {
+	if (!ftdm_strlen_zero(str)) {
 		loc = ftdm_str2ftdm_sngisdn_progind_loc(str);
 	}
 	if (loc == SNGISDN_PROGIND_LOC_INVALID) {
@@ -1092,18 +1092,20 @@ void get_memory_info(void)
 	return;
 }
 
+
 uint8_t sngisdn_get_infoTranCap_from_user(ftdm_bearer_cap_t bearer_capability)
 {
 	switch(bearer_capability) {
 	case FTDM_BEARER_CAP_SPEECH:
 		return IN_ITC_SPEECH;
-	case FTDM_BEARER_CAP_64K_UNRESTRICTED:
+	case FTDM_BEARER_CAP_UNRESTRICTED:
 		return IN_ITC_UNRDIG;
 	case FTDM_BEARER_CAP_3_1KHZ_AUDIO:
 		return IN_ITC_A31KHZ;
 	case FTDM_BEARER_CAP_INVALID:
 		return IN_ITC_SPEECH;
-		/* Do not put a default case here, so we can see compile warnings if we have unhandled cases */
+	default:
+		return IN_ITC_SPEECH;
 	}
 	return FTDM_BEARER_CAP_SPEECH;
 }
@@ -1119,7 +1121,8 @@ uint8_t sngisdn_get_usrInfoLyr1Prot_from_user(ftdm_user_layer1_prot_t layer1_pro
 		return IN_UIL1_G711ALAW;
 	case FTDM_USER_LAYER1_PROT_INVALID:
 		return IN_UIL1_G711ULAW;
-	/* Do not put a default case here, so we can see compile warnings if we have unhandled cases */
+	default:
+		return IN_UIL1_G711ULAW;
 	}
 	return IN_UIL1_G711ULAW;
 }
@@ -1130,7 +1133,7 @@ ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_stack(uint8_t bearer_capability)
 	case IN_ITC_SPEECH:
 		return FTDM_BEARER_CAP_SPEECH;
 	case IN_ITC_UNRDIG:
-		return FTDM_BEARER_CAP_64K_UNRESTRICTED;
+		return FTDM_BEARER_CAP_UNRESTRICTED;
 	case IN_ITC_A31KHZ:
 		return FTDM_BEARER_CAP_3_1KHZ_AUDIO;
 	default:

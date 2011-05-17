@@ -392,13 +392,13 @@ FT_DECLARE(void) ftdm_set_echocancel_call_begin(ftdm_channel_t *chan)
 	if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC)) {
 		if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE)) {
 			/* If the ec is disabled on idle, we need to enable it unless is a digital call */
-			if (caller_data->bearer_capability != FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+			if (caller_data->bearer_capability != FTDM_BEARER_CAP_UNRESTRICTED) {
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Enabling ec for call in channel state %s\n", ftdm_channel_state2str(chan->state));
 				ftdm_channel_command(chan, FTDM_COMMAND_ENABLE_ECHOCANCEL, NULL);
 			}
 		} else {
 			/* If the ec is enabled on idle, we do nothing unless is a digital call that needs it disabled */
-			if (caller_data->bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+			if (caller_data->bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Disabling ec for digital call in channel state %s\n", ftdm_channel_state2str(chan->state));
 				ftdm_channel_command(chan, FTDM_COMMAND_DISABLE_ECHOCANCEL, NULL);
 			}
