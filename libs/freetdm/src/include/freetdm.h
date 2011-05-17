@@ -276,12 +276,16 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_screening, ftdm_screening2str, ftdm_screening_t)
 
 /*! \brief bearer capability */
 typedef enum {
-	FTDM_BEARER_CAP_SPEECH = 0x00,
-	FTDM_BEARER_CAP_64K_UNRESTRICTED = 0x02,
-	FTDM_BEARER_CAP_3_1KHZ_AUDIO = 0x03,
+	FTDM_BEARER_CAP_SPEECH = 0x00,	/* Speech */
+	FTDM_BEARER_CAP_UNRESTRICTED,	/* Unrestricted Digital */
+	FTDM_BEARER_CAP_RESTRICTED,	/* Restricted Digital */
+	FTDM_BEARER_CAP_3_1KHZ_AUDIO,	/* 3.1 Khz Audio */
+	FTDM_BEARER_CAP_7KHZ_AUDIO,	/* 7 Khz Audio or Unrestricted digital w tones */
+	FTDM_BEARER_CAP_15KHZ_AUDIO,	/* 15 Khz Audio */
+	FTDM_BEARER_CAP_VIDEO,		/* Video */
 	FTDM_BEARER_CAP_INVALID
 } ftdm_bearer_cap_t;
-#define BEARER_CAP_STRINGS "speech", "unrestricted-digital-information", "3.1-Khz-audio", "invalid"
+#define BEARER_CAP_STRINGS "speech", "unrestricted-digital-information", "restricted-digital-information", "3.1-Khz-audio", "7-Khz-audio", "15-Khz-audio", "video", "invalid"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_bearer_cap, ftdm_bearer_cap2str, ftdm_bearer_cap_t)
 
 /*! \brief user information layer 1 protocol */
