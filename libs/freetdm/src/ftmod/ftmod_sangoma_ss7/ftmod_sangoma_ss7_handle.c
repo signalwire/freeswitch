@@ -33,12 +33,14 @@
 
 /* INCLUDE ********************************************************************/
 #include "ftmod_sangoma_ss7_main.h"
+
 /******************************************************************************/
 
 /* DEFINES ********************************************************************/
 /******************************************************************************/
 
 /* GLOBALS ********************************************************************/
+
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
@@ -79,14 +81,14 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
+
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
-
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  	*ftdmchan = NULL;
 	char				nadi[2];
-
+	
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 	memset(nadi, '\0', sizeof(nadi));
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
@@ -208,6 +210,10 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			sprintf(nadi, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
 			sngss7_add_var(sngss7_info, "ss7_cld_nadi", nadi);
 
+			if (sngss7_info->circuit->transparent_iam) {
+				sngss7_save_iam(ftdmchan, siConEvnt);
+			}
+
 			/* check if a COT test is requested */
 			if ((siConEvnt->natConInd.eh.pres) && 
 				(siConEvnt->natConInd.contChkInd.pres) &&
@@ -231,7 +237,6 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 							siConEvnt->cgPtyNum.natAddrInd.val,
 							ftdmchan->caller_data.dnis.digits,
 							siConEvnt->cdPtyNum.natAddrInd.val);
-
 		} /* if (channel is usable */
 
 		break;

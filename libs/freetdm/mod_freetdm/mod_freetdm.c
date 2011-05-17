@@ -1369,7 +1369,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-CPC");
 		if (sipvar) {
-			ftdm_set_calling_party_category(var, (uint8_t *)&caller_data.cpc);
+			ftdm_set_calling_party_category(sipvar, (uint8_t *)&caller_data.cpc);
+		}
+		
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-IAM");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_iam", sipvar);
 		}
 	}
 
@@ -1443,7 +1448,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (!strncasecmp(h->name, FREETDM_VAR_PREFIX, FREETDM_VAR_PREFIX_LEN)) {
 			char *v = h->name + FREETDM_VAR_PREFIX_LEN;
 			if (!zstr(v)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding outbound freetdm variable %s=%s to channel %d:%d\n", v, h->value, span_id, chan_id);
+				if (!strcasecmp(v, "ss7_iam")) {
+					/* Do not print the value of ss7_iam as it is very long */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding outbound freetdm variable %s to channel %d:%d\n", v, span_id, chan_id);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding outbound freetdm variable %s=%s to channel %d:%d\n", v, h->value, span_id, chan_id);
+				}
+				
 				ftdm_usrmsg_add_var(&usrmsg, v, h->value);
 			}
 		}
@@ -1633,6 +1644,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS", "%s", channel_caller_data->rdnis.digits);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-NADI", "%d", channel_caller_data->rdnis.type);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Plan", "%d", channel_caller_data->rdnis.plan);
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CPC", "%s", ftdm_calling_party_category2str(channel_caller_data->cpc));
+		
 
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdnis_screen_ind");
 		if (!ftdm_strlen_zero(var_value)) {
@@ -1678,10 +1691,10 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumInComp", "%d", var_value);
 			}
 		} /* End - var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_digits"); */
-		
-		var_value = ftdm_sigmsg_get_var(sigmsg, "freetdm_calling_party_category");
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_iam");
 		if (!ftdm_strlen_zero(var_value)) {
-			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CPC", "%s", var_value);
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-IAM", "%s", var_value);
 		}
 
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Screen", "%d", channel_caller_data->screen);
@@ -1694,7 +1707,12 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		ftdm_get_current_var(curr, &var_name, &var_value);
 		snprintf(name, sizeof(name), FREETDM_VAR_PREFIX "%s", var_name);
 		switch_channel_set_variable_printf(channel, name, "%s", var_value);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s = %s\n", name, var_value);
+		if (!strcasecmp(var_name, "ss7_iam")) {
+			/* Do not print freetdm_ss7_iam as it is a very long variable */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s is present\n", name);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Variable: %s = %s\n", name, var_value);
+		}
 	}
 	ftdm_iterator_free(iter);
 	
