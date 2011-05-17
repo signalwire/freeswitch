@@ -586,10 +586,17 @@ ftdm_status_t copy_tknStr_to_sngss7(char* val, TknStr *tknStr, TknU8 *oddEven)
 
 		/* check if the digit is a number and that is not null */
 		while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-			/* move on to the next value */
-			k++;
-			tmp[0] = val[k];
+			if (tmp[0] == '*') {
+				/* Could not find a spec that specifies this , but on customer system, * was transmitted as 0x0b */
+				SS7_DEBUG("Replacing * with 0x0b");
+				k++;
+				tmp[0] = 0x0b;
+			} else {
+				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
+				/* move on to the next value */
+				k++;
+				tmp[0] = val[k];
+			}
 		} /* while(!(isdigit(tmp))) */
 
 		/* check if tmp is null or a digit */
@@ -1350,10 +1357,17 @@ ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int typ
 
 		/* confirm it is a hex digit */
 		while ((!isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-			/* move to the next character in subAddr */
-			x++;
-			tmp[0] = subAddr[x];
+			if (tmp[0] == '*') {
+				/* Could not find a spec that specifies this, but on customer system, * was transmitted as 0x0b */
+				SS7_DEBUG("Replacing * with 0x0b");
+				x++;
+				tmp[0] = 0x0b;
+			} else {
+				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
+				/* move to the next character in subAddr */
+				x++;
+				tmp[0] = subAddr[x];
+			}
 		}
 
 		/* check if tmp is null or a digit */
