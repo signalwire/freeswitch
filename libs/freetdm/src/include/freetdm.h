@@ -320,6 +320,8 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_calling_party_category, ftdm_calling_party_categor
 /*! \brief Digit limit used in DNIS/ANI */
 #define FTDM_DIGITS_LIMIT 25
 
+#define FTDM_SILENCE_VALUE(fchan) (fchan)->native_codec == FTDM_CODEC_ULAW ? 255 : (fchan)->native_codec == FTDM_CODEC_ALAW ? 0xD5 : 0x00
+
 /*! \brief Number abstraction */
 typedef struct {
 	char digits[FTDM_DIGITS_LIMIT];

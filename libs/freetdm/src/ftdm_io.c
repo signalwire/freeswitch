@@ -3923,7 +3923,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 		ftdm_mutex_unlock(ftdmchan->pre_buffer_mutex);
 
 
-		memset(data, 255, *datalen);
+		memset(data, FTDM_SILENCE_VALUE(ftdmchan), *datalen);
 
 		if (ftdmchan->skip_read_frames > 0) {
 			ftdmchan->skip_read_frames--;
@@ -3935,7 +3935,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 			if (ftdm_buffer_inuse(ftdmchan->pre_buffer) >= ftdmchan->pre_buffer_size) {
 				ftdm_buffer_read(ftdmchan->pre_buffer, data, *datalen);
 			} else {
-				memset(data, 255, *datalen);
+				memset(data, FTDM_SILENCE_VALUE(ftdmchan), *datalen);
 			}
 		}
 		ftdm_mutex_unlock(ftdmchan->pre_buffer_mutex);
