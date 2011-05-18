@@ -496,7 +496,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan,
 		return err; 
 	}
 	ftdmchan->caller_data = *caller_data;
-	if (ftdmchan->caller_data.bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+	if (ftdmchan->caller_data.bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
 		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA);
 	}
 	return FTDM_SUCCESS;
@@ -5372,7 +5372,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 			 * doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
 			 * is needed at all? */
 			ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
-			if (sigmsg->channel->caller_data.bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+			if (sigmsg->channel->caller_data.bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
 				ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_DIGITAL_MEDIA);
 			}
 		}

@@ -318,7 +318,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (caller_data->bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+	if (caller_data->bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initializing digital call.\n");
 		/* temporary hack, this will be configurable */
 		dname = "G722";
