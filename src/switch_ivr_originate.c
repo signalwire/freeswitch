@@ -2454,6 +2454,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 						if (fail_on_single_reject == 1 || switch_stristr(cause_str, fail_on_single_reject_var)) {
 							force_reason = reason;
+							status = SWITCH_STATUS_FALSE;
 							goto outer_for;
 						}
 					}
