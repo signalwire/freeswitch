@@ -200,7 +200,6 @@ typedef enum {
 	EFLAG_FLOOR_CHANGE = (1 << 25),
 	EFLAG_MUTE_DETECT = (1 << 26),
 	EFLAG_RECORD = (1 << 27),
-	EFLAG_AUTO_GAIN_LEVEL = (1 << 28)
 } event_type_t;
 
 typedef struct conference_file_node {
@@ -2056,7 +2055,7 @@ static void clear_avg(conference_member_t *member)
 
 static void check_agc_levels(conference_member_t *member)
 {
-	int x = 0, y = member->agc_volume_in_level;
+	int x = 0;
 
 	if (!member->avg_score) return;
 	
@@ -2071,8 +2070,6 @@ static void check_agc_levels(conference_member_t *member)
 	}
 
 	if (x) {
-		switch_event_t *event;
-
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG7,
 						  "AGC %s:%d diff:%d level:%d cur:%d avg:%d vol:%d %s\n", 
 						  member->conference->name,
@@ -2080,17 +2077,6 @@ static void check_agc_levels(conference_member_t *member)
 						  member->score, member->avg_score, member->agc_volume_in_level, x > 0 ? "+++" : "---");
 		
 		clear_avg(member);
-
-
-		if (test_eflag(member->conference, EFLAG_AUTO_GAIN_LEVEL) &&
-			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-			conference_add_event_member_data(member, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "auto-gain-level");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-Level", "%d", y);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->agc_volume_in_level);
-			switch_event_fire(&event);
-		}
-
 	}
 }
 
