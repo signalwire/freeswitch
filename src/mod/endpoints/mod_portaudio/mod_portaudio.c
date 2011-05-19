@@ -2293,7 +2293,8 @@ PaError open_shared_audio_stream(shared_audio_stream_t *shstream, const PaStream
 {
 	PaError err;
 	if (inputParameters->device != -1) {
-		err = OpenAudioStream(&shstream->stream, inputParameters, outputParameters, shstream->sample_rate, 
+		err = OpenAudioStream(&shstream->stream, inputParameters->device != -1 ? inputParameters : NULL, 
+							outputParameters->device != -1 ? outputParameters : NULL, shstream->sample_rate, 
 				paClipOff, STREAM_SAMPLES_PER_PACKET(shstream), globals.dual_streams);
 	} else {
 		err = OpenAudioStream(&shstream->stream, NULL, outputParameters, shstream->sample_rate, 
@@ -2319,20 +2320,25 @@ static int create_shared_audio_stream(shared_audio_stream_t *shstream)
 		inputParameters.hostApiSpecificStreamInfo = NULL;
 	}
 	outputParameters.device = shstream->outdev;
-	outputParameters.channelCount = shstream->channels;
-	outputParameters.sampleFormat = SAMPLE_TYPE;
-	outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
-	outputParameters.hostApiSpecificStreamInfo = NULL;
+	if (shstream->outdev != -1) {
+		outputParameters.channelCount = shstream->channels;
+		outputParameters.sampleFormat = SAMPLE_TYPE;
+		outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
+		outputParameters.hostApiSpecificStreamInfo = NULL;
+	}
 	
 	err = open_shared_audio_stream(shstream, &inputParameters, &outputParameters);
 	if (err != paNoError) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening audio device retrying\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+						"Error opening audio device retrying (indev = %d, outdev = %d, error = %s)\n", 
+						inputParameters.device, outputParameters.device, Pa_GetErrorText(err));
 		switch_yield(1000000);
 		err = open_shared_audio_stream(shstream, &inputParameters, &outputParameters);
 	}
 
 	if (err != paNoError) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open audio device\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open audio device (indev = %d, outdev = %d, error = %s)\n",
+				inputParameters.device, outputParameters.device, Pa_GetErrorText(err));
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ERROR_AUDIO_DEV) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Reason", Pa_GetErrorText(err));
 			switch_event_fire(&event);
