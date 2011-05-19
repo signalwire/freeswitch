@@ -1900,7 +1900,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 
 	if (tb[0]) {
+		char *p;
+
 		switch_channel_set_variable(channel, SWITCH_READ_TERMINATOR_USED_VARIABLE, tb);
+
+		if ((p = strchr(valid_terminators, tb[0]))) {
+			if (p >= (valid_terminators + 1) && (*(p - 1) == '+' || *(p - 1) == 'x')) {
+				switch_snprintf(digit_buffer + strlen(digit_buffer), digit_buffer_length - strlen(digit_buffer), "%s", tb);
+				if (*(p - 1) == 'x') {
+					status = SWITCH_STATUS_RESTART;
+				}
+			}
+		}
 	}
 
 	len = strlen(digit_buffer);
@@ -1923,7 +1934,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
   end:
 
-	if (max_digits == 1 && len == 1 && valid_terminators && strchr(valid_terminators, *digit_buffer)) {
+	if (status != SWITCH_STATUS_RESTART && max_digits == 1 && len == 1 && valid_terminators && strchr(valid_terminators, *digit_buffer)) {
 		*digit_buffer = '\0';
 	}
 
@@ -1958,6 +1969,11 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 
 		status = switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name,
 								 digit_buffer, digit_buffer_length, timeout, valid_terminators, digit_timeout);
+
+		if (status == SWITCH_STATUS_RESTART) {
+			return status;
+		}
+
 		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
 			status = SWITCH_STATUS_SUCCESS;
 		}
