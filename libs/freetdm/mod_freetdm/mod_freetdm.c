@@ -130,6 +130,10 @@ struct span_config {
 	int limit_calls;
 	int limit_seconds;
 	limit_reset_event_t limit_reset_event;
+	/* digital codec and digital sampling rate are used to configure the codec
+	 * when bearer capability is set to unrestricted digital */
+	const char *digital_codec;
+	int digital_sampling_rate;
 	chan_pvt_t pvts[FTDM_MAX_CHANNELS_SPAN];
 };
 
@@ -298,6 +302,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 {
 	const char *dname = NULL;
 	uint32_t interval = 0, srate = 8000;
+	uint32_t span_id;
 	ftdm_codec_t codec;
 
 	tech_pvt->ftdmchan = ftdmchan;
@@ -318,11 +323,13 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (caller_data->bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initializing digital call.\n");
-		/* temporary hack, this will be configurable */
-		dname = "G722";
-		srate = 16000;
+	span_id = ftdm_channel_get_span_id(ftdmchan);
+	if (caller_data->bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED
+	    && SPAN_CONFIG[span_id].digital_codec) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initializing digital call with codec %s at %dhz.\n",
+				SPAN_CONFIG[span_id].digital_codec, SPAN_CONFIG[span_id].digital_sampling_rate);
+		dname = SPAN_CONFIG[span_id].digital_codec;
+		srate = SPAN_CONFIG[span_id].digital_sampling_rate;
 		goto init_codecs;
 	}
 
@@ -2702,6 +2709,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 		/* some defaults first */
 		SPAN_CONFIG[span_id].limit_backend = "hash";
 		SPAN_CONFIG[span_id].limit_reset_event = FTDM_LIMIT_RESET_ON_TIMEOUT;
+		SPAN_CONFIG[span_id].digital_sampling_rate = 8000;
 
 		for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2716,6 +2724,21 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 				context = val;
 			} else if (!strcasecmp(var, "dialplan")) {
 				dialplan = val;
+			} else if (!strcasecmp(var, "unrestricted-digital-codec")) {
+				//switch_core_strdup(pool, val);
+				const switch_codec_implementation_t *codec = NULL;
+				int num_codecs;
+				num_codecs = switch_loadable_module_get_codecs_sorted(&codec, 1, &val, 1);
+				if (num_codecs != 1 || !codec) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+					"Failed finding codec %s for unrestricted digital calls\n", val);
+				} else {
+					SPAN_CONFIG[span_id].digital_codec = switch_core_strdup(module_pool, codec->iananame);
+					SPAN_CONFIG[span_id].digital_sampling_rate = codec->samples_per_second;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"Unrestricted digital codec is %s at %dhz for span %d\n", 
+						SPAN_CONFIG[span_id].digital_codec, SPAN_CONFIG[span_id].digital_sampling_rate, span_id);
+				}
 			} else if (!strcasecmp(var, "call_limit_backend")) {
 				SPAN_CONFIG[span_id].limit_backend = val;
 				ftdm_log(FTDM_LOG_DEBUG, "Using limit backend %s for span %d\n", SPAN_CONFIG[span_id].limit_backend, span_id);
