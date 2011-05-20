@@ -3018,6 +3018,21 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && remote_port == tech_pvt->remote_sdp_audio_port) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Audio params are unchanged for %s.\n",
 							  switch_channel_get_name(tech_pvt->channel));
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				if (tech_pvt->audio_recv_pt != tech_pvt->agreed_pt) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+								  "%s Set audio receive payload in Re-INVITE for non-matching dynamic PT to %u\n", 
+									  switch_channel_get_name(tech_pvt->channel), tech_pvt->audio_recv_pt);
+				
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->audio_recv_pt);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+								  "%s Setting audio receive payload in Re-INVITE to %u\n", 
+									  switch_channel_get_name(tech_pvt->channel), tech_pvt->audio_recv_pt);
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->agreed_pt);
+				}
+
+			}
 			goto video;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Audio params changed for %s from %s:%d to %s:%d\n",
