@@ -814,7 +814,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	switch_event_t *event;
 	conference_file_node_t *member_fnode;
 	switch_speech_handle_t *member_sh;
-	const char *exit_sound;
+	const char *exit_sound = NULL;
 
 	switch_assert(conference != NULL);
 	switch_assert(member != NULL);
@@ -916,7 +916,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			|| (switch_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0)) {
 			switch_set_flag(conference, CFLAG_DESTRUCT);
 		} else {
-			if (conference->exit_sound && switch_test_flag(conference, CFLAG_EXIT_SOUND)) {
+			if (!exit_sound && conference->exit_sound && switch_test_flag(conference, CFLAG_EXIT_SOUND)) {
 				conference_play_file(conference, conference->exit_sound, 0, switch_core_session_get_channel(member->session), 0);
 			}
 			if (conference->count == 1 && conference->alone_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
