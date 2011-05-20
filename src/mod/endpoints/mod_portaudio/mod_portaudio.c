@@ -969,6 +969,15 @@ static switch_status_t channel_endpoint_write(audio_endpoint_t *endpoint, switch
 		switch_core_timer_next(&endpoint->write_timer);
 		return SWITCH_STATUS_SUCCESS;
 	}
+	if (!endpoint->master) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	if (switch_test_flag(endpoint->master, TFLAG_HUP)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	if (!switch_test_flag(endpoint->master, TFLAG_IO)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 	WriteAudioStream(endpoint->out_stream->stream, (short *)frame->data, 
 			(int)(frame->datalen / sizeof(SAMPLE)), 
 			endpoint->outchan, &(endpoint->write_timer));
