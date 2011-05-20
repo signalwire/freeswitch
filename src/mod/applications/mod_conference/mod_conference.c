@@ -814,11 +814,18 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	switch_event_t *event;
 	conference_file_node_t *member_fnode;
 	switch_speech_handle_t *member_sh;
+	const char *exit_sound;
 
 	switch_assert(conference != NULL);
 	switch_assert(member != NULL);
 
 	switch_thread_rwlock_wrlock(member->rwlock);
+
+	if (member->session && (exit_sound = switch_channel_get_variable(switch_core_session_get_channel(member->session), "conference_exit_sound"))) {
+		conference_play_file(conference, (char *)exit_sound, CONF_DEFAULT_LEADIN,
+							 switch_core_session_get_channel(member->session), !switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+	}
+
 
 	lock_member(member);
 	member_fnode = member->fnode;
