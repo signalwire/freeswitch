@@ -70,6 +70,8 @@ static struct {
 	switch_memory_pool_t *pool;
 	int auto_reload;
 	int timeout;
+	int retries;
+	int random;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_root, globals.root);
@@ -110,6 +112,8 @@ static switch_status_t load_config(void)
 	}
 
 	globals.timeout = 5000;
+	globals.retries = 3;
+	globals.random  = 0;
 	
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -125,6 +129,10 @@ static switch_status_t load_config(void)
 				globals.timeout = atoi(val) * 1000;
 			} else if (!strcasecmp(var, "query-timeout-ms")) {
 				globals.timeout = atoi(val);
+			} else if (!strcasecmp(var, "query-timeout-retry")) {
+				globals.retries = atoi(val);
+			} else if (!strcasecmp(var, "random-nameserver")) {
+				globals.random = switch_true(val);
 			} else if (!strcasecmp(var, "default-isn-root")) {
 				set_global_isn_root(val);
 			} else if (!strcasecmp(var, "log-level-trace")) {
@@ -440,6 +448,8 @@ switch_status_t ldns_lookup(const char *number, const char *root, const char *se
 	to.tv_usec = (globals.timeout % 1000) * 1000;
 
 	ldns_resolver_set_timeout(res, to);
+	ldns_resolver_set_retry(res, (uint8_t)globals.retries);
+	ldns_resolver_set_random(res, globals.random);
 
 	if ((p = ldns_resolver_query(res,
 								 domain,
