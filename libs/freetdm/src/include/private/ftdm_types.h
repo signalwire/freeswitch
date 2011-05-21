@@ -249,6 +249,8 @@ typedef enum {
 #define FTDM_CHANNEL_IND_ACK_PENDING (1ULL << 34)
 /*!< There is someone blocking in the channel waiting for state completion */
 #define FTDM_CHANNEL_BLOCKING        (1ULL << 35)
+/*!< Media is digital */
+#define FTDM_CHANNEL_DIGITAL_MEDIA   (1ULL << 36)
 
 #include "ftdm_state.h"
 

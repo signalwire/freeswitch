@@ -1985,12 +1985,12 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 
 	/* Checking for cleanup Abandonded calls from the db */
 	if (!strcasecmp(member_state, cc_member_state2str(CC_MEMBER_STATE_ABANDONED))) {
-		long abandoned_epoch = atol(member_abandoned_epoch);
+		switch_time_t abandoned_epoch = atoll(member_abandoned_epoch);
 		if (abandoned_epoch == 0) {
-			abandoned_epoch = atol(cbt.member_joined_epoch);
+			abandoned_epoch = atoll(cbt.member_joined_epoch);
 		}
 		/* Once we pass a certain point, we want to get rid of the abandoned call */
-		if (abandoned_epoch + discard_abandoned_after < (long) local_epoch_time_now(NULL)) {
+		if (abandoned_epoch + discard_abandoned_after < local_epoch_time_now(NULL)) {
 			sql = switch_mprintf("DELETE FROM members WHERE system = 'single_box' AND uuid = '%q' AND (abandoned_epoch = '%" SWITCH_TIME_T_FMT "' OR joined_epoch = '%q')", cbt.member_uuid, abandoned_epoch, cbt.member_joined_epoch);
 			cc_execute_sql(NULL, sql, NULL);
 			switch_safe_free(sql);

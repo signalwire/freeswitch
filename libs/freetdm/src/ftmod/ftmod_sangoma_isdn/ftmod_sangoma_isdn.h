@@ -292,6 +292,12 @@ typedef struct ftdm_sngisdn_data {
 	sngisdn_span_data_t *spans[MAX_L1_LINKS+1]; /* spans are indexed by link_id */
 }ftdm_sngisdn_data_t;
 
+typedef struct ftdm2trillium
+{
+	uint8_t ftdm_val;
+	uint8_t trillium_val;
+}ftdm2trillium_t;
+
 
 /* TODO implement these 2 functions */
 #define ISDN_FUNC_TRACE_ENTER(a)

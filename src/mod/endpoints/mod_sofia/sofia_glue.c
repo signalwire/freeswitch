@@ -2171,6 +2171,15 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			if (!strncasecmp(url_str, "sips:", 5)) {
 				s = url_str + 5;
 			}
+
+			/* tel: patch from jaybinks, added by MC
+               It compiles but I don't have a way to test it
+			*/
+			if (!strncasecmp(url_str, "tel:", 4)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session),
+								  SWITCH_LOG_ERROR, "URL Error! tel: uri's not supported at this time\n");
+				return SWITCH_STATUS_FALSE;
+			}
 			if (!s) {
 				s = url_str;
 			}
@@ -3009,6 +3018,21 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && remote_port == tech_pvt->remote_sdp_audio_port) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Audio params are unchanged for %s.\n",
 							  switch_channel_get_name(tech_pvt->channel));
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				if (tech_pvt->audio_recv_pt != tech_pvt->agreed_pt) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+								  "%s Set audio receive payload in Re-INVITE for non-matching dynamic PT to %u\n", 
+									  switch_channel_get_name(tech_pvt->channel), tech_pvt->audio_recv_pt);
+				
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->audio_recv_pt);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+								  "%s Setting audio receive payload in Re-INVITE to %u\n", 
+									  switch_channel_get_name(tech_pvt->channel), tech_pvt->audio_recv_pt);
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->agreed_pt);
+				}
+
+			}
 			goto video;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Audio params changed for %s from %s:%d to %s:%d\n",
@@ -3436,9 +3460,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
-				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
+				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
 			} else {
-				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
+				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
 			}
 
 			if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {

@@ -29,6 +29,7 @@ opt/freeswitch/conf/autoload_configs/local_stream.conf.xml
 opt/freeswitch/conf/autoload_configs/logfile.conf.xml
 opt/freeswitch/conf/autoload_configs/memcache.conf.xml
 opt/freeswitch/conf/autoload_configs/modules.conf.xml
+opt/freeswitch/conf/autoload_configs/mongo.conf.xml
 opt/freeswitch/conf/autoload_configs/nibblebill.conf.xml
 opt/freeswitch/conf/autoload_configs/opal.conf.xml
 opt/freeswitch/conf/autoload_configs/pocketsphinx.conf.xml

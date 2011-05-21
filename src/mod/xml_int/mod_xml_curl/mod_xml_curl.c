@@ -31,7 +31,8 @@
  *
  */
 #include <switch.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
+
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown);
@@ -548,7 +549,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 	globals.hash_tail = NULL;
 
 	if (do_config() == SWITCH_STATUS_SUCCESS) {
-		curl_global_init(CURL_GLOBAL_ALL);
+		switch_curl_init();
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -573,7 +574,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown)
 	}
 
 	switch_xml_unbind_search_function_ptr(xml_url_fetch);
-	curl_global_cleanup();
+	switch_curl_destroy();
 	return SWITCH_STATUS_SUCCESS;
 }
 

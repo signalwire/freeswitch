@@ -831,7 +831,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 				if (sng_isdn_retrieve_facility_caller_name(&facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len, retrieved_str) == 0) {
 					strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
 				} else {
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed to retrieve Caller Name from Facility IE\n");
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Failed to retrieve Caller Name from Facility IE\n");
 				}
 				if (signal_data->facility_timeout) {
 					/* Cancel facility timeout */

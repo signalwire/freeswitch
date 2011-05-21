@@ -4514,6 +4514,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					
 					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
 						if (switch_rtp_ready(tech_pvt->rtp_session) && switch_rtp_ready(other_tech_pvt->rtp_session)) {
+							sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 							switch_rtp_udptl_mode(tech_pvt->rtp_session);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating T38 Passthru\n");
 						}
@@ -5558,13 +5559,6 @@ nua_handle_t *sofia_global_nua_handle_by_replaces(sip_replaces_t *replaces)
 	const void *var;
 	void *val;
 	sofia_profile_t *profile;
-	switch_xml_t xml_root;
-	const char *err;
-
-	if ((xml_root = switch_xml_open_root(1, &err))) {
-		switch_xml_free(xml_root);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Reload XML [%s]\n", err);
-	}
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {

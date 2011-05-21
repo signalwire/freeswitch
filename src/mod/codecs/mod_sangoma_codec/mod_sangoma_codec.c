@@ -96,7 +96,7 @@ vocallo_codec_t g_codec_map[] =
 	/* manually initialized */
 	{ SNGTC_CODEC_GSM_FR,    IANA_GSM_A_8000_1,    "GSM",   "Sangoma GSM",    20, 13200, 20000, 160, 320, 33, 8000,  8000,  0 },
 	{ SNGTC_CODEC_G723_1_63, IANA_G723_A_8000_1,   "G723",  "Sangoma G723",   90, 6300,  30000, 240, 480, 24, 8000,  8000,  0 },
-	{ SNGTC_CODEC_AMR_1220,  IANA_AMR_WB_16000_1,  "AMR",   "Sangoma AMR",    20, 12200, 20000, 160, 320, 0,  8000,  8000,  0 },
+	{ SNGTC_CODEC_AMR_1220,  IANA_AMR_A_8000_1,    "AMR",   "Sangoma AMR",    20, 12200, 20000, 160, 320, 0,  8000,  8000,  0 },
 	{ SNGTC_CODEC_SIREN7_24, IANA_SIREN7,          "G7221", "Sangoma G722.1", 20, 24000, 20000, 320, 640, 60, 16000, 16000, 0 },
 	{ SNGTC_CODEC_SIREN7_32, IANA_SIREN7,          "G7221", "Sangoma G722.1", 20, 32000, 20000, 320, 640, 80, 16000, 16000, 0 },
 	{ SNGTC_CODEC_ILBC_133,  IANA_ILBC_133_8000_1, "iLBC",  "Sangoma iLBC",   30, 13300, 30000, 240, 480, 50, 8000,  8000,  0 },
@@ -131,6 +131,7 @@ struct codec_data {
 	/* packet counters */
 	unsigned long tx;
 	unsigned long rx;
+	unsigned long ticks; 
 
 	/* Lost packets */
   	long lastrxseqno;
@@ -467,6 +468,8 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 		func_start_time =  switch_micro_time_now();
 	}
 
+	sess->encoder.ticks++;
+
 	/* start assuming we will not encode anything */
 	*encoded_data_len = 0;
 
@@ -547,7 +550,7 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 			continue;
 		}
 
-		if (encoded_frame.datalen != codec->implementation->encoded_bytes_per_packet) {
+		if (codec->implementation->encoded_bytes_per_packet && encoded_frame.datalen != codec->implementation->encoded_bytes_per_packet) {
 			/* seen when silence suppression is enabled */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring encoded frame of %d bytes intead of %d bytes\n", encoded_frame.datalen, codec->implementation->encoded_bytes_per_packet);
 			continue;
@@ -619,7 +622,7 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 		sess->encoder.rtp_queue[sess->encoder.queue_rindex].datalen = 0;
 		SAFE_INDEX_INC(sess->encoder.rtp_queue, sess->encoder.queue_rindex);
 		sess->encoder.queue_size--;
-		if (*encoded_data_len != codec->implementation->encoded_bytes_per_packet) {
+		if (codec->implementation->encoded_bytes_per_packet && *encoded_data_len != codec->implementation->encoded_bytes_per_packet) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Returning odd encoded frame of %d bytes intead of %d bytes\n", *encoded_data_len, codec->implementation->encoded_bytes_per_packet);
 		}
 	} else {
@@ -667,6 +670,7 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 	}
 
 	dbuf_linear = decoded_data;
+	sess->decoder.ticks++;
 
 	/* start assuming we will not decode anything */
 	*decoded_data_len = 0;
@@ -989,6 +993,7 @@ SWITCH_STANDARD_API(sangoma_function)
 			stream->write_function(stream, "Rx %s at %d.%d.%d.%d:%d from %d.%d.%d.%d:%d\n\n", sess->impl->iananame, SNGTC_NIPV4(sess->encoder.reply.b.host_ip), sess->encoder.reply.b.host_udp_port,
 					SNGTC_NIPV4(sess->encoder.reply.b.codec_ip), sess->encoder.reply.b.codec_udp_port);
 
+			stream->write_function(stream, "Ticks: %lu\n", sess->encoder.ticks);
 
 			stream->write_function(stream, "-- Inbound Stats --\n");
 			stream->write_function(stream, "Rx Discarded: %lu\n", sess->encoder.rxdiscarded);
@@ -1008,6 +1013,7 @@ SWITCH_STANDARD_API(sangoma_function)
 					SNGTC_NIPV4(sess->decoder.reply.a.codec_ip), sess->decoder.reply.a.codec_udp_port);
 			stream->write_function(stream, "Rx L16 at %d.%d.%d.%d:%d from %d.%d.%d.%d:%d\n\n", SNGTC_NIPV4(sess->decoder.reply.b.host_ip), sess->decoder.reply.b.host_udp_port,
 					SNGTC_NIPV4(sess->decoder.reply.b.codec_ip), sess->decoder.reply.b.codec_udp_port);
+			stream->write_function(stream, "Ticks: %lu\n", sess->decoder.ticks);
 
 			stream->write_function(stream, "-- Inbound Stats --\n");
 			stream->write_function(stream, "Rx Discarded: %lu\n", sess->decoder.rxdiscarded);

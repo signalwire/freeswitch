@@ -57,6 +57,7 @@ SWITCH_BEGIN_EXTERN_C
 struct switch_app_log {
 	char *app;
 	char *arg;
+	switch_time_t stamp;
 	struct switch_app_log *next;
 };
 
@@ -433,6 +434,9 @@ SWITCH_DECLARE(void) switch_core_session_rwunlock(_In_ switch_core_session_t *se
   \return the current index/priority of this handler
 */
 SWITCH_DECLARE(int) switch_core_add_state_handler(_In_ const switch_state_handler_table_t *state_handler);
+
+SWITCH_DECLARE(int) switch_core_curl_count(int *val);
+SWITCH_DECLARE(int) switch_core_ssl_count(int *val);
 
 /*!
   \brief Remove a global state handler

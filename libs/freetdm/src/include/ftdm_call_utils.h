@@ -131,5 +131,24 @@ FT_DECLARE(ftdm_status_t) ftdm_is_number(const char *number);
  */
 FT_DECLARE(ftdm_status_t) ftdm_set_calling_party_category(const char *string, uint8_t *target);
 
+/*! 
+ * \brief URL encode a buffer
+ *
+ * \param url buffer to convert
+ * \param buf target to save converted string to
+ * \param len size of buffer
+ *
+ * \retval pointer to converted string
+ */
+FT_DECLARE(char *) ftdm_url_encode(const char *url, char *buf, ftdm_size_t len);
+
+/*! 
+ * \param s buffer to convert
+ * \param len size of buffer
+ *	
+ * \retval pointer to converted string
+ */
+FT_DECLARE(char *) ftdm_url_decode(char *s, ftdm_size_t *len);
+
 #endif /* __FTDM_CALL_UTILS_H__ */
 

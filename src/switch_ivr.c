@@ -1350,6 +1350,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			status = SWITCH_STATUS_SUCCESS;
+
+			/* If we had early media in bypass mode before, it is no longer relevant */
+                	if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+                        	switch_core_session_message_t msg2 = { 0 };
+
+                        	msg2.message_id = SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS;
+                        	msg2.from = __FILE__;
+                        	switch_core_session_receive_message(session, &msg2);
+                	}
+
 			if (switch_core_session_receive_message(session, &msg) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't re-establsh media on %s\n", switch_channel_get_name(channel));
 				switch_core_session_rwunlock(session);
@@ -1954,6 +1964,21 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	}
 	switch_xml_set_txt_d(param, caller_profile->chan_name);
 
+
+	if (caller_profile->soft) {
+		profile_node_t *pn;
+
+		for (pn = caller_profile->soft; pn; pn = pn->next) {
+
+			if (!(param = switch_xml_add_child_d(xml, pn->var, off++))) {
+				return -1;
+			}
+			switch_xml_set_txt_d(param, pn->val);
+		}
+
+	}
+
+
 	return off;
 }
 
@@ -2043,6 +2068,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			goto error;
 		}
 		for (ap = app_log; ap; ap = ap->next) {
+			char tmp[128];
 
 			if (!(x_application = switch_xml_add_child_d(x_apps, "application", app_off++))) {
 				goto error;
@@ -2050,6 +2076,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 			switch_xml_set_attr_d(x_application, "app_name", ap->app);
 			switch_xml_set_attr_d(x_application, "app_data", ap->arg);
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, ap->stamp);
+			switch_xml_set_attr_d_buf(x_application, "app_stamp", tmp);
 		}
 	}
 

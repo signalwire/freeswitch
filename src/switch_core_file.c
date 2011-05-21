@@ -445,14 +445,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
 	switch_set_flag(fh, SWITCH_FILE_SEEK);
 	status = fh->file_interface->file_seek(fh, cur_pos, samples, whence);
 
-	if (samples) {
-		fh->offset_pos = *cur_pos;
+	fh->offset_pos = *cur_pos;
 
-		if (switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE)) {
-			fh->samples_out = *cur_pos;
-		}
+	if (switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE)) {
+		fh->samples_out = *cur_pos;
 	}
-
 
 	return status;
 }
