@@ -178,7 +178,7 @@ struct PACKED soft_key_event_message {
 /* HeadsetStatusMessage */
 #define HEADSET_STATUS_MESSAGE 0x002B
 struct PACKED headset_status_message {
-    uint32_t mode;
+    uint32_t mode; /* 1=HeadsetOn; 2=HeadsetOff */
 };
 
 /* RegisterAvailableLinesMessage */
@@ -233,6 +233,23 @@ struct PACKED extended_data_message {
 /* DeviceToUserDataResponseVersion1Message */
 #define DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE 0x0042
 /* See struct PACKED extended_data_message */
+
+/* DialedPhoneBookMessage */
+#define DIALED_PHONE_BOOK_MESSAGE 0x0048
+struct PACKED dialed_phone_book_message {
+	uint32_t number_index; /* must be shifted 4 bits right */
+	uint32_t line_instance;
+	uint32_t unknown;
+	char phone_number[256];
+};
+
+/* AccessoryStatusMessage */
+#define ACCESSORY_STATUS_MESSAGE 0x0049
+struct PACKED accessory_status_message {
+	uint32_t accessory_id;
+	uint32_t accessory_status;
+	uint32_t unknown;
+};
 
 /* RegisterAckMessage */
 #define REGISTER_ACK_MESSAGE 0x0081
@@ -507,7 +524,7 @@ struct PACKED display_prompt_status_message {
 };
 
 /* ClearPromptStatusMessage */
-#define CLEAR_PROMPT_STATUS_MESSAGE  0x0113
+#define CLEAR_PROMPT_STATUS_MESSAGE 0x0113
 struct PACKED clear_prompt_status_message {
     uint32_t line_instance;
     uint32_t call_id;
@@ -573,6 +590,15 @@ struct PACKED service_url_stat_res_message {
 #define USER_TO_DEVICE_DATA_VERSION1_MESSAGE 0x013F
 /* See struct PACKED extended_data_message */
 
+/* DialedPhoneBookAckMessage */
+#define DIALED_PHONE_BOOK_ACK_MESSAGE 0x0152
+struct PACKED dialed_phone_book_ack_message {
+	uint32_t number_index; /* must be shifted 4 bits right */
+	uint32_t line_instance;
+	uint32_t unknown;
+	uint32_t unknown2;
+};
+
 /* XMLAlarmMessage */
 #define XML_ALARM_MESSAGE 0x015A
 
@@ -614,6 +640,8 @@ union skinny_data {
 	struct feature_stat_req_message feature_req;
 	/* see field "extended_data" for DEVICE_TO_USER_DATA_VERSION1_MESSAGE */
 	/* see field "extended_data" for DEVICE_TO_USER_DATA_RESPONSE_VERSION1_MESSAGE */
+	struct dialed_phone_book_message dialed_phone_book;
+	struct accessory_status_message accessory_status;
 	struct register_ack_message reg_ack;
 	struct start_tone_message start_tone;
 	struct stop_tone_message stop_tone;
@@ -651,6 +679,7 @@ union skinny_data {
 	struct display_pri_notify_message display_pri_notify;
 	struct service_url_stat_res_message service_url_res;
 	/* see field "extended_data" for USER_TO_DEVICE_DATA_VERSION1_MESSAGE */
+	struct dialed_phone_book_ack_message dialed_phone_book_ack;
 
 	struct data_message data;
 	struct extended_data_message extended_data;

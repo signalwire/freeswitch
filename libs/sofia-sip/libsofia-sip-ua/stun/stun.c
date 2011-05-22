@@ -673,12 +673,12 @@ static stun_request_t *stun_request_create(stun_discovery_t *sd)
 
 void stun_request_destroy(stun_request_t *req)
 {
-  stun_handle_t *sh;
+  //stun_handle_t *sh;
   assert(req);
 
   enter;
 
-  sh = req->sr_handle;
+  //sh = req->sr_handle;
 
   if (x_is_inserted(req, sr))
     x_remove(req, sr);
@@ -1140,14 +1140,14 @@ static stun_discovery_t *stun_discovery_create(stun_handle_t *sh,
 
 static int stun_discovery_destroy(stun_discovery_t *sd)
 {
-  stun_handle_t *sh;
+  //stun_handle_t *sh;
 
   enter;
 
   if (!sd)
     return errno = EFAULT, -1;
 
-  sh = sd->sd_handle;
+  //sh = sd->sd_handle;
 
   if (sd->sd_timer)
     su_timer_destroy(sd->sd_timer), sd->sd_timer = NULL;
@@ -1883,7 +1883,7 @@ static int process_test_lifetime(stun_request_t *req, stun_msg_t *binding_respon
   stun_discovery_t *sd = req->sr_discovery;
   stun_request_t *new;
   stun_handle_t *sh = req->sr_handle;
-  su_localinfo_t *li;
+  //su_localinfo_t *li;
   su_sockaddr_t *sa;
   su_timer_t *sockfdy_timer = NULL;
   su_socket_t sockfdy = sd->sd_socket2;
@@ -1954,7 +1954,7 @@ static int process_test_lifetime(stun_request_t *req, stun_msg_t *binding_respon
   /* Rock, we come from sockfdx */
   process_binding_request(req, binding_response);
 
-  li = &req->sr_localinfo;
+  //li = &req->sr_localinfo;
   sa = req->sr_local_addr;
   stun_free_message(binding_response);
 
@@ -1981,7 +1981,7 @@ static int process_test_lifetime(stun_request_t *req, stun_msg_t *binding_respon
 
 static int action_bind(stun_request_t *req, stun_msg_t *binding_response)
 {
-  su_localinfo_t *li = NULL;
+  //su_localinfo_t *li = NULL;
   su_sockaddr_t *sa = NULL;
   stun_discovery_t *sd = req->sr_discovery;
   stun_handle_t *sh = req->sr_handle;
@@ -1992,7 +1992,7 @@ static int action_bind(stun_request_t *req, stun_msg_t *binding_response)
 
   process_binding_request(req, binding_response);
 
-  li = &req->sr_localinfo;
+  //li = &req->sr_localinfo;
   sa = req->sr_local_addr;
 
   memcpy(sd->sd_addr_seen_outside, sa, sizeof(su_sockaddr_t));
@@ -3039,7 +3039,7 @@ int stun_process_request(su_socket_t s, stun_msg_t *req,
   su_sockaddr_t mod_addr[1] = {{ 0 }}, src_addr[1] = {{ 0 }}, chg_addr[1] = {{ 0 }};
   stun_attr_t *tmp, m_attr[1], s_attr[1], c_attr[1], **p;
   su_sockaddr_t to_addr;
-  int c, i;
+  int i;
 
   tmp = stun_get_attr(req->stun_attr, RESPONSE_ADDRESS);
 
@@ -3071,20 +3071,20 @@ int stun_process_request(su_socket_t s, stun_msg_t *req,
   /* SOURCE-ADDRESS depends on CHANGE_REQUEST */
   tmp = stun_get_attr(req->stun_attr, CHANGE_REQUEST);
   if (!tmp) {
-    c = 0;
+    //c = 0;
   }
   else {
     switch (((stun_attr_changerequest_t *) tmp->pattr)->value) {
     case STUN_CR_CHANGE_IP:
-      c = 1;
+      //c = 1;
       break;
 
     case STUN_CR_CHANGE_PORT:
-      c = 2;
+      //c = 2;
       break;
 
     case STUN_CR_CHANGE_IP | STUN_CR_CHANGE_PORT: /* bitwise or */
-      c = 3;
+      //c = 3;
       break;
 
     default:

@@ -852,7 +852,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *reg_host = profile->reg_db_domain;
 	const char *sub_host = profile->sub_domain;
 	char contact_str[1024] = "";
-	int nat_hack = 0;
 	uint8_t multi_reg = 0, multi_reg_contact = 0, avoid_multi_reg = 0;
 	uint8_t stale = 0, forbidden = 0;
 	auth_res_t auth_res;
@@ -863,7 +862,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	char network_ip[80];
 	char network_port_c[6];
 	char url_ip[80];
-	char *register_gateway = NULL;
 	int network_port;
 	const char *reg_desc = "Registered";
 	const char *call_id = NULL;
@@ -1094,8 +1092,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				avoid_multi_reg = 1;
 			}
 
-			register_gateway = switch_event_get_header(*v_event, "sip-register-gateway");
-
 			/* Allow us to force the SIP user to be something specific - needed if 
 			 * we - for example - want to be able to ensure that the username a UA can
 			 * be contacted at is the same one that they used for authentication.
@@ -1166,7 +1162,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 							reg_desc = "Registered(AUTO-NAT)";
 							exptime = 30;
 						}
-						nat_hack = 1;
 					} else {
 						char *p;
 						switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));

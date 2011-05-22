@@ -9,7 +9,7 @@
     <!-- <param name="ptime-override-value" value="20"/> --> <!-- Override negotiated ptime value with this value -->
     <param name="gk-address" value=""/>    <!-- empty to disable, "*" to search LAN -->
     <param name="gk-identifer" value=""/>  <!-- optional name of gk -->
-    <param name="gk-interface" value=""/>  <!-- mandatory listener interface name -->
+    <param name="gk-interface" value=""/>  <!-- optional UDP listener interface (IP:port) -->
     <param name="gk-retry" value="30"/>  <!-- optional GK register retry timer -->
     <param name="faststart" value="true"/>  <!-- optional -->
     <param name="h245tunneling" value="true"/>  <!-- optional -->

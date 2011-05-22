@@ -334,11 +334,12 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 	switch(ieId) {
 		case PROT_Q931_IE_BEARER_CAP:
 			{
-				uint8_t codingStandard, infTransferCap, transferMode, infTransferRate, usrL1Prot;
+				uint8_t codingStandard, infTransferCap, infTransferRate, usrL1Prot;
+				/*uint8_t transferMode;*/
 				
 				codingStandard = get_bits(OCTET(3),6,7);
 				infTransferCap = get_bits(OCTET(3),1,5);
-				transferMode = get_bits(OCTET(4),6,7);
+				/*transferMode = get_bits(OCTET(4),6,7);*/
 				infTransferRate = get_bits(OCTET(4),1,5);
 				usrL1Prot = get_bits(OCTET(5),1,5);
 				
@@ -404,8 +405,9 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 				uint8_t infoChannelSelection=0;
 				uint8_t prefExclusive=0;
 				uint8_t ifaceIdPresent=0;
-				uint8_t ifaceIdentifier = 0; /* octet_3_1 */
-				uint8_t chanType=0, numberMap=0, codingStandard=0;
+				/* uint8_t ifaceIdentifier = 0; */ /* octet_3_1 */
+				uint8_t chanType=0, numberMap=0;
+				/* uint8_t codingStandard=0; */
 				uint8_t channelNo = 0;
 				
 				infoChannelSelection = get_bits(OCTET(3),1,2);
@@ -413,15 +415,15 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 				ifaceIdPresent = get_bits(OCTET(3),7,7);
 	
 				if (ifaceIdPresent) {
-					ifaceIdentifier= get_bits(OCTET(4),1,7);
+					/*ifaceIdentifier= get_bits(OCTET(4),1,7);*/
 					chanType = get_bits(OCTET(5),1,4);
 					numberMap = get_bits(OCTET(5),5,5);
-					codingStandard = get_bits(OCTET(5),6,7);
+					/*codingStandard = get_bits(OCTET(5),6,7);*/
 					channelNo = get_bits(OCTET(6),1,7);
 				} else {
 					chanType = get_bits(OCTET(4),1,4);
 					numberMap = get_bits(OCTET(4),5,5);
-					codingStandard = get_bits(OCTET(4),6,7);
+					/*codingStandard = get_bits(OCTET(4),6,7);*/
 					channelNo = get_bits(OCTET(5),1,7);
 				}
 				

@@ -30,6 +30,7 @@
  *
  */
 #include <switch.h>
+#include <switch_ssl.h>
 #include <switch_stun.h>
 #include <libdingaling.h>
 
@@ -1399,7 +1400,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 {
 	struct private_object *tech_pvt = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	int payload = 0;
+	//int payload = 0;
 
 	tech_pvt = (struct private_object *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1443,7 +1444,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 
 
-			payload = tech_pvt->read_frame.payload;
+			//payload = tech_pvt->read_frame.payload;
 
 #if 0
 			elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000);
@@ -1911,6 +1912,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 	SWITCH_ADD_API(api_interface, "dingaling", "DingaLing Menu", dingaling, DINGALING_SYNTAX);
 	SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
 
+	switch_ssl_init_ssl_locks();
+
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2007,6 +2011,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown)
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.codec_string);
 	switch_safe_free(globals.codec_rates_string);
+
+	switch_ssl_destroy_ssl_locks();
 
 	return SWITCH_STATUS_SUCCESS;
 }

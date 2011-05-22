@@ -31,7 +31,8 @@
  *
  */
 #include <switch.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
+
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown);
@@ -155,7 +156,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	char *uri = NULL;
 	char *dynamic_url = NULL;
 
-	gethostname(hostname, sizeof(hostname));
+    strncpy(hostname, switch_core_get_switchname(), sizeof(hostname));
 
 	if (!binding) {
 		return NULL;
@@ -548,7 +549,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 	globals.hash_tail = NULL;
 
 	if (do_config() == SWITCH_STATUS_SUCCESS) {
-		curl_global_init(CURL_GLOBAL_ALL);
+		switch_curl_init();
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -573,7 +574,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown)
 	}
 
 	switch_xml_unbind_search_function_ptr(xml_url_fetch);
-	curl_global_cleanup();
+	switch_curl_destroy();
 	return SWITCH_STATUS_SUCCESS;
 }
 

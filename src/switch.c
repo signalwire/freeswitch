@@ -793,10 +793,10 @@ int main(int argc, char *argv[])
 
 #if defined(HAVE_SETRLIMIT) && !defined(__sun)
 	if (!waste && !(flags & SCF_VG)) {
-		int x;
+		//int x;
 
 		memset(&rlp, 0, sizeof(rlp));
-		x = getrlimit(RLIMIT_STACK, &rlp);
+		getrlimit(RLIMIT_STACK, &rlp);
 
 		if (rlp.rlim_max > SWITCH_THREAD_STACKSIZE) {
 			char buf[1024] = "";

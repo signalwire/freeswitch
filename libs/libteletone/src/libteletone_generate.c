@@ -321,7 +321,7 @@ static char *my_strdup (const char *s)
 TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cmd)
 {
 	char *data = NULL, *cur = NULL, *end = NULL;
-	int var = 0, LOOPING = 0;
+	int LOOPING = 0;
 	
 	if (!cmd) {
 		return -1;
@@ -335,7 +335,6 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 		cur = data;
 
 		while (*cur) {
-			var = 0;
 			if (*cur == ' ' || *cur == '\r' || *cur == '\n') {
 				cur++;
 				continue;
@@ -346,7 +345,6 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 			}
 			
 			if (*(cur + 1) == '=') {
-				var = 1;
 				switch(*cur) {
 				case 'c':
 					ts->channels = atoi(cur + 2);

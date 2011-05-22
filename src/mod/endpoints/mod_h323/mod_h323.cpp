@@ -1,8 +1,11 @@
 /* 
- * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * H323 endpoint interface for Freeswitch Modular Media Switching Software Library /
+ * Soft-Switch Application
  *
  * Version: MPL 1.1
+ *
+ * Copyright (c) 2010 Ilnitskiy Mixim (max.h323@gmail.com)
+ * Copyright (c) 2010 Georgiewskiy Yuriy (bottleman@icf.org.ru)
  *
  * The contents of this file are subject to the Mozilla Public License Version
  * 1.1 (the "License"); you may not use this file except in compliance with
@@ -14,6 +17,12 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
+ * Contributor(s):
+ * Jan Willamowius.
+ * 
+ * 
+ * 
+ *
  * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  *
  * The Initial Developer of the Original Code is
@@ -24,7 +33,7 @@
  *
  * mod_h323.cpp -- H323 endpoint
  *
- *	Version 0.0.56
+ *	Version 0.0.57
 */
 
 //#define DEBUG_RTP_PACKETS
@@ -215,6 +224,7 @@ class FSTrace : public ostream {
     public:
         Buffer()
             {
+				// leave 2 chars room at end: 1 for overflow char and1 for \0
                 setg(buffer, buffer, &buffer[sizeof(buffer)-2]);
                 setp(buffer, &buffer[sizeof(buffer)-2]);
             }
@@ -432,8 +442,8 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface)
 		}
 	}
 
-	if (!m_gkAddress.IsEmpty() && !m_gkIdentifer.IsEmpty() && !m_gkInterface.IsEmpty()) {
-		m_thread = new FSGkRegThread(this,&m_gkAddress,&m_gkIdentifer,&m_gkInterface,m_gkretry);
+	if (!m_gkAddress.IsEmpty()) {
+		m_thread = new FSGkRegThread(this, &m_gkAddress, &m_gkIdentifer, &m_gkInterface, m_gkretry);
 		m_thread->SetAutoDelete();
 		m_thread->Resume();
 	}
@@ -584,6 +594,7 @@ FSH323EndPoint::FSH323EndPoint()
 	:m_faststart(true)
 	,m_h245tunneling(true)
 	,m_h245insetup(true)
+	,m_dtmfinband(false)
 	,m_thread(NULL)
 	,m_stop_gk(false)
 	,m_fax_old_asn(false)
@@ -708,6 +719,7 @@ FSH323Connection::FSH323Connection(FSH323EndPoint& endpoint, H323Transport* tran
 
 	h323_private_t *tech_pvt = (h323_private_t *) switch_core_session_alloc(m_fsSession, sizeof(*tech_pvt));
 	tech_pvt->me = this;
+	tech_pvt->active_connection = true;
 	switch_core_session_set_private(m_fsSession, tech_pvt);
 	
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(m_fsSession));
@@ -748,8 +760,9 @@ FSH323Connection::~FSH323Connection()
 	} else if (m_RTPlocalPort) {
 		switch_rtp_release_port((const char *)m_RTPlocalIP.AsString(), m_RTPlocalPort);
 	}
-
+	
 	tech_pvt->me = NULL;
+	tech_pvt->active_connection = false;
 //	switch_mutex_unlock(tech_pvt->h323_mutex);
 //	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 }	
@@ -2387,6 +2400,9 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 	switch_mutex_lock(tech_pvt->h323_mutex);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 	switch_mutex_unlock(tech_pvt->h323_mutex);
-
+	while (tech_pvt->active_connection){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Wait clear h323 connection\n");
+		h_timer(1);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -170,10 +170,10 @@ void tport_stun_bind_cb(tport_primary_t *pri,
 			stun_action_t action,
 			stun_state_t event)
 {
-  tport_master_t *mr;
+  //tport_master_t *mr;
   SU_DEBUG_3(("%s: %s\n", __func__, stun_str_state(event)));
 
-  mr = pri->pri_master;
+  //mr = pri->pri_master;
 
   if (event == stun_discovery_done) {
     tport_stun_bind_done(pri, sh, sd);

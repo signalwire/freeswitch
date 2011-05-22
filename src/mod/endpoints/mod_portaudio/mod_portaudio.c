@@ -2415,7 +2415,7 @@ SWITCH_STANDARD_API(pa_cmd)
 			} else if (!strcmp(action, "call")) {
 				switch_snprintf(cmd_buf, sizeof(cmd_buf), "call %s", wcmd);
 				cmd = cmd_buf;
-			} else if (!strcmp(action, "hangup") || !strcmp(action, "list") || !strcmp(action, "answer")) {
+			} else if (!strcmp(action, "hangup") || !strcmp(action, "list") || !strcmp(action, "devlist") || !strcmp(action, "answer")) {
 				cmd = action;
 			}
 		}
@@ -2543,6 +2543,7 @@ SWITCH_STANDARD_API(pa_cmd)
 							   "<input name=action type=submit value=\"unmute\"> "
 							   "<input name=action type=submit value=\"indev\"> "
 							   "<input name=action type=submit value=\"outdev\"> "
+							   "<input name=action type=submit value=\"devlist\"> <br> "
 							   "<input name=action type=submit value=\"preparestream\"> "
 							   "<input name=action type=submit value=\"switchstream\"> "
 							   "<input name=action type=submit value=\"closestreams\"> "

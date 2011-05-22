@@ -779,7 +779,6 @@ void sngisdn_rcv_cc_ind(CcMngmt *status)
 void sngisdn_rcv_q931_trace(InMngmt *trc, Buffer *mBuf)
 {
 	MsgLen mlen;
-	MsgLen i;
 	int16_t j;
 	Buffer *tmp;
 	Data *cptr;
@@ -802,7 +801,6 @@ void sngisdn_rcv_q931_trace(InMngmt *trc, Buffer *mBuf)
 		tmp = mBuf->b_cont;
 		cptr = tmp->b_rptr;
 		data = *cptr++;
-		i = 0;
 
 		for(j=0;j<mlen;j++) {
 			tdata[j]= data;

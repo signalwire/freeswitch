@@ -29,6 +29,7 @@
  * Matt Klein <mklein@nmedia.net>
  * Michael Jerris <mike@jerris.com>
  * Ken Rice <krice at suspicious dot org>
+ * Marc Olivier Chouinard <mochouinard@moctel.com>
  *
  * switch_ivr.c -- IVR Library
  *
@@ -298,13 +299,10 @@ static void *SWITCH_THREAD_FUNC unicast_thread_run(switch_thread_t *thread, void
 {
 	switch_unicast_conninfo_t *conninfo = (switch_unicast_conninfo_t *) obj;
 	switch_size_t len;
-	switch_channel_t *channel;
 
 	if (!conninfo) {
 		return NULL;
 	}
-
-	channel = switch_core_session_get_channel(conninfo->session);
 
 	while (switch_test_flag(conninfo, SUF_READY) && switch_test_flag(conninfo, SUF_THREAD_RUNNING)) {
 		len = conninfo->write_frame.buflen;
@@ -1352,6 +1350,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			status = SWITCH_STATUS_SUCCESS;
+
+			/* If we had early media in bypass mode before, it is no longer relevant */
+                	if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+                        	switch_core_session_message_t msg2 = { 0 };
+
+                        	msg2.message_id = SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS;
+                        	msg2.from = __FILE__;
+                        	switch_core_session_receive_message(session, &msg2);
+                	}
+
 			if (switch_core_session_receive_message(session, &msg) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't re-establsh media on %s\n", switch_channel_get_name(channel));
 				switch_core_session_rwunlock(session);
@@ -1362,11 +1370,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 250, NULL);
 				switch_yield(250000);
 			} else {
-				switch_status_t st;
 				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 				switch_channel_wait_for_flag(channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
-				st = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+				switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 
 			if ((flags & SMF_REBRIDGE)
@@ -1957,6 +1964,21 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	}
 	switch_xml_set_txt_d(param, caller_profile->chan_name);
 
+
+	if (caller_profile->soft) {
+		profile_node_t *pn;
+
+		for (pn = caller_profile->soft; pn; pn = pn->next) {
+
+			if (!(param = switch_xml_add_child_d(xml, pn->var, off++))) {
+				return -1;
+			}
+			switch_xml_set_txt_d(param, pn->val);
+		}
+
+	}
+
+
 	return off;
 }
 
@@ -2046,6 +2068,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			goto error;
 		}
 		for (ap = app_log; ap; ap = ap->next) {
+			char tmp[128];
 
 			if (!(x_application = switch_xml_add_child_d(x_apps, "application", app_off++))) {
 				goto error;
@@ -2053,6 +2076,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 			switch_xml_set_attr_d(x_application, "app_name", ap->app);
 			switch_xml_set_attr_d(x_application, "app_data", ap->arg);
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, ap->stamp);
+			switch_xml_set_attr_d_buf(x_application, "app_stamp", tmp);
 		}
 	}
 
@@ -2222,6 +2248,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
 			switch_xml_set_txt_d(time_tag, tmp);
 
+			if (!(time_tag = switch_xml_add_child_d(x_times, "bridged_time", t_off++))) {
+				goto error;
+			}
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->bridged);
+			switch_xml_set_txt_d(time_tag, tmp);
+
 			if (!(time_tag = switch_xml_add_child_d(x_times, "hangup_time", t_off++))) {
 				goto error;
 			}
@@ -2273,7 +2305,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	switch_frame_t *read_frame, write_frame = { 0 };
 	switch_status_t status;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	uint32_t interval, samples;
+	uint32_t interval;
 	uint32_t ts = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
@@ -2285,7 +2317,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	}
 
 	interval = read_impl.microseconds_per_packet / 1000;
-	samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
+	//samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
 
 	qlen = delay_ms / (interval);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
@@ -2327,9 +2359,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 	switch_say_interface_t *si;
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	const char *save_path = NULL, *chan_lang = NULL, *lang = NULL, *lname = NULL, *sound_path = NULL;
+	const char *save_path = NULL, *chan_lang = NULL, *lang = NULL, *sound_path = NULL;
 	switch_event_t *hint_data;
-	switch_xml_t cfg, xml = NULL, language, macros;
+	switch_xml_t cfg, xml = NULL, language = NULL, macros = NULL, phrases = NULL;
 	char *p;
 
 	switch_assert(session);
@@ -2341,6 +2373,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 	}
 
 	if (module_name) {
+		char *p;
 		p = switch_core_session_strdup(session, module_name);
 		module_name = p;
 		
@@ -2371,58 +2404,35 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "lang", chan_lang);
 	switch_channel_event_set_data(channel, hint_data);
 
-	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Open of phrases failed.\n");
+	if (switch_xml_locate_language(&xml, &cfg, hint_data, &language, &phrases, &macros, chan_lang) != SWITCH_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (!(macros = switch_xml_child(cfg, "macros"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macros tag.\n");
-		goto done;
-	}
-
-	if (!(language = switch_xml_child(macros, "language"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language tag.\n");
-		goto done;
-	}
-
-	while (language) {
-		if ((lname = (char *) switch_xml_attr(language, "name")) && !strcasecmp(lname, chan_lang)) {
-			const char *tmp;
-
-			if ((tmp = switch_xml_attr(language, "module"))) {
-				module_name = tmp;
-			}
-			break;
-		}
-		language = language->next;
-	}
-
-	if (!language) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language %s.\n", chan_lang);
-		goto done;
-	}
-
-	if (!module_name) {
+	if ((p = (char *) switch_xml_attr(language, "say-module"))) {
+		module_name = switch_core_session_strdup(session, p);
+	} else if ((p = (char *) switch_xml_attr(language, "module"))) {
+		module_name = switch_core_session_strdup(session, p);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Deprecated usage of module attribute\n");
+	} else {
 		module_name = chan_lang;
 	}
 
-	if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {
-		sound_path = (char *) switch_xml_attr(language, "sound_path");
+	if (!(sound_path = (char *) switch_xml_attr(language, "sound-prefix"))) {
+		if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {
+			sound_path = (char *) switch_xml_attr(language, "sound_path");
+		}
 	}
 
-	save_path = switch_channel_get_variable(channel, "sound_prefix");
-
-	if (sound_path) {
-		switch_channel_set_variable(channel, "sound_prefix", sound_path);
-		p = switch_core_session_strdup(session, sound_path);
-		sound_path = p;
+	if (channel) {
+		const char *p = switch_channel_get_variable(channel, "sound_prefix_enforced");
+		if (!switch_true(p)) {
+			save_path = switch_channel_get_variable(channel, "sound_prefix");
+			if (sound_path) {
+				switch_channel_set_variable(channel, "sound_prefix", sound_path);
+			}
+		}
 	}
 
-	if (xml) {
-		switch_xml_free(xml);
-	}
-	
 	if ((si = switch_loadable_module_get_say_interface(module_name))) {
 		/* should go back and proto all the say mods to const.... */
 		switch_say_args_t say_args = {0};
@@ -2446,7 +2456,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 	if (save_path) {
 		switch_channel_set_variable(channel, "sound_prefix", save_path);
 	}
-	
+
+	if (xml) {
+		switch_xml_free(xml);
+	}
+
 	return status;
 }
 
@@ -2463,9 +2477,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_string(switch_core_session_t *ses
 	switch_say_interface_t *si;
 	switch_channel_t *channel = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	const char *save_path = NULL, *chan_lang = NULL, *lname = NULL, *sound_path = NULL;
+	const char *save_path = NULL, *chan_lang = NULL, *sound_path = NULL;
 	switch_event_t *hint_data;
-	switch_xml_t cfg, xml = NULL, language, macros;
+	switch_xml_t cfg, xml = NULL, language = NULL, macros = NULL, phrases = NULL;
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
@@ -2498,52 +2512,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_string(switch_core_session_t *ses
 		switch_channel_event_set_data(channel, hint_data);
 	}
 
-	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Open of phrases failed.\n");
+	if (switch_xml_locate_language(&xml, &cfg, hint_data, &language, &phrases, &macros, chan_lang) != SWITCH_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (!(macros = switch_xml_child(cfg, "macros"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macros tag.\n");
-		goto done;
-	}
-
-	if (!(language = switch_xml_child(macros, "language"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language tag.\n");
-		goto done;
-	}
-
-	while (language) {
-		if ((lname = (char *) switch_xml_attr(language, "name")) && !strcasecmp(lname, chan_lang)) {
-			const char *tmp;
-
-			if ((tmp = switch_xml_attr(language, "module"))) {
-				module_name = tmp;
-			}
-			break;
-		}
-		language = language->next;
-	}
-
-	if (!language) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language %s.\n", chan_lang);
-		goto done;
-	}
-
-	if (!module_name) {
+	if ((module_name = switch_xml_attr(language, "say-module"))) {
+	} else if ((module_name = switch_xml_attr(language, "module"))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Deprecated usage of module attribute\n");
+	} else {
 		module_name = chan_lang;
 	}
 
-	if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {
-		sound_path = (char *) switch_xml_attr(language, "sound_path");
+	if (!(sound_path = (char *) switch_xml_attr(language, "sound-prefix"))) {
+		if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {
+			sound_path = (char *) switch_xml_attr(language, "sound_path");
+		}
 	}
 
 	if (channel) {
-		save_path = switch_channel_get_variable(channel, "sound_prefix");
-	}
-
-	if (sound_path && channel) {
-		switch_channel_set_variable(channel, "sound_prefix", sound_path);
+		const char *p = switch_channel_get_variable(channel, "sound_prefix_enforced");	
+		if (!switch_true(p)) {
+			save_path = switch_channel_get_variable(channel, "sound_prefix");
+			if (sound_path) {
+				switch_channel_set_variable(channel, "sound_prefix", sound_path);
+			}
+		}
 	}
 
 	if ((si = switch_loadable_module_get_say_interface(module_name))) {

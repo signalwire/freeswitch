@@ -840,9 +840,9 @@ static const char *basic_gets(int *cnt)
 		}
 		Sleep(20);
 	}
+#endif
 
 	return command_buf;
-#endif
 }
 #endif
 

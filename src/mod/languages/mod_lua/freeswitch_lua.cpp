@@ -123,7 +123,6 @@ void Session::check_hangup_hook()
 void Session::do_hangup_hook()
 {
 	if (hh && !mark) {
-		const char *err = NULL;
 		int arg_count = 2;
 		mark++;
 

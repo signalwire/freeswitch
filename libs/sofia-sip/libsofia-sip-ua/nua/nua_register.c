@@ -1879,14 +1879,14 @@ int nua_registration_process_request(nua_registration_t *list,
 				     nta_incoming_t *irq,
 				     sip_t const *sip)
 {
-  sip_call_id_t *i;
+  //sip_call_id_t *i;
   nua_registration_t *nr;
 
   if (!outbound_targeted_request(sip))
     return 0;
 
   /* Process by outbound... */
-  i = sip->sip_call_id;
+  //i = sip->sip_call_id;
 
   for (nr = list; nr; nr = nr->nr_next) {
     outbound_t *ob = nr->nr_ob;

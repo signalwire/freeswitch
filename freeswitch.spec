@@ -63,12 +63,12 @@ Vendor:       	http://www.freeswitch.org/
 #					Source files and where to get them
 #
 ######################################################################################################################
-Source0:    http://files.freeswitch.org/%{name}-%{version}.tar.bz2
+Source0:        http://files.freeswitch.org/%{name}-%{version}.tar.bz2
 Source1:	http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz
 Source2:	http://files.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
 Source3:	http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
-Source5:	http://files.freeswitch.org/downloads/libs/mpg123.tar.gz
+Source5:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
 Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
 Source7:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-20091212.tar.gz
 Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
@@ -752,6 +752,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_pg_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_sqlite.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cepstral.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cidlookup.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/conference.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/console.conf.xml
@@ -775,6 +776,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/logfile.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/memcache.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/modules.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/mongo.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/nibblebill.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/opal.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/osp.conf.xml
@@ -1064,10 +1066,13 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/en
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/en/demo
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/en/vm
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/en/dir
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/en/ivr
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/vm/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/dir/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/ivr/*.xml
 %{prefix}/mod/mod_say_en.so*
 
 %files lang-de
@@ -1085,6 +1090,7 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr/demo
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr/vm
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr/dir
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/vm/*.xml
@@ -1096,6 +1102,7 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/ru
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/ru/demo
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/ru/vm
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/ru/dir
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/ru/vm/*.xml
@@ -1107,6 +1114,7 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/he/
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/he/demo
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/he/vm
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/he/dir
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/he/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/he/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/he/vm/*.xml

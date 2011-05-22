@@ -20,6 +20,8 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
+ * Portions created by Seventh Signal Ltd. & Co. KG and its employees are Copyright (C)
+ * Seventh Signal Ltd. & Co. KG, All Rights Reserverd.
  *
  * Contributor(s):
  * Michal Bielicki <michal.bielicki@halokwadrat.de>
@@ -158,7 +160,6 @@ static void do_rotate(cdr_fd_t *fd)
 	char date[80] = "";
 	switch_size_t retsize;
 	char *p;
-	size_t len;
 
 	close(fd->fd);
 	fd->fd = -1;
@@ -167,7 +168,6 @@ static void do_rotate(cdr_fd_t *fd)
 		switch_time_exp_lt(&tm, switch_micro_time_now());
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
 
-		len = strlen(fd->path) + strlen(date) + 2;
 		p = switch_mprintf("%s.%s", fd->path, date);
 		assert(p);
 		switch_file_rename(fd->path, p, globals.pool);

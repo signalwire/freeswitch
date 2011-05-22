@@ -1106,7 +1106,7 @@ static int config(void)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid encoding strategy '%s' specified\n", val);
 					}
-				} else if (!strcasecmp(var, "apply-inbound-acl")) {
+				} else if (!strcasecmp(var, "apply-inbound-acl") && ! zstr(val)) {
 					if (prefs.acl_count < MAX_ACL) {
 						prefs.acl[prefs.acl_count++] = strdup(val);
 					} else {

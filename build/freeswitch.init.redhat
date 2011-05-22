@@ -15,7 +15,7 @@
 . /etc/init.d/functions
 
 PROG_NAME=freeswitch
-PID_FILE=${PID_FILE-/opt/freeswitch/run/freeswitch.pid}
+PID_FILE=${PID_FILE-/var/run/freeswitch/freeswitch.pid}
 FS_USER=${FS_USER-freeswitch}
 FS_FILE=${FS_FILE-/opt/freeswitch/bin/freeswitch} 
 FS_HOME=${FS_HOME-/opt/freeswitch}

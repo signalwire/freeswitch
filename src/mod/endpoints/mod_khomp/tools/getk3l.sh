@@ -41,28 +41,25 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ###############################################################################
 
+K3L_FILE="k3l_2.1_client.sh"
+PARAM="0"
 
-clean()
+if [  "$1" ]
+then
+    PARAM=$1
+fi
+
+help()
 {
-    printf "$1"
-    exit 1
+    echo "Usage: getk3l.sh [OPTION]"
+    echo
+    echo "  -h,  --help       print this help"
+    echo "  -d,  --download   only download the k3l package withou doing the installation" 
+    echo 
 }
 
-if [ `whoami` != 'root' ] 
-then
-     clean "Need to be root\n"
-fi  
-
-#if [ "w$FREESWITCH_PATH" == "w" ]
-#then
-#    clean "FreeSWITCH source PATH is needed: \n\tSet \"FREESWITCH_PATH=\"\n"
-#fi
-
-if ! which 'kserver' &> /dev/null
-then
-    echo "k3l will be installed"
-    K3L_FILE="k3l_2.1_client.sh"
-
+download()
+{
     if [ "w`uname -m | grep x86_64`" == "w" ]
     then
         echo "Downloading i686 package"
@@ -71,23 +68,49 @@ then
         echo "Downloading x86_64 package"
         wget -t15 -c --progress=bar:force -O $K3L_FILE.gz http://www.khomp.com.br/binaries/softpbx/freeswitch/k3l_2.1_client_x86-64.sh.gz
     fi
+}
 
-    gunzip $K3L_FILE.gz
-    chmod 0755 $K3L_FILE
+clean()
+{
+    printf "$1"
+    exit 1
+}
 
-    (./$K3L_FILE) || clean "Error on k3l install\n"
-    
-    rm $K3L_FILE
-fi
+install()
+{
+    if [ `whoami` != 'root' ] 
+    then
+         clean "Need to be root to install !\n"
+         exit 1
+    fi  
 
-if [ "w`kserver --version | grep 2.1`" == "w" ]
+    if ! which 'kserver' &> /dev/null
+    then
+        download
+        gunzip $K3L_FILE.gz
+        chmod 0755 $K3L_FILE
+        (./$K3L_FILE) || clean "Error on k3l install\n"
+        rm $K3L_FILE
+    fi
+}
+
+if [ $PARAM == '--help' -o $PARAM == '-h' ]
 then
-    clean "k3l version 2.1 must be installed: \n\tUninstall the old version of k3l and try again\n"
+    help
+    exit 0
+elif [ $PARAM == '--download' -o $PARAM == '-d' ]
+then 
+    download
+    exit 0
+else
+    echo "k3l will be installed"
+    install
+
+    if [ "w`kserver --version | grep 2.1`" == "w" ]
+    then
+        clean "k3l version 2.1 must be installed: \n\tUninstall the old version of k3l and try again\n"
+        exit 1
+    fi
+
+    echo "Successfully installed!"
 fi
-
-#make || clean "Error on compilation\n"
-
-#make install || clean "Error on installation\n"
-
-echo "Successfully installed!"
-
