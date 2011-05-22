@@ -18,6 +18,7 @@
  * License.
  *
  * Contributor(s):
+ * Jan Willamowius.
  * 
  * 
  * 
@@ -223,6 +224,7 @@ class FSTrace : public ostream {
     public:
         Buffer()
             {
+				// leave 2 chars room at end: 1 for overflow char and1 for \0
                 setg(buffer, buffer, &buffer[sizeof(buffer)-2]);
                 setp(buffer, &buffer[sizeof(buffer)-2]);
             }
@@ -440,8 +442,8 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface)
 		}
 	}
 
-	if (!m_gkAddress.IsEmpty() && !m_gkIdentifer.IsEmpty() && !m_gkInterface.IsEmpty()) {
-		m_thread = new FSGkRegThread(this,&m_gkAddress,&m_gkIdentifer,&m_gkInterface,m_gkretry);
+	if (!m_gkAddress.IsEmpty()) {
+		m_thread = new FSGkRegThread(this, &m_gkAddress, &m_gkIdentifer, &m_gkInterface, m_gkretry);
 		m_thread->SetAutoDelete();
 		m_thread->Resume();
 	}
@@ -592,6 +594,7 @@ FSH323EndPoint::FSH323EndPoint()
 	:m_faststart(true)
 	,m_h245tunneling(true)
 	,m_h245insetup(true)
+	,m_dtmfinband(false)
 	,m_thread(NULL)
 	,m_stop_gk(false)
 	,m_fax_old_asn(false)
