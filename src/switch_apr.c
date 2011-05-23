@@ -697,10 +697,10 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t *sock, const 
 	switch_size_t req = *len, wrote = 0, need = *len;
 	int to_count = 0;
 
-	while ((wrote < req && status == SWITCH_STATUS_SUCCESS) || (need == 0 && status == SWITCH_STATUS_BREAK) || status == 730035) {
+	while ((wrote < req && status == SWITCH_STATUS_SUCCESS) || (need == 0 && status == SWITCH_STATUS_BREAK) || status == 730035 || status == 35) {
 		need = req - wrote;
 		status = apr_socket_send(sock, buf + wrote, &need);
-		if (status == SWITCH_STATUS_BREAK || status == 730035) {
+		if (status == SWITCH_STATUS_BREAK || status == 730035 || status == 35) {
 			if (++to_count > 10000000) {
 				status = SWITCH_STATUS_FALSE;
 				break;
