@@ -2002,7 +2002,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *call_id = NULL;
 	char *sql;
 	char *number_alias = NULL;
-	switch_xml_t domain, xml = NULL, user, param, uparams, dparams, group = NULL, gparams = NULL;
+	switch_xml_t user = NULL, param, uparams;
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
 	char *domain_name = NULL;
 	switch_event_t *params = NULL;
@@ -2179,7 +2179,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		domain_name = realm;
 	}
 
-	if (switch_xml_locate_user("id", zstr(username) ? "nobody" : username, domain_name, ip, &xml, &domain, &user, &group, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id", zstr(username) ? "nobody" : username, domain_name, ip, &user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n"
 						  "You must define a domain called '%s' in your directory and add a user with the id=\"%s\" attribute\n"
 						  "and you must configure your device to use the proper domain in it's authentication credentials.\n", username, domain_name,
@@ -2200,90 +2200,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		number_alias = zstr(username) ? "nobody" : username;
 	}
 
-	dparams = switch_xml_child(domain, "params");
-	uparams = switch_xml_child(user, "params");
-	if (group) {
-		gparams = switch_xml_child(group, "params");
-	}
-
-	if (!(dparams || uparams)) {
+	if (!(uparams = switch_xml_child(user, "params"))) {
 		ret = AUTH_OK;
 		goto skip_auth;
-	}
-
-	if (dparams) {
-		for (param = switch_xml_child(dparams, "param"); param; param = param->next) {
-			const char *var = switch_xml_attr_soft(param, "name");
-			const char *val = switch_xml_attr_soft(param, "value");
-
-			if (!strcasecmp(var, "sip-forbid-register") && switch_true(val)) {
-				ret = AUTH_FORBIDDEN;
-				goto end;
-			}
-
-			if (!strcasecmp(var, "password")) {
-				passwd = val;
-			}
-
-			if (!strcasecmp(var, "auth-acl")) {
-				auth_acl = val;
-			}
-
-			if (!strcasecmp(var, "a1-hash")) {
-				a1_hash = val;
-			}
-			if (!strcasecmp(var, "mwi-account")) {
-				mwi_account = val;
-			}
-			if (!strcasecmp(var, "allow-empty-password")) {
-				allow_empty_password = switch_true(val);
-			}
-			if (!strcasecmp(var, "user-agent-filter")) {
-				user_agent_filter = val;
-			}
-			if (!strcasecmp(var, "max-registrations-per-extension")) {
-				max_registrations_perext = atoi(val);
-			}
-		}
-	}
-
-	if (gparams) {
-		for (param = switch_xml_child(gparams, "param"); param; param = param->next) {
-			const char *var = switch_xml_attr_soft(param, "name");
-			const char *val = switch_xml_attr_soft(param, "value");
-
-			if (!strcasecmp(var, "sip-forbid-register") && switch_true(val)) {
-				ret = AUTH_FORBIDDEN;
-				goto end;
-			}
-
-			if (!strcasecmp(var, "password")) {
-				passwd = val;
-			}
-
-			if (!strcasecmp(var, "auth-acl")) {
-				auth_acl = val;
-			}
-
-			if (!strcasecmp(var, "a1-hash")) {
-				a1_hash = val;
-			}
-			if (!strcasecmp(var, "mwi-account")) {
-				mwi_account = val;
-			}
-			if (!strcasecmp(var, "allow-empty-password")) {
-				allow_empty_password = switch_true(val);
-			}
-			if (!strcasecmp(var, "user-agent-filter")) {
-				user_agent_filter = val;
-			}
-			if (!strcasecmp(var, "max-registrations-per-extension")) {
-				max_registrations_perext = atoi(val);
-			}
-		}
-	}
-
-	if (uparams) {
+	} else {
 		for (param = switch_xml_child(uparams, "param"); param; param = param->next) {
 			const char *var = switch_xml_attr_soft(param, "name");
 			const char *val = switch_xml_attr_soft(param, "value");
@@ -2504,29 +2424,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 				switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "mwi-account", mwi_account);
 			}
 
-			if ((dparams = switch_xml_child(domain, "params"))) {
-				xparams_type[i] = 0;
-				xparams[i++] = dparams;
-			}
-
-			if (group && (gparams = switch_xml_child(group, "params"))) {
-				xparams_type[i] = 0;
-				xparams[i++] = gparams;
-			}
-
 			if ((uparams = switch_xml_child(user, "params"))) {
 				xparams_type[i] = 0;
 				xparams[i++] = uparams;
-			}
-
-			if ((dparams = switch_xml_child(domain, "variables"))) {
-				xparams_type[i] = 1;
-				xparams[i++] = dparams;
-			}
-
-			if (group && (gparams = switch_xml_child(group, "variables"))) {
-				xparams_type[i] = 1;
-				xparams[i++] = gparams;
 			}
 
 			if ((uparams = switch_xml_child(user, "variables"))) {
@@ -2632,8 +2532,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	switch_event_destroy(&params);
 
-	if (xml) {
-		switch_xml_free(xml);
+	if (user) {
+		switch_xml_free(user);
 	}
 
 	switch_safe_free(input);

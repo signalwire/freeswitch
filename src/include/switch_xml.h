@@ -378,7 +378,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(_In_z_ const ch
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, const char *user_name, const char *domain_name,
 															  const char *ip, switch_xml_t *user, switch_event_t *params);
-
+SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char *user_name, const char *domain_name);
 SWITCH_DECLARE(void) switch_xml_merge_user(switch_xml_t user, switch_xml_t domain, switch_xml_t group);
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_dup(switch_xml_t xml);

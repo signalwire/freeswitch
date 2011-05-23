@@ -4720,6 +4720,30 @@ SWITCH_STANDARD_API(hupall_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_API(xml_flush_function)
+{
+	char *mycmd = NULL, *argv[3] = { 0 };
+	int argc = 0;
+	int r = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_split(mycmd, ' ', argv);
+	}
+
+	if (argc == 3) {
+		r = switch_xml_clear_user_cache(argv[0], argv[1], argv[2]);
+	} else {
+		r = switch_xml_clear_user_cache(NULL, NULL, NULL);
+	}
+
+
+	stream->write_function(stream, "+OK cleared %u entr%s\n", r, r == 1 ? "y" : "ies");
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(escape_function)
 {
 	int len;
@@ -5233,8 +5257,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_simplify", "Try to cut out of a call path / attended xfer", uuid_simplify_function, SIMPLIFY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_jitterbuffer", "Try to cut out of a call path / attended xfer", 
 				   uuid_jitterbuffer_function, JITTERBUFFER_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "xml_flush_cache", "clear xml cache", xml_flush_function, "<id> <key> <val>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
+
+
 	switch_console_set_complete("add alias add");
 	switch_console_set_complete("add alias del");
 	switch_console_set_complete("add complete add");
