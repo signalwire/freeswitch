@@ -37,6 +37,8 @@
 /*************************************************************************************************************************************************************/
 #include "mod_sofia.h"
 #include "sofia-sip/sip_extra.h"
+#include <switch_ssl.h>
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown);
 SWITCH_MODULE_DEFINITION(mod_sofia, mod_sofia_load, mod_sofia_shutdown, NULL);
@@ -4951,6 +4953,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_management_interface_t *management_interface;
 	struct in_addr in;
 
+	switch_ssl_init_ssl_locks();
+
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
 	mod_sofia_globals.destroy_private.destroy_nh = 1;
 	mod_sofia_globals.destroy_private.is_static = 1;
@@ -5153,6 +5157,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	switch_core_hash_destroy(&mod_sofia_globals.profile_hash);
 	switch_core_hash_destroy(&mod_sofia_globals.gateway_hash);
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	switch_ssl_destroy_ssl_locks();
 
 	return SWITCH_STATUS_SUCCESS;
 }
