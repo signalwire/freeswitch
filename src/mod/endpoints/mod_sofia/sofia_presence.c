@@ -195,15 +195,9 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		}
 
 
-		if (dst->route_uri) {
-			remote_host = strdup(dst->route_uri);
-			if (!zstr(remote_host)) {
-				switch_split_user_domain(remote_host, NULL, &remote_ip);
-			}
-		}
-
-		if (zstr(remote_ip)) {
-			switch_split_user_domain(dup_dest, NULL, &remote_ip);
+		remote_host = strdup(dup_dest);
+		if (!zstr(remote_host)) {
+			switch_split_user_domain(remote_host, NULL, &remote_ip);
 		}
 
 		if (!zstr(remote_ip) && sofia_glue_check_nat(profile, remote_ip)) {
