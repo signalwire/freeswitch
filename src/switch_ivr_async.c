@@ -936,12 +936,6 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Stop recording file %s\n", rh->file);
 			switch_channel_set_private(channel, rh->file, NULL);
 
-			if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
-				switch_channel_event_set_data(channel, event);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
-				switch_event_fire(&event);
-			}
-
 			if (rh->fh) {
 				switch_size_t len;
 				uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
@@ -968,6 +962,12 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					switch_channel_set_variable(channel, "RECORD_DISCARDED", "true");
 					switch_file_remove(rh->file, switch_core_session_get_pool(session));
 				}
+			}
+
+			if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(channel, event);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
+				switch_event_fire(&event);
 			}
 
 			if ((var = switch_channel_get_variable(channel, "record_post_process_exec_app"))) {
