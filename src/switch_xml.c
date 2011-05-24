@@ -1850,13 +1850,11 @@ SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char
 		
 	} else {
 		
-	top:
-		for (hi = switch_hash_first(NULL, CACHE_HASH); hi; hi = switch_hash_next(hi)) {
+		while ((hi = switch_hash_first(NULL, CACHE_HASH))) {
 			switch_hash_this(hi, &var, NULL, &val);
 			switch_xml_free(val);
 			switch_core_hash_delete(CACHE_HASH, var);
 			r++;
-			goto top;
 		}
 	}
 
