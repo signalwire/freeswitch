@@ -3590,6 +3590,14 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
 	switch_mutex_unlock(conference->member_mutex);
 }
 
+static void conference_list_count_only(conference_obj_t *conference, switch_stream_handle_t *stream)
+{
+	switch_assert(conference != NULL);
+	switch_assert(stream != NULL);
+
+	stream->write_function(stream, "%d\n", conference->count);
+}
+
 static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	switch_event_t *event;
@@ -3889,6 +3897,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 	char *d = ";";
 	int pretty = 0;
 	int summary = 0;
+	int countonly = 0;
 	int argofs = (argc >= 2 && strcasecmp(argv[1], "list") == 0);	/* detect being called from chat vs. api */
 
 	if (argv[1 + argofs]) {
@@ -3909,6 +3918,8 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 			pretty = 1;
 		} else if (strcasecmp(argv[1 + argofs], "summary") == 0) {
 			summary = 1;
+		} else if (strcasecmp(argv[1 + argofs], "count") == 0) {
+			countonly = 1;
 		}
 	}
 
@@ -3934,7 +3945,9 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 		switch_mutex_unlock(globals.hash_mutex);
 	} else {
 		count++;
-		if (pretty) {
+		if (countonly) {
+			conference_list_count_only(conference, stream);
+		} else if (pretty) {
 			conference_list_pretty(conference, stream);
 		} else {
 			conference_list(conference, stream, d);
