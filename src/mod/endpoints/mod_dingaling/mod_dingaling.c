@@ -30,7 +30,6 @@
  *
  */
 #include <switch.h>
-#include <switch_ssl.h>
 #include <switch_stun.h>
 #include <libdingaling.h>
 
@@ -1912,9 +1911,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 	SWITCH_ADD_API(api_interface, "dingaling", "DingaLing Menu", dingaling, DINGALING_SYNTAX);
 	SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
 
-	switch_ssl_init_ssl_locks();
-
-
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2011,8 +2007,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown)
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.codec_string);
 	switch_safe_free(globals.codec_rates_string);
-
-	switch_ssl_destroy_ssl_locks();
 
 	return SWITCH_STATUS_SUCCESS;
 }
