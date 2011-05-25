@@ -31510,6 +31510,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_locate_user_merged(char * jarg1, ch
 }
 
 
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_xml_clear_user_cache(char * jarg1, char * jarg2, char * jarg3) {
+  unsigned long jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  uint32_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (uint32_t)switch_xml_clear_user_cache((char const *)arg1,(char const *)arg2,(char const *)arg3);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_xml_merge_user(void * jarg1, void * jarg2, void * jarg3) {
   switch_xml_t arg1 = (switch_xml_t) 0 ;
   switch_xml_t arg2 = (switch_xml_t) 0 ;

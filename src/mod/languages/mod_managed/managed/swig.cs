@@ -5252,6 +5252,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static uint switch_xml_clear_user_cache(string key, string user_name, string domain_name) {
+    uint ret = freeswitchPINVOKE.switch_xml_clear_user_cache(key, user_name, domain_name);
+    return ret;
+  }
+
   public static void switch_xml_merge_user(switch_xml user, switch_xml domain, switch_xml group) {
     freeswitchPINVOKE.switch_xml_merge_user(switch_xml.getCPtr(user), switch_xml.getCPtr(domain), switch_xml.getCPtr(group));
   }
@@ -13233,6 +13238,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_locate_user_merged")]
   public static extern int switch_xml_locate_user_merged(string jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5, HandleRef jarg6);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_clear_user_cache")]
+  public static extern uint switch_xml_clear_user_cache(string jarg1, string jarg2, string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_merge_user")]
   public static extern void switch_xml_merge_user(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
