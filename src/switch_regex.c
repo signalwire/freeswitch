@@ -249,6 +249,15 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
 	return switch_regex_match_partial(target, expression, &partial);
 }
 
+SWITCH_DECLARE(void) switch_regex_set_var_callback(const char *var, const char *val, void *user_data)
+{
+	switch_core_session_t *session = (switch_core_session_t *) user_data;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_add_variable_var_check(channel, var, val, SWITCH_FALSE, SWITCH_STACK_PUSH);
+}
+
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

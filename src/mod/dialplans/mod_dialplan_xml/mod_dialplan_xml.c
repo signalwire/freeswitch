@@ -79,13 +79,6 @@ static switch_status_t exec_app(switch_core_session_t *session, const char *app,
 	return status;
 }
 
-static void set_var_callback(const char *var, const char *val, void *user_data)
-{
-	switch_core_session_t *session = (switch_core_session_t *) user_data;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_channel_add_variable_var_check(channel, var, val, SWITCH_FALSE, SWITCH_STACK_PUSH);
-}
-
 static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten, switch_caller_extension_t **extension)
 {
 	switch_xml_t xcond, xaction, xexpression;
@@ -231,7 +224,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		} else {
 			if (field && strchr(expression, '(')) {
 				switch_channel_set_variable(channel, "DP_MATCH", NULL);
-				switch_capture_regex(re, proceed, field_data, ovector, "DP_MATCH", set_var_callback, session);
+				switch_capture_regex(re, proceed, field_data, ovector, "DP_MATCH", switch_regex_set_var_callback, session);
 			}
 
 			for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {

@@ -2308,6 +2308,26 @@ SWITCH_STANDARD_APP(stop_displace_session_function)
 	switch_ivr_stop_displace_session(session, data);
 }
 
+SWITCH_STANDARD_APP(capture_function)
+{
+	char *argv[3] = { 0 };
+	int argc;
+	switch_regex_t *re = NULL;
+	int ovector[30] = {0};
+	char *lbuf;
+	int proceed;
+	
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 3) {
+		if ((proceed = switch_regex_perform(argv[1], argv[2], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			switch_capture_regex(re, proceed, argv[1], ovector, argv[0], switch_regex_set_var_callback, session);
+		}
+		switch_regex_safe_free(re);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No data specified.\n");
+	}	
+}
+
 SWITCH_STANDARD_APP(record_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -3739,6 +3759,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 
 	SWITCH_ADD_APP(app_interface, "bind_digit_action", "bind a key sequence or regex to an action", 
 				   "bind a key sequence or regex to an action", bind_digit_action_function, BIND_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_APP(app_interface, "capture", "capture data into a var", "capture data into a var", 
+				   capture_function, "<varname>|<data>|<regex>", SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_APP(app_interface, "clear_digit_action", "clear all digit bindings", "", 
 				   clear_digit_action_function, CLEAR_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);
