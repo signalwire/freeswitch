@@ -3784,22 +3784,22 @@ SWITCH_STANDARD_API(sofia_function)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	sofia_command_t func = NULL;
 	int lead = 1;
-	const char *usage_string = "USAGE:\n"
+	static const char usage_string[] = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
-		"sofia help\n"
-		"sofia profile <profile_name> [[start|stop|restart|rescan]|"
-		"flush_inbound_reg [<call_id>|<[user]@domain>] [reboot]|"
-		"[register|unregister] [<gateway name>|all]|"
-		"killgw <gateway name>|"
-		"[stun-auto-disable|stun-enabled] [true|false]]|"
-		"siptrace <on|off>|"
-		"watchdog <on|off>\n"
-		"sofia status|xmlstatus profile <name> [ reg <contact str> ] | [ pres <pres str> ] | [ user <user@domain> ]\n"
-		"sofia status|xmlstatus gateway <name>\n"
+		"sofia global siptrace <on|off>\n"
+		"             watchdog <on|off>\n\n"
+		"sofia profile <name> [start | stop | restart | rescan]\n"
+		"                     flush_inbound_reg [<call_id> | <[user]@domain>] [reboot]\n"
+		"                     [register | unregister] [<gateway name> | all]\n"
+		"                     killgw <gateway name>\n"
+		"                     [stun-auto-disable | stun-enabled] [true | false]]\n"
+		"                     siptrace <on|off>\n"
+		"                     watchdog <on|off>\n\n"
+		"sofia <status|xmlstatus> profile <name> [reg <contact str>] | [pres <pres str>] | [user <user@domain>]\n"
+		"sofia <status|xmlstatus> gateway <name>\n\n"
 		"sofia loglevel <all|default|tport|iptsec|nea|nta|nth_client|nth_server|nua|soa|sresolv|stun> [0-9]\n"
-		"sofia tracelevel <console|alert|crit|err|warning|notice|info|debug>\n"
-		"sofia global siptrace <on|off>|"
-		"watchdog <on|off>\n"
+		"sofia tracelevel <console|alert|crit|err|warning|notice|info|debug>\n\n"
+		"sofia help\n"
 		"--------------------------------------------------------------------------------\n";
 
 	if (zstr(cmd)) {
