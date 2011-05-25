@@ -1025,6 +1025,51 @@ static esl_ssize_t handle_recv(esl_handle_t *handle, void *data, esl_size_t data
 	return recv(handle->sock, data, datalen, 0);
 }
 
+static int add_array(esl_event_t *event, const char *var, const char *val)
+{
+	char *data;
+	char **array;
+	int idx;
+	int max = 0;
+	int len;
+	const char *p;
+	int i;
+
+	if (strlen(val) < 8) {
+		return -1;
+	}
+
+	p = val + 7;
+
+	while((p = strstr(p, "::"))) {
+		max++;
+		p += 2;
+	}
+
+	if (!max) {
+		return -2;
+	}
+
+	data = strdup(val + 7);
+	
+	len = (sizeof(char *) * max) + 1;
+	array = malloc(len);
+	memset(array, 0, len);
+	
+	idx = esl_separate_string_string(data, "::", array, max);
+	
+	for(i = 0; i < max; i++) {
+		esl_event_add_header_string(event, ESL_STACK_PUSH, var, array[i]);
+	}
+
+	free(array);
+	free(data);
+
+	return 0;
+}
+
+
+
 ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_event_t **save_event)
 {
 	char *c;
@@ -1088,7 +1133,11 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 						if (hname && hval) {
 							esl_url_decode(hval);
 							esl_log(ESL_LOG_DEBUG, "RECV HEADER [%s] = [%s]\n", hname, hval);
-							esl_event_add_header_string(revent, ESL_STACK_BOTTOM, hname, hval);
+							if (!strncmp(hval, "ARRAY::", 7)) {
+								add_array(revent, hname, hval);
+							} else {
+								esl_event_add_header_string(revent, ESL_STACK_BOTTOM, hname, hval);
+							}
 						}
 						
 						p = e;
@@ -1217,7 +1266,12 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 							esl_event_del_header(handle->last_ievent, "event-name");
 						        esl_name_event(hval, &handle->last_ievent->event_id);
 						}
-						esl_event_add_header_string(handle->last_ievent, ESL_STACK_BOTTOM, hname, hval);
+
+						if (!strncmp(hval, "ARRAY::", 7)) {
+							add_array(handle->last_ievent, hname, hval);
+						} else {
+							esl_event_add_header_string(handle->last_ievent, ESL_STACK_BOTTOM, hname, hval);
+						}
 					}
 				
 					beg = c + 1;
@@ -1371,5 +1425,23 @@ ESL_DECLARE(esl_status_t) esl_send_recv_timed(esl_handle_t *handle, const char *
 }
 
 
+ESL_DECLARE(unsigned int) esl_separate_string_string(char *buf, const char *delim, char **array, unsigned int arraylen)
+{
+	unsigned int count = 0;
+	char *d;
+	size_t dlen = strlen(delim);
 
+	array[count++] = buf;
+
+	while (count < arraylen && array[count - 1]) {
+		if ((d = strstr(array[count - 1], delim))) {
+			*d = '\0';
+			d += dlen;
+			array[count++] = d;
+		} else
+			break;
+	}
+
+	return count;
+}
 

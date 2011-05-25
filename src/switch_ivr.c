@@ -1982,25 +1982,43 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	return off;
 }
 
+static int switch_ivr_set_xml_chan_var(switch_xml_t xml, const char *var, const char *val, int off)
+{
+	char *data;
+	switch_size_t dlen = strlen(val) * 3 + 1;
+	switch_xml_t variable;
+	
+	if (!zstr(var) && !zstr(val) && ((variable = switch_xml_add_child_d(xml, var, off++)))) {
+		if ((data = malloc(dlen))) {
+			memset(data, 0, dlen);
+			switch_url_encode(val, data, dlen);
+			switch_xml_set_txt_d(variable, data);
+			free(data);
+		} else abort();
+	}
+	
+	return off;
+	
+}
+
+
 SWITCH_DECLARE(int) switch_ivr_set_xml_chan_vars(switch_xml_t xml, switch_channel_t *channel, int off)
 {
-	switch_xml_t variable;
+
 	switch_event_header_t *hi = switch_channel_variable_first(channel);
 
 	if (!hi)
 		return off;
 
 	for (; hi; hi = hi->next) {
-		if (!zstr(hi->name) && !zstr(hi->value) && ((variable = switch_xml_add_child_d(xml, hi->name, off++)))) {
-			char *data;
-			switch_size_t dlen = strlen(hi->value) * 3 + 1;
-
-			if ((data = malloc(dlen))) {
-				memset(data, 0, dlen);
-				switch_url_encode(hi->value, data, dlen);
-				switch_xml_set_txt_d(variable, data);
-				free(data);
+		if (hi->idx) {
+			int i;
+			
+			for (i = 0; i < hi->idx; i++) {
+				off = switch_ivr_set_xml_chan_var(xml, hi->name, hi->array[i], off);
 			}
+		} else {
+			off = switch_ivr_set_xml_chan_var(xml, hi->name, hi->value, off);
 		}
 	}
 	switch_channel_variable_last(channel);

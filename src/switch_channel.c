@@ -675,13 +675,13 @@ SWITCH_DECLARE(const char *) switch_channel_get_hold_music_partner(switch_channe
 	return r;
 }
 
-SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup)
+SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup, int idx)
 {
 	const char *v = NULL, *r = NULL, *vdup = NULL;
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
-	if (!channel->variables || !(v = switch_event_get_header(channel->variables, varname))) {
+	if (!channel->variables || !(v = switch_event_get_header_idx(channel->variables, varname, idx))) {
 		switch_caller_profile_t *cp = channel->caller_profile;
 
 		if (cp) {
@@ -1032,8 +1032,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->variables && !zstr(varname)) {
-
-		switch_event_del_header(channel->variables, varname);
 		if (!zstr(value)) {
 			int ok = 1;
 
@@ -1052,6 +1050,36 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 
 	return status;
 }
+
+
+SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_channel_t *channel,
+																	  const char *varname, const char *value, switch_bool_t var_check, switch_stack_t stack)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->variables && !zstr(varname)) {
+		if (!zstr(value)) {
+			int ok = 1;
+
+			if (var_check) {
+				ok = !switch_string_var_check_const(value);
+			}
+			if (ok) {
+				switch_event_add_header_string(channel->variables, stack, varname, value);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
+			}
+		}
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return status;
+}
+
 
 switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data);
 
@@ -3108,12 +3136,14 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					int offset = 0;
 					int ooffset = 0;
 					char *ptr;
+					int idx = -1;
 
 					if ((expanded = switch_channel_expand_variables(channel, (char *) vname)) == vname) {
 						expanded = NULL;
 					} else {
 						vname = expanded;
 					}
+
 					if ((ptr = strchr(vname, ':'))) {
 						*ptr++ = '\0';
 						offset = atoi(ptr);
@@ -3123,7 +3153,12 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						}
 					}
 
-					if ((sub_val = (char *) switch_channel_get_variable(channel, vname))) {
+					if ((ptr = strchr(vname, '[')) && strchr(ptr, ']')) {
+						*ptr++ = '\0';
+						idx = atoi(ptr);
+					}
+					
+					if ((sub_val = (char *) switch_channel_get_variable_dup(channel, vname, SWITCH_TRUE, idx))) {
 						if (offset || ooffset) {
 							cloned_sub_val = strdup(sub_val);
 							switch_assert(cloned_sub_val);

@@ -727,7 +727,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, const char *header_name)
+SWITCH_DECLARE(switch_event_header_t *) switch_event_get_header_ptr(switch_event_t *event, const char *header_name)
 {
 	switch_event_header_t *hp;
 	switch_ssize_t hlen = -1;
@@ -742,9 +742,28 @@ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, const char
 
 	for (hp = event->headers; hp; hp = hp->next) {
 		if ((!hp->hash || hash == hp->hash) && !strcasecmp(hp->name, header_name)) {
-			return hp->value;
+			return hp;
 		}
 	}
+	return NULL;
+}
+
+SWITCH_DECLARE(char *) switch_event_get_header_idx(switch_event_t *event, const char *header_name, int idx)
+{
+	switch_event_header_t *hp;
+
+	if ((hp = switch_event_get_header_ptr(event, header_name))) {
+		if (idx > -1) {
+			if (idx < hp->idx) {
+				return hp->array[idx];
+			} else {
+				return NULL;
+			}
+		}
+
+		return hp->value;			
+	}
+
 	return NULL;
 }
 
@@ -780,7 +799,19 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *even
 				event->last_header = lp;
 			}
 			FREE(hp->name);
+
+			if (hp->idx) {
+				int i = 0;
+				hp->value = NULL;
+
+				for (i = 0; i < hp->idx; i++) {
+					FREE(hp->array[i]);
+				}
+				FREE(hp->array);
+			}
+
 			FREE(hp->value);
+			
 			memset(hp, 0, sizeof(*hp));
 #ifdef SWITCH_EVENT_RECYCLE
 			if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, hp) != SWITCH_STATUS_SUCCESS) {
@@ -798,48 +829,184 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *even
 	return status;
 }
 
-switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data)
+static switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data)
 {
-	switch_event_header_t *header;
+	switch_event_header_t *header = NULL;
 	switch_ssize_t hlen = -1;
+	int exists = 0, fly = 0;
+	char *index_ptr;
+	int index = 0;
+	char *real_header_name = NULL;
+
+	if ((index_ptr = strchr(header_name, '['))) {
+		index_ptr++;
+		index = atoi(index_ptr);
+		real_header_name = DUP(header_name);
+		if ((index_ptr = strchr(real_header_name, '['))) {
+			*index_ptr++ = '\0';
+		}
+		header_name = real_header_name;
+	}
+	
+	if (index_ptr || (stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT) || switch_test_flag(event, EF_CONTAINS_ARRAYS)) {
+		
+		if (!(header = switch_event_get_header_ptr(event, header_name)) && index_ptr) {
+			header = ALLOC(sizeof(*header));
+			switch_assert(header);
+			memset(header, 0, sizeof(*header));
+			header->name = DUP(header_name);
+			if (switch_test_flag(event, EF_UNIQ_HEADERS)) {
+				switch_event_del_header(event, header_name);
+			}
+			fly++;
+		}
+
+		if ((header = switch_event_get_header_ptr(event, header_name))) {
+			
+			if (index_ptr) {
+				if (index > -1 && index <= 4000) {
+					if (index < header->idx) {
+						FREE(header->array[index]);
+						header->array[index] = DUP(data);
+					} else {
+						int i;
+						char **m;
+					
+						m = realloc(header->array, sizeof(char *) * (index + 1));
+						switch_assert(m);
+						header->array = m;
+						for (i = header->idx; i < index; i++) {
+							m[i] = DUP("");
+						}
+						m[index] = DUP(data);
+						header->idx = index + 1;
+						if (!fly) {
+							exists = 1;
+						}
+
+						goto redraw;
+					}
+				}
+				goto end;
+			} else {
+			
+				if (!(stack & SWITCH_STACK_PUSH) && !(stack & SWITCH_STACK_UNSHIFT) && header->idx) {
+					stack |= SWITCH_STACK_PUSH;
+				}
+				
+				if ((stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
+					exists++;
+					stack &= ~(SWITCH_STACK_TOP | SWITCH_STACK_BOTTOM);
+				} else {
+					header = NULL;
+				}
+			}
+		}
+	}
+
+	if (!header) {
 
 #ifdef SWITCH_EVENT_RECYCLE
-	void *pop;
-	if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-		header = (switch_event_header_t *) pop;
+		void *pop;
+		if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+			header = (switch_event_header_t *) pop;
+		} else {
+#endif
+			header = ALLOC(sizeof(*header));
+			switch_assert(header);
+#ifdef SWITCH_EVENT_RECYCLE
+		}
+#endif
+	
+
+		if (switch_test_flag(event, EF_UNIQ_HEADERS)) {
+			switch_event_del_header(event, header_name);
+		}
+
+		memset(header, 0, sizeof(*header));
+
+		header->name = DUP(header_name);
+	}
+	
+	if ((stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
+		char **m = NULL;
+		switch_size_t len = 0;
+		char *hv;
+		int i = 0, j = 0;
+
+		switch_set_flag(event, EF_CONTAINS_ARRAYS);
+
+		if (header->value && !header->idx) {
+			m = malloc(sizeof(char *));
+			switch_assert(m);
+			m[0] = header->value;
+			header->value = NULL;
+			header->array = m;
+			header->idx++;
+			m = NULL;
+		}
+
+		i = header->idx + 1;
+		m = realloc(header->array, sizeof(char *) * i); 
+		switch_assert(m);
+
+		if ((stack & SWITCH_STACK_PUSH)) {
+			m[header->idx] = data;
+		} else if ((stack & SWITCH_STACK_UNSHIFT)) {
+			for (j = header->idx; j > 0; j--) {
+				m[j] = m[j-1];
+			}
+			m[0] = data;
+		}
+
+		header->idx++;		
+		header->array = m;
+
+	redraw:
+
+		for(j = 0; j < header->idx; j++) {
+			len += strlen(header->array[j]) + 2;
+		}
+
+		if (len) {
+			len += 8;
+			hv = realloc(header->value, len);
+			switch_assert(hv);
+			header->value = hv;
+
+			switch_snprintf(header->value, len, "ARRAY::");
+			for(j = 0; j < header->idx; j++) {
+				switch_snprintf(header->value + strlen(header->value), len - strlen(header->value), "%s%s", j == 0 ? "" : "::", header->array[j]);
+			}
+		}
+
 	} else {
-#endif
-		header = ALLOC(sizeof(*header));
-		switch_assert(header);
-#ifdef SWITCH_EVENT_RECYCLE
-	}
-#endif
-
-	if (switch_test_flag(event, EF_UNIQ_HEADERS)) {
-		switch_event_del_header(event, header_name);
+		header->value = data;
 	}
 
-	memset(header, 0, sizeof(*header));
+	if (!exists) {
+		header->hash = switch_ci_hashfunc_default(header->name, &hlen);
 
-	header->name = DUP(header_name);
-	header->value = data;
-	header->hash = switch_ci_hashfunc_default(header->name, &hlen);
-
-	if ((stack & SWITCH_STACK_TOP)) {
-		header->next = event->headers;
-		event->headers = header;
-		if (!event->last_header) {
+		if ((stack & SWITCH_STACK_TOP)) {
+			header->next = event->headers;
+			event->headers = header;
+			if (!event->last_header) {
+				event->last_header = header;
+			}
+		} else {
+			if (event->last_header) {
+				event->last_header->next = header;
+			} else {
+				event->headers = header;
+				header->next = NULL;
+			}
 			event->last_header = header;
 		}
-	} else {
-		if (event->last_header) {
-			event->last_header->next = header;
-		} else {
-			event->headers = header;
-			header->next = NULL;
-		}
-		event->last_header = header;
 	}
+
+ end:
+
+	switch_safe_free(real_header_name);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -914,7 +1081,19 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 			this = hp;
 			hp = hp->next;
 			FREE(this->name);
+
+			if (this->idx) {
+				int i = 0;
+				this->value = NULL;
+				for (i = 0; i < this->idx; i++) {
+					FREE(this->array[i]);
+				}
+				FREE(this->array);
+			}
+
 			FREE(this->value);
+			
+
 #ifdef SWITCH_EVENT_RECYCLE
 			if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, this) != SWITCH_STATUS_SUCCESS) {
 				FREE(this);
@@ -947,7 +1126,15 @@ SWITCH_DECLARE(void) switch_event_merge(switch_event_t *event, switch_event_t *t
 	switch_assert(tomerge && event);
 
 	for (hp = tomerge->headers; hp; hp = hp->next) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+		if (hp->idx) {
+			int i;
+			
+			for(i = 0; i < hp->idx; i++) {
+				switch_event_add_header_string(event, SWITCH_STACK_PUSH, hp->name, hp->array[i]);
+			}
+		} else {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+		}
 	}
 }
 
@@ -967,7 +1154,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 		if (todup->subclass_name && !strcmp(hp->name, "Event-Subclass")) {
 			continue;
 		}
-		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+		
+		if (hp->idx) {
+			int i;
+			for (i = 0; i < hp->idx; i++) {
+				switch_event_add_header_string(*event, SWITCH_STACK_PUSH, hp->name, hp->array[i]);
+			}
+		} else {
+			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+		}
 	}
 
 	if (todup->body) {
@@ -992,13 +1187,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	dlen = blocksize * 2;
 
 	if (!(buf = malloc(dlen))) {
-		return SWITCH_STATUS_MEMERR;
+		abort();
 	}
 
 	/* go ahead and give ourselves some space to work with, should save a few reallocs */
 	if (!(encode_buf = malloc(encode_len))) {
-		switch_safe_free(buf);
-		return SWITCH_STATUS_MEMERR;
+		abort();
 	}
 
 	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialized!.\n"); */
@@ -1011,32 +1205,38 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		 * destroying loop.
 		 */
 
-		new_len = (strlen(hp->value) * 3) + 1;
+		if (hp->idx) {
+			int i;
+			new_len = 0;
+			for(i = 0; i < hp->idx; i++) {
+				new_len += (strlen(hp->array[i]) * 3) + 1;
+			}
+		} else {
+			new_len = (strlen(hp->value) * 3) + 1;
+		}
 
 		if (encode_len < new_len) {
 			char *tmp;
-			/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocing %d was %d.\n", ((strlen(hp->value) * 3) + 1), encode_len); */
-			/* we can use realloc for initial alloc as well, if encode_buf is zero it treats it as a malloc */
 
 			/* keep track of the size of our allocation */
 			encode_len = new_len;
 
 			if (!(tmp = realloc(encode_buf, encode_len))) {
-				/* oh boy, ram's gone, give back what little we grabbed and bail */
-				switch_safe_free(buf);
-				switch_safe_free(encode_buf);
-				return SWITCH_STATUS_MEMERR;
+				abort();
 			}
 
 			encode_buf = tmp;
 		}
 
 		/* handle any bad things in the string like newlines : etc that screw up the serialized format */
+
+
 		if (encode) {
 			switch_url_encode(hp->value, encode_buf, encode_len);
 		} else {
 			switch_snprintf(encode_buf, encode_len, "[%s]", hp->value);
 		}
+
 
 		llen = strlen(hp->name) + strlen(encode_buf) + 8;
 
@@ -1046,10 +1246,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 			if ((m = realloc(buf, dlen))) {
 				buf = m;
 			} else {
-				/* we seem to be out of memory trying to resize the serialize string, give back what we already have and give up */
-				switch_safe_free(buf);
-				switch_safe_free(encode_buf);
-				return SWITCH_STATUS_MEMERR;
+				abort();
 			}
 		}
 
@@ -1076,8 +1273,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 			if ((m = realloc(buf, dlen))) {
 				buf = m;
 			} else {
-				switch_safe_free(buf);
-				return SWITCH_STATUS_MEMERR;
+				abort();
 			}
 		}
 
@@ -1212,19 +1408,31 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_json(switch_event_t **event,
 	for (cjp = cj->child; cjp; cjp = cjp->next) {
 		char *name = cjp->string;
 		char *value = cjp->valuestring;
-		
+
 		if (name && value) {
 			if (!strcasecmp(name, "_body")) {
 				switch_event_add_body(new_event, value, SWITCH_VA_NONE);
 			} else {
 				if (!strcasecmp(name, "event-name")) {
 					switch_event_del_header(new_event, "event-name");
+					switch_name_event(value, &new_event->event_id);
 				}
-				
-				switch_name_event(value, &new_event->event_id);
+
 				switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, name, value);
 			}
 
+		} else if (name) {
+			if (cjp->type == cJSON_Array) {
+				int i, x = cJSON_GetArraySize(cjp);
+
+				for (i = 0; i < x; i++) {
+					cJSON *item = cJSON_GetArrayItem(cjp, i);
+
+					if (item && item->type == cJSON_String && item->valuestring) {
+						switch_event_add_header_string(new_event, SWITCH_STACK_PUSH, name, item->valuestring);
+					}
+				}
+			}
 		}
 	}
 	
@@ -1243,8 +1451,21 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize_json(switch_event_t *even
 	cj = cJSON_CreateObject();
 
 	for (hp = event->headers; hp; hp = hp->next) {
-		cJSON_AddItemToObject(cj, hp->name, cJSON_CreateString(hp->value));
-							  }
+		if (hp->idx) {
+			cJSON *a = cJSON_CreateArray();
+			int i;
+
+			for(i = 0; i < hp->idx; i++) {
+				cJSON_AddItemToArray(a, cJSON_CreateString(hp->array[i]));
+			}
+			
+			cJSON_AddItemToObject(cj, hp->name, a);
+			
+		} else {
+			cJSON_AddItemToObject(cj, hp->name, cJSON_CreateString(hp->value));
+		}
+	}
+
 	if (event->body) {
 		int blen = (int) strlen(event->body);
 		char tmp[25];
@@ -1316,7 +1537,15 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 	if ((xheaders = switch_xml_add_child_d(xml, "headers", off++))) {
 		int hoff = 0;
 		for (hp = event->headers; hp; hp = hp->next) {
-			add_xml_header(xheaders, hp->name, hp->value, hoff++);
+
+			if (hp->idx) {
+				int i;
+				for (i = 0; i < hp->idx; i++) {
+					add_xml_header(xheaders, hp->name, hp->array[i], hoff++);
+				}
+			} else {
+				add_xml_header(xheaders, hp->name, hp->value, hoff++);
+			}
 		}
 	}
 
@@ -1730,7 +1959,8 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 					int offset = 0;
 					int ooffset = 0;
 					char *ptr;
-
+					int idx = -1;
+					
 					if ((expanded = switch_event_expand_headers(event, (char *) vname)) == vname) {
 						expanded = NULL;
 					} else {
@@ -1745,7 +1975,12 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 						}
 					}
 
-					if (!(sub_val = switch_event_get_header(event, vname))) {
+					if ((ptr = strchr(vname, '[')) && strchr(ptr, ']')) {
+						*ptr++ = '\0';
+						idx = atoi(ptr);
+					}
+
+					if (!(sub_val = switch_event_get_header_idx(event, vname, idx))) {
 						switch_safe_free(gvar);
 						if ((gvar = switch_core_get_variable_dup(vname))) {
 							sub_val = gvar;

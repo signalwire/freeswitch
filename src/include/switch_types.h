@@ -830,7 +830,9 @@ SWITCH_STACK_TOP	- Stack on the top
 typedef enum {
 	SWITCH_STACK_BOTTOM = (1 << 0),
 	SWITCH_STACK_TOP = (1 << 1),
-	SWITCH_STACK_NODUP = (1 << 2)
+	SWITCH_STACK_NODUP = (1 << 2),
+	SWITCH_STACK_UNSHIFT = (1 << 3),
+	SWITCH_STACK_PUSH = (1 << 4),
 } switch_stack_t;
 
 /*!
@@ -1688,6 +1690,7 @@ struct switch_console_callback_match {
 };
 typedef struct switch_console_callback_match switch_console_callback_match_t;
 
+typedef void (*switch_cap_callback_t) (const char *var, const char *val, void *user_data);
 typedef switch_status_t (*switch_console_complete_callback_t) (const char *, const char *, switch_console_callback_match_t **matches);
 typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
 typedef switch_bool_t (*switch_tone_detect_callback_t) (switch_core_session_t *, const char *, const char *);

@@ -1033,7 +1033,7 @@ SWITCH_STANDARD_APP(sched_cancel_function)
 	switch_scheduler_del_task_group(group);
 }
 
-SWITCH_STANDARD_APP(set_function)
+static void base_set (switch_core_session_t *session, const char *data, switch_stack_t stack)
 {
 	char *var, *val = NULL;
 
@@ -1044,7 +1044,10 @@ SWITCH_STANDARD_APP(set_function)
 		char *expanded = NULL;
 
 		var = switch_core_session_strdup(session, data);
-		val = strchr(var, '=');
+
+		if (!(val = strchr(var, '='))) {
+			val = strchr(var, ',');
+		}
 
 		if (val) {
 			*val++ = '\0';
@@ -1059,12 +1062,27 @@ SWITCH_STANDARD_APP(set_function)
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SET [%s]=[%s]\n", switch_channel_get_name(channel), var,
 						  expanded ? expanded : "UNDEF");
-		switch_channel_set_variable_var_check(channel, var, expanded, SWITCH_FALSE);
+		switch_channel_add_variable_var_check(channel, var, expanded, SWITCH_FALSE, stack);
 
 		if (expanded && expanded != val) {
 			switch_safe_free(expanded);
 		}
 	}
+}
+
+SWITCH_STANDARD_APP(set_function)
+{
+	base_set(session, data, SWITCH_STACK_BOTTOM);
+}
+
+SWITCH_STANDARD_APP(push_function)
+{
+	base_set(session, data, SWITCH_STACK_PUSH);
+}
+
+SWITCH_STANDARD_APP(unshift_function)
+{
+	base_set(session, data, SWITCH_STACK_UNSHIFT);
 }
 
 SWITCH_STANDARD_APP(set_global_function)
@@ -3769,6 +3787,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel variable", SET_LONG_DESC, set_function, "<varname>=<value>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+
+	SWITCH_ADD_APP(app_interface, "push", "Set a channel variable", SET_LONG_DESC, push_function, "<varname>=<value>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+
+	SWITCH_ADD_APP(app_interface, "unshift", "Set a channel variable", SET_LONG_DESC, unshift_function, "<varname>=<value>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+
 	SWITCH_ADD_APP(app_interface, "set_global", "Set a global variable", SET_GLOBAL_LONG_DESC, set_global_function, "<varname>=<value>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "set_profile_var", "Set a caller profile variable", SET_PROFILE_VAR_LONG_DESC, set_profile_var_function,
