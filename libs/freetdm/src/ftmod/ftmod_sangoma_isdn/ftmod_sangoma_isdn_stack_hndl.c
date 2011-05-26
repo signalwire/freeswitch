@@ -881,6 +881,12 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 	uint8_t call_state = 0;
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
+
+	if (!suInstId && !spInstId) {
+		/* We already cleared this call */
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dropping STATUS CONFIRM (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
+		return;
+	}
 	
 	if (staEvnt->callSte.eh.pres && staEvnt->callSte.callGlblSte.pres) {
 		call_state = staEvnt->callSte.callGlblSte.val;
