@@ -391,6 +391,7 @@ ESL_DECLARE(int) esl_event_add_array(esl_event_t *event, const char *var, const 
 	data = strdup(val + 7);
 	
 	len = (sizeof(char *) * max) + 1;
+	esl_assert(len);
 	array = malloc(len);
 	memset(array, 0, len);
 	

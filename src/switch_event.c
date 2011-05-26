@@ -882,6 +882,8 @@ SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *va
 	data = strdup(val + 7);
 	
 	len = (sizeof(char *) * max) + 1;
+	switch_assert(len);
+
 	array = malloc(len);
 	memset(array, 0, len);
 	
