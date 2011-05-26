@@ -33,7 +33,7 @@
       <param name="ff-key" value="6"/>
       <param name="rew-key" value="4"/>
       <param name="skip-greet-key" value="#"/>
-      <param name="previous-message-key" value="1"/>-->
+      <param name="previous-message-key" value="1"/>
       <param name="next-message-key" value="3"/>
       <param name="skip-info-key" value="*"/>
       <param name="repeat-message-key" value="0"/>

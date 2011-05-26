@@ -34,6 +34,9 @@
 #include <switch.h>
 #include <stdio.h>
 #include "private/switch_core_pvt.h"
+#ifdef HAVE_TIMERFD_CREATE
+#include <sys/timerfd.h>
+#endif
 
 //#if defined(DARWIN)
 #define DISABLE_1MS_COND
@@ -58,7 +61,20 @@ static int MONO = 1;
 static int MONO = 0;
 #endif
 
+/* clock_nanosleep works badly on some kernels but really well on others.
+   timerfd seems to work well as long as it exists so if you have timerfd we'll also enable clock_nanosleep by default.
+*/
+#if defined(HAVE_TIMERFD_CREATE)
+static int TFD = 1;
+#if defined(HAVE_CLOCK_NANOSLEEP)
+static int NANO = 1;
+#else
 static int NANO = 0;
+#endif
+#else
+static int TFD = 0;
+static int NANO = 0;
+#endif
 
 static int OFFSET = 0;
 
@@ -70,19 +86,6 @@ static int MATRIX = 1;
 static switch_time_t win32_tick_time_since_start = -1;
 static DWORD win32_last_get_time_tick = 0;
 CRITICAL_SECTION  timer_section;
-#endif
-
-#define ONEMS
-#ifdef ONEMS
-static int STEP_MS = 1;
-static int STEP_MIC = 1000;
-static uint32_t TICK_PER_SEC = 1000;
-static int MS_PER_TICK = 10;
-#else
-static int STEP_MS = 10;
-static int STEP_MIC = 10000;
-static uint32_t TICK_PER_SEC = 1000;
-static int MS_PER_TICK = 10;
 #endif
 
 static switch_memory_pool_t *module_pool = NULL;
@@ -208,13 +211,10 @@ SWITCH_DECLARE(void) switch_time_calibrate_clock(void)
 	}
 	
 	if (res > 1500) {
-		STEP_MS = res / 1000;
-		STEP_MIC = res;
-
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 						  "Timer resolution of %ld microseconds detected!\n"
 						  "Do you have your kernel timer frequency set to lower than 1,000Hz? "
-						  "You may experience audio problems. Step MS %d\n", ts.tv_nsec / 1000, STEP_MS);
+						  "You may experience audio problems. Step MS %d\n", ts.tv_nsec / 1000, runtime.microseconds_per_tick / 1000);
 		do_sleep(5000000);
 		switch_time_set_cond_yield(SWITCH_TRUE);
 		return;
@@ -313,8 +313,24 @@ SWITCH_DECLARE(time_t) switch_epoch_time_now(time_t *t)
 
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable)
 {
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
 	MONO = enable ? 1 : 0;
 	switch_time_sync();
+#else
+	MONO = 0;
+#endif
+}
+
+
+SWITCH_DECLARE(void) switch_time_set_timerfd(switch_bool_t enable)
+{
+#if defined(HAVE_TIMERFD_CREATE)
+	TFD = enable ? 1 : 0;
+	switch_time_sync();
+
+#else
+	TFD = 0;
+#endif
 }
 
 
@@ -419,7 +435,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 
 SWITCH_DECLARE(void) switch_cond_next(void)
 {
-	if (globals.timer_count >= runtime.tipping_point) {
+	if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
 		os_yield();
 		return;
 	}
@@ -488,17 +504,20 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		private_info->roll = TIMER_MATRIX[timer->interval].roll;
 		private_info->ready = 1;
 
-		if (timer->interval > 0 && timer->interval < MS_PER_TICK) {
-			MS_PER_TICK = timer->interval;
-			STEP_MS = 1;
-			STEP_MIC = 1000;
-			TICK_PER_SEC = 10000;
+		if ((timer->interval == 10 || timer->interval == 30) && runtime.microseconds_per_tick > 10000) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Increasing global timer resolution to 10ms to handle interval %d\n", timer->interval);
+			runtime.microseconds_per_tick = 10000;
+		}
+
+		if (timer->interval > 0 && (timer->interval < (int)(runtime.microseconds_per_tick / 1000) || (timer->interval % 10) != 0)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Increasing global timer resolution to 1ms to handle interval %d\n", timer->interval);
+			runtime.microseconds_per_tick = 1000;
 			switch_time_sync();
 		}
 
 		switch_mutex_lock(globals.mutex);
 		globals.timer_count++;
-		if (globals.timer_count == (runtime.tipping_point + 1)) {
+		if (runtime.tipping_point && globals.timer_count == (runtime.tipping_point + 1)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Crossed tipping point of %u, shifting into high-gear.\n", runtime.tipping_point);
 		}
 		switch_mutex_unlock(globals.mutex);
@@ -581,7 +600,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
 
-		if (globals.timer_count >= runtime.tipping_point) {
+		if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
 			os_yield();
 			globals.use_cond_yield = 0;
 		} else {
@@ -648,7 +667,7 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 	switch_mutex_lock(globals.mutex);
 	if (globals.timer_count) {
 		globals.timer_count--;
-		if (globals.timer_count == (runtime.tipping_point - 1)) {
+		if (runtime.tipping_point && globals.timer_count == (runtime.tipping_point - 1)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Fell Below tipping point of %u, shifting into low-gear.\n", runtime.tipping_point);
 		}
 	}
@@ -659,12 +678,37 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 
 SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 {
-	switch_time_t too_late = STEP_MIC * 1000;
+	switch_time_t too_late = runtime.microseconds_per_tick * 1000;
 	uint32_t current_ms = 0;
 	uint32_t x, tick = 0;
 	switch_time_t ts = 0, last = 0;
 	int fwd_errs = 0, rev_errs = 0;
 	int profile_tick = 0;
+	int tfd = -1;
+
+#ifdef HAVE_TIMERFD_CREATE
+	int last_MICROSECONDS_PER_TICK = runtime.microseconds_per_tick;
+
+	struct itimerspec spec = { { 0 } };
+
+	if (MONO && TFD) {
+		tfd = timerfd_create(CLOCK_MONOTONIC, 0);
+
+		if (tfd > -1) {
+			spec.it_interval.tv_sec = 0;
+			spec.it_interval.tv_nsec = runtime.microseconds_per_tick * 1000;
+			spec.it_value.tv_sec = spec.it_interval.tv_sec;
+			spec.it_value.tv_nsec = spec.it_interval.tv_nsec;
+		
+			if (timerfd_settime(tfd, TFD_TIMER_ABSTIME, &spec, NULL)) {
+				close(tfd);
+				tfd = -1;
+			}
+		}
+	}
+#else
+	tfd = -1;
+#endif
 
 	runtime.profile_timer = switch_new_profile_timer();
 	switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
@@ -698,7 +742,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				runtime.initiated = runtime.reference;
 				break;
 			}
-			do_sleep(STEP_MIC);
+			do_sleep(runtime.microseconds_per_tick);
 			last = ts;
 		}
 	}
@@ -721,8 +765,19 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	globals.RUNNING = 1;
 
 	while (globals.RUNNING == 1) {
-		runtime.reference += STEP_MIC;
-		while ((ts = time_now(runtime.offset)) < runtime.reference) {
+
+#ifdef HAVE_TIMERFD_CREATE
+		if (last_MICROSECONDS_PER_TICK != runtime.microseconds_per_tick) {
+			spec.it_interval.tv_nsec = runtime.microseconds_per_tick * 1000;
+			timerfd_settime(tfd, TFD_TIMER_ABSTIME, &spec, NULL);
+		}
+		
+		last_MICROSECONDS_PER_TICK = runtime.microseconds_per_tick;
+#endif
+
+		runtime.reference += runtime.microseconds_per_tick;
+
+		while (((ts = time_now(runtime.offset)) + 100) < runtime.reference) {
 			if (ts < last) {
 				if (MONO) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
@@ -736,14 +791,25 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 					runtime.initiated += diff;
 					rev_errs++;
 				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+								  "If you see this message many times try setting the param enable-clock-nanosleep to true in switch.conf.xml or consider a nicer machine to run me on. I AM *FREE* afterall.\n");
+
 			} else {
 				rev_errs = 0;
 			}
 
-			if (globals.timer_count >= runtime.tipping_point) {
+			if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
 				os_yield();
 			} else {
-				do_sleep(1000);
+				if (tfd > -1 && globals.RUNNING == 1) {
+					uint64_t exp;
+					int r;
+					r = read(tfd, &exp, sizeof(exp));
+					r++;
+				} else {
+					do_sleep(runtime.microseconds_per_tick);
+				}
 			}
 
 			last = ts;
@@ -754,7 +820,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
 				switch_time_sync();
 			} else {
-				switch_time_t diff = ts - runtime.reference - STEP_MIC;
+				switch_time_t diff = ts - runtime.reference - runtime.microseconds_per_tick;
 #ifndef WIN32
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Forward Clock Skew Detected!\n");
 #endif
@@ -775,10 +841,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		}
 
 		runtime.timestamp = ts;
-		current_ms += STEP_MS;
-		tick += STEP_MS;
+		current_ms += (runtime.microseconds_per_tick / 1000);
+		tick += (runtime.microseconds_per_tick / 1000);
 
-		if (tick >= TICK_PER_SEC) {
+		if (tick >= (1000000 / runtime.microseconds_per_tick)) {
 			if (++profile_tick == 1) {
 				switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
 				profile_tick = 0;
@@ -806,8 +872,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 #endif
 
 
-		if (MATRIX && (current_ms % MS_PER_TICK) == 0) {
-			for (x = MS_PER_TICK; x <= MAX_ELEMENTS; x += MS_PER_TICK) {
+		if (MATRIX && (current_ms % (runtime.microseconds_per_tick / 1000)) == 0) {
+			for (x = (runtime.microseconds_per_tick / 1000); x <= MAX_ELEMENTS; x += (runtime.microseconds_per_tick / 1000)) {
 				if ((current_ms % x) == 0) {
 					if (TIMER_MATRIX[x].count) {
 						TIMER_MATRIX[x].tick++;
@@ -833,12 +899,17 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	}
 
 	globals.use_cond_yield = 0;
-
-	for (x = MS_PER_TICK; x <= MAX_ELEMENTS; x += MS_PER_TICK) {
+	
+	for (x = (runtime.microseconds_per_tick / 1000); x <= MAX_ELEMENTS; x += (runtime.microseconds_per_tick / 1000)) {
 		if (TIMER_MATRIX[x].mutex && switch_mutex_trylock(TIMER_MATRIX[x].mutex) == SWITCH_STATUS_SUCCESS) {
 			switch_thread_cond_broadcast(TIMER_MATRIX[x].cond);
 			switch_mutex_unlock(TIMER_MATRIX[x].mutex);
 		}
+	}
+
+	if (tfd > -1) {
+		close(tfd);
+		tfd = -1;
 	}
 
 
@@ -1063,6 +1134,10 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 
 	if (switch_test_flag((&runtime), SCF_USE_HEAVY_TIMING)) {
 		switch_time_set_cond_yield(SWITCH_FALSE);
+	}
+
+	if (TFD) {
+		switch_clear_flag((&runtime), SCF_CALIBRATE_CLOCK);
 	}
 
 	if (switch_test_flag((&runtime), SCF_CALIBRATE_CLOCK)) {

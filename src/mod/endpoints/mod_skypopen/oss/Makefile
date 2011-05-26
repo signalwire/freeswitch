@@ -1,6 +1,6 @@
 # Comment/uncomment the following line to disable/enable debugging
 #DEBUG = y
-#LDDINC=/usr/src/linux-headers-2.6.32-26-server/include
+#LDDINC=
 
 # Add your debugging flag (or not) to CFLAGS
 ifeq ($(DEBUG),y)

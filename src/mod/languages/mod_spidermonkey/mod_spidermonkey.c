@@ -35,7 +35,7 @@
 #include "mod_spidermonkey.h"
 
 #ifdef HAVE_CURL
-#include <curl/curl.h>
+#include <switch_curl.h>
 #endif
 static int foo = 0;
 static jsval check_hangup_hook(struct js_session *jss, jsval * rp);
@@ -766,11 +766,8 @@ static JSBool dtmf_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *
 {
 	switch_dtmf_t *dtmf;
 	int32 duration = switch_core_default_dtmf_duration(0);
-	char *ename;
 
-	if (argc > 0) {
-		ename = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-	} else {
+	if (argc <= 0) {
 		eval_some_js("~throw new Error(\"Invalid Args\");", cx, obj, rval);
 		return JS_FALSE;
 	}
@@ -1911,7 +1908,6 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	char *tts_name = NULL;
 	char *voice_name = NULL;
 	char *text = NULL;
-	switch_codec_t *codec;
 	void *bp = NULL;
 	int len = 0;
 	struct input_callback_state cb_state = { 0 };
@@ -1979,7 +1975,6 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 		}
 	}
 
-	codec = switch_core_session_get_read_codec(jss->session);
 	cb_state.ret = BOOLEAN_TO_JSVAL(JS_FALSE);
 	cb_state.saveDepth = JS_SuspendRequest(cx);
 	args.input_callback = dtmf_func;
@@ -2281,13 +2276,12 @@ static JSBool session_detach(JSContext * cx, JSObject * obj, uintN argc, jsval *
 static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	JSBool retval = JS_FALSE;
-	switch_channel_t *channel;
+
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	jsval ret = JS_TRUE;
 
 	METHOD_SANITY_CHECK();
 
-	channel = switch_core_session_get_channel(jss->session);
 	/* you can execute some apps before you answer  CHANNEL_SANITY_CHECK(); */
 
 	if (argc > 0) {
@@ -2557,7 +2551,6 @@ static JSBool js_fetchurl_file(JSContext * cx, JSObject * obj, uintN argc, jsval
 		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		filename = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 
-		curl_global_init(CURL_GLOBAL_ALL);
 		curl_handle = curl_easy_init();
 		if (!strncasecmp(url, "https", 5)) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -2606,7 +2599,6 @@ static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 			JS_ValueToInt32(cx, argv[1], &buffer_size);
 		}
 
-		curl_global_init(CURL_GLOBAL_ALL);
 		curl_handle = curl_easy_init();
 		if (!strncasecmp(url, "https", 5)) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -3498,7 +3490,6 @@ static JSBool js_bridge(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 	struct js_session *jss_a = NULL, *jss_b = NULL;
 	JSObject *session_obj_a = NULL, *session_obj_b = NULL;
 	void *bp = NULL;
-	int len = 0;
 	switch_input_callback_function_t dtmf_func = NULL;
 	struct input_callback_state cb_state = { 0 };
 	JSFunction *function;
@@ -3548,7 +3539,6 @@ static JSBool js_bridge(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 			cb_state.session_state = jss_a;
 			dtmf_func = js_collect_input_callback;
 			bp = &cb_state;
-			len = sizeof(cb_state);
 		}
 	}
 
@@ -3811,7 +3801,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]",
 				   SAF_SUPPORT_NOMEDIA);
 
-	curl_global_init(CURL_GLOBAL_ALL);
+	switch_curl_init();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
@@ -3822,7 +3812,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown)
 	// this causes a crash
 	//JS_DestroyRuntime(globals.rt);
 
-	curl_global_cleanup();
+	switch_curl_destroy();
 
 	switch_core_hash_destroy(&module_manager.mod_hash);
 	switch_core_hash_destroy(&module_manager.load_hash);

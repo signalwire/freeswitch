@@ -360,11 +360,15 @@ static void ft_r2_clean_call(ftdm_r2_call_t *call)
 static void ft_r2_accept_call(ftdm_channel_t *ftdmchan)
 {
 	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
-	// FIXME: not always accept as no charge, let the user decide that
-	// also we should check the return code from openr2_chan_accept_call and handle error condition
+	ftdm_r2_data_t *r2data = ftdmchan->span->signal_data;
+
+	// FIXME: we should check the return code from openr2_chan_accept_call and handle error condition
 	// hanging up the call with protocol error as the reason, this openr2 API will fail only when there something
 	// wrong at the I/O layer or the library itself
-	openr2_chan_accept_call(r2chan, OR2_CALL_NO_CHARGE);
+	if (r2data->charge_calls)
+		openr2_chan_accept_call(r2chan, OR2_CALL_WITH_CHARGE);
+	else
+		openr2_chan_accept_call(r2chan, OR2_CALL_NO_CHARGE);
 }
 
 static void ft_r2_answer_call(ftdm_channel_t *ftdmchan)
@@ -519,6 +523,28 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(ftdm_r2_set_channel_sig_status)
 {
 	openr2_chan_t *r2chan = R2CALL(ftdmchan)->r2chan;
 	openr2_cas_signal_t rxcas, txcas;
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, 
+			"Received request to change sig status of alarmed channel to %s", ftdm_signaling_status2str(status));
+
+		switch (status) {
+		case FTDM_SIG_STATE_SUSPENDED:
+			openr2_chan_set_blocked(r2chan);
+			/* Need to send sig status change to SUSPENDED once out of alarm */
+			R2CALL(ftdmchan)->localsuspend_on_alarm = 1;
+			break;
+		case FTDM_SIG_STATE_UP:
+			openr2_chan_set_blocked(r2chan);
+			/* DO NOT send sig status change to SUSPENDED once out of alarm */
+			R2CALL(ftdmchan)->localsuspend_on_alarm = 0;
+			break;
+		default:
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%d'\n", status);
+			return FTDM_FAIL;
+		}
+		return FTDM_SUCCESS;
+	}
 
 	/* get the current rx and tx cas bits */
 	openr2_chan_get_cas(r2chan, &rxcas, &txcas);
@@ -1675,6 +1701,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 	r2data->category = r2conf.category;
 	r2data->allow_collect_calls = r2conf.allow_collect_calls;
 	r2data->flags = 0;
+	r2data->charge_calls = r2conf.charge_calls;
+	r2data->forced_release = r2conf.forced_release;
 	spanpvt->r2context = r2data->r2context;
 
 	/* just the value must be freed by the hash */
@@ -1832,6 +1860,10 @@ static ftdm_status_t ftdm_r2_state_advance(ftdm_channel_t *ftdmchan)
 			{
 				if (!r2call->disconnect_rcvd) {
 					openr2_call_disconnect_cause_t disconnect_cause = ftdm_r2_ftdm_cause_to_openr2_cause(ftdmchan);
+					/* overwrite the hangup cause if this is an incoming call and forced_release is set */
+					if (openr2_chan_get_direction(r2chan) == OR2_DIR_BACKWARD && r2data->forced_release) {
+						disconnect_cause = OR2_CAUSE_FORCED_RELEASE;
+					}
 					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Clearing call, cause = %s\n", openr2_proto_get_disconnect_string(disconnect_cause));
 					/* this will disconnect the call, but need to wait for the call end before moving to DOWN */
 					openr2_chan_disconnect_call(r2chan, disconnect_cause);

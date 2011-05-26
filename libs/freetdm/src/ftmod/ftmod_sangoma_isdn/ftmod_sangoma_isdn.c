@@ -996,11 +996,15 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 	ftdm_clear_flag(span, FTDM_SPAN_STOP_THREAD);
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
 
-	if (signal_data->raw_trace_q921 == SNGISDN_OPT_TRUE) {
+	if (signal_data->trace_q921 == SNGISDN_OPT_TRUE ||
+		signal_data->raw_trace_q921 == SNGISDN_OPT_TRUE) {
+		
 		sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
 	}
 	
-	if (signal_data->raw_trace_q931 == SNGISDN_OPT_TRUE) {
+	if (signal_data->trace_q931 == SNGISDN_OPT_TRUE ||
+		signal_data->raw_trace_q931 == SNGISDN_OPT_TRUE) {
+
 		sngisdn_activate_trace(span, SNGISDN_TRACE_Q931);
 	}
 
@@ -1195,9 +1199,17 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_isdn_unload)
 	return FTDM_SUCCESS;
 }
 
+#define SANGOMA_ISDN_API_USAGE_TRACE 			"ftdm sangoma_isdn trace <q921|q931> <span name>\n"
+#define SANGOMA_ISDN_API_USAGE_SHOW_L1_STATS	"ftdm sangoma_isdn l1_stats <span name>\n"
+#define SANGOMA_ISDN_API_USAGE_SHOW_SPANS		"ftdm sangoma_isdn show_spans [<span name>]\n"
+
+#define SANGOMA_ISDN_API_USAGE	"\t"SANGOMA_ISDN_API_USAGE_TRACE \
+								"\t"SANGOMA_ISDN_API_USAGE_SHOW_L1_STATS \
+								"\t"SANGOMA_ISDN_API_USAGE_SHOW_SPANS
+
 static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 {
-	ftdm_status_t status = FTDM_SUCCESS;
+	ftdm_status_t status = FTDM_EINVAL;
 	char *mycmd = NULL, *argv[10] = { 0 };
 	int argc = 0;
 
@@ -1219,7 +1231,7 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 		ftdm_span_t *span;
 
 		if (argc < 3) {
-			ftdm_log(FTDM_LOG_ERROR, "Usage: ftdm sangoma_isdn trace <q921|q931> <span name>\n");
+			ftdm_log(FTDM_LOG_ERROR, "Usage: %s\n", SANGOMA_ISDN_API_USAGE_TRACE);
 			status = FTDM_FAIL;
 			goto done;
 		}
@@ -1228,34 +1240,40 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 		status = ftdm_span_find_by_name(argv[2], &span);
 		if (FTDM_SUCCESS != status) {
 			stream->write_function(stream, "-ERR failed to find span by name %s\n", argv[2]);
+
+			status = FTDM_FAIL;
 			goto done;
 		}
 		
 		if (!strcasecmp(trace_opt, "q921")) {
-			sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
+			status = sngisdn_activate_trace(span, SNGISDN_TRACE_Q921);
 		} else if (!strcasecmp(trace_opt, "q931")) {
-			sngisdn_activate_trace(span, SNGISDN_TRACE_Q931);
+			status = sngisdn_activate_trace(span, SNGISDN_TRACE_Q931);
 		} else if (!strcasecmp(trace_opt, "disable")) {
-			sngisdn_activate_trace(span, SNGISDN_TRACE_DISABLE);
+			status = sngisdn_activate_trace(span, SNGISDN_TRACE_DISABLE);
 		} else {
 			stream->write_function(stream, "-ERR invalid trace option <q921|q931> <span name>\n");
+			status = FTDM_FAIL;
 		}
+		goto done;
 	}
+	
 	if (!strcasecmp(argv[0], "l1_stats")) {
 		ftdm_span_t *span;
 		if (argc < 2) {
-			stream->write_function(stream, "Usage: ftdm sangoma_isdn l1_stats <span name>\n");
+			stream->write_function(stream, "Usage: %s\n", SANGOMA_ISDN_API_USAGE_SHOW_L1_STATS);
 			status = FTDM_FAIL;
 			goto done;
 		}
 		status = ftdm_span_find_by_name(argv[1], &span);
 		if (FTDM_SUCCESS != status) {
 			stream->write_function(stream, "-ERR failed to find span with name %s\n", argv[1]);
-			/* Return SUCCESS because we do not want to print the general FTDM usage list */
-			status = FTDM_SUCCESS; 
+
+			status = FTDM_FAIL; 
 			goto done;
 		}
-		sngisdn_print_phy_stats(stream, span);
+		status = sngisdn_show_l1_stats(stream, span);
+		goto done;
 	}
 	
 	if (!strcasecmp(argv[0], "show_spans")) {
@@ -1264,20 +1282,39 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 			status = ftdm_span_find_by_name(argv[1], &span);
 			if (FTDM_SUCCESS != status) {
 				stream->write_function(stream, "-ERR failed to find span with name %s\n", argv[1]);
-				/* Return SUCCESS because we do not want to print the general FTDM usage list */
-				status = FTDM_SUCCESS;
+				
+				stream->write_function(stream, "Usage: %s\n", SANGOMA_ISDN_API_USAGE_SHOW_SPANS);
+				status = FTDM_FAIL;
 				goto done;
 			}
-			sngisdn_print_span(stream, span);
-			status = FTDM_SUCCESS;
+			status = sngisdn_show_span(stream, span);
 			goto done;
 		}
-		sngisdn_print_spans(stream);
+		status = sngisdn_show_spans(stream);
+		goto done;
 	}
+	
 	if (!strcasecmp(argv[0], "check_ids")) {
-		sngisdn_check_free_ids();
+		status = sngisdn_check_free_ids();
+		goto done;
 	}
 done:
+	switch (status) {
+		case FTDM_SUCCESS:
+			stream->write_function(stream, "Command executed OK\n");
+			break;
+		case FTDM_EINVAL:
+			stream->write_function(stream, "Invalid arguments [%s]\n", mycmd);
+			stream->write_function(stream, "Usage:\n%s\n", SANGOMA_ISDN_API_USAGE);
+			break;		
+		default:
+			/* FTDM_FAIL - Do nothing since we already printed the cause of the error */
+			break;
+	}
+	
+	/* Return SUCCESS because we do not want to print the general FTDM usage list */
+	status = FTDM_SUCCESS;
+
 	ftdm_safe_free(mycmd);
 	return status;
 }

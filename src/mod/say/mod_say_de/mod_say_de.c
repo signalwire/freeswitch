@@ -40,6 +40,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
  * Daniel Swarbrick <daniel.swarbrick@gmail.com>
+ * Christian Benke <cb@poab.org>
  *
  * mod_say_de.c -- Say for German
  *
@@ -80,17 +81,27 @@ SWITCH_MODULE_DEFINITION(mod_say_de, mod_say_de_load, NULL, NULL);
 			return SWITCH_STATUS_FALSE;									\
 		}}																\
 
-static switch_status_t play_group(switch_say_method_t method, int a, int b, int c, char *what, switch_core_session_t *session, switch_input_args_t *args)
+static switch_status_t play_group(switch_say_method_t method, switch_say_gender_t gender, int a, int b, int c, char *what, switch_core_session_t *session, switch_input_args_t *args)
 {
 
 	if (a) {
-		say_file("digits/%d.wav", a);
-		say_file("digits/hundred.wav");
+		/*german nominativ for "one" in numbers like 21, 171, 4591 is flexed("ein" instead of "eins"), 2-9 are not*/
+		if ( a == 1 ) {
+			say_file("digits/s-%d.wav");
+		} else {
+			say_file("digits/%d.wav", a);
+		}
+			say_file("digits/hundred.wav");
 	}
 
 	if (b) {
 		if (b > 1) {
-			say_file("digits/%d.wav", c);
+			/*german nominativ for "one" in numbers like 21, 171, 4591 is flexed, 2-9 are not*/
+			if ( c == 1 ) {
+				say_file("digits/s-%d.wav");
+			} else {
+				say_file("digits/%d.wav", c);
+			} 
 			say_file("currency/and.wav");
 			if (method == SSM_COUNTED) {
 				say_file("digits/h-%d0.wav", b);
@@ -111,7 +122,15 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 		if (method == SSM_COUNTED) {
 			say_file("digits/h-%d.wav", c);
 		} else {
-			say_file("digits/%d.wav", c);
+			/*"one" used as an article is feminine or masculine in german, e.g. voicemail-message is feminine
+			only applies to the likes of 1, 101, 1001 etc.*/
+			if ( b == 0  && c == 1 && gender == SSG_FEMININE ) {        
+				say_file("digits/%d_f.wav", c);                         
+			} else if ( b == 0 && c == 1 && what ) {
+				say_file("digits/s-%d.wav");
+			} else {
+				say_file("digits/%d.wav", c);
+			}
 		}
 	}
 
@@ -127,17 +146,30 @@ static switch_status_t de_say_general_count(switch_core_session_t *session, char
 	int in;
 	int x = 0;
 	int places[9] = { 0 };
-	char sbuf[13] = "";
+	char sbuf[128] = "";
 	switch_status_t status;
 
-	if (!(tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
+	if (say_args->method == SSM_ITERATED) {
+		if ((tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf)-1))) {
+			char *p;
+			for (p = tosay; p && *p; p++) {
+				say_file("digits/%c.wav", *p);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+			return SWITCH_STATUS_GENERR;
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!(tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf)-1)) || strlen(tosay) > 9) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	in = atoi(tosay);
 
-	if (in != 0) {
+	if (in != 0) {   /*fills the places-array with tosay(resp. in) from tail to front e.g. 84371 would be places[|1|7|3|4|8|0|0|0|], up to 1 billion minus 1*/
 		for (x = 8; x >= 0; x--) {
 			int num = (int) pow(10, x);
 			if ((places[(uint32_t) x] = in / num)) {
@@ -148,22 +180,14 @@ static switch_status_t de_say_general_count(switch_core_session_t *session, char
 		switch (say_args->method) {
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
-			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(SSM_PRONOUNCED, say_args->gender, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(SSM_PRONOUNCED, say_args->gender, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			if ((status = play_group(say_args->method, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(say_args->method, say_args->gender, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
-			}
-			break;
-		case SSM_ITERATED:
-			{
-				char *p;
-				for (p = tosay; p && *p; p++) {
-					say_file("digits/%c.wav", *p);
-				}
 			}
 			break;
 		default:
@@ -327,7 +351,7 @@ static switch_status_t de_say_money(switch_core_session_t *session, char *tosay,
 	char *dollars = NULL;
 	char *cents = NULL;
 
-	if (strlen(tosay) > 15 || !(tosay = switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) {
+	if (strlen(tosay) > 15 || !(tosay = switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}

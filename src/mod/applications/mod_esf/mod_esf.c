@@ -71,7 +71,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_port_t rtp_port;
 	char guess_ip[25];
 	ls_how_t ready = SEND_TYPE_UNKNOWN;
-	int argc;
+	//int argc;
 	char *mydata, *argv[5];
 	char *mcast_ip = "224.168.168.168";
 	switch_port_t mcast_port = 34567;
@@ -87,7 +87,7 @@ SWITCH_STANDARD_APP(bcast_function)
 		mydata = switch_core_session_strdup(session, data);
 		assert(mydata != NULL);
 
-		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 		if ((var = switch_channel_get_variable(channel, "esf_multicast_ip"))) {
 			mcast_ip = switch_core_session_strdup(session, var);

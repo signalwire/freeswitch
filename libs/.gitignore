@@ -263,6 +263,19 @@
 /js/nsprpub/pr/tests/dll/Makefile
 /js/src/jsautocfg.h
 /js/src/perlconnect/Makefile.PL
+/ldns/Makefile
+/ldns/doc/ldns_manpages
+/ldns/include/
+/ldns/ldns/config.h
+/ldns/ldns/net.h
+/ldns/ldns/util.h
+/ldns/lib
+/ldns/libtool
+/ldns/linktest
+/ldns/linktest.dSYM/
+/ldns/packaging/ldns-config
+/ldns/packaging/libldns.pc
+/ldns-1.6.9/
 /libdingaling/Makefile
 /libdingaling/Makefile.in
 /libdingaling/aclocal.m4
@@ -346,6 +359,7 @@
 /libg722_1/tests/Makefile
 /libg722_1/tests/Makefile.in
 /libg722_1/tests/regression_tests.sh
+/libg722_1/g722_1.pc
 /libsndfile/Cfg/compile
 /libsndfile/Cfg/config.guess
 /libsndfile/Cfg/config.sub
@@ -1104,3 +1118,28 @@
 /tiff-3.8.2/a.out.dSYM/
 /tiff-3.8.2/tiff-Makefile.tgz
 /unimrcp/a.out.dSYM/
+/esl/fs_cli.dSYM/
+/esl/ivrd.dSYM/
+/esl/testclient.dSYM/
+/esl/testserver.dSYM/
+
+/openssl-1.0.0a/
+/esl/Debug/
+/esl/Release/
+/freetdm/msvc/Release/
+/freetdm/msvc/Debug/
+
+/spandsp/src/msvc/All/BuildLog make_at_dictionary.htm
+/spandsp/src/msvc/All/BuildLog make_modem_filter.htm
+
+BuildLog*.htm
+/win32/tmp*.bat
+
+/speex/win32/VS2008/libspeex/*/*/libspeex.log
+/speex/win32/VS2008/libspeexdsp/*/*/libspeexdsp.log
+/win32/celt/*/*/libcelt.log
+/win32/libg722_1/*/*/libg722_1.log
+/win32/libshout/*/*/libshout.log
+openssl_manifest.rc
+libeay32_manifest.rc
+ssleay32_manifest.rc

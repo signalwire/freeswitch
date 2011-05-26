@@ -36,10 +36,8 @@
 /******************************************************************************/
 
 /* DEFINES ********************************************************************/
-/******************************************************************************/
 
 /* GLOBALS ********************************************************************/
-/******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
 void ft_to_sngss7_iam(ftdm_channel_t * ftdmchan);
@@ -66,242 +64,74 @@ void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
 
 void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan);
-/******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
 void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
-{
-	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
-	
-	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
-	const char			*clg_nadi = NULL;
-	const char			*cld_nadi = NULL;
-	const char			*clg_subAddr = NULL;
-	const char			*cld_subAddr = NULL;
-	char 				subAddrIE[MAX_SIZEOF_SUBADDR_IE];
+{	
 	SiConEvnt 			iam;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
+	
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
 	sngss7_info->suInstId 	= get_unique_id ();
 	sngss7_info->spInstId 	= 0;
 	sngss7_info->spId 		= 1;
 	
 	memset (&iam, 0x0, sizeof (iam));
-	
-	/* copy down the nature of connection indicators */
-	iam.natConInd.eh.pres 				= PRSNT_NODEF;
-	iam.natConInd.satInd.pres 			= PRSNT_NODEF;
-	iam.natConInd.satInd.val 			= 0; /* no satellite circuit */
-	iam.natConInd.contChkInd.pres 		= PRSNT_NODEF;
-	iam.natConInd.contChkInd.val 		= CONTCHK_NOTREQ;
-	iam.natConInd.echoCntrlDevInd.pres	= PRSNT_NODEF;
-	iam.natConInd.echoCntrlDevInd.val 	= ECHOCDEV_INCL;
-	
-	/* copy down the forward call indicators */
-	iam.fwdCallInd.eh.pres 				= PRSNT_NODEF;
-	iam.fwdCallInd.natIntCallInd.pres 	= PRSNT_NODEF;
-	iam.fwdCallInd.natIntCallInd.val 	= 0x00;
-	iam.fwdCallInd.end2EndMethInd.pres 	= PRSNT_NODEF;
-	iam.fwdCallInd.end2EndMethInd.val 	= E2EMTH_NOMETH;
-	iam.fwdCallInd.intInd.pres 			= PRSNT_NODEF;
-	iam.fwdCallInd.intInd.val 			= INTIND_NOINTW;
-	iam.fwdCallInd.end2EndInfoInd.pres 	= PRSNT_NODEF;
-	iam.fwdCallInd.end2EndInfoInd.val 	= E2EINF_NOINFO;
-	iam.fwdCallInd.isdnUsrPrtInd.pres 	= PRSNT_NODEF;
-	iam.fwdCallInd.isdnUsrPrtInd.val 	= ISUP_USED;
-	iam.fwdCallInd.isdnUsrPrtPrfInd.pres = PRSNT_NODEF;
-	iam.fwdCallInd.isdnUsrPrtPrfInd.val = PREF_PREFAW;
-	iam.fwdCallInd.isdnAccInd.pres 		= PRSNT_NODEF;
-	iam.fwdCallInd.isdnAccInd.val 		= ISDNACC_ISDN;
-	iam.fwdCallInd.sccpMethInd.pres 	= PRSNT_NODEF;
-	iam.fwdCallInd.sccpMethInd.val 		= SCCPMTH_NOIND;
-	
-	/* copy down the calling number information */
-	iam.cgPtyCat.eh.pres 				= PRSNT_NODEF;
-	iam.cgPtyCat.cgPtyCat.pres 			= PRSNT_NODEF;
-	iam.cgPtyCat.cgPtyCat.val 			= CAT_ORD;	/* ordinary suscriber */
-	
-	/* copy down the transmission medium requirements */
-	iam.txMedReq.eh.pres 				= PRSNT_NODEF;
-	iam.txMedReq.trMedReq.pres 			= PRSNT_NODEF;
-	iam.txMedReq.trMedReq.val 			= ftdmchan->caller_data.bearer_capability;
 
-	if ((g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS88) ||
-		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS92) ||
-		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS95)) {
-
-		/* include only if we're running ANSI */
-		iam.fwdCallInd.transCallNInd.pres   = PRSNT_NODEF;
-		iam.fwdCallInd.transCallNInd.val    = 0x0;
-
-		iam.usrServInfoA.eh.pres				= PRSNT_NODEF;
-
-		iam.usrServInfoA.infoTranCap.pres		= PRSNT_NODEF;
-		switch (ftdmchan->caller_data.bearer_capability) {
-		/**********************************************************************/
-		case (FTDM_BEARER_CAP_SPEECH):
-			iam.usrServInfoA.infoTranCap.val	= 0x0;			/* speech as per ATIS-1000113.3.2005 */
-			break;
-		/**********************************************************************/
-		case (FTDM_BEARER_CAP_64K_UNRESTRICTED):
-			iam.usrServInfoA.infoTranCap.val	= 0x8;			/* unrestricted digital as per ATIS-1000113.3.2005 */
-			break;
-		/**********************************************************************/
-		case (FTDM_BEARER_CAP_3_1KHZ_AUDIO):
-			iam.usrServInfoA.infoTranCap.val	= 0x10;			/* 3.1kHz audio as per ATIS-1000113.3.2005 */
-			break;
-		/**********************************************************************/
-		default:
-			SS7_ERROR_CHAN(ftdmchan, "Unknown Bearer capability falling back to speech%s\n", " ");
-			iam.usrServInfoA.infoTranCap.val	= 0x0;			/* speech as per ATIS-1000113.3.2005 */
-			break;
-		/**********************************************************************/
-		} /* switch (ftdmchan->caller_data.bearer_capability) */
-
-		iam.usrServInfoA.cdeStand.pres			= PRSNT_NODEF;
-		iam.usrServInfoA.cdeStand.val			= 0x0;				/* ITU-T standardized coding */
-		iam.usrServInfoA.tranMode.pres			= PRSNT_NODEF;
-		iam.usrServInfoA.tranMode.val			= 0x0;				/* circuit mode */
-		iam.usrServInfoA.infoTranRate0.pres		= PRSNT_NODEF;
-		iam.usrServInfoA.infoTranRate0.val		= 0x10;				/* 64kbps origination to destination */
-		iam.usrServInfoA.infoTranRate1.pres		= PRSNT_NODEF;
-		iam.usrServInfoA.infoTranRate1.val		= 0x10;				/* 64kbps destination to origination */
-		iam.usrServInfoA.chanStruct.pres		= PRSNT_NODEF;
-		iam.usrServInfoA.chanStruct.val			= 0x1;				/* 8kHz integrity */
-		iam.usrServInfoA.config.pres			= PRSNT_NODEF;
-		iam.usrServInfoA.config.val				= 0x0;				/* point to point configuration */
-		iam.usrServInfoA.establish.pres			= PRSNT_NODEF;
-		iam.usrServInfoA.establish.val			= 0x0;				/* on demand */
-		iam.usrServInfoA.symmetry.pres			= PRSNT_NODEF;
-		iam.usrServInfoA.symmetry.val			= 0x0;				/* bi-directional symmetric */
-		iam.usrServInfoA.usrInfLyr1Prot.pres	= PRSNT_NODEF;
-		iam.usrServInfoA.usrInfLyr1Prot.val		= 0x2;				/* G.711 ulaw */
-		iam.usrServInfoA.rateMultiplier.pres	= PRSNT_NODEF;
-		iam.usrServInfoA.rateMultiplier.val		= 0x1;				/* 1x rate multipler */
-	} /* if ANSI */
-
-	/* copy down the called number information */
-	copy_cdPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cdPtyNum);
-	
-	/* copy down the calling number information */
-	
-	copy_cgPtyNum_to_sngss7 (&ftdmchan->caller_data, &iam.cgPtyNum);
-
-	/* check if the user would like a custom NADI value for the calling Pty Num */
-	clg_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_clg_nadi");
-	if ((clg_nadi != NULL) && (*clg_nadi)) {
-		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Calling NADI value \"%s\"\n", clg_nadi);
-		iam.cgPtyNum.natAddrInd.val	= atoi(clg_nadi);
+	if (sngss7_info->circuit->transparent_iam &&
+		sngss7_retrieve_iam(ftdmchan, &iam) == FTDM_SUCCESS) {
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Transparent)\n", sngss7_info->circuit->cic);
 	} else {
-		iam.cgPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].clg_nadi;
-		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLG, using \"%d\"\n", iam.cgPtyNum.natAddrInd.val);
-	}
+		/* Nature of Connection Indicators */
+		copy_natConInd_to_sngss7(ftdmchan, &iam.natConInd);
 
-	cld_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cld_nadi");
-	if ((cld_nadi != NULL) && (*cld_nadi)) {
-		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called NADI value \"%s\"\n", cld_nadi);
-		iam.cdPtyNum.natAddrInd.val	= atoi(cld_nadi);
-	} else {
-		iam.cdPtyNum.natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].cld_nadi;
-		SS7_DEBUG_CHAN(ftdmchan,"No user supplied NADI value found for CLD, using \"%d\"\n", iam.cdPtyNum.natAddrInd.val);
-	}
+		/* Forward Call Indicators */
+		copy_fwdCallInd_to_sngss7(ftdmchan, &iam.fwdCallInd);
 
-	/* check if the user would like us to send a clg_sub-address */
-	clg_subAddr = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_clg_subaddr");
-	if ((clg_subAddr != NULL) && (*clg_subAddr)) {
-		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Calling Sub-Address value \"%s\"\n", clg_subAddr);
+		/* Transmission medium requirements */
+		copy_txMedReq_to_sngss7(ftdmchan, &iam.txMedReq);
+
+		/* User Service Info A */
+		copy_usrServInfoA_to_sngss7(ftdmchan, &iam.usrServInfoA);
 		
-		/* clean out the subAddrIE */
-		memset(subAddrIE, 0x0, sizeof(subAddrIE));
-
-		/* check the first character in the sub-address to see what type of encoding to use */
-		switch (clg_subAddr[0]) {
-		case '0':						/* NSAP */
-			encode_subAddrIE_nsap(&clg_subAddr[1], subAddrIE, SNG_CALLING);
-			break;
-		case '1':						/* national variant */
-			encode_subAddrIE_nat(&clg_subAddr[1], subAddrIE, SNG_CALLING);
-			break;
-		default:
-			SS7_ERROR_CHAN(ftdmchan,"Invalid Calling Sub-Address encoding requested: %c\n", clg_subAddr[0]);
-			break;
-		} /* switch (cld_subAddr[0]) */
-
-
-		/* if subaddIE is still empty don't copy it in */
-		if (subAddrIE[0] != '0') {
-			/* check if the clg_subAddr has already been added */
-			if (iam.accTrnspt.eh.pres == PRSNT_NODEF) {
-				/* append the subAddrIE */
-				memcpy(&iam.accTrnspt.infoElmts.val[iam.accTrnspt.infoElmts.len], subAddrIE, (subAddrIE[1] + 2));
-				iam.accTrnspt.infoElmts.len		= iam.accTrnspt.infoElmts.len +subAddrIE[1] + 2;
-			} else {
-				/* fill in from the beginning */
-				iam.accTrnspt.eh.pres			= PRSNT_NODEF;
-				iam.accTrnspt.infoElmts.pres	= PRSNT_NODEF;
-				memcpy(iam.accTrnspt.infoElmts.val, subAddrIE, (subAddrIE[1] + 2));
-				iam.accTrnspt.infoElmts.len		= subAddrIE[1] + 2;
-			} /* if (iam.accTrnspt.eh.pres */
-		} /* if (subAddrIE[0] != '0') */
-	}
-
-	/* check if the user would like us to send a cld_sub-address */
-	cld_subAddr = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cld_subaddr");
-	if ((cld_subAddr != NULL) && (*cld_subAddr)) {
-		SS7_DEBUG_CHAN(ftdmchan,"Found user supplied Called Sub-Address value \"%s\"\n", cld_subAddr);
+		/* Called Number information */
+		copy_cdPtyNum_to_sngss7(ftdmchan, &iam.cdPtyNum);
 		
-		/* clean out the subAddrIE */
-		memset(subAddrIE, 0x0, sizeof(subAddrIE));
+		/* Calling Number information */
+		copy_cgPtyNum_to_sngss7(ftdmchan, &iam.cgPtyNum);
 
-		/* check the first character in the sub-address to see what type of encoding to use */
-		switch (cld_subAddr[0]) {
-		case '0':						/* NSAP */
-			encode_subAddrIE_nsap(&cld_subAddr[1], subAddrIE, SNG_CALLED);
-			break;
-		case '1':						/* national variant */
-			encode_subAddrIE_nat(&cld_subAddr[1], subAddrIE, SNG_CALLED);
-			break;
-		default:
-			SS7_ERROR_CHAN(ftdmchan,"Invalid Called Sub-Address encoding requested: %c\n", cld_subAddr[0]);
-			break;
-		} /* switch (cld_subAddr[0]) */
+		/* Generic Number information */
+		copy_genNmb_to_sngss7(ftdmchan, &iam.genNmb);
 
-		/* if subaddIE is still empty don't copy it in */
-		if (subAddrIE[0] != '0') {
-			/* check if the cld_subAddr has already been added */
-			if (iam.accTrnspt.eh.pres == PRSNT_NODEF) {
-				/* append the subAddrIE */
-				memcpy(&iam.accTrnspt.infoElmts.val[iam.accTrnspt.infoElmts.len], subAddrIE, (subAddrIE[1] + 2));
-				iam.accTrnspt.infoElmts.len		= iam.accTrnspt.infoElmts.len +subAddrIE[1] + 2;
-			} else {
-				/* fill in from the beginning */
-				iam.accTrnspt.eh.pres			= PRSNT_NODEF;
-				iam.accTrnspt.infoElmts.pres	= PRSNT_NODEF;
-				memcpy(iam.accTrnspt.infoElmts.val, subAddrIE, (subAddrIE[1] + 2));
-				iam.accTrnspt.infoElmts.len		= subAddrIE[1] + 2;
-			} /* if (iam.accTrnspt.eh.pres */
-		} /* if (subAddrIE[0] != '0') */
-	} /* if ((cld_subAddr != NULL) && (*cld_subAddr)) */
+		/* Calling Party's Category */
+		copy_cgPtyCat_to_sngss7(ftdmchan, &iam.cgPtyCat);
+
+		/* Redirecting Number */
+		copy_redirgNum_to_sngss7(ftdmchan, &iam.redirgNum);
+
+		/* Access Transport */
+		copy_accTrnspt_to_sngss7(ftdmchan, &iam.accTrnspt);
+
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM clg = \"%s\" (NADI=%d), cld = \"%s\" (NADI=%d)\n",
+									sngss7_info->circuit->cic,
+									ftdmchan->caller_data.cid_num.digits,
+									iam.cgPtyNum.natAddrInd.val,
+									ftdmchan->caller_data.dnis.digits,
+									iam.cdPtyNum.natAddrInd.val);
+	}
 
 	sng_cc_con_request (sngss7_info->spId,
 						sngss7_info->suInstId,
 						sngss7_info->spInstId,
-						sngss7_info->circuit->id, 
-						&iam, 
+						sngss7_info->circuit->id,
+						&iam,
 						0);
-
-	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM clg = \"%s\" (NADI=%d), cld = \"%s\" (NADI=%d)\n",
-							sngss7_info->circuit->cic,
-							ftdmchan->caller_data.cid_num.digits,
-							iam.cgPtyNum.natAddrInd.val,
-							ftdmchan->caller_data.dnis.digits,
-							iam.cdPtyNum.natAddrInd.val);
-
 
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
 
-/******************************************************************************/
 void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
@@ -338,7 +168,7 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 		acm.bckCallInd.echoCtrlDevInd.val	= 0x1;
 		break;
 	/**********************************************************************/
-	case (FTDM_BEARER_CAP_64K_UNRESTRICTED):
+	case (FTDM_BEARER_CAP_UNRESTRICTED):
 		acm.bckCallInd.echoCtrlDevInd.val	= 0x0;
 		break;
 	/**********************************************************************/
@@ -381,7 +211,6 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	return;
 }
 
-/******************************************************************************/
 void ft_to_sngss7_anm (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
@@ -891,6 +720,69 @@ void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan)
 	return;
 }
 
+/* French SPIROU send Charge Unit */
+/* No one calls this function yet, but it has been implemented to complement TXA messages */
+void ft_to_sngss7_itx (ftdm_channel_t * ftdmchan)
+{
+#ifndef SANGOMA_SPIROU
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "ITX message not supported!, please update your libsng_ss7\n");
+#else
+	const char* var = NULL;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	SiCnStEvnt itx;
+	
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+
+	memset (&itx, 0x0, sizeof (itx));
+
+	itx.msgNum.eh.pres = PRSNT_NODEF;
+	itx.msgNum.msgNum.pres = PRSNT_NODEF;
+	var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_itx_msg_num");
+	if (!ftdm_strlen_zero(var)) {
+		itx.msgNum.msgNum.val = atoi(var);
+	} else {
+		itx.msgNum.msgNum.val = 0x1;
+	}
+	
+	itx.chargUnitNum.eh.pres = PRSNT_NODEF;
+	itx.chargUnitNum.chargUnitNum.pres = PRSNT_NODEF;
+	var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_itx_charge_unit");
+	if (!ftdm_strlen_zero(var)) {
+		itx.chargUnitNum.chargUnitNum.val = atoi(var);
+	} else {
+		itx.chargUnitNum.chargUnitNum.val = 0x1;
+	}
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "ITX Charging Unit:%d Msg Num:%d\n", itx.chargUnitNum.chargUnitNum.val, itx.msgNum.msgNum.val);
+	sng_cc_con_status  (1, sngss7_info->suInstId, sngss7_info->spInstId, sngss7_info->circuit->id, &itx, CHARGE_UNIT);
+
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx ITX\n", sngss7_info->circuit->cic);
+#endif
+	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
+	return;
+}
+
+/* French SPIROU send Charging Acknowledgement */
+void ft_to_sngss7_txa (ftdm_channel_t * ftdmchan)
+{	
+#ifndef SANGOMA_SPIROU
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "TXA message not supported!, please update your libsng_ss7\n");	
+#else
+	SiCnStEvnt txa;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+		
+	memset (&txa, 0x0, sizeof(txa));
+
+	sng_cc_con_status(1, sngss7_info->suInstId, sngss7_info->spInstId, sngss7_info->circuit->id, &txa, CHARGE_ACK);
+	
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx TXA\n", sngss7_info->circuit->cic);
+#endif
+	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
+	return;
+}
 
 /******************************************************************************/
 /* For Emacs:

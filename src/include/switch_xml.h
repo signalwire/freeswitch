@@ -98,6 +98,7 @@ struct switch_xml {
 	uint32_t flags;
 	/*! is_switch_xml_root bool */
 	switch_bool_t is_switch_xml_root_t;
+	uint32_t refs;
 };
 
 /*! 
@@ -377,7 +378,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(_In_z_ const ch
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, const char *user_name, const char *domain_name,
 															  const char *ip, switch_xml_t *user, switch_event_t *params);
-
+SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char *user_name, const char *domain_name);
 SWITCH_DECLARE(void) switch_xml_merge_user(switch_xml_t user, switch_xml_t domain, switch_xml_t group);
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_dup(switch_xml_t xml);
@@ -415,6 +416,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(_In_ switc
 SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(_In_opt_z_ const char *str);
 
 SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond);
+
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_language(switch_xml_t *root, switch_xml_t *node, switch_event_t *params, switch_xml_t *language, switch_xml_t *phrases, switch_xml_t *macros, const char *str_language);
 
 SWITCH_END_EXTERN_C
 ///\}

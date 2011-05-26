@@ -652,6 +652,7 @@ static __inline__ void force_drop_rx_bits(t4_state_t *s, int bits)
 static int rx_put_bits(t4_state_t *s, uint32_t bit_string, int quantity)
 {
     int bits;
+    int old_a0;
 
     /* We decompress bit by bit, as the data stream is received. We need to
        scan continuously for EOLs, so we might as well work this way. */
@@ -809,8 +810,23 @@ static int rx_put_bits(t4_state_t *s, uint32_t bit_string, int quantity)
                             s->t4_t6_rx.a0,
                             s->t4_t6_rx.b1,
                             s->t4_t6_rx.run_length);
-                s->t4_t6_rx.run_length += (s->t4_t6_rx.b1 - s->t4_t6_rx.a0 + t4_2d_table[bits].param);
+                old_a0 = s->t4_t6_rx.a0;
                 s->t4_t6_rx.a0 = s->t4_t6_rx.b1 + t4_2d_table[bits].param;
+                /* We need to check if a bad or malicious image is failing to move forward along the row.
+                   Going back is obviously bad. We also need to avoid a stall on the spot, except for the
+                   special case of the start of the row. Zero movement as the very first element in the
+                   row is perfectly normal. */
+                if (s->t4_t6_rx.a0 <= old_a0)
+                {
+                    if (s->t4_t6_rx.a0 < old_a0  ||  s->t4_t6_rx.b_cursor > 1)
+                    {
+                        /* Undo the update we just started, and carry on as if this code does not exist */
+                        /* TODO: we really should record that something wasn't right at this point. */
+                        s->t4_t6_rx.a0 = old_a0;
+                        break;
+    		        }
+	            }
+                s->t4_t6_rx.run_length += (s->t4_t6_rx.a0 - old_a0);
                 add_run_to_row(s);
                 /* We need to move one step in one direction or the other, to change to the
                    opposite colour */
@@ -832,8 +848,9 @@ static int rx_put_bits(t4_state_t *s, uint32_t bit_string, int quantity)
                             s->ref_runs[s->t4_t6_rx.b_cursor],
                             s->ref_runs[s->t4_t6_rx.b_cursor + 1]);
                 s->t4_t6_rx.b1 += s->ref_runs[s->t4_t6_rx.b_cursor++];
-                s->t4_t6_rx.run_length += (s->t4_t6_rx.b1 - s->t4_t6_rx.a0);
+                old_a0 = s->t4_t6_rx.a0;
                 s->t4_t6_rx.a0 = s->t4_t6_rx.b1;
+                s->t4_t6_rx.run_length += (s->t4_t6_rx.a0 - old_a0);
                 s->t4_t6_rx.b1 += s->ref_runs[s->t4_t6_rx.b_cursor++];
                 break;
             case S_Ext:

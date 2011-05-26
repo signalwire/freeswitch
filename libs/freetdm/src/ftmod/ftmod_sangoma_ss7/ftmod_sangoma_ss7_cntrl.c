@@ -68,11 +68,15 @@ int ftmod_ss7_shutdown_isup(void);
 int ftmod_ss7_shutdown_mtp3(void);
 int ftmod_ss7_shutdown_mtp2(void);
 int ftmod_ss7_shutdown_relay(void);
+int ftmod_ss7_disable_relay_channel(uint32_t chanId);
 
 int ftmod_ss7_disable_grp_mtp3Link(uint32_t procId);
 int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId);
 
 int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId);
+
+int ftmod_ss7_block_isup_ckt(uint32_t cktId);
+int ftmod_ss7_unblock_isup_ckt(uint32_t cktId);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -81,9 +85,10 @@ int ft_to_sngss7_activate_all(void)
 	int x;
 
 	x = 1;
-	while (g_ftdm_sngss7_data.cfg.isap[x].id != 0) {
+	while (x < (MAX_ISAPS)) {
 		/* check if this link has already been actived */
-		if (!(g_ftdm_sngss7_data.cfg.isap[x].flags & SNGSS7_ACTIVE)) {
+		if ((g_ftdm_sngss7_data.cfg.isap[x].id != 0) &&
+			(!(g_ftdm_sngss7_data.cfg.isap[x].flags & SNGSS7_ACTIVE))) {
 
 			if (ftmod_ss7_enable_isap(x)) {	
 				SS7_CRITICAL("ISAP %d Enable: NOT OK\n", x);
@@ -97,12 +102,13 @@ int ft_to_sngss7_activate_all(void)
 		} /* if !SNGSS7_ACTIVE */
 		
 		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.isap[x].id != 0) */
+	} /* while (x < (MAX_ISAPS)) */
 
 	x = 1;
-	while (g_ftdm_sngss7_data.cfg.nsap[x].id != 0) {
+	while (x < (MAX_NSAPS)) {
 		/* check if this link has already been actived */
-		if (!(g_ftdm_sngss7_data.cfg.nsap[x].flags & SNGSS7_ACTIVE)) {
+		if ((g_ftdm_sngss7_data.cfg.nsap[x].id != 0) &&
+			(!(g_ftdm_sngss7_data.cfg.nsap[x].flags & SNGSS7_ACTIVE))) {
 
 			if (ftmod_ss7_enable_nsap(x)) {	
 				SS7_CRITICAL("NSAP %d Enable: NOT OK\n", x);
@@ -116,13 +122,14 @@ int ft_to_sngss7_activate_all(void)
 		} /* if !SNGSS7_ACTIVE */
 		
 		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.nsap[x].id != 0) */
+	} /* while (x < (MAX_NSAPS)) */
 
 	if (g_ftdm_sngss7_data.cfg.mtpRoute[1].id != 0) {
 		x = 1;
-		while (g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) {
+		while (x < (MAX_MTP_LINKSETS+1)) {
 			/* check if this link has already been actived */
-			if (!(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].flags & SNGSS7_ACTIVE)) {
+		if ((g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) &&
+			(!(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].flags & SNGSS7_ACTIVE))) {
 	
 				if (ftmod_ss7_enable_mtpLinkSet(x)) {	
 					SS7_CRITICAL("LinkSet \"%s\" Enable: NOT OK\n", g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name);
@@ -136,7 +143,7 @@ int ft_to_sngss7_activate_all(void)
 			} /* if !SNGSS7_ACTIVE */
 			
 			x++;
-		} /* while (g_ftdm_sngss7_data.cfg.mtpLinkSet[x].id != 0) */
+		} /* while (x < (MAX_MTP_LINKSETS+1)) */
 	}
 
 	return 0;
@@ -713,6 +720,38 @@ int ftmod_ss7_shutdown_relay(void)
 }
 
 /******************************************************************************/
+int ftmod_ss7_disable_relay_channel(uint32_t chanId)
+{
+	RyMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTRY;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(RyMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType			= TCNTRL;	/* this is a control request */
+	cntrl.hdr.entId.ent			= ENTRY;
+	cntrl.hdr.entId.inst		= S_INST;
+	cntrl.hdr.elmId.elmnt		= STGEN;
+
+	
+	cntrl.hdr.elmId.elmntInst1	= chanId;
+
+	cntrl.t.cntrl.action		= ADISIMM;			/* Deactivate */
+	cntrl.t.cntrl.subAction		= SAELMNT;			/* specificed element */
+
+	return (sng_cntrl_relay(&pst, &cntrl));
+}
+
+/******************************************************************************/
 int ftmod_ss7_disable_grp_mtp3Link(uint32_t procId)
 {
 	SnMngmt cntrl;
@@ -808,6 +847,69 @@ int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId)
 
 }
 
+/******************************************************************************/
+int ftmod_ss7_block_isup_ckt(uint32_t cktId)
+{
+	SiMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSI;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SiMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType						= TCNTRL;		/* this is a control request */
+	cntrl.hdr.entId.ent						= ENTSI;
+	cntrl.hdr.entId.inst					= S_INST;
+	cntrl.hdr.elmId.elmnt					= STICIR;
+
+	cntrl.t.cntrl.s.siElmnt.elmntId.circuit	= cktId;
+	cntrl.t.cntrl.s.siElmnt.elmntParam.cir.flag = LSI_CNTRL_CIR_FORCE;
+
+	cntrl.t.cntrl.action					= ADISIMM;		/* block via BLO */
+	cntrl.t.cntrl.subAction					= SAELMNT;		/* specificed element */
+
+	return (sng_cntrl_isup(&pst, &cntrl));
+}
+
+/******************************************************************************/
+int ftmod_ss7_unblock_isup_ckt(uint32_t cktId)
+{
+	SiMngmt cntrl;
+	Pst pst;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTSI;
+
+	/* initalize the control structure */
+	memset(&cntrl, 0x0, sizeof(SiMngmt));
+
+	/* initalize the control header */
+	smHdrInit(&cntrl.hdr);
+
+	cntrl.hdr.msgType						= TCNTRL;		/* this is a control request */
+	cntrl.hdr.entId.ent						= ENTSI;
+	cntrl.hdr.entId.inst					= S_INST;
+	cntrl.hdr.elmId.elmnt					= STICIR;
+
+	cntrl.t.cntrl.s.siElmnt.elmntId.circuit		= cktId;
+	cntrl.t.cntrl.s.siElmnt.elmntParam.cir.flag = LSI_CNTRL_CIR_FORCE;
+
+	cntrl.t.cntrl.action					= AENA;			/* unblock via UBL */
+	cntrl.t.cntrl.subAction					= SAELMNT;		/* specificed element */
+
+	return (sng_cntrl_isup(&pst, &cntrl));
+}
 /******************************************************************************/
 /* For Emacs:
  * Local Variables:

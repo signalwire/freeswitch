@@ -49,6 +49,7 @@ SWITCH_BEGIN_EXTERN_C struct switch_channel_timetable {
 	switch_time_t hungup;
 	switch_time_t transferred;
 	switch_time_t resurrected;
+	switch_time_t bridged;
 	struct switch_channel_timetable *next;
 };
 
@@ -250,6 +251,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t 
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check);
+SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_channel_t *channel,
+																	  const char *varname, const char *value, switch_bool_t var_check, switch_stack_t stack);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname, const char *fmt, ...);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_name_printf(switch_channel_t *channel, const char *val, const char *fmt, ...);
 
@@ -283,8 +286,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_cha
   \param varname the name of the variable
   \return the value of the requested variable
 */
-SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup);
-#define switch_channel_get_variable(_c, _v) switch_channel_get_variable_dup(_c, _v, SWITCH_TRUE)
+SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup, int idx);
+#define switch_channel_get_variable(_c, _v) switch_channel_get_variable_dup(_c, _v, SWITCH_TRUE, -1)
 
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event);
 
@@ -315,6 +318,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_caller_extension_masquerade(switc
 */
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension);
 
+SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_sort_cid(switch_channel_t *channel, switch_bool_t in);
 
 /*!
@@ -596,7 +600,7 @@ SWITCH_DECLARE(int) switch_channel_test_app_flag_key(const char *app, switch_cha
 #define switch_channel_clear_app_flag(_c, _f) switch_channel_clear_app_flag_key(__FILE__, _c, _f)
 #define switch_channel_test_app_flag(_c, _f) switch_channel_test_app_flag_key(__FILE__, _c, _f)
 
-
+SWITCH_DECLARE(void) switch_channel_set_bridge_time(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel);
 SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_t *channel);
 SWITCH_DECLARE(switch_core_session_t *) switch_channel_get_session(switch_channel_t *channel);
@@ -613,6 +617,9 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str
 SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_bool_t on);
 
 /** @} */
+
+SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix);
+
 
 SWITCH_END_EXTERN_C
 #endif

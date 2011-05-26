@@ -51,7 +51,6 @@ static struct {
 	char *address;
 	char *bindings;
 	uint32_t key_count;
-	char hostname[80];
 	switch_port_t port;
 	switch_sockaddr_t *addr;
 	switch_socket_t *udp_socket;
@@ -282,7 +281,7 @@ static void event_handler(switch_event_t *event)
 		case SWITCH_EVENT_LOG:
 			return;
 		default:
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", globals.hostname);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", switch_core_get_switchname());
 			if (switch_event_serialize(event, &packet, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 				size_t len;
 				char *buf;
@@ -377,7 +376,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 	switch_core_hash_init(&globals.event_hash, module_pool);
 	switch_core_hash_init(&globals.peer_hash, module_pool);
 
-	gethostname(globals.hostname, sizeof(globals.hostname));
 	globals.key_count = 0;
 
 	if (load_config() != SWITCH_STATUS_SUCCESS) {

@@ -294,6 +294,19 @@ if test "${HAVE_SNG_SS7}" = "yes"; then
 	fi
 fi
 
+
+##
+# zlib (required for Sangoma SS7 Transparent IAM)
+#
+HAVE_ZLIB="no"
+AC_MSG_RESULT([${as_nl}<<>> zlib])
+AC_CHECK_LIB([z], [compress], [HAVE_ZLIB="yes"])
+AC_MSG_RESULT([checking whether zlib is installed... ${HAVE_ZLIB}])
+AM_CONDITIONAL([HAVE_ZLIB], [test "{HAVE_ZLIB]" = "yes"])
+if test "${HAVE_ZLIB}" = "yes"; then
+	CFLAGS="$CFLAGS -DHAVE_ZLIB"
+fi
+
 ##
 # libisdn
 #

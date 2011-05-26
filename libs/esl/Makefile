@@ -34,10 +34,10 @@ testclient: $(MYLIB) testclient.c
 fs_cli: $(MYLIB) fs_cli.c
 	$(CC) $(CC_CFLAGS) $(CFLAGS) fs_cli.c -o fs_cli $(LDFLAGS) -L$(LIBEDIT_DIR)/src/.libs $(LIBS) -ledit
 
-%.o: %.c
+%.o: %.c $(HEADERS)
 	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
-%.o: %.cpp
+%.o: %.cpp $(HEADERS)
 	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) -c $< -o $@
 
 clean:
@@ -91,6 +91,9 @@ javamod: $(MYLIB)
 
 managedmod: $(MYLIB)
 	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C managed
+
+perlmod-install: perlmod
+	$(MAKE) -C perl install
 
 phpmod-install: phpmod
 	$(MAKE) -C php install

@@ -65,6 +65,14 @@ typedef struct {
 } cepstral_t;
 
 
+static struct {
+	char *encoding;
+} globals;
+
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_encoding, globals.encoding);
+
+
+
 /* This callback caches the audio in the buffer */
 static swift_result_t write_audio(swift_event * event, swift_event_t type, void *udata)
 {
@@ -223,7 +231,7 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 		if (zstr(text)) {
 			return SWITCH_STATUS_FALSE;
 		}
-		swift_port_speak_file(cepstral->port, text, NULL, &cepstral->tts_stream, NULL);
+		swift_port_speak_file(cepstral->port, text, globals.encoding, &cepstral->tts_stream, NULL);
 	} else {
 		char *to_say;
 		if (zstr(text)) {
@@ -231,7 +239,7 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 		}
 
 		if ((to_say = switch_mprintf("<break time=\"1000ms\"/> %s <break time=\"1000ms\"/>", text))) {
-			swift_port_speak_text(cepstral->port, to_say, 0, NULL, &cepstral->tts_stream, NULL);
+			swift_port_speak_text(cepstral->port, to_say, 0, globals.encoding, &cepstral->tts_stream, NULL);
 			switch_safe_free(to_say);
 		}
 	}
@@ -401,9 +409,53 @@ static void cepstral_float_param_tts(switch_speech_handle_t *sh, char *param, do
 
 }
 
+static switch_status_t load_config(void)
+{
+	char *cf = "cepstral.conf";
+	switch_xml_t cfg, xml = NULL, param, settings;
+
+	/* Init to SWIFT default encoding */
+	set_global_encoding(SWIFT_DEFAULT_ENCODING);
+
+	if (xml = switch_xml_open_cfg(cf, &cfg, NULL)) {
+		if ((settings = switch_xml_child(cfg, "settings"))) {
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+				if (!strcasecmp(var, "encoding")) {
+					if (!strcasecmp(val, "utf-8")) {
+						set_global_encoding(SWIFT_UTF8);
+					} else if (!strcasecmp(val, "us-ascii")) {
+						set_global_encoding(SWIFT_ASCII);
+					} else if (!strcasecmp(val, "iso8859-1")) {
+						set_global_encoding(SWIFT_ISO_8859_1);
+					} else if (!strcasecmp(val, "iso8859-15")) {
+						set_global_encoding(SWIFT_ISO_8859_15);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown value \"%s\" for param \"%s\". Setting to default.\n", val, var);
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Param \"%s\" unknown\n", var);
+				}
+			}
+		}
+        } else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Open of \"%s\" failed. Using default settings.\n", cf);
+	}
+
+	if (xml) {
+		switch_xml_free(xml);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_cepstral_load)
 {
 	switch_speech_interface_t *speech_interface;
+
+	memset(&globals, 0, sizeof(globals));
+	load_config();
 
 	/* Open the Swift TTS Engine */
 	if (!(engine = swift_engine_open(NULL))) {

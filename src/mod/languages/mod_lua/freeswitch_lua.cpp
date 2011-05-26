@@ -3,6 +3,10 @@
 #include "freeswitch_lua.h"
 using namespace LUA;
 
+extern "C" {
+	int docall(lua_State * L, int narg, int clear, int perror);
+};
+
 Session::Session():CoreSession()
 {
 	cb_function = cb_arg = hangup_func_str = hangup_func_arg = NULL;
@@ -119,7 +123,6 @@ void Session::check_hangup_hook()
 void Session::do_hangup_hook()
 {
 	if (hh && !mark) {
-		const char *err = NULL;
 		int arg_count = 2;
 		mark++;
 
@@ -137,12 +140,7 @@ void Session::do_hangup_hook()
 			arg_count++;
 		}
 
-		lua_call(L, arg_count, 1);
-		err = lua_tostring(L, -1);
-
-		if (!zstr(err)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
-		}
+		docall(L, arg_count, 1, 1);
 
 		if (channel) {
 			switch_channel_set_private(channel, "CoreSession", NULL);
@@ -273,7 +271,8 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 				arg_count++;
 			}
 
-			lua_call(L, arg_count, 1);
+			docall(L, arg_count, 0, 1);
+
 			ret = lua_tostring(L, -1);
 			lua_pop(L, 1);
 
@@ -297,7 +296,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 				arg_count++;
 			}
 
-			lua_call(L, arg_count, 1);
+			docall(L, arg_count, 1, 1);
 			ret = lua_tostring(L, -1);
 			lua_pop(L, 1);
 
@@ -374,7 +373,7 @@ int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
     lua_settable(lua_fun->L, -3);
   }
 
-  lua_call(lua_fun->L, 1, 1); /* 1 in, 1 out */
+  docall(lua_fun->L, 1, 1, 1); /* 1 in, 1 out */
 
   if (lua_isnumber(lua_fun->L, -1)) {
     if (lua_tonumber(lua_fun->L, -1) != 0) {

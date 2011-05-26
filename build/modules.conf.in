@@ -36,6 +36,8 @@ applications/mod_valet_parking
 #applications/mod_snipe_hunt
 #applications/mod_callcenter
 #applications/mod_fsk
+#applications/mod_ladspa
+#applications/mod_mongo
 codecs/mod_g723_1
 codecs/mod_amr
 #codecs/mod_amrwb
@@ -75,6 +77,7 @@ endpoints/mod_loopback
 #asr_tts/mod_tts_commandline
 #event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
+#event_handlers/mod_event_zmq
 event_handlers/mod_cdr_csv
 event_handlers/mod_cdr_sqlite
 #event_handlers/mod_cdr_pg_csv
@@ -86,7 +89,6 @@ formats/mod_sndfile
 #formats/mod_shout
 formats/mod_local_stream
 formats/mod_tone_stream
-formats/mod_file_string
 #formats/mod_portaudio_stream
 #formats/mod_shell_stream
 #languages/mod_python
@@ -107,10 +109,12 @@ say/mod_say_en
 #say/mod_say_it
 #say/mod_say_nl
 #say/mod_say_pt
-say/mod_say_ru
+#say/mod_say_ru
 #say/mod_say_zh
 #say/mod_say_hu
 #say/mod_say_th
+#say/mod_say_he
+#timers/mod_timerfd
 
 ## Experimental Modules (don't cry if they're broken)
 #../../contrib/mod/xml_int/mod_xml_odbc

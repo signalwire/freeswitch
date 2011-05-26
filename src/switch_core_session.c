@@ -481,14 +481,12 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		UNPROTECT_INTERFACE(endpoint_interface);
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	} else {
-		switch_caller_profile_t *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
+		switch_caller_profile_t *profile = NULL, *cloned_profile = NULL;
 		switch_event_t *event;
 		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
 		const char *use_uuid;
 
 		switch_assert(peer_channel);
-
-		peer_profile = switch_channel_get_caller_profile(peer_channel);
 
 		if ((use_uuid = switch_event_get_header(var_event, "origination_uuid"))) {
 			use_uuid = switch_core_session_strdup(*new_session, use_uuid);
@@ -1454,13 +1452,12 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	switch_channel_t *channel;
 	switch_xml_t tag, tag2, tag3, vars, callflow;
 	switch_call_direction_t direction = SWITCH_CALL_DIRECTION_OUTBOUND;
-	char *bridgeto, *flag_str = NULL, *cap_str = NULL, *direction_s = NULL, *uuid = NULL;
+	char *flag_str = NULL, *cap_str = NULL, *direction_s = NULL, *uuid = NULL;
 	uint32_t flags[CF_FLAG_MAX] = { 0 };
 	uint32_t caps[CC_FLAG_MAX] = { 0 };
 	int i;
 
 	vars = switch_xml_child(xml, "variables");
-	bridgeto = xml_find_var(vars, SWITCH_SIGNAL_BOND_VARIABLE);
 	uuid = xml_find_var(vars, "uuid");
 
 	if ((tag = switch_xml_child(xml, "channel_data"))) {
@@ -2012,6 +2009,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		if (expanded) {
 			log->arg = switch_core_session_strdup(session, expanded);
 		}
+
+		log->stamp = switch_time_now();
 
 		for (lp = session->app_log; lp && lp->next; lp = lp->next);
 

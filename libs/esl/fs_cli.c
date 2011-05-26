@@ -571,7 +571,7 @@ COLORS[] = { ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FRED, ESL_SEQ_FRED,
 			ESL_SEQ_FRED, ESL_SEQ_FMAGEN, ESL_SEQ_FCYAN, ESL_SEQ_FGREEN, ESL_SEQ_FYELLOW };
 
 static int usage(char *name){
-	printf("Usage: %s [-H <host>] [-P <port>] [-p <secret>] [-d <level>] [-x command] [profile]\n\n", name);
+	printf("Usage: %s [-H <host>] [-P <port>] [-p <secret>] [-d <level>] [-x command] [-t <timeout_ms>] [profile]\n\n", name);
 	printf("  -?,-h --help                    Usage Information\n");
 	printf("  -H, --host=hostname             Host to connect\n");
 	printf("  -P, --port=port                 Port to connect (1 - 65535)\n");
@@ -583,7 +583,8 @@ static int usage(char *name){
 	printf("  -q, --quiet                     Disable logging\n");
 	printf("  -r, --retry                     Retry connection on failure\n");
 	printf("  -R, --reconnect                 Reconnect if disconnected\n");
-	printf("  -d, --debug=level               Debug Level (0 - 7)\n\n");
+	printf("  -d, --debug=level               Debug Level (0 - 7)\n");
+	printf("  -t, --timeout                   Timeout for API commands (in miliseconds)\n\n");
 	return 1;
 }
 
@@ -839,9 +840,9 @@ static const char *basic_gets(int *cnt)
 		}
 		Sleep(20);
 	}
+#endif
 
 	return command_buf;
-#endif
 }
 #endif
 
@@ -1032,6 +1033,7 @@ int main(int argc, char *argv[])
 		{"retry", 0, 0, 'r'},
 		{"interrupt", 0, 0, 'i'},
 		{"reconnect", 0, 0, 'R'},
+		{"timeout", 1, 0, 't'},
 		{0, 0, 0, 0}
 	};
 
@@ -1050,7 +1052,7 @@ int main(int argc, char *argv[])
 	char argv_command[1024] = "";
 	char argv_loglevel[128] = "";
 	int argv_quiet = 0;
-	int loops = 2, reconnect = 0;
+	int loops = 2, reconnect = 0, timeout = 0;
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
@@ -1075,7 +1077,7 @@ int main(int argc, char *argv[])
 	
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:qrRhi?", options, &option_index);
+		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:t:qrRhi?", options, &option_index);
 		if (opt == -1) break;
 		switch (opt)
 		{
@@ -1127,6 +1129,9 @@ int main(int argc, char *argv[])
 				break;
 		    case 'R':
 				reconnect = 1;
+				break;
+			case 't':
+				timeout = atoi(optarg);
 				break;
 			case 'h':
 			case '?':
@@ -1284,7 +1289,17 @@ int main(int argc, char *argv[])
 		const char *err = NULL;
 
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", argv_command);
-		esl_send_recv(&handle, cmd_str);
+		if (timeout) {
+			esl_status_t status = esl_send_recv_timed(&handle, cmd_str, timeout);
+			if (status != ESL_SUCCESS) {
+				printf("Request timed out.\n");
+				esl_disconnect(&handle);
+				return -2;
+			} 
+		} else {
+			esl_send_recv(&handle, cmd_str);
+		}
+		
 		if (handle.last_sr_event) {
 			if (handle.last_sr_event->body) {
 				printf("%s\n", handle.last_sr_event->body);

@@ -1443,6 +1443,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	struct record_helper *rh = NULL;
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 	switch_bool_t hangup_on_error = SWITCH_FALSE;
+	char *file_path = NULL;
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_HANGUP_ON_ERROR"))) {
 		hangup_on_error = switch_true(p);
@@ -1534,9 +1535,30 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 			} else {
 				tfile = NULL;
 			}
+		} else {
+			file_path = switch_core_session_sprintf(session, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
 		}
 
 		file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+	} else {
+		file_path = switch_core_session_strdup(session, file);
+	}
+
+	if (file_path) {
+		char *p;
+		char *path = switch_core_session_strdup(session, file_path);
+
+		if ((p = strrchr(path, *SWITCH_PATH_SEPARATOR))) {
+			*p = '\0';
+			if (switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error creating %s\n", path);
+				return SWITCH_STATUS_GENERR;
+			}
+
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error finding the folder path section in '%s'\n", path);
+			path = NULL;
+		}
 	}
 
 	if (switch_core_file_open(fh, file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -1637,7 +1659,6 @@ static switch_bool_t preprocess_callback(switch_media_bug_t *bug, void *user_dat
 	pp_cb_t *cb = (pp_cb_t *) user_data;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_frame_t *frame = NULL;
-	int y;
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -1682,7 +1703,7 @@ static switch_bool_t preprocess_callback(switch_media_bug_t *bug, void *user_dat
 					memcpy(frame->data, cb->read_out, frame->datalen);
 				}
 
-				y = speex_preprocess_run(cb->read_st, frame->data);
+				speex_preprocess_run(cb->read_st, frame->data);
 			}
 
 			if (cb->write_ec) {
@@ -1703,7 +1724,7 @@ static switch_bool_t preprocess_callback(switch_media_bug_t *bug, void *user_dat
 					memcpy(frame->data, cb->write_out, frame->datalen);
 				}
 
-				y = speex_preprocess_run(cb->write_st, frame->data);
+				speex_preprocess_run(cb->write_st, frame->data);
 			}
 
 			if (cb->read_ec) {
@@ -2392,7 +2413,6 @@ static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_tone_container_t *cont = switch_channel_get_private(channel, "_tone_detect_");
-	switch_event_t *event;
 	int i;
 
 	if (!cont || !cont->detect_fax || dtmf->digit != 'f') {
@@ -2403,13 +2423,10 @@ static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch
 
 	if (cont->list[i].callback) {
 		cont->list[i].callback(cont->session, cont->list[i].app, cont->list[i].data);
-	} else if (cont->list[i].app) {
-		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", cont->list[i].app);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cont->list[i].data);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-			switch_core_session_queue_private_event(cont->session, &event, SWITCH_FALSE);
+	} else {
+		switch_channel_execute_on(switch_core_session_get_channel(cont->session), SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIABLE);
+		if (cont->list[i].app) {
+			switch_core_session_execute_application_async(cont->session, cont->list[i].app, cont->list[i].data);
 		}
 	}
 		
@@ -2491,13 +2508,10 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 								cont->list[i].sleep = 0;
 								cont->list[i].expires = 0;
 							}
-						} else if (cont->list[i].app) {
-							if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", cont->list[i].app);
-								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cont->list[i].data);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-								switch_core_session_queue_private_event(cont->session, &event, SWITCH_FALSE);
+						} else {
+							switch_channel_execute_on(switch_core_session_get_channel(cont->session), SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIABLE);
+							if (cont->list[i].app) {
+								switch_core_session_execute_application_async(cont->session, cont->list[i].app, cont->list[i].data);
 							}
 						}
 
@@ -2604,6 +2618,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	if (!cont && !(cont = switch_core_session_alloc(session, sizeof(*cont)))) {
 		return SWITCH_STATUS_MEMERR;
 	}
+
+	if ((var = switch_channel_get_variable(channel, "tone_detect_hits"))) {
+		int tmp = atoi(var);
+		if (tmp > 0) {
+			hits = tmp;
+		}
+	}
+
+	if (!hits) hits = 1;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding tone spec %s index %d hits %d\n", tone_spec, cont->index, hits);
 

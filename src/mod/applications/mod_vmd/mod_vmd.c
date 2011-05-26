@@ -237,9 +237,8 @@ static switch_bool_t process_data(vmd_session_info_t *vmd_info, switch_frame_t *
 	double pts[P];
 	int16_t *data;
 	int16_t max;
-	switch_ssize_t len;
 
-	len = frame->samples * sizeof(int16_t);
+	//len = frame->samples * sizeof(int16_t);
 	data = (int16_t *) frame->data;
 
 	for (max = (int16_t) abs(data[0]), i = 1; i < frame->samples; i++) {

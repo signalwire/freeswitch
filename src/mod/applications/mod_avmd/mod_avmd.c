@@ -479,7 +479,7 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
     double success = 0.0;
     double amp = 0.0;
     double s_rate;
-    double e_rate;
+//    double e_rate;
     double avg_a;
     double sine_len;
     uint32_t sine_len_i;
@@ -523,7 +523,7 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 		/*! Every once in a while we evaluate the desa2 and amplitude results */
         if(((pos + 1) % sine_len_i) == 0){
             s_rate = success / (error + success);
-            e_rate = error   / (error + success);
+//            e_rate = error   / (error + success);
             avg_a  = amp     / sine_len;
 
 			/*! Results out of these ranges are considered invalid */

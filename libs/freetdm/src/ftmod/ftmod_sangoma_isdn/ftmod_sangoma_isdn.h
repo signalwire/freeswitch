@@ -213,6 +213,8 @@ typedef struct sngisdn_span_data {
 	int8_t			facility_timeout;
 	uint8_t			num_local_numbers;
 	uint8_t 		ignore_cause_value;
+	uint8_t			trace_q931; /* TODO: combine with trace_flags */
+	uint8_t			trace_q921; /* TODO: combine with trace_flags */
 	uint8_t			raw_trace_q931; /* TODO: combine with trace_flags */
 	uint8_t			raw_trace_q921; /* TODO: combine with trace_flags */
 	uint8_t			timer_t3;
@@ -289,6 +291,12 @@ typedef struct ftdm_sngisdn_data {
 	sngisdn_dchan_data_t dchans[MAX_L1_LINKS+1];
 	sngisdn_span_data_t *spans[MAX_L1_LINKS+1]; /* spans are indexed by link_id */
 }ftdm_sngisdn_data_t;
+
+typedef struct ftdm2trillium
+{
+	uint8_t ftdm_val;
+	uint8_t trillium_val;
+}ftdm2trillium_t;
 
 
 /* TODO implement these 2 functions */
@@ -469,9 +477,9 @@ ftdm_status_t sngisdn_stack_start(ftdm_span_t *span);
 ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span);
 ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span);
 
-void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
-void sngisdn_print_spans(ftdm_stream_handle_t *stream);
-void sngisdn_print_span(ftdm_stream_handle_t *stream, ftdm_span_t *span);
+ftdm_status_t sngisdn_show_l1_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
+ftdm_status_t sngisdn_show_spans(ftdm_stream_handle_t *stream);
+ftdm_status_t sngisdn_show_span(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 
 #endif /* __FTMOD_SNG_ISDN_H__ */
 

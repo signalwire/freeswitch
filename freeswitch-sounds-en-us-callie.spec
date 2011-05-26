@@ -2,7 +2,7 @@
 # Copyright and license
 ##############################################################################
 #
-# Spec file for package freeswitch-sounds-en-us-callie (version 1.0.12-8)
+# Spec file for package freeswitch-sounds-en-us-callie (version 1.0.16-8)
 #
 # Copyright (c) 2009 Patrick Laimbock 
 # Some fixes and additions (c) 2011 Michal Bielicki
@@ -20,7 +20,7 @@
 # Set variables
 ##############################################################################
 
-%define version	1.0.14
+%define version	1.0.16
 %define release	1
 
 %define fsname  freeswitch
@@ -299,6 +299,8 @@ cd %{_prefix}/sounds/en/us/callie
 ##############################################################################
 
 %changelog
+* Sun May 22 2011 Michal Bielicki <michal.bielicki@seventhsignal.de> - 1.0.16-1
+- bump up version
 * Tue Jan 18 2011 Michal Bielicki <michal.bielicki@seventhsignal.de> - 1.0.14-1
 - bump up version
 - include script into freeswitch core

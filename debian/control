@@ -6,7 +6,8 @@ Uploaders: Michal Bielicki <michal.bielicki@seventhsignal.pl>, Gabriel Gunderson
 Build-Depends: debhelper (>= 7), wget, automake (>=1.9), autoconf, libtool,
  unixodbc-dev, libasound2-dev, libcurl3-openssl-dev|libcurl4-openssl-dev,
  libssl-dev, ncurses-dev, libogg-dev, libvorbis-dev, libperl-dev, libgdbm-dev,
- libdb-dev, libgnutls-dev, libtiff4-dev, python-dev, libx11-dev, uuid-dev
+ libdb-dev, libgnutls-dev, libtiff4-dev, python-dev, libx11-dev, uuid-dev,
+ libc6-dev
 Homepage: http://freeswitch.org/
 Standards-Version: 3.9.1
 Vcs-Git: git://git.freeswitch.org/freeswitch.git
@@ -247,6 +248,19 @@ Description: Russian language files for FreeSWITCH
  to control the callflow.
  .
  This package contains the mod_say_ru module and available language
+ configuration files.
+
+Package: freeswitch-lang-he
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Hebrew language files for FreeSWITCH
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to a
+ soft-switch.  It can be used as a simple switching engine, a PBX, a media
+ gateway or a media server to host IVR applications using simple scripts or XML
+ to control the callflow.
+ .
+ This package contains the mod_say_he module and available language
  configuration files.
 
 Package: freeswitch-freetdm

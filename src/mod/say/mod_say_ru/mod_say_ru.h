@@ -12,6 +12,8 @@
 //http://ru.wiktionary.org/wiki/%D0%BE%D0%B4%D0%B8%D0%BD
 //http://ru.wiktionary.org/wiki/%D0%BF%D0%B5%D1%80%D0%B2%D1%8B%D0%B9
 
+                                                                                                                                                                                                                    
+
 typedef enum {
 	million,
 	thousand,
@@ -22,28 +24,42 @@ typedef enum {
 //тип числа порядковое или количественное
 typedef enum {
 	nominativus,				// именительный Кто? Что?
-	genitivus,					// Родительный  Кого? Чего?
-	dativus,					// дательный    Кого? Что?
+	genitivus,				// Родительный  Кого? Чего?
+	dativus,				// дательный    Кого? Что?
 	accusativus_a,				// Винительный  Кого? animate - одушевлённый
 	accusativus_i,				// Винительный  Что?  inanimate - неодушевлённый
 	instrumentalis,				// Творительный Кем? Чем?
-	prepositive					// Предложный   О ком? О чём?
-} casus_t;
+	prepositive				// Предложный   О ком? О чём?
+} cases_t;
 
 
 typedef enum {
 	//количественный
-	male_c,						//мужского пола
-	it_c,						//среднего
-	female_c,					//женского
-	plural_c,					//множественное число
+	male,					//мужского пола
+	it,					//среднего
+	female,					//женского
+	plural,					//множественное число
 	//порядковый
-	male_h,						//порядковое мужского пола
-	it_h,						//порядковое среднего
-	female_h,					//порядковое женского
-	plural_h					//порядковое множественное число
-} say_type_t;
+	male_h,					//порядковое мужского пола
+	it_h,					//порядковое среднего
+	female_h,				//порядковое женского
+	plural_h				//порядковое множественное число
+} say_gender_t;
 
+
+typedef enum {
+	ruble,
+	dollar,
+	euro
+} currency_t;
+
+
+
+typedef struct {
+	say_gender_t gender;
+	cases_t    cases;
+	currency_t currency;	    
+} say_opt_t;
 
 
 struct say_t {
@@ -52,7 +68,31 @@ struct say_t {
 	char *million[14];
 	int all;
 };
+struct say_cur_t {
+	char *first[6];
+	say_gender_t first_gender;
+	cases_t first_cases;
+	char *second[6];
+	say_gender_t second_gender;
+	cases_t second_cases;
+	
+};
 
+// описываем как произносить валяюты от 0 до 5 дальше идёт номер рода и падежа (с нуля)
+//рубли
+#define c_0 {{"rubles","ruble","ruble-a","ruble-a","ruble-a","rubles"},male,nominativus,\
+	     {"kopecks","kopeck","kopeck-i","kopeck-i","kopeck-i","kopecks"},female,nominativus}
+
+#define c_1 {{"dollars","dollar","dollara","dollara","dollara","dollars"},male,nominativus,\
+	     {"centov","cent","centa","centa","centa","centov"},male,nominativus}
+
+#define c_2 {{"rubles","ruble","ruble-a","ruble-a","ruble-a","rubles"},male,nominativus,\
+	     {"kopecks","kopeck","kopeck-i","kopeck-i","kopeck-i","kopecks"},female,nominativus}
+
+
+
+
+typedef switch_status_t (*switch_new_say_callback_ru_t) (switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args,say_opt_t *say_opt);
 
 //именительный 
 //именительный количественный/числительное
@@ -60,7 +100,7 @@ struct say_t {
 //мужской род родительный падеж
 
 //первая строка описывае как произносить цифры от 0 до 5 потом пристаставка и окончания для остальных
-// тоже самое для тысяч и миллионов, только ещё с произношением тысяч и миллионов в вонце так же окончание для цифр
+// тоже самое для тысяч и миллионов, только ещё с произношением тысяч и миллионов в конце так же окончание для цифр
 // как произносить тысячи и миллионы берёт с цифры 5
 
 #define m_00 {\
@@ -96,23 +136,25 @@ struct say_t {
 //порядковый
 //мужской
 #define m_04 {\
-	{"","","","","","","",""},\
-	{"","","","","","","","","","","","","",""},\
-	{"","","","","","","","","","","","","",""},\
+	{"h-0m","h-1m","h-2m","h-3m","h-4m","h-5m","h-","m"},\
+	{"","","1f","thousand","2f","thousands-i","3","thousands-i","4","thousands-i","5","thousands","",""},\
+	{"","","","million","2","million-a","3","million-a","4","million-a","5","millions","",""},\
 	0,\
 }\
 								//средний
+
 #define m_05 {\
-	{"","","","","","","",""},\
-	{"","","","","","","","","","","","","",""},\
-	{"","","","","","","","","","","","","",""},\
+	{"0","1n","2","3","4","5","",""},\
+	{"","","1f","thousand","2f","thousands-i","3","thousands-i","4","thousands-i","5","thousands","",""},\
+	{"","","","million","2","million-a","3","million-a","4","million-a","5","millions","",""},\
 	0,\
 }\
+
 								//женский
 #define m_06 {\
-	{"","","","","","","",""},\
-	{"","","","","","","","","","","","","",""},\
-	{"","","","","","","","","","","","","",""},\
+	{"h-0f","h-1f","h-2f","h-3f","h-4f","h-5f","h-","f"},\
+	{"","","1f","thousand","2f","thousands-i","3","thousands-i","4","thousands-i","5","thousands","",""},\
+	{"","","1","million","2","million-a","3","million-a","4","million-a","5","millions","",""},\
 	0,\
 }\
 

@@ -1344,9 +1344,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	switch_event_header_t *hi = NULL;
 	struct ent_originate_ringback rb_data = { 0 };
 	const char *ringback_data = NULL;
-	char *vars = NULL;
-	int var_block_count = 0;
-	char *e = NULL;
 	switch_event_t *var_event = NULL;
 
 	switch_core_new_memory_pool(&pool);
@@ -1357,53 +1354,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 
 	data = switch_core_strdup(pool, bridgeto);
-
-	/* strip leading spaces */
-	while (data && *data && *data == ' ') {
-		data++;
-	}
-
-	/* extract channel variables, allowing multiple sets of braces */
-	while (*data == '<') {
-		if (!var_block_count) {
-			e = switch_find_end_paren(data, '<', '>');
-			if (!e || !*e) {
-				goto var_extract_error;
-			}
-			vars = data + 1;
-			*e = '\0';
-			data = e + 1;
-		} else {
-			int j = 0, k = 0;
-			if (e) {
-				*e = ',';
-			}
-			e = switch_find_end_paren(data, '<', '>');
-			if (!e || !*e) {
-				goto var_extract_error;
-			}
-			/* swallow the opening bracket */
-			while ((data + k) && *(data + k)) {
-				j = k;
-				k++;
-				/* note that this affects vars[] */
-				data[j] = data[k];
-			}
-			*(--e) = '\0';
-			data = e + 1;
-		}
-		var_block_count++;
-		continue;
-
-	  var_extract_error:
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error!\n");
-		switch_goto_status(SWITCH_STATUS_GENERR, done);
-	}
-
-	/* strip leading spaces (again) */
-	while (data && *data && *data == ' ') {
-		data++;
-	}
 
 	if (session) {
 		switch_caller_profile_t *cpp = NULL;
@@ -1428,23 +1378,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	if (channel) {
 		switch_channel_process_export(channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
 	}
-			
-	if (vars) {					/* Parse parameters specified from the dialstring */
-		char *var_array[1024] = { 0 };
-		int var_count = 0;
-		if ((var_count = switch_separate_string(vars, ',', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
-			int x = 0;
-			for (x = 0; x < var_count; x++) {
-				char *inner_var_array[2] = { 0 };
-				int inner_var_count;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "variable string %d = [%s]\n", x, var_array[x]);
-				if ((inner_var_count =
-					 switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
-					switch_event_del_header(var_event, inner_var_array[0]);
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
-				}
-			}
+
+	/* strip leading spaces */
+	while (data && *data && *data == ' ') {
+		data++;
+	}
+
+	/* extract channel variables, allowing multiple sets of braces */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing ultra-global variables\n");
+	while (*data == '<') {
+		char *parsed = NULL;
+
+		if (switch_event_create_brackets(data, '<', '>', ',', &var_event, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error!\n");
+			switch_goto_status(SWITCH_STATUS_GENERR, done);
 		}
+
+		data = parsed;
+	}
+
+	/* strip leading spaces (again) */
+	while (data && *data && *data == ' ') {
+		data++;
 	}
 
 	if (ovars && ovars != var_event) {
@@ -1749,9 +1704,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_call_cause_t reason = SWITCH_CAUSE_NONE;
 	switch_call_cause_t force_reason = SWITCH_CAUSE_NONE;
 	uint8_t to = 0;
-	char *var_val, *vars = NULL;
-	int var_block_count = 0;
-	char *e = NULL;
+	char *var_val;
 	const char *ringback_data = NULL;
 	switch_event_t *var_event = NULL;
 	int8_t fail_on_single_reject = 0;
@@ -1868,59 +1821,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	data = odata;
 
-	/* strip leading spaces */
-	while (data && *data && *data == ' ') {
-		data++;
-	}
-
-	/* extract channel variables, allowing multiple sets of braces */
-	while (*data == '{') {
-		if (!var_block_count) {
-			e = switch_find_end_paren(data, '{', '}');
-			if (!e || !*e) {
-				goto var_extract_error;
-			}
-			vars = data + 1;
-			*e = '\0';
-			data = e + 1;
-		} else {
-			int j = 0, k = 0;
-			if (e) {
-				*e = ',';
-			}
-			e = switch_find_end_paren(data, '{', '}');
-			if (!e || !*e) {
-				goto var_extract_error;
-			}
-			/* swallow the opening bracket */
-			while ((data + k) && *(data + k)) {
-				j = k;
-				k++;
-				/* note that this affects vars[] */
-				data[j] = data[k];
-			}
-			*(--e) = '\0';
-			data = e + 1;
-		}
-		var_block_count++;
-		continue;
-
-	  var_extract_error:
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error!\n");
-		status = SWITCH_STATUS_GENERR;
-		goto done;
-	}
-
-	/* strip leading spaces (again) */
-	while (data && *data && *data == ' ') {
-		data++;
-	}
-
-	if (zstr(data)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No origination URL specified!\n");
-		status = SWITCH_STATUS_GENERR;
-		goto done;
-	}
 
 	/* Some channel are created from an originating channel and some aren't so not all outgoing calls have a way to get params
 	   so we will normalize dialstring params and channel variables (when there is an originator) into an event that we 
@@ -1960,23 +1860,38 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_channel_process_export(caller_channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
 	}
 
-	if (vars) {					/* Parse parameters specified from the dialstring */
-		char *var_array[1024] = { 0 };
-		int var_count = 0;
-		if ((var_count = switch_separate_string(vars, ',', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
-			int x = 0;
-			for (x = 0; x < var_count; x++) {
-				char *inner_var_array[2] = { 0 };
-				int inner_var_count;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "variable string %d = [%s]\n", x, var_array[x]);
-				if ((inner_var_count =
-					 switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
-					switch_event_del_header(var_event, inner_var_array[0]);
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
-				}
-			}
-		}
+
+
+	/* strip leading spaces */
+	while (data && *data && *data == ' ') {
+		data++;
 	}
+
+	/* extract channel variables, allowing multiple sets of braces */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing global variables\n");
+	while (*data == '{') {
+		char *parsed = NULL;
+
+		if (switch_event_create_brackets(data, '{', '}', ',', &var_event, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error!\n");
+			switch_goto_status(SWITCH_STATUS_GENERR, done);
+		}
+
+		data = parsed;
+	}
+
+	
+	/* strip leading spaces (again) */
+	while (data && *data && *data == ' ') {
+		data++;
+	}
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No origination URL specified!\n");
+		status = SWITCH_STATUS_GENERR;
+		goto done;
+	}
+
 
 	if (oglobals.session) {
 		switch_event_header_t *hi;
@@ -2269,8 +2184,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		for (r = 0; r < or_argc; r++) {
 			char *p, *end = NULL;
-			const char *var_begin, *var_end;
-			int q = 0;
+			int q = 0, alt = 0;
+
 			check_reject = 1;
 
 			oglobals.hups = 0;
@@ -2307,19 +2222,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_yield(sleep_ms * 1000);
 				}
 			}
-
+			
 			p = pipe_names[r];
+			
 			while (p && *p) {
 				if (*p == '[') {
 					end = switch_find_end_paren(p, '[', ']');
+					if (*(p+1) == '^' && *(p + 2) == '^') {
+						alt = 1;
+					} else {
+						alt = 0;
+					}
+					q = 0;
 				}
-
+				
 				if (*p == '\'') {
 					q = !q;
 				}
 
 				if (end && p < end && *p == ',') {
-					if (q) {
+					
+					if (q || alt) {
 						*p = QUOTED_ESC_COMMA;
 					} else {
 						*p = UNQUOTED_ESC_COMMA;
@@ -2341,41 +2264,55 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			for (i = 0; i < and_argc; i++) {
-				char *vdata;
 				const char *current_variable;
-				char variable_buffer[512] = "";
 				switch_event_t *local_var_event = NULL, *originate_var_event = NULL, *event = NULL;
-				char *check_a = NULL, *check_b = NULL;
 
 				end = NULL;
 				
 				chan_type = peer_names[i];
 				
+
+				/* strip leading spaces */
+				while (chan_type && *chan_type && *chan_type == ' ') {
+					chan_type++;
+				}
+				
+				/* extract channel variables, allowing multiple sets of braces */
+				
+				if (*chan_type == '[') {
+					switch_event_create_plain(&local_var_event, SWITCH_EVENT_CHANNEL_DATA);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing session specific variables\n");
+				}
+
+				while (*chan_type == '[') {
+					char *parsed = NULL;
+					
+					for (p = chan_type; p && *p && *p != ']'; p++) {
+						if (*p == QUOTED_ESC_COMMA) {
+							*p = ',';
+						}
+					}					
+					
+					if (switch_event_create_brackets(chan_type, '[', ']', UNQUOTED_ESC_COMMA, 
+													 &local_var_event, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error!\n");
+						switch_goto_status(SWITCH_STATUS_GENERR, done);
+					}
+					
+					chan_type = parsed;
+				}
+				
+				
+				/* strip leading spaces (again) */
+				while (chan_type && *chan_type && *chan_type == ' ') {
+					chan_type++;
+				}
+				
 				while (chan_type && *chan_type && *chan_type == ' ') {
 					chan_type++;
 				}
 
-				vdata = chan_type;
-				end = switch_find_end_paren(vdata, '[', ']');
-
-				check_a = end;
-
-				while (check_a && (check_b = strchr(check_a, '['))) {
-					if ((check_b = switch_find_end_paren(check_b, '[', ']'))) {
-						check_a = check_b;
-					}
-				}
-
-				if (check_a) end = check_a;
-
-				if (end) {
-					vdata++;
-					*end++ = '\0';
-					chan_type = end;
-				} else {
-					vdata = NULL;
-				}
-
+				
 				if ((chan_data = strchr(chan_type, '/')) != 0) {
 					*chan_data = '\0';
 					chan_data++;
@@ -2438,7 +2375,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (and_argc > 1 || or_argc > 1) {
 					myflags |= SOF_FORKED_DIAL;
 				} 
-
+				
 				if (var_event) {
 					const char *vvar;
 					if ((vvar = switch_event_get_header(var_event, "forked_dial")) && switch_true(vvar)) {
@@ -2449,80 +2386,30 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
-				/* only valid in [] since it's unique to each channel leg */
+				
+				/* Valid in both {} and [] with [] taking precedence */
 
-				if (vdata && (var_begin = switch_stristr("origination_uuid=", vdata))) {
-					char tmp[512] = "";
-					var_begin += strlen("origination_uuid=");
-					var_end = strchr(var_begin, UNQUOTED_ESC_COMMA);
+				/* make a special var event with mixture of the {} and the [] vars to pass down as global vars to the outgoing channel 
+				   so if something like the user channel does another originate our options will be passed down properly
+				 */
+				
+				switch_event_dup(&originate_var_event, var_event);
 
-					if (var_end) {
-						strncpy(tmp, var_begin, var_end - var_begin);
-					} else {
-						strncpy(tmp, var_begin, strlen(var_begin));
-					}
-
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_uuid", tmp);
+				if (local_var_event) {
+					switch_event_merge(originate_var_event, local_var_event);
 				}
 
-				/* The rest are valid in both {} and [] with [] taking precedence */
-
-				current_variable = NULL;
-
-				if (vdata && (var_begin = switch_stristr("origination_caller_id_number=", vdata))) {
-					var_begin += strlen("origination_caller_id_number=");
-					var_end = strchr(var_begin, UNQUOTED_ESC_COMMA);
-
-					if (var_end) {
-						strncpy(variable_buffer, var_begin, var_end - var_begin);
-					} else {
-						strncpy(variable_buffer, var_begin, strlen(var_begin));
-					}
-
-					current_variable = variable_buffer;
-				}
-
-				if (current_variable || (current_variable = switch_event_get_header(var_event, "origination_caller_id_number"))) {
+				if ((current_variable = switch_event_get_header(originate_var_event, "origination_caller_id_number"))) {
 					new_profile->caller_id_number = switch_core_strdup(new_profile->pool, current_variable);
 					myflags |= SOF_NO_EFFECTIVE_CID_NUM;
 				}
 
-				current_variable = NULL;
-
-				if (vdata && (var_begin = switch_stristr("origination_caller_id_name=", vdata))) {
-					var_begin += strlen("origination_caller_id_name=");
-					var_end = strchr(var_begin, UNQUOTED_ESC_COMMA);
-
-					if (var_end) {
-						strncpy(variable_buffer, var_begin, var_end - var_begin);
-					} else {
-						strncpy(variable_buffer, var_begin, strlen(var_begin));
-					}
-
-					current_variable = variable_buffer;
-				}
-
-				if (current_variable || (current_variable = switch_event_get_header(var_event, "origination_caller_id_name"))) {
+				if ((current_variable = switch_event_get_header(originate_var_event, "origination_caller_id_name"))) {
 					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, current_variable);
 					myflags |= SOF_NO_EFFECTIVE_CID_NAME;
 				}
 
-				current_variable = NULL;
-
-				if (vdata && (var_begin = switch_stristr("origination_privacy=", vdata))) {
-					var_begin += strlen("origination_privacy=");
-					var_end = strchr(var_begin, UNQUOTED_ESC_COMMA);
-
-					if (var_end) {
-						strncpy(variable_buffer, var_begin, var_end - var_begin);
-					} else {
-						strncpy(variable_buffer, var_begin, strlen(var_begin));
-					}
-
-					current_variable = variable_buffer;
-				}
-
-				if (current_variable || (current_variable = switch_event_get_header(var_event, "origination_privacy"))) {
+				if ((current_variable = switch_event_get_header(originate_var_event, "origination_privacy"))) {
 					new_profile->flags = SWITCH_CPF_NONE;
 
 					if (switch_stristr("screen", current_variable)) {
@@ -2538,79 +2425,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 				
-				current_variable = NULL;
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
 
-				if (vdata) {
-					char *var_array[1024] = { 0 };
-					int var_count = 0;
-					char *next;
-					
-
-					switch_event_create_plain(&local_var_event, SWITCH_EVENT_CHANNEL_DATA);
-					
-					
-					for (;;) {
-						if ((next = strchr(vdata, ']'))) {
-							char *pnext;
-							*next++ = '\0';
-
-							if ((pnext = switch_strchr_strict(next, '[', " "))) {
-								next = pnext + 1;
-							}
-						}
-						
-						if ((var_count = switch_separate_string(vdata, UNQUOTED_ESC_COMMA, var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
-							int x = 0;
-							for (x = 0; x < var_count; x++) {
-								char *inner_var_array[2] = { 0 };
-								int inner_var_count;
-								char *p;
-
-								for (p = var_array[x]; p && *p; p++) {
-									if (*p == QUOTED_ESC_COMMA) {
-										*p = ',';
-									}
-								}
-
-
-								
-								if ((inner_var_count =
-									 switch_separate_string(var_array[x], '=',
-														inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
-
-									/* this is stupid but necessary: if the value begins with ^^ take the very next char as a delim, 
-									   increment the string to start the next char after that and replace every instance of the delim with a , */
-									
-									if (*inner_var_array[1] == '^' && *(inner_var_array[1] + 1) == '^') {
-										char *iv;
-										char d = 0;
-										inner_var_array[1] += 2;
-										d = *inner_var_array[1]++;
-
-										if (d) {
-											for(iv = inner_var_array[1]; iv && *iv; iv++) {
-												if (*iv == d) *iv = ',';
-											}
-										}
-									}
-									
-									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "local variable string %d = [%s=%s]\n", 
-													  x, inner_var_array[0], inner_var_array[1]);
-									switch_event_add_header_string(local_var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
-									
-								}
-							}
-						}
-
-						if (next) {
-							vdata = next;
-						} else {
-							break;
-						}
-
-					}
-				}
 
 				if (caller_channel && switch_true(switch_channel_get_variable(caller_channel, "push_channel_name"))) {
 					char *new_name = switch_core_session_sprintf(session, "%s__B", switch_channel_get_name(caller_channel));
@@ -2618,16 +2434,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					new_name = switch_core_session_sprintf(session, "_%s", switch_channel_get_name(caller_channel));
 					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "sip_h_X-FS-Channel-Name", new_name);
 				}
-
-				/* make a special var event with mixture of the {} and the [] vars to pass down as global vars to the outgoing channel 
-				   so if something like the user channel does another originate our options will be passed down properly
-				 */
 				
-				switch_event_dup(&originate_var_event, var_event);
-
-				if (local_var_event) {
-					switch_event_merge(originate_var_event, local_var_event);
-				}
 				
 				reason = switch_core_session_outgoing_channel(oglobals.session, originate_var_event, chan_type,
 															  new_profile, &new_session, NULL, myflags, cancel_cause);
@@ -2645,6 +2452,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 						if (fail_on_single_reject == 1 || switch_stristr(cause_str, fail_on_single_reject_var)) {
 							force_reason = reason;
+							status = SWITCH_STATUS_FALSE;
 							goto outer_for;
 						}
 					}
@@ -2760,23 +2568,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_channel_set_variable(originate_status[i].peer_channel, "originating_leg_uuid", switch_core_session_get_uuid(session));
 					}
 
-					if ((vvar = switch_channel_get_variable_dup(originate_status[i].peer_channel, "execute_on_originate", SWITCH_FALSE))) {
-						char *app = switch_core_session_strdup(originate_status[i].peer_session, vvar);
-						char *arg = NULL;
-
-						if (strstr(app, "::")) {
-							switch_core_session_execute_application_async(originate_status[i].peer_session, app, arg);
-						} else {
-							if ((arg = strchr(app, ' '))) {
-								*arg++ = '\0';
-							}
-							
-							switch_core_session_execute_application(originate_status[i].peer_session, app, arg);
-						}
-						
-					}
+					switch_channel_execute_on(originate_status[i].peer_channel, "execute_on_originate");
 				}
-
+				
 				if (table) {
 					switch_channel_add_state_handler(originate_status[i].peer_channel, table);
 				}
@@ -3262,6 +3056,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 							switch_core_session_rwunlock(holding_session);
 						}
+						switch_channel_set_flag(peer_channel, CF_LAZY_ATTENDED_TRANSFER);
 						switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(peer_session));
 						holding = NULL;
 						oglobals.idx = IDX_NADA;
@@ -3333,6 +3128,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 								switch_core_session_rwunlock(holding_session);
 							}
+							switch_channel_set_flag(originate_status[i].peer_channel, CF_LAZY_ATTENDED_TRANSFER);
 							switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(originate_status[i].peer_session));
 							holding = NULL;
 						} else {
@@ -3609,6 +3405,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (*bleg) {
+		switch_channel_t *bchan = switch_core_session_get_channel(*bleg);
+
 		if (session && caller_channel) {
 			switch_caller_profile_t *cloned_profile, *peer_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(*bleg));
 
@@ -3618,6 +3416,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 		}
+		
+
+		while(switch_channel_state_change_pending(bchan)) {
+			switch_cond_next();
+		}
+
 
 		switch_ivr_sleep(*bleg, 0, SWITCH_TRUE, NULL);
 	}

@@ -945,6 +945,8 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	*new_module = module;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module_interface->module_name);
 
+	switch_core_set_signal_handlers();
+
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -1679,11 +1681,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	switch_mutex_lock(loadable_modules.mutex);
 
 	for (x = 0; x < preflen; x++) {
-		char *cur, *last = NULL, *next = NULL, *name, *p, buf[256];
+		char *cur, *next = NULL, *name, *p, buf[256];
 		uint32_t interval = 0, rate = 0, bit = 0;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
-		last = name = next = cur = buf;
+		name = next = cur = buf;
 
 		for (;;) {
 			if (!next) {
@@ -1917,6 +1919,101 @@ SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_m
 		return NULL;
 	}
 }
+
+struct switch_say_file_handle {
+	char *ext;
+	int cnt;
+	struct switch_stream_handle stream;
+	switch_event_t *param_event;
+};
+	
+SWITCH_DECLARE(char *) switch_say_file_handle_get_variable(switch_say_file_handle_t *sh, const char *var)
+{
+	char *ret = NULL;
+
+	if (sh->param_event) {
+		ret = switch_event_get_header(sh->param_event, var);
+	}
+
+	return ret;
+	
+}
+
+SWITCH_DECLARE(char *) switch_say_file_handle_get_path(switch_say_file_handle_t *sh)
+{
+	return (char *) sh->stream.data;
+}
+
+SWITCH_DECLARE(char *) switch_say_file_handle_detach_path(switch_say_file_handle_t *sh)
+{
+	char *path;
+	
+	switch_assert(sh);
+	path = (char *) sh->stream.data;
+	sh->stream.data = NULL;
+	return path;
+}
+
+
+SWITCH_DECLARE(void) switch_say_file_handle_destroy(switch_say_file_handle_t **sh)
+{
+	switch_assert(sh);
+	
+	switch_safe_free((*sh)->stream.data);
+	switch_safe_free((*sh)->ext);
+
+	if ((*sh)->param_event) {
+		switch_event_destroy(&(*sh)->param_event);
+	}
+	free(*sh);
+	*sh = NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_say_file_handle_create(switch_say_file_handle_t **sh, const char *ext, switch_event_t **var_event)
+{
+	switch_assert(sh);
+
+	if (zstr(ext)) {
+		ext = "wav";
+	}
+
+	*sh = malloc(sizeof(**sh));
+	memset(*sh, 0, sizeof(**sh));
+
+	SWITCH_STANDARD_STREAM((*sh)->stream);
+	
+	if (var_event) {
+		(*sh)->param_event = *var_event;
+		*var_event = NULL;
+	}
+
+	(*sh)->ext = strdup(ext);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *fmt, ...)
+{
+	char buf[256] = "";
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
+	
+	if ((ret = switch_vsnprintf(buf, sizeof(buf), fmt, ap)) > 0) {
+		if (!sh->cnt++) {
+			sh->stream.write_function(&sh->stream, "file_string://%s.%s", buf, sh->ext);
+		} else {
+			sh->stream.write_function(&sh->stream, "!%s.%s", buf, sh->ext);
+		}
+
+	}
+	
+	va_end(ap);
+}
+
+
+
 
 /* For Emacs:
  * Local Variables:

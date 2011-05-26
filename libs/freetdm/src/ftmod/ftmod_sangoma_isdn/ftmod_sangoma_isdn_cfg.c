@@ -333,7 +333,8 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			parse_yesno(var, val, &signal_data->setup_arb);
 		} else if (!strcasecmp(var, "facility")) {
 			parse_yesno(var, val, &signal_data->facility);
-		} else if (!strcasecmp(var, "min_digits")) {
+		} else if (!strcasecmp(var, "min-digits") ||
+					!strcasecmp(var, "min_digits")) {
 			signal_data->min_digits = atoi(val);
 		} else if (!strcasecmp(var, "outbound-called-ton")) {
 			ftdm_set_ton(val, &span->default_caller_data.dnis.type);
@@ -347,11 +348,11 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			ftdm_set_ton(val, &span->default_caller_data.rdnis.type);
 		} else if (!strcasecmp(var, "outbound-rdnis-npi")) {
 			ftdm_set_npi(val, &span->default_caller_data.rdnis.plan);
-		} else if (!strcasecmp(var, "outbound-bearer_cap") ||
-					!strcasecmp(var, "outbound-bc-transfer-cap")) {
+		} else if (!strcasecmp(var, "outbound-bc-transfer-cap") ||
+					!strcasecmp(var, "outbound-bearer_cap")) {
 			ftdm_set_bearer_capability(val, (uint8_t*)&span->default_caller_data.bearer_capability);
-		} else if (!strcasecmp(var, "outbound-bearer_layer1") ||
-					!strcasecmp(var, "outbound-bc-user-layer1")) {
+		} else if (!strcasecmp(var, "outbound-bc-user-layer1") ||
+					!strcasecmp(var, "outbound-bearer_layer1")) {
 			ftdm_set_bearer_layer1(val, (uint8_t*)&span->default_caller_data.bearer_layer1);
 		} else if (!strcasecmp(var, "channel-restart-on-link-up")) {
 			parse_yesno(var, val, &signal_data->restart_opt);
@@ -368,6 +369,10 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			parse_yesno(var, val, &signal_data->facility_ie_decode);
 		} else if (!strcasecmp(var, "ignore-cause-value")) {
 			parse_yesno(var, val, &signal_data->ignore_cause_value);
+		} else if (!strcasecmp(var, "q931-trace")) {
+			parse_yesno(var, val, &signal_data->trace_q931);
+		} else if (!strcasecmp(var, "q921-trace")) {
+			parse_yesno(var, val, &signal_data->trace_q921);
 		} else if (!strcasecmp(var, "q931-raw-trace")) {
 			parse_yesno(var, val, &signal_data->raw_trace_q931);
 		} else if (!strcasecmp(var, "q921-raw-trace")) {

@@ -187,7 +187,7 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 
 static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen, 
 					   switch_port_t port,
-					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map, int verbose_sdp)
+					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map, int verbose_sdp, int secure)
 {
 	int i = 0;
 	int rate;
@@ -195,7 +195,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	int ptime = 0, noptime = 0;
 	
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP", 
-					port, (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) ? "S" : "");
+					port, secure ? "S" : "");
 				
 	
 
@@ -312,6 +312,11 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
 
+	if (secure) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
+		//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
+	}
+
 	if (!cng_type) {
 		//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d CN/8000\n", cng_type);
 		//} else {
@@ -333,7 +338,6 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	if (sr) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=%s\n", sr);
 	}
-
 }
 
 void sofia_glue_check_dtmf_type(private_object_t *tech_pvt) 
@@ -505,7 +509,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			ptime = tech_pvt->read_codec.implementation->microseconds_per_packet / 1000;
 		}
 
-		
+
 		if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 		}
@@ -529,7 +533,11 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		if (sr) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=%s\n", sr);
 		}
-		
+	
+		if (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
+			//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
+		}
 
 	} else if (tech_pvt->num_codecs) {
 		int i;
@@ -545,7 +553,15 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		}
 
 		if (!switch_true(switch_channel_get_variable(tech_pvt->channel, "sdp_m_per_ptime"))) {
-			generate_m(tech_pvt, buf, sizeof(buf), port, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp);
+			char *bp = buf;
+			
+			if ((!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE))) {
+				generate_m(tech_pvt, buf, sizeof(buf), port, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 1);
+				bp = (buf + strlen(buf));
+			}
+
+			generate_m(tech_pvt, bp, sizeof(buf) - strlen(buf), port, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 0);
+
 		} else {
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
@@ -558,8 +574,15 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 				this_ptime = imp->microseconds_per_packet / 1000;
 				
 				if (cur_ptime != this_ptime) {
-					cur_ptime = this_ptime;
-					generate_m(tech_pvt, buf, sizeof(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp);
+					char *bp = buf;
+					cur_ptime = this_ptime;			
+
+					if ((!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE))) {
+						generate_m(tech_pvt, buf, sizeof(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 1);
+						bp = (buf + strlen(buf));
+					}
+					
+					generate_m(tech_pvt, bp, sizeof(buf) - strlen(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 0);
 				}
 				
 			}
@@ -567,11 +590,6 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	}
 	
-	if (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) {
-		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
-		//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
-	}
-
 	if (sofia_test_flag(tech_pvt, TFLAG_VIDEO)) {
 		if (!tech_pvt->local_sdp_video_port) {
 			sofia_glue_tech_choose_video_port(tech_pvt, 0);
@@ -728,6 +746,8 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 	if (tech_pvt->num_codecs) {
 		return;
 	}
+
+	tech_pvt->payload_space = 0;
 
 	switch_assert(tech_pvt->session != NULL);
 
@@ -1259,7 +1279,9 @@ int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip)
 {
 	switch_assert(network_ip);
 
-	return (profile->extsipip && !switch_check_network_list_ip(network_ip, profile->local_network));
+	return (profile->extsipip && 
+			!switch_check_network_list_ip(network_ip, "loopback.auto") && 
+			!switch_check_network_list_ip(network_ip, profile->local_network));
 }
 
 int sofia_glue_transport_has_tls(const sofia_transport_t tp)
@@ -1893,6 +1915,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *invite_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_to");
 	const char *handle_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_handle_full_from");
 	const char *handle_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_handle_full_to");
+	const char *force_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_from");
+	const char *force_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_to");
 	char *mp = NULL, *mp_type = NULL;
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
@@ -2106,8 +2130,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if (!from_display && !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
 			from_str = switch_core_session_sprintf(session, "<%s>", use_from_str);
 		} else {
-			from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", from_display ? from_display :
-												   tech_pvt->caller_profile->caller_id_name, use_from_str);
+			char *name = switch_core_session_strdup(session, from_display ? from_display : tech_pvt->caller_profile->caller_id_name);
+			check_decode(name, session);
+			from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", name, use_from_str);
 		}
 
 		if (!(call_id = switch_channel_get_variable(channel, "sip_invite_call_id"))) {
@@ -2125,6 +2150,15 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 
+		if (force_full_from) {
+			from_str = (char *) force_full_from;
+		}
+
+		if (force_full_to) {
+			to_str = (char *) force_full_to;
+		}
+
+
 		if (invite_req_uri) {
 			url_str = (char *) invite_req_uri;
 		}
@@ -2136,6 +2170,15 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 			if (!strncasecmp(url_str, "sips:", 5)) {
 				s = url_str + 5;
+			}
+
+			/* tel: patch from jaybinks, added by MC
+               It compiles but I don't have a way to test it
+			*/
+			if (!strncasecmp(url_str, "tel:", 4)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session),
+								  SWITCH_LOG_ERROR, "URL Error! tel: uri's not supported at this time\n");
+				return SWITCH_STATUS_FALSE;
 			}
 			if (!s) {
 				s = url_str;
@@ -2520,6 +2563,7 @@ static void set_stats(switch_rtp_t *rtp_session, private_object_t *tech_pvt, con
 		add_stat(stats->inbound.dtmf_packet_count, "in_dtmf_packet_count");
 		add_stat(stats->inbound.cng_packet_count, "in_cng_packet_count");
 		add_stat(stats->inbound.flush_packet_count, "in_flush_packet_count");
+		add_stat(stats->inbound.largest_jb_size, "in_largest_jb_size");
 
 		add_stat(stats->outbound.raw_bytes, "out_raw_bytes");
 		add_stat(stats->outbound.media_bytes, "out_media_bytes");
@@ -2630,9 +2674,7 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
 			return SWITCH_STATUS_FALSE;
 		} else {
-			int ms;
 			tech_pvt->video_read_frame.rate = tech_pvt->video_rm_rate;
-			ms = tech_pvt->video_write_codec.implementation->microseconds_per_packet / 1000;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set VIDEO Codec %s %s/%ld %d ms\n",
 							  switch_channel_get_name(tech_pvt->channel), tech_pvt->video_rm_encoding, tech_pvt->video_rm_rate, tech_pvt->video_codec_ms);
 			tech_pvt->video_read_frame.codec = &tech_pvt->video_read_codec;
@@ -2657,7 +2699,6 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 
 switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 {
-	int ms;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int resetting = 0;
 
@@ -2750,7 +2791,6 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 	}
 
 	tech_pvt->read_frame.rate = tech_pvt->rm_rate;
-	ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
 
 	if (!switch_core_codec_ready(&tech_pvt->read_codec)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
@@ -2833,7 +2873,6 @@ switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, s
 switch_status_t sofia_glue_add_crypto(private_object_t *tech_pvt, const char *key_str, switch_rtp_crypto_direction_t direction)
 {
 	unsigned char key[SWITCH_RTP_MAX_CRYPTO_LEN];
-	int index;
 	switch_rtp_crypto_key_type_t type;
 	char *p;
 
@@ -2841,8 +2880,6 @@ switch_status_t sofia_glue_add_crypto(private_object_t *tech_pvt, const char *ke
 	if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 		goto bad;
 	}
-
-	index = atoi(key_str);
 
 	p = strchr(key_str, ' ');
 
@@ -2890,7 +2927,6 @@ switch_status_t sofia_glue_add_crypto(private_object_t *tech_pvt, const char *ke
 
 switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_flag_t myflags)
 {
-	int bw, ms;
 	const char *err = NULL;
 	const char *val = NULL;
 	switch_rtp_flag_t flags;
@@ -2931,9 +2967,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		goto end;
 	}
 
-	bw = tech_pvt->read_impl.bits_per_second;
-	ms = tech_pvt->read_impl.microseconds_per_packet;
-
 	if (myflags) {
 		flags = myflags;
 	} else if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
@@ -2965,6 +2998,17 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		flags |= SWITCH_RTP_FLAG_AUTO_CNG;
 	}
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	if (!strcasecmp(tech_pvt->read_impl.iananame, "L16")) {
+		flags |= SWITCH_RTP_FLAG_BYTESWAP;
+	}
+#endif
+	
+	if ((flags & SWITCH_RTP_FLAG_BYTESWAP) && (val = switch_channel_get_variable(tech_pvt->channel, "rtp_disable_byteswap")) && switch_true(val)) {
+		flags &= ~SWITCH_RTP_FLAG_BYTESWAP;
+	}
+
+
 	if (tech_pvt->rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		//const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 		//const char *port = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
@@ -2974,6 +3018,21 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && remote_port == tech_pvt->remote_sdp_audio_port) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Audio params are unchanged for %s.\n",
 							  switch_channel_get_name(tech_pvt->channel));
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				if (tech_pvt->audio_recv_pt != tech_pvt->agreed_pt) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+								  "%s Set audio receive payload in Re-INVITE for non-matching dynamic PT to %u\n", 
+									  switch_channel_get_name(tech_pvt->channel), tech_pvt->audio_recv_pt);
+				
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->audio_recv_pt);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+								  "%s Setting audio receive payload in Re-INVITE to %u\n", 
+									  switch_channel_get_name(tech_pvt->channel), tech_pvt->audio_recv_pt);
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->agreed_pt);
+				}
+
+			}
 			goto video;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Audio params changed for %s from %s:%d to %s:%d\n",
@@ -3176,7 +3235,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec")) || (val = tech_pvt->profile->jb_msec)) {
 			int jb_msec = atoi(val);
-			int maxlen = 0, max_drift = 1000;
+			int maxlen = 0, max_drift = 0;
 			char *p, *q;
 			
 			if ((p = strchr(val, ':'))) {
@@ -3196,10 +3255,17 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				
 				qlen = jb_msec / (tech_pvt->read_impl.microseconds_per_packet / 1000);
 
+				if (qlen < 1) {
+					qlen = 3;
+				}
+
 				if (maxlen) {
 					maxqlen = maxlen / (tech_pvt->read_impl.microseconds_per_packet / 1000);
 				}
 
+				if (maxqlen < qlen) {
+					maxqlen = qlen * 5;
+				}
 				if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
 													  tech_pvt->read_impl.samples_per_packet, 
 													  tech_pvt->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
@@ -3394,9 +3460,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
-				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
+				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
 			} else {
-				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
+				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
 			}
 
 			if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
@@ -4045,7 +4111,7 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 	sdp_session_t *sdp;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	sdp_attribute_t *attr;
-	int ptime = 0, dptime = 0, dmaxptime = 0, maxptime = 0;
+	int ptime = 0, dptime = 0;
 
 	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 		return;
@@ -4066,8 +4132,6 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 
 		if (!strcasecmp(attr->a_name, "ptime")) {
 			dptime = atoi(attr->a_value);
-		} else if (!strcasecmp(attr->a_name, "maxptime")) {
-			dmaxptime = atoi(attr->a_value);
 		}
 	}
 
@@ -4075,7 +4139,7 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 
 		ptime = dptime;
-		maxptime = dmaxptime;
+		//maxptime = dmaxptime;
 
 		if (m->m_proto == sdp_proto_rtp) {
 			sdp_rtpmap_t *map;
@@ -4083,7 +4147,7 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
-					maxptime = atoi(attr->a_value);		
+					//maxptime = atoi(attr->a_value);		
 				}
 			}
 
@@ -4290,7 +4354,15 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		}
 	}
 
-	if (!reneg) {
+	if (reneg) {
+		reneg = sofia_test_pflag(tech_pvt->profile, PFLAG_RENEG_ON_REINVITE);
+		
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_renegotiate_codec_on_reinvite"))) {
+			reneg = switch_true(val);
+		}
+	}
+
+	if (!reneg && tech_pvt->num_negotiated_codecs) {
 		codec_array = tech_pvt->negotiated_codecs;
 		total_codecs = tech_pvt->num_negotiated_codecs;
 	}
@@ -4688,6 +4760,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 					tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;
 					tech_pvt->agreed_pt = (switch_payload_t) map->rm_pt;
+					tech_pvt->num_negotiated_codecs = 0;
 					tech_pvt->negotiated_codecs[tech_pvt->num_negotiated_codecs++] = mimp;
 					switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
@@ -4727,6 +4800,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, te);
 					}
 				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Disable 2833 dtmf\n");
+				switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "none");
+				tech_pvt->dtmf_type = DTMF_NONE;
+				te = tech_pvt->recv_te = 0;
 			}
 
 			
@@ -4739,7 +4817,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		} else if (m->m_type == sdp_media_video && m->m_port) {
 			sdp_rtpmap_t *map;
 			const char *rm_encoding;
-			int framerate = 0;
 			const switch_codec_implementation_t *mimp = NULL;
 			int vmatch = 0, i;
 			switch_channel_set_variable(tech_pvt->channel, "video_possible", "true");
@@ -4759,7 +4836,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 				for (attr = m->m_attributes; attr; attr = attr->a_next) {
 					if (!strcasecmp(attr->a_name, "framerate") && attr->a_value) {
-						framerate = atoi(attr->a_value);
+						//framerate = atoi(attr->a_value);
 					}
 					if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 						switch_channel_set_variable(tech_pvt->channel, "sip_remote_video_rtcp_port", attr->a_value);
@@ -5183,12 +5260,14 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 		}
 
 		for (gp = profile->gateways; gp; gp = gp->next) {
+			char *pkey = switch_mprintf("%s::%s", profile->name, gp->name);
+
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_from);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->register_contact);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "deleted gateway %s\n", gp->name);
-			profile->gateways = NULL;
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
+			switch_safe_free(pkey);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "deleted gateway %s from profile %s\n", gp->name, profile->name);
 		}
+		profile->gateways = NULL;
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
@@ -5253,11 +5332,11 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 		tech_pvt->dest = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_from_uri"));
 
-		if (!switch_channel_get_variable_dup(channel, "sip_handle_full_from", SWITCH_FALSE)) {
+		if (!switch_channel_get_variable_dup(channel, "sip_handle_full_from", SWITCH_FALSE, -1)) {
 			switch_channel_set_variable(channel, "sip_handle_full_from", switch_channel_get_variable(channel, "sip_full_to"));
 		}
 
-		if (!switch_channel_get_variable_dup(channel, "sip_handle_full_to", SWITCH_FALSE)) {
+		if (!switch_channel_get_variable_dup(channel, "sip_handle_full_to", SWITCH_FALSE, -1)) {
 			switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, "sip_full_from"));
 		}
 	}
@@ -6187,7 +6266,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	contact = sofia_glue_get_url_from_contact((char *) o_contact, 1);
 	if (!zstr(network_ip) && sofia_glue_check_nat(profile, network_ip)) {
 		char *ptr = NULL;
-		const char *transport_str = NULL;
+		//const char *transport_str = NULL;
 
 
 		id = switch_mprintf("sip:%s@%s", user, profile->extsipip);
@@ -6195,7 +6274,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 
 		if ((ptr = sofia_glue_find_parameter(o_contact, "transport="))) {
 			sofia_transport_t transport = sofia_glue_str2transport(ptr);
-			transport_str = sofia_glue_transport2str(transport);
+			//transport_str = sofia_glue_transport2str(transport);
 			switch (transport) {
 			case SOFIA_TRANSPORT_TCP:
 				contact_str = profile->tcp_public_contact;
@@ -6403,7 +6482,7 @@ void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str)
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_nat_parse_t *np)
 {
 	char *contact_str = NULL;
-	const char *contact_host, *contact_user;
+	const char *contact_host;//, *contact_user;
 	sip_contact_t const *contact;
 	char *port;
 	const char *display = "\"user\"";
@@ -6431,7 +6510,7 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sof
 
 	port = (char *) contact->m_url->url_port;
 	contact_host = sip->sip_contact->m_url->url_host;
-	contact_user = sip->sip_contact->m_url->url_user;
+	//contact_user = sip->sip_contact->m_url->url_user;
 
 	display = contact->m_display;
 

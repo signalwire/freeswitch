@@ -28,6 +28,7 @@
  * Neal Horman <neal at wanlink dot com>
  * Matt Klein <mklein@nmedia.net>
  * Michael Jerris <mike@jerris.com>
+ * Marc Olivier Chouinard <mochouinard@moctel.com>
  *
  * switch_ivr_play_say.c -- IVR Library (functions to play or say audio)
  *
@@ -39,8 +40,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 														switch_input_args_t *args)
 {
 	switch_event_t *hint_data;
-	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
-	char *lname = NULL, *mname = NULL;
+	switch_xml_t cfg, xml = NULL, language = NULL, macros = NULL, phrases = NULL, macro, input, action;
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	const char *old_sound_prefix = NULL, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
 	const char *module_name = NULL, *chan_lang = NULL;
@@ -49,6 +49,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 	int matches = 0;
 	const char *pause_val;
 	int pause = 100;
+	const char *group_macro_name = NULL;
+	const char *local_macro_name = macro_name;
+	switch_bool_t sound_prefix_enforced = switch_true(switch_channel_get_variable(channel, "sound_prefix_enforced"));
+	switch_bool_t local_sound_prefix_enforced = SWITCH_FALSE;
 
 	if (!macro_name) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No phrase macro specified.\n");
@@ -65,8 +69,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		chan_lang = lang;
 	}
 
-	module_name = chan_lang;
-
 	switch_event_create(&hint_data, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(hint_data);
 
@@ -82,40 +84,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 	}
 	switch_channel_event_set_data(channel, hint_data);
 
-	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Open of phrases failed.\n");
+	if (switch_xml_locate_language(&xml, &cfg, hint_data, &language, &phrases, &macros, chan_lang) != SWITCH_STATUS_SUCCESS) {
 		goto done;
 	}
 
-	if (!(macros = switch_xml_child(cfg, "macros"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macros tag.\n");
-		goto done;
+	if ((module_name = switch_xml_attr(language, "say-module"))) {
+	} else if ((module_name = switch_xml_attr(language, "module"))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Deprecated usage of module attribute. Use say-module instead\n");
+	} else {
+		module_name = chan_lang;
 	}
 
-	if (!(language = switch_xml_child(macros, "language"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language tag.\n");
-		goto done;
-	}
-
-	while (language) {
-		if ((lname = (char *) switch_xml_attr(language, "name")) && !strcasecmp(lname, chan_lang)) {
-			const char *tmp;
-
-			if ((tmp = switch_xml_attr(language, "module"))) {
-				module_name = tmp;
-			}
-			break;
+	if (!(sound_path = (char *) switch_xml_attr(language, "sound-prefix"))) {
+		if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {
+			sound_path = (char *) switch_xml_attr(language, "sound_path");
 		}
-		language = language->next;
-	}
-
-	if (!language) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find language %s.\n", chan_lang);
-		goto done;
-	}
-
-	if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {
-		sound_path = (char *) switch_xml_attr(language, "sound_path");
 	}
 
 	if (!(tts_engine = (char *) switch_xml_attr(language, "tts-engine"))) {
@@ -126,29 +109,46 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		tts_voice = (char *) switch_xml_attr(language, "tts_voice");
 	}
 
-	if (sound_path) {
+	/* If we use the new structure, check for a group name */
+	if (language != macros) {
+		char *p;
+		char *macro_name_dup = switch_core_session_strdup(session, macro_name);
+		const char *group_sound_path;
+		const char *sound_prefix_enforced_str;
+
+		if ((p = strchr(macro_name_dup, '@'))) {
+			*p++ = '\0';
+			local_macro_name = macro_name_dup;
+			group_macro_name = p;
+
+			if (!(macros = switch_xml_find_child(phrases, "macros", "name", group_macro_name))) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macros group %s.\n", group_macro_name);
+				goto done;
+			}
+		}
+		/* Support override of certain language attribute */
+		if ((group_sound_path = (char *) switch_xml_attr(macros, "sound-prefix")) || (group_sound_path = (char *) switch_xml_attr(macros, "sound-path")) || (group_sound_path = (char *) switch_xml_attr(macros, "sound_path"))) {
+			sound_path = group_sound_path;
+		}
+
+		if (sound_prefix_enforced == SWITCH_FALSE && (sound_prefix_enforced_str = switch_xml_attr(macros, "sound-prefix-enforced"))
+				&& (local_sound_prefix_enforced = switch_true(sound_prefix_enforced_str)) == SWITCH_TRUE) {
+			switch_channel_set_variable(channel, "sound_prefix_enforced", sound_prefix_enforced_str);
+		}
+
+	}
+
+	if (!(macro = switch_xml_find_child(macros, "macro", "name", local_macro_name))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macro %s.\n", macro_name);
+		goto done;
+	}
+
+	if (sound_path && sound_prefix_enforced == SWITCH_FALSE) {
 		char *p;
 		old_sound_prefix = switch_str_nil(switch_channel_get_variable(channel, "sound_prefix"));
 		p = switch_core_session_strdup(session, old_sound_prefix);
 		old_sound_prefix = p;
 		switch_channel_set_variable(channel, "sound_prefix", sound_path);
-	}
-
-	if (!(macro = switch_xml_child(language, "macro"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find any macro tags.\n");
-		goto done;
-	}
-
-	while (macro) {
-		if ((mname = (char *) switch_xml_attr(macro, "name")) && !strcasecmp(mname, macro_name)) {
-			break;
-		}
-		macro = macro->next;
-	}
-
-	if (!macro) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't find macro %s.\n", macro_name);
-		goto done;
 	}
 
 	if ((pause_val = switch_xml_attr(macro, "pause"))) {
@@ -193,7 +193,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 
 		if (pattern) {
 			switch_regex_t *re = NULL;
-			int proceed = 0, ovector[30];
+			int proceed = 0, ovector[100];
 			char *substituted = NULL;
 			uint32_t len = 0;
 			char *odata = NULL;
@@ -342,6 +342,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 	if (old_sound_prefix) {
 		switch_channel_set_variable(channel, "sound_prefix", old_sound_prefix);
 	}
+	if (local_sound_prefix_enforced == SWITCH_TRUE) {
+		switch_channel_set_variable(channel, "sound_prefix_enforced", NULL);
+	}
+
 	if (xml) {
 		switch_xml_free(xml);
 	}
@@ -828,7 +832,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 	}
 
 	for (;;) {
-		int done = 0;
 		switch_status_t status;
 
 		if (!switch_channel_ready(channel)) {
@@ -870,7 +873,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 			if (switch_channel_has_dtmf(channel)) {
 				if (!args->input_callback && !args->buf && !args->dmachine) {
 					status = SWITCH_STATUS_BREAK;
-					done = 1;
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, &dtmf);
@@ -898,7 +900,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 			}
 
 			if (status != SWITCH_STATUS_SUCCESS) {
-				done = 1;
 				break;
 			}
 		}
@@ -999,8 +1000,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle_t lfh;
 	const char *p;
-	char *title = "", *copyright = "", *software = "", *artist = "", *comment = "", *date = "";
-	uint8_t asis = 0;
+	//char *title = "", *copyright = "", *software = "", *artist = "", *comment = "", *date = "";
 	char *ext;
 	const char *prefix;
 	const char *timer_name;
@@ -1024,6 +1024,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int more_data = 0;
 	char *playback_vars, *tmp;
 	switch_event_t *event;
+	uint32_t test_native = 0, last_native = 0;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -1060,9 +1061,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		l16++;
 	}
 
-
-
-
 	if (play_delimiter) {
 		file_dup = switch_core_session_strdup(session, file);
 		argc = switch_separate_string(file_dup, play_delimiter, argv, (sizeof(argv) / sizeof(argv[0])));
@@ -1071,9 +1069,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		argv[0] = (char *) file;
 	}
 
+	if (!fh) {
+		fh = &lfh;
+		memset(fh, 0, sizeof(lfh));
+	}
+	
+	if (fh->samples > 0) {
+		sample_start = fh->samples;
+		fh->samples = 0;
+	}
+	
 	for (cur = 0; switch_channel_ready(channel) && !done && cur < argc; cur++) {
 		file = argv[cur];
-		asis = 0;
 		eof = 0;
 
 		if (cur) {
@@ -1168,7 +1175,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			} else {
 				ext = read_impl.iananame;
 				file = switch_core_session_sprintf(session, "%s.%s", file, ext);
-				asis = 1;
 			}
 		}
 
@@ -1184,16 +1190,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					playback_vars = tfile+1;
 				}
 			}
-		}
-
-		if (!fh) {
-			fh = &lfh;
-			memset(fh, 0, sizeof(lfh));
-		}
-
-		if (fh->samples > 0) {
-			sample_start = fh->samples;
-			fh->samples = 0;
 		}
 
 		if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
@@ -1221,9 +1217,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_channel_set_private(channel, "__fh", fh);
 		switch_core_session_io_rwunlock(session);
 
-		if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
-			asis = 1;
-		}
 
 		if (!abuf) {
 			switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf));
@@ -1239,35 +1232,35 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 
 		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_TITLE, &p) == SWITCH_STATUS_SUCCESS) {
-			title = switch_core_session_strdup(session, p);
+			//title = switch_core_session_strdup(session, p);
 			switch_channel_set_variable(channel, "RECORD_TITLE", p);
 		}
 
 		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_COPYRIGHT, &p) == SWITCH_STATUS_SUCCESS) {
-			copyright = switch_core_session_strdup(session, p);
+			//copyright = switch_core_session_strdup(session, p);
 			switch_channel_set_variable(channel, "RECORD_COPYRIGHT", p);
 		}
 
 		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_SOFTWARE, &p) == SWITCH_STATUS_SUCCESS) {
-			software = switch_core_session_strdup(session, p);
+			//software = switch_core_session_strdup(session, p);
 			switch_channel_set_variable(channel, "RECORD_SOFTWARE", p);
 		}
 
 		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_ARTIST, &p) == SWITCH_STATUS_SUCCESS) {
-			artist = switch_core_session_strdup(session, p);
+			//artist = switch_core_session_strdup(session, p);
 			switch_channel_set_variable(channel, "RECORD_ARTIST", p);
 		}
 
 		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_COMMENT, &p) == SWITCH_STATUS_SUCCESS) {
-			comment = switch_core_session_strdup(session, p);
+			//comment = switch_core_session_strdup(session, p);
 			switch_channel_set_variable(channel, "RECORD_COMMENT", p);
 		}
 
 		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_DATE, &p) == SWITCH_STATUS_SUCCESS) {
-			date = switch_core_session_strdup(session, p);
+			//date = switch_core_session_strdup(session, p);
 			switch_channel_set_variable(channel, "RECORD_DATE", p);
 		}
-
+		
 		interval = read_impl.microseconds_per_packet / 1000;
 
 		if (!fh->audio_buffer) {
@@ -1275,43 +1268,46 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_assert(fh->audio_buffer);
 		}
 
-		if (asis) {
+		codec_name = "L16";
+		
+		if (!switch_core_codec_ready((&codec))) {
+			if (switch_core_codec_init(&codec,
+									   codec_name,
+									   NULL,
+									   fh->samplerate,
+									   interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+								  SWITCH_LOG_DEBUG, "Codec Activated %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
+				
+				
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+								  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
+				switch_core_session_io_write_lock(session);
+				switch_channel_set_private(channel, "__fh", NULL);
+				switch_core_session_io_rwunlock(session);
+				
+				switch_core_file_close(fh);
+				
+				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
+				status = SWITCH_STATUS_GENERR;
+				continue;
+			}
+		}
+
+		test_native = switch_test_flag(fh, SWITCH_FILE_NATIVE);
+
+		if (test_native) {
 			write_frame.codec = switch_core_session_get_read_codec(session);
 			samples = read_impl.samples_per_packet;
 			framelen = read_impl.encoded_bytes_per_packet;
 		} else {
-			codec_name = "L16";
-
-			if (!switch_core_codec_ready((&codec))) {
-				if (switch_core_codec_init(&codec,
-										   codec_name,
-										   NULL,
-										   fh->samplerate,
-										   interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-									  SWITCH_LOG_DEBUG, "Codec Activated %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
-
-
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-									  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
-					switch_core_session_io_write_lock(session);
-					switch_channel_set_private(channel, "__fh", NULL);
-					switch_core_session_io_rwunlock(session);
-
-					switch_core_file_close(fh);
-
-					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
-					status = SWITCH_STATUS_GENERR;
-					continue;
-				}
-			}
-
 			write_frame.codec = &codec;
-
 			samples = codec.implementation->samples_per_packet;
 			framelen = codec.implementation->decoded_bytes_per_packet;
 		}
+		
+		last_native = test_native;
 
 		if (timer_name && !timer.samplecount) {
 			uint32_t len;
@@ -1429,7 +1425,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					memset(abuf + bread, 255, framelen - bread);
 				}
 
-				olen = asis ? framelen : ilen;
+				olen = switch_test_flag(fh, SWITCH_FILE_NATIVE) ? framelen : ilen;
 				do_speed = 0;
 			} else if (fh->audio_buffer && (eof || (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t) (framelen)))) {
 				if (!(bread = switch_buffer_read(fh->audio_buffer, abuf, framelen))) {
@@ -1440,30 +1436,48 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					}
 				}
 
-				fh->offset_pos += asis ? bread : bread / 2;
+				fh->offset_pos += switch_test_flag(fh, SWITCH_FILE_NATIVE) ? bread : bread / 2;
 
 				if (bread < framelen) {
 					memset(abuf + bread, 255, framelen - bread);
 				}
 
-				olen = asis ? framelen : ilen;
+				olen = switch_test_flag(fh, SWITCH_FILE_NATIVE) ? framelen : ilen;
 			} else {
 				if (eof) {
 					break;
 				}
 				olen = FILE_STARTSAMPLES;
-				if (!asis) {
+				if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 					olen /= 2;
 				}
 				if (switch_core_file_read(fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
 					eof++;
 					continue;
 				}
-				switch_buffer_write(fh->audio_buffer, abuf, asis ? olen : olen * 2);
+				
+				test_native = switch_test_flag(fh, SWITCH_FILE_NATIVE);
+
+				if (test_native != last_native) {
+					if (test_native) {
+						write_frame.codec = switch_core_session_get_read_codec(session);
+						samples = read_impl.samples_per_packet;
+						framelen = read_impl.encoded_bytes_per_packet;						
+					} else {
+						write_frame.codec = &codec;
+						samples = codec.implementation->samples_per_packet;
+						framelen = codec.implementation->decoded_bytes_per_packet;
+					}
+					switch_buffer_zero(fh->audio_buffer);
+				}
+
+				last_native = test_native;
+
+				switch_buffer_write(fh->audio_buffer, abuf, switch_test_flag(fh, SWITCH_FILE_NATIVE) ? olen : olen * 2);
 				olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
 				fh->offset_pos += olen / 2;
 
-				if (!asis) {
+				if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 					olen /= 2;
 				}
 
@@ -1473,7 +1487,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				break;
 			}
 
-			if (!asis) {
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 				if (fh->speed > 2) {
 					fh->speed = 2;
 				} else if (fh->speed < -2) {
@@ -1481,7 +1495,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 			}
 
-			if (!asis && fh->audio_buffer && last_speed > -1 && last_speed != fh->speed) {
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->audio_buffer && last_speed > -1 && last_speed != fh->speed) {
 				switch_buffer_zero(fh->sp_audio_buffer);
 			}
 
@@ -1492,7 +1506,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 
 
-			if (!asis && fh->speed && do_speed) {
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->speed && do_speed) {
 				float factor = 0.25f * abs(fh->speed);
 				switch_size_t newlen, supplement, step;
 				short *bp = write_frame.data;
@@ -1583,7 +1597,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			more_data = 0;
 			write_frame.samples = (uint32_t) olen;
 
-			if (asis) {
+			if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 				write_frame.datalen = (uint32_t) olen;
 			} else {
 				write_frame.datalen = write_frame.samples * 2;
@@ -1596,12 +1610,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 #ifndef WIN32
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-			if (!asis && l16) {
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && l16) {
 				switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
 			}
 #endif
 #endif
-			if (!asis && fh->vol) {
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->vol) {
 				switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
 			}
 
@@ -1886,7 +1900,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 
 	if (tb[0]) {
+		char *p;
+
 		switch_channel_set_variable(channel, SWITCH_READ_TERMINATOR_USED_VARIABLE, tb);
+
+		if ((p = strchr(valid_terminators, tb[0]))) {
+			if (p >= (valid_terminators + 1) && (*(p - 1) == '+' || *(p - 1) == 'x')) {
+				switch_snprintf(digit_buffer + strlen(digit_buffer), digit_buffer_length - strlen(digit_buffer), "%s", tb);
+				if (*(p - 1) == 'x') {
+					status = SWITCH_STATUS_RESTART;
+				}
+			}
+		}
 	}
 
 	len = strlen(digit_buffer);
@@ -1909,7 +1934,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
   end:
 
-	if (max_digits == 1 && len == 1 && valid_terminators && strchr(valid_terminators, *digit_buffer)) {
+	if (status != SWITCH_STATUS_RESTART && max_digits == 1 && len == 1 && valid_terminators && strchr(valid_terminators, *digit_buffer)) {
 		*digit_buffer = '\0';
 	}
 
@@ -1944,6 +1969,11 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 
 		status = switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name,
 								 digit_buffer, digit_buffer_length, timeout, valid_terminators, digit_timeout);
+
+		if (status == SWITCH_STATUS_RESTART) {
+			return status;
+		}
+
 		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
 			status = SWITCH_STATUS_SUCCESS;
 		}
@@ -2297,7 +2327,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_handle_t lsh, *sh;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-	switch_codec_t *read_codec;
 	const char *timer_name, *var;
 	cached_speech_handle_t *cache_obj = NULL;
 	int need_create = 1, need_alloc = 1;
@@ -2338,7 +2367,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
 	switch_core_session_reset(session, SWITCH_FALSE, SWITCH_FALSE);
-	read_codec = switch_core_session_get_read_codec(session);
 
 	rate = read_impl.actual_samples_per_second;
 	interval = read_impl.microseconds_per_packet / 1000;

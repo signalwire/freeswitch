@@ -29,6 +29,7 @@ opt/freeswitch/conf/autoload_configs/local_stream.conf.xml
 opt/freeswitch/conf/autoload_configs/logfile.conf.xml
 opt/freeswitch/conf/autoload_configs/memcache.conf.xml
 opt/freeswitch/conf/autoload_configs/modules.conf.xml
+opt/freeswitch/conf/autoload_configs/mongo.conf.xml
 opt/freeswitch/conf/autoload_configs/nibblebill.conf.xml
 opt/freeswitch/conf/autoload_configs/opal.conf.xml
 opt/freeswitch/conf/autoload_configs/pocketsphinx.conf.xml
@@ -129,7 +130,6 @@ opt/freeswitch/mod/mod_esf.so*
 opt/freeswitch/mod/mod_event_*.so*
 opt/freeswitch/mod/mod_expr.so*
 opt/freeswitch/mod/mod_fifo.so*
-opt/freeswitch/mod/mod_file_string.so*
 opt/freeswitch/mod/mod_flite.so*
 opt/freeswitch/mod/mod_fsv.so*
 opt/freeswitch/mod/mod_hash.so*
@@ -161,6 +161,7 @@ opt/freeswitch/mod/mod_speex.so*
 opt/freeswitch/mod/mod_spy.so*
 opt/freeswitch/mod/mod_syslog.so*
 opt/freeswitch/mod/mod_theora.so*
+opt/freeswitch/mod/mod_timerfd.so*
 opt/freeswitch/mod/mod_tone_stream.so*
 opt/freeswitch/mod/mod_tts_commandline.so*
 opt/freeswitch/mod/mod_valet_parking.so*

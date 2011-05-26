@@ -32,7 +32,7 @@
  */
 #include <sys/stat.h>
 #include <switch.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
 #define MAX_URLS 20
 
 #define ENCODING_NONE 0
@@ -239,6 +239,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 #endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
+				wrote++;
 				close(fd);
 				fd = -1;
 			} else {
@@ -393,6 +394,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 #endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
+				wrote++;
 				close(fd);
 				fd = -1;
 			} else {
@@ -599,8 +601,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	}
 
 	if (globals.retries && globals.delay <= 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries set but delay 0 setting to 5000ms\n");
-		globals.delay = 5000;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries set but delay 0 setting to 5 seconds\n");
+		globals.delay = 5;
 	}
 
 	globals.retries++;
@@ -608,6 +610,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	set_xml_cdr_log_dirs();
 
 	switch_xml_free(xml);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_curl_init();
+	}
+
 	return status;
 }
 
@@ -623,6 +630,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown)
 	switch_core_remove_state_handler(&state_handlers);
 
 	switch_thread_rwlock_destroy(globals.log_path_lock);
+
+	switch_curl_destroy();
 
 	return SWITCH_STATUS_SUCCESS;
 }

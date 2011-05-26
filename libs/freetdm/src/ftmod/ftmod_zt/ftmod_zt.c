@@ -1064,6 +1064,20 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 			fchan->rx_cas_bits = bits;
 		}
 		break;
+	case ZT_EVENT_BADFCS:
+		{
+			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Bad frame checksum (ZT_EVENT_BADFCS)!\n");
+			/* What else could we do? */
+			*event_id = FTDM_OOB_NOOP;
+		}
+		break;
+	case ZT_EVENT_OVERRUN:
+		{
+			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Driver overrun! (ZT_EVENT_OVERRUN)\n");
+			/* What else could we do? */
+			*event_id = FTDM_OOB_NOOP;
+		}
+		break;
 	case ZT_EVENT_NONE:
 		{
 			ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "No event\n");

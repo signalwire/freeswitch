@@ -129,7 +129,7 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 												 char *substituted, switch_size_t len, int *ovector)
 {
 	char index[10] = "";
-	char replace[1024] = "";
+	const char *replace = NULL;
 	switch_size_t x, y = 0, z = 0;
 	int num = 0;
 
@@ -154,11 +154,12 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 				num = -1;
 			}
 
-			if (pcre_copy_substring(field_data, ovector, match_count, num, replace, sizeof(replace)) > 0) {
+			if (pcre_get_substring(field_data, ovector, match_count, num, &replace) > 0) {
 				switch_size_t r;
 				for (r = 0; r < strlen(replace); r++) {
 					substituted[y++] = replace[r];
 				}
+				pcre_free_substring(replace);
 			}
 		} else {
 			substituted[y++] = data[x];
@@ -166,6 +167,24 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 		}
 	}
 	substituted[y++] = '\0';
+}
+
+
+SWITCH_DECLARE(void) switch_capture_regex(switch_regex_t *re, int match_count, const char *field_data, 
+										  int *ovector, const char *var, switch_cap_callback_t callback, void *user_data)
+										  
+{
+
+
+	const char *replace;
+	int i;
+
+	for (i = 0; i < match_count; i++) {
+		if (pcre_get_substring(field_data, ovector, match_count, i, &replace) > 0) {
+			callback(var, replace, user_data);
+			pcre_free_substring(replace);
+		}
+	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, const char *expression, int *partial)
@@ -229,6 +248,15 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
 	int partial = 0;
 	return switch_regex_match_partial(target, expression, &partial);
 }
+
+SWITCH_DECLARE(void) switch_regex_set_var_callback(const char *var, const char *val, void *user_data)
+{
+	switch_core_session_t *session = (switch_core_session_t *) user_data;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_add_variable_var_check(channel, var, val, SWITCH_FALSE, SWITCH_STACK_PUSH);
+}
+
+
 
 /* For Emacs:
  * Local Variables:

@@ -658,7 +658,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 
 		if (frames && codec->implementation->decoded_bytes_per_packet * frames > *decoded_data_len) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Buffer size sanity check failed!\n");
-			return SWITCH_STATUS_GENERR;
+			*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
+			memset(decoded_data, 255, *decoded_data_len);
+			return SWITCH_STATUS_SUCCESS;
 		}
 	}
 	

@@ -57,6 +57,7 @@ SWITCH_BEGIN_EXTERN_C
 struct switch_app_log {
 	char *app;
 	char *arg;
+	switch_time_t stamp;
 	struct switch_app_log *next;
 };
 
@@ -434,6 +435,9 @@ SWITCH_DECLARE(void) switch_core_session_rwunlock(_In_ switch_core_session_t *se
 */
 SWITCH_DECLARE(int) switch_core_add_state_handler(_In_ const switch_state_handler_table_t *state_handler);
 
+SWITCH_DECLARE(int) switch_core_curl_count(int *val);
+SWITCH_DECLARE(int) switch_core_ssl_count(int *val);
+
 /*!
   \brief Remove a global state handler
   \param state_handler the state handler to remove
@@ -762,6 +766,7 @@ SWITCH_DECLARE(char *) switch_core_get_variable(_In_z_ const char *varname);
 SWITCH_DECLARE(char *) switch_core_get_variable_dup(_In_z_ const char *varname);
 SWITCH_DECLARE(char *) switch_core_get_variable_pdup(_In_z_ const char *varname, switch_memory_pool_t *pool);
 SWITCH_DECLARE(const char *) switch_core_get_hostname(void);
+SWITCH_DECLARE(const char *) switch_core_get_switchname(void);
 
 /*! 
   \brief Add a global variable to the core
@@ -1183,7 +1188,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(_In_ switch_core_s
 ///\ingroup core1
 ///\{
 /*! 
-  \brief Initilize a hash table
+  \brief Initialize a hash table
   \param hash a NULL pointer to a hash table to aim at the new hash
   \param pool the pool to use for the new hash
   \return SWITCH_STATUS_SUCCESS if the hash is created
@@ -1940,6 +1945,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, 
   \return 0 on success
 */
 SWITCH_DECLARE(int32_t) set_high_priority(void);
+SWITCH_DECLARE(int32_t) set_normal_priority(void);
 
 /*! 
   \brief Change user and/or group of the running process
@@ -2050,6 +2056,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload);
 SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_str, const char *list_name, const char **token);
 #define switch_check_network_list_ip(_ip_str, _list_name) switch_check_network_list_ip_token(_ip_str, _list_name, NULL)
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable);
+SWITCH_DECLARE(void) switch_time_set_timerfd(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_nanosleep(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_matrix(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_cond_yield(switch_bool_t enable);
@@ -2203,6 +2210,7 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries);
 
+SWITCH_DECLARE(void) switch_core_set_signal_handlers(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
 SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
 SWITCH_DECLARE(const char *) switch_core_banner(void);
@@ -2237,6 +2245,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_del_registration(const char *user, c
  \param [out] err - Error if it exists
 */
 SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force);
+
+
+SWITCH_DECLARE(char *) switch_say_file_handle_get_variable(switch_say_file_handle_t *sh, const char *var);
+SWITCH_DECLARE(char *) switch_say_file_handle_get_path(switch_say_file_handle_t *sh);
+SWITCH_DECLARE(char *) switch_say_file_handle_detach_path(switch_say_file_handle_t *sh);
+SWITCH_DECLARE(void) switch_say_file_handle_destroy(switch_say_file_handle_t **sh);
+SWITCH_DECLARE(switch_status_t) switch_say_file_handle_create(switch_say_file_handle_t **sh, const char *ext, switch_event_t **var_event);
+SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *fmt, ...);
+
 
 SWITCH_END_EXTERN_C
 #endif

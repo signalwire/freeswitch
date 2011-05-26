@@ -662,7 +662,7 @@ void sngisdn_process_rel_ind (sngisdn_event_data_t *sngisdn_event)
 			}
 			break;
 		case FTDM_CHANNEL_STATE_RESET:
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Processing SETUP but channel in RESET state, ignoring\n");
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Processing RELEASE but channel in RESET state, ignoring\n");
 			break;
 		default:
 			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Received RELEASE in an invalid state (%s)\n",
@@ -807,17 +807,10 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 
 	if (signal_data->facility_ie_decode == SNGISDN_OPT_FALSE) {
 		/* If Facility decoding is disabled, we do not care about current call state, just pass event up to user */
-		ftdm_sigmsg_t sigev;
 		if (facEvnt->facElmt.facStr.pres) {
 			get_facility_ie_str(ftdmchan, &facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len-2);
+			sngisdn_send_signal(sngisdn_info, FTDM_SIGEVENT_FACILITY);
 		}
-		memset(&sigev, 0, sizeof(sigev));
-		sigev.chan_id = ftdmchan->chan_id;
-		sigev.span_id = ftdmchan->span_id;
-		sigev.channel = ftdmchan;
-		
-		sigev.event_id = FTDM_SIGEVENT_FACILITY;
-		ftdm_span_send_signal(ftdmchan->span, &sigev);
 		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
 	}
@@ -838,7 +831,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 				if (sng_isdn_retrieve_facility_caller_name(&facEvnt->facElmt.facStr.val[2], facEvnt->facElmt.facStr.len, retrieved_str) == 0) {
 					strcpy(ftdmchan->caller_data.cid_name, retrieved_str);
 				} else {
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Failed to retrieve Caller Name from Facility IE\n");
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Failed to retrieve Caller Name from Facility IE\n");
 				}
 				if (signal_data->facility_timeout) {
 					/* Cancel facility timeout */

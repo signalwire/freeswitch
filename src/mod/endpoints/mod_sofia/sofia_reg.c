@@ -800,7 +800,7 @@ void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 	sql = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc) "
 						 "values('%q', %ld, '%q', '%q', 0)", uuid_str,
-						 switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL),
+						 (long) switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL),
 						 profile->name, mod_sofia_globals.hostname);
 	switch_assert(sql != NULL);
 	sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
@@ -852,7 +852,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *reg_host = profile->reg_db_domain;
 	const char *sub_host = profile->sub_domain;
 	char contact_str[1024] = "";
-	int nat_hack = 0;
 	uint8_t multi_reg = 0, multi_reg_contact = 0, avoid_multi_reg = 0;
 	uint8_t stale = 0, forbidden = 0;
 	auth_res_t auth_res;
@@ -863,7 +862,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	char network_ip[80];
 	char network_port_c[6];
 	char url_ip[80];
-	char *register_gateway = NULL;
 	int network_port;
 	const char *reg_desc = "Registered";
 	const char *call_id = NULL;
@@ -1094,8 +1092,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				avoid_multi_reg = 1;
 			}
 
-			register_gateway = switch_event_get_header(*v_event, "sip-register-gateway");
-
 			/* Allow us to force the SIP user to be something specific - needed if 
 			 * we - for example - want to be able to ensure that the username a UA can
 			 * be contacted at is the same one that they used for authentication.
@@ -1104,7 +1100,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				to_user = force_user;
 			}
 
-			if (profile->rport_level == 3 && sip->sip_user_agent &&
+			if (profile->server_rport_level == 3 && sip->sip_user_agent &&
 				sip->sip_user_agent->g_string && !strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7)) {
 				if (sip && sip->sip_via) {
 					const char *host = sip->sip_via->v_host;
@@ -1124,8 +1120,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				}
 			}
 
-			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact")) || auto_connectile) {
-				if ((!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0")) || auto_connectile) {
+			if (auto_connectile || (v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
+				if (auto_connectile || (!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0"))) {
 					char *path_encoded;
 					size_t path_encoded_len;
 					char my_contact_str[1024];
@@ -1166,7 +1162,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 							reg_desc = "Registered(AUTO-NAT)";
 							exptime = 30;
 						}
-						nat_hack = 1;
 					} else {
 						char *p;
 						switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
@@ -1914,7 +1909,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	} else if (gateway) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No Matching gateway found\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
 		goto cancel;
 	}
 
@@ -2007,7 +2002,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *call_id = NULL;
 	char *sql;
 	char *number_alias = NULL;
-	switch_xml_t domain, xml = NULL, user, param, uparams, dparams, group = NULL, gparams = NULL;
+	switch_xml_t user = NULL, param, uparams;
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
 	char *domain_name = NULL;
 	switch_event_t *params = NULL;
@@ -2184,7 +2179,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		domain_name = realm;
 	}
 
-	if (switch_xml_locate_user("id", zstr(username) ? "nobody" : username, domain_name, ip, &xml, &domain, &user, &group, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id", zstr(username) ? "nobody" : username, domain_name, ip, &user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n"
 						  "You must define a domain called '%s' in your directory and add a user with the id=\"%s\" attribute\n"
 						  "and you must configure your device to use the proper domain in it's authentication credentials.\n", username, domain_name,
@@ -2205,90 +2200,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		number_alias = zstr(username) ? "nobody" : username;
 	}
 
-	dparams = switch_xml_child(domain, "params");
-	uparams = switch_xml_child(user, "params");
-	if (group) {
-		gparams = switch_xml_child(group, "params");
-	}
-
-	if (!(dparams || uparams)) {
+	if (!(uparams = switch_xml_child(user, "params"))) {
 		ret = AUTH_OK;
 		goto skip_auth;
-	}
-
-	if (dparams) {
-		for (param = switch_xml_child(dparams, "param"); param; param = param->next) {
-			const char *var = switch_xml_attr_soft(param, "name");
-			const char *val = switch_xml_attr_soft(param, "value");
-
-			if (!strcasecmp(var, "sip-forbid-register") && switch_true(val)) {
-				ret = AUTH_FORBIDDEN;
-				goto end;
-			}
-
-			if (!strcasecmp(var, "password")) {
-				passwd = val;
-			}
-
-			if (!strcasecmp(var, "auth-acl")) {
-				auth_acl = val;
-			}
-
-			if (!strcasecmp(var, "a1-hash")) {
-				a1_hash = val;
-			}
-			if (!strcasecmp(var, "mwi-account")) {
-				mwi_account = val;
-			}
-			if (!strcasecmp(var, "allow-empty-password")) {
-				allow_empty_password = switch_true(val);
-			}
-			if (!strcasecmp(var, "user-agent-filter")) {
-				user_agent_filter = val;
-			}
-			if (!strcasecmp(var, "max-registrations-per-extension")) {
-				max_registrations_perext = atoi(val);
-			}
-		}
-	}
-
-	if (gparams) {
-		for (param = switch_xml_child(gparams, "param"); param; param = param->next) {
-			const char *var = switch_xml_attr_soft(param, "name");
-			const char *val = switch_xml_attr_soft(param, "value");
-
-			if (!strcasecmp(var, "sip-forbid-register") && switch_true(val)) {
-				ret = AUTH_FORBIDDEN;
-				goto end;
-			}
-
-			if (!strcasecmp(var, "password")) {
-				passwd = val;
-			}
-
-			if (!strcasecmp(var, "auth-acl")) {
-				auth_acl = val;
-			}
-
-			if (!strcasecmp(var, "a1-hash")) {
-				a1_hash = val;
-			}
-			if (!strcasecmp(var, "mwi-account")) {
-				mwi_account = val;
-			}
-			if (!strcasecmp(var, "allow-empty-password")) {
-				allow_empty_password = switch_true(val);
-			}
-			if (!strcasecmp(var, "user-agent-filter")) {
-				user_agent_filter = val;
-			}
-			if (!strcasecmp(var, "max-registrations-per-extension")) {
-				max_registrations_perext = atoi(val);
-			}
-		}
-	}
-
-	if (uparams) {
+	} else {
 		for (param = switch_xml_child(uparams, "param"); param; param = param->next) {
 			const char *var = switch_xml_attr_soft(param, "name");
 			const char *val = switch_xml_attr_soft(param, "value");
@@ -2509,29 +2424,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 				switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "mwi-account", mwi_account);
 			}
 
-			if ((dparams = switch_xml_child(domain, "params"))) {
-				xparams_type[i] = 0;
-				xparams[i++] = dparams;
-			}
-
-			if (group && (gparams = switch_xml_child(group, "params"))) {
-				xparams_type[i] = 0;
-				xparams[i++] = gparams;
-			}
-
 			if ((uparams = switch_xml_child(user, "params"))) {
 				xparams_type[i] = 0;
 				xparams[i++] = uparams;
-			}
-
-			if ((dparams = switch_xml_child(domain, "variables"))) {
-				xparams_type[i] = 1;
-				xparams[i++] = dparams;
-			}
-
-			if (group && (gparams = switch_xml_child(group, "variables"))) {
-				xparams_type[i] = 1;
-				xparams[i++] = gparams;
 			}
 
 			if ((uparams = switch_xml_child(user, "variables"))) {
@@ -2637,8 +2532,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	switch_event_destroy(&params);
 
-	if (xml) {
-		switch_xml_free(xml);
+	if (user) {
+		switch_xml_free(user);
 	}
 
 	switch_safe_free(input);

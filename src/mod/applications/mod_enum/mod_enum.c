@@ -30,11 +30,10 @@
  */
 
 #include <switch.h>
-#include <udns.h>
-
-#ifndef WIN32
-#define closesocket close
+#ifdef _MSC_VER
+#define ssize_t int
 #endif
+#include <ldns/ldns.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown);
@@ -49,18 +48,9 @@ struct enum_record {
 	char *route;
 	int supported;
 	struct enum_record *next;
+	struct enum_record *tail;
 };
 typedef struct enum_record enum_record_t;
-
-struct query {
-	const char *name;			/* original query string */
-	char *number;
-	unsigned char dn[DNS_MAXDN];
-	enum dns_type qtyp;			/* type of the query */
-	enum_record_t *results;
-	int errs;
-};
-typedef struct query enum_query_t;
 
 struct route {
 	char *service;
@@ -70,20 +60,22 @@ struct route {
 };
 typedef struct route enum_route_t;
 
-static enum dns_class qcls = DNS_C_IN;
-
 static switch_event_node_t *NODE = NULL;
 
 static struct {
 	char *root;
+	char *server;
 	char *isn_root;
 	enum_route_t *route_order;
 	switch_memory_pool_t *pool;
 	int auto_reload;
 	int timeout;
+	int retries;
+	int random;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_root, globals.root);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_server, globals.server);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_isn_root, globals.isn_root);
 
 static void add_route(char *service, char *regex, char *replace)
@@ -119,16 +111,28 @@ static switch_status_t load_config(void)
 		goto done;
 	}
 
+	globals.timeout = 5000;
+	globals.retries = 3;
+	globals.random  = 0;
+	
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			const char *var = switch_xml_attr_soft(param, "name");
 			const char *val = switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "default-root")) {
 				set_global_root(val);
+			} else if (!strcasecmp(var, "use-server")) {
+				set_global_server(val);
 			} else if (!strcasecmp(var, "auto-reload")) {
 				globals.auto_reload = switch_true(val);
 			} else if (!strcasecmp(var, "query-timeout")) {
+				globals.timeout = atoi(val) * 1000;
+			} else if (!strcasecmp(var, "query-timeout-ms")) {
 				globals.timeout = atoi(val);
+			} else if (!strcasecmp(var, "query-timeout-retry")) {
+				globals.retries = atoi(val);
+			} else if (!strcasecmp(var, "random-nameserver")) {
+				globals.random = switch_true(val);
 			} else if (!strcasecmp(var, "default-isn-root")) {
 				set_global_isn_root(val);
 			} else if (!strcasecmp(var, "log-level-trace")) {
@@ -152,6 +156,33 @@ static switch_status_t load_config(void)
 	}
 
   done:
+#ifdef _MSC_VER
+	if (!globals.server) {
+		HKEY hKey;
+		DWORD data_sz;
+		char* buf;
+		RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
+			"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters", 
+			0, KEY_QUERY_VALUE, &hKey);
+
+		if (hKey) {
+			RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, NULL, &data_sz);
+			if (data_sz) {
+				buf = (char*)malloc(data_sz + 1);
+
+				RegQueryValueEx(hKey, "DhcpNameServer", NULL, NULL, (LPBYTE)buf, &data_sz);
+				RegCloseKey(hKey);
+
+				if(buf[data_sz - 1] != 0) {
+					buf[data_sz] = 0;
+				}
+				switch_replace_char(buf, ' ', 0, SWITCH_FALSE); /* only use the first entry ex "192.168.1.1 192.168.1.2" */
+				globals.server = buf;
+			}
+		}
+	}
+#endif
+
 
 	if (xml) {
 		switch_xml_free(xml);
@@ -168,11 +199,12 @@ static switch_status_t load_config(void)
 	return status;
 }
 
-static char *reverse_number(char *in, char *root)
+static char *reverse_number(const char *in, const char *root)
 {
 	switch_size_t len;
 	char *out = NULL;
-	char *y, *z;
+	const char *y;
+	char *z;
 
 	if (!(in && root)) {
 		return NULL;
@@ -198,58 +230,32 @@ static char *reverse_number(char *in, char *root)
 	return out;
 }
 
-static void dnserror(enum_query_t *q, int errnum)
-{
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to lookup %s record for %s: %s\n",
-					  dns_typename(q->qtyp), dns_dntosp(q->dn), dns_strerror(errnum));
-	q->errs++;
-}
-
-static void add_result(enum_query_t *q, int order, int preference, char *service, char *route, int supported)
+static void add_result(enum_record_t **results, int order, int preference, char *service, char *route, int supported)
 {
-	enum_record_t *new_result, *rp, *prev = NULL;
+	enum_record_t *new_result;
 
 	new_result = malloc(sizeof(*new_result));
 	switch_assert(new_result);
-	memset(new_result, 0, sizeof(*new_result));
 
+	memset(new_result, 0, sizeof(*new_result));
 	new_result->order = order;
 	new_result->preference = preference;
 	new_result->service = strdup(service);
 	new_result->route = strdup(route);
 	new_result->supported = supported;
+	
 
-	if (!q->results) {
-		q->results = new_result;
-		return;
-	}
-
-	rp = q->results;
-
-	while (rp && strcasecmp(rp->service, new_result->service)) {
-		prev = rp;
-		rp = rp->next;
-	}
-
-	while (rp && !strcasecmp(rp->service, new_result->service) && new_result->order > rp->order) {
-		prev = rp;
-		rp = rp->next;
-	}
-
-	while (rp && !strcasecmp(rp->service, new_result->service) && new_result->preference > rp->preference) {
-		prev = rp;
-		rp = rp->next;
-	}
-
-	if (prev) {
-		new_result->next = rp;
-		prev->next = new_result;
+	if (!*results) {
+		*results = new_result;
+		(*results)->tail = new_result;
 	} else {
-		new_result->next = rp;
-		q->results = new_result;
+		(*results)->tail->next = new_result;
+		(*results)->tail = new_result;
 	}
+
 }
+
 
 static void free_results(enum_record_t ** results)
 {
@@ -265,201 +271,234 @@ static void free_results(enum_record_t ** results)
 	*results = NULL;
 }
 
-static void parse_rr(const struct dns_parse *p, enum_query_t *q, struct dns_rr *rr)
+
+static ldns_rdf *ldns_rdf_new_addr_frm_str(const char *str)
 {
-	const unsigned char *pkt = p->dnsp_pkt;
-	const unsigned char *end = p->dnsp_end;
-	const unsigned char *dptr = rr->dnsrr_dptr;
-	const unsigned char *dend = rr->dnsrr_dend;
-	unsigned char *dn = rr->dnsrr_dn;
-	const unsigned char *c;
-	char flags;
-	int order;
-	int preference;
+	ldns_rdf *a;
+
+	ldns_str2rdf_a(&a, str);
+
+	if (!a) {
+		/* maybe ip6 */
+		ldns_str2rdf_aaaa(&a, str);
+		if (!a) {
+			return NULL;
+		}
+	}
+	return a;
+}
+
+#define strip_quotes(_s) if (*_s == '"') _s++; if (end_of(_s) == '"') end_of(_s) = '\0'
+
+static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t **results)
+{
+	char *str = ldns_rr2str(naptr);
+	char *argv[11] = { 0 };
+	int i, argc;
+	char *pack[4] = { 0 };
+	int packc;
+
+	char *p;
+	int order = 10;
+	int preference = 100;
 	char *service = NULL;
-	char *regex = NULL;
-	char *replace = NULL;
-	char *ptr;
-	int argc = 0;
-	char *argv[4] = { 0 };
-	int n;
-	char string_arg[3][256] = { {0} };
+	char *packstr;
 
-	switch (rr->dnsrr_typ) {
-	case DNS_T_NAPTR:			/* prio weight port targetDN */
-		c = dptr;
-		c += 4;					/* order, pref */
-
-		for (n = 0; n < 3; ++n) {
-			if (c >= dend) {
-				goto xperr;
-			} else {
-				c += *c + 1;
-			}
-		}
-
-		if (dns_getdn(pkt, &c, end, dn, DNS_MAXDN) <= 0 || c != dend) {
-			goto xperr;
-		}
-
-		c = dptr;
-		order = dns_get16(c + 0);
-		preference = dns_get16(c + 2);
-		flags = (char) dns_get16(c + 4);
-		c += 4;
-
-		for (n = 0; n < 3; n++) {
-			uint32_t len = *c++, cpylen = len;
-			switch_assert(string_arg[n]);
-			if (len > sizeof(string_arg[n]) - 1) {
-				cpylen = sizeof(string_arg[n]) - 1;
-			}
-			strncpy(string_arg[n], (char *) c, cpylen);
-			*(string_arg[n] + len) = '\0';
-			c += len;
-		}
-
-		service = string_arg[1];
-
-		if ((argc = switch_separate_string(string_arg[2], '!', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-			regex = argv[1];
-			replace = argv[2];
-		} else {
-			goto xperr;
-		}
-
-		for (ptr = replace; ptr && *ptr; ptr++) {
-			if (*ptr == '\\') {
-				*ptr = '$';
-			}
-		}
-
-		if (flags && service && regex && replace) {
-			switch_regex_t *re = NULL;
-			int proceed = 0, ovector[30];
-			char substituted[1024] = "";
-			char rbuf[1024] = "";
-			char *uri;
-			enum_route_t *route;
-			int supported = 0;
-			switch_regex_safe_free(re);
-
-			if ((proceed = switch_regex_perform(q->number, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-				if (strchr(regex, '(')) {
-					switch_perform_substitution(re, proceed, replace, q->number, substituted, sizeof(substituted), ovector);
-					uri = substituted;
-				} else {
-					uri = replace;
-				}
-
-				switch_mutex_lock(MUTEX);
-				for (route = globals.route_order; route; route = route->next) {
-					if (strcasecmp(service, route->service)) {
-						continue;
-					}
-					switch_regex_safe_free(re);
-					if ((proceed = switch_regex_perform(uri, route->regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-						if (strchr(route->regex, '(')) {
-							switch_perform_substitution(re, proceed, route->replace, uri, rbuf, sizeof(rbuf), ovector);
-							uri = rbuf;
-						} else {
-							uri = route->replace;
-						}
-						supported++;
-						add_result(q, order, preference, service, uri, supported);
-					}
-				}
-
-				if (!supported) {
-					add_result(q, order, preference, service, uri, 0);
-				}
-			}
-			switch_mutex_unlock(MUTEX);
-
-
-			switch_regex_safe_free(re);
-		}
-
-		break;
-
-	default:
-		break;
+	char *regex, *replace;
+	
+	if (zstr(str)) {
+		return;
 	}
 
-	return;
+	for (p = str; p && *p; p++) {
+		if (*p == '\t') *p = ' ';
+		if (*p == ' ' && *(p+1) == '.') *p = '\0';
+	}
 
-  xperr:
 
+	argc = switch_split(str, ' ', argv);
+
+	for (i = 0; i < argc; i++) {
+		if (i > 0) {
+			strip_quotes(argv[i]);
+		}
+	}
+
+	service = argv[7];
+	packstr = argv[8];
+
+	if (zstr(service) || zstr(packstr)) {
+		goto end;
+	}
+	
+	if (!zstr(argv[4])) {
+		order = atoi(argv[4]);
+	}
+
+	if (!zstr(argv[5])) {
+		preference = atoi(argv[5]);
+	}
+
+
+	if ((packc = switch_split(packstr, '!', pack))) {
+		regex = pack[1];
+		replace = pack[2];
+	} else {
+		goto end;
+	}
+	
+	for (p = replace; p && *p; p++) {
+		if (*p == '\\') {
+			*p = '$';
+		}
+	}
+
+	if (service && regex && replace) {
+		switch_regex_t *re = NULL, *re2 = NULL;
+		int proceed = 0, ovector[30];
+		char substituted[1024] = "";
+		char rbuf[1024] = "";
+		char *uri;
+		enum_route_t *route;
+		int supported = 0;
+
+		if ((proceed = switch_regex_perform(number, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			if (strchr(regex, '(')) {
+				switch_perform_substitution(re, proceed, replace, number, substituted, sizeof(substituted), ovector);
+				uri = substituted;
+			} else {
+				uri = replace;
+			}
+			
+			switch_mutex_lock(MUTEX);
+			for (route = globals.route_order; route; route = route->next) {
+				if (strcasecmp(service, route->service)) {
+					continue;
+				}
+
+				if ((proceed = switch_regex_perform(uri, route->regex, &re2, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+					if (strchr(route->regex, '(')) {
+						switch_perform_substitution(re2, proceed, route->replace, uri, rbuf, sizeof(rbuf), ovector);
+						uri = rbuf;
+					} else {
+						uri = route->replace;
+					}
+					supported++;
+					add_result(results, order, preference, service, uri, supported);
+				}
+				switch_regex_safe_free(re2);
+			}
+			switch_mutex_unlock(MUTEX);			
+
+			if (!supported) {
+				add_result(results, order, preference, service, uri, 0);
+			}
+
+			switch_regex_safe_free(re);
+		}
+	}
+
+ end:
+
+	switch_safe_free(str);
+	
 	return;
 }
 
-static void dnscb(struct dns_ctx *ctx, void *result, void *data)
+
+switch_status_t ldns_lookup(const char *number, const char *root, const char *server_name, enum_record_t **results)
 {
-	int r = dns_status(ctx);
-	enum_query_t *q = data;
-	struct dns_parse p;
-	struct dns_rr rr;
-	unsigned nrr;
-	unsigned char dn[DNS_MAXDN];
-	const unsigned char *pkt, *cur, *end, *qdn;
-	if (!result) {
-		dnserror(q, r);
-		return;
+	ldns_resolver *res = NULL;
+	ldns_rdf *domain = NULL;
+	ldns_pkt *p = NULL;
+	ldns_rr_list *naptr = NULL;
+	ldns_status s = LDNS_STATUS_ERR;
+	ldns_rdf *serv_rdf;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *name = NULL;
+	struct timeval to = { 0, 0};
+
+	if (!(name = reverse_number(number, root))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parse Error!\n");
+		goto end;
 	}
-	pkt = result;
-	end = pkt + r;
-	cur = dns_payload(pkt);
-	dns_getdn(pkt, &cur, end, dn, sizeof(dn));
-	dns_initparse(&p, NULL, pkt, cur, end);
-	p.dnsp_qcls = 0;
-	p.dnsp_qtyp = 0;
-	qdn = dn;
-	nrr = 0;
-	while ((r = dns_nextrr(&p, &rr)) > 0) {
-		if (!dns_dnequal(qdn, rr.dnsrr_dn))
-			continue;
-		if ((qcls == DNS_C_ANY || qcls == rr.dnsrr_cls) && (q->qtyp == DNS_T_ANY || q->qtyp == rr.dnsrr_typ))
-			++nrr;
-		else if (rr.dnsrr_typ == DNS_T_CNAME && !nrr) {
-			if (dns_getdn(pkt, &rr.dnsrr_dptr, end, p.dnsp_dnbuf, sizeof(p.dnsp_dnbuf)) <= 0 || rr.dnsrr_dptr != rr.dnsrr_dend) {
-				r = DNS_E_PROTOCOL;
-				break;
-			} else {
-				qdn = p.dnsp_dnbuf;
+	
+	if (!(domain = ldns_dname_new_frm_str(name))) {
+		goto end;
+	}
+
+	if (!zstr(server_name)) {
+		res = ldns_resolver_new();
+		switch_assert(res);
+		
+		if ((serv_rdf = ldns_rdf_new_addr_frm_str(server_name))) {
+			s = ldns_resolver_push_nameserver(res, serv_rdf);
+			ldns_rdf_deep_free(serv_rdf);
+		}
+	} else {
+		/* create a new resolver from /etc/resolv.conf */
+		s = ldns_resolver_new_frm_file(&res, NULL);
+	}
+
+	if (s != LDNS_STATUS_OK) {
+		goto end;
+	}
+
+	to.tv_sec = globals.timeout / 1000;
+	to.tv_usec = (globals.timeout % 1000) * 1000;
+
+	ldns_resolver_set_timeout(res, to);
+	ldns_resolver_set_retry(res, (uint8_t)globals.retries);
+	ldns_resolver_set_random(res, globals.random);
+
+	if ((p = ldns_resolver_query(res,
+								 domain,
+								 LDNS_RR_TYPE_NAPTR,
+								 LDNS_RR_CLASS_IN,
+								 LDNS_RD))) {
+		/* retrieve the NAPTR records from the answer section of that
+		 * packet
+		 */
+
+		if ((naptr = ldns_pkt_rr_list_by_type(p, LDNS_RR_TYPE_NAPTR, LDNS_SECTION_ANSWER))) {
+			size_t i;
+
+			ldns_rr_list_sort(naptr); 
+
+			for (i = 0; i < ldns_rr_list_rr_count(naptr); i++) {
+				parse_naptr(ldns_rr_list_rr(naptr, i), number, results);
 			}
+
+			//ldns_rr_list_print(stdout, naptr);
+			ldns_rr_list_deep_free(naptr);
+			status = SWITCH_STATUS_SUCCESS;
 		}
 	}
-	if (!r && !nrr)
-		r = DNS_E_NODATA;
-	if (r < 0) {
-		dnserror(q, r);
-		free(result);
-		return;
+
+ end:
+
+	switch_safe_free(name);
+	
+	if (domain) {
+		ldns_rdf_deep_free(domain);
 	}
 
-	dns_rewind(&p, NULL);
-	p.dnsp_qtyp = q->qtyp;
-	p.dnsp_qcls = qcls;
-	while (dns_nextrr(&p, &rr)) {
-		parse_rr(&p, q, &rr);
+	if (p) {
+		ldns_pkt_free(p);
 	}
 
-	free(result);
+	if (res) {
+		ldns_resolver_deep_free(res);
+	}
+
+	return status;
 }
 
-static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** results)
+static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results)
 {
 	switch_status_t sstatus = SWITCH_STATUS_SUCCESS;
-	char *name = NULL;
-	enum_query_t query = { 0 };
-	enum dns_type l_qtyp = DNS_T_NAPTR;
-	int i = 0, abs = 0, j = 0;
-	dns_socket fd = (dns_socket) - 1;
-	fd_set fds;
-	struct timeval tv = { 0 };
-	time_t now = 0;
-	struct dns_ctx *nctx = NULL;
-	char *num, *mnum = NULL, *mroot = NULL, *p;
+	char *mnum = NULL, *mroot = NULL, *p;
+	char *server = NULL;
 
 	*results = NULL;
 
@@ -475,87 +514,13 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 		root = globals.root;
 	}
 
-	num = mnum;
-	if (!(name = reverse_number(num, root))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parse Error!\n");
-		sstatus = SWITCH_STATUS_FALSE;
-		goto done;
+
+	if (!(server = switch_core_get_variable("enum-server"))) {
+		server = globals.server;
 	}
 
-	if (!(nctx = dns_new(NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Memory Error!\n");
-		sstatus = SWITCH_STATUS_MEMERR;
-		goto done;
-	}
+	ldns_lookup(mnum, root, server, results);
 
-	fd = dns_open(nctx);
-
-	if (fd < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FD Error!\n");
-		sstatus = SWITCH_STATUS_FALSE;
-		goto done;
-	}
-
-	dns_ptodn(name, (unsigned int) strlen(name), query.dn, sizeof(query.dn), &abs);
-	query.name = name;
-	query.number = num;
-	query.qtyp = l_qtyp;
-
-	if (abs) {
-		abs = DNS_NOSRCH;
-	}
-
-	if (!dns_submit_dn(nctx, query.dn, qcls, l_qtyp, abs, 0, dnscb, &query)) {
-		dnserror(&query, dns_status(nctx));
-	}
-
-	FD_ZERO(&fds);
-	now = 0;
-
-	while ((i = dns_timeouts(nctx, 1, now)) > 0) {
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4389 4127)
-#endif
-		FD_SET(fd, &fds);
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
-		j += i;
-
-		if (j > globals.timeout || query.results || query.errs) {
-			break;
-		}
-
-		tv.tv_sec = i;
-		tv.tv_usec = 0;
-		i = select((int) (fd + 1), &fds, 0, 0, &tv);
-		now = switch_epoch_time_now(NULL);
-		if (i > 0) {
-			dns_ioevent(nctx, now);
-		}
-	}
-
-	if (!query.results) {
-		sstatus = SWITCH_STATUS_FALSE;
-	}
-
-	*results = query.results;
-	query.results = NULL;
-
-  done:
-
-	if (fd > -1) {
-		closesocket(fd);
-		fd = (dns_socket) - 1;
-	}
-
-	if (nctx) {
-		dns_free(nctx);
-	}
-
-	switch_safe_free(name);
 	switch_safe_free(mnum);
 	switch_safe_free(mroot);
 
@@ -623,15 +588,17 @@ SWITCH_STANDARD_APP(enum_app_function)
 		dest = argv[0];
 		root = argv[1];
 		if (enum_lookup(root, dest, &results) == SWITCH_STATUS_SUCCESS) {
-			switch_event_header_t *hi;
-			if ((hi = switch_channel_variable_first(channel))) {
-				for (; hi; hi = hi->next) {
+			switch_event_t *vars;
+			
+			if (switch_channel_get_variables(channel, &vars) == SWITCH_STATUS_SUCCESS) {
+				switch_event_header_t *hi;
+				for (hi = vars->headers; hi; hi = hi->next) {
 					char *vvar = hi->name;
 					if (vvar && !strncmp(vvar, "enum_", 5)) {
 						switch_channel_set_variable(channel, (char *) vvar, NULL);
 					}
 				}
-				switch_channel_variable_last(channel);
+				switch_event_destroy(&vars);
 			}
 
 			for (rp = results; rp; rp = rp->next) {
@@ -823,9 +790,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 		return SWITCH_STATUS_TERM;
 	}
 
-	if (dns_init(0) < 0) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	memset(&globals, 0, sizeof(globals));
 	do_load();
@@ -852,8 +816,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 	}
 
 	switch_safe_free(globals.root);
+	switch_safe_free(globals.server);
 	switch_safe_free(globals.isn_root);
-
+	
 	return SWITCH_STATUS_UNLOAD;
 }
 

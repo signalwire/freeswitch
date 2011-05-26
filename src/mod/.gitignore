@@ -9,8 +9,6 @@
 /applications/mod_conference/Makefile
 /applications/mod_db/Makefile
 /applications/mod_dptools/Makefile
-/applications/mod_enum/Makefile
-/applications/mod_enum/Makefile.in
 /applications/mod_enum/mod_enum.log
 /applications/mod_expr/Makefile
 /applications/mod_expr/Makefile.in
@@ -31,6 +29,7 @@
 /endpoints/mod_portaudio/Makefile.in
 /endpoints/mod_skinny/Makefile
 /endpoints/mod_skinny/Makefile.in
+/endpoints/mod_skinny/mod_skinny.log
 /endpoints/mod_skypopen/Makefile
 /endpoints/mod_skypopen/Makefile.in
 /endpoints/mod_sofia/Makefile

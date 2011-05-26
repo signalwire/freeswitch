@@ -429,13 +429,13 @@ void *sub_alloc(su_home_t *home,
 
   if (sub == NULL || 3 * sub->sub_used > 2 * sub->sub_n) {
     /* Resize the hash table */
-    size_t i, n, n2, used;
+    size_t i, n, n2;
     su_block_t *b2;
 
     if (sub)
-      n = home->suh_blocks->sub_n, n2 = 4 * n + 3, used = sub->sub_used;
+      n = home->suh_blocks->sub_n, n2 = 4 * n + 3; //, used = sub->sub_used;
     else
-      n = 0, n2 = SUB_N, used = 0;
+      n = 0, n2 = SUB_N; //, used = 0;
 
 #if 0
     printf("su_alloc(home = %p): realloc block hash of size %d\n", home, n2);

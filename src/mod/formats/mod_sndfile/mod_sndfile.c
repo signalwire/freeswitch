@@ -339,7 +339,6 @@ static char **supported_formats;
 static switch_status_t setup_formats(void)
 {
 	SF_FORMAT_INFO info;
-	SF_INFO sfinfo;
 	char buffer[128];
 	int format, major_count, subtype_count, m, s;
 	int len, x, skip;
@@ -358,7 +357,7 @@ static switch_status_t setup_formats(void)
 	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
 	sf_command(NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof(int));
 
-	sfinfo.channels = 1;
+	//sfinfo.channels = 1;
 	len = ((major_count + (exlen + 2)) * sizeof(char *));
 	supported_formats = switch_core_permanent_alloc(len);
 
@@ -402,7 +401,7 @@ static switch_status_t setup_formats(void)
 			info.format = s;
 			sf_command(NULL, SFC_GET_FORMAT_SUBTYPE, &info, sizeof(info));
 			format = (format & SF_FORMAT_TYPEMASK) | info.format;
-			sfinfo.format = format;
+			//sfinfo.format = format;
 			/*
 			   if (sf_format_check(&sfinfo)) {
 			   switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "   %s\n", info.name);

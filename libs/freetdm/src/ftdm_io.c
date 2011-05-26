@@ -244,6 +244,7 @@ static struct {
 	ftdm_caller_data_t *call_ids[MAX_CALLIDS+1];
 	ftdm_mutex_t *call_id_mutex;
 	uint32_t last_call_id;
+	char dtmfdebug_directory[1024];
 } globals;
 
 enum ftdm_enum_cpu_alarm_action_flags
@@ -309,21 +310,6 @@ FTDM_STR2ENUM(ftdm_str2channel_indication, ftdm_channel_indication2str, ftdm_cha
 
 static ftdm_status_t ftdm_group_add_channels(ftdm_span_t* span, int currindex, const char* name);
 
-static const char *cut_path(const char *in)
-{
-	const char *p, *ret = in;
-	char delims[] = "/\\";
-	char *i;
-
-	for (i = delims; *i; i++) {
-		p = in;
-		while ((p = strchr(p, *i)) != 0) {
-			ret = ++p;
-		}
-	}
-	return ret;
-}
-
 static void null_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
 	if (file && func && line && level && fmt) {
@@ -349,7 +335,6 @@ static int ftdm_log_level = FTDM_LOG_LEVEL_DEBUG;
 
 static void default_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
-	const char *fp;
 	char data[1024];
 	va_list ap;
 
@@ -359,13 +344,10 @@ static void default_logger(const char *file, const char *func, int line, int lev
 	if (level > ftdm_log_level) {
 		return;
 	}
-	
-	fp = cut_path(file);
 
 	va_start(ap, fmt);
 
 	vsnprintf(data, sizeof(data), fmt, ap);
-
 
 	fprintf(stderr, "[%s] %s:%d %s() %s", FTDM_LEVEL_NAMES[level], file, line, func, data);
 
@@ -410,13 +392,13 @@ FT_DECLARE(void) ftdm_set_echocancel_call_begin(ftdm_channel_t *chan)
 	if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC)) {
 		if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE)) {
 			/* If the ec is disabled on idle, we need to enable it unless is a digital call */
-			if (caller_data->bearer_capability != FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+			if (caller_data->bearer_capability != FTDM_BEARER_CAP_UNRESTRICTED) {
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Enabling ec for call in channel state %s\n", ftdm_channel_state2str(chan->state));
 				ftdm_channel_command(chan, FTDM_COMMAND_ENABLE_ECHOCANCEL, NULL);
 			}
 		} else {
 			/* If the ec is enabled on idle, we do nothing unless is a digital call that needs it disabled */
-			if (caller_data->bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+			if (caller_data->bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Disabling ec for digital call in channel state %s\n", ftdm_channel_state2str(chan->state));
 				ftdm_channel_command(chan, FTDM_COMMAND_DISABLE_ECHOCANCEL, NULL);
 			}
@@ -507,13 +489,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan,
 {
 	ftdm_status_t err = FTDM_SUCCESS;
 	if (!ftdmchan) {
-		ftdm_log(FTDM_LOG_CRIT, "Error: trying to set caller data, but no ftdmchan!\n");
+		ftdm_log(FTDM_LOG_CRIT, "trying to set caller data, but no ftdmchan!\n");
 		return FTDM_FAIL;
 	}
 	if ((err = ftdm_set_caller_data(ftdmchan->span, caller_data)) != FTDM_SUCCESS) {
 		return err; 
 	}
 	ftdmchan->caller_data = *caller_data;
+	if (ftdmchan->caller_data.bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA);
+	}
 	return FTDM_SUCCESS;
 }
 
@@ -2310,7 +2295,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_IND_ACK_PENDING);
 	}
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+	if (indication != FTDM_CHANNEL_INDICATE_FACILITY &&
+	    ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "Cannot indicate %s in outgoing channel in state %s\n",
 				ftdm_channel_indication2str(indication), ftdm_channel_state2str(ftdmchan->state));
 		status = FTDM_EINVAL;
@@ -2525,20 +2512,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_sig_status(ftdm_channel_t *fchan, ftd
 
 	ftdm_channel_lock(fchan);
 
-	if (ftdm_test_flag(fchan, FTDM_CHANNEL_IN_ALARM)) {
-		ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "You can not set the signaling status of an alarmed channel\n");
-		res = FTDM_EINVAL;
-		goto done;
-	}
-
-	if (sigstatus == FTDM_SIG_STATE_DOWN) {
-		ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "You can not set the signaling status to DOWN, valid states are UP or SUSPENDED\n");
-		res = FTDM_EINVAL;
-		goto done;
-	}
-
 	res = fchan->span->set_channel_sig_status(fchan, sigstatus);
-done:
 
 	ftdm_channel_unlock(fchan);
 
@@ -2638,6 +2612,7 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_MEDIA);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_ANSWERED);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_USER_HANGUP);
+	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA);
 	ftdm_mutex_lock(ftdmchan->pre_buffer_mutex);
 	ftdm_buffer_destroy(&ftdmchan->pre_buffer);
 	ftdmchan->pre_buffer_size = 0;
@@ -3469,7 +3444,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 	if (!ftdmchan->dtmfdbg.file) {
 		struct tm currtime;
 		time_t currsec;
-		char dfile[512];
+		char dfile[1024];
 
 		currsec = time(NULL);
 
@@ -3480,10 +3455,18 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 		localtime_r(&currsec, &currtime);
 #endif
 
-		snprintf(dfile, sizeof(dfile), "dtmf-s%dc%d-20%d-%d-%d-%d:%d:%d.%s", 
-				ftdmchan->span_id, ftdmchan->chan_id, 
-				currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
-				currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
+		if (ftdm_strlen_zero(globals.dtmfdebug_directory)) {
+			snprintf(dfile, sizeof(dfile), "dtmf-s%dc%d-20%d-%d-%d-%d:%d:%d.%s", 
+					ftdmchan->span_id, ftdmchan->chan_id, 
+					currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
+					currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
+		} else {
+			snprintf(dfile, sizeof(dfile), "%s/dtmf-s%dc%d-20%d-%d-%d-%d:%d:%d.%s", 
+					globals.dtmfdebug_directory,
+					ftdmchan->span_id, ftdmchan->chan_id, 
+					currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
+					currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
+		}
 		ftdmchan->dtmfdbg.file = fopen(dfile, "wb");	
 		if (!ftdmchan->dtmfdbg.file) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "failed to open debug dtmf file %s\n", dfile);
@@ -3565,6 +3548,16 @@ static FIO_WRITE_FUNCTION(ftdm_raw_write)
 static FIO_READ_FUNCTION(ftdm_raw_read)
 {
 	ftdm_status_t  status = ftdmchan->fio->read(ftdmchan, data, datalen);
+
+	if (status == FTDM_SUCCESS && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_USE_RX_GAIN) 
+	   && (ftdmchan->native_codec == FTDM_CODEC_ALAW || ftdmchan->native_codec == FTDM_CODEC_ULAW)) {
+		ftdm_size_t i = 0;
+		unsigned char *rdata = data;
+		for (i = 0; i < *datalen; i++) {
+			rdata[i] = ftdmchan->rxgain_table[rdata[i]];
+		}
+	}
+
 	if (status == FTDM_SUCCESS && ftdmchan->fds[FTDM_READ_TRACE_INDEX] > -1) {
 		ftdm_size_t dlen = *datalen;
 		if ((ftdm_size_t)write(ftdmchan->fds[FTDM_READ_TRACE_INDEX], data, (int)dlen) != dlen) {
@@ -3732,7 +3725,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 	ftdm_status_t status = FTDM_FAIL;
 	fio_codec_t codec_func = NULL;
 	ftdm_size_t max = *datalen;
-	unsigned i = 0;
 
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "ftdmchan is null\n");
 	ftdm_assert_return(ftdmchan->fio != NULL, FTDM_FAIL, "No I/O module attached to ftdmchan\n");
@@ -3771,14 +3763,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 		goto done;
 	}
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_USE_RX_GAIN) 
-		&& (ftdmchan->native_codec == FTDM_CODEC_ALAW || ftdmchan->native_codec == FTDM_CODEC_ULAW)) {
-		unsigned char *rdata = data;
-		for (i = 0; i < *datalen; i++) {
-			rdata[i] = ftdmchan->rxgain_table[rdata[i]];
-		}
-	}
 	handle_tone_generation(ftdmchan);
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA)) {
+		goto done;
+	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE) && ftdmchan->effective_codec != ftdmchan->native_codec) {
 		if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
@@ -3934,7 +3923,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 		ftdm_mutex_unlock(ftdmchan->pre_buffer_mutex);
 
 
-		memset(data, 255, *datalen);
+		memset(data, FTDM_SILENCE_VALUE(ftdmchan), *datalen);
 
 		if (ftdmchan->skip_read_frames > 0) {
 			ftdmchan->skip_read_frames--;
@@ -3946,7 +3935,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 			if (ftdm_buffer_inuse(ftdmchan->pre_buffer) >= ftdmchan->pre_buffer_size) {
 				ftdm_buffer_read(ftdmchan->pre_buffer, data, *datalen);
 			} else {
-				memset(data, 255, *datalen);
+				memset(data, FTDM_SILENCE_VALUE(ftdmchan), *datalen);
 			}
 		}
 		ftdm_mutex_unlock(ftdmchan->pre_buffer_mutex);
@@ -3994,6 +3983,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 		status = FTDM_FAIL;
 		goto done;
 	}
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA)) {
+		goto do_write;
+	}
 	
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE) && ftdmchan->effective_codec != ftdmchan->native_codec) {
 		if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
@@ -4024,6 +4017,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 			wdata[i] = ftdmchan->txgain_table[wdata[i]];
 		}
 	}
+
+do_write:
 
 	if (ftdmchan->span->sig_write) {
 		status = ftdmchan->span->sig_write(ftdmchan, data, *datalen);
@@ -4697,6 +4692,9 @@ static ftdm_status_t load_config(void)
 						globals.cpu_monitor.alarm_action_flags |= FTDM_CPU_ALARM_ACTION_WARN;
 					}
 				}
+			} else if (!strncasecmp(var, "debugdtmf_directory", sizeof("debugdtmf_directory")-1)) {
+				ftdm_set_string(globals.dtmfdebug_directory, val);
+				ftdm_log(FTDM_LOG_DEBUG, "Debug DTMF directory set to '%s'\n", globals.dtmfdebug_directory);
 			} else if (!strncasecmp(var, "cpu_monitoring_interval", sizeof("cpu_monitoring_interval")-1)) {
 				if (atoi(val) > 0) {
 					globals.cpu_monitor.interval = atoi(val);
@@ -5371,10 +5369,12 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED);
 			ftdm_call_set_call_id(sigmsg->channel, &sigmsg->channel->caller_data);
 			/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
-			* doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
-			* is needed at all?
-			* */
+			 * doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
+			 * is needed at all? */
 			ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
+			if (sigmsg->channel->caller_data.bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
+				ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_DIGITAL_MEDIA);
+			}
 		}
 		break;
 
@@ -6057,9 +6057,12 @@ FT_DECLARE(ftdm_status_t) ftdm_sigmsg_get_raw_data_detached(ftdm_sigmsg_t *sigms
 	if (!sigmsg || !sigmsg->raw.len) {
 		return FTDM_FAIL;
 	}
-	
+
 	*data = sigmsg->raw.data;
-	*datalen = sigmsg->raw.len;		
+	*datalen = sigmsg->raw.len;
+
+	sigmsg->raw.data = NULL;
+	sigmsg->raw.len = 0;
 	return FTDM_SUCCESS;
 }
 

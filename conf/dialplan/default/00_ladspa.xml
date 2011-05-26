@@ -1,0 +1,77 @@
+<include>
+  
+  <X-PRE-PROCESS cmd="set" data="AT_EPENT1=0 0 0 -1 -1 0 -1 0 -1 -1 0 -1"/>
+  <X-PRE-PROCESS cmd="set" data="AT_EPENT2=1 1 1 -1 -1 1 -1 1 -1 -1 1 -1"/>
+  <X-PRE-PROCESS cmd="set" data="AT_CPENT1=0 -1 -1 0 -1 0 0 0 -1 -1 0 -1"/>
+  <X-PRE-PROCESS cmd="set" data="AT_CPENT2=1 -1 -1 1 -1 1 1 1 -1 -1 1 -1"/>
+  <X-PRE-PROCESS cmd="set" data="AT_CMAJ1=0 -1 0 0 -1 0 -1 0 0 -1 0 -1"/>
+  <X-PRE-PROCESS cmd="set" data="AT_CMAJ2=1 -1 1 1 -1 1 -1 1 1 -1 1 -1"/>
+  <X-PRE-PROCESS cmd="set" data="AT_BBLUES=1 -1 1 -1 -1 1 -1 1 1 1 -1 -1"/>
+  <X-PRE-PROCESS cmd="set" data="ATGPENT2=-1 1 -1 1 -1 1 -1 -1 1 -1 1 -1"/>
+  
+  <extension name="101"> 
+    <condition field="destination_number" expression="^101$"> 
+      <!-- AUTOTALENT DEFAULTS -->
+
+      <!--
+      <action application="set" data="AT_TUNE=440"/>
+      <action application="set" data="AT_FIXED=0"/>
+      <action application="set" data="AT_PULL=0"/>
+      <action application="set" data="AT_A=0"/>
+      <action application="set" data="AT_Bb=-1"/>
+      <action application="set" data="AT_B=0"/>
+      <action application="set" data="AT_C=0"/>
+      <action application="set" data="AT_Db=-1"/>
+      <action application="set" data="AT_D=0"/>
+      <action application="set" data="AT_Eb=-1"/>
+      <action application="set" data="AT_E=0"/>
+      <action application="set" data="AT_F=0"/>
+      <action application="set" data="AT_Gb=-1"/>
+      <action application="set" data="AT_G=0"/>
+      <action application="set" data="AT_Ab=-1"/>
+      <action application="set" data="AT_AMOUNT=1"/>
+      <action application="set" data="AT_SMOOTH=0"/>
+      <action application="set" data="AT_SHIFT=0"/>
+      <action application="set" data="AT_OUTSCALE=0"/>
+      <action application="set" data="AT_LFODEPTH=0"/>
+      <action application="set" data="AT_LFORATE=5"/>
+      <action application="set" data="AT_LFOSHAPE=0"/>
+      <action application="set" data="AT_LFOSYMM=0"/>
+      <action application="set" data="AT_LFOQUANT=0"/>
+      <action application="set" data="AT_FCORR=0"/>
+      <action application="set" data="AT_FWARP=0"/>
+      <action application="set" data="AT_MIX=1"/>
+      -->
+
+
+      <action application="set" data="AT_TUNE=440"/>
+      <action application="set" data="AT_FIXED=0"/>
+      <action application="set" data="AT_PULL=0"/>
+
+      <action application="set" data="AT_AMOUNT=1"/>
+      <action application="set" data="AT_SMOOTH=0"/>
+      <action application="set" data="AT_SHIFT=1"/>
+      <action application="set" data="AT_OUTSCALE=0"/>
+      <action application="set" data="AT_LFODEPTH=0"/>
+      <action application="set" data="AT_LFORATE=5"/>
+      <action application="set" data="AT_LFOSHAPE=0"/>
+      <action application="set" data="AT_LFOSYMM=0"/>
+      <action application="set" data="AT_LFOQUANT=0"/>
+      <action application="set" data="AT_FCORR=0"/>
+      <action application="set" data="AT_FWARP=0"/>
+      <action application="set" data="AT_MIX=1"/>
+
+      <!-- you have to download the ladspa package and the desired plugins from their desired site -->
+
+
+      <action application="set"><![CDATA[ladspa_params=${AT_TUNE} ${AT_FIXED} ${AT_PULL} ${AT_EPENT2} ${AT_AMOUNT} ${AT_SMOOTH} ${AT_SHIFT} ${AT_OUTSCALE} ${AT_LFODEPTH} ${AT_LFORATE} ${AT_LFOSHAPE} ${AT_LFOSYMM} ${AT_LFOQUANT} ${AT_FCORR} ${AT_FWARP} ${AT_MIX}]]></action>
+      
+      <action application="ladspa_run" data="r|autotalent||${ladspa_params}"/>
+      <action application="ladspa_run" data="r|tap_chorusflanger||"/>
+      <action application="ladspa_run" data="r|phasers_1217.so|autoPhaser|"/>
+      <action application="bridge" data="sofia/internal/888@conference.freeswitch.org"/>
+
+      </condition> 
+  </extension> 
+
+</include>

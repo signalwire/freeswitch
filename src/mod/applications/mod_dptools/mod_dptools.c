@@ -29,6 +29,7 @@
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
+ * Cesar Cepeda <cesar@auronix.com>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -1032,7 +1033,7 @@ SWITCH_STANDARD_APP(sched_cancel_function)
 	switch_scheduler_del_task_group(group);
 }
 
-SWITCH_STANDARD_APP(set_function)
+static void base_set (switch_core_session_t *session, const char *data, switch_stack_t stack)
 {
 	char *var, *val = NULL;
 
@@ -1043,7 +1044,10 @@ SWITCH_STANDARD_APP(set_function)
 		char *expanded = NULL;
 
 		var = switch_core_session_strdup(session, data);
-		val = strchr(var, '=');
+
+		if (!(val = strchr(var, '='))) {
+			val = strchr(var, ',');
+		}
 
 		if (val) {
 			*val++ = '\0';
@@ -1058,12 +1062,27 @@ SWITCH_STANDARD_APP(set_function)
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SET [%s]=[%s]\n", switch_channel_get_name(channel), var,
 						  expanded ? expanded : "UNDEF");
-		switch_channel_set_variable_var_check(channel, var, expanded, SWITCH_FALSE);
+		switch_channel_add_variable_var_check(channel, var, expanded, SWITCH_FALSE, stack);
 
 		if (expanded && expanded != val) {
 			switch_safe_free(expanded);
 		}
 	}
+}
+
+SWITCH_STANDARD_APP(set_function)
+{
+	base_set(session, data, SWITCH_STACK_BOTTOM);
+}
+
+SWITCH_STANDARD_APP(push_function)
+{
+	base_set(session, data, SWITCH_STACK_PUSH);
+}
+
+SWITCH_STANDARD_APP(unshift_function)
+{
+	base_set(session, data, SWITCH_STACK_UNSHIFT);
 }
 
 SWITCH_STANDARD_APP(set_global_function)
@@ -1551,7 +1570,8 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 	int argc;
 	char *mydata = NULL;
 	time_t to = 0;
-	int hits = 1;
+	int hits = 0;
+	const char *hp = NULL;
 
 	if (zstr(data) || !(mydata = switch_core_session_strdup(session, data))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID ARGS!\n");
@@ -1581,10 +1601,16 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 		}
 	}
 
-	if (argv[6]) {
-		hits = atoi(argv[6]);
+	if (argv[4] && argv[5]) {
+		hp = argv[6];
+	} else if (argv[4] && !argv[6]) {
+		hp = argv[4];
+	}
+
+	if (hp) {
+		hits = atoi(hp);
 		if (hits < 0) {
-			hits = 1;
+			hits = 0;
 		}
 	}
 
@@ -2077,7 +2103,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 							   prompt_audio_file, bad_input_audio_file, var_name, digit_buffer, sizeof(digit_buffer), digits_regex, digit_timeout);
 }
 
-#define SAY_SYNTAX "<module_name> <say_type> <say_method> [<say_gender>] <text>"
+#define SAY_SYNTAX "<module_name>[:<lang>] <say_type> <say_method> [<say_gender>] <text>"
 SWITCH_STANDARD_APP(say_function)
 {
 	char *argv[5] = { 0 };
@@ -2092,6 +2118,11 @@ SWITCH_STANDARD_APP(say_function)
 		args.input_callback = on_dtmf;
 
 		switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
+
+		/* Set default langauge according to the <module_name> */
+		if (!strchr(argv[0], ':')) {
+			argv[0] = switch_core_session_sprintf(session, "%s:%s", argv[0], argv[0]);
+		}
 
 		switch_ivr_say(session, (argc == 4) ? argv[3] : argv[4], argv[0], argv[1], argv[2], (argc == 5) ? argv[3] : NULL ,&args);
 	} else {
@@ -2277,6 +2308,26 @@ SWITCH_STANDARD_APP(stop_displace_session_function)
 	switch_ivr_stop_displace_session(session, data);
 }
 
+SWITCH_STANDARD_APP(capture_function)
+{
+	char *argv[3] = { 0 };
+	int argc;
+	switch_regex_t *re = NULL;
+	int ovector[30] = {0};
+	char *lbuf;
+	int proceed;
+	
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 3) {
+		if ((proceed = switch_regex_perform(argv[1], argv[2], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			switch_capture_regex(re, proceed, argv[1], ovector, argv[0], (switch_cap_callback_t)switch_regex_set_var_callback, session);
+		}
+		switch_regex_safe_free(re);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No data specified.\n");
+	}	
+}
+
 SWITCH_STANDARD_APP(record_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -2285,14 +2336,14 @@ SWITCH_STANDARD_APP(record_function)
 	char *path;
 	switch_input_args_t args = { 0 };
 	switch_file_handle_t fh = { 0 };
-	int argc;
+	//int argc;
 	char *mydata, *argv[4] = { 0 };
 	char *l = NULL;
 	const char *tmp;
 	int rate;
 
 	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
-		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No file specified.\n");
 		return;
@@ -2473,6 +2524,11 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 {
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
 	switch_core_session_t *peer_session = NULL;
+	
+	const char *transfer_on_fail = NULL;
+	char *tof_data = NULL;
+	char *tof_array[4] = { 0 };
+	//int tof_arrayc = 0;
 	const char *continue_on_fail = NULL, *failure_causes = NULL,
 		*v_campon = NULL, *v_campon_retries, *v_campon_sleep, *v_campon_timeout, *v_campon_fallback_exten = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -2489,8 +2545,14 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	}
 
 	continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
-	failure_causes = switch_channel_get_variable(caller_channel, "failure_causes");
 
+	transfer_on_fail = switch_channel_get_variable(caller_channel, "transfer_on_fail");
+	tof_data = switch_core_session_strdup(session, transfer_on_fail);
+	switch_split(tof_data, ' ', tof_array);
+   	transfer_on_fail = tof_array[0];
+	
+	failure_causes = switch_channel_get_variable(caller_channel, "failure_causes");
+	
 	if ((v_campon = switch_channel_get_variable(caller_channel, "campon")) && switch_true(v_campon)) {
 		const char *cid_name = NULL;
 		const char *cid_number = NULL;
@@ -2681,6 +2743,57 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 					return;
 				}
 			}
+			
+			if (transfer_on_fail || failure_causes) {
+				const char *cause_str;
+				char cause_num[35] = "";
+
+				cause_str = switch_channel_cause2str(cause);
+				switch_snprintf(cause_num, sizeof(cause_num), "%u", cause);
+
+				if ((tof_array[1] == NULL ) || (!strcasecmp(tof_array[1], "auto_cause"))){
+					tof_array[1] = (char *) cause_str;
+				}
+
+				if (failure_causes) {
+					char *lbuf = switch_core_session_strdup(session, failure_causes);
+					char *argv[256] = { 0 };
+					int argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+					int i, x = 0;
+
+					for (i = 0; i < argc; i++) {
+						if (!strcasecmp(argv[i], cause_str) || !strcasecmp(argv[i], cause_num)) {
+							x++;
+							break;
+						}
+					}
+					if (!x) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+										  "Failure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
+										  
+						switch_ivr_session_transfer(session, tof_array[1], tof_array[2], tof_array[3]);
+					}
+				}
+
+				if (transfer_on_fail) {
+					if (switch_true(transfer_on_fail)) {
+						return;
+					} else {
+						char *lbuf = switch_core_session_strdup(session, transfer_on_fail);
+						char *argv[256] = { 0 };
+						int argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+						int i;
+
+						for (i = 0; i < argc; i++) {
+							if (!strcasecmp(argv[i], cause_str) || !strcasecmp(argv[i], cause_num)) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+												  "Transfer on fail [%s]:  Cause: %s\n", transfer_on_fail, cause_str);
+								switch_ivr_session_transfer(session, tof_array[1], tof_array[2], tof_array[3]);
+							}
+						}
+					}
+				}
+			} 
 		}
 		if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && switch_channel_get_state(caller_channel) != CS_ROUTING) {
 			switch_channel_hangup(caller_channel, cause);
@@ -2789,7 +2902,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	if ((domain = strchr(group, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable_pdup("domain", switch_core_session_get_pool(session));
+		domain = switch_core_get_variable_dup("domain");
 		dup_domain = domain;
 	}
 
@@ -2890,7 +3003,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
 												 switch_call_cause_t *cancel_cause)
 {
-	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
+	switch_xml_t xml = NULL, x_user = NULL, x_param, x_params;
 	char *user = NULL, *domain = NULL, *dup_domain = NULL;
 	const char *dest = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
@@ -2937,46 +3050,10 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		var_event = NULL;
 	}
 	
-	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, &x_group, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id", user, domain, NULL, &x_user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", user, domain);
 		cause = SWITCH_CAUSE_SUBSCRIBER_ABSENT;
 		goto done;
-	}
-
-	if ((x_params = switch_xml_child(x_domain, "params"))) {
-		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
-			const char *pvar = switch_xml_attr(x_param, "name");
-			const char *val = switch_xml_attr(x_param, "value");
-
-			if (!strcasecmp(pvar, "dial-string")) {
-				dest = val;
-			} else if (!strncasecmp(pvar, "dial-var-", 9)) {
-				if (!var_event) {
-					switch_event_create(&var_event, SWITCH_EVENT_GENERAL);
-				} else {
-					switch_event_del_header(var_event, pvar + 9);
-				}
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, pvar + 9, val);
-			}
-		}
-	}
-
-	if ((x_params = switch_xml_child(x_group, "params"))) {
-		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
-			const char *pvar = switch_xml_attr(x_param, "name");
-			const char *val = switch_xml_attr(x_param, "value");
-
-			if (!strcasecmp(pvar, "dial-string")) {
-				dest = val;
-			} else if (!strncasecmp(pvar, "dial-var-", 9)) {
-				if (!var_event) {
-					switch_event_create(&var_event, SWITCH_EVENT_GENERAL);
-				} else {
-					switch_event_del_header(var_event, pvar + 9);
-				}
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, pvar + 9, val);
-			}
-		}
 	}
 
 	if ((x_params = switch_xml_child(x_user, "params"))) {
@@ -2996,8 +3073,9 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			}
 		}
 	}
-        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", user);
-        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+
+	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", user);
+	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 
 	if (!dest) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No dial-string available, please check your user directory.\n");
@@ -3090,14 +3168,6 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	}
 
 	if (new_channel && xml) {
-		if ((x_params = switch_xml_child(x_domain, "variables"))) {
-			for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
-				const char *pvar = switch_xml_attr(x_param, "name");
-				const char *val = switch_xml_attr(x_param, "value");
-				switch_channel_set_variable(new_channel, pvar, val);
-			}
-		}
-
 		if ((x_params = switch_xml_child(x_user, "variables"))) {
 			for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
 				const char *pvar = switch_xml_attr(x_param, "name");
@@ -3463,6 +3533,173 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 	}
 }
 
+
+
+/* FILE STRING INTERFACE */
+
+/* for apr_pstrcat */
+#define DEFAULT_PREBUFFER_SIZE 1024 * 64
+
+struct file_string_source;
+
+struct file_string_context {
+	char *argv[128];
+	int argc;
+	int index;
+	int samples;
+	switch_file_handle_t fh;
+};
+
+typedef struct file_string_context file_string_context_t;
+
+
+static int next_file(switch_file_handle_t *handle)
+{
+	file_string_context_t *context = handle->private_info;
+	char *file;
+	const char *prefix = handle->prefix;
+
+  top:
+
+	context->index++;
+
+	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
+		switch_core_file_close(&context->fh);
+	}
+
+	if (context->index >= context->argc) {
+		return 0;
+	}
+
+
+	if (!prefix) {
+		if (!(prefix = switch_core_get_variable_pdup("sound_prefix", handle->memory_pool))) {
+			prefix = SWITCH_GLOBAL_dirs.sounds_dir;
+		}
+	}
+
+	if (!prefix || switch_is_file_path(context->argv[context->index])) {
+		file = context->argv[context->index];
+	} else {
+		file = switch_core_sprintf(handle->memory_pool, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, context->argv[context->index]);
+	}
+
+	if (switch_core_file_open(&context->fh,
+							  file, handle->channels, handle->samplerate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+		goto top;
+	}
+
+	handle->samples = context->fh.samples;
+	handle->samplerate = context->fh.samplerate;
+	handle->channels = context->fh.channels;
+	handle->format = context->fh.format;
+	handle->sections = context->fh.sections;
+	handle->seekable = context->fh.seekable;
+	handle->speed = context->fh.speed;
+	handle->interval = context->fh.interval;
+
+	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
+		switch_set_flag(handle, SWITCH_FILE_NATIVE);
+	} else {
+		switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+	}
+
+
+	if (!switch_test_flag(handle, SWITCH_FILE_NATIVE)) {
+		if (context->index == 0) {
+			context->samples = (handle->samplerate / 1000) * 250;
+		}
+	}
+
+	return 1;
+}
+
+
+static switch_status_t file_string_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
+{
+	file_string_context_t *context = handle->private_info;
+
+	if (samples == 0 && whence == SEEK_SET) {
+		context->index = -1;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (!handle->seekable) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
+		return SWITCH_STATUS_NOTIMPL;
+	}
+
+	return switch_core_file_seek(&context->fh, cur_sample, samples, whence);
+}
+
+static switch_status_t file_string_file_open(switch_file_handle_t *handle, const char *path)
+{
+	file_string_context_t *context;
+	char *file_dup;
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This format does not support writing!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
+
+	file_dup = switch_core_strdup(handle->memory_pool, path);
+	context->argc = switch_separate_string(file_dup, '!', context->argv, (sizeof(context->argv) / sizeof(context->argv[0])));
+	context->index = -1;
+
+	handle->private_info = context;
+
+	return next_file(handle) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+static switch_status_t file_string_file_close(switch_file_handle_t *handle)
+{
+	file_string_context_t *context = handle->private_info;
+
+	switch_core_file_close(&context->fh);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t file_string_file_read(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	file_string_context_t *context = handle->private_info;
+	switch_status_t status;
+	size_t llen = *len;
+
+	if (context->samples > 0) {
+		if (*len > (size_t) context->samples) {
+			*len = context->samples;
+		}
+
+		context->samples -= *len;
+		memset(data, 255, *len *2);
+		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		status = switch_core_file_read(&context->fh, data, len);
+	}
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		if (!next_file(handle)) {
+			return SWITCH_STATUS_FALSE;
+		}
+		*len = llen;
+		status = switch_core_file_read(&context->fh, data, len);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/* Registration */
+
+static char *file_string_supported_formats[SWITCH_MAX_CODECS] = { 0 };
+
+
+/* /FILE STRING INTERFACE */
+
+
+
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -3484,9 +3721,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	switch_application_interface_t *app_interface;
 	switch_dialplan_interface_t *dp_interface;
 	switch_chat_interface_t *chat_interface;
+	switch_file_interface_t *file_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	file_string_supported_formats[0] = "file_string";
+
+	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens = file_string_supported_formats;
+	file_interface->file_open = file_string_file_open;
+	file_interface->file_close = file_string_file_close;
+	file_interface->file_read = file_string_file_read;
+	file_interface->file_seek = file_string_file_seek;
+
 
 	error_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	error_endpoint_interface->interface_name = "error";
@@ -3510,6 +3759,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 
 	SWITCH_ADD_APP(app_interface, "bind_digit_action", "bind a key sequence or regex to an action", 
 				   "bind a key sequence or regex to an action", bind_digit_action_function, BIND_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_APP(app_interface, "capture", "capture data into a var", "capture data into a var", 
+				   capture_function, "<varname>|<data>|<regex>", SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_APP(app_interface, "clear_digit_action", "clear all digit bindings", "", 
 				   clear_digit_action_function, CLEAR_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);
@@ -3558,6 +3810,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel variable", SET_LONG_DESC, set_function, "<varname>=<value>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+
+	SWITCH_ADD_APP(app_interface, "push", "Set a channel variable", SET_LONG_DESC, push_function, "<varname>=<value>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+
+	SWITCH_ADD_APP(app_interface, "unshift", "Set a channel variable", SET_LONG_DESC, unshift_function, "<varname>=<value>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+
 	SWITCH_ADD_APP(app_interface, "set_global", "Set a global variable", SET_GLOBAL_LONG_DESC, set_global_function, "<varname>=<value>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "set_profile_var", "Set a caller profile variable", SET_PROFILE_VAR_LONG_DESC, set_profile_var_function,

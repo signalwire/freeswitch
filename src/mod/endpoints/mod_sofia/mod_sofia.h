@@ -231,6 +231,7 @@ typedef enum {
 	PFLAG_PRESENCE_ON_FIRST_REGISTER,
 	PFLAG_NO_CONNECTION_REUSE,
 	PFLAG_RENEG_ON_HOLD,
+	PFLAG_RENEG_ON_REINVITE,
 	PFLAG_RTP_NOTIMER_DURING_BRIDGE,
 	/* No new flags below this line */
 	PFLAG_MAX
@@ -563,7 +564,8 @@ struct sofia_profile {
 	uint32_t reg_acl_count;
 	char *nat_acl[SOFIA_MAX_ACL];
 	uint32_t nat_acl_count;
-	int rport_level;
+	int server_rport_level;
+	int client_rport_level;
 	sofia_presence_type_t pres_type;
 	sofia_media_options_t media_options;
 	uint32_t force_subscription_expires;

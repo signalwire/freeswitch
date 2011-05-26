@@ -58,7 +58,10 @@ static char devices_sql[] =
 	"   type             INTEGER,\n"
 	"   max_streams      INTEGER,\n"
 	"   port             INTEGER,\n"
-	"   codec_string     VARCHAR(255)\n"
+	"   codec_string     VARCHAR(255),\n"
+	"   headset          INTEGER,\n"
+	"   handset          INTEGER,\n"
+	"   speaker          INTEGER\n"
 	");\n";
 
 static char lines_sql[] =
@@ -459,7 +462,6 @@ uint32_t skinny_line_get_state(listener_t *listener, uint32_t line_instance, uin
 
 switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 {
-	int ms;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int resetting = 0;
 
@@ -539,7 +541,7 @@ switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force)
 	}
 
 	tech_pvt->read_frame.rate = tech_pvt->rm_rate;
-	ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
+	//ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
 
 	if (!switch_core_codec_ready(&tech_pvt->read_codec)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec?\n");
@@ -877,7 +879,6 @@ switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_t *tech_pvt = switch_core_session_get_private(session);
-	int payload = 0;
 
 	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
 		if (switch_channel_ready(channel)) {
@@ -905,7 +906,7 @@ switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_
 				return SWITCH_STATUS_FALSE;
 			}
 
-			payload = tech_pvt->read_frame.payload;
+			//payload = tech_pvt->read_frame.payload;
 
 			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
 				switch_dtmf_t dtmf = { 0 };
@@ -1317,6 +1318,9 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 	char *max_streams = argv[5];
 	char *port = argv[6];
 	char *codec_string = argv[7];
+	char *headset = argv[8];
+	char *handset = argv[9];
+	char *speaker = argv[10];
 
 	const char *line = "=================================================================================================";
 	stream->write_function(stream, "%s\n", line);
@@ -1329,6 +1333,12 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 	stream->write_function(stream, "MaxStreams    \t%s\n", max_streams);
 	stream->write_function(stream, "Port          \t%s\n", port);
 	stream->write_function(stream, "Codecs        \t%s\n", codec_string);
+	stream->write_function(stream, "HeadsetId     \t%s\n", headset);
+	stream->write_function(stream, "Headset       \t%s\n", skinny_accessory_state2str(atoi(headset)));
+	stream->write_function(stream, "HandsetId     \t%s\n", handset);
+	stream->write_function(stream, "Handset       \t%s\n", skinny_accessory_state2str(atoi(handset)));
+	stream->write_function(stream, "SpeakerId     \t%s\n", speaker);
+	stream->write_function(stream, "Speaker       \t%s\n", skinny_accessory_state2str(atoi(speaker)));
 	stream->write_function(stream, "%s\n", line);
 
 	return 0;
@@ -1337,7 +1347,7 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 switch_status_t dump_device(skinny_profile_t *profile, const char *device_name, switch_stream_handle_t *stream)
 {
 	char *sql;
-	if ((sql = switch_mprintf("SELECT name, user_id, instance, ip, type, max_streams, port, codec_string "
+	if ((sql = switch_mprintf("SELECT name, user_id, instance, ip, type, max_streams, port, codec_string, headset, handset, speaker "
 			"FROM skinny_devices WHERE name='%s'",
 			device_name))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql, dump_device_callback, stream);
@@ -1916,10 +1926,10 @@ static switch_status_t load_skinny_config(void)
 					switch_odbc_handle_exec(profile->master_odbc, active_lines_sql, NULL, NULL);
 				} else {
 					if ((db = switch_core_db_open_file(profile->dbname))) {
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_devices", NULL, devices_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_lines", NULL, lines_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_buttons", NULL, buttons_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_active_lines", NULL, active_lines_sql);
+						switch_core_db_test_reactive(db, "SELECT headset FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_lines", "DROP TABLE skinny_lines", lines_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_buttons", "DROP TABLE skinny_buttons", buttons_sql);
+						switch_core_db_test_reactive(db, "SELECT * FROM skinny_active_lines", "DROP TABLE skinny_active_lines", active_lines_sql);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 						continue;

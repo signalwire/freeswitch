@@ -242,7 +242,7 @@ static void default_logger(char *file, const char *func, int line, int level, ch
 
 	vsnprintf(data, sizeof(data), fmt, ap);
 
-	fprintf(globals.log_stream, "%s:%d %s() %s", file, line, func, data);
+	fprintf(globals.log_stream, "%s:%d %s() %s", fp, line, func, data);
 
 	va_end(ap);
 
@@ -384,9 +384,12 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 	}
 
 	while(xml) {
-		char *type = xtype ? xtype : iks_find_attrib(xml, "type");
+		char *type = NULL;
 		iks *tag;
-		
+
+		if (iks_type(xml)!=IKS_CDATA)
+			type = xtype ? xtype : iks_find_attrib(xml, "type");
+
 		if (type) {
 			
 			if (!strcasecmp(type, "redirect")) {
