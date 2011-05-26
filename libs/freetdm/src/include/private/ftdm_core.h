@@ -155,6 +155,10 @@ extern "C" {
 #define ftdm_clear_alarm_flag(obj, flag) (obj)->alarm_flags &= ~(flag)
 #define ftdm_test_alarm_flag(obj, flag) ((obj)->alarm_flags & flag)
 
+#define ftdm_set_io_flag(obj, flag) (obj)->io_flags |= (flag)
+#define ftdm_clear_io_flag(obj, flag) (obj)->io_flags &= ~(flag)
+#define ftdm_test_io_flag(obj, flag) ((obj)->io_flags & flag)
+
 /*!
   \brief Set a flag on an arbitrary object
   \command obj the object to set the flags on
@@ -399,6 +403,7 @@ struct ftdm_channel {
 	uint64_t flags;
 	uint32_t pflags;
 	uint32_t sflags;
+	uint8_t	 io_flags;
 	ftdm_alarm_flag_t alarm_flags;
 	ftdm_channel_feature_t features;
 	ftdm_codec_t effective_codec;
@@ -503,6 +508,7 @@ struct ftdm_span {
 	ftdm_span_stop_t stop;
 	ftdm_channel_sig_read_t sig_read;
 	ftdm_channel_sig_write_t sig_write;
+	ftdm_channel_sig_dtmf_t sig_dtmf;
 	ftdm_channel_state_processor_t state_processor; /*!< This guy is called whenever state processing is required */
 	void *io_data; /*!< Private I/O data per span. Do not touch unless you are an I/O module */
 	char *type;
@@ -591,6 +597,10 @@ FT_DECLARE(void) ftdm_ack_indication(ftdm_channel_t *ftdmchan, ftdm_channel_indi
 
 FT_DECLARE(ftdm_iterator_t *) ftdm_get_iterator(ftdm_iterator_type_t type, ftdm_iterator_t *iter);
 
+FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen);
+
+FIO_WRITE_FUNCTION(ftdm_raw_write);
+FIO_READ_FUNCTION(ftdm_raw_read);
 
 /*! 
  * \brief Retrieves an event from the span

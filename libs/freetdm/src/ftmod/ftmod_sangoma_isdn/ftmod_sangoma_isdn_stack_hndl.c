@@ -318,8 +318,9 @@ void sngisdn_process_con_cfm (sngisdn_event_data_t *sngisdn_event)
 		}
 	} else {
 		switch(ftdmchan->state) {
+			case FTDM_CHANNEL_STATE_TRANSFER:
 			case FTDM_CHANNEL_STATE_UP:
-				/* This is the only valid state we should get a CONNECT ACK on */
+				/* These are the only valid states we should get a CONNECT ACK on */
 				/* do nothing */
 				break;
 			case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
@@ -1265,6 +1266,10 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 
 	/* TODO: readjust this when NFAS is implemented as signal_data will not always be the first
 	 * span for that d-channel */
+	if (!rstEvnt->rstInd.eh.pres || !rstEvnt->rstInd.rstClass.pres) {
+		ftdm_log(FTDM_LOG_DEBUG, "Received RESTART IND, but Restart Indicator IE not present\n");
+		return;
+	}
 
 	signal_data = g_sngisdn_data.dchans[dChan].spans[1];
 

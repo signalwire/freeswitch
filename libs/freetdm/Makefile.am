@@ -235,6 +235,7 @@ ftmod_sangoma_isdn_la_SOURCES = \
 	$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_cfg.c \
 	$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_cntrl.c \
 	$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_trace.c \
+	$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_transfer.c \
 	$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_support.c \
 	$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_cntrl.c \
 	$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_cfg.c \
