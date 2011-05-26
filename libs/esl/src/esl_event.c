@@ -391,8 +391,8 @@ ESL_DECLARE(int) esl_event_add_array(esl_event_t *event, const char *var, const 
 	data = strdup(val + 7);
 	
 	len = (sizeof(char *) * max) + 1;
-	esl_assert(len);
 	array = malloc(len);
+	esl_assert(array);
 	memset(array, 0, len);
 	
 	idx = esl_separate_string_string(data, "|:", array, max);
@@ -794,10 +794,12 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 
 		if ((len + llen) > dlen) {
 			char *m;
+			char *old = buf;
 			dlen += (blocksize + (len + llen));
 			if ((m = realloc(buf, dlen))) {
 				buf = m;
 			} else {
+				buf = old;
 				abort();
 			}
 		}
@@ -821,10 +823,12 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 
 		if ((len + llen) > dlen) {
 			char *m;
+			char *old = buf;
 			dlen += (blocksize + (len + llen));
 			if ((m = realloc(buf, dlen))) {
 				buf = m;
 			} else {
+				buf = old;
 				abort();
 			}
 		}
