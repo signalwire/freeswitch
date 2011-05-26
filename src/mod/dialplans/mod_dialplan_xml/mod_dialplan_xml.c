@@ -224,7 +224,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		} else {
 			if (field && strchr(expression, '(')) {
 				switch_channel_set_variable(channel, "DP_MATCH", NULL);
-				switch_capture_regex(re, proceed, field_data, ovector, "DP_MATCH", (switch_cap_callback_t)switch_regex_set_var_callback, session);
+				switch_capture_regex(re, proceed, field_data, ovector, "DP_MATCH", switch_regex_set_var_callback, session);
 			}
 
 			for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {

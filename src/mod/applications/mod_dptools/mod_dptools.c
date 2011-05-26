@@ -2320,7 +2320,7 @@ SWITCH_STANDARD_APP(capture_function)
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 3) {
 		if ((proceed = switch_regex_perform(argv[1], argv[2], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-			switch_capture_regex(re, proceed, argv[1], ovector, argv[0], (switch_cap_callback_t)switch_regex_set_var_callback, session);
+			switch_capture_regex(re, proceed, argv[1], ovector, argv[0], switch_regex_set_var_callback, session);
 		}
 		switch_regex_safe_free(re);
 	} else {

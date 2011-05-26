@@ -137,14 +137,17 @@ typedef int gid_t;
 #ifdef WIN32
 #if defined(SWITCH_CORE_DECLARE_STATIC)
 #define SWITCH_DECLARE(type)			type __stdcall
+#define SWITCH_DECLARE_TYPEDEF(type, name)	type (__stdcall name)
 #define SWITCH_DECLARE_NONSTD(type)		type __cdecl
 #define SWITCH_DECLARE_DATA
 #elif defined(FREESWITCHCORE_EXPORTS)
 #define SWITCH_DECLARE(type)			__declspec(dllexport) type __stdcall
+#define SWITCH_DECLARE_TYPEDEF(type, name)	__declspec(dllexport) type (__stdcall name)
 #define SWITCH_DECLARE_NONSTD(type)		__declspec(dllexport) type __cdecl
 #define SWITCH_DECLARE_DATA				__declspec(dllexport)
 #else
 #define SWITCH_DECLARE(type)			__declspec(dllimport) type __stdcall
+#define SWITCH_DECLARE_TYPEDEF(type, name)	__declspec(dllimport) type (__stdcall name)
 #define SWITCH_DECLARE_NONSTD(type)		__declspec(dllimport) type __cdecl
 #define SWITCH_DECLARE_DATA				__declspec(dllimport)
 #endif
@@ -174,6 +177,7 @@ typedef int gid_t;
 #define O_BINARY 0
 #if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(SWITCH_API_VISIBILITY)
 #define SWITCH_DECLARE(type)		__attribute__((visibility("default"))) type
+#define SWITCH_DECLARE_TYPEDEF(type, name)	type (name)
 #define SWITCH_DECLARE_NONSTD(type)	__attribute__((visibility("default"))) type
 #define SWITCH_DECLARE_DATA		__attribute__((visibility("default")))
 #define SWITCH_MOD_DECLARE(type)	__attribute__((visibility("default"))) type
@@ -182,6 +186,7 @@ typedef int gid_t;
 #define SWITCH_DECLARE_CLASS		__attribute__((visibility("default")))
 #else
 #define SWITCH_DECLARE(type)		type
+#define SWITCH_DECLARE_TYPEDEF(type, name)	type (name)
 #define SWITCH_DECLARE_NONSTD(type)	type
 #define SWITCH_DECLARE_DATA
 #define SWITCH_MOD_DECLARE(type)	type
