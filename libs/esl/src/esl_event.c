@@ -770,7 +770,7 @@ ESL_DECLARE(esl_status_t) esl_event_create_json(esl_event_t **event, const char 
 				for (i = 0; i < x; i++) {
 					cJSON *item = cJSON_GetArrayItem(cjp, i);
 
-					if (item && item->type == cJSON_String && item->valuestring) {
+					if (item != NULL && item->type == cJSON_String && item->valuestring) {
 						esl_event_add_header_string(new_event, ESL_STACK_PUSH, name, item->valuestring);
 					}
 				}
