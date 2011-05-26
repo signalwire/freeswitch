@@ -272,6 +272,7 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 	}
 	
 	rtp_port = (switch_port_t)(long)*rtp_fd;
+	*rtp_fd = NULL;
 
 	codec_req_leg->host_udp_port = rtp_port;
 
@@ -307,6 +308,9 @@ static int sangoma_destroy_rtp(void *usr_priv, void *fd)
 {
 	switch_memory_pool_t *sesspool;
 	switch_rtp_t *rtp = fd;
+	if (!rtp) {
+		return 0;
+	}
 	sesspool = switch_rtp_get_private(rtp);
 	switch_rtp_destroy(&rtp);
 	switch_core_destroy_memory_pool(&sesspool);
