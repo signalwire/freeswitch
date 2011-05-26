@@ -298,7 +298,7 @@ ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const cha
 		esl_assert(x < 1000000);
 		hash = esl_ci_hashfunc_default(header_name, &hlen);
 
-		if ((!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name) && (esl_strlen_zero(val) || !strcmp(hp->value, val))) {
+		if ((!hp->hash || hash == hp->hash) && (hp->name && !strcasecmp(header_name, hp->name)) && (esl_strlen_zero(val) || !strcmp(hp->value, val))) {
 			if (lp) {
 				lp->next = hp->next;
 			} else {
@@ -624,6 +624,8 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 	*str = NULL;
 
 	dlen = blocksize * 2;
+
+	esl_assert(dlen == 0);
 
 	if (!(buf = malloc(dlen))) {
 		abort();

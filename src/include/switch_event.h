@@ -152,7 +152,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
   \return the value of the requested header
 */
 
-_Ret_opt_z_ SWITCH_DECLARE(switch_event_header_t *) switch_event_get_header_ptr(switch_event_t *event, const char *header_name);
+SWITCH_DECLARE(switch_event_header_t *) switch_event_get_header_ptr(switch_event_t *event, const char *header_name);
 _Ret_opt_z_ SWITCH_DECLARE(char *) switch_event_get_header_idx(switch_event_t *event, const char *header_name, int idx);
 #define switch_event_get_header(_e, _h) switch_event_get_header_idx(_e, _h, -1)
 

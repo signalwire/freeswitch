@@ -1053,6 +1053,7 @@ static int add_array(esl_event_t *event, const char *var, const char *val)
 	data = strdup(val + 7);
 	
 	len = (sizeof(char *) * max) + 1;
+	esl_assert(len == 0);
 	array = malloc(len);
 	memset(array, 0, len);
 	
