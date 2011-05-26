@@ -3595,7 +3595,7 @@ static void conference_list_count_only(conference_obj_t *conference, switch_stre
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
 
-	stream->write_function(stream, "%d\n", conference->count);
+	stream->write_function(stream, "%d", conference->count);
 }
 
 static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_stream_handle_t *stream, void *data)
