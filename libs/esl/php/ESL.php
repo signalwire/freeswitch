@@ -76,8 +76,8 @@ class ESLevent {
 		return $r;
 	}
 
-	function getHeader($header_name) {
-		return ESLevent_getHeader($this->_cPtr,$header_name);
+	function getHeader($header_name,$idx=-1) {
+		return ESLevent_getHeader($this->_cPtr,$header_name,$idx);
 	}
 
 	function getBody() {
@@ -94,6 +94,14 @@ class ESLevent {
 
 	function addHeader($header_name,$value) {
 		return ESLevent_addHeader($this->_cPtr,$header_name,$value);
+	}
+
+	function pushHeader($header_name,$value) {
+		return ESLevent_pushHeader($this->_cPtr,$header_name,$value);
+	}
+
+	function unshiftHeader($header_name,$value) {
+		return ESLevent_unshiftHeader($this->_cPtr,$header_name,$value);
 	}
 
 	function delHeader($header_name) {

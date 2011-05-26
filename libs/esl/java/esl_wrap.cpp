@@ -419,10 +419,11 @@ SWIGEXPORT jboolean JNICALL Java_org_freeswitch_esl_eslJNI_ESLevent_1setPriority
 }
 
 
-SWIGEXPORT jstring JNICALL Java_org_freeswitch_esl_eslJNI_ESLevent_1getHeader(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_esl_eslJNI_ESLevent_1getHeader(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jint jarg3) {
   jstring jresult = 0 ;
   ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
+  int arg3 = (int) -1 ;
   char *result = 0 ;
   
   (void)jenv;
@@ -434,7 +435,8 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_esl_eslJNI_ESLevent_1getHeader(JN
     arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
     if (!arg2) return 0;
   }
-  result = (char *)(arg1)->getHeader((char const *)arg2);
+  arg3 = (int)jarg3; 
+  result = (char *)(arg1)->getHeader((char const *)arg2,arg3);
   if(result) jresult = jenv->NewStringUTF((const char *)result);
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   return jresult;
@@ -515,6 +517,64 @@ SWIGEXPORT jboolean JNICALL Java_org_freeswitch_esl_eslJNI_ESLevent_1addHeader(J
     if (!arg3) return 0;
   }
   result = (bool)(arg1)->addHeader((char const *)arg2,(char const *)arg3);
+  jresult = (jboolean)result; 
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
+  return jresult;
+}
+
+
+SWIGEXPORT jboolean JNICALL Java_org_freeswitch_esl_eslJNI_ESLevent_1pushHeader(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
+  jboolean jresult = 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(ESLevent **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return 0;
+  }
+  arg3 = 0;
+  if (jarg3) {
+    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
+    if (!arg3) return 0;
+  }
+  result = (bool)(arg1)->pushHeader((char const *)arg2,(char const *)arg3);
+  jresult = (jboolean)result; 
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
+  return jresult;
+}
+
+
+SWIGEXPORT jboolean JNICALL Java_org_freeswitch_esl_eslJNI_ESLevent_1unshiftHeader(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
+  jboolean jresult = 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(ESLevent **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return 0;
+  }
+  arg3 = 0;
+  if (jarg3) {
+    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
+    if (!arg3) return 0;
+  }
+  result = (bool)(arg1)->unshiftHeader((char const *)arg2,(char const *)arg3);
   jresult = (jboolean)result; 
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
