@@ -154,7 +154,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (ms > 100 && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
+	var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE);
+	if (var) {
+		sval = atoi(var);
+		SWITCH_IVR_VERIFY_SILENCE_DIVISOR(sval);
+	}
+
+	if (ms > 100 && sval) {
 		switch_core_session_get_read_impl(session, &imp);
 
 		if (switch_core_codec_init(&codec,

@@ -910,9 +910,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 							ringback.silence = atoi(p);
 						}
 					}
-					if (ringback.silence <= 0) {
-						ringback.silence = 400;
-					}
+					SWITCH_IVR_VERIFY_SILENCE_DIVISOR(ringback.silence);
 				} else {
 					switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
 					switch_buffer_set_loops(ringback.audio_buffer, -1);
