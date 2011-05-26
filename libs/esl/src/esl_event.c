@@ -625,8 +625,6 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 
 	dlen = blocksize * 2;
 
-	esl_assert(dlen == 0);
-
 	if (!(buf = malloc(dlen))) {
 		abort();
 	}
