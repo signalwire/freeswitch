@@ -2285,17 +2285,20 @@ XS(_wrap_ESLevent_getHeader) {
   {
     ESLevent *arg1 = (ESLevent *) 0 ;
     char *arg2 = (char *) 0 ;
+    int arg3 = (int) -1 ;
     char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int res2 ;
     char *buf2 = 0 ;
     int alloc2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: ESLevent_getHeader(self,header_name);");
+    if ((items < 2) || (items > 3)) {
+      SWIG_croak("Usage: ESLevent_getHeader(self,header_name,idx);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -2307,14 +2310,23 @@ XS(_wrap_ESLevent_getHeader) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_getHeader" "', argument " "2"" of type '" "char const *""'");
     }
     arg2 = reinterpret_cast< char * >(buf2);
-    result = (char *)(arg1)->getHeader((char const *)arg2);
+    if (items > 2) {
+      ecode3 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(2), &val3);
+      if (!SWIG_IsOK(ecode3)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "ESLevent_getHeader" "', argument " "3"" of type '" "int""'");
+      } 
+      arg3 = static_cast< int >(val3);
+    }
+    result = (char *)(arg1)->getHeader((char const *)arg2,arg3);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    
     XSRETURN(argvi);
   fail:
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    
     SWIG_croak_null();
   }
 }
@@ -2451,6 +2463,106 @@ XS(_wrap_ESLevent_addHeader) {
     }
     arg3 = reinterpret_cast< char * >(buf3);
     result = (bool)(arg1)->addHeader((char const *)arg2,(char const *)arg3);
+    ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_ESLevent_pushHeader) {
+  {
+    ESLevent *arg1 = (ESLevent *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    bool result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: ESLevent_pushHeader(self,header_name,value);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_pushHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLevent * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_pushHeader" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLevent_pushHeader" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    result = (bool)(arg1)->pushHeader((char const *)arg2,(char const *)arg3);
+    ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_ESLevent_unshiftHeader) {
+  {
+    ESLevent *arg1 = (ESLevent *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    bool result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: ESLevent_unshiftHeader(self,header_name,value);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_unshiftHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLevent * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_unshiftHeader" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLevent_unshiftHeader" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    result = (bool)(arg1)->unshiftHeader((char const *)arg2,(char const *)arg3);
     ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -3658,6 +3770,8 @@ static swig_command_info swig_commands[] = {
 {"ESLc::ESLevent_getType", _wrap_ESLevent_getType},
 {"ESLc::ESLevent_addBody", _wrap_ESLevent_addBody},
 {"ESLc::ESLevent_addHeader", _wrap_ESLevent_addHeader},
+{"ESLc::ESLevent_pushHeader", _wrap_ESLevent_pushHeader},
+{"ESLc::ESLevent_unshiftHeader", _wrap_ESLevent_unshiftHeader},
 {"ESLc::ESLevent_delHeader", _wrap_ESLevent_delHeader},
 {"ESLc::ESLevent_firstHeader", _wrap_ESLevent_firstHeader},
 {"ESLc::ESLevent_nextHeader", _wrap_ESLevent_nextHeader},

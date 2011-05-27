@@ -274,7 +274,15 @@
 
     <extension name="Local_Extension_Skinny">
       <condition field="destination_number" expression="^(11[01][0-9])$">
+	<action application="set" data="dialed_extension=$1"/>
+	<action application="export" data="dialed_extension=$1"/>
+	<action application="set" data="call_timeout=30"/>
+	<action application="set" data="hangup_after_bridge=true"/>
+	<action application="set" data="continue_on_fail=true"/>
         <action application="bridge" data="skinny/internal/${destination_number}"/>
+	<action application="answer"/>
+	<action application="sleep" data="1000"/>
+	<action application="bridge" data="loopback/app=voicemail:default ${domain_name} ${dialed_extension}"/>
       </condition>
     </extension>
 

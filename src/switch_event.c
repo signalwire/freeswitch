@@ -829,6 +829,75 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *even
 	return status;
 }
 
+static switch_event_header_t *new_header(const char *header_name)
+{
+	switch_event_header_t *header;
+
+#ifdef SWITCH_EVENT_RECYCLE
+		void *pop;
+		if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+			header = (switch_event_header_t *) pop;
+		} else {
+#endif
+			header = ALLOC(sizeof(*header));
+			switch_assert(header);
+#ifdef SWITCH_EVENT_RECYCLE
+		}
+#endif	
+
+		memset(header, 0, sizeof(*header));
+		header->name = DUP(header_name);
+
+		return header;
+
+}
+
+SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *var, const char *val)
+{
+	char *data;
+	char **array;
+	int max = 0;
+	int len;
+	const char *p;
+	int i;
+
+	if (strlen(val) < 8) {
+		return -1;
+	}
+
+	p = val + 7;
+
+	max = 1;
+
+	while((p = strstr(p, "|:"))) {
+		max++;
+		p += 2;
+	}
+
+	if (!max) {
+		return -2;
+	}
+
+	data = strdup(val + 7);
+	
+	len = (sizeof(char *) * max) + 1;
+	switch_assert(len);
+
+	array = malloc(len);
+	memset(array, 0, len);
+	
+	switch_separate_string_string(data, "|:", array, max);
+	
+	for(i = 0; i < max; i++) {
+		switch_event_add_header_string(event, SWITCH_STACK_PUSH, var, array[i]);
+	}
+
+	free(array);
+	free(data);
+
+	return 0;
+}
+
 static switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data)
 {
 	switch_event_header_t *header = NULL;
@@ -848,19 +917,19 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 		header_name = real_header_name;
 	}
 	
-	if (index_ptr || (stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT) || switch_test_flag(event, EF_CONTAINS_ARRAYS)) {
+	if (index_ptr || (stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
 		
 		if (!(header = switch_event_get_header_ptr(event, header_name)) && index_ptr) {
-			header = ALLOC(sizeof(*header));
-			switch_assert(header);
-			memset(header, 0, sizeof(*header));
-			header->name = DUP(header_name);
+
+			header = new_header(header_name);
+
 			if (switch_test_flag(event, EF_UNIQ_HEADERS)) {
 				switch_event_del_header(event, header_name);
 			}
+
 			fly++;
 		}
-
+		
 		if ((header = switch_event_get_header_ptr(event, header_name))) {
 			
 			if (index_ptr) {
@@ -889,11 +958,6 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 				}
 				goto end;
 			} else {
-			
-				if (!(stack & SWITCH_STACK_PUSH) && !(stack & SWITCH_STACK_UNSHIFT) && header->idx) {
-					stack |= SWITCH_STACK_PUSH;
-				}
-				
 				if ((stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
 					exists++;
 					stack &= ~(SWITCH_STACK_TOP | SWITCH_STACK_BOTTOM);
@@ -904,28 +968,20 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 		}
 	}
 
+
 	if (!header) {
-
-#ifdef SWITCH_EVENT_RECYCLE
-		void *pop;
-		if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-			header = (switch_event_header_t *) pop;
-		} else {
-#endif
-			header = ALLOC(sizeof(*header));
-			switch_assert(header);
-#ifdef SWITCH_EVENT_RECYCLE
-		}
-#endif
-	
-
 		if (switch_test_flag(event, EF_UNIQ_HEADERS)) {
 			switch_event_del_header(event, header_name);
 		}
 
-		memset(header, 0, sizeof(*header));
+		if (strstr(data, "ARRAY::")) {
+			switch_event_add_array(event, header_name, data);
+			FREE(data);
+			goto end;
+		}
 
-		header->name = DUP(header_name);
+
+		header = new_header(header_name);
 	}
 	
 	if ((stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
@@ -933,8 +989,6 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 		switch_size_t len = 0;
 		char *hv;
 		int i = 0, j = 0;
-
-		switch_set_flag(event, EF_CONTAINS_ARRAYS);
 
 		if (header->value && !header->idx) {
 			m = malloc(sizeof(char *));
@@ -976,7 +1030,7 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 
 			switch_snprintf(header->value, len, "ARRAY::");
 			for(j = 0; j < header->idx; j++) {
-				switch_snprintf(header->value + strlen(header->value), len - strlen(header->value), "%s%s", j == 0 ? "" : "::", header->array[j]);
+				switch_snprintf(header->value + strlen(header->value), len - strlen(header->value), "%s%s", j == 0 ? "" : "|:", header->array[j]);
 			}
 		}
 

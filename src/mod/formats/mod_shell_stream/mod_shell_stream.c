@@ -29,6 +29,7 @@
  *
  */
 #include <switch.h>
+#include <sys/wait.h>
 
 #define MY_BUF_LEN 1024 * 32
 #define MY_BLOCK_SIZE MY_BUF_LEN
@@ -134,6 +135,8 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 			while (context->running == 2) {
 				switch_cond_next();
 			}
+
+			wait(&(context->pid));
 
 			goto end;
 		} else {				/*  child */

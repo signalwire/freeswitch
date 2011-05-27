@@ -436,15 +436,17 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_ESLevent_SetPriority(void * jarg1, vo
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_ESLevent_GetHeader(void * jarg1, char * jarg2) {
+SWIGEXPORT char * SWIGSTDCALL CSharp_ESLevent_GetHeader(void * jarg1, char * jarg2, int jarg3) {
   char * jresult ;
   ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
+  int arg3 = (int) -1 ;
   char *result = 0 ;
   
   arg1 = (ESLevent *)jarg1; 
   arg2 = (char *)jarg2; 
-  result = (char *)(arg1)->getHeader((char const *)arg2);
+  arg3 = (int)jarg3; 
+  result = (char *)(arg1)->getHeader((char const *)arg2,arg3);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
@@ -499,6 +501,38 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_ESLevent_AddHeader(void * jarg1, char
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   result = (bool)(arg1)->addHeader((char const *)arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_ESLevent_pushHeader(void * jarg1, char * jarg2, char * jarg3) {
+  unsigned int jresult ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  
+  arg1 = (ESLevent *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (bool)(arg1)->pushHeader((char const *)arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_ESLevent_unshiftHeader(void * jarg1, char * jarg2, char * jarg3) {
+  unsigned int jresult ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  
+  arg1 = (ESLevent *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (bool)(arg1)->unshiftHeader((char const *)arg2,(char const *)arg3);
   jresult = result; 
   return jresult;
 }

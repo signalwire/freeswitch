@@ -46,6 +46,8 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_getBody);
 ZEND_NAMED_FUNCTION(_wrap_ESLevent_getType);
 ZEND_NAMED_FUNCTION(_wrap_ESLevent_addBody);
 ZEND_NAMED_FUNCTION(_wrap_ESLevent_addHeader);
+ZEND_NAMED_FUNCTION(_wrap_ESLevent_pushHeader);
+ZEND_NAMED_FUNCTION(_wrap_ESLevent_unshiftHeader);
 ZEND_NAMED_FUNCTION(_wrap_ESLevent_delHeader);
 ZEND_NAMED_FUNCTION(_wrap_ESLevent_firstHeader);
 ZEND_NAMED_FUNCTION(_wrap_ESLevent_nextHeader);

@@ -103,8 +103,7 @@ struct switch_event {
 };
 
 typedef enum {
-	EF_UNIQ_HEADERS = (1 << 0),
-	EF_CONTAINS_ARRAYS = (1 << 1),
+	EF_UNIQ_HEADERS = (1 << 0)
 } switch_event_flag_t;
 
 
@@ -152,7 +151,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
   \return the value of the requested header
 */
 
-_Ret_opt_z_ SWITCH_DECLARE(switch_event_header_t *) switch_event_get_header_ptr(switch_event_t *event, const char *header_name);
+SWITCH_DECLARE(switch_event_header_t *) switch_event_get_header_ptr(switch_event_t *event, const char *header_name);
 _Ret_opt_z_ SWITCH_DECLARE(char *) switch_event_get_header_idx(switch_event_t *event, const char *header_name, int idx);
 #define switch_event_get_header(_e, _h) switch_event_get_header_idx(_e, _h, -1)
 
@@ -192,7 +191,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header_string(switch_event_t *e
 
 SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *event, const char *header_name, const char *val);
 #define switch_event_del_header(_e, _h) switch_event_del_header_val(_e, _h, NULL)
-
+SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *var, const char *val);
 /*!
   \brief Destroy an event
   \param event pointer to the pointer to event to destroy

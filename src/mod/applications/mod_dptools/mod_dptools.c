@@ -2320,7 +2320,7 @@ SWITCH_STANDARD_APP(capture_function)
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 3) {
 		if ((proceed = switch_regex_perform(argv[1], argv[2], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-			switch_capture_regex(re, proceed, argv[1], ovector, argv[0], (switch_cap_callback_t)switch_regex_set_var_callback, session);
+			switch_capture_regex(re, proceed, argv[1], ovector, argv[0], switch_regex_set_var_callback, session);
 		}
 		switch_regex_safe_free(re);
 	} else {
@@ -2529,8 +2529,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	char *tof_data = NULL;
 	char *tof_array[4] = { 0 };
 	//int tof_arrayc = 0;
-	const char *continue_on_fail = NULL, *failure_causes = NULL,
-		*v_campon = NULL, *v_campon_retries, *v_campon_sleep, *v_campon_timeout, *v_campon_fallback_exten = NULL;
+	const char *v_campon = NULL, *v_campon_retries, *v_campon_sleep, *v_campon_timeout, *v_campon_fallback_exten = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	int campon_retries = 100, campon_timeout = 10, campon_sleep = 10, tmp, camping = 0, fail = 0, thread_started = 0;
 	struct camping_stake stake = { 0 };
@@ -2544,14 +2543,10 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		return;
 	}
 
-	continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
-
 	transfer_on_fail = switch_channel_get_variable(caller_channel, "transfer_on_fail");
 	tof_data = switch_core_session_strdup(session, transfer_on_fail);
 	switch_split(tof_data, ' ', tof_array);
    	transfer_on_fail = tof_array[0];
-	
-	failure_causes = switch_channel_get_variable(caller_channel, "failure_causes");
 	
 	if ((v_campon = switch_channel_get_variable(caller_channel, "campon")) && switch_true(v_campon)) {
 		const char *cid_name = NULL;
@@ -2693,6 +2688,11 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		   EXCEPTION... ATTENDED_TRANSFER never is a reason to continue.......
 		 */
 		if (cause != SWITCH_CAUSE_ATTENDED_TRANSFER) {
+			const char *continue_on_fail = NULL, *failure_causes = NULL;
+
+			continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
+			failure_causes = switch_channel_get_variable(caller_channel, "failure_causes");
+
 			if (continue_on_fail || failure_causes) {
 				const char *cause_str;
 				char cause_num[35] = "";

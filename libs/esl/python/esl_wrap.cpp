@@ -3373,17 +3373,21 @@ SWIGINTERN PyObject *_wrap_ESLevent_getHeader(PyObject *SWIGUNUSEDPARM(self), Py
   PyObject *resultobj = 0;
   ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
+  int arg3 = (int) -1 ;
   char *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
   char *buf2 = 0 ;
   int alloc2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
   
   SWIG_PYTHON_THREAD_BEGIN_BLOCK;
-  if (!PyArg_ParseTuple(args,(char *)"OO:ESLevent_getHeader",&obj0,&obj1)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OO|O:ESLevent_getHeader",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_getHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
@@ -3394,9 +3398,16 @@ SWIGINTERN PyObject *_wrap_ESLevent_getHeader(PyObject *SWIGUNUSEDPARM(self), Py
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_getHeader" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
+  if (obj2) {
+    ecode3 = SWIG_AsVal_int(obj2, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "ESLevent_getHeader" "', argument " "3"" of type '" "int""'");
+    } 
+    arg3 = static_cast< int >(val3);
+  }
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (char *)(arg1)->getHeader((char const *)arg2);
+    result = (char *)(arg1)->getHeader((char const *)arg2,arg3);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_FromCharPtr((const char *)result);
@@ -3547,6 +3558,112 @@ SWIGINTERN PyObject *_wrap_ESLevent_addHeader(PyObject *SWIGUNUSEDPARM(self), Py
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
     result = (bool)(arg1)->addHeader((char const *)arg2,(char const *)arg3);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_ESLevent_pushHeader(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if (!PyArg_ParseTuple(args,(char *)"OOO:ESLevent_pushHeader",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_pushHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_pushHeader" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLevent_pushHeader" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (bool)(arg1)->pushHeader((char const *)arg2,(char const *)arg3);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_ESLevent_unshiftHeader(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if (!PyArg_ParseTuple(args,(char *)"OOO:ESLevent_unshiftHeader",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_unshiftHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_unshiftHeader" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLevent_unshiftHeader" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (bool)(arg1)->unshiftHeader((char const *)arg2,(char const *)arg3);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_From_bool(static_cast< bool >(result));
@@ -4726,6 +4843,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"ESLevent_getType", _wrap_ESLevent_getType, METH_VARARGS, NULL},
 	 { (char *)"ESLevent_addBody", _wrap_ESLevent_addBody, METH_VARARGS, NULL},
 	 { (char *)"ESLevent_addHeader", _wrap_ESLevent_addHeader, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_pushHeader", _wrap_ESLevent_pushHeader, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_unshiftHeader", _wrap_ESLevent_unshiftHeader, METH_VARARGS, NULL},
 	 { (char *)"ESLevent_delHeader", _wrap_ESLevent_delHeader, METH_VARARGS, NULL},
 	 { (char *)"ESLevent_firstHeader", _wrap_ESLevent_firstHeader, METH_VARARGS, NULL},
 	 { (char *)"ESLevent_nextHeader", _wrap_ESLevent_nextHeader, METH_VARARGS, NULL},

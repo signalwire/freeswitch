@@ -224,7 +224,7 @@ static int sangoma_create_rtp_port(void *usr_priv, uint32_t host_ip, uint32_t *p
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New allocated port %d for IP %s/%d.%d.%d.%d\n", rtp_port, local_ip,
 			SNGTC_NIPV4(host_ip));
 	*p_rtp_port = rtp_port;
-	*rtp_fd = (void *)(long)rtp_port;
+	*rtp_fd = NULL;
 	return 0;
 }
 
@@ -259,6 +259,9 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 	switch_port_t rtp_port;
 	struct sangoma_transcoding_session *sess = usr_priv;
 
+	rtp_port = codec_req_leg->host_udp_port;
+	*rtp_fd = NULL;
+
 	/*
 	 * We *MUST* use a new pool
 	 * Do not use the session pool since the session may go away while the RTP socket should linger around 
@@ -271,10 +274,6 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 		return -1;
 	}
 	
-	rtp_port = (switch_port_t)(long)*rtp_fd;
-
-	codec_req_leg->host_udp_port = rtp_port;
-
 	local_ip_addr.s_addr = htonl(codec_req_leg->host_ip);
 	switch_inet_ntop(AF_INET, &local_ip_addr, local_ip, sizeof(local_ip));
 	sngtc_codec_ipv4_hex_to_str(codec_reply_leg->codec_ip, codec_ip);
@@ -307,6 +306,9 @@ static int sangoma_destroy_rtp(void *usr_priv, void *fd)
 {
 	switch_memory_pool_t *sesspool;
 	switch_rtp_t *rtp = fd;
+	if (!rtp) {
+		return 0;
+	}
 	sesspool = switch_rtp_get_private(rtp);
 	switch_rtp_destroy(&rtp);
 	switch_core_destroy_memory_pool(&sesspool);

@@ -100,12 +100,12 @@ void clear_call_data(sngisdn_chan_data_t *sngisdn_info)
 	ftdm_mutex_lock(g_sngisdn_data.ccs[cc_id].mutex);
 	g_sngisdn_data.ccs[cc_id].active_spInstIds[sngisdn_info->spInstId]=NULL;
 	g_sngisdn_data.ccs[cc_id].active_suInstIds[sngisdn_info->suInstId]=NULL;
-	ftdm_mutex_unlock(g_sngisdn_data.ccs[cc_id].mutex);
-	
+		
 	sngisdn_info->suInstId = 0;
 	sngisdn_info->spInstId = 0;
 	sngisdn_info->globalFlg = 0;
 	sngisdn_info->flags = 0;
+	ftdm_mutex_unlock(g_sngisdn_data.ccs[cc_id].mutex);
 	return;
 }
 

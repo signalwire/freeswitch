@@ -180,8 +180,7 @@ struct esl_event {
 };
 
 typedef enum {
-	ESL_EF_UNIQ_HEADERS = (1 << 0),
-	ESL_EF_CONTAINS_ARRAYS = (1 << 1)
+	ESL_EF_UNIQ_HEADERS = (1 << 0)
 } esl_event_flag_t;
 
 
@@ -233,6 +232,8 @@ ESL_DECLARE(char *)esl_event_get_body(esl_event_t *event);
 */
 ESL_DECLARE(esl_status_t) esl_event_add_header(esl_event_t *event, esl_stack_t stack,
 											   const char *header_name, const char *fmt, ...); //PRINTF_FUNCTION(4, 5);
+
+ESL_DECLARE(int) esl_event_add_array(esl_event_t *event, const char *var, const char *val);
 
 /*!
   \brief Add a string header to an event

@@ -21,11 +21,13 @@ class eslJNI {
   public final static native void delete_ESLevent(long jarg1);
   public final static native String ESLevent_serialize(long jarg1, ESLevent jarg1_, String jarg2);
   public final static native boolean ESLevent_setPriority(long jarg1, ESLevent jarg1_, long jarg2);
-  public final static native String ESLevent_getHeader(long jarg1, ESLevent jarg1_, String jarg2);
+  public final static native String ESLevent_getHeader(long jarg1, ESLevent jarg1_, String jarg2, int jarg3);
   public final static native String ESLevent_getBody(long jarg1, ESLevent jarg1_);
   public final static native String ESLevent_getType(long jarg1, ESLevent jarg1_);
   public final static native boolean ESLevent_addBody(long jarg1, ESLevent jarg1_, String jarg2);
   public final static native boolean ESLevent_addHeader(long jarg1, ESLevent jarg1_, String jarg2, String jarg3);
+  public final static native boolean ESLevent_pushHeader(long jarg1, ESLevent jarg1_, String jarg2, String jarg3);
+  public final static native boolean ESLevent_unshiftHeader(long jarg1, ESLevent jarg1_, String jarg2, String jarg3);
   public final static native boolean ESLevent_delHeader(long jarg1, ESLevent jarg1_, String jarg2);
   public final static native String ESLevent_firstHeader(long jarg1, ESLevent jarg1_);
   public final static native String ESLevent_nextHeader(long jarg1, ESLevent jarg1_);
