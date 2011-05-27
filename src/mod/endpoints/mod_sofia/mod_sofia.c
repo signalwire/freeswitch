@@ -4634,7 +4634,7 @@ static void general_event_handler(switch_event_t *event)
 				id = switch_mprintf("sip:%s@%s", user, host);
 
 				switch_assert(id);
-
+				
 				for (m = list->head; m; m = m->next) {
 					contact = sofia_glue_get_url_from_contact(m->val, 0);
 
@@ -4647,10 +4647,9 @@ static void general_event_handler(switch_event_t *event)
 
 					nua_message(nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR(ct),
 								TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_IF(!zstr(subject), SIPTAG_SUBJECT_STR(subject)), TAG_END());
-
-
-					free(id);
 				}
+
+				free(id);
 				switch_console_free_matches(&list);
 
 				sofia_glue_release_profile(profile);
