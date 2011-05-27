@@ -1156,8 +1156,7 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	g_sngisdn_event_interface.cc.sng_fac_ind 	= sngisdn_rcv_fac_ind;
 	g_sngisdn_event_interface.cc.sng_sta_cfm 	= sngisdn_rcv_sta_cfm;
 	g_sngisdn_event_interface.cc.sng_srv_ind 	= sngisdn_rcv_srv_ind;
-	g_sngisdn_event_interface.cc.sng_srv_ind	= sngisdn_rcv_srv_cfm;
-	g_sngisdn_event_interface.cc.sng_rst_ind 	= sngisdn_rcv_rst_cfm;
+	g_sngisdn_event_interface.cc.sng_srv_cfm 	= sngisdn_rcv_srv_cfm;
 	g_sngisdn_event_interface.cc.sng_rst_ind 	= sngisdn_rcv_rst_ind;
 	g_sngisdn_event_interface.cc.sng_rst_cfm	= sngisdn_rcv_rst_cfm;
 
