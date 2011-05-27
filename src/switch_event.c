@@ -856,7 +856,6 @@ SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *va
 {
 	char *data;
 	char **array;
-	int idx;
 	int max = 0;
 	int len;
 	const char *p;
@@ -887,7 +886,7 @@ SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *va
 	array = malloc(len);
 	memset(array, 0, len);
 	
-	idx = switch_separate_string_string(data, "|:", array, max);
+	switch_separate_string_string(data, "|:", array, max);
 	
 	for(i = 0; i < max; i++) {
 		switch_event_add_header_string(event, SWITCH_STACK_PUSH, var, array[i]);
