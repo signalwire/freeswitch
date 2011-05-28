@@ -5672,6 +5672,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 					switch_channel_set_variable(channel_a, SOFIA_REPLACES_HEADER, rep);
 					if ((b_private = nua_handle_magic(bnh))) {
+						int deny_refer_requests = 0;
+
 						if (!(b_session = switch_core_session_locate(b_private->uuid))) {
 							goto done;
 						}
@@ -5689,7 +5691,46 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							br_b = NULL;
 						}
 
-						if (switch_channel_test_flag(channel_b, CF_ORIGINATOR)) {
+						if (channel_a && switch_true(switch_channel_get_variable(channel_a, "deny_refer_requests"))) {
+							deny_refer_requests = 1;
+						}
+
+						if (!deny_refer_requests && channel_b && switch_true(switch_channel_get_variable(channel_b, "deny_refer_requests"))) {
+							deny_refer_requests = 1;
+						}
+
+						if (!deny_refer_requests && br_a) {
+							switch_core_session_t *a_session;
+							if ((a_session = switch_core_session_locate(br_a))) {
+								switch_channel_t *a_channel = switch_core_session_get_channel(a_session);
+
+								if (a_channel && switch_true(switch_channel_get_variable(a_channel, "deny_refer_requests"))) {
+									deny_refer_requests = 1;
+								}
+								switch_core_session_rwunlock(a_session);
+							}
+						}
+
+						if (!deny_refer_requests && br_b) {
+							switch_core_session_t *b_session;
+							if ((b_session = switch_core_session_locate(br_b))) {
+								switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+
+								if (b_channel && switch_true(switch_channel_get_variable(b_channel, "deny_refer_requests"))) {
+									deny_refer_requests = 1;
+								}
+								switch_core_session_rwunlock(b_session);
+							}
+						}
+
+						if (deny_refer_requests) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Denying Attended Transfer, variable [deny_refer_requests] was set to true\n");
+
+							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
+								NUTAG_SUBSTATE(nua_substate_terminated),
+								SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
+
+						} else if (switch_channel_test_flag(channel_b, CF_ORIGINATOR)) {
 							switch_core_session_t *a_session;
 
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE,
