@@ -51,6 +51,7 @@ struct record_helper {
 	switch_mutex_t *mutex;
 	int fd;
 	int up;
+    switch_size_t shared_ts;
 };
 
 static void *SWITCH_THREAD_FUNC record_video_thread(switch_thread_t *thread, void *obj)
@@ -63,7 +64,7 @@ static void *SWITCH_THREAD_FUNC record_video_thread(switch_thread_t *thread, voi
 	int bytes;
 
 	eh->up = 1;
-	while (switch_channel_ready(channel)) {
+	while (switch_channel_ready(channel) && eh->up) {
 		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -108,11 +109,13 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	switch_mutex_t *mutex = NULL;
 	switch_codec_t codec, *vid_codec;
 	switch_codec_implementation_t read_impl = { 0 };
+	switch_dtmf_t dtmf = { 0 };
 	int count = 0, sanity = 30;
 
 	switch_core_session_get_read_impl(session, &read_impl);
 	switch_channel_answer(channel);
 
+	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
 	while (switch_channel_up(channel) && !switch_channel_test_flag(channel, CF_VIDEO)) {
 		switch_yield(10000);
@@ -125,6 +128,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 			if (!--sanity) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s timeout waiting for video.\n", 
 								  switch_channel_get_name(channel));
+				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got timeout while waiting for video");
 				return;
 			}
 		}
@@ -132,11 +136,13 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	
 	if (!switch_channel_ready(channel)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s not ready.\n", switch_channel_get_name(channel));
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Channel not ready");
 		return;
 	}
 
 	if ((fd = open((char *) data, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error opening file %s\n", (char *) data);
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got error while opening file");
 		return;
 	}
 
@@ -150,6 +156,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Audio Codec Activation Fail\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Audio codec activation failed");
 		goto end;
 	}
 
@@ -170,6 +177,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		h.audio_ptime = read_impl.microseconds_per_packet / 1000;
 
 		if (write(fd, &h, sizeof(h)) != sizeof(h)) {
+			switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "File write failed");
 			goto end;
 		}
 
@@ -186,9 +194,37 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 	while (switch_channel_ready(channel)) {
 
-		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_SINGLE_READ, 0);
+
+		if (switch_channel_test_flag(channel, CF_BREAK)) {
+			switch_channel_clear_flag(channel, CF_BREAK);
+			eh.up = 0;
+			break;
+		}
+
+		switch_ivr_parse_all_events(session);
+
+		//check for dtmf interrupts
+		if (switch_channel_has_dtmf(channel)) {
+			const char * terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE);
+			switch_channel_dequeue_dtmf(channel, &dtmf);
+
+			if (terminators && !strcasecmp(terminators, "none"))
+			{
+				terminators = NULL;
+			}
+
+			if (terminators && strchr(terminators, dtmf.digit)) {
+
+				char sbuf[2] = {dtmf.digit, '\0'};
+				switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, sbuf);
+				eh.up = 0;
+				break;
+			}
+		}
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			eh.up = 0;
 			break;
 		}
 
@@ -213,12 +249,15 @@ SWITCH_STANDARD_APP(record_fsv_function)
 			}
 			break;
 		}
-
+        
 		if (mutex) {
 			switch_mutex_unlock(mutex);
 		}
+
+        switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 	}
 
+	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
 
   end:
 
@@ -239,7 +278,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	switch_frame_t write_frame = { 0 }, vid_frame = {
 	0};
 	int fd = -1;
-	int bytes;
+    int bytes;
 	switch_codec_t codec = { 0 }, vid_codec = {
 	0}, *read_vid_codec;
 	unsigned char *aud_buffer;
@@ -248,24 +287,32 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	uint32_t ts = 0, last = 0;
 	switch_timer_t timer = { 0 };
 	switch_payload_t pt = 0;
+	switch_dtmf_t dtmf = { 0 };
+	switch_frame_t *read_frame;
 	switch_codec_implementation_t read_impl = { 0 };
+
 	switch_core_session_get_read_impl(session, &read_impl);
 
 	aud_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	vid_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
+	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
+
 	if ((fd = open((char *) data, O_RDONLY | O_BINARY)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error opening file %s\n", (char *) data);
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got error while opening file");
 		return;
 	}
 
 	if (read(fd, &h, sizeof(h)) != sizeof(h)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error reading file header\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got error reading file header");
 		goto end;
 	}
 
 	if (h.version != VERSION) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "File version does not match!\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "File version does not match!");
 		goto end;
 	}
 
@@ -290,6 +337,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	if (switch_core_timer_init(&timer, "soft", read_impl.microseconds_per_packet / 1000,
 							   read_impl.samples_per_packet, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Timer Activation Fail\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Timer activation failed!");
 		goto end;
 	}
 
@@ -303,6 +351,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Audio Codec Activation Fail\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Audio codec activation failed");
 		goto end;
 	}
 
@@ -316,6 +365,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Video Codec Activation Success\n");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Video Codec Activation Fail\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Video codec activation failed");
 		goto end;
 	}
 	switch_core_session_set_read_codec(session, &codec);
@@ -353,14 +403,44 @@ SWITCH_STANDARD_APP(play_fsv_function)
 			if (bytes > (int) write_frame.buflen) {
 				bytes = write_frame.buflen;
 			}
+		    
 			if ((write_frame.datalen = read(fd, write_frame.data, bytes)) <= 0) {
 				break;
 			}
 			switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 			switch_core_timer_next(&timer);
-		}
 
+			switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+			if (switch_channel_test_flag(channel, CF_BREAK)) {
+				switch_channel_clear_flag(channel, CF_BREAK);
+				break;
+			}
+
+			switch_ivr_parse_all_events(session);
+
+			//check for dtmf interrupts
+			if (switch_channel_has_dtmf(channel)) {
+				const char * terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE);
+				switch_channel_dequeue_dtmf(channel, &dtmf);
+
+				if (terminators && !strcasecmp(terminators, "none"))
+				{
+					terminators = NULL;
+				}								
+
+				if (terminators && strchr(terminators, dtmf.digit)) {
+
+					char sbuf[2] = {dtmf.digit, '\0'};
+					switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, sbuf);
+					break;
+				}
+			}
+		}
+		
 	}
+
+	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
 
   end:
 
