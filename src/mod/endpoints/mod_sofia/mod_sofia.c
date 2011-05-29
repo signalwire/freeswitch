@@ -1345,7 +1345,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
-				int len, maxlen = 0, qlen = 0, maxqlen = 50, max_drift = 0;
+				int len = 0, maxlen = 0, qlen = 0, maxqlen = 50, max_drift = 0;
 
 				if (msg->string_arg) {
 					char *p, *q;
@@ -1626,7 +1626,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			ip = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
 			port = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
 			if (ip && port) {
-				sofia_glue_set_local_sdp(tech_pvt, ip, atoi(port), msg->string_arg, 1);
+				sofia_glue_set_local_sdp(tech_pvt, ip, (switch_port_t)atoi(port), msg->string_arg, 1);
 			}
 
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
@@ -1666,7 +1666,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				port = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
 				switch_core_session_rwunlock(other_session);
 				if (ip && port) {
-					sofia_glue_set_local_sdp(tech_pvt, ip, atoi(port), NULL, 1);
+					sofia_glue_set_local_sdp(tech_pvt, ip, (switch_port_t)atoi(port), NULL, 1);
 				}
 			}
 
