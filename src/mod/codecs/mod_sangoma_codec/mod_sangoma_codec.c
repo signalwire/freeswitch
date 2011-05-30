@@ -1269,10 +1269,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 		 * At this point there is an empty shell codec interface registered, but not yet implementations */
 		SWITCH_ADD_CODEC(codec_interface, g_codec_map[c].fs_name);
 
-		/* Now add as many codec implementations as needed, just up to 40ms for now */
+		/* Now add as many codec implementations as needed, just up to 200ms for now */
 		if (g_codec_map[c].autoinit) {
 			int ms = 0;
-			for (i = 1; i <= 4; i++) {
+			for (i = 1; i <= 20; i++) {
 				ms = i * 10;
 				if (g_codec_map[c].maxms < ms) {
 					break;
