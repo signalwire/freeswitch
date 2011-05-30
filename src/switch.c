@@ -894,6 +894,11 @@ int main(int argc, char *argv[])
 
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.run_dir, SWITCH_DEFAULT_DIR_PERMS, pool);
 
+	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Failed to initialize modules: %s\n", err);
+		return 1;
+	}
+
 	if (switch_file_open(&fd, pid_path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, pool) == SWITCH_STATUS_SUCCESS) {
 
 		old_pid_len = sizeof(old_pid_buffer);
@@ -919,14 +924,6 @@ int main(int argc, char *argv[])
 	}
 
 	switch_file_write(fd, pid_buffer, &pid_len);
-
-	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Cannot Initialize [%s], deleting pid file [%s]\n", err, pid_path);
-		if (unlink(pid_path) != 0) {
-			fprintf(stderr, "Failed to delete pid file [%s]\n", pid_path);
-		}
-		return 255;
-	}
 
 #ifndef WIN32
 	if (do_wait) {
