@@ -1134,10 +1134,9 @@ static void sngisdn_process_restart_confirm(ftdm_channel_t *ftdmchan)
 static ftdm_status_t sngisdn_force_down(ftdm_channel_t *ftdmchan)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)ftdmchan->call_data;
+	ftdm_status_t status = FTDM_SUCCESS;
 	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Forcing channel to DOWN state (%s)\n", ftdm_channel_state2str(ftdmchan->state));
-	
-	ftdm_status_t status = FTDM_SUCCESS;
 	switch (ftdmchan->state) {
 		case FTDM_CHANNEL_STATE_DOWN:
 			/* Do nothing */
@@ -1257,11 +1256,18 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 	int16_t dChan = sngisdn_event->dChan;
 	uint8_t ces = sngisdn_event->ces;
 	uint8_t evntType = sngisdn_event->evntType;
+	Rst *rstEvnt = NULL;
+	sngisdn_span_data_t     *signal_data = NULL;
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
-	Rst *rstEvnt = &sngisdn_event->event.rstEvnt;
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[dChan].spans[1];
+	rstEvnt = &sngisdn_event->event.rstEvnt;
+
+	/* TODO: readjust this when NFAS is implemented as signal_data will not always be the first
+	 * span for that d-channel */
+
+	signal_data = g_sngisdn_data.dchans[dChan].spans[1];
+
 	if (!signal_data) {
 		ftdm_log(FTDM_LOG_CRIT, "Received RESTART IND on unconfigured span (suId:%d)\n", suId);
 		return;

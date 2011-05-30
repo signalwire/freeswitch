@@ -1297,6 +1297,9 @@ static FIO_API_FUNCTION(ftdm_sangoma_isdn_api)
 		status = sngisdn_check_free_ids();
 		goto done;
 	}
+	if (!strcasecmp(argv[0], "check_mem")) {
+		sngisdn_get_memory_info();
+	}
 done:
 	switch (status) {
 		case FTDM_SUCCESS:

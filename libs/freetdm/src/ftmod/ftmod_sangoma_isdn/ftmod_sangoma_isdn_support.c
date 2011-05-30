@@ -47,7 +47,6 @@ static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t
 static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val);
 
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
-void get_memory_info(void);
 
 ftdm2trillium_t npi_codes[] = {
 	{FTDM_NPI_UNKNOWN,	IN_NP_UNK},
@@ -1085,7 +1084,7 @@ ftdm_status_t sngisdn_check_free_ids(void)
 	return FTDM_SUCCESS;
 }
 
-void get_memory_info(void)
+void sngisdn_get_memory_info(void)
 {
 	U32 availmen = 0;
 	SRegInfoShow(S_REG, &availmen);

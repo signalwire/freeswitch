@@ -708,7 +708,7 @@ void sngisdn_rcv_q921_ind(BdMngmt *status)
 void sngisdn_rcv_q931_ind(InMngmt *status)
 {	
 	if (status->t.usta.alarm.cause == 287) {
-		get_memory_info();
+		sngisdn_get_memory_info();
 		return;
 	}
 
