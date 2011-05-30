@@ -2669,7 +2669,7 @@ SWITCH_DECLARE(switch_bool_t) switch_dow_cmp(const char *exp, int val)
 			/* Save the previous token and move to the next one */
 			range_start = prev;
 		} else if (cur == DOW_ERR) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse error for [%s] at position %td (%.6s)\n", exp, p - exp, p);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse error for [%s] at position %ld (%.6s)\n", exp, (long) (p - exp), p);
 			break;
 		} else {
 			/* Valid day found */

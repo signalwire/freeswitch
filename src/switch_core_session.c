@@ -616,6 +616,10 @@ static const char *message_names[] = {
 	"APPLICATION_EXEC_COMPLETE",
 	"PHONE_EVENT",
 	"T38_DESCRIPTION"
+	"UDPTL_MODE",
+	"CLEAR_PROGRESS",
+	"JITTER_BUFFER",
+	"RECOVERY_REFRESH",
 	"INVALID"
 };
 
@@ -644,8 +648,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		message->_line = line;
 	}
 
-	if (message->message_id > SWITCH_MESSAGE_INVALID) {
-		message->message_id = SWITCH_MESSAGE_INVALID;
+	if (message->message_id > SWITCH_MESSAGE_INVALID-1) {
+		message->message_id = SWITCH_MESSAGE_INVALID-1;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
