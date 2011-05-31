@@ -478,6 +478,13 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 
 
 	if (!header) {
+
+		if (esl_strlen_zero(data)) {
+			esl_event_del_header(event, header_name);
+			FREE(data);
+			goto end;
+		}
+
 		if (esl_test_flag(event, ESL_EF_UNIQ_HEADERS)) {
 			esl_event_del_header(event, header_name);
 		}

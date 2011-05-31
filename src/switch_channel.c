@@ -1032,7 +1032,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->variables && !zstr(varname)) {
-		if (!zstr(value)) {
+		if (zstr(value)) {
+			switch_event_del_header(channel->variables, varname);
+		} else {
 			int ok = 1;
 
 			if (var_check) {
@@ -1061,7 +1063,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_cha
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->variables && !zstr(varname)) {
-		if (!zstr(value)) {
+		if (zstr(value)) {
+			switch_event_del_header(channel->variables, varname);
+		} else {
 			int ok = 1;
 
 			if (var_check) {

@@ -916,7 +916,7 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 		}
 		header_name = real_header_name;
 	}
-	
+
 	if (index_ptr || (stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
 		
 		if (!(header = switch_event_get_header_ptr(event, header_name)) && index_ptr) {
@@ -970,6 +970,13 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 
 
 	if (!header) {
+
+		if (zstr(data)) {
+			switch_event_del_header(event, header_name);
+			FREE(data);
+			goto end;
+		}
+
 		if (switch_test_flag(event, EF_UNIQ_HEADERS)) {
 			switch_event_del_header(event, header_name);
 		}
