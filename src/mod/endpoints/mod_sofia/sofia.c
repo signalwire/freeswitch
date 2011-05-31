@@ -4975,6 +4975,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									char *br_a = b_private->uuid;
 
 									if (br_b) {
+										switch_core_session_t *tmp;
+
+										if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer")) && 
+											(tmp = switch_core_session_locate(br_a))) {
+											switch_core_media_bug_transfer_recordings(session, tmp);
+											switch_core_session_rwunlock(tmp);
+										}
+
 										switch_ivr_uuid_bridge(br_a, br_b);
 										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 										sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
@@ -5478,6 +5486,11 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 			if ((status = switch_ivr_originate(NULL, &tsession, &cause, nhelper->exten_with_params, timeout, NULL, NULL, NULL,
 											   switch_channel_get_caller_profile(channel_a), nhelper->vars, SOF_NONE, NULL)) == SWITCH_STATUS_SUCCESS) {
 				if (switch_channel_up(channel_a)) {
+
+					if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer"))) {
+						switch_core_media_bug_transfer_recordings(session, a_session);
+					}
+
 					tuuid_str = switch_core_session_get_uuid(tsession);
 					switch_ivr_uuid_bridge(nhelper->bridge_to_uuid, tuuid_str);
 					switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
@@ -5828,6 +5841,14 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_core_session_rwunlock(tmp);
 							}
 
+
+							if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer")) && 
+								(tmp = switch_core_session_locate(br_a))) {
+								switch_core_media_bug_transfer_recordings(session, tmp);
+								switch_core_session_rwunlock(tmp);
+							}
+
+							
 							switch_ivr_uuid_bridge(br_b, br_a);
 							switch_channel_set_variable(channel_b, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),

@@ -1638,6 +1638,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
 typedef struct {
 	SpeexPreprocessState *read_st;
 	SpeexPreprocessState *write_st;
