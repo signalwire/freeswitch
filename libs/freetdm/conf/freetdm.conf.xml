@@ -18,6 +18,11 @@ with the signaling protocols that you can run on top of your I/O interfaces.
 		-->
 		<!--<param name="enable-analog-option" value="call-swap"/>-->
 		<!--<param name="enable-analog-option" value="3-way"/>-->
+		<!--
+		Refuse to load the module if there is configuration errors
+		Defaults to 'no'
+		-->
+		<!--<param name="fail-on-error" value="no"/>-->
 	</settings>
 
 	<!-- Sample analog configuration (The analog_spans tag is for ftmod_analog) -->
