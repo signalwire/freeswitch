@@ -4377,6 +4377,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					if (sofia_test_pflag(profile, PFLAG_MANUAL_REDIRECT)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirect: Transfering to %s %s %s\n",
 										  p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
+
+						if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
+							switch_core_media_bug_transfer_recordings(session, a_session);
+						}
+
 						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
 						switch_channel_hangup(channel, SWITCH_CAUSE_REDIRECTION_TO_NEW_DESTINATION);
 					} else if ((!strcmp(profile->sipip, p_contact->m_url->url_host))
@@ -4384,6 +4389,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 							   || (switch_xml_locate_domain(p_contact->m_url->url_host, NULL, &root, &domain) == SWITCH_STATUS_SUCCESS)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirect: Transfering to %s\n",
 										  p_contact->m_url->url_user);
+
+						if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
+							switch_core_media_bug_transfer_recordings(session, a_session);
+						}
+
 						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, NULL, NULL);
 						switch_channel_hangup(channel, SWITCH_CAUSE_REDIRECTION_TO_NEW_DESTINATION);
 						switch_xml_free(root);
@@ -5845,6 +5855,13 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer")) && 
 								(tmp = switch_core_session_locate(br_a))) {
 								switch_core_media_bug_transfer_recordings(session, tmp);
+								switch_core_session_rwunlock(tmp);
+							}
+
+
+							if (switch_true(switch_channel_get_variable(channel_b, "recording_follow_transfer")) && 
+								(tmp = switch_core_session_locate(br_b))) {
+								switch_core_media_bug_transfer_recordings(b_session, tmp);
 								switch_core_session_rwunlock(tmp);
 							}
 
