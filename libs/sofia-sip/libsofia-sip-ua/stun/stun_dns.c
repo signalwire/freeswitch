@@ -163,7 +163,10 @@ stun_dns_lookup_t *stun_dns_lookup(stun_magic_t *magic,
     query = sres_query(self->stun_sres, priv_sres_cb, self,
 		       sres_type_srv,
 		       srvname);
-  }
+    if (query) {
+      /* TODO Just so compiler doesn't give error */
+    }
+}
   else {
     su_free(NULL, self), self = NULL;
   }

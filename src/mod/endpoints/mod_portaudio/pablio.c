@@ -251,7 +251,7 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	PABLIO_Stream *aStream;
 	long numFrames;
 	//long numBytes;
-	int channels = 1;
+	//int channels = 1;
 
 	if (!(inputParameters || outputParameters)) {
 		return -1;
@@ -262,11 +262,13 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	switch_assert(aStream);
 	memset(aStream, 0, sizeof(PABLIO_Stream));
 
+	/*
 	if (inputParameters) {
 		channels = inputParameters->channelCount;
 	} else if (outputParameters) {
 		channels = outputParameters->channelCount;
 	}
+	*/
 
 	numFrames = RoundUpToNextPowerOf2(samples_per_packet * 5);
 	aStream->bytesPerFrame = bytesPerSample;

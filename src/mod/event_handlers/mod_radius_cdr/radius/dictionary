@@ -276,6 +276,8 @@ ATTRIBUTE	Freeswitch-Callstartdate		20	string  Freeswitch
 ATTRIBUTE	Freeswitch-Callanswerdate		21	string  Freeswitch
 ATTRIBUTE	Freeswitch-Calltransferdate		22	string  Freeswitch
 ATTRIBUTE	Freeswitch-Callenddate			23	string  Freeswitch
+ATTRIBUTE	Freeswitch-Direction			24	string  Freeswitch
+ATTRIBUTE	Freeswitch-Other-Leg-Id			25	string	Freeswitch
 
 #
 #  Freeswitch-Hangupcause

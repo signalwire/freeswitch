@@ -201,7 +201,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 	chan_a = switch_core_session_get_channel(session_a);
 	chan_b = switch_core_session_get_channel(session_b);
-
+	
+	switch_channel_set_bridge_time(chan_a);
+ 
 	if ((exec_app = switch_channel_get_variable(chan_a, "bridge_pre_execute_app"))) {
 		exec_data = switch_channel_get_variable(chan_a, "bridge_pre_execute_data");
 	}
@@ -862,10 +864,9 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 	switch_core_session_message_t msg = { 0 };
 	switch_channel_t *channel = NULL;
 	switch_event_t *event;
-	switch_channel_state_t state;
 
 	channel = switch_core_session_get_channel(session);
-	state = switch_channel_get_state(channel);
+
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	msg.from = __FILE__;
@@ -1068,6 +1069,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
 		switch_event_fire(&event);
 	}
+
+	switch_channel_set_bridge_time(caller_channel);
+	switch_channel_set_bridge_time(peer_channel);
 	
 	switch_channel_set_state_flag(caller_channel, CF_RESET);
 	switch_channel_set_state_flag(peer_channel, CF_RESET);
@@ -1575,6 +1579,8 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 	if (!switch_channel_test_flag(rchannel, CF_ANSWERED)) {
 		switch_channel_answer(rchannel);
 	}
+
+	switch_channel_mark_hold(rchannel, SWITCH_FALSE);
 
 	switch_channel_set_state_flag(rchannel, CF_TRANSFER);
 	switch_channel_set_state(rchannel, CS_PARK);

@@ -417,6 +417,8 @@ SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(_In_opt_z_ 
 
 SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond);
 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_language(switch_xml_t *root, switch_xml_t *node, switch_event_t *params, switch_xml_t *language, switch_xml_t *phrases, switch_xml_t *macros, const char *str_language);
+
 SWITCH_END_EXTERN_C
 ///\}
 #endif // _SWITCH_XML_H

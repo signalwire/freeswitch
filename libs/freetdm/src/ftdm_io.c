@@ -310,21 +310,6 @@ FTDM_STR2ENUM(ftdm_str2channel_indication, ftdm_channel_indication2str, ftdm_cha
 
 static ftdm_status_t ftdm_group_add_channels(ftdm_span_t* span, int currindex, const char* name);
 
-static const char *cut_path(const char *in)
-{
-	const char *p, *ret = in;
-	char delims[] = "/\\";
-	char *i;
-
-	for (i = delims; *i; i++) {
-		p = in;
-		while ((p = strchr(p, *i)) != 0) {
-			ret = ++p;
-		}
-	}
-	return ret;
-}
-
 static void null_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
 	if (file && func && line && level && fmt) {
@@ -350,7 +335,6 @@ static int ftdm_log_level = FTDM_LOG_LEVEL_DEBUG;
 
 static void default_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
-	const char *fp;
 	char data[1024];
 	va_list ap;
 
@@ -360,13 +344,10 @@ static void default_logger(const char *file, const char *func, int line, int lev
 	if (level > ftdm_log_level) {
 		return;
 	}
-	
-	fp = cut_path(file);
 
 	va_start(ap, fmt);
 
 	vsnprintf(data, sizeof(data), fmt, ap);
-
 
 	fprintf(stderr, "[%s] %s:%d %s() %s", FTDM_LEVEL_NAMES[level], file, line, func, data);
 
@@ -411,13 +392,13 @@ FT_DECLARE(void) ftdm_set_echocancel_call_begin(ftdm_channel_t *chan)
 	if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC)) {
 		if (ftdm_channel_test_feature(chan, FTDM_CHANNEL_FEATURE_HWEC_DISABLED_ON_IDLE)) {
 			/* If the ec is disabled on idle, we need to enable it unless is a digital call */
-			if (caller_data->bearer_capability != FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+			if (caller_data->bearer_capability != FTDM_BEARER_CAP_UNRESTRICTED) {
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Enabling ec for call in channel state %s\n", ftdm_channel_state2str(chan->state));
 				ftdm_channel_command(chan, FTDM_COMMAND_ENABLE_ECHOCANCEL, NULL);
 			}
 		} else {
 			/* If the ec is enabled on idle, we do nothing unless is a digital call that needs it disabled */
-			if (caller_data->bearer_capability == FTDM_BEARER_CAP_64K_UNRESTRICTED) {
+			if (caller_data->bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "Disabling ec for digital call in channel state %s\n", ftdm_channel_state2str(chan->state));
 				ftdm_channel_command(chan, FTDM_COMMAND_DISABLE_ECHOCANCEL, NULL);
 			}
@@ -508,13 +489,16 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_set_caller_data(ftdm_channel_t *ftdmchan,
 {
 	ftdm_status_t err = FTDM_SUCCESS;
 	if (!ftdmchan) {
-		ftdm_log(FTDM_LOG_CRIT, "Error: trying to set caller data, but no ftdmchan!\n");
+		ftdm_log(FTDM_LOG_CRIT, "trying to set caller data, but no ftdmchan!\n");
 		return FTDM_FAIL;
 	}
 	if ((err = ftdm_set_caller_data(ftdmchan->span, caller_data)) != FTDM_SUCCESS) {
 		return err; 
 	}
 	ftdmchan->caller_data = *caller_data;
+	if (ftdmchan->caller_data.bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA);
+	}
 	return FTDM_SUCCESS;
 }
 
@@ -2628,6 +2612,7 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_MEDIA);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_ANSWERED);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_USER_HANGUP);
+	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA);
 	ftdm_mutex_lock(ftdmchan->pre_buffer_mutex);
 	ftdm_buffer_destroy(&ftdmchan->pre_buffer);
 	ftdmchan->pre_buffer_size = 0;
@@ -3566,7 +3551,7 @@ static FIO_READ_FUNCTION(ftdm_raw_read)
 
 	if (status == FTDM_SUCCESS && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_USE_RX_GAIN) 
 	   && (ftdmchan->native_codec == FTDM_CODEC_ALAW || ftdmchan->native_codec == FTDM_CODEC_ULAW)) {
-		int i = 0;
+		ftdm_size_t i = 0;
 		unsigned char *rdata = data;
 		for (i = 0; i < *datalen; i++) {
 			rdata[i] = ftdmchan->rxgain_table[rdata[i]];
@@ -3780,6 +3765,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 
 	handle_tone_generation(ftdmchan);
 
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA)) {
+		goto done;
+	}
+
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE) && ftdmchan->effective_codec != ftdmchan->native_codec) {
 		if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
 			codec_func = fio_ulaw2slin;
@@ -3934,7 +3923,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 		ftdm_mutex_unlock(ftdmchan->pre_buffer_mutex);
 
 
-		memset(data, 255, *datalen);
+		memset(data, FTDM_SILENCE_VALUE(ftdmchan), *datalen);
 
 		if (ftdmchan->skip_read_frames > 0) {
 			ftdmchan->skip_read_frames--;
@@ -3946,7 +3935,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read(ftdm_channel_t *ftdmchan, void *data
 			if (ftdm_buffer_inuse(ftdmchan->pre_buffer) >= ftdmchan->pre_buffer_size) {
 				ftdm_buffer_read(ftdmchan->pre_buffer, data, *datalen);
 			} else {
-				memset(data, 255, *datalen);
+				memset(data, FTDM_SILENCE_VALUE(ftdmchan), *datalen);
 			}
 		}
 		ftdm_mutex_unlock(ftdmchan->pre_buffer_mutex);
@@ -3994,6 +3983,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 		status = FTDM_FAIL;
 		goto done;
 	}
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA)) {
+		goto do_write;
+	}
 	
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE) && ftdmchan->effective_codec != ftdmchan->native_codec) {
 		if (ftdmchan->native_codec == FTDM_CODEC_ULAW && ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
@@ -4024,6 +4017,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_write(ftdm_channel_t *ftdmchan, void *dat
 			wdata[i] = ftdmchan->txgain_table[wdata[i]];
 		}
 	}
+
+do_write:
 
 	if (ftdmchan->span->sig_write) {
 		status = ftdmchan->span->sig_write(ftdmchan, data, *datalen);
@@ -5374,10 +5369,12 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED);
 			ftdm_call_set_call_id(sigmsg->channel, &sigmsg->channel->caller_data);
 			/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
-			* doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
-			* is needed at all?
-			* */
+			 * doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
+			 * is needed at all? */
 			ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_HOLD);
+			if (sigmsg->channel->caller_data.bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED) {
+				ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_DIGITAL_MEDIA);
+			}
 		}
 		break;
 

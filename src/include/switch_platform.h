@@ -223,15 +223,15 @@ typedef intptr_t switch_ssize_t;
 #ifdef WIN32
 
 #ifdef WIN64
-#define SWITCH_SSIZE_T_FMT          "I64d"
-#define SWITCH_SIZE_T_FMT           "I64d"
+#define SWITCH_SSIZE_T_FMT          "lld"
+#define SWITCH_SIZE_T_FMT           "lld"
 #else
 #define SWITCH_SSIZE_T_FMT          "d"
 #define SWITCH_SIZE_T_FMT           "d"
 #endif
 
-#define SWITCH_INT64_T_FMT          "I64d"
-#define SWITCH_UINT64_T_FMT         "I64u"
+#define SWITCH_INT64_T_FMT          "lld"
+#define SWITCH_UINT64_T_FMT         "llu"
 
 #ifndef TIME_T_FMT
 #define TIME_T_FMT SWITCH_INT64_T_FMT

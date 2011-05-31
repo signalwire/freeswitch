@@ -292,6 +292,12 @@ typedef struct ftdm_sngisdn_data {
 	sngisdn_span_data_t *spans[MAX_L1_LINKS+1]; /* spans are indexed by link_id */
 }ftdm_sngisdn_data_t;
 
+typedef struct ftdm2trillium
+{
+	uint8_t ftdm_val;
+	uint8_t trillium_val;
+}ftdm2trillium_t;
+
 
 /* TODO implement these 2 functions */
 #define ISDN_FUNC_TRACE_ENTER(a)
@@ -388,7 +394,7 @@ void sngisdn_trace_interpreted_q931(sngisdn_span_data_t *signal_data, ftdm_trace
 void sngisdn_trace_raw_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
 void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
 
-void get_memory_info(void);
+void sngisdn_get_memory_info(void);
 
 ftdm_status_t sng_isdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
 ftdm_status_t sngisdn_check_free_ids(void);
@@ -471,9 +477,9 @@ ftdm_status_t sngisdn_stack_start(ftdm_span_t *span);
 ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span);
 ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span);
 
-void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
-void sngisdn_print_spans(ftdm_stream_handle_t *stream);
-void sngisdn_print_span(ftdm_stream_handle_t *stream, ftdm_span_t *span);
+ftdm_status_t sngisdn_show_l1_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
+ftdm_status_t sngisdn_show_spans(ftdm_stream_handle_t *stream);
+ftdm_status_t sngisdn_show_span(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 
 #endif /* __FTMOD_SNG_ISDN_H__ */
 

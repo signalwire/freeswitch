@@ -42,6 +42,7 @@
 static sng_isup_event_interface_t sng_event;
 static ftdm_io_interface_t g_ftdm_sngss7_interface;
 ftdm_sngss7_data_t g_ftdm_sngss7_data;
+
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
@@ -508,11 +509,6 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	int 				i = 0;
 
 	SS7_DEBUG_CHAN(ftdmchan, "ftmod_sangoma_ss7 processing state %s\n", ftdm_channel_state2str (ftdmchan->state));
-
-#if 0
-	/* clear the state change flag...since we might be setting a new state */
-	ftdm_channel_complete_state(ftdmchan);
-#endif
 
 	/*check what state we are supposed to be in */
 	switch (ftdmchan->state) {

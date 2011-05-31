@@ -136,6 +136,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE "execute_on_media"
 #define SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE "api_on_answer"
 #define SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE "execute_on_ring"
+#define SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIABLE "execute_on_tone_detect"
 #define SWITCH_CALL_TIMEOUT_VARIABLE "call_timeout"
 #define SWITCH_HOLDING_UUID_VARIABLE "holding_uuid"
 #define SWITCH_SOFT_HOLDING_UUID_VARIABLE "soft_holding_uuid"
@@ -488,6 +489,7 @@ typedef struct {
 	switch_size_t dtmf_packet_count;
 	switch_size_t cng_packet_count;
 	switch_size_t flush_packet_count;
+	switch_size_t largest_jb_size;
 } switch_rtp_numbers_t;
 
 

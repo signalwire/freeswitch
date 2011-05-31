@@ -33,6 +33,9 @@
 
 /* INCLUDE ********************************************************************/
 #include "ftmod_sangoma_ss7_main.h"
+#ifdef HAVE_ZLIB
+#include <zlib.h>
+#endif
 /******************************************************************************/
 
 /* DEFINES ********************************************************************/
@@ -91,254 +94,288 @@ FTDM_ENUM_NAMES(BLK_FLAGS_NAMES, BLK_FLAGS_STRING)
 FTDM_STR2ENUM(ftmod_ss7_blk_state2flag, ftmod_ss7_blk_flag2str, sng_ckt_block_flag_t, BLK_FLAGS_NAMES, 31)
 
 /* FUNCTIONS ******************************************************************/
-uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
-{
+static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val);
+static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val);
 
-	return 0;
+
+
+/* Maps generic FreeTDM CPC codes to SS7 CPC codes */
+ftdm2trillium_t cpc_codes[] = {
+	{FTDM_CPC_UNKNOWN,			CAT_UNKNOWN},
+	{FTDM_CPC_OPERATOR_FRENCH,	CAT_OPLANGFR},
+	{FTDM_CPC_OPERATOR_ENGLISH,	CAT_OPLANGENG},
+	{FTDM_CPC_OPERATOR_GERMAN,	CAT_OPLANGGER},
+	{FTDM_CPC_OPERATOR_RUSSIAN,	CAT_OPLANGRUS},
+	{FTDM_CPC_OPERATOR_SPANISH,	CAT_OPLANGSP},
+	{FTDM_CPC_ORDINARY,			CAT_ORD},
+	{FTDM_CPC_PRIORITY,			CAT_PRIOR},
+	{FTDM_CPC_DATA,				CAT_DATA},
+	{FTDM_CPC_TEST,				CAT_TEST},
+	{FTDM_CPC_PAYPHONE,			CAT_PAYPHONE},
+};
+
+ftdm2trillium_t  bc_cap_codes[] = {
+	{FTDM_BEARER_CAP_SPEECH,		ITC_SPEECH},	/* speech as per ATIS-1000113.3.2005 */
+	{FTDM_BEARER_CAP_UNRESTRICTED,	ITC_UNRDIG},	/* unrestricted digital as per ATIS-1000113.3.2005 */
+	{FTDM_BEARER_CAP_RESTRICTED,	ITC_UNRDIG},	/* Restricted Digital */
+	{FTDM_BEARER_CAP_3_1KHZ_AUDIO,	ITC_A31KHZ},	/* 3.1kHz audio as per ATIS-1000113.3.2005 */
+	{FTDM_BEARER_CAP_7KHZ_AUDIO,	ITC_A7KHZ},		/* 7Khz audio */
+	{FTDM_BEARER_CAP_15KHZ_AUDIO,	ITC_A15KHZ},	/* 15Khz audio */
+	{FTDM_BEARER_CAP_VIDEO,			ITC_VIDEO},		/* Video */
+};
+
+static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val)
+{
+	ftdm2trillium_t *val = vals;
+	while(val++) {
+		if (val->ftdm_val == ftdm_val) {
+			return val->trillium_val;
+		}
+	}
+	return default_val;
 }
 
-/******************************************************************************/
-uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum)
+static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val)
 {
-	int k;
-	int j;
-	int flag;
-	int odd;
-	char tmp[2];
-	uint8_t lower;
-	uint8_t upper;
+	ftdm2trillium_t *val = vals;
+	while(val++) {
+		if (val->trillium_val == trillium_val) {
+			return val->ftdm_val;
+		}
+	}
+	return default_val;
+}
 
-	/**************************************************************************/
+ftdm_status_t copy_cgPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPtyNum)
+{
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPtyNum)
+{
+	const char *val;	
+
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+
 	cgPtyNum->eh.pres		   = PRSNT_NODEF;
-	/**************************************************************************/
+	
 	cgPtyNum->natAddrInd.pres   = PRSNT_NODEF;
 	cgPtyNum->natAddrInd.val	= 0x03;
-	/**************************************************************************/
+
+	
 	cgPtyNum->scrnInd.pres	  = PRSNT_NODEF;
-	cgPtyNum->scrnInd.val	   = ftdm->screen;
-	/**************************************************************************/
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_screen_ind");
+	if (!ftdm_strlen_zero(val)) {
+		cgPtyNum->scrnInd.val	= atoi(val);
+	} else {
+		cgPtyNum->scrnInd.val	= caller_data->screen;
+	}
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Screening Ind %d\n", cgPtyNum->scrnInd.val);
+	
 	cgPtyNum->presRest.pres	 = PRSNT_NODEF;
-	cgPtyNum->presRest.val	  = ftdm->pres;
-	/**************************************************************************/
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_pres_ind");
+	if (!ftdm_strlen_zero(val)) {
+		cgPtyNum->presRest.val	= atoi(val);
+	} else {
+		cgPtyNum->presRest.val	= caller_data->pres;
+	}
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Presentation Ind %d\n", cgPtyNum->presRest.val);
+
 	cgPtyNum->numPlan.pres	  = PRSNT_NODEF;
 	cgPtyNum->numPlan.val	   = 0x01;
-	/**************************************************************************/
+
 	cgPtyNum->niInd.pres		= PRSNT_NODEF;
 	cgPtyNum->niInd.val		 = 0x00;
-	/**************************************************************************/
-	cgPtyNum->addrSig.pres	  = PRSNT_NODEF;
-	
-	/* atoi will search through memory starting from the pointer it is given until
-	 * it finds the \0...since tmp is on the stack it will start going through the
-	 * possibly causing corruption.  Hard code a \0 to prevent this
-	 */
-	
-	tmp[1] = '\0';
-	k = 0;
-	j = 0;
-	flag = 0;
-	odd = 0;
-	upper = 0x0;
-	lower = 0x0;
 
-	while (1) {
-		/* grab a digit from the ftdm digits */
-		tmp[0] = ftdm->cid_num.digits[k];
-
-		/* check if the digit is a number and that is not null */
-		while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-			/* move on to the next value */
-			k++;
-			tmp[0] = ftdm->cid_num.digits[k];
-		} /* while(!(isdigit(tmp))) */
-
-		/* check if tmp is null or a digit */
-		if (tmp[0] != '\0') {
-			/* push it into the lower nibble */
-			lower = strtol(&tmp[0], (char **)NULL, 16);
-			/* move to the next digit */
-			k++;
-			/* grab a digit from the ftdm digits */
-			tmp[0] = ftdm->cid_num.digits[k];
-
-			/* check if the digit is a number and that is not null */
-			while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-				k++;
-				tmp[0] = ftdm->cid_num.digits[k];
-			} /* while(!(isdigit(tmp))) */
-
-			/* check if tmp is null or a digit */
-			if (tmp[0] != '\0') {
-				/* push the digit into the upper nibble */
-				upper = (strtol(&tmp[0], (char **)NULL, 16)) << 4;
-			} else {
-				/* there is no upper ... fill in 0 */
-				upper = 0x0;
-				/* throw the odd flag */
-				odd = 1;
-				/* throw the end flag */
-				flag = 1;
-			} /* if (tmp != '\0') */
-		} else {
-			/* keep the odd flag down */
-			odd = 0;
-			/* break right away since we don't need to write the digits */
-			break;
-		}
-
-		/* push the digits into the trillium structure */
-		cgPtyNum->addrSig.val[j] = upper | lower;
-
-		/* increment the trillium pointer */
-		j++;
-
-		/* if the flag is up we're through all the digits */
-		if (flag) break;
-
-		/* move to the next digit */
-		k++;
-	} /* while(1) */
-
-	cgPtyNum->addrSig.len = j;
-
-	/**************************************************************************/
-	cgPtyNum->oddEven.pres	  = PRSNT_NODEF;
-	cgPtyNum->oddEven.val	   = odd;
-	/**************************************************************************/
-	return 0;
+	return copy_tknStr_to_sngss7(caller_data->cid_num.digits, &cgPtyNum->addrSig, &cgPtyNum->oddEven);
 }
 
-/******************************************************************************/
-uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
+ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum)
 {
-
-	return 0;
+	/* TODO: Implement me */
+	return FTDM_SUCCESS;
 }
 
-/******************************************************************************/
-uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum)
-{
-	int k;
-	int j;
-	int flag;
-	int odd;
-	char tmp[2];
-	uint8_t lower;
-	uint8_t upper;
 
-	/**************************************************************************/
+ftdm_status_t copy_cdPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum)
+{
+	const char	*cld_nadi = NULL;
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+
 	cdPtyNum->eh.pres		   = PRSNT_NODEF;
-	/**************************************************************************/
+
 	cdPtyNum->natAddrInd.pres   = PRSNT_NODEF;
-	cdPtyNum->natAddrInd.val	= 0x03;
-	/**************************************************************************/
+	cld_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cld_nadi");
+	if (!ftdm_strlen_zero(cld_nadi)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Called NADI value \"%s\"\n", cld_nadi);
+		cdPtyNum->natAddrInd.val	= atoi(cld_nadi);
+	} else {
+		cdPtyNum->natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].cld_nadi;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied NADI value found for CLD, using \"%d\"\n", cdPtyNum->natAddrInd.val);
+	}
+
 	cdPtyNum->numPlan.pres	  = PRSNT_NODEF;
 	cdPtyNum->numPlan.val	   = 0x01;
-	/**************************************************************************/
+
 	cdPtyNum->innInd.pres	   = PRSNT_NODEF;
 	cdPtyNum->innInd.val		= 0x01;
-	/**************************************************************************/
-	cdPtyNum->addrSig.pres	  = PRSNT_NODEF;
-
-	/* atoi will search through memory starting from the pointer it is given until
-	 * it finds the \0...since tmp is on the stack it will start going through the
-	 * possibly causing corruption.  Hard code a \0 to prevent this
-	 */ /* dnis */
-	tmp[1] = '\0';
-	k = 0;
-	j = 0;
-	flag = 0;
-	odd = 0;
-	upper = 0x0;
-	lower = 0x0;
-
-	while (1) {
-		/* grab a digit from the ftdm digits */
-		tmp[0] = ftdm->dnis.digits[k];
-
-		/* check if the digit is a number and that is not null */
-		while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-			/* move on to the next value */
-			k++;
-			tmp[0] = ftdm->dnis.digits[k];
-		} /* while(!(isdigit(tmp))) */
-
-		/* check if tmp is null or a digit */
-		if (tmp[0] != '\0') {
-			/* push it into the lower nibble */
-			lower = strtol(&tmp[0], (char **)NULL, 16);
-			/* move to the next digit */
-			k++;
-			/* grab a digit from the ftdm digits */
-			tmp[0] = ftdm->dnis.digits[k];
-
-			/* check if the digit is a number and that is not null */
-			while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-				k++;
-				tmp[0] = ftdm->dnis.digits[k];
-			} /* while(!(isdigit(tmp))) */
-
-			/* check if tmp is null or a digit */
-			if (tmp[0] != '\0') {
-				/* push the digit into the upper nibble */
-				upper = (strtol(&tmp[0], (char **)NULL, 16)) << 4;
-			} else {
-				/* there is no upper ... fill in ST */
-				upper = 0xF0;
-				/* keep the odd flag down */
-				odd = 0;
-				/* throw the end flag */
-				flag = 1;
-			} /* if (tmp != '\0') */
-		} else {
-			/* throw the odd flag */
-			odd = 1;
-			/* need to add the ST */
-			lower = 0xF;
-			upper = 0x0;
-			/* throw the flag */
-			flag = 1;
-		}
-
-		/* push the digits into the trillium structure */
-		cdPtyNum->addrSig.val[j] = upper | lower;
-
-		/* increment the trillium pointer */
-		j++;
-
-		/* if the flag is up we're through all the digits */
-		if (flag) break;
-
-		/* move to the next digit */
-		k++;
-	} /* while(1) */
-
-	cdPtyNum->addrSig.len = j;
-
-	/**************************************************************************/
-	cdPtyNum->oddEven.pres	  = PRSNT_NODEF;
-
-	cdPtyNum->oddEven.val	   = odd;
-
-	/**************************************************************************/
-	return 0;
+	
+	return copy_tknStr_to_sngss7(caller_data->dnis.digits, &cdPtyNum->addrSig, &cdPtyNum->oddEven);
 }
 
+ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
+{	
+	const char *val = NULL;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_digits");
+	if (!ftdm_strlen_zero(val)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Generic Number qualifier \"%s\"\n", val);
+		if (copy_tknStr_to_sngss7((char*)val, &genNmb->addrSig, &genNmb->oddEven) != FTDM_SUCCESS) {
+			return FTDM_FAIL;
+		}
+	} else {
+		return FTDM_SUCCESS;
+	}
+	
+	genNmb->eh.pres = PRSNT_NODEF;
+	genNmb->addrSig.pres = PRSNT_NODEF;
+	
+	genNmb->nmbQual.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_numqual");
+	if (!ftdm_strlen_zero(val)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Generic Number \"%s\"\n", val);
+		genNmb->nmbQual.val	= atoi(val);
+	} else {
+		genNmb->nmbQual.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_nmbqual;
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Generic Number \n");
+	}
+	genNmb->natAddrInd.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_nadi");
+	if (!ftdm_strlen_zero(val)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Generic Number \"nature of address\" \"%s\"\n", val);
+		genNmb->natAddrInd.val	= atoi(val);
+	} else {
+		genNmb->natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_nadi;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Generic Number \"nature of address\" \"%d\"\n", genNmb->natAddrInd.val);
+	}
+	genNmb->scrnInd.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_screen_ind");
+	if (!ftdm_strlen_zero(val)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Generic Number \"screening indicator\" \"%s\"\n", val);
+		genNmb->scrnInd.val	= atoi(val);
+	} else {
+		genNmb->natAddrInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_screen_ind;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Generic Number \"screening indicator\" \"%d\"\n", genNmb->natAddrInd.val);
+	}
+	genNmb->presRest.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_pres_ind");
+	if (!ftdm_strlen_zero(val)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Generic Number \"presentation indicator\" \"%s\"\n", val);
+		genNmb->presRest.val	= atoi(val);
+	} else {
+		genNmb->presRest.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_pres_ind;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Generic Number \"presentation indicator\" \"%d\"\n", genNmb->presRest.val);
+	}
+	genNmb->numPlan.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_npi");
+	if (!ftdm_strlen_zero(val)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Generic Number \"numbering plan\" \"%s\"\n", val);
+		genNmb->numPlan.val	= atoi(val);
+	} else {
+	genNmb->numPlan.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_npi;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Generic Number \"numbering plan\" \"%d\"\n", genNmb->numPlan.val);
+	}
+	genNmb->niInd.pres = PRSNT_NODEF;
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_gn_num_inc_ind");
+	if (!ftdm_strlen_zero(val)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Generic Number \"number incomplete indicator\" \"%s\"\n", val);
+		genNmb->niInd.val	= atoi(val);
+	} else {
+		genNmb->niInd.val	= g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].gn_num_inc_ind;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Generic Number \"number incomplete indicator\" \"%d\"\n", genNmb->niInd.val);
+	}
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
+{
+	char val[64];
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+
+	memset(val, 0, sizeof(val));
+
+	if (genNmb->eh.pres != PRSNT_NODEF || genNmb->addrSig.pres != PRSNT_NODEF) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Generic Number available\n");
+		return FTDM_SUCCESS;
+	}
+
+	copy_tknStr_from_sngss7(genNmb->addrSig, val, genNmb->oddEven);
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number:%s\n", val);
+	sngss7_add_var(sngss7_info, "ss7_gn_digits", val);
+
+	if (genNmb->nmbQual.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->nmbQual.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"number qualifier\" \n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_numqual", val);
+	}
+
+	if (genNmb->natAddrInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->natAddrInd.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"nature of address\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_nadi", val);
+	}
+
+	if (genNmb->scrnInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->scrnInd.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"screening indicator\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_screen_ind", val);
+	}
+	
+	if (genNmb->presRest.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->presRest.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"presentation indicator\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_pres_ind", val);
+	}
+
+	if (genNmb->numPlan.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->numPlan.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"numbering plan\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_npi", val);
+	}
+
+	if (genNmb->niInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", genNmb->niInd.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"number incomplete indicator\" \"%s\"\n", val);
+		sngss7_add_var(sngss7_info, "ss7_gn_num_inc_ind", val);
+	}
+	
+	return FTDM_SUCCESS;
+}
 
 ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum)
 {
 	const char* val = NULL;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;	
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
-	uint8_t len = strlen(caller_data->rdnis.digits);
-	if (!len) {
+
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdnis_digits");
+	if (!ftdm_strlen_zero(val)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Redirection Number\"%s\"\n", val);
+		if (copy_tknStr_to_sngss7((char*)val, &redirgNum->addrSig, &redirgNum->oddEven) != FTDM_SUCCESS) {
+			return FTDM_FAIL;
+		}
+	} else if (!ftdm_strlen_zero(caller_data->rdnis.digits)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Redirection Number\"%s\"\n", val);
+		if (copy_tknStr_to_sngss7(caller_data->rdnis.digits, &redirgNum->addrSig, &redirgNum->oddEven) != FTDM_SUCCESS) {
+			return FTDM_FAIL;
+		}
+	} else {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Number\n");
 		return FTDM_SUCCESS;
 	}
-	SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number %s\n", caller_data->rdnis.digits);
 	
 	redirgNum->eh.pres = PRSNT_NODEF;
 
@@ -351,7 +388,7 @@ ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *red
 	} else {		
 		redirgNum->natAddr.val = g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].rdnis_nadi;
 	}
-	SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number NADI:%d\n", redirgNum->natAddr.val);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number NADI:%d\n", redirgNum->natAddr.val);
 
 	/* Screening indicator */
 	redirgNum->scrInd.pres = PRSNT_NODEF;
@@ -361,7 +398,7 @@ ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *red
 	} else {
 		redirgNum->scrInd.val = FTDM_SCREENING_VERIFIED_PASSED;
 	}
-	SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Screening Ind:%d\n", redirgNum->scrInd.val);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Screening Ind:%d\n", redirgNum->scrInd.val);
 	
 	/* Address presentation restricted ind */
 	redirgNum->presRest.pres = PRSNT_NODEF;
@@ -372,7 +409,7 @@ ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *red
 	} else {
 		redirgNum->presRest.val =  FTDM_PRES_ALLOWED;
 	}
-	SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Address Presentation Restricted Ind:%d\n", redirgNum->presRest.val);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Address Presentation Restricted Ind:%d\n", redirgNum->presRest.val);
 
 	/* Numbering plan */
 	redirgNum->numPlan.pres = PRSNT_NODEF;
@@ -384,10 +421,263 @@ ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *red
 		redirgNum->numPlan.val = caller_data->rdnis.plan; 
 	}
 	
-	SS7_DEBUG_CHAN(ftdmchan, "Redirecting Number Numbering plan:%d\n", redirgNum->numPlan.val);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Numbering plan:%d\n", redirgNum->numPlan.val);
 
 	return copy_tknStr_to_sngss7(caller_data->rdnis.digits, &redirgNum->addrSig, &redirgNum->oddEven);
 }
+
+ftdm_status_t copy_redirgNum_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum)
+{
+	char val[20];
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+
+	if (redirgNum->eh.pres != PRSNT_NODEF || redirgNum->addrSig.pres != PRSNT_NODEF) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Redirecting Number available\n");
+		return FTDM_SUCCESS;
+	}
+
+	copy_tknStr_from_sngss7(redirgNum->addrSig, ftdmchan->caller_data.rdnis.digits, redirgNum->oddEven);
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number:%s\n", ftdmchan->caller_data.rdnis.digits);
+	snprintf(val, sizeof(val), "%s", ftdmchan->caller_data.rdnis.digits);
+	sngss7_add_var(sngss7_info, "ss7_rdnis_digits", val);
+	
+
+	if (redirgNum->natAddr.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->natAddr.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number NADI:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_nadi", val);
+		caller_data->rdnis.type = redirgNum->natAddr.val;
+	}
+
+	if (redirgNum->scrInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->scrInd.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Screening Ind:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_screen_ind", val);
+	}
+
+	if (redirgNum->presRest.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->presRest.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Presentation Ind:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_pres_ind", val);		
+	}
+
+	if (redirgNum->numPlan.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirgNum->numPlan.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Numbering plan:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdnis_plan", val);
+		caller_data->rdnis.plan = redirgNum->numPlan.val;
+	}
+
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_cgPtyCat_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyCat *cgPtyCat)
+{
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+	
+	cgPtyCat->eh.pres 			= PRSNT_NODEF;
+	cgPtyCat->cgPtyCat.pres 	= PRSNT_NODEF;
+	
+	cgPtyCat->cgPtyCat.val = get_trillium_val(cpc_codes, caller_data->cpc, CAT_ORD);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Category:0x%x\n",cgPtyCat->cgPtyCat.val);
+	return FTDM_SUCCESS;	
+}
+
+ftdm_status_t copy_cgPtyCat_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyCat *cgPtyCat)
+{
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+	
+	if (cgPtyCat->eh.pres == PRSNT_NODEF &&
+		cgPtyCat->cgPtyCat.pres 	== PRSNT_NODEF) {
+		
+		caller_data->cpc = get_ftdm_val(cpc_codes, cgPtyCat->cgPtyCat.val, FTDM_CPC_UNKNOWN);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Category:0x%x\n", cgPtyCat->cgPtyCat.val);
+	}
+	return FTDM_SUCCESS;
+}
+
+
+ftdm_status_t copy_accTrnspt_to_sngss7(ftdm_channel_t *ftdmchan, SiAccTrnspt *accTrnspt)
+{
+	const char			*clg_subAddr = NULL;
+	const char			*cld_subAddr = NULL;
+	char 				subAddrIE[MAX_SIZEOF_SUBADDR_IE];
+	
+	/* check if the user would like us to send a clg_sub-address */
+	clg_subAddr = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_clg_subaddr");
+	if (!ftdm_strlen_zero(clg_subAddr)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Calling Sub-Address value \"%s\"\n", clg_subAddr);
+		
+		/* clean out the subAddrIE */
+		memset(subAddrIE, 0x0, sizeof(subAddrIE));
+
+		/* check the first character in the sub-address to see what type of encoding to use */
+		switch (clg_subAddr[0]) {
+			case '0':						/* NSAP */
+				encode_subAddrIE_nsap(&clg_subAddr[1], subAddrIE, SNG_CALLING);
+				break;
+				case '1':						/* national variant */
+					encode_subAddrIE_nat(&clg_subAddr[1], subAddrIE, SNG_CALLING);
+					break;
+			default:
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Invalid Calling Sub-Address encoding requested: %c\n", clg_subAddr[0]);
+				break;
+		} /* switch (cld_subAddr[0]) */
+
+
+		/* if subaddIE is still empty don't copy it in */
+		if (subAddrIE[0] != '0') {
+			/* check if the clg_subAddr has already been added */
+			if (accTrnspt->eh.pres == PRSNT_NODEF) {
+				/* append the subAddrIE */
+				memcpy(&accTrnspt->infoElmts.val[accTrnspt->infoElmts.len], subAddrIE, (subAddrIE[1] + 2));
+				accTrnspt->infoElmts.len		= accTrnspt->infoElmts.len +subAddrIE[1] + 2;
+			} else {
+				/* fill in from the beginning */
+				accTrnspt->eh.pres			= PRSNT_NODEF;
+				accTrnspt->infoElmts.pres	= PRSNT_NODEF;
+				memcpy(accTrnspt->infoElmts.val, subAddrIE, (subAddrIE[1] + 2));
+				accTrnspt->infoElmts.len		= subAddrIE[1] + 2;
+			}
+		}
+	}	
+
+	/* check if the user would like us to send a cld_sub-address */
+	cld_subAddr = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_cld_subaddr");
+	if ((cld_subAddr != NULL) && (*cld_subAddr)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Called Sub-Address value \"%s\"\n", cld_subAddr);
+		
+		/* clean out the subAddrIE */
+		memset(subAddrIE, 0x0, sizeof(subAddrIE));
+
+		/* check the first character in the sub-address to see what type of encoding to use */
+		switch (cld_subAddr[0]) {
+			case '0':						/* NSAP */
+				encode_subAddrIE_nsap(&cld_subAddr[1], subAddrIE, SNG_CALLED);
+				break;
+				case '1':						/* national variant */
+					encode_subAddrIE_nat(&cld_subAddr[1], subAddrIE, SNG_CALLED);
+					break;
+			default:
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Invalid Called Sub-Address encoding requested: %c\n", cld_subAddr[0]);
+				break;
+		} /* switch (cld_subAddr[0]) */
+
+		/* if subaddIE is still empty don't copy it in */
+		if (subAddrIE[0] != '0') {
+			/* check if the cld_subAddr has already been added */
+			if (accTrnspt->eh.pres == PRSNT_NODEF) {
+				/* append the subAddrIE */
+				memcpy(&accTrnspt->infoElmts.val[accTrnspt->infoElmts.len], subAddrIE, (subAddrIE[1] + 2));
+				accTrnspt->infoElmts.len		= accTrnspt->infoElmts.len +subAddrIE[1] + 2;
+			} else {
+				/* fill in from the beginning */
+				accTrnspt->eh.pres			= PRSNT_NODEF;
+				accTrnspt->infoElmts.pres	= PRSNT_NODEF;
+				memcpy(accTrnspt->infoElmts.val, subAddrIE, (subAddrIE[1] + 2));
+				accTrnspt->infoElmts.len		= subAddrIE[1] + 2;
+			}
+		}
+	} /* if ((cld_subAddr != NULL) && (*cld_subAddr)) */
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_natConInd_to_sngss7(ftdm_channel_t *ftdmchan, SiNatConInd *natConInd)
+{
+	/* copy down the nature of connection indicators */
+	natConInd->eh.pres 				= PRSNT_NODEF;
+	natConInd->satInd.pres 			= PRSNT_NODEF;
+	natConInd->satInd.val 			= 0; /* no satellite circuit */
+	natConInd->contChkInd.pres 		= PRSNT_NODEF;
+	natConInd->contChkInd.val 		= CONTCHK_NOTREQ;
+	natConInd->echoCntrlDevInd.pres	= PRSNT_NODEF;
+	natConInd->echoCntrlDevInd.val 	= ECHOCDEV_INCL;
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *fwdCallInd)
+{
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	
+	fwdCallInd->eh.pres 				= PRSNT_NODEF;
+	fwdCallInd->natIntCallInd.pres 		= PRSNT_NODEF;
+	fwdCallInd->natIntCallInd.val 		= 0x00;
+	fwdCallInd->end2EndMethInd.pres 	= PRSNT_NODEF;
+	fwdCallInd->end2EndMethInd.val 		= E2EMTH_NOMETH;
+	fwdCallInd->intInd.pres 			= PRSNT_NODEF;
+	fwdCallInd->intInd.val 				= INTIND_NOINTW;
+	fwdCallInd->end2EndInfoInd.pres 	= PRSNT_NODEF;
+	fwdCallInd->end2EndInfoInd.val 		= E2EINF_NOINFO;
+	fwdCallInd->isdnUsrPrtInd.pres 		= PRSNT_NODEF;
+	fwdCallInd->isdnUsrPrtInd.val 		= ISUP_USED;
+	fwdCallInd->isdnUsrPrtPrfInd.pres 	= PRSNT_NODEF;
+	fwdCallInd->isdnUsrPrtPrfInd.val 	= PREF_PREFAW;
+	fwdCallInd->isdnAccInd.pres 		= PRSNT_NODEF;
+	fwdCallInd->isdnAccInd.val 			= ISDNACC_ISDN;
+	fwdCallInd->sccpMethInd.pres 		= PRSNT_NODEF;
+	fwdCallInd->sccpMethInd.val 		= SCCPMTH_NOIND;
+
+	if ((g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS88) ||
+		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS92) ||
+		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS95)) {
+
+		/* include only if we're running ANSI */
+		fwdCallInd->transCallNInd.pres   = PRSNT_NODEF;
+		fwdCallInd->transCallNInd.val    = 0x0;
+	}
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_txMedReq_to_sngss7(ftdm_channel_t *ftdmchan, SiTxMedReq *txMedReq)
+{
+	txMedReq->eh.pres 		= PRSNT_NODEF;
+	txMedReq->trMedReq.pres = PRSNT_NODEF;
+	txMedReq->trMedReq.val 	= ftdmchan->caller_data.bearer_capability;
+
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_usrServInfoA_to_sngss7(ftdm_channel_t *ftdmchan, SiUsrServInfo *usrServInfoA)
+{
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	
+	if ((g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS88) ||
+		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS92) ||
+		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS95)) {
+
+		usrServInfoA->eh.pres			= PRSNT_NODEF;
+
+		usrServInfoA->infoTranCap.pres	= PRSNT_NODEF;
+		
+		usrServInfoA->infoTranCap.val = get_trillium_val(bc_cap_codes, ftdmchan->caller_data.bearer_capability, ITC_SPEECH);
+
+		usrServInfoA->cdeStand.pres			= PRSNT_NODEF;
+		usrServInfoA->cdeStand.val			= 0x0;				/* ITU-T standardized coding */
+		usrServInfoA->tranMode.pres			= PRSNT_NODEF;
+		usrServInfoA->tranMode.val			= 0x0;				/* circuit mode */
+		usrServInfoA->infoTranRate0.pres		= PRSNT_NODEF;
+		usrServInfoA->infoTranRate0.val		= 0x10;				/* 64kbps origination to destination */
+		usrServInfoA->infoTranRate1.pres		= PRSNT_NODEF;
+		usrServInfoA->infoTranRate1.val		= 0x10;				/* 64kbps destination to origination */
+		usrServInfoA->chanStruct.pres		= PRSNT_NODEF;
+		usrServInfoA->chanStruct.val			= 0x1;				/* 8kHz integrity */
+		usrServInfoA->config.pres			= PRSNT_NODEF;
+		usrServInfoA->config.val				= 0x0;				/* point to point configuration */
+		usrServInfoA->establish.pres			= PRSNT_NODEF;
+		usrServInfoA->establish.val			= 0x0;				/* on demand */
+		usrServInfoA->symmetry.pres			= PRSNT_NODEF;
+		usrServInfoA->symmetry.val			= 0x0;				/* bi-directional symmetric */
+		usrServInfoA->usrInfLyr1Prot.pres	= PRSNT_NODEF;
+		usrServInfoA->usrInfLyr1Prot.val		= 0x2;				/* G.711 ulaw */
+		usrServInfoA->rateMultiplier.pres	= PRSNT_NODEF;
+		usrServInfoA->rateMultiplier.val		= 0x1;				/* 1x rate multipler */
+	} /* if ANSI */
+	return FTDM_SUCCESS;
+}
+
+
 
 ftdm_status_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 {
@@ -395,7 +685,6 @@ ftdm_status_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven)
 	uint8_t j;
 
 	/* check if the token string is present */
-
 	if (str.pres == 1) {
 		j = 0;
 
@@ -491,10 +780,17 @@ ftdm_status_t copy_tknStr_to_sngss7(char* val, TknStr *tknStr, TknU8 *oddEven)
 
 		/* check if the digit is a number and that is not null */
 		while (!(isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-			/* move on to the next value */
-			k++;
-			tmp[0] = val[k];
+			if (tmp[0] == '*') {
+				/* Could not find a spec that specifies this , but on customer system, * was transmitted as 0x0b */
+				SS7_DEBUG("Replacing * with 0x0b");
+				k++;
+				tmp[0] = 0x0b;
+			} else {
+				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
+				/* move on to the next value */
+				k++;
+				tmp[0] = val[k];
+			}
 		} /* while(!(isdigit(tmp))) */
 
 		/* check if tmp is null or a digit */
@@ -564,7 +860,7 @@ int check_for_state_change(ftdm_channel_t *ftdmchan)
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
 		/* the flag is still up...so we have a problem */
-		SS7_DEBUG_CHAN(ftdmchan, "FTDM_CHANNEL_STATE_CHANGE flag set for over 500ms, channel state = %s\n",
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "FTDM_CHANNEL_STATE_CHANGE flag set for over 500ms, channel state = %s\n",
 									ftdm_channel_state2str (ftdmchan->state));
 
 		return 1;
@@ -615,8 +911,6 @@ int check_cics_in_range(sngss7_chan_data_t *sngss7_info)
 /******************************************************************************/
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan)
 {
-	/*SS7_FUNC_TRACE_ENTER(__FUNCTION__);*/
-
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj == NULL) {
 		SS7_ERROR("sngss7_info is Null for circuit #%d\n", circuit);
 		return FTDM_FAIL;
@@ -629,7 +923,6 @@ ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_in
 	ftdm_assert_return((*sngss7_info)->ftdmchan, FTDM_FAIL, "received message on signalling link or non-configured cic\n");
 	*ftdmchan = (*sngss7_info)->ftdmchan;
 
-	/*SS7_FUNC_TRACE_EXIT(__FUNCTION__);*/
 	return FTDM_SUCCESS;
 }
 
@@ -1258,10 +1551,17 @@ ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int typ
 
 		/* confirm it is a hex digit */
 		while ((!isxdigit(tmp[0])) && (tmp[0] != '\0')) {
-			SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
-			/* move to the next character in subAddr */
-			x++;
-			tmp[0] = subAddr[x];
+			if (tmp[0] == '*') {
+				/* Could not find a spec that specifies this, but on customer system, * was transmitted as 0x0b */
+				SS7_DEBUG("Replacing * with 0x0b");
+				x++;
+				tmp[0] = 0x0b;
+			} else {
+				SS7_INFO("Dropping invalid digit: %c\n", tmp[0]);
+				/* move to the next character in subAddr */
+				x++;
+				tmp[0] = subAddr[x];
+			}
 		}
 
 		/* check if tmp is null or a digit */
@@ -1606,7 +1906,7 @@ void sngss7_set_sig_status(sngss7_chan_data_t *sngss7_info, ftdm_signaling_statu
 	ftdm_sigmsg_t	sig;
 	ftdm_channel_t	*ftdmchan = sngss7_info->ftdmchan;
 
-	SS7_DEBUG_CHAN(ftdmchan, "Signalling link status changed to %s\n", 
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Signalling link status changed to %s\n",
 								ftdm_signaling_status2str(status));
 	
 	memset(&sig, 0, sizeof(sig));
@@ -1618,7 +1918,7 @@ void sngss7_set_sig_status(sngss7_chan_data_t *sngss7_info, ftdm_signaling_statu
 	sig.ev_data.sigstatus.status = status;
 
 	if (ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS) {
-		SS7_ERROR_CHAN(ftdmchan, "Failed to change channel status to %s\n", 
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR,  "Failed to change channel status to %s\n",
 									ftdm_signaling_status2str(status));
 	}
 	return;
@@ -1660,12 +1960,12 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 
 			/* check if the interface is paused or resumed */
 			if (sngss7_test_flag(sngss7_intf, SNGSS7_PAUSED)) {
-				SS7_DEBUG_CHAN(ftdmchan, "ISUP intf %d is PAUSED\n", sngss7_intf->id);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "ISUP intf %d is PAUSED\n", sngss7_intf->id);
 				/* throw the pause flag */
 				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
 				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			} else {
-				SS7_DEBUG_CHAN(ftdmchan, "ISUP intf %d is RESUMED\n", sngss7_intf->id);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "ISUP intf %d is RESUMED\n", sngss7_intf->id);
 				/* throw the resume flag */
 				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
@@ -1793,6 +2093,336 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 
 	return FTDM_SUCCESS;
 }
+
+ftdm_status_t sngss7_bufferzero_iam(SiConEvnt *siConEvnt)
+{
+	if (siConEvnt->natConInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->natConInd, 0, sizeof(siConEvnt->natConInd));	
+	if (siConEvnt->fwdCallInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->fwdCallInd, 0, sizeof(siConEvnt->fwdCallInd));
+	if (siConEvnt->cgPtyCat.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cgPtyCat, 0, sizeof(siConEvnt->cgPtyCat));
+	if (siConEvnt->txMedReq.eh.pres != PRSNT_NODEF) memset(&siConEvnt->txMedReq, 0, sizeof(siConEvnt->txMedReq));
+#if (SS7_ANS88 || SS7_ANS92 || SS7_ANS95 || SS7_BELL)	
+	if (siConEvnt->usrServInfoA.eh.pres != PRSNT_NODEF) memset(&siConEvnt->usrServInfoA, 0, sizeof(siConEvnt->usrServInfoA));
+#endif	
+	if (siConEvnt->cdPtyNum.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cdPtyNum, 0, sizeof(siConEvnt->cdPtyNum));
+#if TNS_ANSI
+#if (SS7_ANS92 || SS7_ANS95 || SS7_BELL)
+	if (siConEvnt->tranNetSel1.eh.pres != PRSNT_NODEF) memset(&siConEvnt->tranNetSel1, 0, sizeof(siConEvnt->tranNetSel1));
+#endif
+#endif
+	if (siConEvnt->tranNetSel.eh.pres != PRSNT_NODEF) memset(&siConEvnt->tranNetSel, 0, sizeof(siConEvnt->tranNetSel));
+#if (SS7_ANS88 || SS7_ANS92 || SS7_ANS95 || SS7_BELL || SS7_CHINA)
+	if (siConEvnt->callRefA.eh.pres != PRSNT_NODEF) memset(&siConEvnt->callRefA, 0, sizeof(siConEvnt->callRefA));
+#endif
+	if (siConEvnt->callRef.eh.pres != PRSNT_NODEF) memset(&siConEvnt->callRef, 0, sizeof(siConEvnt->callRef));
+	if (siConEvnt->cgPtyNum.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cgPtyNum, 0, sizeof(siConEvnt->cgPtyNum));
+#if SS7_BELL
+	if (siConEvnt->cgPtyNumB.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cgPtyNumB, 0, sizeof(siConEvnt->cgPtyNumB));
+#endif
+	if (siConEvnt->opFwdCalInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->opFwdCalInd, 0, sizeof(siConEvnt->opFwdCalInd));
+#if (SS7_Q767 || SS7_RUSSIA || SS7_NTT)	
+	if (siConEvnt->opFwdCalIndQ.eh.pres != PRSNT_NODEF) memset(&siConEvnt->opFwdCalIndQ, 0, sizeof(siConEvnt->opFwdCalIndQ));
+#endif
+#if SS7_Q767IT
+	if (siConEvnt->fwdVad.eh.pres != PRSNT_NODEF) memset(&siConEvnt->fwdVad, 0, sizeof(siConEvnt->fwdVad));
+#endif
+#if SS7_ANS88
+	if (siConEvnt->opFwdCalIndA.eh.pres != PRSNT_NODEF) memset(&siConEvnt->opFwdCalIndA, 0, sizeof(siConEvnt->opFwdCalIndA));
+#endif	
+	if (siConEvnt->redirgNum.eh.pres != PRSNT_NODEF) memset(&siConEvnt->redirgNum, 0, sizeof(siConEvnt->redirgNum));
+	if (siConEvnt->redirInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->redirInfo, 0, sizeof(siConEvnt->redirInfo));
+	if (siConEvnt->cugIntCode.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cugIntCode, 0, sizeof(siConEvnt->cugIntCode));
+#if SS7_ANS88
+	if (siConEvnt->cugIntCodeA.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cugIntCodeA, 0, sizeof(siConEvnt->cugIntCodeA));
+#endif
+#if (SS7_ANS88 || SS7_ANS92 || SS7_ANS95 || SS7_BELL || SS7_CHINA)
+	if (siConEvnt->connReqA.eh.pres != PRSNT_NODEF) memset(&siConEvnt->connReqA, 0, sizeof(siConEvnt->connReqA));
+#endif
+#if SS7_ANS88
+	if (siConEvnt->usr2UsrInfoA.eh.pres != PRSNT_NODEF) memset(&siConEvnt->usr2UsrInfoA, 0, sizeof(siConEvnt->usr2UsrInfoA));
+#endif
+	if (siConEvnt->connReq.eh.pres != PRSNT_NODEF) memset(&siConEvnt->connReq, 0, sizeof(siConEvnt->connReq));
+	if (siConEvnt->origCdNum.eh.pres != PRSNT_NODEF) memset(&siConEvnt->origCdNum, 0, sizeof(siConEvnt->origCdNum));
+	if (siConEvnt->usr2UsrInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->usr2UsrInfo, 0, sizeof(siConEvnt->usr2UsrInfo));
+	if (siConEvnt->accTrnspt.eh.pres != PRSNT_NODEF) memset(&siConEvnt->accTrnspt, 0, sizeof(siConEvnt->accTrnspt));
+	if (siConEvnt->echoControl.eh.pres != PRSNT_NODEF) memset(&siConEvnt->echoControl, 0, sizeof(siConEvnt->echoControl));
+#if SS7_ANS88
+	if (siConEvnt->redirInfoA.eh.pres != PRSNT_NODEF) memset(&siConEvnt->redirInfoA, 0, sizeof(siConEvnt->redirInfoA));
+#endif
+#if (SS7_ANS88 || SS7_ANS92 || SS7_ANS95 || SS7_BELL)
+	if (siConEvnt->chargeNum.eh.pres != PRSNT_NODEF) memset(&siConEvnt->chargeNum, 0, sizeof(siConEvnt->chargeNum));
+	if (siConEvnt->origLineInf.eh.pres != PRSNT_NODEF) memset(&siConEvnt->origLineInf, 0, sizeof(siConEvnt->origLineInf));
+#endif
+	if (siConEvnt->usrServInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->usrServInfo, 0, sizeof(siConEvnt->usrServInfo));
+	if (siConEvnt->usr2UsrInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->usr2UsrInd, 0, sizeof(siConEvnt->usr2UsrInd));
+	if (siConEvnt->propDly.eh.pres != PRSNT_NODEF) memset(&siConEvnt->propDly, 0, sizeof(siConEvnt->propDly));
+	if (siConEvnt->usrServInfo1.eh.pres != PRSNT_NODEF) memset(&siConEvnt->usrServInfo1, 0, sizeof(siConEvnt->usrServInfo1));
+	if (siConEvnt->netFac.eh.pres != PRSNT_NODEF) memset(&siConEvnt->netFac, 0, sizeof(siConEvnt->netFac));
+#ifdef SS7_CHINA	
+	if (siConEvnt->orgPteCdeA.eh.pres != PRSNT_NODEF) memset(&siConEvnt->orgPteCdeA, 0, sizeof(siConEvnt->orgPteCdeA));
+#endif	
+	if (siConEvnt->orgPteCde.eh.pres != PRSNT_NODEF) memset(&siConEvnt->orgPteCde, 0, sizeof(siConEvnt->orgPteCde));
+	if (siConEvnt->genDigits.eh.pres != PRSNT_NODEF) memset(&siConEvnt->genDigits, 0, sizeof(siConEvnt->genDigits));
+	if (siConEvnt->genDigitsR.eh.pres != PRSNT_NODEF) memset(&siConEvnt->genDigitsR, 0, sizeof(siConEvnt->genDigitsR));
+	if (siConEvnt->usrTSrvInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->usrTSrvInfo, 0, sizeof(siConEvnt->usrTSrvInfo));
+	if (siConEvnt->remotOper.eh.pres != PRSNT_NODEF) memset(&siConEvnt->remotOper, 0, sizeof(siConEvnt->remotOper));
+	if (siConEvnt->parmCom.eh.pres != PRSNT_NODEF) memset(&siConEvnt->parmCom, 0, sizeof(siConEvnt->parmCom));
+#if (SS7_ANS92 || SS7_ANS95)
+	if (siConEvnt->servCode.eh.pres != PRSNT_NODEF) memset(&siConEvnt->servCode, 0, sizeof(siConEvnt->servCode));
+#endif
+#if SS7_ANS92
+	if (siConEvnt->serviceAct1.eh.pres != PRSNT_NODEF) memset(&siConEvnt->serviceAct1, 0, sizeof(siConEvnt->serviceAct1));
+#endif
+#if SS7_CHINA
+	if (siConEvnt->serviceAct2.eh.pres != PRSNT_NODEF) memset(&siConEvnt->serviceAct2, 0, sizeof(siConEvnt->serviceAct2));
+#endif
+	if (siConEvnt->serviceAct2.eh.pres != PRSNT_NODEF) memset(&siConEvnt->serviceAct2, 0, sizeof(siConEvnt->serviceAct2));
+	if (siConEvnt->serviceAct.eh.pres != PRSNT_NODEF) memset(&siConEvnt->serviceAct, 0, sizeof(siConEvnt->serviceAct));
+	if (siConEvnt->mlppPrec.eh.pres != PRSNT_NODEF) memset(&siConEvnt->mlppPrec, 0, sizeof(siConEvnt->mlppPrec));	
+#if (defined(SIT_PARAMETER) || defined(TDS_ROLL_UPGRADE_SUPPORT))
+	if (siConEvnt->txMedUsPr.eh.pres != PRSNT_NODEF) memset(&siConEvnt->txMedUsPr, 0, sizeof(siConEvnt->txMedUsPr));
+#endif
+	if (siConEvnt->bckCallInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->bckCallInd, 0, sizeof(siConEvnt->bckCallInd));
+	if (siConEvnt->cgPtyNum1.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cgPtyNum1, 0, sizeof(siConEvnt->cgPtyNum1));
+	if (siConEvnt->optBckCalInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->optBckCalInd, 0, sizeof(siConEvnt->optBckCalInd));
+#if (SS7_Q767 || SS7_RUSSIA || SS7_NTT)
+	if (siConEvnt->optBckCalIndQ.eh.pres != PRSNT_NODEF) memset(&siConEvnt->optBckCalIndQ, 0, sizeof(siConEvnt->optBckCalIndQ));
+#endif
+	if (siConEvnt->connNum.eh.pres != PRSNT_NODEF) memset(&siConEvnt->connNum, 0, sizeof(siConEvnt->connNum));
+#if (defined(SIT_PARAMETER) || defined(TDS_ROLL_UPGRADE_SUPPORT))
+	if (siConEvnt->connNum2.eh.pres != PRSNT_NODEF) memset(&siConEvnt->connNum2, 0, sizeof(siConEvnt->connNum2));
+#endif
+	if (siConEvnt->accDelInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->accDelInfo, 0, sizeof(siConEvnt->accDelInfo));
+	if (siConEvnt->notifInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->notifInd, 0, sizeof(siConEvnt->notifInd));
+	if (siConEvnt->notifIndR2.eh.pres != PRSNT_NODEF) memset(&siConEvnt->notifIndR2, 0, sizeof(siConEvnt->notifIndR2));
+	if (siConEvnt->cllHstry.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cllHstry, 0, sizeof(siConEvnt->cllHstry));
+	if (siConEvnt->genNmb.eh.pres != PRSNT_NODEF) memset(&siConEvnt->genNmb, 0, sizeof(siConEvnt->genNmb));
+	if (siConEvnt->genNmbR.eh.pres != PRSNT_NODEF) memset(&siConEvnt->genNmbR, 0, sizeof(siConEvnt->genNmbR));
+	if (siConEvnt->redirNum.eh.pres != PRSNT_NODEF) memset(&siConEvnt->redirNum, 0, sizeof(siConEvnt->redirNum));
+	if (siConEvnt->redirRstr.eh.pres != PRSNT_NODEF) memset(&siConEvnt->redirRstr, 0, sizeof(siConEvnt->redirRstr));
+
+#if SS7_Q767IT
+	if (siConEvnt->backVad.eh.pres != PRSNT_NODEF) memset(&siConEvnt->backVad, 0, sizeof(siConEvnt->backVad));
+#endif
+#if SS7_SINGTEL
+	if (siConEvnt->cgPtyNumS.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cgPtyNumS, 0, sizeof(siConEvnt->cgPtyNumS));
+#endif
+#if (SS7_ANS92 || SS7_ANS95 || SS7_BELL)
+	if (siConEvnt->businessGrp.eh.pres != PRSNT_NODEF) memset(&siConEvnt->businessGrp, 0, sizeof(siConEvnt->businessGrp));
+	if (siConEvnt->infoInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->infoInd, 0, sizeof(siConEvnt->infoInd));
+	if (siConEvnt->carrierId.eh.pres != PRSNT_NODEF) memset(&siConEvnt->carrierId, 0, sizeof(siConEvnt->carrierId));
+	if (siConEvnt->carSelInf.eh.pres != PRSNT_NODEF) memset(&siConEvnt->carSelInf, 0, sizeof(siConEvnt->carSelInf));
+	if (siConEvnt->egress.eh.pres != PRSNT_NODEF) memset(&siConEvnt->egress, 0, sizeof(siConEvnt->egress));
+	if (siConEvnt->genAddr.eh.pres != PRSNT_NODEF) memset(&siConEvnt->genAddr, 0, sizeof(siConEvnt->genAddr));
+	if (siConEvnt->genAddrR.eh.pres != PRSNT_NODEF) memset(&siConEvnt->genAddrR, 0, sizeof(siConEvnt->genAddrR));
+	if (siConEvnt->infoReqInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->infoReqInd, 0, sizeof(siConEvnt->infoReqInd));
+	if (siConEvnt->jurisInf.eh.pres != PRSNT_NODEF) memset(&siConEvnt->jurisInf, 0, sizeof(siConEvnt->jurisInf));
+	if (siConEvnt->netTransport.eh.pres != PRSNT_NODEF) memset(&siConEvnt->netTransport, 0, sizeof(siConEvnt->netTransport));
+	if (siConEvnt->specProcReq.eh.pres != PRSNT_NODEF) memset(&siConEvnt->specProcReq, 0, sizeof(siConEvnt->specProcReq));
+	if (siConEvnt->transReq.eh.pres != PRSNT_NODEF) memset(&siConEvnt->transReq, 0, sizeof(siConEvnt->transReq));
+#endif
+#if (defined(SIT_PARAMETER) || defined(TDS_ROLL_UPGRADE_SUPPORT))
+#if (SS7_ANS92 || SS7_ANS95)
+	if (siConEvnt->notifInd1.eh.pres != PRSNT_NODEF) memset(&siConEvnt->notifInd1, 0, sizeof(siConEvnt->notifInd1));
+	if (siConEvnt->notifIndR1.eh.pres != PRSNT_NODEF) memset(&siConEvnt->notifIndR1, 0, sizeof(siConEvnt->notifIndR1));
+#endif /* SS7_ANS92 */
+#endif /* SIT_PARAMETER || TDS_ROLL_UPGRADE_SUPPORT */
+#if (SS7_BELL || SS7_ANS95)
+	if (siConEvnt->genName.eh.pres != PRSNT_NODEF) memset(&siConEvnt->genName, 0, sizeof(siConEvnt->genName));
+#endif
+#if (SS7_ITU97 || SS7_RUSS2000 || SS7_ITU2000 || SS7_ETSIV3 || \
+	SS7_BELL || SS7_ANS95 || SS7_INDIA || SS7_UK || SS7_NZL || SS7_KZ)
+	if (siConEvnt->hopCounter.eh.pres != PRSNT_NODEF) memset(&siConEvnt->hopCounter, 0, sizeof(siConEvnt->hopCounter));
+#endif
+#if (SS7_BELL || SS7_ITU2000 || SS7_KZ)
+	if (siConEvnt->redirCap.eh.pres != PRSNT_NODEF) memset(&siConEvnt->redirCap, 0, sizeof(siConEvnt->redirCap));
+	if (siConEvnt->redirCntr.eh.pres != PRSNT_NODEF) memset(&siConEvnt->redirCntr, 0, sizeof(siConEvnt->redirCntr));
+#endif
+#if (SS7_ETSI || SS7_FTZ)
+	if (siConEvnt->ccbsParam.eh.pres != PRSNT_NODEF) memset(&siConEvnt->ccbsParam, 0, sizeof(siConEvnt->ccbsParam));
+	if (siConEvnt->freePhParam.eh.pres != PRSNT_NODEF) memset(&siConEvnt->freePhParam, 0, sizeof(siConEvnt->freePhParam));
+#endif
+#ifdef SS7_FTZ
+	if (siConEvnt->naPaFF.eh.pres != PRSNT_NODEF) memset(&siConEvnt->naPaFF, 0, sizeof(siConEvnt->naPaFF));
+	if (siConEvnt->naPaFE.eh.pres != PRSNT_NODEF) memset(&siConEvnt->naPaFE, 0, sizeof(siConEvnt->naPaFE));
+	if (siConEvnt->naPaSSP.eh.pres != PRSNT_NODEF) memset(&siConEvnt->naPaSSP, 0, sizeof(siConEvnt->naPaSSP));
+	if (siConEvnt->naPaCdPNO.eh.pres != PRSNT_NODEF) memset(&siConEvnt->naPaCdPNO, 0, sizeof(siConEvnt->naPaCdPNO));
+	if (siConEvnt->naPaSPV.eh.pres != PRSNT_NODEF) memset(&siConEvnt->naPaSPV, 0, sizeof(siConEvnt->naPaSPV));
+	if (siConEvnt->naPaUKK.eh.pres != PRSNT_NODEF) memset(&siConEvnt->naPaUKK, 0, sizeof(siConEvnt->naPaUKK));
+#endif
+#if SS7_NTT
+	if (siConEvnt->msgAreaInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->msgAreaInfo, 0, sizeof(siConEvnt->msgAreaInfo));
+	if (siConEvnt->subsNumber.eh.pres != PRSNT_NODEF) memset(&siConEvnt->subsNumber, 0, sizeof(siConEvnt->subsNumber));
+	if (siConEvnt->rpCllngNo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->rpCllngNo, 0, sizeof(siConEvnt->rpCllngNo));
+	if (siConEvnt->supplUserType.eh.pres != PRSNT_NODEF) memset(&siConEvnt->supplUserType, 0, sizeof(siConEvnt->supplUserType));
+	if (siConEvnt->carrierInfoTrans.eh.pres != PRSNT_NODEF) memset(&siConEvnt->carrierInfoTrans, 0, sizeof(siConEvnt->carrierInfoTrans));
+	if (siConEvnt->nwFuncType.eh.pres != PRSNT_NODEF) memset(&siConEvnt->nwFuncType, 0, sizeof(siConEvnt->nwFuncType));
+#endif
+#if SS7_ANS95
+	if (siConEvnt->optrServicesInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->optrServicesInfo, 0, sizeof(siConEvnt->optrServicesInfo));
+#endif
+#if (SS7_ANS95 || SS7_ITU97  || SS7_RUSS2000|| SS7_ITU2000 || SS7_NZL || SS7_KZ)
+	if (siConEvnt->cirAsgnMap.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cirAsgnMap, 0, sizeof(siConEvnt->cirAsgnMap));
+#endif
+#if (SS7_ITU97 || SS7_RUSS2000 || SS7_ITU2000 || SS7_ETSIV3 || \
+	SS7_INDIA || SS7_UK || SS7_NZL || SS7_KZ)
+	if (siConEvnt->displayInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->displayInfo, 0, sizeof(siConEvnt->displayInfo));
+	if (siConEvnt->confTrtInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->confTrtInd, 0, sizeof(siConEvnt->confTrtInd));
+	if (siConEvnt->netMgmtControls.eh.pres != PRSNT_NODEF) memset(&siConEvnt->netMgmtControls, 0, sizeof(siConEvnt->netMgmtControls));
+	if (siConEvnt->correlationId.eh.pres != PRSNT_NODEF) memset(&siConEvnt->correlationId, 0, sizeof(siConEvnt->correlationId));
+	if (siConEvnt->callDivTrtInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->callDivTrtInd, 0, sizeof(siConEvnt->callDivTrtInd));
+	if (siConEvnt->callInNmb.eh.pres != PRSNT_NODEF) memset(&siConEvnt->callInNmb, 0, sizeof(siConEvnt->callInNmb));
+	if (siConEvnt->callOfferTrtInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->callOfferTrtInd, 0, sizeof(siConEvnt->callOfferTrtInd));
+	if (siConEvnt->scfId.eh.pres != PRSNT_NODEF) memset(&siConEvnt->scfId, 0, sizeof(siConEvnt->scfId));
+	if (siConEvnt->uidCapInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->uidCapInd, 0, sizeof(siConEvnt->uidCapInd));
+	if (siConEvnt->collCallReq.eh.pres != PRSNT_NODEF) memset(&siConEvnt->collCallReq, 0, sizeof(siConEvnt->collCallReq));
+	if (siConEvnt->ccss.eh.pres != PRSNT_NODEF) memset(&siConEvnt->ccss, 0, sizeof(siConEvnt->ccss));
+#endif
+#if (SS7_ITU97 || SS7_RUSS2000 || SS7_ITU2000 || SS7_UK || SS7_NZL || SS7_KZ)
+	if (siConEvnt->backGVNS.eh.pres != PRSNT_NODEF) memset(&siConEvnt->backGVNS, 0, sizeof(siConEvnt->backGVNS));
+	if (siConEvnt->forwardGVNS.eh.pres != PRSNT_NODEF) memset(&siConEvnt->forwardGVNS, 0, sizeof(siConEvnt->forwardGVNS));
+#endif
+#if (SS7_ETSIV3 || SS7_ITU97 || SS7_RUSS2000 || SS7_ITU2000 || \
+	SS7_INDIA || SS7_UK || SS7_NZL || SS7_KZ)
+	if (siConEvnt->appTransParam.eh.pres != PRSNT_NODEF) memset(&siConEvnt->appTransParam, 0, sizeof(siConEvnt->appTransParam));
+#endif
+#if (SS7_ITU2000 || SS7_UK || SS7_NZL || SS7_KZ)
+	if (siConEvnt->htrInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->htrInfo, 0, sizeof(siConEvnt->htrInfo));
+	if (siConEvnt->pivotCap.eh.pres != PRSNT_NODEF) memset(&siConEvnt->pivotCap, 0, sizeof(siConEvnt->pivotCap));
+	if (siConEvnt->cadDirNmb.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cadDirNmb, 0, sizeof(siConEvnt->cadDirNmb));
+	if (siConEvnt->origCallInNum.eh.pres != PRSNT_NODEF) memset(&siConEvnt->origCallInNum, 0, sizeof(siConEvnt->origCallInNum));
+	if (siConEvnt->calgGeoLoc.eh.pres != PRSNT_NODEF) memset(&siConEvnt->calgGeoLoc, 0, sizeof(siConEvnt->calgGeoLoc));
+	if (siConEvnt->netRoutNum.eh.pres != PRSNT_NODEF) memset(&siConEvnt->netRoutNum, 0, sizeof(siConEvnt->netRoutNum));
+	if (siConEvnt->qonRelCap.eh.pres != PRSNT_NODEF) memset(&siConEvnt->qonRelCap, 0, sizeof(siConEvnt->qonRelCap));
+	if (siConEvnt->pivotCntr.eh.pres != PRSNT_NODEF) memset(&siConEvnt->pivotCntr, 0, sizeof(siConEvnt->pivotCntr));
+	if (siConEvnt->pivotRtgFwInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->pivotRtgFwInfo, 0, sizeof(siConEvnt->pivotRtgFwInfo));
+	if (siConEvnt->pivotRtgBkInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->pivotRtgBkInfo, 0, sizeof(siConEvnt->pivotRtgBkInfo));
+	if (siConEvnt->numPortFwdInfo.eh.pres != PRSNT_NODEF) memset(&siConEvnt->numPortFwdInfo, 0, sizeof(siConEvnt->numPortFwdInfo));
+#endif
+#ifdef SS7_UK
+	if (siConEvnt->natFwdCalInd.eh.pres != PRSNT_NODEF) memset(&siConEvnt->natFwdCalInd, 0, sizeof(siConEvnt->natFwdCalInd));
+	if (siConEvnt->presntNum.eh.pres != PRSNT_NODEF) memset(&siConEvnt->presntNum, 0, sizeof(siConEvnt->presntNum));
+	if (siConEvnt->lstDvrtLineId.eh.pres != PRSNT_NODEF) memset(&siConEvnt->lstDvrtLineId, 0, sizeof(siConEvnt->lstDvrtLineId));
+	if (siConEvnt->pcgLineId.eh.pres != PRSNT_NODEF) memset(&siConEvnt->pcgLineId, 0, sizeof(siConEvnt->pcgLineId));
+	if (siConEvnt->natFwdCalIndLnk.eh.pres != PRSNT_NODEF) memset(&siConEvnt->natFwdCalIndLnk, 0, sizeof(siConEvnt->natFwdCalIndLnk));
+	if (siConEvnt->cdBascSrvcMrk.eh.pres != PRSNT_NODEF) memset(&siConEvnt->cdBascSrvcMrk, 0, sizeof(siConEvnt->cdBascSrvcMrk));
+#endif /* SS7_UK */
+#if (defined(CGPN_CHK))
+	if (siConEvnt->causeDgnCgPnChk.eh.pres != PRSNT_NODEF) memset(&siConEvnt->causeDgnCgPnChk, 0, sizeof(siConEvnt->causeDgnCgPnChk));
+#endif
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t sngss7_save_iam(ftdm_channel_t *ftdmchan, SiConEvnt *siConEvnt)
+{
+#ifndef HAVE_ZLIB
+	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Cannot perform transparent IAM because zlib is missing\n");
+	return FTDM_FAIL;
+#else
+	unsigned ret_val = FTDM_FAIL;
+	char *compressed_iam = NULL;
+	char *url_encoded_iam = NULL;
+	uLongf len = sizeof(*siConEvnt);	
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+
+	/* By default, Trillium does not memset their whole structure to zero for
+	 * performance. But we want to memset all the IE's that are not present to
+	 * optimize compressed size */
+	sngss7_bufferzero_iam(siConEvnt);
+	
+	compressed_iam = ftdm_malloc(sizeof(*siConEvnt));
+	if (!compressed_iam) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Failed to allocate buffer for compressed_iam\n");
+		goto done;
+	}
+
+	/* Compress IAM structure to minimize buffer size */
+	ret_val = compress((Bytef *)compressed_iam, &len, (const Bytef *)siConEvnt, (uLong)sizeof(*siConEvnt));
+	if (ret_val != Z_OK) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Failed to compress IAM (error:%d)\n", ret_val);
+		ret_val = FTDM_FAIL;
+		goto done;
+	}
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Compressed IAM size:%d\n", len);
+
+	/* Worst case: size will triple after url encode */
+	url_encoded_iam = ftdm_malloc(3*sizeof(*siConEvnt));
+	if (!url_encoded_iam) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Failed to allocated buffer for url_encoded_iam\n");
+		ret_val = FTDM_FAIL;
+		goto done;
+	}
+	memset(url_encoded_iam, 0, 2*sizeof(*siConEvnt));
+	
+	/* URL encode buffer to that its safe to store it in a string */
+	ftdm_url_encode((const char*)compressed_iam, url_encoded_iam, len);
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "IAM variable length:%d\n", strlen(url_encoded_iam));
+
+	if (strlen(url_encoded_iam) > g_ftdm_sngss7_data.cfg.transparent_iam_max_size) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "IAM variable length exceeds max size (len:%d max:%d) \n", strlen(url_encoded_iam), g_ftdm_sngss7_data.cfg.transparent_iam_max_size);
+		ret_val = FTDM_FAIL;
+		goto done;
+	}
+	
+	sngss7_add_var(sngss7_info, "ss7_iam", url_encoded_iam);
+done:	
+	ftdm_safe_free(compressed_iam);
+	ftdm_safe_free(url_encoded_iam);
+	return ret_val;
+#endif
+}
+
+ftdm_status_t sngss7_retrieve_iam(ftdm_channel_t *ftdmchan, SiConEvnt *siConEvnt)
+{
+#ifndef HAVE_ZLIB
+	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Cannot perform transparent IAM because zlib is missing\n");
+	return FTDM_FAIL;
+#else	
+	uLongf len = 3*sizeof(*siConEvnt); /* worst case: URL encoded buffer is 3x length of buffer */
+	char *val = NULL;
+	unsigned ret_val = FTDM_FAIL;	
+	void *uncompressed_buffer = NULL;
+	char *url_encoded_iam = NULL;
+	ftdm_size_t url_encoded_iam_len;
+
+	val = (char*)ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_iam");
+	if (ftdm_strlen_zero(val)) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Transparent IAM info available\n");
+		return FTDM_FAIL;
+	}
+
+	url_encoded_iam = ftdm_strdup(val);
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "IAM variable length:%d\n", strlen(val));
+	ftdm_url_decode(url_encoded_iam, &url_encoded_iam_len);
+	
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Compressed IAM size:%d\n", url_encoded_iam_len);
+
+	uncompressed_buffer = ftdm_malloc(sizeof(*siConEvnt));
+	ftdm_assert_return(uncompressed_buffer, FTDM_FAIL, "Failed to allocate buffer for uncompressed buffer\n");
+
+	ret_val = uncompress(uncompressed_buffer, &len, (const Bytef *)url_encoded_iam, (uLong)url_encoded_iam_len);
+	if (ret_val != Z_OK) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Failed to uncompress IAM (error:%d)\n", ret_val);
+		goto done;
+	}
+
+	if (len != sizeof(*siConEvnt)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Incompatible IAM structure size (expected:%d size:%d)\n", sizeof(*siConEvnt), strlen(uncompressed_buffer));
+		goto done;
+	}
+
+	memcpy(siConEvnt, uncompressed_buffer, sizeof(*siConEvnt));
+	ret_val = FTDM_SUCCESS;
+
+done:
+	ftdm_safe_free(uncompressed_buffer);
+	ftdm_safe_free(url_encoded_iam);	
+	return ret_val;
+#endif
+}
+
 /******************************************************************************/
 /* For Emacs:
  * Local Variables:

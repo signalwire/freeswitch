@@ -175,7 +175,7 @@ SWITCH_STANDARD_APP(rss_function)
 	char *filename = NULL;
 	char *argv[3], *feed_list[TTS_MAX_ENTRIES] = { 0 }, *feed_names[TTS_MAX_ENTRIES] = {
 	0};
-	int argc, feed_index = 0;
+	int feed_index = 0;
 	const char *cf = "rss.conf";
 	switch_xml_t cfg, cxml, feeds, feed;
 	char buf[1024] = "";
@@ -236,7 +236,7 @@ SWITCH_STANDARD_APP(rss_function)
 
 	if (!zstr(data)) {
 		if ((mydata = switch_core_session_strdup(session, data))) {
-			argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]));
+			switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]));
 
 			if (argv[0]) {
 				engine = argv[0];

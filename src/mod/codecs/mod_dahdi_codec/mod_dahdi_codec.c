@@ -250,7 +250,6 @@ static switch_status_t switch_dahdi_encode(switch_codec_t *codec,
 {
 	int32_t res;
 	short *dbuf_linear;
-	unsigned char *ebuf_g729;
 	unsigned char ebuf_ulaw[decoded_data_len / 2];
 	uint32_t i;
 	struct dahdi_context *context = NULL;
@@ -268,7 +267,6 @@ static switch_status_t switch_dahdi_encode(switch_codec_t *codec,
 	}
 
 	dbuf_linear = decoded_data;
-	ebuf_g729 = encoded_data;
 	for (i = 0; i < decoded_data_len / sizeof(short); i++) {
 		ebuf_ulaw[i] = linear_to_ulaw(dbuf_linear[i]);
 	}

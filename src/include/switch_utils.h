@@ -239,20 +239,23 @@ SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size
 SWITCH_DECLARE(switch_status_t) switch_frame_alloc(switch_frame_t **frame, switch_size_t size);
 SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_frame_t **clone);
 SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame);
+SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str);
 
 /*!
   \brief Evaluate the truthfullness of a string expression
   \param expr a string expression
   \return true or false 
 */
-#define switch_true(expr)\
-((expr && ( !strcasecmp(expr, "yes") ||\
-!strcasecmp(expr, "on") ||\
-!strcasecmp(expr, "true") ||\
-!strcasecmp(expr, "enabled") ||\
-!strcasecmp(expr, "active") ||\
-!strcasecmp(expr, "allow") ||\
-(switch_is_number(expr) && atoi(expr)))) ? SWITCH_TRUE : SWITCH_FALSE)
+static inline int switch_true(const char *expr) 
+{
+	return ((expr && ( !strcasecmp(expr, "yes") ||	
+					   !strcasecmp(expr, "on") ||	
+					   !strcasecmp(expr, "true") ||	
+					   !strcasecmp(expr, "enabled") ||	
+					   !strcasecmp(expr, "active") ||	
+					   !strcasecmp(expr, "allow") ||					
+					   (switch_is_number(expr) && atoi(expr)))) ? SWITCH_TRUE : SWITCH_FALSE);
+}
 
 #define switch_true_buf(expr)\
 ((( !strcasecmp(expr, "yes") ||\
@@ -268,14 +271,16 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame);
   \param expr a string expression
   \return true or false 
 */
-#define switch_false(expr)\
-((expr && ( !strcasecmp(expr, "no") ||\
-!strcasecmp(expr, "off") ||\
-!strcasecmp(expr, "false") ||\
-!strcasecmp(expr, "disabled") ||\
-!strcasecmp(expr, "inactive") ||\
-!strcasecmp(expr, "disallow") ||\
-(switch_is_number(expr) && !atoi(expr)))) ? SWITCH_TRUE : SWITCH_FALSE)
+static inline int switch_false(const char *expr)
+{
+	return ((expr && ( !strcasecmp(expr, "no") ||
+					   !strcasecmp(expr, "off") ||
+					   !strcasecmp(expr, "false") ||
+					   !strcasecmp(expr, "disabled") ||
+					   !strcasecmp(expr, "inactive") ||
+					   !strcasecmp(expr, "disallow") ||
+					   (switch_is_number(expr) && !atoi(expr)))) ? SWITCH_TRUE : SWITCH_FALSE);
+}
 
 
 SWITCH_DECLARE(switch_status_t) switch_resolve_host(const char *host, char *buf, size_t buflen);
@@ -500,6 +505,23 @@ static inline char *switch_clean_string(char *s)
 }
 
 
+static inline char *switch_clean_name_string(char *s)
+{
+	char *p;
+	for (p = s; p && *p; p++) {
+		uint8_t x = (uint8_t) * p;
+		if ((x < 32) ||	x == '\'' || x == '"' || x == '<' || x == '>' || x == '\\' || x == ':' || x == '@' || x == '/') {
+			*p = ' ';
+		}
+		if ( (p == s) && (*p == ' ') ) {
+			s++;
+		}
+	}
+
+	return s;
+}
+
+
 
 /*!
   \brief Free a pointer and set it to NULL unless it already is NULL
@@ -653,7 +675,7 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
 SWITCH_DECLARE(unsigned int) switch_separate_string(_In_ char *buf, char delim, _Post_count_(return) char **array, unsigned int arraylen);
 SWITCH_DECLARE(unsigned int) switch_separate_string_string(char *buf, char *delim, _Post_count_(return) char **array, unsigned int arraylen);
 
-SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str);
+
 SWITCH_DECLARE(char *) switch_strip_spaces(char *str, switch_bool_t dup);
 SWITCH_DECLARE(char *) switch_strip_whitespace(const char *str);
 SWITCH_DECLARE(char *) switch_strip_commas(char *in, char *out, switch_size_t len);

@@ -9,8 +9,6 @@
 /applications/mod_conference/Makefile
 /applications/mod_db/Makefile
 /applications/mod_dptools/Makefile
-/applications/mod_enum/Makefile
-/applications/mod_enum/Makefile.in
 /applications/mod_enum/mod_enum.log
 /applications/mod_expr/Makefile
 /applications/mod_expr/Makefile.in

@@ -33,12 +33,14 @@
 
 /* INCLUDE ********************************************************************/
 #include "ftmod_sangoma_ss7_main.h"
+
 /******************************************************************************/
 
 /* DEFINES ********************************************************************/
 /******************************************************************************/
 
 /* GLOBALS ********************************************************************/
+
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
@@ -79,14 +81,14 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
+
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt)
 {
-	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
-
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  	*ftdmchan = NULL;
 	char				nadi[2];
-
+	
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 	memset(nadi, '\0', sizeof(nadi));
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
@@ -185,17 +187,11 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 				SS7_INFO_CHAN(ftdmchan,"No Called party (DNIS) information in IAM!%s\n", " ");
 			}
 
-			/* fill in rdnis information*/
-			if (siConEvnt->redirgNum.eh.pres) {
-				if (siConEvnt->redirgNum.addrSig.pres) {
-					/* fill in the rdnis digits */
-					copy_tknStr_from_sngss7(siConEvnt->redirgNum.addrSig, 
-											ftdmchan->caller_data.rdnis.digits, 
-											siConEvnt->cgPtyNum.oddEven);
-				}
-			}   else {
-				SS7_DEBUG_CHAN(ftdmchan,"No RDNIS party information in IAM!%s\n", " ");
-			}
+			copy_redirgNum_from_sngss7(ftdmchan, &siConEvnt->redirgNum);
+
+			copy_genNmb_from_sngss7(ftdmchan, &siConEvnt->genNmb);
+
+			copy_cgPtyCat_from_sngss7(ftdmchan, &siConEvnt->cgPtyCat);
 
 			/* fill in the TMR/bearer capability */
 			if (siConEvnt->txMedReq.eh.pres) {
@@ -213,6 +209,10 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 			sprintf(nadi, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
 			sngss7_add_var(sngss7_info, "ss7_cld_nadi", nadi);
+
+			if (sngss7_info->circuit->transparent_iam) {
+				sngss7_save_iam(ftdmchan, siConEvnt);
+			}
 
 			/* check if a COT test is requested */
 			if ((siConEvnt->natConInd.eh.pres) && 
@@ -237,7 +237,6 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 							siConEvnt->cgPtyNum.natAddrInd.val,
 							ftdmchan->caller_data.dnis.digits,
 							siConEvnt->cdPtyNum.natAddrInd.val);
-
 		} /* if (channel is usable */
 
 		break;
@@ -490,6 +489,47 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	case (SUBDIRNUM):
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx SUB-DIR\n", sngss7_info->circuit->cic);
 		break;
+#ifdef SANGOMA_SPIROU
+	case (CHARGE_ACK):
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx TXA\n", sngss7_info->circuit->cic);		
+		break;
+	case (CHARGE_UNIT):
+		{			
+			uint32_t charging_unit = 0;
+			uint32_t msg_num = 0;
+			char	val[3];			
+			
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ITX\n", sngss7_info->circuit->cic);
+
+			memset(val, '\0', sizeof(val));
+
+			if (siCnStEvnt->chargUnitNum.eh.pres == PRSNT_NODEF &&
+				siCnStEvnt->chargUnitNum.chargUnitNum.pres == PRSNT_NODEF) {
+
+				charging_unit = siCnStEvnt->chargUnitNum.chargUnitNum.val;
+			}
+
+			if (siCnStEvnt->msgNum.eh.pres == PRSNT_NODEF &&
+				siCnStEvnt->msgNum.msgNum.pres == PRSNT_NODEF) {
+
+				msg_num = siCnStEvnt->msgNum.msgNum.val;
+			}
+
+			ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Charging Unit:%d Msg Num:%d\n", charging_unit, msg_num);
+			
+			sprintf(val, "%d", charging_unit);
+			sngss7_add_var(sngss7_info, "ss7_itx_charge_unit", val);
+			
+			sprintf(val, "%d", msg_num);
+			sngss7_add_var(sngss7_info, "ss7_itx_msg_num", val);
+			
+			if (sngss7_info->circuit->itx_auto_reply) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "Auto-reply with TXA msg\n");
+				ft_to_sngss7_txa (ftdmchan);
+			}
+		}
+		break;
+#endif
 	/**************************************************************************/
 	default:
 	   	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx Unknown Msg\n", sngss7_info->circuit->cic);
@@ -532,7 +572,7 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* go to UP */
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
-
+		
 		break;
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_DIALING:
@@ -609,6 +649,7 @@ ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 		break;
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_RING:
+	case FTDM_CHANNEL_STATE_RINGING:
 	case FTDM_CHANNEL_STATE_PROGRESS:
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
 	case FTDM_CHANNEL_STATE_UP:

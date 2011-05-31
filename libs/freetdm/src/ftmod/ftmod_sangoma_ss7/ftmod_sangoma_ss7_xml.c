@@ -124,6 +124,8 @@ typedef struct sng_ccSpan
 	uint32_t		cld_nadi;
 	uint32_t		rdnis_nadi;
 	uint32_t		min_digits;
+	uint8_t			itx_auto_reply;
+	uint8_t			transparent_iam;
 	uint32_t		t3;
 	uint32_t		t12;
 	uint32_t		t13;
@@ -465,6 +467,9 @@ static int ftmod_ss7_parse_sng_gen(ftdm_conf_node_t *sng_gen)
 			SS7_DEBUG("Found license file = %s\n", g_ftdm_sngss7_data.cfg.license);
 			SS7_DEBUG("Found signature file = %s\n", g_ftdm_sngss7_data.cfg.signature);	
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "transparent_iam_max_size")) {
+			g_ftdm_sngss7_data.cfg.transparent_iam_max_size = atoi(parm->val);
+			SS7_DEBUG("Found a transparent_iam max size = %d\n", g_ftdm_sngss7_data.cfg.transparent_iam_max_size);
 		} else {
 		/**********************************************************************/
 			SS7_ERROR("Found an invalid parameter \"%s\"!\n", parm->val);
@@ -1892,7 +1897,16 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 				sng_ccSpan.typeCntrl = sng_cic_cntrl_type_map[ret].tril_type;
 				SS7_DEBUG("Found an ccSpan typeCntrl = %s\n", sng_cic_cntrl_type_map[ret].sng_type);
 			}
-		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "itx_auto_reply")) {
+			sng_ccSpan.itx_auto_reply = ftdm_true(parm->val);
+			SS7_DEBUG("Found itx_auto_reply %d\n", sng_ccSpan.itx_auto_reply);
+		} else if (!strcasecmp(parm->var, "transparent_iam")) {
+#ifndef HAVE_ZLIB
+			SS7_CRIT("Cannot enable transparent IAM becauze zlib not installed\n");
+#else
+			sng_ccSpan.transparent_iam = ftdm_true(parm->val);
+			SS7_DEBUG("Found transparent_iam %d\n", sng_ccSpan.transparent_iam);
+#endif
 		} else if (!strcasecmp(parm->var, "cicbase")) {
 		/**********************************************************************/
 			sng_ccSpan.cicbase = atoi(parm->val);
@@ -2904,15 +2918,17 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 			g_ftdm_sngss7_data.cfg.isupCkt[x].cic		= 0;
 		}
 
-		g_ftdm_sngss7_data.cfg.isupCkt[x].infId	   		= ccSpan->isupInf;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].typeCntrl   	= ccSpan->typeCntrl;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].ssf			= ccSpan->ssf;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].cld_nadi		= ccSpan->cld_nadi;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].clg_nadi		= ccSpan->clg_nadi;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].rdnis_nadi	= ccSpan->rdnis_nadi;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].options		= ccSpan->options;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].switchType	= ccSpan->switchType;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].min_digits	= ccSpan->min_digits;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].infId						= ccSpan->isupInf;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].typeCntrl					= ccSpan->typeCntrl;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].ssf						= ccSpan->ssf;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].cld_nadi					= ccSpan->cld_nadi;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].clg_nadi					= ccSpan->clg_nadi;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].rdnis_nadi				= ccSpan->rdnis_nadi;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].options					= ccSpan->options;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].switchType				= ccSpan->switchType;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].min_digits				= ccSpan->min_digits;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].itx_auto_reply			= ccSpan->itx_auto_reply;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].transparent_iam			= ccSpan->transparent_iam;
 
 		if (ccSpan->t3 == 0) {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t3			= 1200;

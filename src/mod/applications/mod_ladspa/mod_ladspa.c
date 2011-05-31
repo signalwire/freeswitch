@@ -565,12 +565,11 @@ switch_status_t ladspa_session(switch_core_session_t *session, const char *flags
 static void ladspa_parse(switch_core_session_t *session, const char *data)
 {
 	char *argv[5] = { 0 };
-	int argc;
 	char *lbuf;
 
 	if (data) {
 		lbuf = strdup(data);
-		argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])));
 	   	ladspa_session(session, argv[0], argv[1], argv[2], argv[3]);
 		free(lbuf);
 	}

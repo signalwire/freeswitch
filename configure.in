@@ -347,6 +347,11 @@ AC_ARG_ENABLE(cpp,
 
 AM_CONDITIONAL([ENABLE_CPP],[test "${enable_cpp}" = "yes"])
 
+AC_ARG_ENABLE(srtp,
+[AC_HELP_STRING([--disable-srtp],[build without srtp support])],[enable_srtp="$enableval"],[enable_srtp="yes"])
+
+AM_CONDITIONAL([ENABLE_SRTP],[test "${enable_srtp}" = "yes"])
+
 AC_ARG_ENABLE(zrtp,
 	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
 if test "x$enable_zrtp" = "xyes" ; then
@@ -583,6 +588,21 @@ if test x"$ac_cv_gcc_declaration_after_statement" = xyes; then
 fi
 CFLAGS="$saved_CFLAGS"
 
+# Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
+# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_dingaling mod_opal mod_skypopen mod_h323 mod_khomp 
+#                    mod_unimrcp mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
+#
+#saved_CFLAGS="$CFLAGS"
+#AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
+#CFLAGS="$CFLAGS -Wunused-but-set-variable"
+#AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
+#])
+#AC_MSG_RESULT($ac_cv_gcc_unused_but_set_variable)
+#if test x"$ac_cv_gcc_unused_but_set_variable" = xyes; then
+#    APR_ADDTO(SWITCH_ANSI_CFLAGS, -Wunused-but-set-variable)
+#fi
+#CFLAGS="$saved_CFLAGS"
+
 AC_C_BIGENDIAN(AC_DEFINE([SWITCH_BYTE_ORDER],__BIG_ENDIAN,[Big Endian]),AC_DEFINE([SWITCH_BYTE_ORDER],__LITTLE_ENDIAN,[Little Endian]))
 
 # Checks for integer size
@@ -788,6 +808,7 @@ SAC_OPENSSL
 
 if test x$HAVE_OPENSSL = x1; then
 	openssl_CFLAGS="$openssl_CFLAGS -DHAVE_OPENSSL";
+	APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_OPENSSL)
 fi
 
 AX_CHECK_JAVA

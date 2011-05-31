@@ -60,6 +60,13 @@
 
 #define MAX_SIZEOF_SUBADDR_IE	24	/* as per Q931 4.5.9 */
 
+typedef struct ftdm2trillium
+{
+	uint8_t ftdm_val;
+	uint8_t trillium_val;
+}ftdm2trillium_t;
+
+
 typedef enum {
 	SNGSS7_CON_IND_EVENT = 0,
 	SNGSS7_CON_CFM_EVENT,
@@ -320,8 +327,19 @@ typedef struct sng_isup_ckt {
 	uint32_t		clg_nadi;
 	uint32_t		cld_nadi;
 	uint8_t			rdnis_nadi;
+
+	/* Generic Number defaults */
+	uint8_t			gn_nmbqual;			/* Number Qualifier */
+	uint8_t			gn_nadi;			/* Nature of Address indicator */
+	uint8_t 		gn_screen_ind;		/* Screening Indicator */
+	uint8_t			gn_pres_ind;		/* Presentation Indicator */
+	uint8_t			gn_npi;				/* Numbering Plan Indicator */
+	uint8_t			gn_num_inc_ind;		/* Number Incomplete Indicator */
+	/* END - Generic Number defaults */
 			
 	uint32_t		min_digits;
+	uint8_t			itx_auto_reply;
+	uint8_t			transparent_iam;
 	void			*obj;
 	uint16_t		t3;
 	uint16_t		t12;
@@ -389,6 +407,7 @@ typedef struct sng_ss7_cfg {
 	uint32_t			procId;
 	char				license[MAX_PATH];
 	char				signature[MAX_PATH];
+	uint32_t			transparent_iam_max_size;
 	uint32_t			flags;
 	sng_relay_t			relay[MAX_RELAY_CHANNELS+1];
 	sng_mtp1_link_t		mtp1Link[MAX_MTP_LINKS+1];
@@ -728,6 +747,9 @@ void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_itx (ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_txa (ftdm_channel_t * ftdmchan);
+
 
 /* in ftmod_sangoma_ss7_in.c */
 void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt);
@@ -744,6 +766,10 @@ void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit);
 void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiResmEvnt *siResmEvnt);
 void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiSuspEvnt *siSuspEvnt);
 void sngss7_ssp_sta_cfm(uint32_t infId);
+
+ftdm_status_t sngss7_bufferzero_iam(SiConEvnt *siConEvnt);
+ftdm_status_t sngss7_retrieve_iam(ftdm_channel_t *ftdmchan, SiConEvnt *siConEvnt);
+ftdm_status_t sngss7_save_iam(ftdm_channel_t *ftdmchan, SiConEvnt *siConEvnt);
 
 /* in ftmod_sangoma_ss7_handle.c */
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt);
@@ -785,12 +811,21 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
 
 /* in ftmod_sangoma_ss7_support.c */
-uint8_t copy_cgPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
-uint8_t copy_cgPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCgPtyNum *cgPtyNum);
-uint8_t copy_cdPtyNum_from_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
-uint8_t copy_cdPtyNum_to_sngss7(ftdm_caller_data_t *ftdm, SiCdPtyNum *cdPtyNum);
+ftdm_status_t copy_cgPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPtyNum);
+ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPtyNum);
+ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum);
+ftdm_status_t copy_cdPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum);
 ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum);
-
+ftdm_status_t copy_redirgNum_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum);
+ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb);
+ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb);
+ftdm_status_t copy_cgPtyCat_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyCat *cgPtyCat);
+ftdm_status_t copy_cgPtyCat_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyCat *cgPtyCat);
+ftdm_status_t copy_accTrnspt_to_sngss7(ftdm_channel_t *ftdmchan, SiAccTrnspt *accTrnspt);
+ftdm_status_t copy_natConInd_to_sngss7(ftdm_channel_t *ftdmchan, SiNatConInd *natConInd);
+ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *fwdCallInd);
+ftdm_status_t copy_txMedReq_to_sngss7(ftdm_channel_t *ftdmchan, SiTxMedReq *txMedReq);
+ftdm_status_t copy_usrServInfoA_to_sngss7(ftdm_channel_t *ftdmchan, SiUsrServInfo *usrServInfoA);
 
 ftdm_status_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
 ftdm_status_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);

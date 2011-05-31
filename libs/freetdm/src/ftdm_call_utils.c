@@ -42,6 +42,74 @@
 #include <ctype.h>
 
 
+
+
+FT_DECLARE(char *) ftdm_url_encode(const char *url, char *buf, ftdm_size_t len)
+{
+	/* This implementation of url_encode is slightly different compared to the
+	* Freeswitch one. This is because this implementation accepts the full
+	* range of values (0x00 - 0xFF) compared to the Freeswitch implementation
+	* that does not accept 0x00 */
+
+	const char *p;
+	size_t x = 0,y = 0;
+	const char urlunsafe[] = "\r\n \"#%&+:;<=>?@[\\]^`{|}";
+	const char hex[] = "0123456789ABCDEF";
+
+	if (!buf) {
+		return 0;
+	}
+
+	if (!url) {
+		return 0;
+	}
+
+	len--;
+
+	for (p = url; y <= len; p++) {		
+		if (*p < ' ' || *p > '~' || strchr(urlunsafe, *p)) {
+			buf[x++] = '%';
+			buf[x++] = hex[(*p >> 4) & 0x0f];
+			buf[x++] = hex[*p & 0x0f];
+		} else {
+			buf[x++] = *p;
+		}
+		y++;
+	}
+	buf[x] = '\0';
+	return buf;
+}
+
+
+FT_DECLARE(char *) ftdm_url_decode(char *s, ftdm_size_t *len)
+{
+	/* This implementation of url_decode is slightly different compared to the
+	* Freeswitch one. This is because this implementation accepts the full
+	* range of values (0x00 - 0xFF) compared to the Freeswitch implementation
+	* that does not accept 0x00 */
+	
+	char *o;
+	unsigned int tmp;
+	ftdm_size_t mylen = 0;
+
+	if (ftdm_strlen_zero(s)) {
+		return s;
+	}
+	
+	for (o = s; *s; s++, o++) {
+		if (*s == '%' && strlen(s) > 2 && sscanf(s + 1, "%2x", &tmp) == 1) {
+			*o = (char) tmp;
+			s += 2;
+		} else {
+			*o = *s;
+		}
+		mylen++;
+	}
+	*o = '\0';
+	*len = mylen;
+	return s;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_set_npi(const char *string, uint8_t *target)
 {
 	uint8_t val;

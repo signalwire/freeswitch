@@ -1,8 +1,11 @@
 /* 
- * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * H323 endpoint interface for Freeswitch Modular Media Switching Software Library /
+ * Soft-Switch Application
  *
  * Version: MPL 1.1
+ *
+ * Copyright (c) 2010 Ilnitskiy Mixim (max.h323@gmail.com)
+ * Copyright (c) 2010 Georgiewskiy Yuriy (bottleman@icf.org.ru)
  *
  * The contents of this file are subject to the Mozilla Public License Version
  * 1.1 (the "License"); you may not use this file except in compliance with
@@ -14,6 +17,11 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
+ * Contributor(s):
+ * 
+ * 
+ * 
+ *
  * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  *
  * The Initial Developer of the Original Code is
@@ -24,7 +32,8 @@
  *
  * mod_h323.h -- H323 endpoint
  *
- */
+ *	Version 0.0.57
+*/
 
 #if defined(__GNUC__) && defined(HAVE_VISIBILITY)
 #pragma GCC visibility push(default)
@@ -184,6 +193,7 @@ typedef struct {
 	switch_mutex_t *h323_io_mutex;
 
 	FSH323Connection *me;
+	bool			active_connection;
 	char			*token;
 } h323_private_t;
 

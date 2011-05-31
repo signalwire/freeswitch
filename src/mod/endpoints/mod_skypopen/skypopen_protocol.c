@@ -1739,19 +1739,23 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 			if (session) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
 
+				if(channel){
 
-				switch_mutex_lock(tech_pvt->flag_mutex);
-				switch_clear_flag(tech_pvt, TFLAG_IO);
-				switch_clear_flag(tech_pvt, TFLAG_VOICE);
-				if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
-					switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+					switch_mutex_lock(tech_pvt->flag_mutex);
+					switch_clear_flag(tech_pvt, TFLAG_IO);
+					switch_clear_flag(tech_pvt, TFLAG_VOICE);
+					if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
+						switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+					}
+					switch_mutex_unlock(tech_pvt->flag_mutex);
+
+
+					switch_core_session_rwunlock(session);
+					WARNINGA("Closing session for %s\n", SKYPOPEN_P_LOG, interfacename);
+					switch_channel_hangup(channel, SWITCH_CAUSE_CRASH);
+				} else {
+					WARNINGA("NO CHANNEL ?\n", SKYPOPEN_P_LOG);
 				}
-				switch_mutex_unlock(tech_pvt->flag_mutex);
-
-
-				switch_core_session_rwunlock(session);
-				WARNINGA("Closing session for %s\n", SKYPOPEN_P_LOG, interfacename);
-				switch_channel_hangup(channel, SWITCH_CAUSE_CRASH);
 			}
 
 			WARNINGA("Removing skype interface %s\n", SKYPOPEN_P_LOG, interfacename);
@@ -1772,19 +1776,23 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 				switch_channel_t *channel = switch_core_session_get_channel(session);
 
 
-				switch_mutex_lock(tech_pvt->flag_mutex);
-				switch_clear_flag(tech_pvt, TFLAG_IO);
-				switch_clear_flag(tech_pvt, TFLAG_VOICE);
-				if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
-					switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+				if(channel){
+					switch_mutex_lock(tech_pvt->flag_mutex);
+					switch_clear_flag(tech_pvt, TFLAG_IO);
+					switch_clear_flag(tech_pvt, TFLAG_VOICE);
+					if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
+						switch_clear_flag(tech_pvt, TFLAG_PROGRESS);
+					}
+					switch_mutex_unlock(tech_pvt->flag_mutex);
+
+
+					switch_core_session_rwunlock(session);
+					WARNINGA("Closing session for %s\n", SKYPOPEN_P_LOG, interfacename);
+					switch_channel_hangup(channel, SWITCH_CAUSE_CRASH);
+
+				} else {
+					WARNINGA("NO CHANNEL ?\n", SKYPOPEN_P_LOG);
 				}
-				switch_mutex_unlock(tech_pvt->flag_mutex);
-
-
-				switch_core_session_rwunlock(session);
-				WARNINGA("Closing session for %s\n", SKYPOPEN_P_LOG, interfacename);
-				switch_channel_hangup(channel, SWITCH_CAUSE_CRASH);
-
 				//skypopen_sleep(500000);
 			}
 

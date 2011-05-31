@@ -636,6 +636,18 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(cause));
 		switch_channel_event_set_data(session->channel, event);
+		if (switch_true(switch_channel_get_variable(session->channel, "hangup_complete_with_xml"))) {
+			switch_xml_t cdr = NULL;
+			char *xml_cdr_text;
+			
+			if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
+				xml_cdr_text = switch_xml_toxml(cdr, SWITCH_FALSE);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CDR-Attached", "xml");
+				switch_event_add_body(event, "%s", xml_cdr_text);
+				switch_xml_free(cdr);
+				switch_safe_free(xml_cdr_text);
+			}
+		}
 		switch_event_fire(&event);
 	}
 

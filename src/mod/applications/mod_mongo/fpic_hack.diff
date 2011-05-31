@@ -1,0 +1,11 @@
+--- SConstruct.orig	2011-04-28 19:00:36.000000000 +0200
++++ SConstruct	2011-04-28 19:01:19.000000000 +0200
+@@ -45,7 +45,7 @@
+     linux = True
+ 
+ if nix:
+-    env.Append( CPPFLAGS=" -O3" )
++    env.Append( CPPFLAGS=" -I../pcre -fPIC -O3" )
+     env.Append( LIBS=["pthread"] )
+ if linux:
+     env.Append( LINKFLAGS=" -Wl,--as-needed -Wl,-zdefs " )

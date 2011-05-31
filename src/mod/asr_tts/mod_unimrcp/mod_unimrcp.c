@@ -3369,7 +3369,7 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_PROCESSING);
 			} else if (message->start_line.request_state == MRCP_REQUEST_STATE_COMPLETE) {
 				/* RECOGNIZE failed to start */
-				if (recog_hdr->completion_cause == RECOGNIZER_COMPLETION_CAUSE_UNKNOWN) {
+				if (!recog_hdr || recog_hdr->completion_cause == RECOGNIZER_COMPLETION_CAUSE_UNKNOWN) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) RECOGNIZE failed: status = %d\n", schannel->name,
 									  message->start_line.status_code);
 				} else {

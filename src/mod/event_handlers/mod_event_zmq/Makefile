@@ -1,6 +1,6 @@
 BASE=../../../..
 
-ZMQ=zeromq-2.1.3
+ZMQ=zeromq-2.1.4
 
 ZMQ_BASEURL=http://download.zeromq.org
 

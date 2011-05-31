@@ -1743,7 +1743,7 @@ static int nua_prack_client_request(nua_client_request_t *cr,
   nua_client_request_t *cri;
   int offer_sent = 0, answer_sent = 0, retval;
   int status = 0; char const *phrase = "PRACK Sent";
-  uint32_t rseq = 0;
+  //uint32_t rseq = 0;
 
   if (du == NULL)		/* Call terminated */
     return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
@@ -1754,8 +1754,8 @@ static int nua_prack_client_request(nua_client_request_t *cr,
 
   cri = du->du_cr;
 
-  if (sip->sip_rack)
-    rseq = sip->sip_rack->ra_response;
+//  if (sip->sip_rack)
+//    rseq = sip->sip_rack->ra_response;
 
   if (cri->cr_offer_recv && !cri->cr_answer_sent) {
     if (nh->nh_soa == NULL)
