@@ -411,7 +411,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch
 			if (!strcmp(bp->function, "session_record")) {
 				list[x] = switch_core_session_strdup(new_session, bp->target);
 				if (bp->stop_time > 0) {
-					stop_times[x] = bp->stop_time - switch_epoch_time_now(NULL);
+					stop_times[x] = (int)(bp->stop_time - switch_epoch_time_now(NULL));
 				}
 				x++;
 			}
