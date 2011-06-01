@@ -1086,8 +1086,15 @@ ftdm_status_t sngisdn_check_free_ids(void)
 
 void sngisdn_get_memory_info(void)
 {
+#ifdef WIN32
+	/* SRegInfoShow is not formally supported by Trillium with Windows */
+	ftdm_log(FTDM_LOG_WARNING, "SRegInfoShow not supported on Windows\n");
+#else	
+	/* SRegInfoShow is not formally supported by Trillium in Linux either, but
+	 * it seems like its working fine so far */
 	U32 availmen = 0;
 	SRegInfoShow(S_REG, &availmen);
+#endif	
 	return;
 }
 
