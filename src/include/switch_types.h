@@ -1690,7 +1690,7 @@ struct switch_console_callback_match {
 };
 typedef struct switch_console_callback_match switch_console_callback_match_t;
 
-typedef SWITCH_DECLARE_TYPEDEF(void, *switch_cap_callback_t) (const char *var, const char *val, void *user_data);
+typedef void (*switch_cap_callback_t) (const char *var, const char *val, void *user_data);
 typedef switch_status_t (*switch_console_complete_callback_t) (const char *, const char *, switch_console_callback_match_t **matches);
 typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
 typedef switch_bool_t (*switch_tone_detect_callback_t) (switch_core_session_t *, const char *, const char *);
