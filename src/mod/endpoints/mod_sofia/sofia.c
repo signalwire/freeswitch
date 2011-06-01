@@ -6190,6 +6190,11 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	const char *clientcode_header;
 	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
 	switch_event_t *event;
+	private_object_t *tech_pvt = NULL;
+
+	if (session) {
+		tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	}
 
 	if (sofia_test_pflag(profile, PFLAG_EXTENDED_INFO_PARSING)) {
 		if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype &&
@@ -6322,7 +6327,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				goto end;
 			}
 
-			if (dtmf.digit) {
+			if (dtmf.digit && tech_pvt->dtmf_type == DTMF_INFO) {
 				/* queue it up */
 				switch_channel_queue_dtmf(channel, &dtmf);
 
@@ -6347,6 +6352,9 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 				/* Send 200 OK response */
 				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+								  "IGNORE INFO DTMF(%c) (This channel was not configured to use INFO DTMF!)\n", dtmf.digit);
 			}
 			goto end;
 		}
