@@ -48,7 +48,7 @@
 #include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */
-#define PIDFILE "sangoma-media-gateway.pid"
+#define PIDFILE "netborder-ss7.pid"
 static char *pfile = PIDFILE;
 static int system_ready = 0;
 
@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-version")) {
-			fprintf(stdout, "Sangoma Media Gateway Version: %s\n", SWITCH_VERSION_FULL);
+			fprintf(stdout, "Netborder SS7 Version: %s\n", SWITCH_VERSION_FULL);
 			return 0;
 			known_opt++;
 		}
