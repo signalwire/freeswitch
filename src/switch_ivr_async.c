@@ -1444,7 +1444,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 	switch_bool_t hangup_on_error = SWITCH_FALSE;
 	char *file_path = NULL;
-
+	
 	if ((p = switch_channel_get_variable(channel, "RECORD_HANGUP_ON_ERROR"))) {
 		hangup_on_error = switch_true(p);
 	}
@@ -1463,7 +1463,36 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	channels = read_impl.number_of_channels;
 
 	if ((bug = switch_channel_get_private(channel, file))) {
-		return switch_ivr_stop_record_session(session, file);
+		if (switch_true(switch_channel_get_variable(channel, "RECORD_TOGGLE_ON_REPEAT"))) {
+			return switch_ivr_stop_record_session(session, file);
+		}
+		
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Already recording [%s]\n", file);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	
+	if ((p = switch_channel_get_variable(channel, "RECORD_CHECK_BRIDGE")) && switch_true(p)) {
+		switch_core_session_t *other_session;
+		int exist = 0;
+		switch_status_t rstatus = SWITCH_STATUS_SUCCESS;
+		
+		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+			if ((bug = switch_channel_get_private(other_channel, file))) {
+				if (switch_true(switch_channel_get_variable(other_channel, "RECORD_TOGGLE_ON_REPEAT"))) {
+					rstatus = switch_ivr_stop_record_session(other_session, file);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(other_session), SWITCH_LOG_WARNING, "Already recording [%s]\n", file);
+				}
+				exist = 1;
+			}
+			switch_core_session_rwunlock(other_session);
+		}
+		
+		if (exist) {
+			return rstatus;
+		}
 	}
 
 	if (!fh) {
@@ -1615,7 +1644,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	rh->file = switch_core_session_strdup(session, file);
 	rh->packet_len = read_impl.decoded_bytes_per_packet;
 
-	rh->min_sec = 3;
+	if (file_flags & SWITCH_FILE_WRITE_APPEND) {
+		rh->min_sec = 3;
+	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_MIN_SEC"))) {
 		int tmp = atoi(p);

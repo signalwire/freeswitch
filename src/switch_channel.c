@@ -635,7 +635,7 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 	switch_event_t *event;
 
 	if (!!on == !!switch_channel_test_flag(channel, CF_LEG_HOLDING)) {
-		return;
+		goto end;
 	}
 	
 	if (on) {
@@ -647,6 +647,18 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 	if (switch_event_create(&event, on ? SWITCH_EVENT_CHANNEL_HOLD : SWITCH_EVENT_CHANNEL_UNHOLD) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
+	}
+
+ end:
+
+	if (on) {
+		if (switch_true(switch_channel_get_variable(channel, "flip_record_on_hold"))) {
+			switch_core_session_t *other_session;
+			if (switch_core_session_get_partner(channel->session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				switch_core_media_bug_transfer_recordings(channel->session, other_session);
+				switch_core_session_rwunlock(other_session);
+			}
+		}
 	}
 
 }

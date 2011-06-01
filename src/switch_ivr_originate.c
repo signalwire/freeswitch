@@ -3123,10 +3123,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							switch_core_session_t *holding_session;
 
 							if ((holding_session = switch_core_session_locate(holding))) {
-								switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
+								switch_channel_t *holding_channel = switch_core_session_get_channel(holding_session);
+								
+								switch_channel_set_variable(holding_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
+
+								if (caller_channel && switch_true(switch_channel_get_variable(caller_channel, "recording_follow_transfer"))) {
+									switch_core_media_bug_transfer_recordings(session, originate_status[i].peer_session);
+								}
+
+								if (switch_true(switch_channel_get_variable(holding_channel, "recording_follow_transfer"))) {
+									switch_core_media_bug_transfer_recordings(holding_session, originate_status[i].peer_session);
+								}
+								
 								switch_core_session_rwunlock(holding_session);
 							}
 							switch_channel_set_flag(originate_status[i].peer_channel, CF_LAZY_ATTENDED_TRANSFER);
+							
 							switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(originate_status[i].peer_session));
 							holding = NULL;
 						} else {

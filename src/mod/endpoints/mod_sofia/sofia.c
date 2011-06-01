@@ -5886,17 +5886,19 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 										   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"),
 										   SIPTAG_EVENT_STR(etmp), TAG_END());
 							} else {
-								switch_core_session_t *t_session;
+								switch_core_session_t *t_session, *hup_session;
 								switch_channel_t *hup_channel;
 								const char *ext;
 
 								if (br_a && !br_b) {
 									t_session = switch_core_session_locate(br_a);
 									hup_channel = channel_b;
+									hup_session = b_session;
 								} else {
 									private_object_t *h_tech_pvt = (private_object_t *) switch_core_session_get_private(b_session);
 									t_session = switch_core_session_locate(br_b);
 									hup_channel = channel_a;
+									hup_session = session;
 									sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 									switch_channel_clear_flag(tech_pvt->channel, CF_LEG_HOLDING);
 									sofia_clear_flag_locked(h_tech_pvt, TFLAG_SIP_HOLD);
@@ -5915,6 +5917,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 									if (!zstr(full_ref_to)) {
 										switch_channel_set_variable(t_channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
+									}
+
+									
+									if (switch_true(switch_channel_get_variable(hup_channel, "recording_follow_transfer"))) {
+										switch_core_media_bug_transfer_recordings(hup_session, t_session);
 									}
 
 									if (idest) {
@@ -6077,6 +6084,10 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				}
 				if (!zstr(full_ref_to)) {
 					switch_channel_set_variable(b_channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
+				}
+
+				if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
+					switch_core_media_bug_transfer_recordings(session, b_session);
 				}
 
 				switch_ivr_session_transfer(b_session, exten, NULL, NULL);

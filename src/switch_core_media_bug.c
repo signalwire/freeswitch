@@ -420,7 +420,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch
 		switch_thread_rwlock_unlock(orig_session->bug_rwlock);
 
 		for(i = 0; i < x; i++) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(orig_session), SWITCH_LOG_DEBUG, "Transfering %s from %s to %s\n", list[i],
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(orig_session), SWITCH_LOG_CRIT, "Transfering %s from %s to %s\n", list[i],
 							  switch_core_session_get_name(orig_session), switch_core_session_get_name(new_session));
 			switch_ivr_stop_record_session(orig_session, list[i]);
 			switch_ivr_record_session(new_session, list[i], stop_times[i], NULL);
