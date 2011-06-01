@@ -6900,7 +6900,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (sip->sip_to && sip->sip_to->a_url) {
 		const char *host, *user;
-		int port;
+		int port, check_nat = 0;
 		url_t *transport_url;
 
 		if (sip->sip_record_route && sip->sip_record_route->r_url) {
@@ -6940,8 +6940,20 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 			if (sofia_glue_check_nat(profile, tech_pvt->remote_ip)) {
 				url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_public_url : profile->public_url;
+				check_nat = 1;
 			} else {
 				url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
+			}
+
+			if (!url) {
+				if (check_nat) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Nat detected but no external address configured.\n");
+				}
+				url = profile->url;
+			}
+
+			if (!url) {
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 
 			tmp = sofia_overcome_sip_uri_weakness(session, url, transport, SWITCH_TRUE, NULL);
