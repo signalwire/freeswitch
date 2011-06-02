@@ -3643,7 +3643,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", billsec);
 	switch_channel_set_variable(channel, "billsec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%d", progresssec);
+	switch_snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, progresssec);
 	switch_channel_set_variable(channel, "progresssec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", answersec);
@@ -3652,7 +3652,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", waitsec);
 	switch_channel_set_variable(channel, "waitsec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%d", progress_mediasec);
+	switch_snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, progress_mediasec);
 	switch_channel_set_variable(channel, "progress_mediasec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", legbillsec);

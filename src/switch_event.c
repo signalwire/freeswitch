@@ -1302,11 +1302,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		llen = strlen(hp->name) + strlen(encode_buf) + 8;
 
 		if ((len + llen) > dlen) {
-			char *m;
+			char *m = buf;
 			dlen += (blocksize + (len + llen));
-			if ((m = realloc(buf, dlen))) {
+			if (!(buf = realloc(buf, dlen))) {
 				buf = m;
-			} else {
 				abort();
 			}
 		}
@@ -1329,11 +1328,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		}
 
 		if ((len + llen) > dlen) {
-			char *m;
+			char *m = buf;
 			dlen += (blocksize + (len + llen));
-			if ((m = realloc(buf, dlen))) {
+			if (!(buf = realloc(buf, dlen))) {
 				buf = m;
-			} else {
 				abort();
 			}
 		}
