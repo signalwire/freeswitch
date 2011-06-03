@@ -3958,8 +3958,13 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 						client = NULL;
 						goto done;
 					}
+					if (zstr(param_value)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing SPEAK param value\n");
+						client = NULL;
+						goto done;
+					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading SPEAK Param %s:%s\n", param_name, param_value);
-					switch_core_hash_insert(mod_profile->default_synth_params, param_name, param_value);
+					switch_core_hash_insert(mod_profile->default_synth_params, switch_core_strdup(pool, param_name), switch_core_strdup(pool, param_value));
 				}
 			}
 
@@ -3976,8 +3981,13 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 						client = NULL;
 						goto done;
 					}
+					if (zstr(param_value)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing RECOGNIZE param value\n");
+						client = NULL;
+						goto done;
+					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading RECOGNIZE Param %s:%s\n", param_name, param_value);
-					switch_core_hash_insert(mod_profile->default_recog_params, param_name, param_value);
+					switch_core_hash_insert(mod_profile->default_recog_params, switch_core_strdup(pool, param_name), switch_core_strdup(pool, param_value));
 				}
 			}
 
