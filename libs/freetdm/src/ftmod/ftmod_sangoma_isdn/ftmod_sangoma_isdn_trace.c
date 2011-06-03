@@ -757,7 +757,7 @@ void print_hex_dump(char* str, uint32_t *str_len, uint8_t* data, uint32_t index_
 {
 	uint32_t k;
 	*str_len += sprintf(&str[*str_len], "  [ ");
-	for(k=index_start; k <= index_end; k++) {
+	for(k=index_start; k < index_end; k++) {
 		if (k && !(k%32)) {
 			*str_len += sprintf(&str[*str_len], "\n    ");
 		}
@@ -917,7 +917,7 @@ static ftdm_status_t sngisdn_map_call(sngisdn_span_data_t *signal_data, sngisdn_
 		case PROT_Q931_MSGTYPE_USER_INFO:
 		case PROT_Q931_MSGTYPE_DISCONNECT:
 		case PROT_Q931_MSGTYPE_RELEASE:
-		case PROT_Q931_MSGTYPE_RELEASE_ACK:
+		case PROT_Q931_MSGTYPE_RESTART_ACK:
 		case PROT_Q931_MSGTYPE_RELEASE_COMPLETE:
 		case PROT_Q931_MSGTYPE_FACILITY:
 		case PROT_Q931_MSGTYPE_NOTIFY:

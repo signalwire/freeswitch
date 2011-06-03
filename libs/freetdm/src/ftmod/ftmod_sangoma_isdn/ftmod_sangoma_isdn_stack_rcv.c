@@ -712,10 +712,12 @@ void sngisdn_rcv_q921_ind(BdMngmt *status)
 }
 void sngisdn_rcv_q931_ind(InMngmt *status)
 {	
+#ifndef WIN32
 	if (status->t.usta.alarm.cause == 287) {
-		get_memory_info();
+		sngisdn_get_memory_info();
 		return;
 	}
+#endif
 
 	switch (status->t.usta.alarm.event) {
 		case LCM_EVENT_UP:
