@@ -569,8 +569,30 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	const char *val;
 	const char *b_sdp = NULL;
 	int is_proxy = 0;
+	int is_3pcc = 0;
 	char *sticky = NULL;
 	const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
+
+
+	if(sofia_test_flag(tech_pvt, TFLAG_3PCC_INVITE)) {
+		// SNARK: complete hack to get final ack sent when a 3pcc invite has been passed from the other leg in bypass_media mode.
+         	// This code handles the pass_indication sent after the 3pcc ack is received by the other leg in the is_3pcc && is_proxy case below.
+	 	// Is there a better place to hang this...?
+		b_sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE);
+		sofia_glue_tech_set_local_sdp(tech_pvt, b_sdp, SWITCH_TRUE);
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY nomedia - sending ack\n");
+		nua_ack(tech_pvt->nh,
+			TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+			SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+			SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+			SOATAG_REUSE_REJECTED(1),
+			SOATAG_RTP_SELECT(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
+			TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
+			TAG_END());
+		sofia_clear_flag(tech_pvt, TFLAG_3PCC_INVITE); // all done
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		return SWITCH_STATUS_SUCCESS;
@@ -579,8 +601,9 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 	b_sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE);
 	is_proxy = (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA));
+	is_3pcc = (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC));
 
-	if (b_sdp && is_proxy) {
+	if (b_sdp && is_proxy && !is_3pcc) {
 		sofia_glue_tech_set_local_sdp(tech_pvt, b_sdp, SWITCH_TRUE);
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
@@ -591,23 +614,35 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		}
 	} else {
 		/* This if statement check and handles the 3pcc proxy mode */
-		if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
+		if (is_3pcc) {
 
+			if(!is_proxy) {
 			tech_pvt->num_codecs = 0;
 			sofia_glue_tech_prepare_codecs(tech_pvt);
 			tech_pvt->local_sdp_str = NULL;
 			sofia_glue_tech_choose_port(tech_pvt, 0);
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+			} else {
+				sofia_glue_tech_set_local_sdp(tech_pvt, b_sdp, SWITCH_TRUE);
+
+				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+					sofia_glue_tech_patch_sdp(tech_pvt);
+					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+						return SWITCH_STATUS_FALSE;
+					}
+				}
+			}
 
 			/* Send the 200 OK */
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 				if (sofia_use_soa(tech_pvt)) {
 					nua_respond(tech_pvt->nh, SIP_200_OK,
+								TAG_IF(is_proxy, NUTAG_AUTOANSWER(0)),
 								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 								TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
-								SOATAG_REUSE_REJECTED(1),
+								SOATAG_REUSE_REJECTED(1), TAG_IF(is_proxy, SOATAG_RTP_SELECT(1)),
 								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1),
 								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
@@ -638,6 +673,14 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 			/*  Regain lock on sofia */
 			switch_mutex_lock(tech_pvt->sofia_mutex);
+
+			if(is_proxy) {
+				sofia_clear_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
+				sofia_clear_flag(tech_pvt, TFLAG_3PCC);
+				// This sends the message to the other leg that causes it to call the TFLAG_3PCC_INVITE code at the start of this function.
+				// Is there another message it would be better to hang this on though?
+				switch_core_session_pass_indication(session, SWITCH_MESSAGE_INDICATE_ANSWER);
+			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Done waiting for ACK\n");
 			return SWITCH_STATUS_SUCCESS;
@@ -1685,6 +1728,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							  switch_channel_get_name(channel), msg->string_arg);
 			sofia_glue_tech_set_local_sdp(tech_pvt, msg->string_arg, SWITCH_TRUE);
 
+			if(zstr(tech_pvt->local_sdp_str)) {
+				sofia_set_flag(tech_pvt, TFLAG_3PCC_INVITE);
+			}
+
 			sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
 			switch_channel_set_flag(channel, CF_REQ_MEDIA);
 			sofia_glue_do_invite(session);
@@ -2182,6 +2229,23 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 										SIPTAG_CONTENT_TYPE_STR("application/sdp"),
 										SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str),
 										TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+						}
+						if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
+							/* Unlock the session signal to allow the ack to make it in */
+							// Maybe we should timeout?
+							switch_mutex_unlock(tech_pvt->sofia_mutex);
+
+							while (switch_channel_ready(channel) && !sofia_test_flag(tech_pvt, TFLAG_3PCC_HAS_ACK)) {
+								switch_cond_next();
+							}
+
+							/*  Regain lock on sofia */
+							switch_mutex_lock(tech_pvt->sofia_mutex);
+				
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Done waiting for ACK\n");
+							sofia_clear_flag(tech_pvt, TFLAG_3PCC);
+							sofia_clear_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
+							switch_core_session_pass_indication(session, SWITCH_MESSAGE_INDICATE_ANSWER);
 						}
 					} else {
 						nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
@@ -4378,6 +4442,14 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				sofia_set_flag(ctech_pvt, TFLAG_ENABLE_SOA);
 			} else {
 				sofia_clear_flag(ctech_pvt, TFLAG_ENABLE_SOA);
+			}
+
+			/* SNARK: lets copy this across so we can see if we're the other leg of 3PCC + bypass_media... */
+			if (sofia_test_flag(ctech_pvt, TFLAG_3PCC) && (switch_channel_test_flag(o_channel, CF_PROXY_MODE) || switch_channel_test_flag(o_channel, CF_PROXY_MEDIA))) {
+				sofia_set_flag(tech_pvt, TFLAG_3PCC_INVITE);
+				sofia_set_flag(tech_pvt, TFLAG_LATE_NEGOTIATION);
+			} else {
+				sofia_clear_flag(tech_pvt, TFLAG_3PCC_INVITE);
 			}
 		}
 
