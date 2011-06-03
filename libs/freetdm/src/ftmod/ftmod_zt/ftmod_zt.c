@@ -976,12 +976,18 @@ FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 		snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 		return FTDM_FAIL;
 	}
-	
+
 	for(i = 1; i <= span->chan_count; i++) {
 		if (pfds[i-1].revents & POLLPRI) {
-			ftdm_set_flag(span->channels[i], FTDM_CHANNEL_EVENT);
+			ftdm_set_io_flag(span->channels[i], FTDM_CHANNEL_IO_EVENT);
 			span->channels[i]->last_event_time = ftdm_current_time_in_ms();
 			k++;
+		}
+		if (pfds[i-1].revents & POLLIN) {
+			ftdm_set_io_flag(span->channels[i], FTDM_CHANNEL_IO_READ);
+		}
+		if (pfds[i-1].revents & POLLOUT) {
+			ftdm_set_io_flag(span->channels[i], FTDM_CHANNEL_IO_WRITE);
 		}
 	}
 
@@ -1106,8 +1112,8 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
 	zt_event_t zt_event_id = 0;
 	ftdm_span_t *span = ftdmchan->span;
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT)) {
-		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_EVENT);
+	if (ftdm_test_io_flag(ftdmchan, FTDM_CHANNEL_IO_EVENT)) {
+		ftdm_clear_io_flag(ftdmchan, FTDM_CHANNEL_IO_EVENT);
 	}
 
 	if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
@@ -1143,8 +1149,8 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 
 	for(i = 1; i <= span->chan_count; i++) {
 		ftdm_channel_t *fchan = span->channels[i];
-		if (ftdm_test_flag(fchan, FTDM_CHANNEL_EVENT)) {
-			ftdm_clear_flag(fchan, FTDM_CHANNEL_EVENT);
+		if (ftdm_test_io_flag(fchan, FTDM_CHANNEL_IO_EVENT)) {
+			ftdm_clear_io_flag(fchan, FTDM_CHANNEL_IO_EVENT);
 			if (ioctl(fchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
 				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 				return FTDM_FAIL;

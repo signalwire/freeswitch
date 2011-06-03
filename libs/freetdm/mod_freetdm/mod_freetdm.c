@@ -67,7 +67,8 @@ typedef enum {
 	TFLAG_CODEC = (1 << 2),
 	TFLAG_BREAK = (1 << 3),
 	TFLAG_HOLD = (1 << 4),
-	TFLAG_DEAD = (1 << 5)
+	TFLAG_DEAD = (1 << 5),
+	TFLAG_TRANSFER = (1 << 6),
 } TFLAGS;
 
 static struct {
@@ -882,10 +883,30 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 			ftdm_channel_call_answer(tech_pvt->ftdmchan);
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_REDIRECT:
+	case SWITCH_MESSAGE_INDICATE_DEFLECT:
+		{
+			ftdm_usrmsg_t usrmsg;
+			const char *val = NULL;
+
+			memset(&usrmsg, 0, sizeof(usrmsg));
+
+			if ((val = switch_channel_get_variable(channel, "freetdm_transfer_data"))) {
+				ftdm_usrmsg_add_var(&usrmsg, "transfer_data", val);
+			}
+
+			switch_set_flag(tech_pvt, TFLAG_TRANSFER);
+			if (ftdm_channel_call_transfer_ex(tech_pvt->ftdmchan, msg->string_arg, &usrmsg) != FTDM_SUCCESS) {
+				switch_clear_flag(tech_pvt, TFLAG_TRANSFER);
+			}
+			while (switch_test_flag(tech_pvt, TFLAG_TRANSFER)) {
+				switch_yield(100000);
+			}
+		}
 	default:
 		break;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1749,11 +1770,13 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 
 static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 {
-	switch_event_t *event = NULL;
-	ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
 	uint32_t chanid, spanid;
+	switch_event_t *event = NULL;	
+	ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
+
 	chanid = ftdm_channel_get_id(sigmsg->channel);
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
+
 	switch (sigmsg->event_id) {
 
 	case FTDM_SIGEVENT_ALARM_CLEAR:
@@ -1788,14 +1811,44 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 			}
 			return FTDM_SUCCESS;
 		}
+	case FTDM_SIGEVENT_TRANSFER_COMPLETED:
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			private_t *tech_pvt = NULL;
 
-	case FTDM_SIGEVENT_RELEASED: 
+			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				tech_pvt = switch_core_session_get_private(session);
+
+				switch_clear_flag_locked(tech_pvt, TFLAG_TRANSFER);
+				switch_channel_set_variable(channel, "freetdm_transfer_response", ftdm_transfer_response2str(sigmsg->ev_data.transfer_completed.response));
+				switch_core_session_rwunlock(session);
+			}
+			return FTDM_SUCCESS;
+		}
+		break;
+	case FTDM_SIGEVENT_RELEASED:
 	case FTDM_SIGEVENT_INDICATION_COMPLETED:
 	case FTDM_SIGEVENT_DIALING:
-		{ 
+		{
 			/* Swallow these events */
 			return FTDM_BREAK;
-		} 
+		}
+		break;
+	case FTDM_SIGEVENT_STOP:
+	case FTDM_SIGEVENT_RESTART:
+		{
+			switch_core_session_t *session = NULL;
+			private_t *tech_pvt = NULL;
+			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+				tech_pvt = switch_core_session_get_private(session);
+
+				switch_clear_flag_locked(tech_pvt, TFLAG_TRANSFER);
+				switch_core_session_rwunlock(session);
+				return FTDM_SUCCESS;
+			}
+		}
 		break;
 	default:
 		return FTDM_SUCCESS;
@@ -2350,6 +2403,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		break;
 	case FTDM_SIGEVENT_PROCEED:
 	case FTDM_SIGEVENT_FACILITY:
+	case FTDM_SIGEVENT_TRANSFER_COMPLETED:
 		/* FS does not have handlers for these messages, so ignore them for now */
 		break;
 	default:

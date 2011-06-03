@@ -47,7 +47,6 @@ static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t
 static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val);
 
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
-void get_memory_info(void);
 
 ftdm2trillium_t npi_codes[] = {
 	{FTDM_NPI_UNKNOWN,	IN_NP_UNK},
@@ -101,11 +100,12 @@ void clear_call_data(sngisdn_chan_data_t *sngisdn_info)
 	g_sngisdn_data.ccs[cc_id].active_spInstIds[sngisdn_info->spInstId]=NULL;
 	g_sngisdn_data.ccs[cc_id].active_suInstIds[sngisdn_info->suInstId]=NULL;
 	ftdm_mutex_unlock(g_sngisdn_data.ccs[cc_id].mutex);
-	
+
 	sngisdn_info->suInstId = 0;
 	sngisdn_info->spInstId = 0;
 	sngisdn_info->globalFlg = 0;
 	sngisdn_info->flags = 0;
+	sngisdn_info->transfer_data.type = SNGISDN_TRANSFER_NONE;
 	return;
 }
 
@@ -846,6 +846,41 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 	return FTDM_SUCCESS;
 }
 
+ftdm_status_t set_user_to_user_ie(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr)
+{
+	sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data;
+
+	if (sngisdn_info->transfer_data.type == SNGISDN_TRANSFER_ATT_COURTESY_VRU_DATA) {
+		usrUsr->eh.pres = PRSNT_NODEF;
+
+		usrUsr->protocolDisc.pres = PRSNT_NODEF;
+		usrUsr->protocolDisc.val = 0x08;
+		usrUsr->usrInfo.pres = PRSNT_NODEF;
+		usrUsr->usrInfo.len = strlen(sngisdn_info->transfer_data.tdata.att_courtesy_vru.data);
+		memcpy(usrUsr->usrInfo.val, sngisdn_info->transfer_data.tdata.att_courtesy_vru.data, usrUsr->usrInfo.len);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending AT&T Transfer data len:%d\n", usrUsr->usrInfo.len);
+
+		return FTDM_SUCCESS;
+	}
+
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t set_cause_ie(ftdm_channel_t *ftdmchan, CauseDgn *causeDgn)
+{
+
+	causeDgn->eh.pres = PRSNT_NODEF;
+	causeDgn->location.pres = PRSNT_NODEF;
+	causeDgn->location.val = IN_LOC_PRIVNETLU;
+	causeDgn->codeStand3.pres = PRSNT_NODEF;
+	causeDgn->codeStand3.val = IN_CSTD_CCITT;
+	causeDgn->causeVal.pres = PRSNT_NODEF;
+	causeDgn->causeVal.val = ftdmchan->caller_data.hangup_cause;
+	causeDgn->recommend.pres = NOTPRSNT;
+	causeDgn->dgnVal.pres = NOTPRSNT;
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)ftdmchan->call_data;
@@ -854,7 +889,7 @@ ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId)
 	}
 
 	ftdm_set_flag(sngisdn_info, FLAG_SENT_CHAN_ID);
-	
+
 	chanId->eh.pres = PRSNT_NODEF;
 	chanId->prefExc.pres = PRSNT_NODEF;
 	chanId->prefExc.val = IN_PE_EXCLSVE;
@@ -863,8 +898,7 @@ ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId)
 	chanId->intIdentPres.pres = PRSNT_NODEF;
 	chanId->intIdentPres.val = IN_IIP_IMPLICIT;
 
-	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI ||
-		   ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
+	if (FTDM_SPAN_IS_BRI(ftdmchan->span)) {
 
 		/* BRI only params */
 		chanId->intType.pres = PRSNT_NODEF;
@@ -1085,10 +1119,17 @@ ftdm_status_t sngisdn_check_free_ids(void)
 	return FTDM_SUCCESS;
 }
 
-void get_memory_info(void)
+void sngisdn_get_memory_info(void)
 {
+#ifdef WIN32
+	/* SRegInfoShow is not formally supported by Trillium with Windows */
+	ftdm_log(FTDM_LOG_WARNING, "SRegInfoShow not supported on Windows\n");
+#else	
+	/* SRegInfoShow is not formally supported by Trillium in Linux either, but
+	 * it seems like its working fine so far */
 	U32 availmen = 0;
 	SRegInfoShow(S_REG, &availmen);
+#endif	
 	return;
 }
 
@@ -1288,9 +1329,12 @@ void sngisdn_send_signal(sngisdn_chan_data_t *sngisdn_info, ftdm_signal_event_t 
 		
 		sigev.raw.data = sngisdn_info->raw_data;
 		sigev.raw.len = sngisdn_info->raw_data_len;
-		
+
 		sngisdn_info->raw_data = NULL;
 		sngisdn_info->raw_data_len = 0;
+	}
+	if (event_id == FTDM_SIGEVENT_TRANSFER_COMPLETED) {
+		sigev.ev_data.transfer_completed.response = sngisdn_info->transfer_data.response;
 	}
 	ftdm_span_send_signal(ftdmchan->span, &sigev);
 }
