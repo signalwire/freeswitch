@@ -2440,7 +2440,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_event_destroy(&originate_var_event);
 
 				if (reason != SWITCH_CAUSE_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n",
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Cannot create outgoing channel of type [%s] cause: [%s]\n",
 									  chan_type, switch_channel_cause2str(reason));
 					if (local_var_event) switch_event_destroy(&local_var_event);
 					
