@@ -231,7 +231,7 @@ void stfu_n_debug(stfu_instance_t *i, const char *name)
 
 void stfu_n_report(stfu_instance_t *i, stfu_report_t *r)
 {
-    assert(i);
+    stfu_assert(i);
 	r->qlen = i->qlen;
 	r->packet_in_count = i->period_packet_in_count;
 	r->clean_count = i->period_clean_count;
@@ -580,7 +580,7 @@ static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_
     uint32_t i = 0;
     stfu_frame_t *frame = NULL;
 
-    assert(r_frame);
+    stfu_assert(r_frame);
     
     *r_frame = NULL;
 

@@ -285,7 +285,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					samples = 0;
 					switch_mutex_lock(source->device_lock);
 					samples = ReadAudioStream(source->audio_stream, source->databuf,
-											  source->read_codec.implementation->samples_per_packet, &source->timer);
+								  source->read_codec.implementation->samples_per_packet, 0, &source->timer);
 					switch_mutex_unlock(source->device_lock);
 
 

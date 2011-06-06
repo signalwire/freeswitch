@@ -190,6 +190,11 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 
 	assert(divisor);
 
+	if (divisor == (uint32_t)-1) {
+		memset(data, 0, sizeof(*data));
+		return;
+	}
+
 	for (i = 0; i < samples; i++, sum_rnd = 0) {
 		for (x = 0; x < 6; x++) {
 			rnd2 = rnd2 * 31821U + 13849U;

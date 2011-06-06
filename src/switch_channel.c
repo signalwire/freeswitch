@@ -635,7 +635,7 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 	switch_event_t *event;
 
 	if (!!on == !!switch_channel_test_flag(channel, CF_LEG_HOLDING)) {
-		return;
+		goto end;
 	}
 	
 	if (on) {
@@ -647,6 +647,18 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 	if (switch_event_create(&event, on ? SWITCH_EVENT_CHANNEL_HOLD : SWITCH_EVENT_CHANNEL_UNHOLD) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
+	}
+
+ end:
+
+	if (on) {
+		if (switch_true(switch_channel_get_variable(channel, "flip_record_on_hold"))) {
+			switch_core_session_t *other_session;
+			if (switch_core_session_get_partner(channel->session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				switch_core_media_bug_transfer_recordings(channel->session, other_session);
+				switch_core_session_rwunlock(other_session);
+			}
+		}
 	}
 
 }
@@ -1032,7 +1044,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->variables && !zstr(varname)) {
-		if (!zstr(value)) {
+		if (zstr(value)) {
+			switch_event_del_header(channel->variables, varname);
+		} else {
 			int ok = 1;
 
 			if (var_check) {
@@ -1061,7 +1075,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_cha
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->variables && !zstr(varname)) {
-		if (!zstr(value)) {
+		if (zstr(value)) {
+			switch_event_del_header(channel->variables, varname);
+		} else {
 			int ok = 1;
 
 			if (var_check) {
@@ -3627,7 +3643,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", billsec);
 	switch_channel_set_variable(channel, "billsec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%d", progresssec);
+	switch_snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, progresssec);
 	switch_channel_set_variable(channel, "progresssec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", answersec);
@@ -3636,7 +3652,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", waitsec);
 	switch_channel_set_variable(channel, "waitsec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%d", progress_mediasec);
+	switch_snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, progress_mediasec);
 	switch_channel_set_variable(channel, "progress_mediasec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", legbillsec);

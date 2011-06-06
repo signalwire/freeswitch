@@ -856,7 +856,6 @@ SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *va
 {
 	char *data;
 	char **array;
-	int idx;
 	int max = 0;
 	int len;
 	const char *p;
@@ -887,7 +886,7 @@ SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *va
 	array = malloc(len);
 	memset(array, 0, len);
 	
-	idx = switch_separate_string_string(data, "|:", array, max);
+	switch_separate_string_string(data, "|:", array, max);
 	
 	for(i = 0; i < max; i++) {
 		switch_event_add_header_string(event, SWITCH_STACK_PUSH, var, array[i]);
@@ -917,7 +916,7 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 		}
 		header_name = real_header_name;
 	}
-	
+
 	if (index_ptr || (stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
 		
 		if (!(header = switch_event_get_header_ptr(event, header_name)) && index_ptr) {
@@ -971,6 +970,13 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 
 
 	if (!header) {
+
+		if (zstr(data)) {
+			switch_event_del_header(event, header_name);
+			FREE(data);
+			goto end;
+		}
+
 		if (switch_test_flag(event, EF_UNIQ_HEADERS)) {
 			switch_event_del_header(event, header_name);
 		}
@@ -1296,11 +1302,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		llen = strlen(hp->name) + strlen(encode_buf) + 8;
 
 		if ((len + llen) > dlen) {
-			char *m;
+			char *m = buf;
 			dlen += (blocksize + (len + llen));
-			if ((m = realloc(buf, dlen))) {
+			if (!(buf = realloc(buf, dlen))) {
 				buf = m;
-			} else {
 				abort();
 			}
 		}
@@ -1323,11 +1328,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		}
 
 		if ((len + llen) > dlen) {
-			char *m;
+			char *m = buf;
 			dlen += (blocksize + (len + llen));
-			if ((m = realloc(buf, dlen))) {
+			if (!(buf = realloc(buf, dlen))) {
 				buf = m;
-			} else {
 				abort();
 			}
 		}

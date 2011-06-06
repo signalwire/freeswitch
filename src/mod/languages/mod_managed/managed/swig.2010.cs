@@ -1073,6 +1073,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_core_media_bug_transfer_recordings(SWIGTYPE_p_switch_core_session orig_session, SWIGTYPE_p_switch_core_session new_session) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_transfer_recordings(SWIGTYPE_p_switch_core_session.getCPtr(orig_session), SWIGTYPE_p_switch_core_session.getCPtr(new_session));
+    return ret;
+  }
+
   public static switch_status_t switch_core_media_bug_read(SWIGTYPE_p_switch_media_bug bug, switch_frame frame, switch_bool_t fill) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_read(SWIGTYPE_p_switch_media_bug.getCPtr(bug), switch_frame.getCPtr(frame), (int)fill);
     return ret;
@@ -3953,6 +3958,11 @@ public class freeswitch {
 
   public static switch_status_t switch_event_del_header_val(switch_event arg0, string header_name, string val) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_del_header_val(switch_event.getCPtr(arg0), header_name, val);
+    return ret;
+  }
+
+  public static int switch_event_add_array(switch_event arg0, string var, string val) {
+    int ret = freeswitchPINVOKE.switch_event_add_array(switch_event.getCPtr(arg0), var, val);
     return ret;
   }
 
@@ -7565,6 +7575,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_enumerate")]
   public static extern int switch_core_media_bug_enumerate(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_transfer_recordings")]
+  public static extern int switch_core_media_bug_transfer_recordings(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_read")]
   public static extern int switch_core_media_bug_read(HandleRef jarg1, HandleRef jarg2, int jarg3);
@@ -12137,6 +12150,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_del_header_val")]
   public static extern int switch_event_del_header_val(HandleRef jarg1, string jarg2, string jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_event_add_array")]
+  public static extern int switch_event_add_array(HandleRef jarg1, string jarg2, string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_destroy")]
   public static extern void switch_event_destroy(HandleRef jarg1);
@@ -25168,8 +25184,7 @@ public class switch_event : IDisposable {
 namespace FreeSWITCH.Native {
 
 public enum switch_event_flag_t {
-  EF_UNIQ_HEADERS = (1 << 0),
-  EF_CONTAINS_ARRAYS = (1 << 1)
+  EF_UNIQ_HEADERS = (1 << 0)
 }
 
 }

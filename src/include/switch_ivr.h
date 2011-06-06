@@ -62,6 +62,12 @@ SWITCH_BEGIN_EXTERN_C struct switch_unicast_conninfo {
 };
 typedef struct switch_unicast_conninfo switch_unicast_conninfo_t;
 
+#define SWITCH_IVR_VERIFY_SILENCE_DIVISOR(divisor) \
+	{ \
+		if ((divisor) <= 0 && (divisor) != -1) { \
+			divisor = 400; \
+		} \
+	}
 
 /**
  * @defgroup switch_ivr IVR Library

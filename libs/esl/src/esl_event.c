@@ -365,7 +365,6 @@ ESL_DECLARE(int) esl_event_add_array(esl_event_t *event, const char *var, const 
 {
 	char *data;
 	char **array;
-	int idx;
 	int max = 0;
 	int len;
 	const char *p;
@@ -395,7 +394,7 @@ ESL_DECLARE(int) esl_event_add_array(esl_event_t *event, const char *var, const 
 	esl_assert(array);
 	memset(array, 0, len);
 	
-	idx = esl_separate_string_string(data, "|:", array, max);
+	esl_separate_string_string(data, "|:", array, max);
 	
 	for(i = 0; i < max; i++) {
 		esl_event_add_header_string(event, ESL_STACK_PUSH, var, array[i]);
@@ -479,6 +478,13 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 
 
 	if (!header) {
+
+		if (esl_strlen_zero(data)) {
+			esl_event_del_header(event, header_name);
+			FREE(data);
+			goto end;
+		}
+
 		if (esl_test_flag(event, ESL_EF_UNIQ_HEADERS)) {
 			esl_event_del_header(event, header_name);
 		}

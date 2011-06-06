@@ -224,7 +224,7 @@ static int sangoma_create_rtp_port(void *usr_priv, uint32_t host_ip, uint32_t *p
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New allocated port %d for IP %s/%d.%d.%d.%d\n", rtp_port, local_ip,
 			SNGTC_NIPV4(host_ip));
 	*p_rtp_port = rtp_port;
-	*rtp_fd = (void *)(long)rtp_port;
+	*rtp_fd = NULL;
 	return 0;
 }
 
@@ -259,6 +259,9 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 	switch_port_t rtp_port;
 	struct sangoma_transcoding_session *sess = usr_priv;
 
+	rtp_port = codec_req_leg->host_udp_port;
+	*rtp_fd = NULL;
+
 	/*
 	 * We *MUST* use a new pool
 	 * Do not use the session pool since the session may go away while the RTP socket should linger around 
@@ -271,11 +274,6 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 		return -1;
 	}
 	
-	rtp_port = (switch_port_t)(long)*rtp_fd;
-	*rtp_fd = NULL;
-
-	codec_req_leg->host_udp_port = rtp_port;
-
 	local_ip_addr.s_addr = htonl(codec_req_leg->host_ip);
 	switch_inet_ntop(AF_INET, &local_ip_addr, local_ip, sizeof(local_ip));
 	sngtc_codec_ipv4_hex_to_str(codec_reply_leg->codec_ip, codec_ip);
@@ -1271,10 +1269,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 		 * At this point there is an empty shell codec interface registered, but not yet implementations */
 		SWITCH_ADD_CODEC(codec_interface, g_codec_map[c].fs_name);
 
-		/* Now add as many codec implementations as needed, just up to 40ms for now */
+		/* Now add as many codec implementations as needed, just up to 200ms for now */
 		if (g_codec_map[c].autoinit) {
 			int ms = 0;
-			for (i = 1; i <= 4; i++) {
+			for (i = 1; i <= 20; i++) {
 				ms = i * 10;
 				if (g_codec_map[c].maxms < ms) {
 					break;

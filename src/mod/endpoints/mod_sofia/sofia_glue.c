@@ -358,7 +358,7 @@ void sofia_glue_check_dtmf_type(private_object_t *tech_pvt)
 }
 
 
-void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32_t port, const char *sr, int force)
+void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch_port_t port, const char *sr, int force)
 {
 	char buf[2048];
 	int ptime = 0;
@@ -2396,6 +2396,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
+				   NUTAG_AUTOACK(0),
 				   NUTAG_SESSION_TIMER(session_timeout),
 				   NUTAG_SESSION_REFRESHER(session_timeout ? nua_local_refresher : nua_no_refresher),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
@@ -2417,15 +2418,19 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(route), SIPTAG_ROUTE_STR(route)),
 				   TAG_IF(tech_pvt->profile->minimum_session_expires, NUTAG_MIN_SE(tech_pvt->profile->minimum_session_expires)),
 				   TAG_IF(cseq, SIPTAG_CSEQ(cseq)),
-				   SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
-				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-				   SOATAG_REUSE_REJECTED(1),
-				   SOATAG_ORDERED_USER(1),
-				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
-				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
+				   TAG_IF(zstr(tech_pvt->local_sdp_str), SIPTAG_PAYLOAD_STR("")),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_REUSE_REJECTED(1)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_ORDERED_USER(1)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL)),
+				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_HOLD(holdstr)), TAG_END());
 	} else {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
+				   NUTAG_AUTOACK(0),
 				   NUTAG_SESSION_TIMER(session_timeout),
 				   TAG_IF(session_timeout, NUTAG_SESSION_REFRESHER(nua_remote_refresher)),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
@@ -3579,7 +3584,7 @@ static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size
 		codec_ms = switch_default_ptime(map->rm_encoding, map->rm_pt);
 	}
 
-	map_bit_rate = switch_known_bitrate(map->rm_pt);
+	map_bit_rate = switch_known_bitrate((switch_payload_t)map->rm_pt);
 				
 	if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
 		ptime = codec_ms = 30;
@@ -4649,7 +4654,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					codec_ms = switch_default_ptime(rm_encoding, map->rm_pt);
 				}
 
-				map_bit_rate = switch_known_bitrate(map->rm_pt);
+				map_bit_rate = switch_known_bitrate((switch_payload_t)map->rm_pt);
 				
 				if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
 					ptime = codec_ms = 30;
@@ -4765,7 +4770,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
-					tech_pvt->audio_recv_pt = map->rm_pt;
+					tech_pvt->audio_recv_pt = (switch_payload_t)map->rm_pt;
 					
 					if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 						sofia_glue_get_offered_pt(tech_pvt, mimp, &tech_pvt->audio_recv_pt);
@@ -4889,7 +4894,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						switch_channel_set_variable(tech_pvt->channel, "sip_video_pt", tmp);
 						sofia_glue_check_video_codecs(tech_pvt);
 
-						tech_pvt->video_recv_pt = map->rm_pt;
+						tech_pvt->video_recv_pt = (switch_payload_t)map->rm_pt;
 						
 						if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 							sofia_glue_get_offered_pt(tech_pvt, mimp, &tech_pvt->video_recv_pt);
@@ -5458,13 +5463,13 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 			
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
 				if ((tmp = switch_channel_get_variable(channel, "sip_audio_recv_pt"))) {
-					switch_rtp_set_recv_pt(tech_pvt->rtp_session, atoi(tmp));
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, (switch_payload_t)atoi(tmp));
 				}
 			}
 
 			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
 				if ((tmp = switch_channel_get_variable(channel, "sip_video_recv_pt"))) {
-					switch_rtp_set_recv_pt(tech_pvt->rtp_session, atoi(tmp));
+					switch_rtp_set_recv_pt(tech_pvt->rtp_session, (switch_payload_t)atoi(tmp));
 				}
 			}
 
@@ -6415,7 +6420,7 @@ void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const 
 }
 
 
-void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str)
+void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str)
 {
 
 	if (switch_stristr("clear", str)) {

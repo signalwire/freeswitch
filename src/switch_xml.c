@@ -1125,12 +1125,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 	do {
 		len += (l = fread((s + len), 1, SWITCH_XML_BUFSIZE, fp));
 		if (l == SWITCH_XML_BUFSIZE) {
-			char *tmp = (char *) realloc(s, len + SWITCH_XML_BUFSIZE);
-			if (!tmp) {
-				free(s);
+			char *tmp = s;
+			s = (char *) realloc(s, len + SWITCH_XML_BUFSIZE);
+			if (!s) {
+				free(tmp);
 				return NULL;
 			}
-			s = tmp;
 		}
 	} while (s && l == SWITCH_XML_BUFSIZE);
 
@@ -2279,10 +2279,10 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	*s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
 
 	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) + 1 > *max) {	/* reallocate s */
-		char *tmp = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
-		if (!tmp)
-			return *s;
-		*s = tmp;
+		char *tmp = *s;
+		*s = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
+		if (!*s)
+			return tmp;
 	}
 
 	if (*len && *(*s + (*len) - 1) == '>') {
@@ -2335,10 +2335,10 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	}
 
 	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
-		char *tmp = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
-		if (!tmp)
-			return *s;
-		*s = tmp;
+		char *tmp = *s;
+		*s = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
+		if (!*s)
+			return tmp;
 	}
 
 	if (xml->child || xml->txt) {
