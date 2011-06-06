@@ -276,6 +276,17 @@
 /ldns/packaging/ldns-config
 /ldns/packaging/libldns.pc
 /ldns-1.6.9/
+/libcodec2/src/c2dec
+/libcodec2/src/c2enc
+/libcodec2/src/c2sim
+/libcodec2/unittest/extract
+/libcodec2/unittest/genlsp
+/libcodec2/unittest/genres
+/libcodec2/unittest/tcodec2
+/libcodec2/unittest/tinterp
+/libcodec2/unittest/tnlp
+/libcodec2/unittest/tquant
+/libcodec2/unittest/vqtrain
 /libdingaling/Makefile
 /libdingaling/Makefile.in
 /libdingaling/aclocal.m4
