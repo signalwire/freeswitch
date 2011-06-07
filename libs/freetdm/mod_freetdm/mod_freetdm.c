@@ -1855,29 +1855,31 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 		break;
 	}
 
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", ftdm_channel_get_span_name(sigmsg->channel));
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", ftdm_channel_get_span_id(sigmsg->channel));
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", ftdm_channel_get_id(sigmsg->channel));
+	if (event) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", ftdm_channel_get_span_name(sigmsg->channel));
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", ftdm_channel_get_span_id(sigmsg->channel));
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", ftdm_channel_get_id(sigmsg->channel));
 
-	if (alarmbits & FTDM_ALARM_RED) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "red");
+		if (alarmbits & FTDM_ALARM_RED) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "red");
+		}
+		if (alarmbits & FTDM_ALARM_YELLOW) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "yellow");
+		}
+		if (alarmbits & FTDM_ALARM_RAI) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "rai");
+		}
+		if (alarmbits & FTDM_ALARM_BLUE) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "blue");
+		}
+		if (alarmbits & FTDM_ALARM_AIS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "ais");
+		}
+		if (alarmbits & FTDM_ALARM_GENERAL) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "general");
+		}
+		switch_event_fire(&event);
 	}
-	if (alarmbits & FTDM_ALARM_YELLOW) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "yellow");
-	}
-	if (alarmbits & FTDM_ALARM_RAI) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "rai");
-	}
-	if (alarmbits & FTDM_ALARM_BLUE) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "blue");
-	}
-	if (alarmbits & FTDM_ALARM_AIS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "ais");
-	}
-	if (alarmbits & FTDM_ALARM_GENERAL) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "general");
-	}
-	switch_event_fire(&event);
 
 	return FTDM_BREAK;
 }
