@@ -4048,6 +4048,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	char *not_const = NULL;
 	int cid_locked = 0;
 	switch_channel_t *o_channel = NULL;
+	sofia_gateway_t *gateway_ptr = NULL;
 
 	*new_session = NULL;
 
@@ -4087,7 +4088,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	if (!strncasecmp(profile_name, "gateway/", 8)) {
 		char *gw, *params;
-		sofia_gateway_t *gateway_ptr = NULL;
 
 		if (!(gw = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid URL\n");
@@ -4115,8 +4115,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway is down!\n");
 			cause = SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
 			gateway_ptr->ob_failed_calls++;
-			sofia_reg_release_gateway(gateway_ptr);
-			gateway_ptr = NULL;
 			goto error;
 		}
 
@@ -4470,6 +4468,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	goto done;
 
   error:
+	if (gateway_ptr) {
+		sofia_reg_release_gateway(gateway_ptr);
+	}
+
 	if (nsession) {
 		switch_core_session_destroy(&nsession);
 	}
