@@ -626,6 +626,11 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-File", file);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Function", func);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Line", "%d", line);
+
+		if (switch_true(switch_channel_get_variable(channel, "presence_privacy"))) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Privacy", "true");
+		}
+
 		switch_event_fire(&event);
 	}
 }

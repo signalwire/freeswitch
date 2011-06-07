@@ -1571,8 +1571,12 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"%s\"/>\n",
 											  !strcasecmp(event_status, "hold") ? "no" : "yes");
 						stream.write_function(&stream, "</target>\n</local>\n");
-						stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_from_user, clean_from_user,
-											  host);
+						if (switch_true(switch_event_get_header(helper->event, "Presence-Privacy"))) {
+							stream.write_function(&stream, "<remote>\n<identity display=\"Anonymous\">sip:anonymous@anonymous.invalid</identity>\n");
+						} else {
+							stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_from_user, clean_from_user,
+												  host);
+						}
 						stream.write_function(&stream, "<target uri=\"sip:**%s@%s\"/>\n", clean_to_user, host);
 						stream.write_function(&stream, "</remote>\n");
 					} else if (!strcasecmp(proto, "park")) {
