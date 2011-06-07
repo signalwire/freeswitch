@@ -42,6 +42,9 @@
 #define FREETDM_VAR_PREFIX "freetdm_"
 #define FREETDM_VAR_PREFIX_LEN (sizeof(FREETDM_VAR_PREFIX)-1) 
 
+/* How many consecutive IO errors before giving up */
+#define FTDM_MAX_READ_WRITE_ERRORS 10
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_freetdm_shutdown);
 SWITCH_MODULE_DEFINITION(mod_freetdm, mod_freetdm_load, mod_freetdm_shutdown, NULL);
@@ -110,7 +113,8 @@ struct private_object {
 	switch_mutex_t *mutex;
 	switch_mutex_t *flag_mutex;
 	ftdm_channel_t *ftdmchan;
-	uint32_t wr_error;
+	uint32_t write_error;
+	uint32_t read_error;
 };
 
 /* private data attached to FTDM channels (only FXS for now) */
@@ -624,11 +628,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	ftdm_status_t status;
 	int total_to;
 	int chunk, do_break = 0;
-
+	uint32_t span_id, chan_id;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
-	
 	
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
@@ -637,6 +640,13 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		ftdm_log(FTDM_LOG_DEBUG, "TFLAG_DEAD is set\n");
 		return SWITCH_STATUS_FALSE;
 	} 
+
+	if (!tech_pvt->ftdmchan) {
+		return SWITCH_STATUS_FALSE;
+	} 
+
+	span_id = ftdm_channel_get_span_id(tech_pvt->ftdmchan);
+	chan_id = ftdm_channel_get_id(tech_pvt->ftdmchan);
 
 	/* Digium Cards sometimes timeout several times in a row here. 
 	   Yes, we support digium cards, ain't we nice.......
@@ -697,8 +707,13 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	len = tech_pvt->read_frame.buflen;
 	if (ftdm_channel_read(tech_pvt->ftdmchan, tech_pvt->read_frame.data, &len) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_WARNING, "failed to read from device\n");
-		goto fail;
+		ftdm_log(FTDM_LOG_WARNING, "failed to read from device %d:%d\n", span_id, chan_id);
+		if (++tech_pvt->read_error > FTDM_MAX_READ_WRITE_ERRORS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "too many I/O read errors on device %d:%d!\n", span_id, chan_id);
+			goto fail;
+		}
+	} else {
+		tech_pvt->read_error = 0;
 	}
 
 	*frame = &tech_pvt->read_frame;
@@ -736,16 +751,13 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	ftdm_size_t len;
 	unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 	ftdm_wait_flag_t wflags = FTDM_WRITE;
+	uint32_t span_id, chan_id;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
-	if (!tech_pvt->ftdmchan) {
-		return SWITCH_STATUS_FALSE;
-	} 
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		return SWITCH_STATUS_FALSE;
@@ -758,6 +770,14 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		goto fail;
 	}
+
+	if (!tech_pvt->ftdmchan) {
+		return SWITCH_STATUS_FALSE;
+	} 
+
+	span_id = ftdm_channel_get_span_id(tech_pvt->ftdmchan);
+	chan_id = ftdm_channel_get_id(tech_pvt->ftdmchan);
+
 	
 	if (switch_test_flag(frame, SFF_CNG)) {
 		frame->data = data;
@@ -779,12 +799,14 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	len = frame->datalen;
 	if (ftdm_channel_write(tech_pvt->ftdmchan, frame->data, frame->buflen, &len) != FTDM_SUCCESS) {
-		if (++tech_pvt->wr_error > 10) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "too many I/O write errors!\n");
+		ftdm_log(FTDM_LOG_WARNING, "failed to write to device %d:%d\n", span_id, chan_id);
+		if (++tech_pvt->write_error > FTDM_MAX_READ_WRITE_ERRORS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, 
+					SWITCH_LOG_ERROR, "too many I/O write errors on device %d:%d!\n", span_id, chan_id);
 			goto fail;
 		}
 	} else {
-		tech_pvt->wr_error = 0;
+		tech_pvt->write_error = 0;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
