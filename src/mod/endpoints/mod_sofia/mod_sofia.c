@@ -3273,6 +3273,19 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		goto done;
 	}
 
+	if (!strcasecmp(argv[1], "check_sync")) {
+		if (argc > 2) {
+			sofia_reg_check_call_id(profile, argv[2]);
+			stream->write_function(stream, "+OK syncing all registrations matching specified call_id\n");
+		} else {
+			sofia_reg_check_sync(profile);
+			stream->write_function(stream, "+OK syncing all registrations\n");
+		}
+
+		goto done;
+	}
+
+
 	if (!strcasecmp(argv[1], "flush_inbound_reg")) {
 		int reboot = 0;
 
@@ -3853,6 +3866,7 @@ SWITCH_STANDARD_API(sofia_function)
 		"             watchdog <on|off>\n\n"
 		"sofia profile <name> [start | stop | restart | rescan]\n"
 		"                     flush_inbound_reg [<call_id> | <[user]@domain>] [reboot]\n"
+		"                     check_sync [<call_id> | <[user]@domain>]\n"
 		"                     [register | unregister] [<gateway name> | all]\n"
 		"                     killgw <gateway name>\n"
 		"                     [stun-auto-disable | stun-enabled] [true | false]]\n"
@@ -5158,6 +5172,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles restart");
 
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles flush_inbound_reg");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles check_sync");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles register ::sofia::list_profile_gateway");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles unregister ::sofia::list_profile_gateway");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw ::sofia::list_profile_gateway");
