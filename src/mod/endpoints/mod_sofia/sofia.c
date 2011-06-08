@@ -4161,6 +4161,16 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			tech_pvt->last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
 		}
 
+
+		if (status > 299 && switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ)) {
+			switch_channel_set_private(channel, "t38_options", NULL);
+			switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
+			switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ);
+			switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_FAIL);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s T38 invite failed\n", switch_channel_get_name(tech_pvt->channel));
+		}
+
+
 		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 			if (channel && sip->sip_call_info) {
 				char *p;
@@ -4462,6 +4472,9 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						switch_channel_set_private(other_channel, "t38_options", NULL);
 						sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
 						sofia_clear_flag(other_tech_pvt, TFLAG_T38_PASSTHRU);
+						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
+						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ);
+						switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_FAIL);
 					} else if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
 						switch_t38_options_t *t38_options = sofia_glue_extract_t38_options(session, sip->sip_payload->pl_data);
 						

@@ -4391,6 +4391,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 			switch_t38_options_t *t38_options = tech_process_udptl(tech_pvt, sdp, m);
 			
 			if (switch_true(switch_channel_get_variable(channel, "refuse_t38"))) {
+				switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
 				match = 0;
 				goto done;
 			} else {

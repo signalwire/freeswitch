@@ -524,6 +524,12 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					char *cid = generate_pai_str(tech_pvt);
 
+					if (sip_cause > 299) {
+						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
+						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ);
+						switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_FAIL);
+					}
+
 					nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause),
 								TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 								TAG_IF(cid, SIPTAG_HEADER_STR(cid)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
