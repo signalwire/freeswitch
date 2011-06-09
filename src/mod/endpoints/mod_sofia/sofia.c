@@ -5246,6 +5246,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 					
 					if (match && sofia_test_flag(tech_pvt, TFLAG_NOREPLY)) {
+						sofia_clear_flag(tech_pvt, TFLAG_NOREPLY);
 						goto done;
 					}
 
