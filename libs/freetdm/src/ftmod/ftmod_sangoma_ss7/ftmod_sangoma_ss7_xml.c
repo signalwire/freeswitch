@@ -2205,7 +2205,7 @@ static int ftmod_ss7_fill_in_mtp2_link(sng_mtp2_link_t *mtp2Link)
 	if ( mtp2Link->t7 != 0 ) {
 		g_ftdm_sngss7_data.cfg.mtp2Link[i].t7		= mtp2Link->t7;
 	}else {
-		g_ftdm_sngss7_data.cfg.mtp2Link[i].t7		= 40;
+		g_ftdm_sngss7_data.cfg.mtp2Link[i].t7		= 20;
 	}
 
 	return FTDM_SUCCESS;
