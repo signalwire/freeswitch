@@ -2496,6 +2496,7 @@ static void conference_loop_output(conference_member_t *member)
 	uint32_t low_count, bytes;
 	call_list_t *call_list, *cp;
 	switch_codec_implementation_t read_impl = { 0 };
+	int sanity;
 
 	switch_core_session_get_read_impl(member->session, &read_impl);
 
@@ -2594,6 +2595,13 @@ static void conference_loop_output(conference_member_t *member)
 	
 	if (!switch_test_flag(member->conference, CFLAG_ANSWERED)) {
 		switch_channel_answer(channel);
+	}
+
+
+	sanity = 2000;
+	while(!switch_test_flag(member, MFLAG_ITHREAD) && sanity > 0) {
+		switch_cond_next();
+		sanity--;
 	}
 
 	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be processed,      */
