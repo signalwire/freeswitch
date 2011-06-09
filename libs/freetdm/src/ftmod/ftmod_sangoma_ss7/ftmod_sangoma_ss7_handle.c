@@ -1267,7 +1267,7 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 
 			/* confirm that the circuit is active on our side otherwise move to the next circuit */
 			if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[i], SNGSS7_ACTIVE)) {
-				SS7_ERROR("[CIC:%d]Circuit is not active yet, skipping!\n",g_ftdm_sngss7_data.cfg.isupCkt[i].cic);
+				ftdm_log(FTDM_LOG_DEBUG, "[CIC:%d]Circuit is not active yet, skipping!\n",g_ftdm_sngss7_data.cfg.isupCkt[i].cic);
 				i++;
 				continue;
 			}
