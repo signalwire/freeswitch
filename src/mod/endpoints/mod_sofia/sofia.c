@@ -5244,8 +5244,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (tech_pvt->num_codecs) {
 						match = sofia_glue_negotiate_sdp(session, r_sdp);
 					}
-
-					if (match && switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38)) {
+					
+					if (match && sofia_test_flag(tech_pvt, TFLAG_NOREPLY)) {
 						goto done;
 					}
 

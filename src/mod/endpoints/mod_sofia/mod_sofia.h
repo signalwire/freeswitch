@@ -295,6 +295,7 @@ typedef enum {
 	TFLAG_NOTIMER_DURING_BRIDGE,
 	TFLAG_JB_PAUSED,
 	TFLAG_3PCC_INVITE,
+	TFLAG_NOREPLY,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
