@@ -1584,6 +1584,13 @@ static int on_dchan_down(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
 static int on_anything(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	ftdm_log(FTDM_LOG_DEBUG, "-- Caught Event span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
+	switch (pevent->e) {
+	case PRI_EVENT_CONFIG_ERR:
+		{
+			ftdm_log(FTDM_LOG_WARNING, "-- PRI error event: %s\n", pevent->err.err);
+		}
+		break;
+	}
 	return 0;
 }
 
