@@ -396,9 +396,30 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	if (!profile) {
 		if (!host || !(profile = sofia_glue_find_profile(host))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile %s\n", switch_str_nil(host));
-			switch_safe_free(dup_account);
-			return;
+			char *sql;
+			switch_hash_index_t *hi;
+			void *val;
+			const void *vvar;
+			char buf[512] = "";
+
+			sql = switch_mprintf("select profile_name from sip_registrations where sip_host='%s' or mwi_host='%s'", host, host);
+
+			switch_mutex_lock(mod_sofia_globals.hash_mutex);
+			for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &vvar, NULL, &val);
+				profile = (sofia_profile_t *) val;
+				sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
+				if (!zstr(buf)) {
+					break;
+				}
+			}
+			switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+			if (!(profile = sofia_glue_find_profile(buf))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile %s\n", switch_str_nil(host));
+				switch_safe_free(dup_account);
+				return;
+			}
 		}
 	}
 
