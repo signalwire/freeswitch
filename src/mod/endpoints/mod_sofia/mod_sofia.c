@@ -524,6 +524,12 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					char *cid = generate_pai_str(tech_pvt);
 
+					if (sip_cause > 299) {
+						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
+						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ);
+						switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_FAIL);
+					}
+
 					nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause),
 								TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 								TAG_IF(cid, SIPTAG_HEADER_STR(cid)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
@@ -3273,6 +3279,19 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		goto done;
 	}
 
+	if (!strcasecmp(argv[1], "check_sync")) {
+		if (argc > 2) {
+			sofia_reg_check_call_id(profile, argv[2]);
+			stream->write_function(stream, "+OK syncing all registrations matching specified call_id\n");
+		} else {
+			sofia_reg_check_sync(profile);
+			stream->write_function(stream, "+OK syncing all registrations\n");
+		}
+
+		goto done;
+	}
+
+
 	if (!strcasecmp(argv[1], "flush_inbound_reg")) {
 		int reboot = 0;
 
@@ -3853,6 +3872,7 @@ SWITCH_STANDARD_API(sofia_function)
 		"             watchdog <on|off>\n\n"
 		"sofia profile <name> [start | stop | restart | rescan]\n"
 		"                     flush_inbound_reg [<call_id> | <[user]@domain>] [reboot]\n"
+		"                     check_sync [<call_id> | <[user]@domain>]\n"
 		"                     [register | unregister] [<gateway name> | all]\n"
 		"                     killgw <gateway name>\n"
 		"                     [stun-auto-disable | stun-enabled] [true | false]]\n"
@@ -5158,6 +5178,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles restart");
 
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles flush_inbound_reg");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles check_sync");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles register ::sofia::list_profile_gateway");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles unregister ::sofia::list_profile_gateway");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw ::sofia::list_profile_gateway");

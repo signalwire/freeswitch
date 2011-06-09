@@ -224,6 +224,22 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_peek(switch_buffer_t *buffer, void *
 	return reading;
 }
 
+SWITCH_DECLARE(switch_size_t) switch_buffer_peek_zerocopy(switch_buffer_t *buffer, const void **ptr)
+{
+	switch_size_t reading = 0;
+
+	if (buffer->used < 1) {
+		buffer->used = 0;
+		return 0;
+	} else {
+		reading = buffer->used;
+	}
+
+	*ptr = buffer->head;
+
+	return reading;
+}
+
 SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const void *data, switch_size_t datalen)
 {
 	switch_size_t freespace, actual_freespace;

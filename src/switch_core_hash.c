@@ -96,6 +96,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t *ha
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_wrlock(switch_hash_t *hash, const char *key, const void *data, switch_thread_rwlock_t *rwlock)
+{
+	if (rwlock) {
+		switch_thread_rwlock_wrlock(rwlock);
+	}
+
+	sqlite3HashInsert(&hash->table, key, (int) strlen(key) + 1, (void *) data);
+
+	if (rwlock) {
+		switch_thread_rwlock_unlock(rwlock);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, const char *key)
 {
 	sqlite3HashInsert(&hash->table, key, (int) strlen(key) + 1, NULL);
@@ -112,6 +127,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t *ha
 
 	if (mutex) {
 		switch_mutex_unlock(mutex);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_wrlock(switch_hash_t *hash, const char *key, switch_thread_rwlock_t *rwlock)
+{
+	if (rwlock) {
+		switch_thread_rwlock_wrlock(rwlock);
+	}
+
+	sqlite3HashInsert(&hash->table, key, (int) strlen(key) + 1, NULL);
+
+	if (rwlock) {
+		switch_thread_rwlock_unlock(rwlock);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -170,6 +200,23 @@ SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t *hash, const c
 
 	if (mutex) {
 		switch_mutex_unlock(mutex);
+	}
+
+	return val;
+}
+
+SWITCH_DECLARE(void *) switch_core_hash_find_rdlock(switch_hash_t *hash, const char *key, switch_thread_rwlock_t *rwlock)
+{
+	void *val;
+
+	if (rwlock) {
+		switch_thread_rwlock_rdlock(rwlock);
+	}
+
+	val = sqlite3HashFind(&hash->table, key, (int) strlen(key) + 1);
+
+	if (rwlock) {
+		switch_thread_rwlock_unlock(rwlock);
 	}
 
 	return val;

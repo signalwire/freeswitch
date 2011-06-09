@@ -1143,7 +1143,7 @@ static ftdm_status_t sngisdn_force_down(ftdm_channel_t *ftdmchan)
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)ftdmchan->call_data;
 	ftdm_status_t status = FTDM_SUCCESS;
 	
-	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Forcing channel to DOWN state (%s)\n", ftdm_channel_state2str(ftdmchan->state));
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Forcing channel to DOWN state (%s)\n", ftdm_channel_state2str(ftdmchan->state));
 	switch (ftdmchan->state) {
 		case FTDM_CHANNEL_STATE_DOWN:
 			/* Do nothing */
