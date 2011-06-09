@@ -141,7 +141,9 @@ typedef enum {
 	MFLAG_MINTWO = (1 << 13),
 	MFLAG_MUTE_DETECT = (1 << 14),
 	MFLAG_DIST_DTMF = (1 << 15),
-	MFLAG_MOD = (1 << 16)
+	MFLAG_MOD = (1 << 16),
+	MFLAG_INDICATE_MUTE = (1 << 17),
+	MFLAG_INDICATE_UNMUTE = (1 << 18)
 } member_flag_t;
 
 typedef enum {
@@ -2745,6 +2747,30 @@ static void conference_loop_output(conference_member_t *member)
 		switch_mutex_unlock(member->write_mutex);
 
 
+		if (switch_test_flag(member, MFLAG_INDICATE_MUTE)) {
+			if (!zstr(member->conference->muted_sound)) {
+				conference_member_play_file(member, member->conference->muted_sound, 0);
+			} else {
+				char msg[512];
+				
+				switch_snprintf(msg, sizeof(msg), "Muted");
+				conference_member_say(member, msg, 0);
+			}
+			switch_clear_flag(member, MFLAG_INDICATE_MUTE);
+		}
+		
+		if (switch_test_flag(member, MFLAG_INDICATE_UNMUTE)) {
+			if (!zstr(member->conference->unmuted_sound)) {
+				conference_member_play_file(member, member->conference->unmuted_sound, 0);
+			} else {
+				char msg[512];
+				
+				switch_snprintf(msg, sizeof(msg), "Un-Muted");
+				conference_member_say(member, msg, 0);
+			}
+			switch_clear_flag(member, MFLAG_INDICATE_UNMUTE);
+		}
+
 		if (switch_core_session_private_event_count(member->session)) {
 			switch_channel_set_app_flag(channel, CF_APP_TAGGED);
 			switch_ivr_parse_all_events(member->session);
@@ -3608,18 +3634,12 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 	switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
 	switch_clear_flag_locked(member, MFLAG_TALKING);
 
+	switch_set_flag(member, MFLAG_INDICATE_MUTE);
 
-	if (!zstr(member->conference->muted_sound)) {
-		conference_member_play_file(member, member->conference->muted_sound, 0);
-	} else {
-		char msg[512];
-
-		switch_snprintf(msg, sizeof(msg), "Muted");
-		conference_member_say(member, msg, 0);
-	}
 	if (stream != NULL) {
 		stream->write_function(stream, "OK mute %u\n", member->id);
 	}
+
 	if (test_eflag(member->conference, EFLAG_MUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
@@ -3684,17 +3704,12 @@ static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_s
 		return SWITCH_STATUS_GENERR;
 
 	switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
+	switch_set_flag(member, MFLAG_INDICATE_UNMUTE);
+
 	if (stream != NULL) {
 		stream->write_function(stream, "OK unmute %u\n", member->id);
 	}
-	if (!zstr(member->conference->unmuted_sound)) {
-		conference_member_play_file(member, member->conference->unmuted_sound, 0);
-	} else {
-		char msg[512];
 
-		switch_snprintf(msg, sizeof(msg), "Un-Muted");
-		conference_member_say(member, msg, 0);
-	}
 	if (test_eflag(member->conference, EFLAG_UNMUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);

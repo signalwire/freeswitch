@@ -295,6 +295,7 @@ typedef enum {
 	TFLAG_NOTIMER_DURING_BRIDGE,
 	TFLAG_JB_PAUSED,
 	TFLAG_3PCC_INVITE,
+	TFLAG_NOREPLY,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -983,6 +984,8 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt);
 switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt);
 void sofia_presence_event_thread_start(void);
 void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int reboot);
+void sofia_reg_check_call_id(sofia_profile_t *profile, const char *call_id);
+void sofia_reg_check_sync(sofia_profile_t *profile);
 switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, int force);
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force);
 char *sofia_glue_get_register_host(const char *uri);

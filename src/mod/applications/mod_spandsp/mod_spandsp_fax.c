@@ -904,6 +904,7 @@ static t38_mode_t request_t38(pvt_t *pvt)
         
         switch_channel_set_private(channel, "t38_options", t38_options);
         pvt->t38_mode = T38_MODE_REQUESTED;
+        switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_REQ);
 
         /* This will send a request for t.38 mode */
         msg.from = __FILE__;
@@ -1173,7 +1174,10 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
         switch (pvt->t38_mode) {
         case T38_MODE_REQUESTED:
             {
-                if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
+                if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38_FAIL)) {
+                    pvt->t38_mode = T38_MODE_REFUSED;
+                    continue;
+                } else if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
                     switch_core_session_message_t msg = { 0 };
                     pvt->t38_mode = T38_MODE_NEGOTIATED;
                     spanfax_init(pvt, T38_MODE);

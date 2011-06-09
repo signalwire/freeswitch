@@ -109,6 +109,8 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(_In_ switch_buffer_t *buffer, _
  */
 SWITCH_DECLARE(switch_size_t) switch_buffer_peek(_In_ switch_buffer_t *buffer, _In_ void *data, _In_ switch_size_t datalen);
 
+SWITCH_DECLARE(switch_size_t) switch_buffer_peek_zerocopy(_In_ switch_buffer_t *buffer, _Out_ const void **ptr);
+
 /*! \brief Read data endlessly from a switch_buffer_t 
  * \param buffer any buffer of type switch_buffer_t
  * \param data pointer to the read data to be returned

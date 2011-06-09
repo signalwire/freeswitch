@@ -1120,7 +1120,9 @@ typedef enum {
 
 typedef enum {
 	CF_APP_TAGGED = (1 << 0),
-	CF_APP_T38 = (1 << 1)
+	CF_APP_T38 = (1 << 1),
+	CF_APP_T38_REQ = (1 << 2),
+	CF_APP_T38_FAIL = (1 << 3)
 } switch_channel_app_flag_t;
 
 
