@@ -364,7 +364,6 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	const char *call_id;
 	const char *sub_call_id;
 	int for_everyone = 0;
-	char *tmp_pname;
 
 	switch_assert(event != NULL);
 
@@ -390,15 +389,8 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	switch_assert(dup_account != NULL);
 	switch_split_user_domain(dup_account, &user, &host);
 
-	if (host && (tmp_pname = strstr(host, "::"))) {
-		*tmp_pname = '\0';
-		tmp_pname += 2;
-		pname = tmp_pname;
-		profile = sofia_glue_find_profile(pname);
-	}
 
-
-	if (!profile && (pname = switch_event_get_header(event, "sofia-profile"))) {
+	if ((pname = switch_event_get_header(event, "sofia-profile"))) {
 		profile = sofia_glue_find_profile(pname);
 	}
 
