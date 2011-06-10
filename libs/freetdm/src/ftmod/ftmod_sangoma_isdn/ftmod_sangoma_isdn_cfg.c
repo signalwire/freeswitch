@@ -393,6 +393,12 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			if (parse_early_media(val, span) != FTDM_SUCCESS) {
 				return FTDM_FAIL;
 			}
+		} else if (!strcasecmp(var, "chan-id-invert-extend-bit")) {
+#ifdef SANGOMA_ISDN_CHAN_ID_INVERT_BIT
+			parse_yesno(var, val, &g_sngisdn_data.chan_id_invert_extend_bit);
+#else
+			ftdm_log(FTDM_LOG_WARNING, "chan-id-invert-extend-bit is not supported in your version of libsng_isdn\n");
+#endif
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}

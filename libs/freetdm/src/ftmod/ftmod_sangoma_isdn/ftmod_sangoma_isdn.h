@@ -324,6 +324,11 @@ typedef struct ftdm_sngisdn_data {
 	uint8_t	num_dchan;
 	sngisdn_dchan_data_t dchans[MAX_L1_LINKS+1];
 	sngisdn_span_data_t *spans[MAX_L1_LINKS+1]; /* spans are indexed by link_id */
+
+#ifdef SANGOMA_ISDN_CHAN_ID_INVERT_BIT
+	/* Since this is a global configuration, place it here instead of sngisdn_span_data_t */
+	uint8_t chan_id_invert_extend_bit;
+#endif
 }ftdm_sngisdn_data_t;
 
 typedef struct ftdm2trillium
