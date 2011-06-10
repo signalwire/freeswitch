@@ -273,7 +273,7 @@ ftdm_status_t sngisdn_att_transfer_process_dtmf(ftdm_channel_t *ftdmchan, const 
 		att_courtesy_transfer_complete(sngisdn_info, sngisdn_info->transfer_data.response);
 	}
 
-	if (signal_data->att_remove_dtmf) {
+	if (signal_data->att_remove_dtmf != SNGISDN_OPT_FALSE) {
 		/* If we return FTDM_BREAK, dtmf event is not queue'ed to user */
 		status = FTDM_BREAK;
 	}
