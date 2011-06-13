@@ -300,7 +300,7 @@ ftdm_status_t disable_all_sigs_for_relay(uint32_t procId)
 ftdm_status_t disble_all_mtp2_sigs_for_relay(void)
 {
 	/* check if there is a local mtp2 link*/
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2)) {
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2_STARTED)) {
 		SS7_INFO("Disalbing all mtp2 sig links on local system\n");
 
 		ftmod_ss7_disable_grp_mtp2Link(1);

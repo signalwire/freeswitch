@@ -99,17 +99,18 @@ int  ft_to_sngss7_cfg_all(void)
 			return 1;
 		} else {
 			SS7_INFO("Started Stack Manager!\n");
-			sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SM);
+			sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SM_STARTED);
 		}
 
 		/* check if the configuration had a Relay Channel */
-		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY)) { 
+		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY_PRESENT)) { 
 			/* start up the relay task */
 			if (sng_isup_init_relay()) {
 				SS7_CRITICAL("Failed to start Relay\n");
 				return 1;
 			} else {
 				SS7_INFO("Started Relay!\n");
+				sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY_STARTED);
 			}
 
 			/* run general configuration on the relay task */
@@ -122,12 +123,13 @@ int  ft_to_sngss7_cfg_all(void)
 
 		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY)) */
 
-		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC)) {
+		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC_PRESENT)) {
 			if (sng_isup_init_cc()) {
 				SS7_CRITICAL("Failed to start Call-Control\n");
 				return 1;
 			} else {
 				SS7_INFO("Started Call-Control!\n");
+				sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC_STARTED);
 			}
 			if (ftmod_ss7_cc_gen_config()) {
 				SS7_CRITICAL("CC General configuration FAILED!\n");
@@ -143,12 +145,13 @@ int  ft_to_sngss7_cfg_all(void)
 			}
 		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC)) */
 
-		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP)) {
+		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP_PRESENT)) {
 			if (sng_isup_init_isup()) {
 				SS7_CRITICAL("Failed to start ISUP\n");
 				return 1;
 			} else {
 				SS7_INFO("Started ISUP!\n");
+				sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP_STARTED);
 			}	
 			if (ftmod_ss7_isup_gen_config()) {
 				SS7_CRITICAL("ISUP General configuration FAILED!\n");
@@ -158,12 +161,13 @@ int  ft_to_sngss7_cfg_all(void)
 			}
 		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP)) */
 
-		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3)) {
+		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3_PRESENT)) {
 			if (sng_isup_init_mtp3()) {
 				SS7_CRITICAL("Failed to start MTP3\n");
 				return 1;
 			} else {
 				SS7_INFO("Started MTP3!\n");
+				sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3_STARTED);
 			}
 
 			if (ftmod_ss7_mtp3_gen_config()) {
@@ -174,18 +178,20 @@ int  ft_to_sngss7_cfg_all(void)
 			}
 		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3)) */
 
-		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2)) {
+		if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2_PRESENT)) {
 			if (sng_isup_init_mtp2()) {
 				SS7_CRITICAL("Failed to start MTP2\n");
 				return 1;
 			} else {
 				SS7_INFO("Started MTP2!\n");
+				sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2_STARTED);
 			}
 			if (sng_isup_init_mtp1()) {
-				SS7_CRITICAL("Failed to start MTP2\n");
+				SS7_CRITICAL("Failed to start MTP1\n");
 				return 1;
 			} else {
 				SS7_INFO("Started MTP1!\n");
+				sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP1_STARTED);
 			}
 			if (ftmod_ss7_mtp1_gen_config()) {
 				SS7_CRITICAL("MTP1 General configuration FAILED!\n");
@@ -376,7 +382,7 @@ int  ft_to_sngss7_cfg_all(void)
 		x++;
 	} /* while (x < (MAX_ISAPS)) */
 
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP)) {
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP_STARTED)) {
 		x = 1;
 		while (x < (MAX_ISUP_INFS)) {
 			/* check if this link has been configured already */
