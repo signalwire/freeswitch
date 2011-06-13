@@ -8,7 +8,7 @@
 			<!-- If this is set to true, no unauthenticated inbound calls will be allowed -->
 			<param name="auth-calls" value="true" />
 			<!-- How much time should the clients buffer the media stream (miliseconds) -->
-			<param name="buffer-len" value="500" />
+			<param name="buffer-len" value="50" />
 			<!-- Sets the maximum size of outbound RTMP chunks -->
 			<param name="chunksize" value="512" />
 		</settings>
