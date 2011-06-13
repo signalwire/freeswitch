@@ -632,13 +632,25 @@ typedef enum {
 } sng_cfg_flag_t;
 
 typedef enum {
-	SNGSS7_SM		= (1 << 0),
-	SNGSS7_RY		= (1 << 1),
-	SNGSS7_MTP1		= (1 << 2),
-	SNGSS7_MTP2		= (1 << 3),
-	SNGSS7_MTP3		= (1 << 4),
-	SNGSS7_ISUP		= (1 << 5),
-	SNGSS7_CC		= (1 << 6)
+	SNGSS7_SM_STARTED	= (1 << 0),
+
+	SNGSS7_RY_PRESENT	= (1 << 2),
+	SNGSS7_RY_STARTED	= (1 << 3),
+	
+	SNGSS7_MTP1_PRESENT	= (1 << 4),
+	SNGSS7_MTP1_STARTED	= (1 << 5),
+
+	SNGSS7_MTP2_PRESENT	= (1 << 6),
+	SNGSS7_MTP2_STARTED     = (1 << 7),
+
+	SNGSS7_MTP3_PRESENT	= (1 << 8),
+	SNGSS7_MTP3_STARTED     = (1 << 9),
+
+	SNGSS7_ISUP_PRESENT	= (1 << 10),
+	SNGSS7_ISUP_STARTED     = (1 << 11),
+
+	SNGSS7_CC_PRESENT	= (1 << 12),
+	SNGSS7_CC_STARTED       = (1 << 13),
 } sng_task_flag_t;
 /******************************************************************************/
 

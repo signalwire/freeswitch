@@ -2082,7 +2082,7 @@ static int ftmod_ss7_fill_in_relay_channel(sng_relay_t *relay_channel)
 					relay_channel->port,
 					relay_channel->procId, 
 					relay_channel->id);
-		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY);
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY_PRESENT);
 	} else {
 		relay_channel->id = i;
 		SS7_DEBUG("found existing relay channel on type:%d, hostname:%s, port:%d, procId:%d, id = %d\n",
@@ -2116,7 +2116,7 @@ static int ftmod_ss7_fill_in_mtp1_link(sng_mtp1_link_t *mtp1Link)
 	/* check if this id value has been used already */
 	if (g_ftdm_sngss7_data.cfg.mtp1Link[i].id == 0) {
 		SS7_DEBUG("Found new MTP1 Link: id=%d, name=%s\n", mtp1Link->id, mtp1Link->name);
-		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP1);
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP1_PRESENT);
 	} else {
 		SS7_DEBUG("Found an existing MTP1 Link: id=%d, name=%s (old name=%s)\n", 
 					mtp1Link->id, 
@@ -2142,7 +2142,7 @@ static int ftmod_ss7_fill_in_mtp2_link(sng_mtp2_link_t *mtp2Link)
 	/* check if this id value has been used already */
 	if (g_ftdm_sngss7_data.cfg.mtp2Link[i].id == 0) {
 		SS7_DEBUG("Found new MTP2 Link: id=%d, name=%s\n", mtp2Link->id, mtp2Link->name);
-		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2);
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2_PRESENT);
 	} else {
 		SS7_DEBUG("Found an existing MTP2 Link: id=%d, name=%s (old name=%s)\n", 
 					mtp2Link->id, 
@@ -2219,7 +2219,7 @@ static int ftmod_ss7_fill_in_mtp3_link(sng_mtp3_link_t *mtp3Link)
 	/* check if this id value has been used already */
 	if (g_ftdm_sngss7_data.cfg.mtp3Link[i].id == 0) {
 		SS7_DEBUG("Found new MTP3 Link: id=%d, name=%s\n", mtp3Link->id, mtp3Link->name);
-		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3);
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3_PRESENT);
 	} else {
 		SS7_DEBUG("Found an existing MTP3 Link: id=%d, name=%s (old name=%s)\n", 
 					mtp3Link->id, 
@@ -2560,7 +2560,7 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 	/* check if this id value has been used already */
 	if (g_ftdm_sngss7_data.cfg.isupIntf[i].id == 0) {
 		SS7_DEBUG("Found new ISUP Interface: id=%d, name=%s\n", sng_isup->id, sng_isup->name);
-		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP);
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP_PRESENT);
 	} else {
 		SS7_DEBUG("Found an existing ISUP Interface: id=%d, name=%s (old name=%s)\n", 
 					sng_isup->id, 
@@ -2908,7 +2908,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 			g_ftdm_sngss7_data.cfg.isupCkt[x].type		= VOICE;
 			
 			/* throw the flag to indicate that we need to start call control */
-			sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC);
+			sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC_PRESENT);
 		}
 
 		if (timeslot.channel) {

@@ -1621,32 +1621,36 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_ss7_unload)
 
 	ftdm_log (FTDM_LOG_INFO, "Starting ftmod_sangoma_ss7 unload...\n");
 
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC)) {
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC_STARTED)) {
 		sng_isup_free_cc();
-		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC);
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC_STARTED);
 	}
 
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP)) {
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP_STARTED)) {
 		ftmod_ss7_shutdown_isup();
 		sng_isup_free_isup();
-		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP);
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP_STARTED);
 	}
 
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3)) {
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3_STARTED)) {
 		ftmod_ss7_shutdown_mtp3();
 		sng_isup_free_mtp3();
-		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3);
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3_STARTED);
 	}
 
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2)) {
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2_STARTED)) {
 		ftmod_ss7_shutdown_mtp2();
 		sng_isup_free_mtp2();
-		sng_isup_free_mtp1();
-		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2);
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2_STARTED);
 	}
 
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY)) {
-		/* go through all the relays channels and configure it */
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP1_STARTED)) {
+		sng_isup_free_mtp1();
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP1_STARTED);
+	}
+
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY_STARTED)) {
+		/* go through all the relays channels and disable them */
 		x = 1;
 		while (x < (MAX_RELAY_CHANNELS)) {
 			/* check if this relay channel has been configured already */
@@ -1668,11 +1672,12 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_ss7_unload)
 		
 		ftmod_ss7_shutdown_relay();
 		sng_isup_free_relay();
-		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY);
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY_STARTED);
 	}
 
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SM)) {
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SM_STARTED)) {
 		sng_isup_free_sm();
+		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SM_STARTED);
 	}
 
 	sng_isup_free_gen();
