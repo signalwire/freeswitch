@@ -215,6 +215,11 @@ void *SWITCH_THREAD_FUNC rtmp_io_tcp_thread(switch_thread_t *thread, void *obj)
 					}
 				} else {
 					rtmp_session_t *newsession;
+					
+					if (switch_socket_opt_set(newsocket, SWITCH_SO_NONBLOCK, TRUE)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't set socket as non-blocking\n");
+					}
+					
 					if (rtmp_session_request(io->base.profile, &newsession) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTMP session request failed\n");
 						switch_socket_close(newsocket);
