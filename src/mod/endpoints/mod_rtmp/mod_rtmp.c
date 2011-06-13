@@ -23,6 +23,7 @@
  * Contributor(s):
  * 
  * Mathieu Rene <mrene@avgs.ca>
+ * Anthony Minessale II <anthm@freeswitch.org>
  *
  * mod_rtmp.c -- RTMP Endpoint Module
  *
@@ -897,6 +898,14 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 	switch_set_flag_locked(tech_pvt, TFLAG_DETACHED);
 	rtmp_set_channel_variables(*newsession);
+
+	if (event) {
+		switch_event_header_t *hp;
+
+		for (hp = event->headers; hp; hp = hp->next) {
+			switch_channel_set_variable_name_printf(channel, hp->value, RTMP_USER_VARIABLE_PREFIX "_%s", hp->name);
+		}
+	}
 
 	switch_core_hash_insert_wrlock(rsession->session_hash, switch_core_session_get_uuid(*newsession), tech_pvt, rsession->session_rwlock);
 
