@@ -58,8 +58,8 @@ static sng_isdn_event_interface_t	g_sngisdn_event_interface;
 
 ftdm_sngisdn_data_t					g_sngisdn_data;
 
-FTDM_ENUM_NAMES(SNGISDN_TRANSFER_TYPE_NAMES, SNGISDN_TRANSFER_TYPE_STRINGS)
-FTDM_STR2ENUM(ftdm_str2sngisdn_transfer_type, sngisdn_transfer_type2str, sngisdn_transfer_type_t, SNGISDN_TRANSFER_TYPE_NAMES, SNGISDN_TRANSFER_INVALID)
+SNGISDN_ENUM_NAMES(SNGISDN_TRANSFER_TYPE_NAMES, SNGISDN_TRANSFER_TYPE_STRINGS)
+SNGISDN_STR2ENUM(ftdm_str2sngisdn_transfer_type, sngisdn_transfer_type2str, sngisdn_transfer_type_t, SNGISDN_TRANSFER_TYPE_NAMES, SNGISDN_TRANSFER_INVALID)
 
 ftdm_state_map_t sangoma_isdn_state_map = {
 	{

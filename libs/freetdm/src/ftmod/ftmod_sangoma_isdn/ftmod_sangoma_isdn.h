@@ -177,7 +177,7 @@ typedef enum {
 	SNGISDN_TRANSFER_INVALID,
 } sngisdn_transfer_type_t;
 #define SNGISDN_TRANSFER_TYPE_STRINGS "NONE", "ATT_COURTESY_VRU", "ATT_COURTERY_VRU_DATA", "INVALID"
-FTDM_STR2ENUM_P(ftdm_str2sngisdn_transfer_type, sngisdn_transfer_type2str, sngisdn_transfer_type_t)
+SNGISDN_STR2ENUM_P(ftdm_str2sngisdn_transfer_type, sngisdn_transfer_type2str, sngisdn_transfer_type_t)
 
 /* From section 4.2 of TR50075, max length of data is 100 when single UUI is sent */
 #define COURTESY_TRANSFER_MAX_DATA_SIZE 100

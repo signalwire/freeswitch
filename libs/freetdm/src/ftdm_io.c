@@ -3583,7 +3583,7 @@ skipdebug:
 	return status;
 }
 
-FIO_WRITE_FUNCTION(ftdm_raw_write)
+FT_DECLARE(ftdm_status_t) ftdm_raw_write (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
 {
 	int dlen = (int) *datalen;
 
@@ -3610,7 +3610,7 @@ FIO_WRITE_FUNCTION(ftdm_raw_write)
 	return ftdmchan->fio->write(ftdmchan, data, datalen);
 }
 
-FIO_READ_FUNCTION(ftdm_raw_read)
+FT_DECLARE(ftdm_status_t) ftdm_raw_read (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
 {
 	ftdm_status_t  status;
 	
