@@ -240,7 +240,7 @@ switch_status_t amf_object_to_event(amf0_data *obj, switch_event_t **event)
 	
 	if (obj && obj->type == AMF0_TYPE_OBJECT) {
 		amf0_node *node;
-		if (!event) {
+		if (!*event) {
 			if ((status = switch_event_create(event, SWITCH_EVENT_CUSTOM)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
