@@ -799,7 +799,11 @@ SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator)
                 return len;
             }
             span_log(&s->logging, SPAN_LOG_FLOW, "Tx %5d: indicator %s\n", s->tx_seq_no, t38_indicator_to_str(indicator));
-            s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, transmissions);
+            if (s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, transmissions) < 0)
+            {
+                span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Tx Packet Handler Failure\n");
+                return -1;
+            }
             s->tx_seq_no = (s->tx_seq_no + 1) & 0xFFFF;
             delay = modem_startup_time[indicator].training;
             if (s->allow_for_tep)
@@ -837,7 +841,11 @@ SPAN_DECLARE(int) t38_core_send_data(t38_core_state_t *s, int data_type, int fie
         span_log(&s->logging, SPAN_LOG_FLOW, "T.38 data len is %d\n", len);
         return len;
     }
-    s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, s->category_control[category]);
+    if (s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, s->category_control[category]) < 0)
+    {
+        span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Tx Packet Handler Failure\n");
+        return -1;
+    }
     s->tx_seq_no = (s->tx_seq_no + 1) & 0xFFFF;
     return 0;
 }
@@ -853,7 +861,11 @@ SPAN_DECLARE(int) t38_core_send_data_multi_field(t38_core_state_t *s, int data_t
         span_log(&s->logging, SPAN_LOG_FLOW, "T.38 data len is %d\n", len);
         return len;
     }
-    s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, s->category_control[category]);
+    if (s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, s->category_control[category]) < 0)
+    {
+        span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Tx Packet Handler Failure\n");
+        return -1;
+    }
     s->tx_seq_no = (s->tx_seq_no + 1) & 0xFFFF;
     return 0;
 }

@@ -707,10 +707,12 @@ void sngisdn_rcv_q921_ind(BdMngmt *status)
 }
 void sngisdn_rcv_q931_ind(InMngmt *status)
 {	
+#ifndef WIN32
 	if (status->t.usta.alarm.cause == 287) {
-		get_memory_info();
+		sngisdn_get_memory_info();
 		return;
 	}
+#endif
 
 	switch (status->t.usta.alarm.event) {
 		case LCM_EVENT_UP:
@@ -779,7 +781,6 @@ void sngisdn_rcv_cc_ind(CcMngmt *status)
 void sngisdn_rcv_q931_trace(InMngmt *trc, Buffer *mBuf)
 {
 	MsgLen mlen;
-	MsgLen i;
 	int16_t j;
 	Buffer *tmp;
 	Data *cptr;
@@ -802,7 +803,6 @@ void sngisdn_rcv_q931_trace(InMngmt *trc, Buffer *mBuf)
 		tmp = mBuf->b_cont;
 		cptr = tmp->b_rptr;
 		data = *cptr++;
-		i = 0;
 
 		for(j=0;j<mlen;j++) {
 			tdata[j]= data;

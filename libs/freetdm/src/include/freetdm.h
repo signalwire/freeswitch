@@ -30,9 +30,10 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Contributors: 
+ * Contributors:
  *
  * Moises Silva <moy@sangoma.com>
+ * David Yat Sin <dyatsin@sangoma.com>
  *
  */
 
@@ -241,12 +242,12 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_ton, ftdm_ton2str, ftdm_ton_t)
 /*! Numbering Plan Identification (NPI) */
 typedef enum {
 	FTDM_NPI_UNKNOWN = 0,
-	FTDM_NPI_ISDN = 1,
-	FTDM_NPI_DATA = 3,
-	FTDM_NPI_TELEX = 4,
-	FTDM_NPI_NATIONAL = 8,
-	FTDM_NPI_PRIVATE = 9,
-	FTDM_NPI_RESERVED = 10,
+	FTDM_NPI_ISDN,
+	FTDM_NPI_DATA,
+	FTDM_NPI_TELEX,
+	FTDM_NPI_NATIONAL,
+	FTDM_NPI_PRIVATE,
+	FTDM_NPI_RESERVED,
 	FTDM_NPI_INVALID
 } ftdm_npi_t;
 #define NPI_STRINGS "unknown", "ISDN", "data", "telex", "national", "private", "reserved", "invalid"
@@ -317,8 +318,23 @@ typedef enum {
 #define CALLING_PARTY_CATEGORY_STRINGS "unknown", "operator", "operator-french", "operator-english", "operator-german", "operator-russian", "operator-spanish", "ordinary", "priority", "data-call", "test-call", "payphone", "invalid"
 FTDM_STR2ENUM_P(ftdm_str2ftdm_calling_party_category, ftdm_calling_party_category2str, ftdm_calling_party_category_t)
 
+/*! Network responses to transfer requests */
+typedef enum {
+	FTDM_TRANSFER_RESPONSE_OK,					/* Call is being transferred */
+	FTDM_TRANSFER_RESPONSE_CP_DROP_OFF,			/* Calling Party drop off */
+	FTDM_TRANSFER_RESPONSE_LIMITS_EXCEEDED,		/* Cannot redirect, limits exceeded */
+	FTDM_TRANSFER_RESPONSE_INVALID_NUM,			/* Network did not receive or recognize dialed number */
+	FTDM_TRANSFER_RESPONSE_INVALID_COMMAND,		/* Network received an invalid command */
+	FTDM_TRANSFER_RESPONSE_TIMEOUT,				/* We did not receive a response from Network */
+	FTDM_TRANSFER_RESPONSE_INVALID,
+} ftdm_transfer_response_t;
+#define TRANSFER_RESPONSE_STRINGS "transfer-ok", "cp-drop-off", "limits-exceeded", "invalid-num", "invalid-command", "timeout", "invalid"
+FTDM_STR2ENUM_P(ftdm_str2ftdm_transfer_response, ftdm_transfer_response2str, ftdm_transfer_response_t)
+
 /*! \brief Digit limit used in DNIS/ANI */
 #define FTDM_DIGITS_LIMIT 25
+
+#define FTDM_SILENCE_VALUE(fchan) (fchan)->native_codec == FTDM_CODEC_ULAW ? 255 : (fchan)->native_codec == FTDM_CODEC_ALAW ? 0xD5 : 0x00
 
 /*! \brief Number abstraction */
 typedef struct {
@@ -434,13 +450,14 @@ typedef enum {
 	FTDM_SIGEVENT_TRACE, /*!<Interpreted trace event */
 	FTDM_SIGEVENT_TRACE_RAW, /*!<Raw trace event */
 	FTDM_SIGEVENT_INDICATION_COMPLETED, /*!< Last requested indication was completed */
-	FTDM_SIGEVENT_DIALING, /* Outgoing call just started */
+	FTDM_SIGEVENT_DIALING, /*!< Outgoing call just started */
+	FTDM_SIGEVENT_TRANSFER_COMPLETED, /*!< Transfer request is completed */
 	FTDM_SIGEVENT_INVALID, /*!<Invalid */
 } ftdm_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "RINGING", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
 		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "FACILITY", \
-		"TRACE", "TRACE_RAW", "INDICATION_COMPLETED", "DIALING", "INVALID"
+		"TRACE", "TRACE_RAW", "INDICATION_COMPLETED", "DIALING", "TRANSFER_COMPLETED", "INVALID"
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
 
@@ -543,12 +560,13 @@ typedef enum {
 	/* Using this indication is equivalent to call ftdm_channel_call_answer API */
 	FTDM_CHANNEL_INDICATE_ANSWER,
 	FTDM_CHANNEL_INDICATE_FACILITY,
+	FTDM_CHANNEL_INDICATE_TRANSFER,
 	FTDM_CHANNEL_INDICATE_INVALID,
 } ftdm_channel_indication_t;
-#define INDICATION_STRINGS "NONE", "RINGING", "PROCEED", "PROGRESS", "PROGRESS_MEDIA", "BUSY", "ANSWER", "FACILITY", "INVALID"
+#define INDICATION_STRINGS "NONE", "RINGING", "PROCEED", "PROGRESS", "PROGRESS_MEDIA", "BUSY", "ANSWER", "FACILITY", "TRANSFER", "INVALID"
 
 /*! \brief Move from string to ftdm_channel_indication_t and viceversa */
-FTDM_STR2ENUM_P(ftdm_str2channel_indication, ftdm_channel_indication2str, ftdm_channel_indication_t)
+FTDM_STR2ENUM_P(ftdm_str2ftdm_channel_indication, ftdm_channel_indication2str, ftdm_channel_indication_t)
 
 typedef struct {
 	/* The indication that was completed */
@@ -556,6 +574,10 @@ typedef struct {
 	/* Completion status of the indication */
 	ftdm_status_t status;
 } ftdm_event_indication_completed_t;
+
+typedef struct {
+	ftdm_transfer_response_t response;
+} ftdm_event_transfer_completed_t;
 
 typedef void * ftdm_variable_container_t;
 
@@ -578,6 +600,7 @@ struct ftdm_sigmsg {
 		ftdm_event_trace_t trace;	/*!< valid if event_id is FTDM_SIGEVENT_TRACE or FTDM_SIGEVENT_TRACE_RAW */
 		ftdm_event_collected_t collected; /*!< valid if event_id is FTDM_SIGEVENT_COLLECTED_DIGIT */
 		ftdm_event_indication_completed_t indication_completed; /*!< valid if the event_id is FTDM_SIGEVENT_INDICATION_COMPLETED */
+		ftdm_event_transfer_completed_t transfer_completed;
 	} ev_data;
 	ftdm_raw_data_t raw;
 };
@@ -911,7 +934,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_answer(const char *file, const char
 #define ftdm_channel_call_place(ftdmchan) _ftdm_channel_call_place(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), NULL)
 #define ftdm_channel_call_place_ex(ftdmchan, usrmsg) _ftdm_channel_call_place_ex(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (usrmsg))
 
-/*! \brief Place an outgoing call recording the source code point where it was called (see ftdm_channel_call_place for an easy to use macro) 
+/*! \brief Place an outgoing call recording the source code point where it was called (see ftdm_channel_call_place for an easy to use macro)
  *  \deprecated This function is deprecated since leaves the door open to glare issues, use ftdm_call_place instead
  */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_place(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_usrmsg_t *usrmsg);
@@ -969,6 +992,20 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup(const char *file, const char
 
 /*! \brief Hangup the call with cause recording the source code point where it was called (see ftdm_channel_call_hangup_with_cause for an easy to use macro) */
 FT_DECLARE(ftdm_status_t) _ftdm_channel_call_hangup_with_cause(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_call_cause_t, ftdm_usrmsg_t *usrmsg);
+
+/*! \brief Transfer call. This can also be accomplished by ftdm_channel_call_indicate with FTDM_CHANNEL_INDICATE_TRANSFER, in both
+ *         cases you will get a FTDM_SIGEVENT_INDICATION_COMPLETED when the indication is sent (or an error occurs).
+ *         Just as with ftdm_channel_call_indicate you won't receive FTDM_SIGEVENT_INDICATION_COMPLETED when this function
+ *         returns anything else than FTDM_SUCCESS
+ *  \note Although this API may result in FTDM_SIGEVENT_INDICATION_COMPLETED event being delivered,
+ *        there is no guarantee of whether the event will arrive after or before your execution thread returns
+ *        from ftdm_channel_call_transfer
+ */
+#define ftdm_channel_call_transfer(ftdmchan, arg) _ftdm_channel_call_transfer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (arg), NULL)
+#define ftdm_channel_call_transfer_ex(ftdmchan, arg, usrmsg) _ftdm_channel_call_transfer(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), (arg), (usrmsg))
+
+/*! \brief Answer call recording the source code point where the it was called (see ftdm_channel_call_tranasfer for an easy to use macro) */
+FT_DECLARE(ftdm_status_t) _ftdm_channel_call_transfer(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, const char* arg, ftdm_usrmsg_t *usrmsg);
 
 /*! \brief Reset the channel */
 #define ftdm_channel_reset(ftdmchan) _ftdm_channel_reset(__FILE__, __FUNCTION__, __LINE__, (ftdmchan), NULL)
@@ -1240,7 +1277,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_add_to_group(const char* name, ftdm_chann
 /*! \brief Remove the channel from a hunt group */
 FT_DECLARE(ftdm_status_t) ftdm_channel_remove_from_group(ftdm_group_t* group, ftdm_channel_t* ftdmchan);
 
-/*! 
+/*!
  * \brief Retrieves an event from the span
  *
  * \note

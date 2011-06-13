@@ -766,7 +766,6 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	int payload = 0;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -809,8 +808,6 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 				}
 				return status;
 			}
-
-			payload = tech_pvt->video_read_frame.payload;
 
 			if (tech_pvt->video_read_frame.datalen > 0) {
 				break;
@@ -867,7 +864,6 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 {
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	int payload = 0;
 	uint32_t sanity = 1000;
 	switch_rtcp_frame_t rtcp_frame;
 
@@ -978,8 +974,6 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 				*frame = &tech_pvt->read_frame;
 				return SWITCH_STATUS_SUCCESS;
 			}
-
-			payload = tech_pvt->read_frame.payload;
 
 			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
 				switch_dtmf_t dtmf = { 0 };
@@ -1247,6 +1241,7 @@ static void start_udptl(private_object_t *tech_pvt, switch_t38_options_t *t38_op
 		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
 		const char *err, *val;
 
+		sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 		switch_rtp_udptl_mode(tech_pvt->rtp_session);
 
 		if (!t38_options || !t38_options->remote_ip) {
@@ -1533,8 +1528,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 			
 			if (sofia_test_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE)) {
-				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+				if (!switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_UDPTL) && 
+					!switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+				}
 				sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 			}
 
@@ -1859,13 +1857,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			const char *name = msg->string_array_arg[0], *number = msg->string_array_arg[1];
 			char *arg = NULL;
 			char *argv[2] = { 0 };
-			int argc;
+			//int argc;
 
 			if (zstr(name) && !zstr(msg->string_arg)) {
 				arg = strdup(msg->string_arg);
 				switch_assert(arg);
 
-				argc = switch_separate_string(arg, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+				switch_separate_string(arg, '|', argv, (sizeof(argv) / sizeof(argv[0])));
 				name = argv[0];
 				number = argv[1];
 
@@ -2159,6 +2157,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							if (t38_options) {
 								sofia_glue_set_image_sdp(tech_pvt, t38_options, 0);
 								if (switch_rtp_ready(tech_pvt->rtp_session)) {
+									sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 									switch_rtp_udptl_mode(tech_pvt->rtp_session);
 								}
 							}
@@ -3613,6 +3612,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	char *p;
 	sofia_profile_t *profile = NULL;
 	const char *exclude_contact = NULL;
+	const char *user_replacement = NULL;
 	char *reply = "error/facility_not_subscribed";
 	switch_stream_handle_t mystream = { 0 };
 
@@ -3624,6 +3624,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		exclude_contact = switch_channel_get_variable(channel, "sip_exclude_contact");
+		user_replacement = switch_channel_get_variable(channel, "sip_contact_user_replacement");
 	}
 
 
@@ -3697,10 +3698,105 @@ SWITCH_STANDARD_API(sofia_contact_function)
 					profile = NULL;
 				}
 			}
+
 		}
+
 		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 	} 
 	
+	reply = (char *) mystream.data;
+
+	if (user_replacement) {
+		int urlcount = 0;
+		int copyerr = 0;
+		char *newreply = NULL;
+		char *urlstart = NULL;
+		char *newptr = NULL;
+		char *bufend = NULL;
+		char *str = reply;
+		switch_size_t copysize = 0;
+		switch_size_t replacesize = strlen(user_replacement);
+		switch_size_t allocsize = 0;
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sofia_contact(): trying to replace %s in %s\n",
+				user_replacement, str);
+		
+		/* first pass to count how many URLs we have */
+		while ((urlstart = strcasestr(str, "sip:")) || (urlstart = strcasestr(str, "sips:"))) {
+			urlcount++;
+			str = urlstart + 4;
+		}
+
+		if (!urlcount) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sofia_contact(): no sip URLs found to replace the user\n");
+			copyerr++;
+			goto copydone;
+		}
+
+		/* this allocates a bit more than needed but better safe than sorry doing more funky math */
+		allocsize = strlen(reply) + (urlcount * replacesize);
+		newreply = switch_core_session_alloc(session, allocsize);
+		if (!newreply) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sofia_contact(): no buffer space available for replacement\n");
+			copyerr++;
+			goto copydone;
+		}
+
+		/* get a working pointer to the new reply */
+		newptr = newreply;
+
+		/* pointer to the end of the allocated buffer for safety checks */
+		bufend = newreply + allocsize;
+		*bufend = 0;
+
+		/* go thru all the urls and replace the user part */
+		str = reply;
+		while ((urlstart = strcasestr(str, "sip:")) || (urlstart = strcasestr(str, "sips:"))) {
+
+			/* found an URL, copy up to the start of the url */
+			copysize = ( urlstart - str ) + 4;
+
+			/* double check boundaries before copying anything at all (this should not happen) */
+			if ((newptr + copysize + replacesize) >= bufend) {
+				copyerr++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sofia_contact(): wow buffer was not big enough!\n");
+				break;
+			}
+
+			/* copy the original contact string except for the user */
+			memcpy(newptr, str, copysize);
+			newptr += copysize;
+
+			/* copy the user replacement */
+			memcpy(newptr, user_replacement, replacesize);
+			newptr += replacesize;
+
+			/* skip the original user part */
+			str = strchr(urlstart, '@');
+			if (!str) {
+				copyerr++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sofia_contact(): not host part found for contact\n");
+				break;
+			}
+			/* continue searching for the next sip: URL */
+		}
+
+copydone:
+		if (!copyerr) {
+			/* copy the remaining reply string */
+			copysize = strlen(str);
+			if ((newptr + copysize) >= bufend) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sofia_contact(): wow buffer was not big enough, close, but not enough!\n");
+			} else {
+				strcpy(newptr, str);
+				reply = newreply;
+				goto end;
+			}
+		} else {
+			/* on error, we do nothing and just default to the original stream returned (mystream.data) */
+		}
+	}
+
 	reply = (char *) mystream.data;
 
  end:
@@ -4910,7 +5006,7 @@ static switch_status_t list_profile_gateway(const char *line, const char *cursor
 	switch_console_callback_match_t *my_matches = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *dup = NULL;
-	int argc;
+	//int argc;
 	char *argv[4] = { 0 };
 
 	if (zstr(line)) {
@@ -4918,7 +5014,7 @@ static switch_status_t list_profile_gateway(const char *line, const char *cursor
 	}
 
 	dup = strdup(line);
-	argc = switch_split(dup, ' ', argv);
+	switch_split(dup, ' ', argv);
 
 	if (zstr(argv[2]) || !strcmp(argv[2], " ")) {
 		goto end;
@@ -4962,7 +5058,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), &mod_sofia_globals.guess_mask, AF_INET);
 	in.s_addr = mod_sofia_globals.guess_mask;
 	switch_set_string(mod_sofia_globals.guess_mask_str, inet_ntoa(in));
-	gethostname(mod_sofia_globals.hostname, sizeof(mod_sofia_globals.hostname));
+
+	strcpy(mod_sofia_globals.hostname, switch_core_get_switchname());
 
 
 	switch_core_hash_init(&mod_sofia_globals.profile_hash, mod_sofia_globals.pool);

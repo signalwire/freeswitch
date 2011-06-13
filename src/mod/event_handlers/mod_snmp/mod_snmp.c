@@ -20,6 +20,8 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
+ * Portions created by Seventh Signal Ltd. & Co. KG and its employees are Copyright (C)
+ * Seventh Signal Ltd. & Co. KG, All Rights Reserverd.
  *
  * Contributor(s):
  * Daniel Swarbrick <daniel.swarbrick@seventhsignal.de>

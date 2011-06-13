@@ -478,7 +478,7 @@ size_t su_memspn(const void *mem, size_t memlen,
  * of bytes not in @a reject.
  *
  * @param mem        pointer to memory area
- *Â @param memlen     size of @a mem in bytes
+ * @param memlen     size of @a mem in bytes
  * @param reject     pointer to table containing bytes to reject
  * @param rejectlen  size of @a reject table
  *

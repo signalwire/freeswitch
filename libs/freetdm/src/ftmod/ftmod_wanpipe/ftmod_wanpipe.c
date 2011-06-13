@@ -950,7 +950,6 @@ static void wanpipe_read_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_rx_hdr_t *rx
 static FIO_READ_FUNCTION(wanpipe_read)
 {
 	int rx_len = 0;
-	int myerrno = 0;
 	wp_tdm_api_rx_hdr_t hdrframe;
 
 	memset(&hdrframe, 0, sizeof(hdrframe));
@@ -964,7 +963,6 @@ static FIO_READ_FUNCTION(wanpipe_read)
 	}
 
 	if (rx_len < 0) {
-		myerrno = errno;
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Failed to read from sangoma device: %s (%d)\n", strerror(errno), rx_len);
 		return FTDM_FAIL;
@@ -1195,12 +1193,26 @@ FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 #else
 		if (pfds[i-1].revents & POLLPRI) {
 #endif
-			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_EVENT);
+			ftdm_set_io_flag(ftdmchan, FTDM_CHANNEL_IO_EVENT);
 			ftdmchan->last_event_time = ftdm_current_time_in_ms();
 			k++;
 		}
+#ifdef LIBSANGOMA_VERSION
+		if (outflags[i-1] & POLLIN) {
+#else
+		if (pfds[i-1].revents & POLLIN) {
+#endif
+			ftdm_set_io_flag(ftdmchan, FTDM_CHANNEL_IO_READ);
+		}
+#ifdef LIBSANGOMA_VERSION
+		if (outflags[i-1] & POLLOUT) {
+#else
+		if (pfds[i-1].revents & POLLOUT) {
+#endif
+			ftdm_set_io_flag(ftdmchan, FTDM_CHANNEL_IO_WRITE);
+		}
 	}
-	/* when k is 0 it might be that an async wanpipe device signal was delivered */	
+	/* when k is 0 it might be that an async wanpipe device signal was delivered */
 	return FTDM_SUCCESS;
 }
 
@@ -1269,7 +1281,7 @@ static FIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
 			ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_LINK_STATUS, &sangoma_status);
 			ftdmchan->alarm_flags = sangoma_status == FTDM_HW_LINK_DISCONNECTED ? FTDM_ALARM_RED : FTDM_ALARM_NONE;
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Link status is %d\n", sangoma_status);
-		}
+		} 
 	}
 
 	if (alarms) {
@@ -1293,6 +1305,7 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 	switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_type) {
 	case WP_API_EVENT_LINK_STATUS:
 		{
+			if (FTDM_IS_DIGITAL_CHANNEL(fchan)) {
 			switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
 			case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
 				/* *event_id = FTDM_OOB_ALARM_CLEAR; */
@@ -1305,6 +1318,22 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 			};
 			/* The WP_API_EVENT_ALARM event should be used to clear alarms */
 			*event_id = FTDM_OOB_NOOP;
+                    } else {
+			switch(tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
+			case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
+				/* *event_id = FTDM_OOB_ALARM_CLEAR; */
+				ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "Using analog link connected event as alarm clear\n");
+				*event_id = FTDM_OOB_ALARM_CLEAR;
+				fchan->alarm_flags = FTDM_ALARM_NONE;
+				break;
+			default:
+				/* *event_id = FTDM_OOB_ALARM_TRAP; */
+				ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "Using analog link disconnected event as alarm trap\n");
+				*event_id = FTDM_OOB_ALARM_TRAP;
+				fchan->alarm_flags = FTDM_ALARM_RED;
+				break;
+			};
+			}
 		}
 		break;
 
@@ -1430,14 +1459,9 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event)
 	wanpipe_tdm_api_t tdm_api;
 	ftdm_span_t *span = ftdmchan->span;
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_EVENT)) {
-		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_EVENT);
-	}
-
 	memset(&tdm_api, 0, sizeof(tdm_api));
 	status = sangoma_tdm_read_event(ftdmchan->sockfd, &tdm_api);
 	if (status != FTDM_SUCCESS) {
-		snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to read event from channel: %s\n", strerror(errno));
 		return FTDM_FAIL;
 	}
@@ -1473,7 +1497,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 	for(i = 1; i <= span->chan_count; i++) {
 		/* as a hack for wink/flash detection, wanpipe_poll_event overrides the timeout parameter
 		 * to force the user to call this function each 5ms or so to detect the timeout of our wink/flash */
-		if (span->channels[i]->last_event_time && !ftdm_test_flag(span->channels[i], FTDM_CHANNEL_EVENT)) {
+		if (span->channels[i]->last_event_time && !ftdm_test_io_flag(span->channels[i], FTDM_CHANNEL_IO_EVENT)) {
 			ftdm_time_t diff = ftdm_current_time_in_ms() - span->channels[i]->last_event_time;
 			/* XX printf("%u %u %u\n", diff, (unsigned)ftdm_current_time_in_ms(), (unsigned)span->channels[i]->last_event_time); */
 			if (ftdm_test_flag(span->channels[i], FTDM_CHANNEL_WINK)) {
@@ -1505,13 +1529,13 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 					goto event;
 				}
 			}
-		} 
-		if (ftdm_test_flag(span->channels[i], FTDM_CHANNEL_EVENT)) {
+		}
+		if (ftdm_test_io_flag(span->channels[i], FTDM_CHANNEL_IO_EVENT)) {
 			ftdm_status_t status;
 			wanpipe_tdm_api_t tdm_api;
 			ftdm_channel_t *ftdmchan = span->channels[i];
 			memset(&tdm_api, 0, sizeof(tdm_api));
-			ftdm_clear_flag(span->channels[i], FTDM_CHANNEL_EVENT);
+			ftdm_clear_io_flag(span->channels[i], FTDM_CHANNEL_IO_EVENT);
 
 			err = sangoma_tdm_read_event(ftdmchan->sockfd, &tdm_api);
 			if (err != FTDM_SUCCESS) {

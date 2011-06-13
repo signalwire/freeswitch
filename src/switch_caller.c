@@ -324,6 +324,16 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		switch_snprintf(header_name, sizeof(header_name), "%s-Profile-Index", prefix);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->profile_index);
 	}
+
+	if (caller_profile->soft) {
+		profile_node_t *pn;
+
+		for (pn = caller_profile->soft; pn; pn = pn->next) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, pn->var, pn->val);
+		}
+
+	}
+
 	if (caller_profile->times) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Profile-Created-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);

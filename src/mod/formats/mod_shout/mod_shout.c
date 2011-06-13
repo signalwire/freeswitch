@@ -36,7 +36,7 @@
 #include <switch.h>
 #include <shout/shout.h>
 #include <lame.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
 
 #define OUTSCALE 8192 * 2
 #define MP3_SCACHE 16384 * 2
@@ -1480,7 +1480,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	supported_formats[0] = "shout";
 	supported_formats[1] = "mp3";
 
-	curl_global_init(CURL_GLOBAL_ALL);
+	switch_curl_init();
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -1507,7 +1507,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown)
 {
-	curl_global_cleanup();
+	switch_curl_destroy();
 	mpg123_exit();
 	return SWITCH_STATUS_SUCCESS;
 }

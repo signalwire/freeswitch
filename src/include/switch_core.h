@@ -57,6 +57,7 @@ SWITCH_BEGIN_EXTERN_C
 struct switch_app_log {
 	char *app;
 	char *arg;
+	switch_time_t stamp;
 	struct switch_app_log *next;
 };
 
@@ -434,6 +435,9 @@ SWITCH_DECLARE(void) switch_core_session_rwunlock(_In_ switch_core_session_t *se
 */
 SWITCH_DECLARE(int) switch_core_add_state_handler(_In_ const switch_state_handler_table_t *state_handler);
 
+SWITCH_DECLARE(int) switch_core_curl_count(int *val);
+SWITCH_DECLARE(int) switch_core_ssl_count(int *val);
+
 /*!
   \brief Remove a global state handler
   \param state_handler the state handler to remove
@@ -762,6 +766,7 @@ SWITCH_DECLARE(char *) switch_core_get_variable(_In_z_ const char *varname);
 SWITCH_DECLARE(char *) switch_core_get_variable_dup(_In_z_ const char *varname);
 SWITCH_DECLARE(char *) switch_core_get_variable_pdup(_In_z_ const char *varname, switch_memory_pool_t *pool);
 SWITCH_DECLARE(const char *) switch_core_get_hostname(void);
+SWITCH_DECLARE(const char *) switch_core_get_switchname(void);
 
 /*! 
   \brief Add a global variable to the core
@@ -2205,6 +2210,7 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries);
 
+SWITCH_DECLARE(void) switch_core_set_signal_handlers(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
 SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
 SWITCH_DECLARE(const char *) switch_core_banner(void);

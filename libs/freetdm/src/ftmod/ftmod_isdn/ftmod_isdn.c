@@ -979,7 +979,6 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 			{
 				Q931ie_CallingNum *callingnum = Q931GetIEPtr(gen->CallingNum, gen->buf);
 				Q931ie_CalledNum *callednum = Q931GetIEPtr(gen->CalledNum, gen->buf);
-				uint32_t cplen = mlen;
 				int overlap_dial = 0;
 				int fail_cause = 0;
 				int fail = 1;
@@ -2128,7 +2127,7 @@ static int ftdm_isdn_q921_log(void *pvt, Q921LogLevel_t level, char *msg, L2INT 
 	return 0;
 }
 
-static L3INT ftdm_isdn_q931_log(void *pvt, Q931LogLevel_t level, char *msg, L3INT size)
+static L3INT ftdm_isdn_q931_log(void *pvt, Q931LogLevel_t level, const char *msg, L3INT size)
 {
 	ftdm_span_t *span = (ftdm_span_t *) pvt;
 

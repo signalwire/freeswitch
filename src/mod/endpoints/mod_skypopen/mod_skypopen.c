@@ -462,6 +462,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	   left in the initial state, nothing will happen. */
 	switch_channel_set_state(channel, CS_ROUTING);
 	DEBUGA_SKYPE("%s CHANNEL INIT %s\n", SKYPOPEN_P_LOG, tech_pvt->name, switch_core_session_get_uuid(session));
+	switch_copy_string(tech_pvt->session_uuid_str, switch_core_session_get_uuid(session), sizeof(tech_pvt->session_uuid_str));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -937,16 +938,21 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 						char *p = digit_str;
 						switch_channel_t *channel = switch_core_session_get_channel(session);
 
-						while (p && *p) {
-							switch_dtmf_t dtmf;
-							dtmf.digit = *p;
-							dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
-							switch_channel_queue_dtmf(channel, &dtmf);
-							p++;
+						if(channel){
+
+							while (p && *p) {
+								switch_dtmf_t dtmf;
+								dtmf.digit = *p;
+								dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+								switch_channel_queue_dtmf(channel, &dtmf);
+								p++;
+							}
+							NOTICA("DTMF DETECTED: [%s] new_dtmf_timestamp: %u, delta_t: %u\n", SKYPOPEN_P_LOG, digit_str, (unsigned int) new_dtmf_timestamp,
+									(unsigned int) (new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp));
+							tech_pvt->old_dtmf_timestamp = new_dtmf_timestamp;
+						}else{
+							WARNINGA("NO CHANNEL ?\n", SKYPOPEN_P_LOG);
 						}
-						NOTICA("DTMF DETECTED: [%s] new_dtmf_timestamp: %u, delta_t: %u\n", SKYPOPEN_P_LOG, digit_str, (unsigned int) new_dtmf_timestamp,
-							   (unsigned int) (new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp));
-						tech_pvt->old_dtmf_timestamp = new_dtmf_timestamp;
 					}
 				}
 			}
@@ -1733,6 +1739,7 @@ static switch_status_t load_config(int reload_type)
 				switch_threadattr_create(&skypopen_api_thread_attr, skypopen_module_pool);
 				switch_threadattr_detach_set(skypopen_api_thread_attr, 0);
 				switch_threadattr_stacksize_set(skypopen_api_thread_attr, SWITCH_THREAD_STACKSIZE);
+				//switch_threadattr_priority_increase(skypopen_api_thread_attr);
 				switch_thread_create(&globals.SKYPOPEN_INTERFACES[interface_id].skypopen_api_thread,
 									 skypopen_api_thread_attr, skypopen_do_skypeapi_thread, &globals.SKYPOPEN_INTERFACES[interface_id],
 									 skypopen_module_pool);
@@ -1742,6 +1749,7 @@ static switch_status_t load_config(int reload_type)
 				switch_threadattr_create(&skypopen_signaling_thread_attr, skypopen_module_pool);
 				switch_threadattr_detach_set(skypopen_signaling_thread_attr, 0);
 				switch_threadattr_stacksize_set(skypopen_signaling_thread_attr, SWITCH_THREAD_STACKSIZE);
+				//switch_threadattr_priority_increase(skypopen_signaling_thread_attr);
 				switch_thread_create(&globals.SKYPOPEN_INTERFACES[interface_id].
 									 skypopen_signaling_thread, skypopen_signaling_thread_attr,
 									 skypopen_signaling_thread_func, &globals.SKYPOPEN_INTERFACES[interface_id], skypopen_module_pool);
@@ -2135,40 +2143,45 @@ int dtmf_received(private_t *tech_pvt, char *value)
 	switch_channel_t *channel = NULL;
 
 	session = switch_core_session_locate(tech_pvt->session_uuid_str);
-	channel = switch_core_session_get_channel(session);
+	if (session) {
+		channel = switch_core_session_get_channel(session);
 
-	if (channel) {
+		if (channel) {
 
-		if (switch_channel_test_flag(channel, CF_BRIDGED)
-			&& !switch_true(switch_channel_get_variable(channel, "skype_add_outband_dtmf_also_when_bridged"))) {
+			if (switch_channel_test_flag(channel, CF_BRIDGED)
+					&& !switch_true(switch_channel_get_variable(channel, "skype_add_outband_dtmf_also_when_bridged"))) {
 
 
-			NOTICA
-				("received DTMF '%c' on channel %s, but we're BRIDGED, so we DO NOT relay it out of band. If you DO want to relay it out of band when bridged too, on top of audio DTMF, set the channel variable 'skype_add_outband_dtmf_also_when_bridged=true' \n",
-				 SKYPOPEN_P_LOG, value[0], switch_channel_get_name(channel));
+				NOTICA
+					("received DTMF '%c' on channel %s, but we're BRIDGED, so we DO NOT relay it out of band. If you DO want to relay it out of band when bridged too, on top of audio DTMF, set the channel variable 'skype_add_outband_dtmf_also_when_bridged=true' \n",
+					 SKYPOPEN_P_LOG, value[0], switch_channel_get_name(channel));
 
+			} else {
+
+
+
+				switch_dtmf_t dtmf = { (char) value[0], switch_core_default_dtmf_duration(0) };
+				DEBUGA_SKYPE("received DTMF %c on channel %s\n", SKYPOPEN_P_LOG, dtmf.digit, switch_channel_get_name(channel));
+				switch_mutex_lock(tech_pvt->flag_mutex);
+				switch_channel_queue_dtmf(channel, &dtmf);
+				switch_set_flag(tech_pvt, TFLAG_DTMF);
+				switch_mutex_unlock(tech_pvt->flag_mutex);
+			}
 		} else {
-
-
-
-			switch_dtmf_t dtmf = { (char) value[0], switch_core_default_dtmf_duration(0) };
-			DEBUGA_SKYPE("received DTMF %c on channel %s\n", SKYPOPEN_P_LOG, dtmf.digit, switch_channel_get_name(channel));
-			switch_mutex_lock(tech_pvt->flag_mutex);
-			switch_channel_queue_dtmf(channel, &dtmf);
-			switch_set_flag(tech_pvt, TFLAG_DTMF);
-			switch_mutex_unlock(tech_pvt->flag_mutex);
+			WARNINGA("received %c DTMF, but no channel?\n", SKYPOPEN_P_LOG, value[0]);
 		}
-	} else {
-		WARNINGA("received %c DTMF, but no channel?\n", SKYPOPEN_P_LOG, value[0]);
+		switch_core_session_rwunlock(session);
+	}else{
+		WARNINGA("received %c DTMF, but no session?\n", SKYPOPEN_P_LOG, value[0]);
 	}
-	switch_core_session_rwunlock(session);
 
 	return 0;
 }
 
 int start_audio_threads(private_t *tech_pvt)
 {
-	switch_threadattr_t *thd_attr = NULL;
+	switch_threadattr_t *tcp_srv_thread_thd_attr = NULL;
+	switch_threadattr_t *tcp_cli_thread_thd_attr = NULL;
 
 	tech_pvt->begin_to_write = 0;
 	tech_pvt->begin_to_read = 0;
@@ -2194,12 +2207,13 @@ int start_audio_threads(private_t *tech_pvt)
 
 	switch_core_timer_sync(&tech_pvt->timer_write);
 
-	switch_threadattr_create(&thd_attr, skypopen_module_pool);
-	switch_threadattr_detach_set(thd_attr, 0);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_create(&tcp_srv_thread_thd_attr, skypopen_module_pool);
+	switch_threadattr_detach_set(tcp_srv_thread_thd_attr, 0);
+	switch_threadattr_stacksize_set(tcp_srv_thread_thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(tcp_srv_thread_thd_attr);
 	switch_mutex_lock(tech_pvt->mutex_thread_audio_srv);
 	//DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
-	if (switch_thread_create(&tech_pvt->tcp_srv_thread, thd_attr, skypopen_do_tcp_srv_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
+	if (switch_thread_create(&tech_pvt->tcp_srv_thread, tcp_srv_thread_thd_attr, skypopen_do_tcp_srv_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_srv_thread thread.\n", SKYPOPEN_P_LOG);
 	} else {
 		ERRORA("failed to start tcp_srv_thread thread.\n", SKYPOPEN_P_LOG);
@@ -2210,12 +2224,13 @@ int start_audio_threads(private_t *tech_pvt)
 	switch_mutex_unlock(tech_pvt->mutex_thread_audio_srv);
 	//DEBUGA_SKYPE("debugging_hangup srv unlock\n", SKYPOPEN_P_LOG);
 
-	switch_threadattr_create(&thd_attr, skypopen_module_pool);
-	switch_threadattr_detach_set(thd_attr, 0);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_create(&tcp_cli_thread_thd_attr, skypopen_module_pool);
+	switch_threadattr_detach_set(tcp_cli_thread_thd_attr, 0);
+	switch_threadattr_stacksize_set(tcp_cli_thread_thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(tcp_cli_thread_thd_attr);
 	switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
 	//DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
-	if (switch_thread_create(&tech_pvt->tcp_cli_thread, thd_attr, skypopen_do_tcp_cli_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
+	if (switch_thread_create(&tech_pvt->tcp_cli_thread, tcp_cli_thread_thd_attr, skypopen_do_tcp_cli_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_cli_thread thread.\n", SKYPOPEN_P_LOG);
 	} else {
 		ERRORA("failed to start tcp_cli_thread thread.\n", SKYPOPEN_P_LOG);

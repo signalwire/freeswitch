@@ -337,7 +337,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 				int32_t *dest = (int32_t *) ptr;
 				int index = (int) (intptr_t) item->data;
 				int8_t currentval = (int8_t) ! !(*dest & index);
-				int8_t newval = 0;
+				int newval = 0;
 
 				if (value) {
 					newval = switch_true(value);

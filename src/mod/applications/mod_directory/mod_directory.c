@@ -67,7 +67,7 @@ static switch_xml_config_int_options_t config_int_ht_0 = { SWITCH_TRUE, 0 };
 
 static struct {
 	switch_hash_t *profile_hash;
-	char hostname[256];
+	const char *hostname;
 	int integer;
 	int debug;
 	char *dbname;
@@ -949,7 +949,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_directory_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	gethostname(globals.hostname, sizeof(globals.hostname));
+	globals.hostname = switch_core_get_switchname();
 
 	globals.dbname = switch_core_sprintf(pool, "directory");
 

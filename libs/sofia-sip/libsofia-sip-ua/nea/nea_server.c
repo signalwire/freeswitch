@@ -550,7 +550,7 @@ int nea_server_shutdown(nea_server_t *nes,
 			int retry_after)
 {
   nea_sub_t *s;
-  int status = 200;
+//  int status = 200;
   int in_callback;
 
   if (nes == NULL)
@@ -576,8 +576,8 @@ int nea_server_shutdown(nea_server_t *nes,
 		   TAG_IF(!retry_after, NEATAG_REASON("deactivated")),
 		   TAG_IF(retry_after, NEATAG_RETRY_AFTER(retry_after)),
 		   TAG_END());
-    else
-      status = 180;
+    //else
+      //status = 180;
   }
 
   nes->nes_in_callback = in_callback;

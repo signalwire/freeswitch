@@ -285,7 +285,9 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	signal_data->timer_t3 = 8;
 	signal_data->restart_opt = SNGISDN_OPT_DEFAULT;
 	signal_data->link_id = span->span_id;
-	
+	signal_data->transfer_timeout = 20000;
+	signal_data->att_remove_dtmf = 1;
+
 	span->default_caller_data.dnis.plan = FTDM_NPI_INVALID;
 	span->default_caller_data.dnis.type = FTDM_TON_INVALID;
 	span->default_caller_data.cid_num.plan = FTDM_NPI_INVALID;
@@ -365,6 +367,13 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			if (signal_data->facility_timeout < 0) {
 				signal_data->facility_timeout = 0;
 			}
+		} else if (!strcasecmp(var, "transfer-timeout")) {
+			signal_data->transfer_timeout = atoi(val);
+			if (signal_data->transfer_timeout < 0) {
+				signal_data->transfer_timeout = 0;
+			}
+		} else if (!strcasecmp(var, "att-remove-dtmf")) {
+			parse_yesno(var, val, &signal_data->att_remove_dtmf);
 		} else if (!strcasecmp(var, "facility-ie-decode")) {
 			parse_yesno(var, val, &signal_data->facility_ie_decode);
 		} else if (!strcasecmp(var, "ignore-cause-value")) {

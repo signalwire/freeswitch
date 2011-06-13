@@ -221,7 +221,6 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 	ftdm_channel_t *closed_chan;
 	uint32_t state_counter = 0, elapsed = 0, collecting = 0, interval = 0, last_digit = 0, indicate = 0, dial_timeout = 30000;
 	ftdm_sigmsg_t sig;
-	ftdm_status_t status;
 	
 	ftdm_log(FTDM_LOG_DEBUG, "ANALOG EM CHANNEL thread starting.\n");
 
@@ -545,7 +544,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			}
 
 			if (codec_func) {
-				status = codec_func(frame, sizeof(frame), &rlen);
+				codec_func(frame, sizeof(frame), &rlen);
 			} else {
 				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
 				goto done;

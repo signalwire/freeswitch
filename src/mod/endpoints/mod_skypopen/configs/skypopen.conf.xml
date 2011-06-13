@@ -1,6 +1,5 @@
 <configuration name="skypopen.conf" description="Skypopen Configuration">
   <global_settings>
-    <param name="debug" value="8"/>
     <param name="dialplan" value="XML"/>
     <param name="context" value="default"/>
     <param name="destination" value="5000"/>
@@ -8,6 +7,7 @@
     <param name="report_incoming_chatmessages" value="true"/>
     <param name="silent_mode" value="false"/>
     <param name="write_silence_when_idle" value="true"/>
+    <param name="setsockopt" value="true"/>
   </global_settings>
   <!-- one entry here per each skypopen interface -->
   <per_interface_settings>

@@ -146,13 +146,18 @@ void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_i
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
- 	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+	if (sngisdn_test_flag(sngisdn_info, FLAG_SENT_PROCEED)) {
+		return;
+	}
+	sngisdn_set_flag(sngisdn_info, FLAG_SENT_PROCEED);
+
+	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending PROGRESS, but no call data, aborting (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 		sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 		return;
 	}
-	
+
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
 
 	/* Indicate channel ID only in first response */
@@ -161,7 +166,7 @@ void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_i
 	}
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
-	
+
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending PROCEED (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
 
 	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, MI_CALLPROC, signal_data->dchan_id, sngisdn_info->ces)) {
@@ -230,12 +235,17 @@ void sngisdn_snd_alert(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind
 
 void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 {
-	CnStEvnt cnStEvnt;	
+	CnStEvnt cnStEvnt;
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 	ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_NETE_ISDN};
 
- 	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+	if (sngisdn_test_flag(sngisdn_info, FLAG_SENT_CONNECT)) {
+		return;
+	}
+	sngisdn_set_flag(sngisdn_info, FLAG_SENT_CONNECT);
+
+	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending CONNECT, but no call data, aborting (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 		sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
@@ -353,22 +363,12 @@ void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan)
 		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 		return;
 	}
-	
-	memset(&discEvnt, 0, sizeof(discEvnt));
-	
-	/* Fill discEvnt here */
-	/* TODO move this to set_cause_ie function */
-  	discEvnt.causeDgn[0].eh.pres = PRSNT_NODEF;
-	discEvnt.causeDgn[0].location.pres = PRSNT_NODEF;
-	discEvnt.causeDgn[0].location.val = IN_LOC_PRIVNETLU;
-	discEvnt.causeDgn[0].codeStand3.pres = PRSNT_NODEF;
-	discEvnt.causeDgn[0].codeStand3.val = IN_CSTD_CCITT;
-	discEvnt.causeDgn[0].causeVal.pres = PRSNT_NODEF;
-	discEvnt.causeDgn[0].causeVal.val = ftdmchan->caller_data.hangup_cause;
-	discEvnt.causeDgn[0].recommend.pres = NOTPRSNT;
-	discEvnt.causeDgn[0].dgnVal.pres = NOTPRSNT;
 
-	set_facility_ie(ftdmchan, &discEvnt.facilityStr);	
+	memset(&discEvnt, 0, sizeof(discEvnt));
+
+	set_cause_ie(ftdmchan, &discEvnt.causeDgn[0]);
+	set_facility_ie(ftdmchan, &discEvnt.facilityStr);
+	set_user_to_user_ie(ftdmchan, &discEvnt.usrUsr);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending DISCONNECT (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
 	if (sng_isdn_disc_request(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &discEvnt)) {

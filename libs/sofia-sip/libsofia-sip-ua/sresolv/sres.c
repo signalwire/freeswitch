@@ -3636,6 +3636,10 @@ sres_decode_msg(sres_resolver_t *res,
     m_get_domain(name, sizeof(name), m, 0); /* Query domain */
     qtype = m_get_uint16(m);  /* Query type */
     qclass = m_get_uint16(m); /* Query class */
+    if (qtype && qclass) {
+      /* XXX: never mind these useless check, this is done to make compiler happy about unused value */
+    }
+
   }
 
   if (m->m_error) {

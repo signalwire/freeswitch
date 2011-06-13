@@ -60,6 +60,10 @@
 
 #define MAX_SIZEOF_SUBADDR_IE	24	/* as per Q931 4.5.9 */
 
+#define SNGSS7_SWITCHTYPE_ANSI(switchtype)	(switchtype == LSI_SW_ANS88) || \
+											(switchtype == LSI_SW_ANS92) || \
+											(switchtype == LSI_SW_ANS95)
+
 typedef struct ftdm2trillium
 {
 	uint8_t ftdm_val;

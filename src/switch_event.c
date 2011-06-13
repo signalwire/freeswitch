@@ -35,7 +35,7 @@
 #include <switch.h>
 #include <switch_event.h>
 
-#define DISPATCH_QUEUE_LEN 5000
+#define DISPATCH_QUEUE_LEN 10000
 //#define DEBUG_DISPATCH_QUEUES
 
 /*! \brief A node to store binded events */
@@ -66,7 +66,6 @@ struct switch_event_subclass {
 #define MAX_DISPATCH_VAL 20
 static unsigned int MAX_DISPATCH = MAX_DISPATCH_VAL;
 static unsigned int SOFT_MAX_DISPATCH = 0;
-static char hostname[128] = "";
 static char guess_ip_v4[80] = "";
 static char guess_ip_v6[80] = "";
 static switch_event_node_t *EVENT_NODES[SWITCH_EVENT_ALL + 1] = { NULL };
@@ -291,6 +290,7 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 	switch_queue_t *queue = (switch_queue_t *) obj;
 	uint32_t index = 0;
 	int my_id = 0;
+	int auto_pause = 0;
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
 	THREAD_COUNT++;
@@ -306,6 +306,14 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 		void *pop = NULL;
 		switch_event_t *event = NULL;
 		int loops = 0;
+
+		if (auto_pause) {
+			if (!--auto_pause) {
+				switch_core_session_ctl(SCSC_PAUSE_INBOUND, &auto_pause);
+			} else {
+				switch_cond_next();
+			}
+		}
 
 		if (switch_queue_pop(queue, &pop) != SWITCH_STATUS_SUCCESS) {
 			break;
@@ -323,8 +331,22 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 
 		while (event) {
 
+
 			if (++loops > 2) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event system overloading\n");
+				uint32_t last_sps = 0, sess_count = switch_core_session_count();
+				if (auto_pause) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event system *still* overloading.\n");
+				} else {
+					switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
+					last_sps = (uint32_t) (float) (last_sps * 0.75f);
+					sess_count = (uint32_t) (float) (sess_count * 0.75f);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+									  "Event system overloading. Taking a 10 second break, Reducing max_sessions to %d %dsps\n", sess_count, last_sps);
+					switch_core_session_limit(sess_count);
+					switch_core_session_ctl(SCSC_SPS, &last_sps);
+					auto_pause = 10;
+					switch_core_session_ctl(SCSC_PAUSE_INBOUND, &auto_pause);
+				}
 				switch_yield(1000000);
 			}
 
@@ -624,7 +646,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
 	switch_threadattr_create(&thd_attr, pool);
-	gethostname(hostname, sizeof(hostname));
 	switch_find_local_ip(guess_ip_v4, sizeof(guess_ip_v4), NULL, AF_INET);
 	switch_find_local_ip(guess_ip_v6, sizeof(guess_ip_v6), NULL, AF_INET6);
 
@@ -1075,17 +1096,21 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a, char b, char c, switch_event_t **event, char **new_data)
+SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a, char b, char c, switch_event_t **event, char **new_data, switch_bool_t dup)
 {
-	char *vdata, *vdatap;
+	char *vdata, *vdatap = NULL;
 	char *end, *check_a, *check_b;
 	switch_event_t *e = *event;
 	char *var_array[1024] = { 0 };
 	int var_count = 0;
 	char *next;
-	
-	vdatap = strdup(data);
-	vdata = vdatap;
+
+	if (dup) {
+		vdatap = strdup(data);
+		vdata = vdatap;
+	} else {
+		vdata = data;
+	}
 
 	end = switch_find_end_paren(vdata, a, b);
 	
@@ -1103,7 +1128,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 		vdata++;
 		*end++ = '\0';
 	} else {
-		free(vdatap);
+		if (dup) {
+			free(vdatap);
+		}
 		return SWITCH_STATUS_FALSE;
 	}
 	
@@ -1121,7 +1148,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 				next = pnext + 1;
 			}
 		}
-						
+			
+
+		if (vdata) {
+			if (*vdata == '^' && *(vdata + 1) == '^') {
+				vdata += 2;
+				c = *vdata++;
+			}
+		}
+			
 		if ((var_count = switch_separate_string(vdata, c, var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
 			int x = 0;
 			for (x = 0; x < var_count; x++) {
@@ -1130,6 +1165,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 
 				if ((inner_var_count = switch_separate_string(var_array[x], '=',
 															  inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing variable [%s]=[%s]\n", inner_var_array[0], inner_var_array[1]);
 					switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
 				}
 			}
@@ -1144,9 +1180,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 	}
 
 	*event = e;
-	*new_data = strdup(end);
-	free(vdatap);
 
+	if (dup) {
+		*new_data = strdup(end);
+		free(vdatap);
+	} else {
+		*new_data = end;
+	}
+	
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -1316,7 +1357,8 @@ SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, c
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name(event->event_id));
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Core-UUID", switch_core_get_uuid());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", hostname);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", switch_core_get_hostname());
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Switchname", switch_core_get_switchname());
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", guess_ip_v4);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
 
@@ -1355,11 +1397,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 
 	for (;;) {
 		for (index = (*event)->priority; index < 3; index++) {
-			int was = (*event)->priority;
 			if (switch_queue_trypush(EVENT_QUEUE[index], *event) == SWITCH_STATUS_SUCCESS) {
-				if (index != was) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "queued event at a lower priority %d/%d!\n", index, was);
-				}
 				goto end;
 			}
 		}

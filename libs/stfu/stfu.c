@@ -76,6 +76,7 @@ struct stfu_instance {
 	uint32_t miss_count;
 	uint32_t max_plc;
     uint32_t qlen;
+    uint32_t most_qlen;
     uint32_t max_qlen;
     uint32_t orig_qlen;
     uint32_t packet_count;
@@ -134,6 +135,11 @@ stfu_logger_t stfu_log = null_logger;
 int32_t stfu_n_get_drift(stfu_instance_t *i)
 {
     return i->ts_drift;
+}
+
+int32_t stfu_n_get_most_qlen(stfu_instance_t *i)
+{
+    return i->most_qlen;
 }
 
 void stfu_global_set_logger(stfu_logger_t logger)
@@ -252,6 +258,10 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
     if ((s = stfu_n_resize_aqueue(&i->a_queue, qlen)) == STFU_IT_WORKED) {
         s = stfu_n_resize_aqueue(&i->b_queue, qlen);
         s = stfu_n_resize_aqueue(&i->c_queue, qlen);
+
+        if (qlen > i->most_qlen) {
+            i->most_qlen = qlen;
+        }
 
         i->qlen = qlen;
         i->max_plc = 5;
@@ -506,9 +516,9 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
     i->diff_total += i->diff;
 
     if ((i->period_packet_in_count > i->period_time)) {
-        uint32_t avg;
+        //uint32_t avg;
 
-        avg = i->diff_total / least1(i->period_packet_in_count);
+        //avg = i->diff_total / least1(i->period_packet_in_count);
 
         i->period_packet_in_count = 0;
 
@@ -904,7 +914,7 @@ static void default_logger(const char *file, const char *func, int line, int lev
 	ret = stfu_vasprintf(&data, fmt, ap);
 
 	if (ret != -1) {
-		fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], file, line, func, data);
+		fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], fp, line, func, data);
 		free(data);
 	}
 

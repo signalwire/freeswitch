@@ -82,6 +82,8 @@ typedef enum {
 	FLAG_MEDIA_READY		= (1 << 11),
 	/* Set when we already sent a Channel ID IE */
 	FLAG_SENT_CHAN_ID		= (1 << 12),
+	/* Set when we already sent a Connect */
+	FLAG_SENT_CONNECT		= (1 << 13),
 } sngisdn_flag_t;
 
 
@@ -152,10 +154,11 @@ typedef struct ftdm_sngisdn_prog_ind {
 } ftdm_sngisdn_progind_t;
 
 /* Only timers that can be cancelled are listed here */
-#define SNGISDN_NUM_TIMERS 1
+#define SNGISDN_NUM_TIMERS 2
 /* Increase NUM_TIMERS as number of ftdm_sngisdn_timer_t increases */
 typedef enum {
 	SNGISDN_TIMER_FACILITY = 0,
+	SNGISDN_TIMER_ATT_TRANSFER,
 } ftdm_sngisdn_timer_t;
 
 typedef struct sngisdn_glare_data {
@@ -165,8 +168,35 @@ typedef struct sngisdn_glare_data {
 	int16_t		dChan;
     ConEvnt		setup;
 	uint8_t		ces;
-}sngisdn_glare_data_t;
+} sngisdn_glare_data_t;
 
+typedef enum {
+	SNGISDN_TRANSFER_NONE = 0, /* Default value, no transfer being done */
+	SNGISDN_TRANSFER_ATT_COURTESY_VRU,
+	SNGISDN_TRANSFER_ATT_COURTESY_VRU_DATA,
+	SNGISDN_TRANSFER_INVALID,
+} sngisdn_transfer_type_t;
+#define SNGISDN_TRANSFER_TYPE_STRINGS "NONE", "ATT_COURTESY_VRU", "ATT_COURTERY_VRU_DATA", "INVALID"
+FTDM_STR2ENUM_P(ftdm_str2sngisdn_transfer_type, sngisdn_transfer_type2str, sngisdn_transfer_type_t)
+
+/* From section 4.2 of TR50075, max length of data is 100 when single UUI is sent */
+#define COURTESY_TRANSFER_MAX_DATA_SIZE 100
+
+typedef struct _att_courtesy_vru
+{
+	char dtmf_digits [20];
+	char data[COURTESY_TRANSFER_MAX_DATA_SIZE];
+} att_courtesy_vru_t;
+
+typedef struct _sngisdn_transfer_data
+{
+	sngisdn_transfer_type_t type; /* Specifies which type of transfer is being used */
+	ftdm_transfer_response_t response;
+	union
+	{
+		att_courtesy_vru_t att_courtesy_vru;
+	} tdata;
+} sngisdn_transfer_data_t;
 
 /* Channel specific data */
 typedef struct sngisdn_chan_data {
@@ -180,7 +210,8 @@ typedef struct sngisdn_chan_data {
 
 	uint8_t                 globalFlg;
 	sngisdn_glare_data_t	glare;
-	ftdm_timer_id_t 		timers[SNGISDN_NUM_TIMERS];
+	ftdm_timer_id_t			timers[SNGISDN_NUM_TIMERS];
+	sngisdn_transfer_data_t transfer_data;
 
 	/* variables saved here will be sent to the user application
 	on next SIGEVENT_XXX */
@@ -211,8 +242,10 @@ typedef struct sngisdn_span_data {
 	uint8_t			facility_ie_decode;
 	uint8_t			facility;
 	int8_t			facility_timeout;
+	uint8_t			att_remove_dtmf;
+	int32_t			transfer_timeout;
 	uint8_t			num_local_numbers;
-	uint8_t 		ignore_cause_value;
+	uint8_t			ignore_cause_value;
 	uint8_t			trace_q931; /* TODO: combine with trace_flags */
 	uint8_t			trace_q921; /* TODO: combine with trace_flags */
 	uint8_t			raw_trace_q931; /* TODO: combine with trace_flags */
@@ -291,6 +324,12 @@ typedef struct ftdm_sngisdn_data {
 	sngisdn_dchan_data_t dchans[MAX_L1_LINKS+1];
 	sngisdn_span_data_t *spans[MAX_L1_LINKS+1]; /* spans are indexed by link_id */
 }ftdm_sngisdn_data_t;
+
+typedef struct ftdm2trillium
+{
+	uint8_t ftdm_val;
+	uint8_t trillium_val;
+}ftdm2trillium_t;
 
 
 /* TODO implement these 2 functions */
@@ -388,7 +427,7 @@ void sngisdn_trace_interpreted_q931(sngisdn_span_data_t *signal_data, ftdm_trace
 void sngisdn_trace_raw_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
 void sngisdn_trace_raw_q931(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len);
 
-void get_memory_info(void);
+void sngisdn_get_memory_info(void);
 
 ftdm_status_t sng_isdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt);
 ftdm_status_t sngisdn_check_free_ids(void);
@@ -426,17 +465,22 @@ ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId);
 ftdm_status_t set_restart_ind_ie(ftdm_channel_t *ftdmchan, RstInd *rstInd);
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
 ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t *data_len);
+ftdm_status_t set_user_to_user_ie(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr);
+ftdm_status_t set_cause_ie(ftdm_channel_t *ftdmchan, CauseDgn *causeDgn);
 
 
 ftdm_status_t sngisdn_add_var(sngisdn_chan_data_t *sngisdn_info, const char* var, const char* val);
 ftdm_status_t sngisdn_add_raw_data(sngisdn_chan_data_t *sngisdn_info, uint8_t* data, ftdm_size_t data_len);
 ftdm_status_t sngisdn_clear_data(sngisdn_chan_data_t *sngisdn_info);
 void sngisdn_send_signal(sngisdn_chan_data_t *sngisdn_info, ftdm_signal_event_t event_id);
-				 
+
 uint8_t sngisdn_get_infoTranCap_from_user(ftdm_bearer_cap_t bearer_capability);
 uint8_t sngisdn_get_usrInfoLyr1Prot_from_user(ftdm_user_layer1_prot_t layer1_prot);
 ftdm_bearer_cap_t sngisdn_get_infoTranCap_from_stack(uint8_t bearer_capability);
 ftdm_user_layer1_prot_t sngisdn_get_usrInfoLyr1Prot_from_stack(uint8_t layer1_prot);
+
+ftdm_status_t sngisdn_transfer(ftdm_channel_t *ftdmchan);
+ftdm_status_t sngisdn_att_transfer_process_dtmf(ftdm_channel_t *ftdmchan, const char* dtmf);
 
 static __inline__ uint32_t sngisdn_test_flag(sngisdn_chan_data_t *sngisdn_info, sngisdn_flag_t flag)
 {
@@ -471,9 +515,9 @@ ftdm_status_t sngisdn_stack_start(ftdm_span_t *span);
 ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span);
 ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span);
 
-void sngisdn_print_phy_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
-void sngisdn_print_spans(ftdm_stream_handle_t *stream);
-void sngisdn_print_span(ftdm_stream_handle_t *stream, ftdm_span_t *span);
+ftdm_status_t sngisdn_show_l1_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
+ftdm_status_t sngisdn_show_spans(ftdm_stream_handle_t *stream);
+ftdm_status_t sngisdn_show_span(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 
 #endif /* __FTMOD_SNG_ISDN_H__ */
 

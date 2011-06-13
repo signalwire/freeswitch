@@ -8,6 +8,7 @@
 #include <signal.h>
 
 #define CMD_BUFLEN 1024
+#define PROMPT_PREFIX "netborder-ss7"
 static int WARN_STOP = 0;
 
 #ifdef WIN32
@@ -839,9 +840,9 @@ static const char *basic_gets(int *cnt)
 		}
 		Sleep(20);
 	}
+#endif
 
 	return command_buf;
-#endif
 }
 #endif
 
@@ -851,17 +852,10 @@ static void print_banner(FILE *stream)
 	fprintf(stream,
 			
 
-			"            _____ ____     ____ _     ___            \n"
-			"           |  ___/ ___|   / ___| |   |_ _|           \n"
-			"           | |_  \\___ \\  | |   | |    | |            \n"
-			"           |  _|  ___) | | |___| |___ | |            \n"
-			"           |_|   |____/   \\____|_____|___|           \n"
 			"\n"
 			"*******************************************************\n"
-			"* Anthony Minessale II, Ken Rice, Michael Jerris      *\n"
-			"* FreeSWITCH (http://www.freeswitch.org)              *\n"
-			"* Paypal Donations Appreciated: paypal@freeswitch.org *\n" 
-			"* Brought to you by ClueCon http://www.cluecon.com/   *\n"
+			"* Netborder SS7 Gateway                               *\n"
+			"* Powered by FreeSWITCH (http://www.freeswitch.org)   *\n"
 			"*******************************************************\n"
 			"\n"
                         "Type /help <enter> to see a list of commands\n\n\n"
@@ -1008,13 +1002,13 @@ int main(int argc, char *argv[])
 	int rv = 0;
 
 #ifndef WIN32
-	char hfile[512] = "/etc/fs_cli_history";
-	char cfile[512] = "/etc/fs_cli.conf";
-	char dft_cfile[512] = "/etc/fs_cli.conf";
+	char hfile[512] = "/etc/nbess7_cli_history";
+	char cfile[512] = "/etc/nbess7_cli.conf";
+	char dft_cfile[512] = "/etc/nbess7_cli.conf";
 #else
-	char hfile[512] = "fs_cli_history";
-	char cfile[512] = "fs_cli.conf";
-	char dft_cfile[512] = "fs_cli.conf";
+	char hfile[512] = "nbess7_cli_history";
+	char cfile[512] = "nbess7_cli.conf";
+	char dft_cfile[512] = "nbess7_cli.conf";
 #endif
 	char *home = getenv("HOME");
 	/* Vars for optargs */
@@ -1055,13 +1049,13 @@ int main(int argc, char *argv[])
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
 	strncpy(internal_profile.name, "internal", sizeof(internal_profile.name));
-	internal_profile.port = 8021;
+	internal_profile.port = 8821;
 	set_fn_keys(&internal_profile);
 
 
 	if (home) {
-		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
-		snprintf(cfile, sizeof(cfile), "%s/.fs_cli_conf", home);
+		snprintf(hfile, sizeof(hfile), "%s/.nbess7_cli_history", home);
+		snprintf(cfile, sizeof(cfile), "%s/.nbess7_cli_conf", home);
 	}
 	
 	signal(SIGINT, handle_SIGINT);
@@ -1157,7 +1151,7 @@ int main(int argc, char *argv[])
 				esl_set_string(profiles[pcount].name, cur_cat);
 				esl_set_string(profiles[pcount].host, "localhost");
 				esl_set_string(profiles[pcount].pass, "ClueCon");
-				profiles[pcount].port = 8021;
+				profiles[pcount].port = 8821;
 				set_fn_keys(&profiles[pcount]);
 				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[pcount].name);
 				pcount++;
@@ -1236,13 +1230,13 @@ int main(int argc, char *argv[])
 	esl_log(ESL_LOG_DEBUG, "Using profile %s [%s]\n", profile->name, profile->host);
 	
 	if (argv_host) {
-		if (argv_port && profile->port != 8021) {
-			snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s:%u@%s> ", profile->host, profile->port, profile->name);
+		if (argv_port && profile->port != 8821) {
+			snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s:%u@%s> ", profile->host, profile->port, profile->name);
 		} else {
-			snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s@%s> ", profile->host, profile->name);
+			snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s@%s> ", profile->host, profile->name);
 		}
 	} else {
-		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
+		snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s> ", profile->name);
 	}
 
  connect:
@@ -1374,7 +1368,7 @@ int main(int argc, char *argv[])
 
 	print_banner(stdout);
 
-	esl_log(ESL_LOG_INFO, "FS CLI Ready.\nenter /help for a list of commands.\n");
+	esl_log(ESL_LOG_INFO, "Netborder SS7 CLI Ready.\nenter /help for a list of commands.\n");
 	printf("%s\n", handle.last_sr_reply);
 
 	while (running > 0) {

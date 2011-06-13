@@ -106,7 +106,10 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-
 
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
+if ENABLE_SRTP
+CORE_CFLAGS += -DENABLE_SRTP
 CORE_LIBS += libs/srtp/libsrtp.la
+endif
 
 MOD_LINK      = $(switch_srcdir)/libfreeswitch.la
 CLEANFILES    = src/include/switch_version.h src/include/switch_swigable_cpp.h

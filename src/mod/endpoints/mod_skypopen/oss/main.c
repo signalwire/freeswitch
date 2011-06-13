@@ -43,12 +43,13 @@
 
 #include "skypopen.h"		/* local definitions */
 
+
 /*
  * Our parameters which can be set at load time.
  */
 
 int skypopen_major =   SKYPOPEN_MAJOR;
-int skypopen_minor =   3;
+int skypopen_minor =   SKYPOPEN_MINOR;
 int skypopen_nr_devs = SKYPOPEN_NR_DEVS;	/* number of bare skypopen devices */
 
 module_param(skypopen_major, int, S_IRUGO);
@@ -61,9 +62,6 @@ MODULE_LICENSE("Dual BSD/GPL");
 static struct skypopen_dev *skypopen_devices;	/* allocated in skypopen_init_module */
 
 static int unload = 0;
-#ifdef CENTOS
-#define HRTIMER_MODE_REL HRTIMER_REL
-#endif// CENTOS
 
 #ifndef WANT_HRTIMER
 void my_timer_callback_inq( unsigned long data )
@@ -84,7 +82,7 @@ void my_timer_callback_outq( unsigned long data )
 }
 #else// WANT_HRTIMER
 
-#ifndef CENTOS
+#ifndef CENTOS_5
 static enum hrtimer_restart my_hrtimer_callback_inq( struct hrtimer *timer_inq )
 {
 	struct skypopen_dev *dev = container_of(timer_inq, struct skypopen_dev, timer_inq);
@@ -113,7 +111,7 @@ static enum hrtimer_restart my_hrtimer_callback_outq( struct hrtimer *timer_outq
 
 	return HRTIMER_RESTART;
 }
-#else// CENTOS
+#else// CENTOS_5
 static int my_hrtimer_callback_inq( struct hrtimer *timer_inq )
 {
 	struct skypopen_dev *dev = container_of(timer_inq, struct skypopen_dev, timer_inq);
@@ -138,7 +136,7 @@ static int my_hrtimer_callback_outq( struct hrtimer *timer_outq )
 
 	return HRTIMER_RESTART;
 }
-#endif// CENTOS
+#endif// CENTOS_5
 #endif// WANT_HRTIMER
 
 /* The clone-specific data structure includes a key field */
@@ -159,10 +157,6 @@ static struct skypopen_dev *skypopen_c_lookfor_device(dev_t key)
 {
 	struct skypopen_listitem *lptr;
 #ifdef WANT_HRTIMER
-#if 0
-	ktime_t ktime_inq;
-	ktime_t ktime_outq;
-#endif //0
 #endif// WANT_HRTIMER
 
 	list_for_each_entry(lptr, &skypopen_c_list, list) {
@@ -181,6 +175,7 @@ static struct skypopen_dev *skypopen_c_lookfor_device(dev_t key)
 
 	init_waitqueue_head(&lptr->device.inq);
 	init_waitqueue_head(&lptr->device.outq);
+
 #ifndef WANT_HRTIMER
 	setup_timer( &lptr->device.timer_inq, my_timer_callback_inq, (long int)lptr );
 	setup_timer( &lptr->device.timer_outq, my_timer_callback_outq, (long int)lptr );
@@ -188,19 +183,6 @@ static struct skypopen_dev *skypopen_c_lookfor_device(dev_t key)
 	mod_timer( &lptr->device.timer_inq, jiffies + msecs_to_jiffies(SKYPOPEN_SLEEP) );
 	printk( "Starting skypopen OSS driver write timer (%dms) skype client:(%d)\n", SKYPOPEN_SLEEP, current->tgid );
 	mod_timer( &lptr->device.timer_outq, jiffies + msecs_to_jiffies(SKYPOPEN_SLEEP) );
-#else// WANT_HRTIMER
-#if 0
-	ktime_inq = ktime_set( 0, SKYPOPEN_SLEEP * 1000000);
-	hrtimer_init( &lptr->device.timer_inq, CLOCK_MONOTONIC, HRTIMER_MODE_REL );
-	lptr->device.timer_inq.function = &my_hrtimer_callback_inq;
-	hrtimer_start( &lptr->device.timer_inq, ktime_inq, HRTIMER_MODE_REL );
-
-	ktime_outq = ktime_set( 0, SKYPOPEN_SLEEP * 1000000);
-	hrtimer_init( &lptr->device.timer_outq, CLOCK_MONOTONIC, HRTIMER_MODE_REL );
-	lptr->device.timer_outq.function = &my_hrtimer_callback_outq;
-	hrtimer_start( &lptr->device.timer_outq, ktime_outq, HRTIMER_MODE_REL );
-#endif
-
 #endif// WANT_HRTIMER
 
 	/* place it in the list */
@@ -249,14 +231,12 @@ static ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
 		loff_t *f_pos)
 {
 	DEFINE_WAIT(wait);
-        size_t written;
 	struct skypopen_dev *dev = filp->private_data;
 
 	if(unload)
 		return -1;
 
 #ifdef WANT_HRTIMER
-#if 1
 	if(dev->timer_inq_started == 0){
 		ktime_t ktime_inq;
 
@@ -266,39 +246,13 @@ static ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
 		hrtimer_start( &dev->timer_inq, ktime_inq, HRTIMER_MODE_REL );
 		dev->timer_inq_started = 1;
 	}
-#endif
 #endif// WANT_HRTIMER
-
 
 	//printk("READ\n");
 	prepare_to_wait(&dev->inq, &wait, TASK_INTERRUPTIBLE);
 	schedule();
 	finish_wait(&dev->inq, &wait);
-
-        if (!count)
-                return 0;
-
-        if (!access_ok(VERIFY_WRITE, buf, count))
-                return -EFAULT;
-
-        written = 0;
-        while (count) {
-                unsigned long unwritten;
-                size_t chunk = count;
-
-                if (chunk > PAGE_SIZE)
-                        chunk = PAGE_SIZE;      /* Just for latency reasons */
-                unwritten = __clear_user(buf, chunk);
-                written += chunk - unwritten;
-                if (unwritten)
-                        break;
-                if (signal_pending(current))
-                        return written ? written : -ERESTARTSYS;
-                buf += chunk;
-                count -= chunk;
-                cond_resched();
-        }
-        return written ? written : -EFAULT;
+	return count;
 }
 
 static ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t count,
@@ -311,7 +265,6 @@ static ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t 
 		return -1;
 
 #ifdef WANT_HRTIMER
-#if 1
 	if(dev->timer_outq_started == 0){
 		ktime_t ktime_outq;
 
@@ -321,9 +274,7 @@ static ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t 
 		hrtimer_start( &dev->timer_outq, ktime_outq, HRTIMER_MODE_REL );
 		dev->timer_outq_started = 1;
 	}
-#endif
 #endif// WANT_HRTIMER
-
 
 	//printk("WRITE\n");
 	prepare_to_wait(&dev->outq, &wait, TASK_INTERRUPTIBLE);
@@ -448,6 +399,7 @@ int skypopen_init_module(void)
 	dev_t dev = 0;
 
 	printk("skypopen OSS driver loading (www.freeswitch.org)\n");
+
 	/*
 	 * Get a range of minor numbers to work with, asking for a dynamic
 	 * major unless directed otherwise at load time.

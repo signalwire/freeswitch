@@ -532,9 +532,9 @@ move_along:
 	/**************************************************************************/
 	default:
 		if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
-			SS7_ERROR("Rx %s on circuit that is not a voice CIC (%d)\n", 
+			ftdm_log(FTDM_LOG_DEBUG, "Rx %s on circuit that is not a voice CIC (%d) (circuit:%d)\n",
 						DECODE_LCC_EVENT(evntType),
-						g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic);
+						g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic, circuit);
 			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 			return;
 		}

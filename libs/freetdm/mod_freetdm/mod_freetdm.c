@@ -67,7 +67,8 @@ typedef enum {
 	TFLAG_CODEC = (1 << 2),
 	TFLAG_BREAK = (1 << 3),
 	TFLAG_HOLD = (1 << 4),
-	TFLAG_DEAD = (1 << 5)
+	TFLAG_DEAD = (1 << 5),
+	TFLAG_TRANSFER = (1 << 6),
 } TFLAGS;
 
 static struct {
@@ -88,6 +89,8 @@ static struct {
 	switch_hash_t *ss7_configs;
 	int sip_headers;
 	uint8_t crash_on_assert;
+	uint8_t fail_on_error;
+	uint8_t config_error;
 } globals;
 
 /* private data attached to each fs session */
@@ -130,6 +133,10 @@ struct span_config {
 	int limit_calls;
 	int limit_seconds;
 	limit_reset_event_t limit_reset_event;
+	/* digital codec and digital sampling rate are used to configure the codec
+	 * when bearer capability is set to unrestricted digital */
+	const char *digital_codec;
+	int digital_sampling_rate;
 	chan_pvt_t pvts[FTDM_MAX_CHANNELS_SPAN];
 };
 
@@ -294,13 +301,11 @@ static void cycle_foreground(ftdm_channel_t *ftdmchan, int flash, const char *bc
 	}
 }
 
-
-
-
-static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, ftdm_channel_t *ftdmchan)
+static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, ftdm_channel_t *ftdmchan, ftdm_caller_data_t *caller_data)
 {
 	const char *dname = NULL;
 	uint32_t interval = 0, srate = 8000;
+	uint32_t span_id;
 	ftdm_codec_t codec;
 
 	tech_pvt->ftdmchan = ftdmchan;
@@ -319,6 +324,16 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	if (FTDM_SUCCESS != ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_INTERVAL, &interval)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to retrieve channel interval.\n");
 		return SWITCH_STATUS_GENERR;
+	}
+
+	span_id = ftdm_channel_get_span_id(ftdmchan);
+	if (caller_data->bearer_capability == FTDM_BEARER_CAP_UNRESTRICTED
+	    && SPAN_CONFIG[span_id].digital_codec) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initializing digital call with codec %s at %dhz.\n",
+				SPAN_CONFIG[span_id].digital_codec, SPAN_CONFIG[span_id].digital_sampling_rate);
+		dname = SPAN_CONFIG[span_id].digital_codec;
+		srate = SPAN_CONFIG[span_id].digital_sampling_rate;
+		goto init_codecs;
 	}
 
 	if (FTDM_SUCCESS != ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_CODEC, &codec)) {
@@ -349,6 +364,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		}
 	}
 
+init_codecs:
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   dname,
@@ -720,7 +736,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	ftdm_size_t len;
 	unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 	ftdm_wait_flag_t wflags = FTDM_WRITE;
-	ftdm_status_t status;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -755,7 +770,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 
 	wflags = FTDM_WRITE;	
-	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 10);
+	ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 10);
 	
 	if (!(wflags & FTDM_WRITE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write not ready)\n");
@@ -868,10 +883,30 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 			ftdm_channel_call_answer(tech_pvt->ftdmchan);
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_REDIRECT:
+	case SWITCH_MESSAGE_INDICATE_DEFLECT:
+		{
+			ftdm_usrmsg_t usrmsg;
+			const char *val = NULL;
+
+			memset(&usrmsg, 0, sizeof(usrmsg));
+
+			if ((val = switch_channel_get_variable(channel, "freetdm_transfer_data"))) {
+				ftdm_usrmsg_add_var(&usrmsg, "transfer_data", val);
+			}
+
+			switch_set_flag(tech_pvt, TFLAG_TRANSFER);
+			if (ftdm_channel_call_transfer_ex(tech_pvt->ftdmchan, msg->string_arg, &usrmsg) != FTDM_SUCCESS) {
+				switch_clear_flag(tech_pvt, TFLAG_TRANSFER);
+			}
+			while (switch_test_flag(tech_pvt, TFLAG_TRANSFER)) {
+				switch_yield(100000);
+			}
+		}
 	default:
 		break;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1094,7 +1129,7 @@ static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t 
 	span_id = ftdm_channel_get_span_id(fchan);
 	chan_id = ftdm_channel_get_id(fchan);
 
-	tech_init(hdata->tech_pvt, hdata->new_session, fchan);
+	tech_init(hdata->tech_pvt, hdata->new_session, fchan, caller_data);
 
 	snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", span_id, chan_id, caller_data->dnis.digits);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
@@ -1557,7 +1592,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t));
 	assert(tech_pvt != NULL);
 	channel = switch_core_session_get_channel(session);
-	if (tech_init(tech_pvt, session, sigmsg->channel) != SWITCH_STATUS_SUCCESS) {
+	if (tech_init(tech_pvt, session, sigmsg->channel, channel_caller_data) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Initilization Error!\n");
 		switch_core_session_destroy(&session);
 		return FTDM_FAIL;
@@ -1735,11 +1770,13 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 
 static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 {
-	switch_event_t *event = NULL;
-	ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
 	uint32_t chanid, spanid;
+	switch_event_t *event = NULL;	
+	ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
+
 	chanid = ftdm_channel_get_id(sigmsg->channel);
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
+
 	switch (sigmsg->event_id) {
 
 	case FTDM_SIGEVENT_ALARM_CLEAR:
@@ -1774,14 +1811,44 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 			}
 			return FTDM_SUCCESS;
 		}
+	case FTDM_SIGEVENT_TRANSFER_COMPLETED:
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			private_t *tech_pvt = NULL;
 
-	case FTDM_SIGEVENT_RELEASED: 
+			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				tech_pvt = switch_core_session_get_private(session);
+
+				switch_clear_flag_locked(tech_pvt, TFLAG_TRANSFER);
+				switch_channel_set_variable(channel, "freetdm_transfer_response", ftdm_transfer_response2str(sigmsg->ev_data.transfer_completed.response));
+				switch_core_session_rwunlock(session);
+			}
+			return FTDM_SUCCESS;
+		}
+		break;
+	case FTDM_SIGEVENT_RELEASED:
 	case FTDM_SIGEVENT_INDICATION_COMPLETED:
 	case FTDM_SIGEVENT_DIALING:
-		{ 
+		{
 			/* Swallow these events */
 			return FTDM_BREAK;
-		} 
+		}
+		break;
+	case FTDM_SIGEVENT_STOP:
+	case FTDM_SIGEVENT_RESTART:
+		{
+			switch_core_session_t *session = NULL;
+			private_t *tech_pvt = NULL;
+			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+				tech_pvt = switch_core_session_get_private(session);
+
+				switch_clear_flag_locked(tech_pvt, TFLAG_TRANSFER);
+				switch_core_session_rwunlock(session);
+				return FTDM_SUCCESS;
+			}
+		}
 		break;
 	default:
 		return FTDM_SUCCESS;
@@ -2336,6 +2403,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		break;
 	case FTDM_SIGEVENT_PROCEED:
 	case FTDM_SIGEVENT_FACILITY:
+	case FTDM_SIGEVENT_TRANSFER_COMPLETED:
 		/* FS does not have handlers for these messages, so ignore them for now */
 		break;
 	default:
@@ -2415,6 +2483,10 @@ static uint32_t enable_analog_option(const char *str, uint32_t current_options)
 	
 }
 
+#define CONFIG_ERROR(...) do { \
+		ftdm_log(FTDM_LOG_ERROR, __VA_ARGS__); \
+		globals.config_error = 1; \
+	} while(0)
 /* create ftdm_conf_node_t tree based on a fixed pattern XML configuration list 
  * last 2 args are for limited aka dumb recursivity
  * */
@@ -2607,7 +2679,7 @@ static int add_profile_parameters(switch_xml_t cfg, const char *profname, ftdm_c
 
 	profnode = switch_xml_child(cfg, "config_profiles");
 	if (!profnode) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot find profile '%s', there is no 'config_profiles' XML section\n", profname);
+		CONFIG_ERROR("cannot find profile '%s', there is no 'config_profiles' XML section\n", profname);
 		return 0;
 	}
 
@@ -2623,7 +2695,7 @@ static int add_profile_parameters(switch_xml_t cfg, const char *profname, ftdm_c
 	}
 
 	if (!profile) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to find profile '%s'\n", profname);
+		CONFIG_ERROR("failed to find profile '%s'\n", profname);
 		return 0;
 	}
 
@@ -2658,7 +2730,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 		unsigned paramindex = 0;
 
 		if (!name && !id) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sangoma isdn span missing required attribute 'id' or 'name', skipping ...\n");
+			CONFIG_ERROR("sangoma isdn span missing required attribute 'id' or 'name', skipping ...\n");
 			continue;
 		}
 
@@ -2676,7 +2748,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 		}
 
 		if (zstatus != FTDM_SUCCESS) {
-			ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+			CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 			continue;
 		}
 		
@@ -2697,13 +2769,14 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 		/* some defaults first */
 		SPAN_CONFIG[span_id].limit_backend = "hash";
 		SPAN_CONFIG[span_id].limit_reset_event = FTDM_LIMIT_RESET_ON_TIMEOUT;
+		SPAN_CONFIG[span_id].digital_sampling_rate = 8000;
 
 		for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
+				CONFIG_ERROR("Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
 				break;
 			}
 
@@ -2711,6 +2784,21 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 				context = val;
 			} else if (!strcasecmp(var, "dialplan")) {
 				dialplan = val;
+			} else if (!strcasecmp(var, "unrestricted-digital-codec")) {
+				//switch_core_strdup(pool, val);
+				const switch_codec_implementation_t *codec = NULL;
+				int num_codecs;
+				num_codecs = switch_loadable_module_get_codecs_sorted(&codec, 1, &val, 1);
+				if (num_codecs != 1 || !codec) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+					"Failed finding codec %s for unrestricted digital calls\n", val);
+				} else {
+					SPAN_CONFIG[span_id].digital_codec = switch_core_strdup(module_pool, codec->iananame);
+					SPAN_CONFIG[span_id].digital_sampling_rate = codec->samples_per_second;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"Unrestricted digital codec is %s at %dhz for span %d\n", 
+						SPAN_CONFIG[span_id].digital_codec, SPAN_CONFIG[span_id].digital_sampling_rate, span_id);
+				}
 			} else if (!strcasecmp(var, "call_limit_backend")) {
 				SPAN_CONFIG[span_id].limit_backend = val;
 				ftdm_log(FTDM_LOG_DEBUG, "Using limit backend %s for span %d\n", SPAN_CONFIG[span_id].limit_backend, span_id);
@@ -2718,10 +2806,10 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 				int calls;
 				int seconds;
 				if (sscanf(val, "%d/%d", &calls, &seconds) != 2) {
-					ftdm_log(FTDM_LOG_ERROR, "Invalid %s parameter, format example: 3/1 for 3 calls per second\n", var);
+					CONFIG_ERROR("Invalid %s parameter, format example: 3/1 for 3 calls per second\n", var);
 				} else {
 					if (calls < 1 || seconds < 1) {
-						ftdm_log(FTDM_LOG_ERROR, "Invalid %s parameter value, minimum call limit must be 1 per second\n", var);
+						CONFIG_ERROR("Invalid %s parameter value, minimum call limit must be 1 per second\n", var);
 					} else {
 						SPAN_CONFIG[span_id].limit_calls = calls;
 						SPAN_CONFIG[span_id].limit_seconds = seconds;
@@ -2731,7 +2819,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 				if (!strcasecmp(val, "answer")) {
 					SPAN_CONFIG[span_id].limit_reset_event = FTDM_LIMIT_RESET_ON_ANSWER;
 				} else {
-					ftdm_log(FTDM_LOG_ERROR, "Invalid %s parameter value, only accepted event is 'answer'\n", var);
+					CONFIG_ERROR("Invalid %s parameter value, only accepted event is 'answer'\n", var);
 				}
 			} else {
 				spanparameters[paramindex].var = var;
@@ -2744,7 +2832,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 						  "sangoma_isdn", 
 						  on_clear_channel_signal,
 						  spanparameters) != FTDM_SUCCESS) {
-			ftdm_log(FTDM_LOG_ERROR, "Error configuring Sangoma ISDN FreeTDM span %d\n", span_id);
+			CONFIG_ERROR("Error configuring Sangoma ISDN FreeTDM span %d\n", span_id);
 			continue;
 		}
 		SPAN_CONFIG[span_id].span = span;
@@ -2761,15 +2849,11 @@ static switch_status_t load_config(void)
 	const char *cf = "freetdm.conf";
 	switch_xml_t cfg, xml, settings, param, spans, myspan;
 	ftdm_conf_node_t *ss7confnode = NULL;
-	ftdm_span_t *boost_spans[FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN];
-	ftdm_span_t *boost_span = NULL;
-	unsigned boosti = 0;
 	unsigned int i = 0;
 	ftdm_channel_t *fchan = NULL;
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *curr = NULL;
 
-	memset(boost_spans, 0, sizeof(boost_spans));
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -2788,6 +2872,8 @@ static switch_status_t load_config(void)
 				switch_set_string(globals.hold_music, val);
 			} else if (!strcasecmp(var, "crash-on-assert")) {
 				globals.crash_on_assert = switch_true(val);
+			} else if (!strcasecmp(var, "fail-on-error")) {
+				globals.fail_on_error = switch_true(val);
 			} else if (!strcasecmp(var, "sip-headers")) {
 				globals.sip_headers = switch_true(val);
 			} else if (!strcasecmp(var, "enable-analog-option")) {
@@ -2818,11 +2904,11 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0;
 			unsigned paramindex = 0;
 			if (!name && !id) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ss7 span missing required attribute 'id' or 'name', skipping ...\n");
+				CONFIG_ERROR("ss7 span missing required attribute 'id' or 'name', skipping ...\n");
 				continue;
 			}
 			if (!configname) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ss7 span missing required attribute, skipping ...\n");
+				CONFIG_ERROR("ss7 span missing required attribute, skipping ...\n");
 				continue;
 			}
 			if (name) {
@@ -2839,7 +2925,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -2849,7 +2935,7 @@ static switch_status_t load_config(void)
 
 			ss7confnode = get_ss7_config_node(cfg, configname);
 			if (!ss7confnode) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding ss7config '%s' for FreeTDM span id: %s\n", configname, switch_str_nil(id));
+				CONFIG_ERROR("Error finding ss7config '%s' for FreeTDM span id: %s\n", configname, switch_str_nil(id));
 				continue;
 			}
 
@@ -2863,7 +2949,7 @@ static switch_status_t load_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
+					CONFIG_ERROR("Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
 					break;
 				}
 
@@ -2882,7 +2968,7 @@ static switch_status_t load_config(void)
 						          "sangoma_ss7", 
 						          on_clear_channel_signal,
 							  spanparameters) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error configuring ss7 FreeTDM span %d\n", span_id);
+				CONFIG_ERROR("Error configuring ss7 FreeTDM span %d\n", span_id);
 				continue;
 			}
 			SPAN_CONFIG[span_id].span = span;
@@ -2933,7 +3019,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -2967,10 +3053,10 @@ static switch_status_t load_config(void)
 					int calls;
 					int seconds;
 					if (sscanf(val, "%d/%d", &calls, &seconds) != 2) {
-						ftdm_log(FTDM_LOG_ERROR, "Invalid %s parameter, format example: 3/1 for 3 calls per second\n", var);
+						CONFIG_ERROR("Invalid %s parameter, format example: 3/1 for 3 calls per second\n", var);
 					} else {
 						if (calls < 1 || seconds < 1) {
-							ftdm_log(FTDM_LOG_ERROR, "Invalid %s parameter value, minimum call limit must be 1 per second\n", var);
+							CONFIG_ERROR("Invalid %s parameter value, minimum call limit must be 1 per second\n", var);
 						} else {
 							SPAN_CONFIG[span_id].limit_calls = calls;
 							SPAN_CONFIG[span_id].limit_seconds = seconds;
@@ -2980,7 +3066,7 @@ static switch_status_t load_config(void)
 					if (!strcasecmp(val, "answer")) {
 						SPAN_CONFIG[span_id].limit_reset_event = FTDM_LIMIT_RESET_ON_ANSWER;
 					} else {
-						ftdm_log(FTDM_LOG_ERROR, "Invalid %s parameter value, only accepted event is 'answer'\n", var);
+						CONFIG_ERROR("Invalid %s parameter value, only accepted event is 'answer'\n", var);
 					}
 				} else if (!strcasecmp(var, "dial-regex")) {
 					dial_regex = val;
@@ -3008,7 +3094,7 @@ static switch_status_t load_config(void)
 			}
 				
 			if (!id && !name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
+				CONFIG_ERROR("span missing required param 'id'\n");
 				continue;
 			}
 			
@@ -3038,7 +3124,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -3058,7 +3144,7 @@ static switch_status_t load_config(void)
 								   "callwaiting", &callwaiting,
 								   "wait_dialtone_timeout", &dialtone_timeout,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM analog span %s\n", ftdm_span_get_name(span));
+				CONFIG_ERROR("Error configuring FreeTDM analog span %s\n", ftdm_span_get_name(span));
 				continue;
 			}
 
@@ -3134,7 +3220,7 @@ static switch_status_t load_config(void)
 			}
 				
 			if (!id && !name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
+				CONFIG_ERROR("span missing required param 'id'\n");
 				continue;
 			}
 
@@ -3166,7 +3252,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -3180,7 +3266,7 @@ static switch_status_t load_config(void)
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d\n", span_id);
+				CONFIG_ERROR("Error starting FreeTDM span %d\n", span_id);
 				continue;
 			}
 
@@ -3217,7 +3303,7 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0;
 
 			if (!name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required attribute 'name'\n");
+				CONFIG_ERROR("span missing required attribute 'name'\n");
 				continue;
 			}
 
@@ -3228,7 +3314,7 @@ static switch_status_t load_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-					ftdm_log(FTDM_LOG_ERROR, "Too many parameters for pri span '%s', ignoring everything after '%s'\n", name, var);
+					CONFIG_ERROR("Too many parameters for pri span '%s', ignoring everything after '%s'\n", name, var);
 					break;
 				}
 
@@ -3250,13 +3336,13 @@ static switch_status_t load_config(void)
 
 			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span %s\n", name);
+				CONFIG_ERROR("Error finding FreeTDM span %s\n", name);
 				continue;
 			}
 
 			span_id = ftdm_span_get_id(span);
 			if (ftdm_configure_span_signaling(span, "isdn", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM span %s\n", name);
+				CONFIG_ERROR("Error configuring FreeTDM span %s\n", name);
 				continue;
 			}
 
@@ -3283,7 +3369,7 @@ static switch_status_t load_config(void)
 			int span_id = 0;
 
 			if (!name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required attribute 'name'\n");
+				CONFIG_ERROR("span missing required attribute 'name'\n");
 				continue;
 			}
 
@@ -3294,7 +3380,7 @@ static switch_status_t load_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-					ftdm_log(FTDM_LOG_ERROR, "Too many parameters for pritap span '%s', ignoring everything after '%s'\n", name, var);
+					CONFIG_ERROR("Too many parameters for pritap span '%s', ignoring everything after '%s'\n", name, var);
 					break;
 				}
 
@@ -3311,13 +3397,13 @@ static switch_status_t load_config(void)
 	
 			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span %s\n", name);
+				CONFIG_ERROR("Error finding FreeTDM span %s\n", name);
 				continue;
 			}
 
 			span_id = ftdm_span_get_id(span);
 			if (ftdm_configure_span_signaling(span, "pritap", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM span %s\n", name);
+				CONFIG_ERROR("Error configuring FreeTDM span %s\n", name);
 				continue;
 			}
 
@@ -3343,7 +3429,7 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0;
 
 			if (!name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required attribute 'name'\n");
+				CONFIG_ERROR("span missing required attribute 'name'\n");
 				continue;
 			}
 
@@ -3354,7 +3440,7 @@ static switch_status_t load_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-					ftdm_log(FTDM_LOG_ERROR, "Too many parameters for libpri span, ignoring everything after '%s'\n", var);
+					CONFIG_ERROR("Too many parameters for libpri span, ignoring everything after '%s'\n", var);
 					break;
 				}
 
@@ -3376,13 +3462,13 @@ static switch_status_t load_config(void)
 
 			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span %s\n", name);
+				CONFIG_ERROR("Error finding FreeTDM span %s\n", name);
 				continue;
 			}
 
 			span_id = ftdm_span_get_id(span);
 			if (ftdm_configure_span_signaling(span, "libpri", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM span %s\n", name);
+				CONFIG_ERROR("Error configuring FreeTDM span %s\n", name);
 				continue;
 			}
 
@@ -3392,86 +3478,6 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span_id].type, "isdn", sizeof(SPAN_CONFIG[span_id].type));
 
 			ftdm_span_start(span);
-		}
-	}
-
-	if ((spans = switch_xml_child(cfg, "boost_spans"))) {
-		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
-			char *id = (char *) switch_xml_attr(myspan, "id");
-			char *name = (char *) switch_xml_attr(myspan, "name");
-			char *sigmod = (char *) switch_xml_attr(myspan, "sigmod");
-			ftdm_status_t zstatus = FTDM_FAIL;
-			const char *context = "default";
-			const char *dialplan = "XML";
-			uint32_t span_id = 0;
-			ftdm_span_t *span = NULL;
-			ftdm_conf_parameter_t spanparameters[30];
-			unsigned paramindex = 0;
-			
-			if (!id && !name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "boost span requires an id or name as attribute: <span id=ftid|name=ftname>\n");
-				continue;
-			}
-			memset(spanparameters, 0, sizeof(spanparameters));
-			if (sigmod) {
-				spanparameters[paramindex].var = "sigmod";
-				spanparameters[paramindex].val = sigmod;
-				paramindex++;
-			}
-
-			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
-				char *var = (char *) switch_xml_attr_soft(param, "name");
-				char *val = (char *) switch_xml_attr_soft(param, "value");
-
-				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many parameters for boost span, ignoring any parameter after %s\n", var);
-					break;
-				}
-
-				if (!strcasecmp(var, "context")) {
-					context = val;
-				} else if (!strcasecmp(var, "dialplan")) {
-					dialplan = val;
-				} else {
-					spanparameters[paramindex].var = var;
-					spanparameters[paramindex].val = val;
-					paramindex++;
-				}
-			}
-
-			if (name) {
-				zstatus = ftdm_span_find_by_name(name, &span);
-			} else {
-				if (switch_is_number(id)) {
-					span_id = atoi(id);
-					zstatus = ftdm_span_find(span_id, &span);
-				}
-
-				if (zstatus != FTDM_SUCCESS) {
-					zstatus = ftdm_span_find_by_name(id, &span);
-				}
-			}
-
-			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
-				continue;
-			}
-			
-			if (!span_id) {
-				span_id = ftdm_span_get_id(span);
-			}
-
-			if (ftdm_configure_span_signaling(span, "sangoma_boost", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM span %d error: %s\n", span_id, ftdm_span_get_last_error(span));
-				continue;
-			}
-
-			SPAN_CONFIG[span_id].span = span;
-			switch_copy_string(SPAN_CONFIG[span_id].context, context, sizeof(SPAN_CONFIG[span_id].context));
-			switch_copy_string(SPAN_CONFIG[span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span_id].dialplan));
-
-			switch_copy_string(SPAN_CONFIG[span_id].type, "Sangoma (boost)", sizeof(SPAN_CONFIG[span_id].type));
-			boost_spans[boosti++] = span;
 		}
 	}
 
@@ -3493,7 +3499,7 @@ static switch_status_t load_config(void)
 			unsigned paramindex = 0;
 
 			if (!name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "'name' attribute required for R2 spans!\n");
+				CONFIG_ERROR("'name' attribute required for R2 spans!\n");
 				continue;
 			}
 
@@ -3528,14 +3534,13 @@ static switch_status_t load_config(void)
 
 			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error finding FreeTDM R2 Span '%s'\n", name);
+				CONFIG_ERROR("Error finding FreeTDM R2 Span '%s'\n", name);
 				continue;
 			}
 			span_id = ftdm_span_get_id(span);
 
 			if (ftdm_configure_span_signaling(span, "r2", on_r2_signal, spanparameters) != FTDM_SUCCESS) {
-				ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM R2 span %s, error: %s\n", 
-				name, ftdm_span_get_last_error(span));
+				CONFIG_ERROR("Error configuring FreeTDM R2 span %s, error: %s\n", name, ftdm_span_get_last_error(span));
 				continue;
 			}
 
@@ -3553,21 +3558,9 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span_id].type, "R2", sizeof(SPAN_CONFIG[span_id].type));
 
 			if (ftdm_span_start(span) == FTDM_FAIL) {
-				ftdm_log(FTDM_LOG_ERROR, "Error starting FreeTDM R2 span %s, error: %s\n", name, ftdm_span_get_last_error(span));
+				CONFIG_ERROR("Error starting FreeTDM R2 span %s, error: %s\n", name, ftdm_span_get_last_error(span));
 				continue;
 			}
-		}
-	}
-
-	/* start all boost spans now that we're done configuring. Unfortunately at this point boost modules have the limitation
-	 * of needing all spans to be configured before starting them */
-	for (i=0 ; i < boosti; i++) {
-		boost_span = boost_spans[i];
-		ftdm_log(FTDM_LOG_DEBUG, "Starting boost span %d\n", ftdm_span_get_id(boost_span));
-		if (ftdm_span_start(boost_span) == FTDM_FAIL) {
-			ftdm_log(FTDM_LOG_ERROR, "Error starting boost FreeTDM span %d, error: %s\n",
-					ftdm_span_get_id(boost_span), ftdm_span_get_last_error(boost_span));
-			continue;
 		}
 	}
 
@@ -3577,6 +3570,11 @@ static switch_status_t load_config(void)
 	}
 
 	switch_xml_free(xml);
+
+	if (globals.fail_on_error && globals.config_error) {
+		ftdm_log(FTDM_LOG_ERROR, "Refusing to load module with errors\n");
+		return SWITCH_STATUS_TERM;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -3632,6 +3630,12 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   "physical_span_id: %u\n"
 						   "physical_chan_id: %u\n"
 						   "physical_status: %s\n"
+						   "physical_status_red: %d\n"
+						   "physical_status_yellow: %d\n"
+						   "physical_status_rai: %d\n"
+						   "physical_status_blue: %d\n"
+						   "physical_status_ais: %d\n"
+						   "physical_status_general: %d\n"
 						   "signaling_status: %s\n"
 						   "type: %s\n"
 						   "state: %s\n"
@@ -3652,7 +3656,13 @@ void dump_chan(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *stre
 						   phspan_id,
 						   phchan_id,
 					  	   alarmflag ? "alarmed" : "ok",
-					           ftdm_signaling_status2str(sigstatus),
+					  	   (alarmflag & FTDM_ALARM_RED) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_YELLOW) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_RAI) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_BLUE) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_AIS) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_GENERAL) ? 1 : 0,
+						   ftdm_signaling_status2str(sigstatus),
 						   chan_type,
 						   state,
 						   last_state,
@@ -3708,6 +3718,12 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   "  <physical-span-id>%u</physical-span-id>\n"
 						   "  <physical-chan-id>%u</physical-chan-id>\n"
 						   "  <physical-status>%s</physical-status>\n"
+						   "  <physical-status-red>%d</physical-status-red>\n"
+						   "  <physical-status-yellow>%d</physical-status-yellow>\n"
+						   "  <physical-status-rai>%d</physical-status-rai>\n"
+						   "  <physical-status-blue>%d</physical-status-blue>\n"
+						   "  <physical-status-ais>%d</physical-status-ais>\n"
+						   "  <physical-status-general>%d</physical-status-general>\n"
 						   "  <signaling-status>%s</signaling-status>\n"
 						   "  <type>%s</type>\n"
 						   "  <state>%s</state>\n"
@@ -3728,7 +3744,13 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   phspan_id,
 						   phchan_id,
 						   alarmflag ? "alarmed" : "ok",
-					     	   ftdm_signaling_status2str(sigstatus),
+					  	   (alarmflag & FTDM_ALARM_RED) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_YELLOW) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_RAI) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_BLUE) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_AIS) ? 1 : 0,
+					  	   (alarmflag & FTDM_ALARM_GENERAL) ? 1 : 0,
+						   ftdm_signaling_status2str(sigstatus),
 						   chan_type,
 						   state,
 						   last_state,

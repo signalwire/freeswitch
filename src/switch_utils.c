@@ -1329,11 +1329,17 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 	char replace[1024] = "";
 	switch_time_t ret = 0;
 	char *pattern = "^(\\d+)-(\\d+)-(\\d+)\\s*(\\d*):{0,1}(\\d*):{0,1}(\\d*)";
+	char *pattern2 = "^(\\d{4})(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{2})";
 
 	switch_time_exp_lt(&tm, switch_micro_time_now());
 	tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
 
-	if ((proceed = switch_regex_perform(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+	if (!(proceed = switch_regex_perform(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		switch_regex_safe_free(re);
+		proceed = switch_regex_perform(in, pattern2, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+	}
+	
+	if (proceed) {
 
 		if (proceed > 1) {
 			switch_regex_copy_substring(in, ovector, proceed, 1, replace, sizeof(replace));
@@ -1365,10 +1371,14 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 			tm.tm_sec = atoi(replace);
 		}
 
+		switch_regex_safe_free(re);
+
 		switch_time_exp_gmt_get(&ret, &tm);
 		return ret;
 	}
-	/* possible else with more patterns later */
+
+	switch_regex_safe_free(re);
+
 	return ret;
 }
 

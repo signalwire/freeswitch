@@ -188,6 +188,7 @@ stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets);
 void stfu_n_call_me(stfu_instance_t *i, stfu_n_call_me_t callback, void *udata);
 void stfu_n_debug(stfu_instance_t *i, const char *name);
 int32_t stfu_n_get_drift(stfu_instance_t *i);
+int32_t stfu_n_get_most_qlen(stfu_instance_t *i);
 
 #define stfu_im_done(i) stfu_n_add_data(i, 0, NULL, 0, 0, 1)
 #define stfu_n_eat(i,t,p,d,l,tt) stfu_n_add_data(i, t, p, d, l, tt, 0)

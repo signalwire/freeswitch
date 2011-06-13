@@ -945,6 +945,8 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	*new_module = module;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module_interface->module_name);
 
+	switch_core_set_signal_handlers();
+
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -1300,7 +1302,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 				if (switch_loadable_module_load_module_ex((char *) path, (char *) val, SWITCH_FALSE, global, &err) == SWITCH_STATUS_GENERR) {
 					if (critical && switch_true(critical)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load critical module '%s', abort()\n", val);
-						abort();
+						return SWITCH_STATUS_FALSE;
 					}
 				}
 				count++;
@@ -1679,11 +1681,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	switch_mutex_lock(loadable_modules.mutex);
 
 	for (x = 0; x < preflen; x++) {
-		char *cur, *last = NULL, *next = NULL, *name, *p, buf[256];
+		char *cur, *next = NULL, *name, *p, buf[256];
 		uint32_t interval = 0, rate = 0, bit = 0;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
-		last = name = next = cur = buf;
+		name = next = cur = buf;
 
 		for (;;) {
 			if (!next) {

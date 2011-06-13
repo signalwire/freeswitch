@@ -189,6 +189,8 @@ typedef enum {
 	/* If this flag is set, then this span cannot be stopped individually, it can only be stopped
 		on freetdm unload */
 	FTDM_SPAN_NON_STOPPABLE = (1 << 13),
+	/* If this flag is set, then this span supports TRANSFER state */
+	FTDM_SPAN_USE_TRANSFER = (1 << 14),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */
@@ -206,6 +208,13 @@ typedef enum {
 	FTDM_CHANNEL_FEATURE_MF_GENERATE = (1<<10), /*!< Channel can generate R2 MF tones (read-only) */
 } ftdm_channel_feature_t;
 
+/*! \brief Channel IO pending flags */
+typedef enum {
+	FTDM_CHANNEL_IO_EVENT = (1 << 0),
+	FTDM_CHANNEL_IO_READ = (1 << 1),
+	FTDM_CHANNEL_IO_WRITE = (1 << 2),
+} ftdm_channel_io_flags_t;
+
 /*!< Channel flags. This used to be an enum but we reached the 32bit limit for enums, is safer this way */
 #define FTDM_CHANNEL_CONFIGURED    (1ULL << 0)
 #define FTDM_CHANNEL_READY         (1ULL << 1)
@@ -214,7 +223,6 @@ typedef enum {
 #define FTDM_CHANNEL_SUPRESS_DTMF  (1ULL << 4)
 #define FTDM_CHANNEL_TRANSCODE     (1ULL << 5)
 #define FTDM_CHANNEL_BUFFER        (1ULL << 6)
-#define FTDM_CHANNEL_EVENT         (1ULL << 7)
 #define FTDM_CHANNEL_INTHREAD      (1ULL << 8)
 #define FTDM_CHANNEL_WINK          (1ULL << 9)
 #define FTDM_CHANNEL_FLASH         (1ULL << 10)
@@ -249,6 +257,8 @@ typedef enum {
 #define FTDM_CHANNEL_IND_ACK_PENDING (1ULL << 34)
 /*!< There is someone blocking in the channel waiting for state completion */
 #define FTDM_CHANNEL_BLOCKING        (1ULL << 35)
+/*!< Media is digital */
+#define FTDM_CHANNEL_DIGITAL_MEDIA   (1ULL << 36)
 
 #include "ftdm_state.h"
 
@@ -329,10 +339,11 @@ typedef ftdm_status_t (*ftdm_span_start_t)(ftdm_span_t *span);
 typedef ftdm_status_t (*ftdm_span_stop_t)(ftdm_span_t *span);
 typedef ftdm_status_t (*ftdm_channel_sig_read_t)(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size);
 typedef ftdm_status_t (*ftdm_channel_sig_write_t)(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size);
+typedef ftdm_status_t (*ftdm_channel_sig_dtmf_t)(ftdm_channel_t *ftdmchan, const char *dtmf);
 
 typedef enum {
 	FTDM_ITERATOR_VARS = 1,
-	FTDM_ITERATOR_CHANS, 
+	FTDM_ITERATOR_CHANS,
 } ftdm_iterator_type_t;
 
 struct ftdm_iterator {

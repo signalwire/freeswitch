@@ -210,17 +210,14 @@ void _usage(int exitcode, switch_stream_handle_t *stream)
 switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
 
 {
-	int exitcode = 0;
 	int o_sctp = 1, o_tls_sctp = 1, o_verbatim = 1;
 	int family = 0, multiple = 0;
-	char const *dnsserver = NULL;
 	char const *string;
 	url_t *uri = NULL;
 
 	char const *host;
 	char const *port;
 	char *transport = NULL, tport[32];
-	int argc;
 	char *argv_[25] = { 0 };
 	char *mycmd = NULL;
 	char **argv;
@@ -239,7 +236,7 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 
 	mycmd = strdup(cmd);
 
-	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv_) / sizeof(argv_[0])) - 1);
+	switch_separate_string(mycmd, ' ', argv, (sizeof(argv_) / sizeof(argv_[0])) - 1);
 	argv = argv_;
 
 
@@ -321,10 +318,6 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 	if (!family)
 		dig->ip4 = 1, dig->ip6 = 2;
 
-	if (argv[1] && argv[1][0] == '@')
-		dnsserver = argv++[1] + 1;
-
-
 
 	if (!argv[1])
 		{usage(2);}
@@ -360,7 +353,6 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 
 		if (!uri || (uri->url_type != url_sip && uri->url_type != url_sips)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: invalid uri\n", string);
-			exitcode = 1;
 			continue;
 		}
 
@@ -387,7 +379,6 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 
 		if (!host_is_domain(host)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: invalid host\n", string);
-			exitcode = 1;
 			continue;
 		}
 
@@ -402,7 +393,6 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 			continue /* resolved a/aaaa */;
 
 		stream->write_function(stream, "-ERR: %s: not found\n", string);
-		exitcode = 1;
 	}
 
 	if (xml) {
