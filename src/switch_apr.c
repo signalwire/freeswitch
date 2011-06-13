@@ -403,6 +403,11 @@ SWITCH_DECLARE(switch_status_t) switch_file_open(switch_file_t ** newf, const ch
 	return apr_file_open(newf, fname, flag, perm, pool);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_filepath_set(const char *path, switch_memory_pool_t *pool)
+{
+	return apr_filepath_set(path, pool);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_file_seek(switch_file_t *thefile, switch_seek_where_t where, int64_t *offset)
 {
 	apr_status_t rv;

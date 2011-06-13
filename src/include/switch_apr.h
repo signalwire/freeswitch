@@ -854,6 +854,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
 SWITCH_DECLARE(switch_status_t) switch_file_open(switch_file_t ** newf, const char *fname, int32_t flag, switch_fileperms_t perm,
 												 switch_memory_pool_t *pool);
 
+SWITCH_DECLARE(switch_status_t) switch_filepath_set(const char *path, switch_memory_pool_t *pool);
 
 SWITCH_DECLARE(switch_status_t) switch_file_seek(switch_file_t *thefile, switch_seek_where_t where, int64_t *offset);
 
