@@ -1529,10 +1529,6 @@ SWITCH_STANDARD_API(rtmp_function)
 					}
 					switch_thread_rwlock_unlock(profile->reg_rwlock);	
 				} else {
-					stream->write_function(stream, "Profile: %s\n", profile->name);
-					stream->write_function(stream, "I/O Backend: %s\n", profile->io->name);
-					stream->write_function(stream, "Bind address: %s\n", profile->io->address);
-					stream->write_function(stream, "Active calls: %d\n", profile->calls);
                     stream->write_function(stream, "Dialplan: %s\n", profile->dialplan);
                     stream->write_function(stream, "Context: %s\n", profile->context);
 				}
