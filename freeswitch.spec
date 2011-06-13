@@ -471,7 +471,7 @@ DIRECTORIES_MODULES=""
 #
 ######################################################################################################################
 ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_loopback ../../libs/freetdm/mod_freetdm endpoints/mod_portaudio \
-                   endpoints/mod_sofia endpoints/mod_skinny endpoints/mod_skypopen"
+                   endpoints/mod_sofia endpoints/mod_skinny endpoints/mod_skypopen endpoints/mod_rtmp"
  
 ######################################################################################################################
 #
@@ -785,6 +785,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/post_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/redis.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/rss.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/rtmp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/sangoma_codec.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/shout.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/skinny.conf.xml
@@ -924,6 +925,7 @@ fi
 %{prefix}/mod/mod_portaudio_stream.so*
 %{prefix}/mod/mod_redis.so*
 %{prefix}/mod/mod_rss.so*
+%{prefix}/mod/mod_rtmp.so*
 %{prefix}/mod/mod_shout.so*
 %{prefix}/mod/mod_silk.so*
 %{prefix}/mod/mod_siren.so*
@@ -1127,6 +1129,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Jun 14 2011 - michal.bielicki@seventhsignal.de
+- added mod_rtmp
 * Fri Apr 01 2011 - michal.bielicki@seventhsignal.de
 - added hebrew language stuff
 * Wed Mar 30 2011 - michal.bielicki@seventhsignal.de
