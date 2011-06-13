@@ -1258,7 +1258,7 @@ static switch_xml_config_item_t *get_instructions(rtmp_profile_t *profile) {
 		SWITCH_FALSE,
 		0,
 		SWITCH_TRUE,
-		UINT32_MAX
+		INT32_MAX
 	};
 	switch_xml_config_item_t instructions[] = {
 		/* parameter name        type                 reloadable   pointer                         default value     options structure */
