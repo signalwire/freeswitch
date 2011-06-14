@@ -45,7 +45,7 @@
 
 #include "private/ftdm_core.h"
 
-#include "sng_ss7.h"
+#include "sng_ss7/sng_ss7.h"
 
 /******************************************************************************/
 
