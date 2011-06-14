@@ -2507,10 +2507,10 @@ static uint32_t enable_analog_option(const char *str, uint32_t current_options)
 	
 }
 
-#define CONFIG_ERROR(...) do { \
+#define CONFIG_ERROR(...) { \
 		ftdm_log(FTDM_LOG_ERROR, __VA_ARGS__); \
 		globals.config_error = 1; \
-	} while(0)
+	}
 /* create ftdm_conf_node_t tree based on a fixed pattern XML configuration list 
  * last 2 args are for limited aka dumb recursivity
  * */
@@ -2895,9 +2895,9 @@ static switch_status_t load_config(void)
 			} else if (!strcasecmp(var, "hold-music")) {
 				switch_set_string(globals.hold_music, val);
 			} else if (!strcasecmp(var, "crash-on-assert")) {
-				globals.crash_on_assert = switch_true(val);
+				globals.crash_on_assert = (uint8_t)switch_true(val);
 			} else if (!strcasecmp(var, "fail-on-error")) {
-				globals.fail_on_error = switch_true(val);
+				globals.fail_on_error = (uint8_t)switch_true(val);
 			} else if (!strcasecmp(var, "sip-headers")) {
 				globals.sip_headers = switch_true(val);
 			} else if (!strcasecmp(var, "enable-analog-option")) {
