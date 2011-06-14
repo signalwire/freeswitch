@@ -410,6 +410,7 @@ cng:
 	data[1] = 0;
 	tech_pvt->read_frame.datalen = 2;
 	tech_pvt->read_frame.flags = SFF_CNG;
+	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
 	switch_core_timer_sync(&tech_pvt->timer);
 
