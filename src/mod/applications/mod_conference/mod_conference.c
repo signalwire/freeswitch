@@ -143,7 +143,8 @@ typedef enum {
 	MFLAG_DIST_DTMF = (1 << 15),
 	MFLAG_MOD = (1 << 16),
 	MFLAG_INDICATE_MUTE = (1 << 17),
-	MFLAG_INDICATE_UNMUTE = (1 << 18)
+	MFLAG_INDICATE_UNMUTE = (1 << 18),
+	MFLAG_NOMOH = (1 << 19)
 } member_flag_t;
 
 typedef enum {
@@ -1096,6 +1097,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_size_t file_data_len = samples * 2;
 		int has_file_data = 0, members_with_video = 0;
 		uint32_t conf_energy = 0;
+		int nomoh = 0;
 
 		/* Sync the conference to a single timing source */
 		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
@@ -1106,11 +1108,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_mutex_lock(conference->mutex);
 		has_file_data = ready = total = 0;
 
-		if (conference->perpetual_sound && !conference->async_fnode) {
-			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
-		} else if (conference->moh_sound && (conference->count == 1 || switch_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode) {
-			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
-		}
 
 		/* Read one frame of audio from each member channel and save it for redistribution */
 		for (imember = conference->members; imember; imember = imember->next) {
@@ -1118,8 +1115,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			total++;
 			imember->read = 0;
 
-			if (imember->session && switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
-				members_with_video++;
+			if (imember->session) {
+				if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
+					members_with_video++;
+				}
+
+				if (switch_test_flag(imember, MFLAG_NOMOH)) {
+					nomoh++;
+				}
 			}
 
 			switch_clear_flag_locked(imember, MFLAG_HAS_AUDIO);
@@ -1133,6 +1136,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			}
 			switch_mutex_unlock(imember->audio_in_mutex);
 		}
+
+		if (conference->perpetual_sound && !conference->async_fnode) {
+			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+		} else if (conference->moh_sound && ((nomoh == 0 && conference->count == 1) 
+											 || switch_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode) {
+			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+		}
+
 
 		/* Find if no one talked for more than x number of second */
 		if (conference->terminate_on_silence && conference->count > 1) {
@@ -5404,6 +5415,8 @@ static void set_mflags(const char *flags, member_flag_t *f)
 				*f |= MFLAG_DIST_DTMF;
 			} else if (!strcasecmp(argv[i], "moderator")) {
 				*f |= MFLAG_MOD;
+			} else if (!strcasecmp(argv[i], "nomoh")) {
+				*f |= MFLAG_NOMOH;
 			} else if (!strcasecmp(argv[i], "endconf")) {
 				*f |= MFLAG_ENDCONF;
 			} else if (!strcasecmp(argv[i], "mintwo")) {
