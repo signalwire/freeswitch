@@ -302,7 +302,7 @@ switch_status_t rtmp_kill_channel(switch_core_session_t *session, int sig)
 	switch (sig) {
 	case SWITCH_SIG_KILL:
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		
 		break;
 	case SWITCH_SIG_BREAK:
 		switch_set_flag_locked(tech_pvt, TFLAG_BREAK);
