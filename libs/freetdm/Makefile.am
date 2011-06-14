@@ -40,14 +40,6 @@ library_includedir = $(prefix)/include
 
 INCS  = -I$(FT_SRCDIR)/$(SRC)/include -I$(FT_SRCDIR)/$(SRC)/include/private
 
-if HAVE_SNG_SS7
-INCS += -I/usr/include/sng_ss7
-endif 
-
-if HAVE_SNG_ISDN
-INCS += -I/usr/include/sng_isdn
-endif 
-
 # we needed to separate CFLAGS in FTDM_COMPAT_CFLAGS and FTDM_CFLAGS due to -c99 which causes problems with wanpipe headers
 FTDM_COMPAT_CFLAGS = $(INCS) -DFTDM_CONFIG_DIR=\"@confdir@\" -DFTDM_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_COMPAT_CFLAGS@ @DEFS@
 FTDM_CFLAGS = $(INCS) -DFTDM_CONFIG_DIR=\"@confdir@\" -DFTDM_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
