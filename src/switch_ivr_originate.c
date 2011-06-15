@@ -2934,7 +2934,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				oglobals.idx = IDX_CANCEL;
 			}
 
-			if (oglobals.session && (ringback_data || !(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&
+			if (oglobals.session && (ringback_data || !(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) ||
 														switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)))) {
 				switch_core_session_reset(oglobals.session, SWITCH_FALSE, SWITCH_TRUE);
 			}
