@@ -4723,7 +4723,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	const char *uuid;
 	switch_core_session_t *other_session = NULL;
 	switch_channel_t *other_channel = NULL;
-	private_object_t *other_tech_pvt = NULL;
+	//private_object_t *other_tech_pvt = NULL;
 	char st[80] = "";
 	int is_dup_sdp = 0;
 	switch_event_t *s_event = NULL;
@@ -4930,7 +4930,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 					&& (other_session = switch_core_session_locate(uuid))) {
 					other_channel = switch_core_session_get_channel(other_session);
-					other_tech_pvt = switch_core_session_get_private(other_session);
+					//other_tech_pvt = switch_core_session_get_private(other_session);
 
 					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
