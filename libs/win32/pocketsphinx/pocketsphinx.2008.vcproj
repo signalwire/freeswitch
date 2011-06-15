@@ -53,7 +53,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;&quot;..\..\pocketsphinx-0.5.99/src/libpocketsphinx&quot;;&quot;..\..\sphinxbase-0.4.99\include&quot;;&quot;..\..\pocketsphinx-0.5.99\include&quot;"
+				AdditionalIncludeDirectories="../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;&quot;..\..\pocketsphinx-0.7/src/libpocketsphinx&quot;;&quot;..\..\sphinxbase-0.7\include&quot;;&quot;..\..\pocketsphinx-0.7\include&quot;"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_USRDLL;POCKETSPHINX_EXPORTS;SPHINXDLL;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -140,7 +140,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;&quot;..\..\pocketsphinx-0.5.99/src/libpocketsphinx&quot;;&quot;..\..\sphinxbase-0.4.99\include&quot;;&quot;..\..\pocketsphinx-0.5.99\include&quot;"
+				AdditionalIncludeDirectories="../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;&quot;..\..\pocketsphinx-0.7/src/libpocketsphinx&quot;;&quot;..\..\sphinxbase-0.7\include&quot;;&quot;..\..\pocketsphinx-0.7\include&quot;"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_USRDLL;POCKETSPHINX_EXPORTS;SPHINXDLL;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -224,7 +224,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;&quot;..\..\pocketsphinx-0.5.99/src/libpocketsphinx&quot;;&quot;..\..\sphinxbase-0.4.99\include&quot;;&quot;..\..\pocketsphinx-0.5.99\include&quot;"
+				AdditionalIncludeDirectories="../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;&quot;..\..\pocketsphinx-0.7/src/libpocketsphinx&quot;;&quot;..\..\sphinxbase-0.7\include&quot;;&quot;..\..\pocketsphinx-0.7\include&quot;"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_USRDLL;POCKETSPHINX_EXPORTS;SPHINXDLL;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -319,7 +319,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;&quot;..\..\pocketsphinx-0.5.99/src/libpocketsphinx&quot;;&quot;..\..\sphinxbase-0.4.99\include&quot;;&quot;..\..\pocketsphinx-0.5.99\include&quot;"
+				AdditionalIncludeDirectories="../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;&quot;..\..\pocketsphinx-0.7/src/libpocketsphinx&quot;;&quot;..\..\sphinxbase-0.7\include&quot;;&quot;..\..\pocketsphinx-0.7\include&quot;"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_USRDLL;POCKETSPHINX_EXPORTS;SPHINXDLL;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -385,15 +385,15 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\acmod.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\acmod.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\bin_mdef.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\bin_mdef.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\blkarray_list.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\blkarray_list.h"
 				>
 			</File>
 			<File
@@ -401,31 +401,31 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\cmu6_lts_rules.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\cmu6_lts_rules.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\dict.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\dict2pid.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict2pid.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fillpen.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\fillpen.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_history.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_history.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_lextree.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_lextree.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_search_internal.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_search_internal.h"
 				>
 			</File>
 			<File
@@ -433,47 +433,47 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\hmm.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\hmm.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\kdtree.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\kdtree.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\lextree.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\lextree.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\mdef.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\mdef.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_gauden.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_gauden.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_mgau.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_mgau.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_senone.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_senone.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search_fwdflat.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdflat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search_fwdtree.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdtree.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\phone_loop_search.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\phone_loop_search.h"
 				>
 			</File>
 			<File
@@ -481,55 +481,55 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\include\pocketsphinx.h"
+				RelativePath="..\..\pocketsphinx-0.7\include\pocketsphinx.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\include\pocketsphinx_export.h"
+				RelativePath="..\..\pocketsphinx-0.7\include\pocketsphinx_export.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\pocketsphinx_internal.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\pocketsphinx_internal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\posixwin32.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\posixwin32.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ps_lattice.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_lattice.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ps_lattice_internal.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_lattice_internal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\include\ps_mllr.h"
+				RelativePath="..\..\pocketsphinx-0.7\include\ps_mllr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\s2_semi_mgau.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\s2_semi_mgau.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\s3dict.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\s3dict.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\tmat.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\tmat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\tst_search.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\tst_search.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\vector.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\vector.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\vithist.h"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\vithist.h"
 				>
 			</File>
 		</Filter>
@@ -537,51 +537,11 @@
 			Name="Source Files"
 			>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\acmod.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\acmod.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\bin_mdef.c"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\blkarray_list.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\bin_mdef.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -621,19 +581,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\cmu6_lts_rules.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\dict2pid.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fillpen.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_history.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\blkarray_list.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -673,7 +621,19 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_lextree.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\cmu6_lts_rules.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict2pid.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\fillpen.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_history.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -713,7 +673,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_search.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_lextree.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -753,7 +713,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\hmm.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_search.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -793,7 +753,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\kdtree.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\hmm.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -833,11 +793,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\lextree.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\mdef.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\kdtree.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -877,7 +833,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_gauden.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\lextree.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\mdef.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -917,7 +877,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_mgau.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_gauden.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -957,7 +917,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_senone.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_mgau.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -997,35 +957,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search_fwdflat.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search_fwdtree.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\phone_loop_search.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\pocketsphinx.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ps_lattice.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ps_mllr.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\s2_semi_mgau.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_senone.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1065,55 +997,35 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\s3dict.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\tmat.c"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\tst_search.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdflat.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\vector.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdtree.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\phone_loop_search.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\pocketsphinx.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_lattice.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_mllr.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\s2_semi_mgau.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1153,7 +1065,95 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\vithist.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\s3dict.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\tmat.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\tst_search.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\vector.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\vithist.c"
 				>
 			</File>
 		</Filter>

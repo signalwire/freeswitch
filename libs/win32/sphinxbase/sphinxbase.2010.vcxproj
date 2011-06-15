@@ -83,7 +83,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\sphinxbase-0.4.99\include\win32;..\..\sphinxbase-0.4.99\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sphinxbase-0.7\include\win32;..\..\sphinxbase-0.7\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;_USRDLL;SPHINXBASE_EXPORTS;HAVE_CONFIG_H;SPHINXDLL;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -113,7 +113,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\sphinxbase-0.4.99\include\win32;..\..\sphinxbase-0.4.99\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sphinxbase-0.7\include\win32;..\..\sphinxbase-0.7\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;_USRDLL;SPHINXBASE_EXPORTS;HAVE_CONFIG_H;SPHINXDLL;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -143,7 +143,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\sphinxbase-0.4.99\include\win32;..\..\sphinxbase-0.4.99\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sphinxbase-0.7\include\win32;..\..\sphinxbase-0.7\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;_USRDLL;SPHINXBASE_EXPORTS;HAVE_CONFIG_H;SPHINXDLL;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -176,7 +176,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\sphinxbase-0.4.99\include\win32;..\..\sphinxbase-0.4.99\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sphinxbase-0.7\include\win32;..\..\sphinxbase-0.7\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;_USRDLL;SPHINXBASE_EXPORTS;HAVE_CONFIG_H;SPHINXDLL;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -201,7 +201,7 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\agc.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\feat\agc.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -211,7 +211,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\bio.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\bio.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -221,7 +221,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\bitvec.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\bitvec.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -231,7 +231,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\blas_lite.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\blas_lite.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -241,7 +241,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\case.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\case.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -251,7 +251,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\ckd_alloc.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\ckd_alloc.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -261,7 +261,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\cmd_ln.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\cmd_ln.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -271,7 +271,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\cmn.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\feat\cmn.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -281,7 +281,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\cmn_prior.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\feat\cmn_prior.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -291,7 +291,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxad\cont_ad_base.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxad\cont_ad_base.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -301,8 +301,8 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\dtoa.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\err.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\dtoa.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\err.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -312,7 +312,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\f2c_lite.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\f2c_lite.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -322,7 +322,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_interface.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_interface.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -332,7 +332,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_sigproc.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_sigproc.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -342,7 +342,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -352,7 +352,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_affine.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_affine.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -362,7 +362,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_inverse_linear.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_inverse_linear.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -372,7 +372,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_piecewise_linear.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_piecewise_linear.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -382,7 +382,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\feat.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\feat\feat.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -392,7 +392,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\filename.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\filename.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -402,7 +402,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fixlog.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fixlog.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -412,8 +412,8 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\fsg_model.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\genrand.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\fsg_model.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\genrand.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -423,7 +423,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\glist.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\glist.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -433,7 +433,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\hash_table.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\hash_table.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -443,7 +443,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\heap.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\heap.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -453,7 +453,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\info.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\info.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -463,10 +463,10 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf_parser.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf_scanner.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\lda.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf_parser.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf_scanner.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\feat\lda.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -476,10 +476,10 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\listelem_alloc.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\lm3g_model.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\logmath.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\matrix.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\listelem_alloc.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\lm3g_model.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\logmath.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\matrix.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -489,13 +489,13 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\mmio.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_arpa.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_dmp.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_dmp32.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_set.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\pio.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\mmio.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_arpa.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_dmp.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_dmp32.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_set.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\pio.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -505,7 +505,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxad\play_win32.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxad\play_win32.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -515,7 +515,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\profile.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\profile.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -525,7 +525,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxad\rec_win32.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxad\rec_win32.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -535,8 +535,8 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\sbthread.c" />
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\slamch.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\sbthread.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\slamch.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -546,7 +546,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\slapack_lite.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\slapack_lite.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -556,7 +556,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\strfuncs.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\strfuncs.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -566,7 +566,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\unlimit.c">
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\util\unlimit.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -576,68 +576,68 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\yin.c" />
+    <ClCompile Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\yin.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\ad.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\agc.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\bio.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\bitvec.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\byteorder.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\case.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\ckd_alloc.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\clapack_lite.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\cmd_ln.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\cmn.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\win32\config.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\cont_ad.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\err.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\f2c.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\fe.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_internal.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_affine.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_inverse_linear.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_piecewise_linear.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\feat.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\filename.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\fixpoint.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\fsg_model.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\gau_cb.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\gau_cb_float64.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\gau_cb_int32.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\gau_file.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\gau_mix.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\genrand.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\glist.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\hash_table.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\heap.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\info.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf_internal.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf_parser.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf_scanner.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\libutil.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\listelem_alloc.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\lm3g_model.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\logmath.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\matrix.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\mmio.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\mulaw.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\ngram_model.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_arpa.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_dmp.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_internal.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_set.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\pio.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\prim_type.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\profile.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\s3_arraylist.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\win32\sphinx_config.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\sphinx_types.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\sphinxbase_export.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\strfuncs.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\unlimit.h" />
-    <ClInclude Include="..\..\sphinxbase-0.4.99\include\yin.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\ad.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\agc.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\bio.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\bitvec.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\byteorder.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\case.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\ckd_alloc.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\clapack_lite.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\cmd_ln.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\cmn.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\win32\config.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\cont_ad.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\err.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\f2c.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\fe.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_internal.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_affine.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_inverse_linear.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_piecewise_linear.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\feat.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\filename.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\fixpoint.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\fsg_model.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\gau_cb.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\gau_cb_float64.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\gau_cb_int32.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\gau_file.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\gau_mix.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\genrand.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\glist.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\hash_table.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\heap.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\info.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf_internal.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf_parser.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf_scanner.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\libutil.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\listelem_alloc.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\lm3g_model.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\logmath.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\matrix.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\mmio.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\mulaw.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\ngram_model.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_arpa.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_dmp.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_internal.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_set.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\pio.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\prim_type.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\profile.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\s3_arraylist.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\win32\sphinx_config.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\sphinx_types.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\sphinxbase_export.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\strfuncs.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\unlimit.h" />
+    <ClInclude Include="..\..\sphinxbase-0.7\include\yin.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Download sphinxbase.2010.vcxproj">
