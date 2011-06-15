@@ -997,6 +997,7 @@
 /xmlrpc-c/stamp-h2
 /xmlrpc-c/xmlrpc_amconfig.h
 /xmlrpc-c/xmlrpc_config.h
+/zeromq-*/
 /apr/build/install-sh
 /js/install-sh
 /js/nsprpub/lib/ds/libplds4.dylib
