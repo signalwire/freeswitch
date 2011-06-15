@@ -131,6 +131,7 @@ struct switch_channel {
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
 	switch_event_t *variables;
+	switch_event_t *scope_variables;
 	switch_hash_t *private_hash;
 	switch_hash_t *app_flag_hash;
 	switch_call_cause_t hangup_cause;
@@ -692,13 +693,47 @@ SWITCH_DECLARE(const char *) switch_channel_get_hold_music_partner(switch_channe
 	return r;
 }
 
+SWITCH_DECLARE(void) switch_channel_set_scope_variables(switch_channel_t *channel, switch_event_t **event)
+{
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->scope_variables) {
+		switch_event_destroy(&channel->scope_variables);
+	}
+	if (event) {
+		channel->scope_variables = *event;
+		*event = NULL;
+	} else {
+		channel->scope_variables = NULL;
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+	
+}
+
+SWITCH_DECLARE(switch_status_t) switch_channel_get_scope_variables(switch_channel_t *channel, switch_event_t **event)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->scope_variables) {
+		status = switch_event_dup(event, channel->scope_variables);
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return status;
+}
+
 SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup, int idx)
 {
 	const char *v = NULL, *r = NULL, *vdup = NULL;
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
-	if (!channel->variables || !(v = switch_event_get_header_idx(channel->variables, varname, idx))) {
+
+	if (channel->scope_variables) {
+		v = switch_event_get_header_idx(channel->scope_variables, varname, idx);
+	}
+
+	if (!v && (!channel->variables || !(v = switch_event_get_header_idx(channel->variables, varname, idx)))) {
 		switch_caller_profile_t *cp = channel->caller_profile;
 
 		if (cp) {
@@ -2129,6 +2164,21 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_CUSTOM) {
 
 		/* Index Variables */
+
+		if (channel->scope_variables) {
+			for (hi = channel->scope_variables->headers; hi; hi = hi->next) {
+				char buf[1024];
+				char *vvar = NULL, *vval = NULL;
+
+				vvar = (char *) hi->name;
+				vval = (char *) hi->value;
+				
+				switch_assert(vvar && vval);
+				switch_snprintf(buf, sizeof(buf), "scope_variable_%s", vvar);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
+			}
+		}
+
 		if (channel->variables) {
 			for (hi = channel->variables->headers; hi; hi = hi->next) {
 				char buf[1024];
