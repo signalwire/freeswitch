@@ -644,7 +644,6 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 				if (sofia_use_soa(tech_pvt)) {
 					nua_respond(tech_pvt->nh, SIP_200_OK,
-								TAG_IF(is_proxy, NUTAG_AUTOANSWER(0)),
 								SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 								TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
