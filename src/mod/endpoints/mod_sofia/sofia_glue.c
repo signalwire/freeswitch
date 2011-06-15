@@ -2396,8 +2396,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
-				   TAG_IF(zstr(tech_pvt->local_sdp_str), NUTAG_AUTOACK(0)),
-				   TAG_IF(!zstr(tech_pvt->local_sdp_str), NUTAG_AUTOACK(1)),
+				   NUTAG_AUTOACK(0),
 				   NUTAG_SESSION_TIMER(session_timeout),
 				   NUTAG_SESSION_REFRESHER(session_timeout ? nua_local_refresher : nua_no_refresher),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
