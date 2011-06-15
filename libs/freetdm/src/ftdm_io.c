@@ -1549,6 +1549,7 @@ static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_directi
 	int best_rate = 0;
 	uint32_t i = 0;
 	uint32_t count = 0;
+	uint32_t first_channel = 0;
 
 	if (group_id) {
 		ftdm_group_find(group_id, &group);
@@ -1573,6 +1574,7 @@ static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_directi
 		i = 0;
 	} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
 		i = rr_next(group->last_used_index, 0, group->chan_count - 1, direction);
+		first_channel = i;
 	} else {
 		i = group->chan_count-1;
 	}
@@ -1605,6 +1607,9 @@ static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_directi
 				group->last_used_index = i;
 			}
 			i = rr_next(i, 0, group->chan_count - 1, direction);
+			if (first_channel == i) {
+				break;
+			}
 		} else {
 			if (i == 0) {
 				break;
@@ -1663,6 +1668,7 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 	int best_rate = 0;
 	uint32_t i = 0;
 	uint32_t count = 0;
+	uint32_t first_channel = 0;
 
 	*ftdmchan = NULL;
 
@@ -1696,6 +1702,7 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 		i = 1;
 	} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
 		i = rr_next(span->last_used_index, 1, span->chan_count, direction);
+		first_channel = i;
 	} else {
 		i = span->chan_count;
 	}	
@@ -1704,10 +1711,6 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 
 		if (direction == FTDM_TOP_DOWN) {
 			if (i > span->chan_count) {
-				break;
-			}
-		} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
-			if (i == span->last_used_index) {
 				break;
 			}
 		} else {
@@ -1738,6 +1741,9 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 				span->last_used_index = i;
 			}
 			i = rr_next(i, 1, span->chan_count, direction);
+			if (first_channel == i) {
+				break;
+			}
 		} else {
 			i--;
 		}
