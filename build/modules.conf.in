@@ -68,6 +68,7 @@ endpoints/mod_loopback
 #endpoints/mod_skypopen
 #endpoints/mod_h323
 #endpoints/mod_khomp
+#endpoints/mod_rtmp
 #../../libs/openzap/mod_openzap
 #../../libs/freetdm/mod_freetdm
 #asr_tts/mod_unimrcp

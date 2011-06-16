@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_control_descriptor.c 1710 2010-05-24 17:36:19Z achaloyan $
  */
 
 #include "apt_string_table.h"
@@ -133,7 +135,7 @@ MRCP_DECLARE(void) mrcp_cmid_add(apr_array_header_t *cmid_arr, apr_size_t cmid)
 }
 
 /** Find cmid in cmid_arr */
-MRCP_DECLARE(apt_bool_t) mrcp_cmid_find(apr_array_header_t *cmid_arr, apr_size_t cmid)
+MRCP_DECLARE(apt_bool_t) mrcp_cmid_find(const apr_array_header_t *cmid_arr, apr_size_t cmid)
 {
 	int i;
 	for(i=0; i<cmid_arr->nelts; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: synthsession.cpp 1586 2010-03-12 19:39:02Z achaloyan $
  */
 
 #include "synthsession.h"
@@ -23,9 +25,14 @@
 
 struct SynthChannel
 {
+	/** MRCP channel */
 	mrcp_channel_t* m_pMrcpChannel;
+	/** IN-PROGRESS SPEAK request */
+	mrcp_message_t* m_pSpeakRequest;
 	/** File to write audio stream to */
 	FILE*           m_pAudioOut;
+
+	SynthChannel() : m_pMrcpChannel(NULL), m_pSpeakRequest(NULL), m_pAudioOut(NULL) {}
 };
 
 SynthSession::SynthSession(const SynthScenario* pScenario) :
@@ -56,6 +63,37 @@ bool SynthSession::Start()
 		return false;
 	}
 	return true;
+}
+
+bool SynthSession::Stop()
+{
+	if(!UmcSession::Stop())
+		return false;
+
+	if(!m_pSynthChannel)
+		return false;
+
+	mrcp_message_t* pStopMessage = CreateMrcpMessage(m_pSynthChannel->m_pMrcpChannel,SYNTHESIZER_STOP);
+	if(!pStopMessage)
+		return false;
+
+	if(m_pSynthChannel->m_pSpeakRequest)
+	{
+		mrcp_generic_header_t* pGenericHeader;
+		/* get/allocate generic header */
+		pGenericHeader = (mrcp_generic_header_t*) mrcp_generic_header_prepare(pStopMessage);
+		if(pGenericHeader) 
+		{
+			pGenericHeader->active_request_id_list.count = 1;
+			pGenericHeader->active_request_id_list.ids[0] = 
+				m_pSynthChannel->m_pSpeakRequest->start_line.request_id;
+			mrcp_generic_header_property_add(pStopMessage,GENERIC_HEADER_ACTIVE_REQUEST_ID_LIST);
+		}
+
+		m_pSynthChannel->m_pSpeakRequest = NULL;
+	}
+	
+	return SendMrcpRequest(m_pSynthChannel->m_pMrcpChannel,pStopMessage);
 }
 
 bool SynthSession::OnSessionTerminate(mrcp_sig_status_code_e status)
@@ -93,8 +131,7 @@ SynthChannel* SynthSession::CreateSynthChannel()
 	apr_pool_t* pool = GetSessionPool();
 
 	/* create channel */
-	SynthChannel *pSynthChannel = new SynthChannel;
-	pSynthChannel->m_pMrcpChannel = NULL;
+	SynthChannel* pSynthChannel = new SynthChannel;
 
 	/* create sink stream capabilities */
 	pCapabilities = mpf_sink_stream_capabilities_create(pool);
@@ -128,7 +165,6 @@ SynthChannel* SynthSession::CreateSynthChannel()
 	}
 
 	pSynthChannel->m_pMrcpChannel = pChannel;
-	pSynthChannel->m_pAudioOut = NULL;
 	return pSynthChannel;
 }
 
@@ -169,6 +205,10 @@ bool SynthSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 			/* received the response to SPEAK request */
 			if(pMrcpMessage->start_line.request_state == MRCP_REQUEST_STATE_INPROGRESS) 
 			{
+				SynthChannel* pSynthChannel = (SynthChannel*) mrcp_application_channel_object_get(pMrcpChannel);
+				if(pSynthChannel)
+					pSynthChannel->m_pSpeakRequest = GetMrcpMessage();
+				
 				/* waiting for SPEAK-COMPLETE event */
 			}
 			else 
@@ -187,6 +227,9 @@ bool SynthSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 		/* received MRCP event */
 		if(pMrcpMessage->start_line.method_id == SYNTHESIZER_SPEAK_COMPLETE) 
 		{
+			SynthChannel* pSynthChannel = (SynthChannel*) mrcp_application_channel_object_get(pMrcpChannel);
+			if(pSynthChannel)
+				pSynthChannel->m_pSpeakRequest = NULL;
 			/* received SPEAK-COMPLETE event, terminate the session */
 			Terminate();
 		}

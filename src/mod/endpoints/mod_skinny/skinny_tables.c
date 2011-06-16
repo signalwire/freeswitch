@@ -108,181 +108,181 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{XML_ALARM_MESSAGE, "XMLAlarmMessage"},
 	{0, NULL}
 };
-SKINNY_DECLARE_ID2STR(skinny_message_type2str, SKINNY_MESSAGE_TYPES, "UnknownMessage")
+	SKINNY_DECLARE_ID2STR(skinny_message_type2str, SKINNY_MESSAGE_TYPES, "UnknownMessage")
 SKINNY_DECLARE_STR2ID(skinny_str2message_type, SKINNY_MESSAGE_TYPES, -1)
 
-struct skinny_table SKINNY_DEVICE_TYPES[] = {
-	{1, "Cisco 30 SP+"},
-	{2, "Cisco 12 SP+"},
-	{3, "Cisco 12 SP"},
-	{4, "Cisco 12"},
-	{5, "Cisco 30 VIP"},
-	{6, "Cisco IP Phone 7910"},
-	{7, "Cisco IP Phone 7960"},
-	{8, "Cisco IP Phone 7940"},
-	{9, "Cisco IP Phone 7935"},
-	{12, "Cisco ATA 186"},
-	{365, "Cisco IP Phone CP-7921G"},
-	{404, "Cisco IP Phone CP-7962G"},
-	{436, "Cisco IP Phone CP-7965G"},
-	{30018, "Cisco IP Phone CP-7961G"},
-	{30019, "Cisco IP Phone 7936"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_device_type2str, SKINNY_DEVICE_TYPES, "UnknownDeviceType")
+	struct skinny_table SKINNY_DEVICE_TYPES[] = {
+		{1, "Cisco 30 SP+"},
+		{2, "Cisco 12 SP+"},
+		{3, "Cisco 12 SP"},
+		{4, "Cisco 12"},
+		{5, "Cisco 30 VIP"},
+		{6, "Cisco IP Phone 7910"},
+		{7, "Cisco IP Phone 7960"},
+		{8, "Cisco IP Phone 7940"},
+		{9, "Cisco IP Phone 7935"},
+		{12, "Cisco ATA 186"},
+		{365, "Cisco IP Phone CP-7921G"},
+		{404, "Cisco IP Phone CP-7962G"},
+		{436, "Cisco IP Phone CP-7965G"},
+		{30018, "Cisco IP Phone CP-7961G"},
+		{30019, "Cisco IP Phone 7936"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_device_type2str, SKINNY_DEVICE_TYPES, "UnknownDeviceType")
 SKINNY_DECLARE_STR2ID(skinny_str2device_type, SKINNY_DEVICE_TYPES, -1)
 
-struct skinny_table SKINNY_RING_TYPES[] = {
-	{SKINNY_RING_OFF, "RingOff"},
-	{SKINNY_RING_INSIDE, "RingInside"},
-	{SKINNY_RING_OUTSIDE, "RingOutside"},
-	{SKINNY_RING_FEATURE, "RingFeature"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_ring_type2str, SKINNY_RING_TYPES, "RingTypeUnknown")
+	struct skinny_table SKINNY_RING_TYPES[] = {
+		{SKINNY_RING_OFF, "RingOff"},
+		{SKINNY_RING_INSIDE, "RingInside"},
+		{SKINNY_RING_OUTSIDE, "RingOutside"},
+		{SKINNY_RING_FEATURE, "RingFeature"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_ring_type2str, SKINNY_RING_TYPES, "RingTypeUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2ring_type, SKINNY_RING_TYPES, -1)
 
-struct skinny_table SKINNY_RING_MODES[] = {
-	{SKINNY_RING_FOREVER, "RingForever"},
-	{SKINNY_RING_ONCE, "RingOnce"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_ring_mode2str, SKINNY_RING_MODES, "RingModeUnknown")
+	struct skinny_table SKINNY_RING_MODES[] = {
+		{SKINNY_RING_FOREVER, "RingForever"},
+		{SKINNY_RING_ONCE, "RingOnce"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_ring_mode2str, SKINNY_RING_MODES, "RingModeUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2ring_mode, SKINNY_RING_MODES, -1)
 
-struct skinny_table SKINNY_BUTTONS[] = {
-	{SKINNY_BUTTON_UNKNOWN, "Unknown"},
-	{SKINNY_BUTTON_LAST_NUMBER_REDIAL, "LastNumberRedial"},
-	{SKINNY_BUTTON_SPEED_DIAL, "SpeedDial"},
-	{SKINNY_BUTTON_HOLD, "Hold"},
-	{SKINNY_BUTTON_TRANSFER, "Transfer"},
-	{SKINNY_BUTTON_LINE, "Line"},
-	{SKINNY_BUTTON_VOICEMAIL, "Voicemail"},
-	{SKINNY_BUTTON_PRIVACY, "Privacy"},
-	{SKINNY_BUTTON_SERVICE_URL, "ServiceUrl"},
-	{SKINNY_BUTTON_UNDEFINED, "Undefined"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_button2str, SKINNY_BUTTONS, "Unknown")
+	struct skinny_table SKINNY_BUTTONS[] = {
+		{SKINNY_BUTTON_UNKNOWN, "Unknown"},
+		{SKINNY_BUTTON_LAST_NUMBER_REDIAL, "LastNumberRedial"},
+		{SKINNY_BUTTON_SPEED_DIAL, "SpeedDial"},
+		{SKINNY_BUTTON_HOLD, "Hold"},
+		{SKINNY_BUTTON_TRANSFER, "Transfer"},
+		{SKINNY_BUTTON_LINE, "Line"},
+		{SKINNY_BUTTON_VOICEMAIL, "Voicemail"},
+		{SKINNY_BUTTON_PRIVACY, "Privacy"},
+		{SKINNY_BUTTON_SERVICE_URL, "ServiceUrl"},
+		{SKINNY_BUTTON_UNDEFINED, "Undefined"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_button2str, SKINNY_BUTTONS, "Unknown")
 SKINNY_DECLARE_STR2ID(skinny_str2button, SKINNY_BUTTONS, -1)
 
-struct skinny_table SKINNY_SOFT_KEY_EVENTS[] = {
-	{SOFTKEY_REDIAL, "SoftkeyRedial"},
-	{SOFTKEY_NEWCALL, "SoftkeyNewcall"},
-	{SOFTKEY_HOLD, "SoftkeyHold"},
-	{SOFTKEY_TRANSFER, "SoftkeyTransfer"},
-	{SOFTKEY_CFWDALL, "SoftkeyCfwdall"},
-	{SOFTKEY_CFWDBUSY, "SoftkeyCfwdbusy"},
-	{SOFTKEY_CFWDNOANSWER, "SoftkeyCfwdnoanswer"},
-	{SOFTKEY_BACKSPACE, "SoftkeyBackspace"},
-	{SOFTKEY_ENDCALL, "SoftkeyEndcall"},
-	{SOFTKEY_RESUME, "SoftkeyResume"},
-	{SOFTKEY_ANSWER , "SoftkeyAnswer"},
-	{SOFTKEY_INFO, "SoftkeyInfo"},
-	{SOFTKEY_CONFRM, "SoftkeyConfrm"},
-	{SOFTKEY_PARK, "SoftkeyPark"},
-	{SOFTKEY_JOIN, "SoftkeyJoin"},
-	{SOFTKEY_MEETMECONFRM, "SoftkeyMeetmeconfrm"},
-	{SOFTKEY_CALLPICKUP, "SoftkeyCallpickup"},
-	{SOFTKEY_GRPCALLPICKUP, "SoftkeyGrpcallpickup"},
-	{SOFTKEY_DND, "SoftkeyDnd"},
-	{SOFTKEY_IDIVERT, "SoftkeyIdivert"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_soft_key_event2str, SKINNY_SOFT_KEY_EVENTS, "SoftkeyUnknown")
+	struct skinny_table SKINNY_SOFT_KEY_EVENTS[] = {
+		{SOFTKEY_REDIAL, "SoftkeyRedial"},
+		{SOFTKEY_NEWCALL, "SoftkeyNewcall"},
+		{SOFTKEY_HOLD, "SoftkeyHold"},
+		{SOFTKEY_TRANSFER, "SoftkeyTransfer"},
+		{SOFTKEY_CFWDALL, "SoftkeyCfwdall"},
+		{SOFTKEY_CFWDBUSY, "SoftkeyCfwdbusy"},
+		{SOFTKEY_CFWDNOANSWER, "SoftkeyCfwdnoanswer"},
+		{SOFTKEY_BACKSPACE, "SoftkeyBackspace"},
+		{SOFTKEY_ENDCALL, "SoftkeyEndcall"},
+		{SOFTKEY_RESUME, "SoftkeyResume"},
+		{SOFTKEY_ANSWER , "SoftkeyAnswer"},
+		{SOFTKEY_INFO, "SoftkeyInfo"},
+		{SOFTKEY_CONFRM, "SoftkeyConfrm"},
+		{SOFTKEY_PARK, "SoftkeyPark"},
+		{SOFTKEY_JOIN, "SoftkeyJoin"},
+		{SOFTKEY_MEETMECONFRM, "SoftkeyMeetmeconfrm"},
+		{SOFTKEY_CALLPICKUP, "SoftkeyCallpickup"},
+		{SOFTKEY_GRPCALLPICKUP, "SoftkeyGrpcallpickup"},
+		{SOFTKEY_DND, "SoftkeyDnd"},
+		{SOFTKEY_IDIVERT, "SoftkeyIdivert"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_soft_key_event2str, SKINNY_SOFT_KEY_EVENTS, "SoftkeyUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2soft_key_event, SKINNY_SOFT_KEY_EVENTS, 0)
 
-struct skinny_table SKINNY_LAMP_MODES[] = {
-	{SKINNY_LAMP_OFF, "Off"},
-	{SKINNY_LAMP_ON, "On"},
-	{SKINNY_LAMP_WINK, "Wink"},
-	{SKINNY_LAMP_FLASH, "Flash"},
-	{SKINNY_LAMP_BLINK, "Blink"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_lamp_mode2str, SKINNY_LAMP_MODES, "Unknown")
+	struct skinny_table SKINNY_LAMP_MODES[] = {
+		{SKINNY_LAMP_OFF, "Off"},
+		{SKINNY_LAMP_ON, "On"},
+		{SKINNY_LAMP_WINK, "Wink"},
+		{SKINNY_LAMP_FLASH, "Flash"},
+		{SKINNY_LAMP_BLINK, "Blink"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_lamp_mode2str, SKINNY_LAMP_MODES, "Unknown")
 SKINNY_DECLARE_STR2ID(skinny_str2lamp_mode, SKINNY_LAMP_MODES, -1)
 
-struct skinny_table SKINNY_SPEAKER_MODES[] = {
-	{SKINNY_SPEAKER_ON, "SpeakerOn"},
-	{SKINNY_SPEAKER_OFF, "SpeakerOff"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_speaker_mode2str, SKINNY_SPEAKER_MODES, "Unknown")
+	struct skinny_table SKINNY_SPEAKER_MODES[] = {
+		{SKINNY_SPEAKER_ON, "SpeakerOn"},
+		{SKINNY_SPEAKER_OFF, "SpeakerOff"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_speaker_mode2str, SKINNY_SPEAKER_MODES, "Unknown")
 SKINNY_DECLARE_STR2ID(skinny_str2speaker_mode, SKINNY_SPEAKER_MODES, -1)
 
-struct skinny_table SKINNY_KEY_SETS[] = {
-	{SKINNY_KEY_SET_ON_HOOK, "KeySetOnHook"},
-	{SKINNY_KEY_SET_CONNECTED, "KeySetConnected"},
-	{SKINNY_KEY_SET_ON_HOLD, "KeySetOnHold"},
-	{SKINNY_KEY_SET_RING_IN, "KeySetRingIn"},
-	{SKINNY_KEY_SET_OFF_HOOK, "KeySetOffHook"},
-	{SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER, "KeySetConnectedWithTransfer"},
-	{SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT, "KeySetDigitsAfterDialingFirstDigit"},
-	{SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE, "KeySetConnectedWithConference"},
-	{SKINNY_KEY_SET_RING_OUT, "KeySetRingOut"},
-	{SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES, "KeySetOffHookWithFeatures"},
-	{SKINNY_KEY_SET_IN_USE_HINT, "KeySetInUseHint"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_soft_key_set2str, SKINNY_KEY_SETS, "UNKNOWN_SOFT_KEY_SET")
+	struct skinny_table SKINNY_KEY_SETS[] = {
+		{SKINNY_KEY_SET_ON_HOOK, "KeySetOnHook"},
+		{SKINNY_KEY_SET_CONNECTED, "KeySetConnected"},
+		{SKINNY_KEY_SET_ON_HOLD, "KeySetOnHold"},
+		{SKINNY_KEY_SET_RING_IN, "KeySetRingIn"},
+		{SKINNY_KEY_SET_OFF_HOOK, "KeySetOffHook"},
+		{SKINNY_KEY_SET_CONNECTED_WITH_TRANSFER, "KeySetConnectedWithTransfer"},
+		{SKINNY_KEY_SET_DIGITS_AFTER_DIALING_FIRST_DIGIT, "KeySetDigitsAfterDialingFirstDigit"},
+		{SKINNY_KEY_SET_CONNECTED_WITH_CONFERENCE, "KeySetConnectedWithConference"},
+		{SKINNY_KEY_SET_RING_OUT, "KeySetRingOut"},
+		{SKINNY_KEY_SET_OFF_HOOK_WITH_FEATURES, "KeySetOffHookWithFeatures"},
+		{SKINNY_KEY_SET_IN_USE_HINT, "KeySetInUseHint"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_soft_key_set2str, SKINNY_KEY_SETS, "UNKNOWN_SOFT_KEY_SET")
 SKINNY_DECLARE_STR2ID(skinny_str2soft_key_set, SKINNY_KEY_SETS, -1)
 
-struct skinny_table SKINNY_CALL_STATES[] = {
-	{SKINNY_OFF_HOOK, "OffHook"},
-	{SKINNY_ON_HOOK, "OnHook"},
-	{SKINNY_RING_OUT, "RingOut"},
-	{SKINNY_RING_IN, "RingIn"},
-	{SKINNY_CONNECTED, "Connected"},
-	{SKINNY_BUSY, "Busy"},
-	{SKINNY_LINE_IN_USE, "LineInUse"},
-	{SKINNY_HOLD, "Hold"},
-	{SKINNY_CALL_WAITING, "CallWaiting"},
-	{SKINNY_CALL_TRANSFER, "CallTransfer"},
-	{SKINNY_CALL_PARK, "CallPark"},
-	{SKINNY_PROCEED, "Proceed"},
-	{SKINNY_IN_USE_REMOTELY, "InUseRemotely"},
-	{SKINNY_INVALID_NUMBER, "InvalidNumber"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_call_state2str, SKINNY_CALL_STATES, "CallStateUnknown")
+	struct skinny_table SKINNY_CALL_STATES[] = {
+		{SKINNY_OFF_HOOK, "OffHook"},
+		{SKINNY_ON_HOOK, "OnHook"},
+		{SKINNY_RING_OUT, "RingOut"},
+		{SKINNY_RING_IN, "RingIn"},
+		{SKINNY_CONNECTED, "Connected"},
+		{SKINNY_BUSY, "Busy"},
+		{SKINNY_LINE_IN_USE, "LineInUse"},
+		{SKINNY_HOLD, "Hold"},
+		{SKINNY_CALL_WAITING, "CallWaiting"},
+		{SKINNY_CALL_TRANSFER, "CallTransfer"},
+		{SKINNY_CALL_PARK, "CallPark"},
+		{SKINNY_PROCEED, "Proceed"},
+		{SKINNY_IN_USE_REMOTELY, "InUseRemotely"},
+		{SKINNY_INVALID_NUMBER, "InvalidNumber"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_call_state2str, SKINNY_CALL_STATES, "CallStateUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2call_state, SKINNY_CALL_STATES, -1)
 
-struct skinny_table SKINNY_DEVICE_RESET_TYPES[] = {
-	{SKINNY_DEVICE_RESET, "DeviceReset"},
-	{SKINNY_DEVICE_RESTART, "DeviceRestart"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_device_reset_type2str, SKINNY_DEVICE_RESET_TYPES, "DeviceResetTypeUnknown")
+	struct skinny_table SKINNY_DEVICE_RESET_TYPES[] = {
+		{SKINNY_DEVICE_RESET, "DeviceReset"},
+		{SKINNY_DEVICE_RESTART, "DeviceRestart"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_device_reset_type2str, SKINNY_DEVICE_RESET_TYPES, "DeviceResetTypeUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2device_reset_type, SKINNY_DEVICE_RESET_TYPES, -1)
 
-struct skinny_table SKINNY_ACCESSORY_TYPES[] = {
-	{SKINNY_ACCESSORY_NONE, "AccessoryNone"},
-	{SKINNY_ACCESSORY_HEADSET, "Headset"},
-	{SKINNY_ACCESSORY_HANDSET, "Handset"},
-	{SKINNY_ACCESSORY_SPEAKER, "Speaker"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_accessory_type2str, SKINNY_ACCESSORY_TYPES, "AccessoryUnknown")
+	struct skinny_table SKINNY_ACCESSORY_TYPES[] = {
+		{SKINNY_ACCESSORY_NONE, "AccessoryNone"},
+		{SKINNY_ACCESSORY_HEADSET, "Headset"},
+		{SKINNY_ACCESSORY_HANDSET, "Handset"},
+		{SKINNY_ACCESSORY_SPEAKER, "Speaker"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_accessory_type2str, SKINNY_ACCESSORY_TYPES, "AccessoryUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2accessory_type, SKINNY_ACCESSORY_TYPES, -1)
 
-struct skinny_table SKINNY_ACCESSORY_STATES[] = {
-	{SKINNY_ACCESSORY_STATE_NONE, "AccessoryNoState"},
-	{SKINNY_ACCESSORY_STATE_OFFHOOK, "OffHook"},
-	{SKINNY_ACCESSORY_STATE_ONHOOK, "OnHook"},
-	{0, NULL}
-};
-SKINNY_DECLARE_ID2STR(skinny_accessory_state2str, SKINNY_ACCESSORY_STATES, "AccessoryStateUnknown")
+	struct skinny_table SKINNY_ACCESSORY_STATES[] = {
+		{SKINNY_ACCESSORY_STATE_NONE, "AccessoryNoState"},
+		{SKINNY_ACCESSORY_STATE_OFFHOOK, "OffHook"},
+		{SKINNY_ACCESSORY_STATE_ONHOOK, "OnHook"},
+		{0, NULL}
+	};
+	SKINNY_DECLARE_ID2STR(skinny_accessory_state2str, SKINNY_ACCESSORY_STATES, "AccessoryStateUnknown")
 SKINNY_DECLARE_STR2ID(skinny_str2accessory_state, SKINNY_ACCESSORY_STATES, -1)
 
-/* For Emacs:
- * Local Variables:
- * mode:c
- * indent-tabs-mode:t
- * tab-width:4
- * c-basic-offset:4
- * End:
- * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
- */
+	/* For Emacs:
+	 * Local Variables:
+	 * mode:c
+	 * indent-tabs-mode:t
+	 * tab-width:4
+	 * c-basic-offset:4
+	 * End:
+	 * For VIM:
+	 * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+	 */
 

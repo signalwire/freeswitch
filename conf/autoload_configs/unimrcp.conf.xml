@@ -12,6 +12,7 @@
 
     <param name="max-connection-count" value="100"/>
     <param name="offer-new-connection" value="1"/>
+    <param name="request-timeout" value="3000"/>
   </settings>
 
   <profiles>

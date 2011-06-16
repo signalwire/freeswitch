@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_engine_loader.c 1700 2010-05-21 18:56:06Z achaloyan $
  */
 
 #include <apr_dso.h>
@@ -121,17 +123,17 @@ static apt_bool_t plugin_logger_load(apr_dso_handle_t *plugin)
 
 
 /** Load engine plugin */
-MRCP_DECLARE(mrcp_engine_t*) mrcp_engine_loader_plugin_load(mrcp_engine_loader_t *loader, const char *path, const char *name)
+MRCP_DECLARE(mrcp_engine_t*) mrcp_engine_loader_plugin_load(mrcp_engine_loader_t *loader, const char *id, const char *path, mrcp_engine_config_t *config)
 {
 	apr_dso_handle_t *plugin = NULL;
 	mrcp_plugin_creator_f plugin_creator = NULL;
 	mrcp_engine_t *engine = NULL;
-	if(!path || !name) {
+	if(!path || !id) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Load Plugin: invalid params");
 		return NULL;
 	}
 
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Load Plugin [%s] [%s]",path,name);
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Load Plugin [%s] [%s]",id,path);
 	if(apr_dso_load(&plugin,path,loader->pool) != APR_SUCCESS) {
 		char derr[512] = "";
 		apr_dso_error(plugin,derr,sizeof(derr));
@@ -153,12 +155,14 @@ MRCP_DECLARE(mrcp_engine_t*) mrcp_engine_loader_plugin_load(mrcp_engine_loader_t
 
 	plugin_logger_load(plugin);
 
-	apr_hash_set(loader->plugins,name,APR_HASH_KEY_STRING,plugin);
+	apr_hash_set(loader->plugins,id,APR_HASH_KEY_STRING,plugin);
 
 	engine = plugin_creator(loader->pool);
 	if(!engine) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create MRCP Engine");
 	}
-
+	
+	engine->id = id;
+	engine->config = config;
 	return engine;
 }

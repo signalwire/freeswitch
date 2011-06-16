@@ -1033,7 +1033,7 @@ SWITCH_STANDARD_APP(sched_cancel_function)
 	switch_scheduler_del_task_group(group);
 }
 
-SWITCH_STANDARD_APP(set_function)
+static void base_set (switch_core_session_t *session, const char *data, switch_stack_t stack)
 {
 	char *var, *val = NULL;
 
@@ -1044,7 +1044,10 @@ SWITCH_STANDARD_APP(set_function)
 		char *expanded = NULL;
 
 		var = switch_core_session_strdup(session, data);
-		val = strchr(var, '=');
+
+		if (!(val = strchr(var, '='))) {
+			val = strchr(var, ',');
+		}
 
 		if (val) {
 			*val++ = '\0';
@@ -1059,12 +1062,27 @@ SWITCH_STANDARD_APP(set_function)
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SET [%s]=[%s]\n", switch_channel_get_name(channel), var,
 						  expanded ? expanded : "UNDEF");
-		switch_channel_set_variable_var_check(channel, var, expanded, SWITCH_FALSE);
+		switch_channel_add_variable_var_check(channel, var, expanded, SWITCH_FALSE, stack);
 
 		if (expanded && expanded != val) {
 			switch_safe_free(expanded);
 		}
 	}
+}
+
+SWITCH_STANDARD_APP(set_function)
+{
+	base_set(session, data, SWITCH_STACK_BOTTOM);
+}
+
+SWITCH_STANDARD_APP(push_function)
+{
+	base_set(session, data, SWITCH_STACK_PUSH);
+}
+
+SWITCH_STANDARD_APP(unshift_function)
+{
+	base_set(session, data, SWITCH_STACK_UNSHIFT);
 }
 
 SWITCH_STANDARD_APP(set_global_function)
@@ -2290,6 +2308,26 @@ SWITCH_STANDARD_APP(stop_displace_session_function)
 	switch_ivr_stop_displace_session(session, data);
 }
 
+SWITCH_STANDARD_APP(capture_function)
+{
+	char *argv[3] = { 0 };
+	int argc;
+	switch_regex_t *re = NULL;
+	int ovector[30] = {0};
+	char *lbuf;
+	int proceed;
+	
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 3) {
+		if ((proceed = switch_regex_perform(argv[1], argv[2], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			switch_capture_regex(re, proceed, argv[1], ovector, argv[0], switch_regex_set_var_callback, session);
+		}
+		switch_regex_safe_free(re);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No data specified.\n");
+	}	
+}
+
 SWITCH_STANDARD_APP(record_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -2491,8 +2529,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	char *tof_data = NULL;
 	char *tof_array[4] = { 0 };
 	//int tof_arrayc = 0;
-	const char *continue_on_fail = NULL, *failure_causes = NULL,
-		*v_campon = NULL, *v_campon_retries, *v_campon_sleep, *v_campon_timeout, *v_campon_fallback_exten = NULL;
+	const char *v_campon = NULL, *v_campon_retries, *v_campon_sleep, *v_campon_timeout, *v_campon_fallback_exten = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	int campon_retries = 100, campon_timeout = 10, campon_sleep = 10, tmp, camping = 0, fail = 0, thread_started = 0;
 	struct camping_stake stake = { 0 };
@@ -2506,14 +2543,10 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		return;
 	}
 
-	continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
-
 	transfer_on_fail = switch_channel_get_variable(caller_channel, "transfer_on_fail");
 	tof_data = switch_core_session_strdup(session, transfer_on_fail);
 	switch_split(tof_data, ' ', tof_array);
    	transfer_on_fail = tof_array[0];
-	
-	failure_causes = switch_channel_get_variable(caller_channel, "failure_causes");
 	
 	if ((v_campon = switch_channel_get_variable(caller_channel, "campon")) && switch_true(v_campon)) {
 		const char *cid_name = NULL;
@@ -2655,6 +2688,11 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		   EXCEPTION... ATTENDED_TRANSFER never is a reason to continue.......
 		 */
 		if (cause != SWITCH_CAUSE_ATTENDED_TRANSFER) {
+			const char *continue_on_fail = NULL, *failure_causes = NULL;
+
+			continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
+			failure_causes = switch_channel_get_variable(caller_channel, "failure_causes");
+
 			if (continue_on_fail || failure_causes) {
 				const char *cause_str;
 				char cause_num[35] = "";
@@ -3722,6 +3760,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "bind_digit_action", "bind a key sequence or regex to an action", 
 				   "bind a key sequence or regex to an action", bind_digit_action_function, BIND_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);
 
+	SWITCH_ADD_APP(app_interface, "capture", "capture data into a var", "capture data into a var", 
+				   capture_function, "<varname>|<data>|<regex>", SAF_SUPPORT_NOMEDIA);
+
 	SWITCH_ADD_APP(app_interface, "clear_digit_action", "clear all digit bindings", "", 
 				   clear_digit_action_function, CLEAR_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);
 
@@ -3769,6 +3810,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel variable", SET_LONG_DESC, set_function, "<varname>=<value>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+
+	SWITCH_ADD_APP(app_interface, "push", "Set a channel variable", SET_LONG_DESC, push_function, "<varname>=<value>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+
+	SWITCH_ADD_APP(app_interface, "unshift", "Set a channel variable", SET_LONG_DESC, unshift_function, "<varname>=<value>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+
 	SWITCH_ADD_APP(app_interface, "set_global", "Set a global variable", SET_GLOBAL_LONG_DESC, set_global_function, "<varname>=<value>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "set_profile_var", "Set a caller profile variable", SET_PROFILE_VAR_LONG_DESC, set_profile_var_function,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: rtsp_start_line.h 1632 2010-03-30 20:46:25Z achaloyan $
  */
 
-#ifndef __RTSP_START_LINE_H__
-#define __RTSP_START_LINE_H__
+#ifndef RTSP_START_LINE_H
+#define RTSP_START_LINE_H
 
 /**
  * @file rtsp_start_line.h
@@ -65,6 +67,8 @@ typedef enum {
 	RTSP_STATUS_CODE_NOT_FOUND                 = 404,
 	RTSP_STATUS_CODE_METHOD_NOT_ALLOWED        = 405,
 	RTSP_STATUS_CODE_NOT_ACCEPTABLE            = 406,
+	RTSP_STATUS_CODE_PROXY_AUTH_REQUIRED       = 407,
+	RTSP_STATUS_CODE_REQUEST_TIMEOUT           = 408,
 	RTSP_STATUS_CODE_SESSION_NOT_FOUND         = 454,
 
 	RTSP_STATUS_CODE_INTERNAL_SERVER_ERROR     = 500,
@@ -80,6 +84,8 @@ typedef enum {
 	RTSP_REASON_PHRASE_NOT_FOUND,
 	RTSP_REASON_PHRASE_METHOD_NOT_ALLOWED,
 	RTSP_REASON_PHRASE_NOT_ACCEPTABLE,
+	RTSP_REASON_PHRASE_PROXY_AUTH_REQUIRED,
+	RTSP_REASON_PHRASE_REQUEST_TIMEOUT,
 	RTSP_REASON_PHRASE_SESSION_NOT_FOUND,
 	RTSP_REASON_PHRASE_INTERNAL_SERVER_ERROR,
 	RTSP_REASON_PHRASE_NOT_IMPLEMENTED,
@@ -162,7 +168,7 @@ static APR_INLINE void rtsp_start_line_init(rtsp_start_line_t *start_line, rtsp_
 }
 
 /** Parse RTSP start-line */
-RTSP_DECLARE(apt_bool_t) rtsp_start_line_parse(rtsp_start_line_t *start_line, apt_text_stream_t *text_stream, apr_pool_t *pool);
+RTSP_DECLARE(apt_bool_t) rtsp_start_line_parse(rtsp_start_line_t *start_line, apt_str_t *str, apr_pool_t *pool);
 
 /** Generate RTSP start-line */
 RTSP_DECLARE(apt_bool_t) rtsp_start_line_generate(rtsp_start_line_t *start_line, apt_text_stream_t *text_stream);
@@ -172,4 +178,4 @@ RTSP_DECLARE(const apt_str_t*) rtsp_reason_phrase_get(rtsp_reason_phrase_e reaso
 
 APT_END_EXTERN_C
 
-#endif /*__RTSP_START_LINE_H__*/
+#endif /* RTSP_START_LINE_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_engine_iface.h 1677 2010-05-01 18:45:50Z achaloyan $
  */
 
-#ifndef __MRCP_ENGINE_IFACE_H__
-#define __MRCP_ENGINE_IFACE_H__
+#ifndef MRCP_ENGINE_IFACE_H
+#define MRCP_ENGINE_IFACE_H
 
 /**
  * @file mrcp_engine_iface.h
@@ -27,30 +29,20 @@
 APT_BEGIN_EXTERN_C
 
 /** Destroy engine */
-static APR_INLINE apt_bool_t mrcp_engine_virtual_destroy(mrcp_engine_t *engine)
-{
-	return engine->method_vtable->destroy(engine);
-}
+apt_bool_t mrcp_engine_virtual_destroy(mrcp_engine_t *engine);
 
 /** Open engine */
-static APR_INLINE apt_bool_t mrcp_engine_virtual_open(mrcp_engine_t *engine)
-{
-	if(engine->is_open == FALSE) {
-		engine->is_open = engine->method_vtable->open(engine);
-		return engine->is_open;
-	}
-	return FALSE;
-}
+apt_bool_t mrcp_engine_virtual_open(mrcp_engine_t *engine);
+
+/** Response to open engine request */
+void mrcp_engine_on_open(mrcp_engine_t *engine, apt_bool_t status);
 
 /** Close engine */
-static APR_INLINE apt_bool_t mrcp_engine_virtual_close(mrcp_engine_t *engine)
-{
-	if(engine->is_open == TRUE) {
-		engine->is_open = FALSE;
-		return engine->method_vtable->close(engine);
-	}
-	return FALSE;
-}
+apt_bool_t mrcp_engine_virtual_close(mrcp_engine_t *engine);
+
+/** Response to close engine request */
+void mrcp_engine_on_close(mrcp_engine_t *engine);
+
 
 /** Create engine channel */
 mrcp_engine_channel_t* mrcp_engine_channel_virtual_create(mrcp_engine_t *engine, mrcp_version_e mrcp_version, apr_pool_t *pool);
@@ -90,4 +82,4 @@ mrcp_engine_config_t* mrcp_engine_config_alloc(apr_pool_t *pool);
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_ENGINE_IFACE_H__*/
+#endif /* MRCP_ENGINE_IFACE_H */

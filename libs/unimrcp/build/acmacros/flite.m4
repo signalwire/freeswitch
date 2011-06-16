@@ -13,21 +13,28 @@ AC_DEFUN([UNIMRCP_CHECK_FLITE],
     
     found_flite="no"
     
-    flite_libdir="build/libs"
+    flite_config="config/config"
     for dir in $flite_path ; do
         cd $dir && flite_dir=`pwd` && cd - > /dev/null
-        if test -d "$dir/$flite_libdir"; then
-            found_flite="yes"
-            UNIMRCP_FLITE_INCLUDES="-I$flite_dir/include"
-            UNIMRCP_FLITE_LIBS="$dir/$flite_libdir/libflite_cmu_us_awb.a \
-	                        $dir/$flite_libdir/libflite_cmu_us_kal.a \
-                            	$dir/$flite_libdir/libflite_cmu_us_rms.a \
-                         	$dir/$flite_libdir/libflite_cmu_us_slt.a \
-                        	$dir/$flite_libdir/libflite_cmulex.a \
-                        	$dir/$flite_libdir/libflite_usenglish.a \
-                        	$dir/$flite_libdir/libflite.a"
-            break
-        fi
+        if test -f "$flite_dir/$flite_config"; then
+	    target_os=`grep TARGET_OS "$flite_dir/$flite_config" | sed "s/^.*= //"` ;\
+	    target_cpu=`grep TARGET_CPU "$flite_dir/$flite_config" | sed "s/^.*= //"` ;\
+	    flite_libdir=$flite_dir/build/$target_cpu-$target_os/lib
+    	    if test -d "$flite_libdir"; then
+		UNIMRCP_FLITE_INCLUDES="-I$flite_dir/include"
+		UNIMRCP_FLITE_LIBS="$flite_libdir/libflite_cmu_us_awb.a \
+	                        $flite_libdir/libflite_cmu_us_kal.a \
+                            	$flite_libdir/libflite_cmu_us_rms.a \
+                         	$flite_libdir/libflite_cmu_us_slt.a \
+                        	$flite_libdir/libflite_cmulex.a \
+                        	$flite_libdir/libflite_usenglish.a \
+                        	$flite_libdir/libflite.a"
+		found_flite="yes"
+		break
+    	    else
+		AC_MSG_WARN(Cannot find Flite lib dir: $flite_libdir)
+	    fi
+	fi
     done
 
     if test x_$found_flite != x_yes; then

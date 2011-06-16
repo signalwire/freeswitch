@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_session.h 1792 2011-01-10 21:08:52Z achaloyan $
  */
 
-#ifndef __MRCP_SESSION_H__
-#define __MRCP_SESSION_H__
+#ifndef MRCP_SESSION_H
+#define MRCP_SESSION_H
 
 /**
  * @file mrcp_session.h
@@ -51,6 +53,10 @@ struct mrcp_session_t {
 	apr_pool_t       *pool;
 	/** External object associated with session */
 	void             *obj;
+	/** External logger object associated with session */
+	void             *log_obj;
+	/** Informative name of the session used for debugging */
+	const char       *name;
 	/** Back pointer to signaling agent */
 	mrcp_sig_agent_t *signaling_agent;
 
@@ -189,4 +195,4 @@ static APR_INLINE apt_bool_t mrcp_session_discover_response(mrcp_session_t *sess
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_SESSION_H__*/
+#endif /* MRCP_SESSION_H */

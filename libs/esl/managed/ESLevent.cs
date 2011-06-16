@@ -89,8 +89,8 @@ public class ESLevent : IDisposable {
     return ret;
   }
 
-  public string GetHeader(string header_name) {
-    string ret = ESLPINVOKE.ESLevent_GetHeader(swigCPtr, header_name);
+  public string GetHeader(string header_name, int idx) {
+    string ret = ESLPINVOKE.ESLevent_GetHeader(swigCPtr, header_name, idx);
     return ret;
   }
 
@@ -111,6 +111,16 @@ public class ESLevent : IDisposable {
 
   public bool AddHeader(string header_name, string value) {
     bool ret = ESLPINVOKE.ESLevent_AddHeader(swigCPtr, header_name, value);
+    return ret;
+  }
+
+  public bool pushHeader(string header_name, string value) {
+    bool ret = ESLPINVOKE.ESLevent_pushHeader(swigCPtr, header_name, value);
+    return ret;
+  }
+
+  public bool unshiftHeader(string header_name, string value) {
+    bool ret = ESLPINVOKE.ESLevent_unshiftHeader(swigCPtr, header_name, value);
     return ret;
   }
 

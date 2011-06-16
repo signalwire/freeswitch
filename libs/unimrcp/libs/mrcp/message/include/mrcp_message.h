@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_message.h 1721 2010-06-01 05:45:46Z achaloyan $
  */
 
-#ifndef __MRCP_MESSAGE_H__
-#define __MRCP_MESSAGE_H__
+#ifndef MRCP_MESSAGE_H
+#define MRCP_MESSAGE_H
 
 /**
  * @file mrcp_message.h
@@ -24,176 +26,228 @@
 
 #include "mrcp_types.h"
 #include "mrcp_start_line.h"
-#include "mrcp_header_accessor.h"
+#include "mrcp_header.h"
+#include "mrcp_generic_header.h"
 
 APT_BEGIN_EXTERN_C
 
-/** MRCP channel-id declaration */
-typedef struct mrcp_channel_id mrcp_channel_id;
-/** MRCP message header declaration */
-typedef struct mrcp_message_header_t mrcp_message_header_t;
-
-/** MRCP channel-identifier */
-struct mrcp_channel_id {
-	/** Unambiguous string identifying the MRCP session */
-	apt_str_t        session_id;
-	/** MRCP resource name */
-	apt_str_t        resource_name;
-};
-
-/** Initialize MRCP channel-identifier */
-MRCP_DECLARE(void) mrcp_channel_id_init(mrcp_channel_id *channel_id);
-
-/** Parse MRCP channel-identifier */
-MRCP_DECLARE(apt_bool_t) mrcp_channel_id_parse(mrcp_channel_id *channel_id, apt_text_stream_t *text_stream, apr_pool_t *pool);
-
-/** Generate MRCP channel-identifier */
-MRCP_DECLARE(apt_bool_t) mrcp_channel_id_generate(mrcp_channel_id *channel_id, apt_text_stream_t *text_stream);
-
-
-/** MRCP message-header */
-struct mrcp_message_header_t {
-	/** MRCP generic-header */
-	mrcp_header_accessor_t generic_header_accessor;
-	/** MRCP resource specific header */
-	mrcp_header_accessor_t resource_header_accessor;
-};
-
-/** Initialize MRCP message-header */
-static APR_INLINE void mrcp_message_header_init(mrcp_message_header_t *message_header)
-{
-	mrcp_header_accessor_init(&message_header->generic_header_accessor);
-	mrcp_header_accessor_init(&message_header->resource_header_accessor);
-}
-
-/** Destroy MRCP message-header */
-static APR_INLINE void mrcp_message_header_destroy(mrcp_message_header_t *message_header)
-{
-	mrcp_header_destroy(&message_header->generic_header_accessor);
-	mrcp_header_destroy(&message_header->resource_header_accessor);
-}
-
-
-/** Parse MRCP message-header */
-MRCP_DECLARE(apt_bool_t) mrcp_message_header_parse(mrcp_message_header_t *message_header, apt_text_stream_t *text_stream, apr_pool_t *pool);
-
-/** Generate MRCP message-header */
-MRCP_DECLARE(apt_bool_t) mrcp_message_header_generate(mrcp_message_header_t *message_header, apt_text_stream_t *text_stream);
-
-/** Set MRCP message-header */
-MRCP_DECLARE(apt_bool_t) mrcp_message_header_set(mrcp_message_header_t *message_header, const mrcp_message_header_t *src, apr_pool_t *pool);
-
-/** Get MRCP message-header */
-MRCP_DECLARE(apt_bool_t) mrcp_message_header_get(mrcp_message_header_t *message_header, const mrcp_message_header_t *src, apr_pool_t *pool);
-
-/** Inherit MRCP message-header */
-MRCP_DECLARE(apt_bool_t) mrcp_message_header_inherit(mrcp_message_header_t *message_header, const mrcp_message_header_t *parent, apr_pool_t *pool);
-
-
+/** Macro to log channel identifier of the message */
+#define MRCP_MESSAGE_SIDRES(message) \
+	(message)->channel_id.session_id.buf, (message)->channel_id.resource_name.buf
 
 /** MRCP message */
 struct mrcp_message_t {
 	/** Start-line of MRCP message */
-	mrcp_start_line_t     start_line;
+	mrcp_start_line_t      start_line;
 	/** Channel-identifier of MRCP message */
-	mrcp_channel_id       channel_id;
+	mrcp_channel_id        channel_id;
 	/** Header of MRCP message */
-	mrcp_message_header_t header;
+	mrcp_message_header_t  header;
 	/** Body of MRCP message */
-	apt_str_t             body;
+	apt_str_t              body;
 
 	/** Associated MRCP resource */
-	mrcp_resource_t      *resource;
-	/** Memory pool MRCP message is allocated from */
-	apr_pool_t           *pool;
+	const mrcp_resource_t *resource;
+	/** Memory pool to allocate memory from */
+	apr_pool_t            *pool;
 };
 
-/** Create MRCP message */
+/**
+ * Create an MRCP message.
+ * @param pool the pool to allocate memory from
+ */
 MRCP_DECLARE(mrcp_message_t*) mrcp_message_create(apr_pool_t *pool);
 
-/** Create MRCP request message */
-MRCP_DECLARE(mrcp_message_t*) mrcp_request_create(mrcp_resource_t *resource, mrcp_version_e version, mrcp_method_id method_id, apr_pool_t *pool);
-/** Create MRCP response message */
+/**
+ * Create an MRCP request message.
+ * @param resource the MRCP resource to use
+ * @param version the MRCP version to use
+ * @param method_id the MRCP resource specific method identifier
+ * @param pool the pool to allocate memory from
+ */
+MRCP_DECLARE(mrcp_message_t*) mrcp_request_create(
+								const mrcp_resource_t *resource, 
+								mrcp_version_e version, 
+								mrcp_method_id method_id, 
+								apr_pool_t *pool);
+
+/**
+ * Create an MRCP response message based on given request message.
+ * @param request_message the MRCP request message to create a response for
+ * @param pool the pool to allocate memory from
+ */
 MRCP_DECLARE(mrcp_message_t*) mrcp_response_create(const mrcp_message_t *request_message, apr_pool_t *pool);
-/** Create MRCP event message */
-MRCP_DECLARE(mrcp_message_t*) mrcp_event_create(const mrcp_message_t *request_message, mrcp_method_id event_id, apr_pool_t *pool);
 
-/** Associate MRCP resource specific data by resource name */
-MRCP_DECLARE(apt_bool_t) mrcp_message_resource_set(mrcp_message_t *message, mrcp_resource_t *resource);
+/**
+ * Create an MRCP event message based on given requuest message.
+ * @param request_message the MRCP request message to create an event for
+ * @param event_id the MRCP resource specific event identifier
+ * @param pool the pool to allocate memory from
+ */
+MRCP_DECLARE(mrcp_message_t*) mrcp_event_create(
+								const mrcp_message_t *request_message, 
+								mrcp_method_id event_id, 
+								apr_pool_t *pool);
 
-/** Validate MRCP message */
+/**
+ * Associate MRCP resource with message.
+ * @param message the message to associate resource with
+ * @param resource the resource to associate
+ */
+MRCP_DECLARE(apt_bool_t) mrcp_message_resource_set(mrcp_message_t *message, const mrcp_resource_t *resource);
+
+/** 
+ * Validate MRCP message.
+ * @param message the message to validate
+ */
 MRCP_DECLARE(apt_bool_t) mrcp_message_validate(mrcp_message_t *message);
 
-/** Destroy MRCP message */
+/**
+ * Destroy MRCP message.
+ * @param message the message to destroy
+ */
 MRCP_DECLARE(void) mrcp_message_destroy(mrcp_message_t *message);
 
 
-/** Parse MRCP message-body */
-MRCP_DECLARE(apt_bool_t) mrcp_body_parse(mrcp_message_t *message, apt_text_stream_t *text_stream, apr_pool_t *pool);
-/** Generate MRCP message-body */
-MRCP_DECLARE(apt_bool_t) mrcp_body_generate(mrcp_message_t *message, apt_text_stream_t *text_stream);
-
-/** Get MRCP generic-header */
-static APR_INLINE void* mrcp_generic_header_get(mrcp_message_t *mrcp_message)
+/**
+ * Get MRCP generic header.
+ * @param message the message to get generic header from
+ */
+static APR_INLINE mrcp_generic_header_t* mrcp_generic_header_get(const mrcp_message_t *message)
 {
-	return mrcp_message->header.generic_header_accessor.data;
+	return (mrcp_generic_header_t*) message->header.generic_header_accessor.data;
 }
 
-/** Prepare MRCP generic-header */
-static APR_INLINE void* mrcp_generic_header_prepare(mrcp_message_t *mrcp_message)
+/**
+ * Allocate (if not allocated) and get MRCP generic header.
+ * @param message the message to prepare generic header for
+ */
+static APR_INLINE mrcp_generic_header_t* mrcp_generic_header_prepare(mrcp_message_t *message)
 {
-	return mrcp_header_allocate(&mrcp_message->header.generic_header_accessor,mrcp_message->pool);
+	return (mrcp_generic_header_t*) mrcp_header_allocate(&message->header.generic_header_accessor,message->pool);
 }
 
-/** Add MRCP generic-header proprerty */
-static APR_INLINE void mrcp_generic_header_property_add(mrcp_message_t *mrcp_message, size_t id)
+/**
+ * Add MRCP generic header field by specified property (numeric identifier).
+ * @param message the message to add property for
+ * @param id the numeric identifier to add
+ */
+MRCP_DECLARE(apt_bool_t) mrcp_generic_header_property_add(mrcp_message_t *message, apr_size_t id);
+
+/**
+ * Add only the name of MRCP generic header field specified by property (numeric identifier).
+ * @param message the message to add property for
+ * @param id the numeric identifier to add
+ * @remark Should be used to construct empty header fiedls for GET-PARAMS requests
+ */
+MRCP_DECLARE(apt_bool_t) mrcp_generic_header_name_property_add(mrcp_message_t *message, apr_size_t id);
+
+/**
+ * Remove MRCP generic header field by specified property (numeric identifier).
+ * @param message the message to remove property from
+ * @param id the numeric identifier to remove
+ */
+static APR_INLINE apt_bool_t mrcp_generic_header_property_remove(mrcp_message_t *message, apr_size_t id)
 {
-	mrcp_header_property_add(&mrcp_message->header.generic_header_accessor,id);
+	apt_header_field_t *header_field = apt_header_section_field_get(&message->header.header_section,id);
+	if(header_field) {
+		return apt_header_section_field_remove(&message->header.header_section,header_field);
+	}
+	return FALSE;
 }
 
-/** Add MRCP generic-header name only proprerty (should be used to construct empty headers in case of GET-PARAMS request) */
-static APR_INLINE void mrcp_generic_header_name_property_add(mrcp_message_t *mrcp_message, size_t id)
+/**
+ * Check whether specified by property (numeric identifier) MRCP generic header field is set or not.
+ * @param message the message to use
+ * @param id the numeric identifier to check
+ */
+static APR_INLINE apt_bool_t mrcp_generic_header_property_check(const mrcp_message_t *message, apr_size_t id)
 {
-	mrcp_header_name_property_add(&mrcp_message->header.generic_header_accessor,id);
+	return apt_header_section_field_check(&message->header.header_section,id);
 }
 
-/** Check MRCP generic-header proprerty */
-static APR_INLINE apt_bool_t mrcp_generic_header_property_check(mrcp_message_t *mrcp_message, size_t id)
+
+/**
+ * Get MRCP resource header.
+ * @param message the message to get resource header from
+ */
+static APR_INLINE void* mrcp_resource_header_get(const mrcp_message_t *message)
 {
-	return mrcp_header_property_check(&mrcp_message->header.generic_header_accessor,id);
+	return message->header.resource_header_accessor.data;
 }
 
-
-/** Get MRCP resource-header */
-static APR_INLINE void* mrcp_resource_header_get(const mrcp_message_t *mrcp_message)
-{
-	return mrcp_message->header.resource_header_accessor.data;
-}
-
-/** Prepare MRCP resource-header */
+/**
+ * Allocate (if not allocated) and get MRCP resource header.
+ * @param message the message to prepare resource header for
+ */
 static APR_INLINE void* mrcp_resource_header_prepare(mrcp_message_t *mrcp_message)
 {
 	return mrcp_header_allocate(&mrcp_message->header.resource_header_accessor,mrcp_message->pool);
 }
 
-/** Add MRCP resource-header proprerty */
-static APR_INLINE void mrcp_resource_header_property_add(mrcp_message_t *mrcp_message, size_t id)
+/**
+ * Add MRCP resource header field by specified property (numeric identifier).
+ * @param message the message to add property for
+ * @param id the numeric identifier to add
+ */
+MRCP_DECLARE(apt_bool_t) mrcp_resource_header_property_add(mrcp_message_t *message, apr_size_t id);
+
+/** 
+ * Add only the name of MRCP resource header field specified by property (numeric identifier).
+ * @param message the message to add property for
+ * @param id the numeric identifier to add
+ * @remark Should be used to construct empty header fiedls for GET-PARAMS requests
+ */
+MRCP_DECLARE(apt_bool_t) mrcp_resource_header_name_property_add(mrcp_message_t *message, apr_size_t id);
+
+/**
+ * Remove MRCP resource header field by specified property (numeric identifier).
+ * @param message the message to remove property from
+ * @param id the numeric identifier to remove
+ */
+static APR_INLINE apt_bool_t mrcp_resource_header_property_remove(mrcp_message_t *message, apr_size_t id)
 {
-	mrcp_header_property_add(&mrcp_message->header.resource_header_accessor,id);
+	apt_header_field_t *header_field = apt_header_section_field_get(&message->header.header_section,id + GENERIC_HEADER_COUNT);
+	if(header_field) {
+		return apt_header_section_field_remove(&message->header.header_section,header_field);
+	}
+	return FALSE;
 }
 
-/** Add MRCP resource-header name only proprerty (should be used to construct empty headers in case of GET-PARAMS request) */
-static APR_INLINE void mrcp_resource_header_name_property_add(mrcp_message_t *mrcp_message, size_t id)
+/**
+ * Check whether specified by property (numeric identifier) MRCP resource header field is set or not.
+ * @param message the message to use
+ * @param id the numeric identifier to check
+ */
+static APR_INLINE apt_bool_t mrcp_resource_header_property_check(const mrcp_message_t *message, apr_size_t id)
 {
-	mrcp_header_name_property_add(&mrcp_message->header.resource_header_accessor,id);
+	return apt_header_section_field_check(&message->header.header_section,id + GENERIC_HEADER_COUNT);
 }
 
-/** Check MRCP resource-header proprerty */
-static APR_INLINE apt_bool_t mrcp_resource_header_property_check(mrcp_message_t *mrcp_message, size_t id)
+/**
+ * Add MRCP header field.
+ * @param message the message to add header field for
+ * @param header_field the header field to add
+ */
+static APR_INLINE apt_bool_t mrcp_message_header_field_add(mrcp_message_t *message, apt_header_field_t *header_field)
 {
-	return mrcp_header_property_check(&mrcp_message->header.resource_header_accessor,id);
+	return mrcp_header_field_add(&message->header,header_field,message->pool);
 }
+
+/**
+ * Get the next MRCP header field.
+ * @param message the message to use
+ * @param header_field current header field
+ * @remark Should be used to iterate on header fields
+ *
+ *	apt_header_field_t *header_field = NULL;
+ *	while( (header_field = mrcp_message_next_header_field_get(message,header_field)) != NULL ) {
+ *  }
+ */
+MRCP_DECLARE(apt_header_field_t*) mrcp_message_next_header_field_get(
+										const mrcp_message_t *message, 
+										apt_header_field_t *header_field);
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_MESSAGE_H__*/
+#endif /* MRCP_MESSAGE_H */

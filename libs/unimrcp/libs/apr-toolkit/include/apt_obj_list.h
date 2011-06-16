@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_obj_list.h 1708 2010-05-24 17:03:25Z achaloyan $
  */
 
-#ifndef __APT_OBJ_LIST_H__
-#define __APT_OBJ_LIST_H__
+#ifndef APT_OBJ_LIST_H
+#define APT_OBJ_LIST_H
 
 /**
  * @file apt_obj_list.h
@@ -65,40 +67,40 @@ APT_DECLARE(void*) apt_list_pop_front(apt_obj_list_t *list);
  * Retrieve object of the first element in the list.
  * @param list the list to retrieve from
  */
-APT_DECLARE(void*) apt_list_head(apt_obj_list_t *list);
+APT_DECLARE(void*) apt_list_head(const apt_obj_list_t *list);
 
 /**
  * Retrieve object of the last element in the list.
  * @param list the list to retrieve from
  */
-APT_DECLARE(void*) apt_obj_list_tail(apt_obj_list_t *list);
+APT_DECLARE(void*) apt_obj_list_tail(const apt_obj_list_t *list);
 
 
 /**
  * Retrieve the first element of the list.
  * @param list the list to retrieve from
  */
-APT_DECLARE(apt_list_elem_t*) apt_list_first_elem_get(apt_obj_list_t *list);
+APT_DECLARE(apt_list_elem_t*) apt_list_first_elem_get(const apt_obj_list_t *list);
 
 /**
  * Retrieve the last element of the list.
  * @param list the list to retrieve from
  */
-APT_DECLARE(apt_list_elem_t*) apt_list_last_elem_get(apt_obj_list_t *list);
+APT_DECLARE(apt_list_elem_t*) apt_list_last_elem_get(const apt_obj_list_t *list);
 
 /**
  * Retrieve the next element of the list.
  * @param list the list to retrieve from
  * @param elem the element to retrieve next element from
  */
-APT_DECLARE(apt_list_elem_t*) apt_list_next_elem_get(apt_obj_list_t *list, apt_list_elem_t *elem);
+APT_DECLARE(apt_list_elem_t*) apt_list_next_elem_get(const apt_obj_list_t *list, apt_list_elem_t *elem);
 
 /**
  * Retrieve the prev element of the list.
  * @param list the list to retrieve from
  * @param elem the element to retrieve prev element from
  */
-APT_DECLARE(apt_list_elem_t*) apt_list_prev_elem_get(apt_obj_list_t *list, apt_list_elem_t *elem);
+APT_DECLARE(apt_list_elem_t*) apt_list_prev_elem_get(const apt_obj_list_t *list, apt_list_elem_t *elem);
 
 /**
  * Insert element to the list.
@@ -123,15 +125,15 @@ APT_DECLARE(apt_list_elem_t*) apt_list_elem_remove(apt_obj_list_t *list, apt_lis
  * @param list the list to query
  * @return TRUE if empty, otherwise FALSE
  */
-APT_DECLARE(apt_bool_t) apt_list_is_empty(apt_obj_list_t *list);
+APT_DECLARE(apt_bool_t) apt_list_is_empty(const apt_obj_list_t *list);
 
 /**
  * Retrieve the object associated with element.
  * @param elem the element to retrieve object from
  */
-APT_DECLARE(void*) apt_list_elem_object_get(apt_list_elem_t *elem);
+APT_DECLARE(void*) apt_list_elem_object_get(const apt_list_elem_t *elem);
 
 
 APT_END_EXTERN_C
 
-#endif /*__APT_OBJ_LIST_H__*/
+#endif /* APT_OBJ_LIST_H */

@@ -251,6 +251,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t 
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check);
+SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_channel_t *channel,
+																	  const char *varname, const char *value, switch_bool_t var_check, switch_stack_t stack);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname, const char *fmt, ...);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_name_printf(switch_channel_t *channel, const char *val, const char *fmt, ...);
 
@@ -277,6 +279,8 @@ SWITCH_DECLARE(void) switch_channel_process_export(switch_channel_t *channel, sw
 SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_channel_t *channel, const char *varname, 
 																	  const char *export_varname, const char *fmt, ...);
 
+SWITCH_DECLARE(void) switch_channel_set_scope_variables(switch_channel_t *channel, switch_event_t **event);
+SWITCH_DECLARE(switch_status_t) switch_channel_get_scope_variables(switch_channel_t *channel, switch_event_t **event);
 
 /*!
   \brief Retrieve a variable from a given channel
@@ -284,8 +288,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_cha
   \param varname the name of the variable
   \return the value of the requested variable
 */
-SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup);
-#define switch_channel_get_variable(_c, _v) switch_channel_get_variable_dup(_c, _v, SWITCH_TRUE)
+SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup, int idx);
+#define switch_channel_get_variable(_c, _v) switch_channel_get_variable_dup(_c, _v, SWITCH_TRUE, -1)
 
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event);
 

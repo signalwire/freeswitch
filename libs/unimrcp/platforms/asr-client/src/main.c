@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: main.c 1541 2010-02-22 20:20:10Z achaloyan $
  */
 
 #include <stdio.h>
@@ -44,7 +46,7 @@ static void* APR_THREAD_FUNC asr_session_run(apr_thread_t *thread, void *data)
 	asr_params_t *params = data;
 	asr_session_t *session = asr_session_create(params->engine,params->profile);
 	if(session) {
-		const char *result = asr_session_recognize(session,params->grammar_file,params->input_file);
+		const char *result = asr_session_file_recognize(session,params->grammar_file,params->input_file);
 		if(result) {
 			printf("Recog Result [%s]",result);
 		}
@@ -87,7 +89,7 @@ static apt_bool_t asr_session_launch(asr_engine_t *engine, const char *grammar_f
 		params->profile = apr_pstrdup(pool,profile);
 	}
 	else {
-		params->profile = "MRCPv2-Default";
+		params->profile = "uni2";
 	}
 
 	/* Launch a thread to run demo ASR session in */
@@ -126,11 +128,11 @@ static apt_bool_t cmdline_process(asr_engine_t *engine, char *cmdline)
 			"\n- run [grammar_file] [audio_input_file] [profile_name] (run demo asr client)\n"
 			"       grammar_file is the name of grammar file, (path is relative to data dir)\n"
 			"       audio_input_file is the name of audio file, (path is relative to data dir)\n"
-			"       profile_name is one of 'MRCPv2-Default', 'MRCPv1-Default', ...\n"
+			"       profile_name is one of 'uni2', 'uni1', ...\n"
 			"\n       examples: \n"
 			"           run\n"
 			"           run grammar.xml one.pcm\n"
-			"           run grammar.xml one.pcm MRCPv1-Default\n"
+			"           run grammar.xml one.pcm uni1\n"
 		    "\n- loglevel [level] (set loglevel, one of 0,1...7)\n"
 		    "\n- quit, exit\n");
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_encoder.c 1530 2010-02-19 18:40:08Z achaloyan $
  */
 
 #include "mpf_encoder.h"
@@ -36,12 +38,14 @@ static apt_bool_t mpf_encoder_destroy(mpf_audio_stream_t *stream)
 static apt_bool_t mpf_encoder_open(mpf_audio_stream_t *stream, mpf_codec_t *codec)
 {
 	mpf_encoder_t *encoder = stream->obj;
+	mpf_codec_open(encoder->codec);
 	return mpf_audio_stream_tx_open(encoder->sink,encoder->codec);
 }
 
 static apt_bool_t mpf_encoder_close(mpf_audio_stream_t *stream)
 {
 	mpf_encoder_t *encoder = stream->obj;
+	mpf_codec_close(encoder->codec);
 	return mpf_audio_stream_tx_close(encoder->sink);
 }
 

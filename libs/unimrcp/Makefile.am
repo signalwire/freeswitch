@@ -14,7 +14,7 @@ MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure $(AUX_DIST)
 
 ACLOCAL			= aclocal -I $(macrodir)
 
-SUBDIRS                 = conf data libs modules plugins platforms build
+SUBDIRS                 = build conf data libs modules plugins platforms
 if TEST_SUITES
 SUBDIRS                += tests
 endif

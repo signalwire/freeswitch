@@ -296,6 +296,14 @@
 				RelativePath=".\include\mrcp_synth_state_machine.h"
 				>
 			</File>
+			<File
+				RelativePath=".\include\mrcp_verifier_engine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_verifier_state_machine.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="src"
@@ -327,6 +335,10 @@
 			</File>
 			<File
 				RelativePath=".\src\mrcp_synth_state_machine.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mrcp_verifier_state_machine.c"
 				>
 			</File>
 		</Filter>

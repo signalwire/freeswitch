@@ -599,8 +599,8 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_get_iterator(ftdm_iterator_type_t type, ftdm_
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen);
 
-FIO_WRITE_FUNCTION(ftdm_raw_write);
-FIO_READ_FUNCTION(ftdm_raw_read);
+FT_DECLARE(ftdm_status_t) ftdm_raw_read (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen);
+FT_DECLARE(ftdm_status_t) ftdm_raw_write (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen);
 
 /*! 
  * \brief Retrieves an event from the span

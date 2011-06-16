@@ -19,4 +19,5 @@ include_HEADERS             = include/mrcp_client_types.h \
                               include/mrcp_application.h
 
 libmrcpclient_la_SOURCES    = src/mrcp_client.c \
-                              src/mrcp_client_session.c
+                              src/mrcp_client_session.c \
+                              src/mrcp_application.c

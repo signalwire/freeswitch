@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_termination.h 1693 2010-05-16 18:33:07Z achaloyan $
  */
 
-#ifndef __MPF_TERMINATION_H__
-#define __MPF_TERMINATION_H__
+#ifndef MPF_TERMINATION_H
+#define MPF_TERMINATION_H
 
 /**
  * @file mpf_termination.h
@@ -23,6 +25,7 @@
  */ 
 
 #include "mpf_types.h"
+#include "apt_timer_queue.h"
 
 APT_BEGIN_EXTERN_C
 
@@ -50,6 +53,8 @@ struct mpf_termination_vtable_t {
 struct mpf_termination_t {
 	/** Pool to allocate memory from */
 	apr_pool_t                     *pool;
+	/** Informative name used for debugging */
+	const char                     *name;
 	/** External object */
 	void                           *obj;
 	/** Object to send events to */
@@ -58,8 +63,8 @@ struct mpf_termination_t {
 	mpf_termination_event_handler_f event_handler;
 	/** Codec manager */
 	const mpf_codec_manager_t      *codec_manager;
-	/** Timer manager */
-	mpf_timer_manager_t            *timer_manager;
+	/** Timer queue */
+	apt_timer_queue_t              *timer_queue;
 	/** Termination factory entire termination created by */
 	mpf_termination_factory_t      *termination_factory;
 	/** Table of virtual methods */
@@ -113,4 +118,4 @@ MPF_DECLARE(apt_bool_t) mpf_termination_subtract(mpf_termination_t *termination)
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_TERMINATION_H__*/
+#endif /* MPF_TERMINATION_H */

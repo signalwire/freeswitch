@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_engine_types.h 1700 2010-05-21 18:56:06Z achaloyan $
  */
 
-#ifndef __MRCP_ENGINE_TYPES_H__
-#define __MRCP_ENGINE_TYPES_H__
+#ifndef MRCP_ENGINE_TYPES_H
+#define MRCP_ENGINE_TYPES_H
 
 /**
  * @file mrcp_engine_types.h
@@ -35,6 +37,8 @@ typedef struct mrcp_engine_t mrcp_engine_t;
 typedef struct mrcp_engine_config_t mrcp_engine_config_t;
 /** MRCP engine vtable declaration */
 typedef struct mrcp_engine_method_vtable_t mrcp_engine_method_vtable_t;
+/** MRCP engine event vtable declaration */
+typedef struct mrcp_engine_event_vtable_t mrcp_engine_event_vtable_t;
 /** MRCP engine channel declaration */
 typedef struct mrcp_engine_channel_t mrcp_engine_channel_t;
 /** MRCP engine channel virtual method table declaration */
@@ -100,14 +104,28 @@ struct mrcp_engine_method_vtable_t {
 	mrcp_engine_channel_t* (*create_channel)(mrcp_engine_t *engine, apr_pool_t *pool);
 };
 
+/** Table of MRCP engine virtual event handlers */
+struct mrcp_engine_event_vtable_t {
+	/** Open event handler */
+	apt_bool_t (*on_open)(mrcp_engine_t *channel, apt_bool_t status);
+	/** Close event handler */
+	apt_bool_t (*on_close)(mrcp_engine_t *channel);
+};
+
 /** MRCP engine */
 struct mrcp_engine_t {
+	/** Identifier of the engine */
+	const char                        *id;
 	/** Resource identifier */
 	mrcp_resource_id                   resource_id;
 	/** External object associated with engine */
 	void                              *obj;
 	/** Table of virtual methods */
 	const mrcp_engine_method_vtable_t *method_vtable;
+	/** Table of virtual event handlers */
+	const mrcp_engine_event_vtable_t  *event_vtable;
+	/** External object used with event handlers */
+	void                              *event_obj;
 	/** Codec manager */
 	const mpf_codec_manager_t         *codec_manager;
 	/** Dir layout structure */
@@ -121,15 +139,12 @@ struct mrcp_engine_t {
 	/** Pool to allocate memory from */
 	apr_pool_t                        *pool;
 
-
 	/** Create state machine */
 	mrcp_state_machine_t* (*create_state_machine)(void *obj, mrcp_version_e version, apr_pool_t *pool);
 };
 
 /** MRCP engine config */
 struct mrcp_engine_config_t {
-	/** Name of the engine */
-	const char  *name;
 	/** Max number of simultaneous channels */
 	apr_size_t   max_channel_count;
 	/** Table of name/value string params */
@@ -138,4 +153,4 @@ struct mrcp_engine_config_t {
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_ENGINE_TYPES_H__*/
+#endif /* MRCP_ENGINE_TYPES_H */

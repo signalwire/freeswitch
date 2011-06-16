@@ -53,7 +53,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;..\..\sphinxbase-0.4.99\include\win32&quot;;&quot;..\..\sphinxbase-0.4.99\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\sphinxbase-0.7\include\win32&quot;;&quot;..\..\sphinxbase-0.7\include&quot;"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_USRDLL;SPHINXBASE_EXPORTS;HAVE_CONFIG_H;SPHINXDLL;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -140,7 +140,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;..\..\sphinxbase-0.4.99\include\win32&quot;;&quot;..\..\sphinxbase-0.4.99\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\sphinxbase-0.7\include\win32&quot;;&quot;..\..\sphinxbase-0.7\include&quot;"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_USRDLL;SPHINXBASE_EXPORTS;HAVE_CONFIG_H;SPHINXDLL;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -225,7 +225,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\sphinxbase-0.4.99\include\win32&quot;;&quot;..\..\sphinxbase-0.4.99\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\sphinxbase-0.7\include\win32&quot;;&quot;..\..\sphinxbase-0.7\include&quot;"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_USRDLL;SPHINXBASE_EXPORTS;HAVE_CONFIG_H;SPHINXDLL;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -322,7 +322,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\sphinxbase-0.4.99\include\win32&quot;;&quot;..\..\sphinxbase-0.4.99\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\sphinxbase-0.7\include\win32&quot;;&quot;..\..\sphinxbase-0.7\include&quot;"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_USRDLL;SPHINXBASE_EXPORTS;HAVE_CONFIG_H;SPHINXDLL;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -389,7 +389,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\agc.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\feat\agc.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -429,7 +429,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\bio.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\bio.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -469,7 +469,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\bitvec.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\bitvec.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -509,7 +509,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\blas_lite.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\blas_lite.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -549,7 +549,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\case.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\case.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -589,7 +589,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\ckd_alloc.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\ckd_alloc.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -629,7 +629,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\cmd_ln.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\cmd_ln.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -669,7 +669,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\cmn.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\feat\cmn.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -709,7 +709,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\cmn_prior.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\feat\cmn_prior.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -749,7 +749,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxad\cont_ad_base.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxad\cont_ad_base.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -789,51 +789,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\dtoa.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\dtoa.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\err.c"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\f2c_lite.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\err.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -873,7 +833,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_interface.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\f2c_lite.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -913,7 +873,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_sigproc.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_interface.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -953,7 +913,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_sigproc.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -993,7 +953,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_affine.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1033,7 +993,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_inverse_linear.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_affine.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1073,7 +1033,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_piecewise_linear.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_inverse_linear.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1113,7 +1073,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\feat.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_piecewise_linear.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1153,7 +1113,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\filename.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\feat\feat.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1193,7 +1153,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fixlog.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\filename.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1233,11 +1193,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\fsg_model.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\genrand.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fixlog.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1277,7 +1233,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\glist.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\fsg_model.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\genrand.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1317,7 +1277,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\hash_table.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\glist.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1357,7 +1317,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\heap.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\hash_table.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1397,7 +1357,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\info.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\heap.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1437,19 +1397,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf_parser.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf_scanner.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\lda.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\info.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1489,83 +1437,19 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\listelem_alloc.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\lm3g_model.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf_parser.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\logmath.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf_scanner.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\matrix.c"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\mmio.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_arpa.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_dmp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_dmp32.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_set.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\pio.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\feat\lda.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1605,7 +1489,19 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxad\play_win32.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\listelem_alloc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\lm3g_model.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\logmath.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\matrix.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1645,7 +1541,31 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\profile.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\mmio.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_arpa.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_dmp.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_dmp32.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_set.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\pio.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1685,7 +1605,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxad\rec_win32.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxad\play_win32.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1725,11 +1645,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\sbthread.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\slamch.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\profile.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1769,7 +1685,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\slapack_lite.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxad\rec_win32.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1809,7 +1725,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\strfuncs.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\sbthread.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\slamch.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1849,7 +1769,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\unlimit.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\slapack_lite.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1889,7 +1809,87 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\yin.c"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\strfuncs.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\util\unlimit.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\yin.c"
 				>
 			</File>
 		</Filter>
@@ -1898,239 +1898,239 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\ad.h"
+				RelativePath="..\..\sphinxbase-0.7\include\ad.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\agc.h"
+				RelativePath="..\..\sphinxbase-0.7\include\agc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\bio.h"
+				RelativePath="..\..\sphinxbase-0.7\include\bio.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\bitvec.h"
+				RelativePath="..\..\sphinxbase-0.7\include\bitvec.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\byteorder.h"
+				RelativePath="..\..\sphinxbase-0.7\include\byteorder.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\case.h"
+				RelativePath="..\..\sphinxbase-0.7\include\case.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\ckd_alloc.h"
+				RelativePath="..\..\sphinxbase-0.7\include\ckd_alloc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\clapack_lite.h"
+				RelativePath="..\..\sphinxbase-0.7\include\clapack_lite.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\cmd_ln.h"
+				RelativePath="..\..\sphinxbase-0.7\include\cmd_ln.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\cmn.h"
+				RelativePath="..\..\sphinxbase-0.7\include\cmn.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\win32\config.h"
+				RelativePath="..\..\sphinxbase-0.7\include\win32\config.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\cont_ad.h"
+				RelativePath="..\..\sphinxbase-0.7\include\cont_ad.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\err.h"
+				RelativePath="..\..\sphinxbase-0.7\include\err.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\f2c.h"
+				RelativePath="..\..\sphinxbase-0.7\include\f2c.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\fe.h"
+				RelativePath="..\..\sphinxbase-0.7\include\fe.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_internal.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_internal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_affine.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_affine.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_inverse_linear.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_inverse_linear.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_piecewise_linear.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\fe\fe_warp_piecewise_linear.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\feat.h"
+				RelativePath="..\..\sphinxbase-0.7\include\feat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\filename.h"
+				RelativePath="..\..\sphinxbase-0.7\include\filename.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\fixpoint.h"
+				RelativePath="..\..\sphinxbase-0.7\include\fixpoint.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\fsg_model.h"
+				RelativePath="..\..\sphinxbase-0.7\include\fsg_model.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\gau_cb.h"
+				RelativePath="..\..\sphinxbase-0.7\include\gau_cb.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\gau_cb_float64.h"
+				RelativePath="..\..\sphinxbase-0.7\include\gau_cb_float64.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\gau_cb_int32.h"
+				RelativePath="..\..\sphinxbase-0.7\include\gau_cb_int32.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\gau_file.h"
+				RelativePath="..\..\sphinxbase-0.7\include\gau_file.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\gau_mix.h"
+				RelativePath="..\..\sphinxbase-0.7\include\gau_mix.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\genrand.h"
+				RelativePath="..\..\sphinxbase-0.7\include\genrand.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\glist.h"
+				RelativePath="..\..\sphinxbase-0.7\include\glist.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\hash_table.h"
+				RelativePath="..\..\sphinxbase-0.7\include\hash_table.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\heap.h"
+				RelativePath="..\..\sphinxbase-0.7\include\heap.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\info.h"
+				RelativePath="..\..\sphinxbase-0.7\include\info.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf_internal.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf_internal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf_parser.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf_parser.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf_scanner.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\jsgf_scanner.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\libutil.h"
+				RelativePath="..\..\sphinxbase-0.7\include\libutil.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\listelem_alloc.h"
+				RelativePath="..\..\sphinxbase-0.7\include\listelem_alloc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\lm3g_model.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\lm3g_model.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\logmath.h"
+				RelativePath="..\..\sphinxbase-0.7\include\logmath.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\matrix.h"
+				RelativePath="..\..\sphinxbase-0.7\include\matrix.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\mmio.h"
+				RelativePath="..\..\sphinxbase-0.7\include\mmio.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\mulaw.h"
+				RelativePath="..\..\sphinxbase-0.7\include\mulaw.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\ngram_model.h"
+				RelativePath="..\..\sphinxbase-0.7\include\ngram_model.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_arpa.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_arpa.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_dmp.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_dmp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_internal.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_internal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\ngram_model_set.h"
+				RelativePath="..\..\sphinxbase-0.7\src\libsphinxbase\lm\ngram_model_set.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\pio.h"
+				RelativePath="..\..\sphinxbase-0.7\include\pio.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\prim_type.h"
+				RelativePath="..\..\sphinxbase-0.7\include\prim_type.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\profile.h"
+				RelativePath="..\..\sphinxbase-0.7\include\profile.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\s3_arraylist.h"
+				RelativePath="..\..\sphinxbase-0.7\include\s3_arraylist.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\win32\sphinx_config.h"
+				RelativePath="..\..\sphinxbase-0.7\include\win32\sphinx_config.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\sphinx_types.h"
+				RelativePath="..\..\sphinxbase-0.7\include\sphinx_types.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\sphinxbase_export.h"
+				RelativePath="..\..\sphinxbase-0.7\include\sphinxbase_export.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\strfuncs.h"
+				RelativePath="..\..\sphinxbase-0.7\include\strfuncs.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\unlimit.h"
+				RelativePath="..\..\sphinxbase-0.7\include\unlimit.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sphinxbase-0.4.99\include\yin.h"
+				RelativePath="..\..\sphinxbase-0.7\include\yin.h"
 				>
 			</File>
 		</Filter>

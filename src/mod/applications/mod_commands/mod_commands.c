@@ -2123,6 +2123,34 @@ SWITCH_STANDARD_API(kill_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define OUTGOING_ANSWER_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(outgoing_answer_function)
+{
+	switch_core_session_t *outgoing_session = NULL;
+	char *mycmd = NULL;
+
+	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
+		stream->write_function(stream, "-USAGE: %s\n", OUTGOING_ANSWER_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (zstr(mycmd) || !(outgoing_session = switch_core_session_locate(mycmd))) {
+		stream->write_function(stream, "-ERR No Such Channel!\n");
+	} else {
+		switch_channel_t *channel = switch_core_session_get_channel(outgoing_session);
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_mark_answered(channel);
+			stream->write_function(stream, "+OK\n");
+		} else {
+			stream->write_function(stream, "-ERR Not an outbound channel!\n");
+		}
+		switch_core_session_rwunlock(outgoing_session);
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define PREPROCESS_SYNTAX "<>"
 SWITCH_STANDARD_API(preprocess_function)
 {
@@ -4720,6 +4748,30 @@ SWITCH_STANDARD_API(hupall_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_API(xml_flush_function)
+{
+	char *mycmd = NULL, *argv[3] = { 0 };
+	int argc = 0;
+	int r = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_split(mycmd, ' ', argv);
+	}
+
+	if (argc == 3) {
+		r = switch_xml_clear_user_cache(argv[0], argv[1], argv[2]);
+	} else {
+		r = switch_xml_clear_user_cache(NULL, NULL, NULL);
+	}
+
+
+	stream->write_function(stream, "+OK cleared %u entr%s\n", r, r == 1 ? "y" : "ies");
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(escape_function)
 {
 	int len;
@@ -5214,6 +5266,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_outgoing_answer", "Answer Outgoing Channel", outgoing_answer_function, OUTGOING_ANSWER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit", "Increase limit resource", uuid_limit_function, LIMIT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_loglevel", "set loglevel on session", uuid_loglevel, UUID_LOGLEVEL_SYNTAX);
@@ -5233,8 +5286,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_simplify", "Try to cut out of a call path / attended xfer", uuid_simplify_function, SIMPLIFY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_jitterbuffer", "Try to cut out of a call path / attended xfer", 
 				   uuid_jitterbuffer_function, JITTERBUFFER_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "xml_flush_cache", "clear xml cache", xml_flush_function, "<id> <key> <val>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
+
+
 	switch_console_set_complete("add alias add");
 	switch_console_set_complete("add alias del");
 	switch_console_set_complete("add complete add");
@@ -5333,6 +5389,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_hold ::console::list_uuid");
 	switch_console_set_complete("add uuid_jitterbuffer ::console::list_uuid");
 	switch_console_set_complete("add uuid_kill ::console::list_uuid");
+	switch_console_set_complete("add uuid_outgoing_answer ::console::list_uuid");
 	switch_console_set_complete("add uuid_limit ::console::list_uuid");
 	switch_console_set_complete("add uuid_limit_release ::console::list_uuid");
 	switch_console_set_complete("add uuid_loglevel ::console::list_uuid console");

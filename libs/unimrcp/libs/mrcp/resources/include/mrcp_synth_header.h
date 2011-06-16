@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_synth_header.h 1643 2010-04-08 13:40:09Z achaloyan $
  */
 
-#ifndef __MRCP_SYNTH_HEADER_H__
-#define __MRCP_SYNTH_HEADER_H__
+#ifndef MRCP_SYNTH_HEADER_H
+#define MRCP_SYNTH_HEADER_H
 
 /**
  * @file mrcp_synth_header.h
@@ -27,7 +29,7 @@
 
 APT_BEGIN_EXTERN_C
 
-/** MRCP synthesizer headers */
+/** MRCP synthesizer header fields */
 typedef enum {
 	SYNTHESIZER_HEADER_JUMP_SIZE,
 	SYNTHESIZER_HEADER_KILL_ON_BARGE_IN,
@@ -248,9 +250,9 @@ struct mrcp_synth_header_t {
 	/** MAY be specified in a "SPEAK-COMPLETE" event coming from
     the synthesizer resource to the client */
 	apt_str_t                     completion_reason;
-	/** This set of headers defines the voice of the speaker */
+	/** This set of header fields defines the voice of the speaker */
 	mrcp_voice_param_t            voice_param;
-	/** This set of headers defines the prosody of the speech */
+	/** This set of header fields defines the prosody of the speech */
 	mrcp_prosody_param_t          prosody_param;
 	/** Contains timestamp information in a "timestamp" field */
 	apt_str_t                     speech_marker;
@@ -285,7 +287,7 @@ struct mrcp_synth_header_t {
 	mrcp_speech_length_value_t    speak_length;
 	/** Used to indicate whether a lexicon has to be loaded or unloaded */
 	apt_bool_t                    load_lexicon;
-	/** used to specify a list of active Lexicon URIs and the
+	/** Used to specify a list of active Lexicon URIs and the
     search order among the active lexicons */
 	apt_str_t                     lexicon_search_order;
 };
@@ -299,4 +301,4 @@ MRCP_DECLARE(const apt_str_t*) mrcp_synth_completion_cause_get(mrcp_synth_comple
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_SYNTH_HEADER_H__*/
+#endif /* MRCP_SYNTH_HEADER_H */

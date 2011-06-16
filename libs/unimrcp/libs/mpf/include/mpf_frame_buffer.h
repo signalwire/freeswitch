@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_frame_buffer.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MPF_FRAME_BUFFER_H__
-#define __MPF_FRAME_BUFFER_H__
+#ifndef MPF_FRAME_BUFFER_H
+#define MPF_FRAME_BUFFER_H
 
 /**
  * @file mpf_frame_buffer.h
@@ -47,4 +49,4 @@ apt_bool_t mpf_frame_buffer_read(mpf_frame_buffer_t *buffer, mpf_frame_t *frame)
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_FRAME_BUFFER_H__*/
+#endif /* MPF_FRAME_BUFFER_H */

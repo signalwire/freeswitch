@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_generic_header.h 1710 2010-05-24 17:36:19Z achaloyan $
  */
 
-#ifndef __MRCP_GENERIC_HEADER_H__
-#define __MRCP_GENERIC_HEADER_H__
+#ifndef MRCP_GENERIC_HEADER_H
+#define MRCP_GENERIC_HEADER_H
 
 /**
  * @file mrcp_generic_header.h
@@ -27,7 +29,7 @@
 
 APT_BEGIN_EXTERN_C
 
-/** Enumeration of MRCP generic headers */
+/** Enumeration of MRCP generic header fields */
 typedef enum {
 	GENERIC_HEADER_ACTIVE_REQUEST_ID_LIST,
 	GENERIC_HEADER_PROXY_SYNC_ID,
@@ -42,7 +44,7 @@ typedef enum {
 	GENERIC_HEADER_LOGGING_TAG,
 	GENERIC_HEADER_VENDOR_SPECIFIC_PARAMS,
 	
-	/** Additional headers for MRCP v2 */
+	/** Additional header fields for MRCP v2 */
 	GENERIC_HEADER_ACCEPT,
 	GENERIC_HEADER_FETCH_TIMEOUT,
 	GENERIC_HEADER_SET_COOKIE,
@@ -65,7 +67,7 @@ struct mrcp_request_id_list_t {
 	/** Array of request identifiers */
 	mrcp_request_id ids[MAX_ACTIVE_REQUEST_ID_COUNT];
 	/** Number of request identifiers */
-	size_t          count;
+	apr_size_t          count;
 };
 
 
@@ -97,7 +99,7 @@ struct mrcp_generic_header_t {
 	/** Specifies the vendor specific parameters used by the media server */
 	apt_pair_arr_t        *vendor_specific_params;
 
-	/** Additional headers for MRCP v2 */
+	/** Additional header fields for MRCP v2 */
 	/** Specifies the acceptable media types set for entities returned in the response or events associated with this request */
 	apt_str_t              accept;
 	/** Defines the timeout for content that the server may need to fetch over the network */
@@ -115,9 +117,9 @@ MRCP_DECLARE(const mrcp_header_vtable_t*) mrcp_generic_header_vtable_get(mrcp_ve
 /** Append active request id list */
 MRCP_DECLARE(apt_bool_t) active_request_id_list_append(mrcp_generic_header_t *generic_header, mrcp_request_id request_id);
 /** Find request id in active request id list */
-MRCP_DECLARE(apt_bool_t) active_request_id_list_find(mrcp_generic_header_t *generic_header, mrcp_request_id request_id);
+MRCP_DECLARE(apt_bool_t) active_request_id_list_find(const mrcp_generic_header_t *generic_header, mrcp_request_id request_id);
 
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_GENERIC_HEADER_H__*/
+#endif /* MRCP_GENERIC_HEADER_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_dir_layout.c 1524 2010-02-15 20:44:16Z achaloyan $
  */
 
 #include <apr_file_info.h>
@@ -67,6 +69,17 @@ APT_DECLARE(char*) apt_datadir_filepath_get(const apt_dir_layout_t *dir_layout, 
 	if(dir_layout && dir_layout->data_dir_path && file_name) {
 		char *file_path = NULL;
 		if(apr_filepath_merge(&file_path,dir_layout->data_dir_path,file_name,0,pool) == APR_SUCCESS) {
+			return file_path;
+		}
+	}
+	return NULL;
+}
+
+APT_DECLARE(char*) apt_confdir_filepath_get(const apt_dir_layout_t *dir_layout, const char *file_name, apr_pool_t *pool)
+{
+	if(dir_layout && dir_layout->conf_dir_path && file_name) {
+		char *file_path = NULL;
+		if(apr_filepath_merge(&file_path,dir_layout->conf_dir_path,file_name,0,pool) == APR_SUCCESS) {
 			return file_path;
 		}
 	}

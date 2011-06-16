@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: rtsp_start_line.c 1671 2010-04-28 19:50:29Z achaloyan $
  */
 
 #include "rtsp_start_line.h"
@@ -43,6 +45,8 @@ static const apt_str_table_item_t rtsp_reason_string_table[] = {
 	{{"Not Found",              9},4},
 	{{"Method Not Allowed",    18},0},
 	{{"Not Acceptable",        14},4},
+	{{"Proxy Auth Required",   19},0},
+	{{"Request Timeout",       15},0},
 	{{"Session Not Found",     17},0},
 	{{"Internal Server Error", 21},0},
 	{{"Not Implemented",       15},4}
@@ -95,10 +99,20 @@ static rtsp_version_e rtsp_version_parse(const apt_str_t *field)
 /** Generate RTSP version */
 static apt_bool_t rtsp_version_generate(rtsp_version_e version, apt_text_stream_t *stream)
 {
+	if(stream->pos + RTSP_NAME_LENGTH + 1 >= stream->end) {
+		return FALSE;
+	}
 	memcpy(stream->pos,RTSP_NAME,RTSP_NAME_LENGTH);
 	stream->pos += RTSP_NAME_LENGTH;
 	*stream->pos++ = RTSP_NAME_VERSION_SEPARATOR;
-	apt_size_value_generate(version,stream);
+
+	if(apt_text_size_value_insert(stream,version) == FALSE) {
+		return FALSE;
+	}
+
+	if(stream->pos + 2 >= stream->end) {
+		return FALSE;
+	}
 	*stream->pos++ = RTSP_VERSION_MAJOR_MINOR_SEPARATOR;
 	*stream->pos++ = '0';
 	return TRUE;
@@ -113,7 +127,7 @@ static APR_INLINE rtsp_status_code_e rtsp_status_code_parse(const apt_str_t *fie
 /** Generate RTSP status-code */
 static APR_INLINE apt_bool_t rtsp_status_code_generate(rtsp_status_code_e status_code, apt_text_stream_t *stream)
 {
-	return apt_size_value_generate(status_code,stream);
+	return apt_text_size_value_insert(stream,status_code);
 }
 
 /** Generate RTSP request-line */
@@ -124,40 +138,50 @@ static apt_bool_t rtsp_request_line_generate(rtsp_request_line_t *start_line, ap
 		return FALSE;
 	}
 	start_line->method_name = *method_name;
-	apt_string_value_generate(&start_line->method_name,stream);
-	apt_text_space_insert(stream);
+	if(apt_text_string_insert(stream,&start_line->method_name) == FALSE) {
+		return FALSE;
+	}
+	if(apt_text_space_insert(stream) == FALSE) {
+		return FALSE;
+	}
 
-	apt_string_value_generate(&start_line->url,stream);
-	apt_text_space_insert(stream);
+	if(apt_text_string_insert(stream,&start_line->url) == FALSE) {
+		return FALSE;
+	}
+	if(apt_text_space_insert(stream) == FALSE) {
+		return FALSE;
+	}
 
-	rtsp_version_generate(start_line->version,stream);
-	return TRUE;
+	return rtsp_version_generate(start_line->version,stream);
 }
 
 /** Generate RTSP status-line */
 static apt_bool_t rtsp_status_line_generate(rtsp_status_line_t *start_line, apt_text_stream_t *stream)
 {
-	rtsp_version_generate(start_line->version,stream);
-	apt_text_space_insert(stream);
-
-	rtsp_status_code_generate(start_line->status_code,stream);
-	apt_text_space_insert(stream);
-
-	apt_string_value_generate(&start_line->reason,stream);
-	return TRUE;
-}
-
-/** Parse RTSP start-line */
-RTSP_DECLARE(apt_bool_t) rtsp_start_line_parse(rtsp_start_line_t *start_line, apt_text_stream_t *stream, apr_pool_t *pool)
-{
-	apt_text_stream_t line;
-	apt_str_t field;
-	if(apt_text_line_read(stream,&line.text) == FALSE) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot parse RTSP start-line");
+	if(rtsp_version_generate(start_line->version,stream) == FALSE) {
+		return FALSE;
+	}
+	if(apt_text_space_insert(stream) == FALSE) {
 		return FALSE;
 	}
 
-	apt_text_stream_reset(&line);
+	if(rtsp_status_code_generate(start_line->status_code,stream) == FALSE) {
+		return FALSE;
+	}
+	if(apt_text_space_insert(stream) == FALSE) {
+		return FALSE;
+	}
+
+	return apt_text_string_insert(stream,&start_line->reason);
+}
+
+/** Parse RTSP start-line */
+RTSP_DECLARE(apt_bool_t) rtsp_start_line_parse(rtsp_start_line_t *start_line, apt_str_t *str, apr_pool_t *pool)
+{
+	apt_text_stream_t line;
+	apt_str_t field;
+
+	apt_text_stream_init(&line,str->buf,str->length);
 	if(apt_text_field_read(&line,APT_TOKEN_SP,TRUE,&field) == FALSE) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot read the first field in start-line");
 		return FALSE;
@@ -223,11 +247,11 @@ RTSP_DECLARE(apt_bool_t) rtsp_start_line_generate(rtsp_start_line_t *start_line,
 			break;
 	}
 
-	if(status == TRUE) {
-		apt_text_eol_insert(stream);
+	if(status == FALSE) {
+		return FALSE;
 	}
-	
-	return status;
+		
+	return apt_text_eol_insert(stream);
 }
 
 /** Get reason phrase by status code */

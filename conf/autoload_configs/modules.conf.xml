@@ -42,6 +42,7 @@
     <!-- <load module="mod_unicall"/> -->
     <!-- <load module="mod_skinny"/> -->
     <!-- <load module="mod_khomp"/>   -->
+    <!-- <load module="mod_rtmp"/>   -->
 
     <!-- Applications -->
     <load module="mod_commands"/>

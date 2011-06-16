@@ -616,6 +616,10 @@ static const char *message_names[] = {
 	"APPLICATION_EXEC_COMPLETE",
 	"PHONE_EVENT",
 	"T38_DESCRIPTION"
+	"UDPTL_MODE",
+	"CLEAR_PROGRESS",
+	"JITTER_BUFFER",
+	"RECOVERY_REFRESH",
 	"INVALID"
 };
 
@@ -644,8 +648,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		message->_line = line;
 	}
 
-	if (message->message_id > SWITCH_MESSAGE_INVALID) {
-		message->message_id = SWITCH_MESSAGE_INVALID;
+	if (message->message_id > SWITCH_MESSAGE_INVALID-1) {
+		message->message_id = SWITCH_MESSAGE_INVALID-1;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
@@ -1975,7 +1979,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	char *expanded = NULL;
 	const char *app;
 	switch_core_session_message_t msg = { 0 };
-
+	char delim = ',';
+	
 	switch_assert(application_interface);
 
 	app = application_interface->interface_name;
@@ -1983,6 +1988,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	if (arg) {
 		expanded = switch_channel_expand_variables(session->channel, arg);
 	}
+
+	if (expanded && *expanded == '%' && (*(expanded+1) == '[' || *(expanded+2) == '[')) {
+		char *p, *dup;
+		switch_event_t *ovars = NULL;
+		
+		p = expanded + 1;
+
+		if (*p != '[') {
+			delim = *p;
+			p++;
+		}
+
+		dup = strdup(p);
+		
+		if (expanded != arg) {
+			switch_safe_free(expanded);
+		}
+
+		switch_event_create_brackets(dup, '[', ']', delim, &ovars, &expanded, SWITCH_TRUE);
+		free(dup);
+
+		switch_channel_set_scope_variables(session->channel, &ovars);
+	}
+
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, "EXECUTE %s %s(%s)\n",
 					  switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
@@ -2061,6 +2090,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	if (expanded != arg) {
 		switch_safe_free(expanded);
 	}
+
+	switch_channel_set_scope_variables(session->channel, NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -13,204 +13,189 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\acmod.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\acmod.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\bin_mdef.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\bin_mdef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\blkarray_list.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\blkarray_list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\cmdln_macro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\cmu6_lts_rules.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\cmu6_lts_rules.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\dict.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\dict2pid.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict2pid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fillpen.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fillpen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_history.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_history.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_lextree.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_lextree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_search_internal.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_search_internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\fsg_set.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\hmm.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\hmm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\kdtree.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\kdtree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\lextree.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\lextree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\mdef.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\mdef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_gauden.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_gauden.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_mgau.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_mgau.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_senone.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_senone.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search_fwdflat.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdflat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search_fwdtree.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdtree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\phone_loop_search.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\phone_loop_search.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\pocketsphinx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\include\pocketsphinx.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\include\pocketsphinx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\include\pocketsphinx_export.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\include\pocketsphinx_export.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\pocketsphinx_internal.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\pocketsphinx_internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\posixwin32.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\posixwin32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ps_lattice.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_lattice.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ps_lattice_internal.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_lattice_internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\include\ps_mllr.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\include\ps_mllr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\s2_semi_mgau.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\s2_semi_mgau.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\s3dict.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\s3dict.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\tmat.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\tmat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\tst_search.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\tst_search.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\vector.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\vector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\vithist.h">
+    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\vithist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\acmod.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\acmod.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\bin_mdef.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\bin_mdef.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\blkarray_list.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\blkarray_list.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\cmu6_lts_rules.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict2pid.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\dict2pid.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_history.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fillpen.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_lextree.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_history.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_search.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_lextree.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\hmm.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\fsg_search.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\mdef.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\hmm.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_gauden.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\kdtree.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_mgau.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\lextree.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_senone.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\mdef.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_gauden.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdflat.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_mgau.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdtree.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ms_senone.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\phone_loop_search.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\pocketsphinx.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search_fwdflat.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_lattice.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ngram_search_fwdtree.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_mllr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\phone_loop_search.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\s2_semi_mgau.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\pocketsphinx.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\tmat.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ps_lattice.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\vector.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ps_mllr.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\s2_semi_mgau.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\s3dict.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\tmat.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\tst_search.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\vector.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\vithist.c">
+    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ptm_mgau.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

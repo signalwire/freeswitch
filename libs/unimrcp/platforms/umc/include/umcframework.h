@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: umcframework.h 1585 2010-03-12 19:12:05Z achaloyan $
  */
 
-#ifndef __UMC_FRAMEWORK_H__
-#define __UMC_FRAMEWORK_H__
+#ifndef UMC_FRAMEWORK_H
+#define UMC_FRAMEWORK_H
 
 /**
  * @file umcframework.h
@@ -42,6 +44,7 @@ public:
 	void Destroy();
 
 	void RunSession(const char* pScenarioName, const char* pProfileName);
+	void StopSession(const char* id);
 	void KillSession(const char* id);
 
 	void ShowScenarios();
@@ -61,6 +64,7 @@ protected:
 	void DestroyScenarios();
 
 	bool ProcessRunRequest(const char* pScenarioName, const char* pProfileName);
+	void ProcessStopRequest(const char* id);
 	void ProcessKillRequest(const char* id);
 	void ProcessShowScenarios();
 	void ProcessShowSessions();
@@ -89,4 +93,4 @@ private:
 	apr_hash_t*          m_pSessionTable;
 };
 
-#endif /*__UMC_FRAMEWORK_H__*/
+#endif /* UMC_FRAMEWORK_H */

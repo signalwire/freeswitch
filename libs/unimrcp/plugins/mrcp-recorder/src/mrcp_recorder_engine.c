@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_recorder_engine.c 1706 2010-05-23 14:11:11Z achaloyan $
  */
 
 /* 
@@ -130,13 +132,13 @@ static apt_bool_t recorder_engine_destroy(mrcp_engine_t *engine)
 /** Open recorder engine */
 static apt_bool_t recorder_engine_open(mrcp_engine_t *engine)
 {
-	return TRUE;
+	return mrcp_engine_open_respond(engine,TRUE);
 }
 
 /** Close recorder engine */
 static apt_bool_t recorder_engine_close(mrcp_engine_t *engine)
 {
-	return TRUE;
+	return mrcp_engine_close_respond(engine);
 }
 
 static mrcp_engine_channel_t* recorder_engine_channel_create(mrcp_engine_t *engine, apr_pool_t *pool)
@@ -434,15 +436,18 @@ static apt_bool_t recorder_stream_write(mpf_audio_stream_t *stream, const mpf_fr
 		mpf_detector_event_e det_event = mpf_activity_detector_process(recorder_channel->detector,frame);
 		switch(det_event) {
 			case MPF_DETECTOR_EVENT_ACTIVITY:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Activity");
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Activity "APT_SIDRES_FMT,
+					MRCP_MESSAGE_SIDRES(recorder_channel->record_request));
 				recorder_start_of_input(recorder_channel);
 				break;
 			case MPF_DETECTOR_EVENT_INACTIVITY:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Inactivity");
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Inactivity "APT_SIDRES_FMT,
+					MRCP_MESSAGE_SIDRES(recorder_channel->record_request));
 				recorder_record_complete(recorder_channel,RECORDER_COMPLETION_CAUSE_SUCCESS_SILENCE);
 				break;
 			case MPF_DETECTOR_EVENT_NOINPUT:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Noinput");
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Noinput "APT_SIDRES_FMT,
+					MRCP_MESSAGE_SIDRES(recorder_channel->record_request));
 				if(recorder_channel->timers_started == TRUE) {
 					recorder_record_complete(recorder_channel,RECORDER_COMPLETION_CAUSE_NO_INPUT_TIMEOUT);
 				}

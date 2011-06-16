@@ -149,26 +149,26 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 
 		if(mlen) {
 			bytes += mlen;
-	
+
 			if(bytes >= SKINNY_MESSAGE_FIELD_SIZE) {
 				do_sleep = 0;
 				ptr += mlen;
 				memcpy(request, mbuf, bytes);
 #ifdef SKINNY_MEGA_DEBUG
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-					"Got request: length=%d,reserved=%x,type=%x\n",
-					request->length,request->reserved,request->type);
+						"Got request: length=%d,reserved=%x,type=%x\n",
+						request->length,request->reserved,request->type);
 #endif
 				if(request->length < SKINNY_MESSAGE_FIELD_SIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-						"Skinny client sent invalid data. Length should be greater than 4 but got %d.\n",
-						request->length);
+							"Skinny client sent invalid data. Length should be greater than 4 but got %d.\n",
+							request->length);
 					return SWITCH_STATUS_FALSE;
 				}
 				if(request->length + 2*SKINNY_MESSAGE_FIELD_SIZE > SKINNY_MESSAGE_MAXSIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-						"Skinny client sent too huge data. Got %d which is above threshold %d.\n",
-						request->length, SKINNY_MESSAGE_MAXSIZE - 2*SKINNY_MESSAGE_FIELD_SIZE);
+							"Skinny client sent too huge data. Got %d which is above threshold %d.\n",
+							request->length, SKINNY_MESSAGE_MAXSIZE - 2*SKINNY_MESSAGE_FIELD_SIZE);
 					return SWITCH_STATUS_FALSE;
 				}
 				if(bytes >= request->length + 2*SKINNY_MESSAGE_FIELD_SIZE) {
@@ -224,10 +224,10 @@ switch_status_t skinny_device_event(listener_t *listener, switch_event_t **ev, s
 	switch_event_create_subclass(&event, event_id, subclass_name);
 	switch_assert(event);
 	if ((sql = switch_mprintf("SELECT '%s', name, user_id, instance, ip, type, max_streams, port, codec_string "
-	        "FROM skinny_devices "
-			"WHERE name='%s' AND instance=%d",
-			listener->profile->name,
-			listener->device_name, listener->device_instance))) {
+					"FROM skinny_devices "
+					"WHERE name='%s' AND instance=%d",
+					listener->profile->name,
+					listener->device_name, listener->device_instance))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql, skinny_device_event_callback, event);
 		switch_safe_free(sql);
 	}
@@ -243,14 +243,14 @@ switch_status_t skinny_session_walk_lines(skinny_profile_t *profile, char *chann
 {
 	char *sql;
 	if ((sql = switch_mprintf(
-			"SELECT skinny_lines.*, channel_uuid, call_id, call_state "
-			"FROM skinny_active_lines "
-			"INNER JOIN skinny_lines "
-				"ON skinny_active_lines.device_name = skinny_lines.device_name "
-				"AND skinny_active_lines.device_instance = skinny_lines.device_instance "
-				"AND skinny_active_lines.line_instance = skinny_lines.line_instance "
-			"WHERE channel_uuid='%s'",
-			channel_uuid))) {
+					"SELECT skinny_lines.*, channel_uuid, call_id, call_state "
+					"FROM skinny_active_lines "
+					"INNER JOIN skinny_lines "
+					"ON skinny_active_lines.device_name = skinny_lines.device_name "
+					"AND skinny_active_lines.device_instance = skinny_lines.device_instance "
+					"AND skinny_active_lines.line_instance = skinny_lines.line_instance "
+					"WHERE channel_uuid='%s'",
+					channel_uuid))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql, callback, data);
 		switch_safe_free(sql);
 	}
@@ -261,14 +261,14 @@ switch_status_t skinny_session_walk_lines_by_call_id(skinny_profile_t *profile, 
 {
 	char *sql;
 	if ((sql = switch_mprintf(
-			"SELECT skinny_lines.*, channel_uuid, call_id, call_state "
-			"FROM skinny_active_lines "
-			"INNER JOIN skinny_lines "
-				"ON skinny_active_lines.device_name = skinny_lines.device_name "
-				"AND skinny_active_lines.device_instance = skinny_lines.device_instance "
-				"AND skinny_active_lines.line_instance = skinny_lines.line_instance "
-			"WHERE call_id='%d'",
-			call_id))) {
+					"SELECT skinny_lines.*, channel_uuid, call_id, call_state "
+					"FROM skinny_active_lines "
+					"INNER JOIN skinny_lines "
+					"ON skinny_active_lines.device_name = skinny_lines.device_name "
+					"AND skinny_active_lines.device_instance = skinny_lines.device_instance "
+					"AND skinny_active_lines.line_instance = skinny_lines.line_instance "
+					"WHERE call_id='%d'",
+					call_id))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql, callback, data);
 		switch_safe_free(sql);
 	}
@@ -309,13 +309,13 @@ void skinny_line_get(listener_t *listener, uint32_t instance, struct line_stat_r
 	helper.button = switch_core_alloc(listener->pool, sizeof(struct line_stat_res_message));
 
 	if ((sql = switch_mprintf(
-			"SELECT '%d' AS wanted_position, position, label, value, caller_name "
-				"FROM skinny_lines "
-				"WHERE device_name='%s' AND device_instance=%d "
-				"ORDER BY position",
-			instance,
-			listener->device_name, listener->device_instance
-			))) {
+					"SELECT '%d' AS wanted_position, position, label, value, caller_name "
+					"FROM skinny_lines "
+					"WHERE device_name='%s' AND device_instance=%d "
+					"ORDER BY position",
+					instance,
+					listener->device_name, listener->device_instance
+				 ))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_line_get_callback, &helper);
 		switch_safe_free(sql);
 	}
@@ -352,14 +352,14 @@ void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed
 	helper.button = switch_core_alloc(listener->pool, sizeof(struct speed_dial_stat_res_message));
 
 	if ((sql = switch_mprintf(
-			"SELECT '%d' AS wanted_position, position, label, value, settings "
-				"FROM skinny_buttons "
-				"WHERE device_name='%s' AND device_instance=%d AND type=%d "
-				"ORDER BY position",
-			instance,
-			listener->device_name, listener->device_instance,
-			SKINNY_BUTTON_SPEED_DIAL
-			))) {
+					"SELECT '%d' AS wanted_position, position, label, value, settings "
+					"FROM skinny_buttons "
+					"WHERE device_name='%s' AND device_instance=%d AND type=%d "
+					"ORDER BY position",
+					instance,
+					listener->device_name, listener->device_instance,
+					SKINNY_BUTTON_SPEED_DIAL
+				 ))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_speed_dial_get_callback, &helper);
 		switch_safe_free(sql);
 	}
@@ -396,15 +396,15 @@ void skinny_service_url_get(listener_t *listener, uint32_t instance, struct serv
 	helper.button = switch_core_alloc(listener->pool, sizeof(struct service_url_stat_res_message));
 
 	if ((sql = switch_mprintf(
-			"SELECT '%d' AS wanted_position, position, label, value, settings "
-				"FROM skinny_buttons "
-				"WHERE device_name='%s' AND device_instance=%d AND type=%d "
-				"ORDER BY position",
-			instance,
-			listener->device_name,
-			listener->device_instance,
-			SKINNY_BUTTON_SERVICE_URL
-			))) {
+					"SELECT '%d' AS wanted_position, position, label, value, settings "
+					"FROM skinny_buttons "
+					"WHERE device_name='%s' AND device_instance=%d AND type=%d "
+					"ORDER BY position",
+					instance,
+					listener->device_name,
+					listener->device_instance,
+					SKINNY_BUTTON_SERVICE_URL
+				 ))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_service_url_get_callback, &helper);
 		switch_safe_free(sql);
 	}
@@ -442,15 +442,15 @@ void skinny_feature_get(listener_t *listener, uint32_t instance, struct feature_
 	helper.button = switch_core_alloc(listener->pool, sizeof(struct feature_stat_res_message));
 
 	if ((sql = switch_mprintf(
-			"SELECT '%d' AS wanted_position, position, label, value, settings "
-				"FROM skinny_buttons "
-				"WHERE device_name='%s' AND device_instance=%d AND NOT (type=%d OR type=%d) "
-				"ORDER BY position",
-			instance,
-			listener->device_name,
-			listener->device_instance,
-			SKINNY_BUTTON_SPEED_DIAL, SKINNY_BUTTON_SERVICE_URL
-			))) {
+					"SELECT '%d' AS wanted_position, position, label, value, settings "
+					"FROM skinny_buttons "
+					"WHERE device_name='%s' AND device_instance=%d AND NOT (type=%d OR type=%d) "
+					"ORDER BY position",
+					instance,
+					listener->device_name,
+					listener->device_instance,
+					SKINNY_BUTTON_SPEED_DIAL, SKINNY_BUTTON_SERVICE_URL
+				 ))) {
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_feature_get_callback, &helper);
 		switch_safe_free(sql);
 	}
@@ -461,11 +461,11 @@ void skinny_feature_get(listener_t *listener, uint32_t instance, struct feature_
 /* SKINNY MESSAGE SENDER */
 /*****************************************************************************/
 switch_status_t send_register_ack(listener_t *listener,
-	uint32_t keep_alive,
-	char *date_format,
-	char *reserved,
-	uint32_t secondary_keep_alive,
-	char *reserved2)
+		uint32_t keep_alive,
+		char *date_format,
+		char *reserved,
+		uint32_t secondary_keep_alive,
+		char *reserved2)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_ack));
@@ -480,10 +480,10 @@ switch_status_t send_register_ack(listener_t *listener,
 }
 
 switch_status_t send_start_tone(listener_t *listener,
-	uint32_t tone,
-	uint32_t reserved,
-	uint32_t line_instance,
-	uint32_t call_id)
+		uint32_t tone,
+		uint32_t reserved,
+		uint32_t line_instance,
+		uint32_t call_id)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.start_tone));
@@ -497,8 +497,8 @@ switch_status_t send_start_tone(listener_t *listener,
 }
 
 switch_status_t send_stop_tone(listener_t *listener,
-	uint32_t line_instance,
-	uint32_t call_id)
+		uint32_t line_instance,
+		uint32_t call_id)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.stop_tone));
@@ -510,10 +510,10 @@ switch_status_t send_stop_tone(listener_t *listener,
 }
 
 switch_status_t send_set_ringer(listener_t *listener,
-	uint32_t ring_type,
-	uint32_t ring_mode,
-	uint32_t line_instance,
-	uint32_t call_id)
+		uint32_t ring_type,
+		uint32_t ring_mode,
+		uint32_t line_instance,
+		uint32_t call_id)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.ringer));
@@ -527,9 +527,9 @@ switch_status_t send_set_ringer(listener_t *listener,
 }
 
 switch_status_t send_set_lamp(listener_t *listener,
-	uint32_t stimulus,
-	uint32_t stimulus_instance,
-	uint32_t mode)
+		uint32_t stimulus,
+		uint32_t stimulus_instance,
+		uint32_t mode)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.lamp));
@@ -542,7 +542,7 @@ switch_status_t send_set_lamp(listener_t *listener,
 }
 
 switch_status_t send_set_speaker_mode(listener_t *listener,
-	uint32_t mode)
+		uint32_t mode)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.speaker_mode));
@@ -553,16 +553,16 @@ switch_status_t send_set_speaker_mode(listener_t *listener,
 }
 
 switch_status_t send_start_media_transmission(listener_t *listener,
-	uint32_t conference_id,
-	uint32_t pass_thru_party_id,
-	uint32_t remote_ip,
-	uint32_t remote_port,
-	uint32_t ms_per_packet,
-	uint32_t payload_capacity,
-	uint32_t precedence,
-	uint32_t silence_suppression,
-	uint16_t max_frames_per_packet,
-	uint32_t g723_bitrate)
+		uint32_t conference_id,
+		uint32_t pass_thru_party_id,
+		uint32_t remote_ip,
+		uint32_t remote_port,
+		uint32_t ms_per_packet,
+		uint32_t payload_capacity,
+		uint32_t precedence,
+		uint32_t silence_suppression,
+		uint16_t max_frames_per_packet,
+		uint32_t g723_bitrate)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.start_media));
@@ -583,9 +583,9 @@ switch_status_t send_start_media_transmission(listener_t *listener,
 }
 
 switch_status_t send_stop_media_transmission(listener_t *listener,
-	uint32_t conference_id,
-	uint32_t pass_thru_party_id,
-	uint32_t conference_id2)
+		uint32_t conference_id,
+		uint32_t pass_thru_party_id,
+		uint32_t conference_id2)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.stop_media));
@@ -599,26 +599,26 @@ switch_status_t send_stop_media_transmission(listener_t *listener,
 }
 
 switch_status_t skinny_send_call_info(listener_t *listener,
-	const char *calling_party_name,
-	const char *calling_party,
-	const char *called_party_name,
-	const char *called_party,
-	uint32_t line_instance,
-	uint32_t call_id,
-	uint32_t call_type,
-	const char *original_called_party_name,
-	const char *original_called_party,
-	const char *last_redirecting_party_name,
-	const char *last_redirecting_party,
-	uint32_t original_called_party_redirect_reason,
-	uint32_t last_redirecting_reason,
-	const char *calling_party_voice_mailbox,
-	const char *called_party_voice_mailbox,
-	const char *original_called_party_voice_mailbox,
-	const char *last_redirecting_voice_mailbox,
-	uint32_t call_instance,
-	uint32_t call_security_status,
-	uint32_t party_pi_restriction_bits)
+		const char *calling_party_name,
+		const char *calling_party,
+		const char *called_party_name,
+		const char *called_party,
+		uint32_t line_instance,
+		uint32_t call_id,
+		uint32_t call_type,
+		const char *original_called_party_name,
+		const char *original_called_party,
+		const char *last_redirecting_party_name,
+		const char *last_redirecting_party,
+		uint32_t original_called_party_redirect_reason,
+		uint32_t last_redirecting_reason,
+		const char *calling_party_voice_mailbox,
+		const char *called_party_voice_mailbox,
+		const char *original_called_party_voice_mailbox,
+		const char *last_redirecting_voice_mailbox,
+		uint32_t call_instance,
+		uint32_t call_security_status,
+		uint32_t party_pi_restriction_bits)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.call_info));
@@ -648,15 +648,15 @@ switch_status_t skinny_send_call_info(listener_t *listener,
 }
 
 switch_status_t send_define_time_date(listener_t *listener,
-	uint32_t year,
-	uint32_t month,
-	uint32_t day_of_week, /* monday = 1 */
-	uint32_t day,
-	uint32_t hour,
-	uint32_t minute,
-	uint32_t seconds,
-	uint32_t milliseconds,
-	uint32_t timestamp)
+		uint32_t year,
+		uint32_t month,
+		uint32_t day_of_week, /* monday = 1 */
+		uint32_t day,
+		uint32_t hour,
+		uint32_t minute,
+		uint32_t seconds,
+		uint32_t milliseconds,
+		uint32_t timestamp)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.define_time_date));
@@ -681,15 +681,15 @@ switch_status_t send_define_current_time_date(listener_t *listener)
 	ts = switch_micro_time_now();
 	switch_time_exp_lt(&tm, ts);
 	return send_define_time_date(listener,
-	    tm.tm_year + 1900,
-	    tm.tm_mon + 1,
-	    tm.tm_wday,
-	    tm.tm_mday,
-	    tm.tm_hour,
-	    tm.tm_min,
-	    tm.tm_sec,
-	    tm.tm_usec / 1000,
-	    ts / 1000000);
+			tm.tm_year + 1900,
+			tm.tm_mon + 1,
+			tm.tm_wday,
+			tm.tm_mday,
+			tm.tm_hour,
+			tm.tm_min,
+			tm.tm_sec,
+			tm.tm_usec / 1000,
+			ts / 1000000);
 }
 
 switch_status_t send_capabilities_req(listener_t *listener)
@@ -702,7 +702,7 @@ switch_status_t send_capabilities_req(listener_t *listener)
 }
 
 switch_status_t send_version(listener_t *listener,
-	char *version)
+		char *version)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.version));
@@ -713,7 +713,7 @@ switch_status_t send_version(listener_t *listener,
 }
 
 switch_status_t send_register_reject(listener_t *listener,
-    char *error)
+		char *error)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_rej));
@@ -724,14 +724,14 @@ switch_status_t send_register_reject(listener_t *listener,
 }
 
 switch_status_t send_open_receive_channel(listener_t *listener,
-	uint32_t conference_id,
-	uint32_t pass_thru_party_id,
-	uint32_t packets,
-	uint32_t payload_capacity,
-	uint32_t echo_cancel_type,
-	uint32_t g723_bitrate,
-	uint32_t conference_id2,
-	uint32_t reserved[10])
+		uint32_t conference_id,
+		uint32_t pass_thru_party_id,
+		uint32_t packets,
+		uint32_t payload_capacity,
+		uint32_t echo_cancel_type,
+		uint32_t g723_bitrate,
+		uint32_t conference_id2,
+		uint32_t reserved[10])
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.open_receive_channel));
@@ -745,24 +745,24 @@ switch_status_t send_open_receive_channel(listener_t *listener,
 	message->data.open_receive_channel.g723_bitrate = g723_bitrate;
 	message->data.open_receive_channel.conference_id2 = conference_id2;
 	/*
-	message->data.open_receive_channel.reserved[0] = reserved[0];
-	message->data.open_receive_channel.reserved[1] = reserved[1];
-	message->data.open_receive_channel.reserved[2] = reserved[2];
-	message->data.open_receive_channel.reserved[3] = reserved[3];
-	message->data.open_receive_channel.reserved[4] = reserved[4];
-	message->data.open_receive_channel.reserved[5] = reserved[5];
-	message->data.open_receive_channel.reserved[6] = reserved[6];
-	message->data.open_receive_channel.reserved[7] = reserved[7];
-	message->data.open_receive_channel.reserved[8] = reserved[8];
-	message->data.open_receive_channel.reserved[9] = reserved[9];
-	*/
+	   message->data.open_receive_channel.reserved[0] = reserved[0];
+	   message->data.open_receive_channel.reserved[1] = reserved[1];
+	   message->data.open_receive_channel.reserved[2] = reserved[2];
+	   message->data.open_receive_channel.reserved[3] = reserved[3];
+	   message->data.open_receive_channel.reserved[4] = reserved[4];
+	   message->data.open_receive_channel.reserved[5] = reserved[5];
+	   message->data.open_receive_channel.reserved[6] = reserved[6];
+	   message->data.open_receive_channel.reserved[7] = reserved[7];
+	   message->data.open_receive_channel.reserved[8] = reserved[8];
+	   message->data.open_receive_channel.reserved[9] = reserved[9];
+	 */
 	return skinny_send_reply(listener, message);
 }
 
 switch_status_t send_close_receive_channel(listener_t *listener,
-	uint32_t conference_id,
-	uint32_t pass_thru_party_id,
-	uint32_t conference_id2)
+		uint32_t conference_id,
+		uint32_t pass_thru_party_id,
+		uint32_t conference_id2)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.close_receive_channel));
@@ -775,10 +775,10 @@ switch_status_t send_close_receive_channel(listener_t *listener,
 }
 
 switch_status_t send_select_soft_keys(listener_t *listener,
-	uint32_t line_instance,
-	uint32_t call_id,
-	uint32_t soft_key_set,
-	uint32_t valid_key_mask)
+		uint32_t line_instance,
+		uint32_t call_id,
+		uint32_t soft_key_set,
+		uint32_t valid_key_mask)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.select_soft_keys));
@@ -792,9 +792,9 @@ switch_status_t send_select_soft_keys(listener_t *listener,
 }
 
 switch_status_t send_call_state(listener_t *listener,
-	uint32_t call_state,
-	uint32_t line_instance,
-	uint32_t call_id)
+		uint32_t call_state,
+		uint32_t line_instance,
+		uint32_t call_id)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.call_state));
@@ -807,10 +807,10 @@ switch_status_t send_call_state(listener_t *listener,
 }
 
 switch_status_t send_display_prompt_status(listener_t *listener,
-	uint32_t timeout,
-	const char *display,
-	uint32_t line_instance,
-	uint32_t call_id)
+		uint32_t timeout,
+		const char *display,
+		uint32_t line_instance,
+		uint32_t call_id)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.display_prompt_status));
@@ -824,8 +824,8 @@ switch_status_t send_display_prompt_status(listener_t *listener,
 }
 
 switch_status_t send_clear_prompt_status(listener_t *listener,
-	uint32_t line_instance,
-	uint32_t call_id)
+		uint32_t line_instance,
+		uint32_t call_id)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.clear_prompt_status));
@@ -837,7 +837,7 @@ switch_status_t send_clear_prompt_status(listener_t *listener,
 }
 
 switch_status_t send_activate_call_plane(listener_t *listener,
-	uint32_t line_instance)
+		uint32_t line_instance)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.activate_call_plane));
@@ -848,8 +848,8 @@ switch_status_t send_activate_call_plane(listener_t *listener,
 }
 
 switch_status_t send_back_space_request(listener_t *listener,
-    uint32_t line_instance,
-    uint32_t call_id)
+		uint32_t line_instance,
+		uint32_t call_id)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.back_space_req));
@@ -862,9 +862,9 @@ switch_status_t send_back_space_request(listener_t *listener,
 }
 
 switch_status_t send_dialed_number(listener_t *listener,
-	char called_party[24],
-	uint32_t line_instance,
-	uint32_t call_id)
+		char called_party[24],
+		uint32_t line_instance,
+		uint32_t call_id)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.dialed_number));
@@ -877,9 +877,9 @@ switch_status_t send_dialed_number(listener_t *listener,
 }
 
 switch_status_t send_display_pri_notify(listener_t *listener,
-	uint32_t message_timeout,
-	uint32_t priority,
-	char *notify)
+		uint32_t message_timeout,
+		uint32_t priority,
+		char *notify)
 {
 	skinny_message_t *message;
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.display_pri_notify));
@@ -903,12 +903,12 @@ switch_status_t send_reset(listener_t *listener, uint32_t reset_type)
 }
 
 switch_status_t send_data(listener_t *listener, uint32_t message_type,
-	uint32_t application_id,
-	uint32_t line_instance,
-	uint32_t call_id,
-	uint32_t transaction_id,
-	uint32_t data_length,
-	const char *data)
+		uint32_t application_id,
+		uint32_t line_instance,
+		uint32_t call_id,
+		uint32_t transaction_id,
+		uint32_t data_length,
+		const char *data)
 {
 	skinny_message_t *message;
 	switch_assert(data_length == strlen(data));
@@ -929,17 +929,17 @@ switch_status_t send_data(listener_t *listener, uint32_t message_type,
 }
 
 switch_status_t send_extended_data(listener_t *listener, uint32_t message_type,
-	uint32_t application_id,
-	uint32_t line_instance,
-	uint32_t call_id,
-	uint32_t transaction_id,
-	uint32_t data_length,
-	uint32_t sequence_flag,
-	uint32_t display_priority,
-	uint32_t conference_id,
-	uint32_t app_instance_id,
-	uint32_t routing_id,
-	const char *data)
+		uint32_t application_id,
+		uint32_t line_instance,
+		uint32_t call_id,
+		uint32_t transaction_id,
+		uint32_t data_length,
+		uint32_t sequence_flag,
+		uint32_t display_priority,
+		uint32_t conference_id,
+		uint32_t app_instance_id,
+		uint32_t routing_id,
+		const char *data)
 {
 	skinny_message_t *message;
 	switch_assert(data_length == strlen(data));
@@ -975,16 +975,16 @@ switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file
 	if (listener_is_ready(listener)) {
 		if (listener->profile->debug >= 10 || reply->type != KEEP_ALIVE_ACK_MESSAGE) {
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,
-				"Sending %s (type=%x,length=%d) to %s:%d.\n",
-				skinny_message_type2str(reply->type), reply->type, reply->length,
-				listener->device_name, listener->device_instance);
+					"Sending %s (type=%x,length=%d) to %s:%d.\n",
+					skinny_message_type2str(reply->type), reply->type, reply->length,
+					listener->device_name, listener->device_instance);
 		}
 		return switch_socket_send(listener->sock, ptr, &len);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_WARNING,
-			"Not sending %s (type=%x,length=%d) to %s:%d while not ready.\n",
-			skinny_message_type2str(reply->type), reply->type, reply->length,
-			listener->device_name, listener->device_instance);
+				"Not sending %s (type=%x,length=%d) to %s:%d while not ready.\n",
+				skinny_message_type2str(reply->type), reply->type, reply->length,
+				listener->device_name, listener->device_instance);
 		return SWITCH_STATUS_FALSE;
 	}
 }

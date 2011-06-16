@@ -3,14 +3,11 @@
 
 AC_PREREQ(2.57)
 
-AC_INIT([unimrcp],[0.9.0])
+AC_INIT([unimrcp],[1.0.0])
 
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_MACRO_DIR([build/acmacros])
 AC_PREFIX_DEFAULT(/usr/local/unimrcp)
-CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
-CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
-LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
 
 plugindir='${prefix}/plugin'
 confdir='${prefix}/conf'
@@ -120,6 +117,15 @@ AC_ARG_ENABLE(demorecog-plugin,
 AM_CONDITIONAL([DEMORECOG_PLUGIN],[test "${enable_demorecog_plugin}" = "yes"])
 
 
+#Enable demo verifier plugin
+AC_ARG_ENABLE(demoverifier-plugin,
+    [AC_HELP_STRING([--disable-demoverifier-plugin  ],[exclude demo verifier plugin from build])],
+    [enable_demoverifier_plugin="$enableval"],
+    [enable_demoverifier_plugin="yes"])
+
+AM_CONDITIONAL([DEMOVERIFIER_PLUGIN],[test "${enable_demoverifier_plugin}" = "yes"])
+
+
 #Enable recorder plugin
 AC_ARG_ENABLE(recorder-plugin,
     [AC_HELP_STRING([--disable-recorder-plugin  ],[exclude recorder plugin from build])],
@@ -127,20 +133,6 @@ AC_ARG_ENABLE(recorder-plugin,
     [enable_recorder_plugin="yes"])
 
 AM_CONDITIONAL([RECORDER_PLUGIN],[test "${enable_recorder_plugin}" = "yes"])
-
-
-#Enable Cepstral Swift plugin
-AC_ARG_ENABLE(cepstral-plugin,
-    [AC_HELP_STRING([--disable-cepstral-plugin  ],[exclude cepstral plugin from build])],
-    [enable_cepstral_plugin="$enableval"],
-    [enable_cepstral_plugin="yes"])
-
-if test "${enable_cepstral_plugin}" != "no"; then
-    UNIMRCP_CHECK_SWIFT
-fi
-
-AM_CONDITIONAL([CEPSTRAL_PLUGIN],[test "${enable_cepstral_plugin}" = "yes" &&\
-                                  test "${found_swift}" = "yes"])
 
 
 #Enable PocketSphinx plugin
@@ -191,12 +183,12 @@ AC_CONFIG_FILES([
   modules/mrcp-sofiasip/Makefile
   modules/mrcp-unirtsp/Makefile
   plugins/Makefile
-  plugins/mrcp-cepstral/Makefile
   plugins/mrcp-pocketsphinx/Makefile
   plugins/mrcp-flite/Makefile
   plugins/mrcp-recorder/Makefile
   plugins/demo-synth/Makefile
   plugins/demo-recog/Makefile
+  plugins/demo-verifier/Makefile
   platforms/Makefile
   platforms/libunimrcp-server/Makefile
   platforms/libunimrcp-client/Makefile
@@ -216,8 +208,10 @@ AC_CONFIG_FILES([
   build/pkgconfig/unimrcpclient.pc
   build/pkgconfig/unimrcpserver.pc
   build/pkgconfig/unimrcpplugin.pc
+  build/svnrev/Makefile
   conf/Makefile
   data/Makefile
+  docs/doxygen.conf
 ])
 
 AC_OUTPUT
@@ -231,6 +225,7 @@ AC_MSG_NOTICE([  Sofia-SIP: $sofia_version])
 AC_MSG_NOTICE([Plugins:])
 AC_MSG_NOTICE([  Demo Synthesizer: $enable_demosynth_plugin])
 AC_MSG_NOTICE([  Demo Recognizer: $enable_demorecog_plugin])
-AC_MSG_NOTICE([  Cepstral: $enable_cepstral_plugin])
+AC_MSG_NOTICE([  Demo Verifier: $enable_demoverifier_plugin])
+AC_MSG_NOTICE([  Recorder: $enable_recorder_plugin])
 AC_MSG_NOTICE([  PocketSphinx: $enable_pocketsphinx_plugin])
 AC_MSG_NOTICE([  Flite: $enable_flite_plugin])

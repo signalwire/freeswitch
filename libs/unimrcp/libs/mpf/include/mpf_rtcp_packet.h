@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_rtcp_packet.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MPF_RTCP_PACKET_H__
-#define __MPF_RTCP_PACKET_H__
+#ifndef MPF_RTCP_PACKET_H
+#define MPF_RTCP_PACKET_H
 
 /**
  * @file mpf_rtcp_packet.h
@@ -198,4 +200,4 @@ static APR_INLINE void rtcp_rr_ntoh(rtcp_rr_stat_t *rr_stat)
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_RTCP_PACKET_H__*/
+#endif /* MPF_RTCP_PACKET_H */

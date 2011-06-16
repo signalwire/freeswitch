@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: recordersession.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __RECORDER_SESSION_H__
-#define __RECORDER_SESSION_H__
+#ifndef RECORDER_SESSION_H
+#define RECORDER_SESSION_H
 
 /**
  * @file recordersession.h
@@ -65,4 +67,4 @@ inline const RecorderScenario* RecorderSession::GetScenario() const
 	return (RecorderScenario*)m_pScenario;
 }
 
-#endif /*__RECORDER_SESSION_H__*/
+#endif /* RECORDER_SESSION_H */

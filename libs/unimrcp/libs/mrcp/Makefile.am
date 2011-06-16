@@ -14,6 +14,7 @@ include_HEADERS          = include/mrcp.h \
                            message/include/mrcp_start_line.h \
                            message/include/mrcp_header_accessor.h \
                            message/include/mrcp_generic_header.h \
+                           message/include/mrcp_header.h \
                            message/include/mrcp_message.h \
                            control/include/mrcp_resource.h \
                            control/include/mrcp_resource_factory.h \
@@ -24,11 +25,14 @@ include_HEADERS          = include/mrcp.h \
                            resources/include/mrcp_recog_header.h \
                            resources/include/mrcp_recog_resource.h \
                            resources/include/mrcp_recorder_header.h \
-                           resources/include/mrcp_recorder_resource.h
+                           resources/include/mrcp_recorder_resource.h \
+                           resources/include/mrcp_verifier_header.h \
+                           resources/include/mrcp_verifier_resource.h
 
-libmrcp_la_SOURCES       = message/src/mrcp_header_accessor.c \
+libmrcp_la_SOURCES       = message/src/mrcp_start_line.c \
+                           message/src/mrcp_header_accessor.c \
                            message/src/mrcp_generic_header.c \
-                           message/src/mrcp_start_line.c \
+                           message/src/mrcp_header.c \
                            message/src/mrcp_message.c \
                            control/src/mrcp_resource_factory.c \
                            control/src/mrcp_resource_loader.c \
@@ -38,4 +42,6 @@ libmrcp_la_SOURCES       = message/src/mrcp_header_accessor.c \
                            resources/src/mrcp_recog_header.c \
                            resources/src/mrcp_recog_resource.c \
                            resources/src/mrcp_recorder_header.c \
-                           resources/src/mrcp_recorder_resource.c
+                           resources/src/mrcp_recorder_resource.c \
+                           resources/src/mrcp_verifier_header.c \
+                           resources/src/mrcp_verifier_resource.c

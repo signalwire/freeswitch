@@ -75,8 +75,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading pocketsphinx."
-					CommandLine="if not exist &quot;$(ProjectDir)..\pocketsphinx-0.5.99&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-20091212.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\pocketsphinx-0.5.99"
+					CommandLine="if not exist &quot;$(ProjectDir)..\pocketsphinx-0.7&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\pocketsphinx-0.7"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -85,8 +85,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading pocketsphinx."
-					CommandLine="if not exist &quot;$(ProjectDir)..\pocketsphinx-0.5.99&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-20091212.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\pocketsphinx-0.5.99"
+					CommandLine="if not exist &quot;$(ProjectDir)..\pocketsphinx-0.7&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\pocketsphinx-0.7"
 				/>
 			</FileConfiguration>
 		</File>

@@ -31,6 +31,7 @@ Source: {#= uni_outdir}\plugin\demosynth.dll; DestDir: {app}\plugin; Components:
 Source: {#= uni_outdir}\plugin\demorecog.dll; DestDir: {app}\plugin; Components: server/demorecog
 Source: {#= uni_outdir}\conf\unimrcpserver.xml; DestDir: {app}\conf; Components: server
 Source: {#= uni_outdir}\conf\unimrcpclient.xml; DestDir: {app}\conf; Components: client
+Source: {#= uni_outdir}\conf\client-profiles\*.xml; DestDir: {app}\conf\client-profiles; Components: client
 Source: {#= uni_outdir}\conf\umcscenarios.xml; DestDir: {app}\conf; Components: client
 Source: {#= uni_outdir}\data\*.pcm; DestDir: {app}\data; Components: server client
 Source: {#= uni_outdir}\data\*.xml; DestDir: {app}\data; Components: server client

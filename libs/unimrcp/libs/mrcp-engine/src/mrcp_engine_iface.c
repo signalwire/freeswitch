@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,55 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_engine_iface.c 1700 2010-05-21 18:56:06Z achaloyan $
  */
 
 #include "mrcp_engine_iface.h"
+#include "apt_log.h"
+
+/** Destroy engine */
+apt_bool_t mrcp_engine_virtual_destroy(mrcp_engine_t *engine)
+{
+	return engine->method_vtable->destroy(engine);
+}
+
+/** Open engine */
+apt_bool_t mrcp_engine_virtual_open(mrcp_engine_t *engine)
+{
+	if(engine->is_open == FALSE) {
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open Engine [%s]",engine->id);
+		return engine->method_vtable->open(engine);
+	}
+	return FALSE;
+}
+
+/** Response to open engine request */
+void mrcp_engine_on_open(mrcp_engine_t *engine, apt_bool_t status)
+{
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Engine Opened [%s] status [%s]",
+		engine->id,
+		status == TRUE ? "success" : "failure");
+	engine->is_open = status;
+}
+
+/** Close engine */
+apt_bool_t mrcp_engine_virtual_close(mrcp_engine_t *engine)
+{
+	if(engine->is_open == TRUE) {
+		engine->is_open = FALSE;
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Close Engine [%s]",engine->id);
+		return engine->method_vtable->close(engine);
+	}
+	return FALSE;
+}
+
+/** Response to close engine request */
+void mrcp_engine_on_close(mrcp_engine_t *engine)
+{
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Engine Closed [%s]",engine->id);
+	engine->is_open = FALSE;
+}
 
 /** Create engine channel */
 mrcp_engine_channel_t* mrcp_engine_channel_virtual_create(mrcp_engine_t *engine, mrcp_version_e mrcp_version, apr_pool_t *pool)
@@ -48,7 +94,6 @@ apt_bool_t mrcp_engine_channel_virtual_destroy(mrcp_engine_channel_t *channel)
 mrcp_engine_config_t* mrcp_engine_config_alloc(apr_pool_t *pool)
 {
 	mrcp_engine_config_t *config = apr_palloc(pool,sizeof(mrcp_engine_config_t));
-	config->name = NULL;
 	config->max_channel_count = 0;
 	config->params = NULL;
 	return config;

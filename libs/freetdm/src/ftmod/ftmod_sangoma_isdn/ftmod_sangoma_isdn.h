@@ -177,7 +177,7 @@ typedef enum {
 	SNGISDN_TRANSFER_INVALID,
 } sngisdn_transfer_type_t;
 #define SNGISDN_TRANSFER_TYPE_STRINGS "NONE", "ATT_COURTESY_VRU", "ATT_COURTERY_VRU_DATA", "INVALID"
-FTDM_STR2ENUM_P(ftdm_str2sngisdn_transfer_type, sngisdn_transfer_type2str, sngisdn_transfer_type_t)
+SNGISDN_STR2ENUM_P(ftdm_str2sngisdn_transfer_type, sngisdn_transfer_type2str, sngisdn_transfer_type_t)
 
 /* From section 4.2 of TR50075, max length of data is 100 when single UUI is sent */
 #define COURTESY_TRANSFER_MAX_DATA_SIZE 100
@@ -251,7 +251,8 @@ typedef struct sngisdn_span_data {
 	uint8_t			raw_trace_q931; /* TODO: combine with trace_flags */
 	uint8_t			raw_trace_q921; /* TODO: combine with trace_flags */
 	uint8_t			timer_t3;
-	uint8_t			restart_opt;	
+	uint8_t			restart_opt;
+	uint8_t			force_sending_complete;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_sched_t 	*sched;
 	ftdm_queue_t 	*event_queue;
@@ -323,6 +324,11 @@ typedef struct ftdm_sngisdn_data {
 	uint8_t	num_dchan;
 	sngisdn_dchan_data_t dchans[MAX_L1_LINKS+1];
 	sngisdn_span_data_t *spans[MAX_L1_LINKS+1]; /* spans are indexed by link_id */
+
+#ifdef SANGOMA_ISDN_CHAN_ID_INVERT_BIT
+	/* Since this is a global configuration, place it here instead of sngisdn_span_data_t */
+	uint8_t chan_id_invert_extend_bit;
+#endif
 }ftdm_sngisdn_data_t;
 
 typedef struct ftdm2trillium

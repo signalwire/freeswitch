@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_bridge.c 1693 2010-05-16 18:33:07Z achaloyan $
  */
 
 #include "mpf_bridge.h"
@@ -31,7 +33,8 @@ struct mpf_bridge_t {
 	mpf_audio_stream_t *source;
 	/** Audio stream sink */
 	mpf_audio_stream_t *sink;
-
+	/** Codec used in case of null bridge */
+	mpf_codec_t        *codec;
 	/** Media frame used to read data from source and write it to sink */
 	mpf_frame_t         frame;
 };
@@ -57,7 +60,14 @@ static apt_bool_t mpf_null_bridge_process(mpf_object_t *object)
 {
 	mpf_bridge_t *bridge = (mpf_bridge_t*) object;
 	bridge->frame.type = MEDIA_FRAME_TYPE_NONE;
+	bridge->frame.marker = MPF_MARKER_NONE;
 	bridge->source->vtable->read_frame(bridge->source,&bridge->frame);
+
+	if((bridge->frame.type & MEDIA_FRAME_TYPE_AUDIO) == 0) {
+		/* generate silence frame */
+		mpf_codec_initialize(bridge->codec,&bridge->frame.codec_frame);
+	}
+
 	bridge->sink->vtable->write_frame(bridge->sink,&bridge->frame);
 	return TRUE;
 }
@@ -80,20 +90,20 @@ static void mpf_bridge_trace(mpf_object_t *object)
 	mpf_audio_stream_trace(bridge->sink,STREAM_DIRECTION_SEND,&output);
 
 	*output.pos = '\0';
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,output.text.buf);
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Media Path %s %s",object->name,output.text.buf);
 }
 
 
 static apt_bool_t mpf_bridge_destroy(mpf_object_t *object)
 {
 	mpf_bridge_t *bridge = (mpf_bridge_t*) object;
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Destroy Audio Bridge");
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Destroy Audio Bridge %s",object->name);
 	mpf_audio_stream_rx_close(bridge->source);
 	mpf_audio_stream_tx_close(bridge->sink);
 	return TRUE;
 }
 
-static mpf_bridge_t* mpf_bridge_base_create(mpf_audio_stream_t *source, mpf_audio_stream_t *sink, apr_pool_t *pool)
+static mpf_bridge_t* mpf_bridge_base_create(mpf_audio_stream_t *source, mpf_audio_stream_t *sink, const char *name, apr_pool_t *pool)
 {
 	mpf_bridge_t *bridge;
 	if(!source || !sink) {
@@ -103,20 +113,21 @@ static mpf_bridge_t* mpf_bridge_base_create(mpf_audio_stream_t *source, mpf_audi
 	bridge = apr_palloc(pool,sizeof(mpf_bridge_t));
 	bridge->source = source;
 	bridge->sink = sink;
-	mpf_object_init(&bridge->base);
+	bridge->codec = NULL;
+	mpf_object_init(&bridge->base,name);
 	bridge->base.destroy = mpf_bridge_destroy;
 	bridge->base.process = mpf_bridge_process;
 	bridge->base.trace = mpf_bridge_trace;
 	return bridge;
 }
 
-static mpf_object_t* mpf_linear_bridge_create(mpf_audio_stream_t *source, mpf_audio_stream_t *sink, const mpf_codec_manager_t *codec_manager, apr_pool_t *pool)
+static mpf_object_t* mpf_linear_bridge_create(mpf_audio_stream_t *source, mpf_audio_stream_t *sink, const mpf_codec_manager_t *codec_manager, const char *name, apr_pool_t *pool)
 {
 	mpf_codec_descriptor_t *descriptor;
 	apr_size_t frame_size;
 	mpf_bridge_t *bridge;
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Create Linear Audio Bridge");
-	bridge = mpf_bridge_base_create(source,sink,pool);
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Create Linear Audio Bridge %s",name);
+	bridge = mpf_bridge_base_create(source,sink,name,pool);
 	if(!bridge) {
 		return NULL;
 	}
@@ -136,13 +147,13 @@ static mpf_object_t* mpf_linear_bridge_create(mpf_audio_stream_t *source, mpf_au
 	return &bridge->base;
 }
 
-static mpf_object_t* mpf_null_bridge_create(mpf_audio_stream_t *source, mpf_audio_stream_t *sink, const mpf_codec_manager_t *codec_manager, apr_pool_t *pool)
+static mpf_object_t* mpf_null_bridge_create(mpf_audio_stream_t *source, mpf_audio_stream_t *sink, const mpf_codec_manager_t *codec_manager, const char *name, apr_pool_t *pool)
 {
 	mpf_codec_t *codec;
 	apr_size_t frame_size;
 	mpf_bridge_t *bridge;
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Create Null Audio Bridge");
-	bridge = mpf_bridge_base_create(source,sink,pool);
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Create Null Audio Bridge %s",name);
+	bridge = mpf_bridge_base_create(source,sink,name,pool);
 	if(!bridge) {
 		return NULL;
 	}
@@ -154,6 +165,7 @@ static mpf_object_t* mpf_null_bridge_create(mpf_audio_stream_t *source, mpf_audi
 	}
 
 	frame_size = mpf_codec_frame_size_calculate(source->rx_descriptor,codec->attribs);
+	bridge->codec = codec;
 	bridge->frame.codec_frame.size = frame_size;
 	bridge->frame.codec_frame.buffer = apr_palloc(pool,frame_size);
 
@@ -167,7 +179,12 @@ static mpf_object_t* mpf_null_bridge_create(mpf_audio_stream_t *source, mpf_audi
 	return &bridge->base;
 }
 
-MPF_DECLARE(mpf_object_t*) mpf_bridge_create(mpf_audio_stream_t *source, mpf_audio_stream_t *sink, const mpf_codec_manager_t *codec_manager, apr_pool_t *pool)
+MPF_DECLARE(mpf_object_t*) mpf_bridge_create(
+						mpf_audio_stream_t *source, 
+						mpf_audio_stream_t *sink, 
+						const mpf_codec_manager_t *codec_manager, 
+						const char *name,
+						apr_pool_t *pool)
 {
 	if(!source || !sink) {
 		return NULL;
@@ -179,7 +196,7 @@ MPF_DECLARE(mpf_object_t*) mpf_bridge_create(mpf_audio_stream_t *source, mpf_aud
 	}
 
 	if(mpf_codec_descriptors_match(source->rx_descriptor,sink->tx_descriptor) == TRUE) {
-		return mpf_null_bridge_create(source,sink,codec_manager,pool);
+		return mpf_null_bridge_create(source,sink,codec_manager,name,pool);
 	}
 
 	if(mpf_codec_lpcm_descriptor_match(source->rx_descriptor) == FALSE) {
@@ -209,5 +226,5 @@ MPF_DECLARE(mpf_object_t*) mpf_bridge_create(mpf_audio_stream_t *source, mpf_aud
 		source = resampler;
 	}
 
-	return mpf_linear_bridge_create(source,sink,codec_manager,pool);
+	return mpf_linear_bridge_create(source,sink,codec_manager,name,pool);
 }

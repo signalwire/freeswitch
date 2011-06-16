@@ -155,7 +155,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (ms > 100 && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
+	var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE);
+	if (var) {
+		sval = atoi(var);
+		SWITCH_IVR_VERIFY_SILENCE_DIVISOR(sval);
+	}
+
+	if (ms > 100 && sval) {
 		switch_core_session_get_read_impl(session, &imp);
 
 		if (switch_core_codec_init(&codec,
@@ -744,34 +750,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	unsigned char *abuf = NULL;
 	switch_codec_implementation_t imp = { 0 };
 
-	if ((var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
-		switch_core_session_get_read_impl(session, &imp);
-
-		if (switch_core_codec_init(&codec,
-								   "L16",
-								   NULL,
-								   imp.samples_per_second,
-								   imp.microseconds_per_packet / 1000,
-								   imp.number_of_channels,
-								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n",
-							  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
-			return SWITCH_STATUS_FALSE;
-		}
-
-
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %u channels %dms\n",
-						  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
-
-		write_frame.codec = &codec;
-		switch_zmalloc(abuf, SWITCH_RECOMMENDED_BUFFER_SIZE);
-		write_frame.data = abuf;
-		write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
-		write_frame.datalen = imp.decoded_bytes_per_packet;
-		write_frame.samples = write_frame.datalen / sizeof(int16_t);
-	}
-
 	if (switch_channel_test_flag(channel, CF_RECOVERED) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
 		switch_channel_clear_flag(channel, CF_CONTROLLED);
 	}
@@ -815,6 +793,34 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			switch_core_session_get_read_impl(session, &read_impl);
 			rate = read_impl.actual_samples_per_second;
 			bpf = read_impl.decoded_bytes_per_packet;
+
+			if ((var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
+				switch_core_session_get_read_impl(session, &imp);
+
+				if (switch_core_codec_init(&codec,
+								   "L16",
+								   NULL,
+								   imp.samples_per_second,
+								   imp.microseconds_per_packet / 1000,
+								   imp.number_of_channels,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n",
+									  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
+					return SWITCH_STATUS_FALSE;
+				}
+
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %u channels %dms\n",
+								  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
+
+				write_frame.codec = &codec;
+				switch_zmalloc(abuf, SWITCH_RECOMMENDED_BUFFER_SIZE);
+				write_frame.data = abuf;
+				write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+				write_frame.datalen = imp.decoded_bytes_per_packet;
+				write_frame.samples = write_frame.datalen / sizeof(int16_t);
+			}
 		}
 
 		if (rate) {
@@ -839,7 +845,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			break;
 		}
 
-		if (write_frame.data) {
+		if (rate && write_frame.data && sval) {
 			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, sval);
 			switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
@@ -1982,25 +1988,43 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	return off;
 }
 
+static int switch_ivr_set_xml_chan_var(switch_xml_t xml, const char *var, const char *val, int off)
+{
+	char *data;
+	switch_size_t dlen = strlen(val) * 3 + 1;
+	switch_xml_t variable;
+	
+	if (!zstr(var) && !zstr(val) && ((variable = switch_xml_add_child_d(xml, var, off++)))) {
+		if ((data = malloc(dlen))) {
+			memset(data, 0, dlen);
+			switch_url_encode(val, data, dlen);
+			switch_xml_set_txt_d(variable, data);
+			free(data);
+		} else abort();
+	}
+	
+	return off;
+	
+}
+
+
 SWITCH_DECLARE(int) switch_ivr_set_xml_chan_vars(switch_xml_t xml, switch_channel_t *channel, int off)
 {
-	switch_xml_t variable;
+
 	switch_event_header_t *hi = switch_channel_variable_first(channel);
 
 	if (!hi)
 		return off;
 
 	for (; hi; hi = hi->next) {
-		if (!zstr(hi->name) && !zstr(hi->value) && ((variable = switch_xml_add_child_d(xml, hi->name, off++)))) {
-			char *data;
-			switch_size_t dlen = strlen(hi->value) * 3 + 1;
-
-			if ((data = malloc(dlen))) {
-				memset(data, 0, dlen);
-				switch_url_encode(hi->value, data, dlen);
-				switch_xml_set_txt_d(variable, data);
-				free(data);
+		if (hi->idx) {
+			int i;
+			
+			for (i = 0; i < hi->idx; i++) {
+				off = switch_ivr_set_xml_chan_var(xml, hi->name, hi->array[i], off);
 			}
+		} else {
+			off = switch_ivr_set_xml_chan_var(xml, hi->name, hi->value, off);
 		}
 	}
 	switch_channel_variable_last(channel);

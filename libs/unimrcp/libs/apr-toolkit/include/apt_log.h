@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_log.h 1792 2011-01-10 21:08:52Z achaloyan $
  */
 
-#ifndef __APT_LOG_H__
-#define __APT_LOG_H__
+#ifndef APT_LOG_H
+#define APT_LOG_H
 
 /**
  * @file apt_log.h
@@ -44,8 +46,10 @@ APT_BEGIN_EXTERN_C
 #define APT_SIDRES_FMT    "<%s@%s>"
 /** Format to log pointers and identifiers */
 #define APT_PTRSID_FMT    APT_PTR_FMT" "APT_SID_FMT
-/** Format to log pointers, identifiers and resources */
-#define APT_PTRSIDRES_FMT APT_PTR_FMT" "APT_SIDRES_FMT
+/** Format to log pointers and identifiers */
+#define APT_NAMESID_FMT   "%s "APT_SID_FMT
+/** Format to log names, identifiers and resources */
+#define APT_NAMESIDRES_FMT "%s "APT_SIDRES_FMT
 
 
 /** Priority of log messages ordered from highest priority to lowest (rfc3164) */
@@ -69,22 +73,30 @@ typedef enum {
 	APT_LOG_HEADER_TIME     = 0x02, /**< enable time output */
 	APT_LOG_HEADER_PRIORITY = 0x04, /**< enable priority name output */
 	APT_LOG_HEADER_MARK     = 0x08, /**< enable file:line mark output */
+	APT_LOG_HEADER_THREAD   = 0x10, /**< enable thread identifier output */
 
 	APT_LOG_HEADER_DEFAULT  = APT_LOG_HEADER_DATE | APT_LOG_HEADER_TIME | APT_LOG_HEADER_PRIORITY
 } apt_log_header_e;
 
-/** Log output modes */
+/** Mode of log output */
 typedef enum {
 	APT_LOG_OUTPUT_NONE     = 0x00, /**< disable logging */
 	APT_LOG_OUTPUT_CONSOLE  = 0x01, /**< enable console output */
 	APT_LOG_OUTPUT_FILE     = 0x02  /**< enable log file output */
 } apt_log_output_e;
 
+/** Masking mode of private data */
+typedef enum {
+	APT_LOG_MASKING_NONE,      /**< log everything as is */
+	APT_LOG_MASKING_COMPLETE,  /**< mask private data completely */
+	APT_LOG_MASKING_ENCRYPTED  /**< encrypt private data */
+} apt_log_masking_e;
+
 /** Opaque logger declaration */
 typedef struct apt_logger_t apt_logger_t;
 
 /** Prototype of extended log handler function */
-typedef apt_bool_t (*apt_log_ext_handler_f)(const char *file, int line, const char *id, 
+typedef apt_bool_t (*apt_log_ext_handler_f)(const char *file, int line, const char *obj, 
 											apt_log_priority_e priority, const char *format, va_list arg_ptr);
 
 /**
@@ -94,6 +106,13 @@ typedef apt_bool_t (*apt_log_ext_handler_f)(const char *file, int line, const ch
  * @param pool the memory pool to use
  */
 APT_DECLARE(apt_bool_t) apt_log_instance_create(apt_log_output_e mode, apt_log_priority_e priority, apr_pool_t *pool);
+
+/**
+ * Create and load the singleton instance of the logger.
+ * @param config_file the path to configuration file to load settings from
+ * @param pool the memory pool to use
+ */
+APT_DECLARE(apt_bool_t) apt_log_instance_load(const char *config_file, apr_pool_t *pool);
 
 /**
  * Destroy the singleton instance of the logger.
@@ -116,13 +135,15 @@ APT_DECLARE(apt_bool_t) apt_log_instance_set(apt_logger_t *logger);
  * @param file_name the name of the log file
  * @param max_file_size the max size of the log file
  * @param max_file_count the max number of files used in log rotation
+ * @param append whether to append or to truncate (start over) the log file
  * @param pool the memory pool to use
  */
 APT_DECLARE(apt_bool_t) apt_log_file_open(
-							const char *dir_path, 
-							const char *file_name, 
-							apr_size_t max_file_size, 
-							apr_size_t max_file_count, 
+							const char *dir_path,
+							const char *file_name,
+							apr_size_t max_file_size,
+							apr_size_t max_file_count,
+							apt_bool_t append,
 							apr_pool_t *pool);
 
 /**
@@ -131,10 +152,22 @@ APT_DECLARE(apt_bool_t) apt_log_file_open(
 APT_DECLARE(apt_bool_t) apt_log_file_close(void);
 
 /**
- * Set the logging output.
+ * Set the logging output mode.
  * @param mode the mode to set
  */
 APT_DECLARE(apt_bool_t) apt_log_output_mode_set(apt_log_output_e mode);
+
+/**
+ * Check the logging output mode to be enabled (set) or not.
+ * @param mode the mode to check
+ */
+APT_DECLARE(apt_bool_t) apt_log_output_mode_check(apt_log_output_e mode);
+
+/**
+ * Translate the output mode string to bitmask of apt_log_output_e values.
+ * @param str the string to translate
+ */
+APT_DECLARE(int) apt_log_output_mode_translate(char *str);
 
 /**
  * Set the logging priority (log level).
@@ -143,10 +176,48 @@ APT_DECLARE(apt_bool_t) apt_log_output_mode_set(apt_log_output_e mode);
 APT_DECLARE(apt_bool_t) apt_log_priority_set(apt_log_priority_e priority);
 
 /**
+ * Translate the priority (log level) string to enum.
+ * @param str the string to translate
+ */
+APT_DECLARE(apt_log_priority_e) apt_log_priority_translate(const char *str);
+
+/**
  * Set the header (format) for log messages.
  * @param header the header to set (used as bitmask)
  */
 APT_DECLARE(apt_bool_t) apt_log_header_set(int header);
+
+/**
+ * Translate the header string to bitmask of apt_log_header_e values.
+ * @param str the string to translate
+ */
+APT_DECLARE(int) apt_log_header_translate(char *str);
+
+/**
+ * Set the masking mode of private data.
+ * @param masking the masking mode to set
+ */
+APT_DECLARE(apt_bool_t) apt_log_masking_set(apt_log_masking_e masking);
+
+/**
+ * Get the current masking mode of private data.
+ */
+APT_DECLARE(apt_log_masking_e) apt_log_masking_get();
+
+/**
+ * Translate the masking mode string to enum.
+ * @param str the string to translate
+ */
+APT_DECLARE(apt_log_masking_e) apt_log_masking_translate(const char *str);
+
+/**
+ * Mask private data based on the masking mode
+ * @param data_in the data to mask
+ * @param length the length of the data to mask on input, the length of the masked data on output
+ * @param pool the memory pool to use if needed
+ * @return The masked data.
+ */
+APT_DECLARE(const char*) apt_log_data_mask(const char *data_in, apr_size_t *length, apr_pool_t *pool);
 
 /**
  * Set the extended external log handler.
@@ -165,6 +236,16 @@ APT_DECLARE(apt_bool_t) apt_log_ext_handler_set(apt_log_ext_handler_f handler);
  */
 APT_DECLARE(apt_bool_t) apt_log(const char *file, int line, apt_log_priority_e priority, const char *format, ...);
 
+/**
+ * Do logging.
+ * @param file the file name log entry is generated from
+ * @param line the line number log entry is generated from
+ * @param priority the priority of the entire log entry
+ * @param obj the associated object
+ * @param format the format of the entire log entry
+ */
+APT_DECLARE(apt_bool_t) apt_obj_log(const char *file, int line, apt_log_priority_e priority, void *obj, const char *format, ...);
+
 APT_END_EXTERN_C
 
-#endif /*__APT_LOG_H__*/
+#endif /* APT_LOG_H */

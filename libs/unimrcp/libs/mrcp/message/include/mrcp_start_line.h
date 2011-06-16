@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_start_line.h 1632 2010-03-30 20:46:25Z achaloyan $
  */
 
-#ifndef __MRCP_START_LINE_H__
-#define __MRCP_START_LINE_H__
+#ifndef MRCP_START_LINE_H
+#define MRCP_START_LINE_H
 
 /**
  * @file mrcp_start_line.h
@@ -59,6 +61,7 @@ typedef enum {
 	MRCP_STATUS_CODE_METHOD_FAILED             = 407,
 	MRCP_STATUS_CODE_UNRECOGNIZED_MESSAGE      = 408,
 	MRCP_STATUS_CODE_UNSUPPORTED_PARAM_VALUE   = 409,
+	MRCP_STATUS_CODE_OUT_OF_ORDER              = 410,
 	MRCP_STATUS_CODE_RESOURCE_SPECIFIC_FAILURE = 421
 } mrcp_status_code_e;
 
@@ -97,7 +100,7 @@ struct mrcp_start_line_t {
 /** Initialize MRCP start-line */
 MRCP_DECLARE(void) mrcp_start_line_init(mrcp_start_line_t *start_line);
 /** Parse MRCP start-line */
-MRCP_DECLARE(apt_bool_t) mrcp_start_line_parse(mrcp_start_line_t *start_line, apt_text_stream_t *text_stream, apr_pool_t *pool);
+MRCP_DECLARE(apt_bool_t) mrcp_start_line_parse(mrcp_start_line_t *start_line, apt_str_t *str, apr_pool_t *pool);
 /** Generate MRCP start-line */
 MRCP_DECLARE(apt_bool_t) mrcp_start_line_generate(mrcp_start_line_t *start_line, apt_text_stream_t *text_stream);
 /** Finalize MRCP start-line generation */
@@ -111,4 +114,4 @@ MRCP_DECLARE(apt_bool_t) mrcp_request_id_generate(mrcp_request_id request_id, ap
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_START_LINE_H__*/
+#endif /* MRCP_START_LINE_H */

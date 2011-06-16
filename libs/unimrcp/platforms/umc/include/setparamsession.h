@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: setparamsession.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __SETPARAM_SESSION_H__
-#define __SETPARAM_SESSION_H__
+#ifndef SETPARAM_SESSION_H
+#define SETPARAM_SESSION_H
 
 /**
  * @file setparamsession.h
@@ -73,4 +75,4 @@ inline const SetParamScenario* SetParamSession::GetScenario() const
 	return (SetParamScenario*)m_pScenario;
 }
 
-#endif /*__SETPARAM_SESSION_H__*/
+#endif /* SETPARAM_SESSION_H */

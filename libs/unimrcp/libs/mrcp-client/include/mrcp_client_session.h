@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_client_session.h 1733 2010-06-07 17:26:49Z achaloyan $
  */
 
-#ifndef __MRCP_CLIENT_SESSION_H__
-#define __MRCP_CLIENT_SESSION_H__
+#ifndef MRCP_CLIENT_SESSION_H
+#define MRCP_CLIENT_SESSION_H
 
 /**
  * @file mrcp_client_session.h
@@ -142,6 +144,11 @@ struct mrcp_profile_t {
 	mrcp_sig_agent_t          *signaling_agent;
 	/** Connection agent */
 	mrcp_connection_agent_t   *connection_agent;
+
+	/** Signaling settings */
+	mrcp_sig_settings_t       *signaling_settings;
+	/** RTP settings */
+	mpf_rtp_settings_t        *rtp_settings;
 };
 
 /** MRCP application */
@@ -156,14 +163,12 @@ struct mrcp_application_t {
 	apt_task_msg_pool_t       *msg_pool;
 };
 
-/** Create client session */
-mrcp_client_session_t* mrcp_client_session_create(mrcp_application_t *application, void *obj);
 /** Create channel */
 mrcp_channel_t* mrcp_client_channel_create(
-					mrcp_session_t *session, 
-					mrcp_resource_t *resource, 
-					mpf_termination_t *termination, 
-					mpf_rtp_termination_descriptor_t *rtp_descriptor, 
+					mrcp_client_session_t *session,
+					mrcp_resource_t *resource,
+					mpf_termination_t *termination,
+					mpf_rtp_termination_descriptor_t *rtp_descriptor,
 					void *obj);
 
 /** Create signaling app_message_t request */
@@ -202,4 +207,4 @@ apt_bool_t mrcp_client_on_disconnect(mrcp_channel_t *channel);
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_CLIENT_SESSION_H__*/
+#endif /* MRCP_CLIENT_SESSION_H */

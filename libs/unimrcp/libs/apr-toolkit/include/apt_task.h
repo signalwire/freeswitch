@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_task.h 1696 2010-05-20 15:44:16Z achaloyan $
  */
 
-#ifndef __APT_TASK_H__
-#define __APT_TASK_H__
+#ifndef APT_TASK_H
+#define APT_TASK_H
 
 /**
  * @file apt_task.h
@@ -124,19 +126,19 @@ APT_DECLARE(apt_bool_t) apt_task_msg_process(apt_task_t *task, apt_task_msg_t *m
  * Get parent (master) task.
  * @param task the task to get parent from
  */
-APT_DECLARE(apt_task_t*) apt_task_parent_get(apt_task_t *task);
+APT_DECLARE(apt_task_t*) apt_task_parent_get(const apt_task_t *task);
 
 /**
  * Get memory pool associated with task.
  * @param task the task to get pool from
  */
-APT_DECLARE(apr_pool_t*) apt_task_pool_get(apt_task_t *task);
+APT_DECLARE(apr_pool_t*) apt_task_pool_get(const apt_task_t *task);
 
 /**
  * Get external object associated with the task.
  * @param task the task to get object from
  */
-APT_DECLARE(void*) apt_task_object_get(apt_task_t *task);
+APT_DECLARE(void*) apt_task_object_get(const apt_task_t *task);
 
 /**
  * Get task vtable.
@@ -155,7 +157,7 @@ APT_DECLARE(void) apt_task_name_set(apt_task_t *task, const char *name);
  * Get task name.
  * @param task the task to get name from
  */
-APT_DECLARE(const char*) apt_task_name_get(apt_task_t *task);
+APT_DECLARE(const char*) apt_task_name_get(const apt_task_t *task);
 
 /**
  * Enable/disable auto ready mode.
@@ -169,6 +171,36 @@ APT_DECLARE(void) apt_task_auto_ready_set(apt_task_t *task, apt_bool_t auto_read
  * @param task the task
  */
 APT_DECLARE(apt_bool_t) apt_task_ready(apt_task_t *task);
+
+/**
+ * Get the running flag.
+ * @param task the task
+ */
+APT_DECLARE(apt_bool_t*) apt_task_running_flag_get(apt_task_t *task);
+
+/**
+ * Add start request.
+ * @param task the task
+ */
+APT_DECLARE(apt_bool_t) apt_task_start_request_add(apt_task_t *task);
+
+/**
+ * Remove start request.
+ * @param task the task
+ */
+APT_DECLARE(apt_bool_t) apt_task_start_request_remove(apt_task_t *task);
+
+/**
+ * Add termination request.
+ * @param task the task
+ */
+APT_DECLARE(apt_bool_t) apt_task_terminate_request_add(apt_task_t *task);
+
+/**
+ * Remove termination request.
+ * @param task the task
+ */
+APT_DECLARE(apt_bool_t) apt_task_terminate_request_remove(apt_task_t *task);
 
 /**
  * Hold task execution.
@@ -197,26 +229,16 @@ struct apt_task_vtable_t {
 	apt_task_event_f on_pre_run;
 	/** Virtual post-run event handler */
 	apt_task_event_f on_post_run;
+	/** Virtual start-request event handler */
+	apt_task_event_f on_start_request;
 	/** Virtual start-complete event handler */
 	apt_task_event_f on_start_complete;
+	/** Virtual terminate-request event handler */
+	apt_task_event_f on_terminate_request;
 	/** Virtual terminate-complete event handler */
 	apt_task_event_f on_terminate_complete;
 };
 
-static APR_INLINE void apt_task_vtable_reset(apt_task_vtable_t *vtable)
-{
-	vtable->destroy = NULL;
-	vtable->start = NULL;
-	vtable->terminate = NULL;
-	vtable->run = NULL;
-	vtable->signal_msg = NULL;
-	vtable->process_msg = NULL;
-	vtable->on_pre_run = NULL;
-	vtable->on_post_run = NULL;
-	vtable->on_start_complete = NULL;
-	vtable->on_terminate_complete = NULL;
-}
-
 APT_END_EXTERN_C
 
-#endif /*__APT_TASK_H__*/
+#endif /* APT_TASK_H */

@@ -59,6 +59,8 @@ class ESLevent:
     def getType(*args): return apply(_ESL.ESLevent_getType, args)
     def addBody(*args): return apply(_ESL.ESLevent_addBody, args)
     def addHeader(*args): return apply(_ESL.ESLevent_addHeader, args)
+    def pushHeader(*args): return apply(_ESL.ESLevent_pushHeader, args)
+    def unshiftHeader(*args): return apply(_ESL.ESLevent_unshiftHeader, args)
     def delHeader(*args): return apply(_ESL.ESLevent_delHeader, args)
     def firstHeader(*args): return apply(_ESL.ESLevent_firstHeader, args)
     def nextHeader(*args): return apply(_ESL.ESLevent_nextHeader, args)

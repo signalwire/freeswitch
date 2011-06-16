@@ -75,8 +75,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading sphinxbase."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sphinxbase-0.4.99&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-20091212.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\sphinxbase-0.4.99"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sphinxbase-0.7&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\sphinxbase-0.7"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -85,8 +85,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading sphinxbase."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sphinxbase-0.4.99&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-20091212.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\sphinxbase-0.4.99"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sphinxbase-0.7&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\sphinxbase-0.7"
 				/>
 			</FileConfiguration>
 		</File>

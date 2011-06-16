@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_pollset.h 1565 2010-03-06 07:13:04Z achaloyan $
  */
 
-#ifndef __APT_POLLSET_H__
-#define __APT_POLLSET_H__
+#ifndef APT_POLLSET_H
+#define APT_POLLSET_H
 
 /**
  * @file apt_pollset.h
@@ -39,7 +41,7 @@ APT_BEGIN_EXTERN_C
 typedef struct apt_pollset_t apt_pollset_t;
 
 /**
- * Create interruptable pollset on top of APR pollset
+ * Create interruptable pollset on top of APR pollset.
  * @param size the maximum number of descriptors pollset can hold
  * @param pool the pool to allocate memory from
  */
@@ -69,7 +71,7 @@ APT_DECLARE(apt_bool_t) apt_pollset_remove(apt_pollset_t *pollset, const apr_pol
  * Block for activity on the descriptor(s) in a pollset.
  * @param pollset the pollset to use
  * @param timeout the timeout in microseconds
- * @param num nthe umber of signalled descriptors (output parameter)
+ * @param num the number of signalled descriptors (output parameter)
  * @param descriptors the array of signalled descriptors (output parameter)
  */
 APT_DECLARE(apr_status_t) apt_pollset_poll(
@@ -93,4 +95,4 @@ APT_DECLARE(apt_bool_t) apt_pollset_is_wakeup(apt_pollset_t *pollset, const apr_
 
 APT_END_EXTERN_C
 
-#endif /*__APT_POLLSET_H__*/
+#endif /* APT_POLLSET_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: flite_voices.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __FLITE_VOICES_H__
-#define __FLITE_VOICES_H__
+#ifndef FLITE_VOICES_H
+#define FLITE_VOICES_H
 
 /**
  * @file flite_voices.h
@@ -42,4 +44,4 @@ cst_voice* flite_voices_best_match_get(flite_voices_t *voices, mrcp_message_t *m
 
 APT_END_EXTERN_C
 
-#endif /*__FLITE_VOICES_H__*/
+#endif /* FLITE_VOICES_H */

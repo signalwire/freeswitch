@@ -42,6 +42,7 @@ extern "C" {
 
 #define esl_copy_string(_x, _y, _z) strncpy(_x, _y, _z - 1)
 #define esl_set_string(_x, _y) esl_copy_string(_x, _y, sizeof(_x))
+#define ESL_VA_NONE "%s", ""
 
 typedef struct esl_event_header esl_event_header_t;
 typedef struct esl_event esl_event_t;
@@ -262,7 +263,8 @@ typedef enum {
 	ESL_SUCCESS,
 	ESL_FAIL,
 	ESL_BREAK,
-	ESL_DISCONNECTED
+	ESL_DISCONNECTED,
+	ESL_GENERR
 } esl_status_t;
 
 #define BUF_CHUNK 65536 * 50
@@ -308,6 +310,10 @@ typedef struct {
 	int event_lock;
 	int destroyed;
 } esl_handle_t;
+
+#define esl_test_flag(obj, flag) ((obj)->flags & flag)
+#define esl_set_flag(obj, flag) (obj)->flags |= (flag)
+#define esl_clear_flag(obj, flag) (obj)->flags &= ~(flag)
 
 /*! \brief Used internally for truth test */
 typedef enum {
@@ -452,6 +458,8 @@ ESL_DECLARE(esl_status_t) esl_filter(esl_handle_t *handle, const char *header, c
 ESL_DECLARE(esl_status_t) esl_events(esl_handle_t *handle, esl_event_type_t etype, const char *value);
 
 ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags);
+
+ESL_DECLARE(unsigned int) esl_separate_string_string(char *buf, const char *delim, char **array, unsigned int arraylen);
 
 #define esl_recv(_h) esl_recv_event(_h, 0, NULL)
 #define esl_recv_timed(_h, _ms) esl_recv_event_timed(_h, _ms, 0, NULL)

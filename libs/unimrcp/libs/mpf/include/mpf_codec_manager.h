@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_codec_manager.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MPF_CODEC_MANAGER_H__
-#define __MPF_CODEC_MANAGER_H__
+#ifndef MPF_CODEC_MANAGER_H
+#define MPF_CODEC_MANAGER_H
 
 /**
  * @file mpf_codec_manager.h
@@ -50,4 +52,4 @@ MPF_DECLARE(const mpf_codec_t*) mpf_codec_manager_codec_find(const mpf_codec_man
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_CODEC_MANAGER_H__*/
+#endif /* MPF_CODEC_MANAGER_H */

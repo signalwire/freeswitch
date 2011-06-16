@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_rtp_termination_factory.c 1693 2010-05-16 18:33:07Z achaloyan $
  */
 
 #include "mpf_termination.h"
@@ -37,7 +39,11 @@ static apt_bool_t mpf_rtp_termination_add(mpf_termination_t *termination, void *
 	mpf_audio_stream_t *audio_stream = termination->audio_stream;
 	if(!audio_stream) {
 		rtp_termination_factory_t *termination_factory = (rtp_termination_factory_t*)termination->termination_factory;
-		audio_stream = mpf_rtp_stream_create(termination,termination_factory->config,termination->pool);
+		audio_stream = mpf_rtp_stream_create(
+							termination,
+							termination_factory->config,
+							rtp_descriptor->audio.settings,
+							termination->pool);
 		if(!audio_stream) {
 			return FALSE;
 		}
@@ -85,7 +91,11 @@ static const mpf_termination_vtable_t rtp_vtable = {
 
 static mpf_termination_t* mpf_rtp_termination_create(mpf_termination_factory_t *termination_factory, void *obj, apr_pool_t *pool)
 {
-	return mpf_termination_base_create(termination_factory,obj,&rtp_vtable,NULL,NULL,pool);
+	mpf_termination_t *termination = mpf_termination_base_create(termination_factory,obj,&rtp_vtable,NULL,NULL,pool);
+	if(termination) {
+		termination->name = "rtp-tm";
+	}
+	return termination;
 }
 
 MPF_DECLARE(mpf_termination_factory_t*) mpf_rtp_termination_factory_create(

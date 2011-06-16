@@ -733,6 +733,92 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 }
 
+
+int sofia_reg_check_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	sofia_profile_t *profile = (sofia_profile_t *) pArg;
+
+	sofia_reg_send_reboot(profile, argv[1], argv[2], argv[3], argv[7], argv[11]);
+
+	return 0;
+}
+
+void sofia_reg_check_call_id(sofia_profile_t *profile, const char *call_id)
+{
+	char *sql = NULL;
+	char *sqlextra = NULL;
+	char *dup = strdup(call_id);
+	char *host = NULL, *user = NULL;
+
+	switch_assert(dup);
+
+	if ((host = strchr(dup, '@'))) {
+		*host++ = '\0';
+		user = dup;
+	} else {
+		host = dup;
+	}
+
+	if (!host) {
+		host = "none";
+	}
+
+	if (zstr(user)) {
+		sqlextra = switch_mprintf(" or (sip_host='%q')", host);
+	} else {
+		sqlextra = switch_mprintf(" or (sip_user='%q' and sip_host='%q')", user, host);
+	}
+
+	sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,expires"
+						 ",user_agent,server_user,server_host,profile_name,network_ip"
+						 " from sip_registrations where call_id='%q' %s", call_id, sqlextra);
+
+	switch_mutex_lock(profile->ireg_mutex);
+	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_check_callback, profile);
+	switch_mutex_unlock(profile->ireg_mutex);
+
+	switch_safe_free(sql);
+	switch_safe_free(sqlextra);
+	switch_safe_free(dup);
+
+}
+
+void sofia_reg_check_sync(sofia_profile_t *profile)
+{
+	char sql[1024];
+
+	switch_mutex_lock(profile->ireg_mutex);
+
+	switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,expires"
+					",user_agent,server_user,server_host,profile_name,network_ip" 
+					" from sip_registrations where expires > 0");
+
+
+	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_del_callback, profile);
+	switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+	sofia_glue_actually_execute_sql(profile, sql, NULL);
+
+
+	switch_snprintf(sql, sizeof(sql), "delete from sip_presence where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+	sofia_glue_actually_execute_sql(profile, sql, NULL);
+
+	switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+	sofia_glue_actually_execute_sql(profile, sql, NULL);
+	
+	switch_snprintf(sql, sizeof(sql), "select sub_to_user,sub_to_host,call_id from sip_subscriptions where expires >= -1 and hostname='%s'", 
+					mod_sofia_globals.hostname);
+	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_sub_del_callback, profile);
+
+	switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires >= -1 and hostname='%s'", mod_sofia_globals.hostname);
+	sofia_glue_actually_execute_sql(profile, sql, NULL);
+
+	switch_snprintf(sql, sizeof(sql), "delete from sip_dialogs where expires >= -1 and hostname='%s'", mod_sofia_globals.hostname);
+	sofia_glue_actually_execute_sql(profile, sql, NULL);
+
+	switch_mutex_unlock(profile->ireg_mutex);
+
+}
+
 char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len)
 {
 	struct callback_t cbt = { 0 };
@@ -1050,7 +1136,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	}
 
 	if (authorization) {
-		char *v_contact_str;
+		char *v_contact_str = NULL;
 		const char *username = "unknown";
 		const char *realm = reg_host;
 		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip, sip->sip_request->rq_method_name,
@@ -2002,7 +2088,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *call_id = NULL;
 	char *sql;
 	char *number_alias = NULL;
-	switch_xml_t domain, xml = NULL, user, param, uparams, dparams, group = NULL, gparams = NULL;
+	switch_xml_t user = NULL, param, uparams;
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
 	char *domain_name = NULL;
 	switch_event_t *params = NULL;
@@ -2179,7 +2265,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		domain_name = realm;
 	}
 
-	if (switch_xml_locate_user("id", zstr(username) ? "nobody" : username, domain_name, ip, &xml, &domain, &user, &group, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id", zstr(username) ? "nobody" : username, domain_name, ip, &user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n"
 						  "You must define a domain called '%s' in your directory and add a user with the id=\"%s\" attribute\n"
 						  "and you must configure your device to use the proper domain in it's authentication credentials.\n", username, domain_name,
@@ -2200,90 +2286,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		number_alias = zstr(username) ? "nobody" : username;
 	}
 
-	dparams = switch_xml_child(domain, "params");
-	uparams = switch_xml_child(user, "params");
-	if (group) {
-		gparams = switch_xml_child(group, "params");
-	}
-
-	if (!(dparams || uparams)) {
+	if (!(uparams = switch_xml_child(user, "params"))) {
 		ret = AUTH_OK;
 		goto skip_auth;
-	}
-
-	if (dparams) {
-		for (param = switch_xml_child(dparams, "param"); param; param = param->next) {
-			const char *var = switch_xml_attr_soft(param, "name");
-			const char *val = switch_xml_attr_soft(param, "value");
-
-			if (!strcasecmp(var, "sip-forbid-register") && switch_true(val)) {
-				ret = AUTH_FORBIDDEN;
-				goto end;
-			}
-
-			if (!strcasecmp(var, "password")) {
-				passwd = val;
-			}
-
-			if (!strcasecmp(var, "auth-acl")) {
-				auth_acl = val;
-			}
-
-			if (!strcasecmp(var, "a1-hash")) {
-				a1_hash = val;
-			}
-			if (!strcasecmp(var, "mwi-account")) {
-				mwi_account = val;
-			}
-			if (!strcasecmp(var, "allow-empty-password")) {
-				allow_empty_password = switch_true(val);
-			}
-			if (!strcasecmp(var, "user-agent-filter")) {
-				user_agent_filter = val;
-			}
-			if (!strcasecmp(var, "max-registrations-per-extension")) {
-				max_registrations_perext = atoi(val);
-			}
-		}
-	}
-
-	if (gparams) {
-		for (param = switch_xml_child(gparams, "param"); param; param = param->next) {
-			const char *var = switch_xml_attr_soft(param, "name");
-			const char *val = switch_xml_attr_soft(param, "value");
-
-			if (!strcasecmp(var, "sip-forbid-register") && switch_true(val)) {
-				ret = AUTH_FORBIDDEN;
-				goto end;
-			}
-
-			if (!strcasecmp(var, "password")) {
-				passwd = val;
-			}
-
-			if (!strcasecmp(var, "auth-acl")) {
-				auth_acl = val;
-			}
-
-			if (!strcasecmp(var, "a1-hash")) {
-				a1_hash = val;
-			}
-			if (!strcasecmp(var, "mwi-account")) {
-				mwi_account = val;
-			}
-			if (!strcasecmp(var, "allow-empty-password")) {
-				allow_empty_password = switch_true(val);
-			}
-			if (!strcasecmp(var, "user-agent-filter")) {
-				user_agent_filter = val;
-			}
-			if (!strcasecmp(var, "max-registrations-per-extension")) {
-				max_registrations_perext = atoi(val);
-			}
-		}
-	}
-
-	if (uparams) {
+	} else {
 		for (param = switch_xml_child(uparams, "param"); param; param = param->next) {
 			const char *var = switch_xml_attr_soft(param, "name");
 			const char *val = switch_xml_attr_soft(param, "value");
@@ -2504,29 +2510,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 				switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "mwi-account", mwi_account);
 			}
 
-			if ((dparams = switch_xml_child(domain, "params"))) {
-				xparams_type[i] = 0;
-				xparams[i++] = dparams;
-			}
-
-			if (group && (gparams = switch_xml_child(group, "params"))) {
-				xparams_type[i] = 0;
-				xparams[i++] = gparams;
-			}
-
 			if ((uparams = switch_xml_child(user, "params"))) {
 				xparams_type[i] = 0;
 				xparams[i++] = uparams;
-			}
-
-			if ((dparams = switch_xml_child(domain, "variables"))) {
-				xparams_type[i] = 1;
-				xparams[i++] = dparams;
-			}
-
-			if (group && (gparams = switch_xml_child(group, "variables"))) {
-				xparams_type[i] = 1;
-				xparams[i++] = gparams;
 			}
 
 			if ((uparams = switch_xml_child(user, "variables"))) {
@@ -2632,8 +2618,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	switch_event_destroy(&params);
 
-	if (xml) {
-		switch_xml_free(xml);
+	if (user) {
+		switch_xml_free(user);
 	}
 
 	switch_safe_free(input);

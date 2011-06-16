@@ -238,6 +238,10 @@
 				RelativePath=".\ftmod_sangoma_isdn_trace.c"
 				>
 			</File>
+			<File
+				RelativePath=".\ftmod_sangoma_isdn_transfer.c"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
