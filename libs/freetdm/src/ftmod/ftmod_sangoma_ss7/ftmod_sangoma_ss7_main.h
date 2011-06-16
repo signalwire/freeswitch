@@ -45,7 +45,7 @@
 
 #include "private/ftdm_core.h"
 
-#include "sng_ss7.h"
+#include "sng_ss7/sng_ss7.h"
 
 /******************************************************************************/
 
@@ -59,6 +59,10 @@
 #define SNGSS7_EVENT_QUEUE_SIZE	100
 
 #define MAX_SIZEOF_SUBADDR_IE	24	/* as per Q931 4.5.9 */
+
+#define SNGSS7_SWITCHTYPE_ANSI(switchtype)	(switchtype == LSI_SW_ANS88) || \
+											(switchtype == LSI_SW_ANS92) || \
+											(switchtype == LSI_SW_ANS95)
 
 typedef struct ftdm2trillium
 {

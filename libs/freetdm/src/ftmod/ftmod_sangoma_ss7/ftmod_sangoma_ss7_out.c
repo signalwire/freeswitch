@@ -92,8 +92,10 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		/* Transmission medium requirements */
 		copy_txMedReq_to_sngss7(ftdmchan, &iam.txMedReq);
 
-		/* User Service Info A */
-		copy_usrServInfoA_to_sngss7(ftdmchan, &iam.usrServInfoA);
+		if (SNGSS7_SWITCHTYPE_ANSI(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType)) {
+			/* User Service Info A */
+			copy_usrServInfoA_to_sngss7(ftdmchan, &iam.usrServInfoA);
+		}
 		
 		/* Called Number information */
 		copy_cdPtyNum_to_sngss7(ftdmchan, &iam.cdPtyNum);

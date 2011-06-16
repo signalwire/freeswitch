@@ -641,39 +641,32 @@ ftdm_status_t copy_txMedReq_to_sngss7(ftdm_channel_t *ftdmchan, SiTxMedReq *txMe
 
 ftdm_status_t copy_usrServInfoA_to_sngss7(ftdm_channel_t *ftdmchan, SiUsrServInfo *usrServInfoA)
 {
-	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
-	
-	if ((g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS88) ||
-		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS92) ||
-		(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].switchType == LSI_SW_ANS95)) {
+	usrServInfoA->eh.pres			= PRSNT_NODEF;
 
-		usrServInfoA->eh.pres			= PRSNT_NODEF;
+	usrServInfoA->infoTranCap.pres	= PRSNT_NODEF;
 
-		usrServInfoA->infoTranCap.pres	= PRSNT_NODEF;
-		
-		usrServInfoA->infoTranCap.val = get_trillium_val(bc_cap_codes, ftdmchan->caller_data.bearer_capability, ITC_SPEECH);
+	usrServInfoA->infoTranCap.val = get_trillium_val(bc_cap_codes, ftdmchan->caller_data.bearer_capability, ITC_SPEECH);
 
-		usrServInfoA->cdeStand.pres			= PRSNT_NODEF;
-		usrServInfoA->cdeStand.val			= 0x0;				/* ITU-T standardized coding */
-		usrServInfoA->tranMode.pres			= PRSNT_NODEF;
-		usrServInfoA->tranMode.val			= 0x0;				/* circuit mode */
-		usrServInfoA->infoTranRate0.pres		= PRSNT_NODEF;
-		usrServInfoA->infoTranRate0.val		= 0x10;				/* 64kbps origination to destination */
-		usrServInfoA->infoTranRate1.pres		= PRSNT_NODEF;
-		usrServInfoA->infoTranRate1.val		= 0x10;				/* 64kbps destination to origination */
-		usrServInfoA->chanStruct.pres		= PRSNT_NODEF;
-		usrServInfoA->chanStruct.val			= 0x1;				/* 8kHz integrity */
-		usrServInfoA->config.pres			= PRSNT_NODEF;
-		usrServInfoA->config.val				= 0x0;				/* point to point configuration */
-		usrServInfoA->establish.pres			= PRSNT_NODEF;
-		usrServInfoA->establish.val			= 0x0;				/* on demand */
-		usrServInfoA->symmetry.pres			= PRSNT_NODEF;
-		usrServInfoA->symmetry.val			= 0x0;				/* bi-directional symmetric */
-		usrServInfoA->usrInfLyr1Prot.pres	= PRSNT_NODEF;
-		usrServInfoA->usrInfLyr1Prot.val		= 0x2;				/* G.711 ulaw */
-		usrServInfoA->rateMultiplier.pres	= PRSNT_NODEF;
-		usrServInfoA->rateMultiplier.val		= 0x1;				/* 1x rate multipler */
-	} /* if ANSI */
+	usrServInfoA->cdeStand.pres			= PRSNT_NODEF;
+	usrServInfoA->cdeStand.val			= 0x0;				/* ITU-T standardized coding */
+	usrServInfoA->tranMode.pres			= PRSNT_NODEF;
+	usrServInfoA->tranMode.val			= 0x0;				/* circuit mode */
+	usrServInfoA->infoTranRate0.pres		= PRSNT_NODEF;
+	usrServInfoA->infoTranRate0.val		= 0x10;				/* 64kbps origination to destination */
+	usrServInfoA->infoTranRate1.pres		= PRSNT_NODEF;
+	usrServInfoA->infoTranRate1.val		= 0x10;				/* 64kbps destination to origination */
+	usrServInfoA->chanStruct.pres		= PRSNT_NODEF;
+	usrServInfoA->chanStruct.val			= 0x1;				/* 8kHz integrity */
+	usrServInfoA->config.pres			= PRSNT_NODEF;
+	usrServInfoA->config.val				= 0x0;				/* point to point configuration */
+	usrServInfoA->establish.pres			= PRSNT_NODEF;
+	usrServInfoA->establish.val			= 0x0;				/* on demand */
+	usrServInfoA->symmetry.pres			= PRSNT_NODEF;
+	usrServInfoA->symmetry.val			= 0x0;				/* bi-directional symmetric */
+	usrServInfoA->usrInfLyr1Prot.pres	= PRSNT_NODEF;
+	usrServInfoA->usrInfLyr1Prot.val		= 0x2;				/* G.711 ulaw */
+	usrServInfoA->rateMultiplier.pres	= PRSNT_NODEF;
+	usrServInfoA->rateMultiplier.val		= 0x1;				/* 1x rate multipler */
 	return FTDM_SUCCESS;
 }
 
