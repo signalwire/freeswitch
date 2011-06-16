@@ -621,15 +621,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\cmu6_lts_rules.c"
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict.c"
 				>
 			</File>
 			<File
 				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict2pid.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\fillpen.c"
 				>
 			</File>
 			<File
@@ -791,50 +787,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\kdtree.c"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\lextree.c"
-				>
 			</File>
 			<File
 				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\mdef.c"
@@ -1025,6 +977,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\ptm_mgau.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\s2_semi_mgau.c"
 				>
 				<FileConfiguration
@@ -1063,10 +1019,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\s3dict.c"
-				>
 			</File>
 			<File
 				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\tmat.c"
@@ -1109,10 +1061,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\tst_search.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\vector.c"
 				>
 				<FileConfiguration
@@ -1151,10 +1099,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\pocketsphinx-0.7\src\libpocketsphinx\vithist.c"
-				>
 			</File>
 		</Filter>
 		<Filter

@@ -1047,7 +1047,7 @@
 /libshout-2.2.2/
 /mpg123/
 /openldap-2.4.19/
-/pocketsphinx-0.5.99/
+/pocketsphinx-0.7/
 /portaudio/bin-stamp
 /portaudio/bin/
 /portaudio/lib-stamp
@@ -1055,7 +1055,7 @@
 /silk/Encoder
 /silk/signalCompare
 /soundtouch-1.3.1/
-/sphinxbase-0.4.99/
+/sphinxbase-0.7/
 /unimrcp/platforms/asr-client/asrclient
 /unimrcp/platforms/umc/umc
 /unimrcp/platforms/unimrcp-client/unimrcpclient
@@ -1079,7 +1079,6 @@
 /libogg-1.1.3/
 /pthreads-w32-2-7-0-release/
 /sounds/
-/sphinxbase-0.4.99/
 /sofia-sip/libsofia-sip-ua/http/http_tag_dll.c
 /sofia-sip/libsofia-sip-ua/iptsec/auth_tag_dll.c
 /sofia-sip/libsofia-sip-ua/msg/msg_tag_dll.c
