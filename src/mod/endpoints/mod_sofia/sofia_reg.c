@@ -875,7 +875,8 @@ switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *p
 }
 
 
-void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale)
+void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_dispatch_event_t *de,
+							  sofia_regtype_t regtype, const char *realm, int stale)
 {
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
@@ -895,9 +896,9 @@ void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "");
 
 	if (regtype == REG_REGISTER) {
-		nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_IF(nua, NUTAG_WITH_THIS(nua)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
+		nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_IF((nua && de), NUTAG_WITH_THIS_MSG(de->data->e_msg)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
 	} else if (regtype == REG_INVITE) {
-		nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED, TAG_IF(nua, NUTAG_WITH_THIS(nua)), SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
+		nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED, TAG_IF((nua && de), NUTAG_WITH_THIS_MSG(de->data->e_msg)), SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
 	}
 
 	switch_safe_free(auth_str);
@@ -916,7 +917,8 @@ uint32_t sofia_reg_reg_count(sofia_profile_t *profile, const char *user, const c
 	return atoi(buf);													
 }
 
-uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
+uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
+								sofia_dispatch_event_t *de, sofia_regtype_t regtype, char *key,
 								  uint32_t keylen, switch_event_t **v_event, const char *is_nat)
 {
 	sip_to_t const *to = NULL;
@@ -976,11 +978,11 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
 
-	sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
+	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
 	snprintf(network_port_c, sizeof(network_port_c), "%d", network_port);
 
-	snprintf(url_ip, sizeof(url_ip), (msg_addrinfo(nua_current_request(nua)))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
+	snprintf(url_ip, sizeof(url_ip), (msg_addrinfo(de->data->e_msg))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
 
 	expires = sip->sip_expires;
 	authorization = sip->sip_authorization;
@@ -1011,7 +1013,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not do authorization without a complete header in REGISTER request from %s:%d\n", 
 						  network_ip, network_port);
 
-		nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
+		nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 		switch_goto_int(r, 1, end);
 	}
 
@@ -1139,7 +1141,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		char *v_contact_str = NULL;
 		const char *username = "unknown";
 		const char *realm = reg_host;
-		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip, sip->sip_request->rq_method_name,
+		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip, de, sip->sip_request->rq_method_name,
 											 key, keylen, network_ip, v_event, exptime, regtype, to_user, &auth_params, &reg_count)) == AUTH_STALE) {
 			stale = 1;
 		}
@@ -1270,10 +1272,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		if (auth_res != AUTH_OK && !stale) {
 			if (auth_res == AUTH_FORBIDDEN) {
-				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
+				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 				forbidden = 1;
 			} else {
-				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
+				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			}
 
 			if (profile->debug) {
@@ -1317,7 +1319,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			realm = from_host;
 		}
 
-		sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
+		sofia_reg_auth_challenge(nua, profile, nh, de, regtype, realm, stale);
 
 		if (profile->debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send challenge for [%s@%s]\n", to_user, to_host);
@@ -1639,7 +1641,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		switch_rfc822_date(date, switch_micro_time_now());
 		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(sip->sip_contact),
-					TAG_IF(path_val, SIPTAG_PATH_STR(path_val)), NUTAG_WITH_THIS(nua), SIPTAG_DATE_STR(date), TAG_END());
+					TAG_IF(path_val, SIPTAG_PATH_STR(path_val)), NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_DATE_STR(date), TAG_END());
 
 		if (s_event) {
 			switch_event_fire(&s_event);
@@ -1650,7 +1652,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (*contact_str && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE_SYLANTRO)) {
-			sofia_sla_handle_register(nua, profile, sip, exptime, contact_str);
+			sofia_sla_handle_register(nua, profile, sip, de, exptime, contact_str);
 		}
 
 		switch_goto_int(r, 1, end);
@@ -1670,6 +1672,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 
 void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
+								sofia_dispatch_event_t *de,
 									 tagi_t tags[])
 {
 	char key[128] = "";
@@ -1692,7 +1695,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	}
 #endif
 
-	sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
+	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
 	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT! ip: %s, port: %i\n", network_ip, network_port);
@@ -1701,7 +1704,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	}
 
 	if (!(profile->mflags & MFLAG_REGISTER)) {
-		nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
+		nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 		goto end;
 	}
 
@@ -1765,7 +1768,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 			type = REG_AUTO_REGISTER;
 		} else if (!ok) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by register acl \"%s\"\n", network_ip, profile->reg_acl[x]);
-			nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
+			nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			goto end;
 		}
 	}
@@ -1783,7 +1786,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		is_nat = NULL;
 	}
 
-	sofia_reg_handle_register(nua, profile, nh, sip, type, key, sizeof(key), &v_event, is_nat);
+	sofia_reg_handle_register(nua, profile, nh, sip, de, type, key, sizeof(key), &v_event, is_nat);
 
 	if (v_event) {
 		switch_event_destroy(&v_event);
@@ -1799,6 +1802,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 void sofia_reg_handle_sip_r_register(int status,
 									 char const *phrase,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
+								sofia_dispatch_event_t *de,
 									 tagi_t tags[])
 {
 	if (status >= 500) {
@@ -1867,7 +1871,8 @@ void sofia_reg_handle_sip_r_register(int status,
 void sofia_reg_handle_sip_r_challenge(int status,
 									  char const *phrase,
 									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private,
-									  switch_core_session_t *session, sofia_gateway_t *gateway, sip_t const *sip, tagi_t tags[])
+									  switch_core_session_t *session, sofia_gateway_t *gateway, sip_t const *sip,
+								sofia_dispatch_event_t *de, tagi_t tags[])
 {
 	sip_www_authenticate_t const *authenticate = NULL;
 	char const *realm = NULL;
@@ -2066,6 +2071,7 @@ static int sofia_reg_regcount_callback(void *pArg, int argc, char **argv, char *
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 								sip_authorization_t const *authorization,
 								sip_t const *sip,
+								sofia_dispatch_event_t *de,
 								const char *regstr,
 								char *np,
 								size_t nplen,

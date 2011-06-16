@@ -669,10 +669,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		goto end;
 	}
 
-	if (switch_channel_down(session->channel)) {
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
-					  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "%s skip receive message [%s] (channel is hungup already)\n",
-					  switch_channel_get_name(session->channel), message_names[message->message_id]);
+	if (switch_channel_down(session->channel) && message->message_id != SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
+						  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "%s skip receive message [%s] (channel is hungup already)\n",
+						  switch_channel_get_name(session->channel), message_names[message->message_id]);
 	
 	} else if (session->endpoint_interface->io_routines->receive_message) {
 		status = session->endpoint_interface->io_routines->receive_message(session, message);

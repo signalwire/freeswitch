@@ -2202,6 +2202,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			switch_safe_free(d_url);
 			return SWITCH_STATUS_FALSE;
 		}
+		nua_handle_ref(tech_pvt->nh);
 
 		if (tech_pvt->dest && (strstr(tech_pvt->dest, ";fs_nat") || strstr(tech_pvt->dest, ";received")
 							   || ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val)))) {
@@ -2290,7 +2291,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		switch_safe_free(d_url);
 
-		if (!(sofia_private = malloc(sizeof(*sofia_private)))) {
+		if (!(sofia_private = su_alloc(tech_pvt->nh->nh_home, sizeof(*sofia_private)))) {
 			abort();
 		}
 
@@ -6484,7 +6485,7 @@ void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str
 	}
 }
 
-char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_nat_parse_t *np)
+char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_dispatch_event_t *de, sofia_nat_parse_t *np)
 {
 	char *contact_str = NULL;
 	const char *contact_host;//, *contact_user;
@@ -6507,7 +6508,7 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sof
 		np = &lnp;
 	}
 
-	sofia_glue_get_addr(nua_current_request(profile->nua), np->network_ip, sizeof(np->network_ip), &np->network_port);
+	sofia_glue_get_addr(de->data->e_msg, np->network_ip, sizeof(np->network_ip), &np->network_port);
 	
 	if (sofia_glue_check_nat(profile, np->network_ip)) {
 		np->is_auto_nat = 1;

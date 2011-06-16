@@ -1366,6 +1366,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	if (msg->message_id == SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
+		sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) msg->pointer_arg;
+		switch_mutex_lock(tech_pvt->sofia_mutex);
+		sofia_process_dispatch_event(&de);
+		switch_mutex_unlock(tech_pvt->sofia_mutex);
+		goto end;
+	}
+
+
 	if (switch_channel_down(channel) || !tech_pvt || sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;
@@ -2158,7 +2167,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					to_host = switch_channel_get_variable(channel, "sip_to_host");
 				}
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Challenging call %s\n", to_uri);
-				sofia_reg_auth_challenge(NULL, tech_pvt->profile, tech_pvt->nh, REG_INVITE, to_host, 0);
+				sofia_reg_auth_challenge(NULL, tech_pvt->profile, tech_pvt->nh, NULL, REG_INVITE, to_host, 0);
 				switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
 			} else if (code == 484 && msg->numeric_arg) {
 				const char *to = switch_channel_get_variable(channel, "sip_to_uri");
@@ -4640,7 +4649,6 @@ static void general_event_handler(switch_event_t *event)
 					
 					nua_notify(nh,
 							   NUTAG_NEWSUB(1),
-							   NUTAG_WITH_THIS(profile->nua),
 							   TAG_IF(dst->route_uri, NUTAG_PROXY(dst->contact)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 							   SIPTAG_EVENT_STR(es), TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
 					
@@ -4826,7 +4834,6 @@ static void general_event_handler(switch_event_t *event)
 			}
 
 			nua_info(nh,
-					 NUTAG_WITH_THIS(profile->nua),
 					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)),
 					 TAG_IF(cd, SIPTAG_CONTENT_DISPOSITION_STR(cd)),
 					 TAG_IF(alert_info, SIPTAG_ALERT_INFO_STR(alert_info)),
@@ -5219,11 +5226,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 {
 	int sanity = 0;
+	int i;
+
 
 	switch_console_del_complete_func("::sofia::list_profiles");
 	switch_console_set_complete("del sofia");
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
+
+	for (i = 0; i < mod_sofia_globals.msg_queue_len; i++) {	
+		switch_queue_push(mod_sofia_globals.msg_queue[i], NULL);
+	}
+
 	if (mod_sofia_globals.running == 1) {
 		mod_sofia_globals.running = 0;
 	}
@@ -5243,6 +5257,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 		if (++sanity >= 60000) {
 			break;
 		}
+	}
+
+	for (i = 0; i < mod_sofia_globals.msg_queue_len; i++) {
+		switch_status_t st;
+		switch_thread_join(&st, mod_sofia_globals.msg_queue_thread[i]);
 	}
 
 	//switch_yield(1000000);
