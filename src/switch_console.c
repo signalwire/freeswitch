@@ -105,7 +105,7 @@ static switch_status_t console_xml_config(void)
 		for (param = switch_xml_child(settings, "key"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-			int i = atoi(var);
+			i = atoi(var);
 			if ((i < 1) || (i > 12)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Keybind %s is invalid, range is from 1 to 12\n", var);
 			} else {
@@ -913,7 +913,7 @@ static unsigned char console_fnkey_pressed(int i)
 {
 	char *c, *cmd;
 
-	assert((i > 0) && (i <= 12));
+	switch_assert((i > 0) && (i <= 12));
 
 	c = console_fnkeys[i - 1];
 
@@ -1675,6 +1675,7 @@ SWITCH_DECLARE(void) switch_console_sort_matches(switch_console_callback_match_t
 		sort[3] = sort[2] ? sort[2]->next : NULL;
 
 		for (j = 1; j <= (matches->count - i); j++) {
+			switch_assert(sort[1] && sort[2]);
 			if (strcmp(sort[1]->val, sort[2]->val) > 0) {
 				sort[1]->next = sort[3];
 				sort[2]->next = sort[1];

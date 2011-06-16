@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_connection_types.h 1792 2011-01-10 21:08:52Z achaloyan $
  */
 
-#ifndef __MRCP_CONNECTION_TYPES_H__
-#define __MRCP_CONNECTION_TYPES_H__
+#ifndef MRCP_CONNECTION_TYPES_H
+#define MRCP_CONNECTION_TYPES_H
 
 /**
  * @file mrcp_connection_types.h
@@ -24,6 +26,7 @@
 
 #include <apr_network_io.h>
 #include "apt_string.h"
+#include "apt_timer_queue.h"
 #include "mrcp_types.h"
 
 APT_BEGIN_EXTERN_C
@@ -63,10 +66,16 @@ struct mrcp_control_channel_t {
 	mrcp_connection_agent_t *agent;
 	/** MRCPv2 (shared) connection */
 	mrcp_connection_t       *connection;
+	/** Request sent to the server and waiting for a response */
+	mrcp_message_t          *active_request;
+	/** Timer used for request timeouts */
+	apt_timer_t             *request_timer;
 	/** Indicate removed connection (safe to destroy) */
 	apt_bool_t               removed;
 	/** External object associated with the channel */
 	void                    *obj;
+	/** External logger object associated with the channel */
+	void                    *log_obj;
 	/** Pool to allocate memory from */
 	apr_pool_t              *pool;
 	/** Channel identifier (id at resource) */
@@ -125,4 +134,4 @@ static APR_INLINE apt_bool_t mrcp_connection_message_receive(
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_CONNECTION_TYPES_H__*/
+#endif /* MRCP_CONNECTION_TYPES_H */

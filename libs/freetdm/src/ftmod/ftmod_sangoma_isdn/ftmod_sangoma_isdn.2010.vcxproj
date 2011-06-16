@@ -189,6 +189,7 @@
     <ClCompile Include="ftmod_sangoma_isdn_stack_rcv.c" />
     <ClCompile Include="ftmod_sangoma_isdn_support.c" />
     <ClCompile Include="ftmod_sangoma_isdn_trace.c" />
+    <ClCompile Include="ftmod_sangoma_isdn_transfer.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\msvc\freetdm.2010.vcxproj">

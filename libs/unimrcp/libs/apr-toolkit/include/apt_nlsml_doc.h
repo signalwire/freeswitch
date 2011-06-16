@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_nlsml_doc.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __APT_NLSML_DOC_H__
-#define __APT_NLSML_DOC_H__
+#ifndef APT_NLSML_DOC_H
+#define APT_NLSML_DOC_H
 
 /**
  * @file apt_nlsml_doc.h
@@ -45,4 +47,4 @@ APT_DECLARE(const char *) nlsml_input_attrib_get(const apr_xml_elem *input, cons
 
 APT_END_EXTERN_C
 
-#endif /*__APT_NLSML_DOC_H__*/
+#endif /* APT_NLSML_DOC_H */

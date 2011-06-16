@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_session_descriptor.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MRCP_SESSION_DESCRIPTOR_H__
-#define __MRCP_SESSION_DESCRIPTOR_H__
+#ifndef MRCP_SESSION_DESCRIPTOR_H
+#define MRCP_SESSION_DESCRIPTOR_H
 
 /**
  * @file mrcp_session_descriptor.h
@@ -143,4 +145,4 @@ MRCP_DECLARE(const char*) mrcp_session_status_phrase_get(mrcp_session_status_e s
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_SESSION_DESCRIPTOR_H__*/
+#endif /* MRCP_SESSION_DESCRIPTOR_H */

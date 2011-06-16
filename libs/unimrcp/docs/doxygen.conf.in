@@ -1,0 +1,34 @@
+PROJECT_NAME="UniMRCP"
+PROJECT_NUMBER = @VERSION@
+
+INPUT=. docs/mainpage.docs
+QUIET=YES
+RECURSIVE=YES
+FILE_PATTERNS=*.h
+
+OUTPUT_DIRECTORY=docs/dox
+
+MACRO_EXPANSION=YES
+EXPAND_ONLY_PREDEF=YES
+
+PREDEFINED="APT_DECLARE(x)=x" \
+           "MPF_DECLARE(x)=x" \
+           "MRCP_DECLARE(x)=x" \
+           "RTSP_DECLARE(x)=x"
+
+OPTIMIZE_OUTPUT_FOR_C=YES
+STRIP_CODE_COMMENTS=NO
+
+FULL_PATH_NAMES=NO
+CASE_SENSE_NAMES=NO
+
+EXCLUDE=platforms/umc platforms/libasr-client platforms/asr-client
+EXCLUDE_PATTERNS="*/acconfig.h" \
+                 "*/test/*" \
+                 "*/arch/*"
+
+GENERATE_HTML=YES
+GENERATE_LATEX=NO
+GENERATE_RTF=NO
+GENERATE_MAN=NO
+GENERATE_XML=NO

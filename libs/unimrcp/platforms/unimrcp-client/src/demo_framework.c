@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: demo_framework.c 1571 2010-03-07 20:33:39Z achaloyan $
  */
 
 #include <apr_hash.h>
@@ -21,7 +23,7 @@
 #include "apt_consumer_task.h"
 #include "apt_log.h"
 
-#define FRAMEWORK_TASK_NAME "Framework Task"
+#define FRAMEWORK_TASK_NAME "Framework Agent"
 
 #define MAX_APP_NAME_LENGTH     16
 #define MAX_PROFILE_NAME_LENGTH 16

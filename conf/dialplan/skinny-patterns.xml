@@ -5,7 +5,7 @@
     This context is used for skinny to match dialed number
 
     The special applications:
-    - skinny-route tells skinny to route the call
+    - skinny-process tells skinny to process the call (route, set call forwarding, ...)
     - skinny-drop tells skinny to drop the call
     - skinny-wait tells skinny to wait 'data' seconds for more numbers before drop
 -->

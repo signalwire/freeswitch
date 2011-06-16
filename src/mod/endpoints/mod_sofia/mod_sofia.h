@@ -294,6 +294,8 @@ typedef enum {
 	TFLAG_AUTOFLUSH_DURING_BRIDGE,
 	TFLAG_NOTIMER_DURING_BRIDGE,
 	TFLAG_JB_PAUSED,
+	TFLAG_3PCC_INVITE,
+	TFLAG_NOREPLY,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -795,7 +797,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 void sofia_glue_deactivate_rtp(private_object_t *tech_pvt);
 
-void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32_t port, const char *sr, int force);
+void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch_port_t port, const char *sr, int force);
 
 void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt);
 
@@ -982,6 +984,8 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt);
 switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt);
 void sofia_presence_event_thread_start(void);
 void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int reboot);
+void sofia_reg_check_call_id(sofia_profile_t *profile, const char *call_id);
+void sofia_reg_check_sync(sofia_profile_t *profile);
 switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, int force);
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force);
 char *sofia_glue_get_register_host(const char *uri);
@@ -1065,6 +1069,6 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp);
 switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt);
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
 void sofia_glue_check_dtmf_type(private_object_t *tech_pvt);
-void sofia_glue_parse_rtp_bugs(uint32_t *flag_pole, const char *str);
+void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str);
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);

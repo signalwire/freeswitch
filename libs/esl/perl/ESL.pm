@@ -88,6 +88,8 @@ sub DESTROY {
 *getType = *ESLc::ESLevent_getType;
 *addBody = *ESLc::ESLevent_addBody;
 *addHeader = *ESLc::ESLevent_addHeader;
+*pushHeader = *ESLc::ESLevent_pushHeader;
+*unshiftHeader = *ESLc::ESLevent_unshiftHeader;
 *delHeader = *ESLc::ESLevent_delHeader;
 *firstHeader = *ESLc::ESLevent_firstHeader;
 *nextHeader = *ESLc::ESLevent_nextHeader;

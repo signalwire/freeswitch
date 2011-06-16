@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_context.c 1709 2010-05-24 17:12:11Z achaloyan $
  */
 
 #ifdef WIN32
@@ -46,6 +48,8 @@ struct mpf_context_t {
 	mpf_context_factory_t        *factory;
 	/** Pool to allocate memory from */
 	apr_pool_t                   *pool;
+	/** Informative name of the context used for debugging */
+	const char                   *name;
 	/** External object */
 	void                         *obj;
 
@@ -109,6 +113,7 @@ MPF_DECLARE(apt_bool_t) mpf_context_factory_process(mpf_context_factory_t *facto
  
 MPF_DECLARE(mpf_context_t*) mpf_context_create(
 								mpf_context_factory_t *factory,
+								const char *name,
 								void *obj,
 								apr_size_t max_termination_count,
 								apr_pool_t *pool)
@@ -120,6 +125,10 @@ MPF_DECLARE(mpf_context_t*) mpf_context_create(
 	context->factory = factory;
 	context->obj = obj;
 	context->pool = pool;
+	context->name = name;
+	if(!context->name) {
+		context->name = apr_psprintf(pool,"0x%pp",context);
+	}
 	context->capacity = max_termination_count;
 	context->count = 0;
 	context->mpf_objects = apr_array_make(pool,1,sizeof(mpf_object_t*));
@@ -154,7 +163,7 @@ MPF_DECLARE(apt_bool_t) mpf_context_destroy(mpf_context_t *context)
 	return TRUE;
 }
 
-MPF_DECLARE(void*) mpf_context_object_get(mpf_context_t *context)
+MPF_DECLARE(void*) mpf_context_object_get(const mpf_context_t *context)
 {
 	return context->obj;
 }
@@ -169,11 +178,10 @@ MPF_DECLARE(apt_bool_t) mpf_context_termination_add(mpf_context_t *context, mpf_
 			continue;
 		}
 		if(!context->count) {
-			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Add Context");
+			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Add Media Context %s",context->name);
 			APR_RING_INSERT_TAIL(&context->factory->head,context,mpf_context_t,link);
 		}
 
-		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Add Termination");
 		header_item->termination = termination;
 		header_item->tx_count = 0;
 		header_item->rx_count = 0;
@@ -200,7 +208,6 @@ MPF_DECLARE(apt_bool_t) mpf_context_termination_subtract(mpf_context_t *context,
 		return FALSE;
 	}
 
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Subtract Termination");
 	for(j=0,k=0; j<context->capacity && k<context->count; j++) {
 		header_item2 = &context->header[j];
 		if(!header_item2->termination) {
@@ -227,7 +234,7 @@ MPF_DECLARE(apt_bool_t) mpf_context_termination_subtract(mpf_context_t *context,
 	termination->slot = (apr_size_t)-1;
 	context->count--;
 	if(!context->count) {
-		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Remove Context");
+		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Remove Media Context %s",context->name);
 		APR_RING_REMOVE(context,link);
 	}
 	return TRUE;
@@ -463,6 +470,7 @@ static mpf_object_t* mpf_context_bridge_create(mpf_context_t *context, apr_size_
 				header_item1->termination->audio_stream,
 				header_item2->termination->audio_stream,
 				header_item1->termination->codec_manager,
+				context->name,
 				context->pool);
 		}
 	}
@@ -494,6 +502,7 @@ static mpf_object_t* mpf_context_multiplier_create(mpf_context_t *context, apr_s
 				sink_arr,
 				header_item1->tx_count,
 				header_item1->termination->codec_manager,
+				context->name,
 				context->pool);
 }
 
@@ -522,6 +531,7 @@ static mpf_object_t* mpf_context_mixer_create(mpf_context_t *context, apr_size_t
 				header_item1->rx_count,
 				header_item1->termination->audio_stream,
 				header_item1->termination->codec_manager,
+				context->name,
 				context->pool);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_flite.c 1678 2010-05-01 18:54:07Z achaloyan $
  */
 
 /* 
@@ -158,7 +160,7 @@ static apt_bool_t flite_synth_engine_open(mrcp_engine_t *engine)
 	flite_engine->voices = flite_voices_load(engine->pool);
 
 	apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "flite init success");
-	return TRUE;
+	return mrcp_engine_open_respond(engine,TRUE);
 }
 
 /** Close synthesizer engine */
@@ -169,7 +171,7 @@ static apt_bool_t flite_synth_engine_close(mrcp_engine_t *engine)
 
 	flite_voices_unload(flite_engine->voices);
 
-	return TRUE;
+	return mrcp_engine_close_respond(engine);
 }
 
 static apt_bool_t flite_synth_task_create(flite_synth_channel_t *synth_channel)

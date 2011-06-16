@@ -23,7 +23,7 @@ export CODECS_MODULES= codecs/mod_bv codecs/mod_h26x codecs/mod_speex codecs/mod
 export DIALPLANS_MODULES= dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml 
 export ENDPOINTS_MODULES= endpoints/mod_dingaling endpoints/mod_portaudio endpoints/mod_sofia endpoints/mod_loopback  \
  ../../libs/freetdm/mod_freetdm endpoints/mod_skypopen endpoints/mod_skinny 
-export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv
+export EVENT_HANDLERS_MODULES=event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv event_handlers/mod_cdr_sqlite
 export FORMATS_MODULES= formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
  formats/mod_shout formats/mod_sndfile formats/mod_tone_stream 
 export LANGUAGES_MODULES=languages/mod_spidermonkey languages/mod_perl languages/mod_lua languages/mod_python

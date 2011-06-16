@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_encoder.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MPF_ENCODER_H__
-#define __MPF_ENCODER_H__
+#ifndef MPF_ENCODER_H
+#define MPF_ENCODER_H
 
 /**
  * @file mpf_encoder.h
@@ -37,4 +39,4 @@ MPF_DECLARE(mpf_audio_stream_t*) mpf_encoder_create(mpf_audio_stream_t *sink, mp
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_ENCODER_H__*/
+#endif /* MPF_ENCODER_H */

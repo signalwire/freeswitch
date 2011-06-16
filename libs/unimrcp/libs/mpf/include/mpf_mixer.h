@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_mixer.h 1693 2010-05-16 18:33:07Z achaloyan $
  */
 
-#ifndef __MPF_MIXER_H__
-#define __MPF_MIXER_H__
+#ifndef MPF_MIXER_H
+#define MPF_MIXER_H
 
 /**
  * @file mpf_mixer.h
@@ -32,6 +34,7 @@ APT_BEGIN_EXTERN_C
  * @param source_count the number of audio sources
  * @param sink the audio sink
  * @param codec_manager the codec manager
+ * @param name the informative name used for debugging
  * @param pool the pool to allocate memory from
  */
 MPF_DECLARE(mpf_object_t*) mpf_mixer_create(
@@ -39,9 +42,10 @@ MPF_DECLARE(mpf_object_t*) mpf_mixer_create(
 								apr_size_t source_count, 
 								mpf_audio_stream_t *sink, 
 								const mpf_codec_manager_t *codec_manager,
+								const char *name,
 								apr_pool_t *pool);
 
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_MIXER_H__*/
+#endif /* MPF_MIXER_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_rtp_descriptor.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MPF_RTP_DESCRIPTOR_H__
-#define __MPF_RTP_DESCRIPTOR_H__
+#ifndef MPF_RTP_DESCRIPTOR_H
+#define MPF_RTP_DESCRIPTOR_H
 
 /**
  * @file mpf_rtp_descriptor.h
@@ -36,6 +38,8 @@ typedef struct mpf_rtp_stream_descriptor_t mpf_rtp_stream_descriptor_t;
 typedef struct mpf_rtp_termination_descriptor_t mpf_rtp_termination_descriptor_t;
 /** RTP configuration declaration */
 typedef struct mpf_rtp_config_t mpf_rtp_config_t;
+/** RTP settings declaration */
+typedef struct mpf_rtp_settings_t mpf_rtp_settings_t;
 /** Jitter buffer configuration declaration */
 typedef struct mpf_jb_config_t mpf_jb_config_t;
 
@@ -75,6 +79,8 @@ struct mpf_rtp_stream_descriptor_t {
 	mpf_rtp_media_descriptor_t *local;
 	/** Remote media descriptor */
 	mpf_rtp_media_descriptor_t *remote;
+	/** Settings loaded from config */
+	mpf_rtp_settings_t         *settings;
 };
 
 /** RTP termination descriptor */
@@ -104,7 +110,7 @@ typedef enum {
 	RTCP_BYE_PER_TALKSPURT  /**< transmit RTCP BYE at the end of each talkspurt (input) */
 } rtcp_bye_policy_e;
 
-/** RTP config */
+/** RTP factory config */
 struct mpf_rtp_config_t {
 	/** Local IP address to bind to */
 	apt_str_t         ip;
@@ -116,6 +122,10 @@ struct mpf_rtp_config_t {
 	apr_port_t        rtp_port_max;
 	/** Current RTP port */
 	apr_port_t        rtp_port_cur;
+};
+
+/** RTP settings */
+struct mpf_rtp_settings_t {
 	/** Packetization time */
 	apr_uint16_t      ptime;
 	/** Codec list */
@@ -172,8 +182,8 @@ static APR_INLINE void mpf_jb_config_init(mpf_jb_config_t *jb_config)
 	jb_config->max_playout_delay = 0;
 }
 
-/** Create/allocate RTP config */
-static APR_INLINE mpf_rtp_config_t* mpf_rtp_config_create(apr_pool_t *pool)
+/** Allocate RTP config */
+static APR_INLINE mpf_rtp_config_t* mpf_rtp_config_alloc(apr_pool_t *pool)
 {
 	mpf_rtp_config_t *rtp_config = (mpf_rtp_config_t*)apr_palloc(pool,sizeof(mpf_rtp_config_t));
 	apt_string_reset(&rtp_config->ip);
@@ -181,18 +191,25 @@ static APR_INLINE mpf_rtp_config_t* mpf_rtp_config_create(apr_pool_t *pool)
 	rtp_config->rtp_port_cur = 0;
 	rtp_config->rtp_port_min = 0;
 	rtp_config->rtp_port_max = 0;
-	rtp_config->ptime = 0;
-	mpf_codec_list_init(&rtp_config->codec_list,0,pool);
-	rtp_config->own_preferrence = FALSE;
-	rtp_config->rtcp = FALSE;
-	rtp_config->rtcp_bye_policy = RTCP_BYE_DISABLE;
-	rtp_config->rtcp_tx_interval = 0;
-	rtp_config->rtcp_rx_resolution = 0;
-	mpf_jb_config_init(&rtp_config->jb_config);
-
 	return rtp_config;
 }
 
+/** Allocate RTP settings */
+static APR_INLINE mpf_rtp_settings_t* mpf_rtp_settings_alloc(apr_pool_t *pool)
+{
+	mpf_rtp_settings_t *rtp_settings = (mpf_rtp_settings_t*)apr_palloc(pool,sizeof(mpf_rtp_settings_t));
+	rtp_settings->ptime = 0;
+	mpf_codec_list_init(&rtp_settings->codec_list,0,pool);
+	rtp_settings->own_preferrence = FALSE;
+	rtp_settings->rtcp = FALSE;
+	rtp_settings->rtcp_bye_policy = RTCP_BYE_DISABLE;
+	rtp_settings->rtcp_tx_interval = 0;
+	rtp_settings->rtcp_rx_resolution = 0;
+	mpf_jb_config_init(&rtp_settings->jb_config);
+	return rtp_settings;
+}
+
+
 APT_END_EXTERN_C
 
-#endif /*__MPF_RTP_DESCRIPTOR_H__*/
+#endif /* MPF_RTP_DESCRIPTOR_H */

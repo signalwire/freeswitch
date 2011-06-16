@@ -584,6 +584,20 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		break;		
 	/**************************************************************************/
+	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+
+		/* already hangup complete, just ignore it */
+		/* 
+		 * i.e. collision REL & ANM
+		 * IAM ->
+		 * <- ACM
+		 * REL ->	<- ANM  (if REL gets processed first, ANM needs to be ignored)
+		 * <- RLC
+		 */
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ANM/CON Ignoring it because we already hung up\n", sngss7_info->circuit->cic);
+
+		break;
+	/**************************************************************************/
 	default:	/* incorrect state...reset the CIC */
 
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ANM/CON\n", sngss7_info->circuit->cic);
@@ -1267,7 +1281,7 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 
 			/* confirm that the circuit is active on our side otherwise move to the next circuit */
 			if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[i], SNGSS7_ACTIVE)) {
-				SS7_ERROR("[CIC:%d]Circuit is not active yet, skipping!\n",g_ftdm_sngss7_data.cfg.isupCkt[i].cic);
+				ftdm_log(FTDM_LOG_DEBUG, "[CIC:%d]Circuit is not active yet, skipping!\n",g_ftdm_sngss7_data.cfg.isupCkt[i].cic);
 				i++;
 				continue;
 			}

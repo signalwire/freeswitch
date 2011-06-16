@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: demo_recog_engine.c 1706 2010-05-23 14:11:11Z achaloyan $
  */
 
 /* 
@@ -175,7 +177,7 @@ static apt_bool_t demo_recog_engine_open(mrcp_engine_t *engine)
 		apt_task_t *task = apt_consumer_task_base_get(demo_engine->task);
 		apt_task_start(task);
 	}
-	return TRUE;
+	return mrcp_engine_open_respond(engine,TRUE);
 }
 
 /** Close recognizer engine */
@@ -186,7 +188,7 @@ static apt_bool_t demo_recog_engine_close(mrcp_engine_t *engine)
 		apt_task_t *task = apt_consumer_task_base_get(demo_engine->task);
 		apt_task_terminate(task,TRUE);
 	}
-	return TRUE;
+	return mrcp_engine_close_respond(engine);
 }
 
 static mrcp_engine_channel_t* demo_recog_engine_channel_create(mrcp_engine_t *engine, apr_pool_t *pool)
@@ -459,15 +461,18 @@ static apt_bool_t demo_recog_stream_write(mpf_audio_stream_t *stream, const mpf_
 		mpf_detector_event_e det_event = mpf_activity_detector_process(recog_channel->detector,frame);
 		switch(det_event) {
 			case MPF_DETECTOR_EVENT_ACTIVITY:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Activity");
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Activity "APT_SIDRES_FMT,
+					MRCP_MESSAGE_SIDRES(recog_channel->recog_request));
 				demo_recog_start_of_input(recog_channel);
 				break;
 			case MPF_DETECTOR_EVENT_INACTIVITY:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Inactivity");
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Inactivity "APT_SIDRES_FMT,
+					MRCP_MESSAGE_SIDRES(recog_channel->recog_request));
 				demo_recog_recognition_complete(recog_channel,RECOGNIZER_COMPLETION_CAUSE_SUCCESS);
 				break;
 			case MPF_DETECTOR_EVENT_NOINPUT:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Noinput");
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Noinput "APT_SIDRES_FMT,
+					MRCP_MESSAGE_SIDRES(recog_channel->recog_request));
 				if(recog_channel->timers_started == TRUE) {
 					demo_recog_recognition_complete(recog_channel,RECOGNIZER_COMPLETION_CAUSE_NO_INPUT_TIMEOUT);
 				}
@@ -478,11 +483,13 @@ static apt_bool_t demo_recog_stream_write(mpf_audio_stream_t *stream, const mpf_
 
 		if((frame->type & MEDIA_FRAME_TYPE_EVENT) == MEDIA_FRAME_TYPE_EVENT) {
 			if(frame->marker == MPF_MARKER_START_OF_EVENT) {
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Start of Event: id [%d]",
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Start of Event "APT_SIDRES_FMT" id:%d",
+					MRCP_MESSAGE_SIDRES(recog_channel->recog_request),
 					frame->event_frame.event_id);
 			}
 			else if(frame->marker == MPF_MARKER_END_OF_EVENT) {
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected End of Event: id [%d] duration [%d ts]",
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected End of Event "APT_SIDRES_FMT" id:%d duration:%d ts",
+					MRCP_MESSAGE_SIDRES(recog_channel->recog_request),
 					frame->event_frame.event_id,
 					frame->event_frame.duration);
 			}

@@ -78,8 +78,8 @@ public class ESLevent {
     return eslJNI.ESLevent_setPriority(swigCPtr, this, SWIGTYPE_p_esl_priority_t.getCPtr(priority));
   }
 
-  public String getHeader(String header_name) {
-    return eslJNI.ESLevent_getHeader(swigCPtr, this, header_name);
+  public String getHeader(String header_name, int idx) {
+    return eslJNI.ESLevent_getHeader(swigCPtr, this, header_name, idx);
   }
 
   public String getBody() {
@@ -96,6 +96,14 @@ public class ESLevent {
 
   public boolean addHeader(String header_name, String value) {
     return eslJNI.ESLevent_addHeader(swigCPtr, this, header_name, value);
+  }
+
+  public boolean pushHeader(String header_name, String value) {
+    return eslJNI.ESLevent_pushHeader(swigCPtr, this, header_name, value);
+  }
+
+  public boolean unshiftHeader(String header_name, String value) {
+    return eslJNI.ESLevent_unshiftHeader(swigCPtr, this, header_name, value);
   }
 
   public boolean delHeader(String header_name) {

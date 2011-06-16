@@ -42,7 +42,9 @@ extern "C" {
 
 typedef enum {
 	ESL_STACK_BOTTOM,
-	ESL_STACK_TOP
+	ESL_STACK_TOP,
+	ESL_STACK_PUSH,
+	ESL_STACK_UNSHIFT
 } esl_stack_t;
 
 typedef enum {
@@ -141,6 +143,10 @@ typedef enum {
 	char *name;
 	/*! the header value */
 	char *value;
+	/*! array space */
+	char **array;
+	/*! array index */
+	int idx;
 	/*! hash of the header name */
 	unsigned long hash;
 	struct esl_event_header *next;
@@ -174,7 +180,7 @@ struct esl_event {
 };
 
 typedef enum {
-	ESL_UNIQ_HEADERS = (1 << 0)
+	ESL_EF_UNIQ_HEADERS = (1 << 0)
 } esl_event_flag_t;
 
 
@@ -203,7 +209,11 @@ ESL_DECLARE(esl_status_t) esl_event_set_priority(esl_event_t *event, esl_priorit
   \param header_name the name of the header to read
   \return the value of the requested header
 */
-ESL_DECLARE(char *)esl_event_get_header(esl_event_t *event, const char *header_name);
+
+
+ESL_DECLARE(esl_event_header_t *) esl_event_get_header_ptr(esl_event_t *event, const char *header_name);
+ESL_DECLARE(char *) esl_event_get_header_idx(esl_event_t *event, const char *header_name, int idx);
+#define esl_event_get_header(_e, _h) esl_event_get_header_idx(_e, _h, -1)
 
 /*!
   \brief Retrieve the body value from an event
@@ -222,6 +232,8 @@ ESL_DECLARE(char *)esl_event_get_body(esl_event_t *event);
 */
 ESL_DECLARE(esl_status_t) esl_event_add_header(esl_event_t *event, esl_stack_t stack,
 											   const char *header_name, const char *fmt, ...); //PRINTF_FUNCTION(4, 5);
+
+ESL_DECLARE(int) esl_event_add_array(esl_event_t *event, const char *var, const char *val);
 
 /*!
   \brief Add a string header to an event
@@ -250,6 +262,7 @@ ESL_DECLARE(void) esl_event_destroy(esl_event_t **event);
   \return ESL_SUCCESS if the event was duplicated
 */
 ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup);
+ESL_DECLARE(void) esl_event_merge(esl_event_t *event, esl_event_t *tomerge);
 
 /*!
   \brief Render the name of an event id enumeration

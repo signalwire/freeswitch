@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_connection.h 1710 2010-05-24 17:36:19Z achaloyan $
  */
 
-#ifndef __MRCP_CONNECTION_H__
-#define __MRCP_CONNECTION_H__
+#ifndef MRCP_CONNECTION_H
+#define MRCP_CONNECTION_H
 
 /**
  * @file mrcp_connection.h
@@ -50,6 +52,9 @@ struct mrcp_connection_t {
 	apt_str_t         remote_ip;
 	/** String identifier used for traces */
 	const char       *id;
+	/** Transparently dump whatever received/sent on transport layer, 
+	if verbose is set to TRUE (default) */
+	apt_bool_t        verbose;
 
 	/** Reference count */
 	apr_size_t        access_count;
@@ -62,22 +67,24 @@ struct mrcp_connection_t {
 	apr_hash_t       *channel_table;
 
 	/** Rx buffer */
-	char              rx_buffer[MRCP_STREAM_BUFFER_SIZE];
+	char             *rx_buffer;
+	/** Rx buffer size */
+	apr_size_t        rx_buffer_size;
 	/** Rx stream */
 	apt_text_stream_t rx_stream;
 	/** MRCP parser to parser MRCP messages out of rx stream */
 	mrcp_parser_t    *parser;
 
 	/** Tx buffer */
-	char              tx_buffer[MRCP_STREAM_BUFFER_SIZE];
-	/** Tx stream */
-	apt_text_stream_t tx_stream;
-	/** MRCP generator to generate MRCP messages out of tx stream */
+	char             *tx_buffer;
+	/** Tx buffer size */
+	apr_size_t        tx_buffer_size;
+	/** MRCP generator to generate MRCP messages into tx stream */
 	mrcp_generator_t *generator;
 };
 
 /** Create MRCP connection. */
-mrcp_connection_t* mrcp_connection_create(void);
+mrcp_connection_t* mrcp_connection_create();
 
 /** Destroy MRCP connection. */
 void mrcp_connection_destroy(mrcp_connection_t *connection);
@@ -86,7 +93,7 @@ void mrcp_connection_destroy(mrcp_connection_t *connection);
 apt_bool_t mrcp_connection_channel_add(mrcp_connection_t *connection, mrcp_control_channel_t *channel);
 
 /** Find Control Channel by Channel Identifier. */
-mrcp_control_channel_t* mrcp_connection_channel_find(mrcp_connection_t *connection, const apt_str_t *identifier);
+mrcp_control_channel_t* mrcp_connection_channel_find(const mrcp_connection_t *connection, const apt_str_t *identifier);
 
 /** Remove Control Channel from MRCP connection. */
 apt_bool_t mrcp_connection_channel_remove(mrcp_connection_t *connection, mrcp_control_channel_t *channel);
@@ -96,4 +103,4 @@ apt_bool_t mrcp_connection_disconnect_raise(mrcp_connection_t *connection, const
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_CONNECTION_H__*/
+#endif /* MRCP_CONNECTION_H */

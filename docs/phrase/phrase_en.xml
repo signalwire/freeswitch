@@ -491,6 +491,9 @@
 	  <prompt phrase="Normal clearing" filename="ivr-normal_clearing.wav"/>
 
       <!-- The following phrases still need to be recorded -->
+      <prompt phrase="This conference is full. Please contact the conference moderator." filename="conf-conference_is_full.wav"/>
+	  <prompt phrase="You do not have permission to perform this action." filename="ivr-not_have_permission.wav"/>
+	  <prompt phrase="" filename=""/>
     </ivr>
 
     <misc>

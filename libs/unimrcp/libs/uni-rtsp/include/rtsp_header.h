@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: rtsp_header.h 1648 2010-04-12 20:03:59Z achaloyan $
  */
 
-#ifndef __RTSP_HEADER_H__
-#define __RTSP_HEADER_H__
+#ifndef RTSP_HEADER_H
+#define RTSP_HEADER_H
 
 /**
  * @file rtsp_header.h
@@ -23,7 +25,7 @@
  */ 
 
 #include "rtsp.h"
-#include "apt_text_stream.h"
+#include "apt_header_field.h"
 
 APT_BEGIN_EXTERN_C
 
@@ -99,9 +101,6 @@ typedef enum {
 } rtsp_content_type_e;
 
 
-/** Bit field masks are used to define property set */
-typedef int rtsp_header_property_t;
-
 
 /** RTSP/RTP port range declaration */
 typedef struct rtsp_port_range_t rtsp_port_range_t;
@@ -156,8 +155,8 @@ struct rtsp_header_t {
 	/** Content length */
 	apr_size_t             content_length;
 
-	/** Property set */
-	rtsp_header_property_t property_set;
+	/** Header section (collection of header fields)*/
+	apt_header_section_t   header_section;
 };
 
 
@@ -188,7 +187,7 @@ static APR_INLINE void rtsp_transport_init(rtsp_transport_t *transport)
 }
 
 /** Initialize header */
-static APR_INLINE void rtsp_header_init(rtsp_header_t *header)
+static APR_INLINE void rtsp_header_init(rtsp_header_t *header, apr_pool_t *pool)
 {
 	header->cseq = 0;
 	rtsp_transport_init(&header->transport);
@@ -196,37 +195,38 @@ static APR_INLINE void rtsp_header_init(rtsp_header_t *header)
 	apt_string_reset(&header->rtp_info);
 	header->content_type = RTSP_CONTENT_TYPE_NONE;
 	header->content_length = 0;
-	header->property_set = 0;
+
+	apt_header_section_init(&header->header_section);
+	apt_header_section_array_alloc(&header->header_section,RTSP_HEADER_FIELD_COUNT,pool);
 }
 
-/** Parse RTSP message */
-RTSP_DECLARE(apt_bool_t) rtsp_header_parse(rtsp_header_t *header, apt_text_stream_t *text_stream, apr_pool_t *pool);
-/** Generate RTSP message */
-RTSP_DECLARE(apt_bool_t) rtsp_header_generate(rtsp_header_t *header, apt_text_stream_t *text_stream);
 
+/** Add RTSP header field */
+RTSP_DECLARE(apt_bool_t) rtsp_header_field_add(rtsp_header_t *header, apt_header_field_t *header_field, apr_pool_t *pool);
 
+/** Parse RTSP header fields */
+RTSP_DECLARE(apt_bool_t) rtsp_header_fields_parse(rtsp_header_t *header, apr_pool_t *pool);
 
-/** Add property to property set */
-static APR_INLINE void rtsp_header_property_add(rtsp_header_property_t *property_set, apr_size_t id)
+/** Add RTSP header field property */
+RTSP_DECLARE(apt_bool_t) rtsp_header_property_add(rtsp_header_t *header, rtsp_header_field_id id, apr_pool_t *pool);
+
+/** Remove RTSP header field property */
+static APR_INLINE apt_bool_t rtsp_header_property_remove(rtsp_header_t *header, rtsp_header_field_id id)
 {
-	int mask = 1 << id;
-	*property_set |= mask;
+	apt_header_field_t *header_field = apt_header_section_field_get(&header->header_section,id);
+	if(header_field) {
+		return apt_header_section_field_remove(&header->header_section,header_field);
+	}
+	return FALSE;
 }
 
-/** Remove property from property set */
-static APR_INLINE void rtsp_header_property_remove(rtsp_header_property_t *property_set, apr_size_t id)
+/** Check RTSP header field property */
+static APR_INLINE apt_bool_t rtsp_header_property_check(const rtsp_header_t *header, rtsp_header_field_id id)
 {
-	int mask = 1 << id;
-	*property_set &= ~mask;
+	return apt_header_section_field_check(&header->header_section,id);
 }
 
-/** Check property in property set */
-static APR_INLINE apt_bool_t rtsp_header_property_check(const rtsp_header_property_t *property_set, apr_size_t id)
-{
-	int mask = 1 << id;
-	return ((*property_set & mask) == mask) ? TRUE : FALSE;
-}
 
 APT_END_EXTERN_C
 
-#endif /*__RTSP_HEADER_H__*/
+#endif /* RTSP_HEADER_H */

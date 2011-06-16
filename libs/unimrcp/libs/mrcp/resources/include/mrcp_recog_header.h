@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_recog_header.h 1736 2010-06-14 20:16:22Z achaloyan $
  */
 
-#ifndef __MRCP_RECOG_HEADER_H__
-#define __MRCP_RECOG_HEADER_H__
+#ifndef MRCP_RECOG_HEADER_H
+#define MRCP_RECOG_HEADER_H
 
 /**
  * @file mrcp_recog_header.h
@@ -27,7 +29,7 @@
 
 APT_BEGIN_EXTERN_C
 
-/** MRCP recognizer headers */
+/** MRCP recognizer header fields */
 typedef enum {
 	RECOGNIZER_HEADER_CONFIDENCE_THRESHOLD,
 	RECOGNIZER_HEADER_SENSITIVITY_LEVEL,
@@ -50,7 +52,7 @@ typedef enum {
 	RECOGNIZER_HEADER_NEW_AUDIO_CHANNEL,
 	RECOGNIZER_HEADER_SPEECH_LANGUAGE,
 
-	/** Additional headers for MRCP v2 */
+	/** Additional header fields for MRCP v2 */
 	RECOGNIZER_HEADER_INPUT_TYPE,
 	RECOGNIZER_HEADER_INPUT_WAVEFORM_URI,
 	RECOGNIZER_HEADER_COMPLETION_REASON,
@@ -64,6 +66,18 @@ typedef enum {
 	RECOGNIZER_HEADER_DTMF_BUFFER_TIME,
 	RECOGNIZER_HEADER_CLEAR_DTMF_BUFFER,
 	RECOGNIZER_HEADER_EARLY_NO_MATCH,
+	RECOGNIZER_HEADER_NUM_MIN_CONSISTENT_PRONUNCIATIONS,
+	RECOGNIZER_HEADER_CONSISTENCY_THRESHOLD,
+	RECOGNIZER_HEADER_CLASH_THRESHOLD,
+	RECOGNIZER_HEADER_PERSONAL_GRAMMAR_URI,
+	RECOGNIZER_HEADER_ENROLL_UTTERANCE,
+	RECOGNIZER_HEADER_PHRASE_ID,
+	RECOGNIZER_HEADER_PHRASE_NL,
+	RECOGNIZER_HEADER_WEIGHT,
+	RECOGNIZER_HEADER_SAVE_BEST_WAVEFORM,
+	RECOGNIZER_HEADER_NEW_PHRASE_ID,
+	RECOGNIZER_HEADER_CONFUSABLE_PHRASES_URI,
+	RECOGNIZER_HEADER_ABORT_PHRASE_ENROLLMENT,
 
 	RECOGNIZER_HEADER_COUNT
 } mrcp_recognizer_header_id;
@@ -160,7 +174,7 @@ struct mrcp_recog_header_t {
     a session or request, if it is not specified within the data */
 	apt_str_t                     speech_language;
 
-	/** Additional headers for MRCP v2 */
+	/** Additional header fields for MRCP v2 */
 	/** Specifies if the input that caused a barge-in was DTMF or speech */
 	apt_str_t                     input_type;
 	/** Optional header specifies a URI pointing to audio content to be
@@ -169,10 +183,10 @@ struct mrcp_recog_header_t {
 	/** MAY be specified in a RECOGNITION-COMPLETE event coming from
     the recognizer resource to the client */
 	apt_str_t                     completion_reason;
-	/** tells the server resource the Media Type in which to store captured 
+	/** Tells the server resource the Media Type in which to store captured 
 	audio such as the one captured and returned by the Waveform-URI header */
 	apt_str_t                     media_type;
-	/** lets the client request the server to buffer the
+	/** Lets the client request the server to buffer the
     utterance associated with this recognition request into a buffer
     available to a co-resident verification resource */
 	apt_bool_t                    ver_buffer_utterance;
@@ -202,6 +216,49 @@ struct mrcp_recog_header_t {
     tell the recognizer that it MUST not wait for the end of speech
     before processing the collected speech to match active grammars */
 	apt_bool_t                    early_no_match;
+	/** MAY be specified in a START-PHRASE-ENROLLMENT, "SET-PARAMS", or 
+	"GET-PARAMS" method and is used to specify the minimum number of 
+	consistent pronunciations that must be obtained to voice enroll a new phrase */
+	apr_size_t                    num_min_consistent_pronunciations;
+	/** MAY be sent as part of the START-PHRASE-ENROLLMENT,"SET-PARAMS", or 
+	"GET-PARAMS" method and is used during voice-enrollment to specify how similar 
+	to a previously enrolled pronunciation of the same phrase an utterance needs 
+	to be in order to be considered "consistent" */
+	float                         consistency_threshold;
+	/** MAY be sent as part of the START-PHRASE-ENROLLMENT, SET-PARAMS, or 
+	"GET-PARAMS" method and is used during voice-enrollment to specify 
+	how similar the pronunciations of two different phrases can be 
+	before they are considered to be clashing */
+	float                         clash_threshold;
+	/** Specifies the speaker-trained grammar to be used or
+	referenced during enrollment operations */
+	apt_str_t                     personal_grammar_uri;
+	/** MAY be specified in the RECOGNIZE method. If this header
+	is set to "true" and an Enrollment is active, the RECOGNIZE command
+	MUST add the collected utterance to the personal grammar that is
+	being enrolled */
+	apt_bool_t                    enroll_utterance;
+	/** Identifies a phrase in an existing personal grammar for which 
+	enrollment is desired.  It is also returned to the client in the 
+	RECOGNIZE complete event */
+	apt_str_t                     phrase_id;
+	/** Specifies the interpreted text to be returned when the
+	phrase is recognized */
+	apt_str_t                     phrase_nl;
+	/** Represents the occurrence likelihood of a phrase in an enrolled grammar */
+	float                         weight;
+	/** Allows the client to request the recognizer resource to
+	save the audio stream for the best repetition of the phrase that was
+	used during the enrollment session */
+	apt_bool_t                    save_best_waveform;
+	/** Replaces the id used to identify the phrase in a personal grammar */
+	apt_str_t                     new_phrase_id;
+	/** Specifies a grammar that defines invalid phrases for enrollment */
+	apt_str_t                     confusable_phrases_uri;
+	/** Can optionally be specified in the END-PHRASE-ENROLLMENT
+	method to abort the phrase enrollment, rather than committing the
+	phrase to the personal grammar */
+	apt_bool_t                    abort_phrase_enrollment;
 };
 
 
@@ -213,4 +270,4 @@ MRCP_DECLARE(const apt_str_t*) mrcp_recog_completion_cause_get(mrcp_recog_comple
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_RECOG_HEADER_H__*/
+#endif /* MRCP_RECOG_HEADER_H */

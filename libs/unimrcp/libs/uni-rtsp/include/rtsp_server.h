@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: rtsp_server.h 1710 2010-05-24 17:36:19Z achaloyan $
  */
 
-#ifndef __RTSP_SERVER_H__
-#define __RTSP_SERVER_H__
+#ifndef RTSP_SERVER_H
+#define RTSP_SERVER_H
 
 /**
  * @file rtsp_server.h
@@ -84,13 +86,13 @@ RTSP_DECLARE(apt_bool_t) rtsp_server_terminate(rtsp_server_t *server);
  * Get task.
  * @param server the server to get task from
  */
-RTSP_DECLARE(apt_task_t*) rtsp_server_task_get(rtsp_server_t *server);
+RTSP_DECLARE(apt_task_t*) rtsp_server_task_get(const rtsp_server_t *server);
 
 /**
  * Get external object.
  * @param server the server to get object from
  */
-RTSP_DECLARE(void*) rtsp_server_object_get(rtsp_server_t *server);
+RTSP_DECLARE(void*) rtsp_server_object_get(const rtsp_server_t *server);
 
 /**
  * Send RTSP message.
@@ -140,4 +142,4 @@ RTSP_DECLARE(const char*) rtsp_server_session_destination_get(const rtsp_server_
 
 APT_END_EXTERN_C
 
-#endif /*__RTSP_SERVER_H__*/
+#endif /* RTSP_SERVER_H */

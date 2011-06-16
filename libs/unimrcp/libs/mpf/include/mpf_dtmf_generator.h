@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Tomas Valenta, Arsen Chaloyan
+ * Copyright 2009-2010 Tomas Valenta, Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef __MPF_DTMF_GENERATOR_H__
-#define __MPF_DTMF_GENERATOR_H__
+#ifndef MPF_DTMF_GENERATOR_H
+#define MPF_DTMF_GENERATOR_H
 
-/*
- * @file mpf_named_event.h
+/**
+ * @file mpf_dtmf_generator.h
  * @brief DTMF generator
  *
  * Generator used to send DTMF tones. Capable to send digits
@@ -128,4 +128,4 @@ MPF_DECLARE(void) mpf_dtmf_generator_destroy(struct mpf_dtmf_generator_t *genera
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_DTMF_GENERATOR_H__*/
+#endif /* MPF_DTMF_GENERATOR_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: set_get_suite.c 1637 2010-04-03 18:29:24Z achaloyan $
  */
 
 #include "apt_test_suite.h"
@@ -319,6 +321,6 @@ static apt_bool_t set_get_test_run(apt_test_suite_t *suite, int argc, const char
 
 apt_test_suite_t* set_get_test_suite_create(apr_pool_t *pool)
 {
-	apt_test_suite_t *suite = apt_test_suite_create(pool,"set-gen",NULL,set_get_test_run);
+	apt_test_suite_t *suite = apt_test_suite_create(pool,"set-get",NULL,set_get_test_run);
 	return suite;
 }

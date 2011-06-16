@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- UniMRCP client document -->
+<unimrcpclient xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+               xsi:noNamespaceSchemaLocation="../unimrcpclient.xsd" 
+               version="1.0">
+  <settings>
+    <!-- RTSP MRCPv1 settings -->
+    <rtsp-settings id="SpeechPro-RTSP-Settings">
+      <!-- Server address should be explicitly specified, it defaults to "ip" address set in the properties. -->
+      <!-- <server-ip>10.10.0.1</server-ip> -->
+      <server-port>8000</server-port>
+      <!-- <force-destination>true</force-destination> -->
+      <resource-location></resource-location>
+      <resource-map>
+        <param name="speechsynth" value="tts"/>
+        <param name="speechrecog" value="asr"/>
+      </resource-map>
+    </rtsp-settings>
+  </settings>
+  
+  <profiles>
+    <!-- SpeechPro MRCPv1 profile -->
+    <mrcpv1-profile id="sp1">
+      <rtsp-uac>RTSP-Agent-1</rtsp-uac>
+      <media-engine>Media-Engine-1</media-engine>
+      <rtp-factory>RTP-Factory-1</rtp-factory>
+      <rtsp-settings>SpeechPro-RTSP-Settings</rtsp-settings>
+      <rtp-settings>RTP-Settings-1</rtp-settings>
+    </mrcpv1-profile>
+
+    <!-- more profiles might be added here -->
+  </profiles>
+</unimrcpclient>

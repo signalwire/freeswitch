@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: demo_synth_engine.c 1706 2010-05-23 14:11:11Z achaloyan $
  */
 
 /* 
@@ -177,7 +179,7 @@ static apt_bool_t demo_synth_engine_open(mrcp_engine_t *engine)
 		apt_task_t *task = apt_consumer_task_base_get(demo_engine->task);
 		apt_task_start(task);
 	}
-	return TRUE;
+	return mrcp_engine_open_respond(engine,TRUE);
 }
 
 /** Close synthesizer engine */
@@ -188,7 +190,7 @@ static apt_bool_t demo_synth_engine_close(mrcp_engine_t *engine)
 		apt_task_t *task = apt_consumer_task_base_get(demo_engine->task);
 		apt_task_terminate(task,TRUE);
 	}
-	return TRUE;
+	return mrcp_engine_close_respond(engine);
 }
 
 /** Create demo synthesizer channel derived from engine channel base */
@@ -270,10 +272,14 @@ static apt_bool_t demo_synth_channel_speak(mrcp_engine_channel_t *channel, mrcp_
 	if(file_path) {
 		synth_channel->audio_file = fopen(file_path,"rb");
 		if(synth_channel->audio_file) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set [%s] as Speech Source",file_path);
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set [%s] as Speech Source "APT_SIDRES_FMT,
+				file_path,
+				MRCP_MESSAGE_SIDRES(request));
 		}
 		else {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"No Speech Source [%s] Found",file_path);
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"No Speech Source [%s] Found "APT_SIDRES_FMT,
+				file_path,
+				MRCP_MESSAGE_SIDRES(request));
 			/* calculate estimated time to complete */
 			if(mrcp_generic_header_property_check(request,GENERIC_HEADER_CONTENT_LENGTH) == TRUE) {
 				mrcp_generic_header_t *generic_header = mrcp_generic_header_get(request);

@@ -131,6 +131,7 @@ struct switch_channel {
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
 	switch_event_t *variables;
+	switch_event_t *scope_variables;
 	switch_hash_t *private_hash;
 	switch_hash_t *app_flag_hash;
 	switch_call_cause_t hangup_cause;
@@ -626,6 +627,11 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-File", file);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Function", func);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Line", "%d", line);
+
+		if (switch_true(switch_channel_get_variable(channel, "presence_privacy"))) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Privacy", "true");
+		}
+
 		switch_event_fire(&event);
 	}
 }
@@ -635,7 +641,7 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 	switch_event_t *event;
 
 	if (!!on == !!switch_channel_test_flag(channel, CF_LEG_HOLDING)) {
-		return;
+		goto end;
 	}
 	
 	if (on) {
@@ -647,6 +653,18 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 	if (switch_event_create(&event, on ? SWITCH_EVENT_CHANNEL_HOLD : SWITCH_EVENT_CHANNEL_UNHOLD) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
+	}
+
+ end:
+
+	if (on) {
+		if (switch_true(switch_channel_get_variable(channel, "flip_record_on_hold"))) {
+			switch_core_session_t *other_session;
+			if (switch_core_session_get_partner(channel->session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				switch_core_media_bug_transfer_recordings(channel->session, other_session);
+				switch_core_session_rwunlock(other_session);
+			}
+		}
 	}
 
 }
@@ -675,13 +693,69 @@ SWITCH_DECLARE(const char *) switch_channel_get_hold_music_partner(switch_channe
 	return r;
 }
 
-SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup)
+SWITCH_DECLARE(void) switch_channel_set_scope_variables(switch_channel_t *channel, switch_event_t **event)
+{
+	switch_mutex_lock(channel->profile_mutex);
+
+	if (event && *event) { /* push */
+		(*event)->next = channel->scope_variables;
+		channel->scope_variables = *event;
+		*event = NULL;
+	} else if (channel->scope_variables) { /* pop */
+		switch_event_t *top_event = channel->scope_variables;
+		channel->scope_variables = channel->scope_variables->next;
+		switch_event_destroy(&top_event);
+	}
+
+	switch_mutex_unlock(channel->profile_mutex);
+	
+}
+
+SWITCH_DECLARE(switch_status_t) switch_channel_get_scope_variables(switch_channel_t *channel, switch_event_t **event)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_event_t *new_event;
+
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->scope_variables) {
+		switch_event_t *ep;
+		switch_event_header_t *hp;
+
+		switch_event_create_plain(&new_event, SWITCH_EVENT_CHANNEL_DATA);
+		status = SWITCH_STATUS_SUCCESS;
+		*event = new_event;
+
+		for (ep = channel->scope_variables; ep; ep = ep->next) {
+			for (hp = ep->headers; hp; hp = hp->next) {
+				if (!switch_event_get_header(new_event, hp->value)) {
+					switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+				}
+			}
+		}
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return status;
+}
+
+SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup, int idx)
 {
 	const char *v = NULL, *r = NULL, *vdup = NULL;
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
-	if (!channel->variables || !(v = switch_event_get_header(channel->variables, varname))) {
+
+	if (channel->scope_variables) {
+		switch_event_t *ep;
+
+		for (ep = channel->scope_variables; ep; ep = ep->next) {
+			if ((v = switch_event_get_header_idx(ep, varname, idx))) {
+				break;
+			}
+		}
+	}
+
+	if (!v && (!channel->variables || !(v = switch_event_get_header_idx(channel->variables, varname, idx)))) {
 		switch_caller_profile_t *cp = channel->caller_profile;
 
 		if (cp) {
@@ -1032,9 +1106,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->variables && !zstr(varname)) {
-
-		switch_event_del_header(channel->variables, varname);
-		if (!zstr(value)) {
+		if (zstr(value)) {
+			switch_event_del_header(channel->variables, varname);
+		} else {
 			int ok = 1;
 
 			if (var_check) {
@@ -1052,6 +1126,38 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 
 	return status;
 }
+
+
+SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_channel_t *channel,
+																	  const char *varname, const char *value, switch_bool_t var_check, switch_stack_t stack)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->variables && !zstr(varname)) {
+		if (zstr(value)) {
+			switch_event_del_header(channel->variables, varname);
+		} else {
+			int ok = 1;
+
+			if (var_check) {
+				ok = !switch_string_var_check_const(value);
+			}
+			if (ok) {
+				switch_event_add_header_string(channel->variables, stack, varname, value);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
+			}
+		}
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return status;
+}
+
 
 switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data);
 
@@ -2080,6 +2186,28 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_CUSTOM) {
 
 		/* Index Variables */
+
+		if (channel->scope_variables) {
+			switch_event_t *ep;
+
+			for (ep = channel->scope_variables; ep; ep = ep->next) {
+				for (hi = ep->headers; hi; hi = hi->next) {
+					char buf[1024];
+					char *vvar = NULL, *vval = NULL;
+					
+					vvar = (char *) hi->name;
+					vval = (char *) hi->value;
+						
+					switch_assert(vvar && vval);
+					switch_snprintf(buf, sizeof(buf), "scope_variable_%s", vvar);
+					
+					if (!switch_event_get_header(event, buf)) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
+					}
+				}
+			}
+		}
+
 		if (channel->variables) {
 			for (hi = channel->variables->headers; hi; hi = hi->next) {
 				char buf[1024];
@@ -3108,12 +3236,14 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					int offset = 0;
 					int ooffset = 0;
 					char *ptr;
+					int idx = -1;
 
 					if ((expanded = switch_channel_expand_variables(channel, (char *) vname)) == vname) {
 						expanded = NULL;
 					} else {
 						vname = expanded;
 					}
+
 					if ((ptr = strchr(vname, ':'))) {
 						*ptr++ = '\0';
 						offset = atoi(ptr);
@@ -3123,7 +3253,12 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						}
 					}
 
-					if ((sub_val = (char *) switch_channel_get_variable(channel, vname))) {
+					if ((ptr = strchr(vname, '[')) && strchr(ptr, ']')) {
+						*ptr++ = '\0';
+						idx = atoi(ptr);
+					}
+					
+					if ((sub_val = (char *) switch_channel_get_variable_dup(channel, vname, SWITCH_TRUE, idx))) {
 						if (offset || ooffset) {
 							cloned_sub_val = strdup(sub_val);
 							switch_assert(cloned_sub_val);
@@ -3592,7 +3727,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", billsec);
 	switch_channel_set_variable(channel, "billsec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%d", progresssec);
+	switch_snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, progresssec);
 	switch_channel_set_variable(channel, "progresssec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", answersec);
@@ -3601,7 +3736,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", waitsec);
 	switch_channel_set_variable(channel, "waitsec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%d", progress_mediasec);
+	switch_snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, progress_mediasec);
 	switch_channel_set_variable(channel, "progress_mediasec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", legbillsec);

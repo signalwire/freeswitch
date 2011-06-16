@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_jitter_buffer.c 1802 2011-05-13 02:43:12Z achaloyan $
  */
 
 #include "mpf_jitter_buffer.h"
@@ -102,6 +104,10 @@ mpf_jitter_buffer_t* mpf_jitter_buffer_create(mpf_jb_config_t *jb_config, mpf_co
 		frame->codec_frame.buffer = jb->raw_data + i*jb->frame_size;
 	}
 
+	if(jb->config->initial_playout_delay % CODEC_FRAME_TIME_BASE != 0) {
+		jb->config->initial_playout_delay += CODEC_FRAME_TIME_BASE - jb->config->initial_playout_delay % CODEC_FRAME_TIME_BASE;
+	}
+
 	jb->playout_delay_ts = (apr_uint32_t)(jb->config->initial_playout_delay *
 		descriptor->channel_count * descriptor->sampling_rate / 1000);
 
@@ -149,17 +155,28 @@ static APR_INLINE jb_result_t mpf_jitter_buffer_write_prepare(mpf_jitter_buffer_
 	*write_ts = ts - jb->write_ts_offset + jb->playout_delay_ts;
 	if(*write_ts % jb->frame_ts != 0) {
 		/* not frame alligned */
+		JB_TRACE("JB write ts=%"APR_SIZE_T_FMT" not alligned -> discard\n",write_ts);
 		return JB_DISCARD_NOT_ALLIGNED;
 	}
 	return JB_OK;
 }
 
-jb_result_t mpf_jitter_buffer_write(mpf_jitter_buffer_t *jb, void *buffer, apr_size_t size, apr_uint32_t ts)
+jb_result_t mpf_jitter_buffer_write(mpf_jitter_buffer_t *jb, void *buffer, apr_size_t size, apr_uint32_t ts, apr_byte_t marker)
 {
 	mpf_frame_t *media_frame;
 	apr_uint32_t write_ts;
 	apr_size_t available_frame_count;
-	jb_result_t result = mpf_jitter_buffer_write_prepare(jb,ts,&write_ts);
+	jb_result_t result;
+
+	if(marker) {
+		/* new talkspurt */
+		if(jb->write_ts <= jb->read_ts) {
+			/* buffer is empty => it's safe to restart */
+			mpf_jitter_buffer_restart(jb);
+		}
+	}
+
+	result = mpf_jitter_buffer_write_prepare(jb,ts,&write_ts);
 	if(result != JB_OK) {
 		return result;
 	}

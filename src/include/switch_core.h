@@ -248,6 +248,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(_Inout_ switch_media
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(_In_ switch_core_session_t *session);
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_session_t *session, switch_stream_handle_t *stream);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch_core_session_t *orig_session, switch_core_session_t *new_session);
 
 /*!
   \brief Read a frame from the bug
@@ -1226,7 +1227,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(_In_ switch_hash_t *hash
   \note the string key must be a constant or a dynamic string
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ const void *data,
-															   _In_ switch_mutex_t *mutex);
+															   _In_opt_ switch_mutex_t *mutex);
+/*! 
+  \brief Retrieve data from a given hash
+  \param hash the hash to retrieve from
+  \param key the key to retrieve
+  \param mutex optional rwlock to wrlock
+  \return a pointer to the data held in the key
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_wrlock(switch_hash_t *hash, const char *key, const void *data, switch_thread_rwlock_t *rwlock);
 
 /*! 
   \brief Delete data from a hash based on desired key
@@ -1243,7 +1252,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(_In_ switch_hash_t *hash
   \param mutex optional mutex to lock
   \return SWITCH_STATUS_SUCCESS if the data is deleted
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_ switch_mutex_t *mutex);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ switch_mutex_t *mutex);
+
+/*! 
+  \brief Delete data from a hash based on desired key
+  \param hash the hash to delete from
+  \param key the key from which to delete the data
+  \param mutex optional rwlock to wrlock
+  \return SWITCH_STATUS_SUCCESS if the data is deleted
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_wrlock(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ switch_thread_rwlock_t *rwlock);
 
 /*! 
   \brief Delete data from a hash based on callback function
@@ -1270,6 +1288,15 @@ SWITCH_DECLARE(void *) switch_core_hash_find(_In_ switch_hash_t *hash, _In_z_ co
   \return a pointer to the data held in the key
 */
 SWITCH_DECLARE(void *) switch_core_hash_find_locked(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_ switch_mutex_t *mutex);
+
+/*! 
+  \brief Retrieve data from a given hash
+  \param hash the hash to retrieve from
+  \param key the key to retrieve
+  \param mutex optional rwlock to rdlock
+  \return a pointer to the data held in the key
+*/
+SWITCH_DECLARE(void *) switch_core_hash_find_rdlock(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_ switch_thread_rwlock_t *rwlock);
 
 /*!
  \brief Gets the first element of a hashtable

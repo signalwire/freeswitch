@@ -35,7 +35,6 @@ include_HEADERS          = codecs/g711/g711.h \
                            include/mpf_rtp_termination_factory.h \
                            include/mpf_file_termination_factory.h \
                            include/mpf_scheduler.h \
-                           include/mpf_timer_manager.h \
                            include/mpf_types.h \
                            include/mpf_encoder.h \
                            include/mpf_decoder.h \
@@ -72,7 +71,6 @@ libmpf_la_SOURCES        = codecs/g711/g711.c \
                            src/mpf_file_termination_factory.c \
                            src/mpf_frame_buffer.c \
                            src/mpf_scheduler.c \
-                           src/mpf_timer_manager.c \
                            src/mpf_encoder.c \
                            src/mpf_decoder.c \
                            src/mpf_jitter_buffer.c \

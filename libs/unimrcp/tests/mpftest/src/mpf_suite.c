@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_suite.c 1700 2010-05-21 18:56:06Z achaloyan $
  */
 
 #include <apr_thread_cond.h>
@@ -95,7 +97,7 @@ static apt_bool_t mpf_test_run(apt_test_suite_t *suite, int argc, const char * c
 
 	suite_engine = apr_palloc(suite->pool,sizeof(mpf_suite_engine_t));
 
-	engine = mpf_engine_create(suite->pool);
+	engine = mpf_engine_create("MPF-Engine",suite->pool);
 	if(!engine) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create MPF Engine");
 		return FALSE;
@@ -106,7 +108,7 @@ static apt_bool_t mpf_test_run(apt_test_suite_t *suite, int argc, const char * c
 	}
 	suite_engine->engine = engine;
 
-	config = mpf_rtp_config_create(suite->pool);
+	config = mpf_rtp_config_alloc(suite->pool);
 	apt_string_set(&config->ip,"127.0.0.1");
 	config->rtp_port_min = 5000;
 	config->rtp_port_min = 6000;
@@ -178,7 +180,7 @@ static void mpf_suite_on_start_complete(apt_task_t *task)
 	session->rtp_mode = TRUE;
 
 	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Create MPF Context");
-	session->context = mpf_engine_context_create(suite_engine->engine,session,2,pool);
+	session->context = mpf_engine_context_create(suite_engine->engine,NULL,session,2,pool);
 
 	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Create Termination [1]");
 	session->termination1 = mpf_termination_create(suite_engine->file_termination_factory,session,session->pool);

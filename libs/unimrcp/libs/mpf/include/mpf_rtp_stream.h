@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_rtp_stream.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MPF_RTP_STREAM_H__
-#define __MPF_RTP_STREAM_H__
+#ifndef MPF_RTP_STREAM_H
+#define MPF_RTP_STREAM_H
 
 /**
  * @file mpf_rtp_stream.h
@@ -30,10 +32,11 @@ APT_BEGIN_EXTERN_C
 /**
  * Create RTP stream.
  * @param termination the back pointer to hold
- * @param config the configuration to use
+ * @param config the configuration of RTP factory
+ * @param settings the settings to use
  * @param pool the pool to allocate memory from
  */
-MPF_DECLARE(mpf_audio_stream_t*) mpf_rtp_stream_create(mpf_termination_t *termination, mpf_rtp_config_t *config, apr_pool_t *pool);
+MPF_DECLARE(mpf_audio_stream_t*) mpf_rtp_stream_create(mpf_termination_t *termination, mpf_rtp_config_t *config, mpf_rtp_settings_t *settings, apr_pool_t *pool);
 
 /**
  * Add/enable RTP stream.
@@ -56,4 +59,4 @@ MPF_DECLARE(apt_bool_t) mpf_rtp_stream_modify(mpf_audio_stream_t *stream, mpf_rt
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_RTP_STREAM_H__*/
+#endif /* MPF_RTP_STREAM_H */

@@ -284,6 +284,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\multipart_suite.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\task_suite.c"
 				>
 			</File>

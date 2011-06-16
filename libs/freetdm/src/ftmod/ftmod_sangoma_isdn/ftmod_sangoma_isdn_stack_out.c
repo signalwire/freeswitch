@@ -51,9 +51,10 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	ftdm_mutex_unlock(g_sngisdn_data.ccs[signal_data->cc_id].mutex);
 
 	memset(&conEvnt, 0, sizeof(conEvnt));
-	if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN) {
+	if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN || signal_data->force_sending_complete == SNGISDN_OPT_TRUE) {
 		conEvnt.sndCmplt.eh.pres = PRSNT_NODEF;
 	}
+	
 	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP &&
 		signal_data->signalling == SNGISDN_SIGNALING_NET) {
 		sngisdn_info->ces = CES_MNGMNT;

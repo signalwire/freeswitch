@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: unimrcp_server.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __UNIMRCP_SERVER_H__
-#define __UNIMRCP_SERVER_H__
+#ifndef UNIMRCP_SERVER_H
+#define UNIMRCP_SERVER_H
 
 /**
  * @file unimrcp_server.h
@@ -40,4 +42,4 @@ MRCP_DECLARE(apt_bool_t) unimrcp_server_shutdown(mrcp_server_t *server);
 
 APT_END_EXTERN_C
 
-#endif /*__UNIMRCP_SERVER_H__*/
+#endif /* UNIMRCP_SERVER_H */

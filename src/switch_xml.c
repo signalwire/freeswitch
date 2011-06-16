@@ -136,10 +136,12 @@ static switch_memory_pool_t *XML_MEMORY_POOL = NULL;
 
 static switch_thread_rwlock_t *B_RWLOCK = NULL;
 static switch_mutex_t *XML_LOCK = NULL;
+static switch_mutex_t *CACHE_MUTEX = NULL;
 static switch_mutex_t *REFLOCK = NULL;
 static switch_mutex_t *FILE_LOCK = NULL;
 static switch_mutex_t *XML_GEN_LOCK = NULL;
 
+static switch_hash_t *CACHE_HASH = NULL;
 
 struct xml_section_t {
 	const char *name;
@@ -1123,12 +1125,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 	do {
 		len += (l = fread((s + len), 1, SWITCH_XML_BUFSIZE, fp));
 		if (l == SWITCH_XML_BUFSIZE) {
-			char *tmp = (char *) realloc(s, len + SWITCH_XML_BUFSIZE);
-			if (!tmp) {
-				free(s);
+			char *tmp = s;
+			s = (char *) realloc(s, len + SWITCH_XML_BUFSIZE);
+			if (!s) {
+				free(tmp);
 				return NULL;
 			}
-			s = tmp;
 		}
 	} while (s && l == SWITCH_XML_BUFSIZE);
 
@@ -1826,15 +1828,90 @@ SWITCH_DECLARE(void) switch_xml_merge_user(switch_xml_t user, switch_xml_t domai
 	do_merge(user, domain, "variables", "variable");
 }
 
+SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char *user_name, const char *domain_name)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	const void *var;
+	char mega_key[1024];
+	int r = 0;
+	switch_xml_t lookup;
+
+	switch_mutex_lock(CACHE_MUTEX);
+
+	if (key && user_name && domain_name) {
+		switch_snprintf(mega_key, sizeof(mega_key), "%s%s%s", key, user_name, domain_name);
+
+		if ((lookup = switch_core_hash_find(CACHE_HASH, mega_key))) {
+			switch_core_hash_delete(CACHE_HASH, mega_key);
+			switch_xml_free(lookup);
+			r++;
+		}
+		
+	} else {
+		
+		while ((hi = switch_hash_first(NULL, CACHE_HASH))) {
+			switch_hash_this(hi, &var, NULL, &val);
+			switch_xml_free(val);
+			switch_core_hash_delete(CACHE_HASH, var);
+			r++;
+		}
+	}
+
+	switch_mutex_unlock(CACHE_MUTEX);
+		
+	return r;
+	
+}
+
+static switch_status_t switch_xml_locate_user_cache(const char *key, const char *user_name, const char *domain_name, switch_xml_t *user)
+{
+	char mega_key[1024];
+	switch_xml_t lookup;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_snprintf(mega_key, sizeof(mega_key), "%s%s%s", key, user_name, domain_name);
+
+	switch_mutex_lock(CACHE_MUTEX);
+	if ((lookup = switch_core_hash_find(CACHE_HASH, mega_key))) {
+		*user = switch_xml_dup(lookup);
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	switch_mutex_unlock(CACHE_MUTEX);
+
+	return status;
+}
+
+static void switch_xml_user_cache(const char *key, const char *user_name, const char *domain_name, switch_xml_t user)
+{
+	char mega_key[1024];
+	switch_xml_t lookup;
+
+	switch_snprintf(mega_key, sizeof(mega_key), "%s%s%s", key, user_name, domain_name);
+	switch_mutex_lock(CACHE_MUTEX);
+	if ((lookup = switch_core_hash_find(CACHE_HASH, mega_key))) {
+		switch_core_hash_delete(CACHE_HASH, mega_key);
+		switch_xml_free(lookup);
+	}
+	
+	switch_core_hash_insert(CACHE_HASH, mega_key, switch_xml_dup(user));
+	switch_mutex_unlock(CACHE_MUTEX);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, const char *user_name, const char *domain_name,
 															  const char *ip, switch_xml_t *user, switch_event_t *params)
 {
 	switch_xml_t xml, domain, group, x_user, x_user_dup;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if ((status = switch_xml_locate_user(key, user_name, domain_name, ip, &xml, &domain, &x_user, &group, params)) == SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_xml_locate_user_cache(key, user_name, domain_name, &x_user)) == SWITCH_STATUS_SUCCESS) {
+		*user = x_user;
+	} else if ((status = switch_xml_locate_user(key, user_name, domain_name, ip, &xml, &domain, &x_user, &group, params)) == SWITCH_STATUS_SUCCESS) {
 		x_user_dup = switch_xml_dup(x_user);
 		switch_xml_merge_user(x_user_dup, domain, group);
+		if (switch_true(switch_xml_attr(x_user_dup, "cacheable"))) {
+			switch_xml_user_cache(key, user_name, domain_name, x_user_dup);
+		}
 		*user = x_user_dup;
 		switch_xml_free(xml);
 	}
@@ -2057,10 +2134,12 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 	XML_MEMORY_POOL = pool;
 	*err = "Success";
 
+	switch_mutex_init(&CACHE_MUTEX, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&REFLOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&FILE_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&XML_GEN_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
+	switch_core_hash_init(&CACHE_HASH, XML_MEMORY_POOL);
 
 	switch_thread_rwlock_create(&B_RWLOCK, XML_MEMORY_POOL);
 
@@ -2078,6 +2157,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
+
 	switch_mutex_lock(XML_LOCK);
 	switch_mutex_lock(REFLOCK);
 
@@ -2090,6 +2170,10 @@ SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 
 	switch_mutex_unlock(XML_LOCK);
 	switch_mutex_unlock(REFLOCK);
+
+	switch_xml_clear_user_cache(NULL, NULL, NULL);
+
+	switch_core_hash_destroy(&CACHE_HASH);
 
 	return status;
 }
@@ -2195,10 +2279,10 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	*s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
 
 	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) + 1 > *max) {	/* reallocate s */
-		char *tmp = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
-		if (!tmp)
-			return *s;
-		*s = tmp;
+		char *tmp = *s;
+		*s = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
+		if (!*s)
+			return tmp;
 	}
 
 	if (*len && *(*s + (*len) - 1) == '>') {
@@ -2251,10 +2335,10 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	}
 
 	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
-		char *tmp = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
-		if (!tmp)
-			return *s;
-		*s = tmp;
+		char *tmp = *s;
+		*s = (char *) realloc(*s, *max += SWITCH_XML_BUFSIZE);
+		if (!*s)
+			return tmp;
 	}
 
 	if (xml->child || xml->txt) {

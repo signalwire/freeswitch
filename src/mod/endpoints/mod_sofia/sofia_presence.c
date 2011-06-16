@@ -195,15 +195,9 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		}
 
 
-		if (dst->route_uri) {
-			remote_host = strdup(dst->route_uri);
-			if (!zstr(remote_host)) {
-				switch_split_user_domain(remote_host, NULL, &remote_ip);
-			}
-		}
-
-		if (zstr(remote_ip)) {
-			switch_split_user_domain(dup_dest, NULL, &remote_ip);
+		remote_host = strdup(dup_dest);
+		if (!zstr(remote_host)) {
+			switch_split_user_domain(remote_host, NULL, &remote_ip);
 		}
 
 		if (!zstr(remote_ip) && sofia_glue_check_nat(profile, remote_ip)) {
@@ -402,9 +396,30 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	if (!profile) {
 		if (!host || !(profile = sofia_glue_find_profile(host))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile %s\n", switch_str_nil(host));
-			switch_safe_free(dup_account);
-			return;
+			char *sql;
+			switch_hash_index_t *hi;
+			void *val;
+			const void *vvar;
+			char buf[512] = "";
+
+			sql = switch_mprintf("select profile_name from sip_registrations where sip_host='%s' or mwi_host='%s'", host, host);
+
+			switch_mutex_lock(mod_sofia_globals.hash_mutex);
+			for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &vvar, NULL, &val);
+				profile = (sofia_profile_t *) val;
+				sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
+				if (!zstr(buf)) {
+					break;
+				}
+			}
+			switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+			if (!(profile = sofia_glue_find_profile(buf))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile %s\n", switch_str_nil(host));
+				switch_safe_free(dup_account);
+				return;
+			}
 		}
 	}
 
@@ -1577,8 +1592,12 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"%s\"/>\n",
 											  !strcasecmp(event_status, "hold") ? "no" : "yes");
 						stream.write_function(&stream, "</target>\n</local>\n");
-						stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_from_user, clean_from_user,
-											  host);
+						if (switch_true(switch_event_get_header(helper->event, "Presence-Privacy"))) {
+							stream.write_function(&stream, "<remote>\n<identity display=\"Anonymous\">sip:anonymous@anonymous.invalid</identity>\n");
+						} else {
+							stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_from_user, clean_from_user,
+												  host);
+						}
 						stream.write_function(&stream, "<target uri=\"sip:**%s@%s\"/>\n", clean_to_user, host);
 						stream.write_function(&stream, "</remote>\n");
 					} else if (!strcasecmp(proto, "park")) {

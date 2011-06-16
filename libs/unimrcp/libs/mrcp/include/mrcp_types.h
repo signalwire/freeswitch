@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_types.h 1753 2010-08-16 20:46:45Z achaloyan $
  */
 
-#ifndef __MRCP_TYPES_H__
-#define __MRCP_TYPES_H__
+#ifndef MRCP_TYPES_H
+#define MRCP_TYPES_H
 
 /**
  * @file mrcp_types.h
@@ -39,6 +41,7 @@ typedef enum {
 	MRCP_SYNTHESIZER_RESOURCE, /**< Synthesizer resource */
 	MRCP_RECOGNIZER_RESOURCE,  /**< Recognizer resource */
 	MRCP_RECORDER_RESOURCE,    /**< Recorder resource */
+	MRCP_VERIFIER_RESOURCE,    /**< Verifier resource */
 
 	MRCP_RESOURCE_TYPE_COUNT   /**< Number of resources */
 } mrcp_resource_type_e;
@@ -77,4 +80,4 @@ typedef struct mrcp_resource_factory_t mrcp_resource_factory_t;
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_TYPES_H__*/
+#endif /* MRCP_TYPES_H */

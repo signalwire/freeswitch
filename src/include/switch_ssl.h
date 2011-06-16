@@ -90,7 +90,9 @@ static inline void switch_ssl_destroy_ssl_locks()
 	if (ssl_count == 0) {
 		CRYPTO_set_locking_callback(NULL);
 		for (i = 0; i < CRYPTO_num_locks(); i++) {
-			switch_mutex_destroy(ssl_mutexes[i]);
+			if (ssl_mutexes[i]) {
+				switch_mutex_destroy(ssl_mutexes[i]);
+			}
 		}
 
 		OPENSSL_free(ssl_mutexes);

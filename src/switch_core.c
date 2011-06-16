@@ -36,6 +36,7 @@
 
 
 #include <switch.h>
+#include <switch_ssl.h>
 #include <switch_stun.h>
 #include <switch_nat.h>
 #include <switch_version.h>
@@ -1479,6 +1480,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(runtime.uuid_str, &uuid);
+	switch_ssl_init_ssl_locks();
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2163,6 +2165,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 
 	switch_loadable_module_shutdown();
+
+	switch_ssl_destroy_ssl_locks();
 
 	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
 		switch_core_sqldb_stop();

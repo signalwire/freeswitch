@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_codec_linear.c 1686 2010-05-08 18:46:08Z achaloyan $
  */
 
 #define APR_WANT_BYTEFUNC
@@ -71,6 +73,7 @@ static const mpf_codec_vtable_t l16_vtable = {
 	l16_close,
 	l16_encode,
 	l16_decode,
+	NULL,
 	NULL
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_engine_impl.c 1710 2010-05-24 17:36:19Z achaloyan $
  */
 
 #include "mrcp_engine_impl.h"
@@ -25,9 +27,12 @@ mrcp_engine_t* mrcp_engine_create(
 					apr_pool_t *pool)
 {
 	mrcp_engine_t *engine = apr_palloc(pool,sizeof(mrcp_engine_t));
+	engine->id = NULL;
 	engine->resource_id = resource_id;
 	engine->obj = obj;
 	engine->method_vtable =vtable;
+	engine->event_vtable = NULL;
+	engine->event_obj = NULL;
 	engine->config = NULL;
 	engine->codec_manager = NULL;
 	engine->dir_layout = NULL;
@@ -217,7 +222,7 @@ mrcp_engine_channel_t* mrcp_engine_sink_channel_create(
 }
 
 /** Get codec descriptor of the audio source stream */
-const mpf_codec_descriptor_t* mrcp_engine_source_stream_codec_get(mrcp_engine_channel_t *channel)
+const mpf_codec_descriptor_t* mrcp_engine_source_stream_codec_get(const mrcp_engine_channel_t *channel)
 {
 	if(channel && channel->termination) {
 		mpf_audio_stream_t *audio_stream = mpf_termination_audio_stream_get(channel->termination);
@@ -229,7 +234,7 @@ const mpf_codec_descriptor_t* mrcp_engine_source_stream_codec_get(mrcp_engine_ch
 }
 
 /** Get codec descriptor of the audio sink stream */
-const mpf_codec_descriptor_t* mrcp_engine_sink_stream_codec_get(mrcp_engine_channel_t *channel)
+const mpf_codec_descriptor_t* mrcp_engine_sink_stream_codec_get(const mrcp_engine_channel_t *channel)
 {
 	if(channel && channel->termination) {
 		mpf_audio_stream_t *audio_stream = mpf_termination_audio_stream_get(channel->termination);

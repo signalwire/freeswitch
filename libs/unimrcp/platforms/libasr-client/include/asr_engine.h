@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Arsen Chaloyan
+ * Copyright 2009-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: asr_engine.h 1566 2010-03-06 16:45:05Z achaloyan $
  */
 
-#ifndef __ASR_ENGINE_H__
-#define __ASR_ENGINE_H__
+#ifndef ASR_ENGINE_H
+#define ASR_ENGINE_H
 
 /**
  * @file asr_engine.h
@@ -75,13 +77,42 @@ ASR_CLIENT_DECLARE(apt_bool_t) asr_engine_destroy(asr_engine_t *engine);
 ASR_CLIENT_DECLARE(asr_session_t*) asr_session_create(asr_engine_t *engine, const char *profile);
 
 /**
- * Initiate recognition.
+ * Initiate recognition based on specified grammar and input file.
  * @param session the session to run recognition in the scope of
  * @param grammar_file the name of the grammar file to use (path is relative to data dir)
  * @param input_file the name of the audio input file to use (path is relative to data dir)
  * @return the recognition result (input element of NLSML content)
  */
-ASR_CLIENT_DECLARE(const char*) asr_session_recognize(asr_session_t *session, const char *grammar_file, const char *input_file);
+ASR_CLIENT_DECLARE(const char*) asr_session_file_recognize(
+									asr_session_t *session, 
+									const char *grammar_file, 
+									const char *input_file);
+
+/**
+ * Initiate recognition based on specified grammar and input stream.
+ * @param session the session to run recognition in the scope of
+ * @param grammar_file the name of the grammar file to use (path is relative to data dir)
+ * @param callback the callback to be called to get input media frames
+ * @param obj the object to pass to the callback
+ * @return the recognition result (input element of NLSML content)
+ *
+ * @remark Audio data should be streamed through 
+ *         asr_session_stream_write() function calls.
+ */
+ASR_CLIENT_DECLARE(const char*) asr_session_stream_recognize(
+									asr_session_t *session, 
+									const char *grammar_file);
+
+/**
+ * Write audio data to recognize.
+ * @param session the session to write audio data for
+ * @param data the audio data
+ * @param size the size of data
+ */
+ASR_CLIENT_DECLARE(apt_bool_t) asr_session_stream_write(
+									asr_session_t *session,
+									char *data,
+									int size);
 
 /**
  * Destroy ASR session.
@@ -99,4 +130,4 @@ ASR_CLIENT_DECLARE(apt_bool_t) asr_engine_log_priority_set(apt_log_priority_e lo
 
 APT_END_EXTERN_C
 
-#endif /*__ASR_ENGINE_H__*/
+#endif /* ASR_ENGINE_H */

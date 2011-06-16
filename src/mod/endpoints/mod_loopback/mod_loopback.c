@@ -54,7 +54,8 @@ typedef enum {
 	TFLAG_BLEG = (1 << 6),
 	TFLAG_APP = (1 << 7),
 	TFLAG_RUNNING_APP = (1 << 8),
-	TFLAG_BOWOUT_USED = (1 << 9)
+	TFLAG_BOWOUT_USED = (1 << 9),
+	TFLAG_CLEAR = (1 << 10)
 } TFLAGS;
 
 struct private_object {
@@ -104,6 +105,17 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
+
+
+static void clear_queue(private_t *tech_pvt)
+{
+	void *pop;
+
+	while (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		switch_frame_t *frame = (switch_frame_t *) pop;
+		switch_frame_free(&frame);
+	}
+}
 
 static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, switch_codec_t *codec)
 {
@@ -566,6 +578,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	mutex = tech_pvt->mutex;
 	switch_mutex_lock(mutex);
 
+
+	if (switch_test_flag(tech_pvt, TFLAG_CLEAR)) {
+		clear_queue(tech_pvt);
+		switch_clear_flag(tech_pvt, TFLAG_CLEAR);
+	}
+
 	if (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		if (tech_pvt->write_frame) {
 			switch_frame_free(&tech_pvt->write_frame);
@@ -598,17 +616,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	return status;
 }
-
-static void clear_queue(private_t *tech_pvt)
-{
-	void *pop;
-
-	while (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-		switch_frame_t *frame = (switch_frame_t *) pop;
-		switch_frame_free(&frame);
-	}
-}
-
 
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
@@ -750,9 +757,9 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		{
 
 			done = 1;
+			switch_set_flag(tech_pvt, TFLAG_CLEAR);
+			switch_set_flag(tech_pvt->other_tech_pvt, TFLAG_CLEAR);
 
-			clear_queue(tech_pvt);
-			clear_queue(tech_pvt->other_tech_pvt);
 			switch_core_timer_sync(&tech_pvt->timer);
 			switch_core_timer_sync(&tech_pvt->other_tech_pvt->timer);
 		}

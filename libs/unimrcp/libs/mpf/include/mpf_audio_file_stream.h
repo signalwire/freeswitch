@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_audio_file_stream.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MPF_AUDIO_FILE_STREAM_H__
-#define __MPF_AUDIO_FILE_STREAM_H__
+#ifndef MPF_AUDIO_FILE_STREAM_H
+#define MPF_AUDIO_FILE_STREAM_H
 
 /**
  * @file mpf_audio_file_stream.h
@@ -43,4 +45,4 @@ MPF_DECLARE(apt_bool_t) mpf_file_stream_modify(mpf_audio_stream_t *stream, mpf_a
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_AUDIO_FILE_STREAM_H__*/
+#endif /* MPF_AUDIO_FILE_STREAM_H */
