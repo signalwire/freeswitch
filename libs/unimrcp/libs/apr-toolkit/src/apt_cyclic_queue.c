@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_cyclic_queue.c 1708 2010-05-24 17:03:25Z achaloyan $
  */
 
 #include <stdlib.h>
@@ -78,7 +80,7 @@ APT_DECLARE(void) apt_cyclic_queue_clear(apt_cyclic_queue_t *queue)
 	queue->head = queue->tail = 0;
 }
 
-APT_DECLARE(apt_bool_t) apt_cyclic_queue_is_empty(apt_cyclic_queue_t *queue)
+APT_DECLARE(apt_bool_t) apt_cyclic_queue_is_empty(const apt_cyclic_queue_t *queue)
 {
 	return queue->actual_size ? TRUE : FALSE;
 }

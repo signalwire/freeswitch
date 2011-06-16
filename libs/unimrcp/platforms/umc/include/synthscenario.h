@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: synthscenario.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __SYNTH_SCENARIO_H__
-#define __SYNTH_SCENARIO_H__
+#ifndef SYNTH_SCENARIO_H
+#define SYNTH_SCENARIO_H
 
 /**
  * @file synthscenario.h
@@ -71,4 +73,4 @@ inline bool SynthScenario::IsSpeakEnabled() const
 	return m_Speak;
 }
 
-#endif /*__SYNTH_SCENARIO_H__*/
+#endif /* SYNTH_SCENARIO_H */

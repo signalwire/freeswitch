@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: main.c 1539 2010-02-22 19:49:33Z achaloyan $
  */
 
 #include "apt_test_suite.h"
@@ -19,6 +21,7 @@
 
 apt_test_suite_t* task_test_suite_create(apr_pool_t *pool);
 apt_test_suite_t* consumer_task_test_suite_create(apr_pool_t *pool);
+apt_test_suite_t* multipart_test_suite_create(apr_pool_t *pool);
 
 int main(int argc, const char * const *argv)
 {
@@ -40,6 +43,9 @@ int main(int argc, const char * const *argv)
 	apt_test_framework_suite_add(test_framework,test_suite);
 
 	test_suite = consumer_task_test_suite_create(pool);
+	apt_test_framework_suite_add(test_framework,test_suite);
+
+	test_suite = multipart_test_suite_create(pool);
 	apt_test_framework_suite_add(test_framework,test_suite);
 
 	/* run tests */

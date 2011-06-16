@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_jitter_buffer.h 1802 2011-05-13 02:43:12Z achaloyan $
  */
 
-#ifndef __MPF_JITTER_BUFFER_H__
-#define __MPF_JITTER_BUFFER_H__
+#ifndef MPF_JITTER_BUFFER_H
+#define MPF_JITTER_BUFFER_H
 
 /**
  * @file mpf_jitter_buffer.h
@@ -50,7 +52,7 @@ void mpf_jitter_buffer_destroy(mpf_jitter_buffer_t *jb);
 apt_bool_t mpf_jitter_buffer_restart(mpf_jitter_buffer_t *jb);
 
 /** Write audio data to jitter buffer */
-jb_result_t mpf_jitter_buffer_write(mpf_jitter_buffer_t *jb, void *buffer, apr_size_t size, apr_uint32_t ts);
+jb_result_t mpf_jitter_buffer_write(mpf_jitter_buffer_t *jb, void *buffer, apr_size_t size, apr_uint32_t ts, apr_byte_t marker);
 
 /** Write named event to jitter buffer */
 jb_result_t mpf_jitter_buffer_event_write(mpf_jitter_buffer_t *jb, const mpf_named_event_frame_t *named_event, apr_uint32_t ts, apr_byte_t marker);
@@ -60,4 +62,4 @@ apt_bool_t mpf_jitter_buffer_read(mpf_jitter_buffer_t *jb, mpf_frame_t *media_fr
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_JITTER_BUFFER_H__*/
+#endif /* MPF_JITTER_BUFFER_H */

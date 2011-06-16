@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_termination_factory.h 1693 2010-05-16 18:33:07Z achaloyan $
  */
 
-#ifndef __MPF_TERMINATION_FACTORY_H__
-#define __MPF_TERMINATION_FACTORY_H__
+#ifndef MPF_TERMINATION_FACTORY_H
+#define MPF_TERMINATION_FACTORY_H
 
 /**
  * @file mpf_termination_factory.h
@@ -65,24 +67,30 @@ MPF_DECLARE(mpf_termination_t*) mpf_raw_termination_create(
 MPF_DECLARE(apt_bool_t) mpf_termination_destroy(mpf_termination_t *termination);
 
 /**
+ * Get termination name.
+ * @param termination the termination to get name of
+ */
+MPF_DECLARE(const char*) mpf_termination_name_get(const mpf_termination_t *termination);
+
+/**
  * Get associated object.
  * @param termination the termination to get object from
  */
-MPF_DECLARE(void*) mpf_termination_object_get(mpf_termination_t *termination);
+MPF_DECLARE(void*) mpf_termination_object_get(const mpf_termination_t *termination);
 
 /**
  * Get audio stream.
  * @param termination the termination to get audio stream from
  */
-MPF_DECLARE(mpf_audio_stream_t*) mpf_termination_audio_stream_get(mpf_termination_t *termination);
+MPF_DECLARE(mpf_audio_stream_t*) mpf_termination_audio_stream_get(const mpf_termination_t *termination);
 
 /**
  * Get video stream.
  * @param termination the termination to get video stream from
  */
-MPF_DECLARE(mpf_video_stream_t*) mpf_termination_video_stream_get(mpf_termination_t *termination);
+MPF_DECLARE(mpf_video_stream_t*) mpf_termination_video_stream_get(const mpf_termination_t *termination);
 
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_TERMINATION_FACTORY_H__*/
+#endif /* MPF_TERMINATION_FACTORY_H */

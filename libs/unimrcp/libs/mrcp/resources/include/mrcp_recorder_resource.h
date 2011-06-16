@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_recorder_resource.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MRCP_RECORDER_RESOURCE_H__
-#define __MRCP_RECORDER_RESOURCE_H__
+#ifndef MRCP_RECORDER_RESOURCE_H
+#define MRCP_RECORDER_RESOURCE_H
 
 /**
  * @file mrcp_recorder_resource.h
@@ -50,4 +52,4 @@ MRCP_DECLARE(mrcp_resource_t*) mrcp_recorder_resource_create(apr_pool_t *pool);
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_RECORDER_RESOURCE_H__*/
+#endif /* MRCP_RECORDER_RESOURCE_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: demo_framework.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __DEMO_FRAMEWORK_H__
-#define __DEMO_FRAMEWORK_H__
+#ifndef DEMO_FRAMEWORK_H
+#define DEMO_FRAMEWORK_H
 
 /**
  * @file demo_framework.h
@@ -50,4 +52,4 @@ apt_bool_t demo_framework_destroy(demo_framework_t *framework);
 
 APT_END_EXTERN_C
 
-#endif /*__DEMO_FRAMEWORK_H__*/
+#endif /* DEMO_FRAMEWORK_H */

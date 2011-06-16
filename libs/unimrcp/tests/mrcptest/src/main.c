@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: main.c 1637 2010-04-03 18:29:24Z achaloyan $
  */
 
 #include "apt_test_suite.h"
@@ -19,6 +21,7 @@
 
 apt_test_suite_t* parse_gen_test_suite_create(apr_pool_t *pool);
 apt_test_suite_t* set_get_test_suite_create(apr_pool_t *pool);
+apt_test_suite_t* transparent_set_get_test_suite_create(apr_pool_t *pool);
 
 int main(int argc, const char * const *argv)
 {
@@ -37,6 +40,8 @@ int main(int argc, const char * const *argv)
 
 	/* create test suites and add them to test framework */
 	test_suite = set_get_test_suite_create(pool);
+	apt_test_framework_suite_add(test_framework,test_suite);
+	test_suite = transparent_set_get_test_suite_create(pool);
 	apt_test_framework_suite_add(test_framework,test_suite);
 	test_suite = parse_gen_test_suite_create(pool);
 	apt_test_framework_suite_add(test_framework,test_suite);

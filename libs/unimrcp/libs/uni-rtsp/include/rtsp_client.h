@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: rtsp_client.h 1710 2010-05-24 17:36:19Z achaloyan $
  */
 
-#ifndef __RTSP_CLIENT_H__
-#define __RTSP_CLIENT_H__
+#ifndef RTSP_CLIENT_H
+#define RTSP_CLIENT_H
 
 /**
  * @file rtsp_client.h
@@ -50,12 +52,14 @@ struct rtsp_client_vtable_t {
 /**
  * Create RTSP client.
  * @param max_connection_count the number of max RTSP connections
+ * @param request_timeout the request timeout to set
  * @param obj the external object to send event to
  * @param handler the response/event handler
  * @param pool the pool to allocate memory from
  */
 RTSP_DECLARE(rtsp_client_t*) rtsp_client_create(
 								apr_size_t max_connection_count,
+								apr_size_t request_timeout,
 								void *obj,
 								const rtsp_client_vtable_t *handler,
 								apr_pool_t *pool);
@@ -82,13 +86,13 @@ RTSP_DECLARE(apt_bool_t) rtsp_client_terminate(rtsp_client_t *client);
  * Get task.
  * @param client the client to get task from
  */
-RTSP_DECLARE(apt_task_t*) rtsp_client_task_get(rtsp_client_t *client);
+RTSP_DECLARE(apt_task_t*) rtsp_client_task_get(const rtsp_client_t *client);
 
 /**
  * Get external object.
  * @param client the client to get object from
  */
-RTSP_DECLARE(void*) rtsp_client_object_get(rtsp_client_t *client);
+RTSP_DECLARE(void*) rtsp_client_object_get(const rtsp_client_t *client);
 
 
 /**
@@ -146,4 +150,4 @@ RTSP_DECLARE(const apt_str_t*) rtsp_client_session_id_get(const rtsp_client_sess
 
 APT_END_EXTERN_C
 
-#endif /*__RTSP_CLIENT_H__*/
+#endif /* RTSP_CLIENT_H */

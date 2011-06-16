@@ -265,6 +265,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\message\include\mrcp_header.h"
+					>
+				</File>
+				<File
 					RelativePath=".\message\include\mrcp_header_accessor.h"
 					>
 				</File>
@@ -283,6 +287,10 @@
 				>
 				<File
 					RelativePath=".\message\src\mrcp_generic_header.c"
+					>
+				</File>
+				<File
+					RelativePath=".\message\src\mrcp_header.c"
 					>
 				</File>
 				<File
@@ -372,6 +380,14 @@
 					RelativePath=".\resources\include\mrcp_synth_resource.h"
 					>
 				</File>
+				<File
+					RelativePath=".\resources\include\mrcp_verifier_header.h"
+					>
+				</File>
+				<File
+					RelativePath=".\resources\include\mrcp_verifier_resource.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="src"
@@ -399,6 +415,14 @@
 				</File>
 				<File
 					RelativePath=".\resources\src\mrcp_synth_resource.c"
+					>
+				</File>
+				<File
+					RelativePath=".\resources\src\mrcp_verifier_header.c"
+					>
+				</File>
+				<File
+					RelativePath=".\resources\src\mrcp_verifier_resource.c"
 					>
 				</File>
 			</Filter>

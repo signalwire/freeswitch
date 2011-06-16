@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_engine_factory.c 1761 2010-08-20 17:35:28Z achaloyan $
  */
 
 #include <apr_hash.h>
@@ -19,6 +21,7 @@
 #include "mrcp_synth_state_machine.h"
 #include "mrcp_recog_state_machine.h"
 #include "mrcp_recorder_state_machine.h"
+#include "mrcp_verifier_state_machine.h"
 #include "apt_log.h"
 
 /** Engine factory declaration */
@@ -61,7 +64,6 @@ MRCP_DECLARE(apt_bool_t) mrcp_engine_factory_open(mrcp_engine_factory_t *factory
 	mrcp_engine_t *engine;
 	apr_hash_index_t *it;
 	void *val;
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open MRCP Engines");
 	it = apr_hash_first(factory->pool,factory->engines);
 	for(; it; it = apr_hash_next(it)) {
 		apr_hash_this(it,NULL,NULL,&val);
@@ -79,7 +81,6 @@ MRCP_DECLARE(apt_bool_t) mrcp_engine_factory_close(mrcp_engine_factory_t *factor
 	mrcp_engine_t *engine;
 	apr_hash_index_t *it;
 	void *val;
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Close MRCP Engines");
 	it=apr_hash_first(factory->pool,factory->engines);
 	for(; it; it = apr_hash_next(it)) {
 		apr_hash_this(it,NULL,NULL,&val);
@@ -92,9 +93,9 @@ MRCP_DECLARE(apt_bool_t) mrcp_engine_factory_close(mrcp_engine_factory_t *factor
 }
 
 /** Register new engine */
-MRCP_DECLARE(apt_bool_t) mrcp_engine_factory_engine_register(mrcp_engine_factory_t *factory, mrcp_engine_t *engine, const char *name)
+MRCP_DECLARE(apt_bool_t) mrcp_engine_factory_engine_register(mrcp_engine_factory_t *factory, mrcp_engine_t *engine)
 {
-	if(!engine || !name) {
+	if(!engine || !engine->id) {
 		return FALSE;
 	}
 
@@ -108,6 +109,9 @@ MRCP_DECLARE(apt_bool_t) mrcp_engine_factory_engine_register(mrcp_engine_factory
 		case MRCP_RECORDER_RESOURCE:
 			engine->create_state_machine = mrcp_recorder_state_machine_create;
 			break;
+		case MRCP_VERIFIER_RESOURCE:
+			engine->create_state_machine = mrcp_verifier_state_machine_create;
+			break;
 		default:
 			break;
 	}
@@ -116,12 +120,12 @@ MRCP_DECLARE(apt_bool_t) mrcp_engine_factory_engine_register(mrcp_engine_factory
 		return FALSE;
 	}
 
-	apr_hash_set(factory->engines,name,APR_HASH_KEY_STRING,engine);
+	apr_hash_set(factory->engines,engine->id,APR_HASH_KEY_STRING,engine);
 	return TRUE;
 }
 
 /** Get engine by name */
-MRCP_DECLARE(mrcp_engine_t*) mrcp_engine_factory_engine_get(mrcp_engine_factory_t *factory, const char *name)
+MRCP_DECLARE(mrcp_engine_t*) mrcp_engine_factory_engine_get(const mrcp_engine_factory_t *factory, const char *name)
 {
 	if(!name) {
 		return NULL;
@@ -130,7 +134,7 @@ MRCP_DECLARE(mrcp_engine_t*) mrcp_engine_factory_engine_get(mrcp_engine_factory_
 }
 
 /** Find engine by resource identifier */
-MRCP_DECLARE(mrcp_engine_t*) mrcp_engine_factory_engine_find(mrcp_engine_factory_t *factory, mrcp_resource_id resource_id)
+MRCP_DECLARE(mrcp_engine_t*) mrcp_engine_factory_engine_find(const mrcp_engine_factory_t *factory, mrcp_resource_id resource_id)
 {
 	mrcp_engine_t *engine;
 	void *val;
@@ -144,4 +148,10 @@ MRCP_DECLARE(mrcp_engine_t*) mrcp_engine_factory_engine_find(mrcp_engine_factory
 		}
 	}
 	return NULL;
+}
+
+/** Start iterating over the engines in a factory */
+MRCP_DECLARE(apr_hash_index_t*) mrcp_engine_factory_engine_first(const mrcp_engine_factory_t *factory)
+{
+	return apr_hash_first(factory->pool,factory->engines);
 }

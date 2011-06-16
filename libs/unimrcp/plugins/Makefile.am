@@ -10,12 +10,12 @@ if DEMORECOG_PLUGIN
 SUBDIRS               += demo-recog
 endif
 
-if RECORDER_PLUGIN
-SUBDIRS               += mrcp-recorder
+if DEMOVERIFIER_PLUGIN
+SUBDIRS               += demo-verifier
 endif
 
-if CEPSTRAL_PLUGIN
-SUBDIRS               += mrcp-cepstral
+if RECORDER_PLUGIN
+SUBDIRS               += mrcp-recorder
 endif
 
 if POCKETSPHINX_PLUGIN

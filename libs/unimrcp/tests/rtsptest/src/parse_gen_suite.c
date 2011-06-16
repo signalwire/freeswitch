@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: parse_gen_suite.c 1667 2010-04-25 07:04:31Z achaloyan $
  */
 
 #include <apr_file_info.h>
@@ -24,22 +26,21 @@ static apt_bool_t test_stream_generate(rtsp_generator_t *generator, rtsp_message
 {
 	char buffer[500];
 	apt_text_stream_t stream;
-	rtsp_stream_status_e status;
+	apt_message_status_e status;
 	apt_bool_t continuation;
 
-	rtsp_generator_message_set(generator,message);
 	do {
 		apt_text_stream_init(&stream,buffer,sizeof(buffer)-1);
 		continuation = FALSE;
-		status = rtsp_generator_run(generator,&stream);
-		if(status == RTSP_STREAM_STATUS_COMPLETE) {
+		status = rtsp_generator_run(generator,message,&stream);
+		if(status == APT_MESSAGE_STATUS_COMPLETE) {
 			stream.text.length = stream.pos - stream.text.buf;
 			*stream.pos = '\0';
-			apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Generated RTSP Stream [%lu bytes]\n%s",stream.text.length,stream.text.buf);
+			apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Generated RTSP Stream [%"APR_SIZE_T_FMT" bytes]\n%s",stream.text.length,stream.text.buf);
 		}
-		else if(status == RTSP_STREAM_STATUS_INCOMPLETE) {
+		else if(status == APT_MESSAGE_STATUS_INCOMPLETE) {
 			*stream.pos = '\0';
-			apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Generated RTSP Stream [%lu bytes] continuation awaited\n%s",stream.text.length,stream.text.buf);
+			apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Generated RTSP Stream [%"APR_SIZE_T_FMT" bytes] continuation awaited\n%s",stream.text.length,stream.text.buf);
 			continuation = TRUE;
 		}
 		else {
@@ -50,11 +51,10 @@ static apt_bool_t test_stream_generate(rtsp_generator_t *generator, rtsp_message
 	return TRUE;
 }
 
-static apt_bool_t rtsp_message_handler(void *obj, rtsp_message_t *message, rtsp_stream_status_e status)
+static apt_bool_t rtsp_message_handler(rtsp_generator_t *generator, rtsp_message_t *message, apt_message_status_e status)
 {
-	if(status == RTSP_STREAM_STATUS_COMPLETE) {
+	if(status == APT_MESSAGE_STATUS_COMPLETE) {
 		/* message is completely parsed */
-		rtsp_generator_t *generator = obj;
 		test_stream_generate(generator,message);
 	}
 	return TRUE;
@@ -69,6 +69,8 @@ static apt_bool_t test_file_process(apt_test_suite_t *suite, const char *file_pa
 	rtsp_generator_t *generator;
 	apr_size_t length;
 	apr_size_t offset;
+	rtsp_message_t *message;
+	apt_message_status_e msg_status;
 
 	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open File [%s]",file_path);
 	if(apr_file_open(&file,file_path,APR_FOPEN_READ | APR_FOPEN_BINARY,APR_OS_DEFAULT,suite->pool) != APR_SUCCESS) {
@@ -82,12 +84,10 @@ static apt_bool_t test_file_process(apt_test_suite_t *suite, const char *file_pa
 	apt_text_stream_init(&stream,buffer,sizeof(buffer)-1);
 
 	do {
-		/* init length of the stream */
-		stream.text.length = sizeof(buffer)-1;
 		/* calculate offset remaining from the previous receive / if any */
 		offset = stream.pos - stream.text.buf;
 		/* calculate available length */
-		length = stream.text.length - offset;
+		length = sizeof(buffer) - 1 - offset;
 
 		if(apr_file_read(file,stream.pos,&length) != APR_SUCCESS) {
 			break;
@@ -95,11 +95,19 @@ static apt_bool_t test_file_process(apt_test_suite_t *suite, const char *file_pa
 		/* calculate actual length of the stream */
 		stream.text.length = offset + length;
 		stream.pos[length] = '\0';
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Parse RTSP Stream [%lu bytes]\n%s",length,stream.pos);
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Parse RTSP Stream [%"APR_SIZE_T_FMT" bytes]\n%s",length,stream.pos);
 		
 		/* reset pos */
 		apt_text_stream_reset(&stream);
-		rtsp_stream_walk(parser,&stream,rtsp_message_handler,generator);
+		
+		do {
+			msg_status = rtsp_parser_run(parser,&stream,&message);
+			rtsp_message_handler(generator,message,msg_status);
+		}
+		while(apt_text_is_eos(&stream) == FALSE);
+
+		/* scroll remaining stream */
+		apt_text_stream_scroll(&stream);
 	}
 	while(apr_file_eof(file) != APR_EOF);
 

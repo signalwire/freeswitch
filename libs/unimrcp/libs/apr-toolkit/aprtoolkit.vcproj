@@ -254,19 +254,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\apt_header_field.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\apt_log.h"
 				>
 			</File>
 			<File
+				RelativePath=".\include\apt_multipart_content.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\apt_net.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\apt_net_client_task.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\apt_net_server_task.h"
 				>
 			</File>
 			<File
@@ -279,6 +279,10 @@
 			</File>
 			<File
 				RelativePath=".\include\apt_pair.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\apt_poller_task.h"
 				>
 			</File>
 			<File
@@ -310,7 +314,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\apt_text_message.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\apt_text_stream.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\apt_timer_queue.h"
 				>
 			</File>
 		</Filter>
@@ -331,19 +343,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\apt_header_field.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\apt_log.c"
 				>
 			</File>
 			<File
+				RelativePath=".\src\apt_multipart_content.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\apt_net.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\apt_net_client_task.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\apt_net_server_task.c"
 				>
 			</File>
 			<File
@@ -356,6 +368,10 @@
 			</File>
 			<File
 				RelativePath=".\src\apt_pair.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\apt_poller_task.c"
 				>
 			</File>
 			<File
@@ -383,7 +399,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\apt_text_message.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\apt_text_stream.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\apt_timer_queue.c"
 				>
 			</File>
 		</Filter>

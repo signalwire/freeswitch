@@ -51,7 +51,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libaprutil-1.lib libapr-1.lib"
+				AdditionalDependencies="aprtoolkit.lib libaprutil-1.lib libapr-1.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -113,7 +113,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libaprutil-1.lib libapr-1.lib"
+				AdditionalDependencies="aprtoolkit.lib libaprutil-1.lib libapr-1.lib"
 				LinkTimeCodeGeneration="1"
 			/>
 			<Tool
@@ -178,7 +178,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libaprutil-1.lib libapr-1.lib"
+				AdditionalDependencies="aprtoolkit.lib libaprutil-1.lib libapr-1.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -241,7 +241,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libaprutil-1.lib libapr-1.lib"
+				AdditionalDependencies="aprtoolkit.lib libaprutil-1.lib libapr-1.lib"
 				LinkTimeCodeGeneration="1"
 			/>
 			<Tool

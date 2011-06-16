@@ -18,13 +18,15 @@ include_HEADERS             = include/mrcp_engine_types.h \
                               include/mrcp_synth_engine.h \
                               include/mrcp_recog_engine.h \
                               include/mrcp_recorder_engine.h \
+                              include/mrcp_verifier_engine.h \
                               include/mrcp_resource_engine.h \
                               include/mrcp_engine_factory.h \
                               include/mrcp_engine_loader.h \
                               include/mrcp_state_machine.h \
                               include/mrcp_synth_state_machine.h \
                               include/mrcp_recog_state_machine.h \
-                              include/mrcp_recorder_state_machine.h
+                              include/mrcp_recorder_state_machine.h \
+                              include/mrcp_verifier_state_machine.h
 
 libmrcpengine_la_SOURCES    = src/mrcp_engine_iface.c \
                               src/mrcp_engine_impl.c \
@@ -32,4 +34,5 @@ libmrcpengine_la_SOURCES    = src/mrcp_engine_iface.c \
                               src/mrcp_engine_loader.c \
                               src/mrcp_synth_state_machine.c \
                               src/mrcp_recog_state_machine.c \
-                              src/mrcp_recorder_state_machine.c
+                              src/mrcp_recorder_state_machine.c \
+                              src/mrcp_verifier_state_machine.c

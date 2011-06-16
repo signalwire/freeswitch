@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_termination.c 1693 2010-05-16 18:33:07Z achaloyan $
  */
 
 #include "mpf_termination.h"
@@ -28,11 +30,12 @@ MPF_DECLARE(mpf_termination_t*) mpf_termination_base_create(
 {
 	mpf_termination_t *termination = apr_palloc(pool,sizeof(mpf_termination_t));
 	termination->pool = pool;
+	termination->name = "media-tm";
 	termination->obj = obj;
 	termination->event_handler_obj = NULL;
 	termination->event_handler = NULL;
 	termination->codec_manager = NULL;
-	termination->timer_manager = NULL;
+	termination->timer_queue = NULL;
 	termination->termination_factory = termination_factory;
 	termination->vtable = vtable;
 	termination->slot = 0;

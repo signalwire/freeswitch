@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_consumer_task.h 1708 2010-05-24 17:03:25Z achaloyan $
  */
 
-#ifndef __APT_CONSUMER_TASK_H__
-#define __APT_CONSUMER_TASK_H__
+#ifndef APT_CONSUMER_TASK_H
+#define APT_CONSUMER_TASK_H
 
 /**
  * @file apt_consumer_task.h
@@ -44,7 +46,7 @@ APT_DECLARE(apt_consumer_task_t*) apt_consumer_task_create(
  * Get task base.
  * @param task the consumer task to get base for
  */
-APT_DECLARE(apt_task_t*) apt_consumer_task_base_get(apt_consumer_task_t *task);
+APT_DECLARE(apt_task_t*) apt_consumer_task_base_get(const apt_consumer_task_t *task);
 
 /**
  * Get task vtable.
@@ -56,8 +58,8 @@ APT_DECLARE(apt_task_vtable_t*) apt_consumer_task_vtable_get(apt_consumer_task_t
  * Get consumer task object.
  * @param task the consumer task to get object from
  */
-APT_DECLARE(void*) apt_consumer_task_object_get(apt_consumer_task_t *task);
+APT_DECLARE(void*) apt_consumer_task_object_get(const apt_consumer_task_t *task);
 
 APT_END_EXTERN_C
 
-#endif /*__APT_CONSUMER_TASK_H__*/
+#endif /* APT_CONSUMER_TASK_H */

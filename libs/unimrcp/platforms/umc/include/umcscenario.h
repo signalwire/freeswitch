@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: umcscenario.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __UMC_SCENARIO_H__
-#define __UMC_SCENARIO_H__
+#ifndef UMC_SCENARIO_H
+#define UMC_SCENARIO_H
 
 /**
  * @file umcscenario.h
@@ -117,4 +119,4 @@ inline bool UmcScenario::IsDiscoveryEnabled() const
 }
 
 
-#endif /*__UMC_SCENARIO_H__*/
+#endif /* UMC_SCENARIO_H */

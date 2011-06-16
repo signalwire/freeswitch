@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_recog_resource.h 1781 2010-09-01 07:33:00Z achaloyan $
  */
 
-#ifndef __MRCP_RECOG_RESOURCE_H__
-#define __MRCP_RECOG_RESOURCE_H__
+#ifndef MRCP_RECOG_RESOURCE_H
+#define MRCP_RECOG_RESOURCE_H
 
 /**
  * @file mrcp_recog_resource.h
@@ -32,9 +34,15 @@ typedef enum {
 	RECOGNIZER_GET_PARAMS,
 	RECOGNIZER_DEFINE_GRAMMAR,
 	RECOGNIZER_RECOGNIZE,
+	RECOGNIZER_INTERPRET,
 	RECOGNIZER_GET_RESULT,
 	RECOGNIZER_START_INPUT_TIMERS,
 	RECOGNIZER_STOP,
+	RECOGNIZER_START_PHRASE_ENROLLMENT,
+	RECOGNIZER_ENROLLMENT_ROLLBACK,
+	RECOGNIZER_END_PHRASE_ENROLLMENT,
+	RECOGNIZER_MODIFY_PHRASE,
+	RECOGNIZER_DELETE_PHRASE,
 
 	RECOGNIZER_METHOD_COUNT
 } mrcp_recognizer_method_id;
@@ -43,6 +51,7 @@ typedef enum {
 typedef enum {
 	RECOGNIZER_START_OF_INPUT,
 	RECOGNIZER_RECOGNITION_COMPLETE,
+	RECOGNIZER_INTERPRETATION_COMPLETE,
 
 	RECOGNIZER_EVENT_COUNT
 } mrcp_recognizer_event_id;
@@ -52,4 +61,4 @@ MRCP_DECLARE(mrcp_resource_t*) mrcp_recog_resource_create(apr_pool_t *pool);
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_RECOG_RESOURCE_H__*/
+#endif /* MRCP_RECOG_RESOURCE_H */

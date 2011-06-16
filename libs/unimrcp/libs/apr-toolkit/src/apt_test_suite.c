@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_test_suite.c 1708 2010-05-24 17:03:25Z achaloyan $
  */
 
 #include "apt_pool.h"
@@ -61,7 +63,7 @@ APT_DECLARE(apt_bool_t) apt_test_framework_suite_add(apt_test_framework_t *frame
 	return (apt_list_push_back(framework->suites,suite,suite->pool) ? TRUE : FALSE);
 }
 
-APT_DECLARE(apr_pool_t*) apt_test_framework_pool_get(apt_test_framework_t *framework)
+APT_DECLARE(apr_pool_t*) apt_test_framework_pool_get(const apt_test_framework_t *framework)
 {
 	return framework->pool;
 }

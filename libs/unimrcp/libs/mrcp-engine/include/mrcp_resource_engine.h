@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_resource_engine.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MRCP_RESOURCE_ENGINE_H__
-#define __MRCP_RESOURCE_ENGINE_H__
+#ifndef MRCP_RESOURCE_ENGINE_H
+#define MRCP_RESOURCE_ENGINE_H
 
 /**
  * @file mrcp_resource_engine.h
@@ -46,4 +48,4 @@ static APR_INLINE mrcp_engine_t* mrcp_resource_engine_create(
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_RESOURCE_ENGINE_H__*/
+#endif /* MRCP_RESOURCE_ENGINE_H */

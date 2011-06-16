@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: recogscenario.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __RECOG_SCENARIO_H__
-#define __RECOG_SCENARIO_H__
+#ifndef RECOG_SCENARIO_H
+#define RECOG_SCENARIO_H
 
 /**
  * @file recogscenario.h
@@ -85,4 +87,4 @@ inline bool RecogScenario::IsRecognizeEnabled() const
 	return m_Recognize;
 }
 
-#endif /*__RECOG_SCENARIO_H__*/
+#endif /* RECOG_SCENARIO_H */

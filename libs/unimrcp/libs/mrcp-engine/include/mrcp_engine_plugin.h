@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_engine_plugin.h 1724 2010-06-02 18:42:20Z achaloyan $
  */
 
-#ifndef __MRCP_ENGINE_PLUGIN_H__
-#define __MRCP_ENGINE_PLUGIN_H__
+#ifndef MRCP_ENGINE_PLUGIN_H
+#define MRCP_ENGINE_PLUGIN_H
 
 /**
  * @file mrcp_engine_plugin.h
@@ -64,13 +66,13 @@ typedef apt_bool_t (*mrcp_plugin_log_accessor_f)(apt_logger_t *logger);
  * plugins such as structure size changes.  No binary compatibility is
  * possible across a change in the major version.
  */
-#define PLUGIN_MAJOR_VERSION   0
+#define PLUGIN_MAJOR_VERSION   1
 
 /** minor version
  * Minor API changes that do not cause binary compatibility problems.
  * Reset to 0 when upgrading PLUGIN_MAJOR_VERSION
  */
-#define PLUGIN_MINOR_VERSION   6
+#define PLUGIN_MINOR_VERSION   0
 
 /** patch level 
  * The Patch Level never includes API changes, simply bug fixes.
@@ -113,4 +115,4 @@ static APR_INLINE int mrcp_plugin_version_check(mrcp_plugin_version_t *version)
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_ENGINE_PLUGIN_H__*/
+#endif /* MRCP_ENGINE_PLUGIN_H */

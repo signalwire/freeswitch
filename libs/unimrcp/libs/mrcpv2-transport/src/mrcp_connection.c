@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_connection.c 1710 2010-05-24 17:36:19Z achaloyan $
  */
 
 #include "mrcp_connection.h"
@@ -32,13 +34,17 @@ mrcp_connection_t* mrcp_connection_create()
 	connection->r_sockaddr = NULL;
 	connection->sock = NULL;
 	connection->id = NULL;
+	connection->verbose = TRUE;
 	connection->access_count = 0;
 	connection->it = NULL;
 	connection->channel_table = apr_hash_make(pool);
-	apt_text_stream_init(&connection->rx_stream,connection->rx_buffer,sizeof(connection->rx_buffer)-1);
-	apt_text_stream_init(&connection->tx_stream,connection->tx_buffer,sizeof(connection->tx_buffer)-1);
 	connection->parser = NULL;
 	connection->generator = NULL;
+	connection->rx_buffer = NULL;
+	connection->rx_buffer_size = 0;
+	connection->tx_buffer = NULL;
+	connection->tx_buffer_size = 0;
+
 	return connection;
 }
 
@@ -60,7 +66,7 @@ apt_bool_t mrcp_connection_channel_add(mrcp_connection_t *connection, mrcp_contr
 	return TRUE;
 }
 
-mrcp_control_channel_t* mrcp_connection_channel_find(mrcp_connection_t *connection, const apt_str_t *identifier)
+mrcp_control_channel_t* mrcp_connection_channel_find(const mrcp_connection_t *connection, const apt_str_t *identifier)
 {
 	if(!connection || !identifier) {
 		return NULL;

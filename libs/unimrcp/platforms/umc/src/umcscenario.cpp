@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: umcscenario.cpp 1571 2010-03-07 20:33:39Z achaloyan $
  */
 
 #include <stdlib.h>
 #include "umcscenario.h"
+#include "apt_log.h"
 
 UmcScenario::UmcScenario() :
 	m_pName(NULL),
-	m_pMrcpProfile("MRCPv2-Default"),
+	m_pMrcpProfile("uni2"),
 	m_pDirLayout(NULL),
 	m_ResourceDiscovery(false),
 	m_pCapabilities(NULL),
@@ -200,14 +203,31 @@ const char* UmcScenario::LoadFileContent(const char* pFileName, apr_pool_t* pool
 	if(!pFilePath)
 		return NULL;
 
-	FILE* pFile = fopen(pFilePath,"r");
-	if(!pFile)
+	apr_file_t *pFile;
+	if(apr_file_open(&pFile,pFilePath,APR_FOPEN_READ|APR_FOPEN_BINARY,0,pool) != APR_SUCCESS) 
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Open File %s",pFilePath);
 		return NULL;
+	}
 
-	char text[1024];
-	apr_size_t size;
-	size = fread(text,1,sizeof(text)-1,pFile);
-	text[size] = '\0';
-	fclose(pFile);
-	return apr_pstrdup(pool,text);
+	apr_finfo_t finfo;
+	if(apr_file_info_get(&finfo,APR_FINFO_SIZE,pFile) != APR_SUCCESS) 
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get File Info %s",pFilePath);
+		apr_file_close(pFile);
+		return NULL;
+	}
+
+	apr_size_t size = (apr_size_t)finfo.size;
+	char* pContent = (char*) apr_palloc(pool,size+1);
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Load File Content size [%"APR_SIZE_T_FMT" bytes] %s",size,pFilePath);
+	if(apr_file_read(pFile,pContent,&size) != APR_SUCCESS) 
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Read Content %s",pFilePath);
+		apr_file_close(pFile);
+		return NULL;
+	}
+	pContent[size] = '\0';
+	apr_file_close(pFile);
+	return pContent;
 }

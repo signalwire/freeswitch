@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_resource_factory.c 1632 2010-03-30 20:46:25Z achaloyan $
  */
 
 #include <apr_hash.h>
@@ -80,7 +82,7 @@ MRCP_DECLARE(apt_bool_t) mrcp_resource_register(mrcp_resource_factory_t *resourc
 }
 
 /** Get MRCP resource by resource id */
-MRCP_DECLARE(mrcp_resource_t*) mrcp_resource_get(mrcp_resource_factory_t *resource_factory, mrcp_resource_id resource_id)
+MRCP_DECLARE(mrcp_resource_t*) mrcp_resource_get(const mrcp_resource_factory_t *resource_factory, mrcp_resource_id resource_id)
 {
 	if(resource_id >= resource_factory->resource_count) {
 		return NULL;
@@ -89,7 +91,7 @@ MRCP_DECLARE(mrcp_resource_t*) mrcp_resource_get(mrcp_resource_factory_t *resour
 }
 
 /** Find MRCP resource by resource name */
-MRCP_DECLARE(mrcp_resource_t*) mrcp_resource_find(mrcp_resource_factory_t *resource_factory, const apt_str_t *name)
+MRCP_DECLARE(mrcp_resource_t*) mrcp_resource_find(const mrcp_resource_factory_t *resource_factory, const apt_str_t *name)
 {
 	if(!name->buf || !name->length) {
 		return NULL;

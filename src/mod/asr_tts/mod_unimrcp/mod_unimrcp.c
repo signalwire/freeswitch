@@ -89,6 +89,8 @@ typedef struct mod_unimrcp_application mod_unimrcp_application_t;
 struct mod_unimrcp_globals {
 	/** max-connection-count config */
 	char *unimrcp_max_connection_count;
+	/** request-timeout config */
+	char *unimrcp_request_timeout;
 	/** offer-new-connection config */
 	char *unimrcp_offer_new_connection;
 	/** default-tts-profile config */
@@ -168,6 +170,8 @@ static switch_xml_config_item_t instructions[] = {
 									 "EMERGENCY|ALERT|CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG", "Logging level for UniMRCP"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("enable-profile-events", CONFIG_REQUIRED, &globals.enable_profile_events_param, "false", "",
 									 "Fire profile events (true|false)"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("request-timeout", CONFIG_REQUIRED, &globals.unimrcp_request_timeout, "10000", "", 
+									 "Maximum time to wait for server response to a request"),
 	SWITCH_CONFIG_ITEM_END()
 };
 
@@ -179,13 +183,13 @@ SWITCH_MODULE_DEFINITION(mod_unimrcp, mod_unimrcp_load, mod_unimrcp_shutdown, NU
 
 static switch_status_t mod_unimrcp_do_config();
 static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool);
-static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_config, const char *param, const char *val, apr_pool_t *pool);
-static int process_mrcpv1_config(rtsp_client_config_t *config, const char *param, const char *val, apr_pool_t *pool);
-static int process_mrcpv2_config(mrcp_sofia_client_config_t *config, const char *param, const char *val, apr_pool_t *pool);
+static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_config, mpf_rtp_settings_t *rtp_settings, const char *param, const char *val, apr_pool_t *pool);
+static int process_mrcpv1_config(rtsp_client_config_t *config, mrcp_sig_settings_t *sig_settings, const char *param, const char *val, apr_pool_t *pool);
+static int process_mrcpv2_config(mrcp_sofia_client_config_t *config, mrcp_sig_settings_t *sig_settings, const char *param, const char *val, apr_pool_t *pool);
 static int process_profile_config(profile_t *profile, const char *param, const char *val, apr_pool_t *pool);
 
 /* UniMRCP <--> FreeSWITCH logging bridge */
-static apt_bool_t unimrcp_log(const char *file, int line, const char *id, apt_log_priority_e priority, const char *format, va_list arg_ptr);
+static apt_bool_t unimrcp_log(const char *file, int line, const char *obj, apt_log_priority_e priority, const char *format, va_list arg_ptr);
 static apt_log_priority_e str_to_log_level(const char *level);
 
 static int get_next_speech_channel_number(void);
@@ -1810,55 +1814,65 @@ static apt_bool_t speech_on_session_terminate(mrcp_application_t *application, m
  * @return TRUE
  */
 static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel,
-										mrcp_sig_status_code_e status)
+					mrcp_sig_status_code_e status)
 {
 	switch_event_t *event = NULL;
 	speech_channel_t *schannel = (speech_channel_t *) mrcp_application_channel_object_get(channel);
+	char codec_name[60] = { 0 };
+	const mpf_codec_descriptor_t *descriptor;
 
 	/* check status */
-	if (session && schannel && status == MRCP_SIG_STATUS_CODE_SUCCESS) {
-		char codec_name[60] = { 0 };
-		const mpf_codec_descriptor_t *descriptor;
-		/* what sample rate did we negotiate? */
-		if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
-			descriptor = mrcp_application_sink_descriptor_get(channel);
-		} else {
-			descriptor = mrcp_application_source_descriptor_get(channel);
-		}
-		schannel->rate = descriptor->sampling_rate;
-		if (descriptor->name.length) {
-			strncpy(codec_name, descriptor->name.buf, sizeof(codec_name));
-		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s channel is ready, codec = %s, sample rate = %d\n", schannel->name,
-						  speech_channel_type_to_string(schannel->type), codec_name, schannel->rate);
-		speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
-		/* notify of channel open */
-		if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_OPEN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
-			if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "TTS");
-			} else {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "ASR");
-			}
-			switch_event_fire(&event);
-		}
-		schannel->channel_opened = 1;
+	if (!session || !schannel || status != MRCP_SIG_STATUS_CODE_SUCCESS) {
+		goto error;
+	}
+
+	/* what sample rate did we negotiate? */
+	if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
+		descriptor = mrcp_application_sink_descriptor_get(channel);
 	} else {
-		if (schannel) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) %s channel error!\n", schannel->name,
-							  speech_channel_type_to_string(schannel->type));
+		descriptor = mrcp_application_source_descriptor_get(channel);
+	}
+	if (!descriptor) {
+		goto error;
+	}
+	schannel->rate = descriptor->sampling_rate;
+	if (descriptor->name.length) {
+		strncpy(codec_name, descriptor->name.buf, sizeof(codec_name));
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s channel is ready, codec = %s, sample rate = %d\n", schannel->name,
+		speech_channel_type_to_string(schannel->type), codec_name, schannel->rate);
+	speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
+
+	/* notify of channel open */
+	if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_OPEN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
+		if (schannel->type == SPEECH_CHANNEL_SYNTHESIZER) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "TTS");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(unknown) channel error!\n");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Resource-Type", "ASR");
 		}
-		if (session) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Terminating MRCP session\n");
-			speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
-			mrcp_application_session_terminate(session);
-		}
+		switch_event_fire(&event);
+	}
+	schannel->channel_opened = 1;
+
+	return TRUE;
+
+error:
+	if (schannel) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) %s channel error!\n", schannel->name,
+			speech_channel_type_to_string(schannel->type));
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(unknown) channel error!\n");
+	}
+	if (session) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Terminating MRCP session\n");
+		speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
+		mrcp_application_session_terminate(session);
 	}
 
 	return TRUE;
 }
+
 
 /**
  * Handle the UniMRCP responses sent to channel remove requests
@@ -3729,7 +3743,7 @@ static int process_profile_config(profile_t *profile, const char *param, const c
  * @param pool memory pool to use
  * @return true if this param belongs to RTP config
  */
-static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_config, const char *param, const char *val, apr_pool_t *pool)
+static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_config, mpf_rtp_settings_t *rtp_settings, const char *param, const char *val, apr_pool_t *pool)
 {
 	int mine = 1;
 	if (strcasecmp(param, "rtp-ip") == 0) {
@@ -3741,26 +3755,26 @@ static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_confi
 	} else if (strcasecmp(param, "rtp-port-max") == 0) {
 		rtp_config->rtp_port_max = (apr_port_t) atol(val);
 	} else if (strcasecmp(param, "playout-delay") == 0) {
-		rtp_config->jb_config.initial_playout_delay = atol(val);
+		rtp_settings->jb_config.initial_playout_delay = atol(val);
 	} else if (strcasecmp(param, "min-playout-delay") == 0) {
-		rtp_config->jb_config.min_playout_delay = atol(val);
+		rtp_settings->jb_config.min_playout_delay = atol(val);
 	} else if (strcasecmp(param, "max-playout-delay") == 0) {
-		rtp_config->jb_config.max_playout_delay = atol(val);
+		rtp_settings->jb_config.max_playout_delay = atol(val);
 	} else if (strcasecmp(param, "codecs") == 0) {
 		const mpf_codec_manager_t *codec_manager = mrcp_client_codec_manager_get(client);
 		if (codec_manager) {
-			mpf_codec_manager_codec_list_load(codec_manager, &rtp_config->codec_list, val, pool);
+			mpf_codec_manager_codec_list_load(codec_manager, &rtp_settings->codec_list, val, pool);
 		}
 	} else if (strcasecmp(param, "ptime") == 0) {
-		rtp_config->ptime = (apr_uint16_t) atol(val);
+		rtp_settings->ptime = (apr_uint16_t) atol(val);
 	} else if (strcasecmp(param, "rtcp") == 0) {
-		rtp_config->rtcp = atoi(val);
+		rtp_settings->rtcp = atoi(val);
 	} else if (strcasecmp(param, "rtcp-bye") == 0) {
-		rtp_config->rtcp_bye_policy = atoi(val);
+		rtp_settings->rtcp_bye_policy = atoi(val);
 	} else if (strcasecmp(param, "rtcp-tx-interval") == 0) {
-		rtp_config->rtcp_tx_interval = (apr_uint16_t) atoi(val);
+		rtp_settings->rtcp_tx_interval = (apr_uint16_t) atoi(val);
 	} else if (strcasecmp(param, "rtcp-rx-resolution") == 0) {
-		rtp_config->rtcp_rx_resolution = (apr_uint16_t) atol(val);
+		rtp_settings->rtcp_rx_resolution = (apr_uint16_t) atol(val);
 	} else {
 		mine = 0;
 	}
@@ -3771,28 +3785,29 @@ static int process_rtp_config(mrcp_client_t *client, mpf_rtp_config_t *rtp_confi
 /**
  * set RTSP client config struct with param, val pair
  * @param config the config struct to set
+ * @param sig_settings the sig settings struct to set
  * @param param the param name
  * @param val the param value
  * @param pool memory pool to use
  * @return true if this param belongs to RTSP config
  */
-static int process_mrcpv1_config(rtsp_client_config_t *config, const char *param, const char *val, apr_pool_t *pool)
+static int process_mrcpv1_config(rtsp_client_config_t *config, mrcp_sig_settings_t *sig_settings, const char *param, const char *val, apr_pool_t *pool)
 {
 	int mine = 1;
 	if (strcasecmp(param, "server-ip") == 0) {
-		config->server_ip = ip_addr_get(val, pool);
+		sig_settings->server_ip = ip_addr_get(val, pool);
 	} else if (strcasecmp(param, "server-port") == 0) {
-		config->server_port = (apr_port_t) atol(val);
+		sig_settings->server_port = (apr_port_t) atol(val);
 	} else if (strcasecmp(param, "resource-location") == 0) {
-		config->resource_location = apr_pstrdup(pool, val);
+		sig_settings->resource_location = apr_pstrdup(pool, val);
 	} else if (strcasecmp(param, "sdp-origin") == 0) {
 		config->origin = apr_pstrdup(pool, val);
 	} else if (strcasecmp(param, "max-connection-count") == 0) {
 		config->max_connection_count = atol(val);
 	} else if (strcasecmp(param, "force-destination") == 0) {
-		config->force_destination = atoi(val);
+		sig_settings->force_destination = atoi(val);
 	} else if (strcasecmp(param, "speechsynth") == 0 || strcasecmp(param, "speechrecog") == 0) {
-		apr_table_set(config->resource_map, param, val);
+		apr_table_set(sig_settings->resource_map, param, val);
 	} else {
 		mine = 0;
 	}
@@ -3802,12 +3817,13 @@ static int process_mrcpv1_config(rtsp_client_config_t *config, const char *param
 /**
  * set SofiaSIP client config struct with param, val pair
  * @param config the config struct to set
+ * @param sig_settings the sig settings struct to set
  * @param param the param name
  * @param val the param value
  * @param pool memory pool to use
  * @return true if this param belongs to SofiaSIP config
  */
-static int process_mrcpv2_config(mrcp_sofia_client_config_t *config, const char *param, const char *val, apr_pool_t *pool)
+static int process_mrcpv2_config(mrcp_sofia_client_config_t *config, mrcp_sig_settings_t *sig_settings, const char *param, const char *val, apr_pool_t *pool)
 {
 	int mine = 1;
 	if (strcasecmp(param, "client-ip") == 0) {
@@ -3817,13 +3833,13 @@ static int process_mrcpv2_config(mrcp_sofia_client_config_t *config, const char 
 	} else if (strcasecmp(param, "client-port") == 0) {
 		config->local_port = (apr_port_t) atol(val);
 	} else if (strcasecmp(param, "server-ip") == 0) {
-		config->remote_ip = ip_addr_get(val, pool);
+		sig_settings->server_ip = ip_addr_get(val, pool);
 	} else if (strcasecmp(param, "server-port") == 0) {
-		config->remote_port = (apr_port_t) atol(val);
+		sig_settings->server_port = (apr_port_t) atol(val);
 	} else if (strcasecmp(param, "server-username") == 0) {
-		config->remote_user_name = apr_pstrdup(pool, val);
+		sig_settings->user_name = apr_pstrdup(pool, val);
 	} else if (strcasecmp(param, "force-destination") == 0) {
-		config->force_destination = atoi(val);
+		sig_settings->force_destination = atoi(val);
 	} else if (strcasecmp(param, "sip-transport") == 0) {
 		config->transport = apr_pstrdup(pool, val);
 	} else if (strcasecmp(param, "ua-name") == 0) {
@@ -3905,15 +3921,21 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 	if (!zstr(globals.unimrcp_offer_new_connection)) {
 		offer_new_connection = strcasecmp("true", globals.unimrcp_offer_new_connection);
 	}
-	connection_agent = mrcp_client_connection_agent_create(max_connection_count, offer_new_connection, pool);
+	connection_agent = mrcp_client_connection_agent_create("MRCPv2ConnectionAgent", max_connection_count, offer_new_connection, pool);
 	if (connection_agent) {
-		mrcp_client_connection_agent_register(client, connection_agent, "MRCPv2ConnectionAgent");
+		if (!zstr(globals.unimrcp_request_timeout)) {
+			apr_size_t request_timeout = (apr_size_t)atol(globals.unimrcp_request_timeout);
+			if (request_timeout > 0) {
+				mrcp_client_connection_timeout_set(connection_agent, request_timeout);
+			}
+		}
+		mrcp_client_connection_agent_register(client, connection_agent);
 	}
 
 	/* Set up the media engine that will be shared with all profiles */
-	media_engine = mpf_engine_create(pool);
+	media_engine = mpf_engine_create("MediaEngine", pool);
 	if (media_engine) {
-		mrcp_client_media_engine_register(client, media_engine, "MediaEngine");
+		mrcp_client_media_engine_register(client, media_engine);
 	}
 
 	/* configure the client profiles */
@@ -3929,6 +3951,8 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 			mpf_termination_factory_t *termination_factory = NULL;
 			mrcp_profile_t *mprofile = NULL;
 			mpf_rtp_config_t *rtp_config = NULL;
+			mpf_rtp_settings_t *rtp_settings = mpf_rtp_settings_alloc(pool);
+			mrcp_sig_settings_t *sig_settings = mrcp_signaling_settings_alloc(pool);
 			profile_t *mod_profile = NULL;
 			switch_xml_t default_params = NULL;
 
@@ -3992,18 +4016,24 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 			}
 
 			/* create RTP config, common to MRCPv1 and MRCPv2 */
-			rtp_config = mpf_rtp_config_create(pool);
+			rtp_config = mpf_rtp_config_alloc(pool);
 			rtp_config->rtp_port_min = DEFAULT_RTP_PORT_MIN;
 			rtp_config->rtp_port_max = DEFAULT_RTP_PORT_MAX;
 			apt_string_set(&rtp_config->ip, DEFAULT_LOCAL_IP_ADDRESS);
 
 			if (strcmp("1", version) == 0) {
 				/* MRCPv1 configuration */
-				rtsp_client_config_t *config = mrcp_unirtsp_client_config_alloc(pool);
 				switch_xml_t param = NULL;
+				rtsp_client_config_t *config = mrcp_unirtsp_client_config_alloc(pool);
 				config->origin = DEFAULT_SDP_ORIGIN;
-				config->resource_location = DEFAULT_RESOURCE_LOCATION;
+				sig_settings->resource_location = DEFAULT_RESOURCE_LOCATION;
 
+				if (!zstr(globals.unimrcp_request_timeout)) {
+					apr_size_t request_timeout = (apr_size_t)atol(globals.unimrcp_request_timeout);
+					if (request_timeout > 0) {
+						config->request_timeout = request_timeout;
+					}
+				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading MRCPv1 profile: %s\n", name);
 				for (param = switch_xml_child(profile, "param"); param; param = switch_xml_next(param)) {
 					const char *param_name = switch_xml_attr(param, "name");
@@ -4014,21 +4044,21 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 						goto done;
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading Param %s:%s\n", param_name, param_value);
-					if (!process_mrcpv1_config(config, param_name, param_value, pool) &&
-						!process_rtp_config(client, rtp_config, param_name, param_value, pool) &&
+					if (!process_mrcpv1_config(config, sig_settings, param_name, param_value, pool) &&
+						!process_rtp_config(client, rtp_config, rtp_settings, param_name, param_value, pool) &&
 						!process_profile_config(mod_profile, param_name, param_value, mod_pool)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown param %s\n", param_name);
 					}
 				}
-				agent = mrcp_unirtsp_client_agent_create(config, pool);
+				agent = mrcp_unirtsp_client_agent_create(name, config, pool);
 			} else if (strcmp("2", version) == 0) {
 				/* MRCPv2 configuration */
 				mrcp_sofia_client_config_t *config = mrcp_sofiasip_client_config_alloc(pool);
 				switch_xml_t param = NULL;
 				config->local_ip = DEFAULT_LOCAL_IP_ADDRESS;
 				config->local_port = DEFAULT_SIP_LOCAL_PORT;
-				config->remote_ip = DEFAULT_REMOTE_IP_ADDRESS;
-				config->remote_port = DEFAULT_SIP_REMOTE_PORT;
+				sig_settings->server_ip = DEFAULT_REMOTE_IP_ADDRESS;
+				sig_settings->server_port = DEFAULT_SIP_REMOTE_PORT;
 				config->ext_ip = NULL;
 				config->user_agent_name = DEFAULT_SOFIASIP_UA_NAME;
 				config->origin = DEFAULT_SDP_ORIGIN;
@@ -4042,13 +4072,13 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 						goto done;
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading Param %s:%s\n", param_name, param_value);
-					if (!process_mrcpv2_config(config, param_name, param_value, pool) &&
-						!process_rtp_config(client, rtp_config, param_name, param_value, pool) &&
+					if (!process_mrcpv2_config(config, sig_settings, param_name, param_value, pool) &&
+						!process_rtp_config(client, rtp_config, rtp_settings, param_name, param_value, pool) &&
 						!process_profile_config(mod_profile, param_name, param_value, mod_pool)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown param %s\n", param_name);
 					}
 				}
-				agent = mrcp_sofiasip_client_agent_create(config, pool);
+				agent = mrcp_sofiasip_client_agent_create(name, config, pool);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "version must be either \"1\" or \"2\"\n");
 				client = NULL;
@@ -4060,11 +4090,11 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 				mrcp_client_rtp_factory_register(client, termination_factory, name);
 			}
 			if (agent) {
-				mrcp_client_signaling_agent_register(client, agent, name);
+				mrcp_client_signaling_agent_register(client, agent);
 			}
 
 			/* create the profile and register it */
-			mprofile = mrcp_client_profile_create(NULL, agent, connection_agent, media_engine, termination_factory, pool);
+			mprofile = mrcp_client_profile_create(NULL, agent, connection_agent, media_engine, termination_factory, rtp_settings, sig_settings, pool);
 			if (mprofile) {
 				mrcp_client_profile_register(client, mprofile, name);
 			}
@@ -4195,11 +4225,12 @@ static apt_log_priority_e str_to_log_level(const char *level)
  * Connects UniMRCP logging to FreeSWITCH
  * @return TRUE
  */
-static apt_bool_t unimrcp_log(const char *file, int line, const char *id, apt_log_priority_e priority, const char *format, va_list arg_ptr)
+static apt_bool_t unimrcp_log(const char *file, int line, const char *obj, apt_log_priority_e priority, const char *format, va_list arg_ptr)
 {
 	switch_log_level_t level;
 	char log_message[4096] = { 0 };	/* same size as MAX_LOG_ENTRY_SIZE in UniMRCP apt_log.c */
 	size_t msglen;
+	const char *id = (obj == NULL) ? "" : ((speech_channel_t *)obj)->name;
 
 	if (zstr(format)) {
 		return TRUE;
@@ -4237,10 +4268,10 @@ static apt_bool_t unimrcp_log(const char *file, int line, const char *id, apt_lo
 	msglen = strlen(log_message);
 	if (msglen >= 2 && log_message[msglen - 2] == '\\' && log_message[msglen - 1] == 'n') {
 		/* log_message already ends in \n */
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, id, level, "%s", log_message);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, NULL, level, "(%s) %s", id, log_message);
 	} else if (msglen > 0) {
 		/* log message needs \n appended */
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, id, level, "%s\n", log_message);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, NULL, level, "(%s) %s\n", id, log_message);
 	}
 
 	return TRUE;

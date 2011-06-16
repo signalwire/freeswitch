@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_object.h 1693 2010-05-16 18:33:07Z achaloyan $
  */
 
-#ifndef __MPF_OBJECT_H__
-#define __MPF_OBJECT_H__
+#ifndef MPF_OBJECT_H
+#define MPF_OBJECT_H
 
 /**
  * @file mpf_object.h
@@ -31,6 +33,8 @@ typedef struct mpf_object_t mpf_object_t;
 
 /** Media processing objects base */
 struct mpf_object_t {
+	/** Informative name used for debugging */
+	const char *name;
 	/** Virtual destroy */
 	apt_bool_t (*destroy)(mpf_object_t *object);
 	/** Virtual process */
@@ -40,8 +44,9 @@ struct mpf_object_t {
 };
 
 /** Initialize object */
-static APR_INLINE void mpf_object_init(mpf_object_t *object)
+static APR_INLINE void mpf_object_init(mpf_object_t *object, const char *name)
 {
+	object->name = name;
 	object->destroy = NULL;
 	object->process = NULL;
 	object->trace = NULL;
@@ -71,4 +76,4 @@ static APR_INLINE void mpf_object_trace(mpf_object_t *object)
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_OBJECT_H__*/
+#endif /* MPF_OBJECT_H */

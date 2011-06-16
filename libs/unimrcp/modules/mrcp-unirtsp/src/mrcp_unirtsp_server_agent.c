@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_unirtsp_server_agent.c 1700 2010-05-21 18:56:06Z achaloyan $
  */
 
 #include <apr_general.h>
@@ -27,8 +29,6 @@
 #include "mrcp_unirtsp_sdp.h"
 #include "apt_consumer_task.h"
 #include "apt_log.h"
-
-#define UNIRTSP_TASK_NAME "UniRTSP Agent"
 
 typedef struct mrcp_unirtsp_agent_t mrcp_unirtsp_agent_t;
 typedef struct mrcp_unirtsp_session_t mrcp_unirtsp_session_t;
@@ -72,12 +72,12 @@ static apt_bool_t rtsp_config_validate(mrcp_unirtsp_agent_t *agent, rtsp_server_
 
 
 /** Create UniRTSP Signaling Agent */
-MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_server_agent_create(rtsp_server_config_t *config, apr_pool_t *pool)
+MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_server_agent_create(const char *id, rtsp_server_config_t *config, apr_pool_t *pool)
 {
 	apt_task_t *task;
 	mrcp_unirtsp_agent_t *agent;
 	agent = apr_palloc(pool,sizeof(mrcp_unirtsp_agent_t));
-	agent->sig_agent = mrcp_signaling_agent_create(agent,MRCP_VERSION_1,pool);
+	agent->sig_agent = mrcp_signaling_agent_create(id,agent,MRCP_VERSION_1,pool);
 	agent->config = config;
 
 	if(rtsp_config_validate(agent,config,pool) == FALSE) {
@@ -96,13 +96,14 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_server_agent_create(rtsp_server_con
 	}
 	
 	task = rtsp_server_task_get(agent->rtsp_server);
-	apt_task_name_set(task,UNIRTSP_TASK_NAME);
+	apt_task_name_set(task,id);
 	agent->sig_agent->task = task;
 
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create "UNIRTSP_TASK_NAME" %s:%hu [%"APR_SIZE_T_FMT"]",
-		config->local_ip,
-		config->local_port,
-		config->max_connection_count);
+	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create UniRTSP Agent [%s] %s:%hu [%"APR_SIZE_T_FMT"]",
+				id,
+				config->local_ip,
+				config->local_port,
+				config->max_connection_count);
 	return agent->sig_agent;
 }
 
@@ -192,23 +193,23 @@ static apt_bool_t mrcp_unirtsp_session_announce(mrcp_unirtsp_agent_t *agent, mrc
 	apt_bool_t status = TRUE;
 
 	if(session && resource_name &&
-		rtsp_header_property_check(&message->header.property_set,RTSP_HEADER_FIELD_CONTENT_TYPE) == TRUE &&
+		rtsp_header_property_check(&message->header,RTSP_HEADER_FIELD_CONTENT_TYPE) == TRUE &&
 		message->header.content_type == RTSP_CONTENT_TYPE_MRCP &&
-		rtsp_header_property_check(&message->header.property_set,RTSP_HEADER_FIELD_CONTENT_LENGTH) == TRUE &&
+		rtsp_header_property_check(&message->header,RTSP_HEADER_FIELD_CONTENT_LENGTH) == TRUE &&
 		message->header.content_length > 0) {
 
 		apt_text_stream_t text_stream;
 		mrcp_parser_t *parser;
 		apt_str_t resource_name_str;
+		mrcp_message_t *mrcp_message;
 
 		text_stream.text = message->body;
 		apt_text_stream_reset(&text_stream);
 		apt_string_set(&resource_name_str,resource_name);
 
 		parser = mrcp_parser_create(agent->sig_agent->resource_factory,session->mrcp_session->pool);
-		mrcp_parser_resource_name_set(parser,&resource_name_str);
-		if(mrcp_parser_run(parser,&text_stream) == MRCP_STREAM_STATUS_COMPLETE) {
-			mrcp_message_t *mrcp_message = mrcp_parser_message_get(parser);
+		mrcp_parser_resource_set(parser,&resource_name_str);
+		if(mrcp_parser_run(parser,&text_stream,&mrcp_message) == APT_MESSAGE_STATUS_COMPLETE) {
 			mrcp_message->channel_id.session_id = message->header.session_id;
 			status = mrcp_session_control_request(session->mrcp_session,mrcp_message);
 		}
@@ -375,9 +376,9 @@ static apt_bool_t mrcp_unirtsp_on_session_control(mrcp_session_t *mrcp_session, 
 	body->buf[body->length] = '\0';
 
 	rtsp_message->header.content_type = RTSP_CONTENT_TYPE_MRCP;
-	rtsp_header_property_add(&rtsp_message->header.property_set,RTSP_HEADER_FIELD_CONTENT_TYPE);
+	rtsp_header_property_add(&rtsp_message->header,RTSP_HEADER_FIELD_CONTENT_TYPE,rtsp_message->pool);
 	rtsp_message->header.content_length = body->length;
-	rtsp_header_property_add(&rtsp_message->header.property_set,RTSP_HEADER_FIELD_CONTENT_LENGTH);
+	rtsp_header_property_add(&rtsp_message->header,RTSP_HEADER_FIELD_CONTENT_LENGTH,rtsp_message->pool);
 
 	rtsp_server_session_respond(agent->rtsp_server,session->rtsp_session,rtsp_message);
 	return TRUE;

@@ -28,7 +28,10 @@ umc_SOURCES            = src/main.cpp \
                          src/dtmfscenario.cpp \
                          src/dtmfsession.cpp \
                          src/setparamscenario.cpp \
-                         src/setparamsession.cpp
+                         src/setparamsession.cpp \
+                         src/verifierscenario.cpp \
+                         src/verifiersession.cpp
+                         
 umc_LDADD              = $(top_builddir)/platforms/libunimrcp-client/libunimrcpclient.la
 
 if ISMAC

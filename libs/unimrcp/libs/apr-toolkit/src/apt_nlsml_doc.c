@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_nlsml_doc.c 1655 2010-04-16 18:36:27Z achaloyan $
  */
 
 #include "apt_nlsml_doc.h"
+#include "apt_log.h"
 
 /** Load NLSML document */
 APT_DECLARE(apr_xml_doc*) nlsml_doc_load(const apt_str_t *data, apr_pool_t *pool)
@@ -26,21 +29,25 @@ APT_DECLARE(apr_xml_doc*) nlsml_doc_load(const apt_str_t *data, apr_pool_t *pool
 	/* create XML parser */
 	parser = apr_xml_parser_create(pool);
 	if(apr_xml_parser_feed(parser,data->buf,data->length) != APR_SUCCESS) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to feed NLSML input to the parser");
 		return NULL;
 	}
 
 	/* done with XML tree creation */
 	if(apr_xml_parser_done(parser,&doc) != APR_SUCCESS) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to terminate NLSML parsing");
 		return NULL;
 	}
 
 	if(!doc || !doc->root) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No NLSML root element");
 		return NULL;
 	}
 	root = doc->root;
 
 	/* NLSML validity check: root element must be <result> */
 	if(strcmp(root->name,"result") != 0) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unexpected NLSML root element <%s>",root->name);
 		return NULL;
 	}
 

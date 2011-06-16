@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_stream_descriptor.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MPF_STREAM_DESCRIPTOR_H__
-#define __MPF_STREAM_DESCRIPTOR_H__
+#ifndef MPF_STREAM_DESCRIPTOR_H
+#define MPF_STREAM_DESCRIPTOR_H
 
 /**
  * @file mpf_stream_descriptor.h
@@ -85,4 +87,4 @@ static APR_INLINE mpf_stream_direction_e mpf_stream_reverse_direction_get(mpf_st
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_STREAM_DESCRIPTOR_H__*/
+#endif /* MPF_STREAM_DESCRIPTOR_H */

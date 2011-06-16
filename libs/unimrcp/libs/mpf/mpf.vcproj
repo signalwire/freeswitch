@@ -417,10 +417,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\mpf_timer_manager.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\mpf_types.h"
 				>
 			</File>
@@ -539,10 +535,6 @@
 			</File>
 			<File
 				RelativePath=".\src\mpf_termination_factory.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\mpf_timer_manager.c"
 				>
 			</File>
 		</Filter>

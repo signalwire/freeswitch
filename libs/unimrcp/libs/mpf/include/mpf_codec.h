@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_codec.h 1686 2010-05-08 18:46:08Z achaloyan $
  */
 
-#ifndef __MPF_CODEC_H__
-#define __MPF_CODEC_H__
+#ifndef MPF_CODEC_H
+#define MPF_CODEC_H
 
 /**
  * @file mpf_codec.h
@@ -55,6 +57,9 @@ struct mpf_codec_vtable_t {
 
 	/** Virtual dissect method */
 	apt_bool_t (*dissect)(mpf_codec_t *codec, void **buffer, apr_size_t *size, mpf_codec_frame_t *frame);
+
+	/** Virtual initialize method */
+	apt_bool_t (*initialize)(mpf_codec_t *codec, mpf_codec_frame_t *frame_out);
 };
 
 /**
@@ -154,6 +159,19 @@ static APR_INLINE apt_bool_t mpf_codec_dissect(mpf_codec_t *codec, void **buffer
 	return rv;
 }
 
+/** Initialize (fill) codec frame with silence */
+static APR_INLINE apt_bool_t mpf_codec_initialize(mpf_codec_t *codec, mpf_codec_frame_t *frame_out)
+{
+	apt_bool_t rv = TRUE;
+	if(codec->vtable->initialize) {
+		rv = codec->vtable->initialize(codec,frame_out);
+	}
+	else {
+		memset(frame_out->buffer,0,frame_out->size);
+	}
+	return rv;
+}
+
 APT_END_EXTERN_C
 
-#endif /*__MPF_CODEC_H__*/
+#endif /* MPF_CODEC_H */

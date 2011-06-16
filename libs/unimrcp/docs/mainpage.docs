@@ -1,0 +1,92 @@
+/**
+@mainpage UniMRCP
+
+<br> 
+@section Introduction
+
+UniMRCP is an open source cross-platform MRCP project, which provides everything required for MRCP client and server side deployment.
+<br> 
+UniMRCP encapsulates SIP/MRCPv2, RTSP, SDP and RTP/RTCP stacks inside and provides MRCP version independent user level interface for the integration.
+<br> 
+<br> 
+@section Source Tree Structure
+
+<br> 
+Libraries
+
+* apr-toolkit - set of utilities built on top of APR and APR-Util libraries (task abstraction, logging, etc)
+<br> 
+* mpf - media processing framework
+<br> 
+* mrcp - implementation of MRCP basics (message, parser, resources)
+<br> 
+* mrcpv2-transport - implementation of MRCPv2 transport layer
+<br> 
+* mrcp-signaling - abstract MRCP signaling (session management) interface
+<br> 
+* mrcp-engine - abstract resource engine interface
+<br> 
+* mrcp-client - implementation of MRCP client stack based on abstract signaling interface
+<br> 
+* mrcp-server - implementation of MRCP server stack based on abstract signaling and engine interfaces
+<br> 
+* uni-rtsp - implementation of minimal RTSP stack required for MRCPv1
+
+
+<br> 
+Modules
+
+* mrcp-sofiasip - implementation of abstract signaling interface using SofiaSIP library
+<br> 
+* mrcp-unirtsp - implementation of abstract signaling interface using UniRTSP library
+<br> 
+
+
+<br> 
+Plugins
+
+* demo-synth - simulation of actual synthesizer engine 
+<br> 
+* demo-recog - simulation of actual recognizer engine
+<br> 
+* mrcp-recorder - implementation of recorder resource
+<br> 
+* mrcp-flite - implementation of synthesizer resource using open source Flite engine
+<br> 
+* mrcp-pocketsphinx - implementation of recognizer resource using open source PocketSphinx engine
+
+<br> 
+Platforms
+
+* libunimrcpclient - unimrcp client stack based on libraries and modules above
+<br> 
+* libunimrcpserver - unimrcp server stack based on libraries, modules and plugins above
+<br> 
+* unimrcpclient - sample C application based on unimrcp client stack
+<br> 
+* umc - sample C++ application based on unimrcp client stack
+<br> 
+* unimrcpserver - final unimrcp server application
+
+<br> 
+@section Dependencies
+
+<a href="http://apr.apache.org"> APR - Apache Portable Runtime </a>
+<br> 
+<a href="http://sofia-sip.sourceforge.net"> Sofia-SIP - SIP User Agent Library </a>
+
+<br> 
+@section Project Links
+
+<a href="http://www.unimrcp.org"> Website </a>
+<br> 
+<a href="http://code.google.com/p/unimrcp/downloads/list"> Downloads </a>
+<br> 
+<a href="http://code.google.com/p/unimrcp/w/list"> Wiki </a>
+<br> 
+<a href="http://code.google.com/p/unimrcp/issues/list"> Issue Tracker </a>
+<br> 
+<a href="http://groups.google.com/group/unimrcp"> Discussion Group </a>
+<br> 
+
+*/

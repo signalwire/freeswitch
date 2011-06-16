@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: pocketsphinx_properties.c 1743 2010-07-12 08:04:46Z achaloyan $
  */
 
 #include <stdlib.h>
@@ -59,8 +61,11 @@ static apt_bool_t sensitivity_properties_load(pocketsphinx_properties_t *propert
 		if(strcasecmp(attr->name,"level") == 0) {
 			properties->sensitivity_level = atol(attr->value);
 		}
-		else if(strcasecmp(attr->name,"timeout") == 0) {
-			properties->sensitivity_timeout = atol(attr->value);
+		else if(strcasecmp(attr->name,"activity-timeout") == 0) {
+			properties->activity_timeout = atol(attr->value);
+		}
+		else if(strcasecmp(attr->name,"inactivity-timeout") == 0) {
+			properties->inactivity_timeout = atol(attr->value);
 		}
 		else {
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Attribute <%s>",attr->name);

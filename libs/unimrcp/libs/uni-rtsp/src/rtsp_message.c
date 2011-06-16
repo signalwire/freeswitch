@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: rtsp_message.c 1648 2010-04-12 20:03:59Z achaloyan $
  */
 
 #include "rtsp_message.h"
@@ -21,7 +23,7 @@ static APR_INLINE void rtsp_message_init(rtsp_message_t *message, rtsp_message_t
 {
 	message->pool = pool;
 	rtsp_start_line_init(&message->start_line,message_type);
-	rtsp_header_init(&message->header);
+	rtsp_header_init(&message->header,pool);
 	apt_string_reset(&message->body);
 }
 
@@ -55,17 +57,16 @@ RTSP_DECLARE(rtsp_message_t*) rtsp_response_create(const rtsp_message_t *request
 		apt_string_copy(&status_line->reason,reason_str,pool);
 	}
 
-	if(rtsp_header_property_check(&request->header.property_set,RTSP_HEADER_FIELD_CSEQ) == TRUE) {
+	if(rtsp_header_property_check(&request->header,RTSP_HEADER_FIELD_CSEQ) == TRUE) {
 		response->header.cseq = request->header.cseq;
-		rtsp_header_property_add(&response->header.property_set,RTSP_HEADER_FIELD_CSEQ);
+		rtsp_header_property_add(&response->header,RTSP_HEADER_FIELD_CSEQ,response->pool);
 	}
 
-	if(rtsp_header_property_check(&request->header.property_set,RTSP_HEADER_FIELD_TRANSPORT) == TRUE) {
+	if(rtsp_header_property_check(&request->header,RTSP_HEADER_FIELD_TRANSPORT) == TRUE) {
 		const rtsp_transport_t *req_transport = &request->header.transport;
 		rtsp_transport_t *res_transport = &response->header.transport;
 		if(req_transport->mode.length) {
 			apt_string_copy(&res_transport->mode,&req_transport->mode,pool);
-			rtsp_header_property_add(&response->header.property_set,RTSP_HEADER_FIELD_TRANSPORT);
 		}
 	}
 
