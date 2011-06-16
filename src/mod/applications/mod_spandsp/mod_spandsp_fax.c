@@ -330,7 +330,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	local_ident = switch_str_nil(t30_get_tx_ident(s));
 	far_ident = switch_str_nil(t30_get_rx_ident(s));
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
 	if (result == T30_ERR_OK) {
 		if (pvt->app_mode == FUNCTION_TX) {
@@ -414,6 +414,8 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	/* Fire event */
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXRESULT : SPANDSP_EVENT_RXFAXRESULT) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-success", (result == T30_ERR_OK) ? "1" : "0");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-code", fax_result_code);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-text", t30_completion_code_to_str(result));
