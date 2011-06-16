@@ -696,15 +696,17 @@ SWITCH_DECLARE(const char *) switch_channel_get_hold_music_partner(switch_channe
 SWITCH_DECLARE(void) switch_channel_set_scope_variables(switch_channel_t *channel, switch_event_t **event)
 {
 	switch_mutex_lock(channel->profile_mutex);
-	if (channel->scope_variables) {
-		switch_event_destroy(&channel->scope_variables);
-	}
-	if (event) {
+
+	if (event && *event) { /* push */
+		(*event)->next = channel->scope_variables;
 		channel->scope_variables = *event;
 		*event = NULL;
-	} else {
-		channel->scope_variables = NULL;
+	} else if (channel->scope_variables) { /* pop */
+		switch_event_t *top_event = channel->scope_variables;
+		channel->scope_variables = channel->scope_variables->next;
+		switch_event_destroy(&top_event);
 	}
+
 	switch_mutex_unlock(channel->profile_mutex);
 	
 }
@@ -712,10 +714,24 @@ SWITCH_DECLARE(void) switch_channel_set_scope_variables(switch_channel_t *channe
 SWITCH_DECLARE(switch_status_t) switch_channel_get_scope_variables(switch_channel_t *channel, switch_event_t **event)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_event_t *new_event;
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->scope_variables) {
-		status = switch_event_dup(event, channel->scope_variables);
+		switch_event_t *ep;
+		switch_event_header_t *hp;
+
+		switch_event_create_plain(&new_event, SWITCH_EVENT_CHANNEL_DATA);
+		status = SWITCH_STATUS_SUCCESS;
+		*event = new_event;
+
+		for (ep = channel->scope_variables; ep; ep = ep->next) {
+			for (hp = ep->headers; hp; hp = hp->next) {
+				if (!switch_event_get_header(new_event, hp->value)) {
+					switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+				}
+			}
+		}
 	}
 	switch_mutex_unlock(channel->profile_mutex);
 
@@ -730,7 +746,13 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *c
 	switch_mutex_lock(channel->profile_mutex);
 
 	if (channel->scope_variables) {
-		v = switch_event_get_header_idx(channel->scope_variables, varname, idx);
+		switch_event_t *ep;
+
+		for (ep = channel->scope_variables; ep; ep = ep->next) {
+			if ((v = switch_event_get_header_idx(ep, varname, idx))) {
+				break;
+			}
+		}
 	}
 
 	if (!v && (!channel->variables || !(v = switch_event_get_header_idx(channel->variables, varname, idx)))) {
@@ -2166,16 +2188,23 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		/* Index Variables */
 
 		if (channel->scope_variables) {
-			for (hi = channel->scope_variables->headers; hi; hi = hi->next) {
-				char buf[1024];
-				char *vvar = NULL, *vval = NULL;
+			switch_event_t *ep;
 
-				vvar = (char *) hi->name;
-				vval = (char *) hi->value;
-				
-				switch_assert(vvar && vval);
-				switch_snprintf(buf, sizeof(buf), "scope_variable_%s", vvar);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
+			for (ep = channel->scope_variables; ep; ep = ep->next) {
+				for (hi = ep->headers; hi; hi = hi->next) {
+					char buf[1024];
+					char *vvar = NULL, *vval = NULL;
+					
+					vvar = (char *) hi->name;
+					vval = (char *) hi->value;
+						
+					switch_assert(vvar && vval);
+					switch_snprintf(buf, sizeof(buf), "scope_variable_%s", vvar);
+					
+					if (!switch_event_get_header(event, buf)) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
+					}
+				}
 			}
 		}
 
