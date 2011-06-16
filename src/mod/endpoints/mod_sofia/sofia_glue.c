@@ -5518,26 +5518,20 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 int sofia_glue_recover(switch_bool_t flush)
 {
-	switch_hash_index_t *hi;
-	const void *var;
-	void *val;
 	sofia_profile_t *profile;
 	char *sql;
 	int r = 0;
+	switch_console_callback_match_t *matches;
 
-	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
 
-			if ((profile = (sofia_profile_t *) val)) {
+	if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+		switch_console_callback_match_node_t *m;
+		for (m = matches->head; m; m = m->next) {
+			if ((profile = sofia_glue_find_profile(m->val))) {
+
 				struct recover_helper h = { 0 };
 				h.profile = profile;
 				h.total = 0;
-
-				if (strcmp((char *) var, profile->name)) {
-					continue;
-				}
 
 				if (flush) {
 					sql = switch_mprintf("delete from sip_recovery where profile_name='%q'", profile->name);
@@ -5559,8 +5553,8 @@ int sofia_glue_recover(switch_bool_t flush)
 				}
 			}
 		}
+		switch_console_free_matches(&matches);
 	}
-	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
 	return r;
 }

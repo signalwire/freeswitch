@@ -4940,7 +4940,7 @@ static void general_event_handler(switch_event_t *event)
 	}
 }
 
-static switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
 	sofia_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
@@ -4983,9 +4983,11 @@ static switch_status_t list_gateways(const char *line, const char *cursor, switc
 		profile = (sofia_profile_t *) val;
 		if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
 			sofia_gateway_t *gp;
+			switch_mutex_lock(profile->gw_mutex);
 			for (gp = profile->gateways; gp; gp = gp->next) {
 				switch_console_push_match(&my_matches, gp->name);
 			}
+			switch_mutex_unlock(profile->gw_mutex);
 		}
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
