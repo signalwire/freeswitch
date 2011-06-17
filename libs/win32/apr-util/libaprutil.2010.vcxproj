@@ -80,7 +80,7 @@ xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C
     <ClCompile>
       <AdditionalOptions>/EHsc  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\apr-util\include;..\..\apr-util\include/private;..\..\apr-util\dbm/sdbm;..\..\apr-iconv-1.1.1\include;..\..\apr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\apr-util\include;..\..\apr-util\include/private;..\..\apr-util\dbm/sdbm;..\..\apr-iconv-1.1.1\include;..\..\apr\include;..\..\apr-util\xml\expat\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -782,6 +782,7 @@ xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="..\..\apr-util\xml\apr_xml.c" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuildStep Include="..\..\apr-util\dbm\sdbm\sdbm_pair.h">
@@ -940,6 +941,9 @@ xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C
   <ItemGroup>
     <ProjectReference Include="..\apr\libapr.2010.vcxproj">
       <Project>{f6c55d93-b927-4483-bb69-15aef3dd2dff}</Project>
+    </ProjectReference>
+    <ProjectReference Include="xml.2010.vcxproj">
+      <Project>{155844c3-ec5f-407f-97a4-a2ddaded9b2f}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
