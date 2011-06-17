@@ -915,7 +915,7 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 		goto fail;
 	}
 
-	return SWITCH_CAUSE_NONE;
+	return SWITCH_CAUSE_SUCCESS;
 	
 fail:
 	switch_core_session_destroy(newsession);
@@ -1609,7 +1609,7 @@ SWITCH_STANDARD_API(rtmp_function)
 			}
 			
 			if (!zstr(dest)) {
-					if (rtmp_session_create_call(rsession, &newsession, 0, RTMP_DEFAULT_STREAM_AUDIO, dest, user, domain, NULL) != SWITCH_STATUS_SUCCESS) {
+					if (rtmp_session_create_call(rsession, &newsession, 0, RTMP_DEFAULT_STREAM_AUDIO, dest, user, domain, NULL) != SWITCH_CAUSE_SUCCESS) {
 						stream->write_function(stream, "-ERR Couldn't create new call\n");
 					} else {
 						rtmp_private_t *new_pvt = switch_core_session_get_private(newsession);
