@@ -112,6 +112,7 @@
     <ClInclude Include="include\mrcp_client_types.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\mrcp_application.c" />
     <ClCompile Include="src\mrcp_client.c" />
     <ClCompile Include="src\mrcp_client_session.c" />
   </ItemGroup>

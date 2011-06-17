@@ -141,7 +141,6 @@
     <ClCompile Include="src\mpf_stream.c" />
     <ClCompile Include="src\mpf_termination.c" />
     <ClCompile Include="src\mpf_termination_factory.c" />
-    <ClCompile Include="src\mpf_timer_manager.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="codecs\g711\g711.h" />
@@ -184,7 +183,6 @@
     <ClInclude Include="include\mpf_stream_descriptor.h" />
     <ClInclude Include="include\mpf_termination.h" />
     <ClInclude Include="include\mpf_termination_factory.h" />
-    <ClInclude Include="include\mpf_timer_manager.h" />
     <ClInclude Include="include\mpf_types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
