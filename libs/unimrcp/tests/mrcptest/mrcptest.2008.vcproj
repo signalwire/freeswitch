@@ -157,6 +157,10 @@
 				RelativePath=".\src\set_get_suite.c"
 				>
 			</File>
+			<File
+				RelativePath=".\src\transparent_set_get_suite.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="include"
