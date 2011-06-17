@@ -538,6 +538,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libaprutil", "libs\win32\apr-util\libaprutil.2008.vcproj", "{F057DA7F-79E5-4B00-845C-EF446EF055E3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
+		{155844C3-EC5F-407F-97A4-A2DDADED9B2F} = {155844C3-EC5F-407F-97A4-A2DDADED9B2F}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iksemel", "libs\win32\iksemel\iksemel.2008.vcproj", "{E727E8F6-935D-46FE-8B0E-37834748A0E3}"
