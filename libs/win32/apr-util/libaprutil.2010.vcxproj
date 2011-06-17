@@ -118,7 +118,7 @@ xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C
     <ClCompile>
       <AdditionalOptions>/EHsc  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\apr-util\include;..\..\apr-util\include/private;..\..\apr-util\dbm/sdbm;..\..\apr-iconv-1.1.1\include;..\..\apr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\apr-util\include;..\..\apr-util\include/private;..\..\apr-util\dbm/sdbm;..\..\apr-iconv-1.1.1\include;..\..\apr\include;..\..\apr-util\xml\expat\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -156,7 +156,7 @@ xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\apr-util\include;..\..\apr-util\include/private;..\..\apr-util\dbm/sdbm;..\..\apr-iconv-1.1.1\include;..\..\apr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\apr-util\include;..\..\apr-util\include/private;..\..\apr-util\dbm/sdbm;..\..\apr-iconv-1.1.1\include;..\..\apr\include;..\..\apr-util\xml\expat\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -197,7 +197,7 @@ xcopy "$(ProjectDir)..\..\apr-util\include\*.h" "$(ProjectDir)..\..\include\" /C
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\apr-util\include;..\..\apr-util\include/private;..\..\apr-util\dbm/sdbm;..\..\apr-iconv-1.1.1\include;..\..\apr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\apr-util\include;..\..\apr-util\include/private;..\..\apr-util\dbm/sdbm;..\..\apr-iconv-1.1.1\include;..\..\apr\include;..\..\apr-util\xml\expat\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
