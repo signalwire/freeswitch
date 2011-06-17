@@ -365,7 +365,7 @@ static switch_bool_t tone_detector_process_buffer(tone_detector_t *detector, voi
 	detector->detected_tone = -1;
 	super_tone_rx(detector->spandsp_detector, data, len);
 
-	if (detector->detected_tone > -1 && detector->detected_tone < detector->descriptor->idx && detector->detected_tone < MAX_TONES) {
+	if (detector->detected_tone > -1 && detector->detected_tone <= detector->descriptor->idx && detector->detected_tone < MAX_TONES) {
 		*key = detector->descriptor->tone_keys[detector->detected_tone];
 		return SWITCH_TRUE;
 	}
