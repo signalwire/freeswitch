@@ -656,7 +656,7 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* this is a remote hangup request */
 		sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
-ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 		/* move the state of the channel to CANCEL to end the call */
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 
@@ -682,6 +682,27 @@ ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 		/* move the state of the channel to TERMINATING to end the call */
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 
+		break;
+	/**************************************************************************/
+	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+		/* ITU Q.764 2.3.1 e)
+		 * Collision of release messages
+		 *
+		 * ITU Q.784 Test Number 3.8
+		 * Collision of REL messages
+		 */
+		SS7_DEBUG_CHAN(ftdmchan, "Collision of REL messages. Rx REL while waiting for RLC.\n", " ");
+		if (sngss7_test_ckt_flag(sngss7_info, FLAG_LOCAL_REL) && 
+			!sngss7_test_ckt_flag (sngss7_info, FLAG_REMOTE_REL)) {
+			/* locally requested hangup completed, wait for remote RLC */
+			/* need to perform remote release */
+
+			/* this is also a remote hangup request */
+			sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
+
+			/* send out the release complete */
+			ft_to_sngss7_rlc (ftdmchan);
+		}
 		break;
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_IN_LOOP:
