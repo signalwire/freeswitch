@@ -489,6 +489,19 @@ struct fifo_chime_data {
 
 typedef struct fifo_chime_data fifo_chime_data_t;
 
+static switch_status_t chime_read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
+{
+	fifo_chime_data_t *cd = (fifo_chime_data_t *) user_data;
+
+	if (cd && cd->orbit_timeout && switch_epoch_time_now(NULL) >= cd->orbit_timeout) {
+		cd->do_orbit = 1;
+		return SWITCH_STATUS_BREAK;
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 static switch_status_t caller_read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
 	fifo_chime_data_t *cd = (fifo_chime_data_t *) user_data;
@@ -510,6 +523,8 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 			args.input_callback = moh_on_dtmf;
 			args.buf = buf;
 			args.buflen = sizeof(buf);
+			args.read_frame_callback = chime_read_frame_callback;
+			args.user_data = user_data;
 
 			if (switch_ivr_play_file(session, NULL, cd->list[cd->index], &args) != SWITCH_STATUS_SUCCESS) {
 				return SWITCH_STATUS_BREAK;
@@ -522,10 +537,10 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 			cd->next = switch_epoch_time_now(NULL) + cd->freq;
 			cd->index++;
 		}
-	} else if (cd->orbit_timeout && switch_epoch_time_now(NULL) >= cd->orbit_timeout) {
-		cd->do_orbit = 1;
-		return SWITCH_STATUS_BREAK;
+	} else {
+		chime_read_frame_callback(session, frame, user_data);
 	}
+	
 
 	return SWITCH_STATUS_SUCCESS;
 }
