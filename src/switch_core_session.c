@@ -1980,7 +1980,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	const char *app;
 	switch_core_session_message_t msg = { 0 };
 	char delim = ',';
-	int scope = 1;
+	int scope = 0;
 
 	switch_assert(application_interface);
 
