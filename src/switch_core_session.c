@@ -1980,7 +1980,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	const char *app;
 	switch_core_session_message_t msg = { 0 };
 	char delim = ',';
-	
+	int scope = 1;
+
 	switch_assert(application_interface);
 
 	app = application_interface->interface_name;
@@ -2010,9 +2011,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		free(dup);
 
 		switch_channel_set_scope_variables(session->channel, &ovars);
+		scope = 1;
 	}
 
-
+	
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, "EXECUTE %s %s(%s)\n",
 					  switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
 
@@ -2091,7 +2093,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		switch_safe_free(expanded);
 	}
 
-	switch_channel_set_scope_variables(session->channel, NULL);
+	if (scope) {
+		switch_channel_set_scope_variables(session->channel, NULL);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
