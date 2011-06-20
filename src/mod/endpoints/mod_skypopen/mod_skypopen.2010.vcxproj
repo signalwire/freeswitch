@@ -49,7 +49,7 @@
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
-      <AdditionalOptions>rpcrt4.lib  "..\..\..\..\debug\libtiff.lib" "..\..\..\..\libs\spandsp\src\debug\spandsp.lib" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>rpcrt4.lib  "..\..\..\..\libs\spandsp\src\Win32\Debug\libtiff.lib" "..\..\..\..\Win32\Debug\libspandsp.lib" %(AdditionalOptions)</AdditionalOptions>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -62,7 +62,7 @@
       </PrecompiledHeader>
     </ClCompile>
     <Link>
-      <AdditionalOptions>rpcrt4.lib "..\..\..\..\release\libtiff.lib" "..\..\..\..\libs\spandsp\src\release\spandsp.lib" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>rpcrt4.lib "..\..\..\..\libs\spandsp\src\Win32\Release\libtiff.lib" "..\..\..\..\Win32\Release\libspandsp.lib" %(AdditionalOptions)</AdditionalOptions>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
