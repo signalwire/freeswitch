@@ -1836,6 +1836,8 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 				switch_caller_extension_add_application(peer_session, extension, app, app_arg);
 				switch_channel_set_caller_extension(peer_channel, extension);
 				switch_channel_set_flag(peer_channel, CF_TRANSFER);
+				switch_channel_set_state(peer_channel, CS_RESET);
+				switch_channel_wait_for_state(peer_channel, channel, CS_RESET);
 				switch_channel_set_state(peer_channel, CS_EXECUTE);
 				switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, NULL);
 
