@@ -401,7 +401,7 @@ static void analog_dial(ftdm_channel_t *ftdmchan, uint32_t *state_counter, uint3
 			ftdmchan->needed_tones[FTDM_TONEMAP_FAIL1] = 1;
 			ftdmchan->needed_tones[FTDM_TONEMAP_FAIL2] = 1;
 			ftdmchan->needed_tones[FTDM_TONEMAP_FAIL3] = 1;
-			*dial_timeout = ((ftdmchan->dtmf_on + ftdmchan->dtmf_off) * strlen(ftdmchan->caller_data.dnis.digits)) + 2000;
+			*dial_timeout = (uint32_t)((ftdmchan->dtmf_on + ftdmchan->dtmf_off) * strlen(ftdmchan->caller_data.dnis.digits)) + 2000;
 		}
 	}
 }

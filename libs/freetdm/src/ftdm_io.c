@@ -2806,7 +2806,7 @@ static ftdm_status_t ftdmchan_activate_dtmf_buffer(ftdm_channel_t *ftdmchan)
 static ftdm_status_t ftdm_insert_dtmf_pause(ftdm_channel_t *ftdmchan, ftdm_size_t pausems)
 {
 	void *data = NULL;
-	unsigned int datalen = pausems * sizeof(uint16_t);
+	ftdm_size_t datalen = pausems * sizeof(uint16_t);
 
 	data = ftdm_malloc(datalen);
 	ftdm_assert(data, "Failed to allocate memory\n");
