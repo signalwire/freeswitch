@@ -5233,11 +5233,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	switch_console_set_complete("del sofia");
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
-
-	for (i = 0; i < mod_sofia_globals.msg_queue_len; i++) {	
-		switch_queue_push(mod_sofia_globals.msg_queue[i], NULL);
-	}
-
 	if (mod_sofia_globals.running == 1) {
 		mod_sofia_globals.running = 0;
 	}
@@ -5259,10 +5254,16 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 		}
 	}
 
+
+	for (i = 0; i < mod_sofia_globals.msg_queue_len; i++) {	
+		switch_queue_push(mod_sofia_globals.msg_queue[i], NULL);
+	}
+
 	for (i = 0; i < mod_sofia_globals.msg_queue_len; i++) {
 		switch_status_t st;
 		switch_thread_join(&st, mod_sofia_globals.msg_queue_thread[i]);
 	}
+
 
 	//switch_yield(1000000);
 	su_deinit();

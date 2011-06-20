@@ -949,8 +949,9 @@ static void our_sofia_event_callback(nua_event_t event,
 			switch_channel_set_flag(channel, CF_MEDIA_ACK);
 		break;
 	case nua_r_shutdown:
-		if (status >= 200)
+		if (status >= 200) {
 			su_root_break(profile->s_root);
+		}
 		break;
 	case nua_r_message:
 		sofia_handle_sip_r_message(status, profile, nh, sip);
@@ -1127,24 +1128,10 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MSG Thread Started\n");
 
-	while (mod_sofia_globals.running == 1) {
-		
-		if (switch_queue_pop(q, &pop) == SWITCH_STATUS_SUCCESS) {
-			sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
 
-			if (!pop) {
-				break;
-			}
-
-			sofia_process_dispatch_event(&de);
-		}
-	}
-
-	while (switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+	while(switch_queue_pop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
-		nua_handle_unref(de->nh);
-		nua_destroy_event(de->event);
-		free(de);
+		sofia_process_dispatch_event(&de);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MSG Thread Ended\n");
@@ -1192,6 +1179,11 @@ static void sofia_msg_thread_start(int idx)
 static void sofia_queue_message(sofia_dispatch_event_t *de)
 {
 	int idx = 0;
+
+	if (mod_sofia_globals.running == 0) {
+		sofia_process_dispatch_event(&de);
+		return;
+	}
 
  again:
 
