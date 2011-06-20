@@ -1057,6 +1057,7 @@ static switch_status_t synth_channel_speak(speech_channel_t *schannel, const cha
 	mrcp_message_t *mrcp_message = NULL;
 	mrcp_generic_header_t *generic_header = NULL;
 	mrcp_synth_header_t *synth_header = NULL;
+	int warned = 0;
 
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state != SPEECH_CHANNEL_READY) {
@@ -1105,9 +1106,9 @@ static switch_status_t synth_channel_speak(speech_channel_t *schannel, const cha
 	}
 	/* wait for IN-PROGRESS */
 	while (schannel->state == SPEECH_CHANNEL_READY) {
-		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Timed out waiting for SPEAK IN-PROGRESS\n", schannel->name);
-			break;
+		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+			warned = 1;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) SPEAK IN-PROGRESS not received after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 		}
 	}
 	if (schannel->state != SPEECH_CHANNEL_PROCESSING) {
@@ -1329,6 +1330,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int warned = 0;
 	switch_mutex_lock(schannel->mutex);
 
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
@@ -1349,17 +1351,13 @@ static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 		}
 		mrcp_application_message_send(schannel->unimrcp_session, schannel->unimrcp_channel, mrcp_message);
 		while (schannel->state == SPEECH_CHANNEL_PROCESSING) {
-			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
-				break;
+			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+				warned = 1;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) STOP has not COMPLETED after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 			}
 		}
 
-		if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Timed out waiting for STOP to COMPLETE.  Continuing.\n", schannel->name);
-			schannel->state = SPEECH_CHANNEL_ERROR;
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		} else if (schannel->state == SPEECH_CHANNEL_ERROR) {
+		if (schannel->state == SPEECH_CHANNEL_ERROR) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Channel error\n", schannel->name);
 			schannel->state = SPEECH_CHANNEL_ERROR;
 			status = SWITCH_STATUS_FALSE;
@@ -2140,6 +2138,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	switch_size_t grammar_uri_count = 0;
 	switch_size_t grammar_uri_list_len = 0;
 	char *grammar_uri_list = NULL;
+	int warned = 0;
 
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state != SPEECH_CHANNEL_READY) {
@@ -2267,9 +2266,9 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	}
 	/* wait for IN-PROGRESS */
 	while (schannel->state == SPEECH_CHANNEL_READY) {
-		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Timed out waiting for RECOGNIZE IN-PROGRESS\n", schannel->name);
-			break;
+		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+			warned = 1;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) IN-PROGRESS not received for RECOGNIZE after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 		}
 	}
 	if (schannel->state != SPEECH_CHANNEL_PROCESSING) {
@@ -2311,6 +2310,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 		mrcp_message_t *mrcp_message;
 		mrcp_generic_header_t *generic_header;
 		const char *mime_type;
+		int warned = 0;
 
 		/* create MRCP message */
 		mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, RECOGNIZER_DEFINE_GRAMMAR);
@@ -2345,9 +2345,9 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 			goto done;
 		}
 		while (schannel->state == SPEECH_CHANNEL_PROCESSING) {
-			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Timed out waiting for DEFINE-GRAMMAR to COMPLETE\n", schannel->name);
-				break;
+			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+				warned = 1;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) DEFINE-GRAMMAR not COMPLETED after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 			}
 		}
 		if (schannel->state != SPEECH_CHANNEL_READY) {
