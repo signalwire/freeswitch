@@ -1693,6 +1693,8 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 
 	switch_assert(channel != NULL);
 
+	switch_ivr_parse_all_messages(channel->session);
+
 	if (check_media) {
 		ret = ((switch_channel_test_flag(channel, CF_ANSWERED) ||
 				switch_channel_test_flag(channel, CF_EARLY_MEDIA)) && !switch_channel_test_flag(channel, CF_PROXY_MODE) &&

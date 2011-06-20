@@ -809,7 +809,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_
 
 	switch_assert(session != NULL);
 
-	if (session->message_queue) {
+	if (session->message_queue && switch_queue_size(session->message_queue)) {
 		if ((status = (switch_status_t) switch_queue_trypop(session->message_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			*message = (switch_core_session_message_t *) pop;
 			if ((*message)->delivery_time && (*message)->delivery_time > switch_epoch_time_now(NULL)) {
