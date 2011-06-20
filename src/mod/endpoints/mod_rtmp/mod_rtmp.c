@@ -1177,10 +1177,12 @@ switch_status_t rtmp_session_check_user(rtmp_session_t *rsession, const char *us
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	
 	switch_thread_rwlock_rdlock(rsession->account_rwlock);
-	for (account = rsession->account; account; account = account->next) {
-		if (!strcmp(account->user, user) && !strcmp(account->domain, domain)) {
-			status = SWITCH_STATUS_SUCCESS;
-			break;
+	if (user && domain) {
+		for (account = rsession->account; account; account = account->next) {
+			if (account->user && account->domain && !strcmp(account->user, user) && !strcmp(account->domain, domain)) {
+				status = SWITCH_STATUS_SUCCESS;
+				break;
+			}
 		}
 	}
 	switch_thread_rwlock_unlock(rsession->account_rwlock);
