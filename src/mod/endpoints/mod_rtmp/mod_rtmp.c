@@ -152,6 +152,8 @@ switch_status_t rtmp_on_init(switch_core_session_t *session)
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
+
+	switch_channel_set_flag(channel, CF_CNG_PLC);
 	
 	rtmp_notify_call_state(session);
 	

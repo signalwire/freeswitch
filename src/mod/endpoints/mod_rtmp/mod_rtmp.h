@@ -518,6 +518,8 @@ struct rtmp_private {
 	const char *auth_user;
 	const char *auth_domain;
 	const char *auth;
+
+	uint16_t maxlen;
 };
 
 struct rtmp_reg;
