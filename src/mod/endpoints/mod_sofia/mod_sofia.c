@@ -2327,9 +2327,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		status = sofia_answer_channel(session);
-		if (switch_channel_test_flag(tech_pvt->channel, CF_VIDEO)) {
-			sofia_glue_build_vid_refresh_message(session, NULL);
-		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
