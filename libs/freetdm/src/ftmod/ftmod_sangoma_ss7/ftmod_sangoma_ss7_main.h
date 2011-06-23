@@ -938,31 +938,31 @@ if (ftdmchan->state == new_state) { \
 #define SS7_FUNC_TRACE_EXIT(a) if (g_ftdm_sngss7_data.function_trace) { \
 									switch (g_ftdm_sngss7_data.function_trace_level) { \
 										case 0: \
-											ftdm_log(FTDM_LOG_EMERG,"Exitting %s\n", a); \
+											ftdm_log(FTDM_LOG_EMERG,"Exiting %s\n", a); \
 											break; \
 										case 1: \
-											ftdm_log(FTDM_LOG_ALERT,"Exitting %s\n", a); \
+											ftdm_log(FTDM_LOG_ALERT,"Exiting %s\n", a); \
 											break; \
 										case 2: \
-											ftdm_log(FTDM_LOG_CRIT,"Exitting %s\n", a); \
+											ftdm_log(FTDM_LOG_CRIT,"Exiting %s\n", a); \
 											break; \
 										case 3: \
-											ftdm_log(FTDM_LOG_ERROR,"Exitting %s\n", a); \
+											ftdm_log(FTDM_LOG_ERROR,"Exiting %s\n", a); \
 											break; \
 										case 4: \
-											ftdm_log(FTDM_LOG_WARNING,"Exitting %s\n", a); \
+											ftdm_log(FTDM_LOG_WARNING,"Exiting %s\n", a); \
 											break; \
 										case 5: \
-											ftdm_log(FTDM_LOG_NOTICE,"Exitting %s\n", a); \
+											ftdm_log(FTDM_LOG_NOTICE,"Exiting %s\n", a); \
 											break; \
 										case 6: \
-											ftdm_log(FTDM_LOG_INFO,"Exitting %s\n", a); \
+											ftdm_log(FTDM_LOG_INFO,"Exiting %s\n", a); \
 											break; \
 										case 7: \
-											ftdm_log(FTDM_LOG_DEBUG,"Exitting %s\n", a); \
+											ftdm_log(FTDM_LOG_DEBUG,"Exiting %s\n", a); \
 											break; \
 										default: \
-											ftdm_log(FTDM_LOG_INFO,"Exitting %s\n", a); \
+											ftdm_log(FTDM_LOG_INFO,"Exiting %s\n", a); \
 											break; \
 										} /* switch (g_ftdm_sngss7_data.function_trace_level) */ \
 								} /*  if(g_ftdm_sngss7_data.function_trace) */
