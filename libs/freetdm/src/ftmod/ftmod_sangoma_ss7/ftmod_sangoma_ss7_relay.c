@@ -150,7 +150,7 @@ ftdm_status_t disable_all_ckts_for_relay(void)
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 	/**********************************************************************/
 		/* make sure this is voice channel */
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
 	
 			/* get the ftdmchan and ss7_chan_data from the circuit */
 			if (extract_chan_data(g_ftdm_sngss7_data.cfg.isupCkt[x].id, &sngss7_info, &ftdmchan)) {
@@ -165,7 +165,7 @@ ftdm_status_t disable_all_ckts_for_relay(void)
 			/* throw the channel infId status flags to PAUSED ... they will be executed next process cycle */
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
 			sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
-		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
+		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) */
 
 		/* move along */
 		x++;
@@ -189,7 +189,7 @@ ftdm_status_t enable_all_ckts_for_relay(void)
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 	/**********************************************************************/
 		/* make sure this is voice channel */
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
 	
 			/* get the ftdmchan and ss7_chan_data from the circuit */
 			if (extract_chan_data(g_ftdm_sngss7_data.cfg.isupCkt[x].id, &sngss7_info, &ftdmchan)) {
@@ -213,7 +213,7 @@ ftdm_status_t enable_all_ckts_for_relay(void)
 				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
 				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			}
-		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
+		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) */
 
 		/* move along */
 		x++;
@@ -233,7 +233,7 @@ ftdm_status_t reconfig_all_ckts_for_relay(void)
 	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 	/**************************************************************************/
-		if ( g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+		if ( g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
 			/* grab the private data structure */
 			sngss7_info = g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
 			
@@ -262,7 +262,7 @@ ftdm_status_t block_all_ckts_for_relay(uint32_t procId)
 	x = (procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 	/**************************************************************************/
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
 
 			/* send a block request via stack manager */
 			ret = ftmod_ss7_block_isup_ckt(g_ftdm_sngss7_data.cfg.isupCkt[x].id);
@@ -276,7 +276,7 @@ ftdm_status_t block_all_ckts_for_relay(uint32_t procId)
 							g_ftdm_sngss7_data.cfg.isupCkt[x].id);
 			}
 	
-		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
+		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) */
 
 		/* move along */
 		x++;
@@ -322,7 +322,7 @@ static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId)
 	x = (procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 	/**************************************************************************/
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
 
 			/* send a block request via stack manager */
 			ret = ftmod_ss7_unblock_isup_ckt(g_ftdm_sngss7_data.cfg.isupCkt[x].id);
@@ -336,7 +336,7 @@ static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId)
 							g_ftdm_sngss7_data.cfg.isupCkt[x].id);
 			}
 	
-		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == VOICE) */
+		} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) */
 
 		/* move along */
 		x++;

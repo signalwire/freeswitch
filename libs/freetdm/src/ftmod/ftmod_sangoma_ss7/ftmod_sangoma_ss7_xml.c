@@ -2901,11 +2901,11 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		g_ftdm_sngss7_data.cfg.isupCkt[x].chan			= count;
 
 		if (timeslot.siglink) {
-			g_ftdm_sngss7_data.cfg.isupCkt[x].type		= SIG;
+			g_ftdm_sngss7_data.cfg.isupCkt[x].type		= SNG_CKT_SIG;
 		} else if (timeslot.gap) {
-			g_ftdm_sngss7_data.cfg.isupCkt[x].type		= HOLE;
+			g_ftdm_sngss7_data.cfg.isupCkt[x].type		= SNG_CKT_HOLE;
 		} else {
-			g_ftdm_sngss7_data.cfg.isupCkt[x].type		= VOICE;
+			g_ftdm_sngss7_data.cfg.isupCkt[x].type		= SNG_CKT_VOICE;
 			
 			/* throw the flag to indicate that we need to start call control */
 			sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC_PRESENT);

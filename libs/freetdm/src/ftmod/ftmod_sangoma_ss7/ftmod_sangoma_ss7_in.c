@@ -66,7 +66,7 @@ void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -110,7 +110,7 @@ void sngss7_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -154,7 +154,7 @@ void sngss7_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCn
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -199,7 +199,7 @@ void sngss7_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -243,7 +243,7 @@ void sngss7_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiRe
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -287,7 +287,7 @@ void sngss7_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiIn
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -331,7 +331,7 @@ void sngss7_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -376,7 +376,7 @@ void sngss7_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -421,7 +421,7 @@ void sngss7_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit)
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -480,7 +480,7 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 		 */
 		intfId = g_ftdm_sngss7_data.cfg.isupCkt[circuit].infId;
 
-		if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 			SS7_DEBUG("Rx %s on circuit that is not a voice CIC (%d) finding a new circuit\n", 
 						DECODE_LCC_EVENT(evntType),
 						g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic);
@@ -491,7 +491,7 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 			   (g_ftdm_sngss7_data.cfg.isupCkt[x].id < ((g_ftdm_sngss7_data.cfg.procId +1) * 1000))) {
 		/**********************************************************************/
 			/* confirm this is a voice channel and not a gap/sig (no ftdmchan there) */
-			if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) goto move_along;
+			if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != SNG_CKT_VOICE) goto move_along;
 
 			/* compare the intfIds */
 			if (g_ftdm_sngss7_data.cfg.isupCkt[x].infId == intfId) {
@@ -531,10 +531,9 @@ move_along:
 		break;
 	/**************************************************************************/
 	default:
-		if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 			ftdm_log(FTDM_LOG_DEBUG, "Rx %s on circuit that is not a voice CIC (%d) (circuit:%d)\n",
-						DECODE_LCC_EVENT(evntType),
-						g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic, circuit);
+						DECODE_LCC_EVENT(evntType), g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic, circuit);
 			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 			return;
 		}
@@ -586,7 +585,7 @@ void sngss7_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiS
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
@@ -633,7 +632,7 @@ void sngss7_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiR
 	ftdm_channel_t		*ftdmchan = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("Rx sig event on circuit that is not a voice CIC (%d)\n", circuit);
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
