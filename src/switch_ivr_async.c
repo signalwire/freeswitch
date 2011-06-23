@@ -1167,12 +1167,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			goto end;
 		}
 
-		while(switch_channel_state_change_pending(tchannel)) {
+		while(switch_channel_state_change_pending(tchannel) || !switch_channel_media_ready(tchannel)) {
 			switch_yield(10000);
 			if (!--sanity) break;
 		}
 
-		if (!switch_channel_media_ready(tchannel)) {
+		if (!switch_channel_media_up(tchannel)) {
 			goto end;
 		}
 
@@ -1287,7 +1287,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
 		switch_core_session_receive_message(tsession, &msg);
 
-		while (switch_channel_ready(tchannel) && switch_channel_ready(channel)) {
+		while (switch_channel_up(tchannel) && switch_channel_ready(channel)) {
 			uint32_t len = sizeof(buf);
 			switch_event_t *event = NULL;
 			char *fcommand = NULL;
