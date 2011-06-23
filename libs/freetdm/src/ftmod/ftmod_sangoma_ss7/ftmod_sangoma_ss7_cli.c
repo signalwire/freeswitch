@@ -106,7 +106,7 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 
 	if (data) {
 		mycmd = ftdm_strdup(data);
-		argc = ftdm_separate_string(mycmd,' ',argv,(sizeof(argv) / sizeof(argv[0])));
+		argc = ftdm_separate_string(mycmd, ' ', argv, ftdm_array_len(argv));
 	}
 
 	if (check_arg_count(argc, 1)) goto handle_cli_error_argc;
