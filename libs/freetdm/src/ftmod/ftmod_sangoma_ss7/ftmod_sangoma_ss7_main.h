@@ -99,9 +99,9 @@ typedef enum {
 } sng_bit_enums_t;
 
 typedef enum {
-	VOICE = 0,
-	SIG,
-	HOLE
+	SNG_CKT_VOICE = 0,
+	SNG_CKT_SIG,
+	SNG_CKT_HOLE
 } sng_ckt_type_t;
 
 typedef enum {
