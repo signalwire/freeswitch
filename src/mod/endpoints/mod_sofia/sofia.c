@@ -2624,6 +2624,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						}
+					} else if (!strcasecmp(var, "liberal-dtmf")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_LIBERAL_DTMF);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_LIBERAL_DTMF);
+						}
 					} else if (!strcasecmp(var, "forward-unsolicited-mwi-notify")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
@@ -3309,6 +3315,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
+						}
+					} else if (!strcasecmp(var, "liberal-dtmf")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_LIBERAL_DTMF);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_LIBERAL_DTMF);
 						}
 					} else if (!strcasecmp(var, "watchdog-enabled")) {
 						profile->watchdog_enabled = switch_true(val);
@@ -6604,7 +6616,8 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				goto end;
 			}
 
-			if (dtmf.digit && tech_pvt->dtmf_type == DTMF_INFO) {
+			if (dtmf.digit && (tech_pvt->dtmf_type == DTMF_INFO || 
+							   sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF))) {
 				/* queue it up */
 				switch_channel_queue_dtmf(channel, &dtmf);
 

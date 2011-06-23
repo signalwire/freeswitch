@@ -43,6 +43,11 @@
 	<!-- <param name="shutdown-on-fail" value="true"/> -->
     <param name="sip-trace" value="no"/>
 
+
+    <!-- Don't be picky about negotiated DTMF just always offer 2833 and accept both 2833 and INFO -->
+    <!--<param name="liberal-dtmf" value="true"/>-->
+
+
     <!-- 
         Sometimes, in extremely rare edge cases, the Sofia SIP stack may stop
         responding. These options allow you to enable and control a watchdog

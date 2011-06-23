@@ -308,7 +308,8 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	}
 
 
-	if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
+	if ((tech_pvt->dtmf_type == DTMF_2833 || sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF)) 
+		&& tech_pvt->te > 95) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
 
@@ -510,7 +511,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 		}
 
 
-		if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
+		if ((tech_pvt->dtmf_type == DTMF_2833 || sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF))
+			&& tech_pvt->te > 95) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 		}
 		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
@@ -2958,6 +2960,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	if ((var = switch_channel_get_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
 		sofia_set_flag_locked(tech_pvt, TFLAG_SECURE);
+	}
+
+	if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_liberal_dtmf")) && switch_true(var)) {
+		sofia_set_flag_locked(tech_pvt, TFLAG_LIBERAL_DTMF);
 	}
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {

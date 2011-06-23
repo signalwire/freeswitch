@@ -245,6 +245,7 @@ typedef enum {
 	PFLAG_RENEG_ON_HOLD,
 	PFLAG_RENEG_ON_REINVITE,
 	PFLAG_RTP_NOTIMER_DURING_BRIDGE,
+	PFLAG_LIBERAL_DTMF,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -308,6 +309,7 @@ typedef enum {
 	TFLAG_JB_PAUSED,
 	TFLAG_3PCC_INVITE,
 	TFLAG_NOREPLY,
+	TFLAG_LIBERAL_DTMF,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
