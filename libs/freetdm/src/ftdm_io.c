@@ -5771,6 +5771,9 @@ FT_DECLARE(uint32_t) ftdm_separate_string(char *buf, char delim, char **array, i
 
 	ptr = buf;
 
+	/* we swallow separators that are contiguous */
+	while (*ptr == delim) ptr++;
+
 	for (argc = 0; *ptr && (argc < arraylen - 1); argc++) {
 		array[argc] = ptr;
 		for (; *ptr; ptr++) {
@@ -5782,6 +5785,8 @@ FT_DECLARE(uint32_t) ftdm_separate_string(char *buf, char delim, char **array, i
 				}
 			} else if ((*ptr == delim) && !quot) {
 				*ptr++ = '\0';
+				/* we swallow separators that are contiguous */
+				while (*ptr == delim) ptr++;
 				break;
 			}
 		}
@@ -5791,21 +5796,12 @@ FT_DECLARE(uint32_t) ftdm_separate_string(char *buf, char delim, char **array, i
 		array[argc++] = ptr;
 	}
 
-	/* strip quotes and leading / trailing spaces */
+	/* strip quotes */
 	for (x = 0; x < argc; x++) {
-		char *p;
-
-		while(*(array[x]) == ' ') {
-			(array[x])++;
-		}
-		p = array[x];
+		char *p = array[x];
 		while((p = strchr(array[x], qc))) {
 			memmove(p, p+1, strlen(p));
 			p++;
-		}
-		p = array[x] + (strlen(array[x]) - 1);
-		while(*p == ' ') {
-			*p-- = '\0';
 		}
 	}
 
