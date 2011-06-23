@@ -1826,6 +1826,8 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 						app = "intercept";
 					}
 					switch_core_session_rwunlock(b_session);
+				} else {
+					switch_channel_set_state(channel, CS_RESET);
 				}
 
 				if ((extension = switch_caller_extension_new(peer_session, app, app_arg)) == 0) {
@@ -1840,7 +1842,6 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 				switch_channel_wait_for_state(peer_channel, channel, CS_RESET);
 				switch_channel_set_state(peer_channel, CS_EXECUTE);
 				switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, NULL);
-
 				return SWITCH_STATUS_FALSE;
 			}
 
