@@ -732,7 +732,6 @@ fi
 #
 %dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model
 %dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model/communicator
-%dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model/wsj1
 %ifos linux
 %config(noreplace) %attr(0644, freeswitch, daemon) /etc/monit.d/freeswitch.monitrc
 %endif
@@ -847,7 +846,6 @@ fi
 ######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/default.dic
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/communicator/*
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/wsj1/*
 ######################################################################################################################
 #
 #						Other Fíles
