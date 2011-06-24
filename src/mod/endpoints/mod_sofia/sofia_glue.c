@@ -1524,6 +1524,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 	char vport_buf[25] = "";
 	char *new_sdp;
 	int bad = 0;
+	int skip_video = 0, skip_audio = 0, skip_image = 0;
 
 	if (zstr(tech_pvt->local_sdp_str)) {
 		return;
@@ -1556,6 +1557,15 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 	q = new_sdp;
 	pe = p + strlen(p);
 	qe = q + len - 1;
+
+
+	if (switch_stristr("m=video 0", p)) {
+		skip_video = 1;
+	} else if (switch_stristr("m=audio 0", p)) {
+		skip_audio = 1;
+	} else if (switch_stristr("m=image 0", p)) {
+		skip_image = 1;
+	}
 
 	while (p && *p) {
 		if (p >= pe) {
@@ -1648,7 +1658,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 			}
 
-		} else if (!strncmp("m=audio ", p, 8) || (!strncmp("m=image ", p, 8))) {
+		} else if ((!skip_audio && !strncmp("m=audio ", p, 8)) || (!skip_image && !strncmp("m=image ", p, 8))) {
 			strncpy(q, p, 8);
 			p += 8;
 
@@ -1684,7 +1694,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 			has_audio++;
 
-		} else if (!strncmp("m=video ", p, 8)) {
+		} else if (!skip_video && !strncmp("m=video ", p, 8)) {
 			if (!has_video) {
 				sofia_glue_tech_choose_video_port(tech_pvt, 1);
 				tech_pvt->video_rm_encoding = "PROXY-VID";
