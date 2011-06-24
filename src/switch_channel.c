@@ -2262,15 +2262,6 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 		caller_profile->context = switch_core_session_strdup(channel->session, "default");
 	}
 
-	if (!channel->caller_profile) {
-		switch_event_t *event;
-
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CREATE) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(channel, event);
-			switch_event_fire(&event);
-		}
-	}
-
 	if (!caller_profile->times) {
 		caller_profile->times = (switch_channel_timetable_t *) switch_core_session_alloc(channel->session, sizeof(*caller_profile->times));
 		caller_profile->times->profile_created = switch_micro_time_now();
