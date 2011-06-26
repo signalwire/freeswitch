@@ -2530,17 +2530,17 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	}
 
-	/* Make sure that an agent was not found, since we could have break out before settign it previously */
+	/* Make sure an agent was found, as we might break above without setting it */
 	if (!agent_found && (p = switch_channel_get_variable(member_channel, "cc_agent_found"))) {
 		agent_found = switch_true(p);
 	}
 
-	/* Stop Member Thread */
+	/* Stop member thread */
 	if (h) {
 		h->running = 0;
 	}
 
-	/* Check if we were removed be cause FS Core(BREAK) asked us too */
+	/* Check if we were removed because FS Core(BREAK) asked us to */
 	if (h->member_cancel_reason == CC_MEMBER_CANCEL_REASON_NONE && !agent_found) {
 		h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_BREAK_OUT;
 	}
