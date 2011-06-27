@@ -51,6 +51,9 @@ extern su_log_t sresolv_log[];
 extern su_log_t stun_log[];
 extern su_log_t su_log_default[];
 
+static void config_sofia_profile_urls(sofia_profile_t * profile);
+static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag);
+static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag, const char *dname, const char *parse, const char *alias);
 
 void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 								 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
@@ -1621,9 +1624,68 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 switch_thread_t *launch_sofia_worker_thread(sofia_profile_t *profile)
 {
-	switch_thread_t *thread;
+	switch_thread_t *thread = NULL;
 	switch_threadattr_t *thd_attr = NULL;
 	int x = 0;
+	switch_xml_t cfg = NULL, xml = NULL, xprofile = NULL, xprofiles = NULL, gateways_tag = NULL, domains_tag = NULL, domain_tag = NULL;
+	switch_event_t *params = NULL;
+	char *cf = "sofia.conf";
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Launching worker thread for %s\n", profile->name);
+
+	/* Parse gateways */
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile->name);
+	
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
+		goto end;
+	}
+
+	if ((xprofiles = switch_xml_child(cfg, "profiles"))) {
+		if ((xprofile = switch_xml_find_child(xprofiles, "profile", "name", profile->name))) {
+
+			if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
+				parse_gateways(profile, gateways_tag);
+			}
+
+			if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
+				switch_event_t *xml_params;
+				switch_event_create(&xml_params, SWITCH_EVENT_REQUEST_PARAMS);
+				switch_assert(xml_params);
+				switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "purpose", "gateways");
+				switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "profile", profile->name);
+
+				for (domain_tag = switch_xml_child(domains_tag, "domain"); domain_tag; domain_tag = domain_tag->next) {
+					switch_xml_t droot, x_domain_tag;
+					const char *dname = switch_xml_attr_soft(domain_tag, "name");
+					const char *parse = switch_xml_attr_soft(domain_tag, "parse");
+					const char *alias = switch_xml_attr_soft(domain_tag, "alias");
+					
+					if (!zstr(dname)) {
+						if (!strcasecmp(dname, "all")) {
+							switch_xml_t xml_root, x_domains;
+							if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, xml_params, SWITCH_FALSE) ==
+								SWITCH_STATUS_SUCCESS) {
+								for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
+									dname = switch_xml_attr_soft(x_domain_tag, "name");
+									parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
+								}
+								switch_xml_free(xml_root);
+							}
+						} else if (switch_xml_locate_domain(dname, xml_params, &droot, &x_domain_tag) == SWITCH_STATUS_SUCCESS) {
+							parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
+							switch_xml_free(droot);
+						}
+					}
+				}
+				
+				switch_event_destroy(&xml_params);
+			}
+
+		}
+	}
 
 	switch_threadattr_create(&thd_attr, profile->pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -1635,6 +1697,13 @@ switch_thread_t *launch_sofia_worker_thread(sofia_profile_t *profile)
 		if (++x >= 100) {
 			break;
 		}
+	}
+
+ end:
+	switch_event_destroy(&params);
+
+	if (xml) {
+		switch_xml_free(xml);
 	}
 
 	return thread;
@@ -1767,6 +1836,26 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_ALLOW_EVENTS("refer"), SIPTAG_SUPPORTED_STR(supported), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
+
+	if (sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_PORT) || sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT)) {
+		sip_via_t *vias = nta_agent_via(profile->nua->nua_nta);
+		sip_via_t *via = NULL;
+
+		for (via = vias; via; via = via->v_next) {
+			if (sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_PORT) && !strcmp(via->v_protocol, "SIP/2.0/UDP")) {
+				profile->sip_port = atoi(via->v_port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found auto sip port %d for %s\n", profile->sip_port, profile->name);
+			}
+
+			if (sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT) && !strcmp(via->v_protocol, "SIP/2.0/TLS")) {
+				profile->tls_sip_port = atoi(via->v_port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found auto sip port %d for %s (TLS)\n", profile->tls_sip_port, profile->name);
+			}
+
+		}
+		
+		config_sofia_profile_urls(profile);
+	}
 
 	for (node = profile->aliases; node; node = node->next) {
 		node->nua = nua_create(profile->s_root,	/* Event loop */
@@ -2478,6 +2567,95 @@ static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag
 	}
 }
 
+static void config_sofia_profile_urls(sofia_profile_t * profile)
+{
+
+	if (profile->extsipip) {
+		char *ipv6 = strchr(profile->extsipip, ':');
+		profile->public_url = switch_core_sprintf(profile->pool,
+												  "sip:%s@%s%s%s:%d",
+												  profile->contact_user,
+												  ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->sip_port);
+	}
+
+	if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+		char *ipv6 = strchr(profile->extsipip, ':');
+		profile->url = switch_core_sprintf(profile->pool,
+										   "sip:%s@%s%s%s:%d",
+										   profile->contact_user, ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->sip_port);
+		profile->bindurl = switch_core_sprintf(profile->pool, "%s;maddr=%s", profile->url, profile->sipip);
+	} else {
+		char *ipv6 = strchr(profile->sipip, ':');
+		profile->url = switch_core_sprintf(profile->pool,
+										   "sip:%s@%s%s%s:%d",
+										   profile->contact_user, ipv6 ? "[" : "", profile->sipip, ipv6 ? "]" : "", profile->sip_port);
+		profile->bindurl = profile->url;
+	}
+	
+	profile->tcp_contact = switch_core_sprintf(profile->pool, "<%s;transport=tcp>", profile->url);
+	
+	if (profile->public_url) {
+		profile->tcp_public_contact = switch_core_sprintf(profile->pool, "<%s;transport=tcp>", profile->public_url);
+	}
+	
+	if (profile->bind_params) {
+		char *bindurl = profile->bindurl;
+		profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
+	}
+	
+	/*
+	 * handle TLS params #2
+	 */
+	if (sofia_test_pflag(profile, PFLAG_TLS)) {
+		if (!profile->tls_sip_port && !sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT)) {
+			profile->tls_sip_port = (switch_port_t) atoi(SOFIA_DEFAULT_TLS_PORT);
+		}
+		
+		if (profile->extsipip) {
+			char *ipv6 = strchr(profile->extsipip, ':');
+			profile->tls_public_url = switch_core_sprintf(profile->pool,
+														  "sip:%s@%s%s%s:%d",
+														  profile->contact_user,
+														  ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->tls_sip_port);
+		}
+		
+		if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+			char *ipv6 = strchr(profile->extsipip, ':');
+			profile->tls_url =
+				switch_core_sprintf(profile->pool,
+									"sip:%s@%s%s%s:%d",
+									profile->contact_user, ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->tls_sip_port);
+			profile->tls_bindurl =
+				switch_core_sprintf(profile->pool,
+									"sips:%s@%s%s%s:%d;maddr=%s",
+									profile->contact_user,
+									ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->tls_sip_port, profile->sipip);
+		} else {
+			char *ipv6 = strchr(profile->sipip, ':');
+			profile->tls_url =
+				switch_core_sprintf(profile->pool,
+									"sip:%s@%s%s%s:%d",
+									profile->contact_user, ipv6 ? "[" : "", profile->sipip, ipv6 ? "]" : "", profile->tls_sip_port);
+			profile->tls_bindurl =
+				switch_core_sprintf(profile->pool,
+									"sips:%s@%s%s%s:%d",
+									profile->contact_user, ipv6 ? "[" : "", profile->sipip, ipv6 ? "]" : "", profile->tls_sip_port);
+		}
+		
+		if (profile->tls_bind_params) {
+			char *tls_bindurl = profile->tls_bindurl;
+			profile->tls_bindurl = switch_core_sprintf(profile->pool, "%s;%s", tls_bindurl, profile->tls_bind_params);
+		}
+
+		profile->tls_contact = switch_core_sprintf(profile->pool, "<%s;transport=tls>", profile->tls_url);
+		if (profile->tls_public_url) {
+			profile->tls_public_contact = switch_core_sprintf(profile->pool, "<%s;transport=tls>", profile->tls_public_url);
+		}
+		
+		
+	}
+}
+
 switch_status_t reconfig_sofia(sofia_profile_t *profile)
 {
 	switch_xml_t cfg, xml = NULL, xprofile, profiles, gateways_tag, domain_tag, domains_tag, aliases_tag, alias_tag, settings, param;
@@ -3123,7 +3301,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 switch_status_t config_sofia(int reload, char *profile_name)
 {
 	char *cf = "sofia.conf";
-	switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles, gateways_tag, domain_tag, domains_tag;
+	switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	sofia_profile_t *profile = NULL;
 	char url[512] = "";
@@ -3150,7 +3328,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		su_log_redirect(sresolv_log, logger, NULL);
 		su_log_redirect(stun_log, logger, NULL);
 	}
-
+	
 	if (!zstr(profile_name) && (profile = sofia_glue_find_profile(profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile [%s] Already exists.\n", switch_str_nil(profile_name));
 		status = SWITCH_STATUS_FALSE;
@@ -3543,7 +3721,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "cng-pt") && !sofia_test_pflag(profile, PFLAG_SUPPRESS_CNG)) {
 						profile->cng_pt = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "sip-port")) {
-						profile->sip_port = (switch_port_t) atoi(val);
+						if (!strcasecmp(val, "auto")) {
+							sofia_set_pflag(profile, PFLAG_AUTO_ASSIGN_PORT);
+						} else {
+							profile->sip_port = (switch_port_t) atoi(val);
+						}
 					} else if (!strcasecmp(var, "vad")) {
 						if (!strcasecmp(val, "in")) {
 							sofia_set_flag(profile, TFLAG_VAD_IN);
@@ -3781,7 +3963,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_NAT_OPTIONS_PING);
 						}
- } else if (!strcasecmp(var, "all-reg-options-ping")) { 
+					} else if (!strcasecmp(var, "all-reg-options-ping")) { 
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING);
 						} else {
@@ -3964,7 +4146,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "tls-bind-params")) {
 						profile->tls_bind_params = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tls-sip-port")) {
-						profile->tls_sip_port = (switch_port_t) atoi(val);
+						if (!strcasecmp(val, "auto")) {
+							sofia_set_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT);
+						} else {
+							profile->tls_sip_port = (switch_port_t) atoi(val);
+						}
 					} else if (!strcasecmp(var, "tls-cert-dir")) {
 						profile->tls_cert_dir = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tls-version")) {
@@ -4053,7 +4239,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					profile->rtpip[profile->rtpip_index++] = switch_core_strdup(profile->pool, "127.0.0.1");
 				}
 
-				if (!profile->sip_port) {
+				if (!profile->sip_port && !sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_PORT)) {
 					profile->sip_port = (switch_port_t) atoi(SOFIA_DEFAULT_PORT);
 				}
 
@@ -4069,132 +4255,15 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
 				}
 
-				if (profile->extsipip) {
-					char *ipv6 = strchr(profile->extsipip, ':');
-					profile->public_url = switch_core_sprintf(profile->pool,
-															  "sip:%s@%s%s%s:%d",
-															  profile->contact_user,
-															  ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->sip_port);
+				config_sofia_profile_urls(profile);
+
+				if (sofia_test_pflag(profile, PFLAG_TLS) && !profile->tls_cert_dir) {
+					profile->tls_cert_dir = switch_core_sprintf(profile->pool, "%s/ssl", SWITCH_GLOBAL_dirs.conf_dir);
 				}
 
-				if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
-					char *ipv6 = strchr(profile->extsipip, ':');
-					profile->url = switch_core_sprintf(profile->pool,
-													   "sip:%s@%s%s%s:%d",
-													   profile->contact_user, ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->sip_port);
-					profile->bindurl = switch_core_sprintf(profile->pool, "%s;maddr=%s", profile->url, profile->sipip);
-				} else {
-					char *ipv6 = strchr(profile->sipip, ':');
-					profile->url = switch_core_sprintf(profile->pool,
-													   "sip:%s@%s%s%s:%d",
-													   profile->contact_user, ipv6 ? "[" : "", profile->sipip, ipv6 ? "]" : "", profile->sip_port);
-					profile->bindurl = profile->url;
-				}
-
-				profile->tcp_contact = switch_core_sprintf(profile->pool, "<%s;transport=tcp>", profile->url);
-
-				if (profile->public_url) {
-					profile->tcp_public_contact = switch_core_sprintf(profile->pool, "<%s;transport=tcp>", profile->public_url);
-				}
-
-				if (profile->bind_params) {
-					char *bindurl = profile->bindurl;
-					profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
-				}
-
-				/*
-				 * handle TLS params #2
-				 */
-				if (sofia_test_pflag(profile, PFLAG_TLS)) {
-					if (!profile->tls_sip_port) {
-						profile->tls_sip_port = (switch_port_t) atoi(SOFIA_DEFAULT_TLS_PORT);
-					}
-
-					if (profile->extsipip) {
-						char *ipv6 = strchr(profile->extsipip, ':');
-						profile->tls_public_url = switch_core_sprintf(profile->pool,
-																	  "sip:%s@%s%s%s:%d",
-																	  profile->contact_user,
-																	  ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->tls_sip_port);
-					}
-
-					if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
-						char *ipv6 = strchr(profile->extsipip, ':');
-						profile->tls_url =
-							switch_core_sprintf(profile->pool,
-												"sip:%s@%s%s%s:%d",
-												profile->contact_user, ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->tls_sip_port);
-						profile->tls_bindurl =
-							switch_core_sprintf(profile->pool,
-												"sips:%s@%s%s%s:%d;maddr=%s",
-												profile->contact_user,
-												ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->tls_sip_port, profile->sipip);
-					} else {
-						char *ipv6 = strchr(profile->sipip, ':');
-						profile->tls_url =
-							switch_core_sprintf(profile->pool,
-												"sip:%s@%s%s%s:%d",
-												profile->contact_user, ipv6 ? "[" : "", profile->sipip, ipv6 ? "]" : "", profile->tls_sip_port);
-						profile->tls_bindurl =
-							switch_core_sprintf(profile->pool,
-												"sips:%s@%s%s%s:%d",
-												profile->contact_user, ipv6 ? "[" : "", profile->sipip, ipv6 ? "]" : "", profile->tls_sip_port);
-					}
-
-					if (profile->tls_bind_params) {
-						char *tls_bindurl = profile->tls_bindurl;
-						profile->tls_bindurl = switch_core_sprintf(profile->pool, "%s;%s", tls_bindurl, profile->tls_bind_params);
-					}
-
-					if (!profile->tls_cert_dir) {
-						profile->tls_cert_dir = switch_core_sprintf(profile->pool, "%s/ssl", SWITCH_GLOBAL_dirs.conf_dir);
-					}
-					profile->tls_contact = switch_core_sprintf(profile->pool, "<%s;transport=tls>", profile->tls_url);
-					if (profile->tls_public_url) {
-						profile->tls_public_contact = switch_core_sprintf(profile->pool, "<%s;transport=tls>", profile->tls_public_url);
-					}
-				}
 			}
 			if (profile) {
 				switch_xml_t aliases_tag, alias_tag;
-
-				if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
-					parse_gateways(profile, gateways_tag);
-				}
-
-				if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
-					switch_event_t *xml_params;
-					switch_event_create(&xml_params, SWITCH_EVENT_REQUEST_PARAMS);
-					switch_assert(xml_params);
-					switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "purpose", "gateways");
-					switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "profile", profile->name);
-
-					for (domain_tag = switch_xml_child(domains_tag, "domain"); domain_tag; domain_tag = domain_tag->next) {
-						switch_xml_t droot, x_domain_tag;
-						const char *dname = switch_xml_attr_soft(domain_tag, "name");
-						const char *parse = switch_xml_attr_soft(domain_tag, "parse");
-						const char *alias = switch_xml_attr_soft(domain_tag, "alias");
-
-						if (!zstr(dname)) {
-							if (!strcasecmp(dname, "all")) {
-								switch_xml_t xml_root, x_domains;
-								if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, xml_params, SWITCH_FALSE) ==
-									SWITCH_STATUS_SUCCESS) {
-									for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
-										dname = switch_xml_attr_soft(x_domain_tag, "name");
-										parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
-									}
-									switch_xml_free(xml_root);
-								}
-							} else if (switch_xml_locate_domain(dname, xml_params, &droot, &x_domain_tag) == SWITCH_STATUS_SUCCESS) {
-								parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
-								switch_xml_free(droot);
-							}
-						}
-					}
-
-					switch_event_destroy(&xml_params);
-				}
 
 				if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
 					for (alias_tag = switch_xml_child(aliases_tag, "alias"); alias_tag; alias_tag = alias_tag->next) {
