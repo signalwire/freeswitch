@@ -1693,8 +1693,6 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 
 	switch_assert(channel != NULL);
 
-	switch_ivr_parse_all_messages(channel->session);
-
 	if (check_media) {
 		ret = ((switch_channel_test_flag(channel, CF_ANSWERED) ||
 				switch_channel_test_flag(channel, CF_EARLY_MEDIA)) && !switch_channel_test_flag(channel, CF_PROXY_MODE) &&
@@ -1714,6 +1712,10 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 		!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_NOT_READY) && 
 		!switch_channel_state_change_pending(channel)) {
 		ret++;
+	}
+
+	if (ret) {
+		switch_ivr_parse_all_events(channel->session);
 	}
 
 	return ret;
