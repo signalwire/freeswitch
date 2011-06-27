@@ -1754,6 +1754,7 @@ SWITCH_STANDARD_API(status_function)
 						   duration.sec, duration.sec == 1 ? "" : "s", duration.ms, duration.ms == 1 ? "" : "s", duration.mms,
 						   duration.mms == 1 ? "" : "s");
 
+	stream->write_function(stream, "FreeSWITCH is %s\n", switch_core_ready() ? "ready" : "not ready");
 	stream->write_function(stream, "%" SWITCH_SIZE_T_FMT " session(s) since startup\n", switch_core_session_id() - 1);
 	switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
 	switch_core_session_ctl(SCSC_SPS, &sps);
@@ -1833,6 +1834,12 @@ SWITCH_STANDARD_API(ctl_function)
 		} else if (!strcasecmp(argv[0], "save_history")) {
 			switch_core_session_ctl(SCSC_SAVE_HISTORY, NULL);
 			stream->write_function(stream, "+OK\n");
+		} else if (!strcasecmp(argv[0], "pause_check")) {
+			switch_core_session_ctl(SCSC_PAUSE_CHECK, &arg);
+			stream->write_function(stream, arg ? "true" : "false");
+		} else if (!strcasecmp(argv[0], "ready_check")) {
+			switch_core_session_ctl(SCSC_READY_CHECK, &arg);
+			stream->write_function(stream, arg ? "true" : "false");
 		} else if (!strcasecmp(argv[0], "shutdown_check")) {
 			switch_core_session_ctl(SCSC_SHUTDOWN_CHECK, &arg);
 			stream->write_function(stream, arg ? "true" : "false");
@@ -5319,6 +5326,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl crash");
 	switch_console_set_complete("add fsctl verbose_events");
 	switch_console_set_complete("add fsctl save_history");
+	switch_console_set_complete("add fsctl pause_check");
+	switch_console_set_complete("add fsctl ready_check");
 	switch_console_set_complete("add fsctl shutdown_check");
 	switch_console_set_complete("add fsctl shutdown");
 	switch_console_set_complete("add fsctl shutdown asap");
