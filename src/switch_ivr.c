@@ -718,7 +718,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_
 	channel = switch_core_session_get_channel(session);
 
 	if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && switch_channel_test_flag(channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA)) {
-		if (switch_channel_media_ready(channel)) {
+		if (switch_channel_media_up(channel)) {
 			switch_channel_clear_flag(channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA);
 		} else {
 			return SWITCH_STATUS_SUCCESS;
