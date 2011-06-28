@@ -1334,11 +1334,17 @@ static int dump_device_callback(void *pArg, int argc, char **argv, char **column
 	stream->write_function(stream, "Port          \t%s\n", port);
 	stream->write_function(stream, "Codecs        \t%s\n", codec_string);
 	stream->write_function(stream, "HeadsetId     \t%s\n", headset);
-	stream->write_function(stream, "Headset       \t%s\n", skinny_accessory_state2str(atoi(headset)));
+	if (headset) {
+		stream->write_function(stream, "Headset       \t%s\n", skinny_accessory_state2str(atoi(headset)));
+	}
 	stream->write_function(stream, "HandsetId     \t%s\n", handset);
-	stream->write_function(stream, "Handset       \t%s\n", skinny_accessory_state2str(atoi(handset)));
+	if (handset) {
+		stream->write_function(stream, "Handset       \t%s\n", skinny_accessory_state2str(atoi(handset)));
+	}
 	stream->write_function(stream, "SpeakerId     \t%s\n", speaker);
-	stream->write_function(stream, "Speaker       \t%s\n", skinny_accessory_state2str(atoi(speaker)));
+	if (speaker) {
+		stream->write_function(stream, "Speaker       \t%s\n", skinny_accessory_state2str(atoi(speaker)));
+	}
 	stream->write_function(stream, "%s\n", line);
 
 	return 0;
