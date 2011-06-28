@@ -3800,7 +3800,6 @@ FT_DECLARE(void) ftdm_generate_sln_silence(int16_t *data, uint32_t samples, uint
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
 {
-	ftdm_status_t status = FTDM_FAIL;
 	fio_codec_t codec_func = NULL;
 	ftdm_size_t max = *datalen;
 
@@ -3822,11 +3821,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 		}
 
 		if (codec_func) {
-			status = codec_func(data, max, datalen);
+			codec_func(data, max, datalen);
 		} else {
 			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "no codec function to perform transcoding from %d to %d\n", ftdmchan->native_codec, ftdmchan->effective_codec);
-			status = FTDM_FAIL;
 		}
 	}
 
@@ -3861,7 +3859,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 				} else {
 					snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
 					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "invalid effective codec %d\n", ftdmchan->effective_codec);
-					status = FTDM_FAIL;
 					goto done;
 				}
 			}
