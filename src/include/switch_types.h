@@ -1813,6 +1813,7 @@ typedef switch_status_t (*switch_new_say_callback_t) (switch_say_file_handle_t *
 
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
+typedef switch_xml_t(*switch_xml_open_root_function_t) (uint8_t reload, const char **err, void *user_data);
 typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
 													 const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
 													 void *user_data);
