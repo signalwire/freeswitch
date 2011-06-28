@@ -517,6 +517,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 							   TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
 				}
 			} else {
+				char *resp_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
+
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
 				if (!tech_pvt->got_bye) {
 					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_refuse");
@@ -532,7 +534,12 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 					nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause),
 								TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
-								TAG_IF(cid, SIPTAG_HEADER_STR(cid)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
+								TAG_IF(cid, SIPTAG_HEADER_STR(cid)), 
+								TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), 
+								TAG_IF(!zstr(resp_headers), SIPTAG_HEADER_STR(resp_headers)), 
+								TAG_END());
+
+					switch_safe_free(resp_headers);
 				}
 			}
 		}
