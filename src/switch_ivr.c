@@ -130,7 +130,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_time_t start = switch_micro_time_now(), now, done = switch_micro_time_now() + (ms * 1000);
 	switch_frame_t *read_frame, cng_frame = { 0 };
-	int32_t left, elapsed;
+	int32_t left;
+	uint32_t elapsed;
 	char data[2] = "";
 
 	switch_frame_t write_frame = { 0 };
