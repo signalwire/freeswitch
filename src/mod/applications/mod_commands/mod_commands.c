@@ -125,7 +125,9 @@ SWITCH_STANDARD_API(say_string_function)
 	char *lbuf = NULL, *string = NULL;
 	int err = 1, par = 0;
 	char *p, *ext = "wav";
-	
+	char *tosay = NULL;
+	int strip = 0;
+
 	if (cmd) {
 		lbuf = strdup(cmd);
 	}
@@ -142,17 +144,25 @@ SWITCH_STANDARD_API(say_string_function)
 			*p++ = '\0';
 			ext = p;
 		}
+
+		tosay = (argc == 5) ? argv[4] : argv[5];
+
+		if (*tosay == '~') {
+			tosay++;
+			strip++;
+		}
+
 		switch_ivr_say_string(session,
 							  argv[1],
 							  ext,
-							  (argc == 5) ? argv[4] : argv[5], 
+							  tosay,
 							  argv[0], 
 							  argv[2], 
 							  argv[3], 
 							  (argc == 6) ? argv[4] : NULL , 
 							  &string);
 		if (string) {
-			stream->write_function(stream, "%s", string);
+			stream->write_function(stream, "%s", strip ? string + 14 : string);
 			free(string);
 			err = 0;
 		}
@@ -161,7 +171,7 @@ SWITCH_STANDARD_API(say_string_function)
 	if (err) {
 		stream->write_function(stream, "-ERR Usage: %s\n", SAY_STRING_SYNTAX);
 	}
-
+	
 	free(lbuf);
 
 	return SWITCH_STATUS_SUCCESS;
