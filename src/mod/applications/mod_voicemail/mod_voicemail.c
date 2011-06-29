@@ -1585,7 +1585,8 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 				TRY_CODE(switch_ivr_read
 						 (session, 0, sizeof(vm_cc), macro_buf, NULL, vm_cc, sizeof(vm_cc), profile->digit_timeout, profile->terminator_key, 0));
 
-				cmd = switch_core_session_sprintf(session, "%s@%s %s %s '%s'", vm_cc, cbt->domain, new_file_path, cbt->cid_number, cbt->cid_name);
+				cmd = switch_core_session_sprintf(session, "%s@%s@%s %s %s '%s'", vm_cc, cbt->domain, profile->name, 
+												  new_file_path, cbt->cid_number, cbt->cid_name);
 
 				if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
