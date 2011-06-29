@@ -141,7 +141,7 @@ static switch_mutex_t *REFLOCK = NULL;
 static switch_mutex_t *FILE_LOCK = NULL;
 static switch_mutex_t *XML_GEN_LOCK = NULL;
 
-SWITCH_DECLARE(switch_xml_t) __switch_xml_open_root(uint8_t reload, const char **err, void *user_data);
+SWITCH_DECLARE_NONSTD(switch_xml_t) __switch_xml_open_root(uint8_t reload, const char **err, void *user_data);
 
 static switch_xml_open_root_function_t XML_OPEN_ROOT_FUNCTION = (switch_xml_open_root_function_t)__switch_xml_open_root;
 static void *XML_OPEN_ROOT_FUNCTION_USER_DATA = NULL;
@@ -2106,7 +2106,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	return root;
 }
 
-SWITCH_DECLARE(switch_xml_t) __switch_xml_open_root(uint8_t reload, const char **err, void *user_data)
+SWITCH_DECLARE_NONSTD(switch_xml_t) __switch_xml_open_root(uint8_t reload, const char **err, void *user_data)
 {
 	char path_buf[1024];
 	uint8_t errcnt = 0;
