@@ -890,14 +890,14 @@ static int on_info(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 		if (!ftdm_strlen_zero(pevent->ring.callednum)) {
 			int digits = strlen(pevent->ring.callednum);
 			int offset = strlen(caller_data->dnis.digits);
-			int len    = MIN(sizeof(caller_data->dnis.digits) - 1 - offset, digits);
+			int len    = MIN(sizeof(caller_data->dnis.digits) - 1 - offset, digits);	/* max. length without terminator */
 
 			if (len < digits) {
 				ftdm_log_chan(chan, FTDM_LOG_WARNING, "Length %d of digit string exceeds available space %d of DNIS, truncating!\n",
 					digits, len);
 			}
 
-			ftdm_copy_string(&caller_data->dnis.digits[offset], (char *)pevent->ring.callednum, len);
+			ftdm_copy_string(&caller_data->dnis.digits[offset], (char *)pevent->ring.callednum, len + 1);	/* max. length with terminator */
 			caller_data->dnis.digits[offset + len] = '\0';
 		}
 		if (pevent->ring.complete) {
