@@ -416,7 +416,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 	switch_assert(pool != NULL);
 
 #ifdef DEBUG_ALLOC2
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Free Pool\n");
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Free Pool %s\n", apr_pool_tag(*pool, NULL));
 #endif
 
 #ifdef INSTANTLY_DESTROY_POOLS
