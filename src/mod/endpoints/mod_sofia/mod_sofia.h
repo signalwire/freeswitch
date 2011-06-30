@@ -317,7 +317,7 @@ typedef enum {
 } TFLAGS;
 
 #define SOFIA_MAX_MSG_QUEUE 25
-#define SOFIA_MSG_QUEUE_SIZE 10
+#define SOFIA_MSG_QUEUE_SIZE 50
 
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
