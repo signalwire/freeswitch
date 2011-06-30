@@ -97,11 +97,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t
 														   switch_ivr_dmachine_callback_t nonmatch_callback,
 														   void *user_data)
 {
-	switch_byte_t my_pool = !!pool;
+	switch_byte_t my_pool = 0;
 	switch_ivr_dmachine_t *dmachine;
 
 	if (!pool) {
 		switch_core_new_memory_pool(&pool);
+		my_pool = 1;
 	}
 
 	dmachine = switch_core_alloc(pool, sizeof(*dmachine));
