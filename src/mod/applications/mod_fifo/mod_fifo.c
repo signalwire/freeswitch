@@ -537,12 +537,9 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 			cd->next = switch_epoch_time_now(NULL) + cd->freq;
 			cd->index++;
 		}
-	} else {
-		chime_read_frame_callback(session, frame, user_data);
-	}
-	
+	} 
 
-	return SWITCH_STATUS_SUCCESS;
+	return chime_read_frame_callback(session, frame, user_data);
 }
 
 static switch_status_t consumer_read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
