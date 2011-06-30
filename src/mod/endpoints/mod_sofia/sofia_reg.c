@@ -875,12 +875,18 @@ switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *p
 }
 
 
-void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_dispatch_event_t *de,
+void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_dispatch_event_t *de,
 							  sofia_regtype_t regtype, const char *realm, int stale)
 {
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	char *sql, *auth_str;
+	msg_t *msg = NULL;
+
+
+	if (de && de->data) {
+		msg = de->data->e_msg;
+	}
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
@@ -896,9 +902,11 @@ void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "");
 
 	if (regtype == REG_REGISTER) {
-		nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_IF((nua && de), NUTAG_WITH_THIS_MSG(de->data->e_msg)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
+		nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_IF(msg, NUTAG_WITH_THIS_MSG(msg)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
 	} else if (regtype == REG_INVITE) {
-		nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED, TAG_IF((nua && de), NUTAG_WITH_THIS_MSG(de->data->e_msg)), SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
+		nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED, 
+					TAG_IF(msg, NUTAG_WITH_THIS_MSG(msg)), 
+					SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
 	}
 
 	switch_safe_free(auth_str);
@@ -1319,7 +1327,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			realm = from_host;
 		}
 
-		sofia_reg_auth_challenge(nua, profile, nh, de, regtype, realm, stale);
+		sofia_reg_auth_challenge(profile, nh, de, regtype, realm, stale);
 
 		if (profile->debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send challenge for [%s@%s]\n", to_user, to_host);
