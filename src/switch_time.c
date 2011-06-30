@@ -34,13 +34,16 @@
 #include <switch.h>
 #include <stdio.h>
 #include "private/switch_core_pvt.h"
-#ifdef HAVE_TIMERFD_CREATE
-#include <sys/timerfd.h>
-#endif
 
 #ifdef TIMERFD_WRAP
 #include <timerfd_wrap.h>
+#ifndef HAVE_TIMERFD_CREATE
 #define HAVE_TIMERFD_CREATE
+#endif
+#else
+#ifdef HAVE_TIMERFD_CREATE
+#include <sys/timerfd.h>
+#endif
 #endif
 
 //#if defined(DARWIN)
