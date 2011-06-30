@@ -34,7 +34,7 @@
 
 #include <switch.h>
 #include "private/switch_core_pvt.h"
-//*#define DEBUG_SQL 1
+//#define DEBUG_SQL 1
 
 struct switch_cache_db_handle {
 	char name[CACHE_DB_LEN];
@@ -1052,7 +1052,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 		if (!lc) {
 			switch_thread_cond_wait(sql_manager.cond, sql_manager.cond_mutex);
 		} else if (wrote) {
-			if (lc > 2000) {
+			if (lc > 200) {
 				do_sleep = 0;
 			} else {
 				do_sleep = 1;
