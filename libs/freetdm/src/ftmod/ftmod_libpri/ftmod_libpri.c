@@ -34,6 +34,10 @@
 #include "private/ftdm_core.h"
 #include "ftmod_libpri.h"
 
+#ifndef MIN
+#define MIN(x,y)	(((x) < (y)) ? (x) : (y))
+#endif
+
 static void _ftdm_channel_set_state_force(ftdm_channel_t *chan, const ftdm_channel_state_t state)
 {
 	assert(chan);
@@ -882,10 +886,22 @@ static int on_info(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "-- Incoming INFORMATION indication, current called number: '%s', number complete: %s\n",
 			pevent->ring.callednum, pevent->ring.complete ? "yes" : "no");
 
+		/* append digits to dnis */
+		if (!ftdm_strlen_zero(pevent->ring.callednum)) {
+			int digits = strlen(pevent->ring.callednum);
+			int offset = strlen(caller_data->dnis.digits);
+			int len    = MIN(sizeof(caller_data->dnis.digits) - 1 - offset, digits);
+
+			if (len < digits) {
+				ftdm_log_chan(chan, FTDM_LOG_WARNING, "Length %d of digit string exceeds available space %d of DNIS, truncating!\n",
+					digits, len);
+			}
+
+			ftdm_copy_string(&caller_data->dnis.digits[offset], (char *)pevent->ring.callednum, len);
+			caller_data->dnis.digits[offset + len] = '\0';
+		}
 		if (pevent->ring.complete) {
 			ftdm_log_chan_msg(chan, FTDM_LOG_DEBUG, "Number complete indicated, moving channel to RING state\n");
-			/* copy final value */
-			ftdm_set_string(caller_data->dnis.digits, (char *)pevent->ring.callednum);
 			/* notify switch */
 			ftdm_set_state(chan, FTDM_CHANNEL_STATE_RING);
 		}
