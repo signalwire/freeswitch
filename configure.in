@@ -391,7 +391,7 @@ if test "$ac_cv_found_odbc" = "yes" ; then
 fi
 
 AC_ARG_ENABLE(enable-timerfd-wrapper,     
-	[AS_HELP_STRING([--enable-timerfd-wrapper], [timerfd is in the kernel but not in your libc])],,[enable_timer_fd_wrapper="yes"])
+	[AS_HELP_STRING([--enable-timerfd-wrapper], [timerfd is in the kernel but not in your libc])],,[enable_timer_fd_wrapper="no"])
 AM_CONDITIONAL([ENABLE_TIMERFD_WRAPPER],[test "x$enable_timer_fd_wrapper" != "xno"])
 
 
