@@ -38,6 +38,11 @@
 #include <sys/timerfd.h>
 #endif
 
+#ifdef TIMERFD_WRAP
+#include <timerfd_wrap.h>
+#define HAVE_TIMERFD_CREATE
+#endif
+
 //#if defined(DARWIN)
 #define DISABLE_1MS_COND
 //#endif
