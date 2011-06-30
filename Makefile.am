@@ -124,6 +124,10 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/libedit/src -DSWITCH_HAVE_LIBEDIT
 CORE_LIBS   += libs/libedit/src/.libs/libedit.a
 endif
 
+if ENABLE_TIMERFD_WRAPPER
+CORE_CFLAGS += -DTIMERFD_WRAP
+endif
+
 ##
 ## libfreeswitch
 ##
