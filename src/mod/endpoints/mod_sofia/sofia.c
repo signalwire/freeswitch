@@ -1113,14 +1113,19 @@ static void our_sofia_event_callback(nua_event_t event,
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 {
 	sofia_dispatch_event_t *de = *dep;
+	nua_handle_t *nh = de->nh;
+	nua_t *nua = de->nua;
+	
 	*dep = NULL;
 
 	our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
 							 de->nh, nua_handle_magic(de->nh), de->sip, de, (tagi_t *) de->data->e_tags);
-	nua_handle_unref(de->nh);
-	nua_stack_unref(de->nua);
-	nua_destroy_event(de->event);
-	free(de);
+
+	nua_destroy_event(de->event);	
+	su_free(nh->nh_home, de);
+	
+	nua_handle_unref(nh);
+	nua_stack_unref(nua);
 }
 
 
@@ -1217,7 +1222,8 @@ void sofia_event_callback(nua_event_t event,
 {
 	sofia_dispatch_event_t *de;
 
-	de = calloc(1, sizeof *de);
+	de = su_alloc(nh->nh_home, sizeof(*de));
+	memset(de, 0, sizeof(*de));
 	nua_save_event(nua, de->event);
 	de->nh = nua_handle_ref(nh);
 	de->data = nua_event_data(de->event);
