@@ -84,6 +84,7 @@ noinst_PROGRAMS =   adsi_tests \
                     line_model_tests \
                     logging_tests \
                     lpc10_tests \
+                    math_fixed_tests \
                     make_g168_css \
                     modem_connect_tones_tests \
                     modem_echo_tests \
@@ -236,6 +237,9 @@ logging_tests_LDADD = $(LIBDIR) -lspandsp
 lpc10_tests_SOURCES = lpc10_tests.c
 lpc10_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
+math_fixed_tests_SOURCES = math_fixed_tests.c
+math_fixed_tests_LDADD = $(LIBDIR) -lspandsp
+
 make_g168_css_SOURCES = make_g168_css.c
 make_g168_css_LDADD = $(LIBDIR) -lspandsp
 
@@ -300,7 +304,7 @@ t38_core_tests_SOURCES = t38_core_tests.c
 t38_core_tests_LDADD = $(LIBDIR) -lspandsp
 
 t38_decode_SOURCES = t38_decode.c fax_utils.c pcap_parse.c udptl.c
-t38_decode_LDADD = $(LIBDIR) -lspandsp -lpcap
+t38_decode_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp -lpcap
 
 t38_gateway_tests_SOURCES = t38_gateway_tests.c fax_utils.c media_monitor.cpp
 t38_gateway_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
