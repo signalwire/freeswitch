@@ -846,25 +846,23 @@ echo v29_tests completed OK
 #fi
 #echo v32bis_tests completed OK
 
-#./v42_tests >$STDOUT_DEST 2>$STDERR_DEST
-#RETVAL=$?
-#if [ $RETVAL != 0 ]
-#then
-#    echo v42_tests failed!
-#    exit $RETVAL
-#fi
-#echo v42_tests completed OK
-echo v42_tests not enabled
+./v42_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo v42_tests failed!
+    exit $RETVAL
+fi
+echo v42_tests completed OK
 
-#./v42bis_tests.sh >/dev/null
-#RETVAL=$?
-#if [ $RETVAL != 0 ]
-#then
-#    echo v42bis_tests failed!
-#    exit $RETVAL
-#fi
-#echo v42bis_tests completed OK
-echo v42bis_tests not enabled
+./v42bis_tests.sh >/dev/null
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo v42bis_tests failed!
+    exit $RETVAL
+fi
+echo v42bis_tests completed OK
 
 ./v8_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?

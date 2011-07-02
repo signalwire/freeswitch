@@ -595,7 +595,7 @@ int main(int argc, char *argv[])
         logging = t38_core_get_logging_state(t38_core);
         span_log_bump_samples(logging, SAMPLES_PER_CHUNK);
         logging = &t38_state_a->audio.modems.v17_rx.logging;
-        span_log_bump_samples(logging, t30_len_a);
+        span_log_bump_samples(logging, SAMPLES_PER_CHUNK);
 
         logging = t38_terminal_get_logging_state(t38_state_b);
         span_log_bump_samples(logging, SAMPLES_PER_CHUNK);

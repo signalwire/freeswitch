@@ -146,12 +146,12 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[], size_t le
     int input_length;
     double c1;
     double c2;
-    double int_part;
     int x;
 #if defined(SPANDSP_USE_FIXED_POINT)
     int frac_row;
     int frac_col;
 #else
+    double int_part;
     double frac_row;
     double frac_col;
 #endif

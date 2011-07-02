@@ -43,7 +43,7 @@ struct v29_tx_state_s
     void *get_bit_user_data;
 
     /*! \brief The callback function used to report modem status changes. */
-    modem_tx_status_func_t status_handler;
+    modem_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 
@@ -68,7 +68,7 @@ struct v29_tx_state_s
     int rrc_filter_step;
 
     /*! \brief The register for the data scrambler. */
-    unsigned int scramble_reg;
+    uint32_t scramble_reg;
     /*! \brief The register for the training scrambler. */
     uint8_t training_scramble_reg;
     /*! \brief TRUE if transmitting the training sequence, or shutting down transmission.

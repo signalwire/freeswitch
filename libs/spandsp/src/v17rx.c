@@ -1248,7 +1248,7 @@ SPAN_DECLARE(void) v17_rx_set_put_bit(v17_rx_state_t *s, put_bit_func_t put_bit,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_tx_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;

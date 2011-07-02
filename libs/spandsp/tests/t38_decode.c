@@ -1,7 +1,7 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * pcap-parse.c
+ * t38_decode.c
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -53,6 +53,7 @@
 #define OUTPUT_FILE_NAME        "t38pcap.tif"
 
 t38_terminal_state_t *t38_state;
+struct timeval now;
 
 static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 {
@@ -110,9 +111,12 @@ static int timing_update(void *user_data, struct timeval *ts)
     t38_core_state_t *t38_core;
     logging_state_t *logging;
     int samples;
+    int partial;
     static int64_t current = 0;
     int64_t when;
     int64_t diff;
+
+    memcpy(&now, ts, sizeof(now));
 
     when = ts->tv_sec*1000000LL + ts->tv_usec;
     if (current == 0)
@@ -120,19 +124,22 @@ static int timing_update(void *user_data, struct timeval *ts)
 
     diff = when - current;
     samples = diff/125LL;
-    if (samples > 0)
+    while (samples > 0)
     {
+        partial = (samples > 160)  ?  160  :  samples;
+        //fprintf(stderr, "Update time by %d samples\n", partial);
         logging = t38_terminal_get_logging_state(t38_state);
-        span_log_bump_samples(logging, samples);
+        span_log_bump_samples(logging, partial);
         t38_core = t38_terminal_get_t38_core_state(t38_state);
         logging = t38_core_get_logging_state(t38_core);
-        span_log_bump_samples(logging, samples);
+        span_log_bump_samples(logging, partial);
         t30 = t38_terminal_get_t30_state(t38_state);
         logging = t30_get_logging_state(t30);
-        span_log_bump_samples(logging, samples);
+        span_log_bump_samples(logging, partial);
     
-        t38_terminal_send_timeout(t38_state, samples);
+        t38_terminal_send_timeout(t38_state, partial);
         current = when;
+        samples -= partial;
     }
     return 0;
 }
@@ -188,6 +195,7 @@ int main(int argc, char *argv[])
 
     use_ecm = FALSE;
     t38_version = 1;
+    options = 0;
     input_file_name = INPUT_FILE_NAME;
     fill_removal = FALSE;
     use_tep = FALSE;
@@ -196,7 +204,7 @@ int main(int argc, char *argv[])
     src_port = 0;
     dest_addr = 0;
     dest_port = 0;
-    while ((opt = getopt(argc, argv, "D:d:eFi:m:S:s:tv:")) != -1)
+    while ((opt = getopt(argc, argv, "D:d:eFi:m:oS:s:tv:")) != -1)
     {
         switch (opt)
         {
@@ -217,6 +225,9 @@ int main(int argc, char *argv[])
             break;
         case 'm':
             supported_modems = atoi(optarg);
+            break;
+        case 'o':
+            options = atoi(optarg);
             break;
         case 'S':
             src_addr = atoi(optarg);
@@ -272,6 +283,9 @@ int main(int argc, char *argv[])
 
     if (pcap_scan_pkts(input_file_name, src_addr, src_port, dest_addr, dest_port, timing_update, process_packet, NULL))
         exit(2);
+    /* Push the time along, to flush out any remaining activity from the application. */
+    now.tv_sec += 60;
+    timing_update(NULL, &now);
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

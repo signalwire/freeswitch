@@ -123,6 +123,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    encoded_fd = -1;
+    inhandle = NULL;
+    oki_enc_state = NULL;
     if (encoded_file_name)
     {
         if ((encoded_fd = open(encoded_file_name, O_RDONLY)) < 0)

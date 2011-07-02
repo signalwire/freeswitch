@@ -62,6 +62,7 @@ display of modem status is maintained.
 #include <sndfile.h>
 #include <signal.h>
 #if defined(HAVE_FENV_H)
+#define __USE_GNU
 #include <fenv.h>
 #endif
 

@@ -23,11 +23,11 @@ LIBS += $(TESTLIBS)
 
 noinst_DATA = sound_c1_8k.wav sound_c3_8k.wav
 
-EXTRA_DIST = regression_tests.sh \
+EXTRA_DIST = fax_tests.sh \
+             regression_tests.sh \
              tsb85_extra_tests.sh \
-             v42bis_tests.sh \
-             fax_tests.sh \
              tsb85_tests.sh \
+             v42bis_tests.sh \
              msvc/adsi_tests.vcproj \
              msvc/complex_tests.vcproj \
              msvc/complex_vector_float_tests.vcproj \
@@ -102,15 +102,15 @@ noinst_PROGRAMS =   adsi_tests \
                     super_tone_rx_tests \
                     super_tone_tx_tests \
                     swept_tone_tests \
-                    t4_tests \
                     t31_tests \
-                    t38_decode \
                     t38_core_tests \
+                    t38_decode \
                     t38_gateway_tests \
                     t38_gateway_to_terminal_tests \
                     t38_non_ecm_buffer_tests \
                     t38_terminal_tests \
                     t38_terminal_to_gateway_tests \
+                    t4_tests \
                     time_scale_tests \
                     timezone_tests \
                     tone_detect_tests \
@@ -126,8 +126,6 @@ noinst_PROGRAMS =   adsi_tests \
                     v8_tests \
                     vector_float_tests \
                     vector_int_tests \
-                    testadsi \
-                    testfax \
                     tsb85_tests
 
 noinst_HEADERS =    echo_monitor.h \
@@ -363,12 +361,6 @@ vector_float_tests_LDADD = $(LIBDIR) -lspandsp
 
 vector_int_tests_SOURCES = vector_int_tests.c
 vector_int_tests_LDADD = $(LIBDIR) -lspandsp
-
-testadsi_SOURCES = testadsi.c
-testadsi_LDADD = $(LIBDIR) -lspandsp
-
-testfax_SOURCES = testfax.c
-testfax_LDADD = $(LIBDIR) -lspandsp
 
 # We need to create the CSS files for echo cancellation tests.
 

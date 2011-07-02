@@ -217,7 +217,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
     char tag[20];
 
     i = (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase D:", i);
+    snprintf(tag, sizeof(tag), "%c: Phase D", i);
 
     printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
     log_transfer_statistics(s, tag);
@@ -260,7 +260,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     char tag[20];
     
     i = (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase E:", i);
+    snprintf(tag, sizeof(tag), "%c: Phase E", i);
     printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));    
     log_transfer_statistics(s, tag);
     log_tx_parameters(s, tag);

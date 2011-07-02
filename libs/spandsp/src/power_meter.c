@@ -122,7 +122,7 @@ SPAN_DECLARE(float) power_meter_current_dbm0(power_meter_t *s)
     if (s->reading <= 0)
         return -96.329f + DBM0_MAX_POWER;
     /* This is based on A-law, but u-law is only 0.03dB different, so don't worry. */
-    return log10f((float) s->reading/(32767.0f*32767.0f))*10.0f + DBM0_MAX_POWER;
+    return 10.0f*log10f((float) s->reading/(32767.0f*32767.0f) + 1.0e-10f) + DBM0_MAX_POWER;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -130,7 +130,7 @@ SPAN_DECLARE(float) power_meter_current_dbov(power_meter_t *s)
 {
     if (s->reading <= 0)
         return -96.329f;
-    return log10f((float) s->reading/(32767.0f*32767.0f))*10.0f;
+    return 10.0f*log10f((float) s->reading/(32767.0f*32767.0f) + 1.0e-10f);
 }
 /*- End of function --------------------------------------------------------*/
 

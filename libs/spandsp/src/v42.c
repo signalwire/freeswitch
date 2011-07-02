@@ -5,7 +5,7 @@
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2004 Steve Underwood
+ * Copyright (C) 2004, 2011 Steve Underwood
  *
  * All rights reserved.
  *
@@ -36,323 +36,125 @@
 #include <inttypes.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include <assert.h>
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
+#include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
 #include "spandsp/hdlc.h"
-#include "spandsp/schedule.h"
-#include "spandsp/queue.h"
 #include "spandsp/v42.h"
 
 #include "spandsp/private/logging.h"
-#include "spandsp/private/schedule.h"
 #include "spandsp/private/hdlc.h"
 #include "spandsp/private/v42.h"
 
-#if !defined(FALSE)
-#define FALSE   0
-#endif
-#if !defined(TRUE)
-#define TRUE    (!FALSE)
-#endif
+#define FALSE 0
+#define TRUE (!FALSE)
 
-#define LAPM_FRAMETYPE_MASK         0x03
-
-#define LAPM_FRAMETYPE_I            0x00
-#define LAPM_FRAMETYPE_I_ALT        0x02
-#define LAPM_FRAMETYPE_S            0x01
-#define LAPM_FRAMETYPE_U            0x03
-
-/* Timer values */
-
-#define T_WAIT_MIN                  2000
-#define T_WAIT_MAX                  10000
 /* Detection phase timer */
-#define T_400                       750000
+#define T_400                           750
 /* Acknowledgement timer - 1 second between SABME's */
-#define T_401                       1000000
+#define T_401                           1000
 /* Replay delay timer (optional) */
-#define T_402                       1000000
+#define T_402                           1000
 /* Inactivity timer (optional). No default - use 10 seconds with no packets */
-#define T_403                       10000000
-/* Max retries */
-#define N_400                       3
-/* Max octets in an information field */
-#define N_401                       128
+#define T_403                           10000
 
-#define LAPM_DLCI_DTE_TO_DTE        0
-#define LAPM_DLCI_LAYER2_MANAGEMENT 63
+#define LAPM_DLCI_DTE_TO_DTE            0
+#define LAPM_DLCI_LAYER2_MANAGEMENT     63
 
-static void t401_expired(span_sched_state_t *s, void *user_data);
-static void t403_expired(span_sched_state_t *s, void *user_data);
+#define elements(a) (sizeof(a)/sizeof((a)[0]))
 
-SPAN_DECLARE(void) lapm_reset(lapm_state_t *s);
-SPAN_DECLARE(void) lapm_restart(lapm_state_t *s);
+/* LAPM definitions */
 
-static void lapm_link_down(lapm_state_t *s);
+#define LAPM_FRAMETYPE_MASK             0x03
 
-static __inline__ void lapm_init_header(uint8_t *frame, int command)
+enum
 {
-    /* Data link connection identifier (0) */
-    /* Command/response (0 if answerer, 1 if originator) */
-    /* Extended address (1) */
-    frame[0] = (LAPM_DLCI_DTE_TO_DTE << 2) | ((command)  ?  0x02  :  0x00) | 0x01;
-}
-/*- End of function --------------------------------------------------------*/
+    LAPM_FRAMETYPE_I = 0x00,
+    LAPM_FRAMETYPE_I_ALT = 0x02,
+    LAPM_FRAMETYPE_S = 0x01,
+    LAPM_FRAMETYPE_U = 0x03
+};
 
-static int lapm_tx_frame(lapm_state_t *s, uint8_t *frame, int len)
+/* Supervisory headers */
+enum
 {
-    if ((s->debug & LAPM_DEBUG_LAPM_DUMP))
-        lapm_dump(s, frame, len, s->debug & LAPM_DEBUG_LAPM_RAW, TRUE);
-    /*endif*/
-    hdlc_tx_frame(&s->hdlc_tx, frame, len);
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
+    LAPM_S_RR = 0x00,       /* cr */
+    LAPM_S_RNR = 0x04,      /* cr */
+    LAPM_S_REJ = 0x08,      /* cr */
+    LAPM_S_SREJ = 0x0C      /* cr */
+};
 
-static void t400_expired(span_sched_state_t *ss, void *user_data)
+#define LAPM_S_PF                       0x01
+
+/* Unnumbered headers */
+enum
 {
-    v42_state_t *s;
-    
-    /* Give up trying to detect a V.42 capable peer. */
-    s = (v42_state_t *) user_data;
-    s->t400_timer = -1;
-    s->lapm.state = LAPM_UNSUPPORTED;
-    if (s->lapm.status_callback)
-        s->lapm.status_callback(s->lapm.status_callback_user_data, s->lapm.state);
-    /*endif*/
-}
-/*- End of function --------------------------------------------------------*/
+    LAPM_U_UI = 0x00,       /* cr */
+    LAPM_U_DM = 0x0C,       /*  r */
+    LAPM_U_DISC = 0x40,     /* c  */
+    LAPM_U_UA = 0x60,       /*  r */
+    LAPM_U_SABME = 0x6C,    /* c  */
+    LAPM_U_FRMR = 0x84,     /*  r */
+    LAPM_U_XID = 0xAC,      /* cr */
+    LAPM_U_TEST = 0xE0      /* c  */
+};
 
-static void lapm_send_ua(lapm_state_t *s, int pfbit)
+#define LAPM_U_PF                       0x10
+
+/* XID sub-field definitions */
+#define FI_GENERAL                      0x82
+#define GI_PARAM_NEGOTIATION            0x80
+#define GI_PRIVATE_NEGOTIATION          0xF0
+#define GI_USER_DATA                    0xFF
+
+/* Param negotiation (Table 11a/V.42) */
+enum
 {
-    uint8_t frame[3];
+    PI_HDLC_OPTIONAL_FUNCTIONS = 0x03,
+    PI_TX_INFO_MAXSIZE = 0x05,
+    PI_RX_INFO_MAXSIZE = 0x06,
+    PI_TX_WINDOW_SIZE = 0x07,
+    PI_RX_WINDOW_SIZE = 0x08
+};
 
-    lapm_init_header(frame, !s->we_are_originator);
-    frame[1] = (uint8_t) (0x63 | (pfbit << 4));
-    frame[2] = 0;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Sending unnumbered acknowledgement\n");
-    lapm_tx_frame(s, frame, 3);
-}
-/*- End of function --------------------------------------------------------*/
-
-static void lapm_send_sabme(span_sched_state_t *ss, void *user_data)
+/* Private param negotiation (Table 11b/V.42) */
+enum
 {
-    lapm_state_t *s;
-    uint8_t frame[3];
+    PI_PARAMETER_SET_ID = 0x00,
+    PI_V42BIS_COMPRESSION_REQUEST = 0x01,
+    PI_V42BIS_NUM_CODEWORDS = 0x02,
+    PI_V42BIS_MAX_STRING_LENGTH = 0x03
+};
 
-    s = (lapm_state_t *) user_data;
-    if (s->t401_timer >= 0)
-    {
-fprintf(stderr, "Deleting T401 q [%p] %d\n", (void *) s, s->t401_timer);
-        span_schedule_del(&s->sched, s->t401_timer);
-        s->t401_timer = -1;
-    }
-    /*endif*/
-    if (++s->retransmissions > N_400)
-    {
-        /* 8.3.2.2 Too many retries */
-        s->state = LAPM_RELEASE;
-        if (s->status_callback)
-            s->status_callback(s->status_callback_user_data, s->state);
-        /*endif*/
-        return;
-    }
-    /*endif*/
-fprintf(stderr, "Setting T401 a1 [%p]\n", (void *) s);
-    s->t401_timer = span_schedule_event(&s->sched, T_401, lapm_send_sabme, s);
-    lapm_init_header(frame, s->we_are_originator);
-    frame[1] = 0x7F;
-    frame[2] = 0;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Sending SABME (set asynchronous balanced mode extended)\n");
-    lapm_tx_frame(s, frame, 3);
-}
-/*- End of function --------------------------------------------------------*/
+#define LAPM_DLCI_DTE_TO_DTE            0
+#define LAPM_DLCI_LAYER2_MANAGEMENT     63
 
-static int lapm_ack_packet(lapm_state_t *s, int num)
+/* Type definitions */
+enum
 {
-    lapm_frame_queue_t *f;
-    lapm_frame_queue_t *prev;
+    LAPM_DETECT = 0,
+    LAPM_IDLE = 1,
+    LAPM_ESTABLISH = 2,
+    LAPM_DATA = 3,
+    LAPM_RELEASE = 4,
+    LAPM_SIGNAL = 5,
+    LAPM_SETPARM = 6,
+    LAPM_TEST = 7,
+    LAPM_V42_UNSUPPORTED = 8
+};
 
-    for (prev = NULL, f = s->txqueue;  f;  prev = f, f = f->next)
-    {
-        if ((f->frame[1] >> 1) == num)
-        {
-            /* Cancel each packet, as necessary */
-            if (prev)
-                prev->next = f->next;
-            else
-                s->txqueue = f->next;
-            /*endif*/
-            span_log(&s->logging,
-                     SPAN_LOG_FLOW,
-                     "-- ACKing packet %d. New txqueue is %d (-1 means empty)\n",
-                     (f->frame[1] >> 1),
-                     (s->txqueue)  ?  (s->txqueue->frame[1] >> 1)  :  -1);
-            s->last_frame_peer_acknowledged = num;
-            free(f);
-            /* Reset retransmission count if we actually acked something */
-            s->retransmissions = 0;
-            return 1;
-        }
-        /*endif*/
-    }
-    /*endfor*/
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
+/* Prototypes */
+static int lapm_connect(v42_state_t *ss);
+static int lapm_disconnect(v42_state_t *s);
+static void reset_lapm(v42_state_t *s);
+static void lapm_hdlc_underflow(void *user_data);
 
-static void lapm_ack_rx(lapm_state_t *s, int ack)
-{
-    int i;
-    int cnt;
-
-    /* This might not be acking anything new */
-    if (s->last_frame_peer_acknowledged == ack)
-        return;
-    /*endif*/
-    /* It should be acking something that is actually outstanding */
-    if ((s->last_frame_peer_acknowledged < s->next_tx_frame  &&  (ack < s->last_frame_peer_acknowledged  ||  ack > s->next_tx_frame))
-        ||
-        (s->last_frame_peer_acknowledged > s->next_tx_frame  &&  (ack > s->last_frame_peer_acknowledged  ||  ack < s->next_tx_frame)))
-    {
-        /* ACK was outside our window --- ignore */
-        span_log(&s->logging, SPAN_LOG_FLOW, "ACK received outside window, ignoring\n");
-        return;
-    }
-    /*endif*/
-    
-    /* Cancel each packet, as necessary */
-    span_log(&s->logging,
-             SPAN_LOG_FLOW,
-             "-- ACKing all packets from %d to (but not including) %d\n",
-             s->last_frame_peer_acknowledged,
-             ack);
-    for (cnt = 0, i = s->last_frame_peer_acknowledged;  i != ack;  i = (i + 1) & 0x7F) 
-        cnt += lapm_ack_packet(s, i);
-    /*endfor*/
-    s->last_frame_peer_acknowledged = ack;
-    if (s->txqueue == NULL)
-    {
-        span_log(&s->logging, SPAN_LOG_FLOW, "-- Since there was nothing left, stopping timer T_401\n");
-        /* Something was ACK'd.  Stop timer T_401. */
-fprintf(stderr, "T401 a2 is %d [%p]\n", s->t401_timer, (void *) s);
-        if (s->t401_timer >= 0)
-        {
-fprintf(stderr, "Deleting T401 a3 [%p] %d\n", (void *) s, s->t401_timer);
-            span_schedule_del(&s->sched, s->t401_timer);
-            s->t401_timer = -1;
-        }
-        /*endif*/
-    }
-    /*endif*/
-    if (s->t403_timer >= 0)
-    {
-        span_log(&s->logging, SPAN_LOG_FLOW, "-- Stopping timer T_403, since we got an ACK\n");
-        if (s->t403_timer >= 0)
-        {
-fprintf(stderr, "Deleting T403 b %d\n", s->t403_timer);
-            span_schedule_del(&s->sched, s->t403_timer);
-            s->t403_timer = -1;
-        }
-        /*endif*/
-    }
-    /*endif*/
-    if (s->txqueue)
-    {
-        /* Something left to transmit. Start timer T_401 again if it is stopped */
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW,
-                 "-- Something left to transmit (%d). Restarting timer T_401\n",
-                 s->txqueue->frame[1] >> 1);
-        if (s->t401_timer < 0)
-        {
-fprintf(stderr, "Setting T401 b [%p]\n", (void *) s);
-            s->t401_timer = span_schedule_event(&s->sched, T_401, t401_expired, s);
-        }
-        /*endif*/
-    }
-    else
-    {
-        span_log(&s->logging, SPAN_LOG_FLOW, "-- Nothing left, starting timer T_403\n");
-        /* Nothing to transmit. Start timer T_403. */
-fprintf(stderr, "Setting T403 c\n");
-        s->t403_timer = span_schedule_event(&s->sched, T_403, t403_expired, s);
-    }
-    /*endif*/
-}
-/*- End of function --------------------------------------------------------*/
-
-static void lapm_reject(lapm_state_t *s)
-{
-    uint8_t frame[4];
-
-    lapm_init_header(frame, !s->we_are_originator);
-    frame[1] = (uint8_t) (0x00 | 0x08 | LAPM_FRAMETYPE_S);
-    /* Where to start retransmission */
-    frame[2] = (uint8_t) ((s->next_expected_frame << 1) | 0x01);
-    span_log(&s->logging, SPAN_LOG_FLOW, "Sending REJ (reject (%d)\n", s->next_expected_frame);
-    lapm_tx_frame(s, frame, 4);
-}
-/*- End of function --------------------------------------------------------*/
-
-static void lapm_rr(lapm_state_t *s, int pfbit)
-{
-    uint8_t frame[4];
-
-    lapm_init_header(frame, !s->we_are_originator);
-    frame[1] = (uint8_t) (0x00 | 0x00 | LAPM_FRAMETYPE_S);
-    frame[2] = (uint8_t) ((s->next_expected_frame << 1) | pfbit);
-    /* Note that we have already ACKed this */
-    s->last_frame_we_acknowledged = s->next_expected_frame;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Sending RR (receiver ready) (%d)\n", s->next_expected_frame);
-    lapm_tx_frame(s, frame, 4);
-}
-/*- End of function --------------------------------------------------------*/
-
-static void t401_expired(span_sched_state_t *ss, void *user_data)
-{
-    lapm_state_t *s;
-    
-    s = (lapm_state_t *) user_data;
-fprintf(stderr, "Expiring T401 a4 [%p]\n", (void *) s);
-    s->t401_timer = -1;
-    if (s->txqueue)
-    {
-        /* Retransmit first packet in the queue, setting the poll bit */
-        span_log(&s->logging, SPAN_LOG_FLOW, "-- Timer T_401 expired, What to do...\n");
-        /* Update N(R), and set the poll bit */
-        s->txqueue->frame[2] = (uint8_t)((s->next_expected_frame << 1) | 0x01);
-        s->last_frame_we_acknowledged = s->next_expected_frame;
-        s->solicit_f_bit = TRUE;
-        if (++s->retransmissions <= N_400)
-        {
-            /* Reschedule timer T401 */
-            span_log(&s->logging, SPAN_LOG_FLOW, "-- Retransmitting %d bytes\n", s->txqueue->len);
-            lapm_tx_frame(s, s->txqueue->frame, s->txqueue->len);
-            span_log(&s->logging, SPAN_LOG_FLOW, "-- Scheduling retransmission (%d)\n", s->retransmissions);
-fprintf(stderr, "Setting T401 d [%p]\n", (void *) s);
-            s->t401_timer = span_schedule_event(&s->sched, T_401, t401_expired, s);
-        }
-        else
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "-- Timeout occured\n");
-            s->state = LAPM_RELEASE;
-            if (s->status_callback)
-                s->status_callback(s->status_callback_user_data, s->state);
-            lapm_link_down(s);
-            lapm_restart(s);
-        }
-        /*endif*/
-    }
-    else
-    {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Timer T_401 expired. Nothing to send...\n");
-    }
-    /*endif*/
-}
-/*- End of function --------------------------------------------------------*/
+static int lapm_config(v42_state_t *ss);
 
 SPAN_DECLARE(const char *) lapm_status_to_str(int status)
 {
@@ -360,6 +162,8 @@ SPAN_DECLARE(const char *) lapm_status_to_str(int status)
     {
     case LAPM_DETECT:
         return "LAPM_DETECT";
+    case LAPM_IDLE:
+        return "LAPM_IDLE";
     case LAPM_ESTABLISH:
         return "LAPM_ESTABLISH";
     case LAPM_DATA:
@@ -372,740 +176,1048 @@ SPAN_DECLARE(const char *) lapm_status_to_str(int status)
         return "LAPM_SETPARM";
     case LAPM_TEST:
         return "LAPM_TEST";
-    case LAPM_UNSUPPORTED:
-        return "LAPM_UNSUPPORTED";
+    case LAPM_V42_UNSUPPORTED:
+        return "LAPM_V42_UNSUPPORTED";
     }
     /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) lapm_tx(lapm_state_t *s, const void *buf, int len)
+static void report_rx_status_change(v42_state_t *s, int status)
 {
-    return queue_write(s->tx_queue, buf, len);
+    if (s->lapm.status_handler)
+        s->lapm.status_handler(s->lapm.status_user_data, status);
+    else if (s->lapm.iframe_put)
+        s->lapm.iframe_put(s->lapm.iframe_put_user_data, NULL, status);
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) lapm_release(lapm_state_t *s)
+static inline uint32_t pack_value(const uint8_t *buf, int len)
 {
-    s->state = LAPM_RELEASE;
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
+    uint32_t val;
 
-SPAN_DECLARE(int) lapm_loopback(lapm_state_t *s, int enable)
-{
-    s->state = LAPM_TEST;
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) lapm_break(lapm_state_t *s, int enable)
-{
-    s->state = LAPM_SIGNAL;
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) lapm_tx_iframe(lapm_state_t *s, const void *buf, int len, int cr)
-{
-    lapm_frame_queue_t *f;
-
-    if ((f = malloc(sizeof(*f) + len + 4)) == NULL)
+    val = 0;
+    while (len--)
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Out of memory\n");
+        val <<= 8;
+        val |= *buf++;
+    }
+    return val;
+}
+/*- End of function --------------------------------------------------------*/
+
+static inline v42_frame_t *get_next_free_ctrl_frame(lapm_state_t *s)
+{
+    v42_frame_t *f;
+    int ctrl_put_next;
+
+    if ((ctrl_put_next = s->ctrl_put + 1) >= V42_CTRL_FRAMES)
+        ctrl_put_next = 0;
+    if (ctrl_put_next == s->ctrl_get)
+        return NULL;
+    f = &s->ctrl_buf[s->ctrl_put];
+    s->ctrl_put = ctrl_put_next;
+    return f;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int tx_unnumbered_frame(lapm_state_t *s, uint8_t addr, uint8_t ctrl, uint8_t *info, int len)
+{
+    v42_frame_t *f;
+    uint8_t *buf;
+
+    if ((f = get_next_free_ctrl_frame(s)) == NULL)
+        return -1;
+    buf = f->buf;
+    buf[0] = addr;
+    buf[1] = LAPM_FRAMETYPE_U | ctrl;
+    f->len = 2;
+    if (info  &&  len)
+    {
+        memcpy(buf + f->len, info, len);
+        f->len += len;
+    }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int tx_supervisory_frame(lapm_state_t *s, uint8_t addr, uint8_t ctrl, uint8_t pf_mask)
+{
+    v42_frame_t *f;
+    uint8_t *buf;
+    
+    if ((f = get_next_free_ctrl_frame(s)) == NULL)
+        return -1;
+    buf = f->buf;
+    buf[0] = addr;
+    buf[1] = LAPM_FRAMETYPE_S | ctrl;
+    buf[2] = (s->vr << 1) | pf_mask;
+    f->len = 3;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ int set_param(int param, int value, int def)
+{
+    if ((value < def  &&  param >= def)  ||  (value >= def  &&  param < def))
+        return def;
+    if ((value < def  &&  param < value)  ||  (value >= def  &&  param > value))
+        return value;
+    return param;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int receive_xid(v42_state_t *ss, const uint8_t *frame, int len)
+{
+    lapm_state_t *s;
+    v42_config_parameters_t config;
+    const uint8_t *buf;
+    uint8_t group_id;
+    uint16_t group_len;
+    uint32_t param_val;
+    uint8_t param_id;
+    uint8_t param_len;
+
+    s = &ss->lapm;
+    if (frame[2] != FI_GENERAL)
+        return -1;
+    memset(&config, 0, sizeof(config));
+    /* Skip the header octets */
+    frame += 3;
+    len -= 3;
+    while (len > 0)
+    {
+        group_id = frame[0];
+        group_len = frame[1];
+        group_len = (group_len << 8) | frame[2];
+        frame += 3;
+        len -= (3 + group_len);
+        if (len < 0)
+            break;
+        buf = frame;
+        frame += group_len;
+        switch (group_id)
+        {
+        case GI_PARAM_NEGOTIATION:
+            while (group_len > 0)
+            {
+                param_id = buf[0];
+                param_len = buf[1];
+                buf += 2;
+                group_len -= (2 + param_len);
+                if (group_len < 0)
+                    break;
+                switch (param_id)
+                {
+                case PI_HDLC_OPTIONAL_FUNCTIONS:
+                    param_val = pack_value(buf, param_len);
+                    break;
+                case PI_TX_INFO_MAXSIZE:
+                    param_val = pack_value(buf, param_len);
+                    param_val >>= 3;
+                    config.v42_tx_n401 =
+                    s->tx_n401 = set_param(s->tx_n401, param_val, ss->config.v42_tx_n401);
+                    break;
+                case PI_RX_INFO_MAXSIZE:
+                    param_val = pack_value(buf, param_len);
+                    param_val >>= 3;
+                    config.v42_rx_n401 =
+                    s->rx_n401 = set_param(s->rx_n401, param_val, ss->config.v42_rx_n401);
+                    break;
+                case PI_TX_WINDOW_SIZE:
+                    param_val = pack_value(buf, param_len);
+                    config.v42_tx_window_size_k =
+                    s->tx_window_size_k = set_param(s->tx_window_size_k, param_val, ss->config.v42_tx_window_size_k);
+                    break;
+                case PI_RX_WINDOW_SIZE:
+                    param_val = pack_value(buf, param_len);
+                    config.v42_rx_window_size_k =
+                    s->rx_window_size_k = set_param(s->rx_window_size_k, param_val, ss->config.v42_rx_window_size_k);
+                    break;
+                default:
+                    break;
+                }
+                buf += param_len;
+            }
+            break;
+        case GI_PRIVATE_NEGOTIATION:
+            while (group_len > 0)
+            {
+                param_id = buf[0];
+                param_len = buf[1];
+                buf += 2;
+                group_len -= (2 + param_len);
+                if (group_len < 0)
+                    break;
+                switch (param_id)
+                {
+                case PI_PARAMETER_SET_ID:
+                    /* This might be worth monitoring, but it doesn't serve mnuch other purpose */
+                    break;
+                case PI_V42BIS_COMPRESSION_REQUEST:
+                    config.comp = pack_value(buf, param_len);
+                    break;
+                case PI_V42BIS_NUM_CODEWORDS:
+                    config.comp_dict_size = pack_value(buf, param_len);
+                    break;
+                case PI_V42BIS_MAX_STRING_LENGTH:
+                    config.comp_max_string = pack_value(buf, param_len);
+                    break;
+                default:
+                    break;
+                }
+                buf += param_len;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    //v42_update_config(ss, &config);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void transmit_xid(v42_state_t *ss, uint8_t addr)
+{
+    lapm_state_t *s;
+    uint8_t *buf;
+    int len;
+    int group_len;
+    uint32_t param_val;
+    v42_frame_t *f;
+
+    s = &ss->lapm;
+    if ((f = get_next_free_ctrl_frame(s)) == NULL)
+        return;
+
+    buf = f->buf;
+    len = 0;
+
+    /* Figure 11/V.42 */
+    *buf++ = addr;
+    *buf++ = LAPM_U_XID | LAPM_FRAMETYPE_U;
+    /* Format identifier subfield */
+    *buf++ = FI_GENERAL;
+    len += 3;
+
+    /* Parameter negotiation group */
+    group_len = 20;
+    *buf++ = GI_PARAM_NEGOTIATION;
+    *buf++ = (group_len >> 8) & 0xFF;
+    *buf++ = group_len & 0xFF;
+    len += 3;
+
+    /* For conformance with the encoding rules in ISO/IEC 8885, the transmitter of an XID command frame shall
+       set bit positions 2, 4, 8, 9, 12 and 16 to 1. (Table 11a/V.42)
+       Optional bits are:
+         3 Selective retransmission procedure (SREJ frame) single I frame request
+        14 Loop-back test procedure (TEST frame)
+        17
+        Extended FCS procedure (32-bit FCS)
+        24 Selective retransmission procedure (SREJ frame) multiple I frame request with span list
+           capability. */
+    *buf++ = PI_HDLC_OPTIONAL_FUNCTIONS;
+    *buf++ = 4;
+    *buf++ = 0x8A;  /* Bits 2, 4, and 8 set */
+    *buf++ = 0x89;  /* Bits 9, 12, and 16 set */
+    *buf++ = 0x00;
+    *buf++ = 0x00;
+
+    /* Send the maximum as a number of bits, rather than octets */
+    param_val = ss->config.v42_tx_n401 << 3;
+    *buf++ = PI_TX_INFO_MAXSIZE;
+    *buf++ = 2;
+    *buf++ = (param_val >> 8) & 0xFF;
+    *buf++ = (param_val & 0xFF);
+
+    /* Send the maximum as a number of bits, rather than octets */
+    param_val = ss->config.v42_rx_n401 << 3;
+    *buf++ = PI_RX_INFO_MAXSIZE;
+    *buf++ = 2;
+    *buf++ = (param_val >> 8) & 0xFF;
+    *buf++ = (param_val & 0xFF);
+    
+    *buf++ = PI_TX_WINDOW_SIZE;
+    *buf++ = 1;
+    *buf++ = ss->config.v42_tx_window_size_k;
+
+    *buf++ = PI_RX_WINDOW_SIZE;
+    *buf++ = 1;
+    *buf++ = ss->config.v42_rx_window_size_k;
+
+    len += group_len;
+
+    if (ss->config.comp)
+    {
+        /* Private parameter negotiation group */
+        group_len = 15;
+        *buf++ = GI_PRIVATE_NEGOTIATION;
+        *buf++ = (group_len >> 8) & 0xFF;
+        *buf++ = group_len & 0xFF;
+        len += 3;
+
+        /* Private parameter for V.42 (ASCII for V42). V.42 says ".42", but V.42bis says "V42",
+           and that seems to be what should be used. */
+        *buf++ = PI_PARAMETER_SET_ID;
+        *buf++ = 3;
+        *buf++ = 'V';
+        *buf++ = '4';
+        *buf++ = '2';
+
+        /* V.42bis P0 
+           00 Compression in neither direction (default);
+           01 Negotiation initiator-responder direction only;
+           10 Negotiation responder-initiator direction only;
+           11 Both directions. */
+        *buf++ = PI_V42BIS_COMPRESSION_REQUEST;
+        *buf++ = 1;
+        *buf++ = ss->config.comp;
+
+        /* V.42bis P1 */
+        param_val = ss->config.comp_dict_size;
+        *buf++ = PI_V42BIS_NUM_CODEWORDS;
+        *buf++ = 2;
+        *buf++ = (param_val >> 8) & 0xFF;
+        *buf++ = param_val & 0xFF;
+
+        /* V.42bis P2 */
+        *buf++ = PI_V42BIS_MAX_STRING_LENGTH;
+        *buf++ = 1;
+        *buf++ = ss->config.comp_max_string;
+
+        len += group_len;
+    }
+
+    f->len = len;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int ms_to_bits(v42_state_t *s, int time)
+{
+    return ((time*s->tx_bit_rate)/1000);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void t400_expired(v42_state_t *ss)
+{
+    /* Give up trying to detect a V.42 capable peer. */
+    ss->bit_timer = 0;
+    ss->lapm.state = LAPM_V42_UNSUPPORTED;
+    report_rx_status_change(ss, ss->lapm.state);
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void t400_start(v42_state_t *s)
+{
+    s->bit_timer = ms_to_bits(s, T_400);
+    s->bit_timer_func = t400_expired;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void t400_stop(v42_state_t *s)
+{
+    s->bit_timer = 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void t401_expired(v42_state_t *ss)
+{
+    lapm_state_t *s;
+
+    span_log(&ss->logging, SPAN_LOG_FLOW, "T.401 expired\n");
+    s = &ss->lapm;
+    if (s->retry_count > V42_DEFAULT_N_400)
+    {
+        s->retry_count = 0;
+        switch (s->state)
+        {
+        case LAPM_ESTABLISH:
+        case LAPM_RELEASE:
+            s->state = LAPM_IDLE;
+            report_rx_status_change(ss, SIG_STATUS_LINK_DISCONNECTED);
+            break;
+        case LAPM_DATA:
+            lapm_disconnect(ss);
+            break;
+        }
+        return ;
+    }
+    s->retry_count++;
+    if (s->configuring)
+    {
+        transmit_xid(ss, s->cmd_addr);
+    }
+    else
+    {
+        switch (s->state)
+        {
+        case LAPM_ESTABLISH:
+            tx_unnumbered_frame(s, s->cmd_addr, LAPM_U_SABME | LAPM_U_PF, NULL, 0);
+            break;
+        case LAPM_RELEASE:
+            tx_unnumbered_frame(s, s->cmd_addr, LAPM_U_DISC | LAPM_U_PF, NULL, 0);
+            break;
+        case LAPM_DATA:
+            tx_supervisory_frame(s, s->cmd_addr, (s->local_busy)  ?  LAPM_S_RNR  :  LAPM_S_RR, 1);
+            break;
+        }
+    }
+    ss->bit_timer = ms_to_bits(ss, T_401);
+    ss->bit_timer_func = t401_expired;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void t401_start(v42_state_t *s)
+{
+    s->bit_timer = ms_to_bits(s, T_401);
+    s->bit_timer_func = t401_expired;
+    s->lapm.retry_count = 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void t401_stop(v42_state_t *s)
+{
+    s->bit_timer = 0;
+    s->lapm.retry_count = 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void t403_expired(v42_state_t *ss)
+{
+    lapm_state_t *s;
+
+    span_log(&ss->logging, SPAN_LOG_FLOW, "T.403 expired\n");
+    if (ss->lapm.state != LAPM_DATA)
+        return;
+    s = &ss->lapm;
+    tx_supervisory_frame(s, s->cmd_addr, (ss->lapm.local_busy)  ?  LAPM_S_RNR  :  LAPM_S_RR, 1);
+    t401_start(ss);
+    ss->lapm.retry_count = 1;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void t401_stop_t403_start(v42_state_t *s)
+{
+    s->bit_timer = ms_to_bits(s, T_403);
+    s->bit_timer_func = t403_expired;
+    s->lapm.retry_count = 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void initiate_negotiation_expired(v42_state_t *s)
+{
+    /* Timer service routine */
+    span_log(&s->logging, SPAN_LOG_FLOW, "Start negotiation\n");
+    lapm_config(s);
+    lapm_hdlc_underflow(s);
+}
+/*- End of function --------------------------------------------------------*/
+
+static int tx_information_frame(v42_state_t *ss)
+{
+    lapm_state_t *s;
+    v42_frame_t *f;
+    uint8_t *buf;
+    int n;
+    int info_put_next;
+
+    s = &ss->lapm;
+    if (s->far_busy  ||  ((s->vs - s->va) & 0x7F) >= s->tx_window_size_k)
+        return FALSE;
+    if (s->info_get != s->info_put)
+        return TRUE;
+    if ((info_put_next = s->info_put + 1) >= V42_INFO_FRAMES)
+        info_put_next = 0;
+    if (info_put_next == s->info_get  ||  info_put_next == s->info_acked)
+        return FALSE;
+    f = &s->info_buf[s->info_put];
+    buf = f->buf;
+    if (s->iframe_get == NULL)
+        return FALSE;
+    n = s->iframe_get(s->iframe_get_user_data, buf + 3, s->tx_n401);
+    if (n < 0)
+    {
+        /* Error */
+        report_rx_status_change(ss, SIG_STATUS_LINK_ERROR);
+        return FALSE;
+    }
+    if (n == 0)
+        return FALSE;
+
+    f->len = n + 3;
+    s->info_put = info_put_next;
+    return TRUE;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void tx_information_rr_rnr_response(v42_state_t *ss, const uint8_t *frame, int len)
+{
+    lapm_state_t *s;
+
+    s = &ss->lapm;
+    /* Respond with information frame, RR, or RNR, as appropriate */
+    /* p = 1 may be used for status checking */
+    if ((frame[2] & 0x1)  ||  !tx_information_frame(ss))
+        tx_supervisory_frame(s, frame[0], (s->local_busy)  ?  LAPM_S_RNR  :  LAPM_S_RR, 1);
+}
+/*- End of function --------------------------------------------------------*/
+
+static int reject_info(lapm_state_t *s)
+{
+    uint8_t n;
+
+    /* Reject all non-acked frames */
+    if (s->state != LAPM_DATA)
+        return 0;
+    n = (s->vs - s->va) & 0x7F;
+    s->vs = s->va;
+    s->info_get = s->info_acked;
+    return n;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int ack_info(v42_state_t *ss, uint8_t nr)
+{
+    lapm_state_t *s;
+    int n;
+
+    s = &ss->lapm;
+    /* Check that NR is valid - i.e.  VA <= NR <= VS  &&  VS-VA <= k */
+    if (!((((nr - s->va) & 0x7F) + ((s->vs - nr) & 0x7F)) <= s->tx_window_size_k
+         &&
+         ((s->vs - s->va) & 0x7F) <= s->tx_window_size_k))
+    {
+        lapm_disconnect(ss);
         return -1;
     }
-    /*endif*/
+    n = 0;
+    while (s->va != nr  &&  s->info_acked != s->info_get)
+    {
+        if (++s->info_acked >= V42_INFO_FRAMES)
+            s->info_acked = 0;
+        s->va = (s->va + 1) & 0x7F;
+        n++;
+    }
+    if (n > 0  &&  s->retry_count == 0)
+    {
+        t401_stop_t403_start(ss);
+        /* 8.4.8 */
+        if (((s->vs - s->va) & 0x7F))
+            t401_start(ss);
+    }
+    return n;
+}
+/*- End of function --------------------------------------------------------*/
 
-    lapm_init_header(f->frame, (s->peer_is_originator)  ?  cr  :  !cr);
-    f->next = NULL;
-    f->len = len + 4;
-    f->frame[1] = (uint8_t) (s->next_tx_frame << 1);
-    f->frame[2] = (uint8_t) (s->next_expected_frame << 1);
-    memcpy(f->frame + 3, buf, len);
-    s->next_tx_frame = (s->next_tx_frame + 1) & 0x7F;
-    s->last_frame_we_acknowledged = s->next_expected_frame;
-    /* Clear poll bit */
-    f->frame[2] &= ~0x01;
-    if (s->tx_last)
-        s->tx_last->next = f;
-    else
-        s->txqueue = f;
-    /*endif*/
-    s->tx_last = f;
-    /* Immediately transmit unless we're in a recovery state */
-    if (s->retransmissions == 0)
-        lapm_tx_frame(s, f->frame, f->len);
-    /*endif*/
-    if (s->t403_timer >= 0)
+static int valid_data_state(v42_state_t *ss)
+{
+    lapm_state_t *s;
+
+    s = &ss->lapm;
+    switch (s->state)
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Stopping T_403 timer\n");
-fprintf(stderr, "Deleting T403 c %d\n", s->t403_timer);
-        span_schedule_del(&s->sched, s->t403_timer);
-        s->t403_timer = -1;
+    case LAPM_DETECT:
+    case LAPM_IDLE:
+        break;
+    case LAPM_ESTABLISH:
+        reset_lapm(ss);
+        s->state = LAPM_DATA;
+        report_rx_status_change(ss, SIG_STATUS_LINK_CONNECTED);
+        return 1;
+    case LAPM_DATA:
+        return 1;
+    case LAPM_RELEASE:
+        reset_lapm(ss);
+        s->state = LAPM_IDLE;
+        report_rx_status_change(ss, SIG_STATUS_LINK_DISCONNECTED);
+        break;
+    case LAPM_SIGNAL:
+    case LAPM_SETPARM:
+    case LAPM_TEST:
+    case LAPM_V42_UNSUPPORTED:
+        break;
     }
-    /*endif*/
-    if (s->t401_timer < 0)
-    {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Starting timer T_401\n");
-        s->t401_timer = span_schedule_event(&s->sched, T_401, t401_expired, s);
-fprintf(stderr, "Setting T401 e %d [%p]\n", s->t401_timer, (void *) s);
-    }
-    else
-    {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Timer T_401 already running (%d)\n", s->t401_timer);
-    }
-    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-static void t403_expired(span_sched_state_t *ss, void *user_data)
+static void receive_information_frame(v42_state_t *ss, const uint8_t *frame, int len)
+{
+    lapm_state_t *s;
+    int ret;
+    int n;
+
+    s = &ss->lapm;
+    if (!valid_data_state(ss))
+        return;
+    if (len > s->rx_n401 + 3)
+        return;
+    ret = 0;
+    /* Ack I frames: NR - 1 */
+    n = ack_info(ss, frame[2] >> 1);
+    if (s->local_busy)
+    {
+        /* 8.4.7 */
+        if ((frame[2] & 0x1))
+            tx_supervisory_frame(s, s->rsp_addr, LAPM_S_RNR, 1);
+        return;
+    }
+    /* NS sequence error */
+    if ((frame[1] >> 1) != s->vr)
+    {
+        if (!s->rejected)
+        {
+            tx_supervisory_frame(s, s->rsp_addr, LAPM_S_REJ, (frame[2] & 0x1));
+            s->rejected = TRUE;
+        }
+        return;
+    }
+    s->rejected = FALSE;
+
+    s->iframe_put(s->iframe_put_user_data, frame + 3, len - 3);
+    /* Increment vr */
+    s->vr = (s->vr + 1) & 0x7F;
+    tx_information_rr_rnr_response(ss, frame, len);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void rx_supervisory_cmd_frame(v42_state_t *ss, const uint8_t *frame, int len)
+{
+    lapm_state_t *s;
+    int n;
+
+    s = &ss->lapm;
+    /* If l->local_busy each RR,RNR,REJ with p=1 should be replied by RNR with f=1 (8.4.7) */
+    switch (frame[1] & 0x0C)
+    {
+    case LAPM_S_RR:
+        s->far_busy = FALSE;
+        n = ack_info(ss, frame[2] >> 1);
+        /* If p = 1 may be used for status checking? */
+        tx_information_rr_rnr_response(ss, frame, len);
+        break;
+    case LAPM_S_RNR:
+        s->far_busy = TRUE;
+        n = ack_info(ss, frame[2] >> 1);
+        /* If p = 1 may be used for status checking? */
+        if ((frame[2] & 0x1))
+            tx_supervisory_frame(s, s->rsp_addr, (s->local_busy)  ?  LAPM_S_RNR  :  LAPM_S_RR, 1);
+        break;
+    case LAPM_S_REJ:
+        s->far_busy = FALSE;
+        n = ack_info(ss, frame[2] >> 1);
+        if (s->retry_count == 0)
+        {
+            t401_stop_t403_start(ss);
+            reject_info(s);
+        }
+        tx_information_rr_rnr_response(ss, frame, len);
+        break;
+    case LAPM_S_SREJ:
+        /* TODO: */
+        return;
+    default:
+        return;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static void rx_supervisory_rsp_frame(v42_state_t *ss, const uint8_t *frame, int len)
+{
+    lapm_state_t *s;
+    int n;
+
+    s = &ss->lapm;
+    if (s->retry_count == 0  &&  (frame[2] & 0x1))
+        return;
+    /* Ack I frames <= NR - 1 */
+    switch (frame[1] & 0x0C)
+    {
+    case LAPM_S_RR:
+        s->far_busy = FALSE;
+        n = ack_info(ss, frame[2] >> 1);
+        if (s->retry_count  &&  (frame[2] & 0x1))
+        {
+            reject_info(s);
+            t401_stop_t403_start(ss);
+        }
+        break;
+    case LAPM_S_RNR:
+        s->far_busy = TRUE;
+        n = ack_info(ss, frame[2] >> 1);
+        if (s->retry_count  &&  (frame[2] & 0x1))
+        {
+            reject_info(s);
+            t401_stop_t403_start(ss);
+        }
+        if (s->retry_count == 0)
+            t401_start(ss);
+        break;
+    case LAPM_S_REJ:
+        s->far_busy = FALSE;
+        n = ack_info(ss, frame[2] >> 1);
+        if (s->retry_count == 0  ||  (frame[2] & 0x1))
+        {
+            reject_info(s);
+            t401_stop_t403_start(ss);
+        }
+        break;
+    case LAPM_S_SREJ:
+        /* TODO: */
+        return;
+    default:
+        return;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static int rx_unnumbered_cmd_frame(v42_state_t *ss, const uint8_t *frame, int len)
 {
     lapm_state_t *s;
 
-    s = (lapm_state_t *) user_data;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Timer T_403 expired. Sending RR and scheduling T_403 again\n");
-    s->t403_timer = -1;
-    s->retransmissions = 0;
-    /* Solicit an F-bit in the other end's RR */
-    s->solicit_f_bit = TRUE;
-    lapm_rr(s, 1);
-    /* Restart ourselves */
-fprintf(stderr, "Setting T403 f\n");
-    s->t401_timer = span_schedule_event(&s->sched, T_401, t401_expired, s);
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(void) lapm_dump(lapm_state_t *s, const uint8_t *frame, int len, int showraw, int txrx)
-{
-    const char *type;
-    char direction_tag[2];
-    
-    direction_tag[0] = txrx  ?  '>'  :  '<';
-    direction_tag[1] = '\0';
-    if (showraw)
-        span_log_buf(&s->logging, SPAN_LOG_FLOW, direction_tag, frame, len);
-    /*endif*/
-
-    switch ((frame[1] & LAPM_FRAMETYPE_MASK))
+    s = &ss->lapm;
+    switch (frame[1] & 0xEC)
     {
-    case LAPM_FRAMETYPE_I:
-    case LAPM_FRAMETYPE_I_ALT:
-        span_log(&s->logging, SPAN_LOG_FLOW, "%c Information frame:\n", direction_tag[0]);
+    case LAPM_U_SABME:
+        /* Discard un-acked I frames. Reset vs, vr, and va. Clear exceptions */
+        reset_lapm(ss);
+        /* Going to connected state */
+        s->state = LAPM_DATA;
+        /* Respond UA (or DM on error) */
+        // fixme: why may be error and LAPM_U_DM ??
+        tx_unnumbered_frame(s, s->rsp_addr, LAPM_U_UA | (frame[1] & 0x10), NULL, 0);
+        t401_stop_t403_start(ss);
+        report_rx_status_change(ss, SIG_STATUS_LINK_CONNECTED);
         break;
-    case LAPM_FRAMETYPE_S:
-        span_log(&s->logging, SPAN_LOG_FLOW, "%c Supervisory frame:\n", direction_tag[0]);
+    case LAPM_U_UI:
+        /* Break signal */
+        /* TODO: */
         break;
-    case LAPM_FRAMETYPE_U:
-        span_log(&s->logging, SPAN_LOG_FLOW, "%c Unnumbered frame:\n", direction_tag[0]);
-        break;
-    }
-    /*endswitch*/
-    
-    span_log(&s->logging,
-             SPAN_LOG_FLOW,
-             "%c DLCI: %2d  C/R: %d  EA: %d\n",
-             direction_tag[0],
-             (frame[0] >> 2),
-             (frame[0] & 0x02)  ?  1  :  0,
-             (frame[0] & 0x01),
-             direction_tag[0]);
-    switch ((frame[1] & LAPM_FRAMETYPE_MASK))
-    {
-    case LAPM_FRAMETYPE_I:
-    case LAPM_FRAMETYPE_I_ALT:
-        /* Information frame */
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW, 
-                 "%c N(S): %03d\n",
-                 direction_tag[0],
-                 (frame[1] >> 1));
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW, 
-                 "%c N(R): %03d   P: %d\n",
-                 direction_tag[0],
-                 (frame[2] >> 1),
-                 (frame[2] & 0x01));
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW, 
-                 "%c %d bytes of data\n",
-                 direction_tag[0],
-                 len - 4);
-        break;
-    case LAPM_FRAMETYPE_S:
-        /* Supervisory frame */
-        switch (frame[1] & 0x0C)
+    case LAPM_U_DISC:
+        /* Respond UA (or DM) */
+        if (s->state == LAPM_IDLE)
         {
-        case 0x00:
-            type = "RR (receive ready)";
-            break;
-        case 0x04:
-            type = "RNR (receive not ready)";
-            break;
-        case 0x08:
-            type = "REJ (reject)";
-            break;
-        case 0x0C:
-            type = "SREJ (selective reject)";
-            break;
-        default:
-            type = "???";
-            break;
-        }
-        /*endswitch*/
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW,
-                 "%c S: %03d [ %s ]\n",
-                 direction_tag[0],
-                 frame[1],
-                 type);
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW,
-                 "%c N(R): %03d P/F: %d\n",
-                 direction_tag[0],
-                 frame[2] >> 1,
-                 frame[2] & 0x01);
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW,
-                 "%c %d bytes of data\n",
-                 direction_tag[0],
-                 len - 4);
-        break;
-    case LAPM_FRAMETYPE_U:
-        /* Unnumbered frame */
-        switch (frame[1] & 0xEC)
-        {
-        case 0x00:
-            type = "UI (unnumbered information)";
-            break;
-        case 0x0C:
-            type = "DM (disconnect mode)";
-            break;
-        case 0x40:
-            type = "DISC (disconnect)";
-            break;
-        case 0x60:
-            type = "UA (unnumbered acknowledgement)";
-            break;
-        case 0x6C:
-            type = "SABME (set asynchronous balanced mode extended)";
-            break;
-        case 0x84:
-            type = "FRMR (frame reject)";
-            break;
-        case 0xAC:
-            type = "XID (exchange identification)";
-            break;
-        case 0xE0:
-            type = "TEST (test)";
-            break;
-        default:
-            type = "???";
-            break;
-        }
-        /*endswitch*/
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW,
-                 "%c   M: %03d [ %s ] P/F: %d\n",
-                 direction_tag[0],
-                 frame[1],
-                 type,
-                 (frame[1] >> 4) & 1);
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW,
-                 "%c %d bytes of data\n",
-                 direction_tag[0],
-                 len - 3);
-        break;
-    }
-    /*endswitch*/
-}
-/*- End of function --------------------------------------------------------*/
-
-static void lapm_link_up(lapm_state_t *s)
-{
-    uint8_t buf[1024];
-    int len;
-
-    lapm_reset(s);
-    /* Go into connection established state */
-    s->state = LAPM_DATA;
-    if (s->status_callback)
-        s->status_callback(s->status_callback_user_data, s->state);
-    /*endif*/
-    if (!queue_empty(s->tx_queue))
-    {
-        if ((len = queue_read(s->tx_queue, buf, s->n401)) > 0)
-            lapm_tx_iframe(s, buf, len, TRUE);
-        /*endif*/
-    }
-    /*endif*/
-    if (s->t401_timer >= 0)
-    {
-fprintf(stderr, "Deleting T401 x [%p] %d\n", (void *) s, s->t401_timer);
-        span_schedule_del(&s->sched, s->t401_timer);
-        s->t401_timer = -1;
-    }
-    /*endif*/
-    /* Start the T403 timer */
-fprintf(stderr, "Setting T403 g\n");
-    s->t403_timer = span_schedule_event(&s->sched, T_403, t403_expired, s);
-}
-/*- End of function --------------------------------------------------------*/
-
-static void lapm_link_down(lapm_state_t *s)
-{
-    lapm_reset(s);
-
-    if (s->status_callback)
-        s->status_callback(s->status_callback_user_data, s->state);
-    /*endif*/
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(void) lapm_reset(lapm_state_t *s)
-{
-    lapm_frame_queue_t *f;
-    lapm_frame_queue_t *p;
-
-    /* Having received a SABME, we need to reset our entire state */
-    s->next_tx_frame = 0;
-    s->last_frame_peer_acknowledged = 0;
-    s->next_expected_frame = 0;
-    s->last_frame_we_acknowledged = 0;
-    s->window_size_k = 15;
-    s->n401 = 128;
-    if (s->t401_timer >= 0)
-    {
-fprintf(stderr, "Deleting T401 d [%p] %d\n", (void *) s, s->t401_timer);
-        span_schedule_del(&s->sched, s->t401_timer);
-        s->t401_timer = -1;
-    }
-    /*endif*/
-    if (s->t403_timer >= 0)
-    {
-fprintf(stderr, "Deleting T403 e %d\n", s->t403_timer);
-        span_schedule_del(&s->sched, s->t403_timer);
-        s->t403_timer = -1;
-    }
-    /*endif*/
-    s->busy = FALSE;
-    s->solicit_f_bit = FALSE;
-    s->state = LAPM_RELEASE;
-    s->retransmissions = 0;
-    /* Discard anything waiting to go out */
-    for (f = s->txqueue;  f;  )
-    {
-        p = f;
-        f = f->next;
-        free(p);
-    }
-    /*endfor*/
-    s->txqueue = NULL;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE_NONSTD(void) lapm_receive(void *user_data, const uint8_t *frame, int len, int ok)
-{
-    lapm_state_t *s;
-    lapm_frame_queue_t *f;
-    int sendnow;
-    int octet;
-    int s_field;
-    int m_field;
-
-fprintf(stderr, "LAPM receive %d %d\n", ok, len);
-    if (!ok  ||  len == 0)
-        return;
-    /*endif*/
-    s = (lapm_state_t *) user_data;
-    if (len < 0)
-    {
-        /* Special conditions */
-        span_log(&s->logging, SPAN_LOG_DEBUG, "V.42 rx status is %s (%d)\n", signal_status_to_str(len), len);
-        return;
-    }
-    /*endif*/
-
-    if ((s->debug & LAPM_DEBUG_LAPM_DUMP))
-        lapm_dump(s, frame, len, s->debug & LAPM_DEBUG_LAPM_RAW, FALSE);
-    /*endif*/
-    octet = 0;
-    /* We do not expect extended addresses */
-    if ((frame[octet] & 0x01) == 0)
-        return;
-    /*endif*/
-    /* Check for DLCIs we do not recognise */
-    if ((frame[octet] >> 2) != LAPM_DLCI_DTE_TO_DTE)
-        return;
-    /*endif*/
-    octet++;
-    switch (frame[octet] & LAPM_FRAMETYPE_MASK)
-    {
-    case LAPM_FRAMETYPE_I:
-    case LAPM_FRAMETYPE_I_ALT:
-        if (s->state != LAPM_DATA)
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "!! Got an I-frame while link state is %d\n", s->state);
-            break;
-        }
-        /*endif*/
-        /* Information frame */
-        if (len < 4)
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "!! Received short I-frame (expected 4, got %d)\n", len);
-            break;
-        }
-        /*endif*/
-        /* Make sure this is a valid packet */
-        if ((frame[1] >> 1) == s->next_expected_frame)
-        {
-            /* Increment next expected I-frame */
-            s->next_expected_frame = (s->next_expected_frame + 1) & 0x7F;
-            /* Handle their ACK */
-            lapm_ack_rx(s, frame[2] >> 1);
-            if ((frame[2] & 0x01))
-            {
-                /* If the Poll/Final bit is set, send the RR immediately */
-                lapm_rr(s, 1);
-            }
-            /*endif*/
-            s->iframe_receive(s->iframe_receive_user_data, frame + 3, len - 4);
-            /* Send an RR if one wasn't sent already */
-            if (s->last_frame_we_acknowledged != s->next_expected_frame) 
-                lapm_rr(s, 0);
-            /*endif*/
+            tx_unnumbered_frame(s, s->rsp_addr, LAPM_U_DM | LAPM_U_PF, NULL, 0);
         }
         else
         {
-            if (((s->next_expected_frame - (frame[1] >> 1)) & 127) < s->window_size_k)
-            {
-                /* It's within our window -- send back an RR */
-                lapm_rr(s, 0);
-            }
-            else
-            {
-                lapm_reject(s);
-            }
-            /*endif*/
+            /* Going to disconnected state, discard unacked I frames, reset all. */
+            s->state = LAPM_IDLE;
+            reset_lapm(ss);
+            tx_unnumbered_frame(s, s->rsp_addr, LAPM_U_UA | (frame[1] & 0x10), NULL, 0);
+            t401_stop(ss);
+            /* TODO: notify CF */
+            report_rx_status_change(ss, SIG_STATUS_LINK_DISCONNECTED);
         }
-        /*endif*/
         break;
-    case LAPM_FRAMETYPE_S:
-        if (s->state != LAPM_DATA)
+    case LAPM_U_XID:
+        /* Exchange general ID info */
+        receive_xid(ss, frame, len);
+        transmit_xid(ss, s->rsp_addr);
+        break;
+    case LAPM_U_TEST:
+        /* TODO: */
+        break;
+    default:
+        return -1;
+    }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int rx_unnumbered_rsp_frame(v42_state_t *ss, const uint8_t *frame, int len)
+{
+    lapm_state_t *s;
+
+    s = &ss->lapm;
+    switch (frame[1] & 0xEC)
+    {
+    case LAPM_U_DM:
+        switch (s->state)
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "!! Got S-frame while link down\n");
-            break;
-        }
-        /*endif*/
-        if (len < 4)
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "!! Received short S-frame (expected 4, got %d)\n", len);
-            break;
-        }
-        /*endif*/
-        s_field = frame[octet] & 0xEC;
-        switch (s_field)
-        {
-        case 0x00:
-            /* RR (receive ready) */
-            s->busy = FALSE;
-            /* Acknowledge frames as necessary */
-            lapm_ack_rx(s, frame[2] >> 1);
-            if ((frame[2] & 0x01))
+        case LAPM_IDLE:
+            if (!(frame[1] & 0x10))
             {
-                /* If P/F is one, respond with an RR with the P/F bit set */
-                if (s->solicit_f_bit)
-                {
-                    span_log(&s->logging, SPAN_LOG_FLOW, "-- Got RR response to our frame\n");
-                }
-                else
-                {
-                    span_log(&s->logging, SPAN_LOG_FLOW, "-- Unsolicited RR with P/F bit, responding\n");
-                    lapm_rr(s, 1);
-                }
-                /*endif*/
-                s->solicit_f_bit = FALSE;
+                /* TODO: notify CF */
+                report_rx_status_change(ss, SIG_STATUS_LINK_CONNECTED);
             }
-            /*endif*/
             break;
-        case 0x04:
-            /* RNR (receive not ready) */
-            span_log(&s->logging, SPAN_LOG_FLOW, "-- Got receiver not ready\n");
-            s->busy = TRUE;
-            break;   
-        case 0x08:
-            /* REJ (reject) */
-            /* Just retransmit */
-            span_log(&s->logging, SPAN_LOG_FLOW, "-- Got reject requesting packet %d...  Retransmitting.\n", frame[2] >> 1);
-            if ((frame[2] & 0x01))
+        case LAPM_ESTABLISH:
+        case LAPM_RELEASE:
+            if ((frame[1] & 0x10))
             {
-                /* If it has the poll bit set, send an appropriate supervisory response */
-                lapm_rr(s, 1);
+                s->state = LAPM_IDLE;
+                reset_lapm(ss);
+                t401_stop(ss);
+                /* TODO: notify CF */
+                report_rx_status_change(ss, SIG_STATUS_LINK_DISCONNECTED);
             }
-            /*endif*/
-            sendnow = FALSE;
-            /* Resend the appropriate I-frame */
-            for (f = s->txqueue;  f;  f = f->next)
-            {
-                if (sendnow  ||  (f->frame[1] >> 1) == (frame[2] >> 1))
-                {
-                    /* Matches the request, or follows in our window */
-                    sendnow = TRUE;
-                    span_log(&s->logging,
-                             SPAN_LOG_FLOW,
-                             "!! Got reject for frame %d, retransmitting frame %d now, updating n_r!\n",
-                             frame[2] >> 1,
-                             f->frame[1] >> 1);
-                    f->frame[2] = (uint8_t) (s->next_expected_frame << 1);
-                    lapm_tx_frame(s, f->frame, f->len);
-                }
-                /*endif*/
-            }
-            /*endfor*/
-            if (!sendnow)
-            {
-                if (s->txqueue)
-                {
-                    /* This should never happen */
-                    if ((frame[2] & 0x01) == 0  ||  (frame[2] >> 1))
-                    {
-                        span_log(&s->logging,
-                                 SPAN_LOG_FLOW,
-                                 "!! Got reject for frame %d, but we only have others!\n",
-                                 frame[2] >> 1);
-                    }
-                    /*endif*/
-                }
-                else
-                {
-                    /* Hrm, we have nothing to send, but have been REJ'd.  Reset last_frame_peer_acknowledged, next_tx_frame, etc */
-                    span_log(&s->logging, SPAN_LOG_FLOW, "!! Got reject for frame %d, but we have nothing -- resetting!\n", frame[2] >> 1);
-                    s->last_frame_peer_acknowledged =
-                    s->next_tx_frame = frame[2] >> 1;
-                    /* Reset t401 timer if it was somehow going */
-                    if (s->t401_timer >= 0)
-                    {
-fprintf(stderr, "Deleting T401 f [%p] %d\n", (void *) s, s->t401_timer);
-                        span_schedule_del(&s->sched, s->t401_timer);
-                        s->t401_timer = -1;
-                    }
-                    /*endif*/
-                    /* Reset and restart t403 timer */
-                    if (s->t403_timer >= 0)
-                    {
-fprintf(stderr, "Deleting T403 g %d\n", s->t403_timer);
-                        span_schedule_del(&s->sched, s->t403_timer);
-                        s->t403_timer = -1;
-                    }
-                    /*endif*/
-fprintf(stderr, "Setting T403 h\n");
-                    s->t403_timer = span_schedule_event(&s->sched, T_403, t403_expired, s);
-                }
-                /*endif*/
-            }
-            /*endif*/
             break;
-        case 0x0C:
-            /* SREJ (selective reject) */
+        case LAPM_DATA:
+            if (s->retry_count  ||  !(frame[1] & 0x10))
+            {
+                s->state = LAPM_IDLE;
+                reset_lapm(ss);
+                /* TODO: notify CF */
+                report_rx_status_change(ss, SIG_STATUS_LINK_DISCONNECTED);
+            }
             break;
         default:
-            span_log(&s->logging,
-                     SPAN_LOG_FLOW,
-                     "!! XXX Unknown Supervisory frame sd=0x%02x,pf=%02xnr=%02x vs=%02x, va=%02x XXX\n",
-                     s_field,
-                     frame[2] & 0x01,
-                     frame[2] >> 1,
-                     s->next_tx_frame,
-                     s->last_frame_peer_acknowledged);
             break;
         }
-        /*endswitch*/
         break;
-    case LAPM_FRAMETYPE_U:
-        if (len < 3)
+    case LAPM_U_UI:
+        /* TODO: */
+        break;
+    case LAPM_U_UA:
+        switch (s->state)
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "!! Received too short unnumbered frame\n");
+        case LAPM_ESTABLISH:
+            s->state = LAPM_DATA;
+            reset_lapm(ss);
+            t401_stop_t403_start(ss);
+            report_rx_status_change(ss, SIG_STATUS_LINK_CONNECTED);
             break;
-        }
-        /*endif*/
-        m_field = frame[octet] & 0xEC;
-        switch (m_field)
-        {
-        case 0x00:
-            /* UI (unnumbered information) */
-            switch (frame[++octet] & 0x7F)
-            {
-            case 0x40:
-                /* BRK */
-                span_log(&s->logging, SPAN_LOG_FLOW, "BRK - option %d, length %d\n", (frame[octet] >> 5), frame[octet + 1]);
-                octet += 2;
-                break;
-            case 0x60:
-                /* BRKACK */
-                span_log(&s->logging, SPAN_LOG_FLOW, "BRKACK\n");
-                break;
-            default:
-                /* Unknown */
-                span_log(&s->logging, SPAN_LOG_FLOW, "Unknown UI type\n");
-                break;
-            }
-            /*endswitch*/
-            break;
-        case 0x0C:
-            /* DM (disconnect mode) */
-            if ((frame[octet] & 0x10))
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "-- Got Unconnected Mode from peer.\n");
-                /* Disconnected mode, try again */
-                lapm_link_down(s);
-                lapm_restart(s);
-            }
-            else
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "-- DM (disconnect mode) requesting SABME, starting.\n");
-                /* Requesting that we start */
-                lapm_restart(s);
-            }
-            /*endif*/
-            break;
-        case 0x40:
-            /* DISC (disconnect) */
-            span_log(&s->logging, SPAN_LOG_FLOW, "-- Got DISC (disconnect) from peer.\n");
-            /* Acknowledge */
-            lapm_send_ua(s, (frame[octet] & 0x10));
-            lapm_link_down(s);
-            break;
-        case 0x60:
-            /* UA (unnumbered acknowledgement) */
-            if (s->state == LAPM_ESTABLISH)
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "-- Got UA (unnumbered acknowledgement) from %s peer. Link up.\n", (frame[0] & 0x02)  ?  "xxx"  :  "yyy");
-                lapm_link_up(s);
-            }
-            else
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "!! Got a UA (unnumbered acknowledgement) in state %d\n", s->state);
-            }
-            /*endif*/
-            break;
-        case 0x6C:
-            /* SABME (set asynchronous balanced mode extended) */
-            span_log(&s->logging, SPAN_LOG_FLOW, "-- Got SABME (set asynchronous balanced mode extended) from %s peer.\n", (frame[0] & 0x02)  ?  "yyy"  :  "xxx");
-            if ((frame[0] & 0x02))
-            {
-                s->peer_is_originator = TRUE;
-                if (s->we_are_originator)
-                {
-                    /* We can't both be originators */
-                    span_log(&s->logging, SPAN_LOG_FLOW, "We think we are the originator, but they think so too.");
-                    break;
-                }
-                /*endif*/
-            }
-            else
-            {
-                s->peer_is_originator = FALSE;
-                if (!s->we_are_originator)
-                {
-                    /* We can't both be answerers */
-                    span_log(&s->logging, SPAN_LOG_FLOW, "We think we are the answerer, but they think so too.\n");
-                    break;
-                }
-                /*endif*/
-            }
-            /*endif*/
-            /* Send unnumbered acknowledgement */
-            lapm_send_ua(s, (frame[octet] & 0x10));
-            lapm_link_up(s);
-            break;
-        case 0x84:
-            /* FRMR (frame reject) */
-            span_log(&s->logging, SPAN_LOG_FLOW, "!! FRMR (frame reject).\n");
-            break;
-        case 0xAC:
-            /* XID (exchange identification) */
-            span_log(&s->logging, SPAN_LOG_FLOW, "!! XID (exchange identification) frames not supported\n");
-            break;
-        case 0xE0:
-            /* TEST (test) */
-            span_log(&s->logging, SPAN_LOG_FLOW, "!! TEST (test) frames not supported\n");
+        case LAPM_RELEASE:
+            s->state = LAPM_IDLE;
+            reset_lapm(ss);
+            t401_stop(ss);
+            report_rx_status_change(ss, SIG_STATUS_LINK_DISCONNECTED);
             break;
         default:
-            span_log(&s->logging, SPAN_LOG_FLOW, "!! Don't know what to do with M=%X u-frames\n", m_field);
+            /* Unsolicited UA */
+            /* TODO: */
             break;
         }
-        /*endswitch*/
+        /* Clear all exceptions, busy states (self and peer) */
+        /* Reset vars */
+        break;
+    case LAPM_U_FRMR:
+        /* Non-recoverable error */
+        /* TODO: */
+        break;
+    case LAPM_U_XID:
+        if (s->configuring)
+        {
+            receive_xid(ss, frame, len);
+            s->configuring = FALSE;
+            t401_stop(ss);
+            switch (s->state)
+            {
+            case LAPM_IDLE:
+                lapm_connect(ss);
+                break;
+            case LAPM_DATA:
+                s->local_busy = FALSE;
+                tx_supervisory_frame(s, s->cmd_addr, LAPM_S_RR, 0);
+                break;
+            }
+        }
+        break;
+    default:
         break;
     }
-    /*endswitch*/
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 static void lapm_hdlc_underflow(void *user_data)
 {
     lapm_state_t *s;
-    uint8_t buf[1024];
-    int len;
+    v42_state_t *ss;
+    v42_frame_t *f;
 
-    s = (lapm_state_t *) user_data;
-    span_log(&s->logging, SPAN_LOG_FLOW, "HDLC underflow\n");
-    if (s->state == LAPM_DATA)
+    ss = (v42_state_t *) user_data;
+    s = &ss->lapm;
+    if (s->ctrl_get != s->ctrl_put)
     {
-        if (!queue_empty(s->tx_queue))
-        {
-            if ((len = queue_read(s->tx_queue, buf, s->n401)) > 0)
-                lapm_tx_iframe(s, buf, len, TRUE);
-            /*endif*/
-        }
-        /*endif*/
+        /* Send control frame */
+        f = &s->ctrl_buf[s->ctrl_get];
+        if (++s->ctrl_get >= V42_CTRL_FRAMES)
+            s->ctrl_get = 0;
     }
-    /*endif*/
+    else
+    {
+        if (s->far_busy  ||  s->configuring  ||  s->state != LAPM_DATA)
+        {
+            hdlc_tx_flags(&s->hdlc_tx, 10);
+            return;
+        }
+        if (s->info_get == s->info_put  &&  !tx_information_frame(ss))
+        {
+            hdlc_tx_flags(&s->hdlc_tx, 10);
+            return;
+        }
+        /* Send info frame */
+        f = &s->info_buf[s->info_get];
+        if (++s->info_get >= V42_INFO_FRAMES)
+            s->info_get = 0;
+
+        f->buf[0] = s->cmd_addr;
+        f->buf[1] = s->vs << 1;
+        f->buf[2] = s->vr << 1;
+        s->vs = (s->vs + 1) & 0x7F;
+        if (ss->bit_timer == 0)
+            t401_start(ss);
+    }
+    hdlc_tx_frame(&s->hdlc_tx, f->buf, f->len);
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) lapm_restart(lapm_state_t *s)
+SPAN_DECLARE_NONSTD(void) lapm_receive(void *user_data, const uint8_t *frame, int len, int ok)
 {
-#if 0
-    if (s->state != LAPM_RELEASE)
+    lapm_state_t *s;
+    v42_state_t *ss;
+
+    ss = (v42_state_t *) user_data;
+    s = &ss->lapm;
+    if (len < 0)
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "!! lapm_restart: Not in 'Link Connection Released' state\n");
+        span_log(&ss->logging, SPAN_LOG_DEBUG, "V.42 rx status is %s (%d)\n", signal_status_to_str(len), len);
         return;
     }
-    /*endif*/
-#endif
-    span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
-    span_log_set_protocol(&s->logging, "LAP.M");
-    hdlc_tx_init(&s->hdlc_tx, FALSE, 1, TRUE, lapm_hdlc_underflow, s);
-    hdlc_rx_init(&s->hdlc_rx, FALSE, FALSE, 1, lapm_receive, s);
-    /* TODO: This is a bodge! */
-    s->t401_timer = -1;
-    s->t402_timer = -1;
-    s->t403_timer = -1;
-    lapm_reset(s);
-    /* TODO: Maybe we should implement T_WAIT? */
-    lapm_send_sabme(NULL, s);
+    if (!ok)
+        return;
+
+    switch ((frame[1] & LAPM_FRAMETYPE_MASK))
+    {
+    case LAPM_FRAMETYPE_I:
+    case LAPM_FRAMETYPE_I_ALT:
+        receive_information_frame(ss, frame, len);
+        break;
+    case LAPM_FRAMETYPE_S:
+        if (!valid_data_state(ss))
+            return;
+        if (frame[0] == s->rsp_addr)
+            rx_supervisory_cmd_frame(ss, frame, len);
+        else
+            rx_supervisory_rsp_frame(ss, frame, len);
+        break;
+    case LAPM_FRAMETYPE_U:
+        if (frame[0] == s->rsp_addr)
+            rx_unnumbered_cmd_frame(ss, frame, len);
+        else
+            rx_unnumbered_rsp_frame(ss, frame, len);
+        break;
+    default:
+        break;
+    }
 }
 /*- End of function --------------------------------------------------------*/
 
-#if 0
-static void lapm_init(lapm_state_t *s)
+static int lapm_connect(v42_state_t *ss)
 {
-    lapm_restart(s);
+    lapm_state_t *s;
+
+    s = &ss->lapm;
+    if (s->state != LAPM_IDLE)
+        return -1;
+
+    /* Negotiate params */
+    //transmit_xid(s, s->cmd_addr);
+
+    reset_lapm(ss);
+    /* Connect */
+    s->state = LAPM_ESTABLISH;
+    tx_unnumbered_frame(s, s->cmd_addr, LAPM_U_SABME | LAPM_U_PF, NULL, 0);
+    /* Start T401 (and not T403) */
+    t401_start(ss);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
-#endif
+
+static int lapm_disconnect(v42_state_t *ss)
+{
+    lapm_state_t *s;
+
+    s = &ss->lapm;
+    s->state = LAPM_RELEASE;
+    tx_unnumbered_frame(s, s->cmd_addr, LAPM_U_DISC | LAPM_U_PF, NULL, 0);
+    t401_start(ss);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int lapm_config(v42_state_t *ss)
+{
+    lapm_state_t *s;
+
+    s = &ss->lapm;
+    s->configuring = TRUE;
+    if (s->state == LAPM_DATA)
+    {
+        s->local_busy = TRUE;
+        tx_supervisory_frame(s, s->cmd_addr, LAPM_S_RNR, 1);
+    }
+    transmit_xid(ss, s->cmd_addr);
+    t401_start(ss);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void reset_lapm(v42_state_t *ss)
+{
+    lapm_state_t *s;
+    
+    s = &ss->lapm;
+    /* Reset the LAP.M state */
+    s->local_busy = FALSE;
+    s->far_busy = FALSE;
+    s->vs = 0;
+    s->va = 0;
+    s->vr = 0;
+    /* Discard any info frames still queued for transmission */
+    s->info_put = 0;
+    s->info_acked = 0;
+    s->info_get = 0;
+    /* Discard any control frames */
+    s->ctrl_put = 0;
+    s->ctrl_get = 0;
+
+    s->tx_window_size_k = ss->config.v42_tx_window_size_k;
+    s->rx_window_size_k = ss->config.v42_rx_window_size_k;
+    s->tx_n401 = ss->config.v42_tx_n401;
+    s->rx_n401 = ss->config.v42_rx_n401;
+}
+/*- End of function --------------------------------------------------------*/
+
+void v42_stop(v42_state_t *ss)
+{
+    lapm_state_t *s;
+
+    s = &ss->lapm;
+    ss->bit_timer = 0;
+    s->packer_process = NULL;
+    lapm_disconnect(ss);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void restart_lapm(v42_state_t *s)
+{
+    if (s->calling_party)
+    {
+        s->bit_timer = 48*8;
+        s->bit_timer_func = initiate_negotiation_expired;
+    }
+    else
+    {
+        lapm_hdlc_underflow(s);
+    }
+    s->lapm.packer_process = NULL;
+    s->lapm.state = LAPM_IDLE;
+}
+/*- End of function --------------------------------------------------------*/
 
 static void negotiation_rx_bit(v42_state_t *s, int new_bit)
 {
     /* DC1 with even parity, 8-16 ones, DC1 with odd parity, 8-16 ones */
-    //uint8_t odp = "0100010001 11111111 0100010011 11111111";
+    /* uint8_t odp = "0100010001 11111111 0100010011 11111111"; */
     /* V.42 OK E , 8-16 ones, C, 8-16 ones */
-    //uint8_t adp_v42 = "0101000101  11111111  0110000101  11111111";
+    /* uint8_t adp_v42 = "0101000101  11111111  0110000101  11111111"; */
     /* V.42 disabled E, 8-16 ones, NULL, 8-16 ones */
-    //uint8_t adp_nov42 = "0101000101  11111111  0000000001  11111111";
+    /* uint8_t adp_nov42 = "0101000101  11111111  0000000001  11111111"; */
 
     /* There may be no negotiation, so we need to process this data through the
        HDLC receiver as well */
@@ -1117,124 +1229,117 @@ static void negotiation_rx_bit(v42_state_t *s, int new_bit)
     }
     /*endif*/
     new_bit &= 1;
-    s->rxstream = (s->rxstream << 1) | new_bit;
-    switch (s->rx_negotiation_step)
+    s->neg.rxstream = (s->neg.rxstream << 1) | new_bit;
+    switch (s->neg.rx_negotiation_step)
     {
     case 0:
         /* Look for some ones */
         if (new_bit)
             break;
         /*endif*/
-        s->rx_negotiation_step = 1;
-        s->rxbits = 0;
-        s->rxstream = ~1;
-        s->rxoks = 0;
+        s->neg.rx_negotiation_step = 1;
+        s->neg.rxbits = 0;
+        s->neg.rxstream = ~1;
+        s->neg.rxoks = 0;
         break;
     case 1:
         /* Look for the first character */
-        if (++s->rxbits < 9)
+        if (++s->neg.rxbits < 9)
             break;
         /*endif*/
-        s->rxstream &= 0x3FF;
-        if (s->calling_party  &&  s->rxstream == 0x145)
+        s->neg.rxstream &= 0x3FF;
+        if (s->calling_party  &&  s->neg.rxstream == 0x145)
         {
-            s->rx_negotiation_step++;
+            s->neg.rx_negotiation_step++;
         }
-        else if (!s->calling_party  &&  s->rxstream == 0x111)
+        else if (!s->calling_party  &&  s->neg.rxstream == 0x111)
         {
-            s->rx_negotiation_step++;
+            s->neg.rx_negotiation_step++;
         }
         else
         {
-            s->rx_negotiation_step = 0;
+            s->neg.rx_negotiation_step = 0;
         }
         /*endif*/
-        s->rxbits = 0;
-        s->rxstream = ~0;
+        s->neg.rxbits = 0;
+        s->neg.rxstream = ~0;
         break;
     case 2:
         /* Look for 8 to 16 ones */
-        s->rxbits++;
+        s->neg.rxbits++;
         if (new_bit)
             break;
         /*endif*/
-        if (s->rxbits >= 8  &&  s->rxbits <= 16)
-            s->rx_negotiation_step++;
+        if (s->neg.rxbits >= 8  &&  s->neg.rxbits <= 16)
+            s->neg.rx_negotiation_step++;
         else
-            s->rx_negotiation_step = 0;
+            s->neg.rx_negotiation_step = 0;
         /*endif*/
-        s->rxbits = 0;
-        s->rxstream = ~1;
+        s->neg.rxbits = 0;
+        s->neg.rxstream = ~1;
         break;
     case 3:
         /* Look for the second character */
-        if (++s->rxbits < 9)
+        if (++s->neg.rxbits < 9)
             break;
         /*endif*/
-        s->rxstream &= 0x3FF;
-        if (s->calling_party  &&  s->rxstream == 0x185)
+        s->neg.rxstream &= 0x3FF;
+        if (s->calling_party  &&  s->neg.rxstream == 0x185)
         {
-            s->rx_negotiation_step++;
+            s->neg.rx_negotiation_step++;
         }
-        else if (s->calling_party  &&  s->rxstream == 0x001)
+        else if (s->calling_party  &&  s->neg.rxstream == 0x001)
         {
-            s->rx_negotiation_step++;
+            s->neg.rx_negotiation_step++;
         }
-        else if (!s->calling_party  &&  s->rxstream == 0x113)
+        else if (!s->calling_party  &&  s->neg.rxstream == 0x113)
         {
-            s->rx_negotiation_step++;
+            s->neg.rx_negotiation_step++;
         }
         else
         {
-            s->rx_negotiation_step = 0;
+            s->neg.rx_negotiation_step = 0;
         }
         /*endif*/
-        s->rxbits = 0;
-        s->rxstream = ~0;
+        s->neg.rxbits = 0;
+        s->neg.rxstream = ~0;
         break;
     case 4:
         /* Look for 8 to 16 ones */
-        s->rxbits++;
+        s->neg.rxbits++;
         if (new_bit)
             break;
         /*endif*/
-        if (s->rxbits >= 8  &&  s->rxbits <= 16)
+        if (s->neg.rxbits >= 8  &&  s->neg.rxbits <= 16)
         {
-            if (++s->rxoks >= 2)
+            if (++s->neg.rxoks >= 2)
             {
-                /* HIT */
-                s->rx_negotiation_step++;
+                /* HIT - we have found the "V.42 supported" pattern. */
+                s->neg.rx_negotiation_step++;
                 if (s->calling_party)
                 {
-                    if (s->t400_timer >= 0)
-                    {
-fprintf(stderr, "Deleting T400 h %d\n", s->t400_timer);
-                        span_schedule_del(&s->lapm.sched, s->t400_timer);
-                        s->t400_timer = -1;
-                    }
-                    /*endif*/
-                    s->lapm.state = LAPM_ESTABLISH;
-                    if (s->lapm.status_callback)
-                        s->lapm.status_callback(s->lapm.status_callback_user_data, s->lapm.state);
-                    /*endif*/
+                    t400_stop(s);
+                    s->lapm.state = LAPM_IDLE;
+                    report_rx_status_change(s, s->lapm.state);
+                    restart_lapm(s);
                 }
                 else
                 {
-                    s->odp_seen = TRUE;
+                    s->neg.odp_seen = TRUE;
                 }
                 /*endif*/
                 break;
             }
             /*endif*/
-            s->rx_negotiation_step = 1;
-            s->rxbits = 0;
-            s->rxstream = ~1;
+            s->neg.rx_negotiation_step = 1;
+            s->neg.rxbits = 0;
+            s->neg.rxstream = ~1;
         }
         else
         {
-            s->rx_negotiation_step = 0;
-            s->rxbits = 0;
-            s->rxstream = ~0;
+            s->neg.rx_negotiation_step = 0;
+            s->neg.rxbits = 0;
+            s->neg.rxstream = ~0;
         }
         /*endif*/
         break;
@@ -1252,56 +1357,49 @@ static int v42_support_negotiation_tx_bit(v42_state_t *s)
 
     if (s->calling_party)
     {
-        if (s->txbits <= 0)
+        if (s->neg.txbits <= 0)
         {
-            s->txstream = 0x3FE22;
-            s->txbits = 36;
+            s->neg.txstream = 0x3FE22;
+            s->neg.txbits = 36;
         }
-        else if (s->txbits == 18)
+        else if (s->neg.txbits == 18)
         {
-            s->txstream = 0x3FF22;
+            s->neg.txstream = 0x3FF22;
         }
         /*endif*/
-        bit = s->txstream & 1;
-        s->txstream >>= 1;
-        s->txbits--;
+        bit = s->neg.txstream & 1;
+        s->neg.txstream >>= 1;
+        s->neg.txbits--;
     }
     else
     {
-        if (s->odp_seen  &&  s->txadps < 10)
+        if (s->neg.odp_seen  &&  s->neg.txadps < 10)
         {
-            if (s->txbits <= 0)
+            if (s->neg.txbits <= 0)
             {
-                if (++s->txadps >= 10)
+                if (++s->neg.txadps >= 10)
                 {
-                    if (s->t400_timer >= 0)
-                    {
-fprintf(stderr, "Deleting T400 i %d\n", s->t400_timer);
-                        span_schedule_del(&s->lapm.sched, s->t400_timer);
-                        s->t400_timer = -1;
-                    }
-                    /*endif*/
-                    s->lapm.state = LAPM_ESTABLISH;
-                    if (s->lapm.status_callback)
-                        s->lapm.status_callback(s->lapm.status_callback_user_data, s->lapm.state);
-                    /*endif*/
-                    s->txstream = 1;
+                    t400_stop(s);
+                    s->lapm.state = LAPM_IDLE;
+                    report_rx_status_change(s, s->lapm.state);
+                    s->neg.txstream = 1;
+                    restart_lapm(s);
                 }
                 else
                 {
-                    s->txstream = 0x3FE8A;
-                    s->txbits = 36;
+                    s->neg.txstream = 0x3FE8A;
+                    s->neg.txbits = 36;
                 }
                 /*endif*/
             }
-            else if (s->txbits == 18)
+            else if (s->neg.txbits == 18)
             {
-                s->txstream = 0x3FE86;
+                s->neg.txstream = 0x3FE86;
             }
             /*endif*/
-            bit = s->txstream & 1;
-            s->txstream >>= 1;
-            s->txbits--;
+            bit = s->neg.txstream & 1;
+            s->neg.txstream >>= 1;
+            s->neg.txbits--;
         }
         else
         {
@@ -1333,6 +1431,11 @@ SPAN_DECLARE(int) v42_tx_bit(void *user_data)
     int bit;
 
     s = (v42_state_t *) user_data;
+    if (s->bit_timer  &&  (--s->bit_timer) <= 0)
+    {
+        s->bit_timer = 0;
+        s->bit_timer_func(s);
+    }
     if (s->lapm.state == LAPM_DETECT)
         bit = v42_support_negotiation_tx_bit(s);
     else
@@ -1342,89 +1445,124 @@ SPAN_DECLARE(int) v42_tx_bit(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, v42_status_func_t callback, void *user_data)
+SPAN_DECLARE(int) v42_set_local_busy_status(v42_state_t *s, int busy)
 {
-    s->lapm.status_callback = callback;
-    s->lapm.status_callback_user_data = user_data;
+    int previous_busy;
+
+    previous_busy = s->lapm.local_busy;
+    s->lapm.local_busy = busy;
+    return previous_busy;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v42_get_far_busy_status(v42_state_t *s)
+{
+    return s->lapm.far_busy;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, modem_status_func_t status_handler, void *user_data)
+{
+    s->lapm.status_handler = status_handler;
+    s->lapm.status_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) v42_restart(v42_state_t *s)
 {
-    span_schedule_init(&s->lapm.sched);
+    hdlc_tx_init(&s->lapm.hdlc_tx, FALSE, 1, TRUE, lapm_hdlc_underflow, s);
+    hdlc_rx_init(&s->lapm.hdlc_rx, FALSE, FALSE, 1, lapm_receive, s);
 
-    s->lapm.we_are_originator = s->calling_party;
-    lapm_restart(&s->lapm);
     if (s->detect)
     {
-        s->txstream = ~0;
-        s->txbits = 0;
-        s->rxstream = ~0;
-        s->rxbits = 0;
-        s->rxoks = 0;
-        s->txadps = 0;
-        s->rx_negotiation_step = 0;
-        s->odp_seen = FALSE;
-fprintf(stderr, "Setting T400 i\n");
-        s->t400_timer = span_schedule_event(&s->lapm.sched, T_400, t400_expired, s);
+        /* We need to do the V.42 support detection sequence */
+        s->neg.txstream = ~0;
+        s->neg.txbits = 0;
+        s->neg.rxstream = ~0;
+        s->neg.rxbits = 0;
+        s->neg.rxoks = 0;
+        s->neg.txadps = 0;
+        s->neg.rx_negotiation_step = 0;
+        s->neg.odp_seen = FALSE;
+        t400_start(s);
         s->lapm.state = LAPM_DETECT;
     }
     else
     {
-        s->lapm.state = LAPM_ESTABLISH;
+        /* Go directly to LAP.M mode */
+        s->lapm.state = LAPM_IDLE;
+        restart_lapm(s);
     }
     /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *s, int calling_party, int detect, v42_frame_handler_t frame_handler, void *user_data)
+SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *ss,
+                                     int calling_party,
+                                     int detect,
+                                     get_msg_func_t iframe_get,
+                                     put_msg_func_t iframe_put,
+                                     void *user_data)
 {
-    int alloced;
-    
-    if (frame_handler == NULL)
-        return NULL;
-    /*endif*/
-    alloced = FALSE;
-    if (s == NULL)
+    lapm_state_t *s;
+
+    if (ss == NULL)
     {
-        if ((s = (v42_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((ss = (v42_state_t *) malloc(sizeof(*ss))) == NULL)
             return NULL;
-        alloced = TRUE;
     }
-    memset(s, 0, sizeof(*s));
-    s->calling_party = calling_party;
-    s->detect = detect;
-    s->lapm.iframe_receive = frame_handler;
-    s->lapm.iframe_receive_user_data = user_data;
-    s->lapm.debug |= (LAPM_DEBUG_LAPM_RAW | LAPM_DEBUG_LAPM_DUMP | LAPM_DEBUG_LAPM_STATE);
-    s->lapm.t401_timer =
-    s->lapm.t402_timer =
-    s->lapm.t403_timer = -1;
+    memset(ss, 0, sizeof(*ss));
 
-    if ((s->lapm.tx_queue = queue_init(NULL, 16384, 0)) == NULL)
-    {
-        if (alloced)
-            free(s);
-        return NULL;
-    }
-    /*endif*/
-    span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
-    span_log_set_protocol(&s->logging, "V.42");
-    v42_restart(s);
-    return s;
+    s = &ss->lapm;
+    ss->calling_party = calling_party;
+    ss->detect = detect;
+    s->iframe_get = iframe_get;
+    s->iframe_get_user_data = user_data;
+    s->iframe_put = iframe_put;
+    s->iframe_put_user_data = user_data;
+
+    s->state = (ss->detect)  ?  LAPM_DETECT  :  LAPM_IDLE;
+    s->local_busy = FALSE;
+    s->far_busy = FALSE;
+
+    /* The address octet is:
+        Data link connection identifier (0)
+        Command/response (0 if answerer, 1 if originator)
+        Extended address (1) */
+    s->cmd_addr = (LAPM_DLCI_DTE_TO_DTE << 2) | ((ss->calling_party)  ?  0x02  :  0x00) | 0x01;
+    s->rsp_addr = (LAPM_DLCI_DTE_TO_DTE << 2) | ((ss->calling_party)  ?  0x00  :  0x02) | 0x01;
+
+    /* Set default values for the LAP.M parameters. These can be modified later. */
+    ss->config.v42_tx_window_size_k = V42_DEFAULT_WINDOW_SIZE_K;
+    ss->config.v42_rx_window_size_k = V42_DEFAULT_WINDOW_SIZE_K;
+    ss->config.v42_tx_n401 = V42_DEFAULT_N_401;
+    ss->config.v42_rx_n401 = V42_DEFAULT_N_401;
+
+    /* TODO: This should be part of the V.42bis startup */
+    ss->config.comp = 1;
+    ss->config.comp_dict_size = 512;
+    ss->config.comp_max_string = 6;
+
+    ss->tx_bit_rate = 28800;
+
+    reset_lapm(ss);
+
+    span_log_init(&ss->logging, SPAN_LOG_NONE, NULL);
+    span_log_set_protocol(&ss->logging, "V.42");
+    return ss;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v42_release(v42_state_t *s)
+SPAN_DECLARE(void) v42_release(v42_state_t *s)
 {
-    return 0;
+    reset_lapm(s);
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v42_free(v42_state_t *s)
+SPAN_DECLARE(void) v42_free(v42_state_t *s)
 {
+    v42_release(s);
     free(s);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

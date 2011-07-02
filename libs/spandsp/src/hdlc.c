@@ -332,7 +332,7 @@ SPAN_DECLARE(void) hdlc_rx_set_frame_handler(hdlc_rx_state_t *s, hdlc_frame_hand
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) hdlc_rx_set_status_handler(hdlc_rx_state_t *s, modem_rx_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) hdlc_rx_set_status_handler(hdlc_rx_state_t *s, modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
