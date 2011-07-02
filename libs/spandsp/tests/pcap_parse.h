@@ -36,7 +36,6 @@ extern "C"
 typedef int (pcap_timing_update_handler_t)(void *user_data, struct timeval *ts);
 typedef int (pcap_packet_handler_t)(void *user_data, const uint8_t *pkt, int len);
 
-
 int pcap_scan_pkts(const char *file,
                    uint32_t src_addr,
                    uint16_t src_port,

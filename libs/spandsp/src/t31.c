@@ -2167,6 +2167,9 @@ SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
         }
         dle_unstuff(s, t, len);
         break;
+    case AT_MODE_CONNECTED:
+        /* TODO: Implement for data modem operation */
+        break;
     }
     return len;
 }

@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
     }
     while (len > 0);
 
-    if (sf_close(outhandle) != 0)
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);

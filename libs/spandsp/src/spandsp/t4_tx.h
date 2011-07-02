@@ -144,6 +144,12 @@ SPAN_DECLARE(void) t4_tx_set_header_info(t4_state_t *s, const char *info);
     \param info A POSIX timezone description string. */
 SPAN_DECLARE(void) t4_tx_set_header_tz(t4_state_t *s, const char *tzstring);
 
+/*! Set page header extends or overlays the image mode.
+    \brief Set page header overlay mode.
+    \param s The T.4 context.
+    \param header_overlays_image TRUE for overlay, or FALSE for extend the page. */
+SPAN_DECLARE(void) t4_tx_set_header_overlays_image(t4_state_t *s, int header_overlays_image);
+
 /*! \brief Set the row read handler for a T.4 transmit context.
     \param s The T.4 transmit context.
     \param handler A pointer to the handler routine.

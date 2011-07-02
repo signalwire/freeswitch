@@ -86,7 +86,7 @@ struct v17_rx_state_s
     /*! \brief The register for the data scrambler. */
     uint32_t scramble_reg;
     /*! \brief Scrambler tap */
-    //int scrambler_tap;
+    int scrambler_tap;
 
     /*! \brief TRUE if the short training sequence is to be used. */
     int short_train;

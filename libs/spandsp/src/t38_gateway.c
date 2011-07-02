@@ -73,9 +73,17 @@
 #include "spandsp/modem_connect_tones.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T85)
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  |  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t81_t82_arith_coding.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t85.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T42)
+#include "spandsp/t42.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+#include "spandsp/t43.h"
 #endif
 #include "spandsp/t4_t6_decode.h"
 #include "spandsp/t4_t6_encode.h"
@@ -100,9 +108,17 @@
 #include "spandsp/private/modem_connect_tones.h"
 #include "spandsp/private/hdlc.h"
 #include "spandsp/private/fax_modems.h"
-#if defined(SPANDSP_SUPPORT_T85)
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  |  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t85.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T42)
+#include "spandsp/private/t42.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+#include "spandsp/private/t43.h"
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
@@ -930,7 +946,7 @@ static void monitor_control_messages(t38_gateway_state_t *s,
     case T30_EOS | 1:
 #if 0
         /* If we are hitting one of these conditions, it will take another DCS/DTC to select
-           the fast modem again, so abandon our idea of t. */
+           the fast modem again, so abandon our idea of it. */
         s->core.fast_bit_rate = 0;
         s->core.fast_rx_modem = T38_NONE;
         s->core.image_data_mode = FALSE;

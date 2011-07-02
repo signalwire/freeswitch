@@ -42,6 +42,10 @@ struct t4_state_s
     /*! \brief The time at which handling of the current page began. */
     time_t page_start_time;
 
+    /*! \brief TRUE for FAX page headers to overlay (i.e. replace) the beginning of the
+               page image. FALSE for FAX page headers to add to the overall length of
+               the page. */
+    int header_overlays_image;
     /*! \brief The text which will be used in FAX page header. No text results
                in no header line. */
     const char *header_info;

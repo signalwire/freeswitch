@@ -36,7 +36,7 @@ These tests exercise the path
 //#define WITH_SPANDSP_INTERNALS
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #if defined(HAVE_FL_FL_H)  &&  defined(HAVE_FL_FL_CARTESIAN_H)  &&  defined(HAVE_FL_FL_AUDIO_METER_H)
@@ -103,7 +103,7 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
     i = (int) (intptr_t) user_data;
     snprintf(tag, sizeof(tag), "%c: Phase B", i);
     printf("%c: Phase B handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
-    log_rx_parameters(s, tag);
+    fax_log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -116,9 +116,9 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
     i = (int) (intptr_t) user_data;
     snprintf(tag, sizeof(tag), "%c: Phase D", i);
     printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
-    log_transfer_statistics(s, tag);
-    log_tx_parameters(s, tag);
-    log_rx_parameters(s, tag);
+    fax_log_transfer_statistics(s, tag);
+    fax_log_tx_parameters(s, tag);
+    fax_log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -132,9 +132,9 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     i = (int) (intptr_t) user_data;
     snprintf(tag, sizeof(tag), "%c: Phase E", i);
     printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));
-    log_transfer_statistics(s, tag);
-    log_tx_parameters(s, tag);
-    log_rx_parameters(s, tag);
+    fax_log_transfer_statistics(s, tag);
+    fax_log_tx_parameters(s, tag);
+    fax_log_rx_parameters(s, tag);
     t30_get_transfer_statistics(s, &t);
     succeeded[i - 'A'] = (result == T30_ERR_OK)  &&  (t.pages_tx == 12  ||  t.pages_rx == 12);
     done[i - 'A'] = TRUE;
@@ -363,7 +363,7 @@ static int decode_test(const char *decode_test_file)
     }
     t38_gateway_release(t38_state_a);
     t38_terminal_release(t38_state_b);
-    if (sf_close(wave_handle) != 0)
+    if (sf_close_telephony(wave_handle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
         exit(2);
@@ -690,7 +690,7 @@ int main(int argc, char *argv[])
     t38_terminal_release(t38_state_b);
     if (log_audio)
     {
-        if (sf_close(wave_handle) != 0)
+        if (sf_close_telephony(wave_handle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME_WAVE);
             exit(2);

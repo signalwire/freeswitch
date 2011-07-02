@@ -58,9 +58,13 @@ struct v17_tx_state_s
 
     /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-    complexi16_t rrc_filter[2*V17_TX_FILTER_STEPS];
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
+    int16_t rrc_filter_re[V17_TX_FILTER_STEPS];
+    int16_t rrc_filter_im[V17_TX_FILTER_STEPS];
 #else
-    complexf_t rrc_filter[2*V17_TX_FILTER_STEPS];
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
+    float rrc_filter_re[V17_TX_FILTER_STEPS];
+    float rrc_filter_im[V17_TX_FILTER_STEPS];
 #endif
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
@@ -75,7 +79,7 @@ struct v17_tx_state_s
     /*! \brief The register for the data scrambler. */
     uint32_t scramble_reg;
     /*! \brief Scrambler tap */
-    //int scrambler_tap;
+    int scrambler_tap;
     /*! \brief TRUE if transmitting the training sequence. FALSE if transmitting user data. */
     int in_training;
     /*! \brief TRUE if the short training sequence is to be used. */

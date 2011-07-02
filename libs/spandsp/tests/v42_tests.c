@@ -56,13 +56,13 @@ int tx_next[3] = {0};
 
 static void v42_status(void *user_data, int status)
 {
-    int x;
+    v42_state_t *s;
 
-    x = (intptr_t) user_data;
+    s = (v42_state_t *) user_data;
     if (status < 0)
-        printf("%d: Status is '%s' (%d)\n", x, signal_status_to_str(status), status);
+        printf("%p: Status is '%s' (%d)\n", s, signal_status_to_str(status), status);
     else
-        printf("%d: Status is '%s' (%d)\n", x, lapm_status_to_str(status), status);
+        printf("%p: Status is '%s' (%d)\n", s, lapm_status_to_str(status), status);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -72,13 +72,15 @@ static int v42_get_frames(void *user_data, uint8_t *msg, int len)
     int j;
     int k;
     int x;
+    v42_state_t *s;
 
     if (len < 0)
     {
         v42_status(user_data, len);
         return 0;
     }
-    x = (intptr_t) user_data;
+    s = (v42_state_t *) user_data;
+    x = (s == &caller)  ?  1  :  2;
     if (variable_length)
     {
         j = make_mask32(len);
@@ -99,24 +101,42 @@ static int v42_get_frames(void *user_data, uint8_t *msg, int len)
 static void v42_put_frames(void *user_data, const uint8_t *msg, int len)
 {
     int i;
+    v42_state_t *s;
     int x;
+    static int count = 0;
+    static int xxx = 0;
 
     if (len < 0)
     {
         v42_status(user_data, len);
         return;
     }
-    x = (intptr_t) user_data;
+    s = (v42_state_t *) user_data;
+    x = (s == &caller)  ?  1  :  2;
     for (i = 0;  i < len;  i++)
     {
         if (msg[i] != (rx_next[x] & 0xFF))
         {
-            printf("%d: Mismatch 0x%02X 0x%02X\n", x, msg[i], rx_next[x] & 0xFF);
+            printf("%p: Mismatch 0x%02X 0x%02X\n", user_data, msg[i], rx_next[x] & 0xFF);
             exit(2);
         }
         rx_next[x]++;
     }
-    printf("%d: Got frame len %d\n", x, len);
+    printf("%p: Got frame len %d\n", user_data, len);
+    printf("%p: %d Far end busy status %d\n", user_data, count, v42_get_far_busy_status(s));
+    if (s == &caller)
+    {
+        if (++count == 5)
+        {
+            v42_set_local_busy_status(s, TRUE);
+            xxx = 1;
+        }
+    }
+    else
+    {
+        if (xxx  &&  ++count == 45)
+            v42_set_local_busy_status(&caller, FALSE);
+    }
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -149,10 +169,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    v42_init(&caller, TRUE, TRUE, v42_get_frames, v42_put_frames, (void *) 1);
-    v42_init(&answerer, FALSE, TRUE, v42_get_frames, v42_put_frames, (void *) 2);
-    v42_set_status_callback(&caller, v42_status, (void *) 1);
-    v42_set_status_callback(&answerer, v42_status, (void *) 2);
+    v42_init(&caller, TRUE, TRUE, v42_get_frames, v42_put_frames, (void *) &caller);
+    v42_init(&answerer, FALSE, TRUE, v42_get_frames, v42_put_frames, (void *) &answerer);
+    v42_set_status_callback(&caller, v42_status, (void *) &caller);
+    v42_set_status_callback(&answerer, v42_status, (void *) &answerer);
     v42_restart(&caller);
     v42_restart(&answerer);
 

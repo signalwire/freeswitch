@@ -295,10 +295,7 @@ static void map_frequency_response(sig_tone_rx_state_t *s, template_t template[]
             sumout += (double) buf[i]*(double) buf[i];
         /*endfor*/
         freq = swept_tone_current_frequency(swept);
-        if (sumin)
-            gain = 10.0*log10(sumout/sumin);
-        else
-            gain = 0.0;
+        gain = (sumin != 0.0)  ?  10.0*log10(sumout/sumin + 1.0e-10)  :  0.0;
         printf("%7.1f Hz %.3f dBm0 < %.3f dBm0 < %.3f dBm0\n",
                freq,
                template[template_entry].min_level,
@@ -367,7 +364,7 @@ static void speech_immunity_tests(sig_tone_rx_state_t *s)
             sig_tone_rx(s, amp, frames);
         }
         /*endwhile*/
-        if (sf_close(inhandle) != 0)
+        if (sf_close_telephony(inhandle))
         {
             printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);
@@ -509,7 +506,7 @@ static void sequence_tests(sig_tone_tx_state_t *tx_state, sig_tone_rx_state_t *r
         /*endif*/
     }
     /*endfor*/
-    if (sf_close(outhandle) != 0)
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);

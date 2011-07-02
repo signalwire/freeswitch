@@ -100,8 +100,7 @@ static __inline__ int scramble(v17_tx_state_t *s, int in_bit)
 {
     int out_bit;
 
-    //out_bit = (in_bit ^ (s->scramble_reg >> s->scrambler_tap) ^ (s->scramble_reg >> (23 - 1))) & 1;
-    out_bit = (in_bit ^ (s->scramble_reg >> (18 - 1)) ^ (s->scramble_reg >> (23 - 1))) & 1;
+    out_bit = (in_bit ^ (s->scramble_reg >> s->scrambler_tap) ^ (s->scramble_reg >> (23 - 1))) & 1;
     s->scramble_reg = (s->scramble_reg << 1) | out_bit;
     return out_bit;
 }
@@ -287,13 +286,16 @@ static __inline__ complexf_t getbaud(v17_tx_state_t *s)
 SPAN_DECLARE_NONSTD(int) v17_tx(v17_tx_state_t *s, int16_t amp[], int len)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
-    complexi_t x;
-    complexi_t z;
+    complexi16_t v;
+    complexi32_t x;
+    complexi32_t z;
+    int16_t iamp;
 #else
+    complexf_t v;
     complexf_t x;
     complexf_t z;
+    float famp;
 #endif
-    int i;
     int sample;
 
     if (s->training_step >= V17_TRAINING_SHUTDOWN_END)
@@ -306,37 +308,30 @@ SPAN_DECLARE_NONSTD(int) v17_tx(v17_tx_state_t *s, int16_t amp[], int len)
         if ((s->baud_phase += 3) >= 10)
         {
             s->baud_phase -= 10;
-            s->rrc_filter[s->rrc_filter_step] =
-            s->rrc_filter[s->rrc_filter_step + V17_TX_FILTER_STEPS] = getbaud(s);
+            v = getbaud(s);
+            s->rrc_filter_re[s->rrc_filter_step] = v.re;
+            s->rrc_filter_im[s->rrc_filter_step] = v.im;
             if (++s->rrc_filter_step >= V17_TX_FILTER_STEPS)
                 s->rrc_filter_step = 0;
         }
-        /* Root raised cosine pulse shaping at baseband */
 #if defined(SPANDSP_USE_FIXED_POINT)
-        x = complex_seti(0, 0);
-        for (i = 0;  i < V17_TX_FILTER_STEPS;  i++)
-        {
-            x.re += (int32_t) tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase][i]*(int32_t) s->rrc_filter[i + s->rrc_filter_step].re;
-            x.im += (int32_t) tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase][i]*(int32_t) s->rrc_filter[i + s->rrc_filter_step].im;
-        }
+        /* Root raised cosine pulse shaping at baseband */
+        x.re = vec_circular_dot_prodi16(s->rrc_filter_re, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase], V17_TX_FILTER_STEPS, s->rrc_filter_step) >> 4;
+        x.im = vec_circular_dot_prodi16(s->rrc_filter_im, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase], V17_TX_FILTER_STEPS, s->rrc_filter_step) >> 4;
         /* Now create and modulate the carrier */
-        x.re >>= 4;
-        x.im >>= 4;
-        z = dds_complexi(&(s->carrier_phase), s->carrier_phase_rate);
+        z = dds_complexi32(&s->carrier_phase, s->carrier_phase_rate);
+        iamp = ((int32_t) x.re*z.re - x.im*z.im) >> 15;
         /* Don't bother saturating. We should never clip. */
-        i = (x.re*z.re - x.im*z.im) >> 15;
-        amp[sample] = (int16_t) ((i*s->gain) >> 15);
+        amp[sample] = (int16_t) (((int32_t) iamp*s->gain) >> 11);
 #else
-        x = complex_setf(0.0f, 0.0f);
-        for (i = 0;  i < V17_TX_FILTER_STEPS;  i++)
-        {
-            x.re += tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase][i]*s->rrc_filter[i + s->rrc_filter_step].re;
-            x.im += tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase][i]*s->rrc_filter[i + s->rrc_filter_step].im;
-        }
+        /* Root raised cosine pulse shaping at baseband */
+        x.re = vec_circular_dot_prodf(s->rrc_filter_re, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase], V17_TX_FILTER_STEPS, s->rrc_filter_step);
+        x.im = vec_circular_dot_prodf(s->rrc_filter_im, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase], V17_TX_FILTER_STEPS, s->rrc_filter_step);
         /* Now create and modulate the carrier */
-        z = dds_complexf(&(s->carrier_phase), s->carrier_phase_rate);
+        z = dds_complexf(&s->carrier_phase, s->carrier_phase_rate);
+        famp = x.re*z.re - x.im*z.im;
         /* Don't bother saturating. We should never clip. */
-        amp[sample] = (int16_t) lfastrintf((x.re*z.re - x.im*z.im)*s->gain);
+        amp[sample] = (int16_t) lfastrintf(famp*s->gain);
 #endif
     }
     return sample;
@@ -345,12 +340,15 @@ SPAN_DECLARE_NONSTD(int) v17_tx(v17_tx_state_t *s, int16_t amp[], int len)
 
 SPAN_DECLARE(void) v17_tx_power(v17_tx_state_t *s, float power)
 {
+    float gain;
+
     /* The constellation design seems to keep the average power the same, regardless
        of which bit rate is in use. */
+    gain = 0.223f*powf(10.0f, (power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
 #if defined(SPANDSP_USE_FIXED_POINT)
-    s->gain = 0.223f*powf(10.0f, (power - DBM0_MAX_POWER)/20.0f)*16.0f*(32767.0f/30672.52f)*32768.0f/TX_PULSESHAPER_GAIN;
+    s->gain = (int16_t) gain;
 #else
-    s->gain = 0.223f*powf(10.0f, (power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
+    s->gain = gain;
 #endif
 }
 /*- End of function --------------------------------------------------------*/
@@ -410,9 +408,11 @@ SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int s
     /* NB: some modems seem to use 3 instead of 1 for long training */
     s->diff = (short_train)  ?  0  :  1;
 #if defined(SPANDSP_USE_FIXED_POINT)
-    cvec_zeroi16(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
+    vec_zeroi16(s->rrc_filter_re, sizeof(s->rrc_filter_re)/sizeof(s->rrc_filter_re[0]));
+    vec_zeroi16(s->rrc_filter_im, sizeof(s->rrc_filter_im)/sizeof(s->rrc_filter_im[0]));
 #else
-    cvec_zerof(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
+    vec_zerof(s->rrc_filter_re, sizeof(s->rrc_filter_re)/sizeof(s->rrc_filter_re[0]));
+    vec_zerof(s->rrc_filter_im, sizeof(s->rrc_filter_im)/sizeof(s->rrc_filter_im[0]));
 #endif
     s->rrc_filter_step = 0;
     s->convolution = 0;
@@ -452,7 +452,7 @@ SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int bit_rate, int 
     span_log_set_protocol(&s->logging, "V.17 TX");
     s->get_bit = get_bit;
     s->get_bit_user_data = user_data;
-    //s->scrambler_tap = 18 - 1;
+    s->scrambler_tap = 18 - 1;
     s->carrier_phase_rate = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
     v17_tx_power(s, -14.0f);
     v17_tx_restart(s, bit_rate, tep, FALSE);

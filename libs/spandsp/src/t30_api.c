@@ -60,9 +60,17 @@
 #include "spandsp/v27ter_tx.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T85)
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  |  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t81_t82_arith_coding.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t85.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T42)
+#include "spandsp/t42.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+#include "spandsp/t43.h"
 #endif
 #include "spandsp/t4_t6_decode.h"
 #include "spandsp/t4_t6_encode.h"
@@ -73,9 +81,17 @@
 #include "spandsp/t30_logging.h"
 
 #include "spandsp/private/logging.h"
-#if defined(SPANDSP_SUPPORT_T85)
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  |  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t85.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T42)
+#include "spandsp/private/t42.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+#include "spandsp/private/t43.h"
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
@@ -548,10 +564,8 @@ SPAN_DECLARE(size_t) t30_get_rx_csa(t30_state_t *s, int *type, const char *addre
 
 SPAN_DECLARE(int) t30_set_tx_page_header_overlays_image(t30_state_t *s, int header_overlays_image)
 {
-#if 0
     s->header_overlays_image = header_overlays_image;
     t4_tx_set_header_overlays_image(&s->t4.tx, s->header_overlays_image);
-#endif
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -686,12 +700,17 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
     mask = T30_SUPPORT_T4_1D_COMPRESSION
          | T30_SUPPORT_T4_2D_COMPRESSION
          | T30_SUPPORT_T6_COMPRESSION
+#if defined(SPANDSP_SUPPORT_T42)
+         | T30_SUPPORT_T42_COMPRESSION
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+         | T30_SUPPORT_T43_COMPRESSION
+#endif
 #if defined(SPANDSP_SUPPORT_T85)
          | T30_SUPPORT_T85_COMPRESSION
-         | T30_SUPPORT_T85_L0_COMPRESSION;
-#else
-         | 0;
+         | T30_SUPPORT_T85_L0_COMPRESSION
 #endif
+         | 0;
     s->supported_compressions = supported_compressions & mask;
     t30_build_dis_or_dtc(s);
     return 0;

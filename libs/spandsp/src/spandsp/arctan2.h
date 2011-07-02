@@ -61,7 +61,7 @@ static __inline__ int32_t arctan2(float y, float x)
             return 0xc0000000;
         return 0x40000000;
     }
-    
+
     abs_y = fabsf(y);
 
     /* If we are in quadrant II or III, flip things around */

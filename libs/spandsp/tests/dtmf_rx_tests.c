@@ -659,7 +659,7 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
                 hits += len;
             }
         }
-        if (sf_close(inhandle) != 0)
+        if (sf_close_telephony(inhandle))
         {
             printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);

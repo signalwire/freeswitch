@@ -399,7 +399,7 @@ static void make_header(t4_state_t *s, char *header)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int t4_tx_put_fax_header(t4_state_t *s)
+static int t4_tx_put_fax_header(t4_state_t *s, int *rows)
 {
     int row;
     int i;
@@ -435,6 +435,7 @@ static int t4_tx_put_fax_header(t4_state_t *s)
         repeats = 1;
         break;
     }
+    *rows = 16*repeats;
     for (row = 0;  row < 16;  row++)
     {
         t = header;
@@ -1285,6 +1286,7 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
     int run_space;
     int len;
     int old_image_width;
+    int header_rows;
     uint8_t *bufptr8;
     uint32_t *bufptr;
 
@@ -1336,7 +1338,7 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
 
     if (s->header_info  &&  s->header_info[0])
     {
-        if (t4_tx_put_fax_header(s))
+        if (t4_tx_put_fax_header(s, &header_rows))
             return -1;
     }
     if (s->t4_t6_tx.row_read_handler)
@@ -1498,6 +1500,12 @@ SPAN_DECLARE(void) t4_tx_set_tx_encoding(t4_state_t *s, int encoding)
 SPAN_DECLARE(void) t4_tx_set_min_bits_per_row(t4_state_t *s, int bits)
 {
     s->t4_t6_tx.min_bits_per_row = bits;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t4_tx_set_header_overlays_image(t4_state_t *s, int header_overlays_image)
+{
+    s->header_overlays_image = header_overlays_image;
 }
 /*- End of function --------------------------------------------------------*/
 
