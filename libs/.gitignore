@@ -643,7 +643,9 @@
 /spandsp/src/at_interpreter_dictionary.h
 /spandsp/src/config.h
 /spandsp/src/make_at_dictionary
+/spandsp/src/make_math_fixed_tables
 /spandsp/src/make_modem_filter
+/spandsp/src/math_fixed_tables.h
 /spandsp/src/spandsp.h
 /spandsp/src/stamp-h1
 /spandsp/src/v17_v32bis_rx_fixed_rrc.h
@@ -917,6 +919,8 @@
 /unimrcp/build/pkgconfig/unimrcpclient.pc
 /unimrcp/build/pkgconfig/unimrcpplugin.pc
 /unimrcp/build/pkgconfig/unimrcpserver.pc
+/unimrcp/build/svnrev/Makefile
+/unimrcp/build/svnrev/Makefile.in
 /unimrcp/conf/Makefile
 /unimrcp/conf/Makefile.in
 /unimrcp/config.log
@@ -924,6 +928,7 @@
 /unimrcp/configure
 /unimrcp/data/Makefile
 /unimrcp/data/Makefile.in
+/unimrcp/docs/doxygen.conf
 /unimrcp/libs/Makefile
 /unimrcp/libs/Makefile.in
 /unimrcp/libs/apr-toolkit/Makefile
@@ -981,6 +986,8 @@
 /unimrcp/plugins/mrcp-pocketsphinx/Makefile.in
 /unimrcp/plugins/mrcp-recorder/Makefile
 /unimrcp/plugins/mrcp-recorder/Makefile.in
+/unimrcp/plugins/demo-verifier/Makefile
+/unimrcp/plugins/demo-verifier/Makefile.in
 /unimrcp/tests/Makefile
 /unimrcp/tests/Makefile.in
 /unimrcp/tests/apttest/Makefile
