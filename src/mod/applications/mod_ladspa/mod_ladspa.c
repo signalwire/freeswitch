@@ -627,14 +627,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ladspa_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
-
 	char *path = getenv("LADSPA_PATH");
 
 	if (zstr(path)) {
 		if (switch_directory_exists("/usr/lib64/ladspa/", pool) == SWITCH_STATUS_SUCCESS) {
-			putenv("LADSPA_PATH=/usr/lib64/ladspa/:/usr/local/lib/ladspa");
+			setenv("LADSPA_PATH", "/usr/lib64/ladspa/:/usr/local/lib/ladspa", 0);
 		} else if (switch_directory_exists("/usr/lib/ladspa/", pool) == SWITCH_STATUS_SUCCESS) {
-			putenv("LADSPA_PATH=/usr/lib/ladspa/:/usr/local/lib/ladspa");
+			setenv("LADSPA_PATH", "/usr/lib/ladspa/:/usr/local/lib/ladspa", 0);
 		}
 	}
 
