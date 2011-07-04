@@ -1789,6 +1789,10 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 	switch_assert(stream->data != NULL);
 	switch_assert(stream->write_function != NULL);
 
+	while (cmd && *cmd == ' ') {
+		cmd++;
+	}
+
 	if (strcasecmp(cmd, "console_complete")) {
 		cmd_used = switch_strip_whitespace(cmd);
 		arg_used = switch_strip_whitespace(arg);
