@@ -1723,7 +1723,9 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 	}
 
 	if (ret) {
-		switch_ivr_parse_all_events(channel->session);
+		if (!switch_channel_test_flag(channel, CF_LEG_HOLDING)) {
+			switch_ivr_parse_all_events(channel->session);
+		}
 	}
 
 	return ret;
