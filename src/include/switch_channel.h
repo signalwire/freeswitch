@@ -125,6 +125,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(_In_ switch_channel
 
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_cause_q850(switch_call_cause_t cause);
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause_q850(switch_channel_t *channel);
+SWITCH_DECLARE(switch_call_cause_t *) switch_channel_get_cause_ptr(switch_channel_t *channel);
 
 /*!
   \brief return a cause string for a given cause

@@ -2517,6 +2517,7 @@ static void *SWITCH_THREAD_FUNC camp_music_thread(switch_thread_t *thread, void 
 	switch_core_session_rwunlock(session);
 
 	stake->running = 0;
+
 	return NULL;
 }
 
@@ -2538,6 +2539,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	switch_threadattr_t *thd_attr = NULL;
 	char *camp_data = NULL;
 	switch_status_t status;
+	int camp_loops = 0;
 
 	if (zstr(data)) {
 		return;
@@ -2607,7 +2609,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 
 		do {
 			fail = 0;
-			status = switch_ivr_originate(NULL, &peer_session, &cause, camp_data, campon_timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL);
 
 			if (!switch_channel_ready(caller_channel)) {
 				fail = 1;
@@ -2635,22 +2636,29 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 					thread_started = 1;
 				}
 
+				if (camp_loops++) {
+					if (--campon_retries <= 0 || stake.do_xfer) {
+						camping = 0;
+						stake.do_xfer = 1;
+						break;
+					}
 
-				if (--campon_retries <= 0 || stake.do_xfer) {
-					camping = 0;
-					stake.do_xfer = 1;
-					break;
-				}
-
-				if (fail) {
-					int64_t wait = campon_sleep * 1000000;
-
-					while (stake.running && wait > 0 && switch_channel_ready(caller_channel)) {
-						switch_yield(100000);
-						wait -= 100000;
+					if (fail) {
+						int64_t wait = campon_sleep * 1000000;
+						
+						while (stake.running && wait > 0 && switch_channel_ready(caller_channel)) {
+							switch_yield(100000);
+							wait -= 100000;
+						}
 					}
 				}
 			}
+
+			status = switch_ivr_originate(NULL, &peer_session, 
+										  &cause, camp_data, campon_timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE, 
+										  switch_channel_get_cause_ptr(caller_channel));
+
+
 		} while (camping && switch_channel_ready(caller_channel));
 
 		if (thread) {

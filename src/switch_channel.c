@@ -181,6 +181,12 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *c
 }
 
 
+SWITCH_DECLARE(switch_call_cause_t *) switch_channel_get_cause_ptr(switch_channel_t *channel)
+{
+	return &channel->hangup_cause;
+}
+
+
 struct switch_callstate_table {
 	const char *name;
 	switch_channel_callstate_t callstate;
