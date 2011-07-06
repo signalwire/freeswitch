@@ -1,5 +1,5 @@
 # 
-# Copyright (c) 2006-2009 Philip R. Zimmermann. All rights reserved.
+# Copyright (c) 2006-2011 Philip R. Zimmermann. All rights reserved.
 # Contact: http://philzimmermann.com
 # For licensing and other legal details, see the file zrtp_legal.c.
 # 
@@ -32,7 +32,7 @@ case $target_os in
 esac
 
 
-AM_INIT_AUTOMAKE([libzrtp], [0.91])
+AM_INIT_AUTOMAKE([libzrtp], [1.12])
 AX_PREFIX_CONFIG_H(../../include/zrtp_config_unix.h,ZRTP,config/config.h)
 
 CFLAGS="$CFLAGS -Wno-unused-parameter -fno-strict-aliasing -fPIC -DZRTP_AUTOMAKE=1"

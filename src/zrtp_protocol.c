@@ -314,12 +314,30 @@ static zrtp_status_t _derive_s0(zrtp_stream_t* stream, int is_initiator)
 		comp_length = zrtp_hton32(1L);
 		session->hash->hash_update(session->hash, hash_ctx, (const int8_t*)&comp_length, 4);
 
+		
+		switch (stream->pubkeyscheme->base.id) {
+			case ZRTP_PKTYPE_DH2048:
+			case ZRTP_PKTYPE_DH3072:
+			case ZRTP_PKTYPE_DH4096:
+				comp_length = stream->pubkeyscheme->pv_length;
+				ZRTP_LOG(3,(_ZTU_,"DH comp_length=%u\n", comp_length));
+				break;
+			case ZRTP_PKTYPE_EC256P:
+			case ZRTP_PKTYPE_EC384P:
+			case ZRTP_PKTYPE_EC521P:
+				comp_length = stream->pubkeyscheme->pv_length/2;
+				ZRTP_LOG(3,(_ZTU_,"ECDH comp_length=%u\n", comp_length));
+				break;
+			default:
+				break;
+		}
+		
 		bnBegin(&dhresult);
-		stream->pubkeyscheme->compute( stream->pubkeyscheme,
-									   &stream->dh_cc,
-									   &dhresult,
-									   &stream->dh_cc.peer_pv);
-		comp_length = stream->pubkeyscheme->pv_length;
+		stream->pubkeyscheme->compute(stream->pubkeyscheme,
+									  &stream->dh_cc,
+									  &dhresult,
+									  &stream->dh_cc.peer_pv);
+				
 		bnExtractBigBytes(&dhresult, (uint8_t *)buffer, 0, comp_length);
 		session->hash->hash_update(session->hash, hash_ctx, (const int8_t*)buffer, comp_length);
 		bnEnd(&dhresult);

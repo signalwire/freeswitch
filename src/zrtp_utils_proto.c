@@ -430,13 +430,15 @@ zrtp_status_t _zrtp_compute_preshared_key( zrtp_session_t *session,
 {
 	static const zrtp_string8_t presh_key_str	= ZSTR_INIT_WITH_CONST_CSTRING(ZRTP_COMMIT_HV_KEY_STR);
 	zrtp_string32_t preshared_key = ZSTR_INIT_EMPTY(preshared_key);
-	static const uint32_t length_rs = ZRTP_RS_SIZE;
-	static const uint32_t length_zero = 0;
+	static uint32_t length_rs = ZRTP_RS_SIZE;
+	static const uint32_t length_zero = 0;		
 	
 	void *hash_ctx = session->hash->hash_begin(session->hash);
 	if (!hash_ctx) {
 		return zrtp_status_alloc_fail;
 	}
+	
+	length_rs = zrtp_hton32(length_rs);
 	
 	if (rs1) {
 		session->hash->hash_update(session->hash, hash_ctx, (const int8_t*)&length_rs, 4);
@@ -466,8 +468,8 @@ zrtp_status_t _zrtp_compute_preshared_key( zrtp_session_t *session,
 	
 	if (key_id) {
 		session->hash->hmac_truncated( session->hash,
-									   ZSTR_GV(presh_key_str),
 									   ZSTR_GV(preshared_key),
+									   ZSTR_GV(presh_key_str),									   
 									   ZRTP_HV_KEY_SIZE,
 									   ZSTR_GVP(key_id));
 	}
