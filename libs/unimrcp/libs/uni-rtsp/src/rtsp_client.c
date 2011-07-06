@@ -804,9 +804,6 @@ static apt_bool_t rtsp_client_on_disconnect(rtsp_client_t *client, rtsp_client_c
 		remaining_handles = apr_hash_count(rtsp_connection->session_table);
 	}
 
-	if(!remaining_handles && !cancelled_requests) {
-		rtsp_client_connection_destroy(rtsp_connection);
-	}
 	return TRUE;
 }
 
