@@ -99,7 +99,7 @@ vocallo_codec_t g_codec_map[] =
 	{ SNGTC_CODEC_AMR_1220,  IANA_AMR_A_8000_1,    "AMR",   "Sangoma AMR",    20, 12200, 20000, 160, 320, 0,  8000,  8000,  0 },
 	{ SNGTC_CODEC_SIREN7_24, IANA_SIREN7,          "G7221", "Sangoma G722.1", 20, 24000, 20000, 320, 640, 60, 16000, 16000, 0 },
 	{ SNGTC_CODEC_SIREN7_32, IANA_SIREN7,          "G7221", "Sangoma G722.1", 20, 32000, 20000, 320, 640, 80, 16000, 16000, 0 },
-	{ SNGTC_CODEC_ILBC_133,  IANA_ILBC_133_8000_1, "iLBC",  "Sangoma iLBC",   30, 13300, 30000, 240, 480, 50, 8000,  8000,  0 },
+	{ SNGTC_CODEC_ILBC_133,  IANA_ILBC_133_8000_1, "iLBC",  "Sangoma iLBC",   30, 13330, 30000, 240, 480, 50, 8000,  8000,  0 },
 	{ SNGTC_CODEC_ILBC_152,  IANA_ILBC_152_8000_1, "iLBC",  "Sangoma iLBC",   20, 15200, 20000, 160, 320, 38, 8000,  8000,  0 },
 	{ -1,                    -1,                   NULL,    NULL,             -1, -1,    -1,    -1,  -1,  -1, -1,    -1,    0 },
 };
@@ -1354,7 +1354,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 								 "mode=30",	/* default fmtp to send (can be overridden by the init function), fmtp is used in SDP for format specific parameters */
 								 8000,	/* samples transferred per second */
 								 8000,	/* actual samples transferred per second */
-								 13300,	/* bits transferred per second */
+								 13330,	/* bits transferred per second */
 								 30000, /* microseconds per frame */
 								 240, /* samples per frame */
 								 480, /* number of bytes per frame decompressed */
