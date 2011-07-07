@@ -57,7 +57,7 @@
 #define FTDM_MAX_SPANS_INTERFACE 128
 
 /*! \brief Max number of channels per hunting group */
-#define FTDM_MAX_CHANNELS_GROUP 1024
+#define FTDM_MAX_CHANNELS_GROUP 2048
 
 /*! \brief Max number of groups */
 #define FTDM_MAX_GROUPS_INTERFACE FTDM_MAX_SPANS_INTERFACE
