@@ -414,7 +414,11 @@
 			isa = PBXProject;
 			buildConfigurationList = 1DEB91EF08733DB70010E9CD /* Build configuration list for PBXProject "libzrtp" */;
 			compatibilityVersion = "Xcode 3.1";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
+			knownRegions = (
+				en,
+			);
 			mainGroup = 08FB7794FE84155DC02AAC07 /* libzrtp */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -503,8 +507,8 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = NO;
 				PREBINDING = NO;
-				SDKROOT = macosx10.5;
-				VALID_ARCHS = "i386 ppc x86_64";
+				SDKROOT = macosx10.6;
+				VALID_ARCHS = "i386 x86_64 ppc";
 			};
 			name = Debug;
 		};
@@ -516,8 +520,8 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
-				SDKROOT = macosx10.5;
-				VALID_ARCHS = "i386 ppc x86_64";
+				SDKROOT = macosx10.6;
+				VALID_ARCHS = "i386 x86_64 ppc";
 			};
 			name = Release;
 		};
@@ -540,7 +544,7 @@
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = zrtp;
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 				SYMROOT = build;
 				VALID_ARCHS = "i386 ppc x86_64";
 			};
@@ -561,7 +565,7 @@
 				INSTALL_PATH = /usr/local/lib;
 				OTHER_CFLAGS = "-DZRTP_USE_ENTERPRISE=1";
 				PRODUCT_NAME = zrtp;
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 				VALID_ARCHS = "i386 ppc x86_64";
 			};
 			name = Release;
