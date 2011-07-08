@@ -10,6 +10,7 @@
 			<api name="msg_save" value="vm_fsdb_msg_save" />
 			<api name="msg_purge" value="vm_fsdb_msg_purge" />
 			<api name="msg_get" value="vm_fsdb_msg_get" />
+			<api name="msg_forward" value="vm_fsdb_msg_forward" />
 			<api name="pref_greeting_set" value="vm_fsdb_pref_greeting_set" />
 			<api name="pref_recname_set" value="vm_fsdb_pref_recname_set" />
 			<api name="pref_password_set" value="vm_fsdb_pref_password_set" />
@@ -55,6 +56,7 @@
 				<key dtmf="6" action="next_msg" variable="VM-Key-Main-Next-Msg" />
 				<key dtmf="4" action="prev_msg" />
 				<key dtmf="7" action="delete_msg" variable="VM-Key-Main-Delete-File" /> <!-- Same key for undelete if it already deleted -->
+				<key dtmf="8" action="menu:std_forward" variable="VM-Key-Main-Forward" />
 				<key dtmf="3" action="save_msg" variable="VM-Key-Main-Save-File" />
 				<key dtmf="5" action="menu:std_preference" />
 			</keys>
@@ -102,7 +104,40 @@
 			</keys>
 			</menu>
 
-		    
+			<menu name="std_record_message">
+			<phrases>
+				<phrase name="instructions" value="record_message@protovm" />
+				<phrase name="play_recording" value="play_recording@protovm" />
+				<phrase name="menu_options" value="record_file_check@protovm" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="listen" variable="VM-Key-Listen-File" />
+				<key dtmf="3" action="save" variable="VM-Key-Save-File" />
+				<key dtmf="4" action="rerecord" variable="VM-Key-ReRecord-File" />
+				<key dtmf="#" action="skip_instruction" />
+			</keys>
+			</menu>			
+
+			<menu name="std_forward_ask_prepend">
+			<phrases>
+				<phrase name="menu_options" value="forward_ask_prepend@protovm" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="prepend" variable="VM-Key-Prepend" />
+				<key dtmf="8" action="forward" variable="VM-Key-Forward" />
+				<key dtmf="#" action="return" variable="VM-Key-Return" />
+			</keys>
+			</menu>
+
+			<menu name="std_forward_ask_extension">
+			<phrases>
+				<phrase name="instructions" value="forward_ask_extension@protovm" />
+				<phrase name="ack" value="ack@protovm" />
+				<phrase name="invalid_extension" value="invalid_extension@protovm" />
+			</phrases>
+			<keys>
+			</keys>
+			</menu>
 
 			<menu name="std_select_greeting_slot">
 			<phrases>
