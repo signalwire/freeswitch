@@ -802,7 +802,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *even
 
 			if (hp->idx) {
 				int i = 0;
-				hp->value = NULL;
 
 				for (i = 0; i < hp->idx; i++) {
 					FREE(hp->array[i]);
@@ -1145,7 +1144,7 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 
 			if (this->idx) {
 				int i = 0;
-				this->value = NULL;
+
 				for (i = 0; i < this->idx; i++) {
 					FREE(this->array[i]);
 				}
