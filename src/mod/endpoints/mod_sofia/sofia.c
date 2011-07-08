@@ -1226,6 +1226,7 @@ void sofia_event_callback(nua_event_t event,
 	memset(de, 0, sizeof(*de));
 	nua_save_event(nua, de->event);
 	de->nh = nua_handle_ref(nh);
+	de->nh = nh;
 	de->data = nua_event_data(de->event);
 	de->sip = sip_object(de->data->e_msg);
 	de->profile = profile;
@@ -1244,21 +1245,20 @@ void sofia_event_callback(nua_event_t event,
 	}
 	
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
-		switch_core_session_message_t *msg;
 		switch_core_session_t *session;
 
 		if (!zstr(sofia_private->uuid)) {
 			if ((session = switch_core_session_locate(sofia_private->uuid))) {
-				msg = switch_core_session_alloc(session, sizeof(*msg));
-				msg->message_id = SWITCH_MESSAGE_INDICATE_SIGNAL_DATA;
-				msg->from = __FILE__;
-				msg->numeric_arg = status;
-				msg->pointer_arg = de;
 				
 				if (switch_core_session_running(session)) {
-					switch_core_session_queue_message(session, msg);
+					switch_core_session_queue_signal_data(session, de);
 				} else {
-					switch_core_session_receive_message(session, msg);
+					switch_core_session_message_t msg = { 0 };
+					msg.message_id = SWITCH_MESSAGE_INDICATE_SIGNAL_DATA;
+					msg.from = __FILE__;
+					msg.pointer_arg = de;	
+
+					switch_core_session_receive_message(session, &msg);
 				}
 				switch_core_session_rwunlock(session);
 				return;
@@ -1266,6 +1266,7 @@ void sofia_event_callback(nua_event_t event,
 		}
 	}
 
+	
 	sofia_queue_message(de);
 }
 
@@ -5016,7 +5017,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			NUTAG_OFFER_SENT_REF(offer_sent),
 			NUTAG_ANSWER_SENT_REF(answer_sent),
 			SIPTAG_REPLACES_STR_REF(replaces_str), SOATAG_LOCAL_SDP_STR_REF(l_sdp), SOATAG_REMOTE_SDP_STR_REF(r_sdp), TAG_END());
-
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);

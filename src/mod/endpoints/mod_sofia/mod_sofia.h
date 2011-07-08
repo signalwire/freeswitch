@@ -316,7 +316,7 @@ typedef enum {
 	TFLAG_MAX
 } TFLAGS;
 
-#define SOFIA_MAX_MSG_QUEUE 25
+#define SOFIA_MAX_MSG_QUEUE 250
 #define SOFIA_MSG_QUEUE_SIZE 50
 
 struct mod_sofia_globals {

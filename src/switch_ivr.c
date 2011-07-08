@@ -674,6 +674,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_messages(switch_core_sessio
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int i = 0;
 
+	switch_ivr_parse_all_signal_data(session);
+
 	while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
 		i++;
 		
@@ -702,6 +704,29 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_messages(switch_core_sessio
 		}
 
 		message = NULL;
+
+	}
+
+	return i ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_session_t *session)
+{
+	void *data;
+	switch_core_session_message_t msg = { 0 };
+	int i = 0;
+
+	msg.message_id = SWITCH_MESSAGE_INDICATE_SIGNAL_DATA;
+	msg.from = __FILE__;
+
+	while (switch_core_session_dequeue_signal_data(session, &data) == SWITCH_STATUS_SUCCESS) {
+		i++;
+	
+		msg.pointer_arg = data;	
+		switch_core_session_receive_message(session, &msg);
+
+		data = NULL;
 
 	}
 

@@ -145,6 +145,7 @@ struct switch_core_session {
 	void *private_info;
 	switch_queue_t *event_queue;
 	switch_queue_t *message_queue;
+	switch_queue_t *signal_data_queue;
 	switch_queue_t *private_event_queue;
 	switch_queue_t *private_event_queue_pri;
 	switch_thread_rwlock_t *bug_rwlock;

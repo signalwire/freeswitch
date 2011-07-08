@@ -841,6 +841,42 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(switch_core_se
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_signal_data(switch_core_session_t *session, void *signal_data)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(session != NULL);
+
+	if (session->signal_data_queue) {
+		if (switch_queue_trypush(session->signal_data_queue, signal_data) == SWITCH_STATUS_SUCCESS) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+
+		switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
+
+		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_THREAD_SLEEPING)) {
+			switch_core_session_wake_session_thread(session);
+		}
+	}
+	
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_signal_data(switch_core_session_t *session, void **signal_data)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	void *pop;
+
+	switch_assert(session != NULL);
+
+	if (session->signal_data_queue && switch_queue_size(session->signal_data_queue)) {
+		if ((status = (switch_status_t) switch_queue_trypop(session->signal_data_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+			*signal_data = pop;
+		}
+	}
+
+	return status;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_session_t *session, switch_event_t **event)
 {
@@ -1713,6 +1749,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
 	switch_thread_rwlock_create(&session->io_rwlock, session->pool);
 	switch_queue_create(&session->message_queue, SWITCH_MESSAGE_QUEUE_LEN, session->pool);
+	switch_queue_create(&session->signal_data_queue, SWITCH_MESSAGE_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->private_event_queue_pri, SWITCH_EVENT_QUEUE_LEN, session->pool);
