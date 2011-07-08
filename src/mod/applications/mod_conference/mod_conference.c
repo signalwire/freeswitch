@@ -1019,7 +1019,11 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				int y = *((int8_t *) vid_frame->data + 2) & 0xfe;
 				iframe = (y == 0x80 || y == 0x82);
 			} else if (vid_frame->codec->implementation->ianacode == 99) {	/* h.264 */
-				iframe = (*((int16_t *) vid_frame->data) >> 5 == 0x11);
+				u_int8_t * hdr = vid_frame->data;
+                uint8_t fragment_type = hdr[0] & 0x1f;
+                uint8_t nal_type = hdr[1] & 0x1f;
+                uint8_t start_bit = hdr[1] & 0x80;
+                iframe = (((fragment_type == 28 || fragment_type == 29) && nal_type == 5 && start_bit == 128) || fragment_type == 5);
 			} else {			/* we need more defs */
 				iframe = 1;
 			}
