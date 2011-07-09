@@ -38,6 +38,38 @@ using FreeSWITCH.Native;
 
 namespace FreeSWITCH
 {
+    /*  When this class is used you must call Dispose on the object when done or you will leak the unmanaged switch_event */
+    public class SwitchEventWrap : switch_event, IDisposable
+    {
+        private bool disposed;
+        private SWIGTYPE_p_p_switch_event p_p_switch_event;
+        private IntPtr native_ptr_ptr;
+
+        internal SwitchEventWrap(IntPtr ptrPtr) : base((IntPtr)Marshal.PtrToStructure(ptrPtr, typeof(IntPtr)), false)
+        {
+            native_ptr_ptr = ptrPtr;
+            p_p_switch_event = new SWIGTYPE_p_p_switch_event(ptrPtr, false);
+        }
+
+        ~SwitchEventWrap()
+        {
+            dispose();
+        }
+
+        public override void Dispose()
+        {
+            dispose();
+            GC.SuppressFinalize(this);
+        }
+
+        internal void dispose()
+        {
+            if (disposed) return;
+            disposed = true;
+            freeswitch.switch_event_destroy(p_p_switch_event);
+            Marshal.FreeCoTaskMem(native_ptr_ptr);
+        }
+    }
 
     public class EventBinding : IDisposable
     {
@@ -82,9 +114,7 @@ namespace FreeSWITCH
         {
             IntPtr clone_ptr_ptr = Marshal.AllocCoTaskMem(IntPtr.Size);
             freeswitch.switch_event_dup(new SWIGTYPE_p_p_switch_event(clone_ptr_ptr, false), evt);
-            IntPtr event_ptr = (IntPtr)Marshal.PtrToStructure(clone_ptr_ptr, typeof(IntPtr));
-            switch_event dupe_evt = new switch_event(event_ptr, false);
-            Marshal.FreeCoTaskMem(clone_ptr_ptr);
+            SwitchEventWrap dupe_evt = new SwitchEventWrap(clone_ptr_ptr);
             return dupe_evt;
         }
         public static IDisposable Bind(string id, switch_event_types_t event_types, string subclass_name, Action<EventBindingArgs> f, bool dupe)
