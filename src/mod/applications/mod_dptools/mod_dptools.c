@@ -1359,22 +1359,23 @@ SWITCH_STANDARD_API(strftime_api_function)
 		mycmd = strdup(cmd);
 	}
 
-	if (!zstr(mycmd) && (p = strchr(cmd, '|'))) {
+	if (!zstr(mycmd) && (p = strchr(mycmd, '|'))) {
 		*p++ = '\0';
 		
-		thetime = switch_time_make(atol(cmd), 0);
-		cmd = p + 1;
+		thetime = switch_time_make(atol(mycmd), 0);
+		mycmd = p + 1;
 	} else {
 		thetime = switch_micro_time_now();
 	}
 	switch_time_exp_lt(&tm, thetime);
 
-	if (zstr(cmd)) {
+	if (zstr(mycmd)) {
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	} else {
-		switch_strftime(date, &retsize, sizeof(date), cmd, &tm);
+		switch_strftime(date, &retsize, sizeof(date), mycmd, &tm);
 	}
 	stream->write_function(stream, "%s", date);
+	switch_safe_free(mycmd);
 
 	return SWITCH_STATUS_SUCCESS;
 }
