@@ -5131,7 +5131,7 @@ SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
 
 	char user_db_password[64] = { 0 };
 	const char *user_xml_password = NULL;
-
+	switch_bool_t authorized = SWITCH_FALSE;
 	switch_event_t *params = NULL;
 	switch_xml_t x_user = NULL;
 	switch_bool_t vm_enabled = SWITCH_TRUE;
@@ -5170,7 +5170,7 @@ SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
 		stream->write_function(stream, "-ERR User not found\n");
 	} else {
 		switch_xml_t x_param, x_params;
-	
+
 		x_params = switch_xml_child(x_user, "params");
 
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
@@ -5191,25 +5191,33 @@ SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
 		sql = switch_mprintf("SELECT password FROM voicemail_prefs WHERE username = '%q' AND domain = '%q'", id, domain);
 		vm_execute_sql2str(profile, profile->mutex, sql, user_db_password, sizeof(user_db_password));
 		switch_safe_free(sql);
-	}
 
-	if (vm_enabled == SWITCH_FALSE) {
-		stream->write_function(stream, "%s", "-ERR Login Denied");
-	} else if (!zstr(user_db_password)) {
-		if (!strcasecmp(user_db_password, password)) {
-			stream->write_function(stream, "%s", "-OK");
+		if (vm_enabled == SWITCH_FALSE) {
+			stream->write_function(stream, "%s", "-ERR Login Denied");
 		} else {
-			stream->write_function(stream, "%s", "-ERR");
+			if (!zstr(user_db_password)) {
+				if (!strcasecmp(user_db_password, password)) {
+					authorized = SWITCH_TRUE;
+				}
+				if (!profile->db_password_override && !zstr(user_xml_password) && !strcasecmp(user_xml_password, password)) {
+					authorized = SWITCH_TRUE;
+				}
+			} else {
+				if (!zstr(user_xml_password)) {
+					if (!strcasecmp(user_xml_password, password)) {
+						authorized = SWITCH_TRUE;
+					}
+				}
+			}
+			if (profile->allow_empty_password_auth && zstr(user_db_password) && zstr(user_xml_password)) {
+				authorized = SWITCH_TRUE;
+			}
+			if (authorized) {
+				stream->write_function(stream, "%s", "-OK");
+			} else {
+				stream->write_function(stream, "%s", "-ERR");
+			}
 		}
-	} else if (!zstr(user_xml_password)) {
-		if (!strcasecmp(user_xml_password, password)) {
-			stream->write_function(stream, "%s", "-OK");
-		} else {
-			stream->write_function(stream, "%s", "-ERR");
-		}
-	} else {
-		stream->write_function(stream, "%s", "-ERR");
-
 	}
 
 	switch_xml_free(x_user);
