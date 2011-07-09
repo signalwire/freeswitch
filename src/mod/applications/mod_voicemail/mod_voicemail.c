@@ -4947,6 +4947,8 @@ SWITCH_STANDARD_API(vm_fsdb_msg_purge_function)
 
 	sql = switch_mprintf("SELECT '%q', uuid, username, domain, file_path FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND flags = 'delete'", profile_name, id, domain);
 	vm_execute_sql_callback(profile, profile->mutex, sql, message_purge_callback, NULL);
+	update_mwi(profile, id, domain, "inbox"); /* TODO Make inbox value configurable */
+
 	profile_rwunlock(profile);
 
 	stream->write_function(stream, "-OK\n");
