@@ -210,6 +210,14 @@ void mtvm_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 					mt_api_execute(session, profile->api_msg_save, cmd);
 
 					msg_saved = SWITCH_TRUE;
+				} else if (!strcasecmp(action, "callback")) { /* CallBack caller */
+					const char *cid_num = switch_event_get_header(phrase_params, "VM-Message-Caller-Number");
+					if (cid_num) {
+						/* TODO add detection for private number */
+						switch_core_session_execute_exten(session, cid_num, "XML", profile->domain);
+					} else {
+						/* TODO Some error msg that the msg doesn't contain a caller number */
+					}
 				} else if (!strncasecmp(action, "menu:", 5)) { /* Sub Menu */
 					void (*fPtr)(switch_core_session_t *session, vmivr_profile_t *profile) = mtvm_get_menu_function(action+5);
 					if (fPtr) {

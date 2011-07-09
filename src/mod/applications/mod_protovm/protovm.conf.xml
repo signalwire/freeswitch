@@ -58,6 +58,7 @@
 				<key dtmf="7" action="delete_msg" variable="VM-Key-Main-Delete-File" /> <!-- Same key for undelete if it already deleted -->
 				<key dtmf="8" action="menu:std_forward" variable="VM-Key-Main-Forward" />
 				<key dtmf="3" action="save_msg" variable="VM-Key-Main-Save-File" />
+				<key dtmf="2" action="callback" variable="VM-Key-Main-Callback" />
 				<key dtmf="5" action="menu:std_preference" />
 			</keys>
 			</menu>
