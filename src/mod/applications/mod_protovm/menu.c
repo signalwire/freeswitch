@@ -96,6 +96,8 @@ void mtvm_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 	/* TODO Add Detection of new message and notify the user */
 
 	for (retry = MAX_ATTEMPT; switch_channel_ready(channel) && retry > 0; retry--) {
+		switch_core_session_message_t msg = { 0 };
+		char cid_buf[1024] = "";
 		dtmf_ss_t loc;
 		char *dtmfa[16] = { 0 };
 		switch_event_t *phrase_params = NULL;
@@ -139,6 +141,14 @@ void mtvm_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 		append_event_message(session, profile, phrase_params, msg_list_params, current_msg);
 
 		/* Save in profile the current msg info for other menu processing AND restoration of our current position */
+		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", switch_str_nil(switch_event_get_header(phrase_params, "VM-Message-Caller-Number")), switch_str_nil(switch_event_get_header(phrase_params, "VM-Message-Caller-Name")));
+
+		/* Display MSG CID/Name to caller */
+		msg.from = __FILE__;
+		msg.string_arg = cid_buf;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+		switch_core_session_receive_message(session, &msg);
+
 		profile->current_msg = current_msg;
 		profile->current_msg_uuid = switch_core_session_strdup(session, switch_event_get_header(phrase_params, "VM-Message-UUID"));
 		
