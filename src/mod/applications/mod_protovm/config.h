@@ -38,10 +38,10 @@ typedef struct vmivr_profile vmivr_profile_t;
 struct vmivr_menu_profile {
 	const char *name;
 
-        switch_event_t *event_keys_action;
+	switch_event_t *event_keys_action;
 	switch_event_t *event_keys_dtmf;
 	switch_event_t *event_keys_varname;
-        switch_event_t *event_phrases;
+	switch_event_t *event_phrases;
 };
 typedef struct vmivr_menu_profile vmivr_menu_profile_t;
 

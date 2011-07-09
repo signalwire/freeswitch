@@ -337,7 +337,7 @@ void mtvm_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile)
 			/* Initialize Menu Configs */
 			populate_profile_menu_event(profile, &sub_menu);
 
-			id = mtvm_menu_get_input_set(session, profile, sub_menu, "X.", "#" /* TODO Conf terminate input key */);
+			id = mtvm_menu_get_input_set(session, profile, sub_menu, "X.");
 			if (id) {
 				const char *cmd = switch_core_session_sprintf(session, "%s %s %s %s %s %s %s%s%s", profile->api_profile, profile->domain, profile->id, profile->current_msg_uuid, profile->domain, id, prepend_filepath?" ":"", prepend_filepath?prepend_filepath:"" );
 				if (mt_api_execute(session, profile->api_msg_forward, cmd) == SWITCH_STATUS_SUCCESS) {
@@ -381,12 +381,16 @@ void mtvm_menu_set_password(switch_core_session_t *session, vmivr_profile_t *pro
 	char *password;
 	vmivr_menu_profile_t menu = { "std_set_password" };
 
-	password = mtvm_menu_get_input_set(session, profile, menu, "XXX." /* TODO Conf Min 3 Digit */, "#" /* TODO Conf terminate input key */);
+	/* Initialize Menu Configs */
+	populate_profile_menu_event(profile, &menu);
+
+	password = mtvm_menu_get_input_set(session, profile, menu, "XXX." /* TODO Conf Min 3 Digit */);
 
 	/* TODO Add Prompts to tell if password was set and if it was not */
 	if (password) {
 		char *cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, profile->id, password);
 		mt_api_execute(session, profile->api_pref_password_set, cmd);
+		
 	}
 
 	free_profile_menu_event(&menu);
@@ -394,7 +398,7 @@ void mtvm_menu_set_password(switch_core_session_t *session, vmivr_profile_t *pro
 
 void mtvm_menu_authenticate(switch_core_session_t *session, vmivr_profile_t *profile) {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-        vmivr_menu_profile_t menu = { "std_authenticate" };
+	vmivr_menu_profile_t menu = { "std_authenticate" };
 	int retry;
 	const char *auth_var = NULL;
 	/* Initialize Menu Configs */
@@ -413,7 +417,7 @@ void mtvm_menu_authenticate(switch_core_session_t *session, vmivr_profile_t *pro
 			/* Initialize Menu Configs */
 			populate_profile_menu_event(profile, &sub_menu);
 
-			id = mtvm_menu_get_input_set(session, profile, sub_menu, "X." /* TODO Conf Min 3 Digit */, "#" /* TODO Conf terminate input key */);
+			id = mtvm_menu_get_input_set(session, profile, sub_menu, "X." /* TODO Conf Min 3 Digit */);
 			free_profile_menu_event(&sub_menu);
 		}
 		if (!password) {
@@ -421,7 +425,7 @@ void mtvm_menu_authenticate(switch_core_session_t *session, vmivr_profile_t *pro
 			/* Initialize Menu Configs */
 			populate_profile_menu_event(profile, &sub_menu);
 
-			password = mtvm_menu_get_input_set(session, profile, sub_menu, "X." /* TODO Conf Min 3 Digit */, "#" /* TODO Conf terminate input key */);
+			password = mtvm_menu_get_input_set(session, profile, sub_menu, "X." /* TODO Conf Min 3 Digit */);
 			free_profile_menu_event(&sub_menu);
 		}
 		cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, id, password);
@@ -445,7 +449,7 @@ void mtvm_menu_select_greeting_slot(switch_core_session_t *session, vmivr_profil
 	/* Initialize Menu Configs */
 	populate_profile_menu_event(profile, &menu);
 
-	result = mtvm_menu_get_input_set(session, profile, menu, "X", NULL);
+	result = mtvm_menu_get_input_set(session, profile, menu, "X");
 
 	if (result)
 		gnum = atoi(result);
@@ -471,7 +475,7 @@ void mtvm_menu_record_greeting_with_slot(switch_core_session_t *session, vmivr_p
 	/* Initialize Menu Configs */
 	populate_profile_menu_event(profile, &menu);
 
-	result = mtvm_menu_get_input_set(session, profile, menu, "X", NULL);
+	result = mtvm_menu_get_input_set(session, profile, menu, "X");
 
 	if (result)
 		gnum = atoi(result);
@@ -557,16 +561,18 @@ void mtvm_menu_preference(switch_core_session_t *session, vmivr_profile_t *profi
 	free_profile_menu_event(&menu);
 }
 
-char *mtvm_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_profile_t menu, const char *input_mask, const char *terminate_key) {
+char *mtvm_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_profile_t menu, const char *input_mask) {
 	char *result = NULL;
 	int retry;
-
+	const char *terminate_key = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (!menu.event_keys_dtmf || !menu.event_phrases) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Menu Phrases and Keys : %s\n", menu.name);
 		return result;
 	}
+
+	terminate_key = switch_event_get_header(menu.event_keys_action, "ivrengine:terminate_entry");
 
 	for (retry = MAX_ATTEMPT; switch_channel_ready(channel) && retry > 0; retry--) {
 		dtmf_ss_t loc;
@@ -582,11 +588,12 @@ char *mtvm_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *p
 		/* Find the last entry and append this one to it */
 		for (i=0; dtmfa[i] && i < 16; i++){
 		}
-                dtmfa[i] = (char *) input_mask;
+		dtmfa[i] = (char *) input_mask;
 
 		captureMenuInitialize(&loc, dtmfa);
-		if (terminate_key)
-			loc.terminate_key = terminate_key[0]; /* TODO Make this load from the configuration */
+		if (terminate_key) {
+			loc.terminate_key = terminate_key[0];
+		}
 		captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "instructions"), NULL, phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
 
 		if (loc.result == RES_TIMEOUT) {

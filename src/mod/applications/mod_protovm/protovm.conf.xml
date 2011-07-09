@@ -29,7 +29,7 @@
 				<phrase name="instructions" value="enter_id@protovm" />
 			</phrases>
 			<keys>
-				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" /> <!-- TODO Make the ivrengine: parsed and the key configurable -->
+				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" />
 			</keys>
 			</menu>
 
@@ -38,7 +38,7 @@
 				<phrase name="instructions" value="enter_pass@protovm" />
 			</phrases>
 			<keys>
-				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" /> <!-- TODO Make the ivrengine: parsed and the key configurable -->
+				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" />
 			</keys>
 			</menu>
 
@@ -60,6 +60,7 @@
 				<key dtmf="3" action="save_msg" variable="VM-Key-Main-Save-File" />
 				<key dtmf="2" action="callback" variable="VM-Key-Main-Callback" />
 				<key dtmf="5" action="menu:std_preference" />
+				<key dtmf="#" action="return" /> <!-- TODO Might Conflict with future fast-forward -->
 			</keys>
 			</menu>
 
@@ -72,7 +73,7 @@
 				<key dtmf="2" action="menu:std_select_greeting_slot" variable="VM-Key-Choose-Greeting" />
 				<key dtmf="3" action="menu:std_record_name" variable="VM-Key-Record-Name" />
 				<key dtmf="6" action="menu:std_set_password" variable="VM-Key-Change-Password" />
-				<key dtmf="0" action="return" variable="VM-Key-Main-Menu" />
+				<key dtmf="#" action="return" variable="VM-Key-Main-Menu" />
 			</keys>
 			</menu>
 
@@ -137,6 +138,7 @@
 				<phrase name="invalid_extension" value="invalid_extension@protovm" />
 			</phrases>
 			<keys>
+				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" />
 			</keys>
 			</menu>
 
@@ -163,6 +165,7 @@
 				<phrase name="instructions" value="enter_pass@protovm" />
 			</phrases>
 			<keys>
+				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" />
 			</keys>
 			</menu>
 		</menus>

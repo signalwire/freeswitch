@@ -14,11 +14,11 @@ void mtvm_menu_preference(switch_core_session_t *session, vmivr_profile_t *profi
 void mtvm_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile);
 
 switch_status_t mtvm_menu_record(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_profile_t menu, const char *file_name);
-char *mtvm_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_profile_t menu, const char *input_mask, const char *terminate_key);
+char *mtvm_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_profile_t menu, const char *input_mask);
 
 
 struct vmivr_menu_function {
-        const char *name;
+	const char *name;
 	void (*pt2Func)(switch_core_session_t *session, vmivr_profile_t *profile);
 
 };
