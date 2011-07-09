@@ -6033,12 +6033,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 				rep = switch_core_session_strdup(session, rep + 9);
 
-				if ((p = strchr(rep, ';'))) {
-					*p = '\0';
-				}
-
 				if ((buf = switch_core_session_alloc(session, strlen(rep) + 1))) {
 					rep = url_unescape(buf, (const char *) rep);
+					if ((p = strchr(rep, ';'))) {
+						*p = '\0';
+					}
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Replaces: [%s]\n", rep);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
