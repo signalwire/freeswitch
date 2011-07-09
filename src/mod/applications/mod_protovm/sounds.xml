@@ -210,7 +210,7 @@
     <macro name="listen_file_check">
       <input>
         <match>
-  	<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Next-Msg}:voicemail/vm-for_next_msg.wav"/>
+  	<!--<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Next-Msg}:voicemail/vm-for_next_msg.wav"/>--> <!-- Not existant in callie recordings -->
   	<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Listen-File}:voicemail/vm-listen_to_recording.wav"/>
   	<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Save-File}:voicemail/vm-save_recording.wav"/>
   	<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Delete-File}:voicemail/vm-delete_recording.wav"/>
