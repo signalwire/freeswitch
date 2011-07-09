@@ -145,6 +145,8 @@ struct vm_profile {
 	uint32_t record_silence_hits;
 	uint32_t record_sample_rate;
 	switch_bool_t auto_playback_recordings;
+	switch_bool_t db_password_override;
+	switch_bool_t allow_empty_password_auth;
 	switch_thread_rwlock_t *rwlock;
 	switch_memory_pool_t *pool;
 	uint32_t flags;
@@ -627,6 +629,10 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 									NULL, NULL, profile, vm_config_notify_callback, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM_CALLBACK(profile->config[i++], "web-template-file", SWITCH_CONFIG_CUSTOM, CONFIG_RELOADABLE,
 									NULL, NULL, profile, vm_config_web_callback, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "db-password-override", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE,
+						   &profile->db_password_override, SWITCH_FALSE, NULL, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "allow-empty-password-auth", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE,
+						   &profile->allow_empty_password_auth, SWITCH_TRUE, NULL, NULL, NULL);
 
 	switch_assert(i < VM_PROFILE_CONFIGITEM_COUNT);
 
@@ -2302,7 +2308,9 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					} else if (!auth && !strcasecmp(var, "vm-password")) {
 						if (!zstr(val) && !strcasecmp(val, "user-choose")) {
 							if (zstr(cbt.password)) {
-								auth = 1;
+								if (profile->allow_empty_password_auth) {
+									auth = 1;
+								}
 							} else {
 								thepass = switch_core_session_strdup(session, val);
 							}
@@ -2355,11 +2363,11 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				if (!auth) {
 					if (!zstr(cbt.password) && !strcmp(cbt.password, mypass)) {
 						auth++;
-					} else if (!thepass) {
+					} else if (!thepass && profile->allow_empty_password_auth) {
 						auth++;
 					}
 
-					if (!auth && (thepass || thehash) && mypass) {
+					if (!auth && (!profile->db_password_override || (profile->db_password_override && zstr(cbt.password))) && (thepass || thehash) && mypass) {
 						if (thehash) {
 							char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 							char *lpbuf = switch_mprintf("%s:%s:%s", myid, domain_name, mypass);
