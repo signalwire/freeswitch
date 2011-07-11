@@ -71,7 +71,7 @@ Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
 Source5:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
 Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
 Source7:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-20091212.tar.gz
-Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
+Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.5.0.tar.gz
 Source9:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-20091212.tar.gz
 Source10:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source11:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
@@ -101,11 +101,11 @@ BuildRequires: libtool >= 1.5.17
 BuildRequires: ncurses-devel
 BuildRequires: openssl-devel
 BuildRequires: perl
-%if 0%{?fedora_version} >= 8
+%if 0%{?fedora_version} >= 8 || 0%{?rhel} >= 6
 BuildRequires: perl-ExtUtils-Embed
 %endif
 BuildRequires: pkgconfig
-%if %{_vendor} == redhat && 0%{?fedora} <= 6
+%if 0%{?rhel} < 6 && 0%{?fedora} <= 6
 BuildRequires: termcap
 %endif
 BuildRequires: unixODBC-devel
