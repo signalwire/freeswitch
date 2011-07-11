@@ -38,7 +38,6 @@ using FreeSWITCH.Native;
 
 namespace FreeSWITCH
 {
-    /*  When this class is used you must call Dispose on the object when done or you will leak the unmanaged switch_event */
     public class SwitchEventWrap : switch_event, IDisposable
     {
         private bool disposed;
