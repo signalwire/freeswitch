@@ -12,7 +12,7 @@ include $(BASE)/build/modmake.rules
 $(BUILD_DIRECTORY)/Makefile $(BUILD_DIRECTORY)/config.status:
 	$(GETLIB) $(VERSION).tar.gz
 	mkdir -p $(BUILD_DIRECTORY)
-	cd $(BUILD_DIRECTORY) && libtoolize --force && automake && autoreconf -if
+	cd $(BUILD_DIRECTORY) && ./bootstrap
 	$(DEFAULT_VARS) $(DIRECTORY)/configure $(DEFAULT_ARGS) --enable-integer-samples --srcdir=$(DIRECTORY)
 	$(TOUCH_TARGET)
 
