@@ -1,6 +1,6 @@
-VERSION=soundtouch-1.3.1
-DIRECTORY=$(switch_srcdir)/libs/$(VERSION)
-BUILD_DIRECTORY=$(switch_builddir)/libs/$(VERSION)
+VERSION=soundtouch-1.5.0
+DIRECTORY=$(switch_srcdir)/libs/soundtouch
+BUILD_DIRECTORY=$(switch_builddir)/libs/soundtouch
 LA=$(BUILD_DIRECTORY)/source/SoundTouch/.libs/libSoundTouch.a
 
 BASE=../../../..
