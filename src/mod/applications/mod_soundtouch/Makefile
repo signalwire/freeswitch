@@ -1,22 +1,24 @@
-VERSION=soundtouch-1.5.0
-DIRECTORY=$(switch_srcdir)/libs/soundtouch
-BUILD_DIRECTORY=$(switch_builddir)/libs/soundtouch
-LA=$(BUILD_DIRECTORY)/source/SoundTouch/.libs/libSoundTouch.a
-
 BASE=../../../..
-LOCAL_CFLAGS += -I$(DIRECTORY)/include -DINTEGER_SAMPLES -I$(BUILD_DIRECTORY)/include
+VERSION=soundtouch-1.5.0
+SNDT_SRC=$(switch_srcdir)/libs/soundtouch
+SNDT_BUILD=$(switch_builddir)/libs/soundtouch
+LA=$(SNDT_BUILD)/source/SoundTouch/.libs/libSoundTouch.a
+
+LOCAL_CFLAGS += -I$(SNDT_SRC)/include -DINTEGER_SAMPLES -I$(SNDT_BUILD)/include
 LOCAL_LIBADD=$(LA)
 
 include $(BASE)/build/modmake.rules
 
-$(BUILD_DIRECTORY)/Makefile $(BUILD_DIRECTORY)/config.status:
+$(SNDT_SRC):
 	$(GETLIB) $(VERSION).tar.gz
-	mkdir -p $(BUILD_DIRECTORY)
-	cd $(BUILD_DIRECTORY) && ./bootstrap
-	$(DEFAULT_VARS) $(DIRECTORY)/configure $(DEFAULT_ARGS) --enable-integer-samples --srcdir=$(DIRECTORY)
-	$(TOUCH_TARGET)
 
-$(LA): $(BUILD_DIRECTORY)/Makefile $(BUILD_DIRECTORY)/config.status
-	cd $(BUILD_DIRECTORY) && $(MAKE)
-	$(TOUCH_TARGET)
+$(SNDT_BUILD)/Makefile:
+	mkdir -p $(SNDT_BUILD)
+	cd $(SNDT_SRC) && AUTOMAKE="automake --add-missing --foreign --copy" autoreconf -fisv && rm -f `find . -name "*~"` && rm -f ChangeLog
+	cd ${SNDT_BUILD} && $(DEFAULT_VARS) $(SNDT_SRC)/configure $(DEFAULT_ARGS) --enable-integer-samples --srcdir=$(SNDT_SRC)
+	${TOUCH_TARGET}
+	
 
+$(LA): $(SNDT_BUILD)/Makefile
+	cd $(SNDT_BUILD) && ${MAKE}
+	$(TOUCH_TARGET)
