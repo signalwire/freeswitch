@@ -1012,7 +1012,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 #endif
 	if (!tech_pvt->write_buffer) {
-		int32_t max_len = BYTES_PER_FRAME * 3;
+		int32_t max_len = BYTES_PER_FRAME * 4;
 
 		switch_buffer_create(skypopen_module_pool, &tech_pvt->write_buffer, max_len);
 		switch_assert(tech_pvt->write_buffer);

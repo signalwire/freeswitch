@@ -539,6 +539,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 				if (!strcasecmp(prop, "FAILUREREASON")) {
 					DEBUGA_SKYPE("Skype FAILED on skype_call %s. Let's wait for the FAILED message.\n", SKYPOPEN_P_LOG, id);
 				}
+#if 0
 				if (!strcasecmp(prop, "DURATION")) {	/* each 20 seconds, we zero the buffers and sync the timers */
 					if (!((atoi(value) % 20))) {
 						if (tech_pvt->read_buffer) {
@@ -564,6 +565,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						DEBUGA_SKYPE("Synching audio on skype_call: %s.\n", SKYPOPEN_P_LOG, id);
 					}
 				}
+#endif //0
 				if (!strcasecmp(prop, "DURATION") && (!strcasecmp(value, "1"))) {
 					if (strcasecmp(id, tech_pvt->skype_call_id)) {
 						skypopen_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
@@ -901,7 +903,7 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 					if (rt > 0) {
 
 						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
-							len = recv(fd, (char *) srv_in, BYTES_PER_FRAME, 0);
+							len = recv(fd, (char *) srv_in, BYTES_PER_FRAME * 2, 0);
 						} else {
 							skypopen_sleep(10000);
 							continue;
@@ -1073,7 +1075,7 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 						}
 						switch_mutex_lock(tech_pvt->mutex_audio_cli);
 						if (tech_pvt->write_buffer && switch_buffer_inuse(tech_pvt->write_buffer)) {
-							bytes_to_write = switch_buffer_read(tech_pvt->write_buffer, cli_out, BYTES_PER_FRAME);
+							bytes_to_write = switch_buffer_read(tech_pvt->write_buffer, cli_out, BYTES_PER_FRAME * 2);
 						}
 						switch_mutex_unlock(tech_pvt->mutex_audio_cli);
 
