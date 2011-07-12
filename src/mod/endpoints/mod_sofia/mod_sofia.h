@@ -142,6 +142,7 @@ typedef struct sofia_dispatch_event_s {
 	sip_t *sip;
 	nua_t *nua;
 	sofia_profile_t *profile;
+	int save;
 } sofia_dispatch_event_t;
 
 struct sofia_private {
