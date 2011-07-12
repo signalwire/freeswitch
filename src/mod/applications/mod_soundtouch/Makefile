@@ -12,13 +12,13 @@ include $(BASE)/build/modmake.rules
 $(SNDT_SRC):
 	$(GETLIB) $(VERSION).tar.gz
 
-$(SNDT_BUILD)/Makefile:
+$(SNDT_BUILD)/Makefile: $(SNDT_SRC)
 	mkdir -p $(SNDT_BUILD)
 	cd $(SNDT_SRC) && AUTOMAKE="automake --add-missing --foreign --copy" autoreconf -fisv && rm -f `find . -name "*~"` && rm -f ChangeLog
 	cd ${SNDT_BUILD} && $(DEFAULT_VARS) $(SNDT_SRC)/configure $(DEFAULT_ARGS) --enable-integer-samples --srcdir=$(SNDT_SRC)
 	${TOUCH_TARGET}
 	
 
-$(LA): $(SNDT_BUILD)/Makefile
+$(LA): $(SNDT_BUILD)/Makefile 
 	cd $(SNDT_BUILD) && ${MAKE}
 	$(TOUCH_TARGET)
