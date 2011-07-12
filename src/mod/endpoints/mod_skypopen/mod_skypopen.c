@@ -2431,6 +2431,8 @@ SWITCH_STANDARD_API(sk_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
 	int argc = 0;
+	int tmp_i = 0;
+	char tmp_message[4096];
 
 	if (globals.sk_console)
 		stream->write_function(stream, "sk console is: |||%s|||\n", globals.sk_console->name);
@@ -2444,6 +2446,26 @@ SWITCH_STANDARD_API(sk_function)
 	if (!argc || !argv[0]) {
 		stream->write_function(stream, "%s", SK_SYNTAX);
 		goto end;
+	}
+
+	
+	if (!strcasecmp(argv[0], "balances")) {
+	    stream->write_function(stream, "  Name  \tBalance\tCurrency\n");
+	    stream->write_function(stream, "  ====  \t=======\t========\n");
+	    
+	    for (tmp_i = 0; tmp_i < SKYPOPEN_MAX_INTERFACES; tmp_i++) {
+		if (strlen(globals.SKYPOPEN_INTERFACES[tmp_i].name)) {
+        		skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[tmp_i], "GET PROFILE PSTN_BALANCE");
+			switch_sleep(10000);
+			
+			strncpy(tmp_message, globals.SKYPOPEN_INTERFACES[tmp_i].message, sizeof(globals.SKYPOPEN_INTERFACES[tmp_i].message));
+			
+        		skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[tmp_i], "GET PROFILE PSTN_BALANCE_CURRENCY");
+			switch_sleep(10000);
+			if(strlen(tmp_message)>21 && strlen(globals.SKYPOPEN_INTERFACES[tmp_i].message) > 30)
+			    stream->write_function(stream, "  %s \t%s\t%s\n", globals.SKYPOPEN_INTERFACES[tmp_i].name, tmp_message+21,  globals.SKYPOPEN_INTERFACES[tmp_i].message+30);
+	        }
+	    }
 	}
 
 	if (!strcasecmp(argv[0], "list")) {
