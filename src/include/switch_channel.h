@@ -72,6 +72,7 @@ typedef struct switch_channel_timetable switch_channel_timetable_t;
 */
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t *channel);
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_channel_t *channel);
+SWITCH_DECLARE(int) switch_channel_check_signal(switch_channel_t *channel, switch_bool_t in_thread_only);
 
 /*!
   \brief Determine if a channel is ready for io
@@ -84,8 +85,8 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 #define switch_channel_media_ready(_channel) switch_channel_test_ready(_channel, SWITCH_TRUE, SWITCH_TRUE)
 #define switch_channel_media_up(_channel) (switch_channel_test_flag(_channel, CF_ANSWERED) || switch_channel_test_flag(_channel, CF_EARLY_MEDIA))
 
-#define switch_channel_up(_channel) (switch_channel_get_state(_channel) < CS_HANGUP)
-#define switch_channel_down(_channel) (switch_channel_get_state(_channel) >= CS_HANGUP)
+#define switch_channel_up(_channel) (switch_channel_check_signal(_channel, SWITCH_TRUE) || switch_channel_get_state(_channel) < CS_HANGUP)
+#define switch_channel_down(_channel) (switch_channel_check_signal(_channel, SWITCH_TRUE) || switch_channel_get_state(_channel) >= CS_HANGUP)
 #define switch_channel_media_ack(_channel) (!switch_channel_test_cap(_channel, CC_MEDIA_ACK) || switch_channel_test_flag(_channel, CF_MEDIA_ACK))
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);

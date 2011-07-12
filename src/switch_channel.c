@@ -1701,11 +1701,22 @@ SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channe
 	return channel->running_state != channel->state;
 }
 
+SWITCH_DECLARE(int) switch_channel_check_signal(switch_channel_t *channel, switch_bool_t in_thread_only)
+{
+	if (!in_thread_only || switch_core_session_in_thread(channel->session)) {
+		switch_ivr_parse_all_signal_data(channel->session);
+	}
+
+	return 0;
+}
+
 SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_bool_t check_ready, switch_bool_t check_media)
 {
 	int ret = 0;
 
 	switch_assert(channel != NULL);
+
+	switch_channel_check_signal(channel, SWITCH_TRUE);
 
 	if (check_media) {
 		ret = ((switch_channel_test_flag(channel, CF_ANSWERED) ||
@@ -1728,9 +1739,7 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 		ret++;
 	}
 
-	if (ret && switch_core_session_in_thread(channel->session)) {
-		switch_ivr_parse_all_signal_data(channel->session);
-	}
+
 
 	return ret;
 }
