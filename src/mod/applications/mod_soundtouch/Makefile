@@ -14,6 +14,8 @@ $(SNDT_SRC):
 
 $(SNDT_BUILD)/Makefile: $(SNDT_SRC)
 	mkdir -p $(SNDT_BUILD)
+	rm -rf $(SNDT_BUILD)/config/m4
+	rm -rf $(SNDT_SRC)/config/m4
 	cd $(SNDT_SRC) %% libtoolize -fisv
 	cd $(SNDT_SRC) && AUTOCONF="autoconf --add-missing --foreign --copy" AUTOMAKE="automake --add-missing --foreign --copy" autoreconf -fisv 
 	cd ${SNDT_BUILD} && $(DEFAULT_VARS) $(SNDT_SRC)/configure $(DEFAULT_ARGS) --enable-integer-samples --srcdir=$(SNDT_SRC)
