@@ -14,6 +14,7 @@ $(SNDT_SRC):
 
 $(SNDT_BUILD)/Makefile: $(SNDT_SRC)
 	mkdir -p $(SNDT_BUILD)
+	cd $(SNDT_SRC) %% libtoolize -fisv
 	cd $(SNDT_SRC) && AUTOMAKE="automake --add-missing --foreign --copy" autoreconf -fisv && rm -f `find . -name "*~"` && rm -f ChangeLog
 	cd ${SNDT_BUILD} && $(DEFAULT_VARS) $(SNDT_SRC)/configure $(DEFAULT_ARGS) --enable-integer-samples --srcdir=$(SNDT_SRC)
 	${TOUCH_TARGET}
