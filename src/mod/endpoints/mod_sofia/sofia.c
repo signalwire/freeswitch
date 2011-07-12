@@ -859,7 +859,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready()) {
 			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No more sessions allowed at this time.\n");
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No more sessions allowed at this time.\n");
 
 			goto done;
 		}
@@ -3575,11 +3575,15 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "message-threads")) {
 						int num = atoi(val);
 
-						if (num < 1 || num >= SOFIA_MAX_MSG_QUEUE) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "message-threads must be between 1 and %d", SOFIA_MAX_MSG_QUEUE);
-						} else {
-							sofia_msg_thread_start(num);
-						}
+						if (num < 1 || num > SOFIA_MAX_MSG_QUEUE - 1) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "message-threads must be between 1 and %d", SOFIA_MAX_MSG_QUEUE -1);
+						} 
+
+						if (num < 1) num = 1;
+						if (num > SOFIA_MAX_MSG_QUEUE - 1) num = SOFIA_MAX_MSG_QUEUE -1;
+
+						sofia_msg_thread_start(num);
+						
 
 					} else if (!strcasecmp(var, "disable-hold")) {
 						if (switch_true(val)) {
