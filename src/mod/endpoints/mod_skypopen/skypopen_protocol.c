@@ -932,7 +932,7 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 							}
 							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 							if (nospace) {
-								WARNINGA("NO SPACE READ: there was no space for: %d\n", SKYPOPEN_P_LOG, len);
+								DEBUGA_SKYPE("NO SPACE READ: there was no space for: %d\n", SKYPOPEN_P_LOG, len);
 							}
 						} else if (len == 0) {
 							DEBUGA_SKYPE("CLOSED\n", SKYPOPEN_P_LOG);
