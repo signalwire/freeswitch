@@ -2473,10 +2473,10 @@ SWITCH_STANDARD_API(sk_function)
 
 	if (!strcasecmp(argv[0], "list")) {
 		int i;
-		int ib = 0;
-		int ib_failed = 0;
-		int ob = 0;
-		int ob_failed = 0;
+		unsigned int ib = 0;
+		unsigned int ib_failed = 0;
+		unsigned int ob = 0;
+		unsigned int ob_failed = 0;
 		char next_flag_char = ' ';
 
 		stream->write_function(stream, "F ID\t    Name    \tIB (F/T)    OB (F/T)\tState\tCallFlw\t\tUUID\n");
@@ -2505,7 +2505,7 @@ SWITCH_STANDARD_API(sk_function)
 			}
 
 		}
-		stream->write_function(stream, "\nTotal Interfaces: %d  IB Calls(Failed/Total): %ld/%ld  OB Calls(Failed/Total): %ld/%ld\n",
+		stream->write_function(stream, "\nTotal Interfaces: %d  IB Calls(Failed/Total): %u/%u  OB Calls(Failed/Total): %u/%u\n",
 							   globals.real_interfaces > 0 ? globals.real_interfaces - 1 : 0, ib_failed, ib, ob_failed, ob);
 
 	} else if (!strcasecmp(argv[0], "console")) {
