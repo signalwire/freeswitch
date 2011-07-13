@@ -4358,7 +4358,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	if (tech_pvt->local_url) {
 		switch_channel_set_variable(nchannel, "sip_local_url", tech_pvt->local_url);
 		if (profile->pres_type) {
-			switch_channel_set_variable(nchannel, "presence_id", tech_pvt->local_url);
+			const char *presence_id = switch_channel_get_variable(nchannel, "presence_id");
+			if (zstr(presence_id)) {
+				switch_channel_set_variable(nchannel, "presence_id", tech_pvt->local_url);
+			}
 		}
 	}
 	switch_channel_set_variable(nchannel, "sip_destination_url", tech_pvt->dest);

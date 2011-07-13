@@ -7501,13 +7501,15 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if (profile->pres_type) {
-		const char *user = switch_str_nil(sip->sip_from->a_url->url_user);
-		const char *host = switch_str_nil(sip->sip_from->a_url->url_host);
-
-		char *tmp = switch_mprintf("%s@%s", user, host);
-		switch_assert(tmp);
-		switch_channel_set_variable(channel, "presence_id", tmp);
-		free(tmp);
+		const char *presence_id = switch_channel_get_variable(channel, "presence_id");
+		if (zstr(presence_id)) {
+			const char *user = switch_str_nil(sip->sip_from->a_url->url_user);
+			const char *host = switch_str_nil(sip->sip_from->a_url->url_host);
+			char *tmp = switch_mprintf("%s@%s", user, host);
+			switch_assert(tmp);
+			switch_channel_set_variable(channel, "presence_id", tmp);
+			free(tmp);
+		}
 	}
 
 
