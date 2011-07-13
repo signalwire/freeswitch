@@ -219,6 +219,7 @@ SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *chan
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Original-Channel-Call-State", switch_channel_callstate2str(o_callstate));
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number", "%d", callstate);
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
 	}
