@@ -48,7 +48,7 @@
 #include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */
-#define PIDFILE "netborder-ss7.pid"
+#define PIDFILE "nsg.pid"
 static char *pfile = PIDFILE;
 static int system_ready = 0;
 
