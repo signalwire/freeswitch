@@ -857,6 +857,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		switch_core_timer_next(&tech_pvt->timer_read);
 	}
 
+	try = 0;
   read:
 
 
@@ -871,7 +872,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 		switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 
-		try = 0;
 		if (!bytes_read) {
 			switch_sleep(1000); //XXX don't like this
 			try++;
@@ -879,7 +879,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				DEBUGA_SKYPE("skypopen_audio_read going back to read\n", SKYPOPEN_P_LOG);
 				goto read;
 			}
-			WARNINGA("skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
+			DEBUGA_SKYPE("skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
 			memset(tech_pvt->read_frame.data, 255, BYTES_PER_FRAME);
 			tech_pvt->read_frame.datalen = BYTES_PER_FRAME;
 
