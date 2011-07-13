@@ -578,5 +578,17 @@ struct code2str dcodQ931TypeOfSubaddressTable[] = {
 	{ -1,   "Invalid"},
 };
 
-#endif /* __FTMOD_SANGOMA_ISDN_TRACE_H__ */
+struct code2str dcodQ931DisplayTypeTable[] = {
+	{ 0x00, "Calling Party Name"},
+	{ 0x01, "Connected Party Name"},
+	{ 0x05, "Original Called Party Name"},
+	{ -1,   "Invalid"},
+};
 
+struct code2str dcodQ931AssocInfoTable[] = {
+	{ 0x00, "Requested"},
+	{ 0x03, "Included"},
+	{ -1,   "Invalid"},
+};
+
+#endif /* __FTMOD_SANGOMA_ISDN_TRACE_H__ */
