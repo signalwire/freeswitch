@@ -7819,7 +7819,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 
 	tech_pvt->sofia_private = sofia_private;
-	tech_pvt->nh = nua_handle_ref(nh);
+	tech_pvt->nh = nh;
 	
 	if (profile->pres_type && sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT)) {
 		sofia_presence_set_chat_hash(tech_pvt, sip);
