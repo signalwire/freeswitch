@@ -964,6 +964,12 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 
 	switch_mutex_lock(sql_manager.cond_mutex);
 
+
+	switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA synchronous=OFF;", NULL);
+	switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA count_changes=OFF;", NULL);
+	switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA temp_store=MEMORY;", NULL);
+	switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA journal_mode=OFF;", NULL);
+
 	while (sql_manager.thread_running == 1) {
 		if (save_sql || switch_queue_trypop(sql_manager.sql_queue[0], &pop) == SWITCH_STATUS_SUCCESS ||
 			switch_queue_trypop(sql_manager.sql_queue[1], &pop) == SWITCH_STATUS_SUCCESS) {
@@ -1055,6 +1061,8 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 #ifdef DEBUG_SQL
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DONE\n");
 #endif
+
+
 			iterations = 0;
 			trans = 0;
 			len = 0;
@@ -1062,6 +1070,8 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 			lc = 0;
 			if (do_sleep) {
 				switch_yield(200000);
+			} else {
+				switch_yield(1000);
 			}
 			wrote = 1;
 		}
@@ -1228,6 +1238,7 @@ static void core_event_handler(switch_event_t *event)
 								   );
 		break;
 	case SWITCH_EVENT_CODEC:
+
 		new_sql() =
 			switch_mprintf
 			("update channels set read_codec='%q',read_rate='%q',read_bit_rate='%q',write_codec='%q',write_rate='%q',write_bit_rate='%q' where uuid='%q' and hostname='%q'",
@@ -1322,9 +1333,18 @@ static void core_event_handler(switch_event_t *event)
 		break;
 	case SWITCH_EVENT_CHANNEL_CALLSTATE:
 		{
-			new_sql() = switch_mprintf("update channels set callstate='%q' where uuid='%q' and hostname='%q'",
-									   switch_event_get_header_nil(event, "channel-call-state"),
-									   switch_event_get_header_nil(event, "unique-id"), switch_core_get_switchname());
+			char *num = switch_event_get_header_nil(event, "channel-call-state-number");
+			switch_channel_callstate_t callstate = CCS_DOWN;
+
+			if (num) {
+				callstate = atoi(num);
+			}
+
+			if (callstate != CCS_DOWN && callstate != CCS_HANGUP) {
+				new_sql() = switch_mprintf("update channels set callstate='%q' where uuid='%q' and hostname='%q'",
+										   switch_event_get_header_nil(event, "channel-call-state"),
+										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_switchname());
+			}
 
 		}
 		break;
@@ -1338,8 +1358,10 @@ static void core_event_handler(switch_event_t *event)
 			}
 
 			switch (state_i) {
+			case CS_NEW:
 			case CS_HANGUP:
 			case CS_DESTROY:
+			case CS_REPORTING:
 				break;
 			case CS_ROUTING:
 				if ((extra_cols = parse_presence_data_cols(event))) {
@@ -1802,8 +1824,9 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			switch_cache_db_execute_sql(dbh, "drop table tasks", NULL);
 			switch_cache_db_execute_sql(dbh, "PRAGMA synchronous=OFF;", NULL);
 			switch_cache_db_execute_sql(dbh, "PRAGMA count_changes=OFF;", NULL);
-			switch_cache_db_execute_sql(dbh, "PRAGMA cache_size=8000", NULL);
+			switch_cache_db_execute_sql(dbh, "PRAGMA default_cache_size=8000", NULL);
 			switch_cache_db_execute_sql(dbh, "PRAGMA temp_store=MEMORY;", NULL);
+			switch_cache_db_execute_sql(dbh, "PRAGMA journal_mode=OFF;", NULL);
 		}
 		break;
 	}
