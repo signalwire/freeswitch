@@ -584,10 +584,12 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 			break;
 		case PROT_Q931_IE_DISPLAY:
 			{
-				uint8_t j, displayType, assocInfo;
+				uint8_t j;
 				char displayStr[82];
 				uint8_t displayNtEnabled = 0;
 				uint8_t displayStrOct = 2;
+				uint8_t displayType = 0;
+				uint8_t assocInfo = 0;
 				
 				memset(displayStr, 0, sizeof(displayStr));
 				

@@ -186,7 +186,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 					 SKYPOPEN_P_LOG);
 				skypopen_sleep(1000000);
 				skypopen_signaling_write(tech_pvt, "PROTOCOL 7");
-				skypopen_sleep(10000);
+				skypopen_sleep(20000);
 				return 0;
 			}
 			if (!strncasecmp(message, "ERROR 92 CALL", 12)) {
@@ -898,6 +898,9 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 
 					if (tech_pvt->timer_read_srv.timer_interface && tech_pvt->timer_read_srv.timer_interface->timer_next) {
 						switch_core_timer_next(&tech_pvt->timer_read_srv);
+					} else {
+						skypopen_sleep(20000);
+
 					}
 					//rt = select(fdselect + 1, &fs, NULL, NULL, &to);
 					if (rt > 0) {
@@ -905,12 +908,12 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
 							len = recv(fd, (char *) srv_in, BYTES_PER_FRAME * 2, 0);
 						} else {
-							skypopen_sleep(10000);
+							//skypopen_sleep(10000);
 							continue;
 						}
 						if (tech_pvt->begin_to_read == 0) {
 							DEBUGA_SKYPE("len=%d\n", SKYPOPEN_P_LOG, len);
-							skypopen_sleep(10000);
+							//skypopen_sleep(10000);
 							continue;
 						}
 
@@ -1054,6 +1057,8 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 					if (tech_pvt->timer_write.timer_interface && tech_pvt->timer_write.timer_interface->timer_next
 						&& tech_pvt->interface_state != SKYPOPEN_STATE_HANGUP_REQUESTED) {
 						switch_core_timer_next(&tech_pvt->timer_write);
+					} else {
+						skypopen_sleep(20000);
 					}
 
 					if (tech_pvt->begin_to_write == 0) {
@@ -1064,7 +1069,7 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 							DEBUGA_SKYPE("len=%d, error: %s\n", SKYPOPEN_P_LOG, len, strerror(errno));
 							break;
 						}
-						skypopen_sleep(10000);
+						//skypopen_sleep(10000);
 						continue;
 					} else {
 
@@ -1367,7 +1372,7 @@ LRESULT APIENTRY skypopen_present(HWND hWindow, UINT uiMessage, WPARAM uiParam, 
 					}
 					break;
 				case SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION:
-					skypopen_sleep(5000);
+					skypopen_sleep(20000);
 					break;
 				case SKYPECONTROLAPI_ATTACH_REFUSED:
 					ERRORA("Skype client refused to be connected by Skypopen!\n", SKYPOPEN_P_LOG);
@@ -1377,7 +1382,7 @@ LRESULT APIENTRY skypopen_present(HWND hWindow, UINT uiMessage, WPARAM uiParam, 
 					break;
 				case SKYPECONTROLAPI_ATTACH_API_AVAILABLE:
 					DEBUGA_SKYPE("Skype API available\n", SKYPOPEN_P_LOG);
-					skypopen_sleep(5000);
+					skypopen_sleep(20000);
 					break;
 				default:
 					WARNINGA("GOT AN UNKNOWN SKYPE WINDOWS MSG\n", SKYPOPEN_P_LOG);
@@ -1681,7 +1686,7 @@ void skypopen_clean_disp(void *data)
 		DEBUGA_SKYPE("NOT destroyed disp\n", SKYPOPEN_P_LOG);
 	}
 	DEBUGA_SKYPE("OUT destroyed disp\n", SKYPOPEN_P_LOG);
-	skypopen_sleep(1000);
+	skypopen_sleep(20000); 
 }
 
 void *skypopen_do_skypeapi_thread_func(void *obj)
@@ -1927,13 +1932,14 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 											 SKYPOPEN_P_LOG, buf);
 										skypopen_sleep(1000000);	//1 sec
 									}
-									skypopen_sleep(1000);	//0.1 msec
+									skypopen_sleep(20000);	//20 msec
 									break;
 								}
 							}
 							if (continue_is_broken) {
 								XFlush(disp);
-								skypopen_sleep(1000);	//0.1 msec
+								skypopen_sleep(20000);	//20 msec 
+								WARNINGA("continue_is_broken\n", SKYPOPEN_P_LOG);
 								continue;
 							}
 							strcat(buffer, buf);

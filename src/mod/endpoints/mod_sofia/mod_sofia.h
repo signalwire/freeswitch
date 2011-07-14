@@ -33,7 +33,7 @@
  * mod_sofia.h -- SOFIA SIP Endpoint
  *
  */
-
+//#define HAVE_MEMLEAK_LOG 1
 /*Defines etc..*/
 /*************************************************************************************************************************************************************/
 #define MANUAL_BYE 1
@@ -151,10 +151,11 @@ struct sofia_private {
 	char gateway_name[256];
 	char auth_gateway_name[256];
 	int destroy_nh;
-	int destroy_me;
 	int is_call;
+	int got_bye;
 	int is_static;
 	sofia_dispatch_event_t *de;
+	nua_handle_t *nh;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
@@ -317,8 +318,8 @@ typedef enum {
 	TFLAG_MAX
 } TFLAGS;
 
-#define SOFIA_MAX_MSG_QUEUE 26
-#define SOFIA_MSG_QUEUE_SIZE 20
+#define SOFIA_MAX_MSG_QUEUE 51
+#define SOFIA_MSG_QUEUE_SIZE 200
 
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
@@ -1080,8 +1081,10 @@ switch_status_t sofia_set_loglevel(const char *name, int level);
  * \note Valid components are "default" (sofia's default logger), "tport", "iptsec", "nea", "nta", "nth_client", "nth_server", "nua", "soa", "sresolv", "stun"
  * \return the component's loglevel, or -1 if the component isn't valid
  */
-switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches);
 int sofia_get_loglevel(const char *name);
+switch_status_t list_profiles_full(const char *line, const char *cursor, switch_console_callback_match_t **matches, switch_bool_t show_aliases);
+switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches);
+
 sofia_cid_type_t sofia_cid_name2type(const char *name);
 void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_str, switch_bool_t dup);
 void sofia_glue_set_rtp_stats(private_object_t *tech_pvt);

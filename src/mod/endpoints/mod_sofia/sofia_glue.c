@@ -2214,7 +2214,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			switch_safe_free(d_url);
 			return SWITCH_STATUS_FALSE;
 		}
-		nua_handle_ref(tech_pvt->nh);
 
 		if (tech_pvt->dest && (strstr(tech_pvt->dest, ";fs_nat") || strstr(tech_pvt->dest, ";received")
 							   || ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val)))) {
@@ -2309,6 +2308,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		memset(sofia_private, 0, sizeof(*sofia_private));
 		sofia_private->is_call++;
+		sofia_private->nh = nua_handle_ref(tech_pvt->nh);
 
 		tech_pvt->sofia_private = sofia_private;
 		switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
@@ -5541,7 +5541,7 @@ int sofia_glue_recover(switch_bool_t flush)
 	switch_console_callback_match_t *matches;
 
 
-	if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+	if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		switch_console_callback_match_node_t *m;
 		for (m = matches->head; m; m = m->next) {
 			if ((profile = sofia_glue_find_profile(m->val))) {

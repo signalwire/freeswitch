@@ -282,7 +282,7 @@ void sofia_presence_cancel(void)
 		return;
 	}
 	
-	if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+	if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		switch_console_callback_match_node_t *m;
 		
 		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
@@ -409,7 +409,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 			sql = switch_mprintf("select profile_name from sip_registrations where sip_host='%s' or mwi_host='%s'", host, host);
 
-			if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+			if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 				switch_console_callback_match_node_t *m;
 
 				for (m = matches->head; m; m = m->next) {
@@ -592,7 +592,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 
 		switch_assert(sql != NULL);
 		
-		if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+		if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			switch_console_callback_match_node_t *m;
 
 			for (m = matches->head; m; m = m->next) {
@@ -788,7 +788,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		goto done;
 	}
 
-	if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+	if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		switch_console_callback_match_node_t *m;
 
 		for (m = matches->head; m; m = m->next) {
@@ -1790,8 +1790,12 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	switch_safe_free(pl);
 	switch_safe_free(to);
 
-	if (nh && kill_handle) {
-		nua_handle_destroy(nh);
+	if (nh) {
+		if (kill_handle) {
+			nua_handle_destroy(nh);
+		} else {
+			nua_handle_unref(nh);
+		}
 	}
 
 	return 0;
@@ -1840,6 +1844,10 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	h->total++;
 
   end:
+
+	if (nh) {
+		nua_handle_unref(nh);
+	}
 
 	if (ext_profile) {
 		sofia_glue_release_profile(ext_profile);
@@ -1931,6 +1939,8 @@ static int broadsoft_sla_notify_callback(void *pArg, int argc, char **argv, char
 		nua_notify(nh,
 				   SIPTAG_EXPIRES_STR("0"),
 				   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), SIPTAG_EVENT_STR("line-seize"), SIPTAG_CALL_INFO_STR(tmp), TAG_END());
+
+		nua_handle_unref(nh);
 		return 0;
 	}
 
@@ -1939,6 +1949,7 @@ static int broadsoft_sla_notify_callback(void *pArg, int argc, char **argv, char
 				   TAG_IF(*expires_str, SIPTAG_EXPIRES_STR(expires_str)),
 				   SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EVENT_STR("call-info"), SIPTAG_CALL_INFO_STR(tmp), TAG_END());
 
+		nua_handle_unref(nh);
 	}
 
 	return 0;
@@ -2629,6 +2640,7 @@ static int sofia_counterpath_crutch(void *pArg, int argc, char **argv, char **co
 				   SIPTAG_EXPIRES_STR(expstr),
 				   SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EVENT_STR(event_type), 
 				   SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"), SIPTAG_PAYLOAD_STR(pl), TAG_END());
+		nua_handle_unref(nh);
 	}
 
 	return 0;

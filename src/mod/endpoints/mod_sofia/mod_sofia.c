@@ -553,9 +553,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		*tech_pvt->sofia_private->uuid = '\0';
 	}
 
-
 	sofia_glue_set_rtp_stats(tech_pvt);
-
+	
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -4358,7 +4357,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	if (tech_pvt->local_url) {
 		switch_channel_set_variable(nchannel, "sip_local_url", tech_pvt->local_url);
 		if (profile->pres_type) {
-			switch_channel_set_variable(nchannel, "presence_id", tech_pvt->local_url);
+			const char *presence_id = switch_channel_get_variable(nchannel, "presence_id");
+			if (zstr(presence_id)) {
+				switch_channel_set_variable(nchannel, "presence_id", tech_pvt->local_url);
+			}
 		}
 	}
 	switch_channel_set_variable(nchannel, "sip_destination_url", tech_pvt->dest);
@@ -4960,7 +4962,7 @@ static void general_event_handler(switch_event_t *event)
 	}
 }
 
-switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+switch_status_t list_profiles_full(const char *line, const char *cursor, switch_console_callback_match_t **matches, switch_bool_t show_aliases)
 {
 	sofia_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
@@ -4972,7 +4974,12 @@ switch_status_t list_profiles(const char *line, const char *cursor, switch_conso
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &vvar, NULL, &val);
+
 		profile = (sofia_profile_t *) val;
+		if (!show_aliases && strcmp((char *)vvar, profile->name)) {
+			continue;
+		}
+
 		if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
 			switch_console_push_match(&my_matches, (const char *) vvar);
 		}
@@ -4986,6 +4993,11 @@ switch_status_t list_profiles(const char *line, const char *cursor, switch_conso
 
 
 	return status;
+}
+
+switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	return list_profiles_full(line, cursor, matches, SWITCH_TRUE);
 }
 
 static switch_status_t list_gateways(const char *line, const char *cursor, switch_console_callback_match_t **matches)

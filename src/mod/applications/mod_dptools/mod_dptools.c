@@ -1352,27 +1352,28 @@ SWITCH_STANDARD_API(strftime_api_function)
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_time_t thetime;
-	char *p;
+	char *p, *q = NULL;
 	char *mycmd = NULL;
 
 	if (!zstr(cmd)) {
 		mycmd = strdup(cmd);
+		q = mycmd;
 	}
 
-	if (!zstr(mycmd) && (p = strchr(mycmd, '|'))) {
+	if (!zstr(q) && (p = strchr(q, '|'))) {
 		*p++ = '\0';
 		
-		thetime = switch_time_make(atol(mycmd), 0);
-		mycmd = p + 1;
+		thetime = switch_time_make(atol(q), 0);
+		q = p + 1;
 	} else {
 		thetime = switch_micro_time_now();
 	}
 	switch_time_exp_lt(&tm, thetime);
 
-	if (zstr(mycmd)) {
+	if (zstr(q)) {
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	} else {
-		switch_strftime(date, &retsize, sizeof(date), mycmd, &tm);
+		switch_strftime(date, &retsize, sizeof(date), q, &tm);
 	}
 	stream->write_function(stream, "%s", date);
 	switch_safe_free(mycmd);
