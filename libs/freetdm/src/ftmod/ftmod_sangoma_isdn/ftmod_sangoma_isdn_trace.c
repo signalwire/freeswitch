@@ -114,7 +114,7 @@ void sngisdn_trace_interpreted_q921(sngisdn_span_data_t *signal_data, ftdm_trace
 {
 	char *data_str = ftdm_calloc(1,200); /* TODO Find a proper size */
  	sngisdn_decode_q921(data_str, data, data_len);
-	ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q921] %s FRAME %s:%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
+	ftdm_log(FTDM_LOG_DEBUG, "[SNGISDN Q921] %s FRAME %s:%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
 	ftdm_safe_free(data_str);
 }
 
@@ -219,7 +219,7 @@ void sngisdn_trace_interpreted_q931(sngisdn_span_data_t *signal_data, ftdm_trace
 {
 	char *data_str = ftdm_calloc(1,MAX_DECODE_STR_LEN); /* TODO Find a proper size */
 	sngisdn_decode_q931(data_str, data, data_len);
-	ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q931] %s FRAME %s:%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
+	ftdm_log(FTDM_LOG_DEBUG, "[SNGISDN Q931] %s FRAME %s:%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
 	ftdm_safe_free(data_str);
 }
 
