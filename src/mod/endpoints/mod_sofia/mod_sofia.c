@@ -4962,7 +4962,7 @@ static void general_event_handler(switch_event_t *event)
 	}
 }
 
-switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+switch_status_t list_profiles_full(const char *line, const char *cursor, switch_console_callback_match_t **matches, switch_bool_t show_aliases)
 {
 	sofia_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
@@ -4974,7 +4974,12 @@ switch_status_t list_profiles(const char *line, const char *cursor, switch_conso
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &vvar, NULL, &val);
+
 		profile = (sofia_profile_t *) val;
+		if (!show_aliases && strcmp((char *)vvar, profile->name)) {
+			continue;
+		}
+
 		if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
 			switch_console_push_match(&my_matches, (const char *) vvar);
 		}
@@ -4988,6 +4993,11 @@ switch_status_t list_profiles(const char *line, const char *cursor, switch_conso
 
 
 	return status;
+}
+
+switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	return list_profiles_full(line, cursor, matches, SWITCH_TRUE);
 }
 
 static switch_status_t list_gateways(const char *line, const char *cursor, switch_console_callback_match_t **matches)

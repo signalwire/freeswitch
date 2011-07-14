@@ -1081,8 +1081,10 @@ switch_status_t sofia_set_loglevel(const char *name, int level);
  * \note Valid components are "default" (sofia's default logger), "tport", "iptsec", "nea", "nta", "nth_client", "nth_server", "nua", "soa", "sresolv", "stun"
  * \return the component's loglevel, or -1 if the component isn't valid
  */
-switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches);
 int sofia_get_loglevel(const char *name);
+switch_status_t list_profiles_full(const char *line, const char *cursor, switch_console_callback_match_t **matches, switch_bool_t show_aliases);
+switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches);
+
 sofia_cid_type_t sofia_cid_name2type(const char *name);
 void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_str, switch_bool_t dup);
 void sofia_glue_set_rtp_stats(private_object_t *tech_pvt);

@@ -282,7 +282,7 @@ void sofia_presence_cancel(void)
 		return;
 	}
 	
-	if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+	if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		switch_console_callback_match_node_t *m;
 		
 		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
@@ -409,7 +409,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 			sql = switch_mprintf("select profile_name from sip_registrations where sip_host='%s' or mwi_host='%s'", host, host);
 
-			if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+			if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 				switch_console_callback_match_node_t *m;
 
 				for (m = matches->head; m; m = m->next) {
@@ -592,7 +592,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 
 		switch_assert(sql != NULL);
 		
-		if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+		if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			switch_console_callback_match_node_t *m;
 
 			for (m = matches->head; m; m = m->next) {
@@ -788,7 +788,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		goto done;
 	}
 
-	if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+	if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		switch_console_callback_match_node_t *m;
 
 		for (m = matches->head; m; m = m->next) {

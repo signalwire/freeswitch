@@ -5541,7 +5541,7 @@ int sofia_glue_recover(switch_bool_t flush)
 	switch_console_callback_match_t *matches;
 
 
-	if (list_profiles(NULL, NULL, &matches) == SWITCH_STATUS_SUCCESS) {
+	if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		switch_console_callback_match_node_t *m;
 		for (m = matches->head; m; m = m->next) {
 			if ((profile = sofia_glue_find_profile(m->val))) {
