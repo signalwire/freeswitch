@@ -486,12 +486,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 
   end:
 
-	if (sub_state == nua_substate_terminated && sofia_private && sofia_private != &mod_sofia_globals.destroy_private &&
-		sofia_private != &mod_sofia_globals.keep_private) {
-		sofia_private->destroy_nh = 1;
-		sofia_private->destroy_me = 1;
-	}
-
+	return;
 }
 
 void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
@@ -558,13 +553,9 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	switch_channel_hangup(channel, cause);
 	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg),
 				TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)), TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
-
+	
 	switch_safe_free(extra_headers);
 
-	if (sofia_private) {
-		sofia_private->destroy_me = 1;
-		sofia_private->destroy_nh = 1;
-	}
 #endif
 
 
@@ -585,6 +576,8 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	}
 
 	tech_pvt->got_bye = 1;
+	sofia_private->got_bye = 1;
+
 	switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_bye");
 
 	return;
@@ -1075,26 +1068,17 @@ static void our_sofia_event_callback(nua_event_t event,
 	}
 
 	if (check_destroy) {
-		if (nh && ((sofia_private && sofia_private->destroy_nh) || !nua_handle_magic(nh))) {
+		if (0 && nh && ((sofia_private && sofia_private->destroy_nh) || !nua_handle_magic(nh))) {
+			
+			printf("FUCKER2\n");
+
 			if (sofia_private) {
 				nua_handle_bind(nh, NULL);
 			}
+
 			nua_handle_destroy(nh);
 			nh = NULL;
 		}
-	}
-
-	if (sofia_private && sofia_private->destroy_me) {
-		if (tech_pvt) {
-			tech_pvt->sofia_private = NULL;
-		}
-
-		if (nh) {
-			nua_handle_bind(nh, NULL);
-		}
-		sofia_private->destroy_me = 12;
-		sofia_private_free(sofia_private);
-
 	}
 
 	if (gateway) {
@@ -1115,15 +1099,22 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 	sofia_dispatch_event_t *de = *dep;
 	nua_handle_t *nh = de->nh;
 	nua_t *nua = de->nua;
-	
+	sofia_private_t *sofia_private = nua_handle_magic(de->nh);
+
 	*dep = NULL;
 
-	our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
-							 de->nh, nua_handle_magic(de->nh), de->sip, de, (tagi_t *) de->data->e_tags);
+	sofia_private = nua_handle_magic(nh);
 
-	nua_destroy_event(de->event);	
-	su_free(nh->nh_home, de);
+	//printf("QUEUE EVENT %s\n", nua_event_name(de->data->e_event));
+
+
+	our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
+							 nh, sofia_private, de->sip, de, (tagi_t *) de->data->e_tags);
+
+	//printf("/QUEUE EVENT %s\n", nua_event_name(de->data->e_event));
 	
+	nua_destroy_event(de->event);
+	su_free(nh->nh_home, de);
 	nua_handle_unref(nh);
 	nua_stack_unref(nua);
 }
@@ -1222,15 +1213,45 @@ void sofia_event_callback(nua_event_t event,
 {
 	sofia_dispatch_event_t *de;
 
+	//printf("EVENT %s\n", nua_event_name(event));
+
+
+
+	if (event == nua_i_terminated) {
+		if (sofia_private && sofia_private->nh) {
+			nua_handle_bind(nh, NULL);
+			nua_handle_destroy(sofia_private->nh);
+		}
+
+		return;
+	}
+
+
 	de = su_alloc(nh->nh_home, sizeof(*de));
 	memset(de, 0, sizeof(*de));
 	nua_save_event(nua, de->event);
 	de->nh = nua_handle_ref(nh);
-	de->nh = nh;
 	de->data = nua_event_data(de->event);
 	de->sip = sip_object(de->data->e_msg);
 	de->profile = profile;
 	de->nua = nua_stack_ref(nua);
+
+
+   	if (event == nua_i_state) {
+		int ss_state = nua_callstate_init;
+		tl_gets(tags, NUTAG_CALLSTATE_REF(ss_state), TAG_END());
+		
+		//printf("state [%s][%d]\n", nua_callstate_name(ss_state), status);		
+
+		if (ss_state == nua_callstate_terminated || ss_state == nua_callstate_terminating) {
+			sofia_process_dispatch_event(&de);
+			return;
+		}
+	}
+
+
+
+
 
 	if (event == nua_i_invite && !sofia_private) {
 		if (!(sofia_private = su_alloc(nh->nh_home, sizeof(*sofia_private)))) {
@@ -1238,8 +1259,9 @@ void sofia_event_callback(nua_event_t event,
 		}
 
 		memset(sofia_private, 0, sizeof(*sofia_private));
-		sofia_private->is_call++;
+		sofia_private->is_call = 2;
 		sofia_private->de = de;
+		sofia_private->nh = nua_handle_ref(nh);
 		nua_handle_bind(nh, sofia_private);
 		return;
 	}
@@ -1266,7 +1288,6 @@ void sofia_event_callback(nua_event_t event,
 		}
 	}
 
-	
 	sofia_queue_message(de);
 }
 
@@ -4347,7 +4368,6 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 
 	if (sofia_private && !zstr(sofia_private->gateway_name)) {
 		gateway = sofia_reg_find_gateway(sofia_private->gateway_name);
-		sofia_private->destroy_me = 1;
 	}
 
 	if (gateway) {
@@ -5066,10 +5086,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				sofia_glue_do_invite(session);
 				goto done;
 			}
-		}
-
-		if (sofia_private) {
-			sofia_private->destroy_me = 1;
 		}
 	}
 
@@ -5804,21 +5820,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			switch_snprintf(st, sizeof(st), "%d", cause);
 			switch_channel_set_variable(channel, "sip_term_cause", st);
 			switch_channel_hangup(channel, cause);
-		}
-
-
-		if (ss_state == nua_callstate_terminated) {
-			if (tech_pvt->sofia_private) {
-				tech_pvt->sofia_private = NULL;
-			}
-
-			nua_handle_unref(tech_pvt->nh);
-			tech_pvt->nh = NULL;
-
-			if (nh) {
-				nua_handle_bind(nh, NULL);
-				nua_handle_destroy(nh);
-			}
 		}
 
 		break;
@@ -7929,8 +7930,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 	}
 
-	nua_handle_bind(nh, NULL);
-	sofia_private_free(sofia_private);
 	switch_core_session_destroy(&session);
 	nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 	return;

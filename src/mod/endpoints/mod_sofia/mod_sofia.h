@@ -33,7 +33,7 @@
  * mod_sofia.h -- SOFIA SIP Endpoint
  *
  */
-
+//#define HAVE_MEMLEAK_LOG 1
 /*Defines etc..*/
 /*************************************************************************************************************************************************************/
 #define MANUAL_BYE 1
@@ -151,10 +151,11 @@ struct sofia_private {
 	char gateway_name[256];
 	char auth_gateway_name[256];
 	int destroy_nh;
-	int destroy_me;
 	int is_call;
+	int got_bye;
 	int is_static;
 	sofia_dispatch_event_t *de;
+	nua_handle_t *nh;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
@@ -318,7 +319,7 @@ typedef enum {
 } TFLAGS;
 
 #define SOFIA_MAX_MSG_QUEUE 51
-#define SOFIA_MSG_QUEUE_SIZE 2000
+#define SOFIA_MSG_QUEUE_SIZE 200
 
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
