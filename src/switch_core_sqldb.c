@@ -35,6 +35,8 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 //#define DEBUG_SQL 1
+#define SWITCH_SQL_QUEUE_LEN 100000
+#define SWITCH_SQL_QUEUE_PAUSE_LEN 90000
 
 struct switch_cache_db_handle {
 	char name[CACHE_DB_LEN];
@@ -942,7 +944,6 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	switch_size_t newlen;
 	int lc = 0, wrote = 0, do_sleep = 1;
 	uint32_t sanity = 120;
-	int too_long = SWITCH_SQL_QUEUE_LEN / 2;
 	int auto_pause = 0;
 
 	switch_assert(sqlbuf);
@@ -1030,7 +1031,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 		lc = switch_queue_size(sql_manager.sql_queue[0]) + switch_queue_size(sql_manager.sql_queue[1]);
 
 
-		if (lc > too_long) {
+		if (lc > SWITCH_SQL_QUEUE_PAUSE_LEN) {
 			if (!auto_pause) {
 				auto_pause = 1;
 				switch_core_session_ctl(SCSC_PAUSE_INBOUND, &auto_pause);
