@@ -3636,7 +3636,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->client_rport_level = 1;
 						} else if (val && !strcasecmp(val, "server-only")) {
 							profile->client_rport_level = 0;
-							profile->client_rport_level = 1;
+							profile->server_rport_level = 1;
 						} else if (switch_true(val)) {
 							profile->server_rport_level = 2;
 							profile->client_rport_level = 1;
