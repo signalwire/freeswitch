@@ -699,7 +699,7 @@ if test "$ac_cv_sizeof_size_t" = "$ac_cv_sizeof_int"; then
 elif test "$ac_cv_sizeof_size_t" = "$ac_cv_sizeof_long"; then
     size_t_fmt='#define SWITCH_SIZE_T_FMT "ld"'
 else
-    size_t_fmt='#error Can not determine the proper size for size_t'
+    size_t_fmt='#define SWITCH_SIZE_T_FMT "zu"'
 fi
 
 # Basically, we have tried to figure out the correct format strings
