@@ -1068,9 +1068,7 @@ static void our_sofia_event_callback(nua_event_t event,
 	}
 
 	if (check_destroy) {
-		if (0 && nh && ((sofia_private && sofia_private->destroy_nh) || !nua_handle_magic(nh))) {
-			
-			printf("FUCKER2\n");
+		if (nh && ((sofia_private && sofia_private->destroy_nh) || !nua_handle_magic(nh))) {
 
 			if (sofia_private) {
 				nua_handle_bind(nh, NULL);
@@ -1094,29 +1092,99 @@ static void our_sofia_event_callback(nua_event_t event,
 	}
 }
 
+int sofia_nua_handle_destroy_run(switch_queue_t *q)
+{
+	void *pop;
+	int i = 0;
+	uint32_t ttl;
+	
+	ttl = switch_queue_size(q);
+
+	while(i < ttl && switch_queue_trypop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		nua_handle_t *nh = (nua_handle_t *) pop;
+		int x = su_home_refcount((su_home_t *)nh) - 1;
+#ifdef DEBUG_CONN
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DESTROY %p\n", (void *) nh);
+#endif
+
+		if (x == 1) {
+			nua_handle_destroy(nh);
+		} else {
+#ifdef DEBUG_CONN
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DOH REQUEUE %p\n", (void *) nh);
+#endif
+			switch_queue_push(q, nh);
+		}
+		nh = NULL;
+		i++;
+	}
+
+	return i;
+}
+
+void sofia_nua_handle_destroy(switch_queue_t *q, nua_handle_t **nhp)
+{
+	nua_handle_t *nh;
+
+	switch_assert(nhp);
+
+	nh = *nhp;
+	*nhp = NULL;
+	
+	if (nh) {
+		switch_queue_push(q, nh);
+	}
+}
+
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 {
 	sofia_dispatch_event_t *de = *dep;
-	nua_handle_t *nh = de->nh;
+	nua_handle_t *nh = de->nh, *snh = NULL;
 	nua_t *nua = de->nua;
 	sofia_private_t *sofia_private = nua_handle_magic(de->nh);
+	int destroy = 0;
 
 	*dep = NULL;
 
 	sofia_private = nua_handle_magic(nh);
 
-	//printf("QUEUE EVENT %s\n", nua_event_name(de->data->e_event));
-
+	if (de->data->e_event == nua_i_terminated) {
+#ifdef DEBUG_CONN
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CATCH EVENT %s\n", nua_event_name(de->data->e_event));
+#endif
+		destroy = 1;
+		if (sofia_private && sofia_private->nh) {
+			snh = sofia_private->nh;
+			nua_handle_unref(nh);
+		}
+	} else {
+#ifdef DEBUG_CONN
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "PROCESS EVENT %s\n", nua_event_name(de->data->e_event));
+#endif
 
 	our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
 							 nh, sofia_private, de->sip, de, (tagi_t *) de->data->e_tags);
 
-	//printf("/QUEUE EVENT %s\n", nua_event_name(de->data->e_event));
+#ifdef DEBUG_CONN
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "/PROCESS EVENT %s\n", nua_event_name(de->data->e_event));
+#endif
+	}
+
+	nua_handle_unref(nh);
 	
 	nua_destroy_event(de->event);
 	su_free(nh->nh_home, de);
-	nua_handle_unref(nh);
+
+	if (destroy && snh) {
+		nua_handle_bind(snh, NULL);
+#ifdef DEBUG_CONN
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "go go UNREF %d\n", nh->nh_ref_by_user);
+#endif
+		sofia_nua_handle_destroy(sofia_private->profile->nh_destroy_queue, &snh);
+	}
+
 	nua_stack_unref(nua);
+	
 }
 
 
@@ -1213,19 +1281,10 @@ void sofia_event_callback(nua_event_t event,
 {
 	sofia_dispatch_event_t *de;
 
-	//printf("EVENT %s\n", nua_event_name(event));
 
-
-
-	if (event == nua_i_terminated) {
-		if (sofia_private && sofia_private->nh) {
-			nua_handle_bind(nh, NULL);
-			nua_handle_destroy(sofia_private->nh);
-		}
-
-		return;
-	}
-
+#ifdef DEBUG_CONN
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "GOT EVENT %s\n", x, nua_event_name(event));
+#endif
 
 	de = su_alloc(nh->nh_home, sizeof(*de));
 	memset(de, 0, sizeof(*de));
@@ -1237,22 +1296,6 @@ void sofia_event_callback(nua_event_t event,
 	de->nua = nua_stack_ref(nua);
 
 
-   	if (event == nua_i_state) {
-		int ss_state = nua_callstate_init;
-		tl_gets(tags, NUTAG_CALLSTATE_REF(ss_state), TAG_END());
-		
-		//printf("state [%s][%d]\n", nua_callstate_name(ss_state), status);		
-
-		if (ss_state == nua_callstate_terminated || ss_state == nua_callstate_terminating) {
-			sofia_process_dispatch_event(&de);
-			return;
-		}
-	}
-
-
-
-
-
 	if (event == nua_i_invite && !sofia_private) {
 		if (!(sofia_private = su_alloc(nh->nh_home, sizeof(*sofia_private)))) {
 			abort();
@@ -1262,6 +1305,7 @@ void sofia_event_callback(nua_event_t event,
 		sofia_private->is_call = 2;
 		sofia_private->de = de;
 		sofia_private->nh = nua_handle_ref(nh);
+		sofia_private->profile = profile;
 		nua_handle_bind(nh, sofia_private);
 		return;
 	}
@@ -1270,9 +1314,12 @@ void sofia_event_callback(nua_event_t event,
 		switch_core_session_t *session;
 
 		if (!zstr(sofia_private->uuid)) {
-			if ((session = switch_core_session_locate(sofia_private->uuid))) {
+			if ((session = switch_core_session_force_locate(sofia_private->uuid))) {
 				
 				if (switch_core_session_running(session)) {
+#ifdef DEBUG_CONN
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SESSION QUEUE EVENT %s\n", nua_event_name(event));
+#endif
 					switch_core_session_queue_signal_data(session, de);
 				} else {
 					switch_core_session_message_t msg = { 0 };
@@ -1287,6 +1334,10 @@ void sofia_event_callback(nua_event_t event,
 			}
 		}
 	}
+
+#ifdef DEBUG_CONN
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "QUEUE EVENT %s\n", nua_event_name(event));
+#endif
 
 	sofia_queue_message(de);
 }
@@ -1572,7 +1623,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 			last_commit = switch_micro_time_now();
 			
 			if (len) {
-				//printf("TRANS:\n%s\n", sqlbuf);
+				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "TRANS:\n%s\n", sqlbuf);
 				switch_mutex_lock(profile->ireg_mutex);
 				sofia_glue_actually_execute_sql_trans(profile, sqlbuf, NULL);
 				//sofia_glue_actually_execute_sql(profile, "commit;\n", NULL);
@@ -1587,6 +1638,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				free(pop);
 			}
 		}
+
+
+		sofia_nua_handle_destroy_run(profile->nh_destroy_queue);
 
 		if (switch_micro_time_now() - last_check >= 1000000) {
 			if (profile->watchdog_enabled) {
@@ -1933,6 +1987,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		sofia_presence_establish_presence(profile);
 	}
 	
+	switch_queue_create(&profile->nh_destroy_queue, SOFIA_QUEUE_SIZE, profile->pool);
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
 
 	profile->started = switch_epoch_time_now(NULL);
@@ -1961,6 +2017,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 			switch_core_session_hupall_matching_var("sofia_profile_name", profile->name, SWITCH_CAUSE_MANAGER_REQUEST);
 		}
 	}
+
+	sofia_nua_handle_destroy_run(profile->nh_destroy_queue);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock %s\n", profile->name);
 	switch_thread_rwlock_wrlock(profile->rwlock);

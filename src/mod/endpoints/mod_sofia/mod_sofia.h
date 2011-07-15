@@ -156,6 +156,7 @@ struct sofia_private {
 	int is_static;
 	sofia_dispatch_event_t *de;
 	nua_handle_t *nh;
+	sofia_profile_t *profile;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
@@ -617,6 +618,7 @@ struct sofia_profile {
 	uint32_t event_timeout;
 	int watchdog_enabled;
 	switch_mutex_t *gw_mutex;
+	switch_queue_t *nh_destroy_queue;
 };
 
 struct private_object {
@@ -1123,4 +1125,7 @@ void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
+
+int sofia_nua_handle_destroy_run(switch_queue_t *q);
+void sofia_nua_handle_destroy(switch_queue_t *q, nua_handle_t **nhp);
 
