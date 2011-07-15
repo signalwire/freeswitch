@@ -535,7 +535,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
             t->tx_bit_rate = 2400;
             break;
         case T38_IND_V27TER_4800_TRAINING:
-            t->tx_bit_rate = 2400;
+            t->tx_bit_rate = 4800;
             break;
         }
         /*endswitch*/
