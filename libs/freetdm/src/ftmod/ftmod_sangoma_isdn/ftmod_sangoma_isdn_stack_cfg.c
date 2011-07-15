@@ -681,12 +681,7 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 			cfg.t.cfg.s.inDLSAP.clrGlr = FALSE;			/* in case of glare, do not clear local call */
 			cfg.t.cfg.s.inDLSAP.statEnqOpt = TRUE;
 
-			if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN ||
-				signal_data->switchtype == SNGISDN_SWITCH_INSNET) {
-				cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
-			} else {
-				cfg.t.cfg.s.inDLSAP.rstOpt = TRUE;
-			}
+			cfg.t.cfg.s.inDLSAP.rstOpt = TRUE;
 		} else {
 			cfg.t.cfg.s.inDLSAP.ackOpt = FALSE;
 			cfg.t.cfg.s.inDLSAP.intType = USER;

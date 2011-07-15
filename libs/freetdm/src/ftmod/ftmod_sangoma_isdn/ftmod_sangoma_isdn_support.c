@@ -976,7 +976,7 @@ ftdm_status_t set_restart_ind_ie(ftdm_channel_t *ftdmchan, RstInd *rstInd)
 	return FTDM_SUCCESS;
 }
 
-void sngisdn_t3_timeout(void* p_sngisdn_info)
+void sngisdn_t3_timeout(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
@@ -998,7 +998,31 @@ void sngisdn_t3_timeout(void* p_sngisdn_info)
 	ftdm_mutex_unlock(ftdmchan->mutex);
 }
 
-void sngisdn_delayed_setup(void* p_sngisdn_info)
+void sngisdn_restart_timeout(void *p_signal_data)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t *)p_signal_data;
+	ftdm_span_t *span = signal_data->ftdm_span;
+
+	ftdm_log(FTDM_LOG_DEBUG, "s%d:Did not receive a RESTART from remote switch in %d ms - restarting\n", span->name, signal_data->restart_timeout);
+
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
+
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
+		if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+			ftdm_mutex_lock(ftdmchan->mutex);
+			if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) {
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESET);
+			}
+			ftdm_mutex_unlock(ftdmchan->mutex);
+		}
+	}
+	return;
+}
+
+void sngisdn_delayed_setup(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
@@ -1009,7 +1033,7 @@ void sngisdn_delayed_setup(void* p_sngisdn_info)
 	return;
 }
 
-void sngisdn_delayed_release(void* p_sngisdn_info)
+void sngisdn_delayed_release(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;	
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
@@ -1032,7 +1056,7 @@ void sngisdn_delayed_release(void* p_sngisdn_info)
 	return;
 }
 
-void sngisdn_delayed_connect(void* p_sngisdn_info)
+void sngisdn_delayed_connect(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;	
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
@@ -1047,7 +1071,7 @@ void sngisdn_delayed_connect(void* p_sngisdn_info)
 	return;
 }
 
-void sngisdn_delayed_disconnect(void* p_sngisdn_info)
+void sngisdn_delayed_disconnect(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;	
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
@@ -1069,7 +1093,7 @@ void sngisdn_delayed_disconnect(void* p_sngisdn_info)
 	return;
 }
 
-void sngisdn_facility_timeout(void* p_sngisdn_info)
+void sngisdn_facility_timeout(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;

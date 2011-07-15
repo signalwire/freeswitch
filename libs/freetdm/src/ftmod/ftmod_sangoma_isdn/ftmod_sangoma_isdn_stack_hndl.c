@@ -34,8 +34,7 @@
 
 #include "ftmod_sangoma_isdn.h"
 static ftdm_status_t sngisdn_cause_val_requires_disconnect(ftdm_channel_t *ftdmchan, CauseDgn *causeDgn);
-static void sngisdn_process_restart_confirm(ftdm_channel_t *ftdmchan);
-static ftdm_status_t sngisdn_force_down(ftdm_channel_t *ftdmchan);
+static ftdm_status_t sngisdn_bring_down(ftdm_channel_t *ftdmchan);
 
 /* Remote side transmit a SETUP */
 void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
@@ -185,7 +184,7 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 					/* Launch timer in case we never get a FACILITY msg */
 					if (signal_data->facility_timeout) {
 						ftdm_sched_timer(signal_data->sched, "facility_timeout", signal_data->facility_timeout,
-										 sngisdn_facility_timeout, (void*) sngisdn_info, &sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
+										 sngisdn_facility_timeout, (void*) sngisdn_info, &sngisdn_info->timers[SNGISDN_CHAN_TIMER_FACILITY]);
 					}
 					break;
 				} else if (ret_val == 0) {
@@ -836,7 +835,7 @@ void sngisdn_process_fac_ind (sngisdn_event_data_t *sngisdn_event)
 				}
 				if (signal_data->facility_timeout) {
 					/* Cancel facility timeout */
-					ftdm_sched_cancel_timer(signal_data->sched, sngisdn_info->timers[SNGISDN_TIMER_FACILITY]);
+					ftdm_sched_cancel_timer(signal_data->sched, sngisdn_info->timers[SNGISDN_CHAN_TIMER_FACILITY]);
 				}
 			}
 
@@ -927,7 +926,7 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 		switch(call_state) {
 			/* Sere ITU-T Q931 for definition of call states */
 			case 0:	/* Remote switch thinks there are no calls on this channel */
-				if (sngisdn_force_down(ftdmchan) != FTDM_SUCCESS) {
+				if (sngisdn_bring_down(ftdmchan) != FTDM_SUCCESS) {
 					ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Don't know how to handle incompatible state. remote call state:%d our state:%s\n", call_state, ftdm_channel_state2str(ftdmchan->state));
 				}
 				break;
@@ -1121,29 +1120,12 @@ void sngisdn_process_srv_cfm (sngisdn_event_data_t *sngisdn_event)
 	return;
 }
 
-static void sngisdn_process_restart_confirm(ftdm_channel_t *ftdmchan)
-{
-	switch (ftdmchan->state) {
-		case FTDM_CHANNEL_STATE_RESET:
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-			break;
-		case FTDM_CHANNEL_STATE_DOWN:
-			/* Do nothing */
-			break;
-		default:
-			ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Received RESTART CFM in an invalid state (%s)\n",
-						  ftdm_channel_state2str(ftdmchan->state));
-	}
-
-	return;
-}
-
-static ftdm_status_t sngisdn_force_down(ftdm_channel_t *ftdmchan)
+static ftdm_status_t sngisdn_bring_down(ftdm_channel_t *ftdmchan)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)ftdmchan->call_data;
 	ftdm_status_t status = FTDM_SUCCESS;
-	
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Forcing channel to DOWN state (%s)\n", ftdm_channel_state2str(ftdmchan->state));
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Bringing channel to DOWN state (%s)\n", ftdm_channel_state2str(ftdmchan->state));
 	switch (ftdmchan->state) {
 		case FTDM_CHANNEL_STATE_DOWN:
 			/* Do nothing */
@@ -1196,38 +1178,36 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 		return;
 	}
 	
-	if (rstEvnt->rstInd.eh.pres != PRSNT_NODEF && rstEvnt->rstInd.rstClass.pres != PRSNT_NODEF) {
-		ftdm_log(FTDM_LOG_DEBUG, "Received RESTART, but Restart Indicator IE not present\n");
-		return;
-	}
-		
-	switch(rstEvnt->rstInd.rstClass.val) {
-		case IN_CL_INDCHAN: /* Indicated b-channel */
-			if (rstEvnt->chanId.eh.pres) {
-				if (rstEvnt->chanId.intType.val == IN_IT_BASIC) {
-					if (rstEvnt->chanId.infoChanSel.pres == PRSNT_NODEF) {
-						chan_no = rstEvnt->chanId.infoChanSel.val;
-					}
-				} else if (rstEvnt->chanId.intType.val == IN_IT_OTHER) {
-					if (rstEvnt->chanId.chanNmbSlotMap.pres == PRSNT_NODEF) {
-						chan_no = rstEvnt->chanId.chanNmbSlotMap.val[0];
+	if (rstEvnt->rstInd.eh.pres == PRSNT_NODEF && rstEvnt->rstInd.rstClass.pres == PRSNT_NODEF) {			
+		switch(rstEvnt->rstInd.rstClass.val) {
+			case IN_CL_INDCHAN: /* Indicated b-channel */
+				if (rstEvnt->chanId.eh.pres) {
+					if (rstEvnt->chanId.intType.val == IN_IT_BASIC) {
+						if (rstEvnt->chanId.infoChanSel.pres == PRSNT_NODEF) {
+							chan_no = rstEvnt->chanId.infoChanSel.val;
+						}
+					} else if (rstEvnt->chanId.intType.val == IN_IT_OTHER) {
+						if (rstEvnt->chanId.chanNmbSlotMap.pres == PRSNT_NODEF) {
+							chan_no = rstEvnt->chanId.chanNmbSlotMap.val[0];
+						}
 					}
 				}
-			}
-			if (!chan_no) {
-				ftdm_log(FTDM_LOG_CRIT, "Failed to determine channel from RESTART\n");
+				if (!chan_no) {
+					ftdm_log(FTDM_LOG_CRIT, "Failed to determine channel from RESTART\n");
+					return;
+				}
+				break;
+			case IN_CL_SNGINT: /* Single interface */
+			case IN_CL_ALLINT: /* All interfaces */
+				/* In case restart class indicates all interfaces, we will duplicate
+				this event on each span associated to this d-channel in sngisdn_rcv_rst_cfm,
+				so treat it as a single interface anyway */
+				chan_no = 0;
+				break;
+			default:
+				ftdm_log(FTDM_LOG_CRIT, "Invalid restart indicator class:%d\n", rstEvnt->rstInd.rstClass.val);
 				return;
-			}
-			break;
-		case IN_CL_SNGINT: /* Single interface */
-		case IN_CL_ALLINT: /* All interfaces */
-			/* In case restart class indicates all interfaces, we will duplicate
-			this event on each span associated to this d-channel in sngisdn_rcv_rst_cfm,
-			so treat it as a single interface anyway */
-			break;
-		default:
-			ftdm_log(FTDM_LOG_CRIT, "Invalid restart indicator class:%d\n", rstEvnt->rstInd.rstClass.val);
-			return;
+		}
 	}
 
 	if (chan_no) { /* For a single channel */
@@ -1235,7 +1215,7 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 			ftdm_log(FTDM_LOG_CRIT, "Received RESTART on invalid channel:%d\n", chan_no);
 		} else {
 			ftdm_channel_t *ftdmchan = ftdm_span_get_channel(signal_data->ftdm_span, chan_no);
-			sngisdn_process_restart_confirm(ftdmchan);
+			sngisdn_bring_down(ftdmchan);
 		}
 	} else { /* for all channels */
 		ftdm_iterator_t *chaniter = NULL;
@@ -1243,7 +1223,7 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 
 		chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
 		for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
-			sngisdn_process_restart_confirm((ftdm_channel_t*)ftdm_iterator_current(curr));
+			sngisdn_bring_down((ftdm_channel_t*)ftdm_iterator_current(curr));
 		}
 		ftdm_iterator_free(chaniter);
 	}
@@ -1272,10 +1252,6 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 
 	/* TODO: readjust this when NFAS is implemented as signal_data will not always be the first
 	 * span for that d-channel */
-	if (!rstEvnt->rstInd.eh.pres || !rstEvnt->rstInd.rstClass.pres) {
-		ftdm_log(FTDM_LOG_DEBUG, "Received RESTART IND, but Restart Indicator IE not present\n");
-		return;
-	}
 
 	signal_data = g_sngisdn_data.dchans[dChan].spans[1];
 
@@ -1283,46 +1259,48 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 		ftdm_log(FTDM_LOG_CRIT, "Received RESTART IND on unconfigured span (suId:%d)\n", suId);
 		return;
 	}
+
+	if (signal_data->restart_timeout) {
+		ftdm_sched_cancel_timer(signal_data->sched, signal_data->timers[SNGISDN_SPAN_TIMER_RESTART]);
+	}
 	
-	ftdm_log(FTDM_LOG_DEBUG, "Processing RESTART IND (suId:%u dChan:%d ces:%d %s)\n", suId, dChan, ces,
+	ftdm_log(FTDM_LOG_DEBUG, "Processing RESTART IND (suId:%u dChan:%d ces:%d %s(%d))\n", suId, dChan, ces,
 													(evntType == IN_LNK_DWN)?"LNK_DOWN":
 													(evntType == IN_LNK_UP)?"LNK_UP":
 													(evntType == IN_INDCHAN)?"b-channel":
 													(evntType == IN_LNK_DWN_DM_RLS)?"NFAS service procedures":
-													(evntType == IN_SWCHD_BU_DCHAN)?"NFAS switchover to backup":"Unknown");
+													(evntType == IN_SWCHD_BU_DCHAN)?"NFAS switchover to backup":"Unknown", evntType);
 
-	if (!rstEvnt->rstInd.eh.pres || !rstEvnt->rstInd.rstClass.pres) {
-		ftdm_log(FTDM_LOG_DEBUG, "Received RESTART IND, but Restart Indicator IE not present\n");
-		return;
-	}
-
-	switch(rstEvnt->rstInd.rstClass.val) {
-		case IN_CL_INDCHAN: /* Indicated b-channel */
-			if (rstEvnt->chanId.eh.pres) {
-				if (rstEvnt->chanId.intType.val == IN_IT_BASIC) {
-					if (rstEvnt->chanId.infoChanSel.pres == PRSNT_NODEF) {
-						chan_no = rstEvnt->chanId.infoChanSel.val;
-					}
-				} else if (rstEvnt->chanId.intType.val == IN_IT_OTHER) {
-					if (rstEvnt->chanId.chanNmbSlotMap.pres == PRSNT_NODEF) {
-						chan_no = rstEvnt->chanId.chanNmbSlotMap.val[0];
+	if (rstEvnt->rstInd.eh.pres == PRSNT_NODEF && rstEvnt->rstInd.rstClass.pres == PRSNT_NODEF) {
+		switch(rstEvnt->rstInd.rstClass.val) {
+			case IN_CL_INDCHAN: /* Indicated b-channel */
+				if (rstEvnt->chanId.eh.pres) {
+					if (rstEvnt->chanId.intType.val == IN_IT_BASIC) {
+						if (rstEvnt->chanId.infoChanSel.pres == PRSNT_NODEF) {
+							chan_no = rstEvnt->chanId.infoChanSel.val;
+						}
+					} else if (rstEvnt->chanId.intType.val == IN_IT_OTHER) {
+						if (rstEvnt->chanId.chanNmbSlotMap.pres == PRSNT_NODEF) {
+							chan_no = rstEvnt->chanId.chanNmbSlotMap.val[0];
+						}
 					}
 				}
-			}
-			if (!chan_no) {
-				ftdm_log(FTDM_LOG_CRIT, "Failed to determine channel from RESTART\n");
+				if (!chan_no) {
+					ftdm_log(FTDM_LOG_CRIT, "Failed to determine channel from RESTART\n");
+					return;
+				}
+				break;
+			case IN_CL_SNGINT: /* Single interface */
+			case IN_CL_ALLINT: /* All interfaces */
+				/* In case restart class indicates all interfaces, we will duplicate
+						this event on each span associated to this d-channel in sngisdn_rcv_rst_cfm,
+						so treat it as a single interface anyway */
+				chan_no = 0;
+				break;
+			default:
+				ftdm_log(FTDM_LOG_CRIT, "Invalid restart indicator class:%d\n", rstEvnt->rstInd.rstClass.val);
 				return;
-			}
-			break;
-		case IN_CL_SNGINT: /* Single interface */
-		case IN_CL_ALLINT: /* All interfaces */
-			/* In case restart class indicates all interfaces, we will duplicate
-					this event on each span associated to this d-channel in sngisdn_rcv_rst_cfm,
-					so treat it as a single interface anyway */
-			break;
-		default:
-			ftdm_log(FTDM_LOG_CRIT, "Invalid restart indicator class:%d\n", rstEvnt->rstInd.rstClass.val);
-			return;
+		}
 	}
 
 	if (chan_no) { /* For a single channel */
@@ -1336,7 +1314,7 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 			for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {			
 				ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
 				if (ftdmchan->physical_chan_id == chan_no) {
-					sngisdn_force_down(ftdmchan);
+					sngisdn_bring_down(ftdmchan);
 				}
 			}
 			ftdm_iterator_free(chaniter);
@@ -1347,7 +1325,7 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 
 		chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
 		for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
-			sngisdn_force_down((ftdm_channel_t*)ftdm_iterator_current(curr));
+			sngisdn_bring_down((ftdm_channel_t*)ftdm_iterator_current(curr));
 		}
 		ftdm_iterator_free(chaniter);
 	}
