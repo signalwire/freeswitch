@@ -356,10 +356,6 @@ static void *ftdm_sangoma_isdn_io_run(ftdm_thread_t *me, void *obj)
 
 	/* Initialize the d-channel */
 	ftdm_assert(((sngisdn_span_data_t*)span->signal_data)->dchan, "Span does not have a dchannel");
-	ftdm_channel_set_feature(((sngisdn_span_data_t*)span->signal_data)->dchan, FTDM_CHANNEL_FEATURE_IO_STATS);
-	ftdm_sangoma_isdn_dchan_set_queue_size(((sngisdn_span_data_t*)span->signal_data)->dchan);
-	ftdm_channel_open_chan(((sngisdn_span_data_t*)span->signal_data)->dchan);
-
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	if (!chaniter) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
@@ -1039,7 +1035,13 @@ static ftdm_status_t ftdm_sangoma_isdn_dtmf(ftdm_channel_t *ftdmchan, const char
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 {
 	sngisdn_span_data_t *signal_data = span->signal_data;
+
 	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
+	
+	ftdm_channel_set_feature(((sngisdn_span_data_t*)span->signal_data)->dchan, FTDM_CHANNEL_FEATURE_IO_STATS);
+	ftdm_sangoma_isdn_dchan_set_queue_size(((sngisdn_span_data_t*)span->signal_data)->dchan);
+	ftdm_channel_open_chan(((sngisdn_span_data_t*)span->signal_data)->dchan);
+
 	if (sngisdn_stack_start(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
 		return FTDM_FAIL;
