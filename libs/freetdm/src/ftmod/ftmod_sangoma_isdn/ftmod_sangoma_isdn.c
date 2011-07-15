@@ -1039,8 +1039,8 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
 	
 	ftdm_channel_set_feature(((sngisdn_span_data_t*)span->signal_data)->dchan, FTDM_CHANNEL_FEATURE_IO_STATS);
-	ftdm_sangoma_isdn_dchan_set_queue_size(((sngisdn_span_data_t*)span->signal_data)->dchan);
 	ftdm_channel_open_chan(((sngisdn_span_data_t*)span->signal_data)->dchan);
+	ftdm_sangoma_isdn_dchan_set_queue_size(((sngisdn_span_data_t*)span->signal_data)->dchan);	
 
 	if (sngisdn_stack_start(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
@@ -1075,6 +1075,11 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 		return FTDM_FAIL;
 	}
 
+	if (signal_data->restart_timeout) {
+		ftdm_log(FTDM_LOG_DEBUG, "%s:Scheduling Restart timeout\n", signal_data->ftdm_span->name);
+		ftdm_sched_timer(signal_data->sched, "restart_timeout", signal_data->restart_timeout,
+							sngisdn_restart_timeout, (void*) signal_data, &signal_data->timers[SNGISDN_SPAN_TIMER_RESTART]);
+	}
 	ftdm_log(FTDM_LOG_DEBUG,"Finished starting span %s\n", span->name);
 	return FTDM_SUCCESS;
 }
