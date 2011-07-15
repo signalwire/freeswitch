@@ -1087,7 +1087,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									if (codec_ms > 120) {	/* yeah right */
 										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 														  "Your phone is trying to send timestamps that suggest an increment of %dms per packet\n"
-														  "That seems hard to believe so I am going to go on ahead and um ignore that, mmkay?",
+														  "That seems hard to believe so I am going to go on ahead and um ignore that, mmkay?\n",
 														  (int) codec_ms);
 										tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
 										goto skip;
