@@ -54,7 +54,7 @@ static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
 								 NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END());
 	if (attach) {
 		if (!gateway_ptr->sofia_private) {
-			gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
+			gateway_ptr->sofia_private = su_alloc(gateway_ptr->nh->nh_home, sizeof(*gateway_ptr->sofia_private));
 			switch_assert(gateway_ptr->sofia_private);
 		}
 		memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
@@ -186,7 +186,7 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 												 NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END());
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "subscribing to [%s] on gateway [%s]\n", gw_sub_ptr->event, gateway_ptr->name);
 
-				gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
+				gateway_ptr->sofia_private = su_alloc(gateway_ptr->sub_nh->nh_home, sizeof(*gateway_ptr->sofia_private));
 				switch_assert(gateway_ptr->sofia_private);
 
 				memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
