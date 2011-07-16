@@ -2308,8 +2308,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		memset(sofia_private, 0, sizeof(*sofia_private));
 		sofia_private->is_call++;
-		sofia_private->nh = nua_handle_ref(tech_pvt->nh);
-		sofia_private->profile = tech_pvt->profile;
+
 		tech_pvt->sofia_private = sofia_private;
 		switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 		nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
@@ -5352,7 +5351,6 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 		switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, "sip_full_to"));
 	} else {
 
-		tech_pvt->redirected = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_contact_uri"));
 
 		switch_channel_set_variable_printf(channel, "sip_invite_route_uri", "<sip:%s@%s:%s;lr>",
 										   switch_channel_get_variable(channel, "sip_from_user"),
@@ -5371,7 +5369,6 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 	}
 
 	tech_pvt->dest_to = tech_pvt->dest;
-
 
 	sofia_glue_attach_private(session, h->profile, tech_pvt, NULL);
 	switch_channel_set_name(tech_pvt->channel, switch_channel_get_variable(channel, "channel_name"));

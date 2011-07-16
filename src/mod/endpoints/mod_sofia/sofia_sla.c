@@ -83,6 +83,7 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 	sofia_destination_t *dst;
 	char *route_uri = NULL;
 	char port_str[25] = "";
+	nua_handle_t *fnh = NULL;
 
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
@@ -93,7 +94,9 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 	free(sql);
 
 	if (*sh.call_id) {
-		if (!(nh = nua_handle_by_call_id(profile->nua, sh.call_id))) {
+		if ((nh = nua_handle_by_call_id(profile->nua, sh.call_id))) {
+			fnh = nh;
+		} else {
 			if ((sql = switch_mprintf("delete from sip_shared_appearance_dialogs where hostname='%q' and profile_name='%q' and contact_str='%q'",
 									  mod_sofia_globals.hostname, profile->name, contact_str))) {
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -132,6 +135,11 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 				  SIPTAG_CONTACT_STR(my_contact),
 				  SIPTAG_EXPIRES_STR(exp_str),
 				  SIPTAG_EVENT_STR("dialog;sla;include-session-description"), SIPTAG_ACCEPT_STR("application/dialog-info+xml"), TAG_NULL());
+
+
+	if (fnh) {
+		nua_handle_unref(fnh);
+	}
 
 	sofia_glue_free_destination(dst);
 
@@ -399,6 +407,7 @@ static int sofia_sla_sub_callback(void *pArg, int argc, char **argv, char **colu
 		if (fixup && fixup != helper->payload) {
 			free(fixup);
 		}
+		nua_handle_unref(nh);
 	}
 	return 0;
 }

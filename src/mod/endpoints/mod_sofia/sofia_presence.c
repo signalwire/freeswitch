@@ -1776,6 +1776,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			   TAG_IF(*expires_str, SIPTAG_EXPIRES_STR(expires_str)),
 			   SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(pl), TAG_END());
 
+	nua_handle_unref(nh);
 
   end:
 
@@ -1790,12 +1791,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	switch_safe_free(pl);
 	switch_safe_free(to);
 
-	if (nh) {
-		if (kill_handle) {
-			nua_handle_destroy(nh);
-		} else {
-			nua_handle_unref(nh);
-		}
+	if (nh && kill_handle) {
+		nua_handle_destroy(nh);
 	}
 
 	return 0;
@@ -1839,15 +1836,13 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	nua_notify(nh, SIPTAG_SUBSCRIPTION_STATE_STR("active"),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
+	nua_handle_unref(nh);
+
 	switch_safe_free(id);
 
 	h->total++;
 
   end:
-
-	if (nh) {
-		nua_handle_unref(nh);
-	}
 
 	if (ext_profile) {
 		sofia_glue_release_profile(ext_profile);
@@ -1939,7 +1934,6 @@ static int broadsoft_sla_notify_callback(void *pArg, int argc, char **argv, char
 		nua_notify(nh,
 				   SIPTAG_EXPIRES_STR("0"),
 				   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), SIPTAG_EVENT_STR("line-seize"), SIPTAG_CALL_INFO_STR(tmp), TAG_END());
-
 		nua_handle_unref(nh);
 		return 0;
 	}
@@ -1948,7 +1942,6 @@ static int broadsoft_sla_notify_callback(void *pArg, int argc, char **argv, char
 		nua_notify(nh,
 				   TAG_IF(*expires_str, SIPTAG_EXPIRES_STR(expires_str)),
 				   SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EVENT_STR("call-info"), SIPTAG_CALL_INFO_STR(tmp), TAG_END());
-
 		nua_handle_unref(nh);
 	}
 

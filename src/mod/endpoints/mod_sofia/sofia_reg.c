@@ -54,9 +54,8 @@ static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
 								 NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END());
 	if (attach) {
 		if (!gateway_ptr->sofia_private) {
-			if (!(gateway_ptr->sofia_private = su_alloc(gateway_ptr->nh->nh_home, sizeof(*gateway_ptr->sofia_private)))) {
-				abort();
-			}
+			gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
+			switch_assert(gateway_ptr->sofia_private);
 		}
 		memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
 
@@ -187,10 +186,9 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 												 NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END());
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "subscribing to [%s] on gateway [%s]\n", gw_sub_ptr->event, gateway_ptr->name);
 
+				gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
+				switch_assert(gateway_ptr->sofia_private);
 
-				if (!(gateway_ptr->sofia_private = su_alloc(gateway_ptr->sub_nh->nh_home, sizeof(*gateway_ptr->sofia_private)))) {
-					abort();
-				}
 				memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
 
 				gateway_ptr->sofia_private->gateway = gateway_ptr;
@@ -292,6 +290,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		if (gateway_ptr->ping && !gateway_ptr->pinging && (now >= gateway_ptr->ping && (ostate == REG_STATE_NOREG || ostate == REG_STATE_REGED)) &&
 			!gateway_ptr->deleted) {
 			nua_handle_t *nh = nua_handle(profile->nua, NULL, NUTAG_URL(gateway_ptr->register_url), TAG_END());
+			sofia_private_t *pvt;
 
 			register_host = sofia_glue_get_register_host(gateway_ptr->register_proxy);
 
@@ -302,7 +301,13 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 			switch_safe_free(register_host);
 
-			nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+			pvt = malloc(sizeof(*pvt));
+			switch_assert(pvt);
+			memset(pvt, 0, sizeof(*pvt));
+			pvt->destroy_nh = 1;
+			pvt->destroy_me = 1;
+			switch_copy_string(pvt->gateway_name, gateway_ptr->name, sizeof(pvt->gateway_name));
+			nua_handle_bind(nh, pvt);
 
 			gateway_ptr->pinging = 1;
 			nua_options(nh,

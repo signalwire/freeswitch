@@ -33,7 +33,7 @@
  * mod_sofia.h -- SOFIA SIP Endpoint
  *
  */
-//#define HAVE_MEMLEAK_LOG 1
+
 /*Defines etc..*/
 /*************************************************************************************************************************************************************/
 #define MANUAL_BYE 1
@@ -151,12 +151,10 @@ struct sofia_private {
 	char gateway_name[256];
 	char auth_gateway_name[256];
 	int destroy_nh;
+	int destroy_me;
 	int is_call;
-	int got_bye;
 	int is_static;
 	sofia_dispatch_event_t *de;
-	nua_handle_t *nh;
-	sofia_profile_t *profile;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
@@ -320,7 +318,7 @@ typedef enum {
 } TFLAGS;
 
 #define SOFIA_MAX_MSG_QUEUE 51
-#define SOFIA_MSG_QUEUE_SIZE 200
+#define SOFIA_MSG_QUEUE_SIZE 1000
 
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
@@ -618,7 +616,6 @@ struct sofia_profile {
 	uint32_t event_timeout;
 	int watchdog_enabled;
 	switch_mutex_t *gw_mutex;
-	switch_queue_t *nh_destroy_queue;
 };
 
 struct private_object {
@@ -1125,7 +1122,4 @@ void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
-
-int sofia_nua_handle_destroy_run(switch_queue_t *q);
-void sofia_nua_handle_destroy(switch_queue_t *q, nua_handle_t **nhp);
 
