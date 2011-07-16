@@ -2661,34 +2661,35 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 	return 0;
 }
 
-#define CC_CONFIG_API_SYNTAX "callcenter_config agent add [name] [type] | " \
-"callcenter_config agent del [name] | " \
-"callcenter_config agent set status [agent_name] [status] | " \
-"callcenter_config agent set state [agent_name] [state] | " \
-"callcenter_config agent set contact [agent_name] [contact] | " \
-"callcenter_config agent set ready_time [agent_name] [wait till epoch] | "\
-"callcenter_config agent set reject_delay_time [agent_name] [wait second] | "\
-"callcenter_config agent set busy_delay_time [agent_name] [wait second] | "\
-"callcenter_config agent set no_answer_delay_time [agent_name] [wait second] | "\
-"callcenter_config agent get status [agent_name] | " \
-"callcenter_config agent list | " \
-"callcenter_config tier add [queue_name] [agent_name] [level] [position] | " \
-"callcenter_config tier set state [queue_name] [agent_name] [state] | " \
-"callcenter_config tier set level [queue_name] [agent_name] [level] | " \
-"callcenter_config tier set position [queue_name] [agent_name] [position] | " \
-"callcenter_config tier del [queue_name] [agent_name] | " \
-"callcenter_config tier list | " \
-"callcenter_config queue load [queue_name] | " \
-"callcenter_config queue unload [queue_name] | " \
-"callcenter_config queue reload [queue_name] | " \
-"callcenter_config queue list | " \
-"callcenter_config queue list agents [queue_name] [status] | " \
-"callcenter_config queue list members [queue_name] | " \
-"callcenter_config queue list tiers [queue_name] | " \
-"callcenter_config queue count | " \
-"callcenter_config queue count agents [queue_name] [status] | " \
-"callcenter_config queue count members [queue_name] | " \
-"callcenter_config queue count tiers [queue_name]"
+#define CC_CONFIG_API_SYNTAX "callcenter_config <target> <args>,\n"\
+"\tcallcenter_config agent add [name] [type] | \n" \
+"\tcallcenter_config agent del [name] | \n" \
+"\tcallcenter_config agent set status [agent_name] [status] | \n" \
+"\tcallcenter_config agent set state [agent_name] [state] | \n" \
+"\tcallcenter_config agent set contact [agent_name] [contact] | \n" \
+"\tcallcenter_config agent set ready_time [agent_name] [wait till epoch] | \n"\
+"\tcallcenter_config agent set reject_delay_time [agent_name] [wait second] | \n"\
+"\tcallcenter_config agent set busy_delay_time [agent_name] [wait second] | \n"\
+"\tcallcenter_config agent set no_answer_delay_time [agent_name] [wait second] | \n"\
+"\tcallcenter_config agent get status [agent_name] | \n" \
+"\tcallcenter_config agent list | \n" \
+"\tcallcenter_config tier add [queue_name] [agent_name] [level] [position] | \n" \
+"\tcallcenter_config tier set state [queue_name] [agent_name] [state] | \n" \
+"\tcallcenter_config tier set level [queue_name] [agent_name] [level] | \n" \
+"\tcallcenter_config tier set position [queue_name] [agent_name] [position] | \n" \
+"\tcallcenter_config tier del [queue_name] [agent_name] | \n" \
+"\tcallcenter_config tier list | \n" \
+"\tcallcenter_config queue load [queue_name] | \n" \
+"\tcallcenter_config queue unload [queue_name] | \n" \
+"\tcallcenter_config queue reload [queue_name] | \n" \
+"\tcallcenter_config queue list | \n" \
+"\tcallcenter_config queue list agents [queue_name] [status] | \n" \
+"\tcallcenter_config queue list members [queue_name] | \n" \
+"\tcallcenter_config queue list tiers [queue_name] | \n" \
+"\tcallcenter_config queue count | \n" \
+"\tcallcenter_config queue count agents [queue_name] [status] | \n" \
+"\tcallcenter_config queue count members [queue_name] | \n" \
+"\tcallcenter_config queue count tiers [queue_name]"
 
 SWITCH_STANDARD_API(cc_config_api_function)
 {
@@ -2703,7 +2704,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 		return SWITCH_STATUS_FALSE;
 	}
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-USAGE: %s\n", CC_CONFIG_API_SYNTAX);
+		stream->write_function(stream, "-USAGE: \n%s\n", CC_CONFIG_API_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
