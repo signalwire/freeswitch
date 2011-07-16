@@ -5352,6 +5352,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 		switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, "sip_full_to"));
 	} else {
 
+		tech_pvt->redirected = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_contact_uri"));
 
 		switch_channel_set_variable_printf(channel, "sip_invite_route_uri", "<sip:%s@%s:%s;lr>",
 										   switch_channel_get_variable(channel, "sip_from_user"),
