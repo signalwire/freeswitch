@@ -716,6 +716,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_ses
 	void *data;
 	switch_core_session_message_t msg = { 0 };
 	int i = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+
+	if (switch_channel_test_flag(channel, CF_SIGNAL_DATA)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_channel_set_flag(channel, CF_SIGNAL_DATA);
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_SIGNAL_DATA;
 	msg.from = __FILE__;
@@ -729,6 +737,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_ses
 		data = NULL;
 
 	}
+
+	switch_channel_clear_flag(channel, CF_SIGNAL_DATA);
 
 	return i ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }

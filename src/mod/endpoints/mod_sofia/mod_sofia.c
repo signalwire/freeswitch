@@ -968,6 +968,12 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 		switch_assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
 
+
+		if (sofia_test_flag(tech_pvt, TFLAG_SIMPLIFY) && sofia_test_flag(tech_pvt, TFLAG_GOT_ACK)) {
+			sofia_glue_tech_simplify(tech_pvt);
+			sofia_clear_flag(tech_pvt, TFLAG_SIMPLIFY);
+		}
+
 		while (sofia_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 			tech_pvt->read_frame.flags = SFF_NONE;
 
@@ -1518,8 +1524,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
 			sofia_glue_tech_track(tech_pvt->profile, session);
-			
-			sofia_glue_tech_simplify(tech_pvt);
+
+			sofia_set_flag(tech_pvt, TFLAG_SIMPLIFY);
+
 			
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
 				const char *val;

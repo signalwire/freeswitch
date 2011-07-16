@@ -945,6 +945,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 				extract_header_vars(profile, sip, session, nh);
 				sofia_glue_tech_track(tech_pvt->profile, session);
+				sofia_set_flag(tech_pvt, TFLAG_GOT_ACK);
 			}
 		}
 	case nua_r_ack:
@@ -5827,7 +5828,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	
 
 	if ((enum nua_callstate) ss_state == nua_callstate_ready && channel && session && tech_pvt) {
-		sofia_glue_tech_simplify(tech_pvt);
+		sofia_set_flag(tech_pvt, TFLAG_SIMPLIFY);
 	}
 
 
@@ -6803,6 +6804,8 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 		int network_port = 0;
 		char via_space[2048];
 		char branch[16] = "";
+
+		sofia_clear_flag(tech_pvt, TFLAG_GOT_ACK);
 
 		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 		switch_stun_random_string(branch, sizeof(branch) - 1, "0123456789abcdef");

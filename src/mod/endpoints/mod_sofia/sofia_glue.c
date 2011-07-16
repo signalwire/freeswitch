@@ -6352,9 +6352,11 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 	switch_core_session_t *other_session = NULL, *inbound_session = NULL;
 	uint8_t did_simplify = 0;
 
-	if (!switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
+	if (!switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) || switch_channel_test_flag(tech_pvt->channel, CF_SIMPLIFY)) {
 		return;
 	}
+
+
 
 	if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE))
 		&& (other_session = switch_core_session_locate(uuid))) {
@@ -6382,10 +6384,10 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 					&& strcmp(network_addr_a, switch_str_nil(tech_pvt->profile->extsipip))) {
 
 					switch_core_session_message_t *msg;
-
+					
 					switch_log_printf(SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, switch_channel_get_uuid(inbound_channel),
 									  SWITCH_LOG_NOTICE, "Will simplify channel [%s]\n", switch_channel_get_name(inbound_channel));
-
+					
 					msg = switch_core_session_alloc(inbound_session, sizeof(*msg));
 					MESSAGE_STAMP_FFL(msg);
 					msg->message_id = SWITCH_MESSAGE_INDICATE_SIMPLIFY;
@@ -6395,6 +6397,9 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 					did_simplify = 1;
 
 					sofia_glue_tech_track(tech_pvt->profile, inbound_session);
+
+					switch_channel_set_flag(inbound_channel, CF_SIMPLIFY);
+					
 				}
 			}
 
