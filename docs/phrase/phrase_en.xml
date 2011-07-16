@@ -493,7 +493,11 @@
       <!-- The following phrases still need to be recorded -->
       <prompt phrase="This conference is full. Please contact the conference moderator." filename="conf-conference_is_full.wav"/>
 	  <prompt phrase="You do not have permission to perform this action." filename="ivr-not_have_permission.wav"/>
+	  <prompt phrase="You're doing it wrong, but I'll try to connect you anyway. (Douchebag!)" filename="ivr-youre_doing_it_wrong.wav"/>
 	  <prompt phrase="" filename=""/>
+	  <prompt phrase="" filename=""/>
+	  <prompt phrase="" filename=""/>
+	
     </ivr>
 
     <misc>
