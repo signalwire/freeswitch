@@ -2308,6 +2308,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		memset(sofia_private, 0, sizeof(*sofia_private));
 		sofia_private->is_call++;
+		sofia_private->is_static++;
 
 		tech_pvt->sofia_private = sofia_private;
 		switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));

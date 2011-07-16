@@ -1240,6 +1240,7 @@ void sofia_event_callback(nua_event_t event,
 
 		memset(sofia_private, 0, sizeof(*sofia_private));
 		sofia_private->is_call++;
+		sofia_private->is_static++;
 		sofia_private->de = de;
 		nua_handle_bind(nh, sofia_private);
 		return;

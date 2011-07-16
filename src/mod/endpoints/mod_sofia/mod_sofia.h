@@ -159,8 +159,8 @@ struct sofia_private {
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
 #define set_anchor(t,m) if (t->Anchor) {delete t->Anchor;} t->Anchor = new SipMessage(m);
-//#define sofia_private_free(_pvt) if (_pvt && ! _pvt->is_static) {free(_pvt); _pvt = NULL;}
-#define sofia_private_free(_pvt) _pvt = NULL
+#define sofia_private_free(_pvt) if (_pvt && ! _pvt->is_static) {free(_pvt);} _pvt = NULL;
+
 
 /* Local Structures */
 /*************************************************************************************************************************************************************/
