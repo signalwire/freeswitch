@@ -885,7 +885,7 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 					unsigned int fdselect;
 					int rt=1;
 					fd_set fs;
-					struct timeval to;
+					//struct timeval to;
 					int nospace;
 
 					if (!(running && tech_pvt->running))
@@ -893,8 +893,8 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 					fdselect = fd;
 					FD_ZERO(&fs);
 					FD_SET(fdselect, &fs);
-					to.tv_usec = MS_SKYPOPEN * 1000 * 3;
-					to.tv_sec = 0;
+					//to.tv_usec = MS_SKYPOPEN * 1000 * 3;
+					//to.tv_sec = 0;
 
 					if (tech_pvt->timer_read_srv.timer_interface && tech_pvt->timer_read_srv.timer_interface->timer_next) {
 						switch_core_timer_next(&tech_pvt->timer_read_srv);
