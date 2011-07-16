@@ -150,6 +150,7 @@ struct nua_handle_s
   unsigned        nh_ref_by_user:1;	/**< Has user used the handle? */
   unsigned        nh_init:1;	        /**< Handle has been initialized */
   unsigned        nh_used_ptags:1;	/**< Ptags has been used */
+  unsigned        nh_destroyed:1;	/**< nh_destroy already called */
   unsigned :0;
 
   nua_dialog_state_t nh_ds[1];
@@ -337,6 +338,8 @@ int nua_stack_tevent(nua_t *nua, nua_handle_t *nh, msg_t *msg,
 int nua_stack_event(nua_t *nua, nua_handle_t *nh, msg_t *msg,
 		    nua_event_t event, int status, char const *phrase,
 		    tagi_t const *tags);
+
+su_msg_t *nua_current_msg(nua_t const *nua, int clear);
 
 void nua_move_event(nua_saved_event_t a[1], nua_saved_event_t b[1]);
 
