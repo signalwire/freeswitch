@@ -377,10 +377,10 @@ nua_dialog_usage_remove_at(nua_owner_t *own,
 	nua_dialog_usage_t *du = NULL;
 
   if (*at) {
-    du = *at;
     sip_event_t const *o = NULL;
     nua_client_request_t *cr, *cr_next;
     nua_server_request_t *sr, *sr_next;
+    du = *at;
 
     *at = du->du_next;
 
