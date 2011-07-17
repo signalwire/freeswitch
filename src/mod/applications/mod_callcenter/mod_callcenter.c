@@ -1685,6 +1685,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			case SWITCH_CAUSE_CALL_REJECTED:
 				delay_next_agent_call = (h->reject_delay_time > delay_next_agent_call? h->reject_delay_time : delay_next_agent_call);
 				break;
+			/* Protection againts super fast loop due to unregistrer */			
+			case SWITCH_CAUSE_USER_NOT_REGISTERED:
+				delay_next_agent_call = (5 > delay_next_agent_call? 5 : delay_next_agent_call);
+				break;
 			/* No answer: Destination does not answer for some other reason */
 			default:
 				delay_next_agent_call = (h->no_answer_delay_time > delay_next_agent_call? h->no_answer_delay_time : delay_next_agent_call);
