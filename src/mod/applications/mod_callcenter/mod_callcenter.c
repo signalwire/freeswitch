@@ -1371,6 +1371,22 @@ end:
 	return status;
 }
 
+static void playback_array(switch_core_session_t *session, const char *str) {
+	if (str && !strncmp(str, "ARRAY::", 7)) {
+		char *i = (char*) str + 7, *j = i;
+		while (1) {
+			if ((j = strstr(i, "::"))) {
+				*j = 0;
+			}
+			switch_ivr_play_file(session, NULL, i, NULL);
+			if (!j) break;
+			i = j + 2;
+		}
+	} else {
+		switch_ivr_play_file(session, NULL, str, NULL);
+	}
+}
+
 static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct call_helper *h = (struct call_helper *) obj;
@@ -1489,6 +1505,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
 		switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
 		const char *other_loopback_leg_uuid = switch_channel_get_variable(agent_channel, "other_loopback_leg_uuid");
+		const char *o_announce = NULL;
 
 		switch_channel_set_variable(agent_channel, "cc_member_pre_answer_uuid", NULL);
 
@@ -1615,6 +1632,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" <%s> from queue %s%s\n",
 				h->agent_name, h->member_cid_name, h->member_cid_number, h->queue_name, (h->record_template?" (Recorded)":""));
+
+		if ((o_announce = switch_channel_get_variable(member_channel, "cc_outbound_announce"))) {
+			playback_array(agent_session, o_announce);
+		}
 
 		switch_ivr_uuid_bridge(h->member_session_uuid, switch_core_session_get_uuid(agent_session));
 
