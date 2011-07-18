@@ -2340,6 +2340,7 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 
 struct moh_dtmf_helper {
 	const char *queue_name;
+	const char *exit_keys;
 	char dtmf;
 };
 
@@ -2348,10 +2349,9 @@ static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, 
 
 	switch (itype) {
 		case SWITCH_INPUT_TYPE_DTMF:
-			{
-				/* Just laywork for people who want to get some DTMF actions */
+			if (h->exit_keys && *(h->exit_keys)) {
 				switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-				if (strchr("#", dtmf->digit)) {
+				if (strchr(h->exit_keys, dtmf->digit)) {
 					h->dtmf = dtmf->digit;
 					return SWITCH_STATUS_BREAK;
 				}
@@ -2552,6 +2552,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_input_args_t args = { 0 };
 		struct moh_dtmf_helper ht;
 
+		ht.exit_keys = switch_channel_get_variable(member_channel, "cc_exit_keys");
 		ht.dtmf = '\0';
 		args.input_callback = moh_on_dtmf;
 		args.buf = (void *) &ht;
@@ -2575,17 +2576,17 @@ SWITCH_STANDARD_APP(callcenter_function)
 				/* Sadly, there doesn't seem to be a return to switch_ivr_play_file that tell you the file wasn't found.  FALSE also mean that the channel got switch to BRAKE state, so we check for read acceptable */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Couldn't play file '%s', continuing wait with no audio\n", cur_moh);
 				moh_valid = SWITCH_FALSE;
-
+			} else if (status == SWITCH_STATUS_BREAK) {
+				break;
 			} else if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
-
 		} else {
-			switch_ivr_collect_digits_callback(member_session, &args, 0, 0);
+			if ((switch_ivr_collect_digits_callback(member_session, &args, 0, 0)) == SWITCH_STATUS_BREAK) {
+				break;
+			}
 		}
-
 		switch_yield(1000);
-
 	}
 
 	/* Make sure an agent was found, as we might break above without setting it */
