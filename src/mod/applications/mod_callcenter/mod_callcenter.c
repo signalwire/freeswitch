@@ -2577,12 +2577,16 @@ SWITCH_STANDARD_APP(callcenter_function)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Couldn't play file '%s', continuing wait with no audio\n", cur_moh);
 				moh_valid = SWITCH_FALSE;
 			} else if (status == SWITCH_STATUS_BREAK) {
+				char buf[2] = { ht.dtmf, 0 };
+				switch_channel_set_variable(member_channel, "cc_exit_key", buf);
 				break;
 			} else if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
 		} else {
 			if ((switch_ivr_collect_digits_callback(member_session, &args, 0, 0)) == SWITCH_STATUS_BREAK) {
+				char buf[2] = { ht.dtmf, 0 };
+				switch_channel_set_variable(member_channel, "cc_exit_key", buf);
 				break;
 			}
 		}
