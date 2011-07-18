@@ -119,6 +119,7 @@
 
     <!-- Third party modules -->
     <!--<load module="mod_nibblebill"/>-->
+    <!--<load module="mod_callcenter"/>-->
 
   </modules>
 </configuration>

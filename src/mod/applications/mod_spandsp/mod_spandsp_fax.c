@@ -341,6 +341,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully managed. How ?\n");
 		}
 		switch_channel_set_variable(channel, "fax_success", "1");
+
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result,
 						  t30_completion_code_to_str(result));
@@ -430,6 +431,15 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
 		switch_event_fire(&event);
 	}
+
+    switch_channel_execute_on(channel, "execute_on_fax_result");
+
+    if (result == T30_ERR_OK) {
+        switch_channel_execute_on(channel, "execute_on_fax_success");
+    } else {
+        switch_channel_execute_on(channel, "execute_on_fax_failure");
+    }
+
 }
 
 static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count)

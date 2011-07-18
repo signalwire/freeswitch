@@ -91,15 +91,16 @@ void gsm0610_preprocess(gsm0610_state_t *s, const int16_t amp[GSM0610_FRAME_LEN]
         /* 4.2.1   Downscaling of the input signal */
         SO = (amp[k] >> 1) & ~3;
 
-        assert(SO >= -0x4000); // downscaled by
-        assert(SO <=  0x3FFC); // previous routine.
+        /* This is supposed to have been downscaled by previous routine. */
+        assert(SO >= -0x4000);
+        assert(SO <=  0x3FFC);
 
         /* 4.2.2   Offset compensation */
 
         /*  This part implements a high-pass filter and requires extended
             arithmetic precision for the recursive part of this filter.
             The input of this procedure is the array so[0...159] and the
-            output the array sof[ 0...159 ].
+            output the array sof[0...159].
         */
         /* Compute the non-recursive part */
         s1 = SO - z1;

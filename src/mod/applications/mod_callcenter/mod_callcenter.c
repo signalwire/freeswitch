@@ -1473,11 +1473,16 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		switch_channel_set_variable(agent_channel, "cc_member_pre_answer_uuid", NULL);
 
-		/* Loopback special case */
+		/* Our agent channel is a loopback. Try to find if a real channel is bridged to it in order
+		   to use it as our new agent channel.
+		   - Locate the loopback-b channel using 'other_loopback_leg_uuid' variable
+		   - Locate the real agent channel using 'signal_bond' variable from loopback-b
+		*/
 		if (other_loopback_leg_uuid) {
 			switch_core_session_t *other_loopback_session = NULL;
 
-			switch_yield(20000); // Wait 20ms for the channel to be ready
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent '%s' is a loopback channel. Searching for real channel...\n", h->agent_name);
+
 			if ((other_loopback_session = switch_core_session_locate(other_loopback_leg_uuid))) {
 				switch_channel_t *other_loopback_channel = switch_core_session_get_channel(other_loopback_session);
 				const char *real_uuid = switch_channel_get_variable(other_loopback_channel, SWITCH_SIGNAL_BOND_VARIABLE);
@@ -1491,13 +1496,27 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 					agent_uuid = switch_core_session_get_uuid(agent_session);
 					agent_channel = switch_core_session_get_channel(agent_session);
 
-					switch_channel_set_variable(agent_channel, "cc_queue", h->queue_name);
-					switch_channel_set_variable(agent_channel, "cc_agent", h->agent_name);
-					switch_channel_set_variable(agent_channel, "cc_agent_type", h->agent_type);
-					switch_channel_set_variable(agent_channel, "cc_member_uuid", h->member_uuid);
-					switch_channel_set_variable(agent_channel, "cc_member_session_uuid", h->member_session_uuid);
+					/* Wait for the real channel to be fully bridged */
+					switch_channel_wait_for_flag(agent_channel, CF_BRIDGED, SWITCH_TRUE, 5000, member_channel);
+
+					if (!switch_channel_test_flag(agent_channel, CF_BRIDGED)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Timeout waiting for real channel to be bridged (agent '%s')\n", h->agent_name);
+					} else {
+						switch_channel_set_variable(agent_channel, "cc_queue", h->queue_name);
+						switch_channel_set_variable(agent_channel, "cc_agent", h->agent_name);
+						switch_channel_set_variable(agent_channel, "cc_agent_type", h->agent_type);
+						switch_channel_set_variable(agent_channel, "cc_member_uuid", h->member_uuid);
+						switch_channel_set_variable(agent_channel, "cc_member_session_uuid", h->member_session_uuid);
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Real channel found behind loopback agent '%s'\n", h->agent_name);
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Failed to find a real channel behind loopback agent '%s'\n", h->agent_name);
 				}
+
 				switch_core_session_rwunlock(other_loopback_session);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Failed to locate loopback-b channel of agent '%s'\n", h->agent_name);
 			}
 		}
 
@@ -1665,6 +1684,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			/* Reject: User rejected the call */
 			case SWITCH_CAUSE_CALL_REJECTED:
 				delay_next_agent_call = (h->reject_delay_time > delay_next_agent_call? h->reject_delay_time : delay_next_agent_call);
+				break;
+			/* Protection againts super fast loop due to unregistrer */			
+			case SWITCH_CAUSE_USER_NOT_REGISTERED:
+				delay_next_agent_call = (5 > delay_next_agent_call? 5 : delay_next_agent_call);
 				break;
 			/* No answer: Destination does not answer for some other reason */
 			default:
@@ -2530,17 +2553,17 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	}
 
-	/* Make sure that an agent was not found, since we could have break out before settign it previously */
+	/* Make sure an agent was found, as we might break above without setting it */
 	if (!agent_found && (p = switch_channel_get_variable(member_channel, "cc_agent_found"))) {
 		agent_found = switch_true(p);
 	}
 
-	/* Stop Member Thread */
+	/* Stop member thread */
 	if (h) {
 		h->running = 0;
 	}
 
-	/* Check if we were removed be cause FS Core(BREAK) asked us too */
+	/* Check if we were removed because FS Core(BREAK) asked us to */
 	if (h->member_cancel_reason == CC_MEMBER_CANCEL_REASON_NONE && !agent_found) {
 		h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_BREAK_OUT;
 	}
@@ -2642,34 +2665,35 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 	return 0;
 }
 
-#define CC_CONFIG_API_SYNTAX "callcenter_config agent add [name] [type] | " \
-"callcenter_config agent del [name] | " \
-"callcenter_config agent set status [agent_name] [status] | " \
-"callcenter_config agent set state [agent_name] [state] | " \
-"callcenter_config agent set contact [agent_name] [contact] | " \
-"callcenter_config agent set ready_time [agent_name] [wait till epoch] | "\
-"callcenter_config agent set reject_delay_time [agent_name] [wait second] | "\
-"callcenter_config agent set busy_delay_time [agent_name] [wait second] | "\
-"callcenter_config agent set no_answer_delay_time [agent_name] [wait second] | "\
-"callcenter_config agent get status [agent_name] | " \
-"callcenter_config agent list | " \
-"callcenter_config tier add [queue_name] [agent_name] [level] [position] | " \
-"callcenter_config tier set state [queue_name] [agent_name] [state] | " \
-"callcenter_config tier set level [queue_name] [agent_name] [level] | " \
-"callcenter_config tier set position [queue_name] [agent_name] [position] | " \
-"callcenter_config tier del [queue_name] [agent_name] | " \
-"callcenter_config tier list | " \
-"callcenter_config queue load [queue_name] | " \
-"callcenter_config queue unload [queue_name] | " \
-"callcenter_config queue reload [queue_name] | " \
-"callcenter_config queue list | " \
-"callcenter_config queue list agents [queue_name] [status] | " \
-"callcenter_config queue list members [queue_name] | " \
-"callcenter_config queue list tiers [queue_name] | " \
-"callcenter_config queue count | " \
-"callcenter_config queue count agents [queue_name] [status] | " \
-"callcenter_config queue count members [queue_name] | " \
-"callcenter_config queue count tiers [queue_name]"
+#define CC_CONFIG_API_SYNTAX "callcenter_config <target> <args>,\n"\
+"\tcallcenter_config agent add [name] [type] | \n" \
+"\tcallcenter_config agent del [name] | \n" \
+"\tcallcenter_config agent set status [agent_name] [status] | \n" \
+"\tcallcenter_config agent set state [agent_name] [state] | \n" \
+"\tcallcenter_config agent set contact [agent_name] [contact] | \n" \
+"\tcallcenter_config agent set ready_time [agent_name] [wait till epoch] | \n"\
+"\tcallcenter_config agent set reject_delay_time [agent_name] [wait second] | \n"\
+"\tcallcenter_config agent set busy_delay_time [agent_name] [wait second] | \n"\
+"\tcallcenter_config agent set no_answer_delay_time [agent_name] [wait second] | \n"\
+"\tcallcenter_config agent get status [agent_name] | \n" \
+"\tcallcenter_config agent list | \n" \
+"\tcallcenter_config tier add [queue_name] [agent_name] [level] [position] | \n" \
+"\tcallcenter_config tier set state [queue_name] [agent_name] [state] | \n" \
+"\tcallcenter_config tier set level [queue_name] [agent_name] [level] | \n" \
+"\tcallcenter_config tier set position [queue_name] [agent_name] [position] | \n" \
+"\tcallcenter_config tier del [queue_name] [agent_name] | \n" \
+"\tcallcenter_config tier list | \n" \
+"\tcallcenter_config queue load [queue_name] | \n" \
+"\tcallcenter_config queue unload [queue_name] | \n" \
+"\tcallcenter_config queue reload [queue_name] | \n" \
+"\tcallcenter_config queue list | \n" \
+"\tcallcenter_config queue list agents [queue_name] [status] | \n" \
+"\tcallcenter_config queue list members [queue_name] | \n" \
+"\tcallcenter_config queue list tiers [queue_name] | \n" \
+"\tcallcenter_config queue count | \n" \
+"\tcallcenter_config queue count agents [queue_name] [status] | \n" \
+"\tcallcenter_config queue count members [queue_name] | \n" \
+"\tcallcenter_config queue count tiers [queue_name]"
 
 SWITCH_STANDARD_API(cc_config_api_function)
 {
@@ -2684,7 +2708,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 		return SWITCH_STATUS_FALSE;
 	}
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-USAGE: %s\n", CC_CONFIG_API_SYNTAX);
+		stream->write_function(stream, "-USAGE: \n%s\n", CC_CONFIG_API_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 

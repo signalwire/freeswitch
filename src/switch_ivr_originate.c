@@ -1374,7 +1374,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 	
 	if (channel) {
+		const char *cid;
+
 		switch_channel_process_export(channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
+
+		if ((cid = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", cid);
+		}
+
+		if ((cid = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid);
+		}
 	}
 
 	/* strip leading spaces */

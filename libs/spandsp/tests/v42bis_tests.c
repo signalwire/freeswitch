@@ -34,7 +34,7 @@ of this file should exactly match the original file.
 */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
@@ -46,12 +46,14 @@ of this file should exactly match the original file.
 #include <ctype.h>
 #include <assert.h>
 
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
+
 #include "spandsp.h"
 
-#include "spandsp/private/v42bis.h"
-
 #define COMPRESSED_FILE_NAME        "v42bis_tests.v42bis"
-#define OUTPUT_FILE_NAME            "v42bis_tests.out"
+#define DECOMPRESSED_FILE_NAME      "v42bis_tests.out"
 
 int in_octets_to_date = 0;
 int out_octets_to_date = 0;
@@ -85,36 +87,96 @@ int main(int argc, char *argv[])
     int out_fd;
     int do_compression;
     int do_decompression;
+    int stutter_compression;
+    int stutter_time;
+    int seg;
+    int opt;
     time_t now;
+    const char *argv0;
+    const char *original_file;
+    const char *compressed_file;
+    const char *decompressed_file;
 
-    do_compression = TRUE;
-    do_decompression = TRUE;
-    if (argc < 2)
+    argv0 = argv[0];
+    do_compression = FALSE;
+    do_decompression = FALSE;
+    stutter_compression = FALSE;
+    while ((opt = getopt(argc, argv, "cds")) != -1)
     {
-        fprintf(stderr, "Usage: %s <file>\n", argv[0]);
+        switch (opt)
+        {
+        case 'c':
+            do_compression = TRUE;
+            break;
+        case 'd':
+            do_decompression = TRUE;
+            break;
+        case 's':
+            stutter_compression = TRUE;
+            break;
+        default:
+            //usage();
+            exit(2);
+            break;
+        }
+    }
+    argc -= optind;
+    argv += optind;
+    if (argc < 1)
+    {
+        fprintf(stderr, "Usage: %s [-c] [-d] [-s] <in-file> [<out-file>]\n", argv0);
         exit(2);
     }
     if (do_compression)
     {
-        if ((in_fd = open(argv[1], O_RDONLY)) < 0)
+        original_file = argv[0];
+        compressed_file = COMPRESSED_FILE_NAME;
+    }
+    else
+    {
+        original_file = NULL;
+        compressed_file = argv[0];
+    }
+    decompressed_file = (argc > 1)  ?  argv[1]  :  DECOMPRESSED_FILE_NAME;
+    if (do_compression)
+    {
+        stutter_time = rand() & 0x3FF;
+        if ((in_fd = open(argv[0], O_RDONLY)) < 0)
         {
-            fprintf(stderr, "Error opening file '%s'.\n", argv[1]);
+            fprintf(stderr, "Error opening file '%s'.\n", original_file);
             exit(2);
         }
-        if ((v42bis_fd = open(COMPRESSED_FILE_NAME, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0)
+        if ((v42bis_fd = open(compressed_file, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0)
         {
-            fprintf(stderr, "Error opening file '%s'.\n", COMPRESSED_FILE_NAME);
+            fprintf(stderr, "Error opening file '%s'.\n", compressed_file);
             exit(2);
         }
 
         time(&now);
         v42bis_init(&state_a, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, NULL, 512);
-        v42bis_compression_control(&state_a, V42BIS_COMPRESSION_MODE_ALWAYS);
+        span_log_set_level(&state_a.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+        span_log_set_tag(&state_a.logging, "XXX");
+        //v42bis_compression_control(&state_a, V42BIS_COMPRESSION_MODE_ALWAYS);
         in_octets_to_date = 0;
         out_octets_to_date = 0;
         while ((len = read(in_fd, buf, 1024)) > 0)
         {
-            if (v42bis_compress(&state_a, buf, len))
+            seg = 0;
+            if (stutter_compression)
+            {
+                while ((len - seg) >= stutter_time)
+                {
+                    if (v42bis_compress(&state_a, buf + seg, stutter_time))
+                    {
+                        fprintf(stderr, "Bad return code from compression\n");
+                        exit(2);
+                    }
+                    v42bis_compress_flush(&state_a);
+                    seg += stutter_time;
+                    stutter_time = rand() & 0x3FF;
+                }
+            }
+            if (v42bis_compress(&state_a, buf + seg, len - seg))
             {
                 fprintf(stderr, "Bad return code from compression\n");
                 exit(2);
@@ -130,19 +192,21 @@ int main(int argc, char *argv[])
     if (do_decompression)
     {
         /* Now open the files for the decompression. */
-        if ((v42bis_fd = open(COMPRESSED_FILE_NAME, O_RDONLY)) < 0)
+        if ((v42bis_fd = open(compressed_file, O_RDONLY)) < 0)
         {
-            fprintf(stderr, "Error opening file '%s'.\n", COMPRESSED_FILE_NAME);
+            fprintf(stderr, "Error opening file '%s'.\n", compressed_file);
             exit(2);
         }
-        if ((out_fd = open(OUTPUT_FILE_NAME, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0)
+        if ((out_fd = open(decompressed_file, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0)
         {
-            fprintf(stderr, "Error opening file '%s'.\n", OUTPUT_FILE_NAME);
+            fprintf(stderr, "Error opening file '%s'.\n", decompressed_file);
             exit(2);
         }
     
         time(&now);
         v42bis_init(&state_b, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, (void *) (intptr_t) out_fd, 512);
+        span_log_set_level(&state_b.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+        span_log_set_tag(&state_b.logging, "XXX");
         in_octets_to_date = 0;
         out_octets_to_date = 0;
         while ((len = read(v42bis_fd, buf, 1024)) > 0)

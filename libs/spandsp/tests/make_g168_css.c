@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
     outframes = sf_writef_short(filehandle, silence_sound, C1_SILENCE_SAMPLES);
     printf("%d samples of silence\n", C1_SILENCE_SAMPLES);
 
-    if (sf_close(filehandle) != 0)
+    if (sf_close(filehandle))
     {
         fprintf(stderr, "    Cannot close speech file '%s'\n", "sound_c1.wav");
         exit(2);
@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
     outframes = sf_writef_short(filehandle, silence_sound, C3_SILENCE_SAMPLES);
     printf("%d samples of silence\n", C3_SILENCE_SAMPLES);
 
-    if (sf_close(filehandle) != 0)
+    if (sf_close(filehandle))
     {
         fprintf(stderr, "    Cannot close speech file '%s'\n", "sound_c3.wav");
         exit(2);

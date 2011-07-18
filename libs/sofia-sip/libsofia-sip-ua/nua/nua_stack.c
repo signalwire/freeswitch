@@ -396,7 +396,9 @@ void nua_application_event(nua_t *dummy, su_msg_r sumsg, nua_ee_data_t *ee)
 		      e->e_msg ? sip_object(e->e_msg) : NULL,
 		      e->e_tags);
 
-    su_msg_destroy(frame->nf_saved);
+	if (su_msg_is_non_null(frame->nf_saved)) {
+		su_msg_destroy(frame->nf_saved);
+	}
     nua->nua_current = frame->nf_next;
   }
 
@@ -416,6 +418,23 @@ msg_t *nua_current_request(nua_t const *nua)
     return su_msg_data(nua->nua_current->nf_saved)->ee_data->e_msg;
   return NULL;
 }
+
+
+su_msg_t *nua_current_msg(nua_t const *nua, int clear)
+{
+	if (nua && nua->nua_current && su_msg_is_non_null(nua->nua_current->nf_saved)) {
+		su_msg_t *r = nua->nua_current->nf_saved[0];
+		if (clear) {
+			nua->nua_current->nf_saved[0] = NULL;
+		}
+		return r;
+		//return su_msg_data(nua->nua_current->nf_saved)->ee_data->e_msg;
+		
+	}
+
+  return NULL;
+}
+
 
 /** Get request message from saved nua event. @NEW_1_12_4.
  *
@@ -638,8 +657,10 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_ee_data_t *ee)
     nua_stack_respond(nua, nh, e->e_status, e->e_phrase, tags);
     break;
   case nua_r_destroy:
-    nua_stack_destroy_handle(nua, nh, tags);
-    su_msg_destroy(nua->nua_signal);
+	  if (!nh->nh_destroyed) {
+		  nua_stack_destroy_handle(nua, nh, tags);
+		  su_msg_destroy(nua->nua_signal);
+	  }
     return;
   default:
     break;
@@ -912,6 +933,10 @@ nua_handle_t *nh_validate(nua_t *nua, nua_handle_t *maybe)
 
 void nua_stack_destroy_handle(nua_t *nua, nua_handle_t *nh, tagi_t const *tags)
 {
+  if (nh->nh_destroyed) {
+	  return;
+  }
+
   if (nh->nh_notifier)
     nua_stack_terminate(nua, nh, (enum nua_event_e)0, NULL);
 
@@ -948,6 +973,12 @@ void nh_remove(nua_t *nua, nua_handle_t *nh)
 void nh_destroy(nua_t *nua, nua_handle_t *nh)
 {
   assert(nh); assert(nh != nua->nua_dhandle);
+
+  if (nh->nh_destroyed) {
+	  return;
+  }
+
+  nh->nh_destroyed = 1;
 
   if (nh->nh_notifier)
     nea_server_destroy(nh->nh_notifier), nh->nh_notifier = NULL;

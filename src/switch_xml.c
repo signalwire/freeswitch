@@ -141,6 +141,11 @@ static switch_mutex_t *REFLOCK = NULL;
 static switch_mutex_t *FILE_LOCK = NULL;
 static switch_mutex_t *XML_GEN_LOCK = NULL;
 
+SWITCH_DECLARE_NONSTD(switch_xml_t) __switch_xml_open_root(uint8_t reload, const char **err, void *user_data);
+
+static switch_xml_open_root_function_t XML_OPEN_ROOT_FUNCTION = (switch_xml_open_root_function_t)__switch_xml_open_root;
+static void *XML_OPEN_ROOT_FUNCTION_USER_DATA = NULL;
+
 static switch_hash_t *CACHE_HASH = NULL;
 
 struct xml_section_t {
@@ -2046,13 +2051,66 @@ SWITCH_DECLARE(void) switch_xml_free_in_thread(switch_xml_t xml, int stacksize)
 
 static char not_so_threadsafe_error_buffer[256] = "";
 
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_xml_set_root(switch_xml_t new_main)
+{
+	switch_xml_t old_root = NULL;
+	
+	switch_mutex_lock(REFLOCK);
+
+	old_root = MAIN_XML_ROOT;
+	MAIN_XML_ROOT = new_main;
+	switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
+	MAIN_XML_ROOT->refs++;
+			
+	if (old_root) {
+		if (old_root->refs) {
+			old_root->refs--;
+		}
+
+		if (!old_root->refs) {
+			switch_xml_free(old_root);
+		}
+	}
+
+	switch_mutex_unlock(REFLOCK);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_xml_set_open_root_function(switch_xml_open_root_function_t func, void *user_data)
+{
+	if (XML_LOCK) {
+		switch_mutex_lock(XML_LOCK);
+	}
+	
+	XML_OPEN_ROOT_FUNCTION = func;
+	XML_OPEN_ROOT_FUNCTION_USER_DATA = user_data;
+
+	if (XML_LOCK) {
+		switch_mutex_unlock(XML_LOCK);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err) 
+{
+	switch_xml_t root = NULL;
+
+	switch_mutex_lock(XML_LOCK);
+
+	if (XML_OPEN_ROOT_FUNCTION) {
+		root = XML_OPEN_ROOT_FUNCTION(reload, err, XML_OPEN_ROOT_FUNCTION_USER_DATA);
+	}
+	switch_mutex_unlock(XML_LOCK);
+
+	return root;
+}
+
+SWITCH_DECLARE_NONSTD(switch_xml_t) __switch_xml_open_root(uint8_t reload, const char **err, void *user_data)
 {
 	char path_buf[1024];
 	uint8_t errcnt = 0;
 	switch_xml_t new_main, r = NULL;
-
-	switch_mutex_lock(XML_LOCK);
 
 	if (MAIN_XML_ROOT) {
 		if (!reload) {
@@ -2071,27 +2129,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 			new_main = NULL;
 			errcnt++;
 		} else {
-			switch_xml_t old_root;
 			*err = "Success";
-
-			switch_mutex_lock(REFLOCK);
-
-			old_root = MAIN_XML_ROOT;
-			MAIN_XML_ROOT = new_main;
-			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
-			MAIN_XML_ROOT->refs++;
-			
-			if (old_root) {
-				if (old_root->refs) {
-					old_root->refs--;
-				}
-
-				if (!old_root->refs) {
-					switch_xml_free(old_root);
-				}
-			}
-
-			switch_mutex_unlock(REFLOCK);
+			switch_xml_set_root(new_main);
 
 		}
 	} else {
@@ -2109,9 +2148,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		r = switch_xml_root();
 	}
 
-  done:
-
-	switch_mutex_unlock(XML_LOCK);
+ done:
 
 	return r;
 }

@@ -213,7 +213,7 @@ SPAN_DECLARE(void) v22bis_set_put_bit(v22bis_state_t *s, put_bit_func_t put_bit,
     \param s The modem context.
     \param handler The callback routine used to report modem status changes.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v22bis_set_modem_status_handler(v22bis_state_t *s, modem_rx_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) v22bis_set_modem_status_handler(v22bis_state_t *s, modem_status_func_t handler, void *user_data);
 
 #if defined(__cplusplus)
 }

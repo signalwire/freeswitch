@@ -390,6 +390,12 @@ if test "$ac_cv_found_odbc" = "yes" ; then
   enable_core_odbc_support="yes"
 fi
 
+
+AC_ARG_ENABLE(timerfd-wrapper,
+[AC_HELP_STRING([--enable-timerfd-wrapper],[timerfd is in the kernel but not in your libc])],[enable_timer_fd_wrapper="$enableval"],[enable_timer_fd_wrapper="no"])
+AM_CONDITIONAL([ENABLE_TIMERFD_WRAPPER],[test "x$enable_timer_fd_wrapper" != "xno"])
+
+
 AC_CHECK_LIB(z, inflateReset, have_libz=yes, have_libz=no)
 if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO(SWITCH_AM_LDFLAGS, -lz)
@@ -693,7 +699,7 @@ if test "$ac_cv_sizeof_size_t" = "$ac_cv_sizeof_int"; then
 elif test "$ac_cv_sizeof_size_t" = "$ac_cv_sizeof_long"; then
     size_t_fmt='#define SWITCH_SIZE_T_FMT "ld"'
 else
-    size_t_fmt='#error Can not determine the proper size for size_t'
+    size_t_fmt='#define SWITCH_SIZE_T_FMT "zu"'
 fi
 
 # Basically, we have tried to figure out the correct format strings

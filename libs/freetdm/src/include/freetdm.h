@@ -48,7 +48,7 @@
 #define FTDM_MAX_CHANNELS_PHYSICAL_SPAN 32
 
 /*! \brief Max number of physical spans per logical span */
-#define FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN 32
+#define FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN 128
 
 /*! \brief Max number of channels a logical span can contain */
 #define FTDM_MAX_CHANNELS_SPAN FTDM_MAX_CHANNELS_PHYSICAL_SPAN * FTDM_MAX_PHYSICAL_SPANS_PER_LOGICAL_SPAN
@@ -57,7 +57,7 @@
 #define FTDM_MAX_SPANS_INTERFACE 128
 
 /*! \brief Max number of channels per hunting group */
-#define FTDM_MAX_CHANNELS_GROUP 1024
+#define FTDM_MAX_CHANNELS_GROUP 2048
 
 /*! \brief Max number of groups */
 #define FTDM_MAX_GROUPS_INTERFACE FTDM_MAX_SPANS_INTERFACE

@@ -405,7 +405,7 @@ int main(int argc, char *argv[])
             sample += x;
         }
     }
-    if (sf_close(inhandle))
+    if (sf_close_telephony(inhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME);
         exit(2);
@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
                 sample += x;
             }
     	}
-        if (sf_close(inhandle) != 0)
+        if (sf_close_telephony(inhandle))
     	{
     	    printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);

@@ -29,7 +29,7 @@
 struct silence_gen_state_s
 {
     /*! \brief The callback function used to report status changes. */
-    modem_tx_status_func_t status_handler;
+    modem_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 

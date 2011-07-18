@@ -64,8 +64,33 @@ struct su_home_s {
 
 SU_DLL void *su_home_new(isize_t size)
      __attribute__((__malloc__));
+
+#if (defined(HAVE_MEMLEAK_LOG) && (HAVE_MEMLEAK_LOG != 1))
+
+int _su_home_mutex_lock(su_home_t *home, const char *file, unsigned int line, const char *function);
+int _su_home_mutex_lock(su_home_t *home, const char *file, unsigned int line, const char *function);
+
+#define su_home_mutex_lock(home) \
+  _su_home_mutex_lock((home), __FILE__, __LINE__, __func__)
+
+#define su_home_mutex_unlock(home) \
+  _su_home_mutex_unlock((home), __FILE__, __LINE__, __func__)
+
+
+su_home_t *_su_home_ref_by(
+  su_home_t *home, char const *file, unsigned line, char const *by);
+int _su_home_unref_by(
+  su_home_t *home, char const *file, unsigned line, char const *by);
+
+#define su_home_ref(home) \
+  _su_home_ref_by((home), __FILE__, __LINE__, __func__)
+#define su_home_unref(home) \
+  _su_home_unref_by((home), __FILE__, __LINE__, __func__)
+
+#else
 SU_DLL void *su_home_ref(su_home_t const *);
 SU_DLL int su_home_unref(su_home_t *);
+#endif
 
 SU_DLL size_t su_home_refcount(su_home_t *home);
 
@@ -107,9 +132,11 @@ SU_DLL void su_home_check(su_home_t const *home);
 
 SU_DLL int su_home_check_alloc(su_home_t const *home, void const *data);
 
+#if (!defined(HAVE_MEMLEAK_LOG) || (HAVE_MEMLEAK_LOG != 1))
 SU_DLL int su_home_mutex_lock(su_home_t *home);
 
 SU_DLL int su_home_mutex_unlock(su_home_t *home);
+#endif
 
 SU_DLL int su_home_lock(su_home_t *home);
 SU_DLL int su_home_trylock(su_home_t *home);

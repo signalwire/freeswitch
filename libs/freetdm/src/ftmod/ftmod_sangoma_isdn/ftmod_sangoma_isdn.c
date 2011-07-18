@@ -344,7 +344,6 @@ static void *ftdm_sangoma_isdn_io_run(ftdm_thread_t *me, void *obj)
 	uint8_t data[1000];
 	unsigned i = 0;
 	ftdm_status_t status = FTDM_SUCCESS;
-	ftdm_wait_flag_t wflags = FTDM_READ;
 	ftdm_span_t *span = (ftdm_span_t*) obj;
 	ftdm_size_t len = 0;
 	ftdm_channel_t *ftdmchan = NULL;
@@ -365,7 +364,6 @@ static void *ftdm_sangoma_isdn_io_run(ftdm_thread_t *me, void *obj)
 	while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
 		len = 1000;
 		waitms = 1000;
-		wflags = FTDM_READ;
 		memset(poll_events, 0, sizeof(short)*span->chan_count);
 
 		poll_events[i] |= FTDM_EVENTS;

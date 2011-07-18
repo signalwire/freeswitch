@@ -835,6 +835,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(_In_ switch_co
 
 SWITCH_DECLARE(void) switch_core_session_free_message(switch_core_session_message_t **message);
 
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_signal_data(switch_core_session_t *session, void *signal_data);
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_signal_data(switch_core_session_t *session, void **signal_data);
+
 /*! 
   \brief pass an indication message on a session
   \param session the session to pass the message across

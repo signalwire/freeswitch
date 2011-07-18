@@ -322,10 +322,7 @@ int qam_monitor_update_audio_level(qam_monitor_t *s, const int16_t amp[], int le
         s->audio_meter->sample(amp[i]/32768.0);
         s->power_reading += ((amp[i]*amp[i] - s->power_reading) >> 10);
     }
-    if (s->power_reading <= 0)
-        val = -90.0;
-    else
-        val = log10((double) s->power_reading/(32767.0f*32767.0f))*10.0f + 3.14 + 3.02;
+    val = 10.0*log10((double) s->power_reading/(32767.0*32767.0) + 1.0e-10) + 3.14 + 3.02;
 
     snprintf(buf, sizeof(buf), "%5.1fdBm0", val);
     s->audio_level->value(buf);

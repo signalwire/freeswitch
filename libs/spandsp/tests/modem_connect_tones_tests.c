@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
     }
     /*endif*/
 
-    if (sf_close(outhandle) != 0)
+    if (sf_close_telephony(outhandle))
     {
         printf("    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
@@ -1374,7 +1374,7 @@ int main(int argc, char *argv[])
                 /*endif*/
             }
             /*endwhile*/
-            if (sf_close(inhandle) != 0)
+            if (sf_close_telephony(inhandle))
             {
                 fprintf(stderr, "    Cannot close speech file '%s'\n", bellcore_files[j]);
                 exit(2);
@@ -1417,7 +1417,7 @@ int main(int argc, char *argv[])
             modem_connect_tones_rx(&ans_pr_rx, amp, frames);
         }
         /*endwhile*/
-        if (sf_close(inhandle) != 0)
+        if (sf_close_telephony(inhandle))
         {
             fprintf(stderr, "    Cannot close speech file '%s'\n", decode_test_file);
             exit(2);

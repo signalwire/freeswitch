@@ -203,6 +203,7 @@ typedef enum {
 	EFLAG_FLOOR_CHANGE = (1 << 25),
 	EFLAG_MUTE_DETECT = (1 << 26),
 	EFLAG_RECORD = (1 << 27),
+	EFLAG_HUP_MEMBER = (1 << 28)
 } event_type_t;
 
 typedef struct conference_file_node {
@@ -1018,7 +1019,11 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				int y = *((int8_t *) vid_frame->data + 2) & 0xfe;
 				iframe = (y == 0x80 || y == 0x82);
 			} else if (vid_frame->codec->implementation->ianacode == 99) {	/* h.264 */
-				iframe = (*((int16_t *) vid_frame->data) >> 5 == 0x11);
+				uint8_t * hdr = vid_frame->data;
+                uint8_t fragment_type = hdr[0] & 0x1f;
+                uint8_t nal_type = hdr[1] & 0x1f;
+                uint8_t start_bit = hdr[1] & 0x80;
+                iframe = (((fragment_type == 28 || fragment_type == 29) && nal_type == 5 && start_bit == 128) || fragment_type == 5);
 			} else {			/* we need more defs */
 				iframe = 1;
 			}
@@ -3779,6 +3784,27 @@ static switch_status_t conf_api_sub_undeaf(conference_member_t *member, switch_s
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t conf_api_sub_hup(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	switch_event_t *event;
+
+	if (member == NULL) {
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	switch_clear_flag(member, MFLAG_RUNNING);
+
+	if (member->conference && test_eflag(member->conference, EFLAG_HUP_MEMBER)) {
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_member_data(member, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "hup-member");
+			switch_event_fire(&event);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t conf_api_sub_kick(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	switch_event_t *event;
@@ -4857,6 +4883,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"stop", (void_fn_t) & conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "stop", "<[current|all|async|last]> [<member_id>]"},
 	{"dtmf", (void_fn_t) & conf_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET, "dtmf", "<[member_id|all|last]> <digits>"},
 	{"kick", (void_fn_t) & conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "kick", "<[member_id|all|last]>"},
+	{"hup", (void_fn_t) & conf_api_sub_hup, CONF_API_SUB_MEMBER_TARGET, "hup", "<[member_id|all|last]>"},
 	{"mute", (void_fn_t) & conf_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "mute", "<[member_id|all]|last>"},
 	{"unmute", (void_fn_t) & conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "unmute", "<[member_id|all]|last>"},
 	{"deaf", (void_fn_t) & conf_api_sub_deaf, CONF_API_SUB_MEMBER_TARGET, "deaf", "<[member_id|all]|last>"},

@@ -607,7 +607,9 @@ static int on_disco_default(void *user_data, ikspak *pak)
 			int all = 0;
 			
 			iks_insert_attrib(iq, "from", handle->login);
-			iks_insert_attrib(iq, "to", pak->from->full);
+			if (pak->from) {
+				iks_insert_attrib(iq, "to", pak->from->full);
+			}
 			iks_insert_attrib(iq, "id", pak->id);
 			iks_insert_attrib(iq, "type", "result");
 					

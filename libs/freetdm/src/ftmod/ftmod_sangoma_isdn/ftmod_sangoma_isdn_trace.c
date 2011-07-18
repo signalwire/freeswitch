@@ -114,7 +114,7 @@ void sngisdn_trace_interpreted_q921(sngisdn_span_data_t *signal_data, ftdm_trace
 {
 	char *data_str = ftdm_calloc(1,200); /* TODO Find a proper size */
  	sngisdn_decode_q921(data_str, data, data_len);
-	ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q921] %s FRAME %s:\n%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
+	ftdm_log(FTDM_LOG_DEBUG, "[SNGISDN Q921] %s FRAME %s:\n%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
 	ftdm_safe_free(data_str);
 }
 
@@ -221,7 +221,7 @@ void sngisdn_trace_interpreted_q931(sngisdn_span_data_t *signal_data, ftdm_trace
 {
 	char *data_str = ftdm_calloc(1,MAX_DECODE_STR_LEN); /* TODO Find a proper size */
 	sngisdn_decode_q931(data_str, data, data_len);
-	ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q931] %s FRAME %s:\n%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
+	ftdm_log(FTDM_LOG_DEBUG, "[SNGISDN Q931] %s FRAME %s:\n%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
 	ftdm_safe_free(data_str);
 }
 
@@ -586,11 +586,20 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 			break;
 		case PROT_Q931_IE_DISPLAY:
 			{
-				uint8_t displayStrOct=2, j;
+				uint8_t j;
 				char displayStr[82];
+				uint8_t displayNtEnabled = 0;
+				uint8_t displayStrOct = 2;
+				uint8_t displayType = 0;
+				uint8_t assocInfo = 0;
+				
 				memset(displayStr, 0, sizeof(displayStr));
 				
 				if(get_bits(OCTET(3),8,8)) {
+					displayType = get_bits(OCTET(3),1,4);
+					assocInfo = get_bits(OCTET(3),5,7);
+
+					displayNtEnabled = 1;
 					displayStrOct++;
 				}
 				j = 0;	
@@ -601,8 +610,15 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 					displayStr[j++]=ia5[get_bits(OCTET(displayStrOct),1,4)][get_bits(OCTET(displayStrOct),5,8)];
 				}
 				displayStr[j]='\0';
-				*str_len+= sprintf(&str[*str_len], "%s(l:%d)\n",
-														displayStr, len);
+				if (displayNtEnabled) {
+					*str_len+= sprintf(&str[*str_len], "%s(l:%d) type:%s(%d) info:%s(%d)\n",
+												displayStr, len,
+												get_code_2_str(displayType, dcodQ931DisplayTypeTable), displayType,
+												get_code_2_str(assocInfo, dcodQ931AssocInfoTable), assocInfo);
+				} else {
+					*str_len+= sprintf(&str[*str_len], "%s(l:%d)\n",
+															displayStr, len);
+				}
 			}
 			break;
 		case PROT_Q931_IE_RESTART_IND:

@@ -51,11 +51,7 @@ $(DESTDIR)$(grammardir)/model/communicator:
 	mkdir -p $(DESTDIR)$(grammardir)/model/communicator
 	cp -rp $(switch_srcdir)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(grammardir)/model/communicator
 
-$(DESTDIR)$(grammardir)/model/wsj1:
-	mkdir -p $(DESTDIR)$(grammardir)/model/wsj1
-	cp -rp $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(grammardir)/model/wsj1
-
 dictionary:
-	@cp -f $(POCKETSPHINX_DIR)/model/lm/cmudict.0.6d $(DESTDIR)$(grammardir)/default.dic
+	@cp -f $(POCKETSPHINX_DIR)/model/lm/en_US/cmu07a.dic $(DESTDIR)$(grammardir)/default.dic
 
-local_install: $(DESTDIR)$(grammardir)/model $(DESTDIR)$(grammardir)/model/communicator $(DESTDIR)$(grammardir)/model/wsj1 dictionary
+local_install: $(DESTDIR)$(grammardir)/model $(DESTDIR)$(grammardir)/model/communicator dictionary

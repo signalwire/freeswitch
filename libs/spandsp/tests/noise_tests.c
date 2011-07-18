@@ -104,12 +104,12 @@ int main (int argc, char *argv[])
                 total += ((double) value)*((double) value);
             }
             printf ("RMS = %.3f (expected %d) %.2f%% error [clipped samples %d+%d]\n",
-                    log10(sqrt(total/total_samples)/32768.0)*20.0,
+                    10.0*log10((total/total_samples)/(32768.0*32768.0) + 1.0e-10),
                     level,
                     100.0*(1.0 - sqrt(total/total_samples)/(pow(10.0, level/20.0)*32768.0)),
                     clip_low,
                     clip_high);
-            if (level < -5  &&  fabs(log10(sqrt(total/total_samples)/32768.0)*20.0 - level) > 0.2)
+            if (level < -5  &&  fabs(10.0*log10((total/total_samples)/(32768.0*32768.0) + 1.0e-10) - level) > 0.2)
             {
                 printf("Test failed\n");
                 exit(2);
@@ -195,12 +195,12 @@ int main (int argc, char *argv[])
             total += ((double) value)*((double) value);
         }
         printf ("RMS = %.3f (expected %d) %.2f%% error [clipped samples %d+%d]\n",
-                log10(sqrt(total/total_samples)/32768.0)*20.0,
+                10.0*log10((total/total_samples)/(32768.0*32768.0) + 1.0e-10),
                 level,
                 100.0*(1.0 - sqrt(total/total_samples)/(pow(10.0, level/20.0)*32768.0)),
                 clip_low,
                 clip_high);
-        if (level < -5  &&  fabs(log10(sqrt(total/total_samples)/32768.0)*20.0 - level) > 0.2)
+        if (level < -5  &&  fabs(10.0*log10((total/total_samples)/(32768.0*32768.0) + 1.0e-10) - level) > 0.2)
         {
             printf("Test failed\n");
             exit(2);
@@ -223,7 +223,7 @@ int main (int argc, char *argv[])
         }
     }
 
-    if (sf_close(outhandle))
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);

@@ -5,7 +5,7 @@
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2003 Steve Underwood
+ * Copyright (C) 2003, 2011 Steve Underwood
  *
  * All rights reserved.
  *
@@ -36,44 +36,7 @@ far modem supports V.42 is also defined.
 #if !defined(_SPANDSP_V42_H_)
 #define _SPANDSP_V42_H_
 
-enum
-{
-    LAPM_DETECT = 0,
-    LAPM_ESTABLISH = 1,
-    LAPM_DATA = 2,
-    LAPM_RELEASE = 3,
-    LAPM_SIGNAL = 4,
-    LAPM_SETPARM = 5,
-    LAPM_TEST = 6,
-    LAPM_UNSUPPORTED = 7
-};
-
-typedef void (*v42_status_func_t)(void *user_data, int status);
-typedef void (*v42_frame_handler_t)(void *user_data, const uint8_t *pkt, int len);
-
-typedef struct lapm_frame_queue_s
-{
-    struct lapm_frame_queue_s *next;
-    int len;
-    uint8_t frame[];
-} lapm_frame_queue_t;
-
-/*!
-    LAP-M descriptor. This defines the working state for a single instance of LAP-M.
-*/
-typedef struct lapm_state_s lapm_state_t;
-
-/*!
-    V.42 descriptor. This defines the working state for a single instance of V.42.
-*/
 typedef struct v42_state_s v42_state_t;
-
-/*! Log the raw HDLC frames */
-#define LAPM_DEBUG_LAPM_RAW         (1 << 0)
-/*! Log the interpreted frames */
-#define LAPM_DEBUG_LAPM_DUMP        (1 << 1)
-/*! Log state machine changes */
-#define LAPM_DEBUG_LAPM_STATE 	    (1 << 2)
 
 #if defined(__cplusplus)
 extern "C"
@@ -82,58 +45,46 @@ extern "C"
 
 SPAN_DECLARE(const char *) lapm_status_to_str(int status);
 
-/*! Dump LAP.M frames in a raw and/or decoded forms
-    \param frame The frame itself
-    \param len The length of the frame, in octets
-    \param showraw TRUE if the raw octets should be dumped
-    \param txrx TRUE if tx, FALSE if rx. Used to highlight the packet's direction.
-*/
-SPAN_DECLARE(void) lapm_dump(lapm_state_t *s, const uint8_t *frame, int len, int showraw, int txrx);
+SPAN_DECLARE_NONSTD(void) lapm_receive(void *user_data, const uint8_t *frame, int len, int ok);
 
-/*! Accept an HDLC packet
-*/
-SPAN_DECLARE_NONSTD(void) lapm_receive(void *user_data, const uint8_t *buf, int len, int ok);
+SPAN_DECLARE(void) v42_start(v42_state_t *s);
 
-/*! Transmit a LAP.M frame
-*/
-SPAN_DECLARE(int) lapm_tx(lapm_state_t *s, const void *buf, int len);
+SPAN_DECLARE(void) v42_stop(v42_state_t *s);
 
-/*! Transmit a LAP.M information frame
+/*! Set the busy status of the local end of a V.42 context.
+    \param s The V.42 context.
+    \param busy The new local end busy status.
+    \return The previous local end busy status.
 */
-SPAN_DECLARE(int) lapm_tx_iframe(lapm_state_t *s, const void *buf, int len, int cr);
+SPAN_DECLARE(int) v42_set_local_busy_status(v42_state_t *s, int busy);
 
-/*! Send a break over a LAP.M connection
+/*! Get the busy status of the far end of a V.42 context.
+    \param s The V.42 context.
+    \return The far end busy status.
 */
-SPAN_DECLARE(int) lapm_break(lapm_state_t *s, int enable);
+SPAN_DECLARE(int) v42_get_far_busy_status(v42_state_t *s);
 
-/*! Initiate an orderly release of a LAP.M connection
-*/
-SPAN_DECLARE(int) lapm_release(lapm_state_t *s);
-
-/*! Enable or disable loopback of a LAP.M connection
-*/
-SPAN_DECLARE(int) lapm_loopback(lapm_state_t *s, int enable);
-
-/*! Assign or remove a callback routine used to deal with V.42 status changes.
-*/
-SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, v42_status_func_t callback, void *user_data);
-
-/*! Process a newly received bit for a V.42 context.
-*/
 SPAN_DECLARE(void) v42_rx_bit(void *user_data, int bit);
 
-/*! Get the next transmit bit for a V.42 context.
-*/
 SPAN_DECLARE(int) v42_tx_bit(void *user_data);
+
+SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, modem_status_func_t callback, void *user_data);
 
 /*! Initialise a V.42 context.
     \param s The V.42 context.
     \param calling_party TRUE if caller mode, else answerer mode.
-    \param frame_handler A callback function to handle received frames of data.
-    \param user_data An opaque pointer passed to the frame handler routine.
+    \param detect TRUE to perform the V.42 detection, else go straight into LAP.M 
+    \param iframe_get A callback function to handle received frames of data.
+    \param iframe_put A callback function to get frames of data for transmission.
+    \param user_data An opaque pointer passed to the frame handler routines.
     \return ???
 */
-SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *s, int calling_party, int detect, v42_frame_handler_t frame_handler, void *user_data);
+SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *s,
+                                     int calling_party,
+                                     int detect,
+                                     get_msg_func_t iframe_get,
+                                     put_msg_func_t iframe_put,
+                                     void *user_data);
 
 /*! Restart a V.42 context.
     \param s The V.42 context.
@@ -143,12 +94,12 @@ SPAN_DECLARE(void) v42_restart(v42_state_t *s);
 /*! Release a V.42 context.
     \param s The V.42 context.
     \return 0 if OK */
-SPAN_DECLARE(int) v42_release(v42_state_t *s);
+SPAN_DECLARE(void) v42_release(v42_state_t *s);
 
 /*! Free a V.42 context.
     \param s The V.42 context.
     \return 0 if OK */
-SPAN_DECLARE(int) v42_free(v42_state_t *s);
+SPAN_DECLARE(void) v42_free(v42_state_t *s);
 
 #if defined(__cplusplus)
 }

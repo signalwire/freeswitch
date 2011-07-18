@@ -110,6 +110,7 @@ nua_handle_t *nh_create_handle(nua_t *nua,
   assert(nua->nua_home);
 
   if ((nh = su_home_clone(nua->nua_home, sizeof(*nh)))) {
+  //if ((nh = su_home_new(sizeof(*nh)))) {
     nh->nh_valid = nua_valid_handle_cookie;
     nh->nh_nua = nua;
     nh->nh_magic = hmagic;
@@ -171,10 +172,16 @@ _nua_handle_ref_by(nua_handle_t *nh,
 		   char const *file, unsigned line,
 		   char const *function)
 {
-  if (nh)
-    SU_DEBUG_0(("%p - nua_handle_ref() => "MOD_ZU" by %s:%u: %s()\n",
-		nh, su_home_refcount((su_home_t *)nh) + 1, file, line, by));
-  return (nua_handle_t *)su_home_ref((su_home_t *)nh);
+
+#if (HAVE_MEMLEAK_LOG == 1) 
+	if (nh)
+		SU_DEBUG_0(("%p - nua_handle_ref() => "MOD_ZU" by %s:%u: %s()\n",
+					nh, su_home_refcount((su_home_t *)nh) + 1, file, line, function));
+	return (nua_handle_t *)su_home_ref((su_home_t *)nh);
+#else
+
+	return (nua_handle_t *)_su_home_ref_by((su_home_t *)nh, file, line, function);
+#endif
 }
 
 int
@@ -182,26 +189,23 @@ _nua_handle_unref_by(nua_handle_t *nh,
 		    char const *file, unsigned line,
 		    char const *function)
 {
-  if (nh) {
-    size_t refcount = su_home_refcount((su_home_t *)nh) - 1;
-    int freed =  su_home_unref((su_home_t *)nh);
-    if (freed) refcount = 0;
-    SU_DEBUG_0(("%p - nua_handle_unref() => "MOD_ZU" by %s:%u: %s()\n",
-		nh, refcount, file, line, by));
-    return freed;
-  }
 
-  return 0;
-}
+#if (HAVE_MEMLEAK_LOG == 1)
 
-nua_handle_t *nua_handle_ref(nua_handle_t *nh)
-{
-  return _nua_handle_ref_by(nh, "<app>", 0, "<app>")
-}
+	if (nh) {
+		size_t refcount = su_home_refcount((su_home_t *)nh) - 1;
+		int freed =  su_home_unref((su_home_t *)nh);
 
-int nua_handle_unref(nua_handle_t *nh)
-{
-  return _nua_handle_unref_by(nh, "<app>", 0, "<app>")
+		if (freed) refcount = 0;
+		SU_DEBUG_0(("%p - nua_handle_unref() => "MOD_ZU" by %s:%u: %s()\n",
+					nh, refcount, file, line, function));
+		return freed;
+	}
+
+	return 0;
+#else
+	return _su_home_unref_by((su_home_t *)nh, file, line, function);
+#endif
 }
 
 #else

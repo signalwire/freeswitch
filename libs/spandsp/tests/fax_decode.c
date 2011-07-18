@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
     }
     t4_rx_release(&t4_state);
 
-    if (sf_close(inhandle) != 0)
+    if (sf_close(inhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", filename);
         exit(2);

@@ -76,6 +76,9 @@ vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile
 
 		profile->name = profile_name;
 
+		profile->current_msg = 0;
+		profile->current_msg_uuid = NULL;
+
 		/* TODO Make the following configurable */
 		profile->api_profile = profile->name;
 		profile->menu_check_auth = "std_authenticate";
@@ -102,6 +105,8 @@ vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile
 						profile->api_msg_purge = switch_core_session_strdup(session, val);
 					else if (!strcasecmp(var, "msg_get") && !profile->api_msg_get)
 						profile->api_msg_get = switch_core_session_strdup(session, val);
+					else if (!strcasecmp(var, "msg_forward") && !profile->api_msg_forward)
+						profile->api_msg_forward = switch_core_session_strdup(session, val);
 					else if (!strcasecmp(var, "pref_greeting_set") && !profile->api_pref_greeting_set)
 						profile->api_pref_greeting_set = switch_core_session_strdup(session, val);
 					else if (!strcasecmp(var, "pref_recname_set") && !profile->api_pref_recname_set)
@@ -115,7 +120,7 @@ vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile
 					total_options++;
 				}
 			}
-			if (total_options - total_invalid_options != 11) {
+			if (total_options - total_invalid_options != 12) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing api definition for profile '%s'\n", profile_name);
 				profile = NULL;
 			}

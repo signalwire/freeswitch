@@ -134,11 +134,8 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			get_calling_subaddr(ftdmchan, &conEvnt->cgPtySad);
 			get_prog_ind_ie(ftdmchan, &conEvnt->progInd);
 			get_facility_ie(ftdmchan, &conEvnt->facilityStr);			
+			get_calling_name(ftdmchan, conEvnt);
 			
-			if (get_calling_name_from_display(ftdmchan, &conEvnt->display) != FTDM_SUCCESS) {
-				get_calling_name_from_usr_usr(ftdmchan, &conEvnt->usrUsr);
-			}
-
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
 			if (conEvnt->bearCap[0].eh.pres) {

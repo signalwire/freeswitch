@@ -311,7 +311,6 @@ ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const cha
 
 			if (hp->idx) {
 				int i = 0;
-				hp->value = NULL;
 
 				for (i = 0; i < hp->idx; i++) {
 					FREE(hp->array[i]);
@@ -642,7 +641,7 @@ ESL_DECLARE(void) esl_event_destroy(esl_event_t **event)
 
 			if (this->idx) {
 				int i = 0;
-				this->value = NULL;
+
 				for (i = 0; i < this->idx; i++) {
 					FREE(this->array[i]);
 				}

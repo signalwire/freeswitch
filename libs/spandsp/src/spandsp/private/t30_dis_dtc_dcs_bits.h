@@ -66,7 +66,7 @@
 #define T30_DCS_BIT_200_200                                 15
 
 #define T30_DIS_BIT_2D_CAPABLE                              16
-#define T30_DCS_BIT_2D_CODING                               16
+#define T30_DCS_BIT_2D_MODE                                 16
 
 /* Standard facsimile terminals conforming to ITU-T Rec. T.4 must have the following capability:
    Paper length = 297 mm. */
@@ -101,7 +101,7 @@
 #define T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE            35
 
 #define T30_DIS_BIT_T43_CAPABLE                             36
-#define T30_DCS_BIT_T43_CODING                              36
+#define T30_DCS_BIT_T43_MODE                                36
 
 #define T30_DIS_BIT_PLANE_INTERLEAVE_CAPABLE                37
 #define T30_DCS_BIT_PLANE_INTERLEAVE                        37
@@ -270,11 +270,11 @@
     bits 49, 102 and 50 in DCS or bits 47, 101, 50 and 35 in DTC shall be set to "1" with the following
     meaning:
     Bit DIS                                             DTC                                                 DCS
-    35  Polled SubAddress capability                    Polled SubAddress transmission                      Not allowed – set to "0"
-    47  Selective polling capability                    Selective polling transmission                      Not allowed – set to "0"
+    35  Polled SubAddress capability                    Polled SubAddress transmission                      Not allowed - set to "0"
+    47  Selective polling capability                    Selective polling transmission                      Not allowed - set to "0"
     49  Subaddressing capability                        Not allowed (Set to "0")                            Subaddressing transmission
     50  Password                                        Password transmission                               Sender Identification transmission
-    101 Internet Selective Polling Address capability   Internet Selective Polling Address transmission     Not allowed – set to "0"
+    101 Internet Selective Polling Address capability   Internet Selective Polling Address transmission     Not allowed - set to "0"
     102 Internet Routing Address capability             Not allowed (Set to "0")                            Internet Routing Address transmission
 
    Terminals conforming to the 1993 version of T.30 may set the above bits to "0" even though PWD/SEP/SUB

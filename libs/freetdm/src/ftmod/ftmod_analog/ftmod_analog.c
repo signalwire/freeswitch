@@ -401,7 +401,7 @@ static void analog_dial(ftdm_channel_t *ftdmchan, uint32_t *state_counter, uint3
 			ftdmchan->needed_tones[FTDM_TONEMAP_FAIL1] = 1;
 			ftdmchan->needed_tones[FTDM_TONEMAP_FAIL2] = 1;
 			ftdmchan->needed_tones[FTDM_TONEMAP_FAIL3] = 1;
-			*dial_timeout = ((ftdmchan->dtmf_on + ftdmchan->dtmf_off) * strlen(ftdmchan->caller_data.dnis.digits)) + 2000;
+			*dial_timeout = (uint32_t)((ftdmchan->dtmf_on + ftdmchan->dtmf_off) * strlen(ftdmchan->caller_data.dnis.digits)) + 2000;
 		}
 	}
 }
@@ -932,6 +932,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	ftdm_channel_lock(closed_chan);
 
 	if (ftdmchan->type == FTDM_CHAN_TYPE_FXO && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK)) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Going onhook");
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ONHOOK, NULL);
 	}
 

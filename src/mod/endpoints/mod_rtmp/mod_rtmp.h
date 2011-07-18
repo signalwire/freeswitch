@@ -126,6 +126,9 @@
 #define INT24(x)	((x) >> 16) & 0xFF, ((x) >> 8) & 0xFF, (x) & 0xFF
 #define INT16(x)	((x) >> 8) & 0xFF, (x) & 0xFF
 
+#ifndef INT32_MAX
+#define INT32_MAX 0x7fffffffL
+#endif
 
 typedef enum {
 	RTMP_AUDIO_PCM = 0,
@@ -461,7 +464,7 @@ struct rtmp_session {
 	
 	rtmp_account_t *account;
 	switch_thread_rwlock_t *account_rwlock;
-	uint_least32_t flags;
+	uint32_t flags;
 
 	int8_t sendAudio, sendVideo;
 	uint64_t recv_ack_window;			/* < ACK Window */
@@ -515,6 +518,8 @@ struct rtmp_private {
 	const char *auth_user;
 	const char *auth_domain;
 	const char *auth;
+
+	uint16_t maxlen;
 };
 
 struct rtmp_reg;

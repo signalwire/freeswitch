@@ -1,5 +1,5 @@
 <include><!--This line will be ignored it's here to validate the xml and is optional -->
-  <macros name="protovm" sound-prefix="$${sounds_dir}/fr/ca/june"> 
+  <macros name="protovm" sound-prefix="$${sounds_dir}/en/us/callie"> 
     <macro name="press_key">
       <input pattern="^(.*):(.*)$">
         <match>
@@ -140,6 +140,25 @@
         </match>
       </input>
     </macro>
+
+    <macro name="forward_ask_prepend">
+      <input>
+        <match>
+        <action function="phrase" phrase="press_key@protovm" data="${VM-Key-Prepend}:voicemail/vm-forward_add_intro.wav"/>
+        <action function="phrase" phrase="press_key@protovm" data="${VM-Key-Forward}:voicemail/vm-send_message_now.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="forward_ask_extension">
+      <input>
+        <match>
+        <action function="play-file" data="voicemail/vm-forward_enter_ext.wav"/>
+<!--	<action function="phrase" phrase="play-file" data="voicemail/vm-followed_by.wav"/>
+	<action function="say" data="${VM-Key-Terminate}" method="pronounced" type="name_spelled"/>-->
+        </match>
+      </input>
+    </macro>
   
     <macro name="record_file_check">
       <input>
@@ -150,6 +169,7 @@
         </match>
       </input>
     </macro>
+
   
     <macro name="record_urgent_check">
       <input>
@@ -190,10 +210,11 @@
     <macro name="listen_file_check">
       <input>
         <match>
-  	<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Next-Msg}:voicemail/vm-for_next_msg.wav"/>
+  	<!--<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Next-Msg}:voicemail/vm-for_next_msg.wav"/>--> <!-- Not existant in callie recordings -->
   	<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Listen-File}:voicemail/vm-listen_to_recording.wav"/>
   	<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Save-File}:voicemail/vm-save_recording.wav"/>
   	<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Delete-File}:voicemail/vm-delete_recording.wav"/>
+  	<action function="phrase" phrase="press_key@protovm" data="${VM-Key-Main-Forward}:voicemail/vm-to_forward.wav"/>
        </match>
       </input>
       <input field="${VM-Message-Email}" pattern="^$">

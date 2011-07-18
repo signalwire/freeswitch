@@ -77,6 +77,8 @@
 #include <spandsp/private/t4_t6_encode.h>
 /*#include <spandsp/private/t81_t82_arith_coding.h>*/
 /*#include <spandsp/private/t85.h>*/
+/*#include <spandsp/private/t42.h>*/
+/*#include <spandsp/private/t43.h>*/
 #include <spandsp/private/t4_rx.h>
 #include <spandsp/private/t4_tx.h>
 #include <spandsp/private/t30.h>

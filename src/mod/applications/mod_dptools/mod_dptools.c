@@ -1352,29 +1352,31 @@ SWITCH_STANDARD_API(strftime_api_function)
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_time_t thetime;
-	char *p;
+	char *p, *q = NULL;
 	char *mycmd = NULL;
 
 	if (!zstr(cmd)) {
 		mycmd = strdup(cmd);
+		q = mycmd;
 	}
 
-	if (!zstr(mycmd) && (p = strchr(cmd, '|'))) {
+	if (!zstr(q) && (p = strchr(q, '|'))) {
 		*p++ = '\0';
 		
-		thetime = switch_time_make(atol(cmd), 0);
-		cmd = p + 1;
+		thetime = switch_time_make(atol(q), 0);
+		q = p + 1;
 	} else {
 		thetime = switch_micro_time_now();
 	}
 	switch_time_exp_lt(&tm, thetime);
 
-	if (zstr(cmd)) {
+	if (zstr(q)) {
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	} else {
-		switch_strftime(date, &retsize, sizeof(date), cmd, &tm);
+		switch_strftime(date, &retsize, sizeof(date), q, &tm);
 	}
 	stream->write_function(stream, "%s", date);
+	switch_safe_free(mycmd);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1835,10 +1837,10 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 
 				switch_caller_extension_add_application(peer_session, extension, app, app_arg);
 				switch_channel_set_caller_extension(peer_channel, extension);
-				switch_channel_set_flag(peer_channel, CF_TRANSFER);
+				switch_channel_set_state(peer_channel, CS_RESET);
+				switch_channel_wait_for_state(peer_channel, channel, CS_RESET);
 				switch_channel_set_state(peer_channel, CS_EXECUTE);
 				switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, NULL);
-
 				return SWITCH_STATUS_FALSE;
 			}
 
@@ -2517,6 +2519,7 @@ static void *SWITCH_THREAD_FUNC camp_music_thread(switch_thread_t *thread, void 
 	switch_core_session_rwunlock(session);
 
 	stake->running = 0;
+
 	return NULL;
 }
 
@@ -2538,6 +2541,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	switch_threadattr_t *thd_attr = NULL;
 	char *camp_data = NULL;
 	switch_status_t status;
+	int camp_loops = 0;
 
 	if (zstr(data)) {
 		return;
@@ -2607,7 +2611,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 
 		do {
 			fail = 0;
-			status = switch_ivr_originate(NULL, &peer_session, &cause, camp_data, campon_timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL);
 
 			if (!switch_channel_ready(caller_channel)) {
 				fail = 1;
@@ -2635,22 +2638,29 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 					thread_started = 1;
 				}
 
+				if (camp_loops++) {
+					if (--campon_retries <= 0 || stake.do_xfer) {
+						camping = 0;
+						stake.do_xfer = 1;
+						break;
+					}
 
-				if (--campon_retries <= 0 || stake.do_xfer) {
-					camping = 0;
-					stake.do_xfer = 1;
-					break;
-				}
-
-				if (fail) {
-					int64_t wait = campon_sleep * 1000000;
-
-					while (stake.running && wait > 0 && switch_channel_ready(caller_channel)) {
-						switch_yield(100000);
-						wait -= 100000;
+					if (fail) {
+						int64_t wait = campon_sleep * 1000000;
+						
+						while (stake.running && wait > 0 && switch_channel_ready(caller_channel)) {
+							switch_yield(100000);
+							wait -= 100000;
+						}
 					}
 				}
 			}
+
+			status = switch_ivr_originate(NULL, &peer_session, 
+										  &cause, camp_data, campon_timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE, 
+										  switch_channel_get_cause_ptr(caller_channel));
+
+
 		} while (camping && switch_channel_ready(caller_channel));
 
 		if (thread) {

@@ -152,6 +152,8 @@ switch_status_t rtmp_on_init(switch_core_session_t *session)
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
+
+	switch_channel_set_flag(channel, CF_CNG_PLC);
 	
 	rtmp_notify_call_state(session);
 	
@@ -915,7 +917,7 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 		goto fail;
 	}
 
-	return SWITCH_CAUSE_NONE;
+	return SWITCH_CAUSE_SUCCESS;
 	
 fail:
 	switch_core_session_destroy(newsession);
@@ -1177,10 +1179,12 @@ switch_status_t rtmp_session_check_user(rtmp_session_t *rsession, const char *us
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	
 	switch_thread_rwlock_rdlock(rsession->account_rwlock);
-	for (account = rsession->account; account; account = account->next) {
-		if (!strcmp(account->user, user) && !strcmp(account->domain, domain)) {
-			status = SWITCH_STATUS_SUCCESS;
-			break;
+	if (user && domain) {
+		for (account = rsession->account; account; account = account->next) {
+			if (account->user && account->domain && !strcmp(account->user, user) && !strcmp(account->domain, domain)) {
+				status = SWITCH_STATUS_SUCCESS;
+				break;
+			}
 		}
 	}
 	switch_thread_rwlock_unlock(rsession->account_rwlock);
@@ -1609,7 +1613,7 @@ SWITCH_STANDARD_API(rtmp_function)
 			}
 			
 			if (!zstr(dest)) {
-					if (rtmp_session_create_call(rsession, &newsession, 0, RTMP_DEFAULT_STREAM_AUDIO, dest, user, domain, NULL) != SWITCH_STATUS_SUCCESS) {
+					if (rtmp_session_create_call(rsession, &newsession, 0, RTMP_DEFAULT_STREAM_AUDIO, dest, user, domain, NULL) != SWITCH_CAUSE_SUCCESS) {
 						stream->write_function(stream, "-ERR Couldn't create new call\n");
 					} else {
 						rtmp_private_t *new_pvt = switch_core_session_get_private(newsession);

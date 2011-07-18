@@ -293,7 +293,7 @@ static int decode_test_data_file(int mode, const char *filename)
             break;
         v18_rx(v18_state, amp, len);
     }
-    if (sf_close(inhandle) != 0)
+    if (sf_close_telephony(inhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
         exit(2);
@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
     basic_tests(V18_MODE_5BIT_45);
     if (log_audio)
     {
-        if (sf_close(outhandle) != 0)
+        if (sf_close_telephony(outhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
             exit(2);

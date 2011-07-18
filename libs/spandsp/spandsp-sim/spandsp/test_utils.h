@@ -69,6 +69,8 @@ SPAN_DECLARE(SNDFILE *) sf_open_telephony_read(const char *name, int channels);
 
 SPAN_DECLARE(SNDFILE *) sf_open_telephony_write(const char *name, int channels);
 
+SPAN_DECLARE(int) sf_close_telephony(SNDFILE *handle);
+
 #ifdef __cplusplus
 }
 #endif

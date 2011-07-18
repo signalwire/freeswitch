@@ -3721,6 +3721,9 @@ static int nua_bye_client_init(nua_client_request_t *cr,
 static int nua_bye_client_request(nua_client_request_t *cr,
 				  msg_t *msg, sip_t *sip,
 				  tagi_t const *tags);
+static int nua_bye_client_response(nua_client_request_t *cr,
+				      int status, char const *phrase,
+				      sip_t const *sip);
 static int nua_bye_client_report(nua_client_request_t *cr,
 				 int status, char const *phrase,
 				 sip_t const *sip,
@@ -3739,7 +3742,7 @@ nua_client_methods_t const nua_bye_client_methods = {
   nua_bye_client_init,		/* crm_init */
   nua_bye_client_request,	/* crm_send */
   NULL,				/* crm_check_restart */
-  NULL,				/* crm_recv */
+  nua_bye_client_response,	/* crm_recv */
   NULL,				/* crm_preliminary */
   nua_bye_client_report,	/* crm_report */
   NULL,				/* crm_complete */
@@ -3817,6 +3820,18 @@ static int nua_bye_client_request(nua_client_request_t *cr,
   }
 
   return error;
+}
+static int nua_bye_client_response(nua_client_request_t *cr,
+				      int status, char const *phrase,
+				      sip_t const *sip) {
+
+  nua_dialog_usage_t *du = cr->cr_usage;
+  nua_session_usage_t *ss = nua_dialog_usage_private(du);
+
+  if (ss && ss->ss_reporting && status >= 900)
+    return 1;
+
+  return nua_base_client_response(cr, status, phrase, sip, NULL);
 }
 
 /** @NUA_EVENT nua_r_bye

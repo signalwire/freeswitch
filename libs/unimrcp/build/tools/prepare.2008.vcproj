@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9.00"
+	Name="prepare"
+	ProjectGUID="{01D63BF5-7798-4746-852A-4B45229BB735}"
+	RootNamespace="prepare"
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\apr.vsprops;$(ProjectDir)..\..\build\vsprops\sofiasip.vsprops"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="xcopy &quot;$(AprDir)\$(ConfigurationName)\libapr-1.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(AprUtilDir)\$(ConfigurationName)\libaprutil-1.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(AprIconvDir)\$(ConfigurationName)\libapriconv-1.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(SofiaDir)\win32\libsofia-sip-ua\$(ConfigurationName)\libsofia_sip_ua.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(SofiaDir)\win32\pthread\pthreadVC2.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(ConfigurationName)\conf&quot; xcopy &quot;$(SolutionDir)conf\*.xml&quot; &quot;$(SolutionDir)$(ConfigurationName)\conf\&quot; /Y&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(ConfigurationName)\data&quot; xcopy &quot;$(SolutionDir)data\*&quot; &quot;$(SolutionDir)$(ConfigurationName)\data\&quot; /Y&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(ConfigurationName)\log&quot; mkdir &quot;$(SolutionDir)$(ConfigurationName)\log\&quot;&#x0D;&#x0A;"
+				ExcludedFromBuild="false"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			ConfigurationType="10"
+			InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\apr.vsprops;$(ProjectDir)..\..\build\vsprops\sofiasip.vsprops"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="xcopy &quot;$(AprDir)\$(ConfigurationName)\libapr-1.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(AprUtilDir)\$(ConfigurationName)\libaprutil-1.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(AprIconvDir)\$(ConfigurationName)\libapriconv-1.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(SofiaDir)\win32\libsofia-sip-ua\$(ConfigurationName)\libsofia_sip_ua.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;xcopy &quot;$(SofiaDir)\win32\pthread\pthreadVC2.dll&quot; &quot;$(SolutionDir)$(ConfigurationName)\bin\&quot; /Y&#x0D;&#x0A;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(ConfigurationName)\conf&quot; xcopy &quot;$(SolutionDir)conf\*.xml&quot; &quot;$(SolutionDir)$(ConfigurationName)\conf\&quot; /Y&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(ConfigurationName)\data&quot; xcopy &quot;$(SolutionDir)data\*&quot; &quot;$(SolutionDir)$(ConfigurationName)\data\&quot; /Y&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(ConfigurationName)\log&quot; mkdir &quot;$(SolutionDir)$(ConfigurationName)\log\&quot;&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+</VisualStudioProject>

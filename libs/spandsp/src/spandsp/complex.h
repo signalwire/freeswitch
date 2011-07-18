@@ -477,6 +477,12 @@ static __inline__ complexi32_t complex_conji32(const complexi32_t *x)
 }
 /*- End of function --------------------------------------------------------*/
 
+static __inline__ int32_t poweri16(const complexi16_t *x)
+{
+    return (int32_t) x->re*x->re + (int32_t) x->im*x->im;
+}
+/*- End of function --------------------------------------------------------*/
+
 static __inline__ float powerf(const complexf_t *x)
 {
     return x->re*x->re + x->im*x->im;

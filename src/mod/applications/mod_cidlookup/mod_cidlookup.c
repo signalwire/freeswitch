@@ -554,6 +554,7 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	char *name = NULL;
 	char *url_query = NULL;
 	cid_data_t *cid = NULL;
+	cid_data_t *cidtmp = NULL;
 	switch_bool_t save_cache = SWITCH_FALSE;
 
 	cid = switch_core_alloc(pool, sizeof(cid_data_t));
@@ -573,8 +574,9 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	}
 
 	if (globals.cache) {
-		cid = check_cache(pool, number);
-		if (cid) {
+		cidtmp = check_cache(pool, number);
+		if (cidtmp) {
+			cid = cidtmp;
 			cid->src = switch_core_sprintf(pool, "%s (cache)", cid->src);
 			goto done;
 		}
