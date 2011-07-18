@@ -422,7 +422,7 @@ ftdm_status_t sngisdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management
 
 	cfg.t.cfg.s.bdDLSAP.n200		= 3;             	/* n200 */
 	cfg.t.cfg.s.bdDLSAP.congTmr		= 300;           	/* congestion timer */
-	cfg.t.cfg.s.bdDLSAP.t200Tmr		= 1;				/* t1 changed from 25 */
+	cfg.t.cfg.s.bdDLSAP.t200Tmr		= 3;				/* t1 changed from 25 */
 	cfg.t.cfg.s.bdDLSAP.t203Tmr		= 10;				/* t3 changed from 50 */
 	cfg.t.cfg.s.bdDLSAP.mod			= 128;           	/* modulo */
 	cfg.t.cfg.s.bdDLSAP.selector	= 0;				/* Selector 0 */
@@ -798,8 +798,10 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	cfg.t.cfg.s.inDLSAP.tmr.t322.val = 4;
 	cfg.t.cfg.s.inDLSAP.tmr.t332.enb = FALSE;
 	cfg.t.cfg.s.inDLSAP.tmr.t332.val = 35;
+
 	cfg.t.cfg.s.inDLSAP.tmr.tRst.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.tRst.val = 8;
+
 	cfg.t.cfg.s.inDLSAP.tmr.tAns.enb = FALSE;  /* non-standard timer */
 	cfg.t.cfg.s.inDLSAP.tmr.t396.enb = FALSE;  /* non-standard timer */
 	cfg.t.cfg.s.inDLSAP.tmr.t397.enb = TRUE;  /* non-standard timer */

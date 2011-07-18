@@ -911,7 +911,7 @@ int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_l1_frame_t *l1_frame)
 				string_len += sprintf(&string[string_len], "0x%02x ", l1_frame->data[i]);
 			}
 
-			ftdm_log_chan(signal_data->dchan, FTDM_LOG_CRIT, "\nTX [%s]\n", string);
+			ftdm_log_chan(signal_data->dchan, FTDM_LOG_CRIT, "\nL1 TX [%s]\n", string);
 #endif
 			
 			status = signal_data->dchan->fio->write(signal_data->dchan, l1_frame->data, (ftdm_size_t*)&length);
