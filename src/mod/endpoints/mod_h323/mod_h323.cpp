@@ -1138,8 +1138,7 @@ bool FSH323Connection::OnAlerting(const H323SignalPDU &alertingPDU, const PStrin
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>PFSH323Connection::OnAlerting user = %s [%p]\n",(const char *)user,this);
 	unsigned pi;
-	switch_status_t status = switch_channel_mark_ring_ready(m_fsChannel);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"----------->OnAlerting return = %d\n",status);
+	switch_channel_mark_ring_ready(m_fsChannel);
 	
 	if (!alertingPDU.GetQ931().GetProgressIndicator(pi))
 		pi = 0;
@@ -1151,7 +1150,7 @@ bool FSH323Connection::OnAlerting(const H323SignalPDU &alertingPDU, const PStrin
 			m_ChannelProgress = true;
 		}
 	}
-	return ( status == SWITCH_STATUS_SUCCESS);
+	return H323Connection::OnAlerting(alertingPDU,user);
 }
 
 void FSH323Connection::AnsweringCall(AnswerCallResponse response)
