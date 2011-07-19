@@ -1311,10 +1311,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 
 	memset(&globals, 0, sizeof(globals));
 
-	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
-		return status;
-	}
-
 	switch_core_hash_init(&globals.call_hash, module_pool);
 	switch_core_hash_init(&globals.sh_streams, module_pool);
 	switch_core_hash_init(&globals.endpoints, module_pool);
@@ -1335,6 +1331,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 #if defined(sun) || defined(__sun)
 	globals.dual_streams = 0;
 #endif
+
+	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
 
 	if (dump_info(0)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't find any audio devices!\n");
