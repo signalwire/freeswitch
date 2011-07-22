@@ -41,6 +41,9 @@
 #define SWITCH_APR_H
 
 SWITCH_BEGIN_EXTERN_C
+
+SWITCH_DECLARE(int) switch_status_is_timeup(int status);
+
 #ifdef WIN32
 typedef DWORD switch_thread_id_t;
 #else

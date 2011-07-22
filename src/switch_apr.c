@@ -69,6 +69,11 @@
 
 /* apr stubs */
 
+SWITCH_DECLARE(int) switch_status_is_timeup(int status)
+{
+	return APR_STATUS_IS_TIMEUP(status);
+}
+
 /* Memory Pools */
 
 SWITCH_DECLARE(switch_thread_id_t) switch_thread_self(void)
