@@ -4588,6 +4588,7 @@ static ftdm_status_t load_config(void)
 	ftdm_analog_start_type_t tmp;
 	ftdm_size_t len = 0;
 	ftdm_channel_config_t chan_config;
+	ftdm_status_t ret = FTDM_SUCCESS;
 
 	memset(&chan_config, 0, sizeof(chan_config));
 	sprintf(chan_config.group_name, "__default");
@@ -4622,6 +4623,13 @@ static ftdm_status_t load_config(void)
 
 				if ((name = strchr(type, ' '))) {
 					*name++ = '\0';
+				}
+
+				/* Verify is trunk_type was specified for previous span */
+				if (span && span->trunk_type == FTDM_TRUNK_NONE) {
+					ftdm_log(FTDM_LOG_ERROR, "trunk_type not specified for span %d (%s)\n", span->span_id, span->name);
+					ret = FTDM_FAIL;
+					goto done;
 				}
 
 				if (ftdm_span_create(type, name, &span) == FTDM_SUCCESS) {
@@ -4821,11 +4829,22 @@ static ftdm_status_t load_config(void)
 			ftdm_log(FTDM_LOG_ERROR, "unknown param [%s] '%s' / '%s'\n", cfg.category, var, val);
 		}
 	}
+
+	/* Verify is trunk_type was specified for the last span */
+	if (span && span->trunk_type == FTDM_TRUNK_NONE) {
+		ftdm_log(FTDM_LOG_ERROR, "trunk_type not specified for span %d (%s)\n", span->span_id, span->name);
+		ret = FTDM_FAIL;
+	}
+
+done:
 	ftdm_config_close_file(&cfg);
 
 	ftdm_log(FTDM_LOG_INFO, "Configured %u channel(s)\n", configured);
+	if (!configured) {
+		ret = FTDM_FAIL;
+	}
 	
-	return configured ? FTDM_SUCCESS : FTDM_FAIL;
+	return ret;
 }
 
 static ftdm_status_t process_module_config(ftdm_io_interface_t *fio)
