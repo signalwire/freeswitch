@@ -910,9 +910,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 							ringback.silence = atoi(p);
 						}
 					}
-					if (ringback.silence <= 0) {
-						ringback.silence = 400;
-					}
+					SWITCH_IVR_VERIFY_SILENCE_DIVISOR(ringback.silence);
 				} else {
 					switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
 					switch_buffer_set_loops(ringback.audio_buffer, -1);
@@ -1203,9 +1201,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 					ringback->silence = atoi(c);
 				}
 			}
-			if (ringback->silence <= 0) {
-				ringback->silence = 400;
-			}
+			SWITCH_IVR_VERIFY_SILENCE_DIVISOR(ringback->silence);
 		} else {
 			switch_buffer_create_dynamic(&ringback->audio_buffer, 512, 1024, 0);
 			switch_buffer_set_loops(ringback->audio_buffer, -1);
@@ -1378,7 +1374,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 	
 	if (channel) {
+		const char *cid;
+
 		switch_channel_process_export(channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
+
+		if ((cid = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", cid);
+		}
+
+		if ((cid = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid);
+		}
 	}
 
 	/* strip leading spaces */
@@ -2444,7 +2450,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_event_destroy(&originate_var_event);
 
 				if (reason != SWITCH_CAUSE_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n",
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Cannot create outgoing channel of type [%s] cause: [%s]\n",
 									  chan_type, switch_channel_cause2str(reason));
 					if (local_var_event) switch_event_destroy(&local_var_event);
 					
@@ -2938,7 +2944,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				oglobals.idx = IDX_CANCEL;
 			}
 
-			if (oglobals.session && (ringback_data || !(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&
+			if (oglobals.session && (ringback_data || !(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) ||
 														switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)))) {
 				switch_core_session_reset(oglobals.session, SWITCH_FALSE, SWITCH_TRUE);
 			}
@@ -3127,10 +3133,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							switch_core_session_t *holding_session;
 
 							if ((holding_session = switch_core_session_locate(holding))) {
-								switch_channel_set_variable(switch_core_session_get_channel(holding_session), SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
+								switch_channel_t *holding_channel = switch_core_session_get_channel(holding_session);
+								
+								switch_channel_set_variable(holding_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
+
+								if (caller_channel && switch_true(switch_channel_get_variable(caller_channel, "recording_follow_transfer"))) {
+									switch_core_media_bug_transfer_recordings(session, originate_status[i].peer_session);
+								}
+
+								if (switch_true(switch_channel_get_variable(holding_channel, "recording_follow_transfer"))) {
+									switch_core_media_bug_transfer_recordings(holding_session, originate_status[i].peer_session);
+								}
+								
 								switch_core_session_rwunlock(holding_session);
 							}
 							switch_channel_set_flag(originate_status[i].peer_channel, CF_LAZY_ATTENDED_TRANSFER);
+							
 							switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(originate_status[i].peer_session));
 							holding = NULL;
 						} else {

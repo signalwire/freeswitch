@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: umcconsole.h 1525 2010-02-16 14:58:56Z achaloyan $
  */
 
-#ifndef __UMC_CONSOLE_H__
-#define __UMC_CONSOLE_H__
+#ifndef UMC_CONSOLE_H
+#define UMC_CONSOLE_H
 
 /**
  * @file umcconsole.h
@@ -47,12 +49,12 @@ private:
 	struct UmcOptions
 	{
 		const char*        m_RootDirPath;
-		apt_log_priority_e m_LogPriority;
-		apt_log_output_e   m_LogOutput;
+		const char*        m_LogPriority;
+		const char*        m_LogOutput;
 	};
 
 	UmcOptions    m_Options;
 	UmcFramework* m_pFramework;
 };
 
-#endif /*__UMC_CONSOLE_H__*/
+#endif /* UMC_CONSOLE_H */

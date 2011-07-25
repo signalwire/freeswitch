@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_generic_header.c 1710 2010-05-24 17:36:19Z achaloyan $
  */
 
 #include "mrcp_generic_header.h"
@@ -56,15 +58,20 @@ static apt_bool_t mrcp_request_id_list_parse(mrcp_request_id_list_t *request_id_
 }
 
 /** Generate mrcp request-id list */
-static apt_bool_t mrcp_request_id_list_generate(mrcp_request_id_list_t *request_id_list, apt_text_stream_t *stream)
+static apt_bool_t mrcp_request_id_list_generate(mrcp_request_id_list_t *request_id_list, apt_str_t *str, apr_pool_t *pool)
 {
-	size_t i;
+	apr_size_t i;
+	char buf[256];
+	apt_text_stream_t stream;
+	apt_text_stream_init(&stream,buf,sizeof(buf));
 	for(i=0; i<request_id_list->count; i++) {
-		mrcp_request_id_generate(request_id_list->ids[i],stream);
+		mrcp_request_id_generate(request_id_list->ids[i],&stream);
 		if(i < request_id_list->count-1) {
-			*stream->pos++ = ',';
+			*stream.pos++ = ',';
 		}
 	}
+
+	apt_string_assign_n(str,stream.text.buf, stream.pos - stream.text.buf, pool);
 	return TRUE;
 }
 
@@ -84,7 +91,7 @@ static void mrcp_generic_header_init(mrcp_generic_header_t *generic_header)
 	apt_string_reset(&generic_header->cache_control);
 	apt_string_reset(&generic_header->logging_tag);
 	generic_header->vendor_specific_params = NULL;
-	/* initializes additionnal MRCP V2 generic headers */
+	/* initializes additionnal MRCP v2 generic header fields */
 	apt_string_reset(&generic_header->accept);
 	generic_header->fetch_timeout = 0;
 	apt_string_reset(&generic_header->set_cookie);
@@ -111,34 +118,34 @@ static apt_bool_t mrcp_generic_header_parse(mrcp_header_accessor_t *accessor, si
 			mrcp_request_id_list_parse(&generic_header->active_request_id_list,value);
 			break;
 		case GENERIC_HEADER_PROXY_SYNC_ID:
-			apt_string_copy(&generic_header->proxy_sync_id,value,pool);
+			generic_header->proxy_sync_id = *value;
 			break;
 		case GENERIC_HEADER_ACCEPT_CHARSET:
-			apt_string_copy(&generic_header->accept_charset,value,pool);
+			generic_header->accept_charset = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_TYPE:
-			apt_string_copy(&generic_header->content_type,value,pool);
+			generic_header->content_type =  *value;
 			break;
 		case GENERIC_HEADER_CONTENT_ID:
-			apt_string_copy(&generic_header->content_id,value,pool);
+			generic_header->content_id = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_BASE:
-			apt_string_copy(&generic_header->content_base,value,pool);
+			generic_header->content_base = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_ENCODING:
-			apt_string_copy(&generic_header->content_encoding,value,pool);
+			generic_header->content_encoding = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_LOCATION:
-			apt_string_copy(&generic_header->content_location,value,pool);
+			generic_header->content_location = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_LENGTH:
 			generic_header->content_length = apt_size_value_parse(value);
 			break;
 		case GENERIC_HEADER_CACHE_CONTROL:
-			apt_string_copy(&generic_header->cache_control,value,pool);
+			generic_header->cache_control = *value;
 			break;
 		case GENERIC_HEADER_LOGGING_TAG:
-			apt_string_copy(&generic_header->logging_tag,value,pool);
+			generic_header->logging_tag = *value;
 			break;
 		case GENERIC_HEADER_VENDOR_SPECIFIC_PARAMS:
 			if(!generic_header->vendor_specific_params) {
@@ -147,16 +154,16 @@ static apt_bool_t mrcp_generic_header_parse(mrcp_header_accessor_t *accessor, si
 			apt_pair_array_parse(generic_header->vendor_specific_params,value,pool);
 			break;
 		case GENERIC_HEADER_ACCEPT:
-			apt_string_copy(&generic_header->accept,value,pool);
+			generic_header->accept = *value;
 			break;
 		case GENERIC_HEADER_FETCH_TIMEOUT:
 			generic_header->fetch_timeout = apt_size_value_parse(value);
 			break;
 		case GENERIC_HEADER_SET_COOKIE:
-			apt_string_copy(&generic_header->set_cookie,value,pool);
+			generic_header->set_cookie = *value;
 			break;
 		case GENERIC_HEADER_SET_COOKIE2:
-			apt_string_copy(&generic_header->set_cookie2,value,pool);
+			generic_header->set_cookie2 = *value;
 			break;
 		default:
 			status = FALSE;
@@ -165,57 +172,57 @@ static apt_bool_t mrcp_generic_header_parse(mrcp_header_accessor_t *accessor, si
 }
 
 /** Generate generic-header */
-static apt_bool_t mrcp_generic_header_generate(mrcp_header_accessor_t *accessor, size_t id, apt_text_stream_t *value)
+static apt_bool_t mrcp_generic_header_generate(const mrcp_header_accessor_t *accessor, apr_size_t id, apt_str_t *value, apr_pool_t *pool)
 {
 	mrcp_generic_header_t *generic_header = accessor->data;
 	switch(id) {
 		case GENERIC_HEADER_ACTIVE_REQUEST_ID_LIST:
-			mrcp_request_id_list_generate(&generic_header->active_request_id_list,value);
+			mrcp_request_id_list_generate(&generic_header->active_request_id_list,value,pool);
 			break;
 		case GENERIC_HEADER_PROXY_SYNC_ID:
-			apt_string_value_generate(&generic_header->proxy_sync_id,value);
+			*value = generic_header->proxy_sync_id;
 			break;
 		case GENERIC_HEADER_ACCEPT_CHARSET:
-			apt_string_value_generate(&generic_header->accept_charset,value);
+			*value = generic_header->accept_charset;
 			break;
 		case GENERIC_HEADER_CONTENT_TYPE:
-			apt_string_value_generate(&generic_header->content_type,value);
+			*value = generic_header->content_type;
 			break;
 		case GENERIC_HEADER_CONTENT_ID:
-			apt_string_value_generate(&generic_header->content_id,value);
+			*value = generic_header->content_id;
 			break;
 		case GENERIC_HEADER_CONTENT_BASE:
-			apt_string_value_generate(&generic_header->content_base,value);
+			*value = generic_header->content_base;
 			break;
 		case GENERIC_HEADER_CONTENT_ENCODING:
-			apt_string_value_generate(&generic_header->content_encoding,value);
+			*value = generic_header->content_encoding;
 			break;
 		case GENERIC_HEADER_CONTENT_LOCATION:
-			apt_string_value_generate(&generic_header->content_location,value);
+			*value = generic_header->content_location;
 			break;
 		case GENERIC_HEADER_CONTENT_LENGTH:
-			apt_size_value_generate(generic_header->content_length,value);
+			apt_size_value_generate(generic_header->content_length,value,pool);
 			break;
 		case GENERIC_HEADER_CACHE_CONTROL:
-			apt_string_value_generate(&generic_header->cache_control,value);
+			*value = generic_header->cache_control;
 			break;
 		case GENERIC_HEADER_LOGGING_TAG:
-			apt_string_value_generate(&generic_header->logging_tag,value);
+			*value = generic_header->logging_tag;
 			break;
 		case GENERIC_HEADER_VENDOR_SPECIFIC_PARAMS:
-			apt_pair_array_generate(generic_header->vendor_specific_params,value);
+			apt_pair_array_generate(generic_header->vendor_specific_params,value,pool);
 			break;
 		case GENERIC_HEADER_ACCEPT:
-			apt_string_value_generate(&generic_header->accept,value);
+			*value = generic_header->accept;
 			break;
 		case GENERIC_HEADER_FETCH_TIMEOUT:
-			apt_size_value_generate(generic_header->fetch_timeout,value);
+			apt_size_value_generate(generic_header->fetch_timeout,value,pool);
 			break;
 		case GENERIC_HEADER_SET_COOKIE:
-			apt_string_value_generate(&generic_header->set_cookie,value);
+			*value = generic_header->set_cookie;
 			break;
 		case GENERIC_HEADER_SET_COOKIE2:
-			apt_string_value_generate(&generic_header->set_cookie2,value);
+			*value = generic_header->set_cookie2;
 			break;
 		default:
 			break;
@@ -224,7 +231,7 @@ static apt_bool_t mrcp_generic_header_generate(mrcp_header_accessor_t *accessor,
 }
 
 /** Duplicate generic-header */
-static apt_bool_t mrcp_generic_header_duplicate(mrcp_header_accessor_t *accessor, const mrcp_header_accessor_t *src, size_t id, apr_pool_t *pool)
+static apt_bool_t mrcp_generic_header_duplicate(mrcp_header_accessor_t *accessor, const mrcp_header_accessor_t *src, apr_size_t id, const apt_str_t *value, apr_pool_t *pool)
 {
 	mrcp_generic_header_t *generic_header = accessor->data;
 	const mrcp_generic_header_t *src_generic_header = src->data;
@@ -238,49 +245,49 @@ static apt_bool_t mrcp_generic_header_duplicate(mrcp_header_accessor_t *accessor
 		case GENERIC_HEADER_ACTIVE_REQUEST_ID_LIST:
 			break;
 		case GENERIC_HEADER_PROXY_SYNC_ID:
-			apt_string_copy(&generic_header->proxy_sync_id,&src_generic_header->proxy_sync_id,pool);
+			generic_header->proxy_sync_id = *value;
 			break;
 		case GENERIC_HEADER_ACCEPT_CHARSET:
-			apt_string_copy(&generic_header->accept_charset,&src_generic_header->accept_charset,pool);
+			generic_header->accept_charset = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_TYPE:
-			apt_string_copy(&generic_header->content_type,&src_generic_header->content_type,pool);
+			generic_header->content_type = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_ID:
-			apt_string_copy(&generic_header->content_id,&src_generic_header->content_id,pool);
+			generic_header->content_id = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_BASE:
-			apt_string_copy(&generic_header->content_base,&src_generic_header->content_base,pool);
+			generic_header->content_base = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_ENCODING:
-			apt_string_copy(&generic_header->content_encoding,&src_generic_header->content_encoding,pool);
+			generic_header->content_encoding = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_LOCATION:
-			apt_string_copy(&generic_header->content_location,&src_generic_header->content_location,pool);
+			generic_header->content_location = *value;
 			break;
 		case GENERIC_HEADER_CONTENT_LENGTH:
 			generic_header->content_length = src_generic_header->content_length;
 			break;
 		case GENERIC_HEADER_CACHE_CONTROL:
-			apt_string_copy(&generic_header->cache_control,&src_generic_header->cache_control,pool);
+			generic_header->cache_control = *value;
 			break;
 		case GENERIC_HEADER_LOGGING_TAG:
-			apt_string_copy(&generic_header->logging_tag,&src_generic_header->logging_tag,pool);
+			generic_header->logging_tag = *value;
 			break;
 		case GENERIC_HEADER_VENDOR_SPECIFIC_PARAMS:
 			generic_header->vendor_specific_params = apt_pair_array_copy(src_generic_header->vendor_specific_params,pool);
 			break;
 		case GENERIC_HEADER_ACCEPT:
-			apt_string_copy(&generic_header->accept,&src_generic_header->accept,pool);
+			generic_header->accept = *value;
 			break;
 		case GENERIC_HEADER_FETCH_TIMEOUT:
 			generic_header->fetch_timeout = src_generic_header->fetch_timeout;
 			break;
 		case GENERIC_HEADER_SET_COOKIE:
-			apt_string_copy(&generic_header->set_cookie,&src_generic_header->set_cookie,pool);
+			generic_header->set_cookie = *value;
 			break;
 		case GENERIC_HEADER_SET_COOKIE2:
-			apt_string_copy(&generic_header->set_cookie2,&src_generic_header->set_cookie2,pool);
+			generic_header->set_cookie2 = *value;
 			break;
 		default:
 			status = FALSE;
@@ -317,10 +324,10 @@ MRCP_DECLARE(apt_bool_t) active_request_id_list_append(mrcp_generic_header_t *ge
 }
 
 /** Find request id in active request id list */
-MRCP_DECLARE(apt_bool_t) active_request_id_list_find(mrcp_generic_header_t *generic_header, mrcp_request_id request_id)
+MRCP_DECLARE(apt_bool_t) active_request_id_list_find(const mrcp_generic_header_t *generic_header, mrcp_request_id request_id)
 {
 	size_t i;
-	mrcp_request_id_list_t *request_id_list = &generic_header->active_request_id_list;
+	const mrcp_request_id_list_t *request_id_list = &generic_header->active_request_id_list;
 	for(i=0; i<request_id_list->count; i++) {
 		if(request_id_list->ids[i] == request_id) {
 			return TRUE;

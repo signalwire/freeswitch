@@ -69,6 +69,12 @@ SPAN_DECLARE(const char *) signal_status_to_str(int status)
         return "Poor signal quality";
     case SIG_STATUS_MODEM_RETRAIN_OCCURRED:
         return "Modem retrain occurred";
+    case SIG_STATUS_LINK_CONNECTED:
+        return "Link connected";
+    case SIG_STATUS_LINK_DISCONNECTED:
+        return "Link disconnected";
+    case SIG_STATUS_LINK_ERROR:
+        return "Link error";
     }
     return "???";
 }

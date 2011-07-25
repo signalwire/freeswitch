@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +12,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: umcsession.cpp 1695 2010-05-19 18:56:15Z achaloyan $
  */
 
 #include "umcsession.h"
 #include "umcscenario.h"
+#include "mrcp_message.h"
 
 UmcSession::UmcSession(const UmcScenario* pScenario) :
 	m_pScenario(pScenario),
 	m_pMrcpProfile(NULL),
 	m_pMrcpApplication(NULL),
 	m_pMrcpSession(NULL),
+	m_pMrcpMessage(NULL),
 	m_Running(false),
 	m_Terminating(false)
 {
@@ -69,6 +73,14 @@ bool UmcSession::Run()
 	return ret;
 }
 
+bool UmcSession::Stop()
+{
+	if(m_Terminating)
+		return false;
+
+	return true;
+}
+
 bool UmcSession::Terminate()
 {
 	if(m_Terminating)
@@ -105,7 +117,17 @@ bool UmcSession::OnChannelRemove(mrcp_channel_t *channel, mrcp_sig_status_code_e
 
 bool UmcSession::OnMessageReceive(mrcp_channel_t *channel, mrcp_message_t *message) 
 {
-	return m_Running;
+	if(!m_Running)
+		return false;
+
+	if(!m_pMrcpMessage)
+		return false;
+
+	/* match request identifiers */
+	if(m_pMrcpMessage->start_line.request_id != message->start_line.request_id)
+		return false;
+
+	return true;
 }
 
 bool UmcSession::OnTerminateEvent(mrcp_channel_t *channel)
@@ -129,6 +151,9 @@ bool UmcSession::OnResourceDiscover(mrcp_session_descriptor_t* descriptor, mrcp_
 bool UmcSession::CreateMrcpSession(const char* pProfileName)
 {
 	m_pMrcpSession = mrcp_application_session_create(m_pMrcpApplication,pProfileName,this);
+	char name[32];
+	apr_snprintf(name,sizeof(name),"umc-%s",m_Id);
+	mrcp_application_session_name_set(m_pMrcpSession,name);
 	return (m_pMrcpSession != NULL);
 }
 
@@ -163,6 +188,7 @@ bool UmcSession::SendMrcpRequest(mrcp_channel_t* pMrcpChannel, mrcp_message_t* p
 	if(!m_Running)
 		return false;
 
+	m_pMrcpMessage = pMrcpMessage;
 	return (mrcp_application_message_send(m_pMrcpSession,pMrcpChannel,pMrcpMessage) == TRUE);
 }
 

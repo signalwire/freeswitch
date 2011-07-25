@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_start_line.c 1671 2010-04-28 19:50:29Z achaloyan $
  */
 
 #include <stdlib.h>
@@ -65,10 +67,20 @@ static mrcp_version_e mrcp_version_parse(const apt_str_t *field)
 /** Generate MRCP version */
 static apt_bool_t mrcp_version_generate(mrcp_version_e version, apt_text_stream_t *stream)
 {
+	if(stream->pos + MRCP_NAME_LENGTH + 1 >= stream->end) {
+		return FALSE;
+	}
 	memcpy(stream->pos,MRCP_NAME,MRCP_NAME_LENGTH);
 	stream->pos += MRCP_NAME_LENGTH;
 	*stream->pos++ = MRCP_NAME_VERSION_SEPARATOR;
-	apt_size_value_generate(version,stream);
+
+	if(apt_text_size_value_insert(stream,version) == FALSE) {
+		return FALSE;
+	}
+
+	if(stream->pos + 2 >= stream->end) {
+		return FALSE;
+	}
 	*stream->pos++ = MRCP_VERSION_MAJOR_MINOR_SEPARATOR;
 	*stream->pos++ = '0';
 	return TRUE;
@@ -102,7 +114,7 @@ static APR_INLINE mrcp_status_code_e mrcp_status_code_parse(const apt_str_t *fie
 /** Generate MRCP status-code */
 static APR_INLINE size_t  mrcp_status_code_generate(mrcp_status_code_e status_code, apt_text_stream_t *stream)
 {
-	return apt_size_value_generate(status_code,stream);
+	return apt_text_size_value_insert(stream,status_code);
 }
 
 
@@ -318,18 +330,14 @@ MRCP_DECLARE(void) mrcp_start_line_init(mrcp_start_line_t *start_line)
 }
 
 /** Parse MRCP start-line */
-MRCP_DECLARE(apt_bool_t) mrcp_start_line_parse(mrcp_start_line_t *start_line, apt_text_stream_t *text_stream, apr_pool_t *pool)
+MRCP_DECLARE(apt_bool_t) mrcp_start_line_parse(mrcp_start_line_t *start_line, apt_str_t *str, apr_pool_t *pool)
 {
 	apt_text_stream_t line;
 	apt_str_t field;
 	apt_bool_t status = TRUE;
+
 	start_line->message_type = MRCP_MESSAGE_TYPE_UNKNOWN;
-	if(apt_text_line_read(text_stream,&line.text) == FALSE) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot parse MRCP start-line");
-		return FALSE;
-	}
-	
-	apt_text_stream_reset(&line);
+	apt_text_stream_init(&line,str->buf,str->length);
 	if(apt_text_field_read(&line,APT_TOKEN_SP,TRUE,&field) == FALSE) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot read the first field in start-line");
 		return FALSE;
@@ -383,11 +391,11 @@ MRCP_DECLARE(apt_bool_t) mrcp_start_line_generate(mrcp_start_line_t *start_line,
 		status = mrcp_v2_start_line_generate(start_line,text_stream);
 	}
 
-	if(status == TRUE) {
-		apt_text_eol_insert(text_stream);
+	if(status == FALSE) {
+		return FALSE;
 	}
-	
-	return status;
+
+	return apt_text_eol_insert(text_stream);
 }
 
 /** Finalize MRCP start-line generation */

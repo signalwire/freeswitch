@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_sig_types.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MRCP_SIG_TYPES_H__
-#define __MRCP_SIG_TYPES_H__
+#ifndef MRCP_SIG_TYPES_H
+#define MRCP_SIG_TYPES_H
 
 /**
  * @file mrcp_sig_types.h
@@ -25,6 +27,9 @@
 #include "mrcp_types.h"
 
 APT_BEGIN_EXTERN_C
+
+/** Opaque MRCP signaling settings declaration */
+typedef struct mrcp_sig_settings_t mrcp_sig_settings_t;
 
 /** Opaque MRCP signaling agent declaration */
 typedef struct mrcp_sig_agent_t mrcp_sig_agent_t;
@@ -37,4 +42,4 @@ typedef struct mrcp_session_descriptor_t mrcp_session_descriptor_t;
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_SIG_TYPES_H__*/
+#endif /* MRCP_SIG_TYPES_H */

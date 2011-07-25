@@ -238,7 +238,7 @@ int fs_switch_ivr_originate(switch_core_session_t *session, switch_core_session_
 	}
 
 	if (switch_ivr_originate(session, &peer_session, &cause, bridgeto, timelimit, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Cannot Create Outgoing Channel!\n");
 		switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
 		return;
 	} else {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_control_descriptor.h 1710 2010-05-24 17:36:19Z achaloyan $
  */
 
-#ifndef __MRCP_CONTROL_DESCRIPTOR_H__
-#define __MRCP_CONTROL_DESCRIPTOR_H__
+#ifndef MRCP_CONTROL_DESCRIPTOR_H
+#define MRCP_CONTROL_DESCRIPTOR_H
 
 /**
  * @file mrcp_control_descriptor.h
@@ -110,7 +112,7 @@ MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_answer_create(mrcp_control
 MRCP_DECLARE(void) mrcp_cmid_add(apr_array_header_t *cmid_arr, apr_size_t cmid);
 
 /** Find cmid in cmid_arr */
-MRCP_DECLARE(apt_bool_t) mrcp_cmid_find(apr_array_header_t *cmid_arr, apr_size_t cmid);
+MRCP_DECLARE(apt_bool_t) mrcp_cmid_find(const apr_array_header_t *cmid_arr, apr_size_t cmid);
 
 /** Get MRCP protocol transport name by identifier */
 MRCP_DECLARE(const apt_str_t*) mrcp_proto_get(mrcp_proto_type_e proto);
@@ -142,4 +144,4 @@ MRCP_DECLARE(mrcp_connection_type_e) mrcp_connection_type_find(const apt_str_t *
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_CONTROL_DESCRIPTOR_H__*/
+#endif /* MRCP_CONTROL_DESCRIPTOR_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_state_machine.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __MRCP_STATE_MACHINE_H__
-#define __MRCP_STATE_MACHINE_H__
+#ifndef MRCP_STATE_MACHINE_H
+#define MRCP_STATE_MACHINE_H
 
 /**
  * @file mrcp_state_machine.h
@@ -81,4 +83,4 @@ static APR_INLINE apt_bool_t mrcp_state_machine_deactivate(mrcp_state_machine_t 
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_STATE_MACHINE_H__*/
+#endif /* MRCP_STATE_MACHINE_H */

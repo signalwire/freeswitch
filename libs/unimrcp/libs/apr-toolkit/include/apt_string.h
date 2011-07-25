@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_string.h 1531 2010-02-20 14:19:53Z achaloyan $
  */
 
-#ifndef __APT_STRING_H__
-#define __APT_STRING_H__
+#ifndef APT_STRING_H
+#define APT_STRING_H
 
 /**
  * @file apt_string.h
@@ -65,7 +67,7 @@ static APR_INLINE apr_size_t apt_string_length_get(const apt_str_t *str)
 /** Check whether string is empty. */
 static APR_INLINE apr_size_t apt_string_is_empty(const apt_str_t *str)
 {
-	return str->length ? TRUE : FALSE;
+	return str->length ? FALSE : TRUE;
 }
 
 /**
@@ -140,4 +142,4 @@ static APR_INLINE apt_bool_t apt_string_compare(const apt_str_t *str1, const apt
 
 APT_END_EXTERN_C
 
-#endif /*__APT_STRING_H__*/
+#endif /* APT_STRING_H */

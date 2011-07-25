@@ -40,6 +40,13 @@ extern "C" {
 #include <string.h>
 #include <stdarg.h>
 
+#if (_MSC_VER >= 1400)			// VC8+
+#define stfu_assert(expr) assert(expr);__analysis_assume( expr )
+#endif
+
+#ifndef stfu_assert
+#define stfu_assert(_x) assert(_x)
+#endif
 
 #ifdef  _MSC_VER
 #ifndef uint32_t

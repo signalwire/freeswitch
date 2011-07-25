@@ -1445,13 +1445,16 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_ESLevent_getHeader) {
   ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
+  int arg3 = (int) -1 ;
   char *result = 0 ;
-  zval **args[2];
+  zval **args[3];
+  int arg_count;
   
   SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
+  arg_count = ZEND_NUM_ARGS();
+  if(arg_count<2 || arg_count>3 ||
+    zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
+  WRONG_PARAM_COUNT;
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLevent, 0) < 0) {
@@ -1465,7 +1468,14 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_getHeader) {
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
-  result = (char *)(arg1)->getHeader((char const *)arg2);
+  if(arg_count > 2) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
+    convert_to_long_ex(args[2]);
+    arg3 = (int) Z_LVAL_PP(args[2]);
+    /*@SWIG@*/;
+    
+  }
+  result = (char *)(arg1)->getHeader((char const *)arg2,arg3);
   {
     if(!result) {
       ZVAL_NULL(return_value);
@@ -1603,6 +1613,86 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_addHeader) {
   /*@SWIG@*/;
   
   result = (bool)(arg1)->addHeader((char const *)arg2,(char const *)arg3);
+  {
+    ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_ESLevent_pushHeader) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  zval **args[3];
+  
+  SWIG_ResetError();
+  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLevent, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLevent_pushHeader. Expected SWIGTYPE_p_ESLevent");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  convert_to_string_ex(args[1]);
+  arg2 = (char *) Z_STRVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  convert_to_string_ex(args[2]);
+  arg3 = (char *) Z_STRVAL_PP(args[2]);
+  /*@SWIG@*/;
+  
+  result = (bool)(arg1)->pushHeader((char const *)arg2,(char const *)arg3);
+  {
+    ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_ESLevent_unshiftHeader) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  zval **args[3];
+  
+  SWIG_ResetError();
+  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLevent, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLevent_unshiftHeader. Expected SWIGTYPE_p_ESLevent");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  convert_to_string_ex(args[1]);
+  arg2 = (char *) Z_STRVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  convert_to_string_ex(args[2]);
+  arg3 = (char *) Z_STRVAL_PP(args[2]);
+  /*@SWIG@*/;
+  
+  result = (bool)(arg1)->unshiftHeader((char const *)arg2,(char const *)arg3);
   {
     ZVAL_BOOL(return_value,(result)?1:0);
   }
@@ -2547,6 +2637,8 @@ static zend_function_entry ESL_functions[] = {
  SWIG_ZEND_NAMED_FE(eslevent_gettype,_wrap_ESLevent_getType,NULL)
  SWIG_ZEND_NAMED_FE(eslevent_addbody,_wrap_ESLevent_addBody,NULL)
  SWIG_ZEND_NAMED_FE(eslevent_addheader,_wrap_ESLevent_addHeader,NULL)
+ SWIG_ZEND_NAMED_FE(eslevent_pushheader,_wrap_ESLevent_pushHeader,NULL)
+ SWIG_ZEND_NAMED_FE(eslevent_unshiftheader,_wrap_ESLevent_unshiftHeader,NULL)
  SWIG_ZEND_NAMED_FE(eslevent_delheader,_wrap_ESLevent_delHeader,NULL)
  SWIG_ZEND_NAMED_FE(eslevent_firstheader,_wrap_ESLevent_firstHeader,NULL)
  SWIG_ZEND_NAMED_FE(eslevent_nextheader,_wrap_ESLevent_nextHeader,NULL)

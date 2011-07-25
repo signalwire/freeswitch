@@ -631,7 +631,7 @@ int main(int argc, char *argv[])
 
         v8_free(v8_caller);
         v8_free(v8_answerer);
-        if (sf_close(inhandle) != 0)
+        if (sf_close_telephony(inhandle))
         {
             fprintf(stderr, "    Cannot close speech file '%s'\n", decode_test_file);
             exit(2);
@@ -663,7 +663,7 @@ int main(int argc, char *argv[])
 
         if (outhandle)
         {
-            if (sf_close(outhandle))
+            if (sf_close_telephony(outhandle))
             {
                 fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
                 exit(2);

@@ -26,7 +26,7 @@
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <inttypes.h>
@@ -287,7 +287,7 @@ static void hdlc_rx_status(void *user_data, int status)
     faxtester_state_t *s;
 
     s = (faxtester_state_t *) user_data;
-    fprintf(stderr, "HDLC carrier status is %s (%d)\n", signal_status_to_str(status), status);
+    span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier status is %s (%d)\n", signal_status_to_str(status), status);
     switch (status)
     {
     case SIG_STATUS_TRAINING_FAILED:

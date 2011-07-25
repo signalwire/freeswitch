@@ -84,7 +84,6 @@
 
 #define SWITCH_EVENT_QUEUE_LEN 256
 #define SWITCH_MESSAGE_QUEUE_LEN 256
-#define SWITCH_SQL_QUEUE_LEN 100000
 
 #define SWITCH_BUFFER_BLOCK_FRAMES 25
 #define SWITCH_BUFFER_START_FRAMES 50
@@ -145,6 +144,7 @@ struct switch_core_session {
 	void *private_info;
 	switch_queue_t *event_queue;
 	switch_queue_t *message_queue;
+	switch_queue_t *signal_data_queue;
 	switch_queue_t *private_event_queue;
 	switch_queue_t *private_event_queue_pri;
 	switch_thread_rwlock_t *bug_rwlock;
@@ -220,7 +220,7 @@ struct switch_runtime {
 	switch_mutex_t *throttle_mutex;
 	switch_mutex_t *session_hash_mutex;
 	switch_mutex_t *global_mutex;
-	switch_mutex_t *global_var_mutex;
+	switch_thread_rwlock_t *global_var_rwlock;
 	uint32_t sps_total;
 	int32_t sps;
 	int32_t sps_last;

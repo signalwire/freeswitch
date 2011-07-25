@@ -1,4 +1,4 @@
-#define uni_version "0.9.0"
+#define uni_version "1.0.0"
 #define uni_src "..\.."
 
 AppName=UniMRCP

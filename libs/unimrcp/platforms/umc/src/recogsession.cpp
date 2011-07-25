@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: recogsession.cpp 1587 2010-03-12 19:40:02Z achaloyan $
  */
 
 #include "recogsession.h"
@@ -27,12 +29,21 @@ struct RecogChannel
 {
 	/** MRCP control channel */
 	mrcp_channel_t* m_pMrcpChannel;
+	/** IN-PROGRESS RECOGNIZE request */
+	mrcp_message_t* m_pRecogRequest;
 	/** Streaming is in-progress */
 	bool            m_Streaming;
 	/** File to read audio stream from */
 	FILE*           m_pAudioIn;
 	/** Estimated time to complete (used if no audio_in available) */
 	apr_size_t      m_TimeToComplete;
+
+	RecogChannel() :
+		m_pMrcpChannel(NULL),
+		m_pRecogRequest(NULL),
+		m_Streaming(false),
+		m_pAudioIn(NULL),
+		m_TimeToComplete(0) {}
 };
 
 RecogSession::RecogSession(const RecogScenario* pScenario) :
@@ -65,6 +76,37 @@ bool RecogSession::Start()
 		return false;
 	}
 	return true;
+}
+
+bool RecogSession::Stop()
+{
+	if(!UmcSession::Stop())
+		return false;
+
+	if(!m_pRecogChannel)
+		return false;
+
+	mrcp_message_t* pStopMessage = CreateMrcpMessage(m_pRecogChannel->m_pMrcpChannel,RECOGNIZER_STOP);
+	if(!pStopMessage)
+		return false;
+
+	if(m_pRecogChannel->m_pRecogRequest)
+	{
+		mrcp_generic_header_t* pGenericHeader;
+		/* get/allocate generic header */
+		pGenericHeader = (mrcp_generic_header_t*) mrcp_generic_header_prepare(pStopMessage);
+		if(pGenericHeader) 
+		{
+			pGenericHeader->active_request_id_list.count = 1;
+			pGenericHeader->active_request_id_list.ids[0] = 
+				m_pRecogChannel->m_pRecogRequest->start_line.request_id;
+			mrcp_generic_header_property_add(pStopMessage,GENERIC_HEADER_ACTIVE_REQUEST_ID_LIST);
+		}
+
+		m_pRecogChannel->m_pRecogRequest = NULL;
+	}
+	
+	return SendMrcpRequest(m_pRecogChannel->m_pMrcpChannel,pStopMessage);
 }
 
 bool RecogSession::OnSessionTerminate(mrcp_sig_status_code_e status)
@@ -128,11 +170,7 @@ RecogChannel* RecogSession::CreateRecogChannel()
 	apr_pool_t* pool = GetSessionPool();
 
 	/* create channel */
-	RecogChannel *pRecogChannel = new RecogChannel;
-	pRecogChannel->m_pMrcpChannel = NULL;
-	pRecogChannel->m_Streaming = false;
-	pRecogChannel->m_pAudioIn = NULL;
-	pRecogChannel->m_TimeToComplete = 0;
+	RecogChannel* pRecogChannel = new RecogChannel;
 
 	/* create source stream capabilities */
 	pCapabilities = mpf_source_stream_capabilities_create(pool);
@@ -218,11 +256,13 @@ bool RecogSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 			/* received the response to RECOGNIZE request */
 			if(pMrcpMessage->start_line.request_state == MRCP_REQUEST_STATE_INPROGRESS)
 			{
+				RecogChannel* pRecogChannel = (RecogChannel*) mrcp_application_channel_object_get(pMrcpChannel);
+				if(pRecogChannel)
+					pRecogChannel->m_pRecogRequest = GetMrcpMessage();
+
 				/* start to stream the speech to recognize */
 				if(pRecogChannel) 
-				{
 					pRecogChannel->m_Streaming = true;
-				}
 			}
 			else 
 			{
@@ -241,9 +281,12 @@ bool RecogSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 		{
 			ParseNLSMLResult(pMrcpMessage);
 			if(pRecogChannel) 
-			{
 				pRecogChannel->m_Streaming = false;
-			}
+
+			RecogChannel* pRecogChannel = (RecogChannel*) mrcp_application_channel_object_get(pMrcpChannel);
+			if(pRecogChannel)
+				pRecogChannel->m_pRecogRequest = NULL;
+
 			Terminate();
 		}
 		else if(pMrcpMessage->start_line.method_id == RECOGNIZER_START_OF_INPUT) 

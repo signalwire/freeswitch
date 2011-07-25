@@ -1,8 +1,9 @@
 BASE=../../../..
 
-ZMQ=zeromq-2.1.4
+ZMQ=zeromq-2.1.7
 
 ZMQ_BASEURL=http://download.zeromq.org
+ZMQ_BASEURL_ALT=http://download.zeromq.org/historic
 
 ZMQ_DIR=$(switch_srcdir)/libs/$(ZMQ)
 ZMQ_BUILDDIR=$(switch_builddir)/libs/$(ZMQ)
@@ -13,7 +14,7 @@ LOCAL_LIBADD=$(ZMQ_LA)
 include $(BASE)/build/modmake.rules
 
 $(ZMQ_DIR):
-	$(GETLIB) $(ZMQ_BASEURL) $(ZMQ).tar.gz
+	$(GETLIB) $(ZMQ_BASEURL) $(ZMQ).tar.gz || $(GETLIB) $(ZMQ_BASEURL_ALT) $(ZMQ).tar.gz
 	cd $(ZMQ_DIR) && ./autogen.sh
 
 $(ZMQ_BUILDDIR)/Makefile: $(ZMQ_DIR)

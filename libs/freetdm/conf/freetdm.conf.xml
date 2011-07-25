@@ -275,5 +275,37 @@ with the signaling protocols that you can run on top of your I/O interfaces.
 			-->
 		</span>
 	</r2_spans>
+
+	<!-- 
+		PRI passive tapping spans. Requires patched version from libpri at http://svn.digium.com/svn/libpri/team/moy/tap-1.4
+		You must also configure FreeTDM with "-with-pritap" (see ./configure help for details)
+	-->
+	<pritap_spans>
+		<span name="tapped1">
+			<!-- The peer span name used to tap the link -->
+			<param name="peerspan" value="tapped2"/>
+
+			<!-- 
+				Whether to mix the audio from the peerspan with the audio from this span 
+				This is most likely what you want (and therefore the default) so you can hear
+				the full conversation being tapped instead of just one side
+			-->
+			<!-- <param name="mixaudio" value="yes"/> -->
+			
+			<!-- switch parameters (required), where to send calls to -->
+			<param name="dialplan" value="XML"/>
+			<param name="context" value="default"/>
+		</span>
+
+		<span name="tapped2">
+			<!-- This span is linked to "tapped1" through its peerspan parameter -->
+			<param name="peerspan" value="tapped1"/>
+			<!-- <param name="mixaudio" value="yes"/> -->
+
+			<!-- switch parameters (required), where to send calls to -->
+			<param name="dialplan" value="XML"/>
+			<param name="context" value="default"/>
+		</span>
+	</pritap_spans>
 </configuration>
 

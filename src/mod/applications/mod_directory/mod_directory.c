@@ -311,7 +311,7 @@ static switch_bool_t directory_execute_sql_callback(switch_mutex_t *mutex, char 
 }
 
 #define DIR_DESC "directory"
-#define DIR_USAGE "<profile_name> <domain_name> [<context_name>]"
+#define DIR_USAGE "<profile_name> <domain_name> [<context_name>] | [<dialplan_name> <context_name>]"
 
 static void free_profile(dir_profile_t *profile)
 {
@@ -834,6 +834,7 @@ SWITCH_STANDARD_APP(directory_function)
 	const char *profile_name = NULL;
 	const char *domain_name = NULL;
 	const char *context_name = NULL;
+	const char *dialplan_name = NULL;
 	dir_profile_t *profile = NULL;
 	int x = 0;
 	char *sql = NULL;
@@ -861,6 +862,14 @@ SWITCH_STANDARD_APP(directory_function)
 	}
 
 	if (argv[x]) {
+		if (!(argv[x+1])) {
+			context_name = argv[x++];
+		} else {
+			dialplan_name = argv[x++];
+		}
+	}
+
+	if (argv[x]) {
 		context_name = argv[x++];
 	}
 
@@ -871,6 +880,10 @@ SWITCH_STANDARD_APP(directory_function)
 
 	if (!context_name) {
 		context_name = domain_name;
+	}
+
+	if (!dialplan_name) {
+		dialplan_name = "XML";
 	}
 
 	populate_database(session, profile, domain_name);
@@ -919,7 +932,7 @@ SWITCH_STANDARD_APP(directory_function)
 
 	if (!zstr(s_param.transfer_to)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Directory transfering call to : %s\n", s_param.transfer_to);
-		switch_ivr_session_transfer(session, s_param.transfer_to, "XML", context_name);
+		switch_ivr_session_transfer(session, s_param.transfer_to, dialplan_name, context_name);
 	}
 
 	/* Delete all sql entry for this call */

@@ -150,9 +150,9 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 				switch_stream_handle_t stream = { 0 };
 				SWITCH_STANDARD_STREAM(stream);
 
-				stream.write_function(&stream, " argv = {[0]='%s', ", input_code);
+				stream.write_function(&stream, " argv = {[0]='%y', ", input_code);
 				for (x = 0; x < argc; x++) {
-					stream.write_function(&stream, "'%s'%s", argv[x], x == argc - 1 ? "" : ", ");
+					stream.write_function(&stream, "'%y'%s", argv[x], x == argc - 1 ? "" : ", ");
 				}
 				stream.write_function(&stream, " };");
 				code = (char *) stream.data;

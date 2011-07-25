@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: umcsession.h 1585 2010-03-12 19:12:05Z achaloyan $
  */
 
-#ifndef __UMC_SESSION_H__
-#define __UMC_SESSION_H__
+#ifndef UMC_SESSION_H
+#define UMC_SESSION_H
 
 /**
  * @file umcsession.h
@@ -35,6 +37,7 @@ public:
 
 /* ============================ MANIPULATORS =============================== */
 	virtual bool Run();
+	virtual bool Stop();
 	virtual bool Terminate();
 
 	void SetMrcpProfile(const char* pMrcpProfile);
@@ -82,6 +85,7 @@ protected:
 /* ============================ ACCESSORS ================================== */
 	apr_pool_t* GetSessionPool() const;
 	const char* GetMrcpSessionId() const;
+	mrcp_message_t* GetMrcpMessage() const;
 
 /* ============================ DATA ======================================= */
 	const UmcScenario*  m_pScenario;
@@ -92,6 +96,7 @@ private:
 /* ============================ DATA ======================================= */
 	mrcp_application_t* m_pMrcpApplication;
 	mrcp_session_t*     m_pMrcpSession;
+	mrcp_message_t*     m_pMrcpMessage; /* last message sent */
 	bool                m_Running;
 	bool                m_Terminating;
 };
@@ -118,4 +123,9 @@ inline void UmcSession::SetMrcpProfile(const char* pMrcpProfile)
 	m_pMrcpProfile = pMrcpProfile;
 }
 
-#endif /*__UMC_SESSION_H__*/
+inline mrcp_message_t* UmcSession::GetMrcpMessage() const
+{
+	return m_pMrcpMessage;
+}
+
+#endif /* UMC_SESSION_H */

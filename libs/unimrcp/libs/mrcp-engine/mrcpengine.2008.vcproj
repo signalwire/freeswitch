@@ -131,11 +131,67 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\include\mrcp_engine_factory.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_engine_iface.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_engine_impl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_engine_loader.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_engine_plugin.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_engine_types.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_recog_engine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_recog_state_machine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_recorder_engine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_recorder_state_machine.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\mrcp_resource_engine.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\mrcp_resource_plugin.h"
+				RelativePath=".\include\mrcp_state_machine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_synth_engine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_synth_state_machine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_verifier_engine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mrcp_verifier_state_machine.h"
 				>
 			</File>
 		</Filter>
@@ -144,7 +200,35 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			>
 			<File
-				RelativePath=".\src\mrcp_resource_engine.c"
+				RelativePath=".\src\mrcp_engine_factory.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mrcp_engine_iface.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mrcp_engine_impl.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mrcp_engine_loader.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mrcp_recog_state_machine.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mrcp_recorder_state_machine.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mrcp_synth_state_machine.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mrcp_verifier_state_machine.c"
 				>
 			</File>
 		</Filter>

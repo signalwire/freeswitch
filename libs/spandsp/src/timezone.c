@@ -114,11 +114,11 @@ static const int year_lengths[2] =
 
 static int increment_overflow(int *number, int delta)
 {
-    int number0;
+    int last_number;
 
-    number0 = *number;
+    last_number = *number;
     *number += delta;
-    return (*number < number0) != (delta < 0);
+    return (*number < last_number) != (delta < 0);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -164,6 +164,10 @@ static struct tm *time_sub(const time_t * const timep, const long int offset, co
     int y;
     int hit;
     int i;
+    int newy;
+    time_t tdelta;
+    int idelta;
+    int leapdays;
 
     corr = 0;
     hit = 0;
@@ -198,11 +202,6 @@ static struct tm *time_sub(const time_t * const timep, const long int offset, co
     rem = *timep - tdays*SECS_PER_DAY;
     while (tdays < 0  ||  tdays >= year_lengths[isleap(y)])
     {
-        int newy;
-        time_t tdelta;
-        int idelta;
-        int leapdays;
-
         tdelta = tdays / DAYS_PER_LEAP_YEAR;
         idelta = tdelta;
         if (tdelta - idelta >= 1  ||  idelta - tdelta >= 1)

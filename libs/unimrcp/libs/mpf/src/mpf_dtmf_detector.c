@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Tomas Valenta, Arsen Chaloyan
+ * Copyright 2009-2010 Tomas Valenta, Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_dtmf_detector.c 1788 2010-11-22 19:45:38Z tomas.valenta@speechtech.cz $
  */
 
 #include "mpf_dtmf_detector.h"
@@ -217,8 +219,8 @@ static void goertzel_energies_digit(struct mpf_dtmf_detector_t *detector)
 		}
 	}
 
-	if ((reng < 8.0e8 * detector->wsamples / GOERTZEL_SAMPLES_8K) ||
-		(ceng < 8.0e8 * detector->wsamples / GOERTZEL_SAMPLES_8K))
+	if ((reng < 8.0e10 * detector->wsamples / GOERTZEL_SAMPLES_8K) ||
+		(ceng < 8.0e10 * detector->wsamples / GOERTZEL_SAMPLES_8K))
 	{
 		/* energy not high enough */
 	} else if ((ceng > reng) && (reng < ceng * 0.398)) {  /* twist > 4dB, error */
@@ -233,7 +235,7 @@ static void goertzel_energies_digit(struct mpf_dtmf_detector_t *detector)
 		 */
 	} else if ((ceng < reng) && (ceng < reng * 0.158)) {  /* twist > 8db, error */
 		/* Reverse twist check failed */
-	} else if (0.025 * detector->totenergy > (reng + ceng)) {  /* 16db */
+	} else if (0.25 * detector->totenergy > (reng + ceng)) {  /* 16db */
 		/* Signal energy to total energy ratio test failed */
 	} else {
 		digit = freq2digits[rmax][cmax - DTMF_FREQUENCIES/2];

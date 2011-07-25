@@ -1549,6 +1549,7 @@ static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_directi
 	int best_rate = 0;
 	uint32_t i = 0;
 	uint32_t count = 0;
+	uint32_t first_channel = 0;
 
 	if (group_id) {
 		ftdm_group_find(group_id, &group);
@@ -1573,6 +1574,7 @@ static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_directi
 		i = 0;
 	} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
 		i = rr_next(group->last_used_index, 0, group->chan_count - 1, direction);
+		first_channel = i;
 	} else {
 		i = group->chan_count-1;
 	}
@@ -1605,6 +1607,9 @@ static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_directi
 				group->last_used_index = i;
 			}
 			i = rr_next(i, 0, group->chan_count - 1, direction);
+			if (first_channel == i) {
+				break;
+			}
 		} else {
 			if (i == 0) {
 				break;
@@ -1663,6 +1668,7 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 	int best_rate = 0;
 	uint32_t i = 0;
 	uint32_t count = 0;
+	uint32_t first_channel = 0;
 
 	*ftdmchan = NULL;
 
@@ -1696,6 +1702,7 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 		i = 1;
 	} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
 		i = rr_next(span->last_used_index, 1, span->chan_count, direction);
+		first_channel = i;
 	} else {
 		i = span->chan_count;
 	}	
@@ -1704,10 +1711,6 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 
 		if (direction == FTDM_TOP_DOWN) {
 			if (i > span->chan_count) {
-				break;
-			}
-		} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
-			if (i == span->last_used_index) {
 				break;
 			}
 		} else {
@@ -1738,6 +1741,9 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 				span->last_used_index = i;
 			}
 			i = rr_next(i, 1, span->chan_count, direction);
+			if (first_channel == i) {
+				break;
+			}
 		} else {
 			i--;
 		}
@@ -2800,7 +2806,7 @@ static ftdm_status_t ftdmchan_activate_dtmf_buffer(ftdm_channel_t *ftdmchan)
 static ftdm_status_t ftdm_insert_dtmf_pause(ftdm_channel_t *ftdmchan, ftdm_size_t pausems)
 {
 	void *data = NULL;
-	unsigned int datalen = pausems * sizeof(uint16_t);
+	ftdm_size_t datalen = pausems * sizeof(uint16_t);
 
 	data = ftdm_malloc(datalen);
 	ftdm_assert(data, "Failed to allocate memory\n");
@@ -3583,7 +3589,7 @@ skipdebug:
 	return status;
 }
 
-FIO_WRITE_FUNCTION(ftdm_raw_write)
+FT_DECLARE(ftdm_status_t) ftdm_raw_write (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
 {
 	int dlen = (int) *datalen;
 
@@ -3610,7 +3616,7 @@ FIO_WRITE_FUNCTION(ftdm_raw_write)
 	return ftdmchan->fio->write(ftdmchan, data, datalen);
 }
 
-FIO_READ_FUNCTION(ftdm_raw_read)
+FT_DECLARE(ftdm_status_t) ftdm_raw_read (ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
 {
 	ftdm_status_t  status;
 	
@@ -3794,7 +3800,6 @@ FT_DECLARE(void) ftdm_generate_sln_silence(int16_t *data, uint32_t samples, uint
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
 {
-	ftdm_status_t status = FTDM_FAIL;
 	fio_codec_t codec_func = NULL;
 	ftdm_size_t max = *datalen;
 
@@ -3816,11 +3821,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 		}
 
 		if (codec_func) {
-			status = codec_func(data, max, datalen);
+			codec_func(data, max, datalen);
 		} else {
 			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "no codec function to perform transcoding from %d to %d\n", ftdmchan->native_codec, ftdmchan->effective_codec);
-			status = FTDM_FAIL;
 		}
 	}
 
@@ -3855,7 +3859,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 				} else {
 					snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
 					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "invalid effective codec %d\n", ftdmchan->effective_codec);
-					status = FTDM_FAIL;
 					goto done;
 				}
 			}
@@ -5765,6 +5768,9 @@ FT_DECLARE(uint32_t) ftdm_separate_string(char *buf, char delim, char **array, i
 
 	ptr = buf;
 
+	/* we swallow separators that are contiguous */
+	while (*ptr == delim) ptr++;
+
 	for (argc = 0; *ptr && (argc < arraylen - 1); argc++) {
 		array[argc] = ptr;
 		for (; *ptr; ptr++) {
@@ -5776,6 +5782,8 @@ FT_DECLARE(uint32_t) ftdm_separate_string(char *buf, char delim, char **array, i
 				}
 			} else if ((*ptr == delim) && !quot) {
 				*ptr++ = '\0';
+				/* we swallow separators that are contiguous */
+				while (*ptr == delim) ptr++;
 				break;
 			}
 		}
@@ -5785,21 +5793,12 @@ FT_DECLARE(uint32_t) ftdm_separate_string(char *buf, char delim, char **array, i
 		array[argc++] = ptr;
 	}
 
-	/* strip quotes and leading / trailing spaces */
+	/* strip quotes */
 	for (x = 0; x < argc; x++) {
-		char *p;
-
-		while(*(array[x]) == ' ') {
-			(array[x])++;
-		}
-		p = array[x];
+		char *p = array[x];
 		while((p = strchr(array[x], qc))) {
 			memmove(p, p+1, strlen(p));
 			p++;
-		}
-		p = array[x] + (strlen(array[x]) - 1);
-		while(*p == ' ') {
-			*p-- = '\0';
 		}
 	}
 

@@ -34,6 +34,7 @@
 
 #include "mod_spandsp.h"
 
+#if SWITCH_MAX_INTERVAL >= 90
 /*  LPC10     - START */
 
 struct lpc10_context {
@@ -123,7 +124,7 @@ static switch_status_t switch_lpc10_decode(switch_codec_t *codec,
 }
 
 /*  LPC10     - END */
-
+#endif
 
 /*  GSM       - START */
 struct gsm_context {

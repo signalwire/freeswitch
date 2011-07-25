@@ -1,7 +1,7 @@
 <include>
   <extension name="External">
     <condition field="destination_number" expression="^(0[0-9]{10,})$">
-      <action application="skinny-route"/>
+      <action application="skinny-process"/>
     </condition>
   </extension>
 </include>

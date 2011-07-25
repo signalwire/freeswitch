@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: dtmfsession.h 1474 2010-02-07 20:51:47Z achaloyan $
  */
 
-#ifndef __DTMF_SESSION_H__
-#define __DTMF_SESSION_H__
+#ifndef DTMF_SESSION_H
+#define DTMF_SESSION_H
 
 /**
  * @file dtmfsession.h
@@ -65,4 +67,4 @@ inline const DtmfScenario* DtmfSession::GetScenario() const
 	return (DtmfScenario*)m_pScenario;
 }
 
-#endif /*__DTMF_SESSION_H__*/
+#endif /* DTMF_SESSION_H */

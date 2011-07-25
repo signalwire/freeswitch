@@ -261,7 +261,7 @@ enum
     T30_ERR_RX_GOTDCS,          /*! DCS received while waiting for DTC */
     T30_ERR_RX_INVALCMD,        /*! Unexpected command after page received */
     T30_ERR_RX_NOCARRIER,       /*! Carrier lost during fax receive */
-    T30_ERR_RX_NOEOL,           /*! Timed out while waiting for EOL (end Of line) */
+    T30_ERR_RX_NOEOL,           /*! Timed out while waiting for EOL (end of line) */
     T30_ERR_RX_NOFAX,           /*! Timed out while waiting for first line */
     T30_ERR_RX_T2EXPDCN,        /*! Timer T2 expired while waiting for DCN */
     T30_ERR_RX_T2EXPD,          /*! Timer T2 expired while waiting for phase D */
@@ -547,12 +547,10 @@ typedef struct
     int error_correcting_mode_retries;
     /*! \brief Current status. */
     int current_status;
-#if 0
     /*! \brief The number of RTP events in this call. */
     int rtp_events;
     /*! \brief The number of RTN events in this call. */
     int rtn_events;
-#endif
 } t30_stats_t;
 
 #if defined(__cplusplus)

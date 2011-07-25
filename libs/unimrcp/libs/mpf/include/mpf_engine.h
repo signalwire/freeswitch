@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_engine.h 1709 2010-05-24 17:12:11Z achaloyan $
  */
 
-#ifndef __MPF_ENGINE_H__
-#define __MPF_ENGINE_H__
+#ifndef MPF_ENGINE_H
+#define MPF_ENGINE_H
 
 /**
  * @file mpf_engine.h
@@ -32,9 +34,10 @@ typedef apt_task_msg_t mpf_task_msg_t;
 
 /**
  * Create MPF engine.
+ * @param id the identifier of the engine
  * @param pool the pool to allocate memory from
  */
-MPF_DECLARE(mpf_engine_t*) mpf_engine_create(apr_pool_t *pool);
+MPF_DECLARE(mpf_engine_t*) mpf_engine_create(const char *id, apr_pool_t *pool);
 
 /**
  * Create MPF codec manager.
@@ -52,12 +55,14 @@ MPF_DECLARE(apt_bool_t) mpf_engine_codec_manager_register(mpf_engine_t *engine, 
 /**
  * Create MPF context.
  * @param engine the engine to create context for
+ * @param name the informative name of the context
  * @param obj the external object associated with context
  * @param max_termination_count the max number of terminations in context
  * @param pool the pool to allocate memory from
  */
 MPF_DECLARE(mpf_context_t*) mpf_engine_context_create(
-								mpf_engine_t *engine, 
+								mpf_engine_t *engine,
+								const char *name,
 								void *obj, 
 								apr_size_t max_termination_count, 
 								apr_pool_t *pool);
@@ -72,13 +77,13 @@ MPF_DECLARE(apt_bool_t) mpf_engine_context_destroy(mpf_context_t *context);
  * Get external object associated with MPF context.
  * @param context the context to get object from
  */
-MPF_DECLARE(void*) mpf_engine_context_object_get(mpf_context_t *context);
+MPF_DECLARE(void*) mpf_engine_context_object_get(const mpf_context_t *context);
 
 /**
  * Get task.
  * @param engine the engine to get task from
  */
-MPF_DECLARE(apt_task_t*) mpf_task_get(mpf_engine_t *engine);
+MPF_DECLARE(apt_task_t*) mpf_task_get(const mpf_engine_t *engine);
 
 /**
  * Set task msg type to send responses and events with.
@@ -148,7 +153,13 @@ MPF_DECLARE(apt_bool_t) mpf_engine_message_send(mpf_engine_t *engine, mpf_task_m
  */
 MPF_DECLARE(apt_bool_t) mpf_engine_scheduler_rate_set(mpf_engine_t *engine, unsigned long rate);
 
+/**
+ * Get the identifier of the engine .
+ * @param engine the engine to get name of
+ */
+MPF_DECLARE(const char*) mpf_engine_id_get(const mpf_engine_t *engine);
+
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_ENGINE_H__*/
+#endif /* MPF_ENGINE_H */

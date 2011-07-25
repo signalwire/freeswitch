@@ -286,7 +286,8 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	signal_data->restart_opt = SNGISDN_OPT_DEFAULT;
 	signal_data->link_id = span->span_id;
 	signal_data->transfer_timeout = 20000;
-	signal_data->att_remove_dtmf = 1;
+	signal_data->att_remove_dtmf = SNGISDN_OPT_DEFAULT;
+	signal_data->force_sending_complete = SNGISDN_OPT_DEFAULT;
 
 	span->default_caller_data.dnis.plan = FTDM_NPI_INVALID;
 	span->default_caller_data.dnis.type = FTDM_TON_INVALID;
@@ -358,6 +359,8 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			ftdm_set_bearer_layer1(val, (uint8_t*)&span->default_caller_data.bearer_layer1);
 		} else if (!strcasecmp(var, "channel-restart-on-link-up")) {
 			parse_yesno(var, val, &signal_data->restart_opt);
+		} else if (!strcasecmp(var, "channel-restart-timeout")) {
+			signal_data->restart_timeout = atoi(val);
 		} else if (!strcasecmp(var, "local-number")) {			
 			if (add_local_number(val, span) != FTDM_SUCCESS) {
 				return FTDM_FAIL;
@@ -386,10 +389,18 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			parse_yesno(var, val, &signal_data->raw_trace_q931);
 		} else if (!strcasecmp(var, "q921-raw-trace")) {
 			parse_yesno(var, val, &signal_data->raw_trace_q921);
+		} else if (!strcasecmp(var, "force-sending-complete")) {
+			parse_yesno(var, val, &signal_data->force_sending_complete);
 		} else if (!strcasecmp(var, "early-media-override")) {
 			if (parse_early_media(val, span) != FTDM_SUCCESS) {
 				return FTDM_FAIL;
 			}
+		} else if (!strcasecmp(var, "chan-id-invert-extend-bit")) {
+#ifdef SANGOMA_ISDN_CHAN_ID_INVERT_BIT
+			parse_yesno(var, val, &g_sngisdn_data.chan_id_invert_extend_bit);
+#else
+			ftdm_log(FTDM_LOG_WARNING, "chan-id-invert-extend-bit is not supported in your version of libsng_isdn\n");
+#endif
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}

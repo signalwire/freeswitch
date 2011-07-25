@@ -29,6 +29,11 @@
  * LIABILITY|WHETHER IN CONTRACT|STRICT LIABILITY|OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE|EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Ricardo Barroetaveña <rbarroetavena@anura.com.ar>
+ *
  */
 
 /* INCLUDE ********************************************************************/
@@ -584,6 +589,20 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		break;		
 	/**************************************************************************/
+	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+
+		/* already hangup complete, just ignore it */
+		/* 
+		 * i.e. collision REL & ANM
+		 * IAM ->
+		 * <- ACM
+		 * REL ->	<- ANM  (if REL gets processed first, ANM needs to be ignored)
+		 * <- RLC
+		 */
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ANM/CON Ignoring it because we already hung up\n", sngss7_info->circuit->cic);
+
+		break;
+	/**************************************************************************/
 	default:	/* incorrect state...reset the CIC */
 
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ANM/CON\n", sngss7_info->circuit->cic);
@@ -642,7 +661,7 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* this is a remote hangup request */
 		sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
-ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 		/* move the state of the channel to CANCEL to end the call */
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 
@@ -668,6 +687,27 @@ ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_LOOP, NULL);
 		/* move the state of the channel to TERMINATING to end the call */
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 
+		break;
+	/**************************************************************************/
+	case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+		/* ITU Q.764 2.3.1 e)
+		 * Collision of release messages
+		 *
+		 * ITU Q.784 Test Number 3.8
+		 * Collision of REL messages
+		 */
+		SS7_DEBUG_CHAN(ftdmchan, "Collision of REL messages. Rx REL while waiting for RLC.\n", " ");
+		if (sngss7_test_ckt_flag(sngss7_info, FLAG_LOCAL_REL) && 
+			!sngss7_test_ckt_flag (sngss7_info, FLAG_REMOTE_REL)) {
+			/* locally requested hangup completed, wait for remote RLC */
+			/* need to perform remote release */
+
+			/* this is also a remote hangup request */
+			sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
+
+			/* send out the release complete */
+			ft_to_sngss7_rlc (ftdmchan);
+		}
 		break;
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_IN_LOOP:
@@ -1125,7 +1165,7 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1198,7 +1238,7 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 		
 		/* check that the infId matches and that this is not a siglink */
 		if ((g_ftdm_sngss7_data.cfg.isupCkt[i].infId == infId) && 
-			(g_ftdm_sngss7_data.cfg.isupCkt[i].type == VOICE)) {
+			(g_ftdm_sngss7_data.cfg.isupCkt[i].type == SNG_CKT_VOICE)) {
 
 			/* confirm that the circuit is active on our side otherwise move to the next circuit */
 			if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[i], SNGSS7_ACTIVE)) {
@@ -1263,7 +1303,7 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 
 		/* check that the infId matches and that this is not a siglink */
 		if ((g_ftdm_sngss7_data.cfg.isupCkt[i].infId == infId) && 
-			(g_ftdm_sngss7_data.cfg.isupCkt[i].type == VOICE)) {
+			(g_ftdm_sngss7_data.cfg.isupCkt[i].type == SNG_CKT_VOICE)) {
 
 			/* confirm that the circuit is active on our side otherwise move to the next circuit */
 			if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[i], SNGSS7_ACTIVE)) {
@@ -1316,7 +1356,7 @@ ftdm_status_t handle_cot_start(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1371,7 +1411,7 @@ ftdm_status_t handle_cot_stop(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1416,7 +1456,7 @@ ftdm_status_t handle_cot(uint32_t suInstId, uint32_t spInstId, uint32_t circuit,
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1484,7 +1524,7 @@ ftdm_status_t handle_blo_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1534,7 +1574,7 @@ ftdm_status_t handle_blo_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1575,7 +1615,7 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1628,7 +1668,7 @@ ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1669,7 +1709,7 @@ ftdm_status_t handle_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1728,7 +1768,7 @@ ftdm_status_t handle_local_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1786,7 +1826,7 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1877,7 +1917,7 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1928,7 +1968,7 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	int					range;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -1985,7 +2025,7 @@ ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -2035,7 +2075,7 @@ ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 	ftdm_channel_t	  *ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -2087,7 +2127,7 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -2150,7 +2190,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	memset(&status[0], '\0', sizeof(status));
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -2212,7 +2252,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/* loop over the cics starting from circuit until range+1 */
 	for (x = circuit; x < (circuit + range + 1); x++) {
 		/* confirm this is a voice channel */
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != SNG_CKT_VOICE) continue;
 
 		/* grab the circuit in question */
 		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
@@ -2298,7 +2338,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	memset(&status[0], '\0', sizeof(status));
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));
@@ -2360,7 +2400,7 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* loop over the cics starting from circuit until range+1 */
 	for (x = circuit; x < (circuit + range + 1); x++) {
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != VOICE) continue;
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != SNG_CKT_VOICE) continue;
 		/* grab the circuit in question */
 		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
 			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
@@ -2430,7 +2470,7 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t		*ftdmchan = NULL;
 
 	/* confirm that the circuit is voice channel */
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != VOICE) {
+	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
 		SS7_ERROR("[CIC:%d]Rx %s on non-voice CIC\n",
 					g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 					DECODE_LCC_EVENT(evntType));

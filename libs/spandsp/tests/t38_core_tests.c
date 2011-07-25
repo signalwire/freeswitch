@@ -31,7 +31,7 @@ These tests exercise the T.38 core ASN.1 processing code.
 */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>

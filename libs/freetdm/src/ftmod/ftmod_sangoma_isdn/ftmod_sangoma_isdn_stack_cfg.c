@@ -422,7 +422,7 @@ ftdm_status_t sngisdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management
 
 	cfg.t.cfg.s.bdDLSAP.n200		= 3;             	/* n200 */
 	cfg.t.cfg.s.bdDLSAP.congTmr		= 300;           	/* congestion timer */
-	cfg.t.cfg.s.bdDLSAP.t200Tmr		= 1;				/* t1 changed from 25 */
+	cfg.t.cfg.s.bdDLSAP.t200Tmr		= 3;				/* t1 changed from 25 */
 	cfg.t.cfg.s.bdDLSAP.t203Tmr		= 10;				/* t3 changed from 50 */
 	cfg.t.cfg.s.bdDLSAP.mod			= 128;           	/* modulo */
 	cfg.t.cfg.s.bdDLSAP.selector	= 0;				/* Selector 0 */
@@ -624,7 +624,7 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	cfg.t.cfg.s.inDLSAP.tCbCfg = TRUE;
 
 	cfg.t.cfg.s.inDLSAP.tCbId = signal_data->cc_id;
-
+	
 	if (signal_data->facility == SNGISDN_OPT_TRUE) {
 		cfg.t.cfg.s.inDLSAP.facilityHandling = IN_FACILITY_STANDRD;
 	} else {
@@ -681,12 +681,7 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 			cfg.t.cfg.s.inDLSAP.clrGlr = FALSE;			/* in case of glare, do not clear local call */
 			cfg.t.cfg.s.inDLSAP.statEnqOpt = TRUE;
 
-			if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN ||
-				signal_data->switchtype == SNGISDN_SWITCH_INSNET) {
-				cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
-			} else {
-				cfg.t.cfg.s.inDLSAP.rstOpt = TRUE;
-			}
+			cfg.t.cfg.s.inDLSAP.rstOpt = TRUE;
 		} else {
 			cfg.t.cfg.s.inDLSAP.ackOpt = FALSE;
 			cfg.t.cfg.s.inDLSAP.intType = USER;
@@ -720,6 +715,16 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	}
 	
 	cfg.t.cfg.s.inDLSAP.useSubAdr = 0;       /* call routing on subaddress */
+#ifdef SANGOMA_ISDN_CHAN_ID_INVERT_BIT
+	if (signal_data->switchtype == SNGISDN_SWITCH_DMS100 &&
+		g_sngisdn_data.chan_id_invert_extend_bit == SNGISDN_OPT_TRUE) {
+		/* Since this feature is not standard, we modified Trillium to check 
+		the useSubAdr field and remove the extended bit if this is set, this
+		is a global configuration and once set, applies to all spans configured
+		as DMS 100 */
+		cfg.t.cfg.s.inDLSAP.useSubAdr = PRSNT_NODEF;
+	}
+#endif
 	cfg.t.cfg.s.inDLSAP.adrPref = 0;         /* use of prefix for international calls */
 	cfg.t.cfg.s.inDLSAP.nmbPrefDig = 0;      /* number of digits used for prefix */
 	for (i = 0; i < IN_MAXPREFDIG; i++)
@@ -793,8 +798,10 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	cfg.t.cfg.s.inDLSAP.tmr.t322.val = 4;
 	cfg.t.cfg.s.inDLSAP.tmr.t332.enb = FALSE;
 	cfg.t.cfg.s.inDLSAP.tmr.t332.val = 35;
+
 	cfg.t.cfg.s.inDLSAP.tmr.tRst.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.tRst.val = 8;
+
 	cfg.t.cfg.s.inDLSAP.tmr.tAns.enb = FALSE;  /* non-standard timer */
 	cfg.t.cfg.s.inDLSAP.tmr.t396.enb = FALSE;  /* non-standard timer */
 	cfg.t.cfg.s.inDLSAP.tmr.t397.enb = TRUE;  /* non-standard timer */

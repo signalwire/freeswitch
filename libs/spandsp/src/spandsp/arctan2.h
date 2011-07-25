@@ -49,9 +49,19 @@ static __inline__ int32_t arctan2(float y, float x)
     float abs_y;
     float angle;
 
-    if (x == 0.0f  ||  y == 0.0f)
-        return 0;
-    
+    if (y == 0.0f)
+    {
+        if (x < 0.0f)
+            return 0x80000000;
+        return 0x00000000;
+    }
+    if (x == 0.0f)
+    {
+        if (y < 0.0f)
+            return 0xc0000000;
+        return 0x40000000;
+    }
+
     abs_y = fabsf(y);
 
     /* If we are in quadrant II or III, flip things around */
@@ -77,8 +87,18 @@ static __inline__ float arctan2f(float y, float x)
     float fx;
     float fy;
 
-    if (x == 0.0f  ||  y == 0.0f)
-        return 0;
+    if (y == 0.0f)
+    {
+        if (x < 0.0f)
+            return 3.1415926f;
+        return 0.0f;
+    }
+    if (x == 0.0f)
+    {
+        if (y < 0.0f)
+            return 3.1415926f*1.5f;
+        return 3.1415926f*0.5f;
+    }
     fx = fabsf(x);
     fy = fabsf(y);
     /* Deal with the octants */

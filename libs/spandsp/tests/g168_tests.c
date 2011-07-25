@@ -73,7 +73,7 @@ static void signal_load(signal_source_t *sig, const char *name)
 
 static void signal_free(signal_source_t *sig)
 {
-    if (sf_close(sig->handle) != 0)
+    if (sf_close_telephony(sig->handle))
     {
         fprintf(stderr, "    Cannot close sound file '%s'\n", sig->name);
         exit(2);

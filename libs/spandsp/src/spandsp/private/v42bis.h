@@ -28,100 +28,85 @@
 
 /*!
     V.42bis dictionary node.
+    Note that 0 is not a valid node to point to (0 is always a control code), so 0 is used
+    as a "no such value" marker in this structure.
 */
 typedef struct
 {
-    /*! \brief The prior code for each defined code. */
-    uint16_t parent_code;
-    /*! \brief The number of leaf nodes this node has */
-    int16_t leaves;
-    /*! \brief This leaf octet for each defined code. */
+    /*! \brief The value of the octet represented by the current dictionary node */
     uint8_t node_octet;
-    /*! \brief Bit map of the children which exist */
-    uint32_t children[8];
+    /*! \brief The parent of this node */
+    uint16_t parent;
+    /*! \brief The first child of this node */
+    uint16_t child;
+    /*! \brief The next node at the same depth */
+    uint16_t next;
 } v42bis_dict_node_t;
 
 /*!
-    V.42bis compression. This defines the working state for a single instance
-    of V.42bis compression.
+    V.42bis compression or decompression. This defines the working state for a single instance
+    of V.42bis compression or decompression.
 */
 typedef struct
 {
+    /*! \brief Compression enabled. */
+    int v42bis_parm_p0;
     /*! \brief Compression mode. */
     int compression_mode;
-    /*! \brief Callback function to handle received frames. */
-    v42bis_frame_handler_t handler;
-    /*! \brief An opaque pointer passed in calls to frame_handler. */
+    /*! \brief Callback function to handle output data. */
+    put_msg_func_t handler;
+    /*! \brief An opaque pointer passed in calls to the data handler. */
     void *user_data;
-    /*! \brief The maximum frame length allowed */
-    int max_len;
+    /*! \brief The maximum amount to be passed to the data handler. */
+    int max_output_len;
 
-    uint32_t string_code;
-    uint32_t latest_code;
+    /*! \brief TRUE if we are in transparent (i.e. uncompressable) mode */
+    int transparent;
+    /*! \brief Next empty dictionary entry */
+    uint16_t v42bis_parm_c1;
+    /*! \brief Current codeword size */
+    uint16_t v42bis_parm_c2;
+    /*! \brief Threshold for codeword size change */
+    uint16_t v42bis_parm_c3;
+    /*! \brief The current update point in the dictionary */
+    uint16_t update_at;
+    /*! \brief The last entry matched in the dictionary */
+    uint16_t last_matched;
+    /*! \brief The last entry added to the dictionary */
+    uint16_t last_added;
+    /*! \brief Total number of codewords in the dictionary */
+    int v42bis_parm_n2;
+    /*! \brief Maximum permitted string length */
+    int v42bis_parm_n7;
+    /*! \brief The dictionary */
+    v42bis_dict_node_t dict[V42BIS_MAX_CODEWORDS];
+
+    /*! \brief The octet string in progress */
+    uint8_t string[V42BIS_MAX_STRING_SIZE];
+    /*! \brief The current length of the octet string in progress */
     int string_length;
-    uint32_t output_bit_buffer;
-    int output_bit_count;
+    /*! \brief The amount of the octet string in progress which has already
+        been flushed out of the buffer */
+    int flushed_length;
+
+    /*! \brief Compression performance metric */
+    uint16_t compression_performance;
+
+    /*! \brief Outgoing bit buffer (compression), or incoming bit buffer (decompression) */ 
+    uint32_t bit_buffer;
+    /*! \brief Outgoing bit count (compression), or incoming bit count (decompression) */ 
+    int bit_count;
+
+    /*! \brief The output composition buffer */
+    uint8_t output_buf[V42BIS_MAX_OUTPUT_LENGTH];
+    /*! \brief The length of the contents of the output composition buffer */    
     int output_octet_count;
-    uint8_t output_buf[1024];
-    v42bis_dict_node_t dict[V42BIS_MAX_CODEWORDS];
-    /*! \brief TRUE if we are in transparent (i.e. uncompressable) mode */
-    int transparent;
-    int change_transparency;
-    /*! \brief IIR filter state, used in assessing compressibility. */
-    int compressibility_filter;
-    int compressibility_persistence;
-    
-    /*! \brief Next empty dictionary entry */
-    uint32_t v42bis_parm_c1;
-    /*! \brief Current codeword size */
-    int v42bis_parm_c2;
-    /*! \brief Threshold for codeword size change */
-    uint32_t v42bis_parm_c3;
 
-    /*! \brief Mark that this is the first octet/code to be processed */
-    int first;
+    /*! \brief The current value of the escape code */
     uint8_t escape_code;
-} v42bis_compress_state_t;
-
-/*!
-    V.42bis decompression. This defines the working state for a single instance
-    of V.42bis decompression.
-*/
-typedef struct
-{
-    /*! \brief Callback function to handle decompressed data. */
-    v42bis_data_handler_t handler;
-    /*! \brief An opaque pointer passed in calls to data_handler. */
-    void *user_data;
-    /*! \brief The maximum decompressed data block length allowed */
-    int max_len;
-
-    uint32_t old_code;
-    uint32_t last_old_code;
-    uint32_t input_bit_buffer;
-    int input_bit_count;
-    int octet;
-    int last_length;
-    int output_octet_count;
-    uint8_t output_buf[1024];
-    v42bis_dict_node_t dict[V42BIS_MAX_CODEWORDS];
-    /*! \brief TRUE if we are in transparent (i.e. uncompressable) mode */
-    int transparent;
-
-    int last_extra_octet;
-
-    /*! \brief Next empty dictionary entry */
-    uint32_t v42bis_parm_c1;
-    /*! \brief Current codeword size */
-    int v42bis_parm_c2;
-    /*! \brief Threshold for codeword size change */
-    uint32_t v42bis_parm_c3;
-        
-    /*! \brief Mark that this is the first octet/code to be processed */
-    int first;
-    uint8_t escape_code;
+    /*! \brief TRUE if we just hit an escape code, and are waiting for the following octet */
     int escaped;
-} v42bis_decompress_state_t;
+} v42bis_comp_state_t;
 
 /*!
     V.42bis compression/decompression descriptor. This defines the working state for a
@@ -129,20 +114,13 @@ typedef struct
 */
 struct v42bis_state_s
 {
-    /*! \brief V.42bis data compression directions. */
-    int v42bis_parm_p0;
-
     /*! \brief Compression state. */
-    v42bis_compress_state_t compress;
+    v42bis_comp_state_t compress;
     /*! \brief Decompression state. */
-    v42bis_decompress_state_t decompress;
-    
-    /*! \brief Maximum codeword size (bits) */
-    int v42bis_parm_n1;
-    /*! \brief Total number of codewords */
-    uint32_t v42bis_parm_n2;
-    /*! \brief Maximum string length */
-    int v42bis_parm_n7;
+    v42bis_comp_state_t decompress;
+
+    /*! \brief Error and flow logging control */
+    logging_state_t logging;
 };
 
 #endif

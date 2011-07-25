@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_buffer.h 1709 2010-05-24 17:12:11Z achaloyan $
  */
 
-#ifndef __MPF_BUFFER_H__
-#define __MPF_BUFFER_H__
+#ifndef MPF_BUFFER_H
+#define MPF_BUFFER_H
 
 /**
  * @file mpf_buffer.h
@@ -49,8 +51,8 @@ apt_bool_t mpf_buffer_event_write(mpf_buffer_t *buffer, mpf_frame_type_e event_t
 apt_bool_t mpf_buffer_frame_read(mpf_buffer_t *buffer, mpf_frame_t *media_frame);
 
 /** Get size of buffer **/
-apr_size_t mpf_buffer_get_size(mpf_buffer_t *buffer);
+apr_size_t mpf_buffer_get_size(const mpf_buffer_t *buffer);
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_BUFFER_H__*/
+#endif /* MPF_BUFFER_H */

@@ -1,97 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- UniMRCP client document -->
-<unimrcpclient>
-  <!-- MRCP resources -->
-  <resources>
-    <resource class="speechsynth" enable="1"/>
-    <resource class="speechrecog" enable="1"/>
-    <resource class="recorder" enable="1"/>
-  </resources>
+<unimrcpclient xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+               xsi:noNamespaceSchemaLocation="unimrcpclient.xsd" 
+               version="1.0"
+               subfolder="client-profiles">
+  <properties>
+    <!-- By default, network interface (IP address) to bind to will be implicitly identified. 
+         Alternatively, it can be explicitly set.
+    -->
+    <ip type="auto"/>
+    <!-- <ip>10.10.0.1</ip> -->
+    <!-- <ext-ip>a.b.c.d</ext-ip> -->
+    <!-- <server-ip>a.b.c.d</server-ip> -->
+  </properties>
 
-  <!-- Client settings (signaling, media, ...) -->
+  <components>
+    <!-- Factory of MRCP resources -->
+    <resource-factory>
+      <resource id="speechsynth" enable="true"/>
+      <resource id="speechrecog" enable="true"/>
+      <resource id="recorder" enable="true"/>
+      <resource id="speakverify" enable="true"/>
+    </resource-factory>
+
+    <!-- SofiaSIP MRCPv2 signaling agent -->
+    <sip-uac id="SIP-Agent-1" type="SofiaSIP">
+      <!-- By default, "ip" and "ext-ip" addresses set in the properties will be used. 
+           They still can be explicitly specified (overriden) here.
+      -->
+      <!-- <sip-ip>10.10.0.1</sip-ip> -->
+      <!-- <sip-ext-ip>a.b.c.d</sip-ext-ip> -->
+      <sip-port>8062</sip-port>
+      <sip-transport>udp</sip-transport>
+      <ua-name>UniMRCP SofiaSIP</ua-name>
+      <sdp-origin>UniMRCPClient</sdp-origin>
+      <!-- <sip-t1>500</sip-t1> -->
+      <!-- <sip-t2>4000</sip-t2> -->
+      <!-- <sip-t4>4000</sip-t4> -->
+      <!-- <sip-t1x64>32000</sip-t1x64> -->
+    </sip-uac>
+
+    <!-- UniRTSP MRCPv1 signaling agent -->
+    <rtsp-uac id="RTSP-Agent-1" type="UniRTSP">
+      <max-connection-count>100</max-connection-count>
+      <!-- <request-timeout>5000</request-timeout> -->
+      <sdp-origin>UniMRCPClient</sdp-origin>
+    </rtsp-uac>
+    
+    <!-- MRCPv2 connection agent -->
+    <mrcpv2-uac id="MRCPv2-Agent-1">
+      <max-connection-count>100</max-connection-count>
+      <offer-new-connection>false</offer-new-connection>
+      <rx-buffer-size>1024</rx-buffer-size>
+      <tx-buffer-size>1024</tx-buffer-size>
+      <!-- <request-timeout>5000</request-timeout> -->
+    </mrcpv2-uac>
+    
+    <!-- Media processing engine -->
+    <media-engine id="Media-Engine-1">
+      <realtime-rate>1</realtime-rate>
+    </media-engine>
+    
+    <!-- Factory of RTP terminations -->
+    <rtp-factory id="RTP-Factory-1">
+      <!-- By default, "ip" and "ext-ip" addresses set in the properties will be used. 
+           They still can be explicitly specified (overriden) here.
+      -->
+      <!-- <rtp-ip>10.10.0.1</rtp-ip> -->
+      <!-- <rtp-ext-ip>a.b.c.d</rtp-ext-ip> -->
+      <rtp-port-min>4000</rtp-port-min>
+      <rtp-port-max>5000</rtp-port-max>
+    </rtp-factory>
+  </components>
+  
   <settings>
-    <!-- SIP, RTSP signaling agents -->
-    <signaling>
-      <!-- SofiaSIP MRCPv2 signaling agent -->
-      <agent name="SIP-Agent-1" class="SofiaSIP">
-        <param name="client-ip" value="auto"/>
-        <!-- <param name="client-ext-ip" value="auto"/> -->
-        <param name="client-port" value="8062"/>
-        <param name="server-ip" value="auto"/>
-        <param name="server-port" value="8060"/>
-        <!-- <param name="force-destination" value="1"/> -->
-        <!-- <param name="sip-transport" value="tcp"/> -->
-        <param name="sip-transport" value="udp"/>
- 
-        <param name="ua-name" value="UniMRCP SofiaSIP"/>
-        <param name="sdp-origin" value="UniMRCPClient"/>
-      </agent>
-      <!-- UniRTSP MRCPv1 signaling agent -->
-      <agent name="RTSP-Agent-1" class="UniRTSP">
-        <param name="server-ip" value="auto"/>
-        <param name="server-port" value="1554"/>
-        <!-- <param name="force-destination" value="1"/> -->
-        <param name="resource-location" value="media"/>
-        <resourcemap>
-          <param name="speechsynth" value="speechsynthesizer"/>
-          <param name="speechrecog" value="speechrecognizer"/>
-        </resourcemap>
-      </agent>
-    </signaling>
-
-    <!-- MRCPv2 connection agents -->
-    <connection>
-      <agent name="MRCPv2-Agent-1">
-        <param name="max-connection-count" value="100"/>
-        <!-- <param name="offer-new-connection" value="1"/> -->
-      </agent>
-    </connection>
-
-    <!-- Media engines -->
-    <media>
-      <engine name="Media-Engine-1" realtime-rate="1"/>
-      <rtp name="RTP-Factory-1">
-        <param name="rtp-ip" value="auto"/>
-        <!-- <param name="rtp-ext-ip" value="auto"/> -->
-        <param name="rtp-port-min" value="4000"/>
-        <param name="rtp-port-max" value="5000"/>
-        <!-- <param name="playout-delay" value="50"/> -->
-        <!-- <param name="max-playout-delay" value="200"/> -->
-        <!-- <param name="ptime" value="20"/> -->
-        <param name="codecs" value="PCMU PCMA L16/96/8000 PCMU/97/16000 telephone-event/101/8000"/>
-        <!-- <param name="codecs" value="PCMU PCMA L16/96/8000 PCMU/97/16000 PCMA/98/16000 L16/99/16000"/> -->
-
-        <!-- enable/disable rtcp support -->
-        <param name="rtcp" value="0"/>
-        <!-- rtcp bye policies (rtcp must be enabled first)
-             0 - disable rtcp bye
-             1 - send rtcp bye at the end of session
-             2 - send rtcp bye also at the end of each talkspurt (input)
+    <!-- common (default) RTP/RTCP settings -->
+    <rtp-settings id="RTP-Settings-1">
+      <jitter-buffer>
+        <playout-delay>50</playout-delay>
+        <max-playout-delay>200</max-playout-delay>
+      </jitter-buffer>
+      <ptime>20</ptime>
+      <codecs>PCMU PCMA L16/96/8000 telephone-event/101/8000</codecs>
+      <!-- <codecs>PCMU PCMA L16/96/8000 PCMU/97/16000 PCMA/98/16000 L16/99/16000</codecs> -->
+      <!-- enable/disable RTCP support -->
+      <rtcp enable="false">
+        <!-- RTCP BYE policies (RTCP must be enabled first)
+              0 - disable RTCP BYE
+              1 - send RTCP BYE at the end of session
+              2 - send RTCP BYE also at the end of each talkspurt (input)
         -->
-        <param name="rtcp-bye" value="1"/>
+        <rtcp-bye>1</rtcp-bye>
         <!-- rtcp transmission interval in msec (set 0 to disable) -->
-        <param name="rtcp-tx-interval" value="5000"/>
+        <tx-interval>5000</tx-interval>
         <!-- period (timeout) to check for new rtcp messages in msec (set 0 to disable) -->
-        <param name="rtcp-rx-resolution" value="1000"/>
-      </rtp>
-    </media>
-  </settings>
-
-  <!-- Client profiles -->
-  <profiles>
-    <!-- MRCPv2 default profile -->
-    <profile name="MRCPv2-Default">
-      <param name="signaling-agent" value="SIP-Agent-1"/>
-      <param name="connection-agent" value="MRCPv2-Agent-1"/>
-      <param name="media-engine" value="Media-Engine-1"/>
-      <param name="rtp-factory" value="RTP-Factory-1"/>
-    </profile>
-    <!-- MRCPv1 default profile -->
-    <profile name="MRCPv1-Default">
-      <param name="signaling-agent" value="RTSP-Agent-1"/>
-      <param name="media-engine" value="Media-Engine-1"/>
-      <param name="rtp-factory" value="RTP-Factory-1"/>
-    </profile>
-
-    <!-- more profiles might be added here -->
-  </profiles>
+        <rx-resolution>1000</rx-resolution>
+      </rtcp>
+    </rtp-settings>
+  </settings>  
 </unimrcpclient>

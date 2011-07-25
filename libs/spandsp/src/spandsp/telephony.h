@@ -77,6 +77,27 @@ typedef int (span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define TRUE (!FALSE)
 #endif
 
+/* Fixed point constant macros */
+#define FP_Q_9_7(x) ((int16_t) (128.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_8_8(x) ((int16_t) (256.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_7_9(x) ((int16_t) (512.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_6_10(x) ((int16_t) (1024.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_5_11(x) ((int16_t) (2048.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_4_12(x) ((int16_t) (4096.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_3_13(x) ((int16_t) (8192.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_2_14(x) ((int16_t) (16384.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_1_15(x) ((int16_t) (32768.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+
+#define FP_Q_9_23(x) ((int32_t) (65536.0*128.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_8_24(x) ((int32_t) (65536.0*256.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_7_25(x) ((int32_t) (65536.0*512.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_6_26(x) ((int32_t) (65536.0*1024.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_5_27(x) ((int32_t) (65536.0*2048.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_4_28(x) ((int32_t) (65536.0*4096.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_3_29(x) ((int32_t) (65536.0*8192.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_2_30(x) ((int32_t) (65536.0*16384.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define FP_Q_1_31(x) ((int32_t) (65536.0*32768.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
+
 #if defined(__cplusplus)
 /* C++ doesn't seem to have sane rounding functions/macros yet */
 #if !defined(WIN32)

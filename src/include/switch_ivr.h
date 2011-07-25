@@ -62,6 +62,12 @@ SWITCH_BEGIN_EXTERN_C struct switch_unicast_conninfo {
 };
 typedef struct switch_unicast_conninfo switch_unicast_conninfo_t;
 
+#define SWITCH_IVR_VERIFY_SILENCE_DIVISOR(divisor) \
+	{ \
+		if ((divisor) <= 0 && (divisor) != -1) { \
+			divisor = 400; \
+		} \
+	}
 
 /**
  * @defgroup switch_ivr IVR Library
@@ -104,7 +110,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(_In_ switch_core_session_
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_event(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_messages(switch_core_session_t *session);
-
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_session_t *session);
 /*!
   \brief Wait for time to pass for a specified number of milliseconds
   \param session the session to wait for.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_sdp.c 1647 2010-04-12 19:34:53Z achaloyan $
  */
 
 #include <stdlib.h>
@@ -331,7 +333,7 @@ static apt_bool_t mrcp_control_media_generate(mrcp_control_descriptor_t *control
 	apt_string_set(&name,sdp_media->m_proto_name);
 	control_media->proto = mrcp_proto_find(&name);
 	if(control_media->proto != MRCP_PROTO_TCP) {
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Not supported SDP Proto [%s], expected [%s]",sdp_media->m_proto_name,mrcp_proto_get(MRCP_PROTO_TCP));
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Not supported SDP Proto [%s], expected [%s]",sdp_media->m_proto_name,mrcp_proto_get(MRCP_PROTO_TCP)->buf);
 		return FALSE;
 	}
 	

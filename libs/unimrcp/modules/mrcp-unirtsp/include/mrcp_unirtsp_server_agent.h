@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_unirtsp_server_agent.h 1700 2010-05-21 18:56:06Z achaloyan $
  */
 
-#ifndef __MRCP_UNIRTSP_SERVER_AGENT_H__
-#define __MRCP_UNIRTSP_SERVER_AGENT_H__
+#ifndef MRCP_UNIRTSP_SERVER_AGENT_H
+#define MRCP_UNIRTSP_SERVER_AGENT_H
 
 /**
  * @file mrcp_unirtsp_server_agent.h
@@ -56,7 +58,7 @@ struct rtsp_server_config_t {
 /**
  * Create UniRTSP signaling agent.
  */
-MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_server_agent_create(rtsp_server_config_t *config, apr_pool_t *pool);
+MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_server_agent_create(const char *id, rtsp_server_config_t *config, apr_pool_t *pool);
 
 /**
  * Allocate UniRTSP config.
@@ -65,4 +67,4 @@ MRCP_DECLARE(rtsp_server_config_t*) mrcp_unirtsp_server_config_alloc(apr_pool_t 
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_UNIRTSP_SERVER_AGENT_H__*/
+#endif /* MRCP_UNIRTSP_SERVER_AGENT_H */

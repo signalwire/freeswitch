@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: pocketsphinx_properties.h 1743 2010-07-12 08:04:46Z achaloyan $
  */
 
-#ifndef __POCKETSPHINX_PROPERTIES_H__
-#define __POCKETSPHINX_PROPERTIES_H__
+#ifndef POCKETSPHINX_PROPERTIES_H
+#define POCKETSPHINX_PROPERTIES_H
 
 /**
  * @file pocketsphinx_properties.h
@@ -50,8 +52,10 @@ struct pocketsphinx_properties_t {
 
 	/** Sensitivity level */
 	apr_size_t           sensitivity_level;
-	/** Sensitivity timeout */
-	apr_size_t           sensitivity_timeout;
+	/** Activity timeout (timeout to be used to switch to the activity state) */
+	apr_size_t           activity_timeout;
+	/** Inactivity timeout (timeout to be used to switch to the inactivity state) */
+	apr_size_t           inactivity_timeout;
 
 	/** Noinput timeout */
 	apr_size_t           no_input_timeout;
@@ -74,4 +78,4 @@ apt_bool_t pocketsphinx_properties_load(pocketsphinx_properties_t *properties,
 
 APT_END_EXTERN_C
 
-#endif /*__POCKETSPHINX_PROPERTIES_H__*/
+#endif /* POCKETSPHINX_PROPERTIES_H */

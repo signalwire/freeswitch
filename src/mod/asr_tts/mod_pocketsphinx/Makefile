@@ -1,7 +1,7 @@
-SPHINXBASE=sphinxbase-0.4.99
+SPHINXBASE=sphinxbase-0.7
 SPHINXBASE_DIR=$(switch_srcdir)/libs/$(SPHINXBASE)
 SPHINXBASE_BUILDDIR=$(switch_builddir)/libs/$(SPHINXBASE)
-POCKETSPHINX=pocketsphinx-0.5.99
+POCKETSPHINX=pocketsphinx-0.7
 POCKETSPHINX_DIR=$(switch_srcdir)/libs/$(POCKETSPHINX)
 POCKETSPHINX_BUILDDIR=$(switch_builddir)/libs/$(POCKETSPHINX)
 SPHINXBASE_LA=$(SPHINXBASE_BUILDDIR)/src/libsphinxbase/libsphinxbase.la
@@ -17,7 +17,7 @@ BASE=../../../..
 include $(BASE)/build/modmake.rules
 
 $(SPHINXBASE_DIR):
-	$(GETLIB) $(SPHINXBASE)-20091212.tar.gz
+	$(GETLIB) $(SPHINXBASE).tar.gz
 
 $(SPHINXBASE_BUILDDIR)/buildstamp: $(SPHINXBASE_DIR)
 	mkdir -p $(SPHINXBASE_BUILDDIR)
@@ -29,7 +29,7 @@ $(SPHINXBASE_LA): $(SPHINXBASE_BUILDDIR)/buildstamp
 	$(TOUCH_TARGET)
 
 $(POCKETSPHINX_DIR):
-	$(GETLIB) $(POCKETSPHINX)-20091212.tar.gz
+	$(GETLIB) $(POCKETSPHINX).tar.gz
 
 $(POCKETSPHINX_BUILDDIR)/Makefile: $(POCKETSPHINX_DIR) $(SPHINXBASE_LA)
 	mkdir -p $(POCKETSPHINX_BUILDDIR)
@@ -51,11 +51,7 @@ $(DESTDIR)$(grammardir)/model/communicator:
 	mkdir -p $(DESTDIR)$(grammardir)/model/communicator
 	cp -rp $(switch_srcdir)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(grammardir)/model/communicator
 
-$(DESTDIR)$(grammardir)/model/wsj1:
-	mkdir -p $(DESTDIR)$(grammardir)/model/wsj1
-	cp -rp $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(grammardir)/model/wsj1
-
 dictionary:
-	@cp -f $(POCKETSPHINX_DIR)/model/lm/cmudict.0.6d $(DESTDIR)$(grammardir)/default.dic
+	@cp -f $(POCKETSPHINX_DIR)/model/lm/en_US/cmu07a.dic $(DESTDIR)$(grammardir)/default.dic
 
-local_install: $(DESTDIR)$(grammardir)/model $(DESTDIR)$(grammardir)/model/communicator $(DESTDIR)$(grammardir)/model/wsj1 dictionary
+local_install: $(DESTDIR)$(grammardir)/model $(DESTDIR)$(grammardir)/model/communicator dictionary

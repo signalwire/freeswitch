@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_engine.c 1709 2010-05-24 17:12:11Z achaloyan $
  */
 
 #include "mpf_engine.h"
@@ -21,12 +23,11 @@
 #include "mpf_scheduler.h"
 #include "mpf_codec_descriptor.h"
 #include "mpf_codec_manager.h"
-#include "mpf_timer_manager.h"
 #include "apt_obj_list.h"
 #include "apt_cyclic_queue.h"
 #include "apt_log.h"
 
-#define MPF_TASK_NAME "Media Processing Engine"
+#define MPF_TIMER_RESOLUTION 100 /* 100 ms */
 
 struct mpf_engine_t {
 	apr_pool_t                *pool;
@@ -36,11 +37,12 @@ struct mpf_engine_t {
 	apt_cyclic_queue_t        *request_queue;
 	mpf_context_factory_t     *context_factory;
 	mpf_scheduler_t           *scheduler;
-	mpf_timer_manager_t       *timer_manager;
+	apt_timer_queue_t         *timer_queue;
 	const mpf_codec_manager_t *codec_manager;
 };
 
-static void mpf_engine_main(mpf_scheduler_t *scheduler, void *data);
+static void mpf_engine_main(mpf_scheduler_t *scheduler, void *obj);
+static void mpf_engine_timer_proc(mpf_scheduler_t *scheduler, void *obj);
 static apt_bool_t mpf_engine_destroy(apt_task_t *task);
 static apt_bool_t mpf_engine_start(apt_task_t *task);
 static apt_bool_t mpf_engine_terminate(apt_task_t *task);
@@ -52,7 +54,7 @@ mpf_codec_t* mpf_codec_l16_create(apr_pool_t *pool);
 mpf_codec_t* mpf_codec_g711u_create(apr_pool_t *pool);
 mpf_codec_t* mpf_codec_g711a_create(apr_pool_t *pool);
 
-MPF_DECLARE(mpf_engine_t*) mpf_engine_create(apr_pool_t *pool)
+MPF_DECLARE(mpf_engine_t*) mpf_engine_create(const char *id, apr_pool_t *pool)
 {
 	apt_task_vtable_t *vtable;
 	apt_task_msg_pool_t *msg_pool;
@@ -64,13 +66,13 @@ MPF_DECLARE(mpf_engine_t*) mpf_engine_create(apr_pool_t *pool)
 
 	msg_pool = apt_task_msg_pool_create_dynamic(sizeof(mpf_message_container_t),pool);
 
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create "MPF_TASK_NAME);
+	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create Media Engine [%s]",id);
 	engine->task = apt_task_create(engine,msg_pool,pool);
 	if(!engine->task) {
 		return NULL;
 	}
 
-	apt_task_name_set(engine->task,MPF_TASK_NAME);
+	apt_task_name_set(engine->task,id);
 
 	vtable = apt_task_vtable_get(engine->task);
 	if(vtable) {
@@ -90,17 +92,19 @@ MPF_DECLARE(mpf_engine_t*) mpf_engine_create(apr_pool_t *pool)
 	engine->scheduler = mpf_scheduler_create(engine->pool);
 	mpf_scheduler_media_clock_set(engine->scheduler,CODEC_FRAME_TIME_BASE,mpf_engine_main,engine);
 
-	engine->timer_manager = mpf_timer_manager_create(engine->scheduler,engine->pool);
+	engine->timer_queue = apt_timer_queue_create(engine->pool);
+	mpf_scheduler_timer_clock_set(engine->scheduler,MPF_TIMER_RESOLUTION,mpf_engine_timer_proc,engine);
 	return engine;
 }
 
 MPF_DECLARE(mpf_context_t*) mpf_engine_context_create(
-								mpf_engine_t *engine, 
-								void *obj, 
-								apr_size_t max_termination_count, 
+								mpf_engine_t *engine,
+								const char *name,
+								void *obj,
+								apr_size_t max_termination_count,
 								apr_pool_t *pool)
 {
-	return mpf_context_create(engine->context_factory,obj,max_termination_count,pool);
+	return mpf_context_create(engine->context_factory,name,obj,max_termination_count,pool);
 }
 
 MPF_DECLARE(apt_bool_t) mpf_engine_context_destroy(mpf_context_t *context)
@@ -108,12 +112,12 @@ MPF_DECLARE(apt_bool_t) mpf_engine_context_destroy(mpf_context_t *context)
 	return mpf_context_destroy(context);
 }
 
-MPF_DECLARE(void*) mpf_engine_context_object_get(mpf_context_t *context)
+MPF_DECLARE(void*) mpf_engine_context_object_get(const mpf_context_t *context)
 {
 	return mpf_context_object_get(context);
 }
 
-MPF_DECLARE(apt_task_t*) mpf_task_get(mpf_engine_t *engine)
+MPF_DECLARE(apt_task_t*) mpf_task_get(const mpf_engine_t *engine)
 {
 	return engine->task;
 }
@@ -223,7 +227,7 @@ static apt_bool_t mpf_engine_destroy(apt_task_t *task)
 {
 	mpf_engine_t *engine = apt_task_object_get(task);
 
-	mpf_timer_manager_destroy(engine->timer_manager);
+	apt_timer_queue_destroy(engine->timer_queue);
 	mpf_scheduler_destroy(engine->scheduler);
 	mpf_context_factory_destroy(engine->context_factory);
 	apt_cyclic_queue_destroy(engine->request_queue);
@@ -282,7 +286,7 @@ static apt_bool_t mpf_engine_msg_signal(apt_task_t *task, apt_task_msg_t *msg)
 	
 	apr_thread_mutex_lock(engine->request_queue_guard);
 	if(apt_cyclic_queue_push(engine->request_queue,msg) == FALSE) {
-		apt_log(APT_LOG_MARK,APT_PRIO_ERROR,"MPF Request Queue is Full");
+		apt_log(APT_LOG_MARK,APT_PRIO_ERROR,"MPF Request Queue is Full [%s]",apt_task_name_get(task));
 	}
 	apr_thread_mutex_unlock(engine->request_queue_guard);
 	return TRUE;
@@ -299,7 +303,6 @@ static apt_bool_t mpf_engine_msg_process(apt_task_t *task, apt_task_msg_t *msg)
 	mpf_termination_t *termination;
 	const mpf_message_t *mpf_request;
 	const mpf_message_container_t *request = (const mpf_message_container_t*) msg->data;
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Process MPF Message");
 
 	response_msg = apt_task_msg_get(engine->task);
 	response_msg->type = engine->task_msg_type;
@@ -324,7 +327,7 @@ static apt_bool_t mpf_engine_msg_process(apt_task_t *task, apt_task_msg_t *msg)
 				termination->event_handler_obj = engine;
 				termination->event_handler = mpf_engine_event_raise;
 				termination->codec_manager = engine->codec_manager;
-				termination->timer_manager = engine->timer_manager;
+				termination->timer_queue = engine->timer_queue;
 
 				mpf_termination_add(termination,mpf_request->descriptor);
 				if(mpf_context_termination_add(context,termination) == FALSE) {
@@ -383,9 +386,9 @@ static apt_bool_t mpf_engine_msg_process(apt_task_t *task, apt_task_msg_t *msg)
 	return apt_task_msg_parent_signal(engine->task,response_msg);
 }
 
-static void mpf_engine_main(mpf_scheduler_t *scheduler, void *data)
+static void mpf_engine_main(mpf_scheduler_t *scheduler, void *obj)
 {
-	mpf_engine_t *engine = data;
+	mpf_engine_t *engine = obj;
 	apt_task_msg_t *msg;
 
 	/* process request queue */
@@ -401,6 +404,12 @@ static void mpf_engine_main(mpf_scheduler_t *scheduler, void *data)
 
 	/* process factory of media contexts */
 	mpf_context_factory_process(engine->context_factory);
+}
+
+static void mpf_engine_timer_proc(mpf_scheduler_t *scheduler, void *obj)
+{
+	mpf_engine_t *engine = obj;
+	apt_timer_queue_advance(engine->timer_queue,MPF_TIMER_RESOLUTION);
 }
 
 MPF_DECLARE(mpf_codec_manager_t*) mpf_engine_codec_manager_create(apr_pool_t *pool)
@@ -430,4 +439,9 @@ MPF_DECLARE(apt_bool_t) mpf_engine_codec_manager_register(mpf_engine_t *engine, 
 MPF_DECLARE(apt_bool_t) mpf_engine_scheduler_rate_set(mpf_engine_t *engine, unsigned long rate)
 {
 	return mpf_scheduler_rate_set(engine->scheduler,rate);
+}
+
+MPF_DECLARE(const char*) mpf_engine_id_get(const mpf_engine_t *engine)
+{
+	return apt_task_name_get(engine->task);
 }

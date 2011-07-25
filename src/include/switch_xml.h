@@ -320,6 +320,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_insert(_In_ switch_xml_t xml, _In_ switc
 ///\brief removes a tag along with all its subtags
 #define switch_xml_remove(xml) switch_xml_free(switch_xml_cut(xml))
 
+///\brief set new core xml root
+SWITCH_DECLARE(switch_status_t) switch_xml_set_root(switch_xml_t new_main);
+
+///\brief Set and alternate function for opening xml root
+SWITCH_DECLARE(switch_status_t) switch_xml_set_open_root_function(switch_xml_open_root_function_t func, void *user_data);
+
 ///\brief open the Core xml root
 ///\param reload if it's is already open close it and open it again as soon as permissable (blocking)
 ///\param err a pointer to set error strings
@@ -378,7 +384,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(_In_z_ const ch
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, const char *user_name, const char *domain_name,
 															  const char *ip, switch_xml_t *user, switch_event_t *params);
-
+SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char *user_name, const char *domain_name);
 SWITCH_DECLARE(void) switch_xml_merge_user(switch_xml_t user, switch_xml_t domain, switch_xml_t group);
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_dup(switch_xml_t xml);

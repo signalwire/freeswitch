@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_recog_resource.c 1781 2010-09-01 07:33:00Z achaloyan $
  */
 
 #include "mrcp_recog_resource.h"
@@ -22,34 +24,48 @@
 static const apt_str_table_item_t v1_recog_method_string_table[] = {
 	{{"SET-PARAMS",               10},10},
 	{{"GET-PARAMS",               10},10},
-	{{"DEFINE-GRAMMAR",           14},0},
+	{{"DEFINE-GRAMMAR",           14},2},
 	{{"RECOGNIZE",                 9},7},
-	{{"GET-RESULT",               10},4},
+	{{"INTERPRET",                 9},0},
+	{{"GET-RESULT",               10},6},
 	{{"RECOGNITION-START-TIMERS", 24},7},
-	{{"STOP",                      4},1}
+	{{"STOP",                      4},2},
+	{{"START-PHRASE-ENROLLMENT",  23},2},
+	{{"ENROLLMENT-ROLLBACK",      19},2},
+	{{"END-PHRASE-ENROLLMENT",    21},5},
+	{{"MODIFY-PHRASE",            13},0},
+	{{"DELETE-PHRASE",            13},2}
 };
 
-/** String table of mrcpv2 recognizer methods (mrcp_recognizer_method_id) */
+/** String table of MRCPv2 recognizer methods (mrcp_recognizer_method_id) */
 static const apt_str_table_item_t v2_recog_method_string_table[] = {
 	{{"SET-PARAMS",               10},10},
 	{{"GET-PARAMS",               10},10},
-	{{"DEFINE-GRAMMAR",           14},0},
-	{{"RECOGNIZE",                 9},7},
-	{{"GET-RESULT",               10},4},
-	{{"START-INPUT-TIMERS",       18},2},
-	{{"STOP",                      4},2}
+	{{"DEFINE-GRAMMAR",           14},2},
+	{{"RECOGNIZE",                 9},0},
+	{{"INTERPRET",                 9},0},
+	{{"GET-RESULT",               10},6},
+	{{"START-INPUT-TIMERS",       18},7},
+	{{"STOP",                      4},2},
+	{{"START-PHRASE-ENROLLMENT",  23},6},
+	{{"ENROLLMENT-ROLLBACK",      19},2},
+	{{"END-PHRASE-ENROLLMENT",    21},5},
+	{{"MODIFY-PHRASE",            13},0},
+	{{"DELETE-PHRASE",            13},2}
 };
 
 /** String table of MRCP recognizer events (mrcp_recognizer_event_id) */
 static const apt_str_table_item_t v1_recog_event_string_table[] = {
 	{{"START-OF-SPEECH",          15},0},
-	{{"RECOGNITION-COMPLETE",     20},0}
+	{{"RECOGNITION-COMPLETE",     20},0},
+	{{"INTERPRETATION-COMPLETE",  23},0}
 };
 
-/** String table of mrcpv2 recognizer events (mrcp_recognizer_event_id) */
+/** String table of MRCPv2 recognizer events (mrcp_recognizer_event_id) */
 static const apt_str_table_item_t v2_recog_event_string_table[] = {
 	{{"START-OF-INPUT",           14},0},
-	{{"RECOGNITION-COMPLETE",     20},0}
+	{{"RECOGNITION-COMPLETE",     20},0},
+	{{"INTERPRETATION-COMPLETE",  23},0}
 };
 
 

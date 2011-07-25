@@ -1940,11 +1940,11 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 		}
 	}
 	/* strip quotes, escaped chars and leading / trailing spaces */
-	if (count > 1) {
-		for (i = 0; i < count; ++i) {
-			array[i] = cleanup_separated_string(array[i], delim);
-		}
+
+	for (i = 0; i < count; ++i) {
+		array[i] = cleanup_separated_string(array[i], delim);
 	}
+
 	return count;
 }
 
@@ -2000,11 +2000,11 @@ static unsigned int separate_string_blank_delim(char *buf, char **array, unsigne
 		}
 	}
 	/* strip quotes, escaped chars and leading / trailing spaces */
-	if (count > 1) {
-		for (i = 0; i < count; ++i) {
-			array[i] = cleanup_separated_string(array[i], 0);
-		}
+
+	for (i = 0; i < count; ++i) {
+		array[i] = cleanup_separated_string(array[i], 0);
 	}
+	
 	return count;
 }
 
@@ -2669,7 +2669,7 @@ SWITCH_DECLARE(switch_bool_t) switch_dow_cmp(const char *exp, int val)
 			/* Save the previous token and move to the next one */
 			range_start = prev;
 		} else if (cur == DOW_ERR) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse error for [%s] at position %td (%.6s)\n", exp, p - exp, p);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse error for [%s] at position %ld (%.6s)\n", exp, (long) (p - exp), p);
 			break;
 		} else {
 			/* Valid day found */

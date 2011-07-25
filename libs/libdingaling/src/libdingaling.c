@@ -607,7 +607,9 @@ static int on_disco_default(void *user_data, ikspak *pak)
 			int all = 0;
 			
 			iks_insert_attrib(iq, "from", handle->login);
-			iks_insert_attrib(iq, "to", pak->from->full);
+			if (pak->from) {
+				iks_insert_attrib(iq, "to", pak->from->full);
+			}
 			iks_insert_attrib(iq, "id", pak->id);
 			iks_insert_attrib(iq, "type", "result");
 					
@@ -1908,6 +1910,8 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, const char 
 	int on = 0;
 	int len = 0;
 	char *my_body = strdup(body);
+	char *my_body_base = my_body;
+
 	assert(handle != NULL);
 	assert(body != NULL);
 	
@@ -1952,7 +1956,9 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, const char 
 		free(bdup);
 	}
 
-	free(my_body);
+	if (my_body_base) {
+		free(my_body_base);
+	}
 
 	apr_queue_push(handle->queue, msg);
 	msg = NULL;

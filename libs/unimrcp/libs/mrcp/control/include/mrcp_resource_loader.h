@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mrcp_resource_loader.h 1710 2010-05-24 17:36:19Z achaloyan $
  */
 
-#ifndef __MRCP_RESOURCE_LOADER_H__
-#define __MRCP_RESOURCE_LOADER_H__
+#ifndef MRCP_RESOURCE_LOADER_H
+#define MRCP_RESOURCE_LOADER_H
 
 /**
  * @file mrcp_resource_loader.h
@@ -44,8 +46,8 @@ MRCP_DECLARE(apt_bool_t) mrcp_resource_load(mrcp_resource_loader_t *loader, cons
 MRCP_DECLARE(apt_bool_t) mrcp_resource_load_by_id(mrcp_resource_loader_t *loader, mrcp_resource_id id);
 
 /** Get MRCP resource factory */
-MRCP_DECLARE(mrcp_resource_factory_t*) mrcp_resource_factory_get(mrcp_resource_loader_t *loader);
+MRCP_DECLARE(mrcp_resource_factory_t*) mrcp_resource_factory_get(const mrcp_resource_loader_t *loader);
 
 APT_END_EXTERN_C
 
-#endif /*__MRCP_RESOURCE_LOADER_H__*/
+#endif /* MRCP_RESOURCE_LOADER_H */

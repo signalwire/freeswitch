@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: mpf_context.h 1709 2010-05-24 17:12:11Z achaloyan $
  */
 
-#ifndef __MPF_CONTEXT_H__
-#define __MPF_CONTEXT_H__
+#ifndef MPF_CONTEXT_H
+#define MPF_CONTEXT_H
 
 /**
  * @file mpf_context.h
@@ -47,12 +49,14 @@ MPF_DECLARE(apt_bool_t) mpf_context_factory_process(mpf_context_factory_t *facto
 /**
  * Create MPF context.
  * @param factory the factory context belongs to
+ * @param name the informative name of the context
  * @param obj the external object associated with context
  * @param max_termination_count the max number of terminations in context
  * @param pool the pool to allocate memory from
  */
 MPF_DECLARE(mpf_context_t*) mpf_context_create(
 								mpf_context_factory_t *factory, 
+								const char *name,
 								void *obj, 
 								apr_size_t max_termination_count, 
 								apr_pool_t *pool);
@@ -67,7 +71,7 @@ MPF_DECLARE(apt_bool_t) mpf_context_destroy(mpf_context_t *context);
  * Get external object associated with MPF context.
  * @param context the context to get object from
  */
-MPF_DECLARE(void*) mpf_context_object_get(mpf_context_t *context);
+MPF_DECLARE(void*) mpf_context_object_get(const mpf_context_t *context);
 
 /**
  * Add termination to context.
@@ -126,4 +130,4 @@ MPF_DECLARE(apt_bool_t) mpf_context_process(mpf_context_t *context);
 
 APT_END_EXTERN_C
 
-#endif /*__MPF_CONTEXT_H__*/
+#endif /* MPF_CONTEXT_H */

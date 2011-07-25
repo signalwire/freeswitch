@@ -62,6 +62,7 @@ display of modem status is maintained.
 #include <sndfile.h>
 #include <signal.h>
 #if defined(HAVE_FENV_H)
+#define __USE_GNU
 #include <fenv.h>
 #endif
 
@@ -531,7 +532,7 @@ int main(int argc, char *argv[])
 #endif
     if (decode_test_file)
     {
-        if (sf_close(inhandle))
+        if (sf_close_telephony(inhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
@@ -539,7 +540,7 @@ int main(int argc, char *argv[])
     }
     if (log_audio)
     {
-        if (sf_close(outhandle))
+        if (sf_close_telephony(outhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);

@@ -275,6 +275,10 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			>
 			<File
+				RelativePath=".\src\mrcp_application.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mrcp_client.c"
 				>
 			</File>

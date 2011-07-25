@@ -974,7 +974,7 @@ ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan)
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
 
 		/* confirm this is a voice channel, otherwise we do nothing */ 
-		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != VOICE) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
 			continue;
 		} 
 
@@ -1040,7 +1040,7 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
 
 		/* confirm this is a voice channel, otherwise we do nothing */ 
-		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != VOICE) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
 			continue;
 		}
 
@@ -1074,7 +1074,7 @@ ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
 
 		/* confirm this is a voice channel, otherwise we do nothing */ 
-		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != VOICE) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
 			continue;
 		}
 
@@ -1114,7 +1114,7 @@ GRS_UNLOCK_ALL:
 	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
 
 		/* confirm this is a voice channel, otherwise we do nothing */ 
-		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != VOICE) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
 			continue;
 		}
 

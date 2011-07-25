@@ -96,7 +96,7 @@ static void complexify_tests(void)
         fprintf(stderr, "    Error writing audio file\n");
         exit(2);
     }
-    if (sf_close(outhandle))
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_COMPLEXIFY);
         exit(2);
@@ -174,13 +174,13 @@ static void test_one_way_model(int line_model_no, int speech_test)
     }
     if (speech_test)
     {
-        if (sf_close(inhandle1))
+        if (sf_close_telephony(inhandle1))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME1);
             exit(2);
         }
     }
-    if (sf_close(outhandle))
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME1);
         exit(2);
@@ -288,18 +288,18 @@ static void test_both_ways_model(int line_model_no, int speech_test)
     }
     if (speech_test)
     {
-        if (sf_close(inhandle1))
+        if (sf_close_telephony(inhandle1))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME1);
             exit(2);
         }
-        if (sf_close(inhandle2))
+        if (sf_close_telephony(inhandle2))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME2);
             exit(2);
         }
     }
-    if (sf_close(outhandle))
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME2);
         exit(2);
@@ -313,6 +313,7 @@ static void test_line_filter(int line_model_no)
     float out;
     double sumin;
     double sumout;
+    double gain;
     int i;
     int j;
     int p;
@@ -353,7 +354,8 @@ static void test_line_filter(int line_model_no)
             sumout += out*out;
         }
         /*endfor*/
-        printf("%7.1f %f\n", swept_tone_current_frequency(s), 10.0*log10(sumout/sumin));
+        gain = (sumin != 0.0)  ?  10.0*log10(sumout/sumin + 1.0e-10)  :  0.0;
+        printf("%7.1f %f\n", swept_tone_current_frequency(s), gain);
     }
     /*endfor*/
     swept_tone_free(s);

@@ -50,6 +50,8 @@ SWITCH_BEGIN_EXTERN_C struct switch_channel_timetable {
 	switch_time_t transferred;
 	switch_time_t resurrected;
 	switch_time_t bridged;
+	switch_time_t last_hold;
+	switch_time_t hold_accum;
 	struct switch_channel_timetable *next;
 };
 
@@ -70,6 +72,7 @@ typedef struct switch_channel_timetable switch_channel_timetable_t;
 */
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t *channel);
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_channel_t *channel);
+SWITCH_DECLARE(int) switch_channel_check_signal(switch_channel_t *channel, switch_bool_t in_thread_only);
 
 /*!
   \brief Determine if a channel is ready for io
@@ -82,8 +85,8 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 #define switch_channel_media_ready(_channel) switch_channel_test_ready(_channel, SWITCH_TRUE, SWITCH_TRUE)
 #define switch_channel_media_up(_channel) (switch_channel_test_flag(_channel, CF_ANSWERED) || switch_channel_test_flag(_channel, CF_EARLY_MEDIA))
 
-#define switch_channel_up(_channel) (switch_channel_get_state(_channel) < CS_HANGUP)
-#define switch_channel_down(_channel) (switch_channel_get_state(_channel) >= CS_HANGUP)
+#define switch_channel_up(_channel) (switch_channel_check_signal(_channel, SWITCH_TRUE) || switch_channel_get_state(_channel) < CS_HANGUP)
+#define switch_channel_down(_channel) (switch_channel_check_signal(_channel, SWITCH_TRUE) || switch_channel_get_state(_channel) >= CS_HANGUP)
 #define switch_channel_media_ack(_channel) (!switch_channel_test_cap(_channel, CC_MEDIA_ACK) || switch_channel_test_flag(_channel, CF_MEDIA_ACK))
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);
@@ -123,6 +126,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(_In_ switch_channel
 
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_cause_q850(switch_call_cause_t cause);
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause_q850(switch_channel_t *channel);
+SWITCH_DECLARE(switch_call_cause_t *) switch_channel_get_cause_ptr(switch_channel_t *channel);
 
 /*!
   \brief return a cause string for a given cause
@@ -251,6 +255,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t 
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check);
+SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_channel_t *channel,
+																	  const char *varname, const char *value, switch_bool_t var_check, switch_stack_t stack);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname, const char *fmt, ...);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_name_printf(switch_channel_t *channel, const char *val, const char *fmt, ...);
 
@@ -277,6 +283,8 @@ SWITCH_DECLARE(void) switch_channel_process_export(switch_channel_t *channel, sw
 SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_channel_t *channel, const char *varname, 
 																	  const char *export_varname, const char *fmt, ...);
 
+SWITCH_DECLARE(void) switch_channel_set_scope_variables(switch_channel_t *channel, switch_event_t **event);
+SWITCH_DECLARE(switch_status_t) switch_channel_get_scope_variables(switch_channel_t *channel, switch_event_t **event);
 
 /*!
   \brief Retrieve a variable from a given channel
@@ -284,8 +292,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_cha
   \param varname the name of the variable
   \return the value of the requested variable
 */
-SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup);
-#define switch_channel_get_variable(_c, _v) switch_channel_get_variable_dup(_c, _v, SWITCH_TRUE)
+SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup, int idx);
+#define switch_channel_get_variable(_c, _v) switch_channel_get_variable_dup(_c, _v, SWITCH_TRUE, -1)
 
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event);
 

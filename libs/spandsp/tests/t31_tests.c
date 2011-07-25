@@ -280,9 +280,9 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
     char tag[20];
 
     i = (int) (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase B:", i);
+    snprintf(tag, sizeof(tag), "%c: Phase B", i);
     printf("%c: Phase B handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
-    log_rx_parameters(s, tag);
+    fax_log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -293,11 +293,11 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
     char tag[20];
 
     i = (int) (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase D:", i);
+    snprintf(tag, sizeof(tag), "%c: Phase D", i);
     printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
-    log_transfer_statistics(s, tag);
-    log_tx_parameters(s, tag);
-    log_rx_parameters(s, tag);
+    fax_log_transfer_statistics(s, tag);
+    fax_log_tx_parameters(s, tag);
+    fax_log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -308,11 +308,11 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     char tag[20];
     
     i = (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase E:", i);
+    snprintf(tag, sizeof(tag), "%c: Phase E", i);
     printf("Phase E handler on channel %c\n", i);
-    log_transfer_statistics(s, tag);
-    log_tx_parameters(s, tag);
-    log_rx_parameters(s, tag);
+    fax_log_transfer_statistics(s, tag);
+    fax_log_tx_parameters(s, tag);
+    fax_log_rx_parameters(s, tag);
     //exit(0);
 }
 /*- End of function --------------------------------------------------------*/
@@ -942,7 +942,7 @@ static int t30_tests(int log_audio, int test_sending)
     }
     if (decode_test_file)
     {
-        if (sf_close(in_handle) != 0)
+        if (sf_close_telephony(in_handle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
@@ -950,7 +950,7 @@ static int t30_tests(int log_audio, int test_sending)
     }
     if (log_audio)
     {
-        if (sf_close(wave_handle) != 0)
+        if (sf_close_telephony(wave_handle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             exit(2);

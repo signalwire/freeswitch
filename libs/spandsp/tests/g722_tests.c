@@ -58,7 +58,7 @@ and the resulting audio stored in post_g722.wav.
 //#define WITH_SPANDSP_INTERNALS
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
@@ -347,6 +347,58 @@ static void itu_compliance_tests(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void signal_to_distortion_tests(void)
+{
+    g722_encode_state_t enc_state;
+    g722_decode_state_t dec_state;
+    swept_tone_state_t *swept;
+    power_meter_t in_meter;
+    power_meter_t out_meter;
+    int16_t original[1024];
+    uint8_t compressed[1024];
+    int16_t decompressed[1024];
+    int len;
+    int len2;
+    int len3;
+    int i;
+    int32_t in_level;
+    int32_t out_level;
+
+    /* Test a back to back encoder/decoder pair to ensure we comply with Figure 11/G.722 to
+       Figure 16/G.722, Figure A.1/G.722, and Figure A.2/G.722 */
+    g722_encode_init(&enc_state, 64000, 0);
+    g722_decode_init(&dec_state, 64000, 0);
+    power_meter_init(&in_meter, 7);
+    power_meter_init(&out_meter, 7);
+
+    /* First some silence */
+    len = 1024;
+    memset(original, 0, len*sizeof(original[0]));
+    for (i = 0;  i < len;  i++)
+        in_level = power_meter_update(&in_meter, original[i]);
+    len2 = g722_encode(&enc_state, compressed, original, len);
+    len3 = g722_decode(&dec_state, decompressed, compressed, len2);
+    for (i = 0;  i < len3;  i++)
+        out_level = power_meter_update(&out_meter, decompressed[i]);
+    printf("Silence produces %d at the output\n", out_level);
+
+    /* Now a swept tone test */
+    swept = swept_tone_init(NULL, 25.0f, 3500.0f, -10.0f, 60*16000, FALSE);
+    do
+    {
+        len = swept_tone(swept, original, 1024);
+        for (i = 0;  i < len;  i++)
+            in_level = power_meter_update(&in_meter, original[i]);
+        len2 = g722_encode(&enc_state, compressed, original, len);
+        len3 = g722_decode(&dec_state, decompressed, compressed, len2);
+        for (i = 0;  i < len3;  i++)
+            out_level = power_meter_update(&out_meter, decompressed[i]);
+        printf("%10d, %10d, %f\n", in_level, out_level, (float) out_level/in_level);
+    }
+    while (len > 0);
+}
+/*- End of function --------------------------------------------------------*/
+
 int main(int argc, char *argv[])
 {
     g722_encode_state_t enc_state;
@@ -445,6 +497,7 @@ int main(int argc, char *argv[])
     if (itutests)
     {
         itu_compliance_tests();
+        signal_to_distortion_tests();
     }
     else
     {

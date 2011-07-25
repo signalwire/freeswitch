@@ -725,7 +725,7 @@ static FIO_COMMAND_FUNCTION(zt_command)
 		{
 			int command = ZT_OFFHOOK;
 			if (ioctl(ftdmchan->sockfd, codes.HOOK, &command)) {
-				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "OFFHOOK Failed");
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "OFFHOOK Failed");
 				return FTDM_FAIL;
 			}
 			ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_OFFHOOK);
@@ -735,7 +735,7 @@ static FIO_COMMAND_FUNCTION(zt_command)
 		{
 			int command = ZT_ONHOOK;
 			if (ioctl(ftdmchan->sockfd, codes.HOOK, &command)) {
-				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "ONHOOK Failed");
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "ONHOOK Failed");
 				return FTDM_FAIL;
 			}
 			ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_OFFHOOK);
@@ -745,7 +745,7 @@ static FIO_COMMAND_FUNCTION(zt_command)
 		{
 			int command = ZT_FLASH;
 			if (ioctl(ftdmchan->sockfd, codes.HOOK, &command)) {
-				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "FLASH Failed");
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "FLASH Failed");
 				return FTDM_FAIL;
 			}
 		}
@@ -754,7 +754,7 @@ static FIO_COMMAND_FUNCTION(zt_command)
 		{
 			int command = ZT_WINK;
 			if (ioctl(ftdmchan->sockfd, codes.HOOK, &command)) {
-				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "WINK Failed");
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "WINK Failed");
 				return FTDM_FAIL;
 			}
 		}
@@ -763,7 +763,7 @@ static FIO_COMMAND_FUNCTION(zt_command)
 		{
 			int command = ZT_RING;
 			if (ioctl(ftdmchan->sockfd, codes.HOOK, &command)) {
-				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "Ring Failed");
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "RING Failed");
 				return FTDM_FAIL;
 			}
 			ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_RINGING);
@@ -773,7 +773,7 @@ static FIO_COMMAND_FUNCTION(zt_command)
 		{
 			int command = ZT_RINGOFF;
 			if (ioctl(ftdmchan->sockfd, codes.HOOK, &command)) {
-				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "Ring-off failed");
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Ring-off Failed");
 				return FTDM_FAIL;
 			}
 			ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_RINGING);
@@ -1072,16 +1072,20 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 		break;
 	case ZT_EVENT_BADFCS:
 		{
-			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Bad frame checksum (ZT_EVENT_BADFCS)!\n");
-			/* What else could we do? */
-			*event_id = FTDM_OOB_NOOP;
+			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Bad frame checksum (ZT_EVENT_BADFCS)\n");
+			*event_id = FTDM_OOB_NOOP;	/* What else could we do? */
 		}
 		break;
 	case ZT_EVENT_OVERRUN:
 		{
-			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Driver overrun! (ZT_EVENT_OVERRUN)\n");
-			/* What else could we do? */
-			*event_id = FTDM_OOB_NOOP;
+			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "HDLC frame overrun (ZT_EVENT_OVERRUN)\n");
+			*event_id = FTDM_OOB_NOOP;	/* What else could we do? */
+		}
+		break;
+	case ZT_EVENT_ABORT:
+		{
+			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "HDLC abort frame received (ZT_EVENT_ABORT)\n");
+			*event_id = FTDM_OOB_NOOP;	/* What else could we do? */
 		}
 		break;
 	case ZT_EVENT_NONE:

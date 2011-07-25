@@ -330,7 +330,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	local_ident = switch_str_nil(t30_get_tx_ident(s));
 	far_ident = switch_str_nil(t30_get_rx_ident(s));
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
 	if (result == T30_ERR_OK) {
 		if (pvt->app_mode == FUNCTION_TX) {
@@ -341,6 +341,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully managed. How ?\n");
 		}
 		switch_channel_set_variable(channel, "fax_success", "1");
+
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result,
 						  t30_completion_code_to_str(result));
@@ -414,6 +415,8 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	/* Fire event */
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXRESULT : SPANDSP_EVENT_RXFAXRESULT) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-success", (result == T30_ERR_OK) ? "1" : "0");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-code", fax_result_code);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-text", t30_completion_code_to_str(result));
@@ -428,6 +431,15 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
 		switch_event_fire(&event);
 	}
+
+    switch_channel_execute_on(channel, "execute_on_fax_result");
+
+    if (result == T30_ERR_OK) {
+        switch_channel_execute_on(channel, "execute_on_fax_success");
+    } else {
+        switch_channel_execute_on(channel, "execute_on_fax_failure");
+    }
+
 }
 
 static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count)
@@ -904,6 +916,7 @@ static t38_mode_t request_t38(pvt_t *pvt)
         
         switch_channel_set_private(channel, "t38_options", t38_options);
         pvt->t38_mode = T38_MODE_REQUESTED;
+        switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_REQ);
 
         /* This will send a request for t.38 mode */
         msg.from = __FILE__;
@@ -1173,7 +1186,10 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
         switch (pvt->t38_mode) {
         case T38_MODE_REQUESTED:
             {
-                if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
+                if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38_FAIL)) {
+                    pvt->t38_mode = T38_MODE_REFUSED;
+                    continue;
+                } else if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
                     switch_core_session_message_t msg = { 0 };
                     pvt->t38_mode = T38_MODE_NEGOTIATED;
                     spanfax_init(pvt, T38_MODE);

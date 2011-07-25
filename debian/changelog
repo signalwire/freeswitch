@@ -1,3 +1,9 @@
+freeswitch (1.0.head-git.master.20110530.1-1) unstable; urgency=low
+
+  * added mod_cdr_sqlite
+
+ -- Michal Bielicki <michal.bielicki@seventhsignal.de>  Mon, 30 May 2011 16:02:02 +0200
+
 freeswitch (1.0.head-git.master.20110402.1-1) unstable; urgency=low
 
   * Added Hebrew lang package

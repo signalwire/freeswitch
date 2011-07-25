@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_test_suite.h 1708 2010-05-24 17:03:25Z achaloyan $
  */
 
-#ifndef __APT_TEST_SUITE_H__
-#define __APT_TEST_SUITE_H__
+#ifndef APT_TEST_SUITE_H
+#define APT_TEST_SUITE_H
 
 /**
  * @file apt_test_suite.h
@@ -92,8 +94,8 @@ APT_DECLARE(apt_bool_t) apt_test_framework_run(apt_test_framework_t *framework, 
  * Retrieve the memory pool.
  * @param framework the test framework to retrieve memory pool from
  */
-APT_DECLARE(apr_pool_t*) apt_test_framework_pool_get(apt_test_framework_t *framework);
+APT_DECLARE(apr_pool_t*) apt_test_framework_pool_get(const apt_test_framework_t *framework);
 
 APT_END_EXTERN_C
 
-#endif /*__APT_TEST_SUITE_H__*/
+#endif /* APT_TEST_SUITE_H */

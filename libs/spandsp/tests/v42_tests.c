@@ -5,7 +5,7 @@
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2004 Steve Underwood
+ * Copyright (C) 2004, 2011 Steve Underwood
  *
  * All rights reserved.
  *
@@ -32,10 +32,11 @@ then exchanged between them.
 */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -48,73 +49,148 @@ then exchanged between them.
 
 v42_state_t caller;
 v42_state_t answerer;
+int variable_length;
 
 int rx_next[3] = {0};
 int tx_next[3] = {0};
 
 static void v42_status(void *user_data, int status)
 {
-    int x;
-    
-    x = (intptr_t) user_data;
-    printf("%d: Status is '%s' (%d)\n", x, lapm_status_to_str(status), status);
-    //if (status == LAPM_DATA)
-    //    lapm_tx_iframe((x == 1)  ?  &caller.lapm  :  &answerer.lapm, "ABCDEFGHIJ", 10, 1);
-}
+    v42_state_t *s;
 
-static void v42_frames(void *user_data, const uint8_t *msg, int len)
+    s = (v42_state_t *) user_data;
+    if (status < 0)
+        printf("%p: Status is '%s' (%d)\n", s, signal_status_to_str(status), status);
+    else
+        printf("%p: Status is '%s' (%d)\n", s, lapm_status_to_str(status), status);
+}
+/*- End of function --------------------------------------------------------*/
+
+static int v42_get_frames(void *user_data, uint8_t *msg, int len)
 {
     int i;
+    int j;
+    int k;
     int x;
-    
-    x = (intptr_t) user_data;
+    v42_state_t *s;
+
+    if (len < 0)
+    {
+        v42_status(user_data, len);
+        return 0;
+    }
+    s = (v42_state_t *) user_data;
+    x = (s == &caller)  ?  1  :  2;
+    if (variable_length)
+    {
+        j = make_mask32(len);
+        do
+            k = j & rand();
+        while (k > len);
+    }
+    else
+    {
+        k = len;
+    }
+    for (i = 0;  i < k;  i++)
+        msg[i] = tx_next[x]++;
+    return k;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void v42_put_frames(void *user_data, const uint8_t *msg, int len)
+{
+    int i;
+    v42_state_t *s;
+    int x;
+    static int count = 0;
+    static int xxx = 0;
+
+    if (len < 0)
+    {
+        v42_status(user_data, len);
+        return;
+    }
+    s = (v42_state_t *) user_data;
+    x = (s == &caller)  ?  1  :  2;
     for (i = 0;  i < len;  i++)
     {
         if (msg[i] != (rx_next[x] & 0xFF))
-            printf("%d: Mismatch 0x%02X 0x%02X\n", x, msg[i], rx_next[x] & 0xFF);
+        {
+            printf("%p: Mismatch 0x%02X 0x%02X\n", user_data, msg[i], rx_next[x] & 0xFF);
+            exit(2);
+        }
         rx_next[x]++;
     }
-    printf("%d: Got frame len %d\n", x, len);
+    printf("%p: Got frame len %d\n", user_data, len);
+    printf("%p: %d Far end busy status %d\n", user_data, count, v42_get_far_busy_status(s));
+    if (s == &caller)
+    {
+        if (++count == 5)
+        {
+            v42_set_local_busy_status(s, TRUE);
+            xxx = 1;
+        }
+    }
+    else
+    {
+        if (xxx  &&  ++count == 45)
+            v42_set_local_busy_status(&caller, FALSE);
+    }
 }
+/*- End of function --------------------------------------------------------*/
 
 int main(int argc, char *argv[])
 {
     int i;
     int bit;
-    uint8_t buf[1024];
+    int insert_caller_bit_errors;
+    int insert_answerer_bit_errors;
+    int opt;
 
-    v42_init(&caller, TRUE, TRUE, v42_frames, (void *) 1);
-    v42_init(&answerer, FALSE, TRUE, v42_frames, (void *) 2);
-    v42_set_status_callback(&caller, v42_status, (void *) 1);
-    v42_set_status_callback(&answerer, v42_status, (void *) 2);
-    span_log_set_level(&caller.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG);
+    insert_caller_bit_errors = FALSE;
+    insert_answerer_bit_errors = FALSE;
+    variable_length = FALSE;
+    while ((opt = getopt(argc, argv, "bv")) != -1)
+    {
+        switch (opt)
+        {
+        case 'b':
+            insert_caller_bit_errors = 11000;
+            insert_answerer_bit_errors = 10000;
+            break;
+        case 'v':
+            variable_length = TRUE;
+            break;
+        default:
+            //usage();
+            exit(2);
+            break;
+        }
+    }
+
+    v42_init(&caller, TRUE, TRUE, v42_get_frames, v42_put_frames, (void *) &caller);
+    v42_init(&answerer, FALSE, TRUE, v42_get_frames, v42_put_frames, (void *) &answerer);
+    v42_set_status_callback(&caller, v42_status, (void *) &caller);
+    v42_set_status_callback(&answerer, v42_status, (void *) &answerer);
+    v42_restart(&caller);
+    v42_restart(&answerer);
+
+    span_log_set_level(&caller.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_DEBUG);
     span_log_set_tag(&caller.logging, "caller");
-    span_log_set_level(&caller.lapm.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG);
-    span_log_set_tag(&caller.lapm.logging, "caller");
-    span_log_set_level(&caller.lapm.sched.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG);
-    span_log_set_tag(&caller.lapm.sched.logging, "caller");
-    span_log_set_level(&answerer.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG);
+    span_log_set_level(&answerer.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_DEBUG);
     span_log_set_tag(&answerer.logging, "answerer");
-    span_log_set_level(&answerer.lapm.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG);
-    span_log_set_tag(&answerer.lapm.logging, "answerer");
-    span_log_set_level(&answerer.lapm.sched.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_DEBUG);
-    span_log_set_tag(&answerer.lapm.sched.logging, "answerer");
-    for (i = 0;  i < 100000;  i++)
+
+    for (i = 0;  i < 1000000;  i++)
     {
         bit = v42_tx_bit(&caller);
+        if (insert_caller_bit_errors  &&  i%insert_caller_bit_errors == 0)
+            bit ^= 1;
         v42_rx_bit(&answerer, bit);
         bit = v42_tx_bit(&answerer);
-        //if (i%10000 == 0)
-        //    bit ^= 1;
+        if (insert_answerer_bit_errors  &&  i%insert_answerer_bit_errors == 0)
+            bit ^= 1;
         v42_rx_bit(&caller, bit);
-        span_schedule_update(&caller.lapm.sched, 4);
-        span_schedule_update(&answerer.lapm.sched, 4);
-        buf[0] = tx_next[1];
-        if (lapm_tx(&caller.lapm, buf, 1) == 1)
-            tx_next[1]++;
-        buf[0] = tx_next[2];
-        if (lapm_tx(&answerer.lapm, buf, 1) == 1)
-            tx_next[2]++;
     }
     return  0;
 }

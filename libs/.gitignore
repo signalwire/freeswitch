@@ -276,6 +276,17 @@
 /ldns/packaging/ldns-config
 /ldns/packaging/libldns.pc
 /ldns-1.6.9/
+/libcodec2/src/c2dec
+/libcodec2/src/c2enc
+/libcodec2/src/c2sim
+/libcodec2/unittest/extract
+/libcodec2/unittest/genlsp
+/libcodec2/unittest/genres
+/libcodec2/unittest/tcodec2
+/libcodec2/unittest/tinterp
+/libcodec2/unittest/tnlp
+/libcodec2/unittest/tquant
+/libcodec2/unittest/vqtrain
 /libdingaling/Makefile
 /libdingaling/Makefile.in
 /libdingaling/aclocal.m4
@@ -632,7 +643,9 @@
 /spandsp/src/at_interpreter_dictionary.h
 /spandsp/src/config.h
 /spandsp/src/make_at_dictionary
+/spandsp/src/make_math_fixed_tables
 /spandsp/src/make_modem_filter
+/spandsp/src/math_fixed_tables.h
 /spandsp/src/spandsp.h
 /spandsp/src/stamp-h1
 /spandsp/src/v17_v32bis_rx_fixed_rrc.h
@@ -906,6 +919,8 @@
 /unimrcp/build/pkgconfig/unimrcpclient.pc
 /unimrcp/build/pkgconfig/unimrcpplugin.pc
 /unimrcp/build/pkgconfig/unimrcpserver.pc
+/unimrcp/build/svnrev/Makefile
+/unimrcp/build/svnrev/Makefile.in
 /unimrcp/conf/Makefile
 /unimrcp/conf/Makefile.in
 /unimrcp/config.log
@@ -913,6 +928,7 @@
 /unimrcp/configure
 /unimrcp/data/Makefile
 /unimrcp/data/Makefile.in
+/unimrcp/docs/doxygen.conf
 /unimrcp/libs/Makefile
 /unimrcp/libs/Makefile.in
 /unimrcp/libs/apr-toolkit/Makefile
@@ -970,6 +986,8 @@
 /unimrcp/plugins/mrcp-pocketsphinx/Makefile.in
 /unimrcp/plugins/mrcp-recorder/Makefile
 /unimrcp/plugins/mrcp-recorder/Makefile.in
+/unimrcp/plugins/demo-verifier/Makefile
+/unimrcp/plugins/demo-verifier/Makefile.in
 /unimrcp/tests/Makefile
 /unimrcp/tests/Makefile.in
 /unimrcp/tests/apttest/Makefile
@@ -986,6 +1004,7 @@
 /xmlrpc-c/stamp-h2
 /xmlrpc-c/xmlrpc_amconfig.h
 /xmlrpc-c/xmlrpc_config.h
+/zeromq-*/
 /apr/build/install-sh
 /js/install-sh
 /js/nsprpub/lib/ds/libplds4.dylib
@@ -1035,7 +1054,7 @@
 /libshout-2.2.2/
 /mpg123/
 /openldap-2.4.19/
-/pocketsphinx-0.5.99/
+/pocketsphinx-0.7/
 /portaudio/bin-stamp
 /portaudio/bin/
 /portaudio/lib-stamp
@@ -1043,7 +1062,7 @@
 /silk/Encoder
 /silk/signalCompare
 /soundtouch-1.3.1/
-/sphinxbase-0.4.99/
+/sphinxbase-0.7/
 /unimrcp/platforms/asr-client/asrclient
 /unimrcp/platforms/umc/umc
 /unimrcp/platforms/unimrcp-client/unimrcpclient
@@ -1067,7 +1086,6 @@
 /libogg-1.1.3/
 /pthreads-w32-2-7-0-release/
 /sounds/
-/sphinxbase-0.4.99/
 /sofia-sip/libsofia-sip-ua/http/http_tag_dll.c
 /sofia-sip/libsofia-sip-ua/iptsec/auth_tag_dll.c
 /sofia-sip/libsofia-sip-ua/msg/msg_tag_dll.c

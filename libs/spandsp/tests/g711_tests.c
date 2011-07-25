@@ -324,7 +324,7 @@ static void compliance_tests(int log_audio)
 
     if (log_audio)
     {
-        if (sf_close(outhandle))
+        if (sf_close_telephony(outhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
@@ -486,7 +486,7 @@ int main(int argc, char *argv[])
         }
         if (encode)
         {
-            if (sf_close(inhandle))
+            if (sf_close_telephony(inhandle))
             {
                 fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME);
                 exit(2);
@@ -498,7 +498,7 @@ int main(int argc, char *argv[])
         }
         if (decode)
         {
-            if (sf_close(outhandle))
+            if (sf_close_telephony(outhandle))
             {
                 fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
                 exit(2);

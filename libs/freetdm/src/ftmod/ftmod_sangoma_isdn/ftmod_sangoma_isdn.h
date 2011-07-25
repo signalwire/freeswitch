@@ -154,12 +154,18 @@ typedef struct ftdm_sngisdn_prog_ind {
 } ftdm_sngisdn_progind_t;
 
 /* Only timers that can be cancelled are listed here */
-#define SNGISDN_NUM_TIMERS 2
-/* Increase NUM_TIMERS as number of ftdm_sngisdn_timer_t increases */
-typedef enum {
-	SNGISDN_TIMER_FACILITY = 0,
-	SNGISDN_TIMER_ATT_TRANSFER,
-} ftdm_sngisdn_timer_t;
+#define SNGISDN_NUM_CHAN_TIMERS 2
+/* Increase SNGISDN_NUM_CHAN_TIMERS as number of ftdm_sngisdn_chan_timer_t increases */
+typedef enum {	
+	SNGISDN_CHAN_TIMER_FACILITY,
+	SNGISDN_CHAN_TIMER_ATT_TRANSFER,
+} ftdm_sngisdn_chan_timer_t;
+
+#define SNGISDN_NUM_SPAN_TIMERS 1
+/* Increase SNGISDN_NUM_SPAN_TIMERS as number of ftdm_sngisdn_spanan_timer_t increases */
+typedef enum {	
+	SNGISDN_SPAN_TIMER_RESTART,
+} ftdm_sngisdn_span_timer_t;
 
 typedef struct sngisdn_glare_data {
 	int16_t		suId;
@@ -177,7 +183,7 @@ typedef enum {
 	SNGISDN_TRANSFER_INVALID,
 } sngisdn_transfer_type_t;
 #define SNGISDN_TRANSFER_TYPE_STRINGS "NONE", "ATT_COURTESY_VRU", "ATT_COURTERY_VRU_DATA", "INVALID"
-FTDM_STR2ENUM_P(ftdm_str2sngisdn_transfer_type, sngisdn_transfer_type2str, sngisdn_transfer_type_t)
+SNGISDN_STR2ENUM_P(ftdm_str2sngisdn_transfer_type, sngisdn_transfer_type2str, sngisdn_transfer_type_t)
 
 /* From section 4.2 of TR50075, max length of data is 100 when single UUI is sent */
 #define COURTESY_TRANSFER_MAX_DATA_SIZE 100
@@ -210,7 +216,7 @@ typedef struct sngisdn_chan_data {
 
 	uint8_t                 globalFlg;
 	sngisdn_glare_data_t	glare;
-	ftdm_timer_id_t			timers[SNGISDN_NUM_TIMERS];
+	ftdm_timer_id_t			timers[SNGISDN_NUM_CHAN_TIMERS];
 	sngisdn_transfer_data_t transfer_data;
 
 	/* variables saved here will be sent to the user application
@@ -251,8 +257,11 @@ typedef struct sngisdn_span_data {
 	uint8_t			raw_trace_q931; /* TODO: combine with trace_flags */
 	uint8_t			raw_trace_q921; /* TODO: combine with trace_flags */
 	uint8_t			timer_t3;
-	uint8_t			restart_opt;	
+	uint8_t			restart_opt;
+	uint8_t			restart_timeout;
+	uint8_t			force_sending_complete;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
+	ftdm_timer_id_t timers[SNGISDN_NUM_SPAN_TIMERS];
 	ftdm_sched_t 	*sched;
 	ftdm_queue_t 	*event_queue;
 } sngisdn_span_data_t;
@@ -323,6 +332,11 @@ typedef struct ftdm_sngisdn_data {
 	uint8_t	num_dchan;
 	sngisdn_dchan_data_t dchans[MAX_L1_LINKS+1];
 	sngisdn_span_data_t *spans[MAX_L1_LINKS+1]; /* spans are indexed by link_id */
+
+#ifdef SANGOMA_ISDN_CHAN_ID_INVERT_BIT
+	/* Since this is a global configuration, place it here instead of sngisdn_span_data_t */
+	uint8_t chan_id_invert_extend_bit;
+#endif
 }ftdm_sngisdn_data_t;
 
 typedef struct ftdm2trillium
@@ -446,8 +460,7 @@ ftdm_status_t get_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
 ftdm_status_t get_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
 ftdm_status_t get_called_num(ftdm_channel_t *ftdmchan, CdPtyNmb *cdPtyNmb);
 ftdm_status_t get_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb);
-ftdm_status_t get_calling_name_from_display(ftdm_channel_t *ftdmchan, Display *display);
-ftdm_status_t get_calling_name_from_usr_usr(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr);
+ftdm_status_t get_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt);
 ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
 ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd);
 ftdm_status_t get_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
@@ -508,6 +521,7 @@ void sngisdn_delayed_connect(void* p_sngisdn_info);
 void sngisdn_delayed_disconnect(void* p_sngisdn_info);
 void sngisdn_facility_timeout(void* p_sngisdn_info);
 void sngisdn_t3_timeout(void* p_sngisdn_info);
+void sngisdn_restart_timeout(void* p_signal_data);
 
 /* Stack management functions */
 ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span);

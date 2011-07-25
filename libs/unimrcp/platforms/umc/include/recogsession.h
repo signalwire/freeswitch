@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: recogsession.h 1587 2010-03-12 19:40:02Z achaloyan $
  */
 
-#ifndef __RECOG_SESSION_H__
-#define __RECOG_SESSION_H__
+#ifndef RECOG_SESSION_H
+#define RECOG_SESSION_H
 
 /**
  * @file recogsession.h
@@ -37,6 +39,7 @@ public:
 protected:
 /* ============================ MANIPULATORS =============================== */
 	virtual bool Start();
+	virtual bool Stop();
 
 	RecogChannel* CreateRecogChannel();
 	bool StartRecognition(mrcp_channel_t* pMrcpChannel);
@@ -69,4 +72,4 @@ inline const RecogScenario* RecogSession::GetScenario() const
 	return (RecogScenario*)m_pScenario;
 }
 
-#endif /*__RECOG_SESSION_H__*/
+#endif /* RECOG_SESSION_H */

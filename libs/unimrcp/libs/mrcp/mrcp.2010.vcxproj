@@ -113,6 +113,7 @@
     <ClInclude Include="include\mrcp.h" />
     <ClInclude Include="include\mrcp_types.h" />
     <ClInclude Include="message\include\mrcp_generic_header.h" />
+    <ClInclude Include="message\include\mrcp__header.h" />
     <ClInclude Include="message\include\mrcp_header_accessor.h" />
     <ClInclude Include="message\include\mrcp_message.h" />
     <ClInclude Include="message\include\mrcp_start_line.h" />
@@ -126,9 +127,12 @@
     <ClInclude Include="resources\include\mrcp_recorder_resource.h" />
     <ClInclude Include="resources\include\mrcp_synth_header.h" />
     <ClInclude Include="resources\include\mrcp_synth_resource.h" />
+    <ClInclude Include="resources\include\mrcp_verifier_header.h" />
+    <ClInclude Include="resources\include\mrcp_verifier_resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message\src\mrcp_generic_header.c" />
+    <ClCompile Include="message\src\mrcp_header.c" />
     <ClCompile Include="message\src\mrcp_header_accessor.c" />
     <ClCompile Include="message\src\mrcp_message.c" />
     <ClCompile Include="message\src\mrcp_start_line.c" />
@@ -141,6 +145,8 @@
     <ClCompile Include="resources\src\mrcp_recorder_resource.c" />
     <ClCompile Include="resources\src\mrcp_synth_header.c" />
     <ClCompile Include="resources\src\mrcp_synth_resource.c" />
+    <ClCompile Include="resources\src\mrcp_verifier_header.c" />
+    <ClCompile Include="resources\src\mrcp_verifier_resource.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

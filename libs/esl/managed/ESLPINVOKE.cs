@@ -221,7 +221,7 @@ class ESLPINVOKE {
   public static extern bool ESLevent_SetPriority(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("ESL", EntryPoint="CSharp_ESLevent_GetHeader")]
-  public static extern string ESLevent_GetHeader(HandleRef jarg1, string jarg2);
+  public static extern string ESLevent_GetHeader(HandleRef jarg1, string jarg2, int jarg3);
 
   [DllImport("ESL", EntryPoint="CSharp_ESLevent_GetBody")]
   public static extern string ESLevent_GetBody(HandleRef jarg1);
@@ -234,6 +234,12 @@ class ESLPINVOKE {
 
   [DllImport("ESL", EntryPoint="CSharp_ESLevent_AddHeader")]
   public static extern bool ESLevent_AddHeader(HandleRef jarg1, string jarg2, string jarg3);
+
+  [DllImport("ESL", EntryPoint="CSharp_ESLevent_pushHeader")]
+  public static extern bool ESLevent_pushHeader(HandleRef jarg1, string jarg2, string jarg3);
+
+  [DllImport("ESL", EntryPoint="CSharp_ESLevent_unshiftHeader")]
+  public static extern bool ESLevent_unshiftHeader(HandleRef jarg1, string jarg2, string jarg3);
 
   [DllImport("ESL", EntryPoint="CSharp_ESLevent_DelHeader")]
   public static extern bool ESLevent_DelHeader(HandleRef jarg1, string jarg2);

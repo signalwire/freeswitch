@@ -13,4 +13,5 @@ mrcptest_LDADD       = $(top_builddir)/libs/mrcp/libmrcp.la \
                        $(UNIMRCP_APR_LIBS) $(UNIMRCP_APU_LIBS)
 mrcptest_SOURCES     = src/main.c \
                        src/parse_gen_suite.c \
-                       src/set_get_suite.c
+                       src/set_get_suite.c \
+                       src/transparent_set_get_suite.c

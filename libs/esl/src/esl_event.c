@@ -235,8 +235,7 @@ static unsigned int esl_ci_hashfunc_default(const char *char_key, esl_ssize_t *k
     return hash;
 }
 
-
-ESL_DECLARE(char *)esl_event_get_header(esl_event_t *event, const char *header_name)
+ESL_DECLARE(esl_event_header_t *) esl_event_get_header_ptr(esl_event_t *event, const char *header_name)
 {
 	esl_event_header_t *hp;
 	esl_ssize_t hlen = -1;
@@ -244,15 +243,36 @@ ESL_DECLARE(char *)esl_event_get_header(esl_event_t *event, const char *header_n
 
 	esl_assert(event);
 
-	if (!header_name) return NULL;
-	
+	if (!header_name)
+		return NULL;
+
 	hash = esl_ci_hashfunc_default(header_name, &hlen);
-	
+
 	for (hp = event->headers; hp; hp = hp->next) {
-		if ((!hp->hash || hash == hp->hash) && !strcasecmp(hp->name, header_name) ) {
-			return hp->value;
+		if ((!hp->hash || hash == hp->hash) && !strcasecmp(hp->name, header_name)) {
+			return hp;
 		}
 	}
+	return NULL;
+}
+
+ESL_DECLARE(char *) esl_event_get_header_idx(esl_event_t *event, const char *header_name, int idx)
+{
+	esl_event_header_t *hp;
+
+	if ((hp = esl_event_get_header_ptr(event, header_name))) {
+		if (idx > -1) {
+			if (idx < hp->idx) {
+				return hp->array[idx];
+			} else {
+				return NULL;
+			}
+		}
+
+		return hp->value;
+		
+	}
+
 	return NULL;
 }
 
@@ -264,7 +284,7 @@ ESL_DECLARE(char *)esl_event_get_body(esl_event_t *event)
 ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const char *header_name, const char *val)
 {
 	esl_event_header_t *hp, *lp = NULL, *tp;
-	esl_status_t status = ESL_FAIL;
+	esl_status_t status = ESL_FALSE;
 	int x = 0;
 	esl_ssize_t hlen = -1;
 	unsigned long hash = 0;
@@ -273,12 +293,12 @@ ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const cha
 	while (tp) {
 		hp = tp;
 		tp = tp->next;
-		
+
 		x++;
-		esl_assert(x < 1000);
+		esl_assert(x < 1000000);
 		hash = esl_ci_hashfunc_default(header_name, &hlen);
 
-		if (hp->name && (!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name) && (esl_strlen_zero(val) || !strcmp(hp->value, val))) {
+		if ((!hp->hash || hash == hp->hash) && (hp->name && !strcasecmp(header_name, hp->name)) && (esl_strlen_zero(val) || !strcmp(hp->value, val))) {
 			if (lp) {
 				lp->next = hp->next;
 			} else {
@@ -288,10 +308,26 @@ ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const cha
 				event->last_header = lp;
 			}
 			FREE(hp->name);
-			FREE(hp->value);
-			memset(hp, 0, sizeof(*hp));
-			FREE(hp);
 
+			if (hp->idx) {
+				int i = 0;
+
+				for (i = 0; i < hp->idx; i++) {
+					FREE(hp->array[i]);
+				}
+				FREE(hp->array);
+			}
+
+			FREE(hp->value);
+			
+			memset(hp, 0, sizeof(*hp));
+#ifdef ESL_EVENT_RECYCLE
+			if (esl_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, hp) != ESL_SUCCESS) {
+				FREE(hp);
+			}
+#else
+			FREE(hp);
+#endif
 			status = ESL_SUCCESS;
 		} else {
 			lp = hp;
@@ -301,39 +337,244 @@ ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const cha
 	return status;
 }
 
-static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t stack, const char *header_name, char *data)
+static esl_event_header_t *new_header(const char *header_name)
 {
 	esl_event_header_t *header;
-	esl_ssize_t hlen = -1;
-	
-	header = ALLOC(sizeof(*header));
-	esl_assert(header);
 
-	if ((event->flags & ESL_UNIQ_HEADERS)) {
-		esl_event_del_header(event, header_name);
+#ifdef ESL_EVENT_RECYCLE
+		void *pop;
+		if (esl_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == ESL_SUCCESS) {
+			header = (esl_event_header_t *) pop;
+		} else {
+#endif
+			header = ALLOC(sizeof(*header));
+			esl_assert(header);
+#ifdef ESL_EVENT_RECYCLE
+		}
+#endif	
+
+		memset(header, 0, sizeof(*header));
+		header->name = DUP(header_name);
+
+		return header;
+
+}
+
+ESL_DECLARE(int) esl_event_add_array(esl_event_t *event, const char *var, const char *val)
+{
+	char *data;
+	char **array;
+	int max = 0;
+	int len;
+	const char *p;
+	int i;
+
+	if (strlen(val) < 8) {
+		return -1;
 	}
 
-	memset(header, 0, sizeof(*header));
+	p = val + 7;
 
-	header->name = DUP(header_name);
-	header->value = data;
-	header->hash = esl_ci_hashfunc_default(header->name, &hlen);
+	max = 1;
+
+	while((p = strstr(p, "|:"))) {
+		max++;
+		p += 2;
+	}
+
+	if (!max) {
+		return -2;
+	}
+
+	data = strdup(val + 7);
 	
-	if (stack == ESL_STACK_TOP) {
-		header->next = event->headers;
-		event->headers = header;
-		if (!event->last_header) {
+	len = (sizeof(char *) * max) + 1;
+	array = malloc(len);
+	esl_assert(array);
+	memset(array, 0, len);
+	
+	esl_separate_string_string(data, "|:", array, max);
+	
+	for(i = 0; i < max; i++) {
+		esl_event_add_header_string(event, ESL_STACK_PUSH, var, array[i]);
+	}
+
+	free(array);
+	free(data);
+
+	return 0;
+}
+
+static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t stack, const char *header_name, char *data)
+{
+	esl_event_header_t *header = NULL;
+	esl_ssize_t hlen = -1;
+	int exists = 0, fly = 0;
+	char *index_ptr;
+	int index = 0;
+	char *real_header_name = NULL;
+
+	if ((index_ptr = strchr(header_name, '['))) {
+		index_ptr++;
+		index = atoi(index_ptr);
+		real_header_name = DUP(header_name);
+		if ((index_ptr = strchr(real_header_name, '['))) {
+			*index_ptr++ = '\0';
+		}
+		header_name = real_header_name;
+	}
+	
+	if (index_ptr || (stack & ESL_STACK_PUSH) || (stack & ESL_STACK_UNSHIFT)) {
+		
+		if (!(header = esl_event_get_header_ptr(event, header_name)) && index_ptr) {
+
+			header = new_header(header_name);
+
+			if (esl_test_flag(event, ESL_EF_UNIQ_HEADERS)) {
+				esl_event_del_header(event, header_name);
+			}
+
+			fly++;
+		}
+		
+		if ((header = esl_event_get_header_ptr(event, header_name))) {
+			
+			if (index_ptr) {
+				if (index > -1 && index <= 4000) {
+					if (index < header->idx) {
+						FREE(header->array[index]);
+						header->array[index] = DUP(data);
+					} else {
+						int i;
+						char **m;
+					
+						m = realloc(header->array, sizeof(char *) * (index + 1));
+						esl_assert(m);
+						header->array = m;
+						for (i = header->idx; i < index; i++) {
+							m[i] = DUP("");
+						}
+						m[index] = DUP(data);
+						header->idx = index + 1;
+						if (!fly) {
+							exists = 1;
+						}
+
+						goto redraw;
+					}
+				}
+				goto end;
+			} else {
+				if ((stack & ESL_STACK_PUSH) || (stack & ESL_STACK_UNSHIFT)) {
+					exists++;
+					stack &= ~(ESL_STACK_TOP | ESL_STACK_BOTTOM);
+				} else {
+					header = NULL;
+				}
+			}
+		}
+	}
+
+
+	if (!header) {
+
+		if (esl_strlen_zero(data)) {
+			esl_event_del_header(event, header_name);
+			FREE(data);
+			goto end;
+		}
+
+		if (esl_test_flag(event, ESL_EF_UNIQ_HEADERS)) {
+			esl_event_del_header(event, header_name);
+		}
+
+		if (strstr(data, "ARRAY::")) {
+			esl_event_add_array(event, header_name, data);
+			FREE(data);
+			goto end;
+		}
+
+
+		header = new_header(header_name);
+	}
+	
+	if ((stack & ESL_STACK_PUSH) || (stack & ESL_STACK_UNSHIFT)) {
+		char **m = NULL;
+		esl_size_t len = 0;
+		char *hv;
+		int i = 0, j = 0;
+
+		if (header->value && !header->idx) {
+			m = malloc(sizeof(char *));
+			esl_assert(m);
+			m[0] = header->value;
+			header->value = NULL;
+			header->array = m;
+			header->idx++;
+			m = NULL;
+		}
+
+		i = header->idx + 1;
+		m = realloc(header->array, sizeof(char *) * i); 
+		esl_assert(m);
+
+		if ((stack & ESL_STACK_PUSH)) {
+			m[header->idx] = data;
+		} else if ((stack & ESL_STACK_UNSHIFT)) {
+			for (j = header->idx; j > 0; j--) {
+				m[j] = m[j-1];
+			}
+			m[0] = data;
+		}
+
+		header->idx++;		
+		header->array = m;
+
+	redraw:
+		len = 0;
+		for(j = 0; j < header->idx; j++) {
+			len += strlen(header->array[j]) + 2;
+		}
+
+		if (len) {
+			len += 8;
+			hv = realloc(header->value, len);
+			esl_assert(hv);
+			header->value = hv;
+
+			esl_snprintf(header->value, len, "ARRAY::");
+			for(j = 0; j < header->idx; j++) {
+				esl_snprintf(header->value + strlen(header->value), len - strlen(header->value), "%s%s", j == 0 ? "" : "|:", header->array[j]);
+			}
+		}
+
+	} else {
+		header->value = data;
+	}
+
+	if (!exists) {
+		header->hash = esl_ci_hashfunc_default(header->name, &hlen);
+
+		if ((stack & ESL_STACK_TOP)) {
+			header->next = event->headers;
+			event->headers = header;
+			if (!event->last_header) {
+				event->last_header = header;
+			}
+		} else {
+			if (event->last_header) {
+				event->last_header->next = header;
+			} else {
+				event->headers = header;
+				header->next = NULL;
+			}
 			event->last_header = header;
 		}
-	} else {
-		if (event->last_header) {
-			event->last_header->next = header;
-		} else {
-			event->headers = header;
-			header->next = NULL;
-		}
-		event->last_header = header;
 	}
+
+ end:
+
+	esl_safe_free(real_header_name);
 
 	return ESL_SUCCESS;
 }
@@ -386,48 +627,98 @@ ESL_DECLARE(esl_status_t) esl_event_add_body(esl_event_t *event, const char *fmt
 	}
 }
 
+
 ESL_DECLARE(void) esl_event_destroy(esl_event_t **event)
 {
-	esl_event_t *ep = *event, *this_event;
-	esl_event_header_t *hp, *this_header;
+	esl_event_t *ep = *event;
+	esl_event_header_t *hp, *this;
 
-	for (ep = *event ; ep ;) {
-		this_event = ep;
-		ep = ep->next;
-		
-		for (hp = this_event->headers; hp;) {
-			this_header = hp;
+	if (ep) {
+		for (hp = ep->headers; hp;) {
+			this = hp;
 			hp = hp->next;
-			FREE(this_header->name);
-			FREE(this_header->value);
-			memset(this_header, 0, sizeof(*this_header));
-			FREE(this_header);
+			FREE(this->name);
+
+			if (this->idx) {
+				int i = 0;
+
+				for (i = 0; i < this->idx; i++) {
+					FREE(this->array[i]);
+				}
+				FREE(this->array);
+			}
+
+			FREE(this->value);
+			
+
+#ifdef ESL_EVENT_RECYCLE
+			if (esl_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, this) != ESL_SUCCESS) {
+				FREE(this);
+			}
+#else
+			FREE(this);
+#endif
+
+
 		}
-		FREE(this_event->body);
-		FREE(this_event->subclass_name);
-		memset(this_event, 0, sizeof(*this_event));
-		FREE(this_event);
+		FREE(ep->body);
+		FREE(ep->subclass_name);
+#ifdef ESL_EVENT_RECYCLE
+		if (esl_queue_trypush(EVENT_RECYCLE_QUEUE, ep) != ESL_SUCCESS) {
+			FREE(ep);
+		}
+#else
+		FREE(ep);
+#endif
+
 	}
 	*event = NULL;
 }
 
+ESL_DECLARE(void) esl_event_merge(esl_event_t *event, esl_event_t *tomerge)
+{
+	esl_event_header_t *hp;
+	
+	esl_assert(tomerge && event);
 
+	for (hp = tomerge->headers; hp; hp = hp->next) {
+		if (hp->idx) {
+			int i;
+			
+			for(i = 0; i < hp->idx; i++) {
+				esl_event_add_header_string(event, ESL_STACK_PUSH, hp->name, hp->array[i]);
+			}
+		} else {
+			esl_event_add_header_string(event, ESL_STACK_BOTTOM, hp->name, hp->value);
+		}
+	}
+}
 
 ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup)
 {
 	esl_event_header_t *hp;
 
 	if (esl_event_create_subclass(event, ESL_EVENT_CLONE, todup->subclass_name) != ESL_SUCCESS) {
-		return ESL_FAIL;
+		return ESL_GENERR;
 	}
 
 	(*event)->event_id = todup->event_id;
-
 	(*event)->event_user_data = todup->event_user_data;
 	(*event)->bind_user_data = todup->bind_user_data;
-
+	(*event)->flags = todup->flags;
 	for (hp = todup->headers; hp; hp = hp->next) {
-		esl_event_add_header_string(*event, ESL_STACK_BOTTOM, hp->name, hp->value);
+		if (todup->subclass_name && !strcmp(hp->name, "Event-Subclass")) {
+			continue;
+		}
+		
+		if (hp->idx) {
+			int i;
+			for (i = 0; i < hp->idx; i++) {
+				esl_event_add_header_string(*event, ESL_STACK_PUSH, hp->name, hp->array[i]);
+			}
+		} else {
+			esl_event_add_header_string(*event, ESL_STACK_BOTTOM, hp->name, hp->value);
+		}
 	}
 
 	if (todup->body) {
@@ -439,97 +730,26 @@ ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup)
 	return ESL_SUCCESS;
 }
 
-ESL_DECLARE(esl_status_t) esl_event_create_json(esl_event_t **event, const char *json)
-{
-	esl_event_t *new_event;
-	cJSON *cj, *cjp;
-
-
-	if (!(cj = cJSON_Parse(json))) {
-		return ESL_FAIL;
-	}
-
-	if (esl_event_create(&new_event, ESL_EVENT_CLONE) != ESL_SUCCESS) {
-		cJSON_Delete(cj);
-		return ESL_FAIL;
-	}
-
-	for (cjp = cj->child; cjp; cjp = cjp->next) {
-		char *name = cjp->string;
-		char *value = cjp->valuestring;
-		
-		if (name && value) {
-			if (!strcasecmp(name, "_body")) {
-				esl_event_add_body(new_event, value);
-			} else {
-				if (!strcasecmp(name, "event-name")) {
-					esl_event_del_header(new_event, "event-name");
-				}
-				
-				esl_name_event(value, &new_event->event_id);
-				esl_event_add_header_string(new_event, ESL_STACK_BOTTOM, name, value);
-			}
-
-		}
-	}
-	
-	cJSON_Delete(cj);
-	*event = new_event;
-	return ESL_SUCCESS;
-}
-
-ESL_DECLARE(esl_status_t) esl_event_serialize_json(esl_event_t *event, char **str)
-{
-	esl_event_header_t *hp;
-	cJSON *cj;
-
-	*str = NULL;
-	
-	cj = cJSON_CreateObject();
-
-	for (hp = event->headers; hp; hp = hp->next) {
-		cJSON_AddItemToObject(cj, hp->name, cJSON_CreateString(hp->value));
-							  }
-	if (event->body) {
-		int blen = (int) strlen(event->body);
-		char tmp[25];
-
-		esl_snprintf(tmp, sizeof(tmp), "%d", blen);
-
-		cJSON_AddItemToObject(cj, "Content-Length", cJSON_CreateString(tmp));
-		cJSON_AddItemToObject(cj, "_body", cJSON_CreateString(event->body));
-	}
-
-	*str = cJSON_Print(cj);
-	cJSON_Delete(cj);
-	
-	return ESL_SUCCESS;
-}
 
 ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, esl_bool_t encode)
 {
-	size_t len = 0;
+	esl_size_t len = 0;
 	esl_event_header_t *hp;
-	size_t llen = 0, dlen = 0, blocksize = 512, encode_len = 1536, new_len = 0;
+	esl_size_t llen = 0, dlen = 0, blocksize = 512, encode_len = 1536, new_len = 0;
 	char *buf;
 	char *encode_buf = NULL;	/* used for url encoding of variables to make sure unsafe things stay out of the serialized copy */
-	int clen = 0;
-
-	if (!event || !event->headers)
-		return ESL_FAIL;
 
 	*str = NULL;
 
 	dlen = blocksize * 2;
 
 	if (!(buf = malloc(dlen))) {
-		return ESL_FAIL;
+		abort();
 	}
 
 	/* go ahead and give ourselves some space to work with, should save a few reallocs */
 	if (!(encode_buf = malloc(encode_len))) {
-		esl_safe_free(buf);
-		return ESL_FAIL;
+		abort();
 	}
 
 	/* esl_log_printf(ESL_CHANNEL_LOG, ESL_LOG_INFO, "hit serialized!.\n"); */
@@ -542,54 +762,54 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 		 * destroying loop.
 		 */
 
-		if (!strcasecmp(hp->name, "content-length")) {
-			clen++;
+		if (hp->idx) {
+			int i;
+			new_len = 0;
+			for(i = 0; i < hp->idx; i++) {
+				new_len += (strlen(hp->array[i]) * 3) + 1;
+			}
+		} else {
+			new_len = (strlen(hp->value) * 3) + 1;
 		}
-
-
-		new_len = (strlen(hp->value) * 3) + 1;
 
 		if (encode_len < new_len) {
 			char *tmp;
-			/* esl_log_printf(ESL_CHANNEL_LOG, ESL_LOG_INFO, "Allocing %d was %d.\n", ((strlen(hp->value) * 3) + 1), encode_len); */
-			/* we can use realloc for initial alloc as well, if encode_buf is zero it treats it as a malloc */
 
 			/* keep track of the size of our allocation */
 			encode_len = new_len;
 
 			if (!(tmp = realloc(encode_buf, encode_len))) {
-				/* oh boy, ram's gone, give back what little we grabbed and bail */
-				esl_safe_free(buf);
-				esl_safe_free(encode_buf);
-				return ESL_FAIL;
+				abort();
 			}
 
 			encode_buf = tmp;
 		}
 
 		/* handle any bad things in the string like newlines : etc that screw up the serialized format */
+
+
 		if (encode) {
 			esl_url_encode(hp->value, encode_buf, encode_len);
 		} else {
-			esl_snprintf(encode_buf, encode_len, "%s", hp->value);
+			esl_snprintf(encode_buf, encode_len, "[%s]", hp->value);
 		}
+
 
 		llen = strlen(hp->name) + strlen(encode_buf) + 8;
 
 		if ((len + llen) > dlen) {
 			char *m;
+			char *old = buf;
 			dlen += (blocksize + (len + llen));
 			if ((m = realloc(buf, dlen))) {
 				buf = m;
 			} else {
-				/* we seem to be out of memory trying to resize the serialize string, give back what we already have and give up */
-				esl_safe_free(buf);
-				esl_safe_free(encode_buf);
-				return ESL_FAIL;
+				buf = old;
+				abort();
 			}
 		}
 
-		snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, *encode_buf == '\0' ? "_undef_" : encode_buf);
+		esl_snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, *encode_buf == '\0' ? "_undef_" : encode_buf);
 		len = strlen(buf);
 	}
 
@@ -608,33 +828,121 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 
 		if ((len + llen) > dlen) {
 			char *m;
+			char *old = buf;
 			dlen += (blocksize + (len + llen));
 			if ((m = realloc(buf, dlen))) {
 				buf = m;
 			} else {
-				esl_safe_free(buf);
-				return ESL_FAIL;
+				buf = old;
+				abort();
 			}
 		}
-		
+
 		if (blen) {
-			if (clen) {
-				snprintf(buf + len, dlen - len, "\n%s", event->body);
-			} else {
-				snprintf(buf + len, dlen - len, "Content-Length: %d\n\n%s", (int)strlen(event->body), event->body);
-			
-			}
+			esl_snprintf(buf + len, dlen - len, "Content-Length: %d\n\n%s", blen, event->body);
+		} else {
+			esl_snprintf(buf + len, dlen - len, "\n");
 		}
 	} else {
-		snprintf(buf + len, dlen - len, "\n");
+		esl_snprintf(buf + len, dlen - len, "\n");
 	}
-
 
 	*str = buf;
 
 	return ESL_SUCCESS;
 }
 
+ESL_DECLARE(esl_status_t) esl_event_create_json(esl_event_t **event, const char *json)
+{
+	esl_event_t *new_event;
+	cJSON *cj, *cjp;
+
+
+	if (!(cj = cJSON_Parse(json))) {
+		return ESL_FALSE;
+	}
+
+	if (esl_event_create(&new_event, ESL_EVENT_CLONE) != ESL_SUCCESS) {
+		cJSON_Delete(cj);
+		return ESL_FALSE;
+	}
+
+	for (cjp = cj->child; cjp; cjp = cjp->next) {
+		char *name = cjp->string;
+		char *value = cjp->valuestring;
+
+		if (name && value) {
+			if (!strcasecmp(name, "_body")) {
+				esl_event_add_body(new_event, value, ESL_VA_NONE);
+			} else {
+				if (!strcasecmp(name, "event-name")) {
+					esl_event_del_header(new_event, "event-name");
+					esl_name_event(value, &new_event->event_id);
+				}
+
+				esl_event_add_header_string(new_event, ESL_STACK_BOTTOM, name, value);
+			}
+
+		} else if (name) {
+			if (cjp->type == cJSON_Array) {
+				int i, x = cJSON_GetArraySize(cjp);
+
+				for (i = 0; i < x; i++) {
+					cJSON *item = cJSON_GetArrayItem(cjp, i);
+
+					if (item != NULL && item->type == cJSON_String && item->valuestring) {
+						esl_event_add_header_string(new_event, ESL_STACK_PUSH, name, item->valuestring);
+					}
+				}
+			}
+		}
+	}
+	
+	cJSON_Delete(cj);
+	*event = new_event;
+	return ESL_SUCCESS;
+}
+
+ESL_DECLARE(esl_status_t) esl_event_serialize_json(esl_event_t *event, char **str)
+{
+	esl_event_header_t *hp;
+	cJSON *cj;
+
+	*str = NULL;
+	
+	cj = cJSON_CreateObject();
+
+	for (hp = event->headers; hp; hp = hp->next) {
+		if (hp->idx) {
+			cJSON *a = cJSON_CreateArray();
+			int i;
+
+			for(i = 0; i < hp->idx; i++) {
+				cJSON_AddItemToArray(a, cJSON_CreateString(hp->array[i]));
+			}
+			
+			cJSON_AddItemToObject(cj, hp->name, a);
+			
+		} else {
+			cJSON_AddItemToObject(cj, hp->name, cJSON_CreateString(hp->value));
+		}
+	}
+
+	if (event->body) {
+		int blen = (int) strlen(event->body);
+		char tmp[25];
+
+		esl_snprintf(tmp, sizeof(tmp), "%d", blen);
+
+		cJSON_AddItemToObject(cj, "Content-Length", cJSON_CreateString(tmp));
+		cJSON_AddItemToObject(cj, "_body", cJSON_CreateString(event->body));
+	}
+
+	*str = cJSON_Print(cj);
+	cJSON_Delete(cj);
+	
+	return ESL_SUCCESS;
+}
 
 /* For Emacs:
  * Local Variables:

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Arsen Chaloyan
+ * Copyright 2008-2010 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * $Id: apt_consumer_task.c 1708 2010-05-24 17:03:25Z achaloyan $
  */
 
 #include <apr_time.h>
@@ -54,7 +56,7 @@ APT_DECLARE(apt_consumer_task_t*) apt_consumer_task_create(
 	return consumer_task;
 }
 
-APT_DECLARE(apt_task_t*) apt_consumer_task_base_get(apt_consumer_task_t *task)
+APT_DECLARE(apt_task_t*) apt_consumer_task_base_get(const apt_consumer_task_t *task)
 {
 	return task->base;
 }
@@ -64,7 +66,7 @@ APT_DECLARE(apt_task_vtable_t*) apt_consumer_task_vtable_get(apt_consumer_task_t
 	return apt_task_vtable_get(task->base);
 }
 
-APT_DECLARE(void*) apt_consumer_task_object_get(apt_consumer_task_t *task)
+APT_DECLARE(void*) apt_consumer_task_object_get(const apt_consumer_task_t *task)
 {
 	return task->obj;
 }
@@ -79,22 +81,25 @@ static apt_bool_t apt_consumer_task_run(apt_task_t *task)
 {
 	apr_status_t rv;
 	void *msg;
-	apt_bool_t running = TRUE;
+	apt_bool_t *running;
 	apt_consumer_task_t *consumer_task;
 	consumer_task = apt_task_object_get(task);
 	if(!consumer_task) {
 		return FALSE;
 	}
 
-	while(running) {
-		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Wait for Task Messages [%s]",apt_task_name_get(task));
+	running = apt_task_running_flag_get(task);
+	if(!running) {
+		return FALSE;
+	}
+
+	while(*running) {
+		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Wait for Messages [%s]",apt_task_name_get(task));
 		rv = apr_queue_pop(consumer_task->msg_queue,&msg);
 		if(rv == APR_SUCCESS) {
 			if(msg) {
 				apt_task_msg_t *task_msg = msg;
-				if(apt_task_msg_process(consumer_task->base,task_msg) == FALSE) {
-					running = FALSE;
-				}
+				apt_task_msg_process(consumer_task->base,task_msg);
 			}
 		}
 	}

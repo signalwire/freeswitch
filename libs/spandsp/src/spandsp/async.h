@@ -80,7 +80,13 @@ enum
     /*! \brief Notification that a modem has detected signal quality degradation. */
     SIG_STATUS_POOR_SIGNAL_QUALITY = -12,
     /*! \brief Notification that a modem retrain has occurred. */
-    SIG_STATUS_MODEM_RETRAIN_OCCURRED = -13
+    SIG_STATUS_MODEM_RETRAIN_OCCURRED = -13,
+    /*! \brief The link protocol (e.g. V.42) has connected. */
+    SIG_STATUS_LINK_CONNECTED = -14,
+    /*! \brief The link protocol (e.g. V.42) has disconnected. */
+    SIG_STATUS_LINK_DISCONNECTED = -15,
+    /*! \brief An error has occurred in the link protocol (e.g. V.42). */
+    SIG_STATUS_LINK_ERROR = -16
 };
 
 /*! Message put function for data pumps */
@@ -101,11 +107,8 @@ typedef void (*put_bit_func_t)(void *user_data, int bit);
 /*! Bit get function for data pumps */
 typedef int (*get_bit_func_t)(void *user_data);
 
-/*! Completion callback function for tx data pumps */
-typedef void (*modem_tx_status_func_t)(void *user_data, int status);
-
-/*! Completion callback function for rx data pumps */
-typedef void (*modem_rx_status_func_t)(void *user_data, int status);
+/*! Status change callback function for data pumps */
+typedef void (*modem_status_func_t)(void *user_data, int status);
 
 enum
 {

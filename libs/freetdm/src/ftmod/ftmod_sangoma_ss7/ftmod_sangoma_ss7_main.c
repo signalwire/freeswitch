@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2009, Konrad Hammel <konrad@sangoma.com>
+ * Copyright (c) 2009, Sangoma Technologies
+ * Konrad Hammel <konrad@sangoma.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,6 +30,12 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ * David Yat Sin <dyatsin@sangoma.com>
+ *
  */
 
 /* INCLUDE ********************************************************************/
@@ -1402,7 +1409,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 		sngss7_set_flag(sngss7_info->circuit, SNGSS7_ACTIVE);
 
 		/* if this is a non-voice channel, move along cause we're done with it */
-		if (sngss7_info->circuit->type != VOICE) continue;
+		if (sngss7_info->circuit->type != SNG_CKT_VOICE) continue;
 
 		/* lock the channel */
 		ftdm_mutex_lock(ftdmchan->mutex);

@@ -86,6 +86,7 @@
 #endif
 #define etPOINTER    15			/* The %p conversion */
 #define etSQLESCAPE3 16
+#define etSQLESCAPE4 17
 
 /*
 ** An "etByte" is an 8-bit unsigned value.
@@ -127,6 +128,7 @@ static const et_info fmtinfo[] = {
 	{'q', 0, 4, etSQLESCAPE, 0, 0},
 	{'Q', 0, 4, etSQLESCAPE2, 0, 0},
 	{'w', 0, 4, etSQLESCAPE3, 0, 0},
+	{'y', 0, 4, etSQLESCAPE4, 0, 0},
 	{'c', 0, 0, etCHARX, 0, 0},
 	{'o', 8, 0, etRADIX, 0, 2},
 	{'u', 10, 0, etRADIX, 0, 0},
@@ -676,6 +678,7 @@ static int vxprintf(void (*func) (void *, const char *, int),	/* Consumer of tex
 			break;
 		case etSQLESCAPE:
 		case etSQLESCAPE2:
+		case etSQLESCAPE4:
 		case etSQLESCAPE3:{
 				int i, j, n, ch, isnull;
 				int needQuote;
@@ -697,12 +700,20 @@ static int vxprintf(void (*func) (void *, const char *, int),	/* Consumer of tex
 					bufpt = buf;
 				}
 				j = 0;
-				if (needQuote)
+				if (needQuote) 
 					bufpt[j++] = '\'';
 				for (i = 0; (ch = escarg[i]) != 0; i++) {
 					bufpt[j++] = (char) ch;
-					if (ch == '\'' || (xtype == etSQLESCAPE3 && ch == '\\'))
-						bufpt[j++] = (char) ch;
+					if (xtype == etSQLESCAPE4) {
+						if (ch == '\'' || (xtype == etSQLESCAPE3 && ch == '\\')) {
+							bufpt[j] = (char) ch;
+							bufpt[j-1] = (char) '\\';
+							j++;
+						}
+					} else {
+						if (ch == '\'' || (xtype == etSQLESCAPE3 && ch == '\\'))
+							bufpt[j++] = (char) ch;
+					}
 				}
 				if (needQuote)
 					bufpt[j++] = '\'';

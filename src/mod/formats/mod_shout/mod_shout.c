@@ -655,9 +655,6 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 		}
 	} else if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Appending to MP3 not supported.\n");
-		}
 		if (!(context->gfp = lame_init())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
 			goto error;
@@ -781,8 +778,13 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			}
 
 		} else {
+			const char *mask = "wb+";
+			
+			if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+				mask = "ab+";
+			}
 			/* lame being lame and all has FILE * coded into it's API for some functions so we gotta use it */
-			if (!(context->fp = fopen(path, "wb+"))) {
+			if (!(context->fp = fopen(path, mask))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 				goto error;
 			}

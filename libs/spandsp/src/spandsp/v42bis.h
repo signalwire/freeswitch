@@ -5,7 +5,7 @@
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2005 Steve Underwood
+ * Copyright (C) 2005, 2011 Steve Underwood
  *
  * All rights reserved.
  *
@@ -39,7 +39,7 @@ conjunction with the error correction scheme defined in V.42.
 #define V42BIS_MIN_DICTIONARY_SIZE  512
 #define V42BIS_MAX_BITS             12
 #define V42BIS_MAX_CODEWORDS        4096    /* 2^V42BIS_MAX_BITS */
-#define V42BIS_TABLE_SIZE           5021    /* This should be a prime >(2^V42BIS_MAX_BITS) */
+#define V42BIS_MAX_OUTPUT_LENGTH    1024
 
 enum
 {
@@ -55,9 +55,6 @@ enum
     V42BIS_COMPRESSION_MODE_ALWAYS,
     V42BIS_COMPRESSION_MODE_NEVER
 };
-
-typedef void (*v42bis_frame_handler_t)(void *user_data, const uint8_t *pkt, int len);
-typedef void (*v42bis_data_handler_t)(void *user_data, const uint8_t *buf, int len);
 
 /*!
     V.42bis compression/decompression descriptor. This defines the working state for a
@@ -75,7 +72,7 @@ extern "C"
     \param buf The data to be compressed.
     \param len The length of the data buffer.
     \return 0 */
-SPAN_DECLARE(int) v42bis_compress(v42bis_state_t *s, const uint8_t *buf, int len);
+SPAN_DECLARE(int) v42bis_compress(v42bis_state_t *s, const uint8_t buf[], int len);
 
 /*! Flush out any data remaining in a compression buffer.
     \param s The V.42bis context.
@@ -87,7 +84,7 @@ SPAN_DECLARE(int) v42bis_compress_flush(v42bis_state_t *s);
     \param buf The data to be decompressed.
     \param len The length of the data buffer.
     \return 0 */
-SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *s, const uint8_t *buf, int len);
+SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *s, const uint8_t buf[], int len);
     
 /*! Flush out any data remaining in the decompression buffer.
     \param s The V.42bis context.
@@ -107,23 +104,23 @@ SPAN_DECLARE(void) v42bis_compression_control(v42bis_state_t *s, int mode);
     \param negotiated_p0 The negotiated P0 parameter, from the V.42bis spec.
     \param negotiated_p1 The negotiated P1 parameter, from the V.42bis spec.
     \param negotiated_p2 The negotiated P2 parameter, from the V.42bis spec.
-    \param frame_handler Frame callback handler.
-    \param frame_user_data An opaque pointer passed to the frame callback handler.
-    \param max_frame_len The maximum length that should be passed to the frame handler.
-    \param data_handler data callback handler.
-    \param data_user_data An opaque pointer passed to the data callback handler.
-    \param max_data_len The maximum length that should be passed to the data handler.
+    \param encode_handler Encode callback handler.
+    \param encode_user_data An opaque pointer passed to the encode callback handler.
+    \param max_encode_len The maximum length that should be passed to the encode handler.
+    \param decode_handler Decode callback handler.
+    \param decode_user_data An opaque pointer passed to the decode callback handler.
+    \param max_decode_len The maximum length that should be passed to the decode handler.
     \return The V.42bis context. */
 SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
                                            int negotiated_p0,
                                            int negotiated_p1,
                                            int negotiated_p2,
-                                           v42bis_frame_handler_t frame_handler,
-                                           void *frame_user_data,
-                                           int max_frame_len,
-                                           v42bis_data_handler_t data_handler,
-                                           void *data_user_data,
-                                           int max_data_len);
+                                           put_msg_func_t encode_handler,
+                                           void *encode_user_data,
+                                           int max_encode_len,
+                                           put_msg_func_t decode_handler,
+                                           void *decode_user_data,
+                                           int max_decode_len);
 
 /*! Release a V.42bis context.
     \param s The V.42bis context.

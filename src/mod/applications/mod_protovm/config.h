@@ -9,6 +9,9 @@ struct vmivr_profile {
 	const char *domain;
 	const char *id;
 
+	int current_msg;
+	const char *current_msg_uuid;
+
 	const char *menu_check_auth;
 	const char *menu_check_main;
 	const char *menu_check_terminate;
@@ -24,6 +27,7 @@ struct vmivr_profile {
 	const char *api_msg_save;
 	const char *api_msg_purge;
 	const char *api_msg_get;
+	const char *api_msg_forward;
 	const char *api_pref_greeting_set;
 	const char *api_pref_recname_set;
 	const char *api_pref_password_set;
@@ -34,10 +38,10 @@ typedef struct vmivr_profile vmivr_profile_t;
 struct vmivr_menu_profile {
 	const char *name;
 
-        switch_event_t *event_keys_action;
+	switch_event_t *event_keys_action;
 	switch_event_t *event_keys_dtmf;
 	switch_event_t *event_keys_varname;
-        switch_event_t *event_phrases;
+	switch_event_t *event_phrases;
 };
 typedef struct vmivr_menu_profile vmivr_menu_profile_t;
 

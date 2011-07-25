@@ -141,7 +141,10 @@ typedef enum {
 	MFLAG_MINTWO = (1 << 13),
 	MFLAG_MUTE_DETECT = (1 << 14),
 	MFLAG_DIST_DTMF = (1 << 15),
-	MFLAG_MOD = (1 << 16)
+	MFLAG_MOD = (1 << 16),
+	MFLAG_INDICATE_MUTE = (1 << 17),
+	MFLAG_INDICATE_UNMUTE = (1 << 18),
+	MFLAG_NOMOH = (1 << 19)
 } member_flag_t;
 
 typedef enum {
@@ -200,6 +203,7 @@ typedef enum {
 	EFLAG_FLOOR_CHANGE = (1 << 25),
 	EFLAG_MUTE_DETECT = (1 << 26),
 	EFLAG_RECORD = (1 << 27),
+	EFLAG_HUP_MEMBER = (1 << 28)
 } event_type_t;
 
 typedef struct conference_file_node {
@@ -1015,7 +1019,11 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				int y = *((int8_t *) vid_frame->data + 2) & 0xfe;
 				iframe = (y == 0x80 || y == 0x82);
 			} else if (vid_frame->codec->implementation->ianacode == 99) {	/* h.264 */
-				iframe = (*((int16_t *) vid_frame->data) >> 5 == 0x11);
+				uint8_t * hdr = vid_frame->data;
+                uint8_t fragment_type = hdr[0] & 0x1f;
+                uint8_t nal_type = hdr[1] & 0x1f;
+                uint8_t start_bit = hdr[1] & 0x80;
+                iframe = (((fragment_type == 28 || fragment_type == 29) && nal_type == 5 && start_bit == 128) || fragment_type == 5);
 			} else {			/* we need more defs */
 				iframe = 1;
 			}
@@ -1094,6 +1102,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_size_t file_data_len = samples * 2;
 		int has_file_data = 0, members_with_video = 0;
 		uint32_t conf_energy = 0;
+		int nomoh = 0;
 
 		/* Sync the conference to a single timing source */
 		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
@@ -1104,11 +1113,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_mutex_lock(conference->mutex);
 		has_file_data = ready = total = 0;
 
-		if (conference->perpetual_sound && !conference->async_fnode) {
-			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
-		} else if (conference->moh_sound && (conference->count == 1 || switch_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode) {
-			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
-		}
 
 		/* Read one frame of audio from each member channel and save it for redistribution */
 		for (imember = conference->members; imember; imember = imember->next) {
@@ -1116,8 +1120,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			total++;
 			imember->read = 0;
 
-			if (imember->session && switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
-				members_with_video++;
+			if (imember->session) {
+				if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
+					members_with_video++;
+				}
+
+				if (switch_test_flag(imember, MFLAG_NOMOH)) {
+					nomoh++;
+				}
 			}
 
 			switch_clear_flag_locked(imember, MFLAG_HAS_AUDIO);
@@ -1131,6 +1141,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			}
 			switch_mutex_unlock(imember->audio_in_mutex);
 		}
+
+		if (conference->perpetual_sound && !conference->async_fnode) {
+			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+		} else if (conference->moh_sound && ((nomoh == 0 && conference->count == 1) 
+											 || switch_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode) {
+			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+		}
+
 
 		/* Find if no one talked for more than x number of second */
 		if (conference->terminate_on_silence && conference->count > 1) {
@@ -2494,6 +2512,7 @@ static void conference_loop_output(conference_member_t *member)
 	uint32_t low_count, bytes;
 	call_list_t *call_list, *cp;
 	switch_codec_implementation_t read_impl = { 0 };
+	int sanity;
 
 	switch_core_session_get_read_impl(member->session, &read_impl);
 
@@ -2592,6 +2611,13 @@ static void conference_loop_output(conference_member_t *member)
 	
 	if (!switch_test_flag(member->conference, CFLAG_ANSWERED)) {
 		switch_channel_answer(channel);
+	}
+
+
+	sanity = 2000;
+	while(!switch_test_flag(member, MFLAG_ITHREAD) && sanity > 0) {
+		switch_cond_next();
+		sanity--;
 	}
 
 	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be processed,      */
@@ -2744,6 +2770,30 @@ static void conference_loop_output(conference_member_t *member)
 
 		switch_mutex_unlock(member->write_mutex);
 
+
+		if (switch_test_flag(member, MFLAG_INDICATE_MUTE)) {
+			if (!zstr(member->conference->muted_sound)) {
+				conference_member_play_file(member, member->conference->muted_sound, 0);
+			} else {
+				char msg[512];
+				
+				switch_snprintf(msg, sizeof(msg), "Muted");
+				conference_member_say(member, msg, 0);
+			}
+			switch_clear_flag(member, MFLAG_INDICATE_MUTE);
+		}
+		
+		if (switch_test_flag(member, MFLAG_INDICATE_UNMUTE)) {
+			if (!zstr(member->conference->unmuted_sound)) {
+				conference_member_play_file(member, member->conference->unmuted_sound, 0);
+			} else {
+				char msg[512];
+				
+				switch_snprintf(msg, sizeof(msg), "Un-Muted");
+				conference_member_say(member, msg, 0);
+			}
+			switch_clear_flag(member, MFLAG_INDICATE_UNMUTE);
+		}
 
 		if (switch_core_session_private_event_count(member->session)) {
 			switch_channel_set_app_flag(channel, CF_APP_TAGGED);
@@ -3590,6 +3640,14 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
 	switch_mutex_unlock(conference->member_mutex);
 }
 
+static void conference_list_count_only(conference_obj_t *conference, switch_stream_handle_t *stream)
+{
+	switch_assert(conference != NULL);
+	switch_assert(stream != NULL);
+
+	stream->write_function(stream, "%d", conference->count);
+}
+
 static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	switch_event_t *event;
@@ -3600,18 +3658,12 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 	switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
 	switch_clear_flag_locked(member, MFLAG_TALKING);
 
+	switch_set_flag(member, MFLAG_INDICATE_MUTE);
 
-	if (!zstr(member->conference->muted_sound)) {
-		conference_member_play_file(member, member->conference->muted_sound, 0);
-	} else {
-		char msg[512];
-
-		switch_snprintf(msg, sizeof(msg), "Muted");
-		conference_member_say(member, msg, 0);
-	}
 	if (stream != NULL) {
 		stream->write_function(stream, "OK mute %u\n", member->id);
 	}
+
 	if (test_eflag(member->conference, EFLAG_MUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
@@ -3676,17 +3728,12 @@ static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_s
 		return SWITCH_STATUS_GENERR;
 
 	switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
+	switch_set_flag(member, MFLAG_INDICATE_UNMUTE);
+
 	if (stream != NULL) {
 		stream->write_function(stream, "OK unmute %u\n", member->id);
 	}
-	if (!zstr(member->conference->unmuted_sound)) {
-		conference_member_play_file(member, member->conference->unmuted_sound, 0);
-	} else {
-		char msg[512];
 
-		switch_snprintf(msg, sizeof(msg), "Un-Muted");
-		conference_member_say(member, msg, 0);
-	}
 	if (test_eflag(member->conference, EFLAG_UNMUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_add_event_member_data(member, event);
@@ -3732,6 +3779,27 @@ static switch_status_t conf_api_sub_undeaf(conference_member_t *member, switch_s
 		conference_add_event_member_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "undeaf-member");
 		switch_event_fire(&event);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t conf_api_sub_hup(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	switch_event_t *event;
+
+	if (member == NULL) {
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	switch_clear_flag(member, MFLAG_RUNNING);
+
+	if (member->conference && test_eflag(member->conference, EFLAG_HUP_MEMBER)) {
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_member_data(member, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "hup-member");
+			switch_event_fire(&event);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -3889,6 +3957,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 	char *d = ";";
 	int pretty = 0;
 	int summary = 0;
+	int countonly = 0;
 	int argofs = (argc >= 2 && strcasecmp(argv[1], "list") == 0);	/* detect being called from chat vs. api */
 
 	if (argv[1 + argofs]) {
@@ -3909,6 +3978,8 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 			pretty = 1;
 		} else if (strcasecmp(argv[1 + argofs], "summary") == 0) {
 			summary = 1;
+		} else if (strcasecmp(argv[1 + argofs], "count") == 0) {
+			countonly = 1;
 		}
 	}
 
@@ -3934,7 +4005,9 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 		switch_mutex_unlock(globals.hash_mutex);
 	} else {
 		count++;
-		if (pretty) {
+		if (countonly) {
+			conference_list_count_only(conference, stream);
+		} else if (pretty) {
 			conference_list_pretty(conference, stream);
 		} else {
 			conference_list(conference, stream, d);
@@ -4810,6 +4883,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"stop", (void_fn_t) & conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "stop", "<[current|all|async|last]> [<member_id>]"},
 	{"dtmf", (void_fn_t) & conf_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET, "dtmf", "<[member_id|all|last]> <digits>"},
 	{"kick", (void_fn_t) & conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "kick", "<[member_id|all|last]>"},
+	{"hup", (void_fn_t) & conf_api_sub_hup, CONF_API_SUB_MEMBER_TARGET, "hup", "<[member_id|all|last]>"},
 	{"mute", (void_fn_t) & conf_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "mute", "<[member_id|all]|last>"},
 	{"unmute", (void_fn_t) & conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "unmute", "<[member_id|all]|last>"},
 	{"deaf", (void_fn_t) & conf_api_sub_deaf, CONF_API_SUB_MEMBER_TARGET, "deaf", "<[member_id|all]|last>"},
@@ -5368,6 +5442,8 @@ static void set_mflags(const char *flags, member_flag_t *f)
 				*f |= MFLAG_DIST_DTMF;
 			} else if (!strcasecmp(argv[i], "moderator")) {
 				*f |= MFLAG_MOD;
+			} else if (!strcasecmp(argv[i], "nomoh")) {
+				*f |= MFLAG_NOMOH;
 			} else if (!strcasecmp(argv[i], "endconf")) {
 				*f |= MFLAG_ENDCONF;
 			} else if (!strcasecmp(argv[i], "mintwo")) {

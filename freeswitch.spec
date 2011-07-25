@@ -5,7 +5,7 @@
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
 #                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-perl freeswitch-python freeswitch-spidermonkey
-#                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-ru freeswitch-freetdm
+#                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru freeswitch-freetdm
 #
 # Initial Version Copyright (C) 2007 Peter Nixon and Michal Bielicki, All Rights Reserved.
 #
@@ -70,9 +70,9 @@ Source3:	http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
 Source5:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
 Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
-Source7:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-20091212.tar.gz
-Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
-Source9:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.4.99-20091212.tar.gz
+Source7:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
+Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.5.0.tar.gz
+Source9:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
 Source10:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source11:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
 Source12:       http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
@@ -101,11 +101,11 @@ BuildRequires: libtool >= 1.5.17
 BuildRequires: ncurses-devel
 BuildRequires: openssl-devel
 BuildRequires: perl
-%if 0%{?fedora_version} >= 8
+%if 0%{?fedora_version} >= 8 || 0%{?rhel} >= 6
 BuildRequires: perl-ExtUtils-Embed
 %endif
 BuildRequires: pkgconfig
-%if %{_vendor} == redhat && 0%{?fedora} <= 6
+%if 0%{?rhel} < 6 && 0%{?fedora} <= 6
 BuildRequires: termcap
 %endif
 BuildRequires: unixODBC-devel
@@ -471,7 +471,7 @@ DIRECTORIES_MODULES=""
 #
 ######################################################################################################################
 ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_loopback ../../libs/freetdm/mod_freetdm endpoints/mod_portaudio \
-                   endpoints/mod_sofia endpoints/mod_skinny endpoints/mod_skypopen"
+                   endpoints/mod_sofia endpoints/mod_skinny endpoints/mod_skypopen endpoints/mod_rtmp"
  
 ######################################################################################################################
 #
@@ -732,7 +732,6 @@ fi
 #
 %dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model
 %dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model/communicator
-%dir %attr(0750, freeswitch, daemon) %{prefix}/grammar/model/wsj1
 %ifos linux
 %config(noreplace) %attr(0644, freeswitch, daemon) /etc/monit.d/freeswitch.monitrc
 %endif
@@ -785,6 +784,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/post_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/redis.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/rss.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/rtmp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/sangoma_codec.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/shout.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/skinny.conf.xml
@@ -846,7 +846,6 @@ fi
 ######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/default.dic
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/communicator/*
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/wsj1/*
 ######################################################################################################################
 #
 #						Other Fíles
@@ -924,6 +923,7 @@ fi
 %{prefix}/mod/mod_portaudio_stream.so*
 %{prefix}/mod/mod_redis.so*
 %{prefix}/mod/mod_rss.so*
+%{prefix}/mod/mod_rtmp.so*
 %{prefix}/mod/mod_shout.so*
 %{prefix}/mod/mod_silk.so*
 %{prefix}/mod/mod_siren.so*
@@ -1127,6 +1127,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Jun 14 2011 - michal.bielicki@seventhsignal.de
+- added mod_rtmp
 * Fri Apr 01 2011 - michal.bielicki@seventhsignal.de
 - added hebrew language stuff
 * Wed Mar 30 2011 - michal.bielicki@seventhsignal.de

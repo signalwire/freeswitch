@@ -339,6 +339,14 @@
 				RelativePath=".\src\umcsession.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\src\verifierscenario.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\verifiersession.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="include"
@@ -401,7 +409,51 @@
 				RelativePath=".\include\umcsession.h"
 				>
 			</File>
+			<File
+				RelativePath=".\include\verifierscenario.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\verifiersession.h"
+				>
+			</File>
 		</Filter>
+		<File
+			RelativePath=".\umc.rc"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCResourceCompilerTool"
+					AdditionalIncludeDirectories="..\..\build"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCResourceCompilerTool"
+					AdditionalIncludeDirectories="..\..\build"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|x64"
+				>
+				<Tool
+					Name="VCResourceCompilerTool"
+					AdditionalIncludeDirectories="..\..\build"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|x64"
+				>
+				<Tool
+					Name="VCResourceCompilerTool"
+					AdditionalIncludeDirectories="..\..\build"
+				/>
+			</FileConfiguration>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
