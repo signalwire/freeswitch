@@ -861,13 +861,19 @@ ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_in
 		return FTDM_FAIL;
 	}
 
-	ftdm_assert_return(g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj, FTDM_FAIL, "received message on signalling link or non-configured cic\n");
+	if (!g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj) {
+		SS7_ERROR("No ss7 info for circuit #%d\n", circuit);
+		return FTDM_FAIL;
+	}
 
 	*sngss7_info = g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj;
 
-	ftdm_assert_return((*sngss7_info)->ftdmchan, FTDM_FAIL, "received message on signalling link or non-configured cic\n");
-	*ftdmchan = (*sngss7_info)->ftdmchan;
+	if (!(*sngss7_info)->ftdmchan) {
+		SS7_ERROR("No channel for circuit #%d\n", circuit);
+		return FTDM_FAIL;
+	}
 
+	*ftdmchan = (*sngss7_info)->ftdmchan;
 	return FTDM_SUCCESS;
 }
 
@@ -1168,6 +1174,11 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 				(g_ftdm_sngss7_data.cfg.isupCkt[cinfo->rx_gra.circuit].cic + cinfo->rx_gra.range));
 
 		for (i = cinfo->rx_gra.circuit; i < (cinfo->rx_gra.circuit + cinfo->rx_gra.range + 1); i++) {
+
+			/* confirm this is a voice channel, otherwise we do nothing */ 
+			if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
+				continue;
+			} 
 
 			/* extract the channel in question */
 			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
