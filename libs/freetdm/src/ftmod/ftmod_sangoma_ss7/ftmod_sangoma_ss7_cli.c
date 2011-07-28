@@ -1625,7 +1625,12 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 	int basefound = 0;
 
 	if (range > 31) {
-		stream->write_function(stream, "Invalid range value %d", range);
+		stream->write_function(stream, "Range value %d is too big for a GRS", range);
+		return FTDM_SUCCESS;
+	}
+
+	if (range < 2) {
+		stream->write_function(stream, "Range value %d is too small for a GRS", range);
 		return FTDM_SUCCESS;
 	}
 

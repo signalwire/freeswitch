@@ -962,9 +962,8 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 				/* send out the grs */
 				ft_to_sngss7_grs (ftdmchan);
-				sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_SENT);
 
-		}/* if ( sngss7_test_ckt_flag ( sngss7_info, FLAG_GRP_RESET_TX ) ) */
+		}
 	
 		/* if the sig_status is up...bring it down */
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) {

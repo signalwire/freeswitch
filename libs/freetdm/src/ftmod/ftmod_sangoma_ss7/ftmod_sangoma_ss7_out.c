@@ -461,57 +461,38 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 }
 
 /******************************************************************************/
-void ft_to_sngss7_grs (ftdm_channel_t * ftdmchan)
+void ft_to_sngss7_grs (ftdm_channel_t *fchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	ftdm_iterator_t *iter = NULL;
-	ftdm_iterator_t *curr = NULL;	
-	sngss7_chan_data_t *cinfo = NULL;
-	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+	sngss7_chan_data_t *cinfo = fchan->call_data;
 	
 	SiStaEvnt grs;
 	
-	iter = ftdm_span_get_chan_iterator(ftdmchan->span, NULL);
-	curr = iter;
-	for (curr = iter; curr; curr = ftdm_iterator_next(curr)) {
-		ftdm_channel_t *fchan = ftdm_iterator_current(curr);
+	ftdm_assert(sngss7_test_ckt_flag(cinfo, FLAG_GRP_RESET_TX) && 
+		   !sngss7_test_ckt_flag(cinfo, FLAG_GRP_RESET_SENT), "Incorrect flags\n");
 
-		ftdm_channel_lock(fchan);
+	memset (&grs, 0x0, sizeof(grs));
+	grs.rangStat.eh.pres    = PRSNT_NODEF;
+	grs.rangStat.range.pres = PRSNT_NODEF;
+	grs.rangStat.range.val  = cinfo->tx_grs.range;
 
-		cinfo = fchan->call_data;
+	sng_cc_sta_request (1,
+		0,
+		0,
+		cinfo->tx_grs.circuit,
+		0,
+		SIT_STA_GRSREQ,
+		&grs);
 
-		if (!cinfo->tx_grs.range) {
+	SS7_INFO_CHAN(fchan, "[CIC:%d]Tx GRS (%d:%d)\n",
+		cinfo->circuit->cic,
+		cinfo->circuit->cic,
+		(cinfo->circuit->cic + cinfo->tx_grs.range));
 
-			ftdm_channel_unlock(fchan);
+	memset(&cinfo->tx_grs, 0, sizeof(cinfo->tx_grs));
 
-			continue;
-		}
-
-		memset (&grs, 0x0, sizeof(grs));
-		grs.rangStat.eh.pres    = PRSNT_NODEF;
-		grs.rangStat.range.pres = PRSNT_NODEF;
-		grs.rangStat.range.val  = cinfo->tx_grs.range;
-
-		sng_cc_sta_request (1,
-			0,
-			0,
-			cinfo->tx_grs.circuit,
-			0,
-			SIT_STA_GRSREQ,
-			&grs);
-
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx GRS (%d:%d)\n",
-			sngss7_info->circuit->cic,
-			sngss7_info->circuit->cic,
-			(sngss7_info->circuit->cic + cinfo->tx_grs.range));
-
-		memset(&cinfo->tx_grs, 0, sizeof(cinfo->tx_grs));
-
-		ftdm_channel_unlock(fchan);
-	}
-
-	ftdm_iterator_free(iter);
+	sngss7_set_ckt_flag(cinfo, FLAG_GRP_RESET_SENT);
 
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 }
