@@ -1869,7 +1869,9 @@ static char *cleanup_separated_string(char *str, char delim)
 		}
 		if (!esc) {
 			if (*ptr == '\'') {
-				inside_quotes = (1 - inside_quotes);
+				if ((inside_quotes = (1 - inside_quotes))) {
+					end = dest;
+				}
 			} else {
 				*dest++ = *ptr;
 				if (*ptr != ' ' || inside_quotes) {
