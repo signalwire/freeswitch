@@ -47,7 +47,6 @@ uint32_t sngss7_id;
 
 /* PROTOTYPES *****************************************************************/
 int check_for_state_change(ftdm_channel_t *ftdmchan);
-int check_cics_in_range(sngss7_chan_data_t *sngss7_info);
 int check_for_reset(sngss7_chan_data_t *sngss7_info);
 
 unsigned long get_unique_id(void);
@@ -60,14 +59,6 @@ ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan);
 ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan);
 
 ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan);
-
-ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info);
-ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info);
-ftdm_status_t clear_rx_rsc_flags(sngss7_chan_data_t *sngss7_info);
-ftdm_status_t clear_tx_rsc_flags(sngss7_chan_data_t *sngss7_info);
-ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info);
-ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info);
-ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info);
 
 ftdm_status_t encode_subAddrIE_nsap(const char *subAddr, char *subAddrIE, int type);
 ftdm_status_t encode_subAddrIE_nat(const char *subAddr, char *subAddrIE, int type);
@@ -863,45 +854,6 @@ int check_for_state_change(ftdm_channel_t *ftdmchan)
 }
 
 /******************************************************************************/
-int check_cics_in_range(sngss7_chan_data_t *sngss7_info)
-{
-
-
-#if 0
-	ftdm_channel_t		*tmp_ftdmchan;
-	sngss7_chan_data_t  *tmp_sngss7_info;
-	int 				i = 0;
-	
-	/* check all the circuits in the range to see if we are the last ckt to reset */
-	for ( i = sngss7_info->grs.circuit; i < ( sngss7_info->grs.range + 1 ); i++ ) {
-		if ( g_ftdm_sngss7_data.cfg.isupCircuit[i].siglink == 0 ) {
-		
-			/* get the ftdmchan and ss7_chan_data from the circuit */
-			if (extract_chan_data(g_ftdm_sngss7_data.cfg.isupCircuit[i].id, &tmp_sngss7_info, &tmp_ftdmchan)) {
-				SS7_ERROR("Failed to extract channel data for circuit = %d!\n", g_ftdm_sngss7_data.cfg.isupCircuit[i].id);
-				return 0;
-			}
-
-			/* check if the channel still has the reset flag done is up */
-			if (!sngss7_test_ckt_flag(tmp_sngss7_info, FLAG_GRP_RESET_RX_DN)) {
-				SS7_DEBUG_CHAN(tmp_ftdmchan, "[CIC:%d] Still processing reset...\n", tmp_sngss7_info->circuit->cic);
-				return 0;
-			}
-		} /* if not siglink */
-	} /* for */
-
-	SS7_DEBUG("All circuits out of reset: circuit=%d, range=%d\n",
-				sngss7_info->grs.circuit,
-				sngss7_info->grs.range);
-	return 1;
-
-#endif
-
-	return 0;
-
-}
-
-/******************************************************************************/
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan)
 {
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj == NULL) {
@@ -961,67 +913,86 @@ unsigned long get_unique_id(void)
 /******************************************************************************/
 ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan)
 {
-	ftdm_channel_t 		*ftdmchan = NULL;
-	sngss7_chan_data_t  *sngss7_info = NULL;
-	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
-	int 				i;
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	sngss7_chan_data_t *sngss7_info = NULL;
+	sngss7_chan_data_t *cinfo = NULL;
+	int i = 0;
 
+	iter = ftdm_span_get_chan_iterator(ftdmspan, NULL);
+	for (curr = iter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(curr);
 
-	SS7_INFO("Rx GRS (%d:%d)\n", 
-				g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_grs.circuit].cic, 
-				(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_grs.circuit].cic + sngss7_span->rx_grs.range));
+		ftdm_channel_lock(fchan);
+	
+		cinfo = fchan->call_data;
 
-	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
-
-		/* confirm this is a voice channel, otherwise we do nothing */ 
-		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
-			continue;
-		} 
-
-		/* extract the channel in question */
-		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+		if (!cinfo->rx_grs.range) {
+			ftdm_channel_unlock(fchan);
 			continue;
 		}
 
-		/* check if the GRP_RESET_RX flag is already up */
-		if (sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX)) {
-			/* we have already processed this channel...move along */
-			continue;
+		SS7_INFO("Rx GRS (%d:%d)\n", 
+				g_ftdm_sngss7_data.cfg.isupCkt[cinfo->rx_grs.circuit].cic, 
+				(g_ftdm_sngss7_data.cfg.isupCkt[cinfo->rx_grs.circuit].cic + cinfo->rx_grs.range));
+
+		for (i = cinfo->rx_grs.circuit; i < (cinfo->rx_grs.circuit + cinfo->rx_grs.range + 1); i++) {
+
+			/* confirm this is a voice channel, otherwise we do nothing */ 
+			if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
+				continue;
+			} 
+
+			/* extract the channel in question */
+			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+				SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+				continue;
+			}
+
+			/* check if the GRP_RESET_RX flag is already up */
+			if (sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX)) {
+				/* we have already processed this channel...move along */
+				continue;
+			}
+
+			/* lock the channel */
+			ftdm_channel_lock(ftdmchan);
+
+			/* clear up any pending state changes */
+			while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+				ftdm_sangoma_ss7_process_state_change (ftdmchan);
+			}
+
+			/* flag the channel as having received a reset */
+			sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX);
+
+			switch (ftdmchan->state) {
+			/**************************************************************************/
+			case FTDM_CHANNEL_STATE_RESTART:
+
+				/* go to idle so that we can redo the restart state*/
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
+
+				break;
+			/**************************************************************************/
+			default:
+
+				/* set the state of the channel to restart...the rest is done by the chan monitor */
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				break;
+			/**************************************************************************/
+			}
+
+			/* unlock the channel again before we exit */
+			ftdm_channel_unlock(ftdmchan);
+
 		}
 
-		/* lock the channel */
-		ftdm_mutex_lock(ftdmchan->mutex);
+		ftdm_channel_unlock(fchan);
+	}
 
-		/* clear up any pending state changes */
-		while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-			ftdm_sangoma_ss7_process_state_change (ftdmchan);
-		}
-
-		/* flag the channel as having received a reset */
-		sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX);
-
-		switch (ftdmchan->state) {
-		/**************************************************************************/
-		case FTDM_CHANNEL_STATE_RESTART:
-
-			/* go to idle so that we can redo the restart state*/
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
-
-			break;
-		/**************************************************************************/
-		default:
-
-			/* set the state of the channel to restart...the rest is done by the chan monitor */
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
-			break;
-		/**************************************************************************/
-		} /* switch (ftdmchan->state) */
-
-		/* unlock the channel again before we exit */
-		ftdm_mutex_unlock(ftdmchan->mutex);
-
-	} /* for (chans in GRS */
+	ftdm_iterator_free(iter);
 
 	return FTDM_SUCCESS;
 }
@@ -1029,104 +1000,140 @@ ftdm_status_t check_if_rx_grs_started(ftdm_span_t *ftdmspan)
 /******************************************************************************/
 ftdm_status_t check_if_rx_grs_processed(ftdm_span_t *ftdmspan)
 {
-	ftdm_channel_t 		*ftdmchan = NULL;
-	sngss7_chan_data_t  *sngss7_info = NULL;
-	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
-	int 				i;
-	int					byte = 0;
-	int					bit = 0;
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	sngss7_chan_data_t *sngss7_info = NULL;
+	sngss7_chan_data_t *cinfo = NULL;
+	int i = 0, bn = 0;
+	int byte = 0, bit = 0;
+	int cic_start = 0, cic_end = 0, num_cics = 0;
+	ftdm_bitmap_t *lockmap = 0;
+	ftdm_size_t mapsize = 0;
 
-	/* check all the circuits in the range to see if they are done resetting */
-	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+	iter = ftdm_span_get_chan_iterator(ftdmspan, NULL);
+	for (curr = iter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(curr);
 
-		/* confirm this is a voice channel, otherwise we do nothing */ 
-		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
+		ftdm_channel_lock(fchan);
+
+		cinfo = fchan->call_data;
+
+		if (!cinfo->rx_grs.range) {
+
+			ftdm_channel_unlock(fchan);
+
 			continue;
 		}
 
-		/* extract the channel in question */
-		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
-			continue;
+		cic_start = cinfo->rx_grs.circuit;
+		cic_end = cinfo->rx_grs.circuit + cinfo->rx_grs.range;
+		num_cics = cinfo->rx_grs.range + 1;
+		mapsize = (num_cics / FTDM_BITMAP_NBITS) + 1;
+
+		lockmap = ftdm_calloc(mapsize, sizeof(*lockmap));
+		if (!lockmap) {
+			ftdm_channel_unlock(fchan);
+			return FTDM_ENOMEM;
 		}
 
-		/* lock the channel */
-		ftdm_mutex_lock(ftdmchan->mutex);
+		/* check all the circuits in the range to see if they are done resetting */
+		for (i = cic_start, bn = 0; i <= cic_end; i++, bn++) {
 
-		/* check if there is a state change pending on the channel */
-		if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-			/* check the state to the GRP_RESET_RX_DN flag */
-			if (!sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) {
-				/* this channel is still resetting...do nothing */
+			/* confirm this is a voice channel, otherwise we do nothing */ 
+			if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
+				continue;
+			}
+
+			/* extract the channel in question */
+			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+				SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+				ftdm_assert(FTDM_FALSE, "Failed to extract channel data during GRS\n");
+				continue;
+			}
+
+			/* lock the channel */
+			ftdm_channel_lock(ftdmchan);
+			ftdm_map_set_bit(lockmap, bn);
+
+			/* check if there is a state change pending on the channel */
+			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+				/* check the state to the GRP_RESET_RX_DN flag */
+				if (!sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) {
+					/* this channel is still resetting...do nothing */
 					goto GRS_UNLOCK_ALL;
-			} /* if (!sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) */
-		} else {
-			/* state change pending */
-			goto GRS_UNLOCK_ALL;
-		}
-	} /* for ( i = circuit; i < (circuit + range + 1); i++) */
+				} /* if (!sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_DN)) */
+			} else {
+				/* state change pending */
+				goto GRS_UNLOCK_ALL;
+			}
 
-	SS7_DEBUG("All circuits out of reset for GRS: circuit=%d, range=%d\n",
-					sngss7_span->rx_grs.circuit,
-					sngss7_span->rx_grs.range);
-
-	/* check all the circuits in the range to see if they are done resetting */
-	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
-
-		/* confirm this is a voice channel, otherwise we do nothing */ 
-		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
-			continue;
 		}
 
-		/* extract the channel in question */
-		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n",i);
-			/* check if we need to die */
-			SS7_ASSERT;
-			/* move along */
-			continue;
+		SS7_DEBUG("All circuits out of reset for GRS: circuit=%d, range=%d\n", cinfo->rx_grs.circuit, cinfo->rx_grs.range);
+		for (i = cic_start; i <= cic_end; i++) {
+
+			/* confirm this is a voice channel, otherwise we do nothing */ 
+			if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
+				continue;
+			}
+
+			/* extract the channel in question */
+			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+				SS7_ERROR("Failed to extract channel data for circuit = %d!\n",i);
+				ftdm_assert(FTDM_FALSE, "Failed to extract channel data during GRS\n");
+				continue;
+			}
+
+			/* throw the GRP reset flag complete flag */
+			sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
+
+			/* move the channel to the down state */
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+
+			/* update the status map if the ckt is in blocked state */
+			if ((sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
+				(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
+				(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) ||
+				(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
+			
+				cinfo->rx_grs.status[byte] = (cinfo->rx_grs.status[byte] | (1 << bit));
+			}
+
+			/* update the bit and byte counter*/
+			bit ++;
+			if (bit == 8) {
+				byte++;
+				bit = 0;
+			}
+
 		}
-
-		/* throw the GRP reset flag complete flag */
-		sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT);
-
-		/* move the channel to the down state */
-		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-
-		/* update the status map if the ckt is in blocked state */
-		if ((sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) ||
-			(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) ||
-			(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) ||
-			(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX))) {
-		
-			sngss7_span->rx_grs.status[byte] = (sngss7_span->rx_grs.status[byte] | (1 << bit));
-		} /* if blocked */
-		
-		/* update the bit and byte counter*/
-		bit ++;
-		if (bit == 8) {
-			byte++;
-			bit = 0;
-		}
-	} /* for ( i = circuit; i < (circuit + range + 1); i++) */
-
 GRS_UNLOCK_ALL:
-	for ( i = sngss7_span->rx_grs.circuit; i < (sngss7_span->rx_grs.circuit + sngss7_span->rx_grs.range + 1); i++) {
+		for (i = cic_start, bn = 0; i <= cic_end; i++, bn++) {
+			/* confirm this is a voice channel, otherwise we do nothing */ 
+			if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
+				continue;
+			}
 
-		/* confirm this is a voice channel, otherwise we do nothing */ 
-		if (g_ftdm_sngss7_data.cfg.isupCkt[i].type != SNG_CKT_VOICE) {
-			continue;
+			/* extract the channel in question */
+			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+				SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+				ftdm_assert(FTDM_FALSE, "Failed to extract channel data during GRS\n");
+				continue;
+			}
+			if (ftdm_map_test_bit(lockmap, bn)) {
+				/* unlock the channel */
+				ftdm_channel_unlock(ftdmchan);
+				ftdm_map_clear_bit(lockmap, bn);
+			}
 		}
 
-		/* extract the channel in question */
-		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
-			continue;
-		}
+		ftdm_safe_free(lockmap);
 
-		/* unlock the channel */
-		ftdm_mutex_unlock(ftdmchan->mutex);
+		ftdm_channel_unlock(fchan);
 	}
+
+	ftdm_iterator_free(iter);
 
 	return FTDM_SUCCESS;
 }
@@ -1134,86 +1141,103 @@ GRS_UNLOCK_ALL:
 /******************************************************************************/
 ftdm_status_t check_if_rx_gra_started(ftdm_span_t *ftdmspan)
 {
-	ftdm_channel_t 		*ftdmchan = NULL;
-	sngss7_chan_data_t  *sngss7_info = NULL;
-	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
-	int 				i;
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	sngss7_chan_data_t *sngss7_info = NULL;
+	sngss7_chan_data_t *cinfo = NULL;
+	int i = 0;
 
-	SS7_INFO("Rx GRA (%d:%d)\n", 
-				g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_gra.circuit].cic, 
-				(g_ftdm_sngss7_data.cfg.isupCkt[sngss7_span->rx_gra.circuit].cic + sngss7_span->rx_gra.range));
+	iter = ftdm_span_get_chan_iterator(ftdmspan, NULL);
 
-	for (i = sngss7_span->rx_gra.circuit; i < (sngss7_span->rx_gra.circuit + sngss7_span->rx_gra.range + 1); i++) {
+	for (curr = iter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(curr);
+		ftdm_channel_lock(fchan);
 
-		/* extract the channel in question */
-		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+		cinfo = fchan->call_data;
+
+		if (!cinfo->rx_gra.range) {
+
+			ftdm_channel_unlock(fchan);
+
 			continue;
 		}
 
-		/* check if the channel is already procoessing the GRA */
-		if (sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP)) {
-			/* move along */
-			continue;
-		}
+		SS7_INFO("Rx GRA (%d:%d)\n", 
+				g_ftdm_sngss7_data.cfg.isupCkt[cinfo->rx_gra.circuit].cic, 
+				(g_ftdm_sngss7_data.cfg.isupCkt[cinfo->rx_gra.circuit].cic + cinfo->rx_gra.range));
 
-		/* lock the channel */
-		ftdm_mutex_lock(ftdmchan->mutex);
+		for (i = cinfo->rx_gra.circuit; i < (cinfo->rx_gra.circuit + cinfo->rx_gra.range + 1); i++) {
 
-		/* clear up any pending state changes */
-		while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-			ftdm_sangoma_ss7_process_state_change (ftdmchan);
-		}
-
-
-
-		switch (ftdmchan->state) {
-		/**********************************************************************/
-		case FTDM_CHANNEL_STATE_RESTART:
-			
-			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
-			sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
-
-			/* go to DOWN */
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-
-			break;
-		/**********************************************************************/
-		case FTDM_CHANNEL_STATE_DOWN:
-
-			/* do nothing, just drop the message */
-			SS7_DEBUG("Receveived GRA in down state, dropping\n");
-
-			break;
-		/**********************************************************************/
-		case FTDM_CHANNEL_STATE_TERMINATING:
-		case FTDM_CHANNEL_STATE_HANGUP:
-		case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
-			
-			/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
-			sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
-
-			break;
-		/**********************************************************************/
-		default:
-			/* ITU Q764-2.9.5.1.c -> release the circuit */
-			if (sngss7_span->rx_gra.cause != 0) {
-				ftdmchan->caller_data.hangup_cause = sngss7_span->rx_gra.cause;
-			} else {
-				ftdmchan->caller_data.hangup_cause = 98;	/* Message not compatiable with call state */
+			/* extract the channel in question */
+			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+				SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+				continue;
 			}
 
-			/* go to terminating to hang up the call */
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
-			break;
-		/**********************************************************************/
+			/* check if the channel is already processing the GRA */
+			if (sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP)) {
+				/* move along */
+				continue;
+			}
+
+			/* lock the channel */
+			ftdm_channel_lock(ftdmchan);
+
+			/* clear up any pending state changes */
+			while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+				ftdm_sangoma_ss7_process_state_change (ftdmchan);
+			}
+
+			switch (ftdmchan->state) {
+			/**********************************************************************/
+			case FTDM_CHANNEL_STATE_RESTART:
+				
+				/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
+				sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
+
+				/* go to DOWN */
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+
+				break;
+			/**********************************************************************/
+			case FTDM_CHANNEL_STATE_DOWN:
+
+				/* do nothing, just drop the message */
+				SS7_DEBUG("Receveived GRA in down state, dropping\n");
+
+				break;
+			/**********************************************************************/
+			case FTDM_CHANNEL_STATE_TERMINATING:
+			case FTDM_CHANNEL_STATE_HANGUP:
+			case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+				
+				/* throw the FLAG_RESET_TX_RSP to indicate we have acknowledgement from the remote side */
+				sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP);
+
+				break;
+			/**********************************************************************/
+			default:
+				/* ITU Q764-2.9.5.1.c -> release the circuit */
+				if (cinfo->rx_gra.cause != 0) {
+					ftdmchan->caller_data.hangup_cause = cinfo->rx_gra.cause;
+				} else {
+					ftdmchan->caller_data.hangup_cause = 98;	/* Message not compatiable with call state */
+				}
+
+				/* go to terminating to hang up the call */
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+				break;
+			/**********************************************************************/
+			}
+
+			ftdm_channel_unlock(ftdmchan);
 		}
 
-		/* unlock the channel again before we exit */
-		ftdm_mutex_unlock(ftdmchan->mutex);
+		ftdm_channel_unlock(fchan);
+	}
 
-	} /* for ( circuits in request */
-
+	ftdm_iterator_free(iter);
 
 	return FTDM_SUCCESS;
 }
@@ -1286,41 +1310,66 @@ ftdm_status_t check_for_res_sus_flag(ftdm_span_t *ftdmspan)
 /******************************************************************************/
 ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan)
 {
-	ftdm_channel_t 		*ftdmchan = NULL;
-	sngss7_chan_data_t  *sngss7_info = NULL;
-	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
-	int 				i;
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	sngss7_chan_data_t *sngss7_info = NULL;
+	sngss7_chan_data_t *cinfo = NULL;
+	sngss7_span_data_t *sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
+	int i = 0;
 
-	for (i = sngss7_span->ucic.circuit; i < (sngss7_span->ucic.circuit + sngss7_span->ucic.range + 1); i++) {
+	iter = ftdm_span_get_chan_iterator(ftdmspan, NULL);
+	curr = iter;
+	for (curr = iter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(curr);
 
-		/* extract the channel in question */
-		if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+		ftdm_channel_lock(fchan);
+
+		cinfo = fchan->call_data;
+
+		if (!cinfo->ucic.range) {
+
+			ftdm_channel_unlock(fchan);
+
 			continue;
 		}
 
-		/* lock the channel */
-		ftdm_mutex_lock(ftdmchan->mutex);
+		for (i = cinfo->ucic.circuit; i < (cinfo->ucic.circuit + cinfo->ucic.range + 1); i++) {
 
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx UCIC\n", sngss7_info->circuit->cic);
+			/* extract the channel in question */
+			if (extract_chan_data(i, &sngss7_info, &ftdmchan)) {
+				SS7_ERROR("Failed to extract channel data for circuit = %d!\n", i);
+				continue;
+			}
 
-		/* clear up any pending state changes */
-		while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
-			ftdm_sangoma_ss7_process_state_change (ftdmchan);
+			/* lock the channel */
+			ftdm_channel_lock(ftdmchan);
+
+			SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx UCIC\n", sngss7_info->circuit->cic);
+
+			/* clear up any pending state changes */
+			while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
+				ftdm_sangoma_ss7_process_state_change (ftdmchan);
+			}
+
+			/* throw the ckt block flag */
+			sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
+
+			/* set the channel to suspended state */
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+
+			/* unlock the channel again before we exit */
+			ftdm_channel_unlock(ftdmchan);
 		}
+		/* clear out the ucic data since we're done with it */
+		memset(&cinfo->ucic, 0, sizeof(cinfo->ucic));
 
-		/* throw the ckt block flag */
-		sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
-
-		/* set the channel to suspended state */
-		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
-
-		/* unlock the channel again before we exit */
-		ftdm_mutex_unlock(ftdmchan->mutex);
+		ftdm_channel_unlock(fchan);
 	}
 
-	/* clear out the ucic data since we're done with it */
-	memset(&sngss7_span->ucic, 0x0, sizeof(sngss7_group_data_t));
+	ftdm_clear_flag(sngss7_span, SNGSS7_UCIC_PENDING);
+
+	ftdm_iterator_free(iter);
 
 	return FTDM_SUCCESS;
 }
@@ -1339,11 +1388,36 @@ ftdm_status_t clear_rx_grs_flags(sngss7_chan_data_t *sngss7_info)
 /******************************************************************************/
 ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info)
 {
-	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
-	sngss7_span_data_t	*sngss7_span = ftdmchan->span->signal_data;
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	sngss7_chan_data_t *cinfo = NULL;
+	ftdm_channel_t *ftdmchan = sngss7_info->ftdmchan;
+	sngss7_span_data_t *sngss7_span = (sngss7_span_data_t *)ftdmchan->span->signal_data;
 
-	/* clear the rx_grs data fields */
-	memset(&sngss7_span->rx_grs, 0x0, sizeof(sngss7_group_data_t));
+	memset(&sngss7_info->rx_grs, 0, sizeof(sngss7_info->rx_grs));
+
+	iter = ftdm_span_get_chan_iterator(ftdmchan->span, NULL);
+	curr = iter;
+	for (curr = iter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(curr);
+
+		ftdm_channel_lock(fchan);
+
+		cinfo = fchan->call_data;
+		if (cinfo->rx_grs.range) {
+			/* there is still another grs pending, do not clear the SNGSS7_RX_GRS_PENDING flag yet */
+			ftdm_channel_unlock(fchan);
+			goto done;
+		}
+
+		ftdm_channel_unlock(fchan);
+	}
+
+	/* if we're here is because there is no other grs going on now in this span */
+	ftdm_clear_flag(sngss7_span, SNGSS7_RX_GRS_PENDING);
+
+done:
+	ftdm_iterator_free(iter);
 
 	return FTDM_SUCCESS;
 }
@@ -1351,11 +1425,38 @@ ftdm_status_t clear_rx_grs_data(sngss7_chan_data_t *sngss7_info)
 /******************************************************************************/
 ftdm_status_t clear_rx_gra_data(sngss7_chan_data_t *sngss7_info)
 {
-	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
-	sngss7_span_data_t	*sngss7_span = ftdmchan->span->signal_data;
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	sngss7_chan_data_t *cinfo = NULL;
+	ftdm_channel_t *ftdmchan = sngss7_info->ftdmchan;
+	sngss7_span_data_t *sngss7_span = ftdmchan->span->signal_data;
 
 	/* clear the rx_grs data fields */
-	memset(&sngss7_span->rx_gra, 0x0, sizeof(sngss7_group_data_t));
+	memset(&sngss7_info->rx_gra, 0, sizeof(sngss7_info->rx_gra));
+
+	iter = ftdm_span_get_chan_iterator(ftdmchan->span, NULL);
+	curr = iter;
+	for (curr = iter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(curr);
+
+		ftdm_channel_lock(fchan);
+
+		cinfo = fchan->call_data;
+		if (cinfo->rx_gra.range) {
+			/* there is still another gra pending, do not clear the SNGSS7_RX_GRA_PENDING flag yet */
+			ftdm_channel_unlock(fchan);
+			goto done;
+		}
+
+		ftdm_channel_unlock(fchan);
+	}
+
+	/* if we're here is because there is no other gra pending in this span */
+	ftdm_clear_flag(sngss7_span, SNGSS7_RX_GRA_PENDING);
+
+done:
+
+	ftdm_iterator_free(iter);
 
 	return FTDM_SUCCESS;
 }
@@ -1374,12 +1475,8 @@ ftdm_status_t clear_tx_grs_flags(sngss7_chan_data_t *sngss7_info)
 /******************************************************************************/
 ftdm_status_t clear_tx_grs_data(sngss7_chan_data_t *sngss7_info)
 {
-	ftdm_channel_t		*ftdmchan = sngss7_info->ftdmchan;
-	sngss7_span_data_t	*sngss7_span = ftdmchan->span->signal_data;
-
-	/* clear the rx_grs data fields */
-	memset(&sngss7_span->tx_grs, 0x0, sizeof(sngss7_group_data_t));
-
+	/* clear everything up */
+	memset(&sngss7_info->tx_grs, 0, sizeof(sngss7_info->tx_grs));
 	return FTDM_SUCCESS;
 }
 

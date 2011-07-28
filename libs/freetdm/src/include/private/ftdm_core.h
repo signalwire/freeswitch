@@ -719,8 +719,8 @@ FT_DECLARE(ftdm_status_t) ftdm_sigmsg_set_raw_data(ftdm_sigmsg_t *sigmsg, void *
 */
 #define ftdm_socket_close(it) if (it > -1) { close(it); it = -1;}
 
-#define ftdm_channel_lock(chan) ftdm_mutex_lock(chan->mutex)
-#define ftdm_channel_unlock(chan) ftdm_mutex_unlock(chan->mutex)
+#define ftdm_channel_lock(chan) ftdm_mutex_lock((chan)->mutex)
+#define ftdm_channel_unlock(chan) ftdm_mutex_unlock((chan)->mutex)
 
 #define ftdm_log_throttle(level, ...) \
 	time_current_throttle_log = ftdm_current_time_in_ms(); \
@@ -776,6 +776,13 @@ static __inline__ int16_t ftdm_saturated_add(int16_t sample1, int16_t sample2)
 		addres = -32767;
 	return (int16_t)addres;
 }
+
+/* Bitmap helper functions */
+typedef long ftdm_bitmap_t;
+#define FTDM_BITMAP_NBITS (sizeof(ftdm_bitmap_t) * 8)
+#define ftdm_map_set_bit(map, bit) (map[(bit/FTDM_BITMAP_NBITS)] |= ((ftdm_bitmap_t)1 << (bit % FTDM_BITMAP_NBITS)))
+#define ftdm_map_clear_bit(map, bit) (map[(bit/FTDM_BITMAP_NBITS)] &= ~((ftdm_bitmap_t)1 << (bit % FTDM_BITMAP_NBITS)))
+#define ftdm_map_test_bit(map, bit) (map[(bit/FTDM_BITMAP_NBITS)] & ((ftdm_bitmap_t)1 << (bit % FTDM_BITMAP_NBITS)))
 
 #ifdef __cplusplus
 }
