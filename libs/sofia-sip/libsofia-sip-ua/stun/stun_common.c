@@ -100,7 +100,7 @@ int stun_parse_message(stun_msg_t *msg)
   msg->stun_attr = NULL;
   while (len > 0) {
     i = stun_parse_attribute(msg, p);
-    if (i <= 0) {
+    if (i <= 0 || i > len) {
       SU_DEBUG_3(("%s: Error parsing attribute.\n", __func__));
       return -1;
     }

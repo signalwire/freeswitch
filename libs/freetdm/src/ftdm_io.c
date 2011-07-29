@@ -4498,34 +4498,40 @@ static ftdm_status_t ftdm_set_channels_gains(ftdm_span_t *span, int currindex, f
 	return FTDM_SUCCESS;
 }
 
-static ftdm_status_t ftdm_set_channels_alarms(ftdm_span_t *span, int currindex) {
-	unsigned chan_index = 0;
+static ftdm_status_t ftdm_report_initial_channels_alarms(ftdm_span_t *span) 
+{
+	ftdm_channel_t *fchan = NULL;
+	ftdm_iterator_t *curr = NULL;
+	ftdm_status_t status = FTDM_SUCCESS;
+	ftdm_alarm_flag_t alarmbits;
+	ftdm_event_t fake_event;
+	ftdm_iterator_t *citer = ftdm_span_get_chan_iterator(span, NULL);
 
-	if (!span->chan_count) {
-		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set alarms because span has no channels\n");
-		return FTDM_FAIL;
+	if (!citer) {
+		status = FTDM_ENOMEM;
+		goto done;
 	}
 
-	if (!span->fio->get_alarms) {
-		ftdm_log(FTDM_LOG_WARNING, "%d: Span does not support alarms\n", span->span_id);
-		return FTDM_SUCCESS;
-	}
+	memset(&fake_event, 0, sizeof(fake_event));
+	fake_event.e_type = FTDM_EVENT_OOB;
 
-	for (chan_index = currindex+1; chan_index <= span->chan_count; chan_index++) {
-		/* fio->get_alarms will update ftdm_chan->alarm_flags */
-		if (span->fio->get_alarms(span->channels[chan_index]) != FTDM_SUCCESS) {
-			ftdm_log(FTDM_LOG_ERROR, "%d:%d: Failed to get alarms\n", span->channels[chan_index]->physical_span_id, span->channels[chan_index]->physical_chan_id);
-			return FTDM_FAIL;
+	for (curr = citer; curr; curr = ftdm_iterator_next(curr)) {
+		fchan = ftdm_iterator_current(curr);
+		status = ftdm_channel_get_alarms(fchan, &alarmbits);
+		if (status != FTDM_SUCCESS) {
+			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Failed to initialize alarms\n");
+			continue;
 		}
-		if (span->channels[chan_index]->alarm_flags) {
-			ftdm_set_flag_locked(span->channels[chan_index], FTDM_CHANNEL_IN_ALARM);
-		} else {
-			ftdm_clear_flag_locked(span->channels[chan_index], FTDM_CHANNEL_IN_ALARM);
-		}
+		fake_event.channel = fchan;
+		fake_event.enum_id = fchan->alarm_flags ? FTDM_OOB_ALARM_TRAP : FTDM_OOB_ALARM_CLEAR;
+		ftdm_event_handle_oob(&fake_event);
 	}
-	return FTDM_SUCCESS;
+
+done:
+
+	ftdm_iterator_free(citer);
+	return status;
 }
-
 
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const char* str, ftdm_channel_config_t *chan_config, unsigned *configured)
 {
@@ -4555,12 +4561,6 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 
 	if (ftdm_set_channels_gains(span, currindex, chan_config->rxgain, chan_config->txgain) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set channel gains\n", span->span_id);
-		return FTDM_FAIL;
-	}
-
-
-	if (ftdm_set_channels_alarms(span, currindex) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to set channel alarms\n", span->span_id);
 		return FTDM_FAIL;
 	}
 
@@ -5084,6 +5084,7 @@ static ftdm_status_t post_configure_span_channels(ftdm_span_t *span)
 	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_signaling_status_t sigstatus = FTDM_SIG_STATE_DOWN;
 	for (i = 1; i <= span->chan_count; i++) {
+		sigstatus = FTDM_SIG_STATE_DOWN;
 		ftdm_channel_get_sig_status(span->channels[i], &sigstatus);
 		if (sigstatus == FTDM_SIG_STATE_UP) {
 			ftdm_set_flag(span->channels[i], FTDM_CHANNEL_SIG_UP);
@@ -5189,13 +5190,8 @@ FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span)
 		goto done;
 	}
 
-	/* check the alarms again before starting the signaling module
-	   this works-around some I/O modules (netborder I/O module) that cannot
-	   check the alarm status before during configuration because the spans are
-	   not really started yet at the I/O level */
-	if (ftdm_set_channels_alarms(span, 0) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to set channel alarms in span %s\n", span->name);
-		status = FTDM_FAIL;
+	status = ftdm_report_initial_channels_alarms(span);
+	if (status != FTDM_SUCCESS) {
 		goto done;
 	}
 

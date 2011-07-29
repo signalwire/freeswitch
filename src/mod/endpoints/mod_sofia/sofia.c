@@ -4833,9 +4833,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						}
 					}
 
-					/* SNARK: message to respond to reinvite wasn't being delivered in 3pcc+bypass media case. */
-					//switch_core_session_queue_message(other_session, msg);
-					switch_core_session_receive_message(other_session, msg);
+					switch_core_session_queue_message(other_session, msg);
 
 					switch_core_session_rwunlock(other_session);
 				}

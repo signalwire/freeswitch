@@ -4042,6 +4042,11 @@ SWITCH_STANDARD_API(show_function)
 		if (argv[2] && !strcasecmp(argv[1], "as")) {
 			as = argv[2];
 		}
+	} else if (!strcasecmp(command, "detailed_calls")) {
+		sprintf(sql, "select * from detailed_calls where hostname='%s' order by created_epoch", hostname);
+		if (argv[2] && !strcasecmp(argv[1], "as")) {
+			as = argv[2];
+		}
 	} else if (!strcasecmp(command, "aliases")) {
 		sprintf(sql, "select * from aliases where hostname='%s' order by alias", hostname);
 	} else if (!strcasecmp(command, "complete")) {
