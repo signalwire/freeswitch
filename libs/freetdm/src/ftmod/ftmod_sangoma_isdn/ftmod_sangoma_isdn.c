@@ -366,11 +366,10 @@ static void *ftdm_sangoma_isdn_io_run(ftdm_thread_t *me, void *obj)
 		waitms = 1000;
 		memset(poll_events, 0, sizeof(short)*span->chan_count);
 
-		poll_events[i] |= FTDM_EVENTS;
-
 		for (i = 0, citer = ftdm_span_get_chan_iterator(span, chaniter); citer; citer = ftdm_iterator_next(citer), i++) {
 			ftdmchan = ftdm_iterator_current(citer);
 
+			poll_events[i] |= FTDM_EVENTS;
 			if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
 				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_RX_DISABLED)) {
 					poll_events[i] |= FTDM_READ;
