@@ -1286,7 +1286,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cp->caller_id_number, cp->caller_id_name);
 		msg.string_arg = cid_buf;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
-		switch_core_session_receive_message(tsession, &msg);
+		switch_core_session_receive_message(session, &msg);
 
 		while (switch_channel_up(tchannel) && switch_channel_ready(channel)) {
 			uint32_t len = sizeof(buf);

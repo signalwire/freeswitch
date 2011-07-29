@@ -777,7 +777,7 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 			}
 			assert(sr);
 
-			pri_sr_set_channel(sr, ftdm_channel_get_id(chan), 0, 0);
+			pri_sr_set_channel(sr, ftdm_channel_get_id(chan), 1, 0);
 			pri_sr_set_bearer(sr, PRI_TRANS_CAP_SPEECH, isdn_data->layer1);
 
 			pri_sr_set_called(sr, caller_data->dnis.digits, ton, 1);

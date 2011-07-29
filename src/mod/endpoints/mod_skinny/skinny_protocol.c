@@ -142,7 +142,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 		if (!listener_is_ready(listener)) {
 			break;
 		}
-		if ((status != 70007 /* APR_TIMEUP */) && !SWITCH_STATUS_IS_BREAK(status) && (status != SWITCH_STATUS_SUCCESS)) {
+		if (!switch_status_is_timeup(status) && !SWITCH_STATUS_IS_BREAK(status) && (status != SWITCH_STATUS_SUCCESS)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket break with status=%d.\n", status);
 			return SWITCH_STATUS_FALSE;
 		}

@@ -1047,11 +1047,10 @@ void sngisdn_restart_timeout(void *p_signal_data)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t *)p_signal_data;
 	ftdm_span_t *span = signal_data->ftdm_span;
-
-	ftdm_log(FTDM_LOG_DEBUG, "s%d:Did not receive a RESTART from remote switch in %d ms - restarting\n", span->name, signal_data->restart_timeout);
-
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *curr = NULL;
+
+	ftdm_log(FTDM_LOG_DEBUG, "s%d:Did not receive a RESTART from remote switch in %d ms - restarting\n", span->name, signal_data->restart_timeout);
 
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {

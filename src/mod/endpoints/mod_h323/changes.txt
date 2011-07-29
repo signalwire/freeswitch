@@ -1,3 +1,4 @@
+fix small interoperability issues if remote endpoint send progress twice
 make sure dtmfinband gets initialized
 make gk-identifier and gk-interface settings optional (documentation sayed that about gk-identifier already)
 fix race condition on destroying signaling thread in h323 library
