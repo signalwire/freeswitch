@@ -228,9 +228,9 @@ int line_model_monitor_line_spectrum_update(const int16_t amp[], int len)
     {
         s->spec_re_plot[2*i] = i*4000.0/512.0;
 #if defined(HAVE_FFTW3_H)    
-        s->spec_re_plot[2*i + 1] = 20.0*log10(sqrt(s->out[i][0]*s->out[i][0] + s->out[i][1]*s->out[i][1])/(256.0*32768)) + 3.14;
+        s->spec_re_plot[2*i + 1] = 10.0*log10((s->out[i][0]*s->out[i][0] + s->out[i][1]*s->out[i][1])/(256.0*32768*256.0*32768) + 1.0e-10) + 3.14;
 #else
-        s->spec_re_plot[2*i + 1] = 20.0*log10(sqrt(s->out[i].re*s->out[i].re + s->out[i].im*s->out[i].im)/(256.0*32768)) + 3.14;
+        s->spec_re_plot[2*i + 1] = 10.0*log10((s->out[i].re*s->out[i].re + s->out[i].im*s->out[i].im)/(256.0*32768*256.0*32768) + 1.0e-10) + 3.14;
 #endif
     }
     s->spec_re = new Ca_Line(512, s->spec_re_plot, 0, 0, FL_BLUE, CA_NO_POINT);

@@ -183,23 +183,28 @@ SWITCH_STANDARD_APP(start_tone_detect_app)
 SWITCH_STANDARD_API(start_tone_detect_api)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	 switch_core_session_t *psession = NULL;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "-ERR missing descriptor name\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!session) {
-		stream->write_function(stream, "-ERR no session\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
+    if (!(psession = switch_core_session_locate(cmd))) {
+        stream->write_function(stream, "-ERR Cannot locate session\n");
+        return SWITCH_STATUS_SUCCESS;
+    }
 
-	status = callprogress_detector_start(session, cmd);
+
+	status = callprogress_detector_start(psession, cmd);
+
 	if (status == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK started\n");
 	} else {
 		stream->write_function(stream, "-ERR failed to start tone detector\n");
 	}
+    
+    switch_core_session_rwunlock(psession);
 
 	return status;
 }
@@ -227,12 +232,22 @@ SWITCH_STANDARD_APP(stop_tone_detect_app)
 SWITCH_STANDARD_API(stop_tone_detect_api)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	if (!session) {
-		stream->write_function(stream, "-ERR no session\n");
+	 switch_core_session_t *psession = NULL;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR missing descriptor name\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
-	callprogress_detector_stop(session);
-	stream->write_function(stream, "+OK stopped\n");
+
+    if (!(psession = switch_core_session_locate(cmd))) {
+        stream->write_function(stream, "-ERR Cannot locate session\n");
+        return SWITCH_STATUS_SUCCESS;
+    }
+
+    callprogress_detector_stop(psession);
+    stream->write_function(stream, "+OK stopped\n");
+    switch_core_session_rwunlock(psession);
+    
 	return status;
 }
 

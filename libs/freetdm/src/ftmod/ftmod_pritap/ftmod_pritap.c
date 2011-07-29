@@ -57,6 +57,7 @@ typedef struct pritap {
 	int32_t flags;
 	struct pri *pri;
 	int debug;
+	uint8_t mixaudio;
 	ftdm_channel_t *dchan;
 	ftdm_span_t *span;
 	ftdm_span_t *peerspan;
@@ -752,6 +753,7 @@ static ftdm_status_t ftdm_pritap_sig_read(ftdm_channel_t *ftdmchan, void *data, 
 	ftdm_status_t status;
 	fio_codec_t codec_func;
 	ftdm_channel_t *peerchan = ftdmchan->call_data;
+	pritap_t *pritap = ftdmchan->span->signal_data;
 	int16_t chanbuf[size];
 	int16_t peerbuf[size];
 	int16_t mixedbuf[size];
@@ -759,6 +761,11 @@ static ftdm_status_t ftdm_pritap_sig_read(ftdm_channel_t *ftdmchan, void *data, 
 	ftdm_size_t sizeread = size;
 
 	if (!FTDM_IS_VOICE_CHANNEL(ftdmchan) || !ftdmchan->call_data) {
+		return FTDM_SUCCESS;
+	}
+
+	if (!pritap->mixaudio) {
+		/* No mixing requested */
 		return FTDM_SUCCESS;
 	}
 
@@ -829,6 +836,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 	uint32_t i;
 	const char *var, *val;
 	const char *debug = NULL;
+	uint8_t mixaudio = 1;
 	ftdm_channel_t *dchan = NULL;
 	pritap_t *pritap = NULL;
 	ftdm_span_t *peerspan = NULL;
@@ -857,6 +865,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 
 		if (!strcasecmp(var, "debug")) {
 			debug = val;
+		} else if (!strcasecmp(var, "mixaudio")) {
+			mixaudio = ftdm_true(val);
 		} else if (!strcasecmp(var, "peerspan")) {
 			if (ftdm_span_find_by_name(val, &peerspan) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Invalid tapping peer span %s\n", val);
@@ -880,6 +890,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 	pritap->debug = parse_debug(debug);
 	pritap->dchan = dchan;
 	pritap->peerspan = peerspan;
+	pritap->mixaudio = mixaudio;
 
 	span->start = ftdm_pritap_start;
 	span->stop = ftdm_pritap_stop;

@@ -10,7 +10,7 @@ SOFIALA=$(SOFIAUA_BUILDDIR)/libsofia-sip-ua.la
 
 mod_LTLIBRARIES = mod_sofia.la
 mod_sofia_la_SOURCES = mod_sofia.c sofia.c sofia_glue.c sofia_presence.c sofia_reg.c sofia_sla.c sip-dig.c mod_sofia.h
-mod_sofia_la_CFLAGS  = $(AM_CFLAGS) -I.
+mod_sofia_la_CFLAGS  = $(AM_CFLAGS) -I. $(SOFIA_CMD_LINE_CFLAGS)
 mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/bnf -I$(SOFIAUA_BUILDDIR)/bnf
 mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/http -I$(SOFIAUA_BUILDDIR)/http
 mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/iptsec -I$(SOFIAUA_BUILDDIR)/iptsec

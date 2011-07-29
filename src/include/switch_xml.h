@@ -320,6 +320,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_insert(_In_ switch_xml_t xml, _In_ switc
 ///\brief removes a tag along with all its subtags
 #define switch_xml_remove(xml) switch_xml_free(switch_xml_cut(xml))
 
+///\brief set new core xml root
+SWITCH_DECLARE(switch_status_t) switch_xml_set_root(switch_xml_t new_main);
+
+///\brief Set and alternate function for opening xml root
+SWITCH_DECLARE(switch_status_t) switch_xml_set_open_root_function(switch_xml_open_root_function_t func, void *user_data);
+
 ///\brief open the Core xml root
 ///\param reload if it's is already open close it and open it again as soon as permissable (blocking)
 ///\param err a pointer to set error strings

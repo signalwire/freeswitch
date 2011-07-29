@@ -2806,7 +2806,7 @@ static ftdm_status_t ftdmchan_activate_dtmf_buffer(ftdm_channel_t *ftdmchan)
 static ftdm_status_t ftdm_insert_dtmf_pause(ftdm_channel_t *ftdmchan, ftdm_size_t pausems)
 {
 	void *data = NULL;
-	unsigned int datalen = pausems * sizeof(uint16_t);
+	ftdm_size_t datalen = pausems * sizeof(uint16_t);
 
 	data = ftdm_malloc(datalen);
 	ftdm_assert(data, "Failed to allocate memory\n");
@@ -3800,7 +3800,6 @@ FT_DECLARE(void) ftdm_generate_sln_silence(int16_t *data, uint32_t samples, uint
 
 FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t *datalen)
 {
-	ftdm_status_t status = FTDM_FAIL;
 	fio_codec_t codec_func = NULL;
 	ftdm_size_t max = *datalen;
 
@@ -3822,11 +3821,10 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 		}
 
 		if (codec_func) {
-			status = codec_func(data, max, datalen);
+			codec_func(data, max, datalen);
 		} else {
 			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "no codec function to perform transcoding from %d to %d\n", ftdmchan->native_codec, ftdmchan->effective_codec);
-			status = FTDM_FAIL;
 		}
 	}
 
@@ -3861,7 +3859,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 				} else {
 					snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
 					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "invalid effective codec %d\n", ftdmchan->effective_codec);
-					status = FTDM_FAIL;
 					goto done;
 				}
 			}
@@ -4591,6 +4588,7 @@ static ftdm_status_t load_config(void)
 	ftdm_analog_start_type_t tmp;
 	ftdm_size_t len = 0;
 	ftdm_channel_config_t chan_config;
+	ftdm_status_t ret = FTDM_SUCCESS;
 
 	memset(&chan_config, 0, sizeof(chan_config));
 	sprintf(chan_config.group_name, "__default");
@@ -4625,6 +4623,13 @@ static ftdm_status_t load_config(void)
 
 				if ((name = strchr(type, ' '))) {
 					*name++ = '\0';
+				}
+
+				/* Verify is trunk_type was specified for previous span */
+				if (span && span->trunk_type == FTDM_TRUNK_NONE) {
+					ftdm_log(FTDM_LOG_ERROR, "trunk_type not specified for span %d (%s)\n", span->span_id, span->name);
+					ret = FTDM_FAIL;
+					goto done;
 				}
 
 				if (ftdm_span_create(type, name, &span) == FTDM_SUCCESS) {
@@ -4824,11 +4829,22 @@ static ftdm_status_t load_config(void)
 			ftdm_log(FTDM_LOG_ERROR, "unknown param [%s] '%s' / '%s'\n", cfg.category, var, val);
 		}
 	}
+
+	/* Verify is trunk_type was specified for the last span */
+	if (span && span->trunk_type == FTDM_TRUNK_NONE) {
+		ftdm_log(FTDM_LOG_ERROR, "trunk_type not specified for span %d (%s)\n", span->span_id, span->name);
+		ret = FTDM_FAIL;
+	}
+
+done:
 	ftdm_config_close_file(&cfg);
 
 	ftdm_log(FTDM_LOG_INFO, "Configured %u channel(s)\n", configured);
+	if (!configured) {
+		ret = FTDM_FAIL;
+	}
 	
-	return configured ? FTDM_SUCCESS : FTDM_FAIL;
+	return ret;
 }
 
 static ftdm_status_t process_module_config(ftdm_io_interface_t *fio)

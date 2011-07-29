@@ -848,9 +848,19 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 						case RTMP_TYPE_AUDIO: /* Audio data */
 							if (rsession->tech_pvt) {
 								uint16_t len = state->origlen;
+								
 								switch_mutex_lock(rsession->tech_pvt->readbuf_mutex);
+								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > rsession->tech_pvt->maxlen * 3) {
+									switch_buffer_zero(rsession->tech_pvt->readbuf);
+									#ifdef RTMP_DEBUG_IO
+									fprintf(rsession->io_debug_in, "[chunk_stream=%d type=0x%x ts=%d stream_id=0x%x] FLUSH BUFFER [exceeded %u]\n", rsession->amfnumber, state->type, (int)state->ts, state->stream_id, rsession->tech_pvt->maxlen * 3);									
+									#endif
+								}
 								switch_buffer_write(rsession->tech_pvt->readbuf, &len, 2);
 								switch_buffer_write(rsession->tech_pvt->readbuf, state->buf, len);
+								if (len > rsession->tech_pvt->maxlen) {
+									rsession->tech_pvt->maxlen = len;
+								}
 								switch_mutex_unlock(rsession->tech_pvt->readbuf_mutex);
 							}
 							break;

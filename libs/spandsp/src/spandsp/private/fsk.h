@@ -39,7 +39,7 @@ struct fsk_tx_state_s
     void *get_bit_user_data;
 
     /*! \brief The callback function used to report modem status changes. */
-    modem_tx_status_func_t status_handler;
+    modem_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 
@@ -66,7 +66,7 @@ struct fsk_rx_state_s
     void *put_bit_user_data;
 
     /*! \brief The callback function used to report modem status changes. */
-    modem_tx_status_func_t status_handler;
+    modem_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 

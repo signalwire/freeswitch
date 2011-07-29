@@ -2655,7 +2655,7 @@ static int config(void)
 					prefs.port = (uint16_t) atoi(val);
 				} else if (!strcmp(var, "password")) {
 					set_pref_pass(val);
-				} else if (!strcasecmp(var, "apply-inbound-acl")) {
+				} else if (!strcasecmp(var, "apply-inbound-acl") && ! zstr(val)) {
 					if (prefs.acl_count < MAX_ACL) {
 						prefs.acl[prefs.acl_count++] = strdup(val);
 					} else {

@@ -112,6 +112,9 @@ typedef int gid_t;
 
 #else
 /* packed attribute */
+#if (defined __SUNPRO_CC) || defined(__SUNPRO_C)
+#define PACKED
+#endif
 #ifndef PACKED
 #define PACKED __attribute__ ((__packed__))
 #endif

@@ -267,7 +267,7 @@ SPAN_DECLARE(void) v17_rx_set_put_bit(v17_rx_state_t *s, put_bit_func_t put_bit,
     \param s The modem context.
     \param handler The callback routine used to report modem status changes.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_rx_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_status_func_t handler, void *user_data);
 
 /*! Process a block of received V.17 modem audio samples.
     \brief Process a block of received V.17 modem audio samples.

@@ -5,7 +5,7 @@
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2003 Steve Underwood
+ * Copyright (C) 2003, 2011 Steve Underwood
  *
  * All rights reserved.
  *
@@ -26,75 +26,94 @@
 #if !defined(_SPANDSP_PRIVATE_V42_H_)
 #define _SPANDSP_PRIVATE_V42_H_
 
+/*! Max retries (9.2.2) */
+#define V42_DEFAULT_N_400               5
+/*! Default for max octets in an information field (9.2.3) */
+#define V42_DEFAULT_N_401               128
+/*! Maximum supported value for max octets in an information field */
+#define V42_MAX_N_401                   128
+/*! Default window size (k) (9.2.4) */
+#define V42_DEFAULT_WINDOW_SIZE_K       15
+/*! Maximum supported window size (k) */
+#define V42_MAX_WINDOW_SIZE_K           15
+
+/*! The number of info frames to allocate */
+#define V42_INFO_FRAMES                 (V42_MAX_WINDOW_SIZE_K + 1)
+/*! The number of control frames to allocate */
+#define V42_CTRL_FRAMES                 8
+
+typedef struct
+{
+    /* V.42 LAP.M parameters */
+    uint8_t v42_tx_window_size_k;
+    uint8_t v42_rx_window_size_k;
+    uint16_t v42_tx_n401;
+    uint16_t v42_rx_n401;
+
+    /* V.42bis compressor parameters */
+    uint8_t comp;
+    int comp_dict_size;
+    int comp_max_string;
+} v42_config_parameters_t;
+
+typedef struct frame_s
+{
+    int len;
+    uint8_t buf[4 + V42_MAX_N_401];
+} v42_frame_t;
+
 /*!
     LAP-M descriptor. This defines the working state for a single instance of LAP-M.
 */
-struct lapm_state_s
+typedef struct
 {
-    int handle;
+    get_msg_func_t iframe_get;
+    void *iframe_get_user_data;
+
+    put_msg_func_t iframe_put;
+    void *iframe_put_user_data;
+
+    modem_status_func_t status_handler;
+    void *status_user_data;
+
     hdlc_rx_state_t hdlc_rx;
     hdlc_tx_state_t hdlc_tx;
-    
-    v42_frame_handler_t iframe_receive;
-    void *iframe_receive_user_data;
 
-    v42_status_func_t status_callback;
-    void *status_callback_user_data;
+    /*! Negotiated values for the window and maximum info sizes */
+    uint8_t tx_window_size_k;
+    uint8_t rx_window_size_k;
+    uint16_t tx_n401;
+    uint16_t rx_n401;
 
+    uint8_t cmd_addr;
+    uint8_t rsp_addr;
+    uint8_t vs;
+    uint8_t va;
+    uint8_t vr;
     int state;
-    int tx_waiting;
-    int debug;
-    /*! TRUE if originator. FALSE if answerer */
-    int we_are_originator;
-    /*! Remote network type (unknown, answerer. originator) */
-    int peer_is_originator;
-    /*! Next N(S) for transmission */
-    int next_tx_frame;
-    /*! The last of our frames which the peer acknowledged */
-    int last_frame_peer_acknowledged;
-    /*! Next N(R) for reception */
-    int next_expected_frame;
-    /*! The last of the peer's frames which we acknowledged */
-    int last_frame_we_acknowledged;
-    /*! TRUE if we sent an I or S frame with the F-bit set */
-    int solicit_f_bit;
-    /*! Retransmission count */
-    int retransmissions;
-    /*! TRUE if peer is busy */
-    int busy;
+    int configuring;
+    int local_busy;
+    int far_busy;
+    int rejected;
+    int retry_count;
 
-    /*! Acknowledgement timer */
-    int t401_timer;
-    /*! Reply delay timer - optional */
-    int t402_timer;
-    /*! Inactivity timer - optional */
-    int t403_timer;
-    /*! Maximum number of octets in an information field */
-    int n401;
-    /*! Window size */
-    int window_size_k;
-	
-    lapm_frame_queue_t *txqueue;
-    lapm_frame_queue_t *tx_next;
-    lapm_frame_queue_t *tx_last;
-    queue_state_t *tx_queue;
-    
-    span_sched_state_t sched;
-    /*! \brief Error and flow logging control */
-    logging_state_t logging;
-};
+    /* The control frame buffer, and its pointers */
+    int ctrl_put;
+    int ctrl_get;
+    v42_frame_t ctrl_buf[V42_CTRL_FRAMES];
 
-/*!
-    V.42 descriptor. This defines the working state for a single instance of V.42.
-*/
-struct v42_state_s
+    /* The info frame buffer, and its pointers */
+    int info_put;
+    int info_get;
+    int info_acked;
+    v42_frame_t info_buf[V42_INFO_FRAMES];
+
+    void (*packer_process)(v42_state_t *m, int bits);
+} lapm_state_t;
+
+/*! V.42 support negotiation parameters */
+typedef struct
 {
-    /*! TRUE if we are the calling party, otherwise FALSE */
-    int calling_party;
-    /*! TRUE if we should detect whether the far end is V.42 capable. FALSE if we go
-        directly to protocol establishment */
-    int detect;
-
     /*! Stage in negotiating V.42 support */
     int rx_negotiation_step;
     int rxbits;
@@ -104,11 +123,30 @@ struct v42_state_s
     int txbits;
     int txstream;
     int txadps;
-    /*! The LAP.M context */
+} v42_negotiation_t;
+
+/*!
+    V.42 descriptor. This defines the working state for a single
+    instance of a V.42 error corrector.
+*/
+struct v42_state_s
+{
+    /*! TRUE if we are the calling party, otherwise FALSE. */
+    int calling_party;
+    /*! TRUE if we should detect whether the far end is V.42 capable. FALSE if we go
+        directly to protocol establishment. */
+    int detect;
+
+    /*! The bit rate, used to time events */
+    int tx_bit_rate;
+
+    v42_config_parameters_t config;
+    v42_negotiation_t neg;
     lapm_state_t lapm;
 
-    /*! V.42 support detection timer */
-    int t400_timer;
+    int bit_timer;
+    void (*bit_timer_func)(v42_state_t *m);
+
     /*! \brief Error and flow logging control */
     logging_state_t logging;
 };

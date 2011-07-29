@@ -44,6 +44,9 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
+#include "spandsp/fast_convert.h"
+#include "spandsp/math_fixed.h"
+#include "spandsp/saturated.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
@@ -62,13 +65,13 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v17rx.h"
 
-#include "v17_v32bis_tx_constellation_maps.h"
-#include "v17_v32bis_rx_constellation_maps.h"
 #if defined(SPANDSP_USE_FIXED_POINT)
 #include "v17_v32bis_rx_fixed_rrc.h"
 #else
 #include "v17_v32bis_rx_floating_rrc.h"
 #endif
+#include "v17_v32bis_tx_constellation_maps.h"
+#include "v17_v32bis_rx_constellation_maps.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ            1800.0f
@@ -295,8 +298,7 @@ static int descramble(v17_rx_state_t *s, int in_bit)
 {
     int out_bit;
 
-    //out_bit = (in_bit ^ (s->scramble_reg >> s->scrambler_tap) ^ (s->scramble_reg >> (23 - 1))) & 1;
-    out_bit = (in_bit ^ (s->scramble_reg >> (18 - 1)) ^ (s->scramble_reg >> (23 - 1))) & 1;
+    out_bit = (in_bit ^ (s->scramble_reg >> s->scrambler_tap) ^ (s->scramble_reg >> (23 - 1))) & 1;
     s->scramble_reg <<= 1;
     if (s->training_stage > TRAINING_STAGE_NORMAL_OPERATION  &&  s->training_stage < TRAINING_STAGE_TCM_WINDUP)
         s->scramble_reg |= out_bit;
@@ -1248,7 +1250,7 @@ SPAN_DECLARE(void) v17_rx_set_put_bit(v17_rx_state_t *s, put_bit_func_t put_bit,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_tx_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
@@ -1425,7 +1427,7 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     s->put_bit = put_bit;
     s->put_bit_user_data = user_data;
     s->short_train = FALSE;
-    //s->scrambler_tap = 18 - 1;
+    s->scrambler_tap = 18 - 1;
     v17_rx_signal_cutoff(s, -45.5f);
     s->carrier_phase_rate_save = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
     v17_rx_restart(s, bit_rate, s->short_train);

@@ -84,7 +84,7 @@ struct v22bis_state_s
     /*! \brief A user specified opaque pointer passed to the put_bit callback routine. */
     void *put_bit_user_data;
     /*! \brief The callback function used to report modem status changes. */
-    modem_rx_status_func_t status_handler;
+    modem_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 

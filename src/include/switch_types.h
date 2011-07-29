@@ -799,6 +799,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS,
 	SWITCH_MESSAGE_INDICATE_JITTER_BUFFER,
 	SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH,
+	SWITCH_MESSAGE_INDICATE_SIGNAL_DATA,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 
@@ -1113,6 +1114,8 @@ typedef enum {
 	CF_CNG_PLC,
 	CF_ATTENDED_TRANSFER,
 	CF_LAZY_ATTENDED_TRANSFER,
+	CF_SIGNAL_DATA,
+	CF_SIMPLIFY,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;
@@ -1620,7 +1623,9 @@ typedef enum {
 	SCSC_CRASH,
 	SCSC_MIN_IDLE_CPU,
 	SCSC_VERBOSE_EVENTS,
-	SCSC_SHUTDOWN_CHECK
+	SCSC_SHUTDOWN_CHECK,
+	SCSC_PAUSE_CHECK,
+	SCSC_READY_CHECK
 } switch_session_ctl_t;
 
 typedef enum {
@@ -1810,6 +1815,7 @@ typedef switch_status_t (*switch_new_say_callback_t) (switch_say_file_handle_t *
 
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
+typedef switch_xml_t(*switch_xml_open_root_function_t) (uint8_t reload, const char **err, void *user_data);
 typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
 													 const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
 													 void *user_data);

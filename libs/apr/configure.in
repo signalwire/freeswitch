@@ -1284,7 +1284,7 @@ if test "$ac_cv_sizeof_size_t" = "$ac_cv_sizeof_int"; then
 elif test "$ac_cv_sizeof_size_t" = "$ac_cv_sizeof_long"; then
     size_t_fmt='#define APR_SIZE_T_FMT "ld"'
 else
-    size_t_fmt='#error Can not determine the proper size for size_t'
+    size_t_fmt='#define APR_SIZE_T_FMT "zu"'
 fi
 
 APR_CHECK_SIZEOF_EXTENDED([#include <sys/types.h>], off_t, 8)

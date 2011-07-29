@@ -29,7 +29,7 @@
 \section lpc10_tests_page_sec_1 What does it do?
 
 \section lpc10_tests_page_sec_2 How is it used?
-To perform a general audio quality test, lpc10 should be run. The file ../test-data/local/short_nb_voice.wav
+To perform a general audio quality test, lpc10 should be run. The file ../test-data/local/dam9.wav
 will be compressed to LPC10 data, decompressed, and the resulting audio stored in post_lpc10.wav.
 */
 
@@ -220,19 +220,19 @@ int main(int argc, char *argv[])
             else
                 outframes = sf_writef_short(outhandle, post_amp, dec_len);
         }
-        if (sf_close(inhandle) != 0)
+        if (sf_close_telephony(inhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", in_file_name);
             exit(2);
         }
-        if (sf_close(refhandle) != 0)
+        if (sf_close_telephony(refhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", REF_FILE_NAME);
             exit(2);
         }
     }
     
-    if (sf_close(outhandle) != 0)
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);

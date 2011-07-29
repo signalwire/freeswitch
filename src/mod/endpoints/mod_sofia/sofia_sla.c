@@ -68,7 +68,8 @@ int sofia_sla_supported(sip_t const *sip)
 }
 
 
-void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const *sip, long exptime, const char *full_contact)
+void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const *sip,
+								sofia_dispatch_event_t *de, long exptime, const char *full_contact)
 {
 	nua_handle_t *nh = NULL;
 	char exp_str[256] = "";
@@ -82,8 +83,9 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 	sofia_destination_t *dst;
 	char *route_uri = NULL;
 	char port_str[25] = "";
+	nua_handle_t *fnh = NULL;
 
-	sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
+	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
 	sql = switch_mprintf("select call_id from sip_shared_appearance_dialogs where hostname='%q' and profile_name='%q' and contact_str='%q'",
 						 mod_sofia_globals.hostname, profile->name, contact_str);
@@ -92,7 +94,9 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 	free(sql);
 
 	if (*sh.call_id) {
-		if (!(nh = nua_handle_by_call_id(profile->nua, sh.call_id))) {
+		if ((nh = nua_handle_by_call_id(profile->nua, sh.call_id))) {
+			fnh = nh;
+		} else {
 			if ((sql = switch_mprintf("delete from sip_shared_appearance_dialogs where hostname='%q' and profile_name='%q' and contact_str='%q'",
 									  mod_sofia_globals.hostname, profile->name, contact_str))) {
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -132,18 +136,25 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 				  SIPTAG_EXPIRES_STR(exp_str),
 				  SIPTAG_EVENT_STR("dialog;sla;include-session-description"), SIPTAG_ACCEPT_STR("application/dialog-info+xml"), TAG_NULL());
 
+
+	if (fnh) {
+		nua_handle_unref(fnh);
+	}
+
 	sofia_glue_free_destination(dst);
 
 	free(contact_str);
 }
 
-void sofia_sla_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[])
+void sofia_sla_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
+								sofia_dispatch_event_t *de, tagi_t tags[])
 {
 	/* at present there's no SLA versions that we deal with that do publish. to be safe, we say "OK" */
-	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 }
 
-void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[])
+void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
+								sofia_dispatch_event_t *de, tagi_t tags[])
 {
 	char *aor = NULL;
 	char *subscriber = NULL;
@@ -156,7 +167,7 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 
 	sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
 
-	sofia_glue_get_addr(nua_current_request(nua), network_ip, sizeof(network_ip), &network_port);
+	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 	/*
 	 * XXX MTK FIXME - we don't look at the tag to see if NUTAG_SUBSTATE(nua_substate_terminated) or
 	 * a Subscription-State header with state "terminated" and/or expiration of 0. So we never forget
@@ -225,7 +236,7 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 		sla_contact = switch_mprintf("<sip:%s@%s%s;transport=%s>", profile->sla_contact, profile->sipip, port_str, sofia_glue_transport2str(transport));
 	}
 
-	nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(sla_contact), NUTAG_WITH_THIS(nua), TAG_IF(route_uri, NUTAG_PROXY(route_uri)), SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=300"),	/* you thought the OTHER time was fake... need delta here FIXME XXX MTK */
+	nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(sla_contact), NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_IF(route_uri, NUTAG_PROXY(route_uri)), SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=300"),	/* you thought the OTHER time was fake... need delta here FIXME XXX MTK */
 				SIPTAG_EXPIRES_STR("300"),	/* likewise, totally fake - FIXME XXX MTK */
 				/*  sofia_presence says something about needing TAG_IF(sticky, NUTAG_PROXY(sticky)) for NAT stuff? */
 				TAG_END());
@@ -245,6 +256,7 @@ struct sla_notify_helper {
 void sofia_sla_handle_sip_r_subscribe(int status,
 									  char const *phrase,
 									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
+								sofia_dispatch_event_t *de,
 									  tagi_t tags[])
 {
 	if (status >= 300) {
@@ -270,7 +282,8 @@ void sofia_sla_handle_sip_r_subscribe(int status,
 	}
 }
 
-void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[])
+void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
+								sofia_dispatch_event_t *de, tagi_t tags[])
 {
 	char *sql = NULL;
 	struct sla_notify_helper helper;
@@ -394,6 +407,7 @@ static int sofia_sla_sub_callback(void *pArg, int argc, char **argv, char **colu
 		if (fixup && fixup != helper->payload) {
 			free(fixup);
 		}
+		nua_handle_unref(nh);
 	}
 	return 0;
 }

@@ -84,7 +84,7 @@ SPAN_DECLARE(int) silence_gen_generated(silence_gen_state_t *s);
     \param s The silence generator context.
     \param handler The callback routine used to report status changes.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) silence_gen_status_handler(silence_gen_state_t *s, modem_tx_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) silence_gen_status_handler(silence_gen_state_t *s, modem_status_func_t handler, void *user_data);
 
 /*! Initialise a timed silence generator context.
     \brief Initialise a timed silence generator context.

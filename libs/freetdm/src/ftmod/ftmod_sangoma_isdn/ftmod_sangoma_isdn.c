@@ -344,7 +344,6 @@ static void *ftdm_sangoma_isdn_io_run(ftdm_thread_t *me, void *obj)
 	uint8_t data[1000];
 	unsigned i = 0;
 	ftdm_status_t status = FTDM_SUCCESS;
-	ftdm_wait_flag_t wflags = FTDM_READ;
 	ftdm_span_t *span = (ftdm_span_t*) obj;
 	ftdm_size_t len = 0;
 	ftdm_channel_t *ftdmchan = NULL;
@@ -356,10 +355,6 @@ static void *ftdm_sangoma_isdn_io_run(ftdm_thread_t *me, void *obj)
 
 	/* Initialize the d-channel */
 	ftdm_assert(((sngisdn_span_data_t*)span->signal_data)->dchan, "Span does not have a dchannel");
-	ftdm_channel_set_feature(((sngisdn_span_data_t*)span->signal_data)->dchan, FTDM_CHANNEL_FEATURE_IO_STATS);
-	ftdm_sangoma_isdn_dchan_set_queue_size(((sngisdn_span_data_t*)span->signal_data)->dchan);
-	ftdm_channel_open_chan(((sngisdn_span_data_t*)span->signal_data)->dchan);
-
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	if (!chaniter) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
@@ -369,7 +364,6 @@ static void *ftdm_sangoma_isdn_io_run(ftdm_thread_t *me, void *obj)
 	while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
 		len = 1000;
 		waitms = 1000;
-		wflags = FTDM_READ;
 		memset(poll_events, 0, sizeof(short)*span->chan_count);
 
 		poll_events[i] |= FTDM_EVENTS;
@@ -1039,7 +1033,13 @@ static ftdm_status_t ftdm_sangoma_isdn_dtmf(ftdm_channel_t *ftdmchan, const char
 static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 {
 	sngisdn_span_data_t *signal_data = span->signal_data;
+
 	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
+	
+	ftdm_channel_set_feature(((sngisdn_span_data_t*)span->signal_data)->dchan, FTDM_CHANNEL_FEATURE_IO_STATS);
+	ftdm_channel_open_chan(((sngisdn_span_data_t*)span->signal_data)->dchan);
+	ftdm_sangoma_isdn_dchan_set_queue_size(((sngisdn_span_data_t*)span->signal_data)->dchan);	
+
 	if (sngisdn_stack_start(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
 		return FTDM_FAIL;
@@ -1073,6 +1073,11 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 		return FTDM_FAIL;
 	}
 
+	if (signal_data->restart_timeout) {
+		ftdm_log(FTDM_LOG_DEBUG, "%s:Scheduling Restart timeout\n", signal_data->ftdm_span->name);
+		ftdm_sched_timer(signal_data->sched, "restart_timeout", signal_data->restart_timeout,
+							sngisdn_restart_timeout, (void*) signal_data, &signal_data->timers[SNGISDN_SPAN_TIMER_RESTART]);
+	}
 	ftdm_log(FTDM_LOG_DEBUG,"Finished starting span %s\n", span->name);
 	return FTDM_SUCCESS;
 }

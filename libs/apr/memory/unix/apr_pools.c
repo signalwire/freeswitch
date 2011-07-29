@@ -1895,9 +1895,13 @@ APR_DECLARE(int) apr_pool_is_ancestor(apr_pool_t *a, apr_pool_t *b)
     return 0;
 }
 
-APR_DECLARE(void) apr_pool_tag(apr_pool_t *pool, const char *tag)
+APR_DECLARE(char *) apr_pool_tag(apr_pool_t *pool, const char *tag)
 {
-    pool->tag = tag;
+	if (tag) {
+		pool->tag = tag;
+	}
+
+	return pool->tag;
 }
 
 

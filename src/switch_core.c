@@ -304,9 +304,9 @@ SWITCH_DECLARE(const char *) switch_core_get_switchname(void)
 SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
 	char *val;
-	switch_mutex_lock(runtime.global_var_mutex);
+	switch_thread_rwlock_rdlock(runtime.global_var_rwlock);
 	val = (char *) switch_event_get_header(runtime.global_vars, varname);
-	switch_mutex_unlock(runtime.global_var_mutex);
+	switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 	return val;
 }
 
@@ -314,11 +314,11 @@ SWITCH_DECLARE(char *) switch_core_get_variable_dup(const char *varname)
 {
 	char *val = NULL, *v;
 
-	switch_mutex_lock(runtime.global_var_mutex);
+	switch_thread_rwlock_rdlock(runtime.global_var_rwlock);
 	if ((v = (char *) switch_event_get_header(runtime.global_vars, varname))) {
 		val = strdup(v);
 	}
-	switch_mutex_unlock(runtime.global_var_mutex);
+	switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 
 	return val;
 }
@@ -327,21 +327,21 @@ SWITCH_DECLARE(char *) switch_core_get_variable_pdup(const char *varname, switch
 {
 	char *val = NULL, *v;
 
-	switch_mutex_lock(runtime.global_var_mutex);
+	switch_thread_rwlock_rdlock(runtime.global_var_rwlock);
 	if ((v = (char *) switch_event_get_header(runtime.global_vars, varname))) {
 		val = switch_core_strdup(pool, v);
 	}
-	switch_mutex_unlock(runtime.global_var_mutex);
+	switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 
 	return val;
 }
 
 static void switch_core_unset_variables(void)
 {
-	switch_mutex_lock(runtime.global_var_mutex);
+	switch_thread_rwlock_wrlock(runtime.global_var_rwlock);
 	switch_event_destroy(&runtime.global_vars);
 	switch_event_create_plain(&runtime.global_vars, SWITCH_EVENT_CHANNEL_DATA);
-	switch_mutex_unlock(runtime.global_var_mutex);
+	switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 }
 
 SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *value)
@@ -349,7 +349,7 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 	char *val;
 
 	if (varname) {
-		switch_mutex_lock(runtime.global_var_mutex);
+		switch_thread_rwlock_wrlock(runtime.global_var_rwlock);
 		val = (char *) switch_event_get_header(runtime.global_vars, varname);
 		if (val) {
 			switch_event_del_header(runtime.global_vars, varname);
@@ -361,7 +361,7 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 		} else {
 			switch_event_del_header(runtime.global_vars, varname);
 		}
-		switch_mutex_unlock(runtime.global_var_mutex);
+		switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 	}
 }
 
@@ -370,17 +370,17 @@ SWITCH_DECLARE(switch_bool_t) switch_core_set_var_conditional(const char *varnam
 	char *val;
 
 	if (varname) {
-		switch_mutex_lock(runtime.global_var_mutex);
+		switch_thread_rwlock_wrlock(runtime.global_var_rwlock);
 		val = (char *) switch_event_get_header(runtime.global_vars, varname);
 
 		if (val) {
 			if (!val2 || strcmp(val, val2) != 0) {
-				switch_mutex_unlock(runtime.global_var_mutex);
+				switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 				return SWITCH_FALSE;
 			}
 			switch_event_del_header(runtime.global_vars, varname);
 		} else if (!zstr(val2)) {
-			switch_mutex_unlock(runtime.global_var_mutex);
+			switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 			return SWITCH_FALSE;
 		}
 
@@ -391,7 +391,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_set_var_conditional(const char *varnam
 		} else {
 			switch_event_del_header(runtime.global_vars, varname);
 		}
-		switch_mutex_unlock(runtime.global_var_mutex);
+		switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 	}
 	return SWITCH_TRUE;
 }
@@ -1405,7 +1405,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_mutex_init(&runtime.session_hash_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_mutex_init(&runtime.global_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
-	switch_mutex_init(&runtime.global_var_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
+
+	switch_thread_rwlock_create(&runtime.global_var_rwlock, runtime.memory_pool);
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
 	switch_event_create_plain(&runtime.global_vars, SWITCH_EVENT_CHANNEL_DATA);
@@ -2049,6 +2050,12 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 				switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
 			}
 		}
+		break;
+	case SCSC_PAUSE_CHECK:
+		newintval = !!switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS);
+		break;
+	case SCSC_READY_CHECK:
+		newintval = switch_core_ready();
 		break;
 	case SCSC_SHUTDOWN_CHECK:
 		newintval = !!switch_test_flag((&runtime), SCF_SHUTDOWN_REQUESTED);

@@ -5311,7 +5311,7 @@ static const char *at_cmd_plus_WSTL(at_state_t *s, const char *t)
 
 #include "at_interpreter_dictionary.h"
 
-static int command_search(const char *u, int len, int *matched)
+static int command_search(const char *u, int *matched)
 {
     int i;
     int index;
@@ -5445,7 +5445,7 @@ SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
                     t = s->line + 2;
                     while (t  &&  *t)
                     {
-                        if ((entry = command_search(t, 15, &matched)) <= 0)
+                        if ((entry = command_search(t, &matched)) <= 0)
                             break;
                         if ((t = at_commands[entry - 1](s, t)) == NULL)
                             break;

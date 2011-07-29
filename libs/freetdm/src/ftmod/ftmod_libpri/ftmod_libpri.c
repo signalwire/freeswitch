@@ -34,6 +34,10 @@
 #include "private/ftdm_core.h"
 #include "ftmod_libpri.h"
 
+#ifndef MIN
+#define MIN(x,y)	(((x) < (y)) ? (x) : (y))
+#endif
+
 static void _ftdm_channel_set_state_force(ftdm_channel_t *chan, const ftdm_channel_state_t state)
 {
 	assert(chan);
@@ -476,12 +480,18 @@ static ftdm_state_map_t isdn_state_map = {
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_DOWN, FTDM_END},
-			{FTDM_CHANNEL_STATE_DIALTONE, FTDM_CHANNEL_STATE_RING, FTDM_END}
+			{FTDM_CHANNEL_STATE_DIALTONE, FTDM_CHANNEL_STATE_COLLECT, FTDM_CHANNEL_STATE_RING, FTDM_END}
 		},
 		{
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_DIALTONE, FTDM_END},
+			{FTDM_CHANNEL_STATE_RING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+		},
+		{
+			ZSD_INBOUND,
+			ZSM_UNACCEPTABLE,
+			{FTDM_CHANNEL_STATE_COLLECT, FTDM_END},
 			{FTDM_CHANNEL_STATE_RING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
 		},
 		{
@@ -651,6 +661,29 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 			} else if (call) {
 				pri_proceeding(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
 			} else {
+				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
+			}
+		}
+		break;
+
+	case FTDM_CHANNEL_STATE_COLLECT:	/* Overlap receive */
+		{
+			if (!ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
+				if (!call) {
+					ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "No call handle\n");
+					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
+				}
+				else if (pri_need_more_info(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0)) {
+					ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+
+					ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "Failed to send INFORMATION request\n");
+
+					/* hangup call */
+					caller_data->hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
+					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
+				}
+			} else {
+				ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "Overlap receiving on outbound call?\n");
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 			}
 		}
@@ -837,11 +870,57 @@ static __inline__ void check_state(ftdm_span_t *span)
  */
 static int on_info(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
-	ftdm_log(FTDM_LOG_DEBUG, "number is: %s\n", pevent->ring.callednum);
+	ftdm_span_t *span = spri->span;
+	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->ring.channel);
+	ftdm_caller_data_t *caller_data = NULL;
 
-	if (strlen(pevent->ring.callednum) > 3) {
-		ftdm_log(FTDM_LOG_DEBUG, "final number is: %s\n", pevent->ring.callednum);
-		pri_answer(spri->pri, pevent->ring.call, 0, 1);
+	if (!chan) {
+		ftdm_log(FTDM_LOG_CRIT, "-- Info on channel %d:%d %s but it's not in use?\n", ftdm_span_get_id(span), pevent->ring.channel);
+		return 0;
+	}
+
+	caller_data = ftdm_channel_get_caller_data(chan);
+
+	switch (ftdm_channel_get_state(chan)) {
+	case FTDM_CHANNEL_STATE_COLLECT:	/* TE-mode overlap receiving */
+		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "-- Incoming INFORMATION indication, current called number: '%s', number complete: %s\n",
+			pevent->ring.callednum, pevent->ring.complete ? "yes" : "no");
+
+		/* append digits to dnis */
+		if (!ftdm_strlen_zero(pevent->ring.callednum)) {
+			int digits = strlen(pevent->ring.callednum);
+			int offset = strlen(caller_data->dnis.digits);
+			int len    = MIN(sizeof(caller_data->dnis.digits) - 1 - offset, digits);	/* max. length without terminator */
+
+			if (len < digits) {
+				ftdm_log_chan(chan, FTDM_LOG_WARNING, "Length %d of digit string exceeds available space %d of DNIS, truncating!\n",
+					digits, len);
+			}
+
+			ftdm_copy_string(&caller_data->dnis.digits[offset], (char *)pevent->ring.callednum, len + 1);	/* max. length with terminator */
+			caller_data->dnis.digits[offset + len] = '\0';
+		}
+		if (pevent->ring.complete) {
+			ftdm_log_chan_msg(chan, FTDM_LOG_DEBUG, "Number complete indicated, moving channel to RING state\n");
+			/* notify switch */
+			ftdm_set_state(chan, FTDM_CHANNEL_STATE_RING);
+		}
+		break;
+	case FTDM_CHANNEL_STATE_DIALTONE:	/* NT-mode overlap receiving */
+		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "-- Incoming INFORMATION indication, current called number: '%s'\n",
+			pevent->ring.callednum);
+
+		/* Need to add proper support for overlap receiving in NT-mode (requires FreeSWITCH + FreeTDM core support) */
+		if (strlen(pevent->ring.callednum) > 3) {
+			ftdm_log(FTDM_LOG_DEBUG, "final number is: %s\n", pevent->ring.callednum);
+			pri_answer(spri->pri, pevent->ring.call, 0, 1);
+		}
+		break;
+	default:
+		ftdm_log_chan(chan, FTDM_LOG_ERROR, "-- INFORMATION indication on channel %d:%d in invalid state '%s'\n",
+			ftdm_channel_get_span_id(chan),
+			ftdm_channel_get_id(chan),
+			ftdm_channel_get_state_str(chan));
 	}
 	return 0;
 }
@@ -878,7 +957,15 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 		pri_hangup(spri->pri, pevent->hangup.call, pevent->hangup.cause);
 
 		chan->caller_data.hangup_cause = pevent->hangup.cause;
-		ftdm_set_state(chan, FTDM_CHANNEL_STATE_TERMINATING);
+
+		switch (ftdm_channel_get_state(chan)) {
+		case FTDM_CHANNEL_STATE_DIALTONE:
+		case FTDM_CHANNEL_STATE_COLLECT:
+			ftdm_set_state(chan, FTDM_CHANNEL_STATE_HANGUP);
+			break;
+		default:
+			ftdm_set_state(chan, FTDM_CHANNEL_STATE_TERMINATING);
+		}
 		break;
 
 	case LPWRAP_PRI_EVENT_HANGUP_ACK:	/* */
@@ -1112,6 +1199,7 @@ out:
 static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
 	ftdm_span_t *span = spri->span;
+	ftdm_libpri_data_t *isdn_data = span->signal_data;
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->ring.channel);
 	ftdm_caller_data_t *caller_data = NULL;
 	int ret = 0;
@@ -1187,8 +1275,14 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	/* hurr, this is valid as along as nobody releases the call */
 	chan->call_data = pevent->ring.call;
 
-	ftdm_set_state(chan, FTDM_CHANNEL_STATE_RING);
-
+	/* only go to RING state if we have the complete called number (indicated via pevent->complete flag) */
+	if (!pevent->ring.complete && (isdn_data->overlap & FTMOD_LIBPRI_OVERLAP_RECEIVE)) {
+		ftdm_log(FTDM_LOG_DEBUG, "RING event without complete indicator, waiting for more digits\n");
+		ftdm_set_state(chan, FTDM_CHANNEL_STATE_COLLECT);
+	} else {
+		ftdm_log(FTDM_LOG_DEBUG, "RING event with complete indicator (or overlap receive disabled)\n");
+		ftdm_set_state(chan, FTDM_CHANNEL_STATE_RING);
+	}
 done:
 	ftdm_channel_unlock(chan);
 	return ret;
@@ -1879,6 +1973,25 @@ static int parse_ton(const char *ton)
 }
 
 /**
+ * \brief Parse overlap string to value
+ * \param	val	String to parse
+ * \return	Overlap flags
+ */
+static int parse_overlap_dial(const char *val)
+{
+	if (!strcasecmp(val, "yes") || !strcasecmp(val, "both"))
+		return FTMOD_LIBPRI_OVERLAP_BOTH;
+	if (!strcasecmp(val, "incoming") || !strcasecmp(val, "receive"))
+		return FTMOD_LIBPRI_OVERLAP_RECEIVE;
+	if (!strcasecmp(val, "outgoing") || !strcasecmp(val, "send"))
+		return FTMOD_LIBPRI_OVERLAP_SEND;
+	if (!strcasecmp(val, "no"))
+		return FTMOD_LIBPRI_OVERLAP_NONE;
+
+	return -1;
+}
+
+/**
  * \brief Parses an option string to flags
  * \param in String to parse for configuration options
  * \return Flags
@@ -2033,6 +2146,12 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 		}
 		else if (!strcasecmp(var, "l1") || !strcasecmp(var, "layer1")) {
 			isdn_data->layer1 = parse_layer1(val);
+		}
+		else if (!strcasecmp(var, "overlapdial")) {
+			if ((isdn_data->overlap = parse_overlap_dial(val)) == -1) {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid overlap flag, ignoring parameter\n");
+				isdn_data->overlap = FTMOD_LIBPRI_OVERLAP_NONE;
+			}
 		}
 		else if (!strcasecmp(var, "debug")) {
 			if (parse_debug(val, &isdn_data->debug_mask) == -1) {

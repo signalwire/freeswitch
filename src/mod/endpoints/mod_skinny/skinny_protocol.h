@@ -45,6 +45,11 @@
 
 /* RegisterMessage */
 #define REGISTER_MESSAGE 0x0001
+
+#ifdef _MSC_VER
+#pragma pack(push, r1, 1)
+#endif
+
 struct PACKED register_message {
 	char device_name[16];
 	uint32_t user_id;
@@ -599,6 +604,10 @@ struct PACKED dialed_phone_book_ack_message {
 	uint32_t unknown2;
 };
 
+#ifdef _MSC_VER
+#pragma pack(pop, r1)
+#endif
+
 /* XMLAlarmMessage */
 #define XML_ALARM_MESSAGE 0x015A
 
@@ -688,6 +697,10 @@ union skinny_data {
 	char as_char[1];
 };
 
+#ifdef _MSC_VER
+#pragma pack(push, r1, 1)
+#endif
+
 /*
  * header is length+reserved
  * body is type+data
@@ -699,6 +712,11 @@ struct PACKED skinny_message {
 	uint32_t type;
 	union skinny_data data;
 };
+
+#ifdef _MSC_VER
+#pragma pack(pop, r1)
+#endif
+
 typedef struct skinny_message skinny_message_t;
 
 /*****************************************************************************/

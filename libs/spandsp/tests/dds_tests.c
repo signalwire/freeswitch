@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
         exit(2);
     }
     printf("Level is %fdBOv/%fdBm0\n", power_meter_current_dbov(&meter), power_meter_current_dbm0(&meter));
-    if (fabs(power_meter_current_dbm0(&meter) + 10.0f) > 0.05f)
+    if (fabs(power_meter_current_dbm0(&meter) + 10.0f) > 0.1f)
     {
         printf("Test failed.\n");
         exit(2);
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
         exit(2);
     }
     printf("Level is %fdBOv/%fdBm0\n", power_meter_current_dbov(&meter), power_meter_current_dbm0(&meter));
-    if (fabs(power_meter_current_dbov(&meter) + 10.0f) > 0.05f)
+    if (fabs(power_meter_current_dbov(&meter) + 10.0f) > 0.1f)
     {
         printf("Test failed.\n");
         exit(2);
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    if (sf_close(outhandle) != 0)
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    if (sf_close(outhandle) != 0)
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME_COMPLEX);
         exit(2);

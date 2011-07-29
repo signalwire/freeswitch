@@ -45,6 +45,9 @@ SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str
 
 static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val);
 static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val);
+ftdm_status_t get_calling_name_from_usr_usr(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr);
+ftdm_status_t get_calling_name_from_display(ftdm_channel_t *ftdmchan, Display *display);
+ftdm_status_t get_calling_name_from_ntDisplay(ftdm_channel_t *ftdmchan, NtDisplay *display);
 
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
 
@@ -355,6 +358,20 @@ ftdm_status_t get_calling_name_from_display(ftdm_channel_t *ftdmchan, Display *d
 	return FTDM_SUCCESS;
 }
 
+ftdm_status_t get_calling_name_from_ntDisplay(ftdm_channel_t *ftdmchan, NtDisplay *display)
+{
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+	if (display->eh.pres != PRSNT_NODEF) {
+		return FTDM_FAIL;
+	}
+	if (display->dispInfo.pres != PRSNT_NODEF) {
+		return FTDM_FAIL;
+	}
+	
+	ftdm_copy_string(caller_data->cid_name, (const char*)display->dispInfo.val, display->dispInfo.len+1);
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t get_calling_name_from_usr_usr(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr)
 {
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
@@ -373,6 +390,24 @@ ftdm_status_t get_calling_name_from_usr_usr(ftdm_channel_t *ftdmchan, UsrUsr *us
 	ftdm_copy_string(caller_data->cid_name, (const char*)usrUsr->usrInfo.val, usrUsr->usrInfo.len+1);
 	return FTDM_SUCCESS;
 }
+
+ftdm_status_t get_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt)
+{
+	ftdm_status_t status = FTDM_FAIL;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+	
+	if (signal_data->switchtype == SNGISDN_SWITCH_DMS100) {
+		status = get_calling_name_from_ntDisplay(ftdmchan, &conEvnt->ntDisplay[0]);
+	} else {
+		status = get_calling_name_from_display(ftdmchan, &conEvnt->display);
+
+	}
+	if (status != FTDM_SUCCESS) {
+		status = get_calling_name_from_usr_usr(ftdmchan, &conEvnt->usrUsr);
+	}
+	return status;
+}
+
 
 ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 {
@@ -694,11 +729,21 @@ ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt)
 			/* follow through */
 		case SNGISDN_SWITCH_5ESS:
 		case SNGISDN_SWITCH_4ESS:
-		case SNGISDN_SWITCH_DMS100:
-			conEvnt->display.eh.pres = PRSNT_NODEF;
 			conEvnt->display.dispInfo.pres = PRSNT_NODEF;
 			conEvnt->display.dispInfo.len = len;
 			memcpy(conEvnt->display.dispInfo.val, caller_data->cid_name, len);
+			break;
+		case SNGISDN_SWITCH_DMS100:
+			conEvnt->ntDisplay[0].eh.pres = PRSNT_NODEF;
+			conEvnt->ntDisplay[0].dispTypeNt.pres = PRSNT_NODEF;
+			conEvnt->ntDisplay[0].dispTypeNt.val = 0x01; /* Calling Party Name */
+			conEvnt->ntDisplay[0].assocInfo.pres = PRSNT_NODEF;
+			conEvnt->ntDisplay[0].assocInfo.val  = 0x03; /* Included */
+			conEvnt->ntDisplay[0].eh.pres = PRSNT_NODEF;
+			conEvnt->ntDisplay[0].eh.pres = PRSNT_NODEF;
+			conEvnt->ntDisplay[0].dispInfo.pres = PRSNT_NODEF;
+			conEvnt->ntDisplay[0].dispInfo.len = len;
+			memcpy(conEvnt->ntDisplay[0].dispInfo.val, caller_data->cid_name, len);
 			break;
 		case SNGISDN_SWITCH_QSIG:
 			/* It seems like QSIG does not support Caller ID Name */
@@ -976,7 +1021,7 @@ ftdm_status_t set_restart_ind_ie(ftdm_channel_t *ftdmchan, RstInd *rstInd)
 	return FTDM_SUCCESS;
 }
 
-void sngisdn_t3_timeout(void* p_sngisdn_info)
+void sngisdn_t3_timeout(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
@@ -998,7 +1043,31 @@ void sngisdn_t3_timeout(void* p_sngisdn_info)
 	ftdm_mutex_unlock(ftdmchan->mutex);
 }
 
-void sngisdn_delayed_setup(void* p_sngisdn_info)
+void sngisdn_restart_timeout(void *p_signal_data)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t *)p_signal_data;
+	ftdm_span_t *span = signal_data->ftdm_span;
+
+	ftdm_log(FTDM_LOG_DEBUG, "s%d:Did not receive a RESTART from remote switch in %d ms - restarting\n", span->name, signal_data->restart_timeout);
+
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
+
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
+		if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
+			ftdm_mutex_lock(ftdmchan->mutex);
+			if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) {
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESET);
+			}
+			ftdm_mutex_unlock(ftdmchan->mutex);
+		}
+	}
+	return;
+}
+
+void sngisdn_delayed_setup(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
@@ -1009,7 +1078,7 @@ void sngisdn_delayed_setup(void* p_sngisdn_info)
 	return;
 }
 
-void sngisdn_delayed_release(void* p_sngisdn_info)
+void sngisdn_delayed_release(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;	
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
@@ -1032,7 +1101,7 @@ void sngisdn_delayed_release(void* p_sngisdn_info)
 	return;
 }
 
-void sngisdn_delayed_connect(void* p_sngisdn_info)
+void sngisdn_delayed_connect(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;	
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
@@ -1047,7 +1116,7 @@ void sngisdn_delayed_connect(void* p_sngisdn_info)
 	return;
 }
 
-void sngisdn_delayed_disconnect(void* p_sngisdn_info)
+void sngisdn_delayed_disconnect(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;	
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;
@@ -1069,7 +1138,7 @@ void sngisdn_delayed_disconnect(void* p_sngisdn_info)
 	return;
 }
 
-void sngisdn_facility_timeout(void* p_sngisdn_info)
+void sngisdn_facility_timeout(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;
 	ftdm_channel_t *ftdmchan = sngisdn_info->ftdmchan;

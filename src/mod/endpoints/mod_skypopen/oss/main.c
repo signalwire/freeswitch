@@ -86,13 +86,11 @@ void my_timer_callback_outq( unsigned long data )
 static enum hrtimer_restart my_hrtimer_callback_inq( struct hrtimer *timer_inq )
 {
 	struct skypopen_dev *dev = container_of(timer_inq, struct skypopen_dev, timer_inq);
-	ktime_t now;
 
 	if(unload)
 		return HRTIMER_NORESTART;
 
-	now = ktime_get();
-	hrtimer_forward(&dev->timer_inq, now, ktime_set(0, SKYPOPEN_SLEEP * 1000000));
+	hrtimer_forward(&dev->timer_inq, timer_inq->_softexpires, ktime_set(0, SKYPOPEN_SLEEP * 1000000));
 	wake_up_interruptible(&dev->inq);
 
 	return HRTIMER_RESTART;
@@ -100,13 +98,11 @@ static enum hrtimer_restart my_hrtimer_callback_inq( struct hrtimer *timer_inq )
 static enum hrtimer_restart my_hrtimer_callback_outq( struct hrtimer *timer_outq )
 {
 	struct skypopen_dev *dev = container_of(timer_outq, struct skypopen_dev, timer_outq);
-	ktime_t now;
 
 	if(unload)
 		return HRTIMER_NORESTART;
 
-	now = ktime_get();
-	hrtimer_forward(&dev->timer_outq, now, ktime_set(0, SKYPOPEN_SLEEP * 1000000));
+	hrtimer_forward(&dev->timer_outq, timer_outq->_softexpires, ktime_set(0, SKYPOPEN_SLEEP * 1000000));
 	wake_up_interruptible(&dev->outq);
 
 	return HRTIMER_RESTART;

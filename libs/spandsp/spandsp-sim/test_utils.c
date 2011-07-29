@@ -70,6 +70,16 @@ static int circle_init = FALSE;
 static complex_t icircle[MAX_FFT_LEN/2];
 static int icircle_init = FALSE;
 
+#define SF_MAX_HANDLE   32
+static int sf_close_at_exit_registered = FALSE;
+static SNDFILE *sf_close_at_exit_list[SF_MAX_HANDLE] =
+{
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+};
+
 SPAN_DECLARE(complexify_state_t *) complexify_init(void)
 {
     complexify_state_t *s;
@@ -349,6 +359,42 @@ SPAN_DECLARE(void) codec_munge(codec_munge_state_t *s, int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void sf_close_at_exit(void)
+{
+    int i;
+    
+    for (i = 0;  i < SF_MAX_HANDLE;  i++)
+    {
+        if (sf_close_at_exit_list[i])
+        {
+            sf_close(sf_close_at_exit_list[i]);
+            sf_close_at_exit_list[i] = NULL;
+        }
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static int sf_record_handle(SNDFILE *handle)
+{
+    int i;
+    
+    for (i = 0;  i < SF_MAX_HANDLE;  i++)
+    {
+        if (sf_close_at_exit_list[i] == NULL)
+            break;
+    }
+    if (i >= SF_MAX_HANDLE)
+        return -1;
+    sf_close_at_exit_list[i] = handle;
+    if (!sf_close_at_exit_registered)
+    {
+        atexit(sf_close_at_exit);
+        sf_close_at_exit_registered = TRUE;
+    }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(SNDFILE *) sf_open_telephony_read(const char *name, int channels)
 {
     SNDFILE *handle;
@@ -370,7 +416,7 @@ SPAN_DECLARE(SNDFILE *) sf_open_telephony_read(const char *name, int channels)
         printf("    Unexpected number of channels in audio file '%s'\n", name);
         exit(2);
     }
-
+    sf_record_handle(handle);
     return handle;
 }
 /*- End of function --------------------------------------------------------*/
@@ -393,8 +439,29 @@ SPAN_DECLARE(SNDFILE *) sf_open_telephony_write(const char *name, int channels)
         fprintf(stderr, "    Cannot open audio file '%s' for writing\n", name);
         exit(2);
     }
-
+    sf_record_handle(handle);
     return handle;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) sf_close_telephony(SNDFILE *handle)
+{
+    int res;
+    int i;
+    
+    if ((res = sf_close(handle)) == 0)
+    {
+        for (i = 0;  i < SF_MAX_HANDLE;  i++)
+        {
+            if (sf_close_at_exit_list[i] == handle)
+            {
+                sf_close(sf_close_at_exit_list[i]);
+                sf_close_at_exit_list[i] = NULL;
+                break;
+            }
+        }
+    }
+    return res;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

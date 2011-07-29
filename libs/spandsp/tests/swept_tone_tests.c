@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     }
 
     printf("Test with swept tone.\n");
-    s = swept_tone_init(NULL, 200.0f, 3900.0f, -10.0f, 60*SAMPLE_RATE, 1);
+    s = swept_tone_init(NULL, 200.0f, 3900.0f, -10.0f, 60*SAMPLE_RATE, TRUE);
     for (j = 0;  j < 60*SAMPLE_RATE;  j += BLOCK_LEN)
     {
         len = swept_tone(s, buf, BLOCK_LEN);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 #endif
     }
 
-    if (sf_close(outhandle) != 0)
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);

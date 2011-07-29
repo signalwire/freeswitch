@@ -62,7 +62,7 @@ decompressed, and the resulting audio stored in post_g726.wav.
 //#define WITH_SPANDSP_INTERNALS
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
@@ -1285,12 +1285,12 @@ int main(int argc, char *argv[])
             frames = g726_decode(&dec_state, amp, adpcmdata, adpcm);
             outframes = sf_writef_short(outhandle, amp, frames);
         }
-        if (sf_close(inhandle) != 0)
+        if (sf_close_telephony(inhandle))
         {
             printf("    Cannot close audio file '%s'\n", IN_FILE_NAME);
             exit(2);
         }
-        if (sf_close(outhandle) != 0)
+        if (sf_close_telephony(outhandle))
         {
             printf("    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);

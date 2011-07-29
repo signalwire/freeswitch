@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" creationComplete="init()" 
+	preinitialize="presetup()"
+	width="250" height="150" 
+	xmlns:local="*">
+	<mx:Script>
+		<![CDATA[
+			
+			import flash.external.*;
+			import flash.net.NetConnection;
+			import flash.net.NetStream;
+			import mx.utils.ObjectUtil;
+			import mx.core.FlexGlobals;
+			import flash.system.Security;
+			import flash.system.SecurityPanel;
+			import flash.media.*;
+			import com.adobe.crypto.MD5;
+			import com.adobe.serialization.json.JSON;
+			
+			[Bindable]
+			public  var netConnection:NetConnection = null;
+			private var incomingNetStream:NetStream = null;
+			private var outgoingNetStream:NetStream = null;
+			private var mic:Microphone = null;
+			[Bindable] private var microphoneList:Array;
+			private var sessionid:String;
+			private var auth_user:String;
+			private var auth_domain:String;
+			private var mic_index:int = -1;
+			
+			private var attachedUUID:String = "";
+			
+			[Embed(source="Sound_of_phone_ringing2.mp3")] 
+			[Bindable]
+			private var soundOfPhoneRinging_MP3:Class;
+			private var ringChannel:SoundChannel = null;
+			private var ringUUID:String = "";
+			private var soundOfPhoneRinging:Sound;
+			
+			
+			public function presetup():void 
+			{
+				/* Load config here */
+				soundOfPhoneRinging = new soundOfPhoneRinging_MP3();
+			}
+			
+			/********* JavaScript functions *********/
+			public function makeCall(number:String, account:String, evt:Object):void {
+				if (netConnection != null) {
+					if (incomingNetStream == null) {
+						setupStreams();
+					}
+					netConnection.call("makeCall", null, number, account, evt);
+				}
+			}
+			
+			public function sendDTMF(digits:String, duration:int):void {
+				if (netConnection != null) {
+					netConnection.call("sendDTMF", null, digits, duration);
+				}
+			}
+			
+			public function answer(uuid:String):void {
+				if (ringChannel != null) {
+					ringChannel.stop();
+					ringChannel = null;
+				}
+				if (incomingNetStream == null) {
+					setupStreams();
+				}
+				if (netConnection != null) {
+					netConnection.call("answer", null, uuid);
+				}
+			}
+			
+			public function hangup(uuid:String):void {
+				if (uuid == attachedUUID) {
+	    				destroyStreams();	
+				}
+				if (netConnection != null) {
+					netConnection.call("hangup", null, uuid);
+				}
+			}
+			
+			public function register(account:String, nickname:String):void {
+				if (netConnection != null) {
+					netConnection.call("register", null, account, nickname);
+				}
+			}
+			
+			public function unregister(account:String, nickname:String):void {
+				if (netConnection != null) {
+					netConnection.call("unregister", null, account, nickname);
+				}
+			}
+			
+			public function attach(uuid:String):void {
+				if (netConnection != null) {
+					netConnection.call("attach", null, uuid);
+				}
+			}
+			
+			public function transfer(uuid:String, number:String):void {
+				if (netConnection != null) {
+					netConnection.call("transfer", null, uuid, number);
+				}
+			}
+			
+			public function three_way(uuid1:String, uuid2:String):void {
+				if (netConnection != null) {
+					netConnection.call("three_way", null, uuid1, uuid2);
+				}
+			}
+			
+			public function join(uuid1:String, uuid2:String):void {
+				if (netConnection != null) {
+					netConnection.call("join", null, uuid1, uuid2);
+				}
+			}
+			
+			public function sendevent(data:Object):void {
+				if (netConnection != null) {
+					netConnection.call("sendevent", null, data);
+				}
+			}
+			
+			public function getMic():int {
+				return mic_index;
+			}
+			
+			public function micList():Object {
+				return JSON.encode(microphoneList);
+			}
+			
+			public function setMic(index:int):void {
+				mic_index = index;
+				setupMic();
+			}
+			
+			public function isMuted():Boolean {
+				if (mic != null) {
+					return mic.muted;
+				} else {
+					return false;
+				}
+			}
+			
+			public function showPrivacy():void {
+				Security.showSettings(SecurityPanel.PRIVACY);
+			}
+			
+			public function login(username:String, password:String):void {
+				if (netConnection != null) {
+					netConnection.call("login", null, username, MD5.hash(sessionid + ":" + username + ":" + password));	
+				}
+			}
+			
+			public function logout(account:String):void {
+				if (netConnection != null) {
+					netConnection.call("logout", null, account);
+				}
+			}
+			
+			public function setVolume(value:Number):void {
+				if (incomingNetStream != null) {
+					var st:SoundTransform = new SoundTransform(value);
+					incomingNetStream.soundTransform = st;
+				}
+			}
+			
+			public function setMicVolume(value:Number):void {
+				if (outgoingNetStream != null) {
+					var st:SoundTransform = new SoundTransform(value);
+					outgoingNetStream.soundTransform = st;	
+				}
+			}
+			
+			/********* FreeSWITCH functions *********/
+			/* XXX: TODO: Move those in a separate object so a malicious server can't setup streams and spy on the user */
+			public function connected(sid:String):void{
+				sessionid = sid;
+				
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onConnected", sid);
+				}
+			}
+			
+			
+			public function onHangup(uuid:String, cause:String):void {
+				if (ringUUID == uuid && ringChannel != null) {
+					ringChannel.stop();
+					ringChannel = null;
+				}
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onHangup", uuid, cause);
+				}
+			}
+			
+			public function onLogin(result:String, user:String, domain:String):void {
+				if (result == "success") {
+					auth_user = user;
+					auth_domain = domain;
+				}
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onLogin", result, user, domain);
+				}
+			}
+			
+			public function onLogout(user:String, domain:String):void {
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onLogout", user, domain);
+				}
+			}
+			
+			public function onAttach(uuid:String):void {
+				attachedUUID = uuid;
+
+				if (ringChannel != null && uuid != "") {
+					ringChannel.stop();
+					ringChannel = null;
+				}
+
+				if (attachedUUID == "") {
+					destroyStreams();
+				}  else if (incomingNetStream == null || outgoingNetStream == null) {
+					setupStreams();
+				}
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onAttach", uuid);
+				}
+			}
+			
+			public function onMakeCall(uuid:String, number:String, account:String):void {
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onMakeCall", uuid, number, account);
+				}
+			}
+			
+			public function callState(uuid:String, state:String):void {
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onCallState", uuid, state);
+				}
+			}
+			
+			public function displayUpdate(uuid:String, name:String, number:String):void {
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onDisplayUpdate", uuid, name, number);
+				}
+			}
+			
+			public function incomingCall(uuid:String, name:String, number:String, account:String, evt:Object):void {
+				if (attachedUUID == "" && ringChannel == null) {
+					ringUUID = uuid;
+					ringChannel = soundOfPhoneRinging.play(0, 3);
+				}
+				
+				if (evt != null) {
+					if (evt.hasOwnProperty("rtmp_auto_answer")) {
+						if (evt.rtmp_auto_answer == "true") {
+							answer(uuid);
+						}
+					}
+				}
+				
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onIncomingCall", uuid, name, number, account, evt);
+				}
+			}
+
+		
+			public function event(event:Object):void {
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onEvent", JSON.encode(event));
+				}
+			}
+			
+			/********* Internal functions *********/
+			private function onDebug(message:String):void {
+				//statusTxt.text = (statusTxt.text != "") ? statusTxt.text + "\n" + message : message;
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onDebug", message);
+				}
+			}
+			
+			private function init():void 
+			{				
+				NetConnection.defaultObjectEncoding = ObjectEncoding.AMF0;
+				
+				try {
+					Security.allowDomain("*");	
+				} catch(e:Error) {
+					onDebug("Exception: " + e.toString());
+				}
+				
+				if (ExternalInterface.available) {
+					try {
+						ExternalInterface.marshallExceptions = true;
+						ExternalInterface.addCallback("login", this.login);
+						ExternalInterface.addCallback("logout", this.logout);
+						ExternalInterface.addCallback("makeCall", this.makeCall);
+						ExternalInterface.addCallback("attach", this.attach);
+						ExternalInterface.addCallback("answer", this.answer);
+						ExternalInterface.addCallback("hangup", this.hangup);
+						ExternalInterface.addCallback("sendDTMF", this.sendDTMF);
+						ExternalInterface.addCallback("register", this.register);
+						ExternalInterface.addCallback("unregister", this.unregister);
+						ExternalInterface.addCallback("transfer", this.transfer);
+						ExternalInterface.addCallback("three_way", this.three_way);
+						ExternalInterface.addCallback("getMic", this.getMic);
+						ExternalInterface.addCallback("micList", this.micList);
+						ExternalInterface.addCallback("setMic", this.setMic);
+						ExternalInterface.addCallback("isMuted", this.isMuted);
+						ExternalInterface.addCallback("showPrivacy", this.showPrivacy);
+						ExternalInterface.addCallback("connect", this.connect);
+						ExternalInterface.addCallback("disconnect", this.disconnect);
+						ExternalInterface.addCallback("join", this.join);
+						ExternalInterface.addCallback("sendevent", this.sendevent);
+						ExternalInterface.addCallback("setVolume", this.setVolume);
+						ExternalInterface.addCallback("setMicVolume", this.setMicVolume);
+						//txtStatus.text = "Connecting...";
+					} catch(e:Error) {
+						//txtStatus.text = e.toString();
+						onDebug("Exception: " + e.toString());
+					}
+				} else {
+					onDebug("ExternalInterface is disabled");
+				}
+				
+				try {
+					microphoneList = Microphone.names;
+					setupMic();
+					connect();
+				} catch(e:Error) {
+					onDebug("Exception: " + e.toString());
+				}
+				
+				if (ExternalInterface.available) {					
+					ExternalInterface.call("onInit");
+				}
+				
+			}
+			
+			public function connect():void{
+				if (netConnection != null) {
+					disconnect();
+				}
+				
+				netConnection = new NetConnection();
+				netConnection.client = this;
+				netConnection.addEventListener( NetStatusEvent.NET_STATUS , netStatus );
+				netConnection.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler);
+				netConnection.connect(FlexGlobals.topLevelApplication.parameters.rtmp_url);
+			}
+			
+			public function disconnect():void {
+				if (netConnection != null) {
+					netConnection.close();
+					netConnection = null;
+					incomingNetStream = null;
+					outgoingNetStream = null;	
+				}
+			}
+			
+			private function destroyStreams():void {
+				if (outgoingNetStream != null) {
+					onDebug("Closing media streams")
+					outgoingNetStream.close();	
+					outgoingNetStream = null;
+				}
+				if (incomingNetStream != null) {
+					incomingNetStream.close();	
+					incomingNetStream = null;
+				}
+			}
+			
+			private function setupMic():void {
+				try {
+					mic = Microphone.getMicrophone(mic_index);
+					mic.addEventListener(ActivityEvent.ACTIVITY, activityHandler);
+			                mic.addEventListener(StatusEvent.STATUS, statusHandler);
+					mic.codec = SoundCodec.SPEEX;
+					mic.setUseEchoSuppression(true);
+					mic.setLoopBack(false);
+					mic.setSilenceLevel(0,20000);
+					mic.framesPerPacket = 1;
+					mic.gain = 55;
+					mic.rate = 16;
+					mic_index = mic.index;
+					
+					if (outgoingNetStream != null) {
+						outgoingNetStream.close();
+						outgoingNetStream = new NetStream(netConnection);
+						outgoingNetStream.addEventListener(NetStatusEvent.NET_STATUS, netStatus);
+						outgoingNetStream.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);		
+						outgoingNetStream.attachAudio(mic);
+						outgoingNetStream.publish("publish", "live");
+					}
+				} catch(e:Error) {
+					onDebug("Couldn't setup microphone: " + e.message);
+				}
+			}
+			
+			private function setupStreams():void {
+				onDebug("Setup media streams");
+				
+				if (mic == null || mic.index != mic_index) {
+					setupMic();
+				}
+				
+				incomingNetStream = new NetStream(netConnection);
+				incomingNetStream.addEventListener(NetStatusEvent.NET_STATUS, netStatus);
+				incomingNetStream.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);
+				incomingNetStream.client = this;
+				incomingNetStream.bufferTime = 0.2;
+				incomingNetStream.play("play");
+				incomingNetStream.receiveAudio(true);
+
+				outgoingNetStream = new NetStream(netConnection);
+				outgoingNetStream.addEventListener(NetStatusEvent.NET_STATUS, netStatus);
+				outgoingNetStream.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);		
+				outgoingNetStream.attachAudio(mic);
+				outgoingNetStream.publish("publish", "live");
+			}
+			
+			private function onDisconnected():void {
+				if (ExternalInterface.available) {
+					ExternalInterface.call("onDisconnected");
+				}
+			}
+
+			private function securityErrorHandler(event:SecurityErrorEvent):void {
+				onDebug("securityErrorHandler: " + event.text);
+			}
+			
+			private function asyncErrorHandler(event:AsyncErrorEvent):void {
+				onDebug("asyncErrorHandler: " + event.text);
+			}
+
+		        private function activityHandler(event:ActivityEvent):void {
+		            onDebug("activityHandler: " + event);
+		        }
+
+		        private function statusHandler(event:StatusEvent):void {
+		            onDebug("statusHandler: " + event);
+		        }
+		
+			private function netStatus (evt:NetStatusEvent ):void {		 
+				
+				onDebug("netStatus: " + evt.info.code);
+
+				switch(evt.info.code) {
+
+					case "NetConnection.Connect.Success":
+						//txtStatus.text = "Connected";
+						break;
+
+					case "NetConnection.Connect.Failed":
+						netConnection = null;
+						incomingNetStream = null;
+						outgoingNetStream = null;
+						//btnCall.label = "Connect";
+						//txtStatus.text = "Failed";
+						onDisconnected();
+						break;
+
+					case "NetConnection.Connect.Closed":
+						netConnection = null;
+						incomingNetStream = null;
+						outgoingNetStream = null;
+						//btnCall.label = "Connect";
+						//txtStatus.text = "Disconnected";
+						onDisconnected();
+						break;
+
+					case "NetConnection.Connect.Rejected":
+						netConnection = null;
+						incomingNetStream = null;
+						outgoingNetStream = null;
+						//btnCall.label = "Connect";
+						//txtStatus.text = "Rejected";
+						onDisconnected();
+						break;
+
+					case "NetStream.Play.StreamNotFound":
+						break;
+
+					case "NetStream.Play.Failed":
+						break;
+
+					case "NetStream.Play.Start":	
+						break;
+
+					case "NetStream.Play.Stop":			
+						break;
+
+					case "NetStream.Buffer.Full":
+						break;
+
+					default:
+
+				}	 
+			}
+		]]>
+	</mx:Script>
+	<!--<mx:Panel id="reader" title="Test" width="500">
+		<mx:TextArea width="500" color="#FF0000" id="statusTxt"/>
+	</mx:Panel>-->
+</mx:Application>

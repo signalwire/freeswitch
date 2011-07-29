@@ -40,7 +40,7 @@
 #include "spandsp-sim.h"
 #include "fax_utils.h"
 
-void log_tx_parameters(t30_state_t *s, const char *tag)
+void fax_log_tx_parameters(t30_state_t *s, const char *tag)
 {
     const char *u;
     
@@ -59,7 +59,7 @@ void log_tx_parameters(t30_state_t *s, const char *tag)
 }
 /*- End of function --------------------------------------------------------*/
 
-void log_rx_parameters(t30_state_t *s, const char *tag)
+void fax_log_rx_parameters(t30_state_t *s, const char *tag)
 {
     const char *u;
 
@@ -84,7 +84,7 @@ void log_rx_parameters(t30_state_t *s, const char *tag)
 }
 /*- End of function --------------------------------------------------------*/
 
-void log_transfer_statistics(t30_state_t *s, const char *tag)
+void fax_log_transfer_statistics(t30_state_t *s, const char *tag)
 {
     t30_stats_t t;
 
@@ -103,6 +103,24 @@ void log_transfer_statistics(t30_state_t *s, const char *tag)
 #if defined(WITH_SPANDSP_INTERNALS)
     printf("%s: bits per row - min %d, max %d\n", tag, s->t4.min_row_bits, s->t4.max_row_bits);
 #endif
+}
+/*- End of function --------------------------------------------------------*/
+
+int get_tiff_total_pages(const char *file)
+{
+    TIFF *tiff_file;
+    int max;
+
+    if ((tiff_file = TIFFOpen(file, "r")) == NULL)
+        return -1;
+    /* Each page *should* contain the total number of pages, but can this be
+       trusted? Some files say 0. Actually searching for the last page is
+       more reliable. */
+    max = 0;
+    while (TIFFSetDirectory(tiff_file, (tdir_t) max))
+        max++;
+    TIFFClose(tiff_file);
+    return max;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

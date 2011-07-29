@@ -60,9 +60,17 @@
 #include "spandsp/v27ter_tx.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T85)
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  |  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t81_t82_arith_coding.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t85.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T42)
+#include "spandsp/t42.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+#include "spandsp/t43.h"
 #endif
 #include "spandsp/t4_t6_decode.h"
 #include "spandsp/t4_t6_encode.h"
@@ -73,9 +81,17 @@
 #include "spandsp/t30_logging.h"
 
 #include "spandsp/private/logging.h"
-#if defined(SPANDSP_SUPPORT_T85)
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  |  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t85.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T42)
+#include "spandsp/private/t42.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+#include "spandsp/private/t43.h"
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
@@ -387,6 +403,7 @@ static void repeat_last_command(t30_state_t *s);
 static void disconnect(t30_state_t *s);
 static void decode_20digit_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int len);
 static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int len);
+static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt, int len);
 static int set_min_scan_time_code(t30_state_t *s);
 static int send_cfr_sequence(t30_state_t *s, int start);
 static void timer_t2_start(t30_state_t *s);
@@ -1312,6 +1329,19 @@ static int build_dcs(t30_state_t *s)
     /* Select the compression to use. */
     switch (s->line_encoding)
     {
+#if defined(SPANDSP_SUPPORT_T42)
+    case T4_COMPRESSION_ITU_T42:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
+        set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
+        break;
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+    case T4_COMPRESSION_ITU_T43:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T43_MODE);
+        set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
+        break;
+#endif
+#if defined(SPANDSP_SUPPORT_T85)
     case T4_COMPRESSION_ITU_T85:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_MODE);
         clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_L0_MODE);
@@ -1322,12 +1352,13 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_L0_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
+#endif
     case T4_COMPRESSION_ITU_T6:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T6_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
     case T4_COMPRESSION_ITU_T4_2D:
-        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_2D_CODING);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_2D_MODE);
         set_ctrl_bits(s->dcs_frame, s->min_scan_time_code, 21);
         break;
     case T4_COMPRESSION_ITU_T4_1D:
@@ -1515,7 +1546,7 @@ static int build_dcs(t30_state_t *s)
     if (bad != T30_ERR_OK)
     {
         s->current_status = bad;
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image width (%d pixels) not an acceptable FAX image width\n", s->image_width);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width (%d pixels) is not an acceptable FAX image width\n", s->image_width);
         return -1;
     }
     switch (s->image_width)
@@ -1557,7 +1588,7 @@ static int build_dcs(t30_state_t *s)
     if (bad != T30_ERR_OK)
     {
         s->current_status = bad;
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image width (%d pixels) not an acceptable FAX image width\n", s->image_width);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width (%d pixels) is not an acceptable FAX image width\n", s->image_width);
         return -1;
     }
     /* Deal with the image length */
@@ -2132,6 +2163,60 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             return -1;
         }
     }
+#if 0
+    /* T.4 1D is always available */
+    bi_level_support = T30_SUPPORT_T4_1D_COMPRESSION;
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
+        bi_level_support |= T30_SUPPORT_T4_2D_COMPRESSION;
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE))
+        bi_level_support |= T30_SUPPORT_T6_COMPRESSION;
+    /* Bit 79 set with bit 78 clear is invalid, so let's completely ignore 79
+       if 78 is clear. */
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE))
+    {
+        bi_level_support |= T30_SUPPORT_T85_COMPRESSION;
+        if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE)
+            bi_level_support |= T30_SUPPORT_T85_L0_COMPRESSION;
+    }
+
+    gray_support = 0;
+    colour_support = 0;
+    if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE))
+    {
+        /* Multi-level coding available */
+        gray_support |= T30_SUPPORT_T81_COMPRESSION;
+        if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
+            gray_support |= T30_SUPPORT_T81_12BIT_COMPRESSION;
+        if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE))
+        {
+            gray_support |= T30_SUPPORT_T43_COMPRESSION;
+            if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
+                gray_support |= T30_SUPPORT_T43_COMPRESSION_12BIT;
+        }
+
+        if (test_ctrl_bit(s->far_dis_dtc_frame, bit69))
+        {
+            /* Colour coding available */
+            colour_support |= T30_SUPPORT_T81_COMPRESSION;
+            if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
+                colour_support |= T30_SUPPORT_T81_12BIT_COMPRESSION;
+            if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING))
+            {
+                colour_support |= T30_SUPPORT_T81_SUBSAMPLING_COMPRESSION;
+                if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
+                    colour_support |= T30_SUPPORT_T81_SUBSAMPLING_COMPRESSION_12BIT;
+            }
+            if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE))
+            {
+                colour_support |= T30_SUPPORT_T43_COMPRESSION;
+                if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
+                    colour_support |= T30_SUPPORT_T43_12BIT_COMPRESSION;
+            }
+        }
+        /* bit74 custom illuminant */
+        /* bit75 custom gamut range */
+    }
+#endif
     queue_phase(s, T30_PHASE_B_TX);
     /* Try to send something */
     if (s->tx_file[0])
@@ -2289,7 +2374,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     {
         s->line_encoding = T4_COMPRESSION_ITU_T6;
     }
-    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_2D_CODING))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_2D_MODE))
     {
         s->line_encoding = T4_COMPRESSION_ITU_T4_2D;
     }
@@ -4415,11 +4500,13 @@ static void process_rx_control_msg(t30_state_t *s, const uint8_t *msg, int len)
                     span_log(&s->logging, SPAN_LOG_FLOW, "The remote was made by '%s'\n", s->vendor);
                 if (s->model)
                     span_log(&s->logging, SPAN_LOG_FLOW, "The remote is a '%s'\n", s->model);
+                s->rx_info.nsf_len = decode_nsf_nss_nsc(s, &s->rx_info.nsf, &msg[2], len - 2);
             }
             else
             {
                 /* NSC - Non-standard facilities command */
                 /* OK in (NSC) (CIG) DTC */
+                s->rx_info.nsc_len = decode_nsf_nss_nsc(s, &s->rx_info.nsc, &msg[2], len - 2);
             }
             break;
         case (T30_PWD & 0xFE):
@@ -4487,6 +4574,7 @@ static void process_rx_control_msg(t30_state_t *s, const uint8_t *msg, int len)
             break;
         case (T30_NSS & 0xFE):
             /* Non-standard facilities set-up */
+            s->rx_info.nss_len = decode_nsf_nss_nsc(s, &s->rx_info.nss, &msg[2], len - 2);
             break;
         case (T30_SUB & 0xFE):
             /* Sub-address */
@@ -5206,6 +5294,18 @@ static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int le
     memcpy(msg, &pkt[3], len - 3);
     msg[len - 3] = '\0';
     span_log(&s->logging, SPAN_LOG_FLOW, "Remote fax gave %s as: %d, %d, \"%s\"\n", t30_frametype(pkt[0]), pkt[0], pkt[1], msg);
+}
+/*- End of function --------------------------------------------------------*/
+
+static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt, int len)
+{
+    uint8_t *t;
+    
+    if ((t = malloc(len - 1)) == NULL)
+        return 0;
+    memcpy(t, pkt + 1, len - 1);
+    *msg = t;
+    return len - 1;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -6175,10 +6275,8 @@ SPAN_DECLARE(void) t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t)
     t->encoding = stats.encoding;
     t->image_size = stats.line_image_size;
     t->current_status = s->current_status;
-#if 0
     t->rtn_events = s->rtn_events;
     t->rtp_events = s->rtp_events;
-#endif
 }
 /*- End of function --------------------------------------------------------*/
 

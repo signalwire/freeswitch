@@ -491,7 +491,18 @@ void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
 		/* Should we trigger congestion here? */
 		l1_frame.flags |= SNG_L1FRAME_QUEUE_FULL;
 	}
+#if 0
+	if (1) {
+		int i;
+		char string [2000];
+		unsigned string_len = 0;
+		for (i = 0; i < l1_frame.len; i++) {
+			string_len += sprintf(&string[string_len], "0x%02x ", l1_frame.data[i]);
+		}
 
+		ftdm_log_chan(dchan, FTDM_LOG_CRIT, "\nL1 RX [%s] flags:%x\n", string, l1_frame.flags);
+	}
+#endif
 	sng_isdn_data_ind(signal_data->dchan_id, &l1_frame);
 }
 

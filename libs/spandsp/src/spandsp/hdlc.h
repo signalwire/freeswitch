@@ -113,7 +113,7 @@ SPAN_DECLARE(void) hdlc_rx_set_frame_handler(hdlc_rx_state_t *s, hdlc_frame_hand
     \param handler The callback routine used to report status changes.
     \param user_data An opaque parameter for the callback routine.
 */
-SPAN_DECLARE(void) hdlc_rx_set_status_handler(hdlc_rx_state_t *s, modem_rx_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) hdlc_rx_set_status_handler(hdlc_rx_state_t *s, modem_status_func_t handler, void *user_data);
 
 /*! Release an HDLC receiver context.
     \brief Release an HDLC receiver context.

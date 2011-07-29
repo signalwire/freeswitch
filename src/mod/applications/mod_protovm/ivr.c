@@ -222,6 +222,7 @@ switch_status_t captureMenuRecord(switch_core_session_t *session, dtmf_ss_t *loc
 
 		if (loc->audio_stopped == SWITCH_FALSE && loc->result == RES_WAITFORMORE) {
 			loc->recorded_audio = SWITCH_TRUE;
+			switch_ivr_gentones(session, "%(1000, 0, 640)", 0, NULL); /* TODO Make this optional and configurable */
 			status = switch_ivr_record_file(session, fh, file_path, &args, max_record_len);
 
 		}

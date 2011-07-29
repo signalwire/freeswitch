@@ -569,28 +569,6 @@ void *su_home_new(isize_t size)
   return home;
 }
 
-/** Create a new reference to a home object. */
-void *su_home_ref(su_home_t const *home)
-{
-  if (home) {
-    su_block_t *sub = MEMLOCK(home);
-
-    if (sub == NULL || sub->sub_ref == 0) {
-      assert(sub && sub->sub_ref != 0);
-      UNLOCK(home);
-      return NULL;
-    }
-
-    if (sub->sub_ref != REF_MAX)
-      sub->sub_ref++;
-    UNLOCK(home);
-  }
-  else
-    su_seterrno(EFAULT);
-
-  return (void *)home;
-}
-
 /** Set destructor function.
  *
  * The destructor function is called after the reference count of a
@@ -636,6 +614,123 @@ int su_home_desctructor(su_home_t *home, void (*destructor)(void *))
 {
   return su_home_destructor(home, destructor);
 }
+
+
+#if (defined(HAVE_MEMLEAK_LOG) && (HAVE_MEMLEAK_LOG != 1))
+#include "sofia-sip/su_debug.h"
+
+
+static void *real_su_home_ref(su_home_t const *home)
+{
+  if (home) {
+    su_block_t *sub = MEMLOCK(home);
+
+    if (sub == NULL || sub->sub_ref == 0) {
+      assert(sub && sub->sub_ref != 0);
+      UNLOCK(home);
+      return NULL;
+    }
+
+    if (sub->sub_ref != REF_MAX)
+      sub->sub_ref++;
+    UNLOCK(home);
+  }
+  else
+    su_seterrno(EFAULT);
+
+  return (void *)home;
+}
+
+
+static int real_su_home_unref(su_home_t *home)
+{
+  su_block_t *sub;
+
+  if (home == NULL)
+    return 0;
+
+  sub = MEMLOCK(home);
+
+  if (sub == NULL) {
+    /* Xyzzy */
+    return 0;
+  }
+  else if (sub->sub_ref == REF_MAX) {
+    UNLOCK(home);
+    return 0;
+  }
+  else if (--sub->sub_ref > 0) {
+    UNLOCK(home);
+    return 0;
+  }
+  else if (sub->sub_parent) {
+    su_home_t *parent = sub->sub_parent;
+    UNLOCK(home);
+    su_free(parent, home);
+    return 1;
+  }
+  else {
+    int hauto = sub->sub_hauto;
+    _su_home_deinit(home);
+    if (!hauto)
+      safefree(home);
+    /* UNLOCK(home); */
+    return 1;
+  }
+}
+
+su_home_t *
+_su_home_ref_by(su_home_t *home,
+		   char const *file, unsigned line,
+		   char const *function)
+{
+  if (home)
+	  SU_DEBUG_0(("%ld %p - su_home_ref() => "MOD_ZU" by %s:%u: %s()\n", pthread_self(),
+		home, su_home_refcount(home) + 1, file, line, function));
+  return (su_home_t *)real_su_home_ref(home);
+}
+
+int
+_su_home_unref_by(su_home_t *home,
+		    char const *file, unsigned line,
+		    char const *function)
+{
+  if (home) {
+    size_t refcount = su_home_refcount(home) - 1;
+    int freed =  real_su_home_unref(home);
+
+    if (freed) refcount = 0;
+    SU_DEBUG_0(("%ld %p - su_home_unref() => "MOD_ZU" by %s:%u: %s()\n", pthread_self(),
+		home, refcount, file, line, function));
+    return freed;
+  }
+
+  return 0;
+}
+#else
+
+/** Create a new reference to a home object. */
+void *su_home_ref(su_home_t const *home)
+{
+  if (home) {
+    su_block_t *sub = MEMLOCK(home);
+
+    if (sub == NULL || sub->sub_ref == 0) {
+      assert(sub && sub->sub_ref != 0);
+      UNLOCK(home);
+      return NULL;
+    }
+
+    if (sub->sub_ref != REF_MAX)
+      sub->sub_ref++;
+    UNLOCK(home);
+  }
+  else
+    su_seterrno(EFAULT);
+
+  return (void *)home;
+}
+
 
 /**Unreference a su_home_t object.
  *
@@ -683,6 +778,7 @@ int su_home_unref(su_home_t *home)
     return 1;
   }
 }
+#endif
 
 /** Return reference count of home. */
 size_t su_home_refcount(su_home_t *home)
@@ -1546,14 +1642,24 @@ int su_home_is_threadsafe(su_home_t const *home)
  * Otherwise the su_home_mutex_lock() will just increase the reference
  * count.
  */
+
+#if (defined(HAVE_MEMLEAK_LOG) && (HAVE_MEMLEAK_LOG != 1))
+int _su_home_mutex_lock(su_home_t *home, const char *file, unsigned int line, const char *function)
+#else
 int su_home_mutex_lock(su_home_t *home)
+#endif
+
 {
   int error;
 
   if (home == NULL)
     return su_seterrno(EFAULT);
 
+#if (defined(HAVE_MEMLEAK_LOG) && (HAVE_MEMLEAK_LOG != 1))
+  if (home->suh_blocks == NULL || !_su_home_ref_by(home, file, line, function))
+#else
   if (home->suh_blocks == NULL || !su_home_ref(home))
+#endif
     return su_seterrno(EINVAL);  /* Uninitialized home */
 
   if (!home->suh_lock)
@@ -1570,7 +1676,12 @@ int su_home_mutex_lock(su_home_t *home)
  *
  * @sa su_home_unlock().
  */
+
+#if (defined(HAVE_MEMLEAK_LOG) && (HAVE_MEMLEAK_LOG != 1))
+int _su_home_mutex_unlock(su_home_t *home, const char *file, unsigned int line, const char *function)
+#else
 int su_home_mutex_unlock(su_home_t *home)
+#endif
 {
   if (home == NULL)
     return su_seterrno(EFAULT);
@@ -1584,7 +1695,11 @@ int su_home_mutex_unlock(su_home_t *home)
   if (home->suh_blocks == NULL)
     return su_seterrno(EINVAL), -1; /* Uninitialized home */
 
+#if (defined(HAVE_MEMLEAK_LOG) && (HAVE_MEMLEAK_LOG != 1))
+  _su_home_unref_by(home, file, line, function);
+#else
   su_home_unref(home);
+#endif
 
   return 0;
 }

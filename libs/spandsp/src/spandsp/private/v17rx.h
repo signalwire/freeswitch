@@ -61,7 +61,7 @@ struct v17_rx_state_s
     void *put_bit_user_data;
 
     /*! \brief The callback function used to report modem status changes. */
-    modem_rx_status_func_t status_handler;
+    modem_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 
@@ -86,7 +86,7 @@ struct v17_rx_state_s
     /*! \brief The register for the data scrambler. */
     uint32_t scramble_reg;
     /*! \brief Scrambler tap */
-    //int scrambler_tap;
+    int scrambler_tap;
 
     /*! \brief TRUE if the short training sequence is to be used. */
     int short_train;

@@ -175,8 +175,9 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					if (impl->decoded_bytes_per_packet > SWITCH_RECOMMENDED_BUFFER_SIZE) {
 						load_interface = 0;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-										  "Failed to load codec interface %s from %s due to bytes per frame exceeding buffer size.\n", ptr->interface_name,
-										  key);
+										  "Failed to load codec interface %s from %s due to bytes per frame %d exceeding buffer size %d.\n", 
+										  ptr->interface_name,
+										  key, impl->decoded_bytes_per_packet, SWITCH_RECOMMENDED_BUFFER_SIZE);
 						break;
 					}
 				}

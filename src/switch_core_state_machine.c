@@ -358,7 +358,16 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 				break;
 			case CS_INIT:		/* Basic setup tasks */
-				STATE_MACRO(init, "INIT");
+				{
+					switch_event_t *event;
+
+					STATE_MACRO(init, "INIT");
+					
+					if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CREATE) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_event_set_data(session->channel, event);
+						switch_event_fire(&event);
+					}
+				}
 				break;
 			case CS_ROUTING:	/* Look for a dialplan and find something to do */
 				STATE_MACRO(routing, "ROUTING");
@@ -401,6 +410,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		if (endstate == switch_channel_get_running_state(session->channel)) {
 			if (endstate == CS_NEW) {
 				switch_cond_next();
+				switch_ivr_parse_all_events(session);
 				if (!--new_loops) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s Timeout waiting for next instruction in CS_NEW!\n",
 									  session->uuid_str);

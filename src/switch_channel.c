@@ -181,6 +181,12 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *c
 }
 
 
+SWITCH_DECLARE(switch_call_cause_t *) switch_channel_get_cause_ptr(switch_channel_t *channel)
+{
+	return &channel->hangup_cause;
+}
+
+
 struct switch_callstate_table {
 	const char *name;
 	switch_channel_callstate_t callstate;
@@ -213,6 +219,7 @@ SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *chan
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Original-Channel-Call-State", switch_channel_callstate2str(o_callstate));
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number", "%d", callstate);
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
 	}
@@ -756,7 +763,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *c
 	}
 
 	if (!v && (!channel->variables || !(v = switch_event_get_header_idx(channel->variables, varname, idx)))) {
-		switch_caller_profile_t *cp = channel->caller_profile;
+		switch_caller_profile_t *cp = switch_channel_get_caller_profile(channel);
 
 		if (cp) {
 			if (!strncmp(varname, "aleg_", 5)) {
@@ -1495,6 +1502,9 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 
 	if (HELD) {
 		switch_channel_set_callstate(channel, CCS_HELD);
+		switch_mutex_lock(channel->profile_mutex);
+		channel->caller_profile->times->last_hold = switch_time_now();
+		switch_mutex_unlock(channel->profile_mutex);
 	}
 
 	if (flag == CF_OUTBOUND) {
@@ -1630,6 +1640,11 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 
 	if (ACTIVE) {
 		switch_channel_set_callstate(channel, CCS_ACTIVE);
+		switch_mutex_lock(channel->profile_mutex);
+		if (channel->caller_profile->times->last_hold) {
+			channel->caller_profile->times->hold_accum += (switch_time_now() - channel->caller_profile->times->last_hold);
+		}
+		switch_mutex_unlock(channel->profile_mutex);
 	}
 
 	if (flag == CF_OUTBOUND) {
@@ -1687,11 +1702,22 @@ SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channe
 	return channel->running_state != channel->state;
 }
 
+SWITCH_DECLARE(int) switch_channel_check_signal(switch_channel_t *channel, switch_bool_t in_thread_only)
+{
+	if (!in_thread_only || switch_core_session_in_thread(channel->session)) {
+		switch_ivr_parse_all_signal_data(channel->session);
+	}
+
+	return 0;
+}
+
 SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_bool_t check_ready, switch_bool_t check_media)
 {
 	int ret = 0;
 
 	switch_assert(channel != NULL);
+
+	switch_channel_check_signal(channel, SWITCH_TRUE);
 
 	if (check_media) {
 		ret = ((switch_channel_test_flag(channel, CF_ANSWERED) ||
@@ -1713,6 +1739,8 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 		!switch_channel_state_change_pending(channel)) {
 		ret++;
 	}
+
+
 
 	return ret;
 }
@@ -2258,15 +2286,6 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 
 	if (!caller_profile->context) {
 		caller_profile->context = switch_core_session_strdup(channel->session, "default");
-	}
-
-	if (!channel->caller_profile) {
-		switch_event_t *event;
-
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CREATE) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(channel, event);
-			switch_event_fire(&event);
-		}
 	}
 
 	if (!caller_profile->times) {
@@ -3513,13 +3532,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_caller_profile_t *caller_profile, *ocp;
 	switch_app_log_t *app_log, *ap;
 	char *last_app = NULL, *last_arg = NULL;
-	char start[80] = "", resurrect[80] = "", answer[80] = "", bridge[80] = "", progress[80] = "", progress_media[80] = "", end[80] = "", tmp[80] = "",
+	char start[80] = "", resurrect[80] = "", answer[80] = "", hold[80], 
+		bridge[80] = "", progress[80] = "", progress_media[80] = "", end[80] = "", tmp[80] = "",
 		profile_start[80] =	"";
 	int32_t duration = 0, legbillsec = 0, billsec = 0, mduration = 0, billmsec = 0, legbillmsec = 0, progressmsec = 0, progress_mediamsec = 0;
 	int32_t answersec = 0, answermsec = 0, waitsec = 0, waitmsec = 0;
 	switch_time_t answerusec = 0;
 	switch_time_t uduration = 0, legbillusec = 0, billusec = 0, progresssec = 0, progressusec = 0, progress_mediasec = 0, progress_mediausec = 0, waitusec = 0;
-	time_t tt_created = 0, tt_answered = 0, tt_resurrected = 0, tt_bridged,
+	time_t tt_created = 0, tt_answered = 0, tt_resurrected = 0, tt_bridged, tt_last_hold, tt_hold_accum,
 		tt_progress = 0, tt_progress_media = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_bridged = 0,
 		mtt_hungup = 0, tt_prof_created, mtt_prof_created, mtt_progress = 0, mtt_progress_media = 0;
 	void *pop;
@@ -3598,6 +3618,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 			switch_channel_set_variable(channel, "bridge_stamp", bridge);
 		}
 
+		if (caller_profile->times->last_hold) {
+			switch_time_exp_lt(&tm, caller_profile->times->last_hold);
+			switch_strftime_nocheck(hold, &retsize, sizeof(hold), fmt, &tm);
+			switch_channel_set_variable(channel, "hold_stamp", hold);
+		}
+
 		if (caller_profile->times->resurrected) {
 			switch_time_exp_lt(&tm, caller_profile->times->resurrected);
 			switch_strftime_nocheck(resurrect, &retsize, sizeof(resurrect), fmt, &tm);
@@ -3647,6 +3673,20 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_channel_set_variable(channel, "bridge_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->bridged);
 		switch_channel_set_variable(channel, "bridge_uepoch", tmp);
+
+		tt_last_hold = (time_t) (caller_profile->times->last_hold / 1000000);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_last_hold);
+		switch_channel_set_variable(channel, "last_hold_epoch", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->last_hold);
+		switch_channel_set_variable(channel, "last_hold_uepoch", tmp);
+
+		tt_hold_accum = (time_t) (caller_profile->times->hold_accum / 1000000);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_hold_accum);
+		switch_channel_set_variable(channel, "hold_accum_seconds", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hold_accum);
+		switch_channel_set_variable(channel, "hold_accum_usec", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hold_accum / 1000);
+		switch_channel_set_variable(channel, "hold_accum_ms", tmp);
 
 		tt_resurrected = (time_t) (caller_profile->times->resurrected / 1000000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_resurrected);

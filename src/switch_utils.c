@@ -1940,11 +1940,11 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 		}
 	}
 	/* strip quotes, escaped chars and leading / trailing spaces */
-	if (count > 1) {
-		for (i = 0; i < count; ++i) {
-			array[i] = cleanup_separated_string(array[i], delim);
-		}
+
+	for (i = 0; i < count; ++i) {
+		array[i] = cleanup_separated_string(array[i], delim);
 	}
+
 	return count;
 }
 
@@ -2000,11 +2000,11 @@ static unsigned int separate_string_blank_delim(char *buf, char **array, unsigne
 		}
 	}
 	/* strip quotes, escaped chars and leading / trailing spaces */
-	if (count > 1) {
-		for (i = 0; i < count; ++i) {
-			array[i] = cleanup_separated_string(array[i], 0);
-		}
+
+	for (i = 0; i < count; ++i) {
+		array[i] = cleanup_separated_string(array[i], 0);
 	}
+	
 	return count;
 }
 

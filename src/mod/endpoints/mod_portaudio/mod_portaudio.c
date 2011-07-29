@@ -1304,9 +1304,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 
 	module_pool = pool;
 
-	Pa_Initialize();
+	if (paNoError != Pa_Initialize()) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot initialize port audio!\n");
+		return SWITCH_STATUS_TERM;
+	}
 
 	memset(&globals, 0, sizeof(globals));
+
+	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+
 	switch_core_hash_init(&globals.call_hash, module_pool);
 	switch_core_hash_init(&globals.sh_streams, module_pool);
 	switch_core_hash_init(&globals.endpoints, module_pool);
@@ -1327,10 +1335,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 #if defined(sun) || defined(__sun)
 	globals.dual_streams = 0;
 #endif
-
-	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
-		return status;
-	}
 
 	if (dump_info(0)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't find any audio devices!\n");
@@ -1620,7 +1624,7 @@ static switch_status_t load_endpoints(switch_xml_t endpoints)
 		}
 		if (check_stream_compat(endpoint->in_stream, endpoint->out_stream)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-					"Incomatible input and output streams for endpoint '%s'\n", endpoint_name);
+					"Incompatible input and output streams for endpoint '%s'\n", endpoint_name);
 			continue;
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 

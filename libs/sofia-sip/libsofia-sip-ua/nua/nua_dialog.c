@@ -373,11 +373,14 @@ nua_dialog_usage_remove_at(nua_owner_t *own,
 			   nua_client_request_t *cr0,
 			   nua_server_request_t *sr0)
 {
+	int unref = 0;
+	nua_dialog_usage_t *du = NULL;
+
   if (*at) {
-    nua_dialog_usage_t *du = *at;
     sip_event_t const *o = NULL;
     nua_client_request_t *cr, *cr_next;
     nua_server_request_t *sr, *sr_next;
+    du = *at;
 
     *at = du->du_next;
 
@@ -409,8 +412,7 @@ nua_dialog_usage_remove_at(nua_owner_t *own,
       }
     }
 
-    su_home_unref(own);
-    su_free(own, du);
+	unref = 1;
   }
 
   /* Zap dialog if there are no more usages */
@@ -419,10 +421,19 @@ nua_dialog_usage_remove_at(nua_owner_t *own,
   else if (ds->ds_usage == NULL) {
     nua_dialog_remove(own, ds, NULL);
     ds->ds_has_events = 0;
+	if (unref) {
+		su_home_unref(own);
+		su_free(own, du);
+	}
     return;
   }
   else {
     nua_dialog_log_usage(own, ds);
+  }
+
+  if (unref) {
+    su_home_unref(own);
+    su_free(own, du);
   }
 }
 

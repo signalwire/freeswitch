@@ -34,7 +34,7 @@
 
 #include <switch.h>
 #include <switch_event.h>
-
+//#define SWITCH_EVENT_RECYCLE
 #define DISPATCH_QUEUE_LEN 10000
 //#define DEBUG_DISPATCH_QUEUES
 
@@ -691,7 +691,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 		return SWITCH_STATUS_GENERR;
 	}
 #ifdef SWITCH_EVENT_RECYCLE
-	if (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+	if (EVENT_RECYCLE_QUEUE && switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		*event = (switch_event_t *) pop;
 	} else {
 #endif
@@ -802,7 +802,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *even
 
 			if (hp->idx) {
 				int i = 0;
-				hp->value = NULL;
 
 				for (i = 0; i < hp->idx; i++) {
 					FREE(hp->array[i]);
@@ -835,7 +834,7 @@ static switch_event_header_t *new_header(const char *header_name)
 
 #ifdef SWITCH_EVENT_RECYCLE
 		void *pop;
-		if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+		if (EVENT_HEADER_RECYCLE_QUEUE && switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
 			header = (switch_event_header_t *) pop;
 		} else {
 #endif
@@ -1145,7 +1144,7 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 
 			if (this->idx) {
 				int i = 0;
-				this->value = NULL;
+
 				for (i = 0; i < this->idx; i++) {
 					FREE(this->array[i]);
 				}
