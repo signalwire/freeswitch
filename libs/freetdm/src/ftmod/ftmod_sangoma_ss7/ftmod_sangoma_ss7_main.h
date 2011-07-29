@@ -423,7 +423,7 @@ typedef struct sng_ss7_cfg {
 	sng_isup_ckt_t		isupCkt[10000]; 	/* KONRAD - only need 2000 ( and 0-1000 aren't used) since other servers are registerd else where */
 	sng_nsap_t			nsap[MAX_NSAPS+1];
 	sng_isap_t			isap[MAX_ISAPS+1];	
-}sng_ss7_cfg_t;
+} sng_ss7_cfg_t;
 
 typedef struct ftdm_sngss7_data {
 	sng_ss7_cfg_t		cfg;
@@ -433,7 +433,7 @@ typedef struct ftdm_sngss7_data {
 	int					message_trace;
 	int					message_trace_level;
 	fio_signal_cb_t		sig_cb;
-}ftdm_sngss7_data_t;
+} ftdm_sngss7_data_t;
 
 typedef struct sngss7_timer_data {
 	ftdm_timer_id_t			hb_timer_id;
@@ -442,13 +442,13 @@ typedef struct sngss7_timer_data {
 	ftdm_sched_callback_t	callback;
 	ftdm_sched_t			*sched;
 	void					*sngss7_info;
-}sngss7_timer_data_t;
+} sngss7_timer_data_t;
 
 typedef struct sngss7_glare_data {
 	uint32_t				spInstId; 
 	uint32_t				circuit; 
 	SiConEvnt				iam;
-}sngss7_glare_data_t;
+} sngss7_glare_data_t;
 
 typedef struct sngss7_group_data {
 	uint32_t				circuit;
@@ -456,7 +456,7 @@ typedef struct sngss7_group_data {
 	uint8_t					status[255];
 	uint8_t					type;
 	uint8_t					cause;
-}sngss7_group_data_t;
+} sngss7_group_data_t;
 
 typedef struct sngss7_chan_data {
 	ftdm_channel_t			*ftdmchan;
@@ -473,20 +473,24 @@ typedef struct sngss7_chan_data {
 	void					*raw_data;		/* send on next sigevent */
 	sngss7_glare_data_t		glare;
 	sngss7_timer_data_t		t35;
-}sngss7_chan_data_t;
-
-typedef struct sngss7_span_data {
-	ftdm_sched_t			*sched;
 	sngss7_group_data_t		rx_grs;
 	sngss7_group_data_t		rx_gra;
 	sngss7_group_data_t		tx_grs;
+	sngss7_group_data_t		ucic;
+} sngss7_chan_data_t;
+
+#define SNGSS7_RX_GRS_PENDING (1 << 0)
+#define SNGSS7_UCIC_PENDING (1 << 1)
+#define SNGSS7_RX_GRA_PENDING (1 << 2)
+typedef struct sngss7_span_data {
+	ftdm_sched_t			*sched;
+	uint32_t                        flags;
 	sngss7_group_data_t		rx_cgb;
 	sngss7_group_data_t		tx_cgb;
 	sngss7_group_data_t		rx_cgu;
 	sngss7_group_data_t		tx_cgu;
-	sngss7_group_data_t		ucic;
 	ftdm_queue_t 			*event_queue;
-}sngss7_span_data_t;
+} sngss7_span_data_t;
 
 typedef struct sngss7_event_data
 {
@@ -848,7 +852,6 @@ ftdm_status_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
 ftdm_status_t copy_tknStr_to_sngss7(char* str, TknStr *tknStr, TknU8 *oddEven);
 
 int check_for_state_change(ftdm_channel_t *ftdmchan);
-int check_cics_in_range(sngss7_chan_data_t *sngss7_info);
 int check_for_reset(sngss7_chan_data_t *sngss7_info);
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan);
 unsigned long get_unique_id(void);
@@ -887,6 +890,7 @@ ftdm_status_t sngss7_add_raw_data(sngss7_chan_data_t *sngss7_info, uint8_t* data
 
 /* in ftmod_sangoma_ss7_timers.c */
 void handle_isup_t35(void *userdata);
+
 /******************************************************************************/
 
 /* MACROS *********************************************************************/

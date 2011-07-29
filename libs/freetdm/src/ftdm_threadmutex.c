@@ -27,6 +27,7 @@
 #   endif
 #   include <windows.h>
 #endif
+/*#define FTDM_DEBUG_MUTEX 0*/
 
 #include "private/ftdm_core.h"
 #include "ftdm_threadmutex.h"
@@ -46,8 +47,26 @@ struct ftdm_mutex {
 
 #define FTDM_THREAD_CALLING_CONVENTION
 
+#ifdef FTDM_DEBUG_MUTEX
+#define FTDM_MUTEX_MAX_REENTRANCY 30
+typedef struct ftdm_lock_entry {
+	const char *file;
+	const char *func;
+	uint32_t line;
+} ftdm_lock_entry_t;
+
+typedef struct ftdm_lock_history {
+	ftdm_lock_entry_t locked;
+	ftdm_lock_entry_t unlocked;
+} ftdm_lock_history_t;
+#endif
+
 struct ftdm_mutex {
 	pthread_mutex_t mutex;
+#ifdef FTDM_DEBUG_MUTEX
+	ftdm_lock_history_t lock_history[FTDM_MUTEX_MAX_REENTRANCY];
+	uint8_t reentrancy;
+#endif
 };
 
 #endif
@@ -112,7 +131,7 @@ FT_DECLARE(ftdm_status_t) ftdm_thread_create_detached_ex(ftdm_thread_function_t 
 	ftdm_thread_t *thread = NULL;
 	ftdm_status_t status = FTDM_FAIL;
 
-	if (!func || !(thread = (ftdm_thread_t *)ftdm_malloc(sizeof(ftdm_thread_t)))) {
+	if (!func || !(thread = (ftdm_thread_t *)ftdm_calloc(1, sizeof(ftdm_thread_t)))) {
 		goto done;
 	}
 
@@ -162,7 +181,7 @@ FT_DECLARE(ftdm_status_t) ftdm_mutex_create(ftdm_mutex_t **mutex)
 #endif
 	ftdm_mutex_t *check = NULL;
 
-	check = (ftdm_mutex_t *)ftdm_malloc(sizeof(**mutex));
+	check = (ftdm_mutex_t *)ftdm_calloc(1, sizeof(**mutex));
 	if (!check)
 		goto done;
 #ifdef WIN32
@@ -209,21 +228,40 @@ FT_DECLARE(ftdm_status_t) ftdm_mutex_destroy(ftdm_mutex_t **mutex)
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) _ftdm_mutex_lock(ftdm_mutex_t *mutex)
+#define ADD_LOCK_HISTORY(mutex, file, line, func) \
+	{ \
+		if ((mutex)->reentrancy < FTDM_MUTEX_MAX_REENTRANCY) { \
+			(mutex)->lock_history[mutex->reentrancy].locked.file = (file); \
+			(mutex)->lock_history[mutex->reentrancy].locked.func = (func); \
+			(mutex)->lock_history[mutex->reentrancy].locked.line = (line); \
+			(mutex)->lock_history[mutex->reentrancy].unlocked.file = NULL; \
+			(mutex)->lock_history[mutex->reentrancy].unlocked.func = NULL; \
+			(mutex)->lock_history[mutex->reentrancy].unlocked.line = 0; \
+			(mutex)->reentrancy++; \
+			if ((mutex)->reentrancy == FTDM_MUTEX_MAX_REENTRANCY) { \
+				ftdm_log((file), (func), (line), FTDM_LOG_LEVEL_ERROR, "Max reentrancy reached for mutex %p\n", (mutex)); \
+			} \
+		} \
+	}
+
+FT_DECLARE(ftdm_status_t) _ftdm_mutex_lock(const char *file, int line, const char *func, ftdm_mutex_t *mutex)
 {
 #ifdef WIN32
 	EnterCriticalSection(&mutex->mutex);
 #else
 	int err;
 	if ((err = pthread_mutex_lock(&mutex->mutex))) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to lock mutex %d:%s\n", err, strerror(err));
+		ftdm_log(file, func, line, FTDM_LOG_LEVEL_ERROR, "Failed to lock mutex %d:%s\n", err, strerror(err));
 		return FTDM_FAIL;
 	}
+#endif
+#ifdef FTDM_DEBUG_MUTEX
+	ADD_LOCK_HISTORY(mutex, file, line, func);
 #endif
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) _ftdm_mutex_trylock(ftdm_mutex_t *mutex)
+FT_DECLARE(ftdm_status_t) _ftdm_mutex_trylock(const char *file, int line, const char *func, ftdm_mutex_t *mutex)
 {
 #ifdef WIN32
 	if (!TryEnterCriticalSection(&mutex->mutex))
@@ -232,16 +270,42 @@ FT_DECLARE(ftdm_status_t) _ftdm_mutex_trylock(ftdm_mutex_t *mutex)
 	if (pthread_mutex_trylock(&mutex->mutex))
 		return FTDM_FAIL;
 #endif
+#ifdef FTDM_DEBUG_MUTEX
+	ADD_LOCK_HISTORY(mutex, file, line, func);
+#endif
 	return FTDM_SUCCESS;
 }
 
-FT_DECLARE(ftdm_status_t) _ftdm_mutex_unlock(ftdm_mutex_t *mutex)
+FT_DECLARE(ftdm_status_t) _ftdm_mutex_unlock(const char *file, int line, const char *func, ftdm_mutex_t *mutex)
 {
+#ifdef FTDM_DEBUG_MUTEX
+	int i = 0;
+	if (mutex->reentrancy == 0) {
+		ftdm_log(file, func, line, FTDM_LOG_LEVEL_ERROR, "Cannot unlock something that is not locked!\n");
+		return FTDM_FAIL;
+	}
+	i = mutex->reentrancy - 1;
+	/* I think this is a fair assumption when debugging */
+	if (func != mutex->lock_history[i].locked.func) {
+		ftdm_log(file, func, line, FTDM_LOG_LEVEL_WARNING, "Mutex %p was suspiciously locked at %s->%s:%d but unlocked at %s->%s:%d!\n",
+				mutex, mutex->lock_history[i].locked.func, mutex->lock_history[i].locked.file, mutex->lock_history[i].locked.line, 
+				func, file, line);
+	}
+	mutex->lock_history[i].unlocked.file = file;
+	mutex->lock_history[i].unlocked.line = line;
+	mutex->lock_history[i].unlocked.func = func;
+	mutex->reentrancy--;
+#endif
 #ifdef WIN32
 	LeaveCriticalSection(&mutex->mutex);
 #else
-	if (pthread_mutex_unlock(&mutex->mutex))
+	if (pthread_mutex_unlock(&mutex->mutex)) {
+		ftdm_log(file, func, line, FTDM_LOG_LEVEL_ERROR, "Failed to unlock mutex: %s\n", strerror(errno));
+#ifdef FTDM_DEBUG_MUTEX
+		mutex->reentrancy++;
+#endif
 		return FTDM_FAIL;
+	}
 #endif
 	return FTDM_SUCCESS;
 }

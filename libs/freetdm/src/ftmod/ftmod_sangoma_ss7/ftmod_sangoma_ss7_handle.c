@@ -1910,11 +1910,10 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 {
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
-	sngss7_chan_data_t	*sngss7_info = NULL;
-	ftdm_channel_t		*ftdmchan = NULL;
-	sngss7_span_data_t	*sngss7_span = NULL; 
-	int					range;
-
+	sngss7_chan_data_t *sngss7_info = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	sngss7_span_data_t *sngss7_span = NULL;
+	int range = 0;
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1948,9 +1947,15 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* fill in the span structure for this circuit */
 	sngss7_span = ftdmchan->span->signal_data;
-	sngss7_span->rx_grs.circuit = circuit; 
-	sngss7_span->rx_grs.range = range;
+	if (sngss7_info->rx_grs.range) {
+		SS7_CRITICAL("Cannot handle another GRS on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+	sngss7_info->rx_grs.circuit = circuit; 
+	sngss7_info->rx_grs.range = range;
 
+	ftdm_set_flag(sngss7_span, SNGSS7_RX_GRS_PENDING);
 	/* the reset will be started in the main thread by "check_if_rx_grs_started" */
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
@@ -1962,10 +1967,10 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 {
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
-	sngss7_chan_data_t	*sngss7_info = NULL;
-	ftdm_channel_t		*ftdmchan = NULL;
-	sngss7_span_data_t	*sngss7_span = NULL; 
-	int					range;
+	sngss7_chan_data_t *sngss7_info = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	sngss7_span_data_t *sngss7_span = NULL; 
+	int range = 0;
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1999,16 +2004,23 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* fill in the span structure for this circuit */
 	sngss7_span = ftdmchan->span->signal_data;
-	sngss7_span->rx_gra.circuit = circuit; 
-	sngss7_span->rx_gra.range = range;
+	if (sngss7_info->rx_gra.range) {
+		SS7_ERROR("Cannot handle another GRA on CIC = %d\n", sngss7_info->circuit->cic);
+		SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+		return FTDM_FAIL;
+	}
+	sngss7_info->rx_gra.circuit = circuit; 
+	sngss7_info->rx_gra.range = range;
 
 	/* check if there is a cause value in the GRA */
 	if ((siStaEvnt != NULL) &&
 		(siStaEvnt->causeDgn.eh.pres == PRSNT_NODEF) &&
 		(siStaEvnt->causeDgn.causeVal.pres == PRSNT_NODEF)) {
 
-		sngss7_span->rx_gra.cause = siStaEvnt->causeDgn.causeVal.val;
+		sngss7_info->rx_gra.cause = siStaEvnt->causeDgn.causeVal.val;
 	}
+
+	ftdm_set_flag(sngss7_span, SNGSS7_RX_GRA_PENDING);
 
 	/* the reset will be started in the main thread by "check_if_rx_gra_started" */
 	
@@ -2121,9 +2133,12 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 {
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
 
-	sngss7_chan_data_t	*sngss7_info = NULL;
-	sngss7_span_data_t	*sngss7_span = NULL;
-	ftdm_channel_t		*ftdmchan = NULL;
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	sngss7_chan_data_t *sngss7_info = NULL;
+	sngss7_chan_data_t *cinfo = NULL;
+	sngss7_span_data_t *sngss7_span = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
 
 
 	/* confirm that the circuit is voice channel */
@@ -2147,13 +2162,28 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 			DECODE_LCC_EVENT(evntType));
 	}
 
-	/* check if we just sent a GRS request...*/
+	/* find out if the cic belongs to one of our GRS requests, if so, 
+	 * all circuits in the request must be blocked */
 	sngss7_span = ftdmchan->span->signal_data;
-	if (sngss7_span->tx_grs.circuit > 0) {
-		/* we need to put all circuits on this UCIC */
-		sngss7_span->ucic.circuit = sngss7_span->tx_grs.circuit;
-		sngss7_span->ucic.range = sngss7_span->tx_grs.range;
-		goto done;
+	iter = ftdm_span_get_chan_iterator(ftdmchan->span, NULL);
+	curr = iter;
+	for (curr = iter; curr; curr = ftdm_iterator_next(curr)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(curr);
+
+		ftdm_channel_lock(fchan);
+
+		cinfo = fchan->call_data;
+		if (circuit == cinfo->tx_grs.circuit) {
+			cinfo->ucic.circuit = cinfo->tx_grs.circuit;
+			cinfo->ucic.range = cinfo->tx_grs.range;
+			ftdm_set_flag(sngss7_span, SNGSS7_UCIC_PENDING);
+
+			ftdm_channel_unlock(fchan);
+
+			goto done;
+		}
+
+		ftdm_channel_unlock(fchan);
 	}
 
 	/* lock the channel */
@@ -2168,6 +2198,10 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 	/* unlock the channel again before we exit */
 	ftdm_mutex_unlock(ftdmchan->mutex);
 done:
+	if (iter) {
+		ftdm_iterator_free(iter);
+	}
+
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
 }

@@ -39,32 +39,6 @@
 
 /* GLOBALS ********************************************************************/
 
-/* PROTOTYPES *****************************************************************/
-void ft_to_sngss7_iam(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_acm(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_anm(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_rel(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_rlc(ftdm_channel_t * ftdmchan);
-
-void ft_to_sngss7_rsc(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_rsca(ftdm_channel_t * ftdmchan);
-
-void ft_to_sngss7_blo(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_bla(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_ubl(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_uba(ftdm_channel_t * ftdmchan);
-
-void ft_to_sngss7_lpa(ftdm_channel_t * ftdmchan);
-
-void ft_to_sngss7_gra(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_grs(ftdm_channel_t * ftdmchan);
-
-void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
-
-void ft_to_sngss7_cgba(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_cgua(ftdm_channel_t * ftdmchan);
-
 /* FUNCTIONS ******************************************************************/
 void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 {	
@@ -447,7 +421,6 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_span_data_t *sngss7_span = ftdmchan->span->signal_data;
 	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
 	SiStaEvnt	gra;
 	
@@ -458,11 +431,11 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 
 	/* fill in the range */	
 	gra.rangStat.range.pres = PRSNT_NODEF;
-	gra.rangStat.range.val = sngss7_span->rx_grs.range;
+	gra.rangStat.range.val = sngss7_info->rx_grs.range;
 
 	/* fill in the status */
 	gra.rangStat.status.pres = PRSNT_NODEF;
-	gra.rangStat.status.len = ((sngss7_span->rx_grs.range + 1) >> 3) + (((sngss7_span->rx_grs.range + 1) & 0x07) ? 1 : 0); 
+	gra.rangStat.status.len = ((sngss7_info->rx_grs.range + 1) >> 3) + (((sngss7_info->rx_grs.range + 1) & 0x07) ? 1 : 0); 
 	
 	/* the status field should be 1 if blocked for maintenace reasons 
 	* and 0 is not blocked....since we memset the struct nothing to do
@@ -472,15 +445,15 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 	sng_cc_sta_request (1,
 						0,
 						0,
-						sngss7_span->rx_grs.circuit,
+						sngss7_info->rx_grs.circuit,
 						0,
 						SIT_STA_GRSRSP,
 						&gra);
 	
-	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx GRA (%d:%d)\n",
+	SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Tx GRA (%d:%d)\n",
 							sngss7_info->circuit->cic,
 							sngss7_info->circuit->cic,
-							(sngss7_info->circuit->cic + sngss7_span->rx_grs.range));
+							(sngss7_info->circuit->cic + sngss7_info->rx_grs.range));
 	
 
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
@@ -488,37 +461,40 @@ void ft_to_sngss7_gra (ftdm_channel_t * ftdmchan)
 }
 
 /******************************************************************************/
-void ft_to_sngss7_grs (ftdm_channel_t * ftdmchan)
+void ft_to_sngss7_grs (ftdm_channel_t *fchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
-	sngss7_span_data_t 	*sngss7_span = ftdmchan->span->signal_data;
-	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+	sngss7_chan_data_t *cinfo = fchan->call_data;
 	
 	SiStaEvnt grs;
 	
-	memset (&grs, 0x0, sizeof(grs));
-	
-	grs.rangStat.eh.pres	= PRSNT_NODEF;
-	grs.rangStat.range.pres	= PRSNT_NODEF;
-	grs.rangStat.range.val	= sngss7_span->tx_grs.range;
-	
-	sng_cc_sta_request (1,
-						0,
-						0,
-						sngss7_span->tx_grs.circuit,
-						0,
-						SIT_STA_GRSREQ,
-						&grs);
-	
-	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx GRS (%d:%d)\n",
-							sngss7_info->circuit->cic,
-							sngss7_info->circuit->cic,
-							(sngss7_info->circuit->cic + sngss7_span->tx_grs.range));
+	ftdm_assert(sngss7_test_ckt_flag(cinfo, FLAG_GRP_RESET_TX) && 
+		   !sngss7_test_ckt_flag(cinfo, FLAG_GRP_RESET_SENT), "Incorrect flags\n");
 
+	memset (&grs, 0x0, sizeof(grs));
+	grs.rangStat.eh.pres    = PRSNT_NODEF;
+	grs.rangStat.range.pres = PRSNT_NODEF;
+	grs.rangStat.range.val  = cinfo->tx_grs.range;
+
+	sng_cc_sta_request (1,
+		0,
+		0,
+		cinfo->tx_grs.circuit,
+		0,
+		SIT_STA_GRSREQ,
+		&grs);
+
+	SS7_INFO_CHAN(fchan, "[CIC:%d]Tx GRS (%d:%d)\n",
+		cinfo->circuit->cic,
+		cinfo->circuit->cic,
+		(cinfo->circuit->cic + cinfo->tx_grs.range));
+
+	memset(&cinfo->tx_grs, 0, sizeof(cinfo->tx_grs));
+
+	sngss7_set_ckt_flag(cinfo, FLAG_GRP_RESET_SENT);
 
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
-return;
 }
 
 /******************************************************************************/

@@ -1618,13 +1618,19 @@ static ftdm_status_t handle_tx_rsc(ftdm_stream_handle_t *stream, int span, int c
 /******************************************************************************/
 static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose)
 {
-	int					x;
-	sngss7_chan_data_t	*sngss7_info;
-	ftdm_channel_t		*ftdmchan;
-	sngss7_span_data_t	*sngss7_span;
+	sngss7_chan_data_t *sngss7_info = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	sngss7_span_data_t *sngss7_span = NULL;
+	int x = 0;
+	int basefound = 0;
 
 	if (range > 31) {
-		stream->write_function(stream, "Invalid range value %d", range);
+		stream->write_function(stream, "Range value %d is too big for a GRS", range);
+		return FTDM_SUCCESS;
+	}
+
+	if (range < 2) {
+		stream->write_function(stream, "Range value %d is too small for a GRS", range);
 		return FTDM_SUCCESS;
 	}
 
@@ -1638,42 +1644,45 @@ static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int c
 
 			if ((ftdmchan->physical_span_id == span) && 
 				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
+
 				/* now that we have the right channel...put a lock on it so no-one else can use it */
-				ftdm_mutex_lock(ftdmchan->mutex);
+				ftdm_channel_lock(ftdmchan);
+
+				/* if another reset is still in progress, skip this channel */
+				if (sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX)) {
+					ftdm_channel_unlock(ftdmchan);
+					continue;
+				}
 
 				/* check if there is a pending state change|give it a bit to clear */
 				if (check_for_state_change(ftdmchan)) {
 					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", sngss7_info->circuit->cic);
-					/* check if we need to die */
-					SS7_ASSERT;
-					/* unlock the channel again before we exit */
-					ftdm_mutex_unlock(ftdmchan->mutex);
-					/* move to the next channel */
+					ftdm_channel_unlock(ftdmchan);
 					continue;
-				} else {
-					/* throw the grp reset flag */
-					sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX);
-					if (ftdmchan->physical_chan_id == chan) {
-						sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_BASE);
-						sngss7_span->tx_grs.circuit = sngss7_info->circuit->id;
-						sngss7_span->tx_grs.range = range-1;
-					}
-
-					/* set the channel to suspended state */
-					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
-
 				}
 
-				/* unlock the channel again before we exit */
-				ftdm_mutex_unlock(ftdmchan->mutex);
+				/* throw the grp reset flag */
+				sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX);
+				if (!basefound) {
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Setting channel as GRS base\n");
+					sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_BASE);
+					sngss7_info->tx_grs.circuit = sngss7_info->circuit->id;
+					sngss7_info->tx_grs.range = range - 1;
+					basefound = 1;
+				}
 
-			} /* if ( span and chan) */
+				/* set the channel to restart state */
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 
-		} /* if ( cic != 0) */
+				ftdm_channel_unlock(ftdmchan);
+
+			}
+
+		}
 
 		/* go the next circuit */
 		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+	}
 	
 	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {

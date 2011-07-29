@@ -5433,12 +5433,14 @@ static void execute_safety_hangup(void *data)
 
 FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
+	ftdm_channel_t *fchan = NULL;
 	if (sigmsg->channel) {
-		ftdm_mutex_lock(sigmsg->channel->mutex);
-		sigmsg->chan_id = sigmsg->channel->chan_id;
-		sigmsg->span_id = sigmsg->channel->span_id;
-		sigmsg->call_id = sigmsg->channel->caller_data.call_id;
-		sigmsg->call_priv = sigmsg->channel->caller_data.priv;
+		fchan = sigmsg->channel;
+		ftdm_channel_lock(fchan);
+		sigmsg->chan_id = fchan->chan_id;
+		sigmsg->span_id = fchan->span_id;
+		sigmsg->call_id = fchan->caller_data.call_id;
+		sigmsg->call_priv = fchan->caller_data.priv;
 	}
 	
 	/* some core things to do on special events */
@@ -5447,14 +5449,14 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		{
 			if (sigmsg->ev_data.sigstatus.status == FTDM_SIG_STATE_UP) {
-				ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
-				ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SUSPENDED);
+				ftdm_set_flag(fchan, FTDM_CHANNEL_SIG_UP);
+				ftdm_clear_flag(fchan, FTDM_CHANNEL_SUSPENDED);
 			} else {
-				ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SIG_UP);
+				ftdm_clear_flag(fchan, FTDM_CHANNEL_SIG_UP);
 				if (sigmsg->ev_data.sigstatus.status == FTDM_SIG_STATE_SUSPENDED) {
-					ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_SUSPENDED);
+					ftdm_set_flag(fchan, FTDM_CHANNEL_SUSPENDED);
 				} else {
-					ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_SUSPENDED);
+					ftdm_clear_flag(fchan, FTDM_CHANNEL_SUSPENDED);
 				}
 			}
 		}
@@ -5462,14 +5464,14 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 
 	case FTDM_SIGEVENT_START:
 		{
-			ftdm_assert(!ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED), "Started call twice!");
+			ftdm_assert(!ftdm_test_flag(fchan, FTDM_CHANNEL_CALL_STARTED), "Started call twice!");
 
-			if (ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_OUTBOUND)) {
-				ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_WARNING, "Inbound call taking over outbound channel\n");
-				ftdm_clear_flag(sigmsg->channel, FTDM_CHANNEL_OUTBOUND);
+			if (ftdm_test_flag(fchan, FTDM_CHANNEL_OUTBOUND)) {
+				ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "Inbound call taking over outbound channel\n");
+				ftdm_clear_flag(fchan, FTDM_CHANNEL_OUTBOUND);
 			}
-			ftdm_set_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED);
-			ftdm_call_set_call_id(sigmsg->channel, &sigmsg->channel->caller_data);
+			ftdm_set_flag(fchan, FTDM_CHANNEL_CALL_STARTED);
+			ftdm_call_set_call_id(fchan, &fchan->caller_data);
 			/* when cleaning up the public API I added this because mod_freetdm.c on_fxs_signal was
 			 * doing it during SIGEVENT_START, but now that flags are private they can't, wonder if
 			 * is needed at all? */
@@ -5483,8 +5485,8 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	case FTDM_SIGEVENT_PROGRESS_MEDIA:
 		{
 			/* test signaling module compliance */
-			if (sigmsg->channel->state != FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
-				ftdm_log_chan(sigmsg->channel, FTDM_LOG_WARNING, "FTDM_SIGEVENT_PROGRESS_MEDIA sent in state %s\n", ftdm_channel_state2str(sigmsg->channel->state));
+			if (fchan->state != FTDM_CHANNEL_STATE_PROGRESS_MEDIA) {
+				ftdm_log_chan(fchan, FTDM_LOG_WARNING, "FTDM_SIGEVENT_PROGRESS_MEDIA sent in state %s\n", ftdm_channel_state2str(fchan->state));
 			}
 		}
 		break;
@@ -5492,8 +5494,8 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	case FTDM_SIGEVENT_UP:
 		{
 			/* test signaling module compliance */
-			if (sigmsg->channel->state != FTDM_CHANNEL_STATE_UP) {
-				ftdm_log_chan(sigmsg->channel, FTDM_LOG_WARNING, "FTDM_SIGEVENT_UP sent in state %s\n", ftdm_channel_state2str(sigmsg->channel->state));
+			if (fchan->state != FTDM_CHANNEL_STATE_UP) {
+				ftdm_log_chan(fchan, FTDM_LOG_WARNING, "FTDM_SIGEVENT_UP sent in state %s\n", ftdm_channel_state2str(fchan->state));
 			}
 		}
 		break;
@@ -5505,20 +5507,20 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 
 			/* if the call was never started, do not send SIGEVENT_STOP
 			   this happens for FXS devices in ftmod_analog which blindly send SIGEVENT_STOP, we should fix it there ... */
-			if (!ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_CALL_STARTED)) {
-				ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_DEBUG, "Ignoring SIGEVENT_STOP since user never knew about a call in this channel\n");
+			if (!ftdm_test_flag(fchan, FTDM_CHANNEL_CALL_STARTED)) {
+				ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "Ignoring SIGEVENT_STOP since user never knew about a call in this channel\n");
 				goto done;
 			}
 
-			if (ftdm_test_flag(sigmsg->channel, FTDM_CHANNEL_USER_HANGUP)) {
-				ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_DEBUG, "Ignoring SIGEVENT_STOP since user already requested hangup\n");
+			if (ftdm_test_flag(fchan, FTDM_CHANNEL_USER_HANGUP)) {
+				ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "Ignoring SIGEVENT_STOP since user already requested hangup\n");
 				goto done;
 			}
 
-			if (sigmsg->channel->state == FTDM_CHANNEL_STATE_TERMINATING) {
-				ftdm_log_chan_msg(sigmsg->channel, FTDM_LOG_DEBUG, "Scheduling safety hangup timer\n");
+			if (fchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
+				ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "Scheduling safety hangup timer\n");
 				/* if the user does not move us to hangup in 2 seconds, we will do it ourselves */
-				ftdm_sched_timer(globals.timingsched, "safety-hangup", FORCE_HANGUP_TIMER, execute_safety_hangup, sigmsg->channel, &sigmsg->channel->hangup_timer);
+				ftdm_sched_timer(globals.timingsched, "safety-hangup", FORCE_HANGUP_TIMER, execute_safety_hangup, fchan, &fchan->hangup_timer);
 			}
 		}
 		break;
@@ -5537,8 +5539,8 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 
 done:
 	
-	if (sigmsg->channel) {
-		ftdm_mutex_unlock(sigmsg->channel->mutex);
+	if (fchan) {
+		ftdm_channel_unlock(fchan);
 	}
 
 	return FTDM_SUCCESS;

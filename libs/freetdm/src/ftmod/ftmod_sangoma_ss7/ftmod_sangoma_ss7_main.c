@@ -328,13 +328,13 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
  
 				/* unlock the channel */
 				ftdm_mutex_unlock (ftdmchan->mutex);				
-			}/* while ((ftdmchan = ftdm_queue_dequeue(ftdmspan->pendingchans)))  */
+			}
 
 			/* clean out all pending stack events */
 			while ((sngss7_event = ftdm_queue_dequeue(sngss7_span->event_queue))) {
 				ftdm_sangoma_ss7_process_stack_event(sngss7_event);
 				ftdm_safe_free(sngss7_event);
-			}/* while ((sngss7_event = ftdm_queue_dequeue(ftdmspan->signal_data->event_queue))) */
+			}
 
 			/* signal the core that sig events are queued for processing */
 			ftdm_span_trigger_signals(ftdmspan);
@@ -356,27 +356,27 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 
 			break;
 		/**********************************************************************/
-		} /* switch ((ftdm_interrupt_wait(ftdm_sangoma_ss7_int, 100))) */
+		}
 
 		/* check if there is a GRA to proccess on the span */
-		if (sngss7_span->rx_gra.range > 0) {
+		if (ftdm_test_flag(sngss7_span, SNGSS7_RX_GRA_PENDING)) {
 			check_if_rx_gra_started(ftdmspan);
-		} /* if (sngss7->span->rx_gra.range > 0) */
+		}
 
 		/* check if there is a GRS being processed on the span */
-		if (sngss7_span->rx_grs.range > 0) {
+		if (ftdm_test_flag(sngss7_span, SNGSS7_RX_GRS_PENDING)) {
 			/* check if the rx_grs has started */
 			check_if_rx_grs_started(ftdmspan);
 
 			/* check if the rx_grs has cleared */
 			check_if_rx_grs_processed(ftdmspan);
-		} /* if (sngss7_span->rx_grs.range > 0) */
+		}
 
 		/* check if there is a UCIC to be processed on the span */
-		if (sngss7_span->ucic.range > 0) {
+		if (ftdm_test_flag(sngss7_span, SNGSS7_UCIC_PENDING)) {
 			/* process the span wide UCIC */
 			process_span_ucic(ftdmspan);
-		} /* if (sngss7_span->ucic.range > 0) */
+		}
 
 		/* check each channel on the span to see if there is an un-procressed SUS/RES flag */
 		check_for_res_sus_flag(ftdmspan);
@@ -398,8 +398,8 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 		default:
 			SS7_ERROR("%s:Failed to poll span event\n", ftdmspan->name);
 		/**********************************************************************/
-		} /* switch (ftdm_span_poll_event(span, 0)) */
-	} /* master while loop */
+		}
+	}
 
 	/* clear the IN_THREAD flag so that we know the thread is done */
 	ftdm_clear_flag (ftdmspan, FTDM_SPAN_IN_THREAD);
@@ -423,8 +423,8 @@ ftdm_sangoma_ss7_run_exit:
 /******************************************************************************/
 static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_event)
 {
-	sngss7_chan_data_t  *sngss7_info ;
-	ftdm_channel_t	  *ftdmchan;
+	sngss7_chan_data_t *sngss7_info = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(sngss7_event->circuit, &sngss7_info, &ftdmchan)) {
@@ -432,8 +432,8 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 		return;
 	}
 
-	/* now that we have the right channel...put a lock on it so no-one else can use it */
-	ftdm_mutex_lock(ftdmchan->mutex);
+	/* now that we have the right channel ... put a lock on it so no-one else can use it */
+	ftdm_channel_lock(ftdmchan);
 
 	/* while there's a state change present on this channel process it */
 	ftdm_channel_advance_states(ftdmchan);
@@ -496,24 +496,23 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 		SS7_ERROR("Unknown Event Id!\n");
 		break;
 	/**************************************************************************/
-	} /* switch (sngss7_event->event_id) */
+	}
 
 	/* while there's a state change present on this channel process it */
 	ftdm_channel_advance_states(ftdmchan);
 
 	/* unlock the channel */
-	ftdm_mutex_unlock(ftdmchan->mutex);
+	ftdm_channel_unlock(ftdmchan);
 
-	return;
 }
 
 /******************************************************************************/
 ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 {
-	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
-	sng_isup_inf_t		*isup_intf = NULL;
-	int					state_flag = 1; 
-	int 				i = 0;
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+	sng_isup_inf_t *isup_intf = NULL;
+	int state_flag = 1; 
+	int i = 0;
 
 	SS7_DEBUG_CHAN(ftdmchan, "ftmod_sangoma_ss7 processing state %s\n", ftdm_channel_state2str (ftdmchan->state));
 
@@ -807,7 +806,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* clear the reset flag  */
 			clear_rx_rsc_flags(sngss7_info);
-		} /* if (sngss7_test_ckt_flag (sngss7_info, FLAG_RESET_RX)) */
+		}
 
 		/* check if there was a GRS that needs a GRA */
 		if ((sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX)) &&
@@ -815,10 +814,8 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX_CMPLT))) {
 
 			/* check if this is the base circuit and send out the GRA
-			 * we insure that this is the last circuit to have the state change queued
-			 */
-			sngss7_span_data_t *span = ftdmchan->span->signal_data;
-			if (span->rx_grs.circuit == sngss7_info->circuit->id) {
+			 * we insure that this is the last circuit to have the state change queued */
+			if (sngss7_info->rx_grs.range) {
 				/* send out the GRA */
 				ft_to_sngss7_gra(ftdmchan);
 
@@ -828,21 +825,22 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* clear the grp reset flag */
 			clear_rx_grs_flags(sngss7_info);
-		}/*  if ( sngss7_test_ckt_flag ( sngss7_info, FLAG_GRP_RESET_RX ) ) */
+		}
 
 		/* check if we got the reset response */
 		if (sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX_RSP)) {
 			/* clear the reset flag  */
 			clear_tx_rsc_flags(sngss7_info);
-		} /* if (sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX_RSP)) */
+		}
 
 		if (sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP)) {
 			/* clear the reset flag  */
 			clear_tx_grs_flags(sngss7_info);
-			
-			/* clean out the spans GRA structure */
-			clear_rx_gra_data(sngss7_info);
-		} /* if (sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX_RSP)) */
+			if (sngss7_info->rx_gra.range) {
+				/* clean out the spans GRA structure */
+				clear_rx_gra_data(sngss7_info);
+			}
+		}
 
 		/* check if we came from reset (aka we just processed a reset) */
 		if ((ftdmchan->last_state == FTDM_CHANNEL_STATE_RESTART) || 
@@ -900,7 +898,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			ftdm_channel_t *close_chan = ftdmchan;
 			/* close the channel */
 			ftdm_channel_close (&close_chan);
-		} /* if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_OPEN)) */
+		}
 
 		/* check if there is a glared call that needs to be processed */
 		if (sngss7_test_ckt_flag(sngss7_info, FLAG_GLARE)) {
@@ -918,8 +916,8 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 				/* clear the glare info */
 				memset(&sngss7_info->glare, 0x0, sizeof(sngss7_glare_data_t));
-			} /* if (sngss7_info->glare.circuit != 0) */
-		} /* if (sngss7_test_ckt_flag(sngss7_info, FLAG_GLARE)) */
+			}
+		}
 
 		break;
 	/**************************************************************************/
@@ -964,9 +962,8 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 				/* send out the grs */
 				ft_to_sngss7_grs (ftdmchan);
-				sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_SENT);
 
-		}/* if ( sngss7_test_ckt_flag ( sngss7_info, FLAG_GRP_RESET_TX ) ) */
+		}
 	
 		/* if the sig_status is up...bring it down */
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) {
@@ -1265,13 +1262,12 @@ suspend_goto_restart:
 		
 		break;
 	/**************************************************************************/
-	}/*switch (ftdmchan->state) */
-#if 1
+	}
+
 	if (state_flag) {
 		/* clear the state change flag...since we might be setting a new state */
 		ftdm_channel_complete_state(ftdmchan);
 	}
-#endif
 	return FTDM_SUCCESS;
 }
 
