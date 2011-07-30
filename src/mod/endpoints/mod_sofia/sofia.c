@@ -5100,7 +5100,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			sdp_parser_t *parser;
 			sdp_session_t *sdp;
 
-			if ((profile->ndlb & PFLAG_NDLB_ALLOW_NONDUP_SDP) || !zstr(tech_pvt->remote_sdp_str) && !strcmp(tech_pvt->remote_sdp_str, r_sdp)) {
+			if ((profile->ndlb & PFLAG_NDLB_ALLOW_NONDUP_SDP) || (!zstr(tech_pvt->remote_sdp_str) && !strcmp(tech_pvt->remote_sdp_str, r_sdp))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Duplicate SDP\n%s\n", r_sdp);
 				is_dup_sdp = 1;
 			} else {
