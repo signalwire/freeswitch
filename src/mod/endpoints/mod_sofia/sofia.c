@@ -5804,7 +5804,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			switch_snprintf(st, sizeof(st), "%d", cause);
 			switch_channel_set_variable(channel, "sip_term_cause", st);
 			switch_channel_hangup(channel, cause);
-			ss_state = nua_callstate_terminated
+			ss_state = nua_callstate_terminated;
 		}
 
 
