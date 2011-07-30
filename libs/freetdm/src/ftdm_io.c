@@ -2825,9 +2825,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "No channel\n");
 	ftdm_assert_return(ftdmchan->fio != NULL, FTDM_FAIL, "No IO attached to channel\n");
 
-	ftdm_mutex_lock(ftdmchan->mutex);
+	ftdm_channel_lock(ftdmchan);
 
-	switch(command) {
+	switch (command) {
 
 	case FTDM_COMMAND_ENABLE_CALLERID_DETECT:
 		{
@@ -3278,12 +3278,31 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
+	case FTDM_COMMAND_GET_IOSTATS:
+		{
+			if (!obj) {
+				GOTO_STATUS(done, FTDM_EINVAL);
+			}
+			memcpy(obj, &ftdmchan->iostats, sizeof(ftdmchan->iostats));
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
+	case FTDM_COMMAND_SWITCH_IOSTATS:
+		{
+			ftdm_bool_t enable = *(ftdm_bool_t *)obj;
+			if (enable) {
+				ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
+			} else {
+				ftdm_channel_clear_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS);
+			}
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
 	default:
 		break;
 	}
 
 	if (!ftdmchan->fio->command) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "method not implemented");
 		ftdm_log(FTDM_LOG_ERROR, "no command function defined by the I/O freetdm module!\n");	
 		GOTO_STATUS(done, FTDM_FAIL);
 	}
@@ -3291,11 +3310,12 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
     	status = ftdmchan->fio->command(ftdmchan, command, obj);
 
 	if (status == FTDM_NOTIMPL) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "I/O command %d not implemented in backend", command);
 		ftdm_log(FTDM_LOG_ERROR, "I/O backend does not support command %d!\n", command);	
 	}
+
 done:
-	ftdm_mutex_unlock(ftdmchan->mutex);
+	ftdm_channel_unlock(ftdmchan);
+
 	return status;
 
 }

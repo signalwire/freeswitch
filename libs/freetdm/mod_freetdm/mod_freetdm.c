@@ -4346,6 +4346,76 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void exec_io_command(const char *cmd, switch_stream_handle_t *stream, ftdm_channel_t *fchan)
+{
+	int enable = 0;
+	ftdm_channel_iostats_t stats;
+	if (!strcasecmp("enable", cmd)) {
+		enable = 1;
+		ftdm_channel_command(fchan, FTDM_COMMAND_SWITCH_IOSTATS, &enable);
+	} else if (!strcasecmp("disable", cmd)) {
+		enable = 0;
+		ftdm_channel_command(fchan, FTDM_COMMAND_SWITCH_IOSTATS, &enable);
+	} else if (!strcasecmp("flush", cmd)) {
+		ftdm_channel_command(fchan, FTDM_COMMAND_FLUSH_IOSTATS, NULL);
+	} else {
+		ftdm_channel_command(fchan, FTDM_COMMAND_GET_IOSTATS, &stats);
+		stream->write_function(stream, "-- IO statistics for channel %d:%d --\n", 
+				ftdm_channel_get_span_id(fchan), ftdm_channel_get_id(fchan));
+		stream->write_function(stream, "Rx errors: %u\n", stats.rx.errors);
+		stream->write_function(stream, "Rx queue size: %u\n", stats.rx.queue_size);
+		stream->write_function(stream, "Rx queue len: %u\n", stats.rx.queue_len);
+		stream->write_function(stream, "Rx count: %lu\n", stats.rx.packets);
+
+		stream->write_function(stream, "Tx errors: %u\n", stats.tx.errors);
+		stream->write_function(stream, "Tx queue len: %u\n", stats.tx.queue_len);
+		stream->write_function(stream, "Tx queue len: %u\n", stats.tx.queue_len);
+		stream->write_function(stream, "Tx count: %lu\n", stats.tx.packets);
+		stream->write_function(stream, "Tx idle: %u\n", stats.tx.idle_packets);
+	}
+}
+
+static switch_status_t ftdm_cmd_iostats(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	uint32_t chan_id = 0;
+	ftdm_channel_t *chan;
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	ftdm_span_t *span = NULL;
+
+	if (argc < 3) {
+		stream->write_function(stream, "-ERR Usage: ftdm iostats enable|disable|flush|print <span_id> [<chan_id>]\n");
+		goto end;
+	}
+
+	ftdm_span_find_by_name(argv[2], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR invalid span\n");
+		goto end;
+	}
+
+	if (argc > 3) {
+		chan_id = atoi(argv[3]);
+		if (chan_id > ftdm_span_get_chan_count(span)) {
+			stream->write_function(stream, "-ERR invalid chan\n");
+			goto end;
+		}
+		chan = ftdm_span_get_channel(span, chan_id);
+		exec_io_command(argv[1], stream, chan);
+	} else {
+		iter = ftdm_span_get_chan_iterator(span, NULL);
+		for (curr  = iter; curr; curr = ftdm_iterator_next(curr)) {
+			chan = ftdm_iterator_current(curr);
+			exec_io_command(argv[1], stream, chan);
+		}
+		ftdm_iterator_free(iter);
+	}
+	stream->write_function(stream, "+OK\n");
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
 typedef switch_status_t (*ftdm_cli_function_t)(const char *cmd, switch_core_session_t *session,
 		                               switch_stream_handle_t *stream, int argc, char *argv[]);
 typedef struct ftdm_cli_entry {
@@ -4368,6 +4438,7 @@ static ftdm_cli_entry_t ftdm_cli_options[] =
 	{ "gains", "<rxgain> <txgain> <span_id|span_name> [<chan_id>]", "", ftdm_cmd_gains },
 	{ "dtmf", "on|off <span_id|span_name> [<chan_id>]", "::[on:off", ftdm_cmd_dtmf },
 	{ "queuesize", "<rxsize> <txsize> <span_id|span_name> [<chan_id>]", "", ftdm_cmd_queuesize },
+	{ "iostats", "enable|disable|flush|print <span_id|span_name> <chan_id>", "::[enable:disable:flush:print", ftdm_cmd_iostats },
 	{ "voice_detect", "[on|off] <span_id|span_name> [<chan_id>]", "::[on:off", ftdm_cmd_voice_detect },
 
 	/* Fake handlers as they are handled within freetdm library,
