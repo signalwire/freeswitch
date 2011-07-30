@@ -665,7 +665,11 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		return;
 	}
 
-	if (sip->sip_to) {
+	number = (char *) switch_channel_get_variable(channel, "callee_id_number");
+	name = (char *) switch_channel_get_variable(channel, "callee_id_name");
+
+	
+	if (zstr(number) && sip->sip_to) {
 		number = sip->sip_to->a_url->url_user;
 	}
 
