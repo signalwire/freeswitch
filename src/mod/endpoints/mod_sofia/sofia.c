@@ -2954,6 +2954,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							profile->ndlb &= ~PFLAG_NDLB_ALLOW_BAD_IANANAME;
 						}
+					} else if (!strcasecmp(var, "NDLB-allow-nondup-sdp")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
+						} else {
+							profile->ndlb &= ~PFLAG_NDLB_ALLOW_NONDUP_SDP;
+						}
 					} else if (!strcasecmp(var, "aggressive-nat-detection")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION);
@@ -3951,6 +3957,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->ndlb |= PFLAG_NDLB_ALLOW_BAD_IANANAME;
 						} else {
 							profile->ndlb &= ~PFLAG_NDLB_ALLOW_BAD_IANANAME;
+						}
+					} else if (!strcasecmp(var, "NDLB-allow-nondup-sdp")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
+						} else {
+							profile->ndlb &= ~PFLAG_NDLB_ALLOW_NONDUP_SDP;
 						}
 					} else if (!strcasecmp(var, "pass-rfc2833")) {
 						if (switch_true(val)) {
@@ -5088,7 +5100,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			sdp_parser_t *parser;
 			sdp_session_t *sdp;
 
-			if (!zstr(tech_pvt->remote_sdp_str) && !strcmp(tech_pvt->remote_sdp_str, r_sdp)) {
+			if ((profile->ndlb & PFLAG_NDLB_ALLOW_NONDUP_SDP) || !zstr(tech_pvt->remote_sdp_str) && !strcmp(tech_pvt->remote_sdp_str, r_sdp)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Duplicate SDP\n%s\n", r_sdp);
 				is_dup_sdp = 1;
 			} else {
