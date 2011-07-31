@@ -5240,6 +5240,27 @@ void sofia_glue_global_siptrace(switch_bool_t on)
 
 }
 
+void sofia_glue_global_capture(switch_bool_t on)
+{
+       switch_hash_index_t *hi;
+       const void *var;
+       void *val;
+       sofia_profile_t *pptr;
+
+       switch_mutex_lock(mod_sofia_globals.hash_mutex);
+       if (mod_sofia_globals.profile_hash) {
+               for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+                       switch_hash_this(hi, &var, NULL, &val);
+                       if ((pptr = (sofia_profile_t *) val)) {
+                               nua_set_params(pptr->nua, TPTAG_CAPT(on ? mod_sofia_globals.capture_server : NULL), TAG_END());
+                       }
+               }
+       }
+       switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+}
+
+
 void sofia_glue_global_watchdog(switch_bool_t on)
 {
 	switch_hash_index_t *hi;

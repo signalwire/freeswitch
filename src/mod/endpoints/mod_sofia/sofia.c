@@ -1793,6 +1793,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  NTATAG_SERVER_RPORT(profile->server_rport_level),
 							  NTATAG_CLIENT_RPORT(profile->client_rport_level),
 							  TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)),
+							  TPTAG_CAPT(sofia_test_flag(profile, TFLAG_CAPTURE) ? mod_sofia_globals.capture_server : NULL),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_SIPCOMPACT),
 									 NTATAG_SIPFLAGS(MSG_DO_COMPACT)),
 							  TAG_IF(profile->timer_t1, NTATAG_SIP_T1(profile->timer_t1)),
@@ -2713,6 +2714,9 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
 				}
 			}
+			else if (!strcasecmp(var, "capture-server")) {
+                                 mod_sofia_globals.capture_server = switch_core_strdup(mod_sofia_globals.pool, val);
+                        }
 		}
 	}
 
@@ -2791,6 +2795,13 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							sofia_clear_flag(profile, TFLAG_TPORT_LOG);
 						}
 						nua_set_params(profile->nua, TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)), TAG_END());
+                                        } else if (!strcasecmp(var, "sip-capture")) {
+                                                if (switch_true(val)) {
+                                                        sofia_set_flag(profile, TFLAG_CAPTURE);
+                                                } else {
+                                                        sofia_clear_flag(profile, TFLAG_CAPTURE);
+                                                }
+                                                nua_set_params(profile->nua, TPTAG_CAPT(sofia_test_flag(profile, TFLAG_CAPTURE) ? mod_sofia_globals.capture_server : NULL), TAG_END());						
 					} else if (!strcasecmp(var, "send-message-query-on-register")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
@@ -3394,6 +3405,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
 				}
 			}
+			else if (!strcasecmp(var, "capture-server")) {
+                                 mod_sofia_globals.capture_server = switch_core_strdup(mod_sofia_globals.pool, val);
+                        }
 		}
 	}
 
@@ -3485,6 +3499,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->shutdown_type = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "sip-trace") && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_TPORT_LOG);
+					} else if (!strcasecmp(var, "sip-capture") && switch_true(val)) {
+                                                sofia_set_flag(profile, TFLAG_CAPTURE);
+                                                nua_set_params(profile->nua, TPTAG_CAPT(mod_sofia_globals.capture_server), TAG_END());
 					} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 						if (switch_odbc_available()) {
 							profile->odbc_dsn = switch_core_strdup(profile->pool, val);

@@ -3434,6 +3434,17 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		goto done;
 	}
 
+        if (!strcasecmp(argv[1], "capture")) {
+               if (argc > 2) {
+                       int value = switch_true(argv[2]);
+                       nua_set_params(profile->nua, TPTAG_CAPT(value ? mod_sofia_globals.capture_server : NULL), TAG_END());
+                       stream->write_function(stream, "%s sip capturing on %s", value ? "Enabled" : "Disabled", profile->name);
+               } else {
+                       stream->write_function(stream, "Usage: sofia profile <name> capture <on/off>\n");
+               }
+               goto done;
+        }
+
 	if (!strcasecmp(argv[1], "watchdog")) {
 		if (argc > 2) {
 			int value = switch_true(argv[2]);
@@ -3898,6 +3909,7 @@ SWITCH_STANDARD_API(sofia_function)
 	static const char usage_string[] = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"sofia global siptrace <on|off>\n"
+		"sofia        capture  <on|off>\n"
 		"             watchdog <on|off>\n\n"
 		"sofia profile <name> [start | stop | restart | rescan]\n"
 		"                     flush_inbound_reg [<call_id> | <[user]@domain>] [reboot]\n"
@@ -3906,6 +3918,7 @@ SWITCH_STANDARD_API(sofia_function)
 		"                     killgw <gateway name>\n"
 		"                     [stun-auto-disable | stun-enabled] [true | false]]\n"
 		"                     siptrace <on|off>\n"
+		"                     capture  <on|off>\n"
 		"                     watchdog <on|off>\n\n"
 		"sofia <status|xmlstatus> profile <name> [reg <contact str>] | [pres <pres str>] | [user <user@domain>]\n"
 		"sofia <status|xmlstatus> gateway <name>\n\n"
@@ -3965,6 +3978,7 @@ SWITCH_STANDARD_API(sofia_function)
 		goto done;
 	} else if (!strcasecmp(argv[0], "global")) {
 		int ston = -1;
+		int cton = -1;
 		int wdon = -1;
 
 		if (argc > 1) {
@@ -4001,6 +4015,12 @@ SWITCH_STANDARD_API(sofia_function)
 				}
 			}
 
+			if (!strcasecmp(argv[1], "capture")) {
+	                        if (argc > 2) {
+                                        cton = switch_true(argv[2]);
+                                }
+                        }
+
 			if (!strcasecmp(argv[1], "watchdog")) {
 				if (argc > 2) {
 					wdon = switch_true(argv[2]);
@@ -4011,11 +4031,14 @@ SWITCH_STANDARD_API(sofia_function)
 		if (ston != -1) {
 			sofia_glue_global_siptrace(ston);
 			stream->write_function(stream, "+OK Global siptrace %s", ston ? "on" : "off");
+		} else if (cton != -1) {
+                        sofia_glue_global_capture(cton);
+                        stream->write_function(stream, "+OK Global capture %s", cton ? "on" : "off");
 		} else if (wdon != -1) {
 			sofia_glue_global_watchdog(wdon);
 			stream->write_function(stream, "+OK Global watchdog %s", wdon ? "on" : "off");
 		} else {
-			stream->write_function(stream, "-ERR Usage: siptrace <on|off>|watchdog <on|off>|debug <sla|presence|none");
+			stream->write_function(stream, "-ERR Usage: siptrace <on|off>|capture <on|off>|watchdog <on|off>|debug <sla|presence|none");
 		}
 		
 		goto done;
@@ -5208,6 +5231,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia tracelevel ::[console:alert:crit:err:warning:notice:info:debug");
 
 	switch_console_set_complete("add sofia global siptrace ::[on:off");
+	switch_console_set_complete("add sofia global capture  ::[on:off");
 	switch_console_set_complete("add sofia global watchdog ::[on:off");
 
 	switch_console_set_complete("add sofia global debug ::[presence:sla:none");
@@ -5228,6 +5252,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles killgw ::sofia::list_profile_gateway");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace on");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles siptrace off");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles capture on");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles capture off");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles watchdog on");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles watchdog off");
 

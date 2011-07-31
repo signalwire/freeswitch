@@ -21,6 +21,7 @@
 	<!-- If you want FreeSWITCH to shutdown if this profile fails to load, uncomment the next line. -->
 	<!-- <param name="shutdown-on-fail" value="true"/> -->
     <param name="sip-trace" value="no"/>
+    <param name="sip-capture" value="no"/>        
     <param name="rfc2833-pt" value="101"/>
     <param name="sip-port" value="$${external_sip_port}"/>
     <param name="dialplan" value="XML"/>
