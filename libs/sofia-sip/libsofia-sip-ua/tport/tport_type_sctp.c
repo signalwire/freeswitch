@@ -260,6 +260,9 @@ int tport_recv_sctp(tport_t *self)
   if (self->tp_master->mr_dump_file)
     tport_dump_iovec(self, msg, N, iovec, veclen, "recv", "from");
 
+ if (self->tp_master->mr_capt_sock)
+     tport_capt_msg(self, msg, N, iovec, veclen, "recv");
+     
   msg_recv_commit(msg, N, 0);  /* Mark buffer as used */
 
   return 2;

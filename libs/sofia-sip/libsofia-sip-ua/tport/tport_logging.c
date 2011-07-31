@@ -33,9 +33,11 @@
  */
 
 #include "config.h"
+#include "msg_internal.h"
 
 #include "tport_internal.h"
 
+#include <sofia-sip/su.h>
 #include <sofia-sip/su_string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -70,6 +72,21 @@ extern char const TPORT_LOG[];	/* dummy declaration for Doxygen */
 extern char const TPORT_DUMP[];	/* dummy declaration for Doxygen */
 #endif
 
+/**@var TPORT_CAPT
+ *
+ * Environment variable for transport data capturing.
+ *
+ * The received and sent data is dumped to the capture server specified by TPORT_CAPT
+ * environment variable. This can be used to save message traces into database and help
+ * hairy debugging tasks.
+ *
+ * @sa TPORT_LOG, TPORT_DEBUG, TPORT_CAPT, tport_log
+ */
+#ifdef DOXYGEN
+extern char const TPORT_CAPT[];	/* dummy declaration for Doxygen */
+#endif
+
+
 /**@var TPORT_DEBUG
  *
  * Environment variable determining the debug log level for @b tport module.
@@ -93,31 +110,140 @@ su_log_t tport_log[] = {
 };
 
 
+
 /** Initialize logging. */
 int tport_open_log(tport_master_t *mr, tagi_t *tags)
 {
   int log_msg = mr->mr_log != 0;
   char const *dump = NULL;
+  char const *capt = NULL;;
   int n;
-
+  
+  if(mr->mr_capt_name) capt = mr->mr_capt_name;
+  
   n = tl_gets(tags,
 	      TPTAG_LOG_REF(log_msg),
 	      TPTAG_DUMP_REF(dump),
+	      TPTAG_CAPT_REF(capt),
 	      TAG_END());
 
   if (getenv("MSG_STREAM_LOG") != NULL || getenv("TPORT_LOG") != NULL)
     log_msg = 1;
   mr->mr_log = log_msg ? MSG_DO_EXTRACT_COPY : 0;
 
+  if (getenv("TPORT_CAPT"))
+    capt = getenv("TPORT_CAPT");
   if (getenv("MSG_DUMP"))
     dump = getenv("MSG_DUMP");
   if (getenv("TPORT_DUMP"))
     dump = getenv("TPORT_DUMP");
+ 
+  if(capt) {
+
+        char *captname, *p, *host_s;
+        char port[10];
+        su_addrinfo_t *ai = NULL, hints[1] = {{ 0 }};
+        unsigned len =0;
+
+        if (mr->mr_capt_name && mr->mr_capt_sock && strcmp(capt, mr->mr_capt_name) == 0)                
+              return n;
+
+        captname = su_strdup(mr->mr_home, capt);
+        if (captname == NULL)
+              return n;
+                           
+        if(strncmp(captname, "udp:",4) != 0) {
+              su_log("tport_open_log: capturing. Only udp protocol supported [%s]\n", captname);          
+              return n;
+        } 
+        
+        /* separate proto and host */
+        p = captname+4;
+        if( (*(p)) == '\0') {
+                su_log("malformed ip address\n");
+                return n;
+        }
+        host_s = p;
+
+        if( (p = strrchr(p+1, ':')) == 0 ) {
+                su_log("no host or port specified\n");
+                return n;
+        }
+ 
+        /*the address contains a port number*/
+        *p = '\0';
+        p++;
+
+        if (atoi(p) <1024  || atoi(p)>65536)
+        {
+                su_log("invalid port number; must be in [1024,65536]\n");
+                return n;
+        }
+
+        memcpy(port, p, sizeof(p));
+                        
+        *p = '\0'; 
+        
+        /* check if we have [] */
+        if (host_s[0] == '[') {
+              len = strlen(host_s + 1) - 1;              
+              if(host_s[len+1] != ']') {
+                su_log("bracket not closed\n");
+                return n;            
+            }            
+            memmove(host_s, host_s + 1, len);
+            host_s[len] = '\0';
+        }                              
+
+        /* and again */
+        captname = su_strdup(mr->mr_home, capt);
+        if (captname == NULL) return n;
+        
+        su_free(mr->mr_home, mr->mr_capt_name);
+        mr->mr_capt_name = captname;
+
+        if (mr->mr_capt_sock)
+          su_close(mr->mr_capt_sock), mr->mr_capt_sock = 0;        
+
+        /* HINTS && getaddrinfo */
+        hints->ai_flags = AI_NUMERICSERV;
+        hints->ai_family = AF_UNSPEC; 
+        hints->ai_socktype = SOCK_DGRAM;
+        hints->ai_protocol = IPPROTO_UDP;
+        
+
+        if (su_getaddrinfo(host_s, port, hints, &ai)) {
+            su_perror("capture: su_getaddrinfo()");
+            return n;
+        }
+        
+	mr->mr_capt_sock = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+	if (mr->mr_capt_sock == INVALID_SOCKET) {
+	    su_perror("capture: invalid socket");
+	    return n;
+	}
+
+	su_setblocking(mr->mr_capt_sock, 0);         /* Don't block */
+
+	if (connect(mr->mr_capt_sock, ai->ai_addr, (socklen_t)(ai->ai_addrlen)) == -1) {
+	    if (errno != EINPROGRESS) {
+		    su_perror("capture: socket connect");
+		    return n;
+	    }	                
+	}
+		
+	su_freeaddrinfo(ai);        
+  }
+  else if(mr->mr_capt_sock) {
+      /* close capture server*/
+      su_close(mr->mr_capt_sock);
+      mr->mr_capt_sock = 0;
+  }
 
   if (dump) {
     time_t now;
     char *dumpname;
-
+    
     if (mr->mr_dump && strcmp(dump, mr->mr_dump) == 0)
       return n;
     dumpname = su_strdup(mr->mr_home, dump);
@@ -213,6 +339,115 @@ void tport_dump_iovec(tport_t const *self, msg_t *msg,
   fflush(mr->mr_dump_file);
 }
 
+/** Capture the data from the iovec */
+void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n, 
+                    su_iovec_t const iov[], size_t iovused, char const *what)
+{
+
+   int buflen = 0, error;
+   su_sockaddr_t const *su, *su_self;
+   struct hep_hdr hep_header;
+   struct hep_iphdr hep_ipheader;   
+#if SU_HAVE_IN6
+   struct hep_ip6hdr hep_ip6header;
+#endif   
+   int eth_frame_len = 8000;
+   void* buffer;
+   size_t i, dst = 0;   
+   tport_master_t *mr;
+
+   assert(self); assert(msg);
+
+   su = msg_addr(msg);
+   su_self = self->tp_addr;
+
+   mr = self->tp_master;
+
+   /* If we don't have socket, go out */
+   if (!mr->mr_capt_sock) {
+         su_log("error: capture socket is not open\n");
+         return;
+   }
+
+   /*buffer for ethernet frame*/
+   buffer = (void*)malloc(eth_frame_len);
+
+   /* VOIP Header */   
+   hep_header.hp_v =  1;
+   hep_header.hp_f = su->su_family; 
+   /* Header Length */   
+   hep_header.hp_l = sizeof(struct hep_hdr);   
+   
+   /* PROTOCOL */
+   if(strcmp(self->tp_name->tpn_proto, "tcp") == 0) hep_header.hp_p = IPPROTO_TCP;
+   else if(strcmp(self->tp_name->tpn_proto, "tls") == 0) hep_header.hp_p = IPPROTO_IDP; /* FAKE*/
+   else if(strcmp(self->tp_name->tpn_proto, "sctp") == 0) hep_header.hp_p = IPPROTO_SCTP;
+   else hep_header.hp_p = IPPROTO_UDP; /* DEFAULT UDP */
+
+   /* Check destination */         
+   if(strncmp("recv", what, 4) == 0) dst = 1;
+      
+   /* copy destination and source IPs*/
+   if(su->su_family == AF_INET) {
+
+       memcpy(dst ? &hep_ipheader.hp_dst : &hep_ipheader.hp_src, &su->su_sin.sin_addr.s_addr, sizeof(su->su_sin.sin_addr.s_addr));
+       memcpy(dst ? &hep_ipheader.hp_src : &hep_ipheader.hp_dst, &su_self->su_sin.sin_addr.s_addr, sizeof(su_self->su_sin.sin_addr.s_addr));
+       hep_header.hp_l += sizeof(struct hep_iphdr);
+   }
+#if SU_HAVE_IN6
+   else {   
+       memcpy(dst ? &hep_ip6header.hp6_dst : &hep_ip6header.hp6_src, &su->su_sin.sin_addr.s_addr, sizeof(su->su_sin.sin_addr.s_addr));
+       memcpy(dst ? &hep_ip6header.hp6_src : &hep_ip6header.hp6_dst, &su_self->su_sin.sin_addr.s_addr, sizeof(su_self->su_sin.sin_addr.s_addr));
+       hep_header.hp_l += sizeof(struct hep_ip6hdr);       
+   }
+#endif     
+
+   hep_header.hp_dport = dst ? su->su_port : htons(atoi(self->tp_port));   
+   hep_header.hp_sport = dst ? htons(atoi(self->tp_port)) : su->su_port;
+
+      
+   /* Copy hepheader */
+   memset(buffer, '\0', eth_frame_len);
+   memcpy((void*)buffer, &hep_header, sizeof(struct hep_hdr));
+   buflen = sizeof(struct hep_hdr);
+   
+   if(su->su_family == AF_INET) {
+       memcpy((void*)buffer + buflen, &hep_ipheader, sizeof(struct hep_iphdr));
+       buflen += sizeof(struct hep_iphdr);      
+   }
+#if SU_HAVE_IN6   
+   else {
+       memcpy((void*)buffer+buflen, &hep_ip6header, sizeof(struct hep_ip6hdr));
+       buflen += sizeof(struct hep_ip6hdr);   
+   }   
+#endif             
+   
+   for (i = 0; i < iovused && n > 0; i++) {
+       size_t len = iov[i].mv_len;
+       if (len > n)
+            len = n;   
+       /* if the packet too big for us */
+       if((buflen + len) > eth_frame_len) 
+              break;
+
+      memcpy((void*)(buffer + buflen) , (void*)iov[i].mv_base, len);
+      buflen +=len;
+      n -= len;
+   }
+   
+   /* check if we have error i.e. capture server is down */
+   if ((error = su_soerror(mr->mr_capt_sock))) {
+      su_perror("capture socket error");
+      return;
+   }
+
+   su_send(mr->mr_capt_sock, buffer, buflen, 0);   
+
+   /* Now we release it */
+   if(buffer) free(buffer);  
+}
+
+
 /** Log the message. */
 void tport_log_msg(tport_t *self, msg_t *msg,
 		   char const *what, char const *via,
@@ -223,6 +458,7 @@ void tport_log_msg(tport_t *self, msg_t *msg,
   size_t i, iovlen = msg_iovec(msg, iov, 80);
   size_t linelen = 0, n, logged = 0, truncated = 0;
   int skip_lf = 0;
+
 
 #define MSG_SEPARATOR \
   "------------------------------------------------------------------------\n"

@@ -554,6 +554,19 @@ tag_typedef_t tptag_log = INTTAG_TYPEDEF(log);
  */
 tag_typedef_t tptag_dump = STRTAG_TYPEDEF(dump);
 
+/**@def TPTAG_CAPT(x)
+ *
+ * URL for capturing unparsed messages from transport.
+ *
+ * Use with tport_tcreate(), nta_agent_create(), nua_create(),
+ * nth_engine_create(), or initial nth_site_create().
+ *
+ * @sa #TPORT_CAPT environment variable, TPTAG_LOG().
+ *
+ */
+tag_typedef_t tptag_capt = STRTAG_TYPEDEF(capt);
+
+
 /** Mark transport as trusted.
  *
  * @note Not implemented by tport module.
