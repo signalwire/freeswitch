@@ -114,10 +114,10 @@ su_log_t tport_log[] = {
 /** Initialize logging. */
 int tport_open_log(tport_master_t *mr, tagi_t *tags)
 {
+  int n;
   int log_msg = mr->mr_log != 0;
   char const *dump = NULL;
   char const *capt = NULL;;
-  int n;
   
   if(mr->mr_capt_name) capt = mr->mr_capt_name;
   
@@ -352,7 +352,7 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
    struct hep_ip6hdr hep_ip6header;
 #endif   
    int eth_frame_len = 8000;
-   void* buffer;
+   char* buffer;
    size_t i, dst = 0;   
    tport_master_t *mr;
 
@@ -408,16 +408,16 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
       
    /* Copy hepheader */
    memset(buffer, '\0', eth_frame_len);
-   memcpy((void*)buffer, &hep_header, sizeof(struct hep_hdr));
+   memcpy(buffer, &hep_header, sizeof(struct hep_hdr));
    buflen = sizeof(struct hep_hdr);
    
    if(su->su_family == AF_INET) {
-       memcpy((void*)buffer + buflen, &hep_ipheader, sizeof(struct hep_iphdr));
+       memcpy(buffer + buflen, &hep_ipheader, sizeof(struct hep_iphdr));
        buflen += sizeof(struct hep_iphdr);      
    }
 #if SU_HAVE_IN6   
    else {
-       memcpy((void*)buffer+buflen, &hep_ip6header, sizeof(struct hep_ip6hdr));
+       memcpy(buffer+buflen, &hep_ip6header, sizeof(struct hep_ip6hdr));
        buflen += sizeof(struct hep_ip6hdr);   
    }   
 #endif             
@@ -430,7 +430,7 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
        if((buflen + len) > eth_frame_len) 
               break;
 
-      memcpy((void*)(buffer + buflen) , (void*)iov[i].mv_base, len);
+      memcpy(buffer + buflen , (void*)iov[i].mv_base, len);
       buflen +=len;
       n -= len;
    }

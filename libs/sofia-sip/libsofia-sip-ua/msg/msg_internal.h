@@ -116,12 +116,12 @@ struct msg_buffer_s {
 
 
 struct hep_hdr{
-    u_int8_t hp_v;             /* version */
-    u_int8_t hp_l;             /* length */
-    u_int8_t hp_f;             /* family */
-    u_int8_t hp_p;             /* protocol */
-    u_int16_t hp_sport;        /* source port */
-    u_int16_t hp_dport;        /* destination port */
+    uint8_t hp_v;             /* version */
+    uint8_t hp_l;             /* length */
+    uint8_t hp_f;             /* family */
+    uint8_t hp_p;             /* protocol */
+    uint16_t hp_sport;        /* source port */
+    uint16_t hp_dport;        /* destination port */
 };
 
 
