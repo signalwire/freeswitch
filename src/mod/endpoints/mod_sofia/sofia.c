@@ -742,18 +742,6 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		goto end;
 	}
 
-	if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
-		const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
-		switch_channel_set_profile_var(channel, "callee_id_name", name);
-		switch_channel_set_profile_var(channel, "callee_id_number", number);
-		if (uuid) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
-		}
-		switch_channel_event_set_data(channel, event);
-		switch_event_fire(&event);
-	}
-
 	caller_profile = switch_channel_get_caller_profile(channel);
 
 	if (!strcmp(caller_profile->callee_id_name, name) && !strcmp(caller_profile->callee_id_number, number)) {
@@ -768,6 +756,20 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 			switch_channel_flip_cid(channel);
 		}
 	}
+
+
+	if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
+		const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
+		if (uuid) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
+		}
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
+
+
+
 
 	if (send) {
 		sofia_send_callee_id(session, NULL, NULL);
