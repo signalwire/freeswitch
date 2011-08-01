@@ -1299,7 +1299,7 @@ static void core_event_handler(switch_event_t *event)
 		break;
 	case SWITCH_EVENT_CALL_UPDATE:
 		{
-			const char *name = NULL, *number = NULL, *direction;
+			const char *name = NULL, *number = NULL, *direction, *cid_name = NULL, *cid_num = NULL;
 			int recv = 0;
 
 			direction = switch_event_get_header(event, "direction");
@@ -1309,8 +1309,9 @@ static void core_event_handler(switch_event_t *event)
 				name = switch_event_get_header(event, "callee-name");
 				number = switch_event_get_header(event, "callee-number");
 			}
-			
-			if (!name) {
+
+
+  			if (!name) {
 				name = switch_event_get_header(event, "caller-callee-id-name");
 			}
 
@@ -1318,22 +1319,38 @@ static void core_event_handler(switch_event_t *event)
 				number = switch_event_get_header(event, "caller-callee-id-number");
 			}
 
+
+			cid_name = switch_event_get_header(event, "caller-name");
+			cid_num = switch_event_get_header(event, "caller-number");
+
+			if (!cid_name) {
+				cid_name = switch_event_get_header(event, "caller-caller-id-name");
+			}
+
+			if (!cid_num) {
+				cid_num = switch_event_get_header(event, "caller-caller-id-number");
+			}
+
 			if (!zstr(name) && !zstr(number)) {
 				new_sql() = switch_mprintf("update channels set state='%s',callstate='%s',callee_name='%q',"
-										   "callee_num='%q',callee_direction='%q' where uuid='%s' and hostname='%q'",
+										   "callee_num='%q',callee_direction='%q',cid_name='%q',cid_num='%q' where uuid='%s' and hostname='%q'",
 										   switch_event_get_header_nil(event, "channel-state"),
 										   switch_event_get_header_nil(event, "channel-call-state"),
 										   switch_str_nil(name),
 										   switch_str_nil(number),
 										   switch_event_get_header_nil(event, "direction"),
+										   switch_str_nil(cid_name),
+										   switch_str_nil(cid_num),
 										   switch_event_get_header_nil(event, "unique-id"), switch_core_get_switchname());
 
 				name = switch_event_get_header(event, "callee-name");
 				number = switch_event_get_header(event, "callee-number");
 
 				if (name && number && recv) {
-					new_sql() = switch_mprintf("update calls set callee_cid_name='%q',callee_cid_num='%q' where caller_uuid='%q'",
-											   name, number, switch_event_get_header_nil(event, "unique-id"));
+					new_sql() = switch_mprintf("update calls set callee_cid_name='%q',callee_cid_num='%q',caller_cid_name='%q',caller_cid_num='%q'"
+											   " where caller_uuid='%q'",
+											   name, number, switch_str_nil(cid_name), switch_str_nil(cid_num),
+											   switch_event_get_header_nil(event, "unique-id"));
 
 				}
 			}
