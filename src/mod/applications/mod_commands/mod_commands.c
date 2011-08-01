@@ -4445,6 +4445,9 @@ SWITCH_STANDARD_API(uuid_fileman_function)
 				if (switch_ivr_get_file_handle(psession, &fh) == SWITCH_STATUS_SUCCESS) {
 					switch_ivr_process_fh(psession, cmd, fh);
 					switch_ivr_release_file_handle(psession, &fh);
+					stream->write_function(stream, "+OK\n");
+				} else {
+					stream->write_function(stream, "-ERR No File Handle!\n");
 				}
 
 				switch_core_session_rwunlock(psession);
