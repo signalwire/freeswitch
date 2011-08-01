@@ -347,9 +347,9 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
    int buflen = 0, error;
    su_sockaddr_t const *su, *su_self;
    struct hep_hdr hep_header;
-   struct hep_iphdr hep_ipheader;   
+   struct hep_iphdr hep_ipheader = {0,0,0,0,0,0};   
 #if SU_HAVE_IN6
-   struct hep_ip6hdr hep_ip6header;
+   struct hep_ip6hdr hep_ip6header = {0,0,0,0,0,0};
 #endif   
    int eth_frame_len = 8000;
    char* buffer;
