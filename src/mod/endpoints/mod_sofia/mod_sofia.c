@@ -2016,8 +2016,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
 							const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "SEND");
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Callee-Name", name);
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Callee-Number", number);
+
+							switch_channel_set_profile_var(channel, "callee_id_name", name);
+							switch_channel_set_profile_var(channel, "callee_id_number", number);
+							
 							if (uuid) {
 								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
 							}

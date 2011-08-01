@@ -3906,7 +3906,7 @@ SWITCH_STANDARD_API(alias_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|distinct_channels|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits"
+#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|calls|detailed_calls|bridged_calls|detailed_bridged_calls|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -3995,7 +3995,7 @@ SWITCH_STANDARD_API(show_function)
 			sprintf(sql, "select name, description, syntax, ikey from interfaces where hostname='%s' and type = '%s' and description != '' order by type,name", hostname, command);
 		}
 	} else if (!strcasecmp(command, "calls")) {
-		sprintf(sql, "select * from calls where hostname='%s' order by call_created_epoch", hostname);
+		sprintf(sql, "select * from basic_calls where hostname='%s' order by call_created_epoch", hostname);
 		if (argv[1] && !strcasecmp(argv[1], "count")) {
 			holder.justcount = 1;
 			if (argv[3] && !strcasecmp(argv[2], "as")) {
@@ -4043,19 +4043,18 @@ SWITCH_STANDARD_API(show_function)
 				as = argv[3];
 			}
 		}
-	} else if (!strcasecmp(command, "distinct_channels")) {
-		sprintf(sql, "select * from channels left join calls on "
-				"channels.uuid=calls.caller_uuid where channels.hostname='%s' and channels.uuid not in (select callee_uuid from calls where hostname='%s') order by created_epoch", hostname, hostname);
-		if (argv[2] && !strcasecmp(argv[1], "as")) {
-			as = argv[2];
-		}
 	} else if (!strcasecmp(command, "detailed_calls")) {
 		sprintf(sql, "select * from detailed_calls where hostname='%s' order by created_epoch", hostname);
 		if (argv[2] && !strcasecmp(argv[1], "as")) {
 			as = argv[2];
 		}
-	} else if (!strcasecmp(command, "detailed_calls")) {
-		sprintf(sql, "select * from detailed_calls where hostname='%s' order by created_epoch", hostname);
+	} else if (!strcasecmp(command, "bridged_calls")) {
+		sprintf(sql, "select * from basic_calls where b_uuid is not null and hostname='%s' order by created_epoch", hostname);
+		if (argv[2] && !strcasecmp(argv[1], "as")) {
+			as = argv[2];
+		}
+	} else if (!strcasecmp(command, "detailed_bridged_calls")) {
+		sprintf(sql, "select * from detailed_calls where b_uuid is not null and hostname='%s' order by created_epoch", hostname);
 		if (argv[2] && !strcasecmp(argv[1], "as")) {
 			as = argv[2];
 		}
