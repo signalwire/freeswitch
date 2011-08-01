@@ -208,6 +208,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 
 		if (!noptime) {
 			if (!cur_ptime) {
+#if 0
 				if (ptime) {
 					if (ptime != imp->microseconds_per_packet / 1000) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
@@ -225,6 +226,11 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 				} else {
 					ptime = imp->microseconds_per_packet / 1000;
 				}
+#else
+				if (!ptime) {
+					ptime = imp->microseconds_per_packet / 1000;
+				}
+#endif
 			} else {
 				if ((imp->microseconds_per_packet / 1000) != cur_ptime) {
 					continue;
@@ -544,7 +550,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 	} else if (tech_pvt->num_codecs) {
 		int i;
 		int cur_ptime = 0, this_ptime = 0, cng_type = 0;
-
+		const char *mult;
 
 		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
 			cng_type = tech_pvt->cng_pt;
@@ -553,8 +559,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 				tech_pvt->cng_pt = 0;
 			}
 		}
-
-		if (!switch_true(switch_channel_get_variable(tech_pvt->channel, "sdp_m_per_ptime"))) {
+		
+		mult = switch_channel_get_variable(tech_pvt->channel, "sdp_m_per_ptime");
+		
+		if (mult && switch_false(mult)) {
 			char *bp = buf;
 			
 			if ((!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE))) {
