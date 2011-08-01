@@ -1688,6 +1688,73 @@ static char create_registrations_sql[] =
 	"create index regindex1 on registrations (reg_user,realm,hostname);\n";
 	
 
+
+static char detailed_calls_sql[] =
+	"create view detailed_calls as select\n"
+	"a.uuid,\n"
+	"a.direction direction,\n"
+	"a.created created,\n"
+	"a.created_epoch created_epoch,\n"
+	"a.name name,\n"
+	"a.state state,\n"
+	"a.cid_name cid_name,\n"
+	"a.cid_num cid_num,\n"
+	"a.ip_addr ip_addr,\n"
+	"a.dest dest,\n"
+	"a.application application,\n"
+	"a.application_data application_data,\n"
+	"a.dialplan dialplan,\n"
+	"a.context context,\n"
+	"a.read_codec read_codec,\n"
+	"a.read_rate read_rate,\n"
+	"a.read_bit_rate read_bit_rate,\n"
+	"a.write_codec write_codec,\n"
+	"a.write_rate write_rate,\n"
+	"a.write_bit_rate write_bit_rate,\n"
+	"a.secure secure,\n"
+	"a.hostname hostname,\n"
+	"a.presence_id presence_id,\n"
+	"a.presence_data presence_data,\n"
+	"a.callstate callstate,\n"
+	"a.callee_name callee_name,\n"
+	"a.callee_num callee_num,\n"
+	"a.callee_direction callee_direction,\n"
+	"a.call_uuid call_uuid,\n"
+	"b.uuid b_uuid,\n"
+	"b.direction b_direction,\n"
+	"b.created b_created,\n"
+	"b.created_epoch b_created_epoch,\n"
+	"b.name b_name,\n"
+	"b.state b_state,\n"
+	"b.cid_name b_cid_name,\n"
+	"b.cid_num b_cid_num,\n"
+	"b.ip_addr b_ip_addr,\n"
+	"b.dest b_dest,\n"
+	"b.application b_application,\n"
+	"b.application_data b_application_data,\n"
+	"b.dialplan b_dialplan,\n"
+	"b.context b_context,\n"
+	"b.read_codec b_read_codec,\n"
+	"b.read_rate b_read_rate,\n"
+	"b.read_bit_rate b_read_bit_rate,\n"
+	"b.write_codec b_write_codec,\n"
+	"b.write_rate b_write_rate,\n"
+	"b.write_bit_rate b_write_bit_rate,\n"
+	"b.secure b_secure,\n"
+	"b.hostname b_hostname,\n"
+	"b.presence_id b_presence_id,\n"
+	"b.presence_data b_presence_data,\n"
+	"b.callstate b_callstate,\n"
+	"b.callee_name b_callee_name,\n"
+	"b.callee_num b_callee_num,\n"
+	"b.callee_direction b_callee_direction,\n"
+	"b.call_uuid b_call_uuid\n"
+	"from channels a \n"
+	"left join calls c on a.uuid = c.caller_uuid and a.hostname = c.hostname\n"
+	"left join channels b on b.uuid = c.callee_uuid and b.hostname = c.hostname\n"
+	"where a.uuid = c.caller_uuid or a.uuid not in (select callee_uuid from calls);\n";
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
 															 const char *network_ip, const char *network_port, const char *network_proto)
 {
@@ -1828,6 +1895,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		{
 			switch_cache_db_execute_sql(dbh, "drop table channels", NULL);
 			switch_cache_db_execute_sql(dbh, "drop table calls", NULL);
+			switch_cache_db_execute_sql(dbh, "drop view detailed_calls", NULL);
 			switch_cache_db_execute_sql(dbh, "drop table interfaces", NULL);
 			switch_cache_db_execute_sql(dbh, "drop table tasks", NULL);
 			switch_cache_db_execute_sql(dbh, "PRAGMA synchronous=OFF;", NULL);
@@ -1852,6 +1920,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		{
 			char *err;
 			switch_cache_db_test_reactive(dbh, "select call_uuid, read_bit_rate from channels", "DROP TABLE channels", create_channels_sql);
+			switch_cache_db_test_reactive(dbh, "select * from detailed_calls", "DROP VIEW detailed channels", detailed_calls_sql);
 			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
 				switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
 			} else {
@@ -1887,6 +1956,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			switch_cache_db_execute_sql(dbh, create_calls_sql, NULL);
 			switch_cache_db_execute_sql(dbh, create_interfaces_sql, NULL);
 			switch_cache_db_execute_sql(dbh, create_tasks_sql, NULL);
+			switch_cache_db_execute_sql(dbh, detailed_calls_sql, NULL);
 		}
 		break;
 	}
