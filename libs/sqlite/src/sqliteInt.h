@@ -297,7 +297,7 @@ static inline char *strndup_lite(const char *s, size_t n)
 #define sqliteMalloc(x)          zmalloc(x)//sqlite3Malloc(x,1)
 #define sqliteMallocRaw(x)       malloc(x)//sqlite3MallocRaw(x,1)
 #define sqliteRealloc(x,y)       realloc(x, y)//sqlite3Realloc(x,y)
-#define sqliteStrDup(x)          (x?strdup(x):NULL)//sqlite3StrDup(x)
+#define sqliteStrDup(x)          (x?strdup(x):strdup(""))//sqlite3StrDup(x)
 #define sqliteStrNDup(x,y)       strndup_lite(x,y) //sqlite3StrNDup(x,y)
 #define sqliteReallocOrFree(x,y) sqlite3ReallocOrFree(x,y)
 
