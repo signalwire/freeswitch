@@ -2317,17 +2317,25 @@ SWITCH_STANDARD_API(dual_transfer_function)
 	dest1 = argv[1];
 	dest2= argv[2];
 
-	if ((dp1 = strchr(dest1, '/'))) {
+	if ((dp1 = strstr(dest1, "/inline")) && *(dp1 + 7) == '\0') {
 		*dp1++ = '\0';
-		if ((context1 = strchr(dp1, '/'))) {
-			*context1++ = '\0';
+	} else {
+		if ((dp1 = strchr(dest1, '/'))) {
+			*dp1++ = '\0';
+			if ((context1 = strchr(dp1, '/'))) {
+				*context1++ = '\0';
+			}
 		}
 	}
 
-	if ((dp2 = strchr(dest2, '/'))) {
+	if ((dp2 = strstr(dest1, "/inline")) && *(dp2 + 7) == '\0') {
 		*dp2++ = '\0';
-		if ((context2 = strchr(dp2, '/'))) {
-			*context2++ = '\0';
+	} else {
+		if ((dp2 = strchr(dest2, '/'))) {
+			*dp2++ = '\0';
+			if ((context2 = strchr(dp2, '/'))) {
+				*context2++ = '\0';
+			}
 		}
 	}
 
