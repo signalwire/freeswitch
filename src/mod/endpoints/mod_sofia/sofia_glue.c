@@ -3049,7 +3049,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		flags &= ~SWITCH_RTP_FLAG_BYTESWAP;
 	}
 
-
 	if (tech_pvt->rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		//const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 		//const char *port = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
@@ -3117,7 +3116,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		const char *rport = NULL;
 		switch_port_t remote_rtcp_port = 0;
 
-		sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
+		
 
 		if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port"))) {
 			remote_rtcp_port = (switch_port_t)atoi(rport);
@@ -3598,6 +3597,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
  end:
 
+	sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
 	sofia_glue_tech_track(tech_pvt->profile, tech_pvt->session);
 
 

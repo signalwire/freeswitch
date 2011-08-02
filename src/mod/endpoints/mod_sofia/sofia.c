@@ -3488,6 +3488,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->local_network = "localnet.auto";
 				sofia_set_flag(profile, TFLAG_ENABLE_SOA);
 				sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
+				profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -5109,11 +5110,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
 	if (session) {
-		if ((switch_channel_test_flag(channel, CF_EARLY_MEDIA) || switch_channel_test_flag(channel, CF_ANSWERED)) && (status == 180 || status == 183)) {
+		if ((switch_channel_test_flag(channel, CF_EARLY_MEDIA) || switch_channel_test_flag(channel, CF_ANSWERED)) && (status == 180 || status == 183) && !r_sdp) {
 			/* Must you send 180 after 183 w/sdp ? sheesh */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel %s skipping state [%s][%d]\n",
 							  switch_channel_get_name(channel), nua_callstate_name(ss_state), status);
 			goto done;
+		} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA) && (status == 180 || status == 183) && r_sdp) {
+			sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel %s entering state [%s][%d]\n",
@@ -5211,7 +5214,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 				switch_channel_mark_pre_answered(channel);
 				sofia_set_flag(tech_pvt, TFLAG_SDP);
-				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) || sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 						goto done;
 					}
@@ -5632,6 +5635,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
+				sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+
 				if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
