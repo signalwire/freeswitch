@@ -416,11 +416,15 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
        buflen += sizeof(struct hep_iphdr);      
    }
 #if SU_HAVE_IN6   
-   else {
+   else if(su->su_family == AF_INET6) {
        memcpy(buffer+buflen, &hep_ip6header, sizeof(struct hep_ip6hdr));
        buflen += sizeof(struct hep_ip6hdr);   
    }   
-#endif             
+#endif 
+   else {
+       su_perror("error: tport_logging: capture: unsupported protocol family");
+       goto done;
+   }           
    
    for (i = 0; i < iovused && n > 0; i++) {
        size_t len = iov[i].mv_len;
@@ -437,14 +441,16 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
    
    /* check if we have error i.e. capture server is down */
    if ((error = su_soerror(mr->mr_capt_sock))) {
-      su_perror("capture socket error");
-      return;
+      su_perror("error: tport_logging: capture socket error");
+      goto done;
    }
 
    su_send(mr->mr_capt_sock, buffer, buflen, 0);   
 
+done:
    /* Now we release it */
    if(buffer) free(buffer);  
+   return;
 }
 
 
