@@ -1293,14 +1293,12 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CALL_UPDATE:
 		{
 			new_sql() = switch_mprintf("update channels set callee_name='%q',callee_num='%q',callee_direction='%q',"
-									   "cid_name='%q',cid_num='%q',callee_name='%q',callee_num='%q' where uuid='%s' and hostname='%q'",
+									   "cid_name='%q',cid_num='%q' where uuid='%s' and hostname='%q'",
 									   switch_event_get_header_nil(event, "caller-callee-id-name"),
 									   switch_event_get_header_nil(event, "caller-callee-id-number"),
 									   switch_event_get_header_nil(event, "direction"),
 									   switch_event_get_header_nil(event, "caller-caller-id-name"),
 									   switch_event_get_header_nil(event, "caller-caller-id-number"),
-									   switch_event_get_header_nil(event, "caller-callee-id-name"),
-									   switch_event_get_header_nil(event, "caller-callee-id-number"),
 									   switch_event_get_header_nil(event, "unique-id"), 
 									   switch_core_get_switchname());
 		}
