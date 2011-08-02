@@ -1293,12 +1293,14 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CALL_UPDATE:
 		{
 			new_sql() = switch_mprintf("update channels set callee_name='%q',callee_num='%q',callee_direction='%q',"
-									   "cid_name='%q',cid_num='%q' where uuid='%s' and hostname='%q'",
+									   "cid_name='%q',cid_num='%q',callee_name='%q',callee_num='%q' where uuid='%s' and hostname='%q'",
 									   switch_event_get_header_nil(event, "caller-callee-id-name"),
 									   switch_event_get_header_nil(event, "caller-callee-id-number"),
 									   switch_event_get_header_nil(event, "direction"),
 									   switch_event_get_header_nil(event, "caller-caller-id-name"),
 									   switch_event_get_header_nil(event, "caller-caller-id-number"),
+									   switch_event_get_header_nil(event, "caller-callee-id-name"),
+									   switch_event_get_header_nil(event, "caller-callee-id-number"),
 									   switch_event_get_header_nil(event, "unique-id"), 
 									   switch_core_get_switchname());
 		}
@@ -1337,12 +1339,14 @@ static void core_event_handler(switch_event_t *event)
 				break;
 			case CS_ROUTING:
 				if ((extra_cols = parse_presence_data_cols(event))) {
-					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',"
+					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',callee_name='%q',callee_num='%q',"
 											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q',%s "
 											   "where uuid='%s' and hostname='%q'",
 											   switch_event_get_header_nil(event, "channel-state"),
 											   switch_event_get_header_nil(event, "caller-caller-id-name"),
 											   switch_event_get_header_nil(event, "caller-caller-id-number"),
+											   switch_event_get_header_nil(event, "caller-callee-id-name"),
+											   switch_event_get_header_nil(event, "caller-callee-id-number"),
 											   switch_event_get_header_nil(event, "caller-network-addr"),
 											   switch_event_get_header_nil(event, "caller-destination-number"),
 											   switch_event_get_header_nil(event, "caller-dialplan"),
@@ -1353,12 +1357,14 @@ static void core_event_handler(switch_event_t *event)
 											   switch_event_get_header_nil(event, "unique-id"), switch_core_get_switchname());
 					free(extra_cols);
 				} else {
-					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',"
+					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',callee_name='%q',callee_num='%q',"
 											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q' "
 											   "where uuid='%s' and hostname='%q'",
 											   switch_event_get_header_nil(event, "channel-state"),
 											   switch_event_get_header_nil(event, "caller-caller-id-name"),
 											   switch_event_get_header_nil(event, "caller-caller-id-number"),
+											   switch_event_get_header_nil(event, "caller-callee-id-name"),
+											   switch_event_get_header_nil(event, "caller-callee-id-number"),
 											   switch_event_get_header_nil(event, "caller-network-addr"),
 											   switch_event_get_header_nil(event, "caller-destination-number"),
 											   switch_event_get_header_nil(event, "caller-dialplan"),
