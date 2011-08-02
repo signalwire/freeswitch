@@ -1148,7 +1148,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	}
 	
 	if (switch_socket_bind(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
-		*err = "Bind Error!";
+		char *em = switch_core_sprintf(rtp_session->pool, "Bind Error! %s:%d", host, port);
+		*err = em;
 		goto done;
 	}
 
