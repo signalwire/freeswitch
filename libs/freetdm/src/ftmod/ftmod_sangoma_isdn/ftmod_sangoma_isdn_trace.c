@@ -737,8 +737,16 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 														calling_subaddr_string, (j-1), get_code_2_str(type, dcodQ931TypeOfSubaddressTable), type);
 			}
 			break;
-		case PROT_Q931_IE_REDIRECTION_NUMBER:
 		case PROT_Q931_IE_NOTIFICATION_IND:
+			{
+				uint8_t desc;
+
+				desc = get_bits(OCTET(3),1,7);
+				*str_len += sprintf(&str[*str_len], "%s (%d)\n",
+														get_code_2_str(desc, dcodQ931NotificationIndTable), desc);
+			}
+			break;
+		case PROT_Q931_IE_REDIRECTION_NUMBER:		
 		case PROT_Q931_IE_DATE_TIME:
 		case PROT_Q931_IE_INFORMATION_REQUEST:
 		case PROT_Q931_IE_SIGNAL:

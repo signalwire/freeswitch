@@ -168,7 +168,8 @@ void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, C
 													(evntType == MI_CALLPROC)?"PROCEED":
 													(evntType == MI_PROGRESS)?"PROGRESS":
 													(evntType == MI_SETUPACK)?"SETUP ACK":
-															(evntType == MI_INFO)?"INFO":"UNKNOWN",
+													(evntType == MI_NOTIFY)?"NOTIFY":
+													(evntType == MI_INFO)?"INFO":"UNKNOWN",
 															suId, suInstId, spInstId, ces);
 
 	sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
