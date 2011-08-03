@@ -63,6 +63,10 @@
 #define SNGISDN_NUM_LOCAL_NUMBERS	8
 #define SNGISDN_DCHAN_QUEUE_LEN		200
 
+#ifndef MI_INFO
+#define MI_INFO 0x12
+#endif
+
 /* TODO: rename all *_cc_* to *_an_*  */
 
 typedef enum {
