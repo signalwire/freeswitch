@@ -111,7 +111,7 @@ FT_DECLARE(void) ftdm_thread_override_default_stacksize(ftdm_size_t size)
 static void * FTDM_THREAD_CALLING_CONVENTION thread_launch(void *args)
 {
 	void *exit_val;
-    ftdm_thread_t *thread = (ftdm_thread_t *)args;
+	ftdm_thread_t *thread = (ftdm_thread_t *)args;
 	exit_val = thread->function(thread, thread->private_data);
 #ifndef WIN32
 	pthread_attr_destroy(&thread->attribute);
@@ -247,6 +247,10 @@ FT_DECLARE(ftdm_status_t) ftdm_mutex_destroy(ftdm_mutex_t **mutex)
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_lock(const char *file, int line, const char *func, ftdm_mutex_t *mutex)
 {
 #ifdef WIN32
+	UNREFERENCED_PARAMETER(file);
+	UNREFERENCED_PARAMETER(line);
+	UNREFERENCED_PARAMETER(func);
+
 	EnterCriticalSection(&mutex->mutex);
 #else
 	int err;
@@ -264,6 +268,10 @@ FT_DECLARE(ftdm_status_t) _ftdm_mutex_lock(const char *file, int line, const cha
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_trylock(const char *file, int line, const char *func, ftdm_mutex_t *mutex)
 {
 #ifdef WIN32
+	UNREFERENCED_PARAMETER(file);
+	UNREFERENCED_PARAMETER(line);
+	UNREFERENCED_PARAMETER(func);
+
 	if (!TryEnterCriticalSection(&mutex->mutex))
 		return FTDM_FAIL;
 #else
@@ -297,6 +305,10 @@ FT_DECLARE(ftdm_status_t) _ftdm_mutex_unlock(const char *file, int line, const c
 	mutex->reentrancy--;
 #endif
 #ifdef WIN32
+	UNREFERENCED_PARAMETER(file);
+	UNREFERENCED_PARAMETER(line);
+	UNREFERENCED_PARAMETER(func);
+
 	LeaveCriticalSection(&mutex->mutex);
 #else
 	if (pthread_mutex_unlock(&mutex->mutex)) {
