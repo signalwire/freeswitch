@@ -380,6 +380,7 @@ void sngisdn_snd_setup_ack(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
 void sngisdn_snd_progress(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
 void sngisdn_snd_alert(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind);
+void sngisdn_snd_notify_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_connect(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_disconnect(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare);
@@ -480,7 +481,7 @@ ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr
 ftdm_status_t set_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t *data_len);
 ftdm_status_t set_user_to_user_ie(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr);
 ftdm_status_t set_cause_ie(ftdm_channel_t *ftdmchan, CauseDgn *causeDgn);
-
+ftdm_status_t set_not_ind_ie(ftdm_channel_t *ftdmchan, NotInd *notInd);
 
 ftdm_status_t sngisdn_add_var(sngisdn_chan_data_t *sngisdn_info, const char* var, const char* val);
 ftdm_status_t sngisdn_add_raw_data(sngisdn_chan_data_t *sngisdn_info, uint8_t* data, ftdm_size_t data_len);
