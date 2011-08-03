@@ -4368,7 +4368,7 @@ static void exec_io_command(const char *cmd, switch_stream_handle_t *stream, ftd
 		stream->write_function(stream, "Rx count: %lu\n", stats.rx.packets);
 
 		stream->write_function(stream, "Tx errors: %u\n", stats.tx.errors);
-		stream->write_function(stream, "Tx queue len: %u\n", stats.tx.queue_len);
+		stream->write_function(stream, "Tx queue size: %u\n", stats.tx.queue_size);
 		stream->write_function(stream, "Tx queue len: %u\n", stats.tx.queue_len);
 		stream->write_function(stream, "Tx count: %lu\n", stats.tx.packets);
 		stream->write_function(stream, "Tx idle: %u\n", stats.tx.idle_packets);
