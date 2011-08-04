@@ -487,6 +487,7 @@ typedef struct ftdm_channel_config {
 	float rxgain;
 	float txgain;
 	uint8_t debugdtmf;
+	uint8_t iostats;
 } ftdm_channel_config_t;
 
 /*!

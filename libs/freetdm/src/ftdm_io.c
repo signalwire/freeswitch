@@ -4584,14 +4584,20 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 		return FTDM_FAIL;
 	}
 
-	if (chan_config->debugdtmf) {
-		for (chan_index = currindex+1; chan_index <= span->chan_count; chan_index++) {
-			if (!FTDM_IS_VOICE_CHANNEL(span->channels[chan_index])) {
-				continue;
-			}
-			span->channels[chan_index]->dtmfdbg.requested = 1;
+	for (chan_index = currindex + 1; chan_index <= span->chan_count; chan_index++) {
+		if (chan_config->iostats) {
+			ftdm_channel_set_feature(span->channels[chan_index], FTDM_CHANNEL_FEATURE_IO_STATS);
+		}
+
+		if (!FTDM_IS_VOICE_CHANNEL(span->channels[chan_index])) {
+			continue;
+		}
+
+		if (chan_config->debugdtmf) {
+				span->channels[chan_index]->dtmfdbg.requested = 1;
 		}
 	}
+
 	return FTDM_SUCCESS;
 }
 
@@ -4658,6 +4664,8 @@ static ftdm_status_t load_config(void)
 					/* it is confusing that parameters from one span affect others, so let's clear them */
 					memset(&chan_config, 0, sizeof(chan_config));
 					sprintf(chan_config.group_name, "__default");
+					/* default to storing iostats */
+					chan_config.iostats = FTDM_TRUE;
 				} else {
 					ftdm_log(FTDM_LOG_CRIT, "failure creating span of type %s\n", type);
 					span = NULL;
@@ -4784,6 +4792,13 @@ static ftdm_status_t load_config(void)
 			} else if (!strcasecmp(var, "debugdtmf")) {
 				chan_config.debugdtmf = ftdm_true(val);
 				ftdm_log(FTDM_LOG_DEBUG, "Setting debugdtmf to '%s'\n", chan_config.debugdtmf ? "yes" : "no");
+			} else if (!strncasecmp(var, "iostats", sizeof("iostats")-1)) {
+				if (ftdm_true(val)) {
+					chan_config.iostats = FTDM_TRUE;
+				} else {
+					chan_config.iostats = FTDM_FALSE;
+				}
+				ftdm_log(FTDM_LOG_DEBUG, "Setting iostats to '%s'\n", chan_config.iostats ? "yes" : "no");
 			} else if (!strcasecmp(var, "group")) {
 				len = strlen(val);
 				if (len >= FTDM_MAX_NAME_STR_SZ) {
