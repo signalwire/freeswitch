@@ -1218,13 +1218,14 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 			if (auto_connectile || (v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
 				if (auto_connectile || (!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0"))) {
-					char *path_encoded;
+					char *path_encoded = NULL;
 					size_t path_encoded_len;
 					char my_contact_str[1024];
 
 					switch_snprintf(my_contact_str, sizeof(my_contact_str), "sip:%s@%s:%d", contact->m_url->url_user, url_ip, network_port);
 					path_encoded_len = (strlen(my_contact_str) * 3) + 1;
 
+					if (!switch_stristr("fs_path=", contact_str)) {
 					switch_zmalloc(path_encoded, path_encoded_len);
 					switch_copy_string(path_encoded, ";fs_nat=yes;fs_path=", 21);
 					switch_url_encode(my_contact_str, path_encoded + 20, path_encoded_len - 20);
@@ -1237,7 +1238,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					} else {
 						switch_snprintf(contact_str + strlen(contact_str), sizeof(contact_str) - strlen(contact_str), "%s", path_encoded);
 					}
-					free(path_encoded);
+						switch_safe_free(path_encoded);
+					}
 				} else {
 					if (*received_data && sofia_test_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
 						switch_snprintf(received_data, sizeof(received_data), ";received=%s:%d", url_ip, network_port);
