@@ -3413,6 +3413,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_channel_set_originatee_caller_profile(caller_channel, cloned_profile);
 				}
 			}
+
+			switch_channel_set_variable(caller_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(*bleg));
 		}
 		
 
