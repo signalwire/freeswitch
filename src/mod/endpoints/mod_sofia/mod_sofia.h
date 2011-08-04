@@ -143,6 +143,7 @@ typedef struct sofia_dispatch_event_s {
 	nua_t *nua;
 	sofia_profile_t *profile;
 	int save;
+	switch_core_session_t *session;
 } sofia_dispatch_event_t;
 
 struct sofia_private {

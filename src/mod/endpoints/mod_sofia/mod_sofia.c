@@ -1388,6 +1388,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	if (msg->message_id == SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
 		sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) msg->pointer_arg;
 		switch_mutex_lock(tech_pvt->sofia_mutex);
+		if (switch_core_session_in_thread(session)) {
+			de->session = session;
+		}
 		sofia_process_dispatch_event(&de);
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
 		goto end;

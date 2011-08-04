@@ -818,14 +818,14 @@ static void our_sofia_event_callback(nua_event_t event,
 				return;
 			}
 		} else if (!zstr(sofia_private->uuid)) {
-			if ((session = switch_core_session_locate(sofia_private->uuid))) {
+			if ((session = de->session) || (session = switch_core_session_locate(sofia_private->uuid))) {
 				tech_pvt = switch_core_session_get_private(session);
 				channel = switch_core_session_get_channel(session);
 				if (tech_pvt) {
 					switch_mutex_lock(tech_pvt->sofia_mutex);
 					locked = 1;
 				} else {
-					switch_core_session_rwunlock(session);
+					if (session != de->session) switch_core_session_rwunlock(session);
 					return;
 				}
 
@@ -1111,7 +1111,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
 	}
 
-	if (session) {
+	if (session && session != de->session) {
 		switch_core_session_rwunlock(session);
 	}
 }
