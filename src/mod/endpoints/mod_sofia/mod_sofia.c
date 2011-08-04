@@ -1881,14 +1881,21 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_PHONE_EVENT:
 		{
 			const char *event = "talk";
+
 			if (!zstr(msg->string_arg) && strcasecmp(msg->string_arg, event)) {
 				if (!strcasecmp(msg->string_arg, "hold")) {
 					event = "hold";
-				} else {
+				} else if (strncasecmp(msg->string_arg, "talk", 4)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid event.\n");
 				}
 			}
-			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR(event), TAG_END());
+
+			if (!switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, 
+								  "Operation not permitted on an inbound non-answered call leg!\n");
+			} else { 
+				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR(event), TAG_END());
+			}
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_SIMPLIFY:
