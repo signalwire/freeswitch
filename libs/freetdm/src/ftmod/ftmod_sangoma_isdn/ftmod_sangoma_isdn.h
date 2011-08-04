@@ -63,8 +63,8 @@
 #define SNGISDN_NUM_LOCAL_NUMBERS	8
 #define SNGISDN_DCHAN_QUEUE_LEN		200
 
-#ifndef MI_INFO
-#define MI_INFO 0x12
+#ifndef MI_NOTIFY
+#define MI_NOTIFY 0x14
 #endif
 
 /* TODO: rename all *_cc_* to *_an_*  */
