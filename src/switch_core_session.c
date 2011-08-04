@@ -1427,6 +1427,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 		profile->uuid = switch_core_strdup(profile->pool, use_uuid);
 	}
 
+	switch_channel_set_variable(session->channel, "uuid", use_uuid);
+	switch_channel_set_variable(session->channel, "call_uuid", use_uuid);
+
 	switch_event_create(&event, SWITCH_EVENT_CHANNEL_UUID);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Unique-ID", session->uuid_str);
 	switch_core_hash_delete(session_manager.session_table, session->uuid_str);
@@ -1729,6 +1732,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	}
 
 	switch_channel_set_variable(session->channel, "uuid", session->uuid_str);
+	switch_channel_set_variable(session->channel, "call_uuid", session->uuid_str);
 
 	session->endpoint_interface = endpoint_interface;
 	session->raw_write_frame.data = session->raw_write_buf;

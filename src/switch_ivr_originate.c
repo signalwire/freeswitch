@@ -1843,33 +1843,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
-	if (var_event) {
-		switch_uuid_t uuid;
-		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-		char *use_uuid;
-
-		if (caller_channel) {
-			use_uuid = switch_core_session_get_uuid(session);
-		} else {
-			switch_uuid_get(&uuid);
-			switch_uuid_format(uuid_str, &uuid);
-			use_uuid = uuid_str;
-		}
-
-		switch_event_del_header(var_event, "call_uuid");
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "call_uuid", use_uuid);
-
-		if (caller_channel) {
-			switch_channel_set_variable(caller_channel, "call_uuid", use_uuid);
-		}
-	}
-
-	if (caller_channel) {
-		switch_channel_process_export(caller_channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
-	}
-
-
-
 	/* strip leading spaces */
 	while (data && *data && *data == ' ') {
 		data++;
@@ -2478,6 +2451,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				originate_status[i].peer_session = new_session;
 
 				switch_channel_set_flag(originate_status[i].peer_channel, CF_ORIGINATING);
+				
+				if (caller_channel) {
+					switch_channel_set_variable(originate_status[i].peer_channel, "call_uuid", switch_channel_get_variable(caller_channel, "call_uuid"));
+				}
+				
 
 				if ((lc = switch_event_get_header(var_event, "local_var_clobber"))) {
 					local_clobber = switch_true(lc);

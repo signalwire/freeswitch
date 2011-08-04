@@ -2121,6 +2121,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 
 	if ((v = switch_channel_get_variable(channel, "call_uuid"))) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", v);
+	} else {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", switch_core_session_get_uuid(channel->session));
 	}
 
 	if (switch_channel_down(channel)) {

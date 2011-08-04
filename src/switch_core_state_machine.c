@@ -62,6 +62,7 @@ static void switch_core_standard_on_destroy(switch_core_session_t *session)
 
 static void switch_core_standard_on_reset(switch_core_session_t *session)
 {
+	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard RESET\n", switch_channel_get_name(session->channel));
 }
@@ -76,6 +77,8 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard ROUTING\n", switch_channel_get_name(session->channel));
 
+	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
+		
 	if ((switch_channel_test_flag(session->channel, CF_ANSWERED) ||
 		 switch_channel_test_flag(session->channel, CF_EARLY_MEDIA) ||
 		 switch_channel_test_flag(session->channel, CF_SIGNAL_BRIDGE_TTL)) && switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
@@ -155,6 +158,8 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	switch_caller_extension_t *extension;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard EXECUTE\n", switch_channel_get_name(session->channel));
+
+	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
 
 	if (switch_channel_get_variable(session->channel, "recovered") && !switch_channel_test_flag(session->channel, CF_RECOVERED)) {
 		switch_channel_set_flag(session->channel, CF_RECOVERED);
