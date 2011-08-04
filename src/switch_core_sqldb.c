@@ -1291,10 +1291,12 @@ static void core_event_handler(switch_event_t *event)
 		break;
 	case SWITCH_EVENT_CALL_UPDATE:
 		{
-			new_sql() = switch_mprintf("update channels set callee_name='%q',callee_num='%q',callee_direction='%q',"
+			new_sql() = switch_mprintf("update channels set callee_name='%q',callee_num='%q',sent_callee_name='%q',sent_callee_num='%q',callee_direction='%q',"
 									   "cid_name='%q',cid_num='%q' where uuid='%s'",
 									   switch_event_get_header_nil(event, "caller-callee-id-name"),
 									   switch_event_get_header_nil(event, "caller-callee-id-number"),
+									   switch_event_get_header_nil(event, "sent-callee-id-name"),
+									   switch_event_get_header_nil(event, "sent-callee-id-number"),
 									   switch_event_get_header_nil(event, "direction"),
 									   switch_event_get_header_nil(event, "caller-caller-id-name"),
 									   switch_event_get_header_nil(event, "caller-caller-id-number"),
@@ -1337,6 +1339,7 @@ static void core_event_handler(switch_event_t *event)
 			case CS_ROUTING:
 				if ((extra_cols = parse_presence_data_cols(event))) {
 					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',callee_name='%q',callee_num='%q',"
+											   "sent_callee_name='%q',sent_callee_num='%q',"
 											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q',%s "
 											   "where uuid='%s'",
 											   switch_event_get_header_nil(event, "channel-state"),
@@ -1344,6 +1347,8 @@ static void core_event_handler(switch_event_t *event)
 											   switch_event_get_header_nil(event, "caller-caller-id-number"),
 											   switch_event_get_header_nil(event, "caller-callee-id-name"),
 											   switch_event_get_header_nil(event, "caller-callee-id-number"),
+											   switch_event_get_header_nil(event, "sent-callee-id-name"),
+											   switch_event_get_header_nil(event, "sent-callee-id-number"),
 											   switch_event_get_header_nil(event, "caller-network-addr"),
 											   switch_event_get_header_nil(event, "caller-destination-number"),
 											   switch_event_get_header_nil(event, "caller-dialplan"),
@@ -1354,7 +1359,8 @@ static void core_event_handler(switch_event_t *event)
 											   switch_event_get_header_nil(event, "unique-id"));
 					free(extra_cols);
 				} else {
-					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',callee_name='%q',callee_num='%q',"
+					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',callee_name='%q',"
+											   "sent_callee_name='%q',sent_callee_num='%q', callee_num='%q',"
 											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q' "
 											   "where uuid='%s'",
 											   switch_event_get_header_nil(event, "channel-state"),
@@ -1362,6 +1368,8 @@ static void core_event_handler(switch_event_t *event)
 											   switch_event_get_header_nil(event, "caller-caller-id-number"),
 											   switch_event_get_header_nil(event, "caller-callee-id-name"),
 											   switch_event_get_header_nil(event, "caller-callee-id-number"),
+											   switch_event_get_header_nil(event, "sent-callee-id-name"),
+											   switch_event_get_header_nil(event, "sent-callee-id-number"),
 											   switch_event_get_header_nil(event, "caller-network-addr"),
 											   switch_event_get_header_nil(event, "caller-destination-number"),
 											   switch_event_get_header_nil(event, "caller-dialplan"),
@@ -1384,6 +1392,15 @@ static void core_event_handler(switch_event_t *event)
 		}
 	case SWITCH_EVENT_CHANNEL_BRIDGE:
 		{
+			const char *a_uuid, *b_uuid;
+
+			a_uuid = switch_event_get_header(event, "Bridge-A-Unique-ID");
+			b_uuid = switch_event_get_header(event, "Bridge-B-Unique-ID");
+
+			if (zstr(a_uuid) || zstr(b_uuid)) {
+				a_uuid = switch_event_get_header_nil(event, "caller-unique-id");
+				b_uuid = switch_event_get_header_nil(event, "other-leg-unique-id");
+			}
 
 			new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s'",
 									   switch_event_get_header_nil(event, "channel-call-uuid"),
@@ -1395,8 +1412,8 @@ static void core_event_handler(switch_event_t *event)
 									   switch_event_get_header_nil(event, "channel-call-uuid"),
 									   switch_event_get_header_nil(event, "event-date-local"),
 									   (long) switch_epoch_time_now(NULL),
-									   switch_event_get_header_nil(event, "caller-unique-id"),
-									   switch_event_get_header_nil(event, "Other-Leg-unique-id"), 
+									   a_uuid,
+									   b_uuid,
 									   switch_core_get_switchname()
 									   );
 		}
@@ -1554,7 +1571,9 @@ static char create_channels_sql[] =
 	"   callee_name  VARCHAR(1024),\n"
 	"   callee_num  VARCHAR(256),\n"
 	"   callee_direction  VARCHAR(5),\n"
-	"   call_uuid  VARCHAR(256)\n"
+	"   call_uuid  VARCHAR(256),\n"
+	"   sent_callee_name  VARCHAR(1024),\n"
+	"   sent_callee_num  VARCHAR(256)\n"
 	");\n"
 	"create index chidx1 on channels (hostname);\n"
 	"create index uuindex on channels (uuid);\n"
@@ -1650,6 +1669,8 @@ static char detailed_calls_sql[] =
 	"a.callee_num as callee_num,"
 	"a.callee_direction as callee_direction,"
 	"a.call_uuid as call_uuid,"
+	"a.sent_callee_name as sent_callee_name,"
+	"a.sent_callee_num as sent_callee_num,"
 	"b.uuid as b_uuid,"
 	"b.direction as b_direction,"
 	"b.created as b_created,"
@@ -1679,6 +1700,8 @@ static char detailed_calls_sql[] =
 	"b.callee_num as b_callee_num,"
 	"b.callee_direction as b_callee_direction,"
 	"b.call_uuid as b_call_uuid,"
+	"b.sent_callee_name as b_sent_callee_name,"
+	"b.sent_callee_num as b_sent_callee_num,"
 	"c.call_created_epoch as call_created_epoch "
 	"from channels a "
 	"left join calls c on a.uuid = c.caller_uuid and a.hostname = c.hostname "
@@ -1707,6 +1730,9 @@ static char basic_calls_sql[] =
 	"a.callee_direction as callee_direction,"
 	"a.call_uuid as call_uuid,"
 	"a.hostname as hostname,"
+	"a.sent_callee_name as sent_callee_name,"
+	"a.sent_callee_num as sent_callee_num,"
+
 
 	"b.uuid as b_uuid,"
 	"b.direction as b_direction,"
@@ -1725,6 +1751,8 @@ static char basic_calls_sql[] =
 	"b.callee_name as b_callee_name,"
 	"b.callee_num as b_callee_num,"
 	"b.callee_direction as b_callee_direction,"
+	"b.sent_callee_name as b_sent_callee_name,"
+	"b.sent_callee_num as b_sent_callee_num,"
 	"c.call_created_epoch as call_created_epoch "
 
 	"from channels a "

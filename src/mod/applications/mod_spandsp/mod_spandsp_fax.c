@@ -1570,6 +1570,8 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
     switch_core_session_receive_message(session, &msg);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", peer_uuid);
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
 	}
