@@ -1449,7 +1449,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	if (flags & SCF_MINIMAL) return SWITCH_STATUS_SUCCESS;
 													   
 	runtime.tipping_point = 0;
-	runtime.timer_affinity = 0;
+	runtime.timer_affinity = -1;
 	runtime.microseconds_per_tick = 20000;
 
 	switch_load_core_config("switch.conf");
