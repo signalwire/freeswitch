@@ -519,7 +519,7 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const cha
 		event = "reboot";
 	}
 
-	sofia_glue_send_notify(profile, user, host, event, contenttype, body, contact, network_ip);
+	sofia_glue_send_notify(profile, user, host, event, contenttype, body, contact, network_ip, NULL);
 }
 
 int sofia_sla_dialog_del_callback(void *pArg, int argc, char **argv, char **columnNames)
