@@ -457,6 +457,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			}
 		}
 
+		if (originator && !ans_b) ans_b = switch_channel_test_flag(chan_b, CF_ANSWERED);
+
 		if (originator && !sent_update && ans_a && ans_b && switch_channel_media_ack(chan_a) && switch_channel_media_ack(chan_b)) {
 			switch_ivr_bridge_display(session_a, session_b);
 			sent_update = 1;
