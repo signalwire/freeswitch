@@ -1364,8 +1364,8 @@ static void core_event_handler(switch_event_t *event)
 											   switch_event_get_header_nil(event, "unique-id"));
 					free(extra_cols);
 				} else {
-					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',callee_name='%q',"
-											   "sent_callee_name='%q',sent_callee_num='%q', callee_num='%q',"
+					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',callee_name='%q',callee_num='%q',"
+											   "sent_callee_name='%q',sent_callee_num='%q',"
 											   "ip_addr='%s',dest='%q',dialplan='%q',context='%q',presence_id='%q',presence_data='%q' "
 											   "where uuid='%s'",
 											   switch_event_get_header_nil(event, "channel-state"),
@@ -1511,6 +1511,7 @@ static void core_event_handler(switch_event_t *event)
 
 	if (sql_idx) {
 		int i = 0;
+		
 
 		for (i = 0; i < sql_idx; i++) {
 			if (switch_stristr("update channels", sql[i]) || switch_stristr("delete from channels", sql[i])) {
