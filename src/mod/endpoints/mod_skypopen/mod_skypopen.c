@@ -838,7 +838,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	if (switch_test_flag(tech_pvt, TFLAG_PROGRESS)) {
 		//DEBUGA_SKYPE("CHANNEL READ FRAME in TFLAG_PROGRESS goto CNG\n", SKYPOPEN_P_LOG);
-		switch_sleep(MS_SKYPOPEN * 1000);
+		//switch_sleep(MS_SKYPOPEN * 1000);
 		goto cng;
 	}
 
@@ -879,7 +879,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				DEBUGA_SKYPE("skypopen_audio_read going back to read\n", SKYPOPEN_P_LOG);
 				goto read;
 			}
-			DEBUGA_SKYPE("skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
+			DEBUGA_SKYPE("READ BUFFER EMPTY, skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
 			memset(tech_pvt->read_frame.data, 255, BYTES_PER_FRAME);
 			tech_pvt->read_frame.datalen = BYTES_PER_FRAME;
 
@@ -1022,17 +1022,16 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	switch_mutex_lock(tech_pvt->mutex_audio_cli);
 	if (switch_buffer_freespace(tech_pvt->write_buffer) < frame->datalen) {
-		DEBUGA_SKYPE("NO SPACE WRITE: %d\n", SKYPOPEN_P_LOG, frame->datalen);
 		switch_buffer_zero(tech_pvt->write_buffer);
 		no_space = 1;
 	}
 	switch_buffer_write(tech_pvt->write_buffer, frame->data, frame->datalen);
 	switch_mutex_unlock(tech_pvt->mutex_audio_cli);
 	if (no_space) {
-		switch_sleep(MS_SKYPOPEN * 1000);
-	} else {
-		tech_pvt->begin_to_write = 1;
+		//switch_sleep(MS_SKYPOPEN * 1000);
+		DEBUGA_SKYPE("NO SPACE in WRITE BUFFER: there was no space for %d\n", SKYPOPEN_P_LOG, frame->datalen);
 	}
+	tech_pvt->begin_to_write = 1;
 
 	return SWITCH_STATUS_SUCCESS;
 }
