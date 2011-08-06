@@ -204,6 +204,32 @@ static int parse_debug(const char *in, uint32_t *flags)
 	return res;
 }
 
+/**
+ * \brief Parses a change status string to flags
+ * \param in change status string to parse for
+ * \return Flags
+ */
+static int parse_change_status(const char *in)
+{
+	int flags = 0;
+	if (!in) {
+		return 0;
+	}
+
+	if (strstr(in, "in_service") || strstr(in, "in")) {
+		flags = SERVICE_CHANGE_STATUS_INSERVICE;
+	}
+	if (strstr(in, "maintenance") || strstr(in, "maint")) {
+		flags = SERVICE_CHANGE_STATUS_MAINTENANCE;
+	}
+	if (strstr(in, "out_of_service") || strstr(in, "out")) {
+		flags = SERVICE_CHANGE_STATUS_OUTOFSERVICE;
+	}
+
+
+	return flags;
+}
+
 static int print_debug(uint32_t flags, char *tmp, const int size)
 {
 	int offset = 0;
@@ -240,6 +266,9 @@ static ftdm_io_interface_t ftdm_libpri_interface;
 static const char *ftdm_libpri_usage =
 	"Usage:\n"
 	"libpri kill <span>\n"
+	"libpri reset <span>\n"
+	"libpri restart <span> <channel/all>\n"
+	"libpri maintenance <span> <channel/all> <in/maint/out>\n"
 	"libpri debug <span> [all|none|flag,...flagN]\n"
 	"\n"
 	"Possible debug flags:\n"
@@ -339,8 +368,78 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				goto done;
 			}
 		}
+		if (!strcasecmp(argv[0], "reset")) {
+			ftdm_span_t *span = NULL;
+			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS) {
+				ftdm_libpri_data_t *isdn_data = span->signal_data;
+				if (span->start != ftdm_libpri_start) {
+					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					goto done;
+				}
+
+				pri_restart(isdn_data->spri.pri);
+				stream->write_function(stream, "%s: +OK reset.\n", __FILE__);
+				goto done;
+			} else {
+				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+				goto done;
+			}
+		}
+		if (!strcasecmp(argv[0], "restart") && argc == 3) {
+			ftdm_span_t *span = NULL;
+			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS) {
+				ftdm_libpri_data_t *isdn_data = span->signal_data;
+				if (span->start != ftdm_libpri_start) {
+					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					goto done;
+				}
+				if (!strcasecmp(argv[2], "all")) {
+					int j;
+					for(j = 1; j <= span->chan_count; j++) {
+						pri_reset(isdn_data->spri.pri, j);
+						ftdm_sleep(50);
+					}
+				} else {
+					pri_reset(isdn_data->spri.pri, atoi(argv[2]));
+				}
+				stream->write_function(stream, "%s: +OK restart set.\n", __FILE__);
+				goto done;
+			} else {
+				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+				goto done;
+			}
+		}
+		if (!strcasecmp(argv[0], "maintenance") && argc > 3) {
+			ftdm_span_t *span = NULL;
+			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS) {
+				ftdm_libpri_data_t *isdn_data = span->signal_data;
+				if (span->start != ftdm_libpri_start) {
+					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					goto done;
+				}
+				if (!isdn_data->service_message_support) {
+					stream->write_function(stream, "%s: -ERR service message support is disabled\n", __FILE__);
+					goto done;
+				}
+				if (!strcasecmp(argv[2], "all")) {
+					int j;
+					for(j = 1; j <= span->chan_count; j++) {
+						pri_maintenance_service(isdn_data->spri.pri, atoi(argv[1]), j, parse_change_status(argv[3]));
+						ftdm_sleep(50);
+					}
+				} else {
+					pri_maintenance_service(isdn_data->spri.pri, atoi(argv[1]), atoi(argv[2]), parse_change_status(argv[3]));
+				}
+				stream->write_function(stream, "%s: +OK change status set.\n", __FILE__);
+				goto done;
+			} else {
+				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+				goto done;
+			}
+		}
 
 	}
+
 	stream->write_function(stream, "%s: -ERR invalid command.\n", __FILE__);
 
 done:
@@ -1780,6 +1879,10 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 			pri_facility_enable(isdn_data->spri.pri);
 		}
 #endif
+		/* Support the different switch of service status */
+		if (isdn_data->service_message_support) {
+			pri_set_service_message_support(isdn_data->spri.pri, 1 /* True */);
+		}
 
 		if (res == 0) {
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_ANY, on_anything);
@@ -2157,6 +2260,11 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 			if (parse_debug(val, &isdn_data->debug_mask) == -1) {
 				ftdm_log(FTDM_LOG_ERROR, "Invalid debug flag, ignoring parameter\n");
 				isdn_data->debug_mask = 0;
+			}
+		}
+		else if (!strcasecmp(var, "service_message_support")) {
+			if (ftdm_true(val)) {
+				isdn_data->service_message_support = 1;
 			}
 		}
 		else {

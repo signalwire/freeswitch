@@ -2346,7 +2346,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				new_profile->callee_id_name = switch_core_strdup(new_profile->pool, "Outbound Call");
-				new_profile->callee_id_number = switch_core_strdup(new_profile->pool, new_profile->destination_number);
+				new_profile->callee_id_number = switch_sanitize_number(switch_core_strdup(new_profile->pool, new_profile->destination_number));
 
 				originate_status[i].caller_profile = NULL;
 				originate_status[i].peer_channel = NULL;
@@ -3413,6 +3413,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_channel_set_originatee_caller_profile(caller_channel, cloned_profile);
 				}
 			}
+
+			switch_channel_set_variable(caller_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(*bleg));
 		}
 		
 

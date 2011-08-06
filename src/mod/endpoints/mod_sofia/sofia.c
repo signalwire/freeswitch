@@ -85,7 +85,7 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 								sofia_dispatch_event_t *de, tagi_t tags[])
 {
 
-	if (status >= 300 && sip && sip->sip_call_id) {
+	if (status >= 300 && sip && sip->sip_call_id && (!sofia_private || !sofia_private->is_call)) {
 		char *sql;
 		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
 		switch_assert(sql != NULL);
@@ -952,9 +952,8 @@ static void our_sofia_event_callback(nua_event_t event,
 			}
 		}
 	case nua_r_ack:
-		if (channel) {
+		if (channel)
 			switch_channel_set_flag(channel, CF_MEDIA_ACK);
-		}
 		break;
 	case nua_r_shutdown:
 		if (status >= 200) {
@@ -4969,12 +4968,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			sofia_clear_flag(tech_pvt, TFLAG_RECOVERING);
 		}
 
-		if ((status == 180 || status == 183) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			const char *val;
-			if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
-				nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR("talk"), TAG_END());
-			}
-		}
 	}
 
   end:
@@ -5164,6 +5157,15 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	if (status == 180 && r_sdp) {
 		status = 183;
 	}
+
+	if (channel && (status == 180 || status == 183) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+		const char *val;
+		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
+			nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_WITH_THIS_MSG(de->data->e_msg), 
+					   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_EVENT_STR("talk"), TAG_END());
+		}
+	}
+
 
 
   state_process:
@@ -5840,6 +5842,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			switch_snprintf(st, sizeof(st), "%d", cause);
 			switch_channel_set_variable(channel, "sip_term_cause", st);
 			switch_channel_hangup(channel, cause);
+			ss_state = nua_callstate_terminated;
 		}
 
 

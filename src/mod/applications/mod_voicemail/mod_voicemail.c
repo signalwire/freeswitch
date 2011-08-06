@@ -4318,7 +4318,7 @@ static int api_list_callback(void *pArg, int argc, char **argv, char **columnNam
 {
 	switch_stream_handle_t *stream = (switch_stream_handle_t *) pArg;
 
-	if (!strcasecmp(argv[9], "xml")) {
+	if (!strcasecmp(argv[10], "xml")) {
 		stream->write_function(stream, " <message>\n");
 		stream->write_function(stream, "  <created_epoch>%s</created_epoch>\n", argv[0]);
 		stream->write_function(stream, "  <read_epoch>%s</read_epoch>\n", argv[1]);
@@ -4329,9 +4329,10 @@ static int api_list_callback(void *pArg, int argc, char **argv, char **columnNam
 		stream->write_function(stream, "  <uuid>%s</uuid>\n", argv[6]);
 		stream->write_function(stream, "  <cid-name>%s</cid-name>\n", argv[7]);
 		stream->write_function(stream, "  <cid-number>%s</cid-number>\n", argv[8]);
+		stream->write_function(stream, "  <message-len>%s</message-len>\n", argv[9]);
 		stream->write_function(stream, " </message>\n");
 	} else {
-		stream->write_function(stream, "%s:%s:%s:%s:%s:%s:%s:%s:%s\n", argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8]);
+		stream->write_function(stream, "%s:%s:%s:%s:%s:%s:%s:%s:%s:%s\n", argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8], argv[9]);
 	}
 	
     return 0;
@@ -4375,11 +4376,11 @@ SWITCH_STANDARD_API(voicemail_list_api_function)
 
 	if (id && domain && profile_name && (profile = get_profile(profile_name))) {
 		if (uuid) {
-			sql = switch_mprintf("select created_epoch, read_epoch, username, domain, in_folder, file_path, uuid, cid_name, cid_number, "
+			sql = switch_mprintf("select created_epoch, read_epoch, username, domain, in_folder, file_path, uuid, cid_name, cid_number, message_len, "
 								 "'%q' from voicemail_msgs where username='%q' and domain='%q' and uuid='%q'", 
 								 format, id, domain, uuid);
 		} else {
-			sql = switch_mprintf("select created_epoch, read_epoch, username, domain, in_folder, file_path, uuid, cid_name, cid_number, "
+			sql = switch_mprintf("select created_epoch, read_epoch, username, domain, in_folder, file_path, uuid, cid_name, cid_number, message_len, "
 								 "'%q' from voicemail_msgs where username='%q' and domain='%q'", 
 								 format, id, domain);
 		}
@@ -4390,7 +4391,6 @@ SWITCH_STANDARD_API(voicemail_list_api_function)
 
 		vm_execute_sql_callback(profile, profile->mutex, sql, api_list_callback, stream);
 		switch_safe_free(sql);
-		update_mwi(profile, id, domain, "inbox");
 	
 		if (!strcasecmp(format, "xml")) {
 			stream->write_function(stream, "</voicemail>\n");

@@ -110,6 +110,12 @@ typedef enum {
 	OCF_HANGUP = (1 << 0)
 } opaque_channel_flag_t;
 
+typedef enum {
+	LP_NEITHER,
+	LP_ORIGINATOR,
+	LP_ORIGINATEE
+} switch_originator_type_t;
+
 struct switch_channel {
 	char *name;
 	switch_call_direction_t direction;
@@ -139,6 +145,7 @@ struct switch_channel {
 	int event_count;
 	int profile_index;
 	opaque_channel_flag_t opaque_flags;
+	switch_originator_type_t last_profile_type;
 };
 
 
@@ -1840,6 +1847,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Call-Direction",
 											   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-HIT-Dialplan", 
+											   switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND ||
+											   switch_channel_test_flag(channel, CF_DIALPLAN) ? "true" : "false");
+				
 				if (switch_channel_down(channel)) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "hangup");
 				} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
@@ -2106,6 +2117,11 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Call-Direction",
 								   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-HIT-Dialplan", 
+								   switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND ||
+								   switch_channel_test_flag(channel, CF_DIALPLAN) ? "true" : "false");
+
+
 	if ((v = switch_channel_get_variable(channel, "presence_id"))) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-ID", v);
 	}
@@ -2156,22 +2172,15 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 		switch_caller_profile_event_set_data(caller_profile, "Caller", event);
 	}
 
-	if (originator_caller_profile && originatee_caller_profile) {
-		/* Index Originator's Profile */
-		switch_caller_profile_event_set_data(originator_caller_profile, "Originator", event);
-
-		/* Index Originatee's Profile */
-		switch_caller_profile_event_set_data(originatee_caller_profile, "Originatee", event);
-	} else {
-		/* Index Originator's Profile */
-		if (originator_caller_profile) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Type", "originator");
-			switch_caller_profile_event_set_data(originator_caller_profile, "Other-Leg", event);
-		} else if (originatee_caller_profile) {	/* Index Originatee's Profile */
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Type", "originatee");
-			switch_caller_profile_event_set_data(originatee_caller_profile, "Other-Leg", event);
-		}
+	/* Index Originator/ee's Profile */
+	if (originator_caller_profile && channel->last_profile_type == LP_ORIGINATOR) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Type", "originator");
+		switch_caller_profile_event_set_data(originator_caller_profile, "Other-Leg", event);
+	} else if (originatee_caller_profile && channel->last_profile_type == LP_ORIGINATEE) {	/* Index Originatee's Profile */
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Type", "originatee");
+		switch_caller_profile_event_set_data(originatee_caller_profile, "Other-Leg", event);
 	}
+
 
 	switch_mutex_unlock(channel->profile_mutex);
 }
@@ -2342,6 +2351,7 @@ SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel
 	if (channel->caller_profile) {
 		caller_profile->next = channel->caller_profile->originator_caller_profile;
 		channel->caller_profile->originator_caller_profile = caller_profile;
+		channel->last_profile_type = LP_ORIGINATOR;
 	}
 	switch_assert(channel->caller_profile->originator_caller_profile->next != channel->caller_profile->originator_caller_profile);
 	switch_mutex_unlock(channel->profile_mutex);
@@ -2402,6 +2412,7 @@ SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel
 	if (channel->caller_profile) {
 		caller_profile->next = channel->caller_profile->originatee_caller_profile;
 		channel->caller_profile->originatee_caller_profile = caller_profile;
+		channel->last_profile_type = LP_ORIGINATEE;
 	}
 	switch_assert(channel->caller_profile->originatee_caller_profile->next != channel->caller_profile->originatee_caller_profile);
 	switch_mutex_unlock(channel->profile_mutex);
