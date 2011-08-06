@@ -53,6 +53,9 @@ static struct {
 	char decoder[256];
 	float vol;
 	uint32_t outscale;
+	uint32_t brate;
+	uint32_t resample;
+	uint32_t quality;
 } globals;
 
 mpg123_handle *our_mpg123_new(const char *decoder, int *error)
@@ -172,7 +175,7 @@ static inline void free_context(shout_context_t *context)
 		}
 
 		if (context->fp) {
-			unsigned char mp3buffer[8192];
+			unsigned char mp3buffer[20480];
 			int len;
 			int16_t blank[2048] = { 0 }, *r = NULL;
 
@@ -494,7 +497,7 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 	}
 
 	while (!context->err && context->thread_running) {
-		unsigned char mp3buf[8192] = "";
+		unsigned char mp3buf[20480] = "";
 		int16_t audio[9600] = { 0 };
 		switch_size_t audio_read = 0;
 		int rlen = 0;
@@ -667,17 +670,33 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 		}
 		context->channels = handle->channels;
-		lame_set_brate(context->gfp, 16 * (handle->samplerate / 8000) * handle->channels);
+		
+		if (globals.brate) {
+			lame_set_brate(context->gfp, globals.brate);
+		} else {
+			lame_set_brate(context->gfp, 16 * (handle->samplerate / 8000) * handle->channels);
+		}
+		
 		lame_set_num_channels(context->gfp, handle->channels);
 		lame_set_in_samplerate(context->gfp, handle->samplerate);
-		lame_set_out_samplerate(context->gfp, handle->samplerate);
+		
+		if (globals.resample) {
+			lame_set_out_samplerate(context->gfp, globals.resample);
+		} else {
+			lame_set_out_samplerate(context->gfp, handle->samplerate);
+		}
 
 		if (handle->channels == 2) {
 			lame_set_mode(context->gfp, STEREO);
 		} else {
 			lame_set_mode(context->gfp, MONO);
 		}
-		lame_set_quality(context->gfp, 2);	/* 2=high  5 = medium  7=low */
+
+		if (globals.quality) {
+			lame_set_quality(context->gfp, globals.quality);
+		} else {
+			lame_set_quality(context->gfp, 2);      /* 2=high  5 = medium  7=low */
+		}
 
 		lame_set_errorf(context->gfp, log_error);
 		lame_set_debugf(context->gfp, log_debug);
@@ -1463,6 +1482,21 @@ static switch_status_t load_config(void)
 				int tmp = atoi(val);
 				if (tmp > 0) {
 					globals.outscale = tmp;
+				}
+			} else if (!strcmp(var, "encode-brate")) {
+				int tmp = atoi(val);
+				if (tmp > 0) {
+					globals.brate = tmp;
+				}
+			} else if (!strcmp(var, "encode-resample")) {
+				int tmp = atoi(val);
+				if (tmp > 0) {
+					globals.resample = tmp;
+				}
+			} else if (!strcmp(var, "encode-quality")) {
+				int tmp = atoi(val);
+				if (tmp > 0) {
+					globals.quality = tmp;
 				}
 			}
 		}
