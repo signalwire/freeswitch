@@ -1141,12 +1141,12 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 			if (event->channel->state == FTDM_CHANNEL_STATE_DOWN) {
 				if (ftdm_test_flag(analog_data, FTDM_ANALOG_CALLERID) 
 				    && ftdm_test_flag(analog_data, FTDM_ANALOG_POLARITY_CALLERID)) {
-					ftdm_log_chan_msg(event->channel, "Polarity reversal detected while down, getting caller id now\n");
+					ftdm_log_chan_msg(event->channel, FTDM_LOG_DEBUG, "Polarity reversal detected while down, getting caller id now\n");
 					ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_GET_CALLERID);
 					event->channel->ring_count = 1;
 					ftdm_mutex_unlock(event->channel->mutex);
 					locked = 0;
-					ftdm_thread_create_detached(ftdm_analog_channel_run);
+					ftdm_thread_create_detached(ftdm_analog_channel_run, event->channel);
 				} else {
 					ftdm_log_chan_msg(event->channel, FTDM_LOG_DEBUG, 
 						"Ignoring polarity reversal because this channel is down\n");
