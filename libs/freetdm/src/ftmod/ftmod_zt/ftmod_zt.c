@@ -29,6 +29,12 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ * W McRoberts <fs@whmcr.com>
+ *
  */
 
 #include "private/ftdm_core.h"
@@ -94,6 +100,7 @@ struct ioctl_codes {
     ioctlcmd ECHOTRAIN;
     ioctlcmd SETTXBITS;
     ioctlcmd GETRXBITS;
+    ioctlcmd SETPOLARITY;
 };
 
 /**
@@ -169,7 +176,8 @@ static struct ioctl_codes dahdi_ioctl_codes = {
     .GETCONFMUTE = DAHDI_GETCONFMUTE,
     .ECHOTRAIN = DAHDI_ECHOTRAIN,
     .SETTXBITS = DAHDI_SETTXBITS,
-    .GETRXBITS = DAHDI_GETRXBITS
+    .GETRXBITS = DAHDI_GETRXBITS,
+    .SETPOLARITY = DAHDI_SETPOLARITY
 };
 
 #define ZT_INVALID_SOCKET -1
@@ -826,6 +834,15 @@ static FIO_COMMAND_FUNCTION(zt_command)
 			err = ioctl(ftdmchan->sockfd, codes.FLUSH, &flushmode);
 		}
 		break;
+	case FTDM_COMMAND_SET_POLARITY:
+		{
+			ftdm_polarity_t polarity = FTDM_COMMAND_OBJ_INT;
+			err = ioctl(ftdmchan->sockfd, codes.SETPOLARITY, polarity);
+			if (!err) {
+				ftdmchan->polarity = polarity;
+			}
+		}
+		break;
 	case FTDM_COMMAND_FLUSH_RX_BUFFERS:
 		{
 			int flushmode = ZT_FLUSH_READ;
@@ -1086,6 +1103,12 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 		{
 			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "HDLC abort frame received (ZT_EVENT_ABORT)\n");
 			*event_id = FTDM_OOB_NOOP;	/* What else could we do? */
+		}
+		break;
+	case ZT_EVENT_POLARITY:
+		{
+			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Got polarity reverse (ZT_EVENT_POLARITY)\n");
+			*event_id = FTDM_OOB_POLARITY_REVERSE;
 		}
 		break;
 	case ZT_EVENT_NONE:
