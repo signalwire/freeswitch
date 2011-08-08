@@ -739,6 +739,7 @@ int ftmod_ss7_isup_ckt_sta(uint32_t id, unsigned char *state);
 /* in ftmod_sangoma_ss7_out.c */
 void ft_to_sngss7_iam(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_acm(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_cpg (ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_anm(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_rel(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_rlc(ftdm_channel_t *ftdmchan);

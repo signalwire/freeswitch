@@ -656,10 +656,10 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 			/* inform the user there is media avai */
 			sngss7_send_signal(sngss7_info, FTDM_SIGEVENT_PROGRESS_MEDIA);
+		} else {
+			ft_to_sngss7_cpg(ftdmchan);
 		}
-			
 
-		/* nothing to do at this time */
 		break;
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_UP:	/*call is accpeted...both incoming and outgoing */
