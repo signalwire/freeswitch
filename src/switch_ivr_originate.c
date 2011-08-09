@@ -1843,6 +1843,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
+	if (caller_channel) {
+		switch_channel_process_export(caller_channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
+	}
+
 	/* strip leading spaces */
 	while (data && *data && *data == ' ') {
 		data++;
