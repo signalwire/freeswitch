@@ -3084,8 +3084,10 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 	}
 
-	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", user);
-	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+	if (var_event) {
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", user);
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+	}
 
 	if (!dest) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No dial-string available, please check your user directory.\n");
