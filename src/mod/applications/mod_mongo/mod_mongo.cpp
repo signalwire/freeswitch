@@ -1,26 +1,87 @@
 #include <switch.h>
 #include "mod_mongo.h"
 
+#define DELIMITER ';'
+#define FIND_ONE_SYNTAX  "mongo_find_one ns; query; fields"
+#define MAPREDUCE_SYNTAX "mongo_mapreduce ns; query"
 
 static struct {
 	mongo_connection_pool_t *conn_pool;
+	char *map;
+	char *reduce;
+	char *finalize;
 } globals;
 
+SWITCH_STANDARD_API(mongo_mapreduce_function)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	DBClientConnection *conn = NULL;
+	char *ns = NULL, *json_query = NULL;
 
-static const char *SYNTAX = "mongo_find_one ns; query; fields";
+	ns = strdup(cmd);
+	switch_assert(ns != NULL);
+
+	if ((json_query = strchr(ns, DELIMITER))) {
+	  *json_query++ = '\0';
+	}
+
+	if (!zstr(ns) && !zstr(json_query)) {
+		try {
+			BSONObj query = fromjson(json_query);
+			BSONObj out;
+			BSONObjBuilder cmd;
+
+			cmd.append("mapreduce", conn->nsGetCollection(ns));
+			if (!zstr(globals.map)) {
+				cmd.appendCode("map", globals.map);
+			}
+			if (!zstr(globals.reduce)) {
+				cmd.appendCode("reduce", globals.reduce);
+			}
+			if (!zstr(globals.finalize)) {
+				cmd.appendCode("finalize", globals.finalize);
+			}
+			if(!query.isEmpty()) {
+				cmd.append("query", query);
+			}
+			cmd.append("out", BSON("inline" << 1));
+
+			conn = mongo_connection_pool_get(globals.conn_pool);
+			if (conn) {
+				conn->runCommand(conn->nsGetDB(ns), cmd.done(), out);
+				mongo_connection_pool_put(globals.conn_pool, conn);
+
+				stream->write_function(stream, "-OK\n%s\n", out.toString().c_str());
+			} else {
+				stream->write_function(stream, "-ERR\nNo connection\n");
+			}
+		} catch (DBException &e) {
+			if (conn) {
+				mongo_connection_destroy(&conn);
+			}
+			stream->write_function(stream, "-ERR\n%s\n", e.toString().c_str());
+		}
+	} else {
+	  stream->write_function(stream, "-ERR\n%s\n", MAPREDUCE_SYNTAX);	  
+	}
+
+	switch_safe_free(ns);
+
+	return status;
+}
+
 
 SWITCH_STANDARD_API(mongo_find_one_function) 
 {
   switch_status_t status = SWITCH_STATUS_SUCCESS;
   char *ns = NULL, *json_query = NULL, *json_fields = NULL;
-  char delim = ';';
 
   ns = strdup(cmd);
   switch_assert(ns != NULL);
 
-  if ((json_query = strchr(ns, delim))) {
+  if ((json_query = strchr(ns, DELIMITER))) {
 	  *json_query++ = '\0';
-	  if ((json_fields = strchr(json_query, delim))) {
+	  if ((json_fields = strchr(json_query, DELIMITER))) {
 		  *json_fields++ = '\0';
 	  }
   }
@@ -49,9 +110,8 @@ SWITCH_STANDARD_API(mongo_find_one_function)
 		  stream->write_function(stream, "-ERR\n%s\n", e.toString().c_str());
 	  }
 
-
   } else {
-	  stream->write_function(stream, "-ERR\n%s\n", SYNTAX);	  
+	  stream->write_function(stream, "-ERR\n%s\n", FIND_ONE_SYNTAX);	  
   }
 
   switch_safe_free(ns);
@@ -88,6 +148,12 @@ static switch_status_t config(void)
 				if ((tmp = atoi(val)) > 0) {
 					max_connections = tmp;
 				}
+			} else if (!strcmp(var, "map")) {
+				globals.map = strdup(val);
+			} else if (!strcmp(var, "reduce")) {
+				globals.reduce = strdup(val);
+			} else if (!strcmp(var, "finalize")) {
+				globals.finalize = strdup(val);
 			}
 		}
 	}
@@ -125,7 +191,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mongo_load)
 	  return SWITCH_STATUS_TERM;
   }
   
-  SWITCH_ADD_API(api_interface, "mongo_find_one", "mongo", mongo_find_one_function, SYNTAX);
+  SWITCH_ADD_API(api_interface, "mongo_find_one", "findOne", mongo_find_one_function, FIND_ONE_SYNTAX);
+  SWITCH_ADD_API(api_interface, "mongo_mapreduce", "Map/Reduce", mongo_mapreduce_function, MAPREDUCE_SYNTAX);
 
   return SWITCH_STATUS_SUCCESS;
 }
@@ -133,6 +200,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mongo_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mongo_shutdown)
 {
 	mongo_connection_pool_destroy(&globals.conn_pool);
+	switch_safe_free(globals.map);
+	switch_safe_free(globals.reduce);
+	switch_safe_free(globals.finalize);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
