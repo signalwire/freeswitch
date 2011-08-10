@@ -2842,10 +2842,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
 		switch_channel_set_callstate(channel, CCS_EARLY);
 		switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(channel, event);
-			switch_event_fire(&event);
-		}
 
 		if (channel->caller_profile && channel->caller_profile->times) {
 			switch_mutex_lock(channel->profile_mutex);
@@ -2863,6 +2859,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 				channel->caller_profile->originator_caller_profile->times->progress_media = channel->caller_profile->times->progress_media;
 			}
 			switch_mutex_unlock(channel->profile_mutex);
+		}
+
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
 		}
 
 		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE);
