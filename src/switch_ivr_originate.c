@@ -337,6 +337,7 @@ static switch_bool_t monitor_callback(switch_core_session_t *session, const char
 			if (!bd) {
 				bd = "monitor_early_media_fail";
 			}
+			switch_channel_set_variable(channel, "DIALSTATUS", "BUSY");
 			switch_channel_set_variable(channel, "originate_disposition", bd);
 			switch_channel_hangup(channel, data ? switch_channel_str2cause(data) : SWITCH_CAUSE_USER_BUSY);
 		} else if (!strcmp(app, "ring")) {
@@ -346,6 +347,7 @@ static switch_bool_t monitor_callback(switch_core_session_t *session, const char
 				bd = "monitor_early_media_ring";
 			}
 			switch_channel_set_variable(channel, "originate_disposition", bd);
+			switch_channel_set_variable(channel, "DIALSTATUS", "EARLY");
 
 			if (oglobals) {
 				if (oglobals->monitor_early_media_ring_total && ++oglobals->monitor_early_media_ring_count < oglobals->monitor_early_media_ring_total) {
@@ -1967,6 +1969,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 
 		switch_channel_set_variable(caller_channel, "originate_disposition", "failure");
+		switch_channel_set_variable(caller_channel, "DIALSTATUS", "INVALIDARGS");
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 			ringback_data = NULL;
@@ -3201,6 +3204,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
 					if (peer_channel) {
 						switch_process_import(oglobals.session, peer_channel, "import", NULL);
+
+						if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+							switch_channel_set_variable(caller_channel, "DIALSTATUS", "EARLY");
+						} else {
+							switch_channel_set_variable(caller_channel, "DIALSTATUS", "ANSWER");
+						}
+
 					}
 				}
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n",
@@ -3304,6 +3314,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			if (caller_channel) {
 				switch_channel_set_variable(caller_channel, "originate_disposition", switch_channel_cause2str(*cause));
+
+				switch (*cause) {
+				case SWITCH_CAUSE_ORIGINATOR_CANCEL:
+					switch_channel_set_variable(caller_channel, "DIALSTATUS", "CANCEL");
+					break;
+				case SWITCH_CAUSE_USER_BUSY:
+					switch_channel_set_variable(caller_channel, "DIALSTATUS", "BUSY");
+					break;
+				case SWITCH_CAUSE_NO_ANSWER:
+					switch_channel_set_variable(caller_channel, "DIALSTATUS", "NOANSWER");
+					break;
+				case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
+					switch_channel_set_variable(caller_channel, "DIALSTATUS", "INVALIDARGS");
+					break;
+				case SWITCH_CAUSE_CALL_REJECTED:
+					switch_channel_set_variable(caller_channel, "DIALSTATUS", "DONTCALL");
+					break;
+				default:
+					switch_channel_set_variable(caller_channel, "DIALSTATUS", switch_channel_cause2str(*cause));
+					break;
+				}
 			}
 
 			early_state.ready = 0;
