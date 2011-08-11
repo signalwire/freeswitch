@@ -1936,8 +1936,8 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		{
 			char *err;
 			switch_cache_db_test_reactive(dbh, "select call_uuid, read_bit_rate from channels", "DROP TABLE channels", create_channels_sql);
-			switch_cache_db_test_reactive(dbh, "select * from detailed_calls", "DROP VIEW detailed_calls", detailed_calls_sql);
-			switch_cache_db_test_reactive(dbh, "select * from basic_calls", "DROP VIEW basic_call", basic_calls_sql);
+			switch_cache_db_test_reactive(dbh, "select * from detailed_calls where sent_callee_name=''", "DROP VIEW detailed_calls", detailed_calls_sql);
+			switch_cache_db_test_reactive(dbh, "select * from basic_calls where sent_callee_name=''", "DROP VIEW basic_calls", basic_calls_sql);
 			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
 				switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
 			} else {
