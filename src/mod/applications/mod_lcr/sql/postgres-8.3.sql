@@ -57,6 +57,7 @@ CREATE TABLE lcr
   reliability numeric(10,6) NOT NULL DEFAULT 0,
   cid VARCHAR(32) NOT NULL DEFAULT '',
   enabled boolean NOT NULL DEFAULT 'true',
+  lrn boolean NOT NULL DEFAULT 'false',
   CONSTRAINT lcr_pkey PRIMARY KEY (id)
 );
 
