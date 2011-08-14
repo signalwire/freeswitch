@@ -1120,7 +1120,7 @@ static switch_status_t lcr_load_config()
 
 					if (db_check("SELECT lrn FROM lcr LIMIT 1") != SWITCH_TRUE) {
 						if (db_check("ALTER TABLE lcr add lrn boolean")) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "adding cid field to your lcr database schema.\n");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "adding lrn field to your lcr database schema.\n");
 						} else {
 							return SWITCH_FALSE;
 						}
