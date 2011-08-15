@@ -283,6 +283,7 @@ static ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t 
  * The ioctl() implementation
  */
 
+#ifndef HAVE_UNLOCKED_IOCTL
 static int skypopen_ioctl(struct inode *inode, struct file *filp,
 		unsigned int cmd, unsigned long arg)
 {
@@ -302,13 +303,38 @@ static int skypopen_ioctl(struct inode *inode, struct file *filp,
 	}
 
 }
+#else// HAVE_UNLOCKED_IOCTL
+static long skypopen_unlocked_ioctl(struct file *filp,
+		unsigned int cmd, unsigned long arg)
+{
+	void __user *argp = (void __user *)arg;
+	int __user *p = argp;
+
+	switch (cmd) {
+		case OSS_GETVERSION:
+			return put_user(SOUND_VERSION, p);
+		case SNDCTL_DSP_GETBLKSIZE:
+			return put_user(SKYPOPEN_BLK, p);
+		case SNDCTL_DSP_GETFMTS:
+			return put_user(28731, p);
+
+		default:
+			return 0;
+	}
+
+}
+#endif// HAVE_UNLOCKED_IOCTL
 
 struct file_operations skypopen_fops = {
 	.owner =    THIS_MODULE,
 	.llseek =   no_llseek,
 	.read =     skypopen_read,
 	.write =    skypopen_write,
+#ifndef HAVE_UNLOCKED_IOCTL
 	.ioctl =    skypopen_ioctl,
+#else// HAVE_UNLOCKED_IOCTL
+	.unlocked_ioctl =    skypopen_unlocked_ioctl,
+#endif// HAVE_UNLOCKED_IOCTL
 	.open =     skypopen_c_open,
 	.release =  skypopen_c_release,
 };
