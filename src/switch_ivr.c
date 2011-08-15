@@ -2412,7 +2412,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 		}
 
 		stfu_n_eat(jb, ts, read_frame->payload, read_frame->data, read_frame->datalen, 0);
-		ts += interval;
+		ts += read_impl.samples_per_packet;
 
 		if ((jb_frame = stfu_n_read_a_frame(jb))) {
 			write_frame.data = jb_frame->data;

@@ -3021,6 +3021,7 @@ static switch_status_t load_config(void)
 			const char *enable_callerid = "true";
 			const char *answer_polarity = "false";
 			const char *hangup_polarity = "false";
+			const char *polarity_callerid = "false";
 			int polarity_delay = 600;
 			int callwaiting = 1;
 			int dialtone_timeout = 5000;
@@ -3102,6 +3103,8 @@ static switch_status_t load_config(void)
 					hangup_polarity = val;
 				} else if (!strcasecmp(var, "polarity-delay")) {
 					polarity_delay = atoi(val);
+				} else if (!strcasecmp(var, "polarity-callerid")) {
+					polarity_callerid = val;
 				} else if (!strcasecmp(var, "fail-dial-regex")) {
 					fail_dial_regex = val;
 				} else if (!strcasecmp(var, "hold-music")) {
@@ -3164,6 +3167,7 @@ static switch_status_t load_config(void)
 								   "enable_callerid", enable_callerid,
 								   "answer_polarity_reverse", answer_polarity,
 								   "hangup_polarity_reverse", hangup_polarity,
+								   "polarity_callerid", polarity_callerid,
 								   "polarity_delay", &polarity_delay,
 								   "callwaiting", &callwaiting,
 								   "wait_dialtone_timeout", &dialtone_timeout,

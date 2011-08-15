@@ -75,6 +75,11 @@ with the signaling protocols that you can run on top of your I/O interfaces.
 			<param name="polarity-delay" value="600"/>
 			-->
 
+			<!-- Retrieve caller id on polarity reverse -->
+			<!-- 
+			<param name="polarity-callerid" value="true"/>
+			-->
+
 			<!-- regex to stop dialing when it matches -->
 			<!--<param name="dial-regex" value="5555"/>-->
 

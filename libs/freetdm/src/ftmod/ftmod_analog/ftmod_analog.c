@@ -275,6 +275,15 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 				break;
 			}
 			hotline = val;
+		} else if (!strcasecmp(var, "polarity_callerid")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			if (ftdm_true(val)) {
+				flags |= FTDM_ANALOG_POLARITY_CALLERID;
+			} else {
+				flags &= ~FTDM_ANALOG_POLARITY_CALLERID;
+			}
 		} else {
 			ftdm_log(FTDM_LOG_ERROR, "Unknown parameter %s in span %s\n", var, span->name);
 		}			
@@ -1130,8 +1139,18 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 				break;
 			}
 			if (event->channel->state == FTDM_CHANNEL_STATE_DOWN) {
-				ftdm_log_chan_msg(event->channel, FTDM_LOG_DEBUG, 
-					"Ignoring polarity reversal because this channel is down\n");
+				if (ftdm_test_flag(analog_data, FTDM_ANALOG_CALLERID) 
+				    && ftdm_test_flag(analog_data, FTDM_ANALOG_POLARITY_CALLERID)) {
+					ftdm_log_chan_msg(event->channel, FTDM_LOG_DEBUG, "Polarity reversal detected while down, getting caller id now\n");
+					ftdm_set_state(event->channel, FTDM_CHANNEL_STATE_GET_CALLERID);
+					event->channel->ring_count = 1;
+					ftdm_mutex_unlock(event->channel->mutex);
+					locked = 0;
+					ftdm_thread_create_detached(ftdm_analog_channel_run, event->channel);
+				} else {
+					ftdm_log_chan_msg(event->channel, FTDM_LOG_DEBUG, 
+						"Ignoring polarity reversal because this channel is down\n");
+				}
 				break;
 			}
 			/* we have a good channel, set the polarity flag and let the channel thread deal with it */

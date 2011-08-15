@@ -61,6 +61,7 @@ static struct {
 	char *psk;
 	switch_mutex_t *mutex;
 	switch_hash_t *peer_hash;
+	int loopback;
 } globals;
 
 struct peer_status {
@@ -88,6 +89,7 @@ static switch_status_t load_config(void)
 
 	globals.ttl = 1;
 	globals.key_count = 0;
+	globals.loopback = 0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -119,6 +121,8 @@ static switch_status_t load_config(void)
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid ttl '%s' specified, using default of 1\n", val);
 				}
+			} else if (!strcasecmp(var, "loopback")) {
+				globals.loopback = switch_true(val);
 			}
 
 		}
@@ -408,8 +412,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
 
-	if (switch_mcast_loopback(globals.udp_socket, 0) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to disable loopback\n");
+	if (switch_mcast_loopback(globals.udp_socket, globals.loopback) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set loopback to '%d'\n", globals.loopback);
 		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
 
