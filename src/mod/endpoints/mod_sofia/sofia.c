@@ -48,7 +48,9 @@ extern su_log_t nth_server_log[];
 extern su_log_t nua_log[];
 extern su_log_t soa_log[];
 extern su_log_t sresolv_log[];
+#ifdef HAVE_SOFIA_STUN
 extern su_log_t stun_log[];
+#endif
 extern su_log_t su_log_default[];
 
 static void config_sofia_profile_urls(sofia_profile_t * profile);
@@ -2077,8 +2079,10 @@ static su_log_t *sofia_get_logger(const char *name)
 		return soa_log;
 	} else if (!strcasecmp(name, "sresolv")) {
 		return sresolv_log;
+#ifdef HAVE_SOFIA_STUN
 	} else if (!strcasecmp(name, "stun")) {
 		return stun_log;
+#endif
 	} else if (!strcasecmp(name, "default")) {
 		return su_log_default;
 	} else {
@@ -2105,7 +2109,9 @@ switch_status_t sofia_set_loglevel(const char *name, int level)
 		su_log_set_level(nua_log, level);
 		su_log_set_level(soa_log, level);
 		su_log_set_level(sresolv_log, level);
+#ifdef HAVE_SOFIA_STUN
 		su_log_set_level(stun_log, level);
+#endif
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -3356,7 +3362,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		su_log_redirect(nua_log, logger, NULL);
 		su_log_redirect(soa_log, logger, NULL);
 		su_log_redirect(sresolv_log, logger, NULL);
+#ifdef HAVE_SOFIA_STUN
 		su_log_redirect(stun_log, logger, NULL);
+#endif
 	}
 	
 	if (!zstr(profile_name) && (profile = sofia_glue_find_profile(profile_name))) {
