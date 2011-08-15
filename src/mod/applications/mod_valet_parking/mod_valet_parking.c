@@ -276,17 +276,19 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			if (token->timeout) {
 				const char *var = switch_channel_get_variable(channel, "valet_ticket");
 				
-				if (!strcmp(var, token->uuid)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Valet ticket %s accepted.\n", var);
-					switch_channel_set_variable(channel, "valet_ticket", NULL);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid token %s\n", token->uuid);
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					return;
+				if (!zstr(var)) {
+					if (!strcmp(var, token->uuid)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Valet ticket %s accepted.\n", var);
+						switch_channel_set_variable(channel, "valet_ticket", NULL);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid token %s\n", token->uuid);
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						return;
+					}
 				}
 			}
 
-			if (token && (b_session = switch_core_session_locate(token->uuid))) {
+			if (!zstr(token->uuid) && (b_session = switch_core_session_locate(token->uuid))) {
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
