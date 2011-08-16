@@ -1160,6 +1160,8 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 		args.buf = input;
 		args.buflen = sizeof(input);
 
+		unlink(file_path);
+
 		switch_ivr_record_file(session, &fh, file_path, &args, profile->max_record_len);
 
 		if (switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
@@ -1819,7 +1821,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	uint32_t timeout, attempts = 0, retries = 0;
 	int failed = 0;
 	msg_type_t play_msg_type = MSG_NONE;
-	char *dir_path = NULL, *file_path = NULL;
+	char *dir_path = NULL, *file_path = NULL, *tmp_file_path = NULL;
 	int total_new_messages = 0;
 	int total_saved_messages = 0;
 	int total_new_urgent_messages = 0;
@@ -2099,13 +2101,19 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					} else {
 						switch_event_t *params;
 						file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
+						tmp_file_path = switch_mprintf("%s%sgreeting_%d_TMP.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
+						unlink(tmp_file_path);
+
 						TRY_CODE(create_file(session, profile, VM_RECORD_GREETING_MACRO, file_path, &message_len, SWITCH_TRUE, NULL, NULL));
+						switch_file_rename(tmp_file_path, file_path, switch_core_session_get_pool(session));
+						
 						sql =
 							switch_mprintf("update voicemail_prefs set greeting_path='%s' where username='%s' and domain='%s'", file_path, myid,
 										   domain_name);
 						vm_execute_sql(profile, sql, profile->mutex);
 						switch_safe_free(sql);
 						switch_safe_free(file_path);
+						switch_safe_free(tmp_file_path);
 
 						switch_event_create_subclass(&params, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
 						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Action", "record-greeting");
@@ -2146,10 +2154,14 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				} else if (!strcmp(input, profile->record_name_key)) {
 					switch_event_t *params;
 					file_path = switch_mprintf("%s%srecorded_name.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
+					tmp_file_path = switch_mprintf("%s%srecorded_name_TMP.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
+					unlink(tmp_file_path);
 					TRY_CODE(create_file(session, profile, VM_RECORD_NAME_MACRO, file_path, &message_len, SWITCH_FALSE, NULL, NULL));
+					switch_file_rename(tmp_file_path, file_path, switch_core_session_get_pool(session));
 					sql = switch_mprintf("update voicemail_prefs set name_path='%s' where username='%s' and domain='%s'", file_path, myid, domain_name);
 					vm_execute_sql(profile, sql, profile->mutex);
 					switch_safe_free(file_path);
+					switch_safe_free(tmp_file_path);
 					switch_safe_free(sql);
 
 					switch_event_create_subclass(&params, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
@@ -2430,6 +2442,14 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	}
 
   end:
+
+	switch_safe_free(file_path);
+
+	if (tmp_file_path) {
+		unlink(tmp_file_path);
+		free(tmp_file_path);
+		tmp_file_path = NULL;
+	}
 
 	if (switch_channel_ready(channel)) {
 		if (failed) {
