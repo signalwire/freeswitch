@@ -6745,35 +6745,37 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				goto end;
 			}
 
-			if (dtmf.digit && (tech_pvt->dtmf_type == DTMF_INFO || 
-							   sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF))) {
-				/* queue it up */
-				switch_channel_queue_dtmf(channel, &dtmf);
+			if (dtmf.digit) {
+				if (tech_pvt->dtmf_type == DTMF_INFO || 
+						sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF)) {
+					/* queue it up */
+					switch_channel_queue_dtmf(channel, &dtmf);
 
-				/* print debug info */
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "INFO DTMF(%c)\n", dtmf.digit);
+					/* print debug info */
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "INFO DTMF(%c)\n", dtmf.digit);
 
-				if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-					const char *uuid;
-					switch_core_session_t *session_b;
+					if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+						const char *uuid;
+						switch_core_session_t *session_b;
 
-					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
-						while (switch_channel_has_dtmf(channel)) {
-							switch_dtmf_t idtmf = { 0, 0 };
-							if (switch_channel_dequeue_dtmf(channel, &idtmf) == SWITCH_STATUS_SUCCESS) {
-								switch_core_session_send_dtmf(session_b, &idtmf);
+						if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
+							while (switch_channel_has_dtmf(channel)) {
+								switch_dtmf_t idtmf = { 0, 0 };
+								if (switch_channel_dequeue_dtmf(channel, &idtmf) == SWITCH_STATUS_SUCCESS) {
+									switch_core_session_send_dtmf(session_b, &idtmf);
+								}
 							}
+
+							switch_core_session_rwunlock(session_b);
 						}
-
-						switch_core_session_rwunlock(session_b);
 					}
-				}
 
-				/* Send 200 OK response */
-				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
-								  "IGNORE INFO DTMF(%c) (This channel was not configured to use INFO DTMF!)\n", dtmf.digit);
+					/* Send 200 OK response */
+					nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+									  "IGNORE INFO DTMF(%c) (This channel was not configured to use INFO DTMF!)\n", dtmf.digit);
+				}
 			}
 			goto end;
 		}
