@@ -135,10 +135,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_uuid_format(uuid_str, &uuid);
 
 		fh->spool_path = switch_core_sprintf(fh->memory_pool, "%s%s%s.%s", spool_path, SWITCH_PATH_SEPARATOR, uuid_str, ext);
+	} else {
+		fh->spool_path = NULL;
 	}
 
 	if (rhs) {
 		fh->handler = switch_core_strdup(fh->memory_pool, rhs);
+	} else {
+		fh->handler = NULL;
 	}
 
 	if (channels) {
