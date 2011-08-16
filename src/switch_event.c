@@ -333,17 +333,11 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 
 
 			if (++loops > 2) {
-				uint32_t last_sps = 0, sess_count = switch_core_session_count();
 				if (auto_pause) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event system *still* overloading.\n");
 				} else {
-					switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
-					last_sps = (uint32_t) (float) (last_sps * 0.75f);
-					sess_count = (uint32_t) (float) (sess_count * 0.75f);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-									  "Event system overloading. Taking a 10 second break, Reducing max_sessions to %d %dsps\n", sess_count, last_sps);
-					switch_core_session_limit(sess_count);
-					switch_core_session_ctl(SCSC_SPS, &last_sps);
+									  "Event system overloading. Taking a 10 second break\n");
 					auto_pause = 10;
 					switch_core_session_ctl(SCSC_PAUSE_INBOUND, &auto_pause);
 				}
