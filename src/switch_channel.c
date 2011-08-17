@@ -362,7 +362,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 {
 	switch_status_t status;
 	void *pop;
-	switch_dtmf_t new_dtmf;
+	switch_dtmf_t new_dtmf = { 0 };
 
 	switch_assert(dtmf);
 
@@ -376,14 +376,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 	if (is_dtmf(new_dtmf.digit)) {
 		switch_dtmf_t *dt;
 		int x = 0;
+		char str[2] = "";
 
+		str[0] = new_dtmf.digit;
+		
 		if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
-							  switch_channel_get_name(channel), new_dtmf.digit, new_dtmf.duration);
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s EXCESSIVE DTMF DIGIT [%s] LEN [%d]\n",
+							  switch_channel_get_name(channel), str, new_dtmf.duration);
 			new_dtmf.duration = switch_core_max_dtmf_duration(0);
 		} else if (new_dtmf.duration < switch_core_min_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s SHORT DTMF DIGIT [%c] LEN [%d]\n",
-							  switch_channel_get_name(channel), new_dtmf.digit, new_dtmf.duration);
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s SHORT DTMF DIGIT [%s] LEN [%d]\n",
+							  switch_channel_get_name(channel), str, new_dtmf.duration);
 			new_dtmf.duration = switch_core_min_dtmf_duration(0);
 		} else if (!new_dtmf.duration) {
 			new_dtmf.duration = switch_core_default_dtmf_duration(0);
