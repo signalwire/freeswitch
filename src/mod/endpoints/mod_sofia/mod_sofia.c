@@ -792,6 +792,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 						SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1),
+					        TAG_IF(is_proxy, SOATAG_RTP_SELECT(1)),
 						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
 							   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)), TAG_END());
