@@ -1257,8 +1257,9 @@ void sofia_event_callback(nua_event_t event,
 
 		if (!zstr(sofia_private->uuid)) {
 			if ((session = switch_core_session_locate(sofia_private->uuid))) {
-				
-				if (switch_core_session_running(session)) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+
+				if (switch_core_session_running(session) && !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 					switch_core_session_queue_signal_data(session, de);
 				} else {
 					switch_core_session_message_t msg = { 0 };
