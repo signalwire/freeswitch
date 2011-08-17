@@ -996,7 +996,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 					trans = 1;
 				}
 
-				if (len + newlen > sql_len) {
+				if (len + newlen + 1 > sql_len) {
 					int new_mlen = len + newlen + 10240;
 					
 					if (new_mlen < runtime.max_sql_buffer_len) {
