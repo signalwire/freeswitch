@@ -303,7 +303,7 @@ SWITCH_STANDARD_APP(easyroute_app_function)
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		destnum = argv[0];
-		if (argc == 2) {
+		if (argc >= 2) {
 			if (!strcasecmp(argv[1], "noat")) {
 				noat = 1;
 			} else if (!strcasecmp(argv[1], "separator")) {
