@@ -2458,6 +2458,8 @@ static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch
 		cont->list[i].callback(cont->session, cont->list[i].app, cont->list[i].data);
 	} else {
 		switch_channel_execute_on(switch_core_session_get_channel(cont->session), SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIABLE);
+		switch_channel_api_on(switch_core_session_get_channel(cont->session), SWITCH_CHANNEL_API_ON_TONE_DETECT_VARIABLE);
+
 		if (cont->list[i].app) {
 			switch_core_session_execute_application_async(cont->session, cont->list[i].app, cont->list[i].data);
 		}

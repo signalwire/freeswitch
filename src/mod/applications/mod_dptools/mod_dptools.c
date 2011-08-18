@@ -3669,7 +3669,9 @@ static switch_status_t file_string_file_close(switch_file_handle_t *handle)
 {
 	file_string_context_t *context = handle->private_info;
 
-	switch_core_file_close(&context->fh);
+	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
+		switch_core_file_close(&context->fh);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

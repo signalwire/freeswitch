@@ -30,9 +30,10 @@
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * David Knell <>
  * Eliot Gable <egable AT.AT broadvox.com>
+ * Leon de Rooij <leon@scarlet-internet.nl>
  *
  *
- * sofia_ref.c -- SOFIA SIP Endpoint (registration code)
+ * sofia_reg.c -- SOFIA SIP Endpoint (registration code)
  *
  */
 #include "mod_sofia.h"
@@ -466,6 +467,39 @@ int sofia_reg_find_callback(void *pArg, int argc, char **argv, char **columnName
 	return cbt->matches == 1 ? 0 : 1;
 }
 
+
+int sofia_reg_find_reg_with_positive_expires_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct callback_t *cbt = (struct callback_t *) pArg;
+	sofia_destination_t *dst = NULL;
+	long int expires;
+	char *contact = NULL;
+
+	expires = atol(argv[1]) - 60 - (long) switch_epoch_time_now(NULL);
+
+	if (expires > 0) {
+		dst = sofia_glue_get_destination(argv[0]);
+		contact = switch_mprintf("<%s>;expires=%ld", dst->contact, expires);
+
+		if (!cbt->len) {
+			switch_console_push_match(&cbt->list, contact);
+			switch_safe_free(contact);
+			sofia_glue_free_destination(dst);
+			cbt->matches++;
+			return 0;
+		}
+
+		switch_copy_string(cbt->val, contact, cbt->len);
+		switch_safe_free(contact);
+		sofia_glue_free_destination(dst);
+		cbt->matches++;
+		return cbt->matches == 1 ? 0 : 1;
+	}
+
+	return 0;
+}
+
+
 int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
@@ -875,6 +909,29 @@ switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *p
 }
 
 
+switch_console_callback_match_t *sofia_reg_find_reg_url_with_positive_expires_multi(sofia_profile_t *profile, const char *user, const char *host)
+{
+	struct callback_t cbt = { 0 };
+	char sql[512] = "";
+
+	if (!user) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Called with null user!\n");
+		return NULL;
+	}
+
+	if (host) {
+		switch_snprintf(sql, sizeof(sql), "select contact,expires from sip_registrations where sip_user='%s' and (sip_host='%s' or presence_hosts like '%%%s%%')",
+						user, host, host);
+	} else {
+		switch_snprintf(sql, sizeof(sql), "select contact,expires from sip_registrations where sip_user='%s'", user);
+	}
+
+	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_find_reg_with_positive_expires_callback, &cbt);
+
+	return cbt.list;
+}
+
+
 void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_dispatch_event_t *de,
 							  sofia_regtype_t regtype, const char *realm, int stale)
 {
@@ -983,8 +1040,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 	}
 
-	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
-	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
+	/* all callers must confirm that sip and sip->sip_request are not NULL */
+	switch_assert(sip != NULL && sip->sip_request != NULL);
 
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
@@ -1032,7 +1089,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		sub_host = to_host;
 	}
 
-	if (contact->m_url) {
+	if (contact && contact->m_url) {
 		const char *port = contact->m_url->url_port;
 		char new_port[25] = "";
 		const char *contact_host = contact->m_url->url_host;
@@ -1130,7 +1187,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	if (expires) {
 		exptime = expires->ex_delta;
-	} else if (contact->m_expires) {
+	} else if (contact && contact->m_expires) {
 		exptime = atol(contact->m_expires);
 	}
 
@@ -1163,11 +1220,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", reg_host);
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
+			if (contact)
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", reg_desc);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+			if (contact)
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", from_user);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
@@ -1178,7 +1237,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_fire(&s_event);
 		}
 
-		if (exptime && v_event && *v_event) {
+		if (contact && exptime && v_event && *v_event) {
 			char *exp_var;
 			char *allow_multireg = NULL;
 			int auto_connectile = 0;
@@ -1310,11 +1369,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", reg_host);
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
+			if (contact)
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", reg_desc);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+			if (contact)
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", from_user);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
@@ -1343,6 +1404,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		switch_goto_int(r, 1, end);
 	}
+
+	if (!contact)
+		goto respond_200_ok;
+
   reg:
 
 
@@ -1589,69 +1654,107 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 	}
 
+  respond_200_ok:
 
 	if (regtype == REG_REGISTER) {
 		char exp_param[128] = "";
 		char date[80] = "";
 		switch_event_t *s_mwi_event = NULL;
 
+		switch_console_callback_match_t *contact_list = NULL;
+		tagi_t *contact_tags;
+		switch_console_callback_match_node_t *m;
+		int i;
+
 		s_event = NULL;
 
-		if (exptime) {
-			switch_snprintf(exp_param, sizeof(exp_param), "expires=%ld", exptime);
-			sip_contact_add_param(nua_handle_home(nh), sip->sip_contact, exp_param);
+		if (contact) {
+			if (exptime) {
+				switch_snprintf(exp_param, sizeof(exp_param), "expires=%ld", exptime);
+				sip_contact_add_param(nua_handle_home(nh), sip->sip_contact, exp_param);
 
-			if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER) ||
-				(reg_count == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) {
-				if (switch_event_create(&s_mwi_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(s_mwi_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", mwi_user, mwi_host);
-					switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
-					switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Call-ID", call_id);
-				}
-			}
-
-			if (sofia_test_pflag(profile, PFLAG_PRESENCE_ON_REGISTER) || 
-				(reg_count == 1 && sofia_test_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER)) 
-				|| send_pres == 1 || (reg_count == 1 && send_pres == 2)) {
-				
-				if (sofia_test_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER)) {
-					if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
-						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
-						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, sub_host);
-						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
-						switch_event_fire(&s_event);
+				if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER) ||
+					(reg_count == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) {
+					if (switch_event_create(&s_mwi_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(s_mwi_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", mwi_user, mwi_host);
+						switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
+						switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Call-ID", call_id);
 					}
-				} else {
-					if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
-						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
-						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", "Registered");
-						switch_event_fire(&s_event);
-					}		
 				}
-			}
-		} else {
-			switch_core_del_registration(to_user, reg_host, call_id);
 
-			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", reg_host);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+				if (sofia_test_pflag(profile, PFLAG_PRESENCE_ON_REGISTER) || 
+					(reg_count == 1 && sofia_test_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER)) 
+					|| send_pres == 1 || (reg_count == 1 && send_pres == 2)) {
+				
+					if (sofia_test_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER)) {
+						if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
+							switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
+							switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, sub_host);
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+							switch_event_fire(&s_event);
+						}
+					} else {
+						if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
+							switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, sub_host);
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", "Registered");
+							switch_event_fire(&s_event);
+						}		
+					}
+				}
+			} else {
+				switch_core_del_registration(to_user, reg_host, call_id);
+
+				if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", reg_host);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
+				}
 			}
 		}
 
 		switch_rfc822_date(date, switch_micro_time_now());
-		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(sip->sip_contact),
-					TAG_IF(path_val, SIPTAG_PATH_STR(path_val)), NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_DATE_STR(date), TAG_END());
+
+		/* generate and respond a 200 OK */
+
+		if (mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup) {
+			/* handle backwards compatibility - contacts will not be looked up but only copied from the request into the response
+			   remove this condition later if nobody complains about the extra select of the below new behavior
+			   also remove the parts in mod_sofia.h, sofia.c and sofia_reg.c that refer to reg_deny_binding_fetch_and_no_lookup */
+			nua_respond(nh, SIP_200_OK, TAG_IF(contact, SIPTAG_CONTACT(sip->sip_contact)), TAG_IF(path_val, SIPTAG_PATH_STR(path_val)),
+			                            NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_DATE_STR(date), TAG_END());
+ 
+		} else if ((contact_list = sofia_reg_find_reg_url_with_positive_expires_multi(profile, from_user, reg_host))) {
+			/* all + 1 tag_i elements initialized as NULL - last one implies TAG_END() */
+			switch_zmalloc(contact_tags, sizeof(*contact_tags) * (contact_list->count + 1));
+			i = 0;
+			for (m = contact_list->head; m; m = m->next) {
+				contact_tags[i].t_tag = siptag_contact_str;
+				contact_tags[i].t_value = (tag_value_t) m->val;
+				++i;
+			}
+
+			nua_respond(nh, SIP_200_OK, TAG_IF(path_val, SIPTAG_PATH_STR(path_val)),
+			                            NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_DATE_STR(date), TAG_NEXT(contact_tags));
+
+			switch_safe_free(contact_tags);
+			switch_console_free_matches(&contact_list);
+
+		} else {
+			/* respond without any contacts */
+			nua_respond(nh, SIP_200_OK, TAG_IF(path_val, SIPTAG_PATH_STR(path_val)),
+			                            NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_DATE_STR(date), TAG_END());
+		}
+
 
 		if (s_event) {
 			switch_event_fire(&s_event);
@@ -1661,7 +1764,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_fire(&s_mwi_event);
 		}
 
-		if (*contact_str && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE_SYLANTRO)) {
+		if (contact && *contact_str && sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE_SYLANTRO)) {
 			sofia_sla_handle_register(nua, profile, sip, de, exptime, contact_str);
 		}
 
@@ -1707,7 +1810,8 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
-	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
+	/* backwards compatibility */
+	if (mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup && !(sip->sip_contact && sip->sip_contact->m_url)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT! ip: %s, port: %i\n", network_ip, network_port);
 		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
 		goto end;

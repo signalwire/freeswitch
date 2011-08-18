@@ -377,7 +377,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	int divisor = 0;
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 	int restart_limit_on_dtmf = 0;
-	const char *prefix;
+	const char *prefix, *var;
 
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
 
@@ -755,6 +755,29 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	}
 
 	switch_core_file_close(fh);
+
+
+	if ((var = switch_channel_get_variable(channel, "record_post_process_exec_api"))) {
+		char *cmd = switch_core_session_strdup(session, var);
+		char *data, *expanded = NULL;
+		switch_stream_handle_t stream = { 0 };
+		
+		SWITCH_STANDARD_STREAM(stream);
+		
+		if ((data = strchr(cmd, ':'))) {
+			*data++ = '\0';
+			expanded = switch_channel_expand_variables(channel, data);
+		}
+		
+		switch_api_execute(cmd, expanded, session, &stream);
+		
+		if (expanded && expanded != data) {
+			free(expanded);
+		}
+		
+		switch_safe_free(stream.data);
+		
+	}
 
 	if (read_impl.samples_per_second) {
 		switch_channel_set_variable_printf(channel, "record_seconds", "%d", fh->samples_out / read_impl.samples_per_second);

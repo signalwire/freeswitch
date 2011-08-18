@@ -994,8 +994,8 @@ static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fn
 		switch_snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 	}
 
-	switch_mutex_lock(loadable_modules.mutex);
-	if (switch_core_hash_find(loadable_modules.module_hash, file)) {
+
+	if (switch_core_hash_find_locked(loadable_modules.module_hash, file, loadable_modules.mutex)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s Already Loaded!\n", file);
 		*err = "Module already loaded";
 		status = SWITCH_STATUS_FALSE;
@@ -1010,7 +1010,7 @@ static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fn
 	} else {
 		*err = "module load file routine returned an error";
 	}
-	switch_mutex_unlock(loadable_modules.mutex);
+
 
 	return status;
 

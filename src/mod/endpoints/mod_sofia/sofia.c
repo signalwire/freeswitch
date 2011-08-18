@@ -48,7 +48,9 @@ extern su_log_t nth_server_log[];
 extern su_log_t nua_log[];
 extern su_log_t soa_log[];
 extern su_log_t sresolv_log[];
+#ifdef HAVE_SOFIA_STUN
 extern su_log_t stun_log[];
+#endif
 extern su_log_t su_log_default[];
 
 static void config_sofia_profile_urls(sofia_profile_t * profile);
@@ -1255,8 +1257,9 @@ void sofia_event_callback(nua_event_t event,
 
 		if (!zstr(sofia_private->uuid)) {
 			if ((session = switch_core_session_locate(sofia_private->uuid))) {
-				
-				if (switch_core_session_running(session)) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+
+				if (switch_core_session_running(session) && !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 					switch_core_session_queue_signal_data(session, de);
 				} else {
 					switch_core_session_message_t msg = { 0 };
@@ -2077,8 +2080,10 @@ static su_log_t *sofia_get_logger(const char *name)
 		return soa_log;
 	} else if (!strcasecmp(name, "sresolv")) {
 		return sresolv_log;
+#ifdef HAVE_SOFIA_STUN
 	} else if (!strcasecmp(name, "stun")) {
 		return stun_log;
+#endif
 	} else if (!strcasecmp(name, "default")) {
 		return su_log_default;
 	} else {
@@ -2105,7 +2110,9 @@ switch_status_t sofia_set_loglevel(const char *name, int level)
 		su_log_set_level(nua_log, level);
 		su_log_set_level(soa_log, level);
 		su_log_set_level(sresolv_log, level);
+#ifdef HAVE_SOFIA_STUN
 		su_log_set_level(stun_log, level);
+#endif
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2702,6 +2709,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 				mod_sofia_globals.debug_sla = atoi(val);
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
+			} else if (!strcasecmp(var, "reg-deny-binding-fetch-and-no-lookup")) {          /* backwards compatibility */
+				mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = switch_true(val);  /* remove when noone complains about the extra lookup */
+				if (switch_true(val)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Enabling reg-deny-binding-fetch-and-no-lookup - this functionality is "
+					                                         "deprecated and will be removed - let FS devs know if you think it should stay\n");
+				}
 			} else if (!strcasecmp(var, "rewrite-multicasted-fs-path")) {
 				if( (!strcasecmp(val, "to_host")) || (!strcasecmp(val, "1")) ) {
 					/* old behaviour */
@@ -3356,7 +3369,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		su_log_redirect(nua_log, logger, NULL);
 		su_log_redirect(soa_log, logger, NULL);
 		su_log_redirect(sresolv_log, logger, NULL);
+#ifdef HAVE_SOFIA_STUN
 		su_log_redirect(stun_log, logger, NULL);
+#endif
 	}
 	
 	if (!zstr(profile_name) && (profile = sofia_glue_find_profile(profile_name))) {
@@ -3377,6 +3392,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 	}
 
 	mod_sofia_globals.auto_restart = SWITCH_TRUE;
+	mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = SWITCH_FALSE; /* handle backwards compatilibity - by default use new behavior */
 	mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
 
 	if ((settings = switch_xml_child(cfg, "global_settings"))) {
@@ -3393,6 +3409,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				mod_sofia_globals.debug_sla = atoi(val);
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
+			} else if (!strcasecmp(var, "reg-deny-binding-fetch-and-no-lookup")) {          /* backwards compatibility */
+				mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = switch_true(val);  /* remove when noone complains about the extra lookup */
+				if (switch_true(val)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Enabling reg-deny-binding-fetch-and-no-lookup - this functionality is "
+					                                         "deprecated and will be removed - let FS devs know if you think it should stay\n");
+				}
 			} else if (!strcasecmp(var, "rewrite-multicasted-fs-path")) {
 				if( (!strcasecmp(val, "to_host")) || (!strcasecmp(val, "1")) ) {
 					/* old behaviour */
@@ -6737,35 +6759,37 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				goto end;
 			}
 
-			if (dtmf.digit && (tech_pvt->dtmf_type == DTMF_INFO || 
-							   sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF))) {
-				/* queue it up */
-				switch_channel_queue_dtmf(channel, &dtmf);
+			if (dtmf.digit) {
+				if (tech_pvt->dtmf_type == DTMF_INFO || 
+						sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF)) {
+					/* queue it up */
+					switch_channel_queue_dtmf(channel, &dtmf);
 
-				/* print debug info */
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "INFO DTMF(%c)\n", dtmf.digit);
+					/* print debug info */
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "INFO DTMF(%c)\n", dtmf.digit);
 
-				if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-					const char *uuid;
-					switch_core_session_t *session_b;
+					if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+						const char *uuid;
+						switch_core_session_t *session_b;
 
-					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
-						while (switch_channel_has_dtmf(channel)) {
-							switch_dtmf_t idtmf = { 0, 0 };
-							if (switch_channel_dequeue_dtmf(channel, &idtmf) == SWITCH_STATUS_SUCCESS) {
-								switch_core_session_send_dtmf(session_b, &idtmf);
+						if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
+							while (switch_channel_has_dtmf(channel)) {
+								switch_dtmf_t idtmf = { 0, 0 };
+								if (switch_channel_dequeue_dtmf(channel, &idtmf) == SWITCH_STATUS_SUCCESS) {
+									switch_core_session_send_dtmf(session_b, &idtmf);
+								}
 							}
+
+							switch_core_session_rwunlock(session_b);
 						}
-
-						switch_core_session_rwunlock(session_b);
 					}
-				}
 
-				/* Send 200 OK response */
-				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
-								  "IGNORE INFO DTMF(%c) (This channel was not configured to use INFO DTMF!)\n", dtmf.digit);
+					/* Send 200 OK response */
+					nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+									  "IGNORE INFO DTMF(%c) (This channel was not configured to use INFO DTMF!)\n", dtmf.digit);
+				}
 			}
 			goto end;
 		}
