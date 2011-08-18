@@ -2709,6 +2709,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 				mod_sofia_globals.debug_sla = atoi(val);
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
+			} else if (!strcasecmp(var, "reg-deny-binding-fetch-and-no-lookup")) {          /* backwards compatibility */
+				mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = switch_true(val);  /* remove when noone complains about the extra lookup */
+				if (switch_true(val)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Enabling reg-deny-binding-fetch-and-no-lookup - this functionality is "
+					                                         "deprecated and will be removed - let FS devs know if you think it should stay\n");
+				}
 			} else if (!strcasecmp(var, "rewrite-multicasted-fs-path")) {
 				if( (!strcasecmp(val, "to_host")) || (!strcasecmp(val, "1")) ) {
 					/* old behaviour */
@@ -3386,6 +3392,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 	}
 
 	mod_sofia_globals.auto_restart = SWITCH_TRUE;
+	mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = SWITCH_FALSE; /* handle backwards compatilibity - by default use new behavior */
 	mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
 
 	if ((settings = switch_xml_child(cfg, "global_settings"))) {
@@ -3402,6 +3409,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				mod_sofia_globals.debug_sla = atoi(val);
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
+			} else if (!strcasecmp(var, "reg-deny-binding-fetch-and-no-lookup")) {          /* backwards compatibility */
+				mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = switch_true(val);  /* remove when noone complains about the extra lookup */
+				if (switch_true(val)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Enabling reg-deny-binding-fetch-and-no-lookup - this functionality is "
+					                                         "deprecated and will be removed - let FS devs know if you think it should stay\n");
+				}
 			} else if (!strcasecmp(var, "rewrite-multicasted-fs-path")) {
 				if( (!strcasecmp(val, "to_host")) || (!strcasecmp(val, "1")) ) {
 					/* old behaviour */
