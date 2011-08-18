@@ -2830,6 +2830,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 		}
 
 		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE);
+		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_RING_VARIABLE);
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -2877,7 +2878,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE);
 		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
 
-
+		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_PRE_ANSWER_VARIABLE);
+		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_MEDIA_VARIABLE);
 
 		if ((var = switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
 			switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
@@ -2969,43 +2971,108 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready_value(switch_c
 	return status;
 }
 
+static void do_api_on(switch_channel_t *channel, const char *variable)
+{
+	char *app;
+	char *arg = NULL;	
+	switch_stream_handle_t stream = { 0 };
+
+	app = switch_core_session_strdup(channel->session, variable);
+	
+	if ((arg = strchr(app, ' '))) {
+		*arg++ = '\0';
+	}
+	
+	SWITCH_STANDARD_STREAM(stream);
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s process %s: %s(%s)\n%s\n",
+					  channel->name, variable, app, switch_str_nil(arg), (char *) stream.data);
+	switch_api_execute(app, arg, NULL, &stream);
+	free(stream.data);
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_channel_api_on(switch_channel_t *channel, const char *variable_prefix)
+{
+	switch_event_header_t *hp;
+	switch_event_t *event;
+	int x = 0;
+
+								
+	switch_channel_get_variables(channel, &event);
+	
+	for (hp = event->headers; hp; hp = hp->next) {
+		char *var = hp->name;
+		char *val = hp->value;
+
+		if (!strncasecmp(var, variable_prefix, strlen(variable_prefix))) {
+			if (hp->idx) {
+				int i;
+				for (i = 0; i < hp->idx; i++) {
+					x++;
+					do_api_on(channel, hp->array[i]);					
+				}
+			} else {
+				x++;
+				do_api_on(channel, val);
+			}
+		}
+	}
+	
+	switch_event_destroy(&event);
+
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+static void do_execute_on(switch_channel_t *channel, const char *variable)
+{
+	char *arg = NULL;
+	char *p;
+	int bg = 0;
+	char *app;
+
+	app = switch_core_session_strdup(channel->session, variable);
+	
+	for(p = app; p && *p; p++) {
+		if (*p == ' ') {
+			*p++ = '\0';
+			arg = p;
+			break;
+		} else if (*p == ':' && (*(p+1) == ':')) {
+			bg++;
+			break;
+		}
+	}
+	
+	
+	if (bg) {
+		switch_core_session_execute_application_async(channel->session, app, arg);
+	} else {
+		switch_core_session_execute_application(channel->session, app, arg);
+	}
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix)
 {
-	switch_event_header_t *hi;
+	switch_event_header_t *hp;
 	switch_event_t *event;
 	int x = 0;
 
 	switch_channel_get_variables(channel, &event);
 	
-	for (hi = event->headers; hi; hi = hi->next) {
-		char *var = hi->name;
-		char *val = hi->value;
-		char *app;
-			
+	for (hp = event->headers; hp; hp = hp->next) {
+		char *var = hp->name;
+		char *val = hp->value;
+
 		if (!strncasecmp(var, variable_prefix, strlen(variable_prefix))) {
-			char *arg = NULL;
-			char *p;
-			int bg = 0;
-			x++;
-
-			app = switch_core_session_strdup(channel->session, val);
-
-			for(p = app; p && *p; p++) {
-				if (*p == ' ') {
-					*p++ = '\0';
-					arg = p;
-					break;
-				} else if (*p == ':' && (*(p+1) == ':')) {
-					bg++;
-					break;
+			if (hp->idx) {
+				int i;
+				for (i = 0; i < hp->idx; i++) {
+					x++;
+					do_execute_on(channel, hp->array[i]);					
 				}
-			}
-
-			
-			if (bg) {
-				switch_core_session_execute_application_async(channel->session, app, arg);
 			} else {
-				switch_core_session_execute_application(channel->session, app, arg);
+				x++;
+				do_execute_on(channel, val);
 			}
 		}
 	}
@@ -3021,7 +3088,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	const char *uuid;
 	switch_core_session_t *other_session;
 	const char *var;
-	char *app;
 
 	switch_assert(channel != NULL);
 
@@ -3087,24 +3153,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
 		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE);
+		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_MEDIA_VARIABLE);
 	}
 
-	if ((var = switch_channel_get_variable(channel, SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE)) && !zstr(var)) {
-		switch_stream_handle_t stream = { 0 };
-		char *arg = NULL;
-
-		app = switch_core_session_strdup(channel->session, var);
-		if ((arg = strchr(app, ' '))) {
-			*arg++ = '\0';
-		}
-
-		SWITCH_STANDARD_STREAM(stream);
-		switch_api_execute(app, arg, NULL, &stream);
-
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s api on answer: %s(%s)\n%s\n",
-						  channel->name, app, switch_str_nil(arg), (char *) stream.data);
-		free(stream.data);
-	}
+	switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE);
 
 	switch_channel_presence(channel, "unknown", "answered", NULL);
 
