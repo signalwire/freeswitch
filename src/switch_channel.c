@@ -1017,8 +1017,10 @@ SWITCH_DECLARE(void) switch_channel_process_export(switch_channel_t *channel, sw
 			const char *vval;
 			if ((vval = switch_channel_get_variable(channel, argv[x]))) {
 				char *vvar = argv[x];
-				if (!strncasecmp(vvar, "nolocal:", 8)) {
+				if (!strncasecmp(vvar, "nolocal:", 8)) { /* remove this later ? */
 					vvar += 8;
+				} else if (!strncasecmp(vvar, "_nolocal_", 9)) {
+					vvar += 9;
 				}
 				if (var_event) {
 					switch_event_del_header(var_event, vvar);
@@ -1058,8 +1060,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_var_check(switch_
 	var = switch_core_session_strdup(channel->session, varname);
 
 	if (var) {
-		if (!strncasecmp(var, "nolocal:", 8)) {
+		if (!strncasecmp(var, "nolocal:", 8)) { /* remove this later ? */
 			var_name = var + 8;
+			local = 0;
+		} else if (!strncasecmp(var, "_nolocal_", 9)) {
+			var_name = var + 9;
 			local = 0;
 		} else {
 			var_name = var;
