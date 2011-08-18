@@ -23,9 +23,9 @@ DROP TABLE IF EXISTS `lcr`;
 CREATE TABLE `lcr` (
   `id` int(11) NOT NULL auto_increment,
   `digits` varchar(15) default NULL,
-  `rate` float(11,5) unsigned NOT NULL,
-  `intrastate_rate` float(11, 5) unsigned NOT NULL,
-  `intralata_rate` float(11, 5) unsigned NOT NULL,
+  `rate` float(11,5) unsigned,
+  `intrastate_rate` float(11, 5) unsigned,
+  `intralata_rate` float(11, 5) unsigned,
   `carrier_id` int(11) NOT NULL,
   `lead_strip` int(11) NOT NULL,
   `trail_strip` int(11) NOT NULL,
