@@ -3653,7 +3653,6 @@ SWITCH_STANDARD_API(prefs_api_function)
 				switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account); \
 				switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", \
 										+total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages); \
-				created++;												\
 			}															\
 		}																\
 	}
@@ -3662,7 +3661,6 @@ SWITCH_STANDARD_API(prefs_api_function)
 static void actual_message_query_handler(switch_event_t *event)
 {
 	char *account = switch_event_get_header(event, "message-account");
-	int created = 0;
 	switch_event_t *new_event = NULL;
 	char *dup = NULL;
 	int total_new_messages = 0;
@@ -3701,6 +3699,10 @@ static void actual_message_query_handler(switch_event_t *event)
 					switch_hash_this(hi, NULL, NULL, &val);
 					profile = (vm_profile_t *) val;
 					parse_profile();
+
+					if (new_event) {
+						break;
+					}
 				}
 			}
 		}
@@ -3709,7 +3711,7 @@ static void actual_message_query_handler(switch_event_t *event)
 
 	}
 
-	if (!created) {
+	if (!new_event) {
 		if (switch_event_create(&new_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "no");
 			switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account);
