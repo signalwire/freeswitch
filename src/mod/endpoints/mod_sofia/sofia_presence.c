@@ -484,10 +484,10 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	}
 
 	if (for_everyone) {
-		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q',call_id "
+		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q' "
 							 "from sip_registrations where mwi_user='%q' and mwi_host='%q'", stream.data, user, host);
 	} else if (call_id) {
-		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q',call_id "
+		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q' "
 							 "from sip_registrations where mwi_user='%q' and mwi_host='%q' and call_id='%q'", stream.data, user, host, call_id);
 	}
 
@@ -1860,7 +1860,6 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	const char *body = argv[5];
 	const char *o_contact = argv[2];
 	const char *network_ip = argv[4];
-	const char *call_id = argv[6];
 
 	char *profile_name = argv[3];
 	struct mwi_helper *h = (struct mwi_helper *) pArg;
@@ -1872,7 +1871,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 		}
 	}
 
-	sofia_glue_send_notify(profile, user, host, event, contenttype, body, o_contact, network_ip, call_id);
+	sofia_glue_send_notify(profile, user, host, event, contenttype, body, o_contact, network_ip);
 
 	if (ext_profile) {
 		sofia_glue_release_profile(ext_profile);
