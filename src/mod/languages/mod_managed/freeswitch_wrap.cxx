@@ -1169,17 +1169,6 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE_ge
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE_get() {
-  char * jresult ;
-  char *result = 0 ;
-  
-  result = (char *) "api_on_answer";
-  
-  jresult = SWIG_csharp_string_callback((const char *)result); 
-  return jresult;
-}
-
-
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -1196,6 +1185,83 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIA
   char *result = 0 ;
   
   result = (char *) "execute_on_tone_detect";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "execute_on_originate";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "api_on_answer";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_PRE_ANSWER_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "api_on_pre_answer";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_MEDIA_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "api_on_media";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_RING_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "api_on_ring";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_TONE_DETECT_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "api_on_tone_detect";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_ORIGINATE_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "api_on_originate";
   
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
@@ -25329,6 +25395,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_execute_on(void * jarg1, char *
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (char *)jarg2; 
   result = (switch_status_t)switch_channel_execute_on(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_api_on(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (switch_status_t)switch_channel_api_on(arg1,(char const *)arg2);
   jresult = result; 
   return jresult;
 }
