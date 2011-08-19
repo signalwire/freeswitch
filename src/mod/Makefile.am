@@ -39,6 +39,6 @@ mod_com_g729-activate:
 	cd $(switch_builddir)/src/mod/codecs/mod_com_g729 && $(MAKE) $(AM_MAKEFLAGS) activate
 
 .DEFAULT:
-	@if test -z "`echo $@ | grep all`"; then  $(MAKE) $(AM_MAKEFLAGS) $@-all ; else echo Unknown target `echo $@ | sed -e 's|-all||'`; exit 1; fi
+	@if test -z "`echo $@ | grep '\-all$$'`"; then  $(MAKE) $(AM_MAKEFLAGS) $@-all ; else echo Unknown target `echo $@ | sed -e 's|-all||'`; exit 1; fi
 
 
