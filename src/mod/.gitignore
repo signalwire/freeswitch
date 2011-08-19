@@ -54,6 +54,7 @@
 /loggers/mod_syslog/Makefile
 /say/mod_say_en/Makefile
 /say/mod_say_ru/Makefile
+/timers/mod_timerfd/Makefile
 /applications/mod_stress/mod_stress.log
 /asr_tts/mod_unimrcp/mod_unimrcp.log
 /endpoints/mod_portaudio/mod_portaudio.log
