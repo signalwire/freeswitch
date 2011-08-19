@@ -687,7 +687,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(_In_ switch_co
 /*! 
   \brief Signal a session's state machine thread that a state change has occured
 */
-SWITCH_DECLARE(void) switch_core_session_wake_session_thread(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_wake_session_thread(_In_ switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(_In_ switch_core_session_t *session);
 
 /*! 

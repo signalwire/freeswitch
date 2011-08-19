@@ -1030,6 +1030,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		switch_buffer_destroy(&ringback.audio_buffer);
 	}
 
+	
+	switch_ivr_parse_all_events(session);
+	
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 	if (switch_core_codec_ready(&write_codec)) {
@@ -3162,9 +3165,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			if (caller_channel) {
 				if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 					switch_channel_pass_callee_id(peer_channel, caller_channel);
+					if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
+						status = SWITCH_STATUS_SUCCESS;
+					} else {
 					status = switch_channel_answer(caller_channel);
+					}
 				} else if (switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
+					if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
+						status = SWITCH_STATUS_SUCCESS;
+					} else {
 					status = switch_channel_pre_answer(caller_channel);
+					}
 				} else {
 					status = SWITCH_STATUS_SUCCESS;
 				}
@@ -3460,6 +3471,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 
 		switch_ivr_sleep(*bleg, 0, SWITCH_TRUE, NULL);
+	}
+
+	if (oglobals.session) {
+		switch_ivr_parse_all_events(oglobals.session);
 	}
 
 	if (oglobals.session && status == SWITCH_STATUS_SUCCESS) {

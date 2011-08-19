@@ -832,9 +832,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(switch_core_se
 
 	switch_assert(session != NULL);
 
+
 	if (session->message_queue) {
 		while ((status = (switch_status_t) switch_queue_trypop(session->message_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			message = (switch_core_session_message_t *) pop;
+			switch_ivr_process_indications(session, message);
 			switch_core_session_free_message(&message);
 		}
 	}
@@ -1124,14 +1126,20 @@ SWITCH_DECLARE(switch_channel_t *) switch_core_session_get_channel(switch_core_s
 	return session->channel;
 }
 
-SWITCH_DECLARE(void) switch_core_session_wake_session_thread(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_core_session_wake_session_thread(switch_core_session_t *session)
 {
+	switch_status_t status;
+
 	/* If trylock fails the signal is already awake so we needn't bother */
 
-	if (switch_mutex_trylock(session->mutex) == SWITCH_STATUS_SUCCESS) {
+	status = switch_mutex_trylock(session->mutex);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_thread_cond_signal(session->cond);
 		switch_mutex_unlock(session->mutex);
 	}
+
+	return status;
 }
 
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session_t *session)
