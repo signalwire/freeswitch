@@ -524,7 +524,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				switch_snprintf(tmp, sizeof(tmp), "%s%s", rc, vrc);
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, tmp);
 			} else if ((ep = switch_channel_get_variable(channel, "ep_codec_string"))) {
-				printf("SET [%s] [%s]\n", switch_channel_get_name(peer_channel), ep);
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, ep);
 			}
 
