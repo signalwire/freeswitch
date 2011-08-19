@@ -2022,7 +2022,7 @@ SWITCH_STANDARD_APP(read_function)
 SWITCH_STANDARD_APP(play_and_get_digits_function)
 {
 	char *mydata;
-	char *argv[10] = { 0 };
+	char *argv[11] = { 0 };
 	int argc;
 	int32_t min_digits = 0;
 	int32_t max_digits = 0;
@@ -2035,6 +2035,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 	const char *var_name = NULL;
 	const char *valid_terminators = NULL;
 	const char *digits_regex = NULL;
+	const char *transfer_on_failure = NULL;
 
 	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -2084,6 +2085,10 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 		}
 	}
 
+	if (argc > 10) {
+		transfer_on_failure = argv[10];
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer on failure = [%s].\n", transfer_on_failure);
+	}
 
 	if (min_digits <= 1) {
 		min_digits = 1;
@@ -2102,7 +2107,8 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 	}
 
 	switch_play_and_get_digits(session, min_digits, max_digits, max_tries, timeout, valid_terminators,
-							   prompt_audio_file, bad_input_audio_file, var_name, digit_buffer, sizeof(digit_buffer), digits_regex, digit_timeout);
+							   prompt_audio_file, bad_input_audio_file, var_name, digit_buffer, sizeof(digit_buffer), 
+							   digits_regex, digit_timeout, transfer_on_failure);
 }
 
 #define SAY_SYNTAX "<module_name>[:<lang>] <say_type> <say_method> [<say_gender>] <text>"
@@ -3904,7 +3910,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   "<min> <max> <file> <var_name> <timeout> <terminators> <digit_timeout>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "play_and_get_digits", "Play and get Digits", "Play and get Digits",
 				   play_and_get_digits_function, 
-				   "<min> <max> <tries> <timeout> <terminators> <file> <invalid_file> <var_name> <regexp> [<digit_timeout>]", SAF_NONE);
+				   "\n\t<min> <max> <tries> <timeout> <terminators> <file> <invalid_file> <var_name> <regexp> [<digit_timeout>] ['<failure_ext> [failure_dp [failure_context]]']", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_record_session", "Stop Record Session", STOP_SESS_REC_DESC, stop_record_session_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path> [+<timeout>]", SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "record", "Record File", "Record a file from the channels input", record_function,

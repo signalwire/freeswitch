@@ -1981,7 +1981,8 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   char *digit_buffer, 
 														   uint32_t digit_buffer_length, 
 														   const char *digits_regex,
-														   uint32_t digit_timeout)
+														   uint32_t digit_timeout,
+														   const char *transfer_on_failure)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -2031,7 +2032,45 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 	}
 
 	memset(digit_buffer, 0, digit_buffer_length);
-	return SWITCH_STATUS_FALSE;
+	
+	/* If we get here then check for transfer-on-failure ext/dp/context */
+	/* split this arg on spaces to get ext, dp, and context */
+		
+	if (!zstr(transfer_on_failure)) {
+		const char *failure_ext = NULL;
+		const char *failure_dialplan = NULL;
+		const char *failure_context = NULL;
+		char *target[4];
+		char *mydata = switch_core_session_strdup(session, transfer_on_failure);
+		int argc;
+		
+		argc = switch_separate_string(mydata, ' ', target, (sizeof(target) / sizeof(target[0])));
+		
+		if ( argc < 1 ) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,"Bad target for PAGD failure: [%s]\n", transfer_on_failure);
+			return SWITCH_STATUS_FALSE;
+		}
+		
+		if ( argc > 0 ) {
+			failure_ext = target[0];
+		}
+		
+		if ( argc > 1 ) {
+			failure_dialplan = target[1];
+		}
+
+		if ( argc > 2 ) {
+			failure_context = target[2];
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+			"PAGD failure! Transfer to: %s / %s / %s\n", failure_ext, failure_dialplan, failure_context);
+			
+		switch_ivr_session_transfer(session,failure_ext, failure_dialplan, failure_context);
+		return SWITCH_STATUS_FALSE;
+	} 
+	
+	return SWITCH_STATUS_FALSE;	
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,

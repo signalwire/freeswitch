@@ -312,7 +312,8 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 												 int max_digits,
 												 int max_tries,
 												 int timeout, char *terminators, char *audio_files, char *bad_input_audio_files,
-												 char *digits_regex, const char *var_name = NULL, int digit_timeout = 0);
+												 char *digits_regex, const char *var_name = NULL, int digit_timeout = 0,
+												 const char *transfer_on_failure = NULL);
 
 	/** \brief Play a file that resides on disk into the channel
 	 *
