@@ -1790,6 +1790,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 									 NTATAG_USE_SRV(0)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_NAPTR),
 									 NTATAG_USE_NAPTR(0)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV503),
+									 NTATAG_SRV_503(0)),									 
 							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
 							  NTATAG_SERVER_RPORT(profile->server_rport_level),
 							  NTATAG_CLIENT_RPORT(profile->client_rport_level),
@@ -3962,6 +3964,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_DISABLE_NAPTR);
 						}
+					} else if (!strcasecmp(var, "disable-srv503")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_DISABLE_SRV503);
+						}						
 					} else if (!strcasecmp(var, "unregister-on-options-fail")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL);
