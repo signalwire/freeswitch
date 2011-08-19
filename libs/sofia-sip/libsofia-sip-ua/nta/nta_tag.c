@@ -1470,6 +1470,29 @@ tag_typedef_t ntatag_use_naptr = BOOLTAG_TYPEDEF(naptr);
  */
 tag_typedef_t ntatag_use_srv = BOOLTAG_TYPEDEF(srv);
 
+/**@def NTATAG_SRV_503(x)
+ *
+ * If true, try to use another destination from SRV records on 503 response. RFC3263
+ *
+ * The application can disable NTA from using a new route after 503
+ *
+ * @par Used with
+ *    nua_create(), nua_set_params(), agent_recv_response(),
+ *    nta_agent_create(), nta_agent_set_params()
+ *
+ * @par Parameter type
+ *    boolean: true (non-zero or non-NULL pointer)
+ *          or false (zero or NULL pointer)
+ *
+ * @par Values
+ *    - true - enable new destination on 503
+ *    - false - still use the same destination after timeout
+ *
+ * @sa @RFC3263
+ */
+tag_typedef_t ntatag_srv_503 = BOOLTAG_TYPEDEF(srv_503);
+
+
 /**@def NTATAG_RSEQ(x)
  *
  * @RSeq value for nta_outgoing_prack().

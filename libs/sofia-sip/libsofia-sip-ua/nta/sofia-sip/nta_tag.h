@@ -393,6 +393,12 @@ NTA_DLL extern tag_typedef_t ntatag_use_srv;
 NTA_DLL extern tag_typedef_t ntatag_use_srv_ref;
 #define NTATAG_USE_SRV_REF(x) ntatag_use_srv_ref, tag_bool_vr(&(x))
 
+NTA_DLL extern tag_typedef_t ntatag_srv_503;
+#define NTATAG_SRV_503(x) ntatag_srv_503, tag_bool_v((x))
+
+NTA_DLL extern tag_typedef_t ntatag_srv_503_ref;
+#define NTATAG_SRV_503_REF(x) ntatag_srv_503_ref, tag_bool_vr(&(x))
+
 NTA_DLL extern tag_typedef_t ntatag_rseq;
 #define NTATAG_RSEQ(x)    ntatag_rseq, tag_uint_v((x))
 
