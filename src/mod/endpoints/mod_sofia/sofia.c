@@ -3509,6 +3509,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_flag(profile, TFLAG_ENABLE_SOA);
 				sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
 				profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
+				profile->te = 101;
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
