@@ -168,16 +168,20 @@
       <prompt phrase="Gisteren" filename="yesterday.wav"/>
     </time>
     <voicemail>
+      <prompt phrase="De persoon op toestel" filename="vm-person.wav"/> 
+      <prompt phrase="als dringend gemarkeerd" filename="vm-marked-urgent.wav"/>
+      <prompt phrase="geë-maild" filename="vm-emailed.wav"/> 
       <prompt phrase="u heeft" filename="vm-you_have.wav"/>
-      <prompt phrase="toets uw i d in en sluit af met een" filename="vm-enter_id.wav"/>
+      <prompt phrase="toets uw i d in en sluit af met een" filename="vm-enter_id.wav"/>	 
       <prompt phrase="toets uw wachtwoord in en sluit af met een" filename="vm-enter_pass.wav"/>
       <prompt phrase="login incorrect" filename="vm-fail_auth.wav"/>
       <prompt phrase="welkom in uw voicemail" filename="vm-hello.wav"/>
       <prompt phrase="tot ziens" filename="vm-goodbye.wav"/>
       <prompt phrase="spreek uw naam in na de toon en druk op een toets of stop met praten om de opname te beëindigen." filename="vm-record_name1.wav"/>
-      <prompt phrase="kies een boodschap tussen 1 en 3" filename="vm-choose_greeting.wav"/>
-      <prompt phrase="ongeldig nummer" filename="vm-choose_greeting_fail.wav"/>
+      <prompt phrase="kies een boodschap tussen 1 en 9" filename="vm-choose_greeting.wav"/>
+      <prompt phrase="ongeldige waarde" filename="vm-choose_greeting_fail.wav"/>
       <prompt phrase="te veel incorrecte pogingen" filename="vm-abort.wav"/>
+      <prompt phrase="om uw wachtwoord te wijzigen" filename="vm-change_password.wav"/>
       <prompt phrase="spreek uw boodschap in na de toon en druk op een toets of stop met praten om de opname te beëindigen" filename="vm-record_greeting.wav"/>
       <prompt phrase="spreek uw bericht in na de toon en druk op een toets of stop met praten om de opname te beëindigen" filename="vm-record_message.wav"/>
       <prompt phrase="is niet bereikbaar" filename="vm-play_greeting.wav"/>
@@ -192,9 +196,9 @@
       <prompt phrase="om opgeslagen berichten af te spelen" filename="vm-listen_saved.wav"/>
       <prompt phrase="voor speciale opties" filename="vm-advanced.wav"/>
       <prompt phrase="om te beëindigen" filename="vm-to_exit.wav"/>
-      <prompt phrase="om een boodschap op te nemen" filename="vm-record_greeting.wav"/>
-      <prompt phrase="om een boodschap te kiezen" filename="vm-choose_greeting.wav"/>
-      <prompt phrase="op uw naam op te nemen" filename="vm-record_name2.wav"/>
+      <prompt phrase="om een welkomstboodschap op te nemen" filename="vm-record_greeting.wav"/>
+      <prompt phrase="om een welkomstboodschap te kiezen" filename="vm-choose_greeting.wav"/>
+      <prompt phrase="om uw naam op te nemen" filename="vm-record_name2.wav"/>
       <prompt phrase="voor het hoofd menu" filename="vm-main_menu.wav"/>
       <prompt phrase="om naar de opname te luisteren" filename="vm-listen_to_recording.wav"/>
       <prompt phrase="om de opname op te slaan" filename="vm-save_recording.wav"/>
@@ -204,11 +208,244 @@
       <prompt phrase="om nogmaals naar de opname te luisteren" filename="vm-listen_to_recording_again.wav"/>
       <prompt phrase="om de opname te wissen" filename="vm-delete_recording.wav"/>
       <prompt phrase="om de opname door te sturen naar uw email" filename="vm-forward_to_email.wav"/>
-      <prompt phrase="boodschap" filename="vm-greeting.wav"/>
+      <prompt phrase="welkomstboodschap" filename="vm-greeting.wav"/>
       <prompt phrase="gekozen" filename="vm-selected.wav"/>
       <prompt phrase="is niet bereikbaar" filename="vm-not_avaliable.wav"/>
       <prompt phrase="bericht nummer" filename="vm-message_number.wav"/>
       <prompt phrase="verwijderd" filename="vm-deleted.wav"/>
+      <prompt phrase="Uw opname is korter dan de minimaal aanvaardbare lengte, probeer het opnieuw" filename="vm-too-small.wav"/>
+      <prompt phrase="in de map postvak in" filename="vm-in_folder.wav"/>
+      <prompt phrase="om nu terug te bellen" filename="vm-return_call.wav"/>
+      <prompt phrase="dringend" filename="vm-urgent.wav"/>
+      <prompt phrase="Deze mailbox is vol. Probeer uw oproep later opnieuw." filename="vm-mailbox_full.wav"/>
+      <prompt phrase="Welkom bij uw nieuwe voicemail. Om te luisteren naar een uitleg en het opzetten van uw voice mail box, druk op 1. Om dit over te slaan, druk op 2." filename="vm-tutorial_yes_no.wav"/>
+      <prompt phrase="Ik moet uw voor- en achternaam opnemen. Deze opname wordt gebruikt in het systeem zoals het bedrijfsmatige telefoonboek" filename="vm-tutorial_record_name.wav"/> 
+      <prompt phrase="Uw persoonlijk identificatienummer, ofwel 'pin', wordt gebruikt om te voorkomen dat anderen toegang krijgen tot uw voicemailberichten. Wilt u deze nu wijzigen?" filename="vm-tutorial_change_pin.wav"/>
+      <prompt phrase="De persoon die u probeert te bereiken is niet beschikbaar en heeft geen voicemail." filename="vm-not_available_no_voicemail.wav"/>
     </voicemail>
+    <directory>
+     <prompt phrase="Geef de eerste paar letters op van de persoons" filename="dir-enter_person.wav"/>
+     <prompt phrase="...achternaam..." filename="dir-last_name.wav"/>
+     <prompt phrase="Om te zoeken met..." filename="dir-to_search_by.wav"/>
+     <prompt phrase="...voornaam..." filename="dir-first_name.wav"/>
+     <prompt phrase="Er zijn geen resultaten gevonden" filename="dir-no_matching_results.wav"/>
+     <prompt phrase="...resultaten gevonden." filename="dir-result_match.wav"/>
+     <prompt phrase="Er zijn teveel resultaten gevonden." filename="dir-too_many_result.wav"/>
+     <prompt phrase="Geen andere resultaten gevonden." filename="dir-no_more_results.wav"/>
+     <prompt phrase="Resultaat nummer..." filename="dir-result_number.wav"/>
+     <prompt phrase="...bij toestel..." filename="dir-at_extension.wav"/>
+     <prompt phrase="Om deze te kiezen..." filename="dir-to_select_entry.wav"/>
+     <prompt phrase="Voor de volgende..." filename="dir-for_next.wav"/>
+     <prompt phrase="Voor de vorige..." filename="dir-for_prev.wav"/>
+     <prompt phrase="Om een nieuwe zoekopdracht te beginnen..." filename="dir-start_new_search.wav"/>
+     <prompt phrase="U moet een minimum van..." filename="dir-specify_mininum.wav"/>
+     <prompt phrase="...letters van de naam opgeven." filename="dir-letters_of_person_name.wav"/>
+     <prompt phrase="Probeer het opnieuw." filename="dir-please_try_again.wav"/>
+     <prompt phrase="toets" filename="dir-press.wav" info="we can copy vm/vm-press.wav"/>
+     <!-- <prompt phrase="For the next entry..." filename="dir-for_next.wav" note="re-recorded because original was wrong"/> -->
+     <prompt phrase="Geef de eerste paar letters op van de persoons voor- of achternaam" filename="dir-enter_person_first_or_last.wav"/>
+    </directory>
+    <conference>
+      <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
+      <prompt phrase="NULL" filename="conf-nack.wav" type="tone"/>
+      <prompt phrase="U bent nu gedempt." filename="conf-muted.wav"/>
+      <prompt phrase="U bent niet gedempt." filename="conf-unmuted.wav"/>
+      <prompt phrase="U bent momenteel de enige persoon in deze conferentie." filename="conf-alone.wav"/>
+      <prompt phrase="NULL" filename="conf-perpetual.wav" type="music"/>
+      <prompt phrase="NULL" filename="conf-enter.wav" type="tone"/>
+      <prompt phrase="NULL" filename="conf-exit.wav" type="tone"/>
+      <prompt phrase="U bent verwijderd uit deze conferentie." filename="conf-kicked.wav"/>
+      <prompt phrase="Deze conferentie is vergrendeld." filename="conf-locked.wav"/>
+      <prompt phrase="Deze conferentie is nu vergrendeld." filename="conf-is-locked.wav"/>
+      <prompt phrase="Deze conferentie is nu ontgrendeld." filename="conf-is-unlocked.wav"/>
+      <prompt phrase="Geef de conferentie pincode op." filename="conf-pin.wav"/>
+      <prompt phrase="Incorrecte pin nummer, probeer het nogmaals." filename="conf-bad-pin.wav"/>
+      <prompt phrase="tot ziens" filename="conf-goodbye.wav"/>
+      <prompt phrase="Welkom op de conferentie." filename="conf-welcome.wav"/>
+      <prompt phrase="Geef het conferentie nummer op, gevolgd door een hekje." filename="conf-enter_conf_number.wav"/>
+      <prompt phrase="Geef het conferentie pin nummer op, gevolgd door een hekje." filename="conf-enter_conf_pin.wav"/>
+      <prompt phrase="...heeft zich aangesloten aan de conferentie." filename="conf-has_joined.wav"/>
+      <prompt phrase="...heeft conferentie verlaten." filename="conf-has_left.wav"/>
+      <prompt phrase="U bent al gedempt." filename="conf-you_are_already_muted.wav"/>
+      <prompt phrase="U bent nu bidirectioneel gedempt." filename="conf-you_are_now_bidirectionally_muted.wav"/>
+    </conference>
+    <ivr>
+      <prompt phrase="Account nummer" filename="ivr-account_number.wav"/>
+      <prompt phrase="Verbinden naar beller" filename="ivr-connect_to_caller.wav"/>
+      <prompt phrase="Als u het nummer weet van de persoon die u wilt bereiken, kunt u dat nu intoetsen" filename="ivr-enter_ext_pound.wav"/>
+      <prompt phrase="Toets een toestel nummer in, gevolgd door een hekje" filename="ivr-enter_ext.wav"/>
+      <prompt phrase="Voor deze persoon" filename="ivr-for_this_person.wav"/>
+      <prompt phrase="Een moment geduld alstublieft, uw gesprek wordt doorverbonden" filename="ivr-hold_connect_call.wav"/>
+      <prompt phrase="Pardon" filename="ivr-im_sorry.wav"/>
+      <prompt phrase="Alstublieft" filename="ivr-please.wav"/>
+      <prompt phrase="Bel ons aub terug op" filename="ivr-please_return_our_call_at.wav"/>
+      <prompt phrase="In verband met referentienummer" filename="ivr-regarding_reference_number.wav"/>
+      <prompt phrase="Dit is een voorbeeld van een IVR submenu..." filename="ivr-sample_submenu.wav"/>
+      <prompt phrase="Spreek u naam in na de toon" filename="ivr-say_name.wav"/>
+      <prompt phrase="Stuur deze beller naar de voicemail" filename="ivr-send_to_voicemail.wav"/>
+      <prompt phrase="Om te spreken met een medewerker van de klantenservice" filename="ivr-speak_to_a_customer_service_representative.wav"/>
+      <prompt phrase="Een bericht doorgeven" filename="ivr-take_a_message.wav"/>
+      <prompt phrase="Bedankt" filename="ivr-thank_you.wav"/>
+      <prompt phrase="Dat was een verkeerde invoer" filename="ivr-that_was_an_invalid_entry.wav"/>
+      <prompt phrase="Dit is een gesprek van" filename="ivr-this_is_a_call_from.wav"/>
+      <prompt phrase="Deze IVR stelt u instaat om een aantal functies te testen..." filename="ivr-this_ivr_will_let_you_test_features.wav"/>
+      <prompt phrase="Om de FreeSWITCH conferentie te bellen" filename="ivr-to_call_the_freeswitch_conference.wav"/>
+      <prompt phrase="Om een FreeSWITCH echo test uit te voeren" filename="ivr-to_do_a_freeswitch_echo_test.wav"/>
+      <prompt phrase="Om een Free World Dial Up echo test uit te voeren" filename="ivr-to_do_a_fwd_echo_test.wav"/>
+      <prompt phrase="Om een een voorbeeld IVR submenu te hoeren" filename="ivr-to_hear_sample_submenu.wav"/>
+      <prompt phrase="Om schreeuwende apen te horen" filename="ivr-to_hear_screaming_monkeys.wav"/>
+      <prompt phrase="Om naar wachtstand muziek te luisteren" filename="ivr-to_listen_to_moh.wav"/>
+      <prompt phrase="Om deze keuzes nog een keer te horen" filename="ivr-to_repeat_these_options.wav"/>
+      <prompt phrase="Om terug te keren naar het vorige menu" filename="ivr-to_return_to_previous_menu.wav"/>
+      <prompt phrase="Om met een mederwerker te spreken" filename="ivr-to_speak_with_an_operator.wav"/>
+      <prompt phrase="Welkom bij FreeSWITCH, de toekomst in telefonie" filename="ivr-welcome_to_freeswitch.wav"/>
+      <prompt phrase="U kunt op elk moment dit menu verlaten door op te hangen" filename="ivr-you_may_exit_by_hanging_up.wav"/>
+      <prompt phrase="of" filename ="ivr-or.wav"/>
+      <prompt phrase="niet" filename ="ivr-not.wav"/>
+      <prompt phrase="bel" filename ="ivr-call.wav"/>
+      <prompt phrase="U kunt" filename ="ivr-you_may.wav"/>
+      <prompt phrase="hallo" filename="ivr-hello.wav"/>
+      <prompt phrase="U kunt uw telefoon toetsten gebruiken..." filename="ivr-use_telephone_keypad.wav"/>
+      <prompt phrase="Spel de naam van de persoon die u probeert te bereiken." filename="ivr-spell_name.wav"/>
+      <prompt phrase="Achternaam eerst" filename="ivr-last_name_first.wav"/>
+      <prompt phrase="Voornaam eerst" filename="ivr-first_name_first.wav"/>
+      <prompt phrase="Toest 1 voor Q of Z." filename="ivr-press_one_q_or_z.wav"/>
+      <prompt phrase="Verkoop" filename="ivr-sales.wav"/>
+      <prompt phrase="Klanten service" filename="ivr-customer_service.wav"/>
+      <prompt phrase="Technische ondersteuning" filename="ivr-technical_support.wav"/>
+      <prompt phrase="telefonist" filename="ivr-operator.wav"/>
+      <prompt phrase="U heeft een ongeldige toestel nummer gebeld." filename="ivr-you_have_dialed_an_invalid_extension.wav"/>
+      <prompt phrase="Toets uw toestel nummer in, gevolgd door een hekje." filename="ivr-please_enter_extension_followed_by_pound.wav"/>
+      <prompt phrase="Toets uw pin in, gevolgd door een hekje." filename="ivr-please_enter_pin_followed_by_pound.wav"/>
+      <prompt phrase="Uw pin of toestel nummer is ongeldig." filename="ivr-pin_or_extension_is-invalid.wav"/>
+      <prompt phrase="U staat op het punt om dit toestel te koppelen aan uw account..." filename="ivr-you_are_about_to_provision_this_phone.wav"/>
+      <prompt phrase="Toets uw pin nogmaals in om te bevestigen." filename="ivr-please_reenter_your_pin.wav"/>
+      <prompt phrase="Om te registreten voor ClueCon, toets een..." filename="ivr-register_for_cluecon.wav"/>
+      <prompt phrase="om in te loggen" filename="ivr-to_log_in.wav"/>
+      <prompt phrase="om uit te loggen" filename="ivr-to_log_out.wav"/>
+      <prompt phrase="U bent nu ingelogd" filename="ivr-you_are_now_logged_in.wav"/>
+      <prompt phrase="U bent nu uitgelogd" filename="ivr-you_are_now_logged_out.wav"/>
+      <prompt phrase="Probeer het aub nogmaals." filename="ivr-please_try_again.wav"/>
+      <prompt phrase="U staat op het punt om dit toestel permanent te koppelen aan uw account nummer." filename="ivr-provision_phone_permanently_to_extension.wav"/>
+      <prompt phrase="Toets het toestel nummer in die uw wilt koppellen aan deze telefoon, gevolgd door een hekje." filename="ivr-extension_to_provision_this_phone.wav"/>
+      <prompt phrase="Bedankt, deze telefoon zal nu opnieuw opstarten." filename="ivr-this_phone_will_now_reboot.wav"/>
+      <prompt phrase="Bedankt, Uw opname wordt bewaard." filename="ivr-recording_saved.wav"/>
+      <prompt phrase="Toets 1 om uw opnamen op te slaan. Toets 2 om uw opanmen te beluisteren. Toets 3 om overnieuw op te nemen." filename="ivr-save_review_record.wav"/>
+      <prompt phrase="Het systeem is niet in staat om uw opanme op te slaan op dit moment, probeer het aub later nog een keer." filename="ivr-unable_save.wav"/>
+      <prompt phrase="U bent nummer..." filename="ivr-you_are_number.wav"/>
+      <prompt phrase="...in de wachtrij" filename="ivr-in_line.wav"/>
+      <prompt phrase="Bedankt voor het wachten." filename="ivr-thank_you_for_holding.wav"/>
+      <prompt phrase="De geschatte wachttijd is..." filename="ivr-estimated_hold_time.wav"/>
+      <prompt phrase="Meer dan..." filename="ivr-more_than.wav"/>
+      <prompt phrase="Minder dan..." filename="ivr-less_than.wav"/>
+      <prompt phrase="Begin met opnemen." filename="ivr-begin_recording.wav "/>
+      <prompt phrase="Doorschakelen is geannuleerd." filename="ivr-call_forwarding_has_been_cancelled.wav"/>
+      <prompt phrase="Doorschakelen is ingesteld." filename="ivr-call_forwarding_has_been_set.wav"/>
+      <prompt phrase="Toets uw telefoon nummer in." filename="ivr-please_enter_the_phone_number.wav"/>
+      <prompt phrase="Geef uw naam op en de reden waarom u belt." filename="ivr-please_state_your_name_and_reason_for_calling.wav"/>
+      <prompt phrase="Om te accepteren toets 1. Om te weigeren toets 2. Om een voicemail te sturen toets 3" filename="ivr-accept_reject_voicemail.wav"/>
+      <prompt phrase="Binnekomend gesprek." filename="ivr-incoming_call.wav"/>
+      <prompt phrase="Bedankt voor het bellen." filename="ivr-thank_you_for_calling.wav"/>
+      <prompt phrase="Blijft uw aan de lijn, uw wordt zo spoedig mogelijk te woord gestaan." filename="ivr-stay_on_line_call_answered_momentarily.wav"/>
+      <prompt phrase="U wordt doorgeschakeld." filename="ivr-call_being_transferred.wav"/>
+      <prompt phrase="Geniet van de muziek terwijl u wordt door geschakeld." filename="ivr-enjoy_music_while_transfer.wav"/>
+      <prompt phrase="U heeft een binnekomend gesprek van..." filename="ivr-call_from.wav"/>
+      <prompt phrase="Dit menu heeft geen keuzes. Neem aub contact op met de beheerder." filename="ivr-no_menu_items.wav"/>
+      <prompt phrase="Voor het telefoonboek toets..." filename="ivr-for_directory_press.wav"/>
+      <prompt phrase="Gebruik de toetsen van uw telefoon toestel..." filename="ivr-using_telephone_keypad.wav"/>
+      <prompt phrase="Geef de eerste paar letters op van de persoons achternaam." filename="ivr-enter_letters_last_name.wav"/>
+      <prompt phrase="Geef de eerste paar letters op van de persoons voornaam." filename="ivr-enter_letters_first_name.wav"/>
+      <prompt phrase="Geef de eerste paar letters op van de persoons voornaam of achternaam." filename="ivr-enter_letters_first_or_last_name.wav"/>
+      <prompt phrase="Als dit correct is, toest..." filename="ivr-if_correct_press.wav"/>
+      <prompt phrase="Zo niet, toets..." filename="ivr-if_not_press.wav"/>
+      <prompt phrase="Als u klaar bent druk op hekje" filename="ivr-finished_pound_hash_key.wav"/>
+      <prompt phrase="Niet storen is nu geactiveerd." filename="ivr-dnd_activated.wav"/>
+      <prompt phrase="Niet storen is nu gedactiveerd." filename="ivr-dnd_cancelled.wav"/>
+      <prompt phrase="Druk een op toets..." filename="ivr-any_other_digit.wav"/>
+      <prompt phrase="Druk 1 voor ja. Druk 2 voor nee." filename="ivr-one_yes_two_no.wav"/>
+      <prompt phrase="Toets het wachtrij nummer in, gevolgd door een hekje." filename="ivr-enter_queue_number.wav"/>
+      <prompt phrase="Geef aub de..." filename="ivr-please_enter_the.wav"/>
+      <prompt phrase="Nummer." filename="ivr-number.wav"/>
+      <prompt phrase="...gevolgd door een hekje." filename="ivr-followed_by_pound.wav"/>
+      <prompt phrase="Het saldo is..." filename="ivr-account_balance_is.wav"/>
+      <prompt phrase="Bedankt voor het bellen. Als u het toestel nummer weet van de persoon die u wilt bereiken, kunt u dat nu intoetsen. Voor het telefoonboek toets..." filename="ivr-generic_greeting.wav"/>
+      <prompt phrase="...bestand..." filename="ivr-file.wav"/>
+      <prompt phrase="...bestanden..." filename="ivr-files-.wav"/>
+      <prompt phrase="Om een wekdienst in te stellen..." filename="ivr-for_a_wakeup_call.wav"/>
+      <prompt phrase="Dit is uw wekdienst." filename="ivr-this_is_your_wakeup_call.wav"/>
+      <prompt phrase="Om een wekdienst aan te vragen..." filename="ivr-request_wakeup_call.wav"/>
+      <prompt phrase="Om de wekdienst te bevestigen..." filename="ivr-confirm_wakeup_call.wav"/>
+      <prompt phrase="Om de wekdienst te annuleren..." filename="ivr-cancel_wakeup_call.wav"/>
+      <prompt phrase="U heeft een wekdienst aangevraagd voor..." filename="ivr-requested_wakeup_call_for.wav"/>
+      <prompt phrase="U heeft geen wekdienst aangevraagd." filename="ivr-not_requested_wakeup_call.wav"/>
+      <prompt phrase="Uw wekdienst is geannuleerd." filename="ivr-wakeup_call_cancelled.wav"/>
+      <prompt phrase="Voor een dagelijkse wekdienst..." filename="ivr-for_daily_wakeup_call.wav"/>
+      <prompt phrase="Dagelijkse wekdienst..." filename="ivr-daily_wakeup_call.wav"/>
+      <prompt phrase="Voor dagelijkse wekdiensten..." filename="ivr-for_daily_wakeup_calls.wav"/>
+      <prompt phrase="Voor een eenmalig wekdienst..." filename="ivr-for_one_time_wakeup_call.wav"/>
+      <prompt phrase="Eenmalig wekdiesnt..." filename="ivr-one_time_wakeup_call.wav"/>
+      <prompt phrase="...wekdienst..." filename="ivr-wakeup_call.wav"/>
+      <prompt phrase="Wakker worden!" filename="ivr-wakey_wakey_sunshine.wav"/>
+      <prompt phrase="Welkom." filename="ivr-welcome.wav"/>
+      <prompt phrase="Welkom bij..." filename="ivr-welcome_to.wav"/>
+      <prompt phrase="Goedemorgen." filename="ivr-good_morning.wav"/>
+      <prompt phrase="Goedemiddag." filename="ivr-good_afternoon.wav"/>
+      <prompt phrase="Goedeavond." filename="ivr-good_evening.wav"/>
+      <prompt phrase="Bedankt." filename="ivr-Thank_you.wav"/>
+      <prompt phrase="Voor..." filename="ivr-for.wav"/>
+      <prompt phrase="Momenteel zijn de wachttijden langer dan normaal." filename="ivr-longer_than_usual_hold_times.wav"/>
+      <prompt phrase="U bent de..." filename="ivr-you_are_the.wav"/>
+      <prompt phrase="Een moment geduld alstublieft." filename="ivr-one_moment_please.wav"/>
+      <prompt phrase="Uw gesprek wordt beantwoord in de volgorde van binnekomst." filename="ivr-call_answered_order_received.wav"/>
+      <prompt phrase="U heeft ingevoerd..." filename="ivr-you_entered.wav"/>
+      <prompt phrase="Toestel nummer..." filename="ivr-extension_number.wav"/>
+      <prompt phrase="Een moment geduld alstublieft, Uw gesprekspartner wordt gecontacteerd." filename="ivr-please_hold_while_party_contacted.wav"/>
+      <prompt phrase="Geniet van de muziek terwijl uw gesrpeks partner gecontacteerd wordt." filename="ivr-please_enjoy_music_while_party_reached.wav"/>
+      <prompt phrase="Bedankt voor het bellen. Als u het toestel nummer weet van de persoon die u wilt bereiken, kunt u dat nu intoetsen of toets een 9 voor het telefoonboek." filename="ivr-generic_greeting.wav"/>
+      <prompt phrase="Als dit correct is toets een 1, is dit niet correct toets dan een 2." filename="ivr-if_correct_one_if_not_two.wav"/>
+      <prompt phrase="Om deze gegevens te herhalen..." filename="ivr-repeat_this_information.wav"/>
+      <prompt phrase="Nee nee nee!" filename="ivr-no_no_no.wav"/>
+      <prompt phrase="Was het de bedoeling dat u die toets indrukte?" filename="ivr-did_you_mean_to_press_key.wav"/>
+      <prompt phrase="Serieus. Was het ECHT de bedoeling dat u die toets indrukte?" filename="ivr-seriously_mean_to_press_key.wav"/>
+      <prompt phrase="Het zal wel!" filename="ivr-oh_whatever.wav"/>
+      <prompt phrase="Nu moet je oppassen! Nog één zo'n fout en ik verbreek de verbinding." filename="ivr-one_more_mistake.wav"/>
+      <prompt phrase="Gefeliciteerd, U heeft op de ster gedrukt. Dit betekent overigens niet dat u een ster bent. Dit betekent dat u op knopjes kunt drukken en naar alle waarschijnlijkheid vingers heeft." filename="ivr-congratulations_you_pressed_star.wav"/>
+      <prompt phrase="Al onze technische mederwerkers zijn bezig onze verkoop medewerkers te ondersteunen met het demonstreren hoe goed de CudaTel is." filename="ivr-engineers_busy_assisting_other_sales.wav"/>
+      <prompt phrase="Dit bericht zal zichzelf vernietigen in 5, 4, 3, 2, 1..." filename="ivr-message_self_destruct.wav"/>
+      <prompt phrase="Al u telefoongesprek zijn de onze." filename="ivr-all_your_call_are_belong_to_us.wav"/>
+      <prompt phrase="Ik hou ervan hoe je die knoppen indrukt!" filename="ivr-love_those_touch_tones.wav"/>
+      <prompt phrase="Correct, we hebben geen bananen." filename="ivr-yes_we_have_no_bananas.wav"/>
+      <prompt phrase="Kerel, je zuigt!" filename="ivr-dude_you_suck.wav"/>
+      <prompt phrase="Uw oproep is erg belangrijk voor ons, maar uw geestelijke welzijn niet, dus we zullen u graag in de wacht houden, voor eeuwig martelen met onze vervelende wachtstandmuziek." filename="ivr-on_hold_indefinitely.wav"/>
+      <prompt phrase="...heeft het pand verlaten." filename="ivr-has_left_the_building.wav"/>
+      <prompt phrase="Deze telefoon is niet toegekend en kan niet gebruikt worden voor externe oproepen." filename="ivr-phone_is_unassigned.wav"/>
+      <prompt phrase="Deze telefoon is niet correct geconfigureerd." filename="ivr-phone_not_configured.wav"/>
+      <prompt phrase="Gefeliciteerd! Deze telefoon is correct geconfigureerd en kan nu aan een gebruiker toegekend worden." filename="ivr-phone_is_configured_properly.wav"/>
+      <prompt phrase="Neem aub contact op met de systeem beheerder voor ondersteuning." filename="ivr-contact_system_administrator.wav"/>	
+      <prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
+      <prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
+      <prompt phrase="Er zijn geen gesprekken aanwezig in deze wachtrij." filename="ivr-no_calls_waiting_in_queue.wav"/>
+      <prompt phrase="U bent beller nummer 1. Uiteraard is *elke* beller nummer 1 bij ons dus het kan best dat u nog een tijdje moet wachten." filename="ivr-youre_number_one.wav"/>
+      <prompt phrase="...heeft een nood oproep geplaatst" filename="ivr-has_called_emergency_services.wav"/>
+      <prompt phrase="Er zijn..." filename="ivr-there_are.wav"/>
+      <prompt phrase="Geef het aantal luisteraars op, gevolgd door een hekje." filename="conf-number_of_listeners.wav"/>
+      <prompt phrase="...luisteraars in deze conferentie." filename="conf-listeners_in_conference.wav"/>
+      <prompt phrase="...leden in deze conferentie." filename="conf-members_in_conference.wav"/>
+      <prompt phrase="Geef het bron telefoon nummer op, gevolgd door een hekje." filename="ivr-enter_source_telephone_number.wav"/>
+      <prompt phrase="Geef het bestemmings telefoon nummer op, gevolgd door een hekje." filename="ivr-enter_destination_telephone_number.wav"/>
+    </ivr>
+    <misc>
+      <prompt phrase="Dit telefoon gesprek is beveiligd" filename="call_secured.wav"/>
+      <prompt phrase="Gevolgd door een hekje" filename="followed.wav"/>
+      <prompt phrase="Als u deze persoon bent" filename="if_you_are_this_person.wav"/>
+      <prompt phrase="Als u wilt" filename="if_you_would_like_to.wav"/>
+      <prompt phrase="Geef een referentie nummer op" filename="provide_reference_number.wav"/>
+      <prompt phrase="Geef het toestel nummer op waar naar door verbonden wilt worden" filename="transfer1.wav"/>
+      <prompt phrase="Doorschakelen" filename="transfer2.wav"/>
+      <prompt phrase="We proberen te bereiken" filename="we_are_trying_to_reach.wav"/><!-- LANG CHECK, i dont think this posible to translate to dutch in this way, 'We proberen %name% te bereiken' is better but not posible in this way --> 	
+      <prompt phrase="Er heeft zich een fout voorgedaan, neem contact op met de systeem beheerder." filename="error.wav"/>
+      <prompt phrase="Uw gesprek wordt beëindigd in..." filename="misc-your_call_will_be_terminated_in.wav"/>
+      <prompt phrase="Uw gesprek is beëindigd." filename="misc-your_call_has_been_terminated.wav"/>
+    </misc>
   </nl>
 </language>
