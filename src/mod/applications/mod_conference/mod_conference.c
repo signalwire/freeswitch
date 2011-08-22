@@ -1498,13 +1498,15 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		if (!switch_test_flag(imember, MFLAG_NOCHANNEL)) {
 			channel = switch_core_session_get_channel(imember->session);
 
-			/* add this little bit to preserve the bridge cause code in case of an early media call that */
-			/* never answers */
-			if (switch_test_flag(conference, CFLAG_ANSWERED)) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			} else {
-				/* put actual cause code from outbound channel hangup here */
-				switch_channel_hangup(channel, conference->bridge_hangup_cause);
+			if (!switch_false(switch_channel_get_variable(channel, "hangup_after_conference"))) {
+				/* add this little bit to preserve the bridge cause code in case of an early media call that */
+				/* never answers */
+				if (switch_test_flag(conference, CFLAG_ANSWERED)) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				} else {
+					/* put actual cause code from outbound channel hangup here */
+					switch_channel_hangup(channel, conference->bridge_hangup_cause);
+				}
 			}
 		}
 
