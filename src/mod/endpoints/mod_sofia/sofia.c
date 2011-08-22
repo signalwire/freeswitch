@@ -7454,6 +7454,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (sofia_glue_check_nat(profile, tech_pvt->remote_ip)) {
 		tech_pvt->user_via = sofia_glue_create_external_via(session, profile, tech_pvt->transport);
+		nua_set_hparams(tech_pvt->nh, SIPTAG_VIA_STR(tech_pvt->user_via), TAG_END());
 	}
 
 	if (sip->sip_contact && sip->sip_contact->m_url) {

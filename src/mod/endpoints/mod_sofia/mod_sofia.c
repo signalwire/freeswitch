@@ -741,19 +741,19 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		}
 	}
 
-	if ((val = switch_channel_get_variable(channel, SOFIA_SESSION_TIMEOUT))) {
-		int v_session_timeout = atoi(val);
-		if (v_session_timeout >= 0) {
-			session_timeout = v_session_timeout;
-		}
-	}
-
 	if (sofia_test_flag(tech_pvt, TFLAG_NAT) ||
 		(val = switch_channel_get_variable(channel, "sip-force-contact")) ||
 		((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 		sticky = tech_pvt->record_route;
 		session_timeout = SOFIA_NAT_SESSION_TIMEOUT;
 		switch_channel_set_variable(channel, "sip_nat_detected", "true");
+	}
+
+	if ((val = switch_channel_get_variable(channel, SOFIA_SESSION_TIMEOUT))) {
+		int v_session_timeout = atoi(val);
+		if (v_session_timeout >= 0) {
+			session_timeout = v_session_timeout;
+		}
 	}
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
@@ -780,19 +780,27 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 		}
 
+		if ((tech_pvt->session_timeout = session_timeout)) {
+			tech_pvt->session_refresher = switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? nua_local_refresher : nua_remote_refresher;
+		} else {
+			tech_pvt->session_refresher = nua_no_refresher;
+		}
+
+		
+
 		if (sofia_use_soa(tech_pvt)) {
 			nua_respond(tech_pvt->nh, SIP_200_OK,
 						NUTAG_AUTOANSWER(0),
 						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
-						NUTAG_SESSION_TIMER(session_timeout),
-						NUTAG_SESSION_REFRESHER(session_timeout ? nua_local_refresher : nua_no_refresher),
+						NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
+						NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 						SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1),
-					        TAG_IF(is_proxy, SOATAG_RTP_SELECT(1)),
+						TAG_IF(is_proxy, SOATAG_RTP_SELECT(1)),
 						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
 							   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)), TAG_END());
@@ -803,8 +811,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 						TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 						TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
-						NUTAG_SESSION_TIMER(session_timeout),
-						NUTAG_SESSION_REFRESHER(session_timeout ? nua_local_refresher : nua_no_refresher),
+						NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
+						NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
 						SIPTAG_CONTENT_TYPE_STR("application/sdp"),
@@ -2001,6 +2009,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", name, number);
 							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
 							nua_update(tech_pvt->nh,
+									   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
+									   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
@@ -2009,17 +2019,21 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
 							nua_update(tech_pvt->nh,
+									   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
+									   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
 						} else if ((ua && (switch_stristr("cisco/spa50", ua) || switch_stristr("cisco/spa525", ua)))) {
-                                                        snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
+							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
 
-                                                        sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
-                                                        nua_update(tech_pvt->nh,
-                                                                           TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
-                                                                           TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
-                                                }
+							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
+							nua_update(tech_pvt->nh,
+									   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
+									   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
+									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
+									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
+						}
 
 						tech_pvt->last_sent_callee_id_name = switch_core_session_strdup(tech_pvt->session, name);
 						tech_pvt->last_sent_callee_id_number = switch_core_session_strdup(tech_pvt->session, number);
@@ -2071,6 +2085,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				} else if (ua && switch_stristr("polycom", ua)) {
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
 					nua_update(tech_pvt->nh,
+							   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
+							   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 							   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 							   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 							   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());

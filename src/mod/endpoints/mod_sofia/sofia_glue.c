@@ -2366,6 +2366,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
 
 	session_timeout = tech_pvt->profile->session_timeout;
+
 	if ((val = switch_channel_get_variable(channel, SOFIA_SESSION_TIMEOUT))) {
 		int v_session_timeout = atoi(val);
 		if (v_session_timeout >= 0) {
@@ -2420,10 +2421,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 	}
 
-	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERED)) {
-		session_timeout = 0;
+	if ((tech_pvt->session_timeout = session_timeout)) {
+		tech_pvt->session_refresher = switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? nua_local_refresher : nua_remote_refresher;
+	} else {
+		tech_pvt->session_refresher = nua_no_refresher;
 	}
-
+	
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
@@ -2431,8 +2434,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   //TAG_IF(!zstr(tech_pvt->local_sdp_str), NUTAG_AUTOACK(1)),
 				   // The code above is breaking things...... grrr WE need this because we handle our own acks and there are 3pcc cases in there too
 				   NUTAG_AUTOACK(0),
-				   NUTAG_SESSION_TIMER(session_timeout),
-				   NUTAG_SESSION_REFRESHER(session_timeout ? nua_local_refresher : nua_no_refresher),
+				   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
+				   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
@@ -2465,8 +2468,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOACK(0),
-				   NUTAG_SESSION_TIMER(session_timeout),
-				   TAG_IF(session_timeout, NUTAG_SESSION_REFRESHER(nua_remote_refresher)),
+				   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
+				   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
 				   TAG_IF(sofia_test_flag(tech_pvt, TFLAG_RECOVERED), NUTAG_INVITE_TIMER(UINT_MAX)),
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
