@@ -154,6 +154,7 @@ void nua_dialog_store_peer_info(nua_owner_t *own,
     sip = NULL;			/* Redirected */
 
   if (sip == NULL) {
+    nr->nr_via = NULL, su_free(own, old->nr_via);
     nr->nr_allow = NULL, su_free(own, old->nr_allow);
     nr->nr_accept = NULL, su_free(own, old->nr_accept);
     nr->nr_require = NULL, su_free(own, old->nr_require);
@@ -180,6 +181,11 @@ void nua_dialog_store_peer_info(nua_owner_t *own,
   if (sip->sip_supported) {
     nr->nr_supported = sip_supported_dup(own, sip->sip_supported);
     su_free(own, old->nr_supported);
+  }
+
+  if (sip->sip_via) {
+    nr->nr_via = sip_via_dup(own, sip->sip_via);
+    su_free(own, old->nr_via);
   }
 
   if (sip->sip_user_agent) {

@@ -537,6 +537,10 @@ int nua_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 	   sip_add_make(msg, sip, sip_organization_class,
 			NH_PGET(nh, organization)) < 0)
     ;
+  else if (!sip->sip_via && NH_PGET(nh, via) &&
+	   sip_add_make(msg, sip, sip_via_class,
+			NH_PGET(nh, via)) < 0)
+    ;
   else if (!sip->sip_allow && NH_PGET(nh, allow) &&
 	   sip_add_dup(msg, sip, (void *)NH_PGET(nh, allow)) < 0)
     ;
