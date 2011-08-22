@@ -228,7 +228,7 @@
 			function add_call(uuid, name, number, account) {
 				var c = [ {uuid: uuid, name: name, number: number, account: account } ];
 				
-				var elm = $("#call_template").render(c);
+				var elm = $("#call_template").tmpl(c);
 
 				elm.data("uuid", uuid);
 				elm.data("name", name);
@@ -251,7 +251,7 @@
 				var u = suser + "@" + domain;
 				var sid = u.replace("@", "_").replace(/\./g, "_");
 				var c = [ { id: sid, user: u} ];
-				var elm = $("#account_template").render(c);
+				var elm = $("#account_template").tmpl(c);
 				elm.data("user", u);
 				elm.appendTo("#account_container");
 				$("a", "#account_" + sid).button();
