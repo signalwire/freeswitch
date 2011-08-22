@@ -31,7 +31,7 @@ CREATE TABLE `lcr` (
   `trail_strip` int(11) NOT NULL,
   `prefix` varchar(16) NOT NULL,
   `suffix` varchar(16) NOT NULL,
-  `lcr_profile` varchar(32) default NULL,
+  `lcr_profile` int(11) NOT NULL default 0,
   `date_start` datetime NOT NULL DEFAULT '1970-01-01',
   `date_end` datetime NOT NULL DEFAULT '2030-12-31',
   `quality` float(10,6) NOT NULL,
