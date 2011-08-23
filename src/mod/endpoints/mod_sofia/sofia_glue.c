@@ -4823,6 +4823,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				}
 			}
 
+			if (!best_te && (sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF))) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+								  "No 2833 in SDP. Liberal DTMF mode adding %d as telephone-event.", tech_pvt->profile->te);
+				best_te = tech_pvt->profile->te;
+			}
+
 			if (best_te) {
 				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 					te = tech_pvt->te = (switch_payload_t) best_te;
