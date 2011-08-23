@@ -116,7 +116,7 @@ static void check_timeouts(void)
 			switch_hash_this(i_hi, &i_var, NULL, &i_val);
 			i_ext = (char *) i_var;
 			token = (valet_token_t *) i_val;
-			if (token->timeout > 0 && token->timeout < now) {
+			if (token->timeout > 0 && (token->timeout < now || token->timeout == 1)) {
 				switch_core_hash_delete(lot->hash, i_ext);
 				switch_safe_free(token);
 				goto top;
@@ -164,7 +164,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	char dtmf_buf[128] = "";
 	int is_auto = 0, play_announce = 1;
 	const char *var;
-	valet_token_t *token;
+	valet_token_t *token = NULL;
 
 	if ((var = switch_channel_get_variable(channel, "valet_announce_slot"))) {
 		play_announce = switch_true(var);
@@ -279,6 +279,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				if (!zstr(var)) {
 					if (!strcmp(var, token->uuid)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Valet ticket %s accepted.\n", var);
+						token->timeout = 0;
 						switch_channel_set_variable(channel, "valet_ticket", NULL);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid token %s\n", token->uuid);
@@ -319,7 +320,6 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		}
 
 		switch_zmalloc(token, sizeof(*token));
-		token->timeout = switch_epoch_time_now(NULL) + 10;
 		switch_set_string(token->uuid, switch_core_session_get_uuid(session));
 		switch_core_hash_insert(lot->hash, ext, token);
 
@@ -335,15 +335,15 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				switch_core_session_t *b_session;
 
 				if ((b_session = switch_core_session_locate(uuid))) {
+					token->timeout = switch_epoch_time_now(NULL) + 10;		
 					if (play_announce) {
 						switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
 					}
-					
 					switch_ivr_session_transfer(b_session, dest, "inline", NULL);
 					switch_mutex_unlock(lot->mutex);
 					switch_core_session_rwunlock(b_session);
 					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-					return;
+					goto end;
 				}
 			}
 
@@ -388,6 +388,13 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", VALET_APP_SYNTAX);
 	}
+
+ end:
+
+	if (token) {
+		token->timeout = 1;
+	}
+	
 }
 
 SWITCH_STANDARD_API(valet_info_function)
