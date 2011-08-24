@@ -109,6 +109,9 @@ echo $line >> $post_file
 gdb $prefix/bin/freeswitch `echo $core | tail -n1` \
         --eval-command="echo \n\n" \
         --eval-command="set pagination off" \
+        --eval-command="echo Thread Info\n" \
+        --eval-command="echo $line\n" \
+        --eval-command="info threads" \
         --eval-command="echo Stack Trace\n" \
         --eval-command="echo $line\n" \
         --eval-command="bt" \
