@@ -82,7 +82,9 @@ void ei_link(listener_t *listener, erlang_pid * from, erlang_pid * to)
 #ifdef WIN32
 	send(listener->sockfd, msgbuf, index, 0);
 #else
-	write(listener->sockfd, msgbuf, index);
+	if (write(listener->sockfd, msgbuf, index) == -1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to link to process on %s\n", listener->peer_nodename);
+	}
 #endif
 	switch_mutex_unlock(listener->sock_mutex);
 }
