@@ -47,7 +47,7 @@
 #include <srtp.h>
 
 /* number of writes to delay sending new DTMF when RTP_BUG_PAUSE_BETWEEN_DTMF flag is set */
-#define BUGGY_DIGIT_DELAY_PERIOD 3
+#define BUGGY_DIGIT_DELAY_PERIOD 5
 
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
 #define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
@@ -2289,7 +2289,8 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 				rtp_session->next_write_samplecount = rtp_session->timer.samplecount + samples * 5;
 			}
 			rtp_session->dtmf_data.out_digit_dur = 0;
-			if ((rtp_session->rtp_bugs & RTP_BUG_PAUSE_BETWEEN_DTMF) && switch_queue_size(rtp_session->dtmf_data.dtmf_queue)) {
+
+			if ((rtp_session->rtp_bugs & RTP_BUG_PAUSE_BETWEEN_DTMF)) {
 				rtp_session->dtmf_data.out_digit_delay = BUGGY_DIGIT_DELAY_PERIOD;
 			}
 			return;
