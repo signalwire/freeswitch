@@ -997,13 +997,25 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_ident"))) {
-		pvt->ident = switch_core_session_strdup(session, tmp);
+        char *data = NULL;
+
+        data = strdup(tmp);
+        switch_url_decode(data);
+		pvt->ident = switch_core_session_strdup(session, data);
+
+        switch_safe_free(data);
 	} else {
 		pvt->ident = switch_core_session_strdup(session, globals.ident);
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_header"))) {
-		pvt->header = switch_core_session_strdup(session, tmp);
+        char *data = NULL;
+
+        data = strdup(tmp);
+        switch_url_decode(data);
+        pvt->header = switch_core_session_strdup(session, data);
+
+        switch_safe_free(data);
 	} else {
 		pvt->header = switch_core_session_strdup(session, globals.header);
 	}
