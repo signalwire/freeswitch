@@ -1358,6 +1358,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.dummy_cng_frame.buflen = sizeof(runtime.dummy_data);
 	switch_set_flag((&runtime.dummy_cng_frame), SFF_CNG);
 	switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
+	switch_set_flag((&runtime), SCF_CLEAR_SQL);
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	runtime.hard_log_level = SWITCH_LOG_DEBUG;
@@ -1674,6 +1675,12 @@ static void switch_load_core_config(const char *file)
 						switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
 					} else {
 						switch_clear_flag((&runtime), SCF_AUTO_SCHEMAS);
+					}
+				} else if (!strcasecmp(var, "auto-clear-sql")) {
+					if (switch_true(val)) {
+						switch_set_flag((&runtime), SCF_CLEAR_SQL);
+					} else {
+						switch_clear_flag((&runtime), SCF_CLEAR_SQL);
 					}
 				} else if (!strcasecmp(var, "enable-early-hangup") && switch_true(val)) {
 					switch_set_flag((&runtime), SCF_EARLY_HANGUP);

@@ -852,6 +852,10 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 	switch_bool_t r = SWITCH_TRUE;
 	switch_mutex_t *io_mutex = dbh->io_mutex;
 
+	if (!switch_test_flag((&runtime), SCF_CLEAR_SQL)) {
+		return SWITCH_TRUE;
+	}
+
 	if (!switch_test_flag((&runtime), SCF_AUTO_SCHEMAS)) {
 		switch_cache_db_execute_sql(dbh, (char *)test_sql, NULL);
 		return SWITCH_TRUE;
@@ -1894,7 +1898,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
 	switch (dbh->type) {
 	case SCDB_TYPE_ODBC:
-		{
+		if (switch_test_flag((&runtime), SCF_CLEAR_SQL)) {
 			char sql[512] = "";
 			char *tables[] = { "channels", "calls", "interfaces", "tasks", NULL };
 			int i;

@@ -276,7 +276,8 @@ typedef enum {
 	SCF_USE_WIN32_MONOTONIC = (1 << 12),
 	SCF_AUTO_SCHEMAS = (1 << 13),
 	SCF_MINIMAL = (1 << 14),
-	SCF_USE_NAT_MAPPING = (1 << 15)
+	SCF_USE_NAT_MAPPING = (1 << 15),
+	SCF_CLEAR_SQL = (1 << 16)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
