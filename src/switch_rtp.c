@@ -46,6 +46,9 @@
 #include <datatypes.h>
 #include <srtp.h>
 
+/* number of writes to delay sending new DTMF when RTP_BUG_PAUSE_BETWEEN_DTMF flag is set */
+#define BUGGY_DIGIT_DELAY_PERIOD 3
+
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
 #define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
 #define WRITE_INC(rtp_session)  switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
@@ -138,6 +141,7 @@ struct switch_rtp_rfc2833_data {
 	switch_queue_t *dtmf_inqueue;
 	switch_mutex_t *dtmf_mutex;
 	uint8_t in_digit_queued;
+	uint32_t out_digit_delay;
 };
 
 struct switch_rtp {
@@ -2234,6 +2238,11 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 	switch_frame_flag_t flags = 0;
 	uint32_t samples = rtp_session->samples_per_interval;
 
+	if (rtp_session->dtmf_data.out_digit_delay) {
+		rtp_session->dtmf_data.out_digit_delay--;
+		return;
+	}
+
 	if (rtp_session->dtmf_data.out_digit_dur > 0) {
 		int x, loops = 1;
 
@@ -2280,6 +2289,10 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 				rtp_session->next_write_samplecount = rtp_session->timer.samplecount + samples * 5;
 			}
 			rtp_session->dtmf_data.out_digit_dur = 0;
+			if ((rtp_session->rtp_bugs & RTP_BUG_PAUSE_BETWEEN_DTMF) && switch_queue_size(rtp_session->dtmf_data.dtmf_queue)) {
+				rtp_session->dtmf_data.out_digit_delay = BUGGY_DIGIT_DELAY_PERIOD;
+			}
+			return;
 		}
 	}
 
