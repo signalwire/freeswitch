@@ -83,6 +83,7 @@ struct nua_dialog_state
 					 */
 
   struct nua_dialog_peer_info {
+    sip_via_t        *nr_via;
     sip_allow_t      *nr_allow;
     sip_accept_t     *nr_accept;
     sip_require_t    *nr_require;

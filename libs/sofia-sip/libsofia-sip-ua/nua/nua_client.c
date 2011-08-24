@@ -837,6 +837,9 @@ int nua_client_request_sendmsg(nua_client_request_t *cr)
   if (!sip->sip_user_agent && NH_PGET(nh, user_agent))
     sip_add_make(msg, sip, sip_user_agent_class, NH_PGET(nh, user_agent));
 
+  if (!sip->sip_via && NH_PGET(nh, via))
+    sip_add_make(msg, sip, sip_via_class, NH_PGET(nh, via));
+
   /** Any node implementing one or more event packages SHOULD include an
    * appropriate @AllowEvents header indicating all supported events in
    * all methods which initiate dialogs and their responses (such as

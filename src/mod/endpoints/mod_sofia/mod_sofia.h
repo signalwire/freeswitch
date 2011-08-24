@@ -45,7 +45,7 @@
 #define HAVE_APR
 #include <switch.h>
 #include <switch_version.h>
-#define SOFIA_NAT_SESSION_TIMEOUT 1800
+#define SOFIA_NAT_SESSION_TIMEOUT 90
 #define SOFIA_MAX_ACL 100
 #ifdef _MSC_VER
 #define HAVE_FUNCTION 1
@@ -767,6 +767,8 @@ struct private_object {
 	sofia_cid_type_t cid_type;
 	switch_payload_t payload_space;
 	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
+	uint32_t session_timeout;
+	enum nua_session_refresher session_refresher;
 };
 
 struct callback_t {
