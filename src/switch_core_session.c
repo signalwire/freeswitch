@@ -1548,7 +1548,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 				switch_url_decode(val);
 				switch_channel_set_variable(channel, tag->name, val);
 				if (!strcasecmp(tag->name, "channel_name")) {
-					printf("name %s\n", val);
 					switch_channel_set_name(channel, val);
 				}
 				free(p);
