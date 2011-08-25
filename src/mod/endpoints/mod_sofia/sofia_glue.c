@@ -496,7 +496,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->pt);
 
-		if (tech_pvt->dtmf_type == DTMF_2833 && tech_pvt->te > 95) {
+		if ((tech_pvt->dtmf_type == DTMF_2833 || sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF)) && tech_pvt->te > 95) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->te);
 		}
 		
@@ -4598,7 +4598,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		greed:
 			x = 0;
 
-			if (tech_pvt->rm_encoding) {	// && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+			if (tech_pvt->rm_encoding && !(sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF))) {	// && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 				char *remote_host = tech_pvt->remote_sdp_audio_ip;
 				switch_port_t remote_port = tech_pvt->remote_sdp_audio_port;
 				int same = 0;
@@ -4825,7 +4825,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 			if (!best_te && (sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || sofia_test_flag(tech_pvt, TFLAG_LIBERAL_DTMF))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-								  "No 2833 in SDP. Liberal DTMF mode adding %d as telephone-event.", tech_pvt->profile->te);
+								  "No 2833 in SDP. Liberal DTMF mode adding %d as telephone-event.\n", tech_pvt->profile->te);
 				best_te = tech_pvt->profile->te;
 			}
 
@@ -4848,7 +4848,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No 2833 in SDP.  Disable 2833 dtmf and switch to INFO\n");
 				switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "info");
 				tech_pvt->dtmf_type = DTMF_INFO;
-				te = tech_pvt->recv_te = 0;
+				te = tech_pvt->recv_te = tech_pvt->te = 0;
 			}
 
 			
