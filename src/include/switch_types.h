@@ -202,6 +202,25 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_DTMF_LOG_LEN 1000
 typedef uint8_t switch_byte_t;
 
+/*!
+  \enum switch_dtmf_source_t
+  \brief DTMF sources
+<pre>
+    SWITCH_DTMF_UNKNOWN             - Unknown source
+    SWITCH_DTMF_INBAND_AUDIO        - From audio
+    SWITCH_DTMF_RTP                 - From RTP as a telephone event
+    SWITCH_DTMF_ENDPOINT            - From endpoint signaling
+    SWITCH_DTMF_APP                 - From application
+</pre>
+ */
+typedef enum {
+	SWITCH_DTMF_UNKNOWN,
+	SWITCH_DTMF_INBAND_AUDIO,
+	SWITCH_DTMF_RTP,
+	SWITCH_DTMF_ENDPOINT,
+	SWITCH_DTMF_APP
+} switch_dtmf_source_t;
+
 typedef enum {
 	DTMF_FLAG_SKIP_PROCESS = (1 << 0)
 } dtmf_flag_t;
@@ -210,6 +229,7 @@ typedef struct {
 	char digit;
 	uint32_t duration;
 	int32_t flags;
+	switch_dtmf_source_t source;
 } switch_dtmf_t;
 
 typedef enum {

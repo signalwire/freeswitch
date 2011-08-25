@@ -57,6 +57,7 @@ static void spandsp_dtmf_rx_realtime_callback(void *user_data, int code, int lev
 			pvt->last_digit = digit;
 			dtmf.digit = digit;
 			dtmf.duration = switch_core_default_dtmf_duration(0);
+			dtmf.source = SWITCH_DTMF_INBAND_AUDIO;
 			switch_channel_queue_dtmf(switch_core_session_get_channel(pvt->session), &dtmf);
 			pvt->digit_begin = pvt->samples;
 		} else {

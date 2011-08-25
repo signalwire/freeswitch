@@ -344,7 +344,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 
 			if (!rtp_session->dtmf_data.in_digit_queued && (rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION) &&
 				rtp_session->dtmf_data.in_digit_ts) {
-				switch_dtmf_t dtmf = { key, switch_core_min_dtmf_duration(0) };
+				switch_dtmf_t dtmf = { key, switch_core_min_dtmf_duration(0), 0, SWITCH_DTMF_RTP };
 #ifdef DEBUG_2833
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Early Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
 #endif
@@ -373,7 +373,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 					rtp_session->dtmf_data.in_digit_sanity = 2000;
 				}
 				if (rtp_session->dtmf_data.in_digit_ts) {
-					switch_dtmf_t dtmf = { key, duration };
+					switch_dtmf_t dtmf = { key, duration, 0, SWITCH_DTMF_RTP };
 
 					if (ts > rtp_session->dtmf_data.in_digit_ts) {
 						dtmf.duration += (ts - rtp_session->dtmf_data.in_digit_ts);

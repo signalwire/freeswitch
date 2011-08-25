@@ -6625,7 +6625,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	const char *signal_ptr;
 	const char *rec_header;
 	const char *clientcode_header;
-	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
+	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0), 0, SWITCH_DTMF_ENDPOINT };
 	switch_event_t *event;
 	private_object_t *tech_pvt = NULL;
 
