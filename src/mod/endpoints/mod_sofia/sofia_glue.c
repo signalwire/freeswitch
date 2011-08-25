@@ -4847,10 +4847,17 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No 2833 in SDP.  Disable 2833 dtmf and switch to INFO\n");
-				switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "info");
-				tech_pvt->dtmf_type = DTMF_INFO;
-				te = tech_pvt->recv_te = tech_pvt->te = 0;
+				/* by default, use SIP INFO if 2833 is not in the SDP */
+				if (!switch_false(switch_channel_get_variable(channel, "sip_info_when_no_2833"))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No 2833 in SDP.  Disable 2833 dtmf and switch to INFO\n");
+					switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "info");
+					tech_pvt->dtmf_type = DTMF_INFO;
+					te = tech_pvt->recv_te = tech_pvt->te = 0;
+				} else {
+					switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "none");
+					tech_pvt->dtmf_type = DTMF_NONE;
+					te = tech_pvt->recv_te = tech_pvt->te = 0;
+				}
 			}
 
 			
