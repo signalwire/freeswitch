@@ -98,8 +98,8 @@ typedef struct {
 	switch_core_session_t *session;
 	int32_t idx;
 	uint32_t hups;
-	char file[512];
-	char error_file[512];
+	char *file;
+	char *error_file;
 	int confirm_timeout;
 	char key[80];
 	uint8_t early_ok;
@@ -216,7 +216,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		
 		
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_TOO_SMALL) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(collect->session), SWITCH_LOG_ERROR, "%s Error Playing File!",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(collect->session), SWITCH_LOG_ERROR, "%s Error Playing File!\n",
 							  switch_channel_get_name(channel));
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		}
@@ -1743,6 +1743,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	oglobals.ringback_ok = 1;
 	oglobals.bridge_early_media = -1;
+	oglobals.file = NULL;
+	oglobals.error_file = NULL;
 	switch_core_new_memory_pool(&oglobals.pool);
 
 	if (caller_profile_override) {
@@ -2003,10 +2005,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if ((var = switch_event_get_header(var_event, "group_confirm_key"))) {
 		switch_copy_string(oglobals.key, var, sizeof(oglobals.key));
 		if ((var = switch_event_get_header(var_event, "group_confirm_file"))) {
-			switch_copy_string(oglobals.file, var, sizeof(oglobals.file));
+			oglobals.file = strdup(var);
 		}
 		if ((var = switch_event_get_header(var_event, "group_confirm_error_file"))) {
-			switch_copy_string(oglobals.error_file, var, sizeof(oglobals.error_file));
+			oglobals.error_file = strdup(var);
 		}
 		if ((var = switch_event_get_header(var_event, "group_confirm_read_timeout"))) {
 			int tmp = atoi(var);
@@ -2031,12 +2033,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
-	if ((*oglobals.file != '\0') && (!strcmp(oglobals.file, "undef"))) {
-		*oglobals.file = '\0';
+	if ((!zstr(oglobals.file)) && (!strcmp(oglobals.file, "undef"))) {
+		switch_safe_free(oglobals.file);
+		oglobals.file = NULL;
 	}
-
-	if ((*oglobals.error_file != '\0') && (!strcmp(oglobals.error_file, "undef"))) {
-		*oglobals.error_file = '\0';
+	if ((!zstr(oglobals.error_file)) && (!strcmp(oglobals.error_file, "undef"))) {
+		switch_safe_free(oglobals.error_file);
+		oglobals.error_file = NULL;
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "bridge_early_media"))) {
@@ -3200,6 +3203,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		  done:
 
+			switch_safe_free(oglobals.file);
+			switch_safe_free(oglobals.error_file);
+
 			*cause = SWITCH_CAUSE_NONE;
 
 			if (caller_channel && !switch_channel_ready(caller_channel)) {
@@ -3439,6 +3445,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
   outer_for:
 	switch_safe_free(loop_data);
 	switch_safe_free(odata);
+	switch_safe_free(oglobals.file);
+	switch_safe_free(oglobals.error_file);
 
 	if (bleg && status != SWITCH_STATUS_SUCCESS) {
 		*bleg = NULL;
