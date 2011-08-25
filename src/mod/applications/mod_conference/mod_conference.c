@@ -145,7 +145,8 @@ typedef enum {
 	MFLAG_INDICATE_MUTE = (1 << 17),
 	MFLAG_INDICATE_UNMUTE = (1 << 18),
 	MFLAG_NOMOH = (1 << 19),
-	MFLAG_VIDEO_BRIDGE = (1 << 20)
+	MFLAG_VIDEO_BRIDGE = (1 << 20),
+	MFLAG_INDICATE_MUTE_DETECT = (1 << 21)
 } member_flag_t;
 
 typedef enum {
@@ -2359,7 +2360,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 						if (switch_test_flag(member, MFLAG_MUTE_DETECT) && !switch_test_flag(member, MFLAG_CAN_SPEAK)) {
 
 							if (!zstr(member->conference->mute_detect_sound)) {
-								conference_member_play_file(member, member->conference->mute_detect_sound, 0);
+								switch_set_flag(member, MFLAG_INDICATE_MUTE_DETECT);
 							}
 
 							if (test_eflag(member->conference, EFLAG_MUTE_DETECT) &&
@@ -2849,6 +2850,18 @@ static void conference_loop_output(conference_member_t *member)
 				conference_member_say(member, msg, 0);
 			}
 			switch_clear_flag(member, MFLAG_INDICATE_MUTE);
+		}
+
+		if (switch_test_flag(member, MFLAG_INDICATE_MUTE_DETECT)) {
+			if (!zstr(member->conference->mute_detect_sound)) {
+				conference_member_play_file(member, member->conference->mute_detect_sound, 0);
+			} else {
+				char msg[512];
+				
+				switch_snprintf(msg, sizeof(msg), "Currently Muted");
+				conference_member_say(member, msg, 0);
+			}
+			switch_clear_flag(member, MFLAG_INDICATE_MUTE_DETECT);
 		}
 		
 		if (switch_test_flag(member, MFLAG_INDICATE_UNMUTE)) {
