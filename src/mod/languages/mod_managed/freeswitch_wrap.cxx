@@ -1931,6 +1931,29 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_dtmf_t_flags_get(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_dtmf_t_source_set(void * jarg1, int jarg2) {
+  switch_dtmf_t *arg1 = (switch_dtmf_t *) 0 ;
+  switch_dtmf_source_t arg2 ;
+  
+  arg1 = (switch_dtmf_t *)jarg1; 
+  arg2 = (switch_dtmf_source_t)jarg2; 
+  if (arg1) (arg1)->source = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_dtmf_t_source_get(void * jarg1) {
+  int jresult ;
+  switch_dtmf_t *arg1 = (switch_dtmf_t *) 0 ;
+  switch_dtmf_source_t result;
+  
+  arg1 = (switch_dtmf_t *)jarg1; 
+  result = (switch_dtmf_source_t) ((arg1)->source);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_dtmf_t() {
   void * jresult ;
   switch_dtmf_t *result = 0 ;
