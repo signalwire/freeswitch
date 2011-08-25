@@ -658,6 +658,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 					if (ov_fmtp) {
 						pass_fmtp = ov_fmtp;
+					} else {
+						pass_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_video_fmtp");
 					}
 				}
 
