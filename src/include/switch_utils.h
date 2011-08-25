@@ -426,6 +426,8 @@ static inline char *switch_sanitize_number(char *number)
 	char warp[] = "/:";
 	int i;
 
+	switch_assert(number);
+
 	if (!(strchr(p, '/') || strchr(p, ':') || strchr(p, '@'))) {
 		return number;
 	}
