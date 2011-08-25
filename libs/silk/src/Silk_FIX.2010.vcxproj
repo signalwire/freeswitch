@@ -201,13 +201,13 @@
     <ClCompile Include="SKP_Silk_quant_LTP_gains_FIX.c" />
     <ClCompile Include="SKP_Silk_range_coder.c" />
     <ClCompile Include="SKP_Silk_regularize_correlations_FIX.c" />
-    <ClCompile Include="SKP_Silk_resample_resampler.c" />
-    <ClCompile Include="SKP_Silk_resample_resampler_down2.c" />
-    <ClCompile Include="SKP_Silk_resample_resampler_down2_3.c" />
+    <ClCompile Include="SKP_Silk_resampler.c" />
+    <ClCompile Include="SKP_Silk_resampler_down2.c" />
+    <ClCompile Include="SKP_Silk_resampler_down2_3.c" />
     <ClCompile Include="SKP_Silk_resampler_down3.c" />
     <ClCompile Include="SKP_Silk_resampler_private_AR2.c" />
     <ClCompile Include="SKP_Silk_resampler_private_ARMA4.c" />
-    <ClCompile Include="SKP_Silk_resampler_private_copy" />
+    <ClCompile Include="SKP_Silk_resampler_private_copy.c" />
     <ClCompile Include="SKP_Silk_resampler_private_down4.c" />
     <ClCompile Include="SKP_Silk_resampler_private_down_FIR.c" />
     <ClCompile Include="SKP_Silk_resampler_private_IIR_FIR.c" />
