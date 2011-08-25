@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -100,7 +100,7 @@ void SKP_Silk_decode_parameters(
     /* Set pointer to NLSF VQ CB for the current signal type */
     psNLSF_CB = psDec->psNLSF_CB[ psDecCtrl->sigtype ];
 
-    /* Arithmetically decode NLSF path */
+    /* Range decode NLSF path */
     SKP_Silk_range_decoder_multi( NLSFIndices, psRC, psNLSF_CB->StartPtr, psNLSF_CB->MiddleIx, psNLSF_CB->nStages );
 
     /* From the NLSF path, decode an NLSF vector */
@@ -182,14 +182,14 @@ void SKP_Silk_decode_parameters(
                 SKP_Silk_LTP_per_index_CDF_offset );
 
         /* Decode Codebook Index */
-        cbk_ptr_Q14 = SKP_Silk_LTP_vq_ptrs_Q14[ psDecCtrl->PERIndex ]; // set pointer to start of codebook
-        
+        cbk_ptr_Q14 = SKP_Silk_LTP_vq_ptrs_Q14[ psDecCtrl->PERIndex ]; /* set pointer to start of codebook */
+
         for( k = 0; k < NB_SUBFR; k++ ) {
             SKP_Silk_range_decoder( &Ix, psRC, SKP_Silk_LTP_gain_CDF_ptrs[ psDecCtrl->PERIndex ], 
                 SKP_Silk_LTP_gain_CDF_offsets[ psDecCtrl->PERIndex ] );
 
             for( i = 0; i < LTP_ORDER; i++ ) {
-                psDecCtrl->LTPCoef_Q14[ SKP_SMULBB( k, LTP_ORDER ) + i ] = cbk_ptr_Q14[ SKP_SMULBB( Ix, LTP_ORDER ) + i ];
+                psDecCtrl->LTPCoef_Q14[ k * LTP_ORDER + i ] = cbk_ptr_Q14[ Ix * LTP_ORDER + i ];
             }
         }
 
@@ -199,8 +199,9 @@ void SKP_Silk_decode_parameters(
         SKP_Silk_range_decoder( &Ix, psRC, SKP_Silk_LTPscale_CDF, SKP_Silk_LTPscale_offset );
         psDecCtrl->LTP_scale_Q14 = SKP_Silk_LTPScales_table_Q14[ Ix ];
     } else {
-        SKP_memset( psDecCtrl->pitchL,      0, NB_SUBFR * sizeof( SKP_int ) );
-        SKP_memset( psDecCtrl->LTPCoef_Q14, 0, NB_SUBFR * LTP_ORDER * sizeof( SKP_int16 ) );
+        SKP_assert( psDecCtrl->sigtype == SIG_TYPE_UNVOICED );
+        SKP_memset( psDecCtrl->pitchL,      0,             NB_SUBFR * sizeof( SKP_int   ) );
+        SKP_memset( psDecCtrl->LTPCoef_Q14, 0, LTP_ORDER * NB_SUBFR * sizeof( SKP_int16 ) );
         psDecCtrl->PERIndex      = 0;
         psDecCtrl->LTP_scale_Q14 = 0;
     }

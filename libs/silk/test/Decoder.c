@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -25,6 +25,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
+
 /*****************************/
 /* Silk decoder test program */
 /*****************************/
@@ -43,37 +44,62 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAX_BYTES_PER_FRAME     1024
 #define MAX_INPUT_FRAMES        5
 #define MAX_FRAME_LENGTH        480
+#define FRAME_LENGTH_MS         20
+#define MAX_API_FS_KHZ          48
 #define MAX_LBRR_DELAY          2
+
+#ifdef _SYSTEM_IS_BIG_ENDIAN
+/* Function to convert a little endian int16 to a */
+/* big endian int16 or vica verca                 */
+void swap_endian(
+    SKP_int16       vec[],
+    SKP_int         len
+)
+{
+    SKP_int i;
+    SKP_int16 tmp;
+    SKP_uint8 *p1, *p2;
+
+    for( i = 0; i < len; i++ ){
+        tmp = vec[ i ];
+        p1 = (SKP_uint8 *)&vec[ i ]; p2 = (SKP_uint8 *)&tmp;
+        p1[ 0 ] = p2[ 1 ]; p1[ 1 ] = p2[ 0 ];
+    }
+}
+#endif
+
+/* Seed for the random number generator, which is used for simulating packet loss */
+static SKP_int32 rand_seed = 1;
 
 static void print_usage(char* argv[]) {
     printf( "\nusage: %s in.bit out.pcm [settings]\n", argv[ 0 ] );
-    printf( "\nin.bit        : Bitstream input to decoder" );
-    printf( "\nout.pcm       : Speech output from decoder" );
+    printf( "\nstream.bit   : Bitstream input to decoder" );
+    printf( "\nout.pcm      : Speech output from decoder" );
     printf( "\n   settings:" );
-    printf( "\n-fs <kHz>     : Sampling rate of output signal in kHz; default: 24" );
-    printf( "\n-loss <perc>  : Simulated packet loss percentage (0-100); default: 0" );
+    printf( "\n-Fs_API <Hz> : Sampling rate of output signal in Hz; default: 24000" );
+    printf( "\n-loss <perc> : Simulated packet loss percentage (0-100); default: 0" );
     printf( "\n" );
 }
 
 int main( int argc, char* argv[] )
 {
     size_t    counter;
-    SKP_int   args, totPackets, i, k;
+    SKP_int32 args, totPackets, i, k;
     SKP_int16 ret, len, tot_len;
     SKP_int16 nBytes;
     SKP_uint8 payload[    MAX_BYTES_PER_FRAME * MAX_INPUT_FRAMES * ( MAX_LBRR_DELAY + 1 ) ];
-    SKP_uint8 FECpayload[ MAX_BYTES_PER_FRAME * MAX_INPUT_FRAMES ], *payloadPtr;
     SKP_uint8 *payloadEnd = NULL, *payloadToDec = NULL;
+    SKP_uint8 FECpayload[ MAX_BYTES_PER_FRAME * MAX_INPUT_FRAMES ], *payloadPtr;
     SKP_int16 nBytesFEC;
     SKP_int16 nBytesPerPacket[ MAX_LBRR_DELAY + 1 ], totBytes;
-    SKP_int16 out[ ( MAX_FRAME_LENGTH << 1 ) * MAX_INPUT_FRAMES ], *outPtr;
+    SKP_int16 out[ ( ( FRAME_LENGTH_MS * MAX_API_FS_KHZ ) << 1 ) * MAX_INPUT_FRAMES ], *outPtr;
     char      speechOutFileName[ 150 ], bitInFileName[ 150 ];
     FILE      *bitInFile, *speechOutFile;
-    SKP_int   Fs_kHz = 0;
+    SKP_int32 API_Fs_Hz = 0;
     SKP_int32 decSizeBytes;
     void      *psDec;
     float     loss_prob;
-    SKP_int   frames, lost, quiet;
+    SKP_int32 frames, lost, quiet;
     SKP_SILK_SDK_DecControlStruct DecControl;
 
     if( argc < 3 ) {
@@ -95,8 +121,8 @@ int main( int argc, char* argv[] )
         if( SKP_STR_CASEINSENSITIVE_COMPARE( argv[ args ], "-loss" ) == 0 ) {
             sscanf( argv[ args + 1 ], "%f", &loss_prob );
             args += 2;
-        } else if( SKP_STR_CASEINSENSITIVE_COMPARE( argv[ args ], "-fs" ) == 0 ) {
-            sscanf( argv[ args + 1 ], "%d", &Fs_kHz );
+        } else if( SKP_STR_CASEINSENSITIVE_COMPARE( argv[ args ], "-Fs_API" ) == 0 ) {
+            sscanf( argv[ args + 1 ], "%d", &API_Fs_Hz );
             args += 2;
         } else if( SKP_STR_CASEINSENSITIVE_COMPARE( argv[ args ], "-quiet" ) == 0 ) {
             quiet = 1;
@@ -121,18 +147,34 @@ int main( int argc, char* argv[] )
         printf( "Error: could not open input file %s\n", bitInFileName );
         exit( 0 );
     } 
+
+    /* Check Silk header */
+    {
+        char header_buf[ 50 ];
+        counter = fread( header_buf, sizeof( char ), strlen( "#!SILK_V3" ), bitInFile );
+        header_buf[ strlen( "#!SILK_V3" ) ] = ( char )0; /* Terminate with a null character */
+        if( strcmp( header_buf, "#!SILK_V3" ) != 0 ) { 
+            /* Non-equal strings */
+            printf( "Error: Wrong Header %s\n", header_buf );
+            exit( 0 );
+        }
+    }
+
     speechOutFile = fopen( speechOutFileName, "wb" );
     if( speechOutFile == NULL ) {
         printf( "Error: could not open output file %s\n", speechOutFileName );
         exit( 0 );
     }
 
-	/* Set the samplingrate that is requested for the output */
-    if( Fs_kHz == 0 ) {
-        DecControl.sampleRate = 24000;
+    /* Set the samplingrate that is requested for the output */
+    if( API_Fs_Hz == 0 ) {
+        DecControl.API_sampleRate = 24000;
     } else {
-        DecControl.sampleRate = Fs_kHz * 1000;
+        DecControl.API_sampleRate = API_Fs_Hz;
     }
+
+    /* Initialize to one frame per packet, for proper concealment before first packet arrives */
+    DecControl.framesPerPacket = 1;
 
     /* Create decoder */
     ret = SKP_Silk_SDK_Get_Decoder_Size( &decSizeBytes );
@@ -154,10 +196,13 @@ int main( int argc, char* argv[] )
     for( i = 0; i < MAX_LBRR_DELAY; i++ ) {
         /* Read payload size */
         counter = fread( &nBytes, sizeof( SKP_int16 ), 1, bitInFile );
+#ifdef _SYSTEM_IS_BIG_ENDIAN
+        swap_endian( &nBytes, 1 );
+#endif
         /* Read payload */
         counter = fread( payloadEnd, sizeof( SKP_uint8 ), nBytes, bitInFile );
 
-        if( (SKP_int16)counter < nBytes ) {
+        if( ( SKP_int16 )counter < nBytes ) {
             break;
         }
         nBytesPerPacket[ i ] = nBytes;
@@ -167,18 +212,22 @@ int main( int argc, char* argv[] )
     while( 1 ) {
         /* Read payload size */
         counter = fread( &nBytes, sizeof( SKP_int16 ), 1, bitInFile );
+#ifdef _SYSTEM_IS_BIG_ENDIAN
+        swap_endian( &nBytes, 1 );
+#endif
         if( nBytes < 0 || counter < 1 ) {
             break;
         }
         
         /* Read payload */
         counter = fread( payloadEnd, sizeof( SKP_uint8 ), nBytes, bitInFile );
-        if( (SKP_int16)counter < nBytes ) {
+        if( ( SKP_int16 )counter < nBytes ) {
             break;
         }
 
         /* Simulate losses */
-        if( ( (float)rand() / (float)RAND_MAX >= loss_prob / 100 ) && counter > 0 ) {
+        rand_seed = SKP_RAND( rand_seed );
+        if( ( ( ( float )( ( rand_seed >> 16 ) + ( 1 << 15 ) ) ) / 65535.0f >= ( loss_prob / 100.0f ) ) && ( counter > 0 ) ) {
             nBytesPerPacket[ MAX_LBRR_DELAY ] = nBytes;
             payloadEnd                       += nBytes;
         } else {
@@ -193,7 +242,7 @@ int main( int argc, char* argv[] )
             payloadPtr = payload;
             for( i = 0; i < MAX_LBRR_DELAY; i++ ) {
                 if( nBytesPerPacket[ i + 1 ] > 0 ) {
-                    SKP_Silk_SDK_search_for_LBRR( psDec, payloadPtr, nBytesPerPacket[ i + 1 ], i + 1, FECpayload, &nBytesFEC );
+                    SKP_Silk_SDK_search_for_LBRR( payloadPtr, nBytesPerPacket[ i + 1 ], i + 1, FECpayload, &nBytesFEC );
                     if( nBytesFEC > 0 ) {
                         payloadToDec = FECpayload;
                         nBytes = nBytesFEC;
@@ -249,6 +298,9 @@ int main( int argc, char* argv[] )
         totPackets++;
 
         /* Write output to file */
+#ifdef _SYSTEM_IS_BIG_ENDIAN   
+        swap_endian( out, tot_len );
+#endif
         fwrite( out, sizeof( SKP_int16 ), tot_len, speechOutFile );
 
         /* Update buffer */
@@ -261,7 +313,7 @@ int main( int argc, char* argv[] )
         SKP_memmove( nBytesPerPacket, &nBytesPerPacket[ 1 ], MAX_LBRR_DELAY * sizeof( SKP_int16 ) );
 
         if( !quiet ) {
-            fprintf( stderr, "\rFrames decoded:              %d", totPackets );
+            fprintf( stderr, "\rPackets decoded:             %d", totPackets );
         }
     }
 
@@ -275,7 +327,7 @@ int main( int argc, char* argv[] )
             payloadPtr = payload;
             for( i = 0; i < MAX_LBRR_DELAY; i++ ) {
                 if( nBytesPerPacket[ i + 1 ] > 0 ) {
-                    SKP_Silk_SDK_search_for_LBRR( psDec, payloadPtr, nBytesPerPacket[ i + 1 ], i + 1, FECpayload, &nBytesFEC );
+                    SKP_Silk_SDK_search_for_LBRR( payloadPtr, nBytesPerPacket[ i + 1 ], i + 1, FECpayload, &nBytesFEC );
                     if( nBytesFEC > 0 ) {
                         payloadToDec = FECpayload;
                         nBytes = nBytesFEC;
@@ -332,6 +384,9 @@ int main( int argc, char* argv[] )
         totPackets++;
 
         /* Write output to file */
+#ifdef _SYSTEM_IS_BIG_ENDIAN   
+        swap_endian( out, tot_len );
+#endif
         fwrite( out, sizeof( SKP_int16 ), tot_len, speechOutFile );
 
         /* Update Buffer */

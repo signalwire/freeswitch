@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@ void SKP_Silk_k2a(
 )
 {
     SKP_int   k, n;
-    SKP_int32 Atmp[ SigProc_MAX_ORDER_LPC ];
+    SKP_int32 Atmp[ SKP_Silk_MAX_ORDER_LPC ];
 
     for( k = 0; k < order; k++ ) {
         for( n = 0; n < k; n++ ) {

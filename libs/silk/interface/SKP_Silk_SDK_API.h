@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -39,7 +39,7 @@ extern "C"
 
 #define SILK_MAX_FRAMES_PER_PACKET  5
 
-/* Struct for TOC (Table Of Contents) */
+/* Struct for TOC (Table of Contents) */
 typedef struct {
     SKP_int     framesInPacket;                             /* Number of 20 ms frames in packet     */
     SKP_int     fs_kHz;                                     /* Sampling frequency in packet         */
@@ -85,7 +85,7 @@ SKP_int SKP_Silk_SDK_Encode(
     const SKP_int16                     *samplesIn,     /* I:   Speech sample input vector                      */
     SKP_int                             nSamplesIn,     /* I:   Number of samples in input vector               */
     SKP_uint8                           *outData,       /* O:   Encoded output vector                           */
-    SKP_int16                           *nBytesOut      /* I/O: Number of Bytes in outData (input: Max Bytes)   */
+    SKP_int16                           *nBytesOut      /* I/O: Number of bytes in outData (input: Max bytes)   */
 );
 
 /****************************************/
@@ -114,7 +114,7 @@ SKP_int SKP_Silk_SDK_Decode(
     SKP_SILK_SDK_DecControlStruct*      decControl,     /* I/O: Control Structure                               */
     SKP_int                             lostFlag,       /* I:   0: no loss, 1 loss                              */
     const SKP_uint8                     *inData,        /* I:   Encoded input vector                            */
-    const SKP_int                       nBytesIn,       /* I:   Number of input Bytes                           */
+    const SKP_int                       nBytesIn,       /* I:   Number of input bytes                           */
     SKP_int16                           *samplesOut,    /* O:   Decoded output speech vector                    */
     SKP_int16                           *nSamplesOut    /* I/O: Number of samples (vector/decoded)              */
 );
@@ -123,22 +123,20 @@ SKP_int SKP_Silk_SDK_Decode(
 /* Find Low Bit Rate Redundancy (LBRR) information in a packet */
 /***************************************************************/
 void SKP_Silk_SDK_search_for_LBRR(
-    void                                *decState,      /* I:   Decoder state, to select bitstream version only */
     const SKP_uint8                     *inData,        /* I:   Encoded input vector                            */
-    const SKP_int16                     nBytesIn,       /* I:   Number of input Bytes                           */
+    const SKP_int                       nBytesIn,       /* I:   Number of input Bytes                           */
     SKP_int                             lost_offset,    /* I:   Offset from lost packet                         */
     SKP_uint8                           *LBRRData,      /* O:   LBRR payload                                    */
     SKP_int16                           *nLBRRBytes     /* O:   Number of LBRR Bytes                            */
 );
 
-/************************************/
-/* Get type of content for a packet */
-/************************************/
+/**************************************/
+/* Get table of contents for a packet */
+/**************************************/
 void SKP_Silk_SDK_get_TOC(
-    void		                        *decState,      /* I:   Decoder state, to select bitstream version only */
     const SKP_uint8                     *inData,        /* I:   Encoded input vector                            */
-    const SKP_int16                     nBytesIn,       /* I:   Number of input bytes                           */
-    SKP_Silk_TOC_struct                 *Silk_TOC       /* O:   Type of content                                 */
+    const SKP_int                       nBytesIn,       /* I:   Number of input bytes                           */
+    SKP_Silk_TOC_struct                 *Silk_TOC       /* O:   Table of contents                               */
 );
 
 /**************************/

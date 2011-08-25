@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -37,14 +37,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* Faster than schur64(), but much less accurate.                       */
 /* uses SMLAWB(), requiring armv5E and higher.                          */ 
-void SKP_Silk_schur(
-    SKP_int16            *rc_Q15,                /* O:    reflection coefficients [order] Q15         */
-    const SKP_int32      *c,                     /* I:    correlations [order+1]                      */
-    const SKP_int32      order                   /* I:    prediction order                            */
+SKP_int32 SKP_Silk_schur(                     /* O:    Returns residual energy                     */
+    SKP_int16            *rc_Q15,               /* O:    reflection coefficients [order] Q15         */
+    const SKP_int32      *c,                    /* I:    correlations [order+1]                      */
+    const SKP_int32      order                  /* I:    prediction order                            */
 )
 {
     SKP_int        k, n, lz;
-    SKP_int32    C[ SigProc_MAX_ORDER_LPC + 1 ][ 2 ];
+    SKP_int32    C[ SKP_Silk_MAX_ORDER_LPC + 1 ][ 2 ];
     SKP_int32    Ctmp1, Ctmp2, rc_tmp_Q15;
 
     /* Get number of leading zeros */
@@ -88,4 +88,7 @@ void SKP_Silk_schur(
             C[ n ][ 1 ]         = SKP_SMLAWB( Ctmp2, SKP_LSHIFT( Ctmp1, 1 ), rc_tmp_Q15 );
         }
     }
+
+    /* return residual energy */
+    return C[0][1];
 }

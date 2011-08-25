@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -106,7 +106,7 @@ void SKP_Silk_NLSF_stabilize(
             max_center_Q15 -= ( NDeltaMin_Q15[I] - SKP_RSHIFT( NDeltaMin_Q15[I], 1 ) );
 
             /* Move apart, sorted by value, keeping the same center frequency */
-            center_freq_Q15 = SKP_LIMIT( SKP_RSHIFT_ROUND( (SKP_int32)NLSF_Q15[I-1] + (SKP_int32)NLSF_Q15[I], 1 ),
+            center_freq_Q15 = SKP_LIMIT_32( SKP_RSHIFT_ROUND( (SKP_int32)NLSF_Q15[I-1] + (SKP_int32)NLSF_Q15[I], 1 ),
                 min_center_Q15, max_center_Q15 );
             NLSF_Q15[I-1] = center_freq_Q15 - SKP_RSHIFT( NDeltaMin_Q15[I], 1 );
             NLSF_Q15[I] = NLSF_Q15[I-1] + NDeltaMin_Q15[I];
@@ -137,18 +137,3 @@ void SKP_Silk_NLSF_stabilize(
     }
 }
 
-/* NLSF stabilizer, over multiple input column data vectors */
-void SKP_Silk_NLSF_stabilize_multi(
-          SKP_int        *NLSF_Q15,        /* I/O:  Unstable/stabilized normalized LSF vectors in Q15 [LxN]                 */
-    const SKP_int        *NDeltaMin_Q15,   /* I:    Normalized delta min vector in Q15, NDeltaMin_Q15[L] must be >= 1 [L+1] */
-    const SKP_int         N,               /* I:    Number of input vectors to be stabilized                                */
-    const SKP_int         L                /* I:    NLSF vector dimension                                                   */
-)
-{
-    SKP_int n;
-    
-    /* loop over input data */
-    for( n = 0; n < N; n++ ) {
-        SKP_Silk_NLSF_stabilize( &NLSF_Q15[n * L], NDeltaMin_Q15, L );
-    }
-}

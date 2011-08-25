@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -26,6 +26,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
 #include "SKP_Silk_main_FIX.h"
+#include "SKP_Silk_tuning_parameters.h"
 
 /* Finds LPC vector from correlations, and converts to NLSF */
 void SKP_Silk_find_LPC_FIX(
@@ -40,7 +41,6 @@ void SKP_Silk_find_LPC_FIX(
 {
     SKP_int     k;
     SKP_int32   a_Q16[ MAX_LPC_ORDER ];
-
     SKP_int     isInterpLower, shift;
     SKP_int16   S[ MAX_LPC_ORDER ];
     SKP_int32   res_nrg0, res_nrg1;
@@ -57,13 +57,17 @@ void SKP_Silk_find_LPC_FIX(
     *interpIndex = 4;
 
     /* Burg AR analysis for the full frame */
-    SKP_Silk_burg_modified( &res_nrg, &res_nrg_Q, a_Q16, x, subfr_length, NB_SUBFR, FIND_LPC_COND_FAC_Q32, LPC_order );
+    SKP_Silk_burg_modified( &res_nrg, &res_nrg_Q, a_Q16, x, subfr_length, NB_SUBFR, SKP_FIX_CONST( FIND_LPC_COND_FAC, 32 ), LPC_order );
+
+    SKP_Silk_bwexpander_32( a_Q16, LPC_order, SKP_FIX_CONST( FIND_LPC_CHIRP, 16 ) );
 
     if( useInterpolatedNLSFs == 1 ) {
 
         /* Optimal solution for last 10 ms */
         SKP_Silk_burg_modified( &res_tmp_nrg, &res_tmp_nrg_Q, a_tmp_Q16, x + ( NB_SUBFR >> 1 ) * subfr_length, 
-            subfr_length, ( NB_SUBFR >> 1 ), FIND_LPC_COND_FAC_Q32, LPC_order );
+            subfr_length, ( NB_SUBFR >> 1 ), SKP_FIX_CONST( FIND_LPC_COND_FAC, 32 ), LPC_order );
+
+        SKP_Silk_bwexpander_32( a_tmp_Q16, LPC_order, SKP_FIX_CONST( FIND_LPC_CHIRP, 16 ) );
 
         /* subtract residual energy here, as that's easier than adding it to the    */
         /* residual energy of the first 10 ms in each iteration of the search below */

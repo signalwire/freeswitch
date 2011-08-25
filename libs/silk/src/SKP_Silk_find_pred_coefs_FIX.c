@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -28,9 +28,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SKP_Silk_main_FIX.h"
 
 
-#define VARQ        1 // EXPERIMENTAL
-#define Qx          0 // EXPERIMENTAL
-
 void SKP_Silk_find_pred_coefs_FIX(
     SKP_Silk_encoder_state_FIX      *psEnc,         /* I/O  encoder state                               */
     SKP_Silk_encoder_control_FIX    *psEncCtrl,     /* I/O  encoder control                             */
@@ -39,15 +36,11 @@ void SKP_Silk_find_pred_coefs_FIX(
 {
     SKP_int         i;
     SKP_int32       WLTP[ NB_SUBFR * LTP_ORDER * LTP_ORDER ];
-    SKP_int32       invGains_Q16[ NB_SUBFR ], local_gains_Qx[ NB_SUBFR ], Wght_Q15[ NB_SUBFR ];
+    SKP_int32       invGains_Q16[ NB_SUBFR ], local_gains[ NB_SUBFR ], Wght_Q15[ NB_SUBFR ];
     SKP_int         NLSF_Q15[ MAX_LPC_ORDER ];
     const SKP_int16 *x_ptr;
     SKP_int16       *x_pre_ptr, LPC_in_pre[ NB_SUBFR * MAX_LPC_ORDER + MAX_FRAME_LENGTH ];
-
     SKP_int32       tmp, min_gain_Q16;
-#if !VARQ
-    SKP_int         LZ;
-#endif
     SKP_int         LTP_corrs_rshift[ NB_SUBFR ];
 
 
@@ -56,20 +49,11 @@ void SKP_Silk_find_pred_coefs_FIX(
     for( i = 0; i < NB_SUBFR; i++ ) {
         min_gain_Q16 = SKP_min( min_gain_Q16, psEncCtrl->Gains_Q16[ i ] );
     }
-#if !VARQ
-    LZ = SKP_Silk_CLZ32( min_gain_Q16 ) - 1;
-    LZ = SKP_LIMIT( LZ, 0, 16 );
-    min_gain_Q16 = SKP_RSHIFT( min_gain_Q16, 2 ); /* Ensure that maximum invGains_Q16 is within range of a 16 bit int */
-#endif
     for( i = 0; i < NB_SUBFR; i++ ) {
         /* Divide to Q16 */
         SKP_assert( psEncCtrl->Gains_Q16[ i ] > 0 );
-#if VARQ
         /* Invert and normalize gains, and ensure that maximum invGains_Q16 is within range of a 16 bit int */
         invGains_Q16[ i ] = SKP_DIV32_varQ( min_gain_Q16, psEncCtrl->Gains_Q16[ i ], 16 - 2 );
-#else
-        invGains_Q16[ i ] = SKP_DIV32( SKP_LSHIFT( min_gain_Q16, LZ ), SKP_RSHIFT( psEncCtrl->Gains_Q16[ i ], 16 - LZ ) );
-#endif
 
         /* Ensure Wght_Q15 a minimum value 1 */
         invGains_Q16[ i ] = SKP_max( invGains_Q16[ i ], 363 ); 
@@ -80,7 +64,7 @@ void SKP_Silk_find_pred_coefs_FIX(
         Wght_Q15[ i ] = SKP_RSHIFT( tmp, 1 );
 
         /* Invert the inverted and normalized gains */
-        local_gains_Qx[ i ] = SKP_DIV32( ( 1 << ( 16 + Qx ) ), invGains_Q16[ i ] );
+        local_gains[ i ] = SKP_DIV32( ( 1 << 16 ), invGains_Q16[ i ] );
     }
 
     if( psEncCtrl->sCmn.sigtype == SIG_TYPE_VOICED ) {
@@ -104,7 +88,7 @@ void SKP_Silk_find_pred_coefs_FIX(
 
         /* Create LTP residual */
         SKP_Silk_LTP_analysis_filter_FIX( LPC_in_pre, psEnc->x_buf + psEnc->sCmn.frame_length - psEnc->sCmn.predictLPCOrder, 
-            psEncCtrl->LTPCoef_Q14, psEncCtrl->sCmn.pitchL, invGains_Q16, 16, psEnc->sCmn.subfr_length, psEnc->sCmn.predictLPCOrder );
+            psEncCtrl->LTPCoef_Q14, psEncCtrl->sCmn.pitchL, invGains_Q16, psEnc->sCmn.subfr_length, psEnc->sCmn.predictLPCOrder );
 
     } else {
         /************/
@@ -138,7 +122,7 @@ void SKP_Silk_find_pred_coefs_FIX(
     TOC(PROCESS_LSFS)
 
     /* Calculate residual energy using quantized LPC coefficients */
-    SKP_Silk_residual_energy_FIX( psEncCtrl->ResNrg, psEncCtrl->ResNrgQ, LPC_in_pre, psEncCtrl->PredCoef_Q12, local_gains_Qx, Qx,
+    SKP_Silk_residual_energy_FIX( psEncCtrl->ResNrg, psEncCtrl->ResNrgQ, LPC_in_pre, psEncCtrl->PredCoef_Q12, local_gains,
         psEnc->sCmn.subfr_length, psEnc->sCmn.predictLPCOrder );
 
     /* Copy to prediction struct for use in next frame for fluctuation reduction */

@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -26,6 +26,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
 #include "SKP_Silk_main_FIX.h"
+#include "SKP_Silk_tuning_parameters.h"
+
+/* Head room for correlations                           */
+#define LTP_CORRS_HEAD_ROOM                             2
 
 void SKP_Silk_fit_LTP(
     SKP_int32 LTP_coefs_Q16[ LTP_ORDER ],
@@ -71,22 +75,27 @@ void SKP_Silk_find_LTP_FIX(
         lag_ptr = r_ptr - ( lag[ k ] + LTP_ORDER / 2 );
 
         SKP_Silk_sum_sqr_shift( &rr[ k ], &rr_shifts, r_ptr, subfr_length ); /* rr[ k ] in Q( -rr_shifts ) */
+
         /* Assure headroom */
         LZs = SKP_Silk_CLZ32( rr[k] );
         if( LZs < LTP_CORRS_HEAD_ROOM ) {
             rr[ k ] = SKP_RSHIFT_ROUND( rr[ k ], LTP_CORRS_HEAD_ROOM - LZs );
-            rr_shifts += (LTP_CORRS_HEAD_ROOM - LZs);
+            rr_shifts += ( LTP_CORRS_HEAD_ROOM - LZs );
         }
         corr_rshifts[ k ] = rr_shifts;
-        SKP_Silk_corrMatrix_FIX( lag_ptr, subfr_length, LTP_ORDER, WLTP_ptr, &corr_rshifts[ k ] );     /* WLTP_fix_ptr in Q( -corr_rshifts[ k ] ) */
-        /* The correlation vector always have lower max abs value than rr and/or RR so head room is assured */
-        SKP_Silk_corrVector_FIX( lag_ptr, r_ptr, subfr_length, LTP_ORDER, Rr, corr_rshifts[ k ] ); /* Rr_fix_ptr   in Q( -corr_rshifts[ k ] ) */
+        SKP_Silk_corrMatrix_FIX( lag_ptr, subfr_length, LTP_ORDER, LTP_CORRS_HEAD_ROOM, WLTP_ptr, &corr_rshifts[ k ] );  /* WLTP_fix_ptr in Q( -corr_rshifts[ k ] ) */
+
+        /* The correlation vector always has lower max abs value than rr and/or RR so head room is assured */
+        SKP_Silk_corrVector_FIX( lag_ptr, r_ptr, subfr_length, LTP_ORDER, Rr, corr_rshifts[ k ] );  /* Rr_fix_ptr   in Q( -corr_rshifts[ k ] ) */
         if( corr_rshifts[ k ] > rr_shifts ) {
             rr[ k ] = SKP_RSHIFT( rr[ k ], corr_rshifts[ k ] - rr_shifts ); /* rr[ k ] in Q( -corr_rshifts[ k ] ) */
         }
         SKP_assert( rr[ k ] >= 0 );
 
-        regu = SKP_SMULWB( rr[ k ] + 1, LTP_DAMPING_Q16 );
+        regu = 1;
+        regu = SKP_SMLAWB( regu, rr[ k ], SKP_FIX_CONST( LTP_DAMPING/3, 16 ) );
+        regu = SKP_SMLAWB( regu, matrix_ptr( WLTP_ptr, 0, 0, LTP_ORDER ), SKP_FIX_CONST( LTP_DAMPING/3, 16 ) );
+        regu = SKP_SMLAWB( regu, matrix_ptr( WLTP_ptr, LTP_ORDER-1, LTP_ORDER-1, LTP_ORDER ), SKP_FIX_CONST( LTP_DAMPING/3, 16 ) );
         SKP_Silk_regularize_correlations_FIX( WLTP_ptr, &rr[k], regu, LTP_ORDER );
 
         SKP_Silk_solve_LDL_FIX( WLTP_ptr, LTP_ORDER, Rr, b_Q16 ); /* WLTP_fix_ptr and Rr_fix_ptr both in Q(-corr_rshifts[k]) */
@@ -99,12 +108,12 @@ void SKP_Silk_find_LTP_FIX(
 
         /* temp = Wght[ k ] / ( nrg[ k ] * Wght[ k ] + 0.01f * subfr_length ); */
         extra_shifts = SKP_min_int( corr_rshifts[ k ], LTP_CORRS_HEAD_ROOM );
-        denom32 = SKP_LSHIFT_SAT32( SKP_SMULWB( nrg[ k ], Wght_Q15[ k ] ), 1 + extra_shifts ) +  /* Q( -corr_rshifts[ k ] + extra_shifts ) */
-            SKP_RSHIFT( SKP_SMULWB( subfr_length, 655 ), corr_rshifts[ k ] - extra_shifts );     /* Q( -corr_rshifts[ k ] + extra_shifts ) */
+        denom32 = SKP_LSHIFT_SAT32( SKP_SMULWB( nrg[ k ], Wght_Q15[ k ] ), 1 + extra_shifts ) + /* Q( -corr_rshifts[ k ] + extra_shifts ) */
+            SKP_RSHIFT( SKP_SMULWB( subfr_length, 655 ), corr_rshifts[ k ] - extra_shifts );    /* Q( -corr_rshifts[ k ] + extra_shifts ) */
         denom32 = SKP_max( denom32, 1 );
-        SKP_assert( ((SKP_int64)Wght_Q15[ k ] << 16 ) < SKP_int32_MAX ); /* Wght always < 0.5 in Q0 */
-        temp32 = SKP_DIV32( SKP_LSHIFT( ( SKP_int32 )Wght_Q15[ k ], 16 ), denom32 );  /* Q( 15 + 16 + corr_rshifts[k] - extra_shifts ) */
-        temp32 = SKP_RSHIFT( temp32, 31 + corr_rshifts[ k ] - extra_shifts - 26 );  /* Q26 */
+        SKP_assert( ((SKP_int64)Wght_Q15[ k ] << 16 ) < SKP_int32_MAX );                        /* Wght always < 0.5 in Q0 */
+        temp32 = SKP_DIV32( SKP_LSHIFT( ( SKP_int32 )Wght_Q15[ k ], 16 ), denom32 );            /* Q( 15 + 16 + corr_rshifts[k] - extra_shifts ) */
+        temp32 = SKP_RSHIFT( temp32, 31 + corr_rshifts[ k ] - extra_shifts - 26 );              /* Q26 */
         
         /* Limit temp such that the below scaling never wraps around */
         WLTP_max = 0;
@@ -132,7 +141,7 @@ void SKP_Silk_find_LTP_FIX(
         maxRshifts = SKP_max_int( corr_rshifts[ k ], maxRshifts );
     }
 
-    /* compute LTP coding gain */
+    /* Compute LTP coding gain */
     if( LTPredCodGain_Q7 != NULL ) {
         LPC_LTP_res_nrg = 0;
         LPC_res_nrg     = 0;
@@ -204,8 +213,8 @@ void SKP_Silk_find_LTP_FIX(
 
         g_Q26 = SKP_MUL( 
             SKP_DIV32( 
-                LTP_SMOOTHING_Q26, 
-                SKP_RSHIFT( LTP_SMOOTHING_Q26, 10 ) + temp32 ),                                       /* Q10 */ 
+                SKP_FIX_CONST( LTP_SMOOTHING, 26 ), 
+                SKP_RSHIFT( SKP_FIX_CONST( LTP_SMOOTHING, 26 ), 10 ) + temp32 ),                                       /* Q10 */ 
             SKP_LSHIFT_SAT32( SKP_SUB_SAT32( ( SKP_int32 )m_Q12, SKP_RSHIFT( d_Q14[ k ], 2 ) ), 4 ) );  /* Q16 */
 
         temp32 = 0;
@@ -215,7 +224,7 @@ void SKP_Silk_find_LTP_FIX(
         }
         temp32 = SKP_DIV32( g_Q26, temp32 ); /* Q14->Q12 */
         for( i = 0; i < LTP_ORDER; i++ ) {
-            b_Q14_ptr[ i ] = SKP_LIMIT( ( SKP_int32 )b_Q14_ptr[ i ] + SKP_SMULWB( SKP_LSHIFT_SAT32( temp32, 4 ), delta_b_Q14[ i ] ), -16000, 28000 );
+            b_Q14_ptr[ i ] = SKP_LIMIT_32( ( SKP_int32 )b_Q14_ptr[ i ] + SKP_SMULWB( SKP_LSHIFT_SAT32( temp32, 4 ), delta_b_Q14[ i ] ), -16000, 28000 );
         }
         b_Q14_ptr += LTP_ORDER;
     }

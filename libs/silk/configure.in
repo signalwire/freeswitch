@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT(libSKP_SILK_SDK, 1.0.2, brian@freeswitch.org, libSKP_SILK_SDK)
-AM_INIT_AUTOMAKE(libSKP_SILK_SDK,1.0.2)
+AC_INIT(libSKP_SILK_SDK, 1.0.8, brian@freeswitch.org, libSKP_SILK_SDK)
+AM_INIT_AUTOMAKE(libSKP_SILK_SDK,1.0.8)
 
 # Checks for programs.
 AC_PROG_CC

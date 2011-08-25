@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -292,7 +292,7 @@ SKP_int SKP_Silk_range_coder_get_length(                /* O    returns number o
 {
     SKP_int nBits;
 
-    /* Number of additional bits (1..9) required to be stored to stream */
+    /* Number of bits in stream */
     nBits = SKP_LSHIFT( psRC->bufferIx, 3 ) + SKP_Silk_CLZ32( psRC->range_Q16 - 1 ) - 14;
 
     *nBytes = SKP_RSHIFT( nBits + 7, 3 );

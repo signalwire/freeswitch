@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -34,7 +34,7 @@ void SKP_Silk_encode_parameters(
     SKP_Silk_encoder_state          *psEncC,        /* I/O  Encoder state                   */
     SKP_Silk_encoder_control        *psEncCtrlC,    /* I/O  Encoder control                 */
     SKP_Silk_range_coder_state      *psRC,          /* I/O  Range encoder state             */
-    const SKP_int                   *q              /* I    Quantization indices            */
+    const SKP_int8                  *q              /* I    Quantization indices            */
 )
 {
     SKP_int   i, k, typeOffset;
@@ -46,11 +46,6 @@ void SKP_Silk_encode_parameters(
     /************************/
     /* only done for first frame in packet */
     if( psEncC->nFramesInPayloadBuf == 0 ) {
-        
-        /* Initialize arithmetic coder */
-        SKP_Silk_range_enc_init( &psEncC->sRC );
-        psEncC->nBytesInPayloadBuf = 0;
-
         /* get sampling rate index */
         for( i = 0; i < 3; i++ ) {
             if( SKP_Silk_SamplingRates_table[ i ] == psEncC->fs_kHz ) {

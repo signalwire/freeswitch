@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -30,7 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ********************************************************** */
 #include "SKP_Silk_SigProc_FIX.h"
 #include "SKP_Silk_pitch_est_defines.h"
-#include "SKP_Silk_resample_rom.h"
+#include "SKP_Silk_common_pitch_est_defines.h"
 
 #define SCRATCH_SIZE    22
 
@@ -59,31 +59,6 @@ SKP_int32 SKP_FIX_P_Ana_find_scaling(
     const SKP_int    sum_sqr_len
 );
 
-void SKP_Silk_decode_pitch(
-    SKP_int          lagIndex,                        /* I                             */
-    SKP_int          contourIndex,                    /* O                             */
-    SKP_int          pitch_lags[],                    /* O 4 pitch values              */
-    SKP_int          Fs_kHz                           /* I sampling frequency (kHz)    */
-)
-{
-    SKP_int lag, i, min_lag;
-
-    min_lag = SKP_SMULBB( PITCH_EST_MIN_LAG_MS, Fs_kHz );
-
-    /* Only for 24 / 16 kHz version for now */
-    lag = min_lag + lagIndex;
-    if( Fs_kHz == 8 ) {
-        /* Only a small codebook for 8 khz */
-        for( i = 0; i < PITCH_EST_NB_SUBFR; i++ ) {
-            pitch_lags[ i ] = lag + SKP_Silk_CB_lags_stage2[ i ][ contourIndex ];
-        }
-    } else {
-        for( i = 0; i < PITCH_EST_NB_SUBFR; i++ ) {
-            pitch_lags[ i ] = lag + SKP_Silk_CB_lags_stage3[ i ][ contourIndex ];
-        }
-    }
-}
-
 /*************************************************************/
 /*      FIXED POINT CORE PITCH ANALYSIS FUNCTION             */
 /*************************************************************/
@@ -97,7 +72,8 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
     const SKP_int32  search_thres1_Q16,  /* I    First stage threshold for lag candidates 0 - 1              */
     const SKP_int    search_thres2_Q15,  /* I    Final threshold for lag candidates 0 - 1                    */
     const SKP_int    Fs_kHz,             /* I    Sample frequency (kHz)                                      */
-    const SKP_int    complexity          /* I    Complexity setting, 0-2, where 2 is highest                 */
+    const SKP_int    complexity,         /* I   Complexity setting, 0-2, where 2 is highest                 */
+	const SKP_int	 forLJC			     /* I	 1 if this function is called from LJC code, 0 otherwise.  */
 )
 {
     SKP_int16 signal_8kHz[ PITCH_EST_MAX_FRAME_LENGTH_ST_2 ];
@@ -131,8 +107,8 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
     SKP_assert( Fs_kHz == 8 || Fs_kHz == 12 || Fs_kHz == 16 || Fs_kHz == 24 );
 
     /* Check for valid complexity setting */
-    SKP_assert( complexity >= SigProc_PITCH_EST_MIN_COMPLEX );
-    SKP_assert( complexity <= SigProc_PITCH_EST_MAX_COMPLEX );
+    SKP_assert( complexity >= SKP_Silk_PITCH_EST_MIN_COMPLEX );
+    SKP_assert( complexity <= SKP_Silk_PITCH_EST_MAX_COMPLEX );
 
     SKP_assert( search_thres1_Q16 >= 0 && search_thres1_Q16 <= (1<<16) );
     SKP_assert( search_thres2_Q15 >= 0 && search_thres2_Q15 <= (1<<15) );
@@ -154,50 +130,24 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
     SKP_memset( C, 0, sizeof( SKP_int16 ) * PITCH_EST_NB_SUBFR * ( ( PITCH_EST_MAX_LAG >> 1 ) + 5) );
     
     /* Resample from input sampled at Fs_kHz to 8 kHz */
-    if( Fs_kHz == 12 ) {
-        SKP_int16 R23[ SigProc_Resample_2_3_coarsest_NUM_FIR_COEFS - 1 ];
-        SKP_memset( R23, 0, ( SigProc_Resample_2_3_coarsest_NUM_FIR_COEFS - 1 ) * sizeof( SKP_int16 ) );
-        
-        SKP_Silk_resample_2_3_coarsest( signal_8kHz, R23, signal, 
-            PITCH_EST_FRAME_LENGTH_MS * 12, (SKP_int16*)scratch_mem );
-    } else if( Fs_kHz == 16 ) {
-        if( complexity == SigProc_PITCH_EST_MAX_COMPLEX ) {
-            SKP_assert( 4 <= PITCH_EST_MAX_DECIMATE_STATE_LENGTH );
-            SKP_memset( filt_state, 0, 4 * sizeof( SKP_int32 ) );
-
-            SKP_Silk_resample_1_2_coarse( signal, filt_state, signal_8kHz,
-                scratch_mem, frame_length_8kHz );
-        } else {
-            SKP_assert( 2 <= PITCH_EST_MAX_DECIMATE_STATE_LENGTH );
-            SKP_memset( filt_state, 0, 2 * sizeof( SKP_int32 ) );
-            
-            SKP_Silk_resample_1_2_coarsest( signal, filt_state, signal_8kHz,
-                scratch_mem, frame_length_8kHz );
-        }
+    if( Fs_kHz == 16 ) {
+        SKP_memset( filt_state, 0, 2 * sizeof( SKP_int32 ) );
+        SKP_Silk_resampler_down2( filt_state, signal_8kHz, signal, frame_length );
+    } else if ( Fs_kHz == 12 ) {
+        SKP_int32 R23[ 6 ];
+        SKP_memset( R23, 0, 6 * sizeof( SKP_int32 ) );
+        SKP_Silk_resampler_down2_3( R23, signal_8kHz, signal, PITCH_EST_FRAME_LENGTH_MS * 12 );
     } else if( Fs_kHz == 24 ) {
-        /* Resample to 24 -> 8 khz */
-        SKP_assert( 7 <= PITCH_EST_MAX_DECIMATE_STATE_LENGTH );
-        SKP_memset( filt_state, 0, 7 * sizeof( SKP_int32 ) );
-
-        SKP_Silk_resample_1_3( signal_8kHz, filt_state, signal, 24 * PITCH_EST_FRAME_LENGTH_MS );
-    
+        SKP_int32 filt_state_fix[ 8 ];
+        SKP_memset( filt_state_fix, 0, 8 * sizeof(SKP_int32) );
+        SKP_Silk_resampler_down3( filt_state_fix, signal_8kHz, signal, 24 * PITCH_EST_FRAME_LENGTH_MS );
     } else {
         SKP_assert( Fs_kHz == 8 );
-        SKP_memcpy( signal_8kHz, signal, frame_length_8kHz * sizeof( SKP_int16 ) );
+        SKP_memcpy( signal_8kHz, signal, frame_length_8kHz * sizeof(SKP_int16) );
     }
-
-    /* Decimate again to 4 kHz. Set mem to zero */
-    if( complexity == SigProc_PITCH_EST_MAX_COMPLEX ) {
-        SKP_assert( 4 <= PITCH_EST_MAX_DECIMATE_STATE_LENGTH );
-        SKP_memset( filt_state, 0, 4 * sizeof( SKP_int32 ) );    
-        SKP_Silk_resample_1_2_coarse( signal_8kHz, filt_state,
-            signal_4kHz, scratch_mem, frame_length_4kHz );
-    } else {
-        SKP_assert( 2 <= PITCH_EST_MAX_DECIMATE_STATE_LENGTH );
-        SKP_memset( filt_state, 0, 2 * sizeof( SKP_int32 ) );    
-        SKP_Silk_resample_1_2_coarsest( signal_8kHz, filt_state,
-            signal_4kHz, scratch_mem, frame_length_4kHz );
-    }
+    /* Decimate again to 4 kHz */
+    SKP_memset( filt_state, 0, 2 * sizeof( SKP_int32 ) );/* Set state to zero */
+    SKP_Silk_resampler_down2( filt_state, signal_4kHz, signal_8kHz, frame_length_8kHz );
 
     /* Low-pass filter */
     for( i = frame_length_4kHz - 1; i > 0; i-- ) {
@@ -238,7 +188,7 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
         /* Calculate first vector products before loop */
         cross_corr = SKP_Silk_inner_prod_aligned( target_ptr, basis_ptr, sf_length_8kHz );
         normalizer = SKP_Silk_inner_prod_aligned( basis_ptr,  basis_ptr, sf_length_8kHz );
-        normalizer = SKP_ADD_SAT32( normalizer, 1000 );
+        normalizer = SKP_ADD_SAT32( normalizer, SKP_SMULBB( sf_length_8kHz, 4000 ) );
 
         temp32 = SKP_DIV32( cross_corr, SKP_Silk_SQRT_APPROX( normalizer ) + 1 );
         C[ k ][ min_lag_4kHz ] = (SKP_int16)SKP_SAT16( temp32 );        /* Q0 */
@@ -277,14 +227,14 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
     }
 
     /* Sort */
-    length_d_srch = 5 + complexity;
-    SKP_assert( length_d_srch <= PITCH_EST_D_SRCH_LENGTH );
+    length_d_srch = 4 + 2 * complexity;
+    SKP_assert( 3 * length_d_srch <= PITCH_EST_D_SRCH_LENGTH );
     SKP_Silk_insertion_sort_decreasing_int16( &C[ 0 ][ min_lag_4kHz ], d_srch, max_lag_4kHz - min_lag_4kHz + 1, length_d_srch );
 
     /* Escape if correlation is very low already here */
     target_ptr = &signal_4kHz[ SKP_RSHIFT( frame_length_4kHz, 1 ) ];
     energy = SKP_Silk_inner_prod_aligned( target_ptr, target_ptr, SKP_RSHIFT( frame_length_4kHz, 1 ) );
-    energy = SKP_ADD_SAT32( energy, 1000 );                                  /* Q0 */
+    energy = SKP_ADD_POS_SAT32( energy, 1000 );                              /* Q0 */
     Cmax = (SKP_int)C[ 0 ][ min_lag_4kHz ];                                  /* Q-1 */
     threshold = SKP_SMULBB( Cmax, Cmax );                                    /* Q-2 */
     /* Compare in Q-2 domain */
@@ -383,13 +333,13 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
             if( cross_corr > 0 ) {
                 energy = SKP_max( energy_target, energy_basis ); /* Find max to make sure first division < 1.0 */
                 lz = SKP_Silk_CLZ32( cross_corr );
-                lshift = SKP_LIMIT( lz - 1, 0, 15 );
+                lshift = SKP_LIMIT_32( lz - 1, 0, 15 );
                 temp32 = SKP_DIV32( SKP_LSHIFT( cross_corr, lshift ), SKP_RSHIFT( energy, 15 - lshift ) + 1 ); /* Q15 */
                 SKP_assert( temp32 == SKP_SAT16( temp32 ) );
                 temp32 = SKP_SMULWB( cross_corr, temp32 ); /* Q(-1), cc * ( cc / max(b, t) ) */
                 temp32 = SKP_ADD_SAT32( temp32, temp32 );  /* Q(0) */
                 lz = SKP_Silk_CLZ32( temp32 );
-                lshift = SKP_LIMIT( lz - 1, 0, 15 );
+                lshift = SKP_LIMIT_32( lz - 1, 0, 15 );
                 energy = SKP_min( energy_target, energy_basis );
                 C[ k ][ d ] = SKP_DIV32( SKP_LSHIFT( temp32, lshift ), SKP_RSHIFT( energy, 15 - lshift ) + 1 ); // Q15
             } else {
@@ -424,7 +374,7 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
     corr_thres_Q15 = SKP_RSHIFT( SKP_SMULBB( search_thres2_Q15, search_thres2_Q15 ), 13 );
 
     /* If input is 8 khz use a larger codebook here because it is last stage */
-    if( Fs_kHz == 8 && complexity > SigProc_PITCH_EST_MIN_COMPLEX ) {
+    if( Fs_kHz == 8 && complexity > SKP_Silk_PITCH_EST_MIN_COMPLEX ) {
         nb_cbks_stage2 = PITCH_EST_NB_CBKS_STAGE2_EXT;    
     } else {
         nb_cbks_stage2 = PITCH_EST_NB_CBKS_STAGE2;
@@ -451,10 +401,15 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
 
         /* Bias towards shorter lags */
         lag_log2_Q7 = SKP_Silk_lin2log( (SKP_int32)d ); /* Q7 */
-        SKP_assert( lag_log2_Q7 == SKP_SAT16( lag_log2_Q7 ) );
-        SKP_assert( PITCH_EST_NB_SUBFR * PITCH_EST_SHORTLAG_BIAS_Q15 == SKP_SAT16( PITCH_EST_NB_SUBFR * PITCH_EST_SHORTLAG_BIAS_Q15 ) );
-        CCmax_new_b = CCmax_new - SKP_RSHIFT( SKP_SMULBB( PITCH_EST_NB_SUBFR * PITCH_EST_SHORTLAG_BIAS_Q15, lag_log2_Q7 ), 7 ); /* Q15 */
+	    SKP_assert( lag_log2_Q7 == SKP_SAT16( lag_log2_Q7 ) );
+		SKP_assert( PITCH_EST_NB_SUBFR * PITCH_EST_SHORTLAG_BIAS_Q15 == SKP_SAT16( PITCH_EST_NB_SUBFR * PITCH_EST_SHORTLAG_BIAS_Q15 ) );
 
+		if (forLJC) {
+			CCmax_new_b = CCmax_new;
+		} else {
+			CCmax_new_b = CCmax_new - SKP_RSHIFT( SKP_SMULBB( PITCH_EST_NB_SUBFR * PITCH_EST_SHORTLAG_BIAS_Q15, lag_log2_Q7 ), 7 ); /* Q15 */
+		}
+		
         /* Bias towards previous lag */
         SKP_assert( PITCH_EST_NB_SUBFR * PITCH_EST_PREVLAG_BIAS_Q15 == SKP_SAT16( PITCH_EST_NB_SUBFR * PITCH_EST_PREVLAG_BIAS_Q15 ) );
         if( prevLag > 0 ) {
@@ -466,7 +421,10 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
             CCmax_new_b -= prev_lag_bias_Q15; /* Q15 */
         }
 
-        if( CCmax_new_b > CCmax_b && CCmax_new > corr_thres_Q15 ) {
+        if ( CCmax_new_b > CCmax_b                                          &&              /* Find maximum biased correlation                  */
+              CCmax_new > corr_thres_Q15                                    &&              /* Correlation needs to be high enough to be voiced */
+             SKP_Silk_CB_lags_stage2[ 0 ][ CBimax_new ] <= min_lag_8kHz                   /* Lag must be in range                             */
+            ) {
             CCmax_b = CCmax_new_b;
             CCmax   = CCmax_new;
             lag     = d;
@@ -515,7 +473,7 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
             lag = SKP_SMULBB( lag, 3 );
         }
 
-        lag = SKP_LIMIT( lag, min_lag, max_lag );
+        lag = SKP_LIMIT_int( lag, min_lag, max_lag );
         start_lag = SKP_max_int( lag - 2, min_lag );
         end_lag   = SKP_min_int( lag + 2, max_lag );
         lag_new   = lag;                                    /* to avoid undefined lag */
@@ -554,7 +512,7 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
                     /* Divide cross_corr / energy and get result in Q15 */
                     lz = SKP_Silk_CLZ32( cross_corr );
                     /* Divide with result in Q13, cross_corr could be larger than energy */
-                    lshift = SKP_LIMIT( lz - 1, 0, 13 );
+                    lshift = SKP_LIMIT_32( lz - 1, 0, 13 );
                     CCmax_new = SKP_DIV32( SKP_LSHIFT( cross_corr, lshift ), SKP_RSHIFT( energy, 13 - lshift ) + 1 );
                     CCmax_new = SKP_SAT16( CCmax_new );
                     CCmax_new = SKP_SMULWB( cross_corr, CCmax_new );
@@ -574,7 +532,9 @@ SKP_int SKP_Silk_pitch_analysis_core(  /* O    Voicing estimate: 0 voiced, 1 unv
                     CCmax_new = 0;
                 }
 
-                if( CCmax_new > CCmax ) {
+                if( CCmax_new > CCmax                                               && 
+                   ( d + (SKP_int)SKP_Silk_CB_lags_stage3[ 0 ][ j ] ) <= max_lag  
+                   ) {
                     CCmax   = CCmax_new;
                     lag_new = d;
                     CBimax  = j;
@@ -621,8 +581,8 @@ void SKP_FIX_P_Ana_calc_corr_st3(
     SKP_int        cbk_offset, cbk_size, delta, idx;
     SKP_int32    scratch_mem[ SCRATCH_SIZE ];
 
-    SKP_assert( complexity >= SigProc_PITCH_EST_MIN_COMPLEX );
-    SKP_assert( complexity <= SigProc_PITCH_EST_MAX_COMPLEX );
+    SKP_assert( complexity >= SKP_Silk_PITCH_EST_MIN_COMPLEX );
+    SKP_assert( complexity <= SKP_Silk_PITCH_EST_MAX_COMPLEX );
 
     cbk_offset = SKP_Silk_cbk_offsets_stage3[ complexity ];
     cbk_size   = SKP_Silk_cbk_sizes_stage3[   complexity ];
@@ -673,8 +633,8 @@ void SKP_FIX_P_Ana_calc_energy_st3(
     SKP_int        cbk_offset, cbk_size, delta, idx;
     SKP_int32    scratch_mem[ SCRATCH_SIZE ];
 
-    SKP_assert( complexity >= SigProc_PITCH_EST_MIN_COMPLEX );
-    SKP_assert( complexity <= SigProc_PITCH_EST_MAX_COMPLEX );
+    SKP_assert( complexity >= SKP_Silk_PITCH_EST_MIN_COMPLEX );
+    SKP_assert( complexity <= SKP_Silk_PITCH_EST_MAX_COMPLEX );
 
     cbk_offset = SKP_Silk_cbk_offsets_stage3[ complexity ];
     cbk_size   = SKP_Silk_cbk_sizes_stage3[   complexity ];

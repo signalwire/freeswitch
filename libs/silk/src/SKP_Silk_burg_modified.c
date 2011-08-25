@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -40,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAX_FRAME_SIZE              544 // subfr_length * nb_subfr = ( 0.005 * 24000 + 16 ) * 4 = 544
 #define MAX_NB_SUBFR                4
 
-#define QA                          24
+#define QA                          25
 #define N_BITS_HEAD_ROOM            2
 #define MIN_RSHIFTS                 -16
 #define MAX_RSHIFTS                 (32 - QA)
@@ -61,12 +61,12 @@ void SKP_Silk_burg_modified(
     SKP_int32       C0, num, nrg, rc_Q31, Atmp_QA, Atmp1, tmp1, tmp2, x1, x2;
     const SKP_int16 *x_ptr;
 
-    SKP_int32       C_first_row[ SigProc_MAX_ORDER_LPC ];
-    SKP_int32       C_last_row[  SigProc_MAX_ORDER_LPC ];
-    SKP_int32       Af_QA[       SigProc_MAX_ORDER_LPC ];
+    SKP_int32       C_first_row[ SKP_Silk_MAX_ORDER_LPC ];
+    SKP_int32       C_last_row[  SKP_Silk_MAX_ORDER_LPC ];
+    SKP_int32       Af_QA[       SKP_Silk_MAX_ORDER_LPC ];
 
-    SKP_int32       CAf[ SigProc_MAX_ORDER_LPC + 1 ];
-    SKP_int32       CAb[ SigProc_MAX_ORDER_LPC + 1 ];
+    SKP_int32       CAf[ SKP_Silk_MAX_ORDER_LPC + 1 ];
+    SKP_int32       CAb[ SKP_Silk_MAX_ORDER_LPC + 1 ];
 
     SKP_assert( subfr_length * nb_subfr <= MAX_FRAME_SIZE );
     SKP_assert( nb_subfr <= MAX_NB_SUBFR );
@@ -90,7 +90,7 @@ void SKP_Silk_burg_modified(
         }
         rshifts += rshifts_extra;
     }
-    SKP_memset( C_first_row, 0, SigProc_MAX_ORDER_LPC * sizeof( SKP_int32 ) );
+    SKP_memset( C_first_row, 0, SKP_Silk_MAX_ORDER_LPC * sizeof( SKP_int32 ) );
     if( rshifts > 0 ) {
         for( s = 0; s < nb_subfr; s++ ) {
             x_ptr = x + s * subfr_length;
@@ -108,7 +108,7 @@ void SKP_Silk_burg_modified(
             }
         }
     }
-    SKP_memcpy( C_last_row, C_first_row, SigProc_MAX_ORDER_LPC * sizeof( SKP_int32 ) );
+    SKP_memcpy( C_last_row, C_first_row, SKP_Silk_MAX_ORDER_LPC * sizeof( SKP_int32 ) );
     
     /* Initialize */
     CAb[ 0 ] = CAf[ 0 ] = C0 + SKP_SMMUL( WhiteNoiseFrac_Q32, C0 ) + 1;         // Q(-rshifts)

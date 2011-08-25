@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -41,60 +41,57 @@ void SKP_Silk_VQ_WMat_EC_FIX(
 {
     SKP_int   k;
     const SKP_int16 *cb_row_Q14;
-    SKP_int32 sum1_Q14, sum2_Q16, diff_Q14_01, diff_Q14_23, diff_Q14_4;
+    SKP_int16 diff_Q14[ 5 ];
+    SKP_int32 sum1_Q14, sum2_Q16;
 
     /* Loop over codebook */
     *rate_dist_Q14 = SKP_int32_MAX;
     cb_row_Q14 = cb_Q14;
     for( k = 0; k < L; k++ ) {
-        /* Pack pairs of int16 values per int32 */
-        diff_Q14_01 = (SKP_uint16)( in_Q14[ 0 ] - cb_row_Q14[ 0 ] ) | SKP_LSHIFT( ( SKP_int32 )in_Q14[ 1 ] - cb_row_Q14[ 1 ], 16 );
-        diff_Q14_23 = (SKP_uint16)( in_Q14[ 2 ] - cb_row_Q14[ 2 ] ) | SKP_LSHIFT( ( SKP_int32 )in_Q14[ 3 ] - cb_row_Q14[ 3 ], 16 );
-        diff_Q14_4  = in_Q14[ 4 ] - cb_row_Q14[ 4 ];
+        diff_Q14[ 0 ] = in_Q14[ 0 ] - cb_row_Q14[ 0 ];
+        diff_Q14[ 1 ] = in_Q14[ 1 ] - cb_row_Q14[ 1 ];
+        diff_Q14[ 2 ] = in_Q14[ 2 ] - cb_row_Q14[ 2 ];
+        diff_Q14[ 3 ] = in_Q14[ 3 ] - cb_row_Q14[ 3 ];
+        diff_Q14[ 4 ] = in_Q14[ 4 ] - cb_row_Q14[ 4 ];
 
         /* Weighted rate */
         sum1_Q14 = SKP_SMULBB( mu_Q8, cl_Q6[ k ] );
 
         SKP_assert( sum1_Q14 >= 0 );
 
-        /* Add weighted quantization error, assuming W_Q18 is symmetric */
-        /* NOTE: the code below loads two int16 values as one int32, and multiplies each using the  */
-        /* SMLAWB and SMLAWT instructions. On a big-endian CPU the two int16 variables would be     */
-        /* loaded in reverse order and the code will give the wrong result. In that case swapping   */
-        /* the SMLAWB and SMLAWT instructions should solve the problem.                             */
         /* first row of W_Q18 */
-        sum2_Q16 = SKP_SMULWT(           W_Q18[ 1 ], diff_Q14_01 );
-        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 2 ], diff_Q14_23 );
-        sum2_Q16 = SKP_SMLAWT( sum2_Q16, W_Q18[ 3 ], diff_Q14_23 );
-        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 4 ], diff_Q14_4  );
+        sum2_Q16 = SKP_SMULWB(           W_Q18[  1 ], diff_Q14[ 1 ] );
+        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[  2 ], diff_Q14[ 2 ] );
+        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[  3 ], diff_Q14[ 3 ] );
+        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[  4 ], diff_Q14[ 4 ] );
         sum2_Q16 = SKP_LSHIFT( sum2_Q16, 1 );
-        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 0 ], diff_Q14_01 );
-        sum1_Q14 = SKP_SMLAWB( sum1_Q14, sum2_Q16,   diff_Q14_01 );
+        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[  0 ], diff_Q14[ 0 ] );
+        sum1_Q14 = SKP_SMLAWB( sum1_Q14, sum2_Q16,    diff_Q14[ 0 ] );
 
         /* second row of W_Q18 */
-        sum2_Q16 = SKP_SMULWB(           W_Q18[ 7 ], diff_Q14_23 );
-        sum2_Q16 = SKP_SMLAWT( sum2_Q16, W_Q18[ 8 ], diff_Q14_23 );
-        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 9 ], diff_Q14_4  );
+        sum2_Q16 = SKP_SMULWB(           W_Q18[  7 ], diff_Q14[ 2 ] ); 
+        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[  8 ], diff_Q14[ 3 ] );
+        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[  9 ], diff_Q14[ 4 ] );
         sum2_Q16 = SKP_LSHIFT( sum2_Q16, 1 );
-        sum2_Q16 = SKP_SMLAWT( sum2_Q16, W_Q18[ 6 ], diff_Q14_01 );
-        sum1_Q14 = SKP_SMLAWT( sum1_Q14, sum2_Q16,   diff_Q14_01 );
+        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[  6 ], diff_Q14[ 1 ] );
+        sum1_Q14 = SKP_SMLAWB( sum1_Q14, sum2_Q16,    diff_Q14[ 1 ] );
 
         /* third row of W_Q18 */
-        sum2_Q16 = SKP_SMULWT(           W_Q18[ 13 ], diff_Q14_23 );
-        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 14 ], diff_Q14_4  );
+        sum2_Q16 = SKP_SMULWB(           W_Q18[ 13 ], diff_Q14[ 3 ] ); 
+        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 14 ], diff_Q14[ 4 ] );
         sum2_Q16 = SKP_LSHIFT( sum2_Q16, 1 );
-        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 12 ], diff_Q14_23 );
-        sum1_Q14 = SKP_SMLAWB( sum1_Q14, sum2_Q16,    diff_Q14_23 );
+        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 12 ], diff_Q14[ 2 ] );
+        sum1_Q14 = SKP_SMLAWB( sum1_Q14, sum2_Q16,    diff_Q14[ 2 ] );
 
         /* fourth row of W_Q18 */
-        sum2_Q16 = SKP_SMULWB(           W_Q18[ 19 ], diff_Q14_4  );
+        sum2_Q16 = SKP_SMULWB(           W_Q18[ 19 ], diff_Q14[ 4 ] ); 
         sum2_Q16 = SKP_LSHIFT( sum2_Q16, 1 );
-        sum2_Q16 = SKP_SMLAWT( sum2_Q16, W_Q18[ 18 ], diff_Q14_23 );
-        sum1_Q14 = SKP_SMLAWT( sum1_Q14, sum2_Q16,    diff_Q14_23 );
+        sum2_Q16 = SKP_SMLAWB( sum2_Q16, W_Q18[ 18 ], diff_Q14[ 3 ] );
+        sum1_Q14 = SKP_SMLAWB( sum1_Q14, sum2_Q16,    diff_Q14[ 3 ] );
 
         /* last row of W_Q18 */
-        sum2_Q16 = SKP_SMULWB(           W_Q18[ 24 ], diff_Q14_4  );
-        sum1_Q14 = SKP_SMLAWB( sum1_Q14, sum2_Q16,    diff_Q14_4  );
+        sum2_Q16 = SKP_SMULWB(           W_Q18[ 24 ], diff_Q14[ 4 ] ); 
+        sum1_Q14 = SKP_SMLAWB( sum1_Q14, sum2_Q16,    diff_Q14[ 4 ] );
 
         SKP_assert( sum1_Q14 >= 0 );
 

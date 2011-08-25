@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -26,6 +26,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
 #include "SKP_Silk_main_FIX.h"
+
 
 /* Compute weighted quantization errors for an LPC_order element input vector, over one codebook stage */
 void SKP_Silk_NLSF_VQ_sum_error_FIX(
@@ -76,4 +77,5 @@ void SKP_Silk_NLSF_VQ_sum_error_FIX(
         in_Q15 += LPC_order;
     }
 }
+
 

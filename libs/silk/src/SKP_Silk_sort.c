@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -29,7 +29,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Best case:  O(n)   for an already sorted array            */
 /* Worst case: O(n^2) for an inversely sorted array          */
 /*                                                           */
-/* To be implemented:                                        */
 /* Shell short:    http://en.wikipedia.org/wiki/Shell_sort   */
 
 #include "SKP_Silk_SigProc_FIX.h"
@@ -38,7 +37,7 @@ void SKP_Silk_insertion_sort_increasing(
     SKP_int32           *a,             /* I/O:  Unsorted / Sorted vector               */
     SKP_int             *index,         /* O:    Index vector for the sorted elements   */
     const SKP_int       L,              /* I:    Vector length                          */
-    const SKP_int       K               /* I:    Number of correctly sorted positions   */
+    const SKP_int       K               /* I:    Number of correctly sorted output positions   */
 )
 {
     SKP_int32    value;
@@ -65,7 +64,7 @@ void SKP_Silk_insertion_sort_increasing(
         index[ j + 1 ] = i;     /* Write index */
     }
 
-    /* If less than L values are asked check the remaining values,      */
+    /* If less than L values are asked for, check the remaining values, */
     /* but only spend CPU to ensure that the K first values are correct */
     for( i = K; i < L; i++ ) {
         value = a[ i ];
@@ -80,57 +79,11 @@ void SKP_Silk_insertion_sort_increasing(
     }
 }
 
-void SKP_Silk_insertion_sort_decreasing(
-    SKP_int             *a,             /* I/O: Unsorted / Sorted vector                */
-    SKP_int             *index,         /* O:   Index vector for the sorted elements    */
-    const SKP_int       L,              /* I:   Vector length                           */
-    const SKP_int       K               /* I:   Number of correctly sorted positions    */
-)
-{
-    SKP_int    value;
-    SKP_int    i, j;
-
-    /* Safety checks */
-    SKP_assert( K >  0 );
-    SKP_assert( L >  0 );
-    SKP_assert( L >= K );
-
-    /* Write start indices in index vector */
-    for( i = 0; i < K; i++ ) {
-        index[ i ] = i;
-    }
-
-    /* Sort vector elements by value, decreasing order */
-    for( i = 1; i < K; i++ ) {
-        value = a[ i ];
-        for( j = i - 1; ( j >= 0 ) && ( value > a[ j ] ); j-- ) {
-            a[ j + 1 ]     = a[ j ];     /* Shift value */
-            index[ j + 1 ] = index[ j ]; /* Shift index */
-        }
-        a[ j + 1 ]     = value; /* Write value */
-        index[ j + 1 ] = i;     /* Write index */
-    }
-
-    /* If less than L values are asked check the remaining values,      */
-    /* but only spend CPU to ensure that the K first values are correct */
-    for( i = K; i < L; i++ ) {
-        value = a[ i ];
-        if( value > a[ K - 1 ] ) {
-            for( j = K - 2; ( j >= 0 ) && ( value > a[ j ] ); j-- ) {
-                a[ j + 1 ]     = a[ j ];     /* Shift value */
-                index[ j + 1 ] = index[ j ]; /* Shift index */
-            }
-            a[ j + 1 ]     = value; /* Write value */
-            index[ j + 1 ] = i;     /* Write index */
-        }
-    }
-}
-
 void SKP_Silk_insertion_sort_decreasing_int16(
     SKP_int16           *a,             /* I/O: Unsorted / Sorted vector                */
     SKP_int             *index,         /* O:   Index vector for the sorted elements    */
     const SKP_int       L,              /* I:   Vector length                           */
-    const SKP_int       K               /* I:   Number of correctly sorted positions    */
+    const SKP_int       K               /* I:   Number of correctly sorted output positions    */
 )
 {
     SKP_int i, j;
@@ -157,7 +110,7 @@ void SKP_Silk_insertion_sort_decreasing_int16(
         index[ j + 1 ] = i;     /* Write index */
     }
 
-    /* If less than L values are asked check the remaining values,        */
+    /* If less than L values are asked for, check the remaining values, */
     /* but only spend CPU to ensure that the K first values are correct */
     for( i = K; i < L; i++ ) {
         value = a[ i ];

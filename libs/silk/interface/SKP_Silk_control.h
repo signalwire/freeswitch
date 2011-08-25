@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -39,8 +39,11 @@ extern "C"
 /* Structure for controlling encoder operation */
 /***********************************************/
 typedef struct {
-    /* I:   Sampling rate in Hertz; 8000/12000/16000/24000                                  */
-    SKP_int32 sampleRate;
+    /* I:   Input signal sampling rate in Hertz; 8000/12000/16000/24000                     */
+    SKP_int32 API_sampleRate;
+
+    /* I:   Maximum internal sampling rate in Hertz; 8000/12000/16000/24000                 */
+    SKP_int32 maxInternalSampleRate;
 
     /* I:   Number of samples per packet; must be equivalent of 20, 40, 60, 80 or 100 ms    */
     SKP_int packetSize;
@@ -48,7 +51,7 @@ typedef struct {
     /* I:   Bitrate during active speech in bits/second; internally limited                 */
     SKP_int32 bitRate;                        
 
-    /* I:   Uplink Packet loss in pct (0...100)                                             */
+    /* I:   Uplink packet loss in percent (0-100)                                           */
     SKP_int packetLossPercentage;
     
     /* I:   Complexity mode; 0 is lowest; 1 is medium and 2 is highest complexity           */
@@ -57,7 +60,7 @@ typedef struct {
     /* I:   Flag to enable in-band Forward Error Correction (FEC); 0/1                      */
     SKP_int useInBandFEC;
 
-    /* I:   Flag to enable Discontinous Transmission; 0/1                                   */
+    /* I:   Flag to enable discontinuous transmission (DTX); 0/1                            */
     SKP_int useDTX;
 } SKP_SILK_SDK_EncControlStruct;
 
@@ -65,8 +68,8 @@ typedef struct {
 /* Structure for controlling decoder operation and reading decoder status */
 /**************************************************************************/
 typedef struct {
-    /* I:   Sampling rate in Hertz; 8000/12000/16000/24000                                  */
-    SKP_int32 sampleRate;
+    /* I:   Output signal sampling rate in Hertz; 8000/12000/16000/24000                    */
+    SKP_int32 API_sampleRate;
 
     /* O:   Number of samples per frame                                                     */
     SKP_int frameSize;

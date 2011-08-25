@@ -1,14 +1,14 @@
 ************************************************************************
-Fixed Point SILK SDK 1.0.2 beta source code package
+Fixed Point SILK SDK 1.0.8 beta source code package
 Copyright 2010 (c), Skype Limited
 https://developer.skype.com/silk/
 ************************************************************************
 
-Date: 09/03/2010 (Format: DD/MM/YYYY)
+Date: 15/06/2011 (Format: DD/MM/YYYY)
 
 I. Description
 
-This package contains files for compiling and testing the fixed
+This package contains files for compilation and evaluation of the fixed
 point SILK SDK library. The following is included in this package:
 
     o Source code for the fixed point SILK SDK library
@@ -51,22 +51,38 @@ III. How to use the Makefile
 
        make clean all
 
-    6. How to use the comparison tool:
-       
+    6. How to build for big endian CPU's
+
+       Make clean all ADDED_DEFINES+=_SYSTEM_IS_BIG_ENDIAN
+       To be able to use the test vectors with big endian CPU's the test programs
+       need to be compiled in a different way. Note that the 16 bit input and output 
+       from the test programs will have the upper and lower bytes swapped with this setting. 
+
+    7. How to use the comparison tool:
+
        See 'How to use the test vectors.txt' in the test_vectors folder.     	
 
 IV. History
 
+    Version 1.0.8 - Improved noise shaping, various other improvements, and various bugfixes. Added a MIPS version
+    Version 1.0.7 - Updated with bugfixes for LBRR and pitch estimator. SignalCompare updated
+    Version 1.0.6 - Updated with bugfixes for ARM builds
+    Version 1.0.5 - Updated with bugfixes for ARM builds
+    Version 1.0.4 - Updated with various bugfixes and improvements, including some API changes
+                    Added support for big endian platforms
+                    Added resampler support for additional API sample rates
+    Version 1.0.3 - Updated with various bugfixes and improvements
     Version 1.0.2 - Updated with various bugfixes and improvements
     Version 1.0.1 - First beta source code release
     
 V. Compatibility
 
-    This package has been tested under the following platforms:
+    This package has been tested on the following platforms:
 
     Windows XP Home and Professional
     Windows Vista, 32-bit version
-    Mac OS X Version 10.5.8
+    Mac OSX intel
+    Mac OSX ppc
     Ubuntu Linux 9.10, 64-bit version 
 
 VI. Known Issues

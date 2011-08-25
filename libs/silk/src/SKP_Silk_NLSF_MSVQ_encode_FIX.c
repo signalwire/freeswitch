@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -43,9 +43,8 @@ void SKP_Silk_NLSF_MSVQ_encode_FIX(
     const SKP_int                   deactivate_fluc_red     /* I    Deactivate fluctuation reduction        */
 )
 {
-    SKP_int     i, s, k, cur_survivors = 0, prev_survivors, input_index, cb_index, bestIndex;
+    SKP_int     i, s, k, cur_survivors = 0, prev_survivors, min_survivors, input_index, cb_index, bestIndex;
     SKP_int32   rateDistThreshold_Q18;
-    SKP_int     pNLSF_in_Q15[ MAX_LPC_ORDER ];
 #if( NLSF_MSVQ_FLUCTUATION_REDUCTION == 1 )
     SKP_int32   se_Q15, wsse_Q20, bestRateDist_Q20;
 #endif
@@ -75,13 +74,14 @@ void SKP_Silk_NLSF_MSVQ_encode_FIX(
     const SKP_int16 *pCB_element;
     const SKP_Silk_NLSF_CBS *pCurrentCBStage;
 
+#ifdef USE_UNQUANTIZED_LSFS
+    SKP_int NLSF_orig[ MAX_LPC_ORDER ];
+    SKP_memcpy( NLSF_orig, pNLSF_Q15, LPC_order * sizeof( SKP_int ) );
+#endif
+
     SKP_assert( NLSF_MSVQ_Survivors <= MAX_NLSF_MSVQ_SURVIVORS );
     SKP_assert( ( LOW_COMPLEXITY_ONLY == 0 ) || ( NLSF_MSVQ_Survivors <= MAX_NLSF_MSVQ_SURVIVORS_LC_MODE ) );
 
-
-
-    /* Copy the input vector */
-    SKP_memcpy( pNLSF_in_Q15, pNLSF_Q15, LPC_order * sizeof( SKP_int ) );
 
     /****************************************************/
     /* Tree search for the multi-stage vector quantizer */
@@ -97,6 +97,9 @@ void SKP_Silk_NLSF_MSVQ_encode_FIX(
 
     /* Set first stage values */
     prev_survivors = 1;
+
+    /* Minimum number of survivors */
+    min_survivors = NLSF_MSVQ_Survivors / 2;
 
     /* Loop over all stages */
     for( s = 0; s < psNLSF_CB->nStages; s++ ) {
@@ -124,9 +127,10 @@ void SKP_Silk_NLSF_MSVQ_encode_FIX(
             prev_survivors * pCurrentCBStage->nVectors, cur_survivors );
 
         /* Discard survivors with rate-distortion values too far above the best one */
-        if( pRateDist_Q18[ 0 ] < SKP_int32_MAX / NLSF_MSVQ_SURV_MAX_REL_RD ) {
-            rateDistThreshold_Q18 = SKP_MUL( NLSF_MSVQ_SURV_MAX_REL_RD, pRateDist_Q18[ 0 ] );
-            while( pRateDist_Q18[ cur_survivors - 1 ] > rateDistThreshold_Q18 && cur_survivors > 1 ) {
+        if( pRateDist_Q18[ 0 ] < SKP_int32_MAX / MAX_NLSF_MSVQ_SURVIVORS ) {
+            rateDistThreshold_Q18 = SKP_SMLAWB( pRateDist_Q18[ 0 ], 
+                SKP_MUL( NLSF_MSVQ_Survivors, pRateDist_Q18[ 0 ] ), SKP_FIX_CONST( NLSF_MSVQ_SURV_MAX_REL_RD, 16 ) );
+            while( pRateDist_Q18[ cur_survivors - 1 ] > rateDistThreshold_Q18 && cur_survivors > min_survivors ) {
                 cur_survivors--;
             }
         }
@@ -227,5 +231,9 @@ void SKP_Silk_NLSF_MSVQ_encode_FIX(
 
     /* Decode and stabilize the best survivor */
     SKP_Silk_NLSF_MSVQ_decode( pNLSF_Q15, psNLSF_CB, NLSFIndices, LPC_order );
+
+#ifdef USE_UNQUANTIZED_LSFS
+    SKP_memcpy( pNLSF_Q15, NLSF_orig, LPC_order * sizeof( SKP_int ) );
+#endif
 
 }

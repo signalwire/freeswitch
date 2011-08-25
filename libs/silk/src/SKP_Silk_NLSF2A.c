@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -63,13 +63,13 @@ void SKP_Silk_NLSF2A(
 )
 {
     SKP_int k, i, dd;
-    SKP_int32 cos_LSF_Q20[SigProc_MAX_ORDER_LPC];
-    SKP_int32 P[SigProc_MAX_ORDER_LPC/2+1], Q[SigProc_MAX_ORDER_LPC/2+1];
+    SKP_int32 cos_LSF_Q20[SKP_Silk_MAX_ORDER_LPC];
+    SKP_int32 P[SKP_Silk_MAX_ORDER_LPC/2+1], Q[SKP_Silk_MAX_ORDER_LPC/2+1];
     SKP_int32 Ptmp, Qtmp;
     SKP_int32 f_int;
     SKP_int32 f_frac;
     SKP_int32 cos_val, delta;
-    SKP_int32 a_int32[SigProc_MAX_ORDER_LPC];
+    SKP_int32 a_int32[SKP_Silk_MAX_ORDER_LPC];
     SKP_int32 maxabs, absval, idx=0, sc_Q16; 
 
     SKP_assert(LSF_COS_TAB_SZ_FIX == 128);
@@ -127,6 +127,7 @@ void SKP_Silk_NLSF2A(
     
         if( maxabs > SKP_int16_MAX ) {    
             /* Reduce magnitude of prediction coefficients */
+            maxabs = SKP_min( maxabs, 98369 ); // ( SKP_int32_MAX / ( 65470 >> 2 ) ) + SKP_int16_MAX = 98369 
             sc_Q16 = 65470 - SKP_DIV32( SKP_MUL( 65470 >> 2, maxabs - SKP_int16_MAX ), 
                                         SKP_RSHIFT32( SKP_MUL( maxabs, idx + 1), 2 ) );
             SKP_Silk_bwexpander_32( a_int32, d, sc_Q16 );

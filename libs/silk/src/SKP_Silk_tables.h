@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -83,7 +83,7 @@ extern const SKP_uint16 SKP_Silk_shell_code_table_offsets[ 19 ];                
 
 extern const SKP_uint16 SKP_Silk_lsb_CDF[ 3 ];                                                      /*   3 */
 
-extern const SKP_uint16 SKP_Silk_sign_CDF[ 36 ][ 3 ];                                               /* 108 */
+extern const SKP_uint16 SKP_Silk_sign_CDF[ 36 ];                                                    /*  36 */
 
 extern const SKP_uint16 SKP_Silk_LTP_per_index_CDF[ 4 ];                                            /*   4 */
 extern const SKP_int    SKP_Silk_LTP_per_index_CDF_offset;
@@ -147,9 +147,6 @@ extern const SKP_int16  SKP_Silk_Dec_B_HP_8[ DEC_HP_ORDER + 1 ];                
 /* Table for frame termination indication */
 extern const SKP_uint16 SKP_Silk_FrameTermination_CDF[ 5 ];
 extern const SKP_int    SKP_Silk_FrameTermination_offset;
-
-extern const SKP_uint16 SKP_Silk_FrameTermination_v4_CDF[ 6 ];
-extern const SKP_int    SKP_Silk_FrameTermination_v4_offset;
 
 /* Table for random seed */
 extern const SKP_uint16 SKP_Silk_Seed_CDF[ 5 ];

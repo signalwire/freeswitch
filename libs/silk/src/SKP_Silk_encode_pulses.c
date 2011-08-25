@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -56,7 +56,7 @@ void SKP_Silk_encode_pulses(
     SKP_Silk_range_coder_state      *psRC,          /* I/O  Range coder state               */
     const SKP_int                   sigtype,        /* I    Sigtype                         */
     const SKP_int                   QuantOffsetType,/* I    QuantOffsetType                 */
-    const SKP_int                   q[],            /* I    quantization indices            */
+    const SKP_int8                  q[],            /* I    quantization indices            */
     const SKP_int                   frame_length    /* I    Frame length                    */
 )
 {
@@ -64,10 +64,10 @@ void SKP_Silk_encode_pulses(
     SKP_int32 abs_q, minSumBits_Q6, sumBits_Q6;
     SKP_int   abs_pulses[ MAX_FRAME_LENGTH ];
     SKP_int   sum_pulses[ MAX_NB_SHELL_BLOCKS ];
-	SKP_int   nRshifts[   MAX_NB_SHELL_BLOCKS ]; 
+    SKP_int   nRshifts[   MAX_NB_SHELL_BLOCKS ];
     SKP_int   pulses_comb[ 8 ];
     SKP_int   *abs_pulses_ptr;
-    const SKP_int *pulses_ptr;
+    const SKP_int8 *pulses_ptr;
     const SKP_uint16 *cdf_ptr;
     const SKP_int16 *nBits_ptr;
 
@@ -177,7 +177,7 @@ void SKP_Silk_encode_pulses(
             pulses_ptr = &q[ i * SHELL_CODEC_FRAME_LENGTH ];
             nLS = nRshifts[ i ] - 1;
             for( k = 0; k < SHELL_CODEC_FRAME_LENGTH; k++ ) {
-                abs_q = SKP_abs( pulses_ptr[ k ] );
+                abs_q = (SKP_int8)SKP_abs( pulses_ptr[ k ] );
                 for( j = nLS; j > 0; j-- ) {
                     bit = SKP_RSHIFT( abs_q, j ) & 1;
                     SKP_Silk_range_encoder( psRC, bit, SKP_Silk_lsb_CDF );
