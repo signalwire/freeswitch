@@ -2109,14 +2109,14 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if (zstr(tech_pvt->invite_contact)) {
 			const char *contact;
 			if ((contact = switch_channel_get_variable(channel, "sip_contact_user"))) {
-				char *ip_addr;
+				char *ip_addr = tech_pvt->profile->sipip;
 				char *ipv6;
 
-				if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-					ip_addr = (switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network))
-						? tech_pvt->profile->sipip : tech_pvt->profile->extsipip;
-				} else {
-					ip_addr = tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip;
+				if ( ( tech_pvt->profile->extsipip && !zstr(tech_pvt->remote_ip) ) &&
+					 ( sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip) ||
+					   switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network) 
+					 ) ) {
+					ip_addr = tech_pvt->profile->extsipip;
 				}
 
 				ipv6 = strchr(ip_addr, ':');
