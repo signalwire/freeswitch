@@ -509,7 +509,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid, CoreSession *a_
 		other_channel = switch_core_session_get_channel(a_leg->session);
 	}
 
-	if (!strchr(nuuid, '/') && (session = switch_core_session_locate(nuuid))) {
+	if (!strchr(nuuid, '/') && (session = switch_core_session_force_locate(nuuid))) {
 		uuid = strdup(nuuid);
 		channel = switch_core_session_get_channel(session);
 		allocated = 1;
