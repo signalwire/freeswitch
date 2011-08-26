@@ -1522,7 +1522,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	parse_array(flag_str, flags, CF_FLAG_MAX);
 	parse_array(cap_str, caps, CC_FLAG_MAX);
 
-	flags[CF_BRIDGE_ORIGINATOR] = 0;
 	flags[CF_TRANSFER] = 0;
 	flags[CF_ACCEPT_CNG] = 0;
 	flags[CF_REDIRECT] = 0;
@@ -1532,7 +1531,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	flags[CF_TAGGED] = 0;
 	flags[CF_WINNER] = 0;
 	flags[CF_CONTROLLED] = 0;
-	flags[CF_PROXY_MODE] = 0;
 	flags[CF_SUSPEND] = 0;
 	flags[CF_EVENT_PARSE] = 0;
 	flags[CF_GEN_RINGBACK] = 0;
