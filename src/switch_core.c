@@ -1483,42 +1483,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 }
 
 
-#ifdef SIGQUIT
-static void handle_SIGQUIT(int sig)
-{
-	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig Quit!\n");
-	return;
-}
-#endif
-
-#ifdef SIGPIPE
-static void handle_SIGPIPE(int sig)
-{
-	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig Pipe!\n");
-	return;
-}
-#endif
-
-#ifdef SIGPOLL
-static void handle_SIGPOLL(int sig)
-{
-	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig Poll!\n");
-	return;
-}
-#endif
-
-#ifdef SIGIO
-static void handle_SIGIO(int sig)
-{
-	if (sig);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Sig I/O!\n");
-	return;
-}
-#endif
-
 #ifdef TRAP_BUS
 static void handle_SIGBUS(int sig)
 {
@@ -1906,17 +1870,18 @@ SWITCH_DECLARE(void) switch_core_set_signal_handlers(void)
 {
 	/* set signal handlers */
 	signal(SIGINT, SIG_IGN);
+
 #ifdef SIGPIPE
-	signal(SIGPIPE, handle_SIGPIPE);
+	signal(SIGPIPE, SIG_IGN);
 #endif
 #ifdef SIGQUIT
-	signal(SIGQUIT, handle_SIGQUIT);
+	signal(SIGQUIT, SIG_IGN);
 #endif
 #ifdef SIGPOLL
-	signal(SIGPOLL, handle_SIGPOLL);
+	signal(SIGPOLL, SIG_IGN);
 #endif
 #ifdef SIGIO
-	signal(SIGIO, handle_SIGIO);
+	signal(SIGIO, SIG_IGN);
 #endif
 #ifdef TRAP_BUS
 	signal(SIGBUS, handle_SIGBUS);
