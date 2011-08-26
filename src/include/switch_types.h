@@ -1156,6 +1156,7 @@ typedef enum {
 	CF_SIGNAL_DATA,
 	CF_SIMPLIFY,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
+	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
 } switch_channel_flag_t;
 
