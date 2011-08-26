@@ -2112,10 +2112,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				char *ip_addr = tech_pvt->profile->sipip;
 				char *ipv6;
 
-				if ( ( tech_pvt->profile->extsipip && !zstr(tech_pvt->remote_ip) ) &&
-					 ( sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip) ||
-					   switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network) 
-					 ) ) {
+				if ( !zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip ) ) {
 					ip_addr = tech_pvt->profile->extsipip;
 				}
 
