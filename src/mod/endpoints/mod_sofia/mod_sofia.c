@@ -1372,10 +1372,16 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 		}
 	case DTMF_INFO:
 		{
-			snprintf(message, sizeof(message), "Signal=%c\r\nDuration=%d\r\n", dtmf->digit, dtmf->duration / 8);
-			switch_mutex_lock(tech_pvt->sofia_mutex);
-			nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("application/dtmf-relay"), SIPTAG_PAYLOAD_STR(message), TAG_END());
-			switch_mutex_unlock(tech_pvt->sofia_mutex);
+			if (dtmf->digit == 'w') {
+				switch_yield(500000);
+			} else if (dtmf->digit == 'W') {
+				switch_yield(1000000);
+			} else {
+				snprintf(message, sizeof(message), "Signal=%c\r\nDuration=%d\r\n", dtmf->digit, dtmf->duration / 8);
+				switch_mutex_lock(tech_pvt->sofia_mutex);
+				nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("application/dtmf-relay"), SIPTAG_PAYLOAD_STR(message), TAG_END());
+				switch_mutex_unlock(tech_pvt->sofia_mutex);
+			}
 		}
 		break;
 	case DTMF_NONE:
