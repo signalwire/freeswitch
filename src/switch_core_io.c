@@ -1345,11 +1345,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	}
 
 	if (session->endpoint_interface->io_routines->send_dtmf) {
-		if (dtmf->digit == 'w') {
-			switch_yield(500000);
-		} else if (dtmf->digit == 'W') {
-			switch_yield(1000000);
+		int send = 0;
+		status = SWITCH_STATUS_SUCCESS;
+		
+		if (switch_channel_test_cap(session->channel, CC_QUEUEABLE_DTMF_DELAY) && (dtmf->digit == 'w' || dtmf->digit == 'W')) {
+			send = 1;
 		} else {
+			if (dtmf->digit == 'w') {
+				switch_yield(500000);
+			} else if (dtmf->digit == 'W') {
+				switch_yield(1000000);
+			} else {
+				send = 1;
+			}
+		}
+
+		if (send) {
 			status = session->endpoint_interface->io_routines->send_dtmf(session, &new_dtmf);
 		}
 	}

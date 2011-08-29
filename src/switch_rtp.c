@@ -2233,6 +2233,21 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp
 	}
 }
 
+static void set_dtmf_delay(switch_rtp_t *rtp_session, uint32_t ms)
+{
+	int mspp = 20;
+
+	if (rtp_session->ms_per_packet) {
+		if (!(mspp = (int) (rtp_session->ms_per_packet / 1000))) {
+			mspp = 20;
+		}
+	}
+	
+	rtp_session->dtmf_data.out_digit_delay += (ms / mspp);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue digit delay of %dms\n", ms);
+	
+}
+
 static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 {
 	switch_frame_flag_t flags = 0;
@@ -2310,6 +2325,19 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 			switch_dtmf_t *rdigit = pop;
 			int64_t offset;
 			switch_size_t wrote;
+
+			if (rdigit->digit == 'w') {
+				set_dtmf_delay(rtp_session, 500);
+				free(rdigit);
+				return;
+			}
+
+			if (rdigit->digit == 'W') {
+				set_dtmf_delay(rtp_session, 1000);
+				free(rdigit);
+				return;
+			}
+			
 			rtp_session->sending_dtmf = 1;
 
 			memset(rtp_session->dtmf_data.out_digit_packet, 0, 4);
