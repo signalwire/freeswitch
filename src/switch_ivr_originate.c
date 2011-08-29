@@ -2354,11 +2354,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (zstr(new_profile->destination_number)) {
-					if (caller_channel) {
-						switch_channel_hangup(caller_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					}
-					status = SWITCH_STATUS_FALSE;
-					goto done;
+					new_profile->destination_number = switch_core_strdup(new_profile->pool, "service");
 				}
 
 				new_profile->callee_id_name = switch_core_strdup(new_profile->pool, "Outbound Call");
