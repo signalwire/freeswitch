@@ -177,6 +177,7 @@ struct switch_rtp {
 	uint16_t seq;
 	uint32_t ssrc;
 	uint8_t sending_dtmf;
+	uint8_t need_mark;
 	switch_payload_t payload;
 	switch_payload_t rpayload;
 	switch_rtp_invalid_handler_t invalid_handler;
@@ -2298,7 +2299,9 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 
 		if (loops != 1) {
 			rtp_session->last_write_ts = rtp_session->dtmf_data.timestamp_dtmf + rtp_session->dtmf_data.out_digit_sub_sofar;
-			rtp_session->sending_dtmf = 0;
+			rtp_session->sending_dtmf = 2;
+			rtp_session->need_mark = 1;
+			
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 				rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 				rtp_session->next_write_samplecount = rtp_session->timer.samplecount + samples * 5;
@@ -2882,7 +2885,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			do_2833(rtp_session, session);
 
-			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity || rtp_session->sending_dtmf || 
+			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity || rtp_session->sending_dtmf == 1 || 
 				switch_queue_size(rtp_session->dtmf_data.dtmf_queue) || switch_queue_size(rtp_session->dtmf_data.dtmf_inqueue)) {
 				pt = 20000;
 			}
@@ -3652,6 +3655,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			m++;
 		}
 		
+		if (rtp_session->need_mark && !rtp_session->sending_dtmf) {
+			m++;
+			rtp_session->need_mark = 0;
+		}
+
 		send_msg->header.m = (m && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) ? 1 : 0;
 
 		memcpy(send_msg->body, data, datalen);
@@ -3769,6 +3777,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 	if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf || !this_ts) {
 		send = 0;
+	}
+
+	if (rtp_session->sending_dtmf == 2) {
+		rtp_session->sending_dtmf = 0;
+		
 	}
 
 	if (send) {
