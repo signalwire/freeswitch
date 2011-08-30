@@ -621,6 +621,7 @@ static const char *message_names[] = {
 	"CLEAR_PROGRESS",
 	"JITTER_BUFFER",
 	"RECOVERY_REFRESH",
+	"SIGNAL_DATA",
 	"INVALID"
 };
 
