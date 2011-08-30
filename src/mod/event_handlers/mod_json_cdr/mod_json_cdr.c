@@ -407,7 +407,7 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 					json_object_object_add(j_application, "last_executed", json_object_new_string("true"));
 				}
 				json_object_object_add(j_application, "app_name", json_object_new_string(ap->application_name));
-				json_object_object_add(j_application, "app_data", json_object_new_string(ap->application_data));
+				json_object_object_add(j_application, "app_data", json_object_new_string(switch_str_nil(ap->application_data)));
 			}
 
 			if (caller_profile->caller_extension->children) {
@@ -454,7 +454,7 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 							json_object_object_add(j_application, "last_executed", json_object_new_string("true"));
 						}
 						json_object_object_add(j_application, "app_name", json_object_new_string(ap->application_name));
-						json_object_object_add(j_application, "app_data", json_object_new_string(ap->application_data));
+						json_object_object_add(j_application, "app_data", json_object_new_string(switch_str_nil(ap->application_data)));
 					}
 				}
 			}
