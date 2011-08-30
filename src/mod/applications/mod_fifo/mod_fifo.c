@@ -1249,15 +1249,28 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	for (i = 0; i < cbh->rowcount; i++) {
 		struct call_helper *h = cbh->rows[i];
 		char *parsed = NULL;
+		int use_ent = 0;
 
-		switch_event_create_brackets(h->originate_string, '{', '}', ',', &ovars, &parsed, SWITCH_TRUE);
+		if (strstr(h->originate_string, "user/")) {
+			switch_event_create_brackets(h->originate_string, '<', '>', ',', &ovars, &parsed, SWITCH_TRUE);
+			use_ent = 1;
+		} else {
+			switch_event_create_brackets(h->originate_string, '{', '}', ',', &ovars, &parsed, SWITCH_TRUE);
+		}
+
 		switch_event_del_header(ovars, "fifo_outbound_uuid");
 
 		if (!h->timeout) h->timeout = node->ring_timeout;
 		if (timeout < h->timeout) timeout = h->timeout;
 
-		stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s]%s,",
-							  h->timeout, h->uuid, node->name, parsed ? parsed : h->originate_string);
+		if (use_ent) {
+			stream.write_function(&stream, "{ignore_early_media=true,outbound_redirect_fatal=true,leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s}%s:_:",
+								  h->timeout, h->uuid, node->name, parsed ? parsed : h->originate_string);
+		} else {
+			stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s]%s,",
+								  h->timeout, h->uuid, node->name, parsed ? parsed : h->originate_string);
+		}
+
 		stream2.write_function(&stream2, "%s,", h->uuid);
 		switch_safe_free(parsed);
 
