@@ -1938,6 +1938,14 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		ftdm_sleep(5000);
 	}
 out:
+	/* close d-channel, if set */
+	if (isdn_data->dchan) {
+		if (ftdm_channel_close(&isdn_data->dchan) != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_ERROR, "Failed to close D-Channel %d:%d\n",
+				ftdm_channel_get_span_id(isdn_data->dchan), ftdm_channel_get_id(isdn_data->dchan));
+		}
+	}
+
 	ftdm_log(FTDM_LOG_DEBUG, "PRI thread ended on span %d\n", ftdm_span_get_id(span));
 
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
