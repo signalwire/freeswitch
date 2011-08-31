@@ -725,7 +725,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	while (ftdm_channel_dequeue_dtmf(tech_pvt->ftdmchan, dtmf, sizeof(dtmf))) {
-		switch_dtmf_t _dtmf = { 0, SWITCH_DEFAULT_DTMF_DURATION };
+		switch_dtmf_t _dtmf = { 0, switch_core_default_dtmf_duration(0) };
 		char *p;
 		for (p = dtmf; p && *p; p++) {
 			if (is_dtmf(*p)) {
