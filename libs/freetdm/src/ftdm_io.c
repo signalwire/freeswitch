@@ -649,9 +649,6 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 		if (span->fio->span_destroy(span) != FTDM_SUCCESS) {
 			status = FTDM_FAIL;
 		}
-		ftdm_safe_free(span->type);
-		ftdm_safe_free(span->name);
-		ftdm_safe_free(span->dtmf_hangup);
 	}
 
 	/* destroy final basic resources of the span data structure */
@@ -5774,6 +5771,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 			}
 
 			hashtable_remove(globals.span_hash, (void *)cur_span->name);
+			ftdm_safe_free(cur_span->dtmf_hangup);
 			ftdm_safe_free(cur_span->type);
 			ftdm_safe_free(cur_span->name);
 			ftdm_safe_free(cur_span);
