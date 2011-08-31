@@ -673,12 +673,7 @@ CFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS
-CPP
-CPPFLAGS
-CC
-LDFLAGS
-LIBS
-CPPFLAGS'
+CPP'
 
 
 # Initialize some variables set by options.
