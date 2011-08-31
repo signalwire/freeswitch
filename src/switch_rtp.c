@@ -176,7 +176,7 @@ struct switch_rtp {
 
 	uint16_t seq;
 	uint32_t ssrc;
-	uint8_t sending_dtmf;
+	int8_t sending_dtmf;
 	uint8_t need_mark;
 	switch_payload_t payload;
 	switch_payload_t rpayload;
@@ -187,7 +187,6 @@ struct switch_rtp {
 	uint32_t last_read_ts;
 	uint32_t last_cng_ts;
 	uint32_t last_write_samplecount;
-	uint32_t next_write_samplecount;
 	switch_time_t last_write_timestamp;
 	uint32_t flags;
 	switch_memory_pool_t *pool;
@@ -2259,6 +2258,11 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 		return;
 	}
 
+	if (!rtp_session->sending_dtmf > 1) {
+		rtp_session->sending_dtmf--;
+		return;
+	}
+
 	if (rtp_session->dtmf_data.out_digit_dur > 0) {
 		int x, loops = 1;
 
@@ -2298,13 +2302,11 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 		}
 
 		if (loops != 1) {
-			rtp_session->last_write_ts = rtp_session->dtmf_data.timestamp_dtmf + rtp_session->dtmf_data.out_digit_sub_sofar;
-			rtp_session->sending_dtmf = 2;
+			rtp_session->sending_dtmf = -1;
 			rtp_session->need_mark = 1;
 			
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 				rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
-				rtp_session->next_write_samplecount = rtp_session->timer.samplecount + samples * 5;
 			}
 			rtp_session->dtmf_data.out_digit_dur = 0;
 
@@ -2318,15 +2320,13 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 	if (!rtp_session->dtmf_data.out_digit_dur && rtp_session->dtmf_data.dtmf_queue && switch_queue_size(rtp_session->dtmf_data.dtmf_queue)) {
 		void *pop;
 
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-			if (rtp_session->timer.samplecount < rtp_session->next_write_samplecount) {
-				return;
-			}
+		if (!rtp_session->sending_dtmf) {
+			rtp_session->sending_dtmf = 2;
+			return;
 		}
 
 		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_dtmf_t *rdigit = pop;
-			int64_t offset;
 			switch_size_t wrote;
 
 			if (rdigit->digit == 'w') {
@@ -2341,8 +2341,8 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 				return;
 			}
 			
-			rtp_session->sending_dtmf = 1;
 
+			
 			memset(rtp_session->dtmf_data.out_digit_packet, 0, 4);
 			rtp_session->dtmf_data.out_digit_sofar = samples;
 			rtp_session->dtmf_data.out_digit_sub_sofar = samples;
@@ -2353,14 +2353,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 			rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (rtp_session->dtmf_data.out_digit_sub_sofar >> 8);
 			rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) rtp_session->dtmf_data.out_digit_sub_sofar;
 
-
 			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-				offset = rtp_session->timer.samplecount - rtp_session->last_write_samplecount;
-				if (offset > 0) {
-					rtp_session->dtmf_data.timestamp_dtmf = (uint32_t) (rtp_session->dtmf_data.timestamp_dtmf + offset);
-				}
-			}
 
 			wrote = switch_rtp_write_manual(rtp_session,
 											rtp_session->dtmf_data.out_digit_packet,
@@ -2885,7 +2878,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			do_2833(rtp_session, session);
 
-			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity || rtp_session->sending_dtmf == 1 || 
+			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity || rtp_session->sending_dtmf > 0 || 
 				switch_queue_size(rtp_session->dtmf_data.dtmf_queue) || switch_queue_size(rtp_session->dtmf_data.dtmf_inqueue)) {
 				pt = 20000;
 			}
@@ -3779,7 +3772,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		send = 0;
 	}
 
-	if (rtp_session->sending_dtmf == 2) {
+	if (rtp_session->sending_dtmf == -1) {
 		rtp_session->sending_dtmf = 0;
 		
 	}
@@ -3891,6 +3884,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			ret = -1;
 			goto end;
 		}
+		rtp_session->last_write_ts = this_ts;
 
 		rtp_session->stats.outbound.raw_bytes += bytes;
 		rtp_session->stats.outbound.packet_count++;
@@ -3907,8 +3901,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		} else {
 			rtp_session->last_write_timestamp = switch_micro_time_now();
 		}
-
-		rtp_session->last_write_ts = this_ts;
 		
 		if (rtp_session->rtcp_sock_output &&
 			switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU) &&
@@ -4279,7 +4271,9 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		goto end;
 	}
 
-	rtp_session->last_write_ts = ts;
+	if (!((*flags) && SFF_RTP_HEADER)) {
+		rtp_session->last_write_ts = ts;
+	}
 
 	ret = (int) bytes;
 
