@@ -143,7 +143,7 @@ static switch_status_t rtmp_tcp_write(rtmp_session_t *rsession, const unsigned c
 	
 	status = switch_socket_send_nonblock(io_pvt->socket, (char*)buf, len);
 	
-	if (*len < orig_len) {
+	if (*len > 0 && *len < orig_len) {
 		
 		if (rsession->state >= RS_DESTROY) {
 			return SWITCH_STATUS_FALSE;
