@@ -204,6 +204,35 @@ static inline void free_context(shout_context_t *context)
 		}
 
 		if (context->shout) {
+			if (context->gfp) {
+				unsigned char mp3buffer[8192];
+				int len;
+				int16_t blank[2048] = { 0 }, *r = NULL;
+
+				if (context->channels == 2) {
+					r = blank;
+				}
+
+				len = lame_encode_buffer(context->gfp, blank, r, sizeof(blank) / 2, mp3buffer, sizeof(mp3buffer));
+
+				if (len) {
+					ret = shout_send(context->shout, mp3buffer, len);
+					if (ret == SHOUTERR_SUCCESS) {
+						shout_sync(context->shout);
+					}
+				}
+
+				while ((len = lame_encode_flush(context->gfp, mp3buffer, sizeof(mp3buffer))) > 0) {
+					ret = shout_send(context->shout, mp3buffer, len);
+
+					if (ret != SHOUTERR_SUCCESS) {
+						break;
+					} else {
+						shout_sync(context->shout);
+					}
+				}
+			}
+
 			shout_close(context->shout);
 			context->shout = NULL;
 		}
