@@ -300,12 +300,13 @@ libbootstrap()
       AMTEST=`grep "AM_INIT_AUTOMAKE" ${CFFILE}`
       AMTEST2=`grep "AC_PROG_INSTALL" ${CFFILE}`
       AHTEST=`grep "AC_CONFIG_HEADERS" ${CFFILE}`
+      AXTEST=`grep "ACX_LIBTOOL_C_ONLY" ${CFFILE}`
 
       echo "Creating aclocal.m4"
       ${ACLOCAL:-aclocal} ${ACLOCAL_OPTS} ${ACLOCAL_FLAGS}
 
 #only run if AC_PROG_LIBTOOL is in configure.in/configure.ac
-      if [ ! -z "${LTTEST}" -o "${LTTEST2}" ] ; then
+      if [ ! -z "${LTTEST}" -o "${LTTEST2}" -o "${AXTEST}" ] ; then
           echo "Running libtoolize..."
           if ${libtoolize} -n --install >/dev/null 2>&1 ; then
              $libtoolize --force --copy --install
