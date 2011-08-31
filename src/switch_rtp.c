@@ -4271,7 +4271,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		goto end;
 	}
 
-	if (!((*flags) && SFF_RTP_HEADER)) {
+	if (((*flags) & SFF_RTP_HEADER)) {
 		rtp_session->last_write_ts = ts;
 	}
 
