@@ -344,6 +344,10 @@ Requires: wanpipe
 Requires: libsng_ss7 
 BuildRequires: wanpipe 
 BuildRequires: libsng_ss7 
+%if 0%{?fedora_version} >= 8 || 0%{?rhel} >= 6
+Requires: openssl098e
+BuildRequires: openssl098e
+%endif
 
 %description freetdm-sng-ss7
 Sangoma SMG-SS7 drivers for FreeTDM
