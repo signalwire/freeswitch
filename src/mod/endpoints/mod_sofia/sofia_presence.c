@@ -702,7 +702,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 									 "from sip_registrations "
 
 									 "left join sip_dialogs on "
-									 "sip_dialogs.presence_id = sip_registrations.sip_user || '@' || sip_registrations.sip_host "
+									 "sip_dialogs.presence_id = sip_registrations.sip_user %q '@' %q sip_registrations.sip_host "
 									 "or (sip_dialogs.sip_from_user = sip_registrations.sip_user "
 									 "and sip_dialogs.sip_from_host = sip_registrations.sip_host) "
  
@@ -713,6 +713,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 									 "(sip_registrations.orig_server_host='%q' or sip_registrations.sip_host='%q' "
 									 "or sip_registrations.presence_hosts like '%%%q%%'))",
 									 dh.status, dh.rpid, 
+									 switch_sql_concat(), switch_sql_concat(),
 									 probe_euser, probe_host,  probe_euser, probe_host, probe_host, probe_host);
 				switch_assert(sql);
 				
