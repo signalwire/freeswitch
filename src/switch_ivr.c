@@ -484,6 +484,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	unsigned long CMD_HANGUP = switch_hashfunc_default("hangup", &hlen);
 	unsigned long CMD_NOMEDIA = switch_hashfunc_default("nomedia", &hlen);
 	unsigned long CMD_UNICAST = switch_hashfunc_default("unicast", &hlen);
+	unsigned long CMD_XFEREXT = switch_hashfunc_default("xferext", &hlen);
 	char *lead_frames = switch_event_get_header(event, "lead-frames");
 	char *event_lock = switch_event_get_header(event, "event-lock");
 	char *event_lock_pri = switch_event_get_header(event, "event-lock-pri");
@@ -623,6 +624,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 		switch_ivr_activate_unicast(session, local_ip, (switch_port_t) atoi(local_port), remote_ip, (switch_port_t) atoi(remote_port), transport, flags);
 
+	} else if (cmd_hash == CMD_XFEREXT) {
+		switch_event_header_t *hp;
+		switch_caller_extension_t *extension = NULL;
+
+
+		if ((extension = switch_caller_extension_new(session, "xferext", "xferext")) == 0) {
+			abort();
+		}
+		
+		for (hp = event->headers; hp; hp = hp->next) {
+			char *app;
+			char *data;
+			
+			if (!strcasecmp(hp->name, "application")) {
+				app = strdup(hp->value);
+				data = strchr(app, ':');
+			
+				if (data) {
+					*data++ = '\0';
+				}
+			
+				switch_caller_extension_add_application(session, extension, app, data);
+			}
+		}
+
+		switch_channel_transfer_to_extension(channel, extension);
+		
 	} else if (cmd_hash == CMD_HANGUP) {
 		char *cause_name = switch_event_get_header(event, "hangup-cause");
 		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -1661,7 +1689,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 		switch_channel_set_caller_profile(channel, new_profile);
 		switch_channel_set_flag(channel, CF_TRANSFER);
-
+		
 		switch_channel_set_state(channel, CS_ROUTING);
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSFER;

@@ -146,6 +146,7 @@ struct switch_channel {
 	int profile_index;
 	opaque_channel_flag_t opaque_flags;
 	switch_originator_type_t last_profile_type;
+	switch_caller_extension_t *queued_extension;
 };
 
 
@@ -2688,6 +2689,27 @@ SWITCH_DECLARE(void) switch_channel_sort_cid(switch_channel_t *channel, switch_b
 	
 }
 
+SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_queued_extension(switch_channel_t *channel)
+{
+	switch_caller_extension_t *caller_extension;
+
+	switch_mutex_lock(channel->profile_mutex);
+	caller_extension = channel->queued_extension;
+	channel->queued_extension = NULL;
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return caller_extension;
+}
+
+SWITCH_DECLARE(void) switch_channel_transfer_to_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension)
+{
+	switch_mutex_lock(channel->profile_mutex);
+	channel->queued_extension = caller_extension;
+	switch_mutex_unlock(channel->profile_mutex);
+
+	switch_channel_set_flag(channel, CF_TRANSFER);
+	switch_channel_set_state(channel, CS_ROUTING);	
+}
 
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension)
 {

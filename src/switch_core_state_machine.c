@@ -93,6 +93,12 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 		char *dp[25];
 		int argc, x, count = 0;
 
+		if ((extension = switch_channel_get_queued_extension(session->channel))) {
+			switch_channel_set_caller_extension(session->channel, extension);
+			switch_channel_set_state(session->channel, CS_EXECUTE);
+			goto end;
+		}
+
 		if (!zstr(caller_profile->dialplan)) {
 			if ((dpstr = switch_core_session_strdup(session, caller_profile->dialplan))) {
 				expanded = switch_channel_expand_variables(session->channel, dpstr);
