@@ -7691,6 +7691,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 	}
 
+	check_decode(displayname, session);
+	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+														 from_user,
+														 dialplan,
+														 displayname, from_user, network_ip, from_user, aniii, NULL, MODNAME, context, destination_number);
+
 	if (!bnh && sip->sip_replaces) {
 		if (!(bnh = nua_handle_by_replaces(nua, sip->sip_replaces))) {
 			if (!(bnh = nua_handle_by_call_id(nua, sip->sip_replaces->rp_call_id))) {
@@ -7711,10 +7717,32 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				private_object_t *b_tech_pvt = NULL;
 				const char *app = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_VARIABLE);
 				const char *data = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE);
+				switch_caller_profile_t *orig_cp;
+				const char *sent_name, *sent_number;
+				orig_cp = switch_channel_get_caller_profile(b_channel);
+				
+				sent_name = switch_channel_get_variable(b_channel, "last_sent_callee_id_name");
+				sent_number = switch_channel_get_variable(b_channel, "last_sent_callee_id_number");
+
+				if (!zstr(sent_name) && !zstr(sent_number)) {
+					tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, sent_name);
+					tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, sent_number);
+				} else {
+					if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+						tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->callee_id_name);
+						tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->callee_id_number);
+					} else {
+						tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_name);
+						tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_number);
+					}
+				}
+				
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Setting NAT mode based on %s\n", is_nat);
+
 
 				if (app && data && !strcasecmp(app, "conference")) {
-					destination_number = switch_core_session_sprintf(session, "answer,conference:%s", data);
-					dialplan = "inline";
+					tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, "answer,conference:%s", data);
+					tech_pvt->caller_profile->dialplan = "inline";
 				} else {
 					if (switch_core_session_check_interface(b_session, sofia_endpoint_interface)) {
 						b_tech_pvt = switch_core_session_get_private(b_session);
@@ -7744,7 +7772,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 							if (switch_core_session_check_interface(c_session, sofia_endpoint_interface)) {
 								c_tech_pvt = switch_core_session_get_private(c_session);
 							}
-
+							
 
 							if (!one_leg &&
 								(!b_tech_pvt || !sofia_test_flag(b_tech_pvt, TFLAG_SIP_HOLD)) &&
@@ -7761,21 +7789,25 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 						}
 
 						if (do_conf) {
-							destination_number = switch_core_session_sprintf(session, "answer,conference:%s@sla+flags{mintwo}", uuid);
+							tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
+																							   "answer,conference:%s@sla+flags{mintwo}", uuid);
 						} else {
 							if (one_leg && c_app) {
 								if (c_data) {
-									destination_number = switch_core_session_sprintf(session, "answer,%s:%s", c_app, c_data);
+									tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
+																									   "answer,%s:%s", c_app, c_data);
 								} else {
-									destination_number = switch_core_session_sprintf(session, "answer,%s", c_app);
+									tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
+																									   "answer,%s", c_app);
 								}
 							} else {
 								switch_channel_mark_hold(b_channel, SWITCH_FALSE);
-								destination_number = switch_core_session_sprintf(session, "answer,intercept:%s", uuid);
+								tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
+																								   "answer,intercept:%s", uuid);
 							}
 						}
 
-						dialplan = "inline";
+						tech_pvt->caller_profile->dialplan = "inline";
 					}
 				}
 				switch_core_session_rwunlock(b_session);
@@ -7784,11 +7816,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		nua_handle_unref(bnh);
 	}
 
-	check_decode(displayname, session);
-	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-														 from_user,
-														 dialplan,
-														 displayname, from_user, network_ip, from_user, aniii, NULL, MODNAME, context, destination_number);
+
 
 	if (tech_pvt->caller_profile) {
 

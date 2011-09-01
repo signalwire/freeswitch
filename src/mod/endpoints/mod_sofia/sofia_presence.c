@@ -1984,14 +1984,21 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 	if (uuid && (session = switch_core_session_locate(uuid))) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
-		if (zstr((callee_name = switch_channel_get_variable(channel, "effective_callee_id_name"))) &&
-			zstr((callee_name = switch_channel_get_variable(channel, "sip_callee_id_name")))) {
-			callee_name = switch_channel_get_variable(channel, "callee_id_name");
-		}
-		
-		if (zstr((callee_number = switch_channel_get_variable(channel, "effective_callee_id_number"))) &&
-			zstr((callee_number = switch_channel_get_variable(channel, "sip_callee_id_number")))) {
-			callee_number = switch_channel_get_variable(channel, "destination_number");
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+
+			if (zstr((callee_name = switch_channel_get_variable(channel, "effective_callee_id_name"))) &&
+				zstr((callee_name = switch_channel_get_variable(channel, "sip_callee_id_name")))) {
+				callee_name = switch_channel_get_variable(channel, "callee_id_name");
+			}
+			
+			if (zstr((callee_number = switch_channel_get_variable(channel, "effective_callee_id_number"))) &&
+				zstr((callee_number = switch_channel_get_variable(channel, "sip_callee_id_number"))) &&
+				zstr((callee_number = switch_channel_get_variable(channel, "callee_id_number")))) {
+				callee_number = switch_channel_get_variable(channel, "destination_number");
+			}
+		} else {
+			callee_name = switch_channel_get_variable(channel, "caller_id_name");
+			callee_number = switch_channel_get_variable(channel, "caller_id_number");
 		}
 		
 		if (zstr(callee_name) && !zstr(callee_number)) {
