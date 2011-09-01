@@ -672,15 +672,6 @@ typedef enum {
 	  This flag will treat every dtmf as if it were 50ms and queue it on recipt of the leading packet rather than at the end.
 	 */
 
-	RTP_BUG_PAUSE_BETWEEN_DTMF = (1 << 7)
-
-	/*
-	  Sonus says they need time to generate the dtmf so we should not send it so fast so with this flag we will wait a few clicks after each send to 
-	  start sending the next one.
-	*/
-
-
-
 } switch_rtp_bug_flag_t;
 
 #ifdef _MSC_VER
