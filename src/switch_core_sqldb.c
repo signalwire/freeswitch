@@ -2114,7 +2114,7 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 	switch_mutex_unlock(sql_manager.dbh_mutex);
 }
 
-SWITCH_DECLARE(char*)switch_sql_concat()
+SWITCH_DECLARE(char*)switch_sql_concat(void)
 {
 	if(runtime.odbc_dbtype == DBTYPE_MSSQL)
 		return "+";

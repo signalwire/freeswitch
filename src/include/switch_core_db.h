@@ -540,7 +540,7 @@ SWITCH_DECLARE(int) switch_core_db_changes(switch_core_db_t *db);
  * literal.
  */
 
-SWITCH_DECLARE(char*)switch_sql_concat();
+SWITCH_DECLARE(char*)switch_sql_concat(void);
 
 SWITCH_END_EXTERN_C
 #endif
