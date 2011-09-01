@@ -59,6 +59,7 @@ struct switch_ivr_dmachine {
 	uint32_t input_timeout_ms;
 	switch_hash_t *binding_hash;
 	switch_ivr_dmachine_match_t match;
+	switch_digit_action_target_t target;
 	char digits[DMACHINE_MAX_DIGIT_LEN];
 	char last_matching_digits[DMACHINE_MAX_DIGIT_LEN];
 	char last_failed_digits[DMACHINE_MAX_DIGIT_LEN];
@@ -72,6 +73,17 @@ struct switch_ivr_dmachine {
 	switch_ivr_dmachine_binding_t *last_matching_binding;
 	void *user_data;
 };
+
+
+SWITCH_DECLARE(switch_digit_action_target_t) switch_ivr_dmachine_get_target(switch_ivr_dmachine_t *dmachine)
+{
+	return dmachine->target;
+}
+
+SWITCH_DECLARE(void) switch_ivr_dmachine_set_target(switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target)
+{
+	dmachine->target = target;
+}
 
 
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_match_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t match_callback)

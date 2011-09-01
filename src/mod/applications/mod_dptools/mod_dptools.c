@@ -108,23 +108,33 @@ struct action_binding {
 static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t *match)
 {
 	switch_core_session_t *session = (switch_core_session_t *) match->user_data;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel;
 	char str[DMACHINE_MAX_DIGIT_LEN + 2];
 	switch_event_t *event;
 	switch_status_t status;
+	switch_core_session_t *use_session = session;
+
+	if (switch_ivr_dmachine_get_target(match->dmachine) == DIGIT_TARGET_PEER) {
+		if (switch_core_session_get_partner(session, &use_session) != SWITCH_STATUS_SUCCESS) {
+			use_session = session;
+		}
+	}
+
+	channel = switch_core_session_get_channel(use_session);
+
 
 	switch_channel_set_variable(channel, "last_non_matching_digits", match->match_digits);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Digit NOT match binding [%s]\n", 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(use_session), SWITCH_LOG_DEBUG, "%s Digit NOT match binding [%s]\n", 
 					  switch_channel_get_name(channel), match->match_digits);
 
 	if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
 
-		if ((status = switch_core_session_queue_event(session, &event)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_core_session_queue_event(use_session, &event)) != SWITCH_STATUS_SUCCESS) {
 			switch_event_destroy(&event);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
-							  switch_core_session_get_name(session));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(use_session), SWITCH_LOG_WARNING, "%s event queue failure.\n", 
+							  switch_core_session_get_name(use_session));
 		}
 	}
 
@@ -133,6 +143,11 @@ static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t
 	
 	switch_channel_queue_dtmf_string(channel, str);
 	
+	if (use_session != session) {
+		switch_core_session_rwunlock(use_session);
+	}
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -143,9 +158,19 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	switch_status_t status;
 	int exec = 0;
 	char *string = act->string;
-	switch_channel_t *channel = switch_core_session_get_channel(act->session);
+	switch_channel_t *channel;
+	switch_core_session_t *use_session = act->session;
+
+	if (switch_ivr_dmachine_get_target(match->dmachine) == DIGIT_TARGET_PEER) {
+		if (switch_core_session_get_partner(act->session, &use_session) != SWITCH_STATUS_SUCCESS) {
+			use_session = act->session;
+		}
+	}
+
+	channel = switch_core_session_get_channel(use_session);
 
 	switch_channel_set_variable(channel, "last_matching_digits", match->match_digits);
+
 	
 	if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_DEBUG, "%s Digit match binding [%s][%s]\n", 
@@ -163,18 +188,24 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute", exec == 2 ? "non-blocking" : "blocking");
 		} 
 
-		if ((status = switch_core_session_queue_event(act->session, &event)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_core_session_queue_event(use_session, &event)) != SWITCH_STATUS_SUCCESS) {
 			switch_event_destroy(&event);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
-							  switch_core_session_get_name(act->session));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(use_session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
+							  switch_core_session_get_name(use_session));
 		}
 	}
 
 	if (exec) {
-		char *cmd = switch_core_session_sprintf(act->session, "%s::%s", string, act->value);
-		switch_ivr_broadcast_in_thread(act->session, cmd, SMF_ECHO_ALEG|SMF_HOLD_BLEG);
+		char *cmd = switch_core_session_sprintf(use_session, "%s::%s", string, act->value);
+		switch_ivr_broadcast_in_thread(use_session, cmd, SMF_ECHO_ALEG|SMF_HOLD_BLEG);
 	}
 	
+
+	if (use_session != act->session) {
+		switch_core_session_rwunlock(use_session);
+	}
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -212,6 +243,30 @@ SWITCH_STANDARD_APP(digit_action_set_realm_function)
 
 }
 
+
+#define DIGIT_ACTION_SET_TARGET_USAGE "<target>"
+SWITCH_STANDARD_APP(digit_action_set_target_function)
+{
+	switch_ivr_dmachine_t *dmachine;
+	char *target_str = (char *) data;
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", DIGIT_ACTION_SET_TARGET_USAGE);
+		return;
+	}
+	
+	if ((dmachine = switch_core_session_get_dmachine(session))) {
+		switch_digit_action_target_t target = DIGIT_TARGET_SELF;
+
+		if (!strcasecmp(target_str, "peer")) {
+			target = DIGIT_TARGET_PEER;
+		}
+
+		switch_ivr_dmachine_set_target(dmachine, target);
+	}
+
+}
+
 #define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>,<value>"
 SWITCH_STANDARD_APP(bind_digit_action_function)
 {
@@ -219,7 +274,7 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 	switch_ivr_dmachine_t *dmachine;
 	char *mydata;
 	int argc = 0;
-	char *argv[4] = { 0 };
+	char *argv[5] = { 0 };
 	struct action_binding *act;
 
 	if (zstr(data)) {
@@ -266,7 +321,7 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 	act->string = argv[2];
 	act->value = argv[3];
 	act->session = session;
-	
+
 	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, 0, digit_action_callback, act);
 }
 
@@ -3788,6 +3843,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 
 	SWITCH_ADD_APP(app_interface, "digit_action_set_realm", "change binding realm", "", 
 				   digit_action_set_realm_function, DIGIT_ACTION_SET_REALM_USAGE, SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_APP(app_interface, "digit_action_set_target", "change binding target", "", 
+				   digit_action_set_target_function, DIGIT_ACTION_SET_TARGET_USAGE, SAF_SUPPORT_NOMEDIA);
 	
 
 	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number",

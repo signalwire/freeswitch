@@ -1293,9 +1293,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	} else if (!new_dtmf.duration) {
 		new_dtmf.duration = switch_core_default_dtmf_duration(0);
 	}
-
+	
 	if (!switch_test_flag(dtmf, DTMF_FLAG_SKIP_PROCESS)) {
-		if (session->dmachine && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+		if (session->dmachine && switch_ivr_dmachine_get_target(session->dmachine) == DIGIT_TARGET_SELF && 
+			!switch_channel_test_flag(session->channel, CF_BROADCAST)) {
 			char str[2] = { dtmf->digit, '\0' };
 			switch_ivr_dmachine_feed(session->dmachine, str, NULL);
 			fed = 1;
@@ -1337,12 +1338,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 		new_dtmf.duration = switch_core_default_dtmf_duration(0);
 	}
 
-
+	
 	for (ptr = session->event_hooks.send_dtmf; ptr; ptr = ptr->next) {
 		if ((status = ptr->send_dtmf(session, dtmf, SWITCH_DTMF_SEND)) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
+
+	if (!switch_test_flag(dtmf, DTMF_FLAG_SKIP_PROCESS)) {
+		if (session->dmachine && switch_ivr_dmachine_get_target(session->dmachine) == DIGIT_TARGET_PEER && 
+			!switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+			char str[2] = { new_dtmf.digit, '\0' };
+			switch_ivr_dmachine_feed(session->dmachine, str, NULL);
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
 
 	if (session->endpoint_interface->io_routines->send_dtmf) {
 		int send = 0;

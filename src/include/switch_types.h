@@ -222,6 +222,13 @@ typedef enum {
 } switch_dtmf_source_t;
 
 typedef enum {
+	DIGIT_TARGET_SELF,
+	DIGIT_TARGET_PEER
+} switch_digit_action_target_t;
+
+
+
+typedef enum {
 	DTMF_FLAG_SKIP_PROCESS = (1 << 0)
 } dtmf_flag_t;
 
