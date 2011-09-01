@@ -1330,7 +1330,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 																const char *cid_name_override,
 																const char *cid_num_override,
 																switch_caller_profile_t *caller_profile_override,
-																switch_event_t *ovars, switch_originate_flag_t flags)
+																switch_event_t *ovars, switch_originate_flag_t flags, 
+																switch_call_cause_t *cancel_cause)
 {
 	int x_argc = 0;
 	char *x_argv[MAX_PEERS] = { 0 };
@@ -1480,6 +1481,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 			break;
 		}
 
+		if (cancel_cause && *cancel_cause > 0) {
+			break;
+		}
+
 		for (i = 0; i < x_argc; i++) {
 
 
@@ -1521,7 +1526,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		if (hp == &handles[i]) {
 			continue;
 		}
-		handles[i].cancel_cause = SWITCH_CAUSE_LOSE_RACE;
+
+		if (cancel_cause && *cancel_cause > 0) {
+			handles[i].cancel_cause = *cancel_cause;
+		} else {
+			handles[i].cancel_cause = SWITCH_CAUSE_LOSE_RACE;
+		}
 	}
 
 	for (i = 0; i < x_argc; i++) {
@@ -1738,7 +1748,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	
 	if (strstr(bridgeto, SWITCH_ENT_ORIGINATE_DELIM)) {
 		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
-											   caller_profile_override, ovars, flags);
+											   caller_profile_override, ovars, flags, cancel_cause);
 	}
 
 	oglobals.ringback_ok = 1;
