@@ -909,6 +909,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static string switch_sql_concat() {
+    string ret = freeswitchPINVOKE.switch_sql_concat();
+    return ret;
+  }
+
   public static SWIGTYPE_p_real_pcre switch_regex_compile(string pattern, int options, ref string errorptr, SWIGTYPE_p_int erroroffset, SWIGTYPE_p_unsigned_char tables) {
     IntPtr cPtr = freeswitchPINVOKE.switch_regex_compile(pattern, options, ref errorptr, SWIGTYPE_p_int.getCPtr(erroroffset), SWIGTYPE_p_unsigned_char.getCPtr(tables));
     SWIGTYPE_p_real_pcre ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_real_pcre(cPtr, false);
@@ -3852,6 +3857,16 @@ public class freeswitch {
   public static switch_status_t switch_channel_api_on(SWIGTYPE_p_switch_channel channel, string variable_prefix) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_api_on(SWIGTYPE_p_switch_channel.getCPtr(channel), variable_prefix);
     return ret;
+  }
+
+  public static switch_caller_extension switch_channel_get_queued_extension(SWIGTYPE_p_switch_channel channel) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_channel_get_queued_extension(SWIGTYPE_p_switch_channel.getCPtr(channel));
+    switch_caller_extension ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_extension(cPtr, false);
+    return ret;
+  }
+
+  public static void switch_channel_transfer_to_extension(SWIGTYPE_p_switch_channel channel, switch_caller_extension caller_extension) {
+    freeswitchPINVOKE.switch_channel_transfer_to_extension(SWIGTYPE_p_switch_channel.getCPtr(channel), switch_caller_extension.getCPtr(caller_extension));
   }
 
   public static switch_status_t switch_buffer_create(SWIGTYPE_p_apr_pool_t pool, SWIGTYPE_p_p_switch_buffer buffer, SWIGTYPE_p_switch_size_t max_len) {
@@ -7335,6 +7350,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CORE_DB_DONE_get")]
   public static extern int SWITCH_CORE_DB_DONE_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_concat")]
+  public static extern string switch_sql_concat();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_regex_compile")]
   public static extern IntPtr switch_regex_compile(string jarg1, int jarg2, ref string jarg3, HandleRef jarg4, HandleRef jarg5);
@@ -12078,6 +12096,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_api_on")]
   public static extern int switch_channel_api_on(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_queued_extension")]
+  public static extern IntPtr switch_channel_get_queued_extension(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_transfer_to_extension")]
+  public static extern void switch_channel_transfer_to_extension(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_buffer_create")]
   public static extern int switch_buffer_create(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
@@ -22298,6 +22322,7 @@ public enum switch_channel_cap_t {
   CC_PROXY_MEDIA,
   CC_JITTERBUFFER,
   CC_FS_RTP,
+  CC_QUEUEABLE_DTMF_DELAY,
   CC_FLAG_MAX
 }
 
@@ -29262,8 +29287,7 @@ public enum switch_rtp_bug_flag_t {
   RTP_BUG_SEND_LINEAR_TIMESTAMPS = (1 << 3),
   RTP_BUG_START_SEQ_AT_ZERO = (1 << 4),
   RTP_BUG_NEVER_SEND_MARKER = (1 << 5),
-  RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6),
-  RTP_BUG_PAUSE_BETWEEN_DTMF = (1 << 7)
+  RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6)
 }
 
 }

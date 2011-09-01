@@ -5411,6 +5411,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_CORE_DB_DONE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_sql_concat() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_sql_concat();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_regex_compile(char * jarg1, int jarg2, void * jarg3, void * jarg4, void * jarg5) {
   void * jresult ;
   char *arg1 = (char *) 0 ;
@@ -25438,6 +25448,28 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_api_on(void * jarg1, char * jar
   result = (switch_status_t)switch_channel_api_on(arg1,(char const *)arg2);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_queued_extension(void * jarg1) {
+  void * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_caller_extension_t *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (switch_caller_extension_t *)switch_channel_get_queued_extension(arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_transfer_to_extension(void * jarg1, void * jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_caller_extension_t *arg2 = (switch_caller_extension_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (switch_caller_extension_t *)jarg2; 
+  switch_channel_transfer_to_extension(arg1,arg2);
 }
 
 

@@ -1902,7 +1902,7 @@ SWIG_ruby_failed(void)
 } 
 
 
-/*@SWIG:/usr/local/share/swig/1.3.35/ruby/rubyprimtypes.swg,23,%ruby_aux_method@*/
+/*@SWIG:/usr/share/swig/1.3.35/ruby/rubyprimtypes.swg,23,%ruby_aux_method@*/
 SWIGINTERN VALUE SWIG_AUX_NUM2LONG(VALUE *args)
 {
   VALUE obj = args[0];
