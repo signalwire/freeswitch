@@ -10,32 +10,26 @@ AM_CPPFLAGS= -I. -I$(includedir)
 AM_LDFLAGS = -L. -L$(libdir) -avoid-version -module -no-undefined -shared
 
 ###
-# GCC specific flags
+# GCC (and compatible) specific flags
 #
-if COMPILER_GCC
+if CC_VENDOR_GNU
 AM_CFLAGS += -Wall
-# symbol visibility support
-if HAVE_VISIBILITY
-AM_CFLAGS  += -fvisibility=hidden
-AM_CXXFLAGS+= -fvisibility=hidden
-AM_CPPFLAGS+= -DSWITCH_API_VISIBILITY=1
-endif
-if HAVE_VISIBILITY_INLINES_HIDDEN
-AM_CXXFLAGS += -fvisibility-inlines-hidden
-endif
 endif
 
 ###
 # SunCC specific flags
 #
-if COMPILER_SUNCC
+if CC_VENDOR_SUN
 AM_CFLAGS +=
-# symbol visibility support
-if HAVE_VISIBILITY
-AM_CFLAGS   += -xldscope=hidden
-AM_CXXFLAGS += -xldscope=hidden
-AM_CPPFLAGS += -DSWITCH_API_VISIBILITY=1
 endif
+
+###
+# symbol visibility support
+#
+if CC_HAS_VISIBILITY
+AM_CFLAGS   += $(VISIBILITY_CFLAGS)
+AM_CXXFLAGS += $(VISIBILITY_CXXFLAGS)
+AM_CPPFLAGS += -DSWITCH_API_VISIBILITY=1
 endif
 
 
