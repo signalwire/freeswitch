@@ -2191,24 +2191,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	return switch_test_flag((&runtime), SCF_RESTART) ? SWITCH_STATUS_RESTART : SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *name, const char *proto, const char *from, const char *to,
-													  const char *subject, const char *body, const char *type, const char *hint)
-{
-	switch_chat_interface_t *ci;
-	switch_status_t status;
-
-	if (!name || !(ci = switch_loadable_module_get_chat_interface(name)) || !ci->chat_send) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", name);
-		return SWITCH_STATUS_FALSE;
-	}
-
-	status = ci->chat_send(proto, from, to, subject, body, type, hint);
-
-	UNPROTECT_INTERFACE(ci);
-
-	return status;
-}
-
 SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen)
 {
 	const switch_management_interface_t *ptr;

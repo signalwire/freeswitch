@@ -468,6 +468,46 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *name, const char *proto, const char *from, const char *to,
+													  const char *subject, const char *body, const char *type, const char *hint)
+{
+	switch_chat_interface_t *ci;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+			
+	if (!name) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!strcasecmp(name, "GLOBAL")) {
+		switch_mutex_lock(loadable_modules.mutex);
+		for (hi = switch_hash_first(NULL, loadable_modules.chat_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &var, NULL, &val);
+			
+			if ((ci = (switch_chat_interface_t *) val)) {
+				if (ci->chat_send && !strncasecmp(ci->interface_name, "GLOBAL_", 7)) {
+					if ((status = ci->chat_send(proto, from, to, subject, body, type, hint)) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Chat Interface Error [%s]!\n", name);
+						break;
+					}			
+				}
+			}
+		}
+		switch_mutex_unlock(loadable_modules.mutex);
+	} else {
+		if (!(ci = switch_loadable_module_get_chat_interface(name)) || !ci->chat_send) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid chat interface [%s]!\n", name);
+			return SWITCH_STATUS_FALSE;
+		}
+		status = ci->chat_send(proto, from, to, subject, body, type, hint);
+		UNPROTECT_INTERFACE(ci);
+	}
+
+	return status;
+}
+
 
 static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t *old_module)
 {

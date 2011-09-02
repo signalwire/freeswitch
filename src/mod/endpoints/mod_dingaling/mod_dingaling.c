@@ -2876,6 +2876,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				char *proto = MDL_CHAT_PROTO;
 				char *pproto = NULL, *ffrom = NULL;
 				char *hint;
+				int got_proto = 0;
+				
 #ifdef AUTO_REPLY
 				if (profile->auto_reply) {
 					ldl_handle_send_msg(handle,
@@ -2890,6 +2892,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						*to++ = '\0';
 					}
 					proto = pproto;
+					got_proto++;
 				}
 
 				hint = from;
@@ -2902,8 +2905,12 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					from = ffrom;
 				}
 
-				if (strcasecmp(proto, MDL_CHAT_PROTO)) {	/* yes no ! on purpose */
+				if (strcasecmp(proto, MDL_CHAT_PROTO)) { /* yes no ! on purpose */
 					switch_core_chat_send(proto, MDL_CHAT_PROTO, from, to, subject, switch_str_nil(msg), NULL, hint);
+				}
+
+				if (!got_proto) {
+					switch_core_chat_send("GLOBAL", MDL_CHAT_PROTO, from, to, subject, switch_str_nil(msg), NULL, hint);
 				}
 
 				switch_safe_free(pproto);

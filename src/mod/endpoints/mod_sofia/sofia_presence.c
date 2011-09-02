@@ -131,7 +131,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 
 	if (!prof || !(profile = sofia_glue_find_profile(prof))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-						  "Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nInvalid Profile %s\n", proto, from, to,
+		"Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nInvalid Profile %s\n", proto, from, to,
 						  body ? body : "[no body]", prof ? prof : "NULL");
 		goto end;
 	}
@@ -233,7 +233,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		}
 		
 		/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
-		
+
 		msg_nh = nua_handle(profile->nua, NULL,
 							TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)),
 							TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
@@ -2891,6 +2891,7 @@ void sofia_presence_handle_sip_i_message(int status,
 			char *p;
 			char *full_from;
 			char proto[512] = SOFIA_CHAT_PROTO;
+			int got_proto = 0;
 
 			full_from = sip_header_as_string(nh->nh_home, (void *) sip->sip_from);
 
@@ -2904,11 +2905,12 @@ void sofia_presence_handle_sip_i_message(int status,
 						*p = '@';
 					}
 				}
+				got_proto++;
 			} else {
 				to_addr = switch_mprintf("%s@%s", to_user, to_host);
 			}
 
-			from_addr = switch_mprintf("%s@%s", from_user, from_host);
+			from_addr = switch_mprintf("%s/%s@%s", profile->name, from_user, from_host);
 
 			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT)) {
 				sofia_presence_set_hash_key(hash_key, sizeof(hash_key), sip);
@@ -2932,8 +2934,15 @@ void sofia_presence_handle_sip_i_message(int status,
 					}
 				}
 			} else {
-				switch_core_chat_send(proto, SOFIA_CHAT_PROTO, from_addr, to_addr, "", msg, NULL, full_from);
+				if (strcasecmp(proto, SOFIA_CHAT_PROTO)) {
+					switch_core_chat_send(proto, SOFIA_CHAT_PROTO, from_addr, to_addr, "", msg, NULL, full_from);
+				}
 			}
+
+			if (!got_proto) {
+				switch_core_chat_send("GLOBAL", SOFIA_CHAT_PROTO, from_addr, to_addr, "", msg, NULL, full_from);
+			}
+
 			switch_safe_free(to_addr);
 			switch_safe_free(from_addr);
 			if (full_from) {
