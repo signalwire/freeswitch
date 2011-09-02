@@ -325,7 +325,7 @@ static void bind_to_session(switch_core_session_t *session,
 	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, 0, digit_action_callback, act);
 }
 
-#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>,<value>[,<direction>][,<event direction>]"
+#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>,<value>[,<dtmf target leg>][,<event target leg>]"
 SWITCH_STANDARD_APP(bind_digit_action_function)
 {
 
