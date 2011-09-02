@@ -1860,7 +1860,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 											   switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND ||
 											   switch_channel_test_flag(channel, CF_DIALPLAN) ? "true" : "false");
 				
-				if (switch_channel_down(channel)) {
+				if (switch_channel_down_nosig(channel)) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "hangup");
 				} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
@@ -2150,7 +2150,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", switch_core_session_get_uuid(channel->session));
 	}
 
-	if (switch_channel_down(channel)) {
+	if (switch_channel_down_nosig(channel)) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "hangup");
 	} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
