@@ -102,6 +102,7 @@ struct action_binding {
 	char *input;
 	char *string;
 	char *value;
+	switch_digit_action_target_t target;
 	switch_core_session_t *session;
 };
 
@@ -160,12 +161,18 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	char *string = act->string;
 	switch_channel_t *channel;
 	switch_core_session_t *use_session = act->session;
-
-	if (switch_ivr_dmachine_get_target(match->dmachine) == DIGIT_TARGET_PEER) {
+	int x = 0;
+	if (switch_ivr_dmachine_get_target(match->dmachine) == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_BOTH) {
 		if (switch_core_session_get_partner(act->session, &use_session) != SWITCH_STATUS_SUCCESS) {
 			use_session = act->session;
 		}
 	}
+
+ top:
+	x++;
+
+	string = act->string;
+	exec = 0;
 
 	channel = switch_core_session_get_channel(use_session);
 
@@ -197,28 +204,53 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 
 	if (exec) {
 		char *cmd = switch_core_session_sprintf(use_session, "%s::%s", string, act->value);
-		switch_ivr_broadcast_in_thread(use_session, cmd, SMF_ECHO_ALEG|SMF_HOLD_BLEG);
+		switch_ivr_broadcast_in_thread(use_session, cmd, SMF_ECHO_ALEG | (act->target == DIGIT_TARGET_BOTH ? 0 : SMF_HOLD_BLEG));
 	}
 	
 
 	if (use_session != act->session) {
 		switch_core_session_rwunlock(use_session);
-	}
 
+		if (act->target == DIGIT_TARGET_BOTH) {
+			use_session = act->session;
+			goto top;
+		}
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CLEAR_DIGIT_ACTION_USAGE "<realm>|all"
+static switch_digit_action_target_t str2target(const char *target_str)
+{
+	if (!strcasecmp(target_str, "peer")) {
+		return DIGIT_TARGET_PEER;
+	}
+
+	if (!strcasecmp(target_str, "both")) {
+		return DIGIT_TARGET_BOTH;
+	}
+	
+	return DIGIT_TARGET_SELF;
+}
+
+#define CLEAR_DIGIT_ACTION_USAGE "<realm>|all[,target]"
 SWITCH_STANDARD_APP(clear_digit_action_function)
 {
 	//switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_ivr_dmachine_t *dmachine;
-	char *realm = (char *) data;
+	char *realm = switch_core_session_strdup(session, data);
+	char *target_str;
+	switch_digit_action_target_t target = DIGIT_TARGET_SELF;
 
-	if ((dmachine = switch_core_session_get_dmachine(session))) {
+	if ((target_str = strchr(realm, ' '))) {
+		*target_str++ = '\0';
+		target = str2target(target_str);
+	}
+
+
+	if ((dmachine = switch_core_session_get_dmachine(session, target))) {
 		if (zstr(realm) || !strcasecmp(realm, "all")) {
-			switch_core_session_set_dmachine(session, NULL);
+			switch_core_session_set_dmachine(session, NULL, target);
 			switch_ivr_dmachine_destroy(&dmachine);
 		} else {
 			switch_ivr_dmachine_clear_realm(dmachine, realm);
@@ -226,73 +258,40 @@ SWITCH_STANDARD_APP(clear_digit_action_function)
 	}
 }
 
-#define DIGIT_ACTION_SET_REALM_USAGE "<realm>"
+#define DIGIT_ACTION_SET_REALM_USAGE "<realm>[,<target>]"
 SWITCH_STANDARD_APP(digit_action_set_realm_function)
 {
 	switch_ivr_dmachine_t *dmachine;
-	char *realm = (char *) data;
+	char *realm = switch_core_session_strdup(session, data);
+	char *target_str;
+	switch_digit_action_target_t target = DIGIT_TARGET_SELF;
+
+	if ((target_str = strchr(realm, ' '))) {
+		*target_str++ = '\0';
+		target = str2target(target_str);
+	}
 
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", DIGIT_ACTION_SET_REALM_USAGE);
 		return;
 	}
 	
-	if ((dmachine = switch_core_session_get_dmachine(session))) {
+	if ((dmachine = switch_core_session_get_dmachine(session, target))) {
 		switch_ivr_dmachine_set_realm(dmachine, realm);
 	}
 
 }
 
 
-#define DIGIT_ACTION_SET_TARGET_USAGE "<target>"
-SWITCH_STANDARD_APP(digit_action_set_target_function)
+static void bind_to_session(switch_core_session_t *session, 
+							const char *arg0, const char *arg1, const char *arg2, const char *arg3,
+							switch_digit_action_target_t target, switch_digit_action_target_t bind_target)
 {
-	switch_ivr_dmachine_t *dmachine;
-	char *target_str = (char *) data;
-
-	if (zstr(data)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", DIGIT_ACTION_SET_TARGET_USAGE);
-		return;
-	}
-	
-	if ((dmachine = switch_core_session_get_dmachine(session))) {
-		switch_digit_action_target_t target = DIGIT_TARGET_SELF;
-
-		if (!strcasecmp(target_str, "peer")) {
-			target = DIGIT_TARGET_PEER;
-		}
-
-		switch_ivr_dmachine_set_target(dmachine, target);
-	}
-
-}
-
-#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>,<value>"
-SWITCH_STANDARD_APP(bind_digit_action_function)
-{
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_ivr_dmachine_t *dmachine;
-	char *mydata;
-	int argc = 0;
-	char *argv[5] = { 0 };
 	struct action_binding *act;
+	switch_ivr_dmachine_t *dmachine;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (zstr(data)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
-		return;
-	}
-
-	mydata = switch_core_session_strdup(session, data);
-
-	argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-	
-	if (argc < 4 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2]) || zstr(argv[3])) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
-		return;
-	}
-
-	
-	if (!(dmachine = switch_core_session_get_dmachine(session))) {
+	if (!(dmachine = switch_core_session_get_dmachine(session, target))) {
 		uint32_t digit_timeout = 1500;
 		uint32_t input_timeout = 0;
 		const char *var;
@@ -311,20 +310,69 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 		}
 		
 		switch_ivr_dmachine_create(&dmachine, "DPTOOLS", NULL, digit_timeout, input_timeout, NULL, digit_nomatch_action_callback, session);
-		switch_core_session_set_dmachine(session, dmachine);
+		switch_core_session_set_dmachine(session, dmachine, target);
 	}
 
 	
 	act = switch_core_session_alloc(session, sizeof(*act));
-	act->realm = argv[0];
-	act->input = argv[1];
-	act->string = argv[2];
-	act->value = argv[3];
+	act->realm = switch_core_session_strdup(session, arg0);
+	act->input = switch_core_session_strdup(session, arg1);
+	act->string = switch_core_session_strdup(session, arg2);
+	act->value = switch_core_session_strdup(session, arg3);
+	act->target = bind_target;
 	act->session = session;
-
 	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, 0, digit_action_callback, act);
 }
 
+#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>,<value>[,<direction>][,<event direction>]"
+SWITCH_STANDARD_APP(bind_digit_action_function)
+{
+
+	char *mydata;
+	int argc = 0;
+	char *argv[6] = { 0 };
+	switch_digit_action_target_t target, bind_target;
+	char *target_str = "self", *bind_target_str = "self";
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
+		return;
+	}
+
+	mydata = switch_core_session_strdup(session, data);
+
+	argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+	
+	if (argc < 4 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2]) || zstr(argv[3])) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
+		return;
+	}
+
+	if (argv[4]) {
+		target_str = argv[4];
+	}
+
+	if (argv[5]) {
+		bind_target_str = argv[5];
+	}
+
+	target = str2target(target_str);
+	bind_target = str2target(bind_target_str);
+
+
+	switch(target) {
+	case DIGIT_TARGET_PEER:
+		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_PEER, bind_target);
+		break;
+	case DIGIT_TARGET_BOTH:
+		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_PEER, bind_target);
+		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_SELF, bind_target);
+		break;
+	default:
+		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_SELF, bind_target);
+		break;
+	}
+}
 
 #define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR nogrammar <gram_name> OR grammaron/grammaroff <gram_name> OR grammarsalloff OR pause OR resume OR start_input_timers OR stop OR param <name> <value>"
 SWITCH_STANDARD_APP(detect_speech_function)
@@ -3843,10 +3891,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 
 	SWITCH_ADD_APP(app_interface, "digit_action_set_realm", "change binding realm", "", 
 				   digit_action_set_realm_function, DIGIT_ACTION_SET_REALM_USAGE, SAF_SUPPORT_NOMEDIA);
-
-	SWITCH_ADD_APP(app_interface, "digit_action_set_target", "change binding target", "", 
-				   digit_action_set_target_function, DIGIT_ACTION_SET_TARGET_USAGE, SAF_SUPPORT_NOMEDIA);
-	
 
 	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number",
 				   SAF_SUPPORT_NOMEDIA);

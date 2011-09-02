@@ -72,6 +72,7 @@ struct switch_ivr_dmachine {
 	dm_binding_head_t *realm;
 	switch_ivr_dmachine_binding_t *last_matching_binding;
 	void *user_data;
+	switch_mutex_t *mutex;
 };
 
 
@@ -124,6 +125,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t
 	dmachine->input_timeout_ms = input_timeout_ms;
 	dmachine->match.dmachine = dmachine;
 	dmachine->name = switch_core_strdup(dmachine->pool, name);
+	switch_mutex_init(&dmachine->mutex, SWITCH_MUTEX_NESTED, dmachine->pool);
 	
 	switch_core_hash_init(&dmachine->binding_hash, dmachine->pool);
 	
@@ -374,7 +376,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	dm_match_t is_match = switch_ivr_dmachine_check_match(dmachine, is_timeout);
 	switch_status_t r, s;
 	int clear = 0;
-	
+
+	switch_mutex_lock(dmachine->mutex);
+
 	if (zstr(dmachine->digits) && !is_timeout) {
 		r = SWITCH_STATUS_SUCCESS;
 	} else if (dmachine->cur_digit_len > dmachine->max_digit_len) {
@@ -465,6 +469,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		switch_ivr_dmachine_clear(dmachine);
 	}
 
+	switch_mutex_unlock(dmachine->mutex);
+
 	return r;
 }
 
@@ -474,10 +480,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_feed(switch_ivr_dmachine_t *
 		return SWITCH_STATUS_FALSE;
 	}
 	
+	switch_mutex_lock(dmachine->mutex);
 	strncat(dmachine->digits, digits, dmachine->max_digit_len);
+	switch_mutex_unlock(dmachine->mutex);
 	dmachine->cur_digit_len = strlen(dmachine->digits);
 	dmachine->last_digit_time = switch_time_now();
-
+	
 	return switch_ivr_dmachine_ping(dmachine, match);
 }
 

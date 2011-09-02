@@ -107,6 +107,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
 	switch_codec_implementation_t codec_impl;
 	unsigned int flag = 0;
+	int i;
 
 	switch_assert(session != NULL);
 
@@ -146,8 +147,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
   top:
 	
-	if (session->dmachine && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
-		switch_ivr_dmachine_ping(session->dmachine, NULL);
+	for(i = 0; i < 2; i++) {
+		if (session->dmachine[i] && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+			switch_ivr_dmachine_ping(session->dmachine[i], NULL);
+		}
 	}
 	
 	if (switch_channel_down(session->channel) || !switch_core_codec_ready(session->read_codec)) {
@@ -1273,7 +1276,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	switch_status_t status;
 	switch_dtmf_t new_dtmf;
 	int fed = 0;
-
+	
 	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1295,10 +1298,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	}
 	
 	if (!switch_test_flag(dtmf, DTMF_FLAG_SKIP_PROCESS)) {
-		if (session->dmachine && switch_ivr_dmachine_get_target(session->dmachine) == DIGIT_TARGET_SELF && 
-			!switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+		if (session->dmachine[0] && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
 			char str[2] = { dtmf->digit, '\0' };
-			switch_ivr_dmachine_feed(session->dmachine, str, NULL);
+			switch_ivr_dmachine_feed(session->dmachine[0], str, NULL);
 			fed = 1;
 		}
 
@@ -1346,10 +1348,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	}
 
 	if (!switch_test_flag(dtmf, DTMF_FLAG_SKIP_PROCESS)) {
-		if (session->dmachine && switch_ivr_dmachine_get_target(session->dmachine) == DIGIT_TARGET_PEER && 
-			!switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+		if (session->dmachine[1] && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
 			char str[2] = { new_dtmf.digit, '\0' };
-			switch_ivr_dmachine_feed(session->dmachine, str, NULL);
+			switch_ivr_dmachine_feed(session->dmachine[1], str, NULL);
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}

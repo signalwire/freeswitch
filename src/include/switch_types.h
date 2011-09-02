@@ -223,7 +223,8 @@ typedef enum {
 
 typedef enum {
 	DIGIT_TARGET_SELF,
-	DIGIT_TARGET_PEER
+	DIGIT_TARGET_PEER,
+	DIGIT_TARGET_BOTH
 } switch_digit_action_target_t;
 
 

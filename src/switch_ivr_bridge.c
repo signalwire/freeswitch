@@ -897,7 +897,7 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 	const char *key;
 	switch_core_session_message_t msg = { 0 };
 	switch_event_t *event = NULL;
-	switch_ivr_dmachine_t *dmachine;
+	switch_ivr_dmachine_t *dmachine[2] = { 0 };
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -927,18 +927,24 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 		}
 	}
 
-	if ((dmachine = switch_core_session_get_dmachine(session))) {
+	if ((dmachine[0] = switch_core_session_get_dmachine(session, DIGIT_TARGET_SELF)) || 
+		(dmachine[1] = switch_core_session_get_dmachine(session, DIGIT_TARGET_PEER))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
 						  "%s not hibernating due to active digit parser, semi-hibernation engaged.\n", switch_channel_get_name(channel));
 
 		while(switch_channel_ready(channel) && switch_channel_get_state(channel) == CS_HIBERNATE) {
 			if (!switch_channel_test_flag(channel, CF_BROADCAST)) {
-				switch_ivr_dmachine_ping(dmachine, NULL);
+				if (dmachine[0]) {
+					switch_ivr_dmachine_ping(dmachine[0], NULL);
+				}
+				if (dmachine[1]) {
+					switch_ivr_dmachine_ping(dmachine[1], NULL);
+				}
 			}
 			switch_yield(20000);
 		}
 	}
-
+	
 
 	return SWITCH_STATUS_SUCCESS;
 }

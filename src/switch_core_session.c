@@ -38,14 +38,25 @@
 
 struct switch_session_manager session_manager;
 
-SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine)
+SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target)
 {
-	session->dmachine = dmachine;
+	int i = (int) target;
+
+	if (i == 0 || i == 1) {
+		switch_ivr_dmachine_set_target(dmachine, target);
+		session->dmachine[i] = dmachine;
+	}
 }
 
-SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_core_session_t *session)
+SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_core_session_t *session, switch_digit_action_target_t target)
 {
-	return session->dmachine;
+	int i = (int) target;
+
+	if (i == 0 || i == 1) {	
+		return session->dmachine[i];
+	}
+
+	return NULL;
 }
 
 SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec)
@@ -1179,7 +1190,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_memory_pool_t *pool;
 	switch_event_t *event;
 	switch_endpoint_interface_t *endpoint_interface = (*session)->endpoint_interface;
-
+	int i;
 
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(*session), SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n",
 					  switch_channel_get_name((*session)->channel), switch_channel_state_name(switch_channel_get_state((*session)->channel)));
@@ -1216,8 +1227,10 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_ivr_clear_speech_cache(*session);
 	switch_channel_uninit((*session)->channel);
 
-	if ((*session)->dmachine) {
-		switch_ivr_dmachine_destroy(&(*session)->dmachine);
+	for (i = 0; i < 2; i++) {
+		if ((*session)->dmachine[i]) {
+			switch_ivr_dmachine_destroy(&(*session)->dmachine[i]);
+		}
 	}
 
 	pool = (*session)->pool;
