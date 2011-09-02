@@ -242,7 +242,7 @@ SWITCH_STANDARD_APP(clear_digit_action_function)
 	char *target_str;
 	switch_digit_action_target_t target = DIGIT_TARGET_SELF;
 
-	if ((target_str = strchr(realm, ' '))) {
+	if ((target_str = strchr(realm, ','))) {
 		*target_str++ = '\0';
 		target = str2target(target_str);
 	}
@@ -266,7 +266,7 @@ SWITCH_STANDARD_APP(digit_action_set_realm_function)
 	char *target_str;
 	switch_digit_action_target_t target = DIGIT_TARGET_SELF;
 
-	if ((target_str = strchr(realm, ' '))) {
+	if ((target_str = strchr(realm, ','))) {
 		*target_str++ = '\0';
 		target = str2target(target_str);
 	}
@@ -275,6 +275,7 @@ SWITCH_STANDARD_APP(digit_action_set_realm_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", DIGIT_ACTION_SET_REALM_USAGE);
 		return;
 	}
+
 	
 	if ((dmachine = switch_core_session_get_dmachine(session, target))) {
 		switch_ivr_dmachine_set_realm(dmachine, realm);
