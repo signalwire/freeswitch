@@ -1376,14 +1376,23 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_session_soft_unlock(SWIGTYPE_p_switch_core_session.getCPtr(session));
   }
 
-  public static void switch_core_session_set_dmachine(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_switch_ivr_dmachine dmachine) {
-    freeswitchPINVOKE.switch_core_session_set_dmachine(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine));
+  public static void switch_core_session_set_dmachine(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_switch_ivr_dmachine dmachine, switch_digit_action_target_t target) {
+    freeswitchPINVOKE.switch_core_session_set_dmachine(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine), (int)target);
   }
 
-  public static SWIGTYPE_p_switch_ivr_dmachine switch_core_session_get_dmachine(SWIGTYPE_p_switch_core_session session) {
-    IntPtr cPtr = freeswitchPINVOKE.switch_core_session_get_dmachine(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  public static SWIGTYPE_p_switch_ivr_dmachine switch_core_session_get_dmachine(SWIGTYPE_p_switch_core_session session, switch_digit_action_target_t target) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_core_session_get_dmachine(SWIGTYPE_p_switch_core_session.getCPtr(session), (int)target);
     SWIGTYPE_p_switch_ivr_dmachine ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_ivr_dmachine(cPtr, false);
     return ret;
+  }
+
+  public static switch_digit_action_target_t switch_ivr_dmachine_get_target(SWIGTYPE_p_switch_ivr_dmachine dmachine) {
+    switch_digit_action_target_t ret = (switch_digit_action_target_t)freeswitchPINVOKE.switch_ivr_dmachine_get_target(SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine));
+    return ret;
+  }
+
+  public static void switch_ivr_dmachine_set_target(SWIGTYPE_p_switch_ivr_dmachine dmachine, switch_digit_action_target_t target) {
+    freeswitchPINVOKE.switch_ivr_dmachine_set_target(SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine), (int)target);
   }
 
   public static switch_status_t switch_core_session_set_codec_slin(SWIGTYPE_p_switch_core_session session, switch_slin_data data) {
@@ -4445,8 +4454,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_enterprise_originate(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_core_session bleg, SWIGTYPE_p_switch_call_cause_t cause, string bridgeto, uint timelimit_sec, switch_state_handler_table table, string cid_name_override, string cid_num_override, switch_caller_profile caller_profile_override, switch_event ovars, uint flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_enterprise_originate(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_core_session.getCPtr(bleg), SWIGTYPE_p_switch_call_cause_t.getCPtr(cause), bridgeto, timelimit_sec, switch_state_handler_table.getCPtr(table), cid_name_override, cid_num_override, switch_caller_profile.getCPtr(caller_profile_override), switch_event.getCPtr(ovars), flags);
+  public static switch_status_t switch_ivr_enterprise_originate(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_core_session bleg, SWIGTYPE_p_switch_call_cause_t cause, string bridgeto, uint timelimit_sec, switch_state_handler_table table, string cid_name_override, string cid_num_override, switch_caller_profile caller_profile_override, switch_event ovars, uint flags, SWIGTYPE_p_switch_call_cause_t cancel_cause) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_enterprise_originate(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_core_session.getCPtr(bleg), SWIGTYPE_p_switch_call_cause_t.getCPtr(cause), bridgeto, timelimit_sec, switch_state_handler_table.getCPtr(table), cid_name_override, cid_num_override, switch_caller_profile.getCPtr(caller_profile_override), switch_event.getCPtr(ovars), flags, SWIGTYPE_p_switch_call_cause_t.getCPtr(cancel_cause));
     return ret;
   }
 
@@ -7874,10 +7883,16 @@ class freeswitchPINVOKE {
   public static extern void switch_core_session_soft_unlock(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_dmachine")]
-  public static extern void switch_core_session_set_dmachine(HandleRef jarg1, HandleRef jarg2);
+  public static extern void switch_core_session_set_dmachine(HandleRef jarg1, HandleRef jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_dmachine")]
-  public static extern IntPtr switch_core_session_get_dmachine(HandleRef jarg1);
+  public static extern IntPtr switch_core_session_get_dmachine(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_get_target")]
+  public static extern int switch_ivr_dmachine_get_target(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_set_target")]
+  public static extern void switch_ivr_dmachine_set_target(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_codec_slin")]
   public static extern int switch_core_session_set_codec_slin(HandleRef jarg1, HandleRef jarg2);
@@ -12731,7 +12746,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_originate(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, string jarg4, uint jarg5, HandleRef jarg6, string jarg7, string jarg8, HandleRef jarg9, HandleRef jarg10, uint jarg11, HandleRef jarg12);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_enterprise_originate")]
-  public static extern int switch_ivr_enterprise_originate(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, string jarg4, uint jarg5, HandleRef jarg6, string jarg7, string jarg8, HandleRef jarg9, HandleRef jarg10, uint jarg11);
+  public static extern int switch_ivr_enterprise_originate(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, string jarg4, uint jarg5, HandleRef jarg6, string jarg7, string jarg8, HandleRef jarg9, HandleRef jarg10, uint jarg11, HandleRef jarg12);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_bridge_display")]
   public static extern void switch_ivr_bridge_display(HandleRef jarg1, HandleRef jarg2);
@@ -24450,6 +24465,23 @@ public class switch_dialplan_interface : IDisposable {
   public switch_dialplan_interface() : this(freeswitchPINVOKE.new_switch_dialplan_interface(), true) {
   }
 
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+public enum switch_digit_action_target_t {
+  DIGIT_TARGET_SELF,
+  DIGIT_TARGET_PEER,
+  DIGIT_TARGET_BOTH
 }
 
 }
