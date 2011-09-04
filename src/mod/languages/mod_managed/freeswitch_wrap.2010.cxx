@@ -7361,23 +7361,27 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_soft_unlock(void * jarg1)
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_set_dmachine(void * jarg1, void * jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_set_dmachine(void * jarg1, void * jarg2, int jarg3) {
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   switch_ivr_dmachine_t *arg2 = (switch_ivr_dmachine_t *) 0 ;
+  switch_digit_action_target_t arg3 ;
   
   arg1 = (switch_core_session_t *)jarg1; 
   arg2 = (switch_ivr_dmachine_t *)jarg2; 
-  switch_core_session_set_dmachine(arg1,arg2);
+  arg3 = (switch_digit_action_target_t)jarg3; 
+  switch_core_session_set_dmachine(arg1,arg2,arg3);
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_get_dmachine(void * jarg1) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_get_dmachine(void * jarg1, int jarg2) {
   void * jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_digit_action_target_t arg2 ;
   switch_ivr_dmachine_t *result = 0 ;
   
   arg1 = (switch_core_session_t *)jarg1; 
-  result = (switch_ivr_dmachine_t *)switch_core_session_get_dmachine(arg1);
+  arg2 = (switch_digit_action_target_t)jarg2; 
+  result = (switch_ivr_dmachine_t *)switch_core_session_get_dmachine(arg1,arg2);
   jresult = (void *)result; 
   return jresult;
 }

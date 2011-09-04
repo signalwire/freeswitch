@@ -1386,12 +1386,12 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_session_soft_unlock(SWIGTYPE_p_switch_core_session.getCPtr(session));
   }
 
-  public static void switch_core_session_set_dmachine(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_switch_ivr_dmachine dmachine) {
-    freeswitchPINVOKE.switch_core_session_set_dmachine(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine));
+  public static void switch_core_session_set_dmachine(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_switch_ivr_dmachine dmachine, switch_digit_action_target_t target) {
+    freeswitchPINVOKE.switch_core_session_set_dmachine(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine), (int)target);
   }
 
-  public static SWIGTYPE_p_switch_ivr_dmachine switch_core_session_get_dmachine(SWIGTYPE_p_switch_core_session session) {
-    IntPtr cPtr = freeswitchPINVOKE.switch_core_session_get_dmachine(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  public static SWIGTYPE_p_switch_ivr_dmachine switch_core_session_get_dmachine(SWIGTYPE_p_switch_core_session session, switch_digit_action_target_t target) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_core_session_get_dmachine(SWIGTYPE_p_switch_core_session.getCPtr(session), (int)target);
     SWIGTYPE_p_switch_ivr_dmachine ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_ivr_dmachine(cPtr, false);
     return ret;
   }
@@ -7897,10 +7897,10 @@ class freeswitchPINVOKE {
   public static extern void switch_core_session_soft_unlock(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_dmachine")]
-  public static extern void switch_core_session_set_dmachine(HandleRef jarg1, HandleRef jarg2);
+  public static extern void switch_core_session_set_dmachine(HandleRef jarg1, HandleRef jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_dmachine")]
-  public static extern IntPtr switch_core_session_get_dmachine(HandleRef jarg1);
+  public static extern IntPtr switch_core_session_get_dmachine(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_get_target")]
   public static extern int switch_ivr_dmachine_get_target(HandleRef jarg1);
@@ -24562,7 +24562,8 @@ namespace FreeSWITCH.Native {
 
 public enum switch_digit_action_target_t {
   DIGIT_TARGET_SELF,
-  DIGIT_TARGET_PEER
+  DIGIT_TARGET_PEER,
+  DIGIT_TARGET_BOTH
 }
 
 }
