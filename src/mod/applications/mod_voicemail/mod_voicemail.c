@@ -2773,6 +2773,10 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 
 		if (send_notify) {
+			if (zstr(vm_notify_email)) {
+				vm_notify_email = vm_email;
+			}
+	
 			if (zstr(profile->notify_email_headers)) {
 				headers = switch_mprintf("From: FreeSWITCH mod_voicemail <%s@%s>\n"
 										 "Subject: Voicemail from %s %s\nX-Priority: %d", myid, domain_name, caller_id_name, caller_id_number, priority);
