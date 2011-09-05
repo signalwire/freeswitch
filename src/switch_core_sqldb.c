@@ -1640,6 +1640,7 @@ static char create_registrations_sql[] =
 	"   reg_user      VARCHAR(256),\n"
 	"   realm     VARCHAR(256),\n"
 	"   token     VARCHAR(256),\n"
+/* If url is modified please check for code in switch_core_sqldb_start for dependencies for MSSQL" */
 	"   url      TEXT,\n"
 	"   expires  INTEGER,\n"
 	"   network_ip VARCHAR(256),\n"
@@ -1942,17 +1943,18 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			switch_cache_db_test_reactive(dbh, "select call_uuid, read_bit_rate, sent_callee_name from channels", "DROP TABLE channels", create_channels_sql);
 			switch_cache_db_test_reactive(dbh, "select * from detailed_calls where sent_callee_name=''", "DROP VIEW detailed_calls", detailed_calls_sql);
 			switch_cache_db_test_reactive(dbh, "select * from basic_calls where sent_callee_name=''", "DROP VIEW basic_calls", basic_calls_sql);
+			switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
 			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
-				switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
+				switch_cache_db_test_reactive(dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
+											  "DROP TABLE registrations", create_registrations_sql);
 			} else {
-				char *tmp = switch_string_replace(create_calls_sql, "function", "call_function");
-				switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", tmp);
+				char *tmp = switch_string_replace(create_registrations_sql, "url      TEXT", "url      VARCHAR(max)");
+				switch_cache_db_test_reactive(dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
+											  "DROP TABLE registrations", tmp);
 				free(tmp);
 			}
 			switch_cache_db_test_reactive(dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
-			switch_cache_db_test_reactive(dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
-										  "DROP TABLE registrations", create_registrations_sql);
 
 			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
 				switch_cache_db_execute_sql(dbh, "begin;delete from channels where hostname='';delete from channels where hostname='';commit;", &err);
