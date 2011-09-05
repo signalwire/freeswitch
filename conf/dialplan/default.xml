@@ -70,8 +70,8 @@
 	<!-- independence day -->
 	<action application="set" data="open=false"/>
       </condition>
-      <condition wday="2" mweek="1" mon="9">
-	<!-- labor day is the 1st monday in september -->
+      <condition wday="2" mday="1-7" mon="9">
+	<!-- labor day is the 1st monday in september (the only monday between the 1st and the 7th) -->
 	<action application="set" data="open=false"/>
       </condition>
       <condition wday="2" mweek="2" mon="10">
