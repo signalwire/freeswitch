@@ -1180,7 +1180,6 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 								}
 							}
 							if (var && val) {
-								switch_event_del_header(*event, var);
 								switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, var, val);
 								if (!strcasecmp(var, "content-length")) {
 									clen = atoi(val);
