@@ -92,6 +92,11 @@ public class ESLconnection : IDisposable {
     return ret;
   }
 
+  public int sendMSG(ESLevent send_me, string uuid) {
+    int ret = ESLPINVOKE.ESLconnection_sendMSG(swigCPtr, ESLevent.getCPtr(send_me), uuid);
+    return ret;
+  }
+
   public ESLevent RecvEvent() {
     IntPtr cPtr = ESLPINVOKE.ESLconnection_RecvEvent(swigCPtr);
     ESLevent ret = (cPtr == IntPtr.Zero) ? null : new ESLevent(cPtr, true);

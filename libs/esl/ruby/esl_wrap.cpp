@@ -1902,7 +1902,7 @@ SWIG_ruby_failed(void)
 } 
 
 
-/*@SWIG:/usr/share/swig/1.3.35/ruby/rubyprimtypes.swg,23,%ruby_aux_method@*/
+/*@SWIG:/usr/local/share/swig/1.3.35/ruby/rubyprimtypes.swg,23,%ruby_aux_method@*/
 SWIGINTERN VALUE SWIG_AUX_NUM2LONG(VALUE *args)
 {
   VALUE obj = args[0];
@@ -3246,6 +3246,51 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_ESLconnection_sendMSG(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *arg2 = (ESLevent *) 0 ;
+  char *arg3 = (char *) NULL ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 1) || (argc > 2)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","sendMSG", 1, self )); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_ConvertPtr(argv[0], &argp2,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "ESLevent *","sendMSG", 2, argv[0] )); 
+  }
+  arg2 = reinterpret_cast< ESLevent * >(argp2);
+  if (argc > 1) {
+    res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","sendMSG", 3, argv[1] ));
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+  }
+  result = (int)(arg1)->sendMSG(arg2,(char const *)arg3);
+  vresult = SWIG_From_int(static_cast< int >(result));
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return vresult;
+fail:
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_ESLconnection_recvEvent(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   ESLevent *result = 0 ;
@@ -3958,6 +4003,7 @@ SWIGEXPORT void Init_ESL(void) {
   rb_define_method(cESLconnection.klass, "api", VALUEFUNC(_wrap_ESLconnection_api), -1);
   rb_define_method(cESLconnection.klass, "bgapi", VALUEFUNC(_wrap_ESLconnection_bgapi), -1);
   rb_define_method(cESLconnection.klass, "sendEvent", VALUEFUNC(_wrap_ESLconnection_sendEvent), -1);
+  rb_define_method(cESLconnection.klass, "sendMSG", VALUEFUNC(_wrap_ESLconnection_sendMSG), -1);
   rb_define_method(cESLconnection.klass, "recvEvent", VALUEFUNC(_wrap_ESLconnection_recvEvent), -1);
   rb_define_method(cESLconnection.klass, "recvEventTimed", VALUEFUNC(_wrap_ESLconnection_recvEventTimed), -1);
   rb_define_method(cESLconnection.klass, "filter", VALUEFUNC(_wrap_ESLconnection_filter), -1);

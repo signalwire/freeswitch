@@ -87,6 +87,7 @@ class ESLconnection:
     def api(*args): return apply(_ESL.ESLconnection_api, args)
     def bgapi(*args): return apply(_ESL.ESLconnection_bgapi, args)
     def sendEvent(*args): return apply(_ESL.ESLconnection_sendEvent, args)
+    def sendMSG(*args): return apply(_ESL.ESLconnection_sendMSG, args)
     def recvEvent(*args): return apply(_ESL.ESLconnection_recvEvent, args)
     def recvEventTimed(*args): return apply(_ESL.ESLconnection_recvEventTimed, args)
     def filter(*args): return apply(_ESL.ESLconnection_filter, args)

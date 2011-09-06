@@ -43,6 +43,7 @@ class eslJNI {
   public final static native long ESLconnection_api(long jarg1, ESLconnection jarg1_, String jarg2, String jarg3);
   public final static native long ESLconnection_bgapi(long jarg1, ESLconnection jarg1_, String jarg2, String jarg3, String jarg4);
   public final static native long ESLconnection_sendEvent(long jarg1, ESLconnection jarg1_, long jarg2, ESLevent jarg2_);
+  public final static native int ESLconnection_sendMSG(long jarg1, ESLconnection jarg1_, long jarg2, ESLevent jarg2_, String jarg3);
   public final static native long ESLconnection_recvEvent(long jarg1, ESLconnection jarg1_);
   public final static native long ESLconnection_recvEventTimed(long jarg1, ESLconnection jarg1_, int jarg2);
   public final static native long ESLconnection_filter(long jarg1, ESLconnection jarg1_, String jarg2, String jarg3);

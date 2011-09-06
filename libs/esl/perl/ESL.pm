@@ -138,6 +138,7 @@ sub DESTROY {
 *api = *ESLc::ESLconnection_api;
 *bgapi = *ESLc::ESLconnection_bgapi;
 *sendEvent = *ESLc::ESLconnection_sendEvent;
+*sendMSG = *ESLc::ESLconnection_sendMSG;
 *recvEvent = *ESLc::ESLconnection_recvEvent;
 *recvEventTimed = *ESLc::ESLconnection_recvEventTimed;
 *filter = *ESLc::ESLconnection_filter;

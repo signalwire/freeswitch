@@ -2632,6 +2632,43 @@ fail:
 }
 
 
+static int _wrap_ESLconnection_sendMSG(lua_State* L) {
+  int SWIG_arg = -1;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *arg2 = (ESLevent *) 0 ;
+  char *arg3 = (char *) NULL ;
+  int result;
+  
+  SWIG_check_num_args("sendMSG",2,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sendMSG",1,"ESLconnection *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("sendMSG",2,"ESLevent *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("sendMSG",3,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_sendMSG",1,SWIGTYPE_p_ESLconnection);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLconnection_sendMSG",2,SWIGTYPE_p_ESLevent);
+  }
+  
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
+  result = (int)(arg1)->sendMSG(arg2,(char const *)arg3);
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_ESLconnection_recvEvent(lua_State* L) {
   int SWIG_arg = -1;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
@@ -2917,6 +2954,7 @@ static swig_lua_method swig_ESLconnection_methods[] = {
     {"api", _wrap_ESLconnection_api}, 
     {"bgapi", _wrap_ESLconnection_bgapi}, 
     {"sendEvent", _wrap_ESLconnection_sendEvent}, 
+    {"sendMSG", _wrap_ESLconnection_sendMSG}, 
     {"recvEvent", _wrap_ESLconnection_recvEvent}, 
     {"recvEventTimed", _wrap_ESLconnection_recvEventTimed}, 
     {"filter", _wrap_ESLconnection_filter}, 

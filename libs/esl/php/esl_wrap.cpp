@@ -1091,7 +1091,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_serialized_string_set) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
@@ -1159,7 +1159,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_mine_set) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
   convert_to_long_ex(args[1]);
   arg2 = (int) Z_LVAL_PP(args[1]);
   /*@SWIG@*/;
@@ -1213,13 +1213,13 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLevent__SWIG_0) {
   WRONG_PARAM_COUNT;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[0]);
   arg1 = (char *) Z_STRVAL_PP(args[0]);
   /*@SWIG@*/;
   
   if(arg_count > 1) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
     convert_to_string_ex(args[1]);
     arg2 = (char *) Z_STRVAL_PP(args[1]);
     /*@SWIG@*/;
@@ -1254,7 +1254,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLevent__SWIG_1) {
     }
   }
   if(arg_count > 1) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
     convert_to_long_ex(args[1]);
     arg2 = (int) Z_LVAL_PP(args[1]);
     /*@SWIG@*/;
@@ -1384,7 +1384,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_serialize) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   if(arg_count > 1) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
     convert_to_string_ex(args[1]);
     arg2 = (char *) Z_STRVAL_PP(args[1]);
     /*@SWIG@*/;
@@ -1463,13 +1463,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_getHeader) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   if(arg_count > 2) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
     convert_to_long_ex(args[2]);
     arg3 = (int) Z_LVAL_PP(args[2]);
     /*@SWIG@*/;
@@ -1567,7 +1567,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_addBody) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
@@ -1601,13 +1601,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_addHeader) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[2]);
   arg3 = (char *) Z_STRVAL_PP(args[2]);
   /*@SWIG@*/;
@@ -1641,13 +1641,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_pushHeader) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[2]);
   arg3 = (char *) Z_STRVAL_PP(args[2]);
   /*@SWIG@*/;
@@ -1681,13 +1681,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_unshiftHeader) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[2]);
   arg3 = (char *) Z_STRVAL_PP(args[2]);
   /*@SWIG@*/;
@@ -1720,7 +1720,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_delHeader) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
@@ -1809,25 +1809,25 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection__SWIG_0) {
   }
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[0]);
   arg1 = (char *) Z_STRVAL_PP(args[0]);
   /*@SWIG@*/;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[2]);
   arg3 = (char *) Z_STRVAL_PP(args[2]);
   /*@SWIG@*/;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[3]);
   arg4 = (char *) Z_STRVAL_PP(args[3]);
   /*@SWIG@*/;
@@ -1855,19 +1855,19 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection__SWIG_1) {
   }
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[0]);
   arg1 = (char *) Z_STRVAL_PP(args[0]);
   /*@SWIG@*/;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[2]);
   arg3 = (char *) Z_STRVAL_PP(args[2]);
   /*@SWIG@*/;
@@ -1893,7 +1893,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLconnection__SWIG_2) {
   }
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
   convert_to_long_ex(args[0]);
   arg1 = (int) Z_LVAL_PP(args[0]);
   /*@SWIG@*/;
@@ -2070,7 +2070,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_send) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
@@ -2103,7 +2103,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_sendRecv) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
@@ -2139,13 +2139,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_api) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   if(arg_count > 2) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
     convert_to_string_ex(args[2]);
     arg3 = (char *) Z_STRVAL_PP(args[2]);
     /*@SWIG@*/;
@@ -2183,20 +2183,20 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_bgapi) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   if(arg_count > 2) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
     convert_to_string_ex(args[2]);
     arg3 = (char *) Z_STRVAL_PP(args[2]);
     /*@SWIG@*/;
     
   }
   if(arg_count > 3) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
     convert_to_string_ex(args[3]);
     arg4 = (char *) Z_STRVAL_PP(args[3]);
     /*@SWIG@*/;
@@ -2237,6 +2237,48 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_sendEvent) {
   result = (ESLevent *)(arg1)->sendEvent(arg2);
   {
     SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_ESLevent, 0);
+  }
+  return;
+fail:
+  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_ESLconnection_sendMSG) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *arg2 = (ESLevent *) 0 ;
+  char *arg3 = (char *) NULL ;
+  int result;
+  zval **args[3];
+  int arg_count;
+  
+  SWIG_ResetError();
+  arg_count = ZEND_NUM_ARGS();
+  if(arg_count<2 || arg_count>3 ||
+    zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
+  WRONG_PARAM_COUNT;
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLconnection, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLconnection_sendMSG. Expected SWIGTYPE_p_ESLconnection");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if(SWIG_ConvertPtr(*args[1], (void **) &arg2, SWIGTYPE_p_ESLevent, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of ESLconnection_sendMSG. Expected SWIGTYPE_p_ESLevent");
+    }
+  }
+  if(arg_count > 2) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[2]);
+    arg3 = (char *) Z_STRVAL_PP(args[2]);
+    /*@SWIG@*/;
+    
+  }
+  result = (int)(arg1)->sendMSG(arg2,(char const *)arg3);
+  {
+    ZVAL_LONG(return_value,result);
   }
   return;
 fail:
@@ -2288,7 +2330,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_recvEventTimed) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
   convert_to_long_ex(args[1]);
   arg2 = (int) Z_LVAL_PP(args[1]);
   /*@SWIG@*/;
@@ -2322,13 +2364,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_filter) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[2]);
   arg3 = (char *) Z_STRVAL_PP(args[2]);
   /*@SWIG@*/;
@@ -2362,13 +2404,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_events) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[2]);
   arg3 = (char *) Z_STRVAL_PP(args[2]);
   /*@SWIG@*/;
@@ -2405,20 +2447,20 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   if(arg_count > 2) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
     convert_to_string_ex(args[2]);
     arg3 = (char *) Z_STRVAL_PP(args[2]);
     /*@SWIG@*/;
     
   }
   if(arg_count > 3) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
     convert_to_string_ex(args[3]);
     arg4 = (char *) Z_STRVAL_PP(args[3]);
     /*@SWIG@*/;
@@ -2456,20 +2498,20 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_executeAsync) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
   if(arg_count > 2) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
     convert_to_string_ex(args[2]);
     arg3 = (char *) Z_STRVAL_PP(args[2]);
     /*@SWIG@*/;
     
   }
   if(arg_count > 3) {
-    /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
     convert_to_string_ex(args[3]);
     arg4 = (char *) Z_STRVAL_PP(args[3]);
     /*@SWIG@*/;
@@ -2503,7 +2545,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_setAsyncExecute) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
@@ -2536,7 +2578,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_setEventLock) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
   convert_to_string_ex(args[1]);
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
@@ -2587,7 +2629,7 @@ ZEND_NAMED_FUNCTION(_wrap_eslSetLogLevel) {
   }
   
   
-  /*@SWIG:/usr/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
   convert_to_long_ex(args[0]);
   arg1 = (int) Z_LVAL_PP(args[0]);
   /*@SWIG@*/;
@@ -2651,6 +2693,7 @@ static zend_function_entry ESL_functions[] = {
  SWIG_ZEND_NAMED_FE(eslconnection_api,_wrap_ESLconnection_api,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_bgapi,_wrap_ESLconnection_bgapi,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_sendevent,_wrap_ESLconnection_sendEvent,NULL)
+ SWIG_ZEND_NAMED_FE(eslconnection_sendmsg,_wrap_ESLconnection_sendMSG,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_recvevent,_wrap_ESLconnection_recvEvent,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_recveventtimed,_wrap_ESLconnection_recvEventTimed,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_filter,_wrap_ESLconnection_filter,NULL)
