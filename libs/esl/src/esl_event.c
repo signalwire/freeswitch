@@ -791,7 +791,7 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 		if (encode) {
 			esl_url_encode(hp->value, encode_buf, encode_len);
 		} else {
-			esl_snprintf(encode_buf, encode_len, "[%s]", hp->value);
+			esl_snprintf(encode_buf, encode_len, "%s", hp->value);
 		}
 
 
