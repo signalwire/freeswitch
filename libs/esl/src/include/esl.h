@@ -398,6 +398,14 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event);
 
 /*!
+    \brief Send an event as a message to be parsed
+    \param handle Handle to which the event should be sent
+    \param event Event to be sent
+	\param uuid a specific uuid if not the default
+*/
+ESL_DECLARE(esl_status_t) esl_sendmsg(esl_handle_t *handle, esl_event_t *event, const char *uuid);
+
+/*!
     \brief Connect a handle to a host/port with a specific password. This will also authenticate against the server
     \param handle Handle to connect
     \param host Host to be connected

@@ -205,6 +205,15 @@ ESLevent *ESLconnection::sendEvent(ESLevent *send_me)
 	return new ESLevent("server_disconnected");
 }
 
+int ESLconnection::sendMSG(ESLevent *send_me, const char *uuid)
+{
+	if (esl_sendmsg(&handle, send_me->event, uuid) == ESL_SUCCESS) {
+		return 0;
+	}
+
+	return 1;
+}
+
 ESLevent *ESLconnection::recvEvent()
 {
 	if (esl_recv_event(&handle, 1, NULL) == ESL_SUCCESS) {
