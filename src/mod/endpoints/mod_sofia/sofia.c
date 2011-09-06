@@ -959,6 +959,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		break;
 	case nua_r_shutdown:
 		if (status >= 200) {
+			sofia_set_pflag(profile, PFLAG_SHUTDOWN);
 			su_root_break(profile->s_root);
 		}
 		break;
@@ -1955,9 +1956,17 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_thread_rwlock_wrlock(profile->rwlock);
 	sofia_reg_unregister(profile);
 	nua_shutdown(profile->nua);
-	su_root_run(profile->s_root);
 
+	sanity = 10;
+	while (!sofia_test_pflag(profile, PFLAG_SHUTDOWN)) {
+		su_root_step(profile->s_root, 1000);
+		if (!--sanity) {
+			break;
+		}
+	}
+	
 	sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
+	sofia_clear_pflag_locked(profile, PFLAG_SHUTDOWN);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for worker thread\n");
 
 	switch_thread_join(&st, worker_thread);

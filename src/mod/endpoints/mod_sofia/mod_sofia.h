@@ -251,6 +251,7 @@ typedef enum {
 	PFLAG_LIBERAL_DTMF,
  	PFLAG_AUTO_ASSIGN_PORT,
  	PFLAG_AUTO_ASSIGN_TLS_PORT,
+	PFLAG_SHUTDOWN,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
