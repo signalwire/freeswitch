@@ -2403,18 +2403,23 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 
 SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp_flush_t flush)
 {
-	if (switch_rtp_ready(rtp_session) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
-		!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
-		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
-		switch (flush) {
-		case SWITCH_RTP_FLUSH_STICK:
-			switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
-			break;
-		case SWITCH_RTP_FLUSH_UNSTICK:
-			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
-			break;
-		default:
-			break;
+
+	if (switch_rtp_ready(rtp_session)) {
+		rtp_session->last_write_ts = 0;
+	
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
+			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
+			switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+			switch (flush) {
+			case SWITCH_RTP_FLUSH_STICK:
+				switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
+				break;
+			case SWITCH_RTP_FLUSH_UNSTICK:
+				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
+				break;
+			default:
+				break;
+			}
 		}
 	}
 }
@@ -3793,6 +3798,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	}
 
 	this_ts = ntohl(send_msg->header.ts);
+
+	if ((this_ts < rtp_session->last_write_ts) && ((rtp_session->last_write_ts - this_ts) > 16000)) {
+		rtp_session->last_write_ts = 0;
+	}
 
 	if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf || !this_ts || this_ts < rtp_session->last_write_ts) {
 		send = 0;
