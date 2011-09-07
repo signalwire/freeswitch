@@ -853,6 +853,7 @@ struct call_control {
 	switch_file_handle_t *fh;
 	char buf[4];
 	int noexit;
+	int playback_controls_active;
 };
 typedef struct call_control cc_t;
 
@@ -871,7 +872,13 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 					|| dtmf->digit == *cc->profile->prev_msg_key || dtmf->digit == *cc->profile->next_msg_key 
 					|| dtmf->digit == *cc->profile->repeat_msg_key
 					|| dtmf->digit == *cc->profile->terminator_key || dtmf->digit == *cc->profile->skip_info_key
-					|| dtmf->digit == *cc->profile->email_key || dtmf->digit == *cc->profile->forward_key)) {
+					|| dtmf->digit == *cc->profile->forward_key)) {
+				*cc->buf = dtmf->digit;
+				return SWITCH_STATUS_BREAK;
+			}
+
+			if (!cc->playback_controls_active
+				&& (dtmf->digit == *cc->profile->email_key)) {
 				*cc->buf = dtmf->digit;
 				return SWITCH_STATUS_BREAK;
 			}
@@ -906,10 +913,6 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 				int samps = -48000;
 				switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
 				return SWITCH_STATUS_SUCCESS;
-			}
-			if (!cc->noexit && dtmf->digit == *cc->profile->terminator_key) {
-				*cc->buf = dtmf->digit;
-				return SWITCH_STATUS_BREAK;
 			}
 		}
 		break;
@@ -1568,9 +1571,11 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 			*cc.buf = '\0';
 			memset(&fh, 0, sizeof(fh));
 			cc.fh = &fh;
+			cc.playback_controls_active = 1;
 			if (switch_file_exists(cbt->file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 				TRY_CODE(switch_ivr_play_file(session, &fh, cbt->file_path, &args));
 			}
+			cc.playback_controls_active = 0;
 		}
 
 		if (!*cc.buf && (profile->play_date_announcement == VM_DATE_LAST)) {
