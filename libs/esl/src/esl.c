@@ -537,7 +537,6 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 ESL_DECLARE(esl_status_t) esl_sendmsg(esl_handle_t *handle, esl_event_t *event, const char *uuid)
 {
 	char cmd_buf[128] = "sendmsg\n";
-	char send_buf[1292] = "";
 	char *txt;
 	
     if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
