@@ -583,6 +583,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 				
 				this_ptime = imp->microseconds_per_packet / 1000;
 				
+				if (!strcasecmp(imp->iananame, "ilbc")) {
+					this_ptime = 20;
+				}
+				
 				if (cur_ptime != this_ptime) {
 					char *bp = buf;
 					cur_ptime = this_ptime;			
