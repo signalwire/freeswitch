@@ -248,6 +248,14 @@ ftmod_r2_la_LDFLAGS = -shared -module -avoid-version -lopenr2
 ftmod_r2_la_LIBADD  = libfreetdm.la
 endif
 
+if HAVE_MISDN
+mod_LTLIBRARIES += ftmod_misdn.la
+ftmod_misdn_la_SOURCES  = $(SRC)/ftmod/ftmod_misdn/ftmod_misdn.c
+ftmod_misdn_la_CFLAGS   = $(FTDM_CFLAGS) $(AM_CFLAGS) $(MISDN_CFLAGS)
+ftmod_misdn_la_LDFLAGS  = -shared -module -avoid-version
+ftmod_misdn_la_LIBADD   = libfreetdm.la
+endif
+
 dox doxygen:
 	doxygen $(FT_SRCDIR)/docs/Doxygen.conf
 
