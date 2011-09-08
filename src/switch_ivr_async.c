@@ -566,7 +566,7 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, swi
 		switch_ivr_parse_all_events(session);
 
 		if (args && (args->input_callback || args->buf || args->buflen)) {
-			switch_dtmf_t dtmf;
+			switch_dtmf_t dtmf = {0};
 
 			/*
 			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
@@ -2154,7 +2154,7 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 			if (digit_str[0]) {
 				char *p = digit_str;
 				while (p && *p) {
-					switch_dtmf_t dtmf;
+					switch_dtmf_t dtmf = {0};
 					dtmf.digit = *p;
 					dtmf.duration = switch_core_default_dtmf_duration(0);
 					dtmf.source = SWITCH_DTMF_INBAND_AUDIO;
@@ -3188,7 +3188,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 					}
 
 					if (is_dtmf(c)) {
-						switch_dtmf_t dtmf;
+						switch_dtmf_t dtmf = {0};
 						dtmf.digit = c;
 						dtmf.duration = switch_core_default_dtmf_duration(0);
 						dtmf.source = SWITCH_DTMF_INBAND_AUDIO;

@@ -943,7 +943,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 						if(channel){
 
 							while (p && *p) {
-								switch_dtmf_t dtmf;
+								switch_dtmf_t dtmf = {0};
 								dtmf.digit = *p;
 								dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
 								switch_channel_queue_dtmf(channel, &dtmf);

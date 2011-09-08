@@ -241,7 +241,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 
 		if (args) {
-			switch_dtmf_t dtmf;
+			switch_dtmf_t dtmf = {0};
 
 			/*
 			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
