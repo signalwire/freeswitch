@@ -654,8 +654,10 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 				}
 				if (write(fd, &out, bytes) != bytes) {
 					rval = -1;
-				} else
+					break;
+				} else {
 					bytes = 0;
+				}
 
 			}
 
