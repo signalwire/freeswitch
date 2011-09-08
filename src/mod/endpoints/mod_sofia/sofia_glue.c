@@ -201,7 +201,12 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 
 	for (i = 0; i < tech_pvt->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
-	
+		int this_ptime = (imp->microseconds_per_packet / 1000);
+
+		if (!strcasecmp(imp->iananame, "ilbc")) {
+			this_ptime = 20;
+		}
+
 		if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 			continue;
 		}
@@ -210,12 +215,12 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 			if (!cur_ptime) {
 #if 0
 				if (ptime) {
-					if (ptime != imp->microseconds_per_packet / 1000) {
+					if (ptime != this_ptime) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 										  "Codec %s payload %d added to sdp wanting ptime %d but it's already %d (%s:%d:%d), disabling ptime.\n", 
 										  imp->iananame,
 										  tech_pvt->ianacodes[i],
-										  imp->microseconds_per_packet / 1000,
+										  this_ptime,
 										  ptime,
 										  tech_pvt->codecs[0]->iananame,
 										  tech_pvt->codecs[0]->ianacode,
@@ -224,15 +229,15 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 						noptime = 1;
 					}
 				} else {
-					ptime = imp->microseconds_per_packet / 1000;
+					ptime = this_ptime;
 				}
 #else
 				if (!ptime) {
-					ptime = imp->microseconds_per_packet / 1000;
+					ptime = this_ptime;
 				}
 #endif
 			} else {
-				if ((imp->microseconds_per_packet / 1000) != cur_ptime) {
+				if (this_ptime != cur_ptime) {
 					continue;
 				}
 			}
@@ -266,18 +271,23 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	for (i = 0; i < tech_pvt->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 		char *fmtp = imp->fmtp;
-			
+		int this_ptime = imp->microseconds_per_packet / 1000;
+
 		if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 			continue;
+		}
+
+		if (!strcasecmp(imp->iananame, "ilbc")) {
+			this_ptime = 20;
 		}
 
 		if (!noptime) {
 			if (!cur_ptime) {
 				if (!ptime) {
-					ptime = imp->microseconds_per_packet / 1000;
+					ptime = this_ptime;
 				}
 			} else {
-				if ((imp->microseconds_per_packet / 1000) != cur_ptime) {
+				if (this_ptime != cur_ptime) {
 					continue;
 				}
 			}
