@@ -1708,10 +1708,16 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					}
 				}
 			} else {
+				const char *username = "unknown";
+				if (auth_params) {
+					username = switch_event_get_header(auth_params, "sip_auth_username");
+				}
+
 				switch_core_del_registration(to_user, reg_host, call_id);
 
 				if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "username", username);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", reg_host);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
