@@ -3135,7 +3135,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					goto recvfrom;
 
 				}
-			} else if (!switch_cmp_addr(rtp_session->from_addr, rtp_session->remote_addr)) {
+			} else if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->from_addr, rtp_session->remote_addr)) {
 				goto recvfrom;
 
 			}

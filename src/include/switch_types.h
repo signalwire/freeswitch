@@ -680,6 +680,16 @@ typedef enum {
 	  This flag will treat every dtmf as if it were 50ms and queue it on recipt of the leading packet rather than at the end.
 	 */
 
+
+	RTP_BUG_ACCEPT_ANY_PACKETS = (1 << 7)
+
+	/*
+	  Oracle's Contact Center Anywhere (CCA) likes to use a single RTP socket to send all its outbound audio.
+	  This messes up our ability to auto adjust to NATTED RTP and causes us to ignore its audio packets.
+	  This flag will allow compatibility with this dying product.
+	*/
+
+
 } switch_rtp_bug_flag_t;
 
 #ifdef _MSC_VER
