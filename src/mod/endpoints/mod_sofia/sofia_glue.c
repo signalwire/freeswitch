@@ -1072,7 +1072,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 	tech_pvt->adv_sdp_audio_port = sdp_port;
 	tech_pvt->adv_sdp_audio_ip = tech_pvt->extrtpip = switch_core_session_strdup(tech_pvt->session, use_ip);
 
-	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
+	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->local_sdp_audio_ip);
 	switch_channel_set_variable_printf(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, "%d", sdp_port);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -5495,8 +5495,8 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 			tech_pvt->adv_sdp_audio_ip = tech_pvt->extrtpip = (char *) ip;
 			tech_pvt->adv_sdp_audio_port = tech_pvt->local_sdp_audio_port = (switch_port_t)atoi(port);
 
-			if ((tmp = switch_channel_get_variable(channel, "local_media_ip"))) {
-				tech_pvt->local_sdp_audio_ip = switch_core_session_strdup(session, tmp);
+			if (!zstr(ip)) {
+				tech_pvt->local_sdp_audio_ip = switch_core_session_strdup(session, ip);
 				tech_pvt->rtpip = tech_pvt->local_sdp_audio_ip;
 			}
 
