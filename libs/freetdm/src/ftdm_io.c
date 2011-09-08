@@ -5465,10 +5465,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	if (sigmsg->channel) {
 		fchan = sigmsg->channel;
 		ftdm_channel_lock(fchan);
-		sigmsg->chan_id = fchan->chan_id;
-		sigmsg->span_id = fchan->span_id;
-		sigmsg->call_id = fchan->caller_data.call_id;
-		sigmsg->call_priv = fchan->caller_data.priv;
 	}
 	
 	/* some core things to do on special events */
@@ -5556,6 +5552,14 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	default:
 		break;	
 
+	}
+
+	if (fchan) {
+		/* set members of the sigmsg that must be present for all events */
+		sigmsg->chan_id = fchan->chan_id;
+		sigmsg->span_id = fchan->span_id;
+		sigmsg->call_id = fchan->caller_data.call_id;
+		sigmsg->call_priv = fchan->caller_data.priv;
 	}
 
 	/* if the signaling module uses a queue for signaling notifications, then enqueue it */
