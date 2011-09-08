@@ -1264,8 +1264,9 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		if (timeout < h->timeout) timeout = h->timeout;
 
 		if (use_ent) {
-			stream.write_function(&stream, "{ignore_early_media=true,outbound_redirect_fatal=true,leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s}%s:_:",
-								  h->timeout, h->uuid, node->name, parsed ? parsed : h->originate_string);
+			stream.write_function(&stream, "{ignore_early_media=true,outbound_redirect_fatal=true,leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s}%s%s",
+								  h->timeout, h->uuid, node->name, 
+								  parsed ? parsed : h->originate_string, (i == cbh->rowcount - 1) ? "" : SWITCH_ENT_ORIGINATE_DELIM);
 		} else {
 			stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s]%s,",
 								  h->timeout, h->uuid, node->name, parsed ? parsed : h->originate_string);
@@ -1277,10 +1278,6 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	}
 
 	originate_string = (char *) stream.data;
-
-	if (originate_string) {
-		end_of(originate_string) = '\0';
-	}
 
 	uuid_list = (char *) stream2.data;
 
