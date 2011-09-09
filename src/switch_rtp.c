@@ -34,8 +34,6 @@
 //#define RTP_DEBUG_WRITE_DELTA
 //#define DEBUG_MISSED_SEQ
 
-#define RTP_TS_RESET 1
-
 #include <switch.h>
 #include <switch_stun.h>
 #undef PACKAGE_NAME
@@ -62,6 +60,7 @@
 #define MASTER_KEY_LEN   30
 #define RTP_MAGIC_NUMBER 42
 #define MAX_SRTP_ERRS 10
+#define RTP_TS_RESET 1
 
 static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
