@@ -2000,6 +2000,21 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	}
 	switch_xml_set_txt_d(param, caller_profile->caller_id_name);
 
+	if (!(param = switch_xml_add_child_d(xml, "caller_id_number", off++))) {
+		return -1;
+	}
+	switch_xml_set_txt_d(param, caller_profile->caller_id_number);
+
+	if (!(param = switch_xml_add_child_d(xml, "callee_id_name", off++))) {
+		return -1;
+	}
+	switch_xml_set_txt_d(param, caller_profile->callee_id_name);
+
+	if (!(param = switch_xml_add_child_d(xml, "callee_id_number", off++))) {
+		return -1;
+	}
+	switch_xml_set_txt_d(param, caller_profile->callee_id_number);
+
 	if (!(param = switch_xml_add_child_d(xml, "ani", off++))) {
 		return -1;
 	}
@@ -2010,10 +2025,6 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	}
 	switch_xml_set_txt_d(param, caller_profile->aniii);
 
-	if (!(param = switch_xml_add_child_d(xml, "caller_id_number", off++))) {
-		return -1;
-	}
-	switch_xml_set_txt_d(param, caller_profile->caller_id_number);
 
 	if (!(param = switch_xml_add_child_d(xml, "network_addr", off++))) {
 		return -1;
