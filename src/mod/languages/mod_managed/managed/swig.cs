@@ -29319,7 +29319,8 @@ public enum switch_rtp_bug_flag_t {
   RTP_BUG_SEND_LINEAR_TIMESTAMPS = (1 << 3),
   RTP_BUG_START_SEQ_AT_ZERO = (1 << 4),
   RTP_BUG_NEVER_SEND_MARKER = (1 << 5),
-  RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6)
+  RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6),
+  RTP_BUG_ACCEPT_ANY_PACKETS = (1 << 7)
 }
 
 }
