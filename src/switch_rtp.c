@@ -3131,6 +3131,11 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 		}
 
+		if (((rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt) || rtp_session->recv_msg.header.pt == 13)) {
+			*flags |= SFF_NOT_AUDIO;
+		}
+
+
 		/* ignore packets not meant for us unless the auto-adjust window is open */
 		if (bytes) {
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ)) {

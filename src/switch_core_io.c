@@ -265,6 +265,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		do_bugs = 1;
 		need_codec = 1;
 	}
+	
+	if (((*frame)->flags & SFF_NOT_AUDIO)) {
+		do_resample = 0;
+		do_bugs = 0;
+		need_codec = 0;
+	}
+
 
 	if (switch_test_flag(session, SSF_READ_TRANSCODE) && !need_codec && switch_core_codec_ready(session->read_codec)) {
 		switch_core_session_t *other_session;
@@ -790,6 +797,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	if (frame->codec->implementation->actual_samples_per_second != session->write_impl.actual_samples_per_second) {
 		need_codec = TRUE;
 		do_resample = TRUE;
+	}
+
+
+	if ((frame->flags & SFF_NOT_AUDIO)) {
+		do_resample = 0;
+		do_bugs = 0;
+		need_codec = 0;
 	}
 
 	if (switch_test_flag(session, SSF_WRITE_TRANSCODE) && !need_codec && switch_core_codec_ready(session->write_codec)) {
