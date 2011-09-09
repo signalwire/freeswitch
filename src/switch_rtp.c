@@ -2255,7 +2255,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 	switch_frame_flag_t flags = 0;
 	uint32_t samples = rtp_session->samples_per_interval;
 
-	if (!rtp_session->sending_dtmf > 1) {
+	if (rtp_session->sending_dtmf > 1) {
 		rtp_session->sending_dtmf--;
 		return;
 	}
