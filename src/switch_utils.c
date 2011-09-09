@@ -466,9 +466,6 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 		b = (b << 8) + in[x];
 		l += 8;
 
-		if ((x % 1024) == 0) {
-			switch_cond_next(); /* give other processes/threads a chance */
-		}
 		while (l >= 6) {
 			out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
 			if (++y != 72) {
@@ -645,7 +642,6 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 			}
 
 			while ((ilen = read(ifd, in, B64BUFFLEN))) {
-				switch_cond_next(); /* give other processes/threads a chance */
 				for (x = 0; x < ilen; x++) {
 					b = (b << 8) + in[x];
 					l += 8;
