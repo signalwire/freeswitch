@@ -1074,6 +1074,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->local_sdp_audio_ip);
 	switch_channel_set_variable_printf(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, "%d", sdp_port);
+	switch_channel_set_variable(tech_pvt->channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -3128,8 +3129,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	}
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->local_sdp_audio_port);
-	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
+	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->local_sdp_audio_ip);
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
+	switch_channel_set_variable(tech_pvt->channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
 
 	if (tech_pvt->rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		const char *rport = NULL;
@@ -5456,6 +5458,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 	if (session) {
 		switch_caller_extension_t *extension = NULL;
 		const char *ip = switch_channel_get_variable(channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
+		const char *a_ip = switch_channel_get_variable(channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE);
 		const char *port = switch_channel_get_variable(channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
 		const char *r_ip = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
 		const char *r_port = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
@@ -5498,6 +5501,10 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 			if (!zstr(ip)) {
 				tech_pvt->local_sdp_audio_ip = switch_core_session_strdup(session, ip);
 				tech_pvt->rtpip = tech_pvt->local_sdp_audio_ip;
+			}
+
+			if (!zstr(a_ip)) {
+				tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(session, a_ip);
 			}
 
 			if (r_ip && r_port) {

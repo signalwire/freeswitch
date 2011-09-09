@@ -182,6 +182,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE "originator_video_codec"
 #define SWITCH_LOCAL_MEDIA_IP_VARIABLE "local_media_ip"
 #define SWITCH_LOCAL_MEDIA_PORT_VARIABLE "local_media_port"
+#define SWITCH_ADVERTISED_MEDIA_IP_VARIABLE "advertised_media_ip"
 #define SWITCH_REMOTE_MEDIA_IP_VARIABLE "remote_media_ip"
 #define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "remote_media_port"
 #define SWITCH_REMOTE_VIDEO_IP_VARIABLE "remote_video_ip"
