@@ -5389,7 +5389,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show codec");
 	switch_console_set_complete("add show complete");
 	switch_console_set_complete("add show dialplan");
-	switch_console_set_complete("add show distinct_channels");
+	switch_console_set_complete("add show detailed_calls");
+	switch_console_set_complete("add show bridged_calls");
+	switch_console_set_complete("add show detailed_bridged_calls");
 	switch_console_set_complete("add show endpoint");
 	switch_console_set_complete("add show file");
 	switch_console_set_complete("add show interfaces");
