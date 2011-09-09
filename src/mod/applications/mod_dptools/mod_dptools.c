@@ -1375,6 +1375,7 @@ SWITCH_STANDARD_APP(event_function)
 							switch_assert(new);
 							memcpy(new, val, len);
 							event->subclass_name = new;
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
 						} else {
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
 						}
