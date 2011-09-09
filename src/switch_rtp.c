@@ -33,6 +33,9 @@
 //#define DEBUG_2833
 //#define RTP_DEBUG_WRITE_DELTA
 //#define DEBUG_MISSED_SEQ
+
+#define RTP_TS_RESET 1
+
 #include <switch.h>
 #include <switch_stun.h>
 #undef PACKAGE_NAME
@@ -2316,7 +2319,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 
 			rtp_session->dtmf_data.out_digit_dur = 0;
 			set_dtmf_delay(rtp_session, 40, 500);
-
+			
 			return;
 		}
 	}
@@ -2405,7 +2408,7 @@ SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp
 {
 
 	if (switch_rtp_ready(rtp_session)) {
-		rtp_session->last_write_ts = 0;
+		rtp_session->last_write_ts = RTP_TS_RESET;
 	
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
 			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
@@ -3800,10 +3803,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	this_ts = ntohl(send_msg->header.ts);
 
 	if ((this_ts < rtp_session->last_write_ts) && ((rtp_session->last_write_ts - this_ts) > 16000)) {
-		rtp_session->last_write_ts = 0;
+		rtp_session->last_write_ts = RTP_TS_RESET;
 	}
 
-	if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf || !this_ts || this_ts < rtp_session->last_write_ts) {
+	if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf || !this_ts || 
+		(rtp_session->last_write_ts > RTP_TS_RESET && this_ts < rtp_session->last_write_ts)) {
 		send = 0;
 	}
 
