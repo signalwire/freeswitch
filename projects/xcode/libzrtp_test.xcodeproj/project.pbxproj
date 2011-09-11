@@ -11,7 +11,7 @@
 		8D6EED000F01458D00529121 /* zrtp_test_crypto.c in Sources */ = {isa = PBXBuildFile; fileRef = 8D6EECF80F01458D00529121 /* zrtp_test_crypto.c */; };
 		8D6EED010F01458D00529121 /* zrtp_test_queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 8D6EECF90F01458D00529121 /* zrtp_test_queue.c */; };
 		8D6EED020F01458D00529121 /* zrtp_test_ui.c in Sources */ = {isa = PBXBuildFile; fileRef = 8D6EECFA0F01458D00529121 /* zrtp_test_ui.c */; };
-		8D6EED110F0145BF00529121 /* libzrtp_ec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D6EED0F0F0145AA00529121 /* libzrtp_ec.a */; };
+		8D6EED110F0145BF00529121 /* libzrtp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D6EED0F0F0145AA00529121 /* libzrtp.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,7 +47,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D6EED110F0145BF00529121 /* libzrtp_ec.a in Frameworks */,
+				8D6EED110F0145BF00529121 /* libzrtp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -136,7 +136,11 @@
 			isa = PBXProject;
 			buildConfigurationList = 1DEB928908733DD80010E9CD /* Build configuration list for PBXProject "libzrtp_test" */;
 			compatibilityVersion = "Xcode 3.1";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
+			knownRegions = (
+				en,
+			);
 			mainGroup = 08FB7794FE84155DC02AAC07 /* libzrtp_test */;
 			projectDirPath = "";
 			projectReferences = (
@@ -156,7 +160,7 @@
 		8D6EED0F0F0145AA00529121 /* libzrtp_ec.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
-			path = libzrtp_ec.a;
+			path = libzrtp.a;
 			remoteRef = 8D6EED0E0F0145AA00529121 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
