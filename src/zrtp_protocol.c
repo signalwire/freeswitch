@@ -1204,8 +1204,21 @@ zrtp_status_t _zrtp_machine_create_confirm( zrtp_stream_t *stream,
 			ZRTP_LOG(1,(_ZTU_,"ERROR! failed to compute Confirm hmac. s=%d ID=%u\n", s, stream->id));
 			return s;
 		}
-
-		zrtp_memcpy(confirm->hmac, hmac.buffer, ZRTP_HMAC_SIZE);
+        
+        zrtp_memcpy(confirm->hmac, hmac.buffer, ZRTP_HMAC_SIZE);
+        
+        {
+            char buff[512];
+            ZRTP_LOG(3,(_ZTU_,"HMAC TRACE. COMPUTE.\n"));
+            ZRTP_LOG(3,(_ZTU_,"\tcipher text:%s. size=%u\n",
+                        hex2str((const char*)&confirm->hash, encrypted_body_size, buff, sizeof(buff)), encrypted_body_size));
+            ZRTP_LOG(3,(_ZTU_,"\t        key:%s.\n",
+                        hex2str(stream->cc.hmackey.buffer, stream->cc.hmackey.length, buff, sizeof(buff))));
+            ZRTP_LOG(3,(_ZTU_,"\t comp hmac:%s.\n",
+                        hex2str(hmac.buffer, hmac.length, buff, sizeof(buff))));
+            ZRTP_LOG(3,(_ZTU_,"\t      hmac:%s.\n",
+                        hex2str((const char*)confirm->hmac, ZRTP_HMAC_SIZE, buff, sizeof(buff))));
+        }
 	}
 
 	return zrtp_status_ok;
@@ -1233,6 +1246,22 @@ zrtp_status_t _zrtp_machine_process_confirm( zrtp_stream_t *stream,
 		ZRTP_LOG(1,(_ZTU_,"\tERROR! failed to compute Incoming Confirm hmac. s=%d ID=%u\n", s, stream->id));
 		return zrtp_status_fail;
 	}
+    
+    
+    // MARK: TRACE CONFIRM HMAC ERROR
+    {
+        char buff[512];
+        ZRTP_LOG(3,(_ZTU_,"HMAC TRACE. VERIFY\n"));
+        ZRTP_LOG(3,(_ZTU_,"\tcipher text:%s. size=%u\n",
+                    hex2str((const char*)&confirm->hash, encrypted_body_size, buff, sizeof(buff)), encrypted_body_size));
+        ZRTP_LOG(3,(_ZTU_,"\t        key:%s.\n",
+                    hex2str(stream->cc.peer_hmackey.buffer, stream->cc.peer_hmackey.length, buff, sizeof(buff))));
+        ZRTP_LOG(3,(_ZTU_,"\t comp hmac:%s.\n",
+                    hex2str(hmac.buffer, hmac.length, buff, sizeof(buff))));
+        ZRTP_LOG(3,(_ZTU_,"\t      hmac:%s.\n",
+                    hex2str((const char*)confirm->hmac, ZRTP_HMAC_SIZE, buff, sizeof(buff))));
+    }
+    
 
 	if (0 != zrtp_memcmp(confirm->hmac, hmac.buffer, ZRTP_HMAC_SIZE)) {
 		/*
