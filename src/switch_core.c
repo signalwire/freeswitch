@@ -2297,7 +2297,6 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 #endif
 
 	sth->ret = system(sth->cmd);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF %d %s\n", sth->ret, strerror(errno));
 
 #if 0
 #if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
