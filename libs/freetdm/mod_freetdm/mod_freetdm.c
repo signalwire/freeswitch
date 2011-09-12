@@ -34,6 +34,15 @@
 #include <switch.h>
 #include "freetdm.h"
 
+//#define CUDATEL_DEBUG
+#ifdef CUDATEL_DEBUG
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#include <execinfo.h>
+#include <syscall.h>
+#endif
+
 #ifndef __FUNCTION__
 #define __FUNCTION__ __SWITCH_FUNC__
 #endif
@@ -495,6 +504,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	ftdm_chan_type_t chantype;
+	const char *name = NULL;
 	uint32_t tokencnt;
 
 	channel = switch_core_session_get_channel(session);
@@ -506,9 +516,29 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	/* ignore any further I/O requests, we're hanging up already! */
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	
+	name = switch_channel_get_name(channel);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP ENTER\n", name);
+
 	if (!tech_pvt->ftdmchan) {
 		goto end;
-	} 
+	}
+
+#ifdef CUDATEL_DEBUG
+	{
+		pid_t tid = 0;
+		size_t size = 0;
+		char **symbols = NULL;
+		void *stacktrace[50];
+		int si = 0;
+		size = backtrace(stacktrace, ftdm_array_len(stacktrace));
+		symbols = backtrace_symbols(stacktrace, size);
+		tid = syscall(SYS_gettid);
+		for (si = 0; si < size; si++) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d] %s -> %s\n", tid, name, symbols[si]);
+		}
+		free(symbols);
+	}
+#endif
 
 	ftdm_channel_clear_token(tech_pvt->ftdmchan, switch_core_session_get_uuid(session));
 
@@ -551,7 +581,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
  end:
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 	switch_mutex_lock(globals.mutex);
 	globals.calls--;
 	if (globals.calls < 0) {
@@ -559,6 +588,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 	switch_mutex_unlock(globals.mutex);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP EXIT\n", name);
 	return SWITCH_STATUS_SUCCESS;
 }
 
