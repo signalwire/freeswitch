@@ -1855,7 +1855,14 @@ static ftdm_status_t _ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm
 		goto done;
 	}
 
-	ftdm_mutex_lock(check->mutex);
+	ftdm_channel_lock(check);
+
+	if (ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
+		/* let them know is already open, but return the channel anyway */
+		status = FTDM_EBUSY;
+		*ftdmchan = check;
+		goto unlockchan;
+	}
 
 	/* The following if's and gotos replace a big if (this || this || this || this) else { nothing; } */
 
@@ -1902,7 +1909,7 @@ openchan:
 	goto done;
 
 unlockchan:
-	ftdm_mutex_unlock(check->mutex);
+	ftdm_channel_unlock(check);
 
 done:
 	ftdm_mutex_unlock(globals.mutex);
