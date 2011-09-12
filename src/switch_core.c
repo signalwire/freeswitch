@@ -1914,7 +1914,11 @@ SWITCH_DECLARE(void) switch_core_set_signal_handlers(void)
 	/* set signal handlers */
 	signal(SIGINT, SIG_IGN);
 #ifndef WIN32
-	signal(SIGCHLD, handle_SIGCHLD);
+	if (switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC)) {
+		signal(SIGCHLD, SIG_DFL);
+	} else {
+		signal(SIGCHLD, handle_SIGCHLD);
+	}
 #endif
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
@@ -2293,6 +2297,7 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 #endif
 
 	sth->ret = system(sth->cmd);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF %d %s\n", sth->ret, strerror(errno));
 
 #if 0
 #if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
