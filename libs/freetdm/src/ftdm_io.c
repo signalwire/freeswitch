@@ -4565,7 +4565,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 	*configured = 0;
 	*configured = span->fio->configure_span(span, str, chan_config->type, chan_config->name, chan_config->number);
 	if (!*configured) {
-		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to configure span", span->span_id);
+		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to configure span\n", span->span_id);
 		return FTDM_FAIL;
 	}
 
