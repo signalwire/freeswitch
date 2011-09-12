@@ -647,6 +647,41 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	switch_assert(SWITCH_GLOBAL_dirs.temp_dir);
 }
 
+
+static int32_t set_low_priority(void)
+{
+#ifdef WIN32
+	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
+#else
+#ifdef USE_SCHED_SETSCHEDULER
+	/*
+	 * Try to use a normal scheduler
+	 */
+	struct sched_param sched = { 0 };
+	sched.sched_priority = 0;
+	if (sched_setscheduler(0, SCHED_OTHER, &sched)) {
+		return -1;
+	}
+#endif
+
+#ifdef HAVE_SETPRIORITY
+	/*
+	 * setpriority() works on FreeBSD (6.2), nice() doesn't
+	 */
+	if (setpriority(PRIO_PROCESS, getpid(), 19) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
+		return -1;
+	}
+#else
+	if (nice(19) != 19) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
+		return -1;
+	}
+#endif
+#endif
+	return 0;
+}
+
 static int32_t set_priority(void)
 {
 #ifdef WIN32
@@ -1359,6 +1394,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_set_flag((&runtime.dummy_cng_frame), SFF_CNG);
 	switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
 	switch_set_flag((&runtime), SCF_CLEAR_SQL);
+	switch_set_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	runtime.hard_log_level = SWITCH_LOG_DEBUG;
@@ -1482,6 +1518,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#ifndef WIN32
+static void handle_SIGCHLD(int sig)
+{
+	int status = 0;
+	int pid = 0;
+
+	if (sig);
+
+	pid = wait(&status);
+	
+	if (pid > 0) {
+		printf("ASS %d\n", pid);
+	}
+
+	return;
+}
+#endif
 
 #ifdef TRAP_BUS
 static void handle_SIGBUS(int sig)
@@ -1690,6 +1744,17 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_clear_flag((&runtime), SCF_VERBOSE_EVENTS);
 					}
+				} else if (!strcasecmp(var, "threaded-system-exec") && !zstr(val)) {
+#ifdef WIN32
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "threaded-system-exec is not implemented on this platform\n");
+#else
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
+					} else {
+						switch_clear_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
+					}
+#endif
 				} else if (!strcasecmp(var, "min-idle-cpu") && !zstr(val)) {
 					switch_core_min_idle_cpu(atof(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
@@ -1870,7 +1935,9 @@ SWITCH_DECLARE(void) switch_core_set_signal_handlers(void)
 {
 	/* set signal handlers */
 	signal(SIGINT, SIG_IGN);
-
+#ifndef WIN32
+	signal(SIGCHLD, handle_SIGCHLD);
+#endif
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 #endif
@@ -1922,6 +1989,18 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 				}
 			}
 			newintval = switch_test_flag((&runtime), SCF_VERBOSE_EVENTS);
+		}
+		break;
+	case SCSC_THREADED_SYSTEM_EXEC:
+		if (intval) {
+			if (oldintval > -1) {
+				if (oldintval) {
+					switch_set_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
+				} else {
+					switch_clear_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
+				}
+			}
+			newintval = switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
 		}
 		break;
 	case SCSC_CALIBRATE_CLOCK:
@@ -2256,7 +2335,8 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 	return NULL;
 }
 
-SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
+
+static int switch_system_thread(const char *cmd, switch_bool_t wait)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;
@@ -2295,6 +2375,68 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 	return ret;
 }
 
+
+#ifdef WIN32
+static int switch_system_fork(const char *cmd, switch_bool_t wait)
+{
+	return switch_system_thread(cmd, wait);
+}
+
+#else
+static int max_open(void)
+{
+	int max;
+
+#if defined(HAVE_GETDTABLESIZE)
+	max = getdtablesize();
+#else
+	max = sysconf(_SC_OPEN_MAX);
+#endif
+
+	return max;
+
+}
+
+static int switch_system_fork(const char *cmd, switch_bool_t wait)
+{
+	int pid;
+
+	switch_core_set_signal_handlers();
+
+	pid = fork();
+	
+	if (pid) {
+		if (wait) {
+			waitpid(pid, NULL, 0);
+		}
+	} else {
+		int open_max = max_open();
+		int i;
+
+		for (i = 3; i < open_max; i++) {
+			close(i);
+		}
+		
+		set_low_priority();
+		system(cmd);
+		exit(0);
+	}
+
+	return 0;
+}
+#endif
+
+
+
+SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
+{
+	int (*sys_p)(const char *cmd, switch_bool_t wait);
+
+	sys_p = switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC) ? switch_system_thread : switch_system_fork;
+
+	return sys_p(cmd, wait);
+
+}
 
 
 /* For Emacs:

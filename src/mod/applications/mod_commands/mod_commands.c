@@ -1840,6 +1840,15 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_VERBOSE_EVENTS, &arg);
 
 			stream->write_function(stream, "+OK verbose_events is %s \n", arg ? "on" : "off");
+		} else if (!strcasecmp(argv[0], "threaded_system_exec")) {
+			arg = -1;
+			if (argv[1]) {
+				arg = switch_true(argv[1]);
+			}
+
+			switch_core_session_ctl(SCSC_THREADED_SYSTEM_EXEC, &arg);
+
+			stream->write_function(stream, "+OK threaded_system_exec is %s \n", arg ? "true" : "false");
 			
 		} else if (!strcasecmp(argv[0], "save_history")) {
 			switch_core_session_ctl(SCSC_SAVE_HISTORY, NULL);
