@@ -39,6 +39,11 @@
  *
  */
 
+#ifdef WP_DEBUG_IO
+#define _BSD_SOURCE
+#include <syscall.h>
+#endif
+
 #ifdef __sun
 #include <unistd.h>
 #include <stropts.h>
@@ -99,6 +104,17 @@ static struct {
 	uint32_t ring_off_ms;
 } wp_globals;
 
+typedef struct {
+	sangoma_wait_obj_t *waitobj;
+#ifdef WP_DEBUG_IO
+	/* record the last reader threads  */
+	pid_t readers[10];
+	int rindex;
+	ftdm_time_t last_read;
+#endif
+} wp_channel_t;
+#define WP_GET_WAITABLE(fchan) ((wp_channel_t *)((fchan)->io_data))->waitobj
+
 /* a bunch of this stuff should go into the wanpipe_tdm_api_iface.h */
 
 FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event);
@@ -123,7 +139,7 @@ static __inline__ int tdmv_api_wait_socket(ftdm_channel_t *ftdmchan, int timeout
 	int err;
 	uint32_t inflags = *flags;
 	uint32_t outflags = 0;
-	sangoma_wait_obj_t *sangoma_wait_obj = ftdmchan->io_data;
+	sangoma_wait_obj_t *sangoma_wait_obj = WP_GET_WAITABLE(ftdmchan);
 
 	if (timeout == -1) {
 		timeout = SANGOMA_WAIT_INFINITE;
@@ -254,9 +270,13 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 		}
 		
 		if (ftdm_span_add_channel(span, sockfd, type, &chan) == FTDM_SUCCESS) {
+			wp_channel_t *wpchan = NULL;
 			wanpipe_tdm_api_t tdm_api;
 			memset(&tdm_api, 0, sizeof(tdm_api));
 #ifdef LIBSANGOMA_VERSION
+			wpchan = ftdm_calloc(1, sizeof(*wpchan));
+			ftdm_assert(wpchan != NULL, "wpchan alloc failed\n");
+			chan->io_data = wpchan;
 			/* we need SANGOMA_DEVICE_WAIT_OBJ_SIG and not SANGOMA_DEVICE_WAIT_OBJ alone because we need to call 
 			 * sangoma_wait_obj_sig to wake up any I/O waiters when closing the channel (typically on ftdm shutdown)
 			 * this adds an extra pair of file descriptors to the waitable object
@@ -266,7 +286,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 				ftdm_log(FTDM_LOG_ERROR, "failure create waitable object for s%dc%d\n", spanno, x);
 				continue;
 			}
-			chan->io_data = sangoma_wait_obj;
+			WP_GET_WAITABLE(chan) = sangoma_wait_obj;
 #endif
 			
 			chan->physical_span_id = spanno;
@@ -580,9 +600,16 @@ static FIO_OPEN_FUNCTION(wanpipe_open)
 static FIO_CLOSE_FUNCTION(wanpipe_close)
 {
 #ifdef LIBSANGOMA_VERSION
-	sangoma_wait_obj_t *waitobj = ftdmchan->io_data;
+	sangoma_wait_obj_t *waitobj = WP_GET_WAITABLE(ftdmchan);
 	/* kick any I/O waiters */
 	sangoma_wait_obj_signal(waitobj);
+#ifdef WP_DEBUG_IO
+	{
+		wp_channel_t *wchan = ftdmchan->io_data;
+		memset(wchan->readers, 0, sizeof(wchan->readers));
+		wchan->rindex = 0;
+	}
+#endif
 #endif
 	return FTDM_SUCCESS;
 }
@@ -950,10 +977,44 @@ static void wanpipe_read_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_rx_hdr_t *rx
 static FIO_READ_FUNCTION(wanpipe_read)
 {
 	int rx_len = 0;
+	int rq_len = (int)*datalen;
 	wp_tdm_api_rx_hdr_t hdrframe;
 
-	memset(&hdrframe, 0, sizeof(hdrframe));
+#ifdef WP_DEBUG_IO
+	wp_channel_t *wchan = ftdmchan->io_data;
+	ftdm_time_t time_diff = 0;
+	pid_t previous_thread = 1;
+	pid_t current_thread = 0;
+	int previous_thread_index = 0;
 
+	previous_thread_index = wchan->rindex == 0 ? (ftdm_array_len(wchan->readers) - 1) : wchan->rindex - 1;
+	previous_thread = wchan->readers[previous_thread_index];
+	current_thread = syscall(SYS_gettid);
+	if (current_thread && current_thread != wchan->readers[wchan->rindex]) {
+		if (!wchan->readers[wchan->rindex]) {
+			wchan->readers[wchan->rindex] = current_thread;
+			/* first read */
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Initial reader thread is %d\n", current_thread);
+			previous_thread = current_thread;
+		} else {
+			previous_thread = wchan->readers[wchan->rindex];
+			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Changed reader thread from %d to %d (rindex = %d)\n", 
+				previous_thread, current_thread, wchan->rindex);
+			if (wchan->rindex == (ftdm_array_len(wchan->readers) - 1)) {
+				wchan->rindex = 0;
+			} else {
+				wchan->rindex++;
+			}
+			wchan->readers[wchan->rindex] = current_thread;
+		}
+	}
+	ftdm_time_t curr = ftdm_current_time_in_ms();
+	if (wchan->last_read) {
+		time_diff = curr - wchan->last_read;
+	}
+#endif
+
+	memset(&hdrframe, 0, sizeof(hdrframe));
 	rx_len = sangoma_readmsg_tdm(ftdmchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (int)*datalen, 0);
 	*datalen = rx_len;
 
@@ -963,14 +1024,20 @@ static FIO_READ_FUNCTION(wanpipe_read)
 	}
 
 	if (rx_len < 0) {
-		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Failed to read from sangoma device: %s (%d)\n", strerror(errno), rx_len);
+#ifdef WP_DEBUG_IO
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Failed to read %d bytes from sangoma device: %s (%d) "
+				"(read time diff = %llums, prev thread = %d, curr thread = %d)\n", rq_len, strerror(errno), rx_len, 
+				time_diff, previous_thread, current_thread);
+#else
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Failed to read %d bytes from sangoma device: %s (%d)\n", rq_len, strerror(errno), rx_len);
+#endif
 		return FTDM_FAIL;
 	}
 
 	if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS)) {
 		wanpipe_read_stats(ftdmchan, &hdrframe);
 	}
+
 	return FTDM_SUCCESS;
 }
 
@@ -1116,7 +1183,7 @@ FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 		if (!ftdmchan->io_data) {
 			continue; /* should never happen but happens when shutting down */
 		}
-		pfds[j] = ftdmchan->io_data;
+		pfds[j] = WP_GET_WAITABLE(ftdmchan);
 		inflags[j] = chan_events;
 #else
 		memset(&pfds[j], 0, sizeof(pfds[j]));
@@ -1578,10 +1645,10 @@ static FIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 {
 #ifdef LIBSANGOMA_VERSION
 	if (ftdmchan->io_data) {
-		sangoma_wait_obj_t *sangoma_wait_obj;
-		sangoma_wait_obj = ftdmchan->io_data;
-		ftdmchan->io_data = NULL;
+		sangoma_wait_obj_t *sangoma_wait_obj = WP_GET_WAITABLE(ftdmchan);
 		sangoma_wait_obj_delete(&sangoma_wait_obj);
+		ftdm_safe_free(ftdmchan->io_data);
+		ftdmchan->io_data = NULL;
 	}
 #endif
 
@@ -1612,7 +1679,8 @@ static FIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
  */
 static FIO_IO_LOAD_FUNCTION(wanpipe_init)
 {
-	assert(fio != NULL);
+	ftdm_assert(fio != NULL, "fio should not be null\n");
+	
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
 
 	wp_globals.codec_ms = 20;
