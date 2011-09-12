@@ -648,8 +648,10 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 }
 
 
-static int32_t set_low_priority(void)
+SWITCH_DECLARE(int32_t) set_low_priority(void)
 {
+
+
 #ifdef WIN32
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
 #else
@@ -679,13 +681,14 @@ static int32_t set_low_priority(void)
 	}
 #endif
 #endif
+
 	return 0;
 }
 
-static int32_t set_priority(void)
+SWITCH_DECLARE(int32_t) set_realtime_priority(void)
 {
 #ifdef WIN32
-	SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #else
 #ifdef USE_SCHED_SETSCHEDULER
 	/*
@@ -720,47 +723,20 @@ static int32_t set_priority(void)
 	return 0;
 }
 
-
 SWITCH_DECLARE(int32_t) set_normal_priority(void)
 {
-	return set_priority();
+	return 0;
 }
 
-SWITCH_DECLARE(int32_t) set_high_priority(void)
+SWITCH_DECLARE(int32_t) set_auto_priority(void)
 {
-#ifdef WIN32
-	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-#else
-	int pri;
+	runtime.cpu_count = sysconf (_SC_NPROCESSORS_ONLN);
 
-#ifdef USE_SETRLIMIT
-	struct rlimit lim = { RLIM_INFINITY, RLIM_INFINITY };
-#endif
-	
-	if ((pri = set_priority())) {
-		return pri;
+	/* If we have more than 1 cpu, we should use realtime priority so we can have priority threads */
+	if (runtime.cpu_count > 1) {
+		return set_realtime_priority();
 	}
 
-#ifdef USE_SETRLIMIT
-	/*
-	 * The amount of memory which can be mlocked is limited for non-root users.
-	 * FS will segfault (= hitting the limit) soon after mlockall has been called
-	 * and we've switched to a different user.
-	 * So let's try to remove the mlock limit here...
-	 */
-	if (setrlimit(RLIMIT_MEMLOCK, &lim) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to disable memlock limit, application may crash if run as non-root user!\n");
-	}
-#endif
-
-#ifdef USE_MLOCKALL
-	/*
-	 * Pin memory pages to RAM to prevent being swapped to disk
-	 */
-	mlockall(MCL_CURRENT | MCL_FUTURE);
-#endif
-
-#endif
 	return 0;
 }
 
@@ -1405,6 +1381,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.min_dtmf_duration = SWITCH_MIN_DTMF_DURATION;
 	runtime.odbc_dbtype = DBTYPE_DEFAULT;
 	runtime.dbname = NULL;
+	runtime.cpu_count = sysconf (_SC_NPROCESSORS_ONLN);
+	
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {

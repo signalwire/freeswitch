@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
 	char *usageDesc;
 	int alt_dirs = 0, log_set = 0, run_set = 0, do_kill = 0;
 	int known_opt;
-	int high_prio = 0;
+	int priority = 0;
 #ifndef WIN32
 	int do_wait = 0;
 #endif
@@ -408,7 +408,9 @@ int main(int argc, char *argv[])
 		"\t-waste                 -- allow memory waste\n" 
 		"\t-core                  -- dump cores\n"
 #endif
-		"\t-hp                    -- enable high priority settings\n"
+		"\t-rp                    -- enable high(realtime) priority settings\n"
+		"\t-lp                    -- enable low priority settings\n"
+		"\t-np                    -- enable normal priority settings (system defaults)\n"
 		"\t-vg                    -- run under valgrind\n"
 		"\t-nosql                 -- disable internal sql scoreboard\n"
 		"\t-heavy-timer           -- Heavy Timer, possibly more accurate but at a cost\n"
@@ -567,8 +569,18 @@ int main(int argc, char *argv[])
 		}
 #endif
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-hp")) {
-			high_prio++;
+		if (local_argv[x] && (!strcmp(local_argv[x], "-hp") || !strcmp(local_argv[x], "-rp"))) {
+			priority = 2;
+			known_opt++;
+		}
+
+		if (local_argv[x] && !strcmp(local_argv[x], "-lp")) {
+			priority = -1;
+			known_opt++;
+		}
+
+		if (local_argv[x] && !strcmp(local_argv[x], "-np")) {
+			priority = 1;
 			known_opt++;
 		}
 
@@ -828,13 +840,21 @@ int main(int argc, char *argv[])
 	}
 
 
-
-	if (high_prio) {
-		set_high_priority();
-	} else {
+	switch(priority) {
+	case 2:
+		set_realtime_priority();
+		break;
+	case 1:
 		set_normal_priority();
+		break;
+	case -1:
+		set_low_priority();
+		break;
+	default:
+		set_auto_priority();
+		break;
 	}
-
+	
 	switch_core_setrlimits();
 
 

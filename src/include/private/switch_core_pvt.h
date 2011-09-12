@@ -255,6 +255,7 @@ struct switch_runtime {
 	uint32_t db_handle_timeout;
 	int curl_count;
 	int ssl_count;
+	int cpu_count;
 };
 
 extern struct switch_runtime runtime;

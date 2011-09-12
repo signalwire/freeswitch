@@ -1978,8 +1978,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, 
   \brief Set the maximum priority the process can obtain
   \return 0 on success
 */
-SWITCH_DECLARE(int32_t) set_high_priority(void);
+
 SWITCH_DECLARE(int32_t) set_normal_priority(void);
+SWITCH_DECLARE(int32_t) set_auto_priority(void);
+SWITCH_DECLARE(int32_t) set_realtime_priority(void);
+SWITCH_DECLARE(int32_t) set_low_priority(void);
 
 /*! 
   \brief Change user and/or group of the running process
