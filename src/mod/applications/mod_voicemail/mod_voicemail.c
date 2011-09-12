@@ -2848,7 +2848,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
   failed:
 
-	if (del_file && file_path) {
+	if (del_file && file_path && switch_file_exists(file_path, pool)) {
 		if (unlink(file_path) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 		}
