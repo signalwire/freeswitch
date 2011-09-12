@@ -3827,12 +3827,12 @@ static void *SWITCH_THREAD_FUNC ioread_thread(switch_thread_t *thread, void *obj
 	cmd_ioread_data_t *data = obj;
 	int span_id = ftdm_span_get_id(data->span);
 	int chan_id = ftdm_channel_get_id(data->fchan);
-	uint32_t len = ftdm_channel_get_io_packet_len(data->fchan);
-	uint32_t origlen = len;
+	ftdm_size_t len = ftdm_channel_get_io_packet_len(data->fchan);
+	ftdm_size_t origlen = len;
 	unsigned int pbuf[5];
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-	         "Started ioread thread (times = %d, interval = %ums, len = %u, span = %d, chan = %d\n", 
+	         "Started ioread thread (times = %d, interval = %ums, len = %"FTDM_SIZE_FMT", span = %d, chan = %d\n", 
 		 data->num_times, data->interval, len, span_id, chan_id);
 
 	while (ftdm_running() && data->num_times > 0) {
@@ -3872,7 +3872,7 @@ static void *SWITCH_THREAD_FUNC ioread_thread(switch_thread_t *thread, void *obj
 
 	switch_core_destroy_memory_pool(&data->pool);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-	         "Done ioread thread (times = %d, interval = %ums, len = %u, span = %d, chan = %d\n", 
+	         "Done ioread thread (times = %d, interval = %ums, len = %"FTDM_SIZE_FMT", span = %d, chan = %d\n", 
 		 data->num_times, data->interval, origlen, span_id, chan_id);
 	return NULL;
 }
