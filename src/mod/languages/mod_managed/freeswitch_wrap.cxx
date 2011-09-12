@@ -1664,6 +1664,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_LOCAL_MEDIA_PORT_VARIABLE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_ADVERTISED_MEDIA_IP_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "advertised_media_ip";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_REMOTE_MEDIA_IP_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -9981,21 +9992,41 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_management_exec(char * jarg1, int 
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_set_high_priority() {
-  int jresult ;
-  int32_t result;
-  
-  result = (int32_t)set_high_priority();
-  jresult = result; 
-  return jresult;
-}
-
-
 SWIGEXPORT int SWIGSTDCALL CSharp_set_normal_priority() {
   int jresult ;
   int32_t result;
   
   result = (int32_t)set_normal_priority();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_set_auto_priority() {
+  int jresult ;
+  int32_t result;
+  
+  result = (int32_t)set_auto_priority();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_set_realtime_priority() {
+  int jresult ;
+  int32_t result;
+  
+  result = (int32_t)set_realtime_priority();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_set_low_priority() {
+  int jresult ;
+  int32_t result;
+  
+  result = (int32_t)set_low_priority();
   jresult = result; 
   return jresult;
 }

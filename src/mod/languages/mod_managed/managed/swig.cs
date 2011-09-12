@@ -2188,13 +2188,23 @@ public class freeswitch {
     return ret;
   }
 
-  public static int set_high_priority() {
-    int ret = freeswitchPINVOKE.set_high_priority();
+  public static int set_normal_priority() {
+    int ret = freeswitchPINVOKE.set_normal_priority();
     return ret;
   }
 
-  public static int set_normal_priority() {
-    int ret = freeswitchPINVOKE.set_normal_priority();
+  public static int set_auto_priority() {
+    int ret = freeswitchPINVOKE.set_auto_priority();
+    return ret;
+  }
+
+  public static int set_realtime_priority() {
+    int ret = freeswitchPINVOKE.set_realtime_priority();
+    return ret;
+  }
+
+  public static int set_low_priority() {
+    int ret = freeswitchPINVOKE.set_low_priority();
     return ret;
   }
 
@@ -5784,6 +5794,7 @@ public class freeswitch {
   public static readonly string SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE = freeswitchPINVOKE.SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE_get();
   public static readonly string SWITCH_LOCAL_MEDIA_IP_VARIABLE = freeswitchPINVOKE.SWITCH_LOCAL_MEDIA_IP_VARIABLE_get();
   public static readonly string SWITCH_LOCAL_MEDIA_PORT_VARIABLE = freeswitchPINVOKE.SWITCH_LOCAL_MEDIA_PORT_VARIABLE_get();
+  public static readonly string SWITCH_ADVERTISED_MEDIA_IP_VARIABLE = freeswitchPINVOKE.SWITCH_ADVERTISED_MEDIA_IP_VARIABLE_get();
   public static readonly string SWITCH_REMOTE_MEDIA_IP_VARIABLE = freeswitchPINVOKE.SWITCH_REMOTE_MEDIA_IP_VARIABLE_get();
   public static readonly string SWITCH_REMOTE_MEDIA_PORT_VARIABLE = freeswitchPINVOKE.SWITCH_REMOTE_MEDIA_PORT_VARIABLE_get();
   public static readonly string SWITCH_REMOTE_VIDEO_IP_VARIABLE = freeswitchPINVOKE.SWITCH_REMOTE_VIDEO_IP_VARIABLE_get();
@@ -6423,6 +6434,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_LOCAL_MEDIA_PORT_VARIABLE_get")]
   public static extern string SWITCH_LOCAL_MEDIA_PORT_VARIABLE_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_ADVERTISED_MEDIA_IP_VARIABLE_get")]
+  public static extern string SWITCH_ADVERTISED_MEDIA_IP_VARIABLE_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_REMOTE_MEDIA_IP_VARIABLE_get")]
   public static extern string SWITCH_REMOTE_MEDIA_IP_VARIABLE_get();
@@ -8374,11 +8388,17 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_management_exec")]
   public static extern int switch_core_management_exec(string jarg1, int jarg2, string jarg3, HandleRef jarg4);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_set_high_priority")]
-  public static extern int set_high_priority();
-
   [DllImport("mod_managed", EntryPoint="CSharp_set_normal_priority")]
   public static extern int set_normal_priority();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_set_auto_priority")]
+  public static extern int set_auto_priority();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_set_realtime_priority")]
+  public static extern int set_realtime_priority();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_set_low_priority")]
+  public static extern int set_low_priority();
 
   [DllImport("mod_managed", EntryPoint="CSharp_change_user_group")]
   public static extern int change_user_group(string jarg1, string jarg2);
@@ -23817,7 +23837,8 @@ namespace FreeSWITCH.Native {
   SCF_AUTO_SCHEMAS = (1 << 13),
   SCF_MINIMAL = (1 << 14),
   SCF_USE_NAT_MAPPING = (1 << 15),
-  SCF_CLEAR_SQL = (1 << 16)
+  SCF_CLEAR_SQL = (1 << 16),
+  SCF_THREADED_SYSTEM_EXEC = (1 << 17)
 }
 
 }
@@ -26537,7 +26558,8 @@ namespace FreeSWITCH.Native {
   SFF_PROXY_PACKET = (1 << 5),
   SFF_DYNAMIC = (1 << 6),
   SFF_ZRTP = (1 << 7),
-  SFF_UDPTL_PACKET = (1 << 8)
+  SFF_UDPTL_PACKET = (1 << 8),
+  SFF_NOT_AUDIO = (1 << 9)
 }
 
 }
@@ -30358,7 +30380,8 @@ public enum switch_session_ctl_t {
   SCSC_VERBOSE_EVENTS,
   SCSC_SHUTDOWN_CHECK,
   SCSC_PAUSE_CHECK,
-  SCSC_READY_CHECK
+  SCSC_READY_CHECK,
+  SCSC_THREADED_SYSTEM_EXEC
 }
 
 }
