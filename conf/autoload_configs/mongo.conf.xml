@@ -1,6 +1,12 @@
 <configuration name="mongo.conf">
   <settings>
-    <param name="host" value="127.0.0.1:27017"/>
+    <!-- 
+      connection-string handles different ways to connect to mongo
+      samples:
+         server:port
+         foo/server:port,server:port   SET
+    -->
+    <param name="connection-string" value="127.0.0.1:27017"/>
     <param name="min-connections" value="10"/>
     <param name="max-connections" value="100"/>
 
