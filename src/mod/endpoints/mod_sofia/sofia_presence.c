@@ -72,8 +72,8 @@ struct presence_helper {
 	char last_uuid[512];
 };
 
-switch_status_t sofia_presence_chat_send(const char *proto, const char *from, const char *to, const char *subject,
-										 const char *body, const char *type, const char *hint)
+switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
+										 
 {
 	char *prof = NULL, *user = NULL, *host = NULL;
 	sofia_profile_t *profile = NULL;
@@ -93,6 +93,22 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	char *dup_dest = NULL;
 	char *p = NULL;
 	char *remote_host = NULL;
+	const char *proto;
+	const char *from; 
+	const char *to;
+	//const char *subject;
+	const char *body;
+	const char *type;
+	const char *hint;
+
+	proto = switch_event_get_header(message_event, "proto");
+	from = switch_event_get_header(message_event, "from");
+	to = switch_event_get_header(message_event, "to");
+	//subject = switch_event_get_header(message_event, "subject");
+	body = switch_event_get_body(message_event);
+	type = switch_event_get_header(message_event, "type");
+	hint = switch_event_get_header(message_event, "hint");
+
 
 	if (!to) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
@@ -2891,7 +2907,6 @@ void sofia_presence_handle_sip_i_message(int status,
 			char *p;
 			char *full_from;
 			char proto[512] = SOFIA_CHAT_PROTO;
-			int got_proto = 0;
 
 			full_from = sip_header_as_string(nh->nh_home, (void *) sip->sip_from);
 
@@ -2905,7 +2920,6 @@ void sofia_presence_handle_sip_i_message(int status,
 						*p = '@';
 					}
 				}
-				got_proto++;
 			} else {
 				to_addr = switch_mprintf("%s@%s", to_user, to_host);
 			}
@@ -2916,35 +2930,35 @@ void sofia_presence_handle_sip_i_message(int status,
 				sofia_presence_set_hash_key(hash_key, sizeof(hash_key), sip);
 			}
 
-			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT) && (tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
-				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", from_addr);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", full_from);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to_addr);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-					if (msg) {
-						switch_event_add_body(event, "%s", msg);
-					}
-
-					if (switch_core_session_queue_event(tech_pvt->session, &event) != SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
-						switch_event_fire(&event);
-					}
+			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", from_addr);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", from_user);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", from_host);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to_addr);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "normal");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", full_from);
+				
+				if (msg) {
+					switch_event_add_body(event, "%s", msg);
 				}
 			} else {
-				if (strcasecmp(proto, SOFIA_CHAT_PROTO)) {
-					switch_core_chat_send(proto, SOFIA_CHAT_PROTO, from_addr, to_addr, "", msg, NULL, full_from);
-				}
+				abort();
 			}
-
-			if (!got_proto) {
-				switch_core_chat_send("GLOBAL", SOFIA_CHAT_PROTO, from_addr, to_addr, "", msg, NULL, full_from);
+			
+			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT) && (tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
+				switch_core_session_queue_event(tech_pvt->session, &event);
+			} else {
+				switch_core_chat_send(proto, event);
+				switch_core_chat_send("GLOBAL", event);
+				switch_event_destroy(&event);
 			}
 
 			switch_safe_free(to_addr);
 			switch_safe_free(from_addr);
+
 			if (full_from) {
 				su_free(nh->nh_home, full_from);
 			}

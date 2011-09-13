@@ -468,28 +468,78 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *name, const char *proto, const char *from, const char *to,
-													  const char *subject, const char *body, const char *type, const char *hint)
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_proto, const char *proto, const char *from, const char *to,
+														   const char *subject, const char *body, const char *type, const char *hint)
+{
+	switch_event_t *message_event;
+	switch_status_t status;
+
+	if (switch_event_create(&message_event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "from", from);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "to", to);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "subject", subject);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "type", type);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
+		
+		if (body) {
+			switch_event_add_body(message_event, "%s", body);
+		}
+	} else {
+		abort();
+	}	
+
+	status = switch_core_chat_send(dest_proto, message_event);
+
+	switch_event_destroy(&message_event);
+
+	return status;
+	
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *dest_proto, switch_event_t *message_event)
+
 {
 	switch_chat_interface_t *ci;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_hash_index_t *hi;
 	const void *var;
 	void *val;
-			
-	if (!name) {
+
+	/*
+	const char *proto;
+	const char *from; 
+	const char *to;
+	const char *subject;
+	const char *body;
+	const char *type;
+	const char *hint;
+	*/		
+
+	if (!dest_proto) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!strcasecmp(name, "GLOBAL")) {
+	/*
+	proto = switch_event_get_header(message_event, "proto");
+	from = switch_event_get_header(message_event, "from");
+	to = switch_event_get_header(message_event, "to");
+	subject = switch_event_get_header(message_event, "subject");
+	body = switch_event_get_body(message_event);
+	type = switch_event_get_header(message_event, "type");
+	hint = switch_event_get_header(message_event, "hint");
+	*/
+
+
+	if (!strcasecmp(dest_proto, "GLOBAL")) {
 		switch_mutex_lock(loadable_modules.mutex);
 		for (hi = switch_hash_first(NULL, loadable_modules.chat_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &var, NULL, &val);
 			
 			if ((ci = (switch_chat_interface_t *) val)) {
 				if (ci->chat_send && !strncasecmp(ci->interface_name, "GLOBAL_", 7)) {
-					if ((status = ci->chat_send(proto, from, to, subject, body, type, hint)) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Chat Interface Error [%s]!\n", name);
+					if ((status = ci->chat_send(message_event)) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Chat Interface Error [%s]!\n", dest_proto);
 						break;
 					}			
 				}
@@ -497,11 +547,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *name, const ch
 		}
 		switch_mutex_unlock(loadable_modules.mutex);
 	} else {
-		if (!(ci = switch_loadable_module_get_chat_interface(name)) || !ci->chat_send) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid chat interface [%s]!\n", name);
+		if (!(ci = switch_loadable_module_get_chat_interface(dest_proto)) || !ci->chat_send) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid chat interface [%s]!\n", dest_proto);
 			return SWITCH_STATUS_FALSE;
 		}
-		status = ci->chat_send(proto, from, to, subject, body, type, hint);
+		status = ci->chat_send(message_event);
 		UNPROTECT_INTERFACE(ci);
 	}
 

@@ -489,11 +489,25 @@ static void pres_event_handler(switch_event_t *event)
 	switch_safe_free(sql);
 }
 
-static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject,
-								 const char *body, const char *type, const char *hint)
+static switch_status_t chat_send(switch_event_t *message_event)
 {
 	char *user, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL, *f_resource = NULL;
 	mdl_profile_t *profile = NULL;
+	const char *proto;
+	const char *from; 
+	const char *to;
+	const char *subject;
+	const char *body;
+	const char *type;
+	const char *hint;
+
+	proto = switch_event_get_header(message_event, "proto");
+	from = switch_event_get_header(message_event, "from");
+	to = switch_event_get_header(message_event, "to");
+	subject = switch_event_get_header(message_event, "subject");
+	body = switch_event_get_body(message_event);
+	type = switch_event_get_header(message_event, "type");
+	hint = switch_event_get_header(message_event, "hint");
 
 	switch_assert(proto != NULL);
 
@@ -2876,8 +2890,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				char *proto = MDL_CHAT_PROTO;
 				char *pproto = NULL, *ffrom = NULL;
 				char *hint;
-				int got_proto = 0;
-				
+				switch_event_t *event;
+				char *from_user, *from_host;
 #ifdef AUTO_REPLY
 				if (profile->auto_reply) {
 					ldl_handle_send_msg(handle,
@@ -2892,7 +2906,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						*to++ = '\0';
 					}
 					proto = pproto;
-					got_proto++;
 				}
 
 				hint = from;
@@ -2905,13 +2918,40 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					from = ffrom;
 				}
 
-				if (strcasecmp(proto, MDL_CHAT_PROTO)) { /* yes no ! on purpose */
-					switch_core_chat_send(proto, MDL_CHAT_PROTO, from, to, subject, switch_str_nil(msg), NULL, hint);
+				from_user = strdup(from);
+				if ((from_host = strchr(from_user, '@'))) {
+					*from_host++ = '\0';
 				}
 
-				if (!got_proto) {
-					switch_core_chat_send("GLOBAL", MDL_CHAT_PROTO, from, to, subject, switch_str_nil(msg), NULL, hint);
+
+				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", from);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", from_user);
+					if (from_host) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", from_host);
+					}
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", subject);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "normal");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", hint);
+					
+					if (msg) {
+						switch_event_add_body(event, "%s", msg);
+					}
+				} else {
+					abort();
 				}
+				
+				switch_safe_free(from_user);
+
+				if (strcasecmp(proto, MDL_CHAT_PROTO)) { /* yes no ! on purpose */
+					switch_core_chat_send(proto, event);
+				}
+
+				switch_core_chat_send("GLOBAL", event);
+
+				switch_event_destroy(&event);
 
 				switch_safe_free(pproto);
 				switch_safe_free(ffrom);

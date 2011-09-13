@@ -483,8 +483,8 @@ struct switch_chat_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the directory interface */
-	switch_status_t (*chat_send) (const char *proto, const char *from, const char *to,
-								  const char *subject, const char *body, const char *type, const char *hint);
+	switch_status_t (*chat_send) (switch_event_t *message_event);
+								  
 	switch_thread_rwlock_t *rwlock;
 	int refs;
 	switch_mutex_t *reflock;

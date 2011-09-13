@@ -2107,8 +2107,10 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string);
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 SWITCH_DECLARE(void) switch_cond_yield(switch_interval_time_t t);
 SWITCH_DECLARE(void) switch_cond_next(void);
-SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *name, const char *proto, const char *from, const char *to,
-													  const char *subject, const char *body, const char *type, const char *hint);
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_proto, const char *proto, const char *from, const char *to,
+														   const char *subject, const char *body, const char *type, const char *hint);
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *dest_proto, switch_event_t *message_event);
+
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_session_t *session, const char *cmds);
 

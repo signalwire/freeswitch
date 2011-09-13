@@ -35,7 +35,7 @@
  */
 
 #include "skypopen.h"
-#define MDL_CHAT_PROTO "skype"
+#define SKYPE_CHAT_PROTO "skype"
 
 #ifdef WIN32
 /***************/
@@ -1858,13 +1858,29 @@ static switch_status_t load_config(int reload_type)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject, const char *body, const char *type,
-								 const char *hint)
+static switch_status_t chat_send(switch_event_t *message_event)
+								 
 {
 	char *user = NULL, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
 	private_t *tech_pvt = NULL;
 	int i = 0, found = 0, tried = 0;
 	char skype_msg[1024];
+
+	const char *proto;
+	const char *from; 
+	const char *to;
+	const char *subject;
+	const char *body;
+	//const char *type;
+	const char *hint;
+
+	proto = switch_event_get_header(message_event, "proto");
+	from = switch_event_get_header(message_event, "from");
+	to = switch_event_get_header(message_event, "to");
+	subject = switch_event_get_header(message_event, "subject");
+	body = switch_event_get_body(message_event);
+	//type = switch_event_get_header(message_event, "type");
+	hint = switch_event_get_header(message_event, "hint");
 
 	switch_assert(proto != NULL);
 
@@ -1998,7 +2014,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypopen_load)
 		SWITCH_ADD_API(commands_api_interface, "skypopen", "Skypopen interface commands", skypopen_function, SKYPOPEN_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function,
 					   SKYPOPEN_CHAT_SYNTAX);
-		SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
+		SWITCH_ADD_CHAT(chat_interface, SKYPE_CHAT_PROTO, chat_send);
 
 		if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
@@ -2944,7 +2960,7 @@ int incoming_chatmessage(private_t *tech_pvt, int which)
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	}
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SKYPE_CHAT_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
@@ -2971,7 +2987,7 @@ int incoming_chatmessage(private_t *tech_pvt, int which)
 	if (!event_sent_to_esl) {
 
 		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SKYPE_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
@@ -2997,6 +3013,33 @@ int incoming_chatmessage(private_t *tech_pvt, int which)
 	return 0;
 }
 
+static switch_status_t compat_chat_send(const char *proto, const char *from, const char *to,
+										const char *subject, const char *body, const char *type, const char *hint)
+{
+	switch_event_t *message_event;
+	switch_status_t status;
+
+	if (switch_event_create(&message_event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "from", from);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "to", to);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "subject", subject);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "type", type);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
+		
+		if (body) {
+			switch_event_add_body(message_event, "%s", body);
+		}
+	} else {
+		abort();
+	}	
+
+	status = chat_send(message_event);
+	switch_event_destroy(&message_event);
+
+	return status;
+	
+}
 
 SWITCH_STANDARD_API(skypopen_chat_function)
 {
@@ -3037,11 +3080,11 @@ SWITCH_STANDARD_API(skypopen_chat_function)
 			goto end;
 		} else {
 
-			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", SKYPOPEN_P_LOG, MDL_CHAT_PROTO, tech_pvt->skype_user,
+			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", SKYPOPEN_P_LOG, SKYPE_CHAT_PROTO, tech_pvt->skype_user,
 				   argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), tech_pvt->name);
 
-			chat_send(MDL_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE",
-					  switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, tech_pvt->name);
+			compat_chat_send(SKYPE_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE",
+							 switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, tech_pvt->name);
 
 		}
 	} else {

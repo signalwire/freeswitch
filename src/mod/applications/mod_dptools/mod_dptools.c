@@ -1549,7 +1549,7 @@ SWITCH_STANDARD_API(chat_api_function)
 	if (!zstr(cmd) && (lbuf = strdup(cmd))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) >= 4) {
 
-		if (switch_core_chat_send(argv[0], "dp", argv[1], argv[2], "", argv[3], !zstr(argv[4]) ? argv[4] : NULL, "") == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_chat_send_args(argv[0], "dp", argv[1], argv[2], "", argv[3], !zstr(argv[4]) ? argv[4] : NULL, "") == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "Sent");
 		} else {
 			stream->write_function(stream, "Error! Message Not Sent");
@@ -3372,44 +3372,51 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", WAIT_FOR_SILENCE_SYNTAX);
 }
 
-static switch_status_t event_chat_send(const char *proto, const char *from, const char *to, const char *subject,
-									   const char *body, const char *type, const char *hint)
+static switch_status_t event_chat_send(switch_event_t *message_event)
+									   
 {
 	switch_event_t *event;
+	const char *to;
 
-	if (switch_event_create(&event, SWITCH_EVENT_RECV_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		if (proto)
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Proto", proto);
-		if (from)
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "From", from);
-		if (subject)
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Subject", subject);
-		if (hint)
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hint", hint);
-		if (body)
-			switch_event_add_body(event, "%s", body);
-		if (to) {
-			char *v;
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "To", to);
-			if ((v = switch_core_get_variable_dup(to))) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Command", v);
-				free(v);
-			}
+	switch_event_dup(&event, message_event);
+	event->event_id = SWITCH_EVENT_RECV_MESSAGE;
+
+	if ((to = switch_event_get_header(event, "to"))) {
+		char *v;
+		if ((v = switch_core_get_variable_dup(to))) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Command", v);
+			free(v);
 		}
-
-		if (switch_event_fire(&event) == SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_SUCCESS;
-		}
-
-		switch_event_destroy(&event);
 	}
+
+	if (switch_event_fire(&event) == SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	switch_event_destroy(&event);
 
 	return SWITCH_STATUS_MEMERR;
 }
 
-static switch_status_t api_chat_send(const char *proto, const char *from, const char *to, const char *subject,
-									 const char *body, const char *type, const char *hint)
+static switch_status_t api_chat_send(switch_event_t *message_event)
 {
+	const char *proto;
+	const char *from; 
+	const char *to;
+	//const char *subject;
+	//const char *body;
+	const char *type;
+	const char *hint;
+
+	proto = switch_event_get_header(message_event, "proto");
+	from = switch_event_get_header(message_event, "from");
+	to = switch_event_get_header(message_event, "to");
+	//subject = switch_event_get_header(message_event, "subject");
+	//body = switch_event_get_body(message_event);
+	type = switch_event_get_header(message_event, "type");
+	hint = switch_event_get_header(message_event, "hint");	
+
+
 	if (to) {
 		char *v = NULL;
 		switch_stream_handle_t stream = { 0 };
@@ -3432,7 +3439,7 @@ static switch_status_t api_chat_send(const char *proto, const char *from, const 
 		switch_api_execute(cmd, arg, NULL, &stream);
 
 		if (proto) {
-			switch_core_chat_send(proto, "api", to, hint && strchr(hint, '/') ? hint : from, !zstr(type) ? type : NULL, (char *) stream.data, NULL, NULL);
+			switch_core_chat_send_args(proto, "api", to, hint && strchr(hint, '/') ? hint : from, !zstr(type) ? type : NULL, (char *) stream.data, NULL, NULL);
 		}
 
 		switch_safe_free(stream.data);
