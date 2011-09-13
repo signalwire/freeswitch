@@ -1871,7 +1871,7 @@ static char *cleanup_separated_string(char *str, char delim)
 			}
 		}
 		if (!esc) {
-			if (*ptr == '\'') {
+			if (*ptr == '\'' && (inside_quotes || ((ptr+1) && strchr(ptr+1, '\'')))) {
 				if ((inside_quotes = (1 - inside_quotes))) {
 					end = dest;
 				}
@@ -1934,7 +1934,7 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 			/* escaped characters are copied verbatim to the destination string */
 			if (*ptr == ESCAPE_META) {
 				++ptr;
-			} else if (*ptr == '\'') {
+			} else if (*ptr == '\'' && (inside_quotes || ((ptr+1) && strchr(ptr+1, '\'')))) {
 				inside_quotes = (1 - inside_quotes);
 			} else if (*ptr == delim && !inside_quotes) {
 				*ptr = '\0';
