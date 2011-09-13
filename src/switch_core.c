@@ -2402,7 +2402,7 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 		}
 		
 		set_low_priority();
-		system(cmd);
+		i = system(cmd);
 		exit(0);
 	}
 
