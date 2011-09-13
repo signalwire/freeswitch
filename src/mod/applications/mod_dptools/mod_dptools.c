@@ -110,7 +110,6 @@ static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t
 {
 	switch_core_session_t *session = (switch_core_session_t *) match->user_data;
 	switch_channel_t *channel;
-	char str[DMACHINE_MAX_DIGIT_LEN + 2];
 	switch_event_t *event;
 	switch_status_t status;
 	switch_core_session_t *use_session = session;
@@ -139,10 +138,8 @@ static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t
 		}
 	}
 
-	/* send it back around flagged to skip the dmachine */
-	switch_snprintf(str, sizeof(str), "!%s", match->match_digits);
-	
-	switch_channel_queue_dtmf_string(channel, str);
+	/* send it back around and skip the dmachine */
+	switch_channel_queue_dtmf_string(channel, match->match_digits);
 	
 	if (use_session != session) {
 		switch_core_session_rwunlock(use_session);
