@@ -730,13 +730,14 @@ SWITCH_DECLARE(int32_t) set_normal_priority(void)
 
 SWITCH_DECLARE(int32_t) set_auto_priority(void)
 {
+#ifndef WIN32
 	runtime.cpu_count = sysconf (_SC_NPROCESSORS_ONLN);
 
 	/* If we have more than 1 cpu, we should use realtime priority so we can have priority threads */
 	if (runtime.cpu_count > 1) {
 		return set_realtime_priority();
 	}
-
+#endif
 	return 0;
 }
 
@@ -1381,8 +1382,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.min_dtmf_duration = SWITCH_MIN_DTMF_DURATION;
 	runtime.odbc_dbtype = DBTYPE_DEFAULT;
 	runtime.dbname = NULL;
+#ifndef WIN32
 	runtime.cpu_count = sysconf (_SC_NPROCESSORS_ONLN);
-	
+#endif	
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
