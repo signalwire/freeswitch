@@ -3616,12 +3616,12 @@ SWITCH_STANDARD_API(sofia_count_reg_function)
 			if (zstr(user)) {
 				sql = switch_mprintf("select count(*) "
 									 "from sip_registrations where (sip_host='%q' or presence_hosts like '%%%q%%')",
-									 (concat != NULL) ? concat : "", domain, domain);
+									 domain, domain);
 
 			} else {
 				sql = switch_mprintf("select count(*) "
-									 "from sip_registrations where (sip_user='%q' or dir_user='%q') and (sip_host='%q' or presence_hosts like '%%%q%%')",
-									 (concat != NULL) ? concat : "", user, user, domain, domain);
+									 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
+									 user, domain, domain);
 			}
 			switch_assert(sql);
 			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
