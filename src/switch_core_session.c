@@ -2049,7 +2049,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
 						  "%s Channel is hungup and application '%s' does not have the zombie_exec flag.\n",
 						  switch_channel_get_name(session->channel), app);
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_IGNORE;
 	}
 
 	if (!arg && strstr(app, "::")) {

@@ -4271,6 +4271,21 @@ SWITCH_STANDARD_API(uuid_flush_dtmf_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(uuid_zombie_exec_function)
+{
+	switch_core_session_t *fsession;
+
+	if (!zstr(cmd) && (fsession = switch_core_session_locate(cmd))) {
+		switch_channel_set_flag(switch_core_session_get_channel(fsession), CF_ZOMBIE_EXEC);
+		switch_core_session_rwunlock(fsession);
+		stream->write_function(stream, "+OK MMM Brains...\n");
+	} else {
+		stream->write_function(stream, "-ERR no such session\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define SETVAR_SYNTAX "<uuid> <var> [value]"
 SWITCH_STANDARD_API(uuid_setvar_function)
 {
@@ -5331,6 +5346,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_simplify", "Try to cut out of a call path / attended xfer", uuid_simplify_function, SIMPLIFY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_jitterbuffer", "Try to cut out of a call path / attended xfer", 
 				   uuid_jitterbuffer_function, JITTERBUFFER_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_zombie_exec", "Set zombie_exec flag on the specified uuid", uuid_zombie_exec_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "xml_flush_cache", "clear xml cache", xml_flush_function, "<id> <key> <val>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");

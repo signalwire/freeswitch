@@ -46,6 +46,10 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
+	
+	if (!switch_channel_test_flag(session->channel, CF_ZOMBIE_EXEC)) {
+		return;
+	}
 
 	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
 		return;
@@ -53,14 +57,17 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 
 	while(extension->current_application) {
 		switch_caller_application_t *current_application = extension->current_application;
+		switch_status_t status;
 
 		extension->current_application = extension->current_application->next;
 
-		if (switch_core_session_execute_application(session,
-													current_application->application_name,
-													current_application->application_data) != SWITCH_STATUS_SUCCESS) {
+		status = switch_core_session_execute_application(session,
+														 current_application->application_name, current_application->application_data);
+														 
+		
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_IGNORE) {
 			return;
-		}		
+		}
 	}
 
 

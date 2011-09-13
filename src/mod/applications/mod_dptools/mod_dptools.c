@@ -1005,6 +1005,18 @@ SWITCH_STANDARD_APP(eval_function)
 	return;
 }
 
+SWITCH_STANDARD_APP(zombie_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (switch_channel_up(channel)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MMM Brains....\n", switch_channel_get_name(channel));
+		switch_channel_set_flag(channel, CF_ZOMBIE_EXEC);
+	}
+
+	return;
+}
+
 
 SWITCH_STANDARD_APP(hangup_function)
 {
@@ -3921,6 +3933,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "strftime", "strftime", "strftime", strftime_function, "[<epoch>|]<format string>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "phrase", "Say a Phrase", "Say a Phrase", phrase_function, "<macro_name>,<data>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "eval", "Do Nothing", "Do Nothing", eval_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "stop", "Do Nothing", "Do Nothing", eval_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "set_zombie_exec", "Enable Zombie Execution", "Enable Zombie Execution", 
+				   zombie_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "pre_answer", "Pre-Answer the call", "Pre-Answer the call for a channel.", pre_answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "answer", "Answer the call", "Answer the call for a channel.", answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hangup", "Hangup the call", "Hangup the call for a channel.", hangup_function, "[<cause>]", SAF_SUPPORT_NOMEDIA);
