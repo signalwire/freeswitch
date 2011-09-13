@@ -2025,13 +2025,35 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 	switch_application_interface_t *application_interface;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (!arg && strstr(app, "::")) {
-		return switch_core_session_execute_application_async(session, app, arg);
+	if (switch_channel_down(session->channel)) {
+		char *p;
+		if (!arg && (p = strstr(app, "::"))) {
+			*p++ = '0';
+			*p++ = '0';
+			arg = p;
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s ASYNC CALL CONVERTED TO INLINE %s(%s)\n", 
+							  switch_channel_get_name(session->channel), app, switch_str_nil(arg));			
+		}
+		
+		if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (switch_test_flag(application_interface, SAF_ZOMBIE_EXEC)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s ZOMBIE EXEC %s(%s)\n", 
+							  switch_channel_get_name(session->channel), app, switch_str_nil(arg));
+			goto exec;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+						  "%s Channel is hungup and application '%s' does not have the zombie_exec flag.\n",
+						  switch_channel_get_name(session->channel), app);
+		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_channel_down(session->channel)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is hungup, aborting execution of application: %s\n", app);
-		return SWITCH_STATUS_FALSE;
+	if (!arg && strstr(app, "::")) {
+		return switch_core_session_execute_application_async(session, app, arg);
 	}
 
 	if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
@@ -2078,6 +2100,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 			}
 		}
 	}
+
+ exec:
 
 	switch_core_session_exec(session, application_interface, arg);
 

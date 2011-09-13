@@ -42,9 +42,28 @@ static void switch_core_standard_on_init(switch_core_session_t *session)
 
 static void switch_core_standard_on_hangup(switch_core_session_t *session)
 {
+	switch_caller_extension_t *extension;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
+
+	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
+		return;
+	}
+
+	while(extension->current_application) {
+		switch_caller_application_t *current_application = extension->current_application;
+
+		extension->current_application = extension->current_application->next;
+
+		if (switch_core_session_execute_application(session,
+													current_application->application_name,
+													current_application->application_data) != SWITCH_STATUS_SUCCESS) {
+			return;
+		}		
+	}
+
+
 }
 
 static void switch_core_standard_on_reporting(switch_core_session_t *session)

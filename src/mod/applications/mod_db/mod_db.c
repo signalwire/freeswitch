@@ -622,8 +622,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_db_load)
 	/* register limit interfaces */
 	SWITCH_ADD_LIMIT(limit_interface, "db", limit_incr_db, limit_release_db, limit_usage_db, limit_reset_db, limit_status_db, NULL);
 
-	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[insert|delete|select]/<realm>/<key>/<value>");
 	switch_console_set_complete("add db insert");
 	switch_console_set_complete("add db delete");
