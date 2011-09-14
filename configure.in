@@ -428,7 +428,7 @@ case "$host" in
 	fi
     ;;
     *-solaris2*)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048 -D__EXTENSIONS__)
         APR_ADDTO(SWITCH_AM_LDFLAGS, -lsendfile -lresolv -lsocket -lnsl -luuid)
         APR_ADDTO(ESL_LDFLAGS, -lnsl -lsocket)
     ;;
