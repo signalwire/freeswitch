@@ -1986,8 +1986,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					number = tech_pvt->caller_profile->destination_number;
 				}
 
-				printf("WTF [%s][%s]\n", name, number);
-
 				if (!sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY)) {
 					if (zstr(tech_pvt->last_sent_callee_id_name) || strcmp(tech_pvt->last_sent_callee_id_name, name) ||
 						zstr(tech_pvt->last_sent_callee_id_number) || strcmp(tech_pvt->last_sent_callee_id_number, number)) {
