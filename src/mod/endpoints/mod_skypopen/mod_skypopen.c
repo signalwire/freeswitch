@@ -1884,7 +1884,9 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 	switch_assert(proto != NULL);
 
-	DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", SKYPOPEN_P_LOG, proto, from, to, subject, body, type,
+	//DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", SKYPOPEN_P_LOG, proto, from, to, subject, body, type,
+	//			 hint ? hint : "NULL");
+	DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, hint=%s)\n", SKYPOPEN_P_LOG, proto, from, to, subject, body,
 				 hint ? hint : "NULL");
 
 	if (!to || !strlen(to)) {
@@ -1911,7 +1913,9 @@ static switch_status_t chat_send(switch_event_t *message_event)
 			*host++ = '\0';
 		}
 
-		DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", SKYPOPEN_P_LOG, proto, from, to, subject, body, type,
+		//DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", SKYPOPEN_P_LOG, proto, from, to, subject, body, type,
+		//			 hint ? hint : "NULL");
+		DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, hint=%s)\n", SKYPOPEN_P_LOG, proto, from, to, subject, body,
 					 hint ? hint : "NULL");
 		if (hint && strlen(hint)) {
 			//in hint we receive the interface name to use
