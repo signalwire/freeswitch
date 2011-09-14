@@ -887,7 +887,7 @@ static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *t
 		/* HDLC channels do not always transmit, so its ok for drivers to fill with idle
 		 * also do not report idle warning when we just started transmitting */
 		if (ftdmchan->iostats.tx.packets && FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
-			ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Tx idle changed from %d to %d\n", 
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Tx idle changed from %d to %d\n", 
 					ftdmchan->iostats.tx.idle_packets, tx_stats->wp_api_tx_hdr_tx_idle_packets);
 		}
 		ftdmchan->iostats.tx.idle_packets = tx_stats->wp_api_tx_hdr_tx_idle_packets;
@@ -940,21 +940,21 @@ static void wanpipe_read_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_rx_hdr_t *rx
 	}
 
 	if (ftdmchan->iostats.rx.queue_len >= (0.8 * ftdmchan->iostats.rx.queue_size)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Rx Queue length exceeded 80% threshold (%d/%d)\n",
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue length exceeded 80% threshold (%d/%d)\n",
 					  		ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
 		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
 	} else if (ftdm_test_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES)){
-		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Rx Queue length reduced 80% threshold (%d/%d)\n",
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue length reduced 80% threshold (%d/%d)\n",
 					  		ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
 		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
 	}
 	
 	if (ftdmchan->iostats.rx.queue_len >= ftdmchan->iostats.rx.queue_size) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Rx Queue Full (%d/%d)\n",
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue Full (%d/%d)\n",
 					  ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
 		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
 	} else if (ftdm_test_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL)){
-		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Rx Queue no longer full (%d/%d)\n",
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue no longer full (%d/%d)\n",
 					  ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
 		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_FULL);
 	}
