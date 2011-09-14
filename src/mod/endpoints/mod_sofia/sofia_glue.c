@@ -5566,7 +5566,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 		}
 
-		if (switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) {
+		if (switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) {
 			sofia_set_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE);
 		} else {
 			switch_xml_t callflow, param, x_extension;
