@@ -10502,7 +10502,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_cond_next() {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_send(char * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7, char * jarg8) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_send_args(char * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7, char * jarg8) {
   int jresult ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -10522,7 +10522,21 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_send(char * jarg1, char * jar
   arg6 = (char *)jarg6; 
   arg7 = (char *)jarg7; 
   arg8 = (char *)jarg8; 
-  result = (switch_status_t)switch_core_chat_send((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8);
+  result = (switch_status_t)switch_core_chat_send_args((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_send(char * jarg1, void * jarg2) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_event_t *arg2 = (switch_event_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_event_t *)jarg2; 
+  result = (switch_status_t)switch_core_chat_send((char const *)arg1,arg2);
   jresult = result; 
   return jresult;
 }
@@ -20745,10 +20759,10 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_chat_interface_interface_name_get(vo
 
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_interface_chat_send_set(void * jarg1, void * jarg2) {
   switch_chat_interface *arg1 = (switch_chat_interface *) 0 ;
-  switch_status_t (*arg2)(char const *,char const *,char const *,char const *,char const *,char const *,char const *) = (switch_status_t (*)(char const *,char const *,char const *,char const *,char const *,char const *,char const *)) 0 ;
+  switch_status_t (*arg2)(switch_event_t *) = (switch_status_t (*)(switch_event_t *)) 0 ;
   
   arg1 = (switch_chat_interface *)jarg1; 
-  arg2 = (switch_status_t (*)(char const *,char const *,char const *,char const *,char const *,char const *,char const *))jarg2; 
+  arg2 = (switch_status_t (*)(switch_event_t *))jarg2; 
   if (arg1) (arg1)->chat_send = arg2;
   
 }
@@ -20757,10 +20771,10 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_interface_chat_send_set(void * ja
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_chat_interface_chat_send_get(void * jarg1) {
   void * jresult ;
   switch_chat_interface *arg1 = (switch_chat_interface *) 0 ;
-  switch_status_t (*result)(char const *,char const *,char const *,char const *,char const *,char const *,char const *) = 0 ;
+  switch_status_t (*result)(switch_event_t *) = 0 ;
   
   arg1 = (switch_chat_interface *)jarg1; 
-  result = (switch_status_t (*)(char const *,char const *,char const *,char const *,char const *,char const *,char const *)) ((arg1)->chat_send);
+  result = (switch_status_t (*)(switch_event_t *)) ((arg1)->chat_send);
   jresult = (void *)result; 
   return jresult;
 }

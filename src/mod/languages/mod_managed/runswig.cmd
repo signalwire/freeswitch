@@ -5,3 +5,5 @@ for %%X in (*.cs) do type %%X >> swig.csx
 @ECHO ON
 move swig.csx managed\swig.cs
 del *.cs
+\tools\dos2unix\bin\dos2unix managed\swig.cs
+\tools\dos2unix\bin\dos2unix freeswitch_wrap.cxx
