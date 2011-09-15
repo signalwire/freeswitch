@@ -453,6 +453,10 @@ static int tport_recv_sigcomp_r(tport_t *self,
       if (self->tp_master->mr_dump_file && !self->tp_pri->pri_threadpool)
 	tport_dump_iovec(self, msg, n, iovec, veclen, "recv", "from");
 
+      /* Send the received data to the capture server */
+      if (self->tp_master->mr_capt_sock && !self->tp_pri->pri_threadpool)
+	tport_dump_iovec(self, msg, 0);
+
       msg_recv_commit(msg, dlen, eos);    /* Mark buffer as used */
     }
     else {

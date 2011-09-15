@@ -591,4 +591,9 @@ struct code2str dcodQ931AssocInfoTable[] = {
 	{ -1,   "Invalid"},
 };
 
+
+struct code2str dcodQ931NotificationIndTable[] = {
+	{ 0x71, "Call Information/event"},
+	{ -1,   "Invalid"},
+};
 #endif /* __FTMOD_SANGOMA_ISDN_TRACE_H__ */

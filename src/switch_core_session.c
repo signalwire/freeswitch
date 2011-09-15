@@ -503,7 +503,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		if (channel) {
 			const char *val;
 			switch_codec_t *vid_read_codec = NULL, *read_codec = switch_core_session_get_read_codec(session);
-			const char *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
+			const char *ep, *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
 
 			switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 
@@ -523,6 +523,9 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 				switch_snprintf(tmp, sizeof(tmp), "%s%s", rc, vrc);
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, tmp);
+			} else if ((ep = switch_channel_get_variable(channel, "ep_codec_string"))) {
+				printf("SET [%s] [%s]\n", switch_channel_get_name(peer_channel), ep);
+				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, ep);
 			}
 
 			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));

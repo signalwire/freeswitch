@@ -1831,8 +1831,17 @@ void sofia_reg_handle_sip_r_register(int status,
 				const char *new_expires;
 				uint32_t expi;
 				if (contact->m_next) {
-					const char *sipip = profile->extsipip ? profile->extsipip : profile->sipip;
-					for (; contact && strcasecmp(contact->m_url->url_host, sipip); contact = contact->m_next);
+					char *full;
+
+					for (; contact; contact = contact->m_next) {
+						if ((full = sip_header_as_string(nh->nh_home, (void *) contact))) {
+							if (switch_stristr(sofia_private->gateway->register_contact, full)) {
+								break;
+							}
+
+							su_free(nh->nh_home, full);
+						}
+					}
 				}
 
 				if (!contact) {

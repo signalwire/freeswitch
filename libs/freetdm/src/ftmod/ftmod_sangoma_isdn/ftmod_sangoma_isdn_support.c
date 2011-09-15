@@ -1021,6 +1021,14 @@ ftdm_status_t set_restart_ind_ie(ftdm_channel_t *ftdmchan, RstInd *rstInd)
 	return FTDM_SUCCESS;
 }
 
+ftdm_status_t set_not_ind_ie(ftdm_channel_t *ftdmchan, NotInd *notInd)
+{
+	notInd->eh.pres = PRSNT_NODEF;
+	notInd->notDesc.pres = PRSNT_NODEF;
+	notInd->notDesc.val = 0x71; /* Call information event */
+	return FTDM_SUCCESS;
+}
+
 void sngisdn_t3_timeout(void *p_sngisdn_info)
 {
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*)p_sngisdn_info;

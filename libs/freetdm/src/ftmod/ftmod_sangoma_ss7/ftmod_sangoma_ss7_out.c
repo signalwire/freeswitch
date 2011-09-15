@@ -36,6 +36,8 @@
 /******************************************************************************/
 
 /* DEFINES ********************************************************************/
+#define SNGSS7_EVNTINFO_IND_INBAND_AVAIL 0x03
+/******************************************************************************/
 
 /* GLOBALS ********************************************************************/
 
@@ -171,6 +173,7 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 		acm.optBckCalInd.simpleSegmInd.pres		= PRSNT_DEF;
 		acm.optBckCalInd.mlppUserInd.pres		= PRSNT_DEF;
 		acm.optBckCalInd.usrNetIneractInd.pres	= PRSNT_DEF;
+		acm.optBckCalInd.netExcDelInd.pres		= PRSNT_DEF;
 	} /* if (sngss7_test_options(isup_intf, SNGSS7_ACM_OBCI_BITA)) */
 
 	/* send the ACM request to LibSngSS7 */
@@ -187,6 +190,32 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	return;
 }
 
+void ft_to_sngss7_cpg (ftdm_channel_t *ftdmchan)
+{
+	SiCnStEvnt cpg;
+	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
+	
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+	
+
+	memset (&cpg, 0, sizeof (cpg));
+
+	cpg.evntInfo.eh.pres = PRSNT_NODEF;
+
+	cpg.evntInfo.evntInd.pres = PRSNT_NODEF;
+	cpg.evntInfo.evntInd.val = SNGSS7_EVNTINFO_IND_INBAND_AVAIL; /* Event Indicator = In-band info is now available */
+	
+	cpg.evntInfo.evntPresResInd.pres = PRSNT_NODEF;
+	cpg.evntInfo.evntPresResInd.val = 0;	/* Event presentation restricted indicator = no indication */
+	
+	/* send the CPG request to LibSngSS7 */
+	sng_cc_con_status  (1, sngss7_info->suInstId, sngss7_info->spInstId, sngss7_info->circuit->id, &cpg, PROGRESS);
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "[CIC:%d]Tx CPG\n", sngss7_info->circuit->cic);
+	ftdm_call_clear_vars(&ftdmchan->caller_data);
+	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
+	return;
+}
 void ft_to_sngss7_anm (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);

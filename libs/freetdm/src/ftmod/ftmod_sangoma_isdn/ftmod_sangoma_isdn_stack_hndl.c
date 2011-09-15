@@ -361,8 +361,9 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 													(evntType == MI_CALLPROC)?"PROCEED":
 													(evntType == MI_PROGRESS)?"PROGRESS":
 													(evntType == MI_SETUPACK)?"SETUP ACK":
-															(evntType == MI_INFO)?"INFO":"UNKNOWN",
-															suId, suInstId, spInstId, ces);
+													(evntType == MI_NOTIFY)?"NOTIFY":
+													(evntType == MI_INFO)?"INFO":"UNKNOWN",
+													suId, suInstId, spInstId, ces);
 	
 	switch(evntType) {
 		case MI_CALLPROC:			
@@ -493,7 +494,10 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 						break;
 				}
 			}
-
+			break;
+		case MI_NOTIFY:
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Processing NOTIFY (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
+			/* Do nothing */
 			break;
 		default:
 			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Unhandled STATUS event\n");

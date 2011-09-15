@@ -735,7 +735,9 @@ static void terminate_session(switch_core_session_t **session, int line, switch_
 		}
 
 		switch_mutex_lock(tech_pvt->flag_mutex);
-		switch_set_flag(tech_pvt, TFLAG_TERM);
+		if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+			switch_set_flag(tech_pvt, TFLAG_TERM);
+		}
 		switch_set_flag(tech_pvt, TFLAG_BYE);
 		switch_clear_flag(tech_pvt, TFLAG_IO);
 		switch_mutex_unlock(tech_pvt->flag_mutex);

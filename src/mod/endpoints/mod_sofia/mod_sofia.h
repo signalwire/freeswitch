@@ -257,7 +257,8 @@ typedef enum {
 	PFLAG_NDLB_TO_IN_200_CONTACT = (1 << 0),
 	PFLAG_NDLB_BROKEN_AUTH_HASH = (1 << 1),
 	PFLAG_NDLB_SENDRECV_IN_SESSION = (1 << 2),
-	PFLAG_NDLB_ALLOW_BAD_IANANAME = (1 << 3)
+	PFLAG_NDLB_ALLOW_BAD_IANANAME = (1 << 3),
+	PFLAG_NDLB_ALLOW_NONDUP_SDP = (1 << 4)
 } sofia_NDLB_t;
 
 typedef enum {
@@ -314,12 +315,13 @@ typedef enum {
 	TFLAG_NOREPLY,
 	TFLAG_LIBERAL_DTMF,
 	TFLAG_GOT_ACK,
+	TFLAG_CAPTURE,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
 
 #define SOFIA_MAX_MSG_QUEUE 51
-#define SOFIA_MSG_QUEUE_SIZE 1000
+#define SOFIA_MSG_QUEUE_SIZE 5000
 
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
@@ -353,6 +355,7 @@ struct mod_sofia_globals {
 	int auto_restart;
 	int auto_nat;
 	int tracelevel;
+	char *capture_server;	
 	int rewrite_multicasted_fs_path;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
@@ -1114,6 +1117,7 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt);
 switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *profile, const char *user, const char *host);
 switch_bool_t sofia_glue_profile_exists(const char *key);
 void sofia_glue_global_siptrace(switch_bool_t on);
+void sofia_glue_global_capture(switch_bool_t on);
 void sofia_glue_global_watchdog(switch_bool_t on);
 void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp);
 switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt);

@@ -334,6 +334,10 @@ int tport_recv_stream(tport_t *self)
   /* Write the received data to the message dump file */
   if (self->tp_master->mr_dump_file)
     tport_dump_iovec(self, msg, n, iovec, veclen, "recv", "from");
+    
+  if (self->tp_master->mr_capt_sock)
+      tport_capt_msg(self, msg, n, iovec, veclen, "recv");
+         
 
   /* Mark buffer as used */
   msg_recv_commit(msg, n, n == 0);

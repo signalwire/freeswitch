@@ -3554,6 +3554,10 @@ ssize_t tport_vsend(tport_t *self,
 
   if (n > 0 && self->tp_master->mr_dump_file)
     tport_dump_iovec(self, msg, n, iov, iovused, "sent", "to");
+    
+  if (n > 0 && self->tp_master->mr_capt_sock)
+      tport_capt_msg(self, msg, n, iov, iovused, "sent");
+              
 
   if (tport_log->log_level >= 7) {
     size_t i, m = 0;

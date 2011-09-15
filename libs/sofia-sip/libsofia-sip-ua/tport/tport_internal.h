@@ -300,6 +300,9 @@ struct tport_master {
   /** FILE to dump received and sent data */
   FILE               *mr_dump_file;
   char               *mr_dump;	/**< Filename for dumping received/sent data */
+  /** SOCK to dump received and sent data */
+  su_socket_t         mr_capt_sock;
+  char               *mr_capt_name;	/**< Servername for capturing received/sent data */  
   tport_primary_t    *mr_primaries;        /**< List of primary contacts */
 
   tport_params_t      mr_params[1];
@@ -477,6 +480,9 @@ void tport_log_msg(tport_t *tp, msg_t *msg, char const *what,
 void tport_dump_iovec(tport_t const *self, msg_t *msg,
 		      size_t n, su_iovec_t const iov[], size_t iovused,
 		      char const *what, char const *how);
+
+void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
+                    su_iovec_t const iov[], size_t iovused, char const *what);
 
 int tport_tcp_ping(tport_t *self, su_time_t now);
 int tport_tcp_pong(tport_t *self);

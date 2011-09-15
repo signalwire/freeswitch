@@ -208,6 +208,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 
 		if (!noptime) {
 			if (!cur_ptime) {
+#if 0
 				if (ptime) {
 					if (ptime != imp->microseconds_per_packet / 1000) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
@@ -225,6 +226,11 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 				} else {
 					ptime = imp->microseconds_per_packet / 1000;
 				}
+#else
+				if (!ptime) {
+					ptime = imp->microseconds_per_packet / 1000;
+				}
+#endif
 			} else {
 				if ((imp->microseconds_per_packet / 1000) != cur_ptime) {
 					continue;
@@ -544,7 +550,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 	} else if (tech_pvt->num_codecs) {
 		int i;
 		int cur_ptime = 0, this_ptime = 0, cng_type = 0;
-
+		const char *mult;
 
 		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
 			cng_type = tech_pvt->cng_pt;
@@ -553,8 +559,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 				tech_pvt->cng_pt = 0;
 			}
 		}
-
-		if (!switch_true(switch_channel_get_variable(tech_pvt->channel, "sdp_m_per_ptime"))) {
+		
+		mult = switch_channel_get_variable(tech_pvt->channel, "sdp_m_per_ptime");
+		
+		if (mult && switch_false(mult)) {
 			char *bp = buf;
 			
 			if ((!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE))) {
@@ -1855,7 +1863,12 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 	char *extra_headers = NULL;
 	switch_stream_handle_t stream = { 0 };
 	switch_event_header_t *hi = NULL;
+	const char *exclude_regex = NULL;
+	switch_regex_t *re = NULL;
+	int ovector[30] = {0};
+	int proceed;
 
+	exclude_regex = switch_channel_get_variable(channel, "exclude_outgoing_extra_header");
 	SWITCH_STANDARD_STREAM(stream);
 	if ((hi = switch_channel_variable_first(channel))) {
 		for (; hi; hi = hi->next) {
@@ -1863,8 +1876,13 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 			char *value = (char *) hi->value;
 
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
-				const char *hname = name + strlen(prefix);
-				stream.write_function(&stream, "%s: %s\r\n", hname, value);
+				if ( !exclude_regex || !(proceed = switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+					const char *hname = name + strlen(prefix);
+					stream.write_function(&stream, "%s: %s\r\n", hname, value);
+					switch_regex_safe_free(re);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring Extra Header [%s] , matches exclude_outgoing_extra_header [%s]\n", name, exclude_regex);
+				}
 			}
 		}
 		switch_channel_variable_last(channel);
@@ -3031,7 +3049,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		flags &= ~SWITCH_RTP_FLAG_BYTESWAP;
 	}
 
-
 	if (tech_pvt->rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		//const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 		//const char *port = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
@@ -3099,7 +3116,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		const char *rport = NULL;
 		switch_port_t remote_rtcp_port = 0;
 
-		sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
+		
 
 		if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port"))) {
 			remote_rtcp_port = (switch_port_t)atoi(rport);
@@ -3580,6 +3597,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
  end:
 
+	sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
 	sofia_glue_tech_track(tech_pvt->profile, tech_pvt->session);
 
 
@@ -5239,6 +5257,27 @@ void sofia_glue_global_siptrace(switch_bool_t on)
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
 }
+
+void sofia_glue_global_capture(switch_bool_t on)
+{
+       switch_hash_index_t *hi;
+       const void *var;
+       void *val;
+       sofia_profile_t *pptr;
+
+       switch_mutex_lock(mod_sofia_globals.hash_mutex);
+       if (mod_sofia_globals.profile_hash) {
+               for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+                       switch_hash_this(hi, &var, NULL, &val);
+                       if ((pptr = (sofia_profile_t *) val)) {
+                               nua_set_params(pptr->nua, TPTAG_CAPT(on ? mod_sofia_globals.capture_server : NULL), TAG_END());
+                       }
+               }
+       }
+       switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+}
+
 
 void sofia_glue_global_watchdog(switch_bool_t on)
 {

@@ -114,6 +114,29 @@ struct msg_buffer_s {
   msg_payload_t  *b_chunks;	    /**< List of body chunks */
 };
 
+
+struct hep_hdr{
+    uint8_t hp_v;             /* version */
+    uint8_t hp_l;             /* length */
+    uint8_t hp_f;             /* family */
+    uint8_t hp_p;             /* protocol */
+    uint16_t hp_sport;        /* source port */
+    uint16_t hp_dport;        /* destination port */
+};
+
+
+struct hep_iphdr{
+        struct in_addr hp_src; 
+        struct in_addr hp_dst;      /* source and dest address */
+};
+
+#if SU_HAVE_IN6
+struct hep_ip6hdr {
+	struct in6_addr hp6_src;        /* source address */
+	struct in6_addr hp6_dst;        /* destination address */
+};
+#endif
+
 /** Maximum size when streaming. */
 #define MSG_SSIZE_MAX (USIZE_MAX)
 
