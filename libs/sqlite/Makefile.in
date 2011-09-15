@@ -194,7 +194,8 @@ SRC += \
   $(TOP)/ext/fts1/fts1_hash.h \
   $(TOP)/ext/fts1/fts1_porter.c \
   $(TOP)/ext/fts1/fts1_tokenizer.h \
-  $(TOP)/ext/fts1/fts1_tokenizer1.c
+  $(TOP)/ext/fts1/fts1_tokenizer1.c \
+  $(TOP)/src/sqliteInt.h
 
 
 # Source code to the test files.

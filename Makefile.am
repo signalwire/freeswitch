@@ -566,6 +566,7 @@ update-clean: clean modwipe uninstall libs/openzap/Makefile python-reconf
 	cd libs/portaudio && $(MAKE) clean
 	cd libs/speex && $(MAKE) clean
 	cd libs/esl && $(MAKE) clean
+	cd libs/sqlite && $(MAKE) clean
 
 swigall:
 	@echo reswigging all

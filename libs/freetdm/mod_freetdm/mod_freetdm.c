@@ -3790,588 +3790,713 @@ void dump_chan_xml(ftdm_span_t *span, uint32_t chan_id, switch_stream_handle_t *
 						   switch_channel_cause2str(caller_data->hangup_cause));
 }
 
-#define FT_SYNTAX "USAGE:\n" \
-"--------------------------------------------------------------------------------\n" \
-"ftdm list\n" \
-"ftdm start|stop <span_name|span_id>\n" \
-"ftdm restart <span_id|span_name> [<chan_id>]\n" \
-"ftdm dump <span_id|span_name> [<chan_id>]\n" \
-"ftdm sigstatus get|set [<span_id|span_name>] [<channel>] [<sigstatus>]\n" \
-"ftdm trace <path> <span_id|span_name> [<chan_id>]\n" \
-"ftdm notrace <span_id|span_name> [<chan_id>]\n" \
-"ftdm q931_pcap <span_id> on|off [pcapfilename without suffix]\n" \
-"ftdm gains <rxgain> <txgain> <span_id> [<chan_id>]\n" \
-"ftdm dtmf on|off <span_id> [<chan_id>]\n" \
-"ftdm queuesize <rxsize> <txsize> <span_id> [<chan_id>]\n" \
-"--------------------------------------------------------------------------------\n"
+
+static switch_status_t ftdm_cmd_voice_detect(const char *cmd, switch_core_session_t *session,
+				      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	stream->write_function(stream, "IMPLEMENT ME!\n");
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t ftdm_cmd_list(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	int j;
+	for (j = 0 ; j < FTDM_MAX_SPANS_INTERFACE; j++) {
+		ftdm_channel_t *fchan;
+		ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
+		const char *flags = "none";
+		ftdm_signaling_status_t sigstatus;
+
+		if (!SPAN_CONFIG[j].span) {
+			continue;
+		}
+
+		if (SPAN_CONFIG[j].analog_options & ANALOG_OPTION_3WAY) {
+			flags = "3way";
+		} else if (SPAN_CONFIG[j].analog_options & ANALOG_OPTION_CALL_SWAP) {
+			flags = "call swap";
+		}
+		fchan = ftdm_span_get_channel(SPAN_CONFIG[j].span, 1);
+		ftdm_channel_get_alarms(fchan, &alarmbits);
+		
+		if ((FTDM_SUCCESS == ftdm_span_get_sig_status(SPAN_CONFIG[j].span, &sigstatus))) {
+			stream->write_function(stream,
+								   "+OK\n"
+								   "span: %u (%s)\n"
+								   "type: %s\n"		
+								   "physical_status: %s\n"
+								   "signaling_status: %s\n"
+								   "chan_count: %u\n"
+								   "dialplan: %s\n"
+								   "context: %s\n"
+								   "dial_regex: %s\n"
+								   "fail_dial_regex: %s\n"
+								   "hold_music: %s\n"
+								   "analog_options: %s\n",
+								   j,
+								   ftdm_span_get_name(SPAN_CONFIG[j].span),
+								   SPAN_CONFIG[j].type,
+								   alarmbits ? "alarmed" : "ok",
+								   ftdm_signaling_status2str(sigstatus),
+								   ftdm_span_get_chan_count(SPAN_CONFIG[j].span),
+								   SPAN_CONFIG[j].dialplan,
+								   SPAN_CONFIG[j].context,
+								   SPAN_CONFIG[j].dial_regex,
+								   SPAN_CONFIG[j].fail_dial_regex,
+								   SPAN_CONFIG[j].hold_music,
+								   flags
+								   );
+		} else {
+			stream->write_function(stream,
+								   "+OK\n"
+								   "span: %u (%s)\n"
+								   "type: %s\n"
+								   "physical_status: %s\n"
+								   "chan_count: %u\n"
+								   "dialplan: %s\n"
+								   "context: %s\n"
+								   "dial_regex: %s\n"
+								   "fail_dial_regex: %s\n"
+								   "hold_music: %s\n"
+								   "analog_options: %s\n",
+								   j,
+								   ftdm_span_get_name(SPAN_CONFIG[j].span),
+								   SPAN_CONFIG[j].type,
+								   alarmbits ? "alarmed" : "ok",
+								   ftdm_span_get_chan_count(SPAN_CONFIG[j].span),
+								   SPAN_CONFIG[j].dialplan,
+								   SPAN_CONFIG[j].context,
+								   SPAN_CONFIG[j].dial_regex,
+								   SPAN_CONFIG[j].fail_dial_regex,
+								   SPAN_CONFIG[j].hold_music,
+								   flags);
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t ftdm_cmd_start_stop(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	char *span_name = argv[1];
+	ftdm_span_t *span = NULL;
+	ftdm_status_t status;
+
+	if (span_name) {
+		ftdm_span_find_by_name(span_name, &span);
+	}
+
+	if (!span) {
+		stream->write_function(stream, "-ERR no span\n");
+		goto end;
+	}
+	
+	if (!strcasecmp(argv[0], "stop")) {
+		status = ftdm_span_stop(span);
+	} else {
+		status = ftdm_span_start(span);
+	}
+	
+	stream->write_function(stream, status == FTDM_SUCCESS ? "+OK\n" : "-ERR failure\n");
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t ftdm_cmd_reset(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	uint32_t chan_id = 0;
+	uint32_t ccount = 0;
+	ftdm_channel_t *chan;
+	ftdm_span_t *span = NULL;
+	if (argc < 2) {
+		stream->write_function(stream, "-ERR Usage: ftdm reset <span_id> [<chan_id>]\n");
+		goto end;
+	}
+	ftdm_span_find_by_name(argv[1], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR invalid span\n");
+		goto end;
+	}
+
+	if (argc > 2) {
+		chan_id = atoi(argv[2]);
+		if (chan_id > ftdm_span_get_chan_count(span)) {
+			stream->write_function(stream, "-ERR invalid chan\n");
+			goto end;
+		}
+	}
+	if (chan_id) {
+		chan = ftdm_span_get_channel(span, chan_id);
+		if (!chan) {
+			stream->write_function(stream, "-ERR Could not find chan\n");
+			goto end;
+		}
+		stream->write_function(stream, "Resetting channel %s:%s\n", argv[1], argv[2]);
+		ftdm_channel_reset(chan);
+	} else {
+		uint32_t i = 0;
+		ccount = ftdm_span_get_chan_count(span);
+		for (i = 1; i < ccount; i++) {
+			chan = ftdm_span_get_channel(span, i);
+			stream->write_function(stream, "Resetting channel %s:%d\n", argv[1], i);
+			ftdm_channel_reset(chan);
+		}
+	}
+
+end:
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t ftdm_cmd_dump(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	uint32_t chan_id = 0;
+	ftdm_span_t *span;
+	char *as = NULL;
+	
+	if (argc < 2) {
+		stream->write_function(stream, "-ERR Usage: ftdm dump <span_id> [<chan_id>]\n");
+		goto end;
+	}
+
+	ftdm_span_find_by_name(argv[1], &span);
+	
+	if (argc > 2) {
+		if (argv[3] && !strcasecmp(argv[2], "as")) {
+			as = argv[3];
+		} else {
+			chan_id = atoi(argv[2]);
+		}
+	}
+
+	if (argv[4] && !strcasecmp(argv[3], "as")) {
+		as = argv[4];
+	}
+
+	if (!zstr(as) && !strcasecmp(as, "xml")) {
+		stream->write_function(stream, "<channels>\n");
+		if (!span) {
+			stream->write_function(stream, "<error>invalid span</error>\n");
+		} else {
+			if (chan_id) {
+				if(chan_id > ftdm_span_get_chan_count(span)) {
+					stream->write_function(stream, "<error>invalid channel</error>\n");
+				} else {
+					dump_chan_xml(span, chan_id, stream);
+				}
+			} else {
+				chaniter = ftdm_span_get_chan_iterator(span, NULL);
+				for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+					dump_chan_xml(span, ftdm_channel_get_id(ftdm_iterator_current(curr)), stream);
+				}
+				ftdm_iterator_free(chaniter);
+			}
+		}
+		stream->write_function(stream, "</channels>\n");
+	} else {
+		if (!span) {
+			stream->write_function(stream, "-ERR invalid span\n");
+		} else {
+			if (chan_id) {
+				if(chan_id > ftdm_span_get_chan_count(span)) {
+					stream->write_function(stream, "-ERR invalid channel\n");
+				} else {
+					char *dbgstr = NULL;
+					ftdm_channel_t *fchan = ftdm_span_get_channel(span, chan_id);
+					dump_chan(span, chan_id, stream);
+					dbgstr = ftdm_channel_get_history_str(fchan);
+					stream->write_function(stream, "%s\n", dbgstr);
+					ftdm_free(dbgstr);
+				}
+			} else {
+				stream->write_function(stream, "+OK\n");
+				chaniter = ftdm_span_get_chan_iterator(span, NULL);
+				for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+					dump_chan(span, ftdm_channel_get_id(ftdm_iterator_current(curr)), stream);
+				}
+				ftdm_iterator_free(chaniter);
+			}
+		}
+	}
+
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t ftdm_cmd_sigstatus(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	ftdm_span_t *span = NULL;
+	ftdm_signaling_status_t sigstatus;
+
+	if (argc < 3) {
+		stream->write_function(stream, "-ERR Usage: ftdm sigstatus get|set [<span_id>] [<chan_id>] [<sigstatus>]\n");
+		goto end;
+	}
+	if (!strcasecmp(argv[1], "get") && argc < 3) {
+		stream->write_function(stream, "-ERR sigstatus get usage: get <span_id>\n");
+		goto end;
+	}
+	if (!strcasecmp(argv[1], "set") && argc != 5) {
+		stream->write_function(stream, "-ERR sigstatus set usage: set <span_id> <chan_id>|all <sigstatus>\n");
+		goto end;
+	}
+
+	ftdm_span_find_by_name(argv[2], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR invalid span\n");
+		goto end;
+	}
+
+	if (!strcasecmp(argv[1], "get")) {
+		if (argc == 4) {
+			uint32_t chan_id = atol(argv[3]);
+			ftdm_channel_t *fchan = ftdm_span_get_channel(span, chan_id);
+			if (!fchan) {
+				stream->write_function(stream, "-ERR failed to get channel id '%d'\n", chan_id);
+				goto end;
+			}
+
+			if ((FTDM_SUCCESS == ftdm_channel_get_sig_status(fchan, &sigstatus))) {
+				stream->write_function(stream, "channel %d signaling status: %s\n", chan_id, ftdm_signaling_status2str(sigstatus));
+			} else {
+				stream->write_function(stream, "-ERR failed to get channel sigstatus\n");
+			}
+			goto end;
+		} else {
+			if ((FTDM_SUCCESS == ftdm_span_get_sig_status(span, &sigstatus))) {
+				stream->write_function(stream, "signaling_status: %s\n", ftdm_signaling_status2str(sigstatus));
+			} else {
+				stream->write_function(stream, "-ERR failed to read span status: %s\n", ftdm_span_get_last_error(span));
+			}
+		}
+		goto end;
+	}
+	if (!strcasecmp(argv[1], "set")) {
+		sigstatus = ftdm_str2ftdm_signaling_status(argv[4]);
+
+		if (!strcasecmp(argv[3], "all")) {
+			if ((FTDM_SUCCESS == ftdm_span_set_sig_status(span, sigstatus))) {
+				stream->write_function(stream, "Signaling status of all channels from span %s set to %s\n",
+						ftdm_span_get_name(span), ftdm_signaling_status2str(sigstatus));
+			} else {
+				stream->write_function(stream, "-ERR failed to set span sigstatus to '%s'\n", ftdm_signaling_status2str(sigstatus));
+			}
+			goto end;
+		} else {
+			uint32_t chan_id = atol(argv[3]);
+			ftdm_channel_t *fchan = ftdm_span_get_channel(span, chan_id);
+			if (!fchan) {
+				stream->write_function(stream, "-ERR failed to get channel id '%d'\n", chan_id);
+				goto end;
+			}
+
+			if ((FTDM_SUCCESS == ftdm_channel_set_sig_status(fchan, sigstatus))) {
+				stream->write_function(stream, "Signaling status of channel %d set to %s\n", chan_id,
+						ftdm_signaling_status2str(sigstatus));
+			} else {
+				stream->write_function(stream, "-ERR failed to set span sigstatus to '%s'\n", ftdm_signaling_status2str(sigstatus));
+			}
+			goto end;
+		}
+	}
+
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t ftdm_cmd_trace(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	char tracepath[255];
+	unsigned i = 0;
+	uint32_t chan_id = 0;
+	uint32_t span_id = 0;
+	uint32_t chan_count = 0;
+	ftdm_span_t *span = NULL;
+	ftdm_channel_t *chan = NULL;
+	if (argc < 3) {
+		stream->write_function(stream, "-ERR Usage: ftdm trace <path> <span_id> [<chan_id>]\n");
+		goto end;
+	} 
+	ftdm_span_find_by_name(argv[2], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR invalid span\n");
+		goto end;
+	}
+	chan_count = ftdm_span_get_chan_count(span);
+	if (argc > 3) {
+		chan_id = atoi(argv[3]);
+		if (chan_id > chan_count) {
+			stream->write_function(stream, "-ERR invalid chan\n");
+			goto end;
+		}
+	}
+	span_id = ftdm_span_get_id(span);
+	if (chan_id) {
+		chan = ftdm_span_get_channel(span, chan_id);
+		snprintf(tracepath, sizeof(tracepath), "%s-in-s%dc%d", argv[1], span_id, chan_id);
+		ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
+		snprintf(tracepath, sizeof(tracepath), "%s-out-s%dc%d", argv[1], span_id, chan_id);
+		ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
+	} else {
+		for (i = 1; i <= chan_count; i++) {
+			chan = ftdm_span_get_channel(span, i);
+			snprintf(tracepath, sizeof(tracepath), "%s-in-s%dc%d", argv[1], span_id, i);
+			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
+			snprintf(tracepath, sizeof(tracepath), "%s-out-s%dc%d", argv[1], span_id, i);
+			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
+		}
+	}
+	stream->write_function(stream, "+OK trace enabled with prefix path %s\n", argv[1]);
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t ftdm_cmd_notrace(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	uint32_t i = 0;
+	uint32_t chan_id = 0;
+	uint32_t chan_count = 0;
+	ftdm_channel_t *fchan = NULL;
+	ftdm_span_t *span = NULL;
+	if (argc < 2) {
+		stream->write_function(stream, "-ERR Usage: ftdm notrace <span_id> [<chan_id>]\n");
+		goto end;
+	} 
+	ftdm_span_find_by_name(argv[1], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR invalid span\n");
+		goto end;
+	}
+	chan_count = ftdm_span_get_chan_count(span);
+	if (argc > 2) {
+		chan_id = atoi(argv[2]);
+		if (chan_id > chan_count) {
+			stream->write_function(stream, "-ERR invalid chan\n");
+			goto end;
+		}
+	}
+	if (chan_id) {
+		fchan = ftdm_span_get_channel(span, chan_id);
+		ftdm_channel_command(fchan, FTDM_COMMAND_TRACE_END_ALL, NULL);
+	} else {
+		for (i = 1; i <= chan_count; i++) {
+			fchan = ftdm_span_get_channel(span, i);
+			ftdm_channel_command(fchan, FTDM_COMMAND_TRACE_END_ALL, NULL);
+		}
+	}
+	stream->write_function(stream, "+OK trace disabled\n");
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t ftdm_cmd_gains(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	unsigned int i = 0;
+	float txgain = 0.0;
+	float rxgain = 0.0;
+	uint32_t chan_id = 0;
+	uint32_t ccount = 0;
+	ftdm_channel_t *chan;
+	ftdm_span_t *span = NULL;
+	if (argc < 4) {
+		stream->write_function(stream, "-ERR Usage: ftdm gains <rxgain> <txgain> <span_id> [<chan_id>]\n");
+		goto end;
+	} 
+	ftdm_span_find_by_name(argv[3], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR invalid span\n");
+		goto end;
+	}
+	if (argc > 4) {
+		chan_id = atoi(argv[4]);
+		if (chan_id > ftdm_span_get_chan_count(span)) {
+			stream->write_function(stream, "-ERR invalid chan\n");
+			goto end;
+		}
+	}
+	i = sscanf(argv[1], "%f", &rxgain);
+	i += sscanf(argv[2], "%f", &txgain);
+	if (i != 2) {
+		stream->write_function(stream, "-ERR invalid gains\n");
+		goto end;
+	}
+
+	if (chan_id) {
+		chan = ftdm_span_get_channel(span, chan_id);
+		ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_GAIN, &rxgain);
+		ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_GAIN, &txgain);
+	} else {
+		ccount = ftdm_span_get_chan_count(span);
+		for (i = 1; i < ccount; i++) {
+			chan = ftdm_span_get_channel(span, i);
+			ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_GAIN, &rxgain);
+			ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_GAIN, &txgain);
+		}
+	}
+	stream->write_function(stream, "+OK gains set to Rx %f and Tx %f\n", rxgain, txgain);
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t ftdm_cmd_dtmf(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	unsigned i = 0;
+	uint32_t chan_id = 0;
+	unsigned schan_count = 0;
+	ftdm_span_t *span = NULL;
+	ftdm_command_t fcmd = FTDM_COMMAND_ENABLE_DTMF_DETECT;
+	ftdm_channel_t *fchan;
+	if (argc < 3) {
+		stream->write_function(stream, "-ERR Usage: dtmf on|off <span_id> [<chan_id>]\n");
+		goto end;
+	}
+
+	if (switch_true(argv[1])) {
+		fcmd = FTDM_COMMAND_ENABLE_DTMF_DETECT;
+	} else {
+		fcmd = FTDM_COMMAND_DISABLE_DTMF_DETECT;
+	}
+
+	ftdm_span_find_by_name(argv[2], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR invalid span\n");
+		goto end;
+	}
+	schan_count = ftdm_span_get_chan_count(span);
+	if (argc > 3) {
+		chan_id = atoi(argv[3]);
+		if (chan_id > schan_count) {
+			stream->write_function(stream, "-ERR invalid chan\n");
+			goto end;
+		}
+	}
+
+	if (chan_id) {
+		fchan = ftdm_span_get_channel(span, chan_id);
+		ftdm_channel_command(fchan, fcmd, NULL);
+	} else {
+		for (i = 1; i <= schan_count; i++) {
+			fchan = ftdm_span_get_channel(span, i);
+			ftdm_channel_command(fchan, fcmd, NULL);
+		}
+	}
+
+	stream->write_function(stream, "+OK DTMF detection was %s\n", fcmd == FTDM_COMMAND_ENABLE_DTMF_DETECT ? "enabled" : "disabled");
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t ftdm_cmd_queuesize(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	unsigned int i = 0;
+	uint32_t rxsize = 10;
+	uint32_t txsize = 10;
+	uint32_t chan_id = 0;
+	uint32_t ccount = 0;
+	ftdm_channel_t *chan;
+	ftdm_span_t *span = NULL;
+	if (argc < 4) {
+		stream->write_function(stream, "-ERR Usage: ftdm queuesize <rxsize> <txsize> <span_id> [<chan_id>]\n");
+		goto end;
+	} 
+	ftdm_span_find_by_name(argv[3], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR invalid span\n");
+		goto end;
+	}
+	if (argc > 4) {
+		chan_id = atoi(argv[4]);
+		if (chan_id > ftdm_span_get_chan_count(span)) {
+			stream->write_function(stream, "-ERR invalid chan\n");
+			goto end;
+		}
+	}
+	i = sscanf(argv[1], "%u", &rxsize);
+	i += sscanf(argv[2], "%u", &txsize);
+	if (i != 2) {
+		stream->write_function(stream, "-ERR invalid queue sizes provided\n");
+		goto end;
+	}
+
+	if (chan_id) {
+		chan = ftdm_span_get_channel(span, chan_id);
+		ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_QUEUE_SIZE, &rxsize);
+		ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &txsize);
+	} else {
+		ccount = ftdm_span_get_chan_count(span);
+		for (i = 1; i < ccount; i++) {
+			chan = ftdm_span_get_channel(span, i);
+			ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_QUEUE_SIZE, &rxsize);
+			ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &txsize);
+		}
+	}
+	stream->write_function(stream, "+OK queue sizes set to Rx %d and Tx %d\n", rxsize, txsize);
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static void exec_io_command(const char *cmd, switch_stream_handle_t *stream, ftdm_channel_t *fchan)
+{
+	int enable = 0;
+	ftdm_channel_iostats_t stats;
+	if (!strcasecmp("enable", cmd)) {
+		enable = 1;
+		ftdm_channel_command(fchan, FTDM_COMMAND_SWITCH_IOSTATS, &enable);
+	} else if (!strcasecmp("disable", cmd)) {
+		enable = 0;
+		ftdm_channel_command(fchan, FTDM_COMMAND_SWITCH_IOSTATS, &enable);
+	} else if (!strcasecmp("flush", cmd)) {
+		ftdm_channel_command(fchan, FTDM_COMMAND_FLUSH_IOSTATS, NULL);
+	} else {
+		ftdm_channel_command(fchan, FTDM_COMMAND_GET_IOSTATS, &stats);
+		stream->write_function(stream, "-- IO statistics for channel %d:%d --\n", 
+				ftdm_channel_get_span_id(fchan), ftdm_channel_get_id(fchan));
+		stream->write_function(stream, "Rx errors: %u\n", stats.rx.errors);
+		stream->write_function(stream, "Rx queue size: %u\n", stats.rx.queue_size);
+		stream->write_function(stream, "Rx queue len: %u\n", stats.rx.queue_len);
+		stream->write_function(stream, "Rx count: %lu\n", stats.rx.packets);
+
+		stream->write_function(stream, "Tx errors: %u\n", stats.tx.errors);
+		stream->write_function(stream, "Tx queue size: %u\n", stats.tx.queue_size);
+		stream->write_function(stream, "Tx queue len: %u\n", stats.tx.queue_len);
+		stream->write_function(stream, "Tx count: %lu\n", stats.tx.packets);
+		stream->write_function(stream, "Tx idle: %u\n", stats.tx.idle_packets);
+	}
+}
+
+static switch_status_t ftdm_cmd_iostats(const char *cmd, switch_core_session_t *session,
+			      switch_stream_handle_t *stream, int argc, char *argv[])
+{
+	uint32_t chan_id = 0;
+	ftdm_channel_t *chan;
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	ftdm_span_t *span = NULL;
+
+	if (argc < 3) {
+		stream->write_function(stream, "-ERR Usage: ftdm iostats enable|disable|flush|print <span_id> [<chan_id>]\n");
+		goto end;
+	}
+
+	ftdm_span_find_by_name(argv[2], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR invalid span\n");
+		goto end;
+	}
+
+	if (argc > 3) {
+		chan_id = atoi(argv[3]);
+		if (chan_id > ftdm_span_get_chan_count(span)) {
+			stream->write_function(stream, "-ERR invalid chan\n");
+			goto end;
+		}
+		chan = ftdm_span_get_channel(span, chan_id);
+		exec_io_command(argv[1], stream, chan);
+	} else {
+		iter = ftdm_span_get_chan_iterator(span, NULL);
+		for (curr  = iter; curr; curr = ftdm_iterator_next(curr)) {
+			chan = ftdm_iterator_current(curr);
+			exec_io_command(argv[1], stream, chan);
+		}
+		ftdm_iterator_free(iter);
+	}
+	stream->write_function(stream, "+OK\n");
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
+typedef switch_status_t (*ftdm_cli_function_t)(const char *cmd, switch_core_session_t *session,
+		                               switch_stream_handle_t *stream, int argc, char *argv[]);
+typedef struct ftdm_cli_entry {
+	const char *name;
+	const char *args;
+	const char *complete;
+	ftdm_cli_function_t execute;
+} ftdm_cli_entry_t;
+
+static ftdm_cli_entry_t ftdm_cli_options[] =
+{
+	{ "list", "", "", ftdm_cmd_list },
+	{ "start", "<span_id|span_name>", "", ftdm_cmd_start_stop },
+	{ "stop", "<span_id|span_name>", "", ftdm_cmd_start_stop },
+	{ "reset", "<span_id|span_name> [<chan_id>]", "", ftdm_cmd_reset },
+	{ "dump", "<span_id|span_name> [<chan_id>]", "", ftdm_cmd_dump },
+	{ "sigstatus", "get|set <span_id|span_name> [<chan_id>] [<sigstatus>]", "::[set:get", ftdm_cmd_sigstatus },
+	{ "trace", "<path> <span_id|span_name> [<chan_id>]", "", ftdm_cmd_trace },
+	{ "notrace", "<span_id|span_name> [<chan_id>]", "", ftdm_cmd_notrace },
+	{ "gains", "<rxgain> <txgain> <span_id|span_name> [<chan_id>]", "", ftdm_cmd_gains },
+	{ "dtmf", "on|off <span_id|span_name> [<chan_id>]", "::[on:off", ftdm_cmd_dtmf },
+	{ "queuesize", "<rxsize> <txsize> <span_id|span_name> [<chan_id>]", "", ftdm_cmd_queuesize },
+	{ "iostats", "enable|disable|flush|print <span_id|span_name> <chan_id>", "::[enable:disable:flush:print", ftdm_cmd_iostats },
+	{ "voice_detect", "[on|off] <span_id|span_name> [<chan_id>]", "::[on:off", ftdm_cmd_voice_detect },
+
+	/* Fake handlers as they are handled within freetdm library,
+	 * we should provide a way inside freetdm to query for completions from signaling modules */
+	{ "core state", "[!]<state_name>", "", NULL },
+	{ "core flag", "[!]<flag_value>", "", NULL },
+	{ "core calls", "", "", NULL },
+};
+
+static void print_full_usage(switch_stream_handle_t *stream)
+{
+	int i = 0;
+	ftdm_cli_entry_t *entry = NULL;
+	stream->write_function(stream, "USAGE:\n");
+	stream->write_function(stream, "--------------------------------------------------------------------------------\n");
+	for (i = 0 ; i < ftdm_array_len(ftdm_cli_options); i++) {
+		entry = &ftdm_cli_options[i];
+		stream->write_function(stream, "ftdm %s %s\n", entry->name, entry->args);
+	}
+	stream->write_function(stream, "--------------------------------------------------------------------------------\n");
+}
+
 SWITCH_STANDARD_API(ft_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
 	int argc = 0;
-	ftdm_iterator_t *chaniter = NULL;
-	ftdm_iterator_t *curr = NULL;
+	int i = 0;
+	ftdm_cli_entry_t *entry = NULL;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (!argc) {
-		stream->write_function(stream, "%s", FT_SYNTAX);
+		print_full_usage(stream);
 		goto end;
 	}
 
-	if (!strcasecmp(argv[0], "sigstatus")) {
-		ftdm_span_t *span = NULL;
-		ftdm_signaling_status_t sigstatus;
-
-		if (argc < 3) {
-			stream->write_function(stream, "-ERR Usage: ftdm sigstatus get|set [<span_id>] [<channel>] [<sigstatus>]\n");
-			goto end;
+	for (i = 0 ; i < ftdm_array_len(ftdm_cli_options); i++) {
+		entry = &ftdm_cli_options[i];
+		if (!strcasecmp(argv[0], entry->name) && entry->execute) {
+			entry->execute(cmd, session, stream, argc, argv);
+			break;
 		}
-		if (!strcasecmp(argv[1], "get") && argc < 3) {
-			stream->write_function(stream, "-ERR sigstatus get usage: get <span_id>\n");
-			goto end;
-		}
-		if (!strcasecmp(argv[1], "set") && argc != 5) {
-			stream->write_function(stream, "-ERR sigstatus set usage: set <span_id> <channel>|all <sigstatus>\n");
-			goto end;
-		}
-
-		ftdm_span_find_by_name(argv[2], &span);
-		if (!span) {
-			stream->write_function(stream, "-ERR invalid span\n");
-			goto end;
-		}
-
-		if (!strcasecmp(argv[1], "get")) {
-			if (argc == 4) {
-				uint32_t chan_id = atol(argv[3]);
-				ftdm_channel_t *fchan = ftdm_span_get_channel(span, chan_id);
-				if (!fchan) {
-					stream->write_function(stream, "-ERR failed to get channel id '%d'\n", chan_id);
-					goto end;
-				}
-
-				if ((FTDM_SUCCESS == ftdm_channel_get_sig_status(fchan, &sigstatus))) {
-					stream->write_function(stream, "channel %d signaling status: %s\n", chan_id, ftdm_signaling_status2str(sigstatus));
-				} else {
-					stream->write_function(stream, "-ERR failed to get channel sigstatus\n");
-				}
-				goto end;
-			} else {
-				if ((FTDM_SUCCESS == ftdm_span_get_sig_status(span, &sigstatus))) {
-					stream->write_function(stream, "signaling_status: %s\n", ftdm_signaling_status2str(sigstatus));
-				} else {
-					stream->write_function(stream, "-ERR failed to read span status: %s\n", ftdm_span_get_last_error(span));
-				}
-			}
-			goto end;
-		}
-		if (!strcasecmp(argv[1], "set")) {
-			sigstatus = ftdm_str2ftdm_signaling_status(argv[4]);
-
-			if (!strcasecmp(argv[3], "all")) {
-				if ((FTDM_SUCCESS == ftdm_span_set_sig_status(span, sigstatus))) {
-					stream->write_function(stream, "Signaling status of all channels from span %s set to %s\n",
-							ftdm_span_get_name(span), ftdm_signaling_status2str(sigstatus));
-				} else {
-					stream->write_function(stream, "-ERR failed to set span sigstatus to '%s'\n", ftdm_signaling_status2str(sigstatus));
-				}
-				goto end;
-			} else {
-				uint32_t chan_id = atol(argv[3]);
-				ftdm_channel_t *fchan = ftdm_span_get_channel(span, chan_id);
-				if (!fchan) {
-					stream->write_function(stream, "-ERR failed to get channel id '%d'\n", chan_id);
-					goto end;
-				}
-
-				if ((FTDM_SUCCESS == ftdm_channel_set_sig_status(fchan, sigstatus))) {
-					stream->write_function(stream, "Signaling status of channel %d set to %s\n", chan_id,
-							ftdm_signaling_status2str(sigstatus));
-				} else {
-					stream->write_function(stream, "-ERR failed to set span sigstatus to '%s'\n", ftdm_signaling_status2str(sigstatus));
-				}
-				goto end;
-			}
-		}
-
-	} else if (!strcasecmp(argv[0], "dump")) {
-		if (argc < 2) {
-			stream->write_function(stream, "-ERR Usage: ftdm dump <span_id> [<chan_id>]\n");
-			goto end;
-		} else {
-			uint32_t chan_id = 0;
-			ftdm_span_t *span;
-			char *as = NULL;
-			
-			ftdm_span_find_by_name(argv[1], &span);
-			
-			if (argc > 2) {
-				if (argv[3] && !strcasecmp(argv[2], "as")) {
-					as = argv[3];
-				} else {
-					chan_id = atoi(argv[2]);
-				}
-			}
-
-			if (argv[4] && !strcasecmp(argv[3], "as")) {
-				as = argv[4];
-			}
-
-			if (!zstr(as) && !strcasecmp(as, "xml")) {
-				stream->write_function(stream, "<channels>\n");
-				if (!span) {
-					stream->write_function(stream, "<error>invalid span</error>\n");
-				} else {
-					if (chan_id) {
-						if(chan_id > ftdm_span_get_chan_count(span)) {
-							stream->write_function(stream, "<error>invalid channel</error>\n");
-						} else {
-							dump_chan_xml(span, chan_id, stream);
-						}
-					} else {
-						chaniter = ftdm_span_get_chan_iterator(span, NULL);
-						for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
-							dump_chan_xml(span, ftdm_channel_get_id(ftdm_iterator_current(curr)), stream);
-						}
-						ftdm_iterator_free(chaniter);
-						
-					}
-				}
-				stream->write_function(stream, "</channels>\n");
-			} else {
-				if (!span) {
-					stream->write_function(stream, "-ERR invalid span\n");
-				} else {
-					if (chan_id) {
-						if(chan_id > ftdm_span_get_chan_count(span)) {
-							stream->write_function(stream, "-ERR invalid channel\n");
-						} else {
-							char *dbgstr = NULL;
-							ftdm_channel_t *fchan = ftdm_span_get_channel(span, chan_id);
-							dump_chan(span, chan_id, stream);
-							dbgstr = ftdm_channel_get_history_str(fchan);
-							stream->write_function(stream, "%s\n", dbgstr);
-							ftdm_free(dbgstr);
-						}
-					} else {
-						stream->write_function(stream, "+OK\n");
-						chaniter = ftdm_span_get_chan_iterator(span, NULL);
-						for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
-							dump_chan(span, ftdm_channel_get_id(ftdm_iterator_current(curr)), stream);
-						}
-						ftdm_iterator_free(chaniter);
-						
-					}
-				}
-			}
-		}
-	} else if (!strcasecmp(argv[0], "list")) {
-		int j;
-		for (j = 0 ; j < FTDM_MAX_SPANS_INTERFACE; j++) {
-			if (SPAN_CONFIG[j].span) {
-				ftdm_channel_t *fchan;
-				ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
-				const char *flags = "none";
-				ftdm_signaling_status_t sigstatus;
-
-				if (SPAN_CONFIG[j].analog_options & ANALOG_OPTION_3WAY) {
-					flags = "3way";
-				} else if (SPAN_CONFIG[j].analog_options & ANALOG_OPTION_CALL_SWAP) {
-					flags = "call swap";
-				}
-				fchan = ftdm_span_get_channel(SPAN_CONFIG[j].span, 1);
-				ftdm_channel_get_alarms(fchan, &alarmbits);
-				
-				if ((FTDM_SUCCESS == ftdm_span_get_sig_status(SPAN_CONFIG[j].span, &sigstatus))) {
-					stream->write_function(stream,
-										   "+OK\n"
-										   "span: %u (%s)\n"
-										   "type: %s\n"		
-										   "physical_status: %s\n"
-										   "signaling_status: %s\n"
-										   "chan_count: %u\n"
-										   "dialplan: %s\n"
-										   "context: %s\n"
-										   "dial_regex: %s\n"
-										   "fail_dial_regex: %s\n"
-										   "hold_music: %s\n"
-										   "analog_options: %s\n",
-										   j,
-										   ftdm_span_get_name(SPAN_CONFIG[j].span),
-										   SPAN_CONFIG[j].type,
-										   alarmbits ? "alarmed" : "ok",
-										   ftdm_signaling_status2str(sigstatus),
-										   ftdm_span_get_chan_count(SPAN_CONFIG[j].span),
-										   SPAN_CONFIG[j].dialplan,
-										   SPAN_CONFIG[j].context,
-										   SPAN_CONFIG[j].dial_regex,
-										   SPAN_CONFIG[j].fail_dial_regex,
-										   SPAN_CONFIG[j].hold_music,
-										   flags
-										   );
-				} else {
-					stream->write_function(stream,
-										   "+OK\n"
-										   "span: %u (%s)\n"
-										   "type: %s\n"
-										   "physical_status: %s\n"
-										   "chan_count: %u\n"
-										   "dialplan: %s\n"
-										   "context: %s\n"
-										   "dial_regex: %s\n"
-										   "fail_dial_regex: %s\n"
-										   "hold_music: %s\n"
-										   "analog_options: %s\n",
-										   j,
-										   ftdm_span_get_name(SPAN_CONFIG[j].span),
-										   SPAN_CONFIG[j].type,
-										   alarmbits ? "alarmed" : "ok",
-										   ftdm_span_get_chan_count(SPAN_CONFIG[j].span),
-										   SPAN_CONFIG[j].dialplan,
-										   SPAN_CONFIG[j].context,
-										   SPAN_CONFIG[j].dial_regex,
-										   SPAN_CONFIG[j].fail_dial_regex,
-										   SPAN_CONFIG[j].hold_music,
-										   flags
-										   );
-				}
-			}
-		}
-	} else if (!strcasecmp(argv[0], "stop") || !strcasecmp(argv[0], "start")) {
-		char *span_name = argv[1];
-		ftdm_span_t *span = NULL;
-		ftdm_status_t status;
-
-		if (span_name) {
-			ftdm_span_find_by_name(span_name, &span);
-		}
-
-		if (!span) {
-			stream->write_function(stream, "-ERR no span\n");
-			goto end;
-		}
-		
-		if (!strcasecmp(argv[0], "stop")) {
-			status = ftdm_span_stop(span);
-		} else {
-			status = ftdm_span_start(span);
-		}
-		
-		stream->write_function(stream, status == FTDM_SUCCESS ? "+OK\n" : "-ERR failure\n");
-		
-		goto end;
-
-		/*Q931ToPcap enhancement*/
-	} else if (!strcasecmp(argv[0], "q931_pcap")) {
-		int32_t span_id = 0;
-                ftdm_span_t *span;
-		const char *pcapfn = NULL;
-		char *tmp_path = NULL;
-
-                if (argc < 3) {
-                        stream->write_function(stream, "-ERR Usage: ftdm q931_pcap <span_id> on|off [pcapfilename without suffix]\n");
-                        goto end;
-                }
-		span_id = atoi(argv[1]);
-		if (!(span_id && (span = SPAN_CONFIG[span_id].span))) {
-                                stream->write_function(stream, "-ERR invalid span\n");
-				goto end;
-                } 
-
-		/*Look for a given file name or use default file name*/
-		if (argc > 3) {
-			if(argv[3]){
-				pcapfn=argv[3];
-			}
-		}
-		else {
-			pcapfn="q931";
-		}
-
-		/*Add log directory path to file name*/
-		tmp_path=switch_mprintf("%s%s%s.pcap", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pcapfn);
-		
-		if(!strcasecmp(argv[2], "on")) {
-			if (ftdm_configure_span(span, "isdn", on_clear_channel_signal, "q931topcap", 1, "pcapfilename", tmp_path, FTDM_TAG_END) != FTDM_SUCCESS) {
-                                ftdm_log(FTDM_LOG_WARNING, "Error couldn't (re-)enable Q931-To-Pcap!\n");
-				goto end;
-                        } else {
-				stream->write_function(stream, "+OK\n");
-			}
-		} else if(!strcasecmp(argv[2], "off")) {
-			if (ftdm_configure_span(span, "isdn", on_clear_channel_signal, "q931topcap", 0, FTDM_TAG_END) != FTDM_SUCCESS) {
-                                ftdm_log(FTDM_LOG_ERROR, "Error couldn't enable Q931-To-Pcap!\n");
-                                goto end;
-			} else {
-                                stream->write_function(stream, "+OK\n");
-                        }
-                } else {
-			stream->write_function(stream, "-ERR Usage: ft q931_pcap <span_id> on|off [pcapfilename without suffix]\n");
-                        goto end;
-		}
-
-	} else if (!strcasecmp(argv[0], "dtmf")) {
-		unsigned i = 0;
-		uint32_t chan_id = 0;
-		unsigned schan_count = 0;
-		ftdm_span_t *span = NULL;
-		ftdm_command_t fcmd = FTDM_COMMAND_ENABLE_DTMF_DETECT;
-		ftdm_channel_t *fchan;
-		if (argc < 3) {
-			stream->write_function(stream, "-ERR Usage: dtmf on|off <span_id> [<chan_id>]\n");
-			goto end;
-		}
-
-		if (switch_true(argv[1])) {
-			fcmd = FTDM_COMMAND_ENABLE_DTMF_DETECT;
-		} else {
-			fcmd = FTDM_COMMAND_DISABLE_DTMF_DETECT;
-		}
-
-		ftdm_span_find_by_name(argv[2], &span);
-		if (!span) {
-			stream->write_function(stream, "-ERR invalid span\n");
-			goto end;
-		}
-		schan_count = ftdm_span_get_chan_count(span);
-		if (argc > 3) {
-			chan_id = atoi(argv[3]);
-			if (chan_id > schan_count) {
-				stream->write_function(stream, "-ERR invalid chan\n");
-				goto end;
-			}
-		}
-
-		if (chan_id) {
-			fchan = ftdm_span_get_channel(span, chan_id);
-			ftdm_channel_command(fchan, fcmd, NULL);
-		} else {
-			for (i = 1; i <= schan_count; i++) {
-				fchan = ftdm_span_get_channel(span, i);
-				ftdm_channel_command(fchan, fcmd, NULL);
-			}
-		}
-
-		stream->write_function(stream, "+OK DTMF detection was %s\n", fcmd == FTDM_COMMAND_ENABLE_DTMF_DETECT ? "enabled" : "disabled");
-	} else if (!strcasecmp(argv[0], "trace")) {
-		char tracepath[255];
-		unsigned i = 0;
-		uint32_t chan_id = 0;
-		uint32_t span_id = 0;
-		uint32_t chan_count = 0;
-		ftdm_span_t *span = NULL;
-		ftdm_channel_t *chan = NULL;
-		if (argc < 3) {
-			stream->write_function(stream, "-ERR Usage: ftdm trace <path> <span_id> [<chan_id>]\n");
-			goto end;
-		} 
-		ftdm_span_find_by_name(argv[2], &span);
-		if (!span) {
-			stream->write_function(stream, "-ERR invalid span\n");
-			goto end;
-		}
-		chan_count = ftdm_span_get_chan_count(span);
-		if (argc > 3) {
-			chan_id = atoi(argv[3]);
-			if (chan_id > chan_count) {
-				stream->write_function(stream, "-ERR invalid chan\n");
-				goto end;
-			}
-		}
-		span_id = ftdm_span_get_id(span);
-		if (chan_id) {
-			chan = ftdm_span_get_channel(span, chan_id);
-			snprintf(tracepath, sizeof(tracepath), "%s-in-s%dc%d", argv[1], span_id, chan_id);
-			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
-			snprintf(tracepath, sizeof(tracepath), "%s-out-s%dc%d", argv[1], span_id, chan_id);
-			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
-		} else {
-			for (i = 1; i <= chan_count; i++) {
-				chan = ftdm_span_get_channel(span, i);
-				snprintf(tracepath, sizeof(tracepath), "%s-in-s%dc%d", argv[1], span_id, i);
-				ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
-				snprintf(tracepath, sizeof(tracepath), "%s-out-s%dc%d", argv[1], span_id, i);
-				ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
-			}
-		}
-		stream->write_function(stream, "+OK trace enabled with prefix path %s\n", argv[1]);
-	} else if (!strcasecmp(argv[0], "notrace")) {
-		uint32_t i = 0;
-		uint32_t chan_id = 0;
-		uint32_t chan_count = 0;
-		ftdm_channel_t *fchan = NULL;
-		ftdm_span_t *span = NULL;
-		if (argc < 2) {
-			stream->write_function(stream, "-ERR Usage: ftdm notrace <span_id> [<chan_id>]\n");
-			goto end;
-		} 
-		ftdm_span_find_by_name(argv[1], &span);
-		if (!span) {
-			stream->write_function(stream, "-ERR invalid span\n");
-			goto end;
-		}
-		chan_count = ftdm_span_get_chan_count(span);
-		if (argc > 2) {
-			chan_id = atoi(argv[2]);
-			if (chan_id > chan_count) {
-				stream->write_function(stream, "-ERR invalid chan\n");
-				goto end;
-			}
-		}
-		if (chan_id) {
-			fchan = ftdm_span_get_channel(span, chan_id);
-			ftdm_channel_command(fchan, FTDM_COMMAND_TRACE_END_ALL, NULL);
-		} else {
-			for (i = 1; i <= chan_count; i++) {
-				fchan = ftdm_span_get_channel(span, i);
-				ftdm_channel_command(fchan, FTDM_COMMAND_TRACE_END_ALL, NULL);
-			}
-		}
-		stream->write_function(stream, "+OK trace disabled\n");
-	} else if (!strcasecmp(argv[0], "gains")) {
-		unsigned int i = 0;
-		float txgain = 0.0;
-		float rxgain = 0.0;
-		uint32_t chan_id = 0;
-		uint32_t ccount = 0;
-		ftdm_channel_t *chan;
-		ftdm_span_t *span = NULL;
-		if (argc < 4) {
-			stream->write_function(stream, "-ERR Usage: ftdm gains <rxgain> <txgain> <span_id> [<chan_id>]\n");
-			goto end;
-		} 
-		ftdm_span_find_by_name(argv[3], &span);
-		if (!span) {
-			stream->write_function(stream, "-ERR invalid span\n");
-			goto end;
-		}
-		if (argc > 4) {
-			chan_id = atoi(argv[4]);
-			if (chan_id > ftdm_span_get_chan_count(span)) {
-				stream->write_function(stream, "-ERR invalid chan\n");
-				goto end;
-			}
-		}
-		i = sscanf(argv[1], "%f", &rxgain);
-		i += sscanf(argv[2], "%f", &txgain);
-		if (i != 2) {
-			stream->write_function(stream, "-ERR invalid gains\n");
-			goto end;
-		}
-
-		if (chan_id) {
-			chan = ftdm_span_get_channel(span, chan_id);
-			ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_GAIN, &rxgain);
-			ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_GAIN, &txgain);
-		} else {
-			ccount = ftdm_span_get_chan_count(span);
-			for (i = 1; i < ccount; i++) {
-				chan = ftdm_span_get_channel(span, i);
-				ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_GAIN, &rxgain);
-				ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_GAIN, &txgain);
-			}
-		}
-		stream->write_function(stream, "+OK gains set to Rx %f and Tx %f\n", rxgain, txgain);
-	} else if (!strcasecmp(argv[0], "queuesize")) {
-		unsigned int i = 0;
-		uint32_t rxsize = 10;
-		uint32_t txsize = 10;
-		uint32_t chan_id = 0;
-		uint32_t ccount = 0;
-		ftdm_channel_t *chan;
-		ftdm_span_t *span = NULL;
-		if (argc < 4) {
-			stream->write_function(stream, "-ERR Usage: ftdm queuesize <rxsize> <txsize> <span_id> [<chan_id>]\n");
-			goto end;
-		} 
-		ftdm_span_find_by_name(argv[3], &span);
-		if (!span) {
-			stream->write_function(stream, "-ERR invalid span\n");
-			goto end;
-		}
-		if (argc > 4) {
-			chan_id = atoi(argv[4]);
-			if (chan_id > ftdm_span_get_chan_count(span)) {
-				stream->write_function(stream, "-ERR invalid chan\n");
-				goto end;
-			}
-		}
-		i = sscanf(argv[1], "%u", &rxsize);
-		i += sscanf(argv[2], "%u", &txsize);
-		if (i != 2) {
-			stream->write_function(stream, "-ERR invalid queue sizes provided\n");
-			goto end;
-		}
-
-		if (chan_id) {
-			chan = ftdm_span_get_channel(span, chan_id);
-			ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_QUEUE_SIZE, &rxsize);
-			ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &txsize);
-		} else {
-			ccount = ftdm_span_get_chan_count(span);
-			for (i = 1; i < ccount; i++) {
-				chan = ftdm_span_get_channel(span, i);
-				ftdm_channel_command(chan, FTDM_COMMAND_SET_RX_QUEUE_SIZE, &rxsize);
-				ftdm_channel_command(chan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &txsize);
-			}
-		}
-		stream->write_function(stream, "+OK queue sizes set to Rx %d and Tx %d\n", rxsize, txsize);
-	} else if (!strcasecmp(argv[0], "restart")) {
-		uint32_t chan_id = 0;
-		uint32_t ccount = 0;
-		ftdm_channel_t *chan;
-		ftdm_span_t *span = NULL;
-		if (argc < 2) {
-			stream->write_function(stream, "-ERR Usage: ftdm restart <span_id> [<chan_id>]\n");
-			goto end;
-		}
-		ftdm_span_find_by_name(argv[1], &span);
-		if (!span) {
-			stream->write_function(stream, "-ERR invalid span\n");
-			goto end;
-		}
-
-		if (argc > 2) {
-			chan_id = atoi(argv[2]);
-			if (chan_id > ftdm_span_get_chan_count(span)) {
-				stream->write_function(stream, "-ERR invalid chan\n");
-				goto end;
-			}
-		}
-		if (chan_id) {
-			chan = ftdm_span_get_channel(span, chan_id);
-			if (!chan) {
-				stream->write_function(stream, "-ERR Could not find chan\n");
-				goto end;
-			}
-			stream->write_function(stream, "Resetting channel %s:%s\n", argv[1], argv[2]);
-			ftdm_channel_reset(chan);
-		} else {
-			uint32_t i = 0;
-			ccount = ftdm_span_get_chan_count(span);
-			for (i = 1; i < ccount; i++) {
-				chan = ftdm_span_get_channel(span, i);
-				stream->write_function(stream, "Resetting channel %s:%d\n", argv[1], i);
-				ftdm_channel_reset(chan);
-			}
-		}
-
-	} else {
-
+	}
+	
+	/* if the command was not found in the main CLI entries, try to execute it as a FreeTDM API */
+	if (i == ftdm_array_len(ftdm_cli_options)) {
 		char *rply = ftdm_api_execute(cmd);
-		
 		if (rply) {
 			stream->write_function(stream, "%s", rply);
 			ftdm_free(rply);
 		} else {
-			stream->write_function(stream, "-ERR Usage: %s\n", FT_SYNTAX);
+			print_full_usage(stream);
 		}
 	}
-	/*Q931ToPcap enhancement done*/
 
- end:
+end:
 
 	switch_safe_free(mycmd);
 
@@ -4441,9 +4566,10 @@ SWITCH_STANDARD_APP(disable_ec_function)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 {
-
-	switch_api_interface_t *commands_api_interface;
-	switch_application_interface_t *app_interface;
+	int i = 0;
+	ftdm_cli_entry_t *entry = NULL;
+	switch_api_interface_t *commands_api_interface = NULL;
+	switch_application_interface_t *app_interface = NULL;
 
 	module_pool = pool;
 
@@ -4474,23 +4600,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	freetdm_endpoint_interface->io_routines = &freetdm_io_routines;
 	freetdm_endpoint_interface->state_handler = &freetdm_state_handlers;
 	
-	SWITCH_ADD_API(commands_api_interface, "ftdm", "FreeTDM commands", ft_function, FT_SYNTAX);
-	switch_console_set_complete("add ftdm start");
-	switch_console_set_complete("add ftdm stop");
-	switch_console_set_complete("add ftdm restart");
-	switch_console_set_complete("add ftdm dump");
-	switch_console_set_complete("add ftdm sigstatus get");
-	switch_console_set_complete("add ftdm sigstatus set");
-	switch_console_set_complete("add ftdm trace");
-	switch_console_set_complete("add ftdm notrace");
-	switch_console_set_complete("add ftdm q931_pcap");
-	switch_console_set_complete("add ftdm gains");
-	switch_console_set_complete("add ftdm queuesize");
-	switch_console_set_complete("add ftdm dtmf on");
-	switch_console_set_complete("add ftdm dtmf off");
-	switch_console_set_complete("add ftdm core state");
-	switch_console_set_complete("add ftdm core flag");
-	switch_console_set_complete("add ftdm core calls");
+	SWITCH_ADD_API(commands_api_interface, "ftdm", "FreeTDM commands", ft_function, "<cmd> <args>");
+	for (i = 0 ; i < ftdm_array_len(ftdm_cli_options); i++) {
+		char complete_cli[512];
+		entry = &ftdm_cli_options[i];
+		snprintf(complete_cli, sizeof(complete_cli), "add ftdm %s %s", entry->name, entry->complete);
+		switch_console_set_complete(complete_cli);
+	}
 
 	SWITCH_ADD_APP(app_interface, "disable_ec", "Disable Echo Canceller", "Disable Echo Canceller", disable_ec_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "disable_dtmf", "Disable DTMF Detection", "Disable DTMF Detection", disable_dtmf_function, "", SAF_NONE);

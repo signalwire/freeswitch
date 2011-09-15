@@ -42,7 +42,8 @@
 	<!-- If you want FreeSWITCH to shutdown if this profile fails to load, uncomment the next line. -->
 	<!-- <param name="shutdown-on-fail" value="true"/> -->
     <param name="sip-trace" value="no"/>
-
+    <param name="sip-capture" value="no"/>
+    
 
     <!-- Don't be picky about negotiated DTMF just always offer 2833 and accept both 2833 and INFO -->
     <!--<param name="liberal-dtmf" value="true"/>-->

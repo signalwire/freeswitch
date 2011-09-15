@@ -317,15 +317,37 @@ void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan)
 	}
 
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
-	//ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "Sending INFO REQ\n");
 
-
-	
-	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending INFO REQ (suId:%d dchan:%d ces:%d)\n", signal_data->cc_id, signal_data->dchan_id, sngisdn_info->ces);
 
 	if (sng_isdn_con_status(signal_data->cc_id, 0, 0, &cnStEvnt, MI_INFO, signal_data->dchan_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused INFO request\n");
+	}
+	return;
+}
+
+void sngisdn_snd_notify_req(ftdm_channel_t *ftdmchan)
+{
+	CnStEvnt cnStEvnt;
+	
+	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+
+	if (!sngisdn_info->suInstId || !sngisdn_info->spInstId) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Sending NOTIFY, but no call data, aborting (suId:%d suInstId:%u spInstId:%u)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId);
+		sngisdn_set_flag(sngisdn_info, FLAG_LOCAL_ABORT);
+		ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+		return;
+	}
+
+	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
+
+	set_not_ind_ie(ftdmchan, &cnStEvnt.notInd);
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending NOTIFY (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
+
+	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId,&cnStEvnt, MI_NOTIFY, signal_data->dchan_id, sngisdn_info->ces)) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused NOTIFY request\n");
 	}
 	return;
 }

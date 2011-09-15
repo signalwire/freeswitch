@@ -2606,6 +2606,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_caller_extension_masquerade(switc
 
 SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 {
+	switch_event_t *event;
+
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->caller_profile->callee_id_name) {
 		switch_channel_set_variable(channel, "pre_transfer_caller_id_name", channel->caller_profile->caller_id_name);
@@ -2619,6 +2621,19 @@ SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 	}
 	channel->caller_profile->callee_id_number = SWITCH_BLANK_STRING;
 	switch_mutex_unlock(channel->profile_mutex);
+
+
+	if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
+		const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
+
+		if (uuid) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
+		}
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
+
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_INFO, "%s Flipping CID from \"%s\" <%s> to \"%s\" <%s>\n", 
 					  switch_channel_get_name(channel),
