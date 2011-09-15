@@ -507,7 +507,11 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	const char *name = NULL;
 	int span_id = 0;
 	int chan_id = 0;
+	int t = 0;
 	uint32_t tokencnt;
+	char *uuid = NULL;
+	const char *token = NULL;
+	uint8_t uuid_found = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -525,8 +529,30 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d] %s CHANNEL HANGUP ENTER\n", span_id, chan_id, name);
 
+	/* First verify this call has a device attached */
 	if (!tech_pvt->ftdmchan) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s does not have any ftdmchan attached\n", name);
+		goto end;
+	}
+
+	/* Now verify the device is still attached to this call :-) 
+	 * Sometimes the FS core takes too long (more than 3 seconds) in calling
+	 * channel_on_hangup() and the FreeTDM core decides to take the brute
+	 * force approach and hangup and detach themselves from the call. Later
+	 * when FS finally comes around, we might end up hanging up the device
+	 * attached to another call, this verification avoids that. */
+	uuid = switch_core_session_get_uuid(session);
+	tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
+	for (t = 0; t < tokencnt; t++) {
+		token = ftdm_channel_get_token(tech_pvt->ftdmchan, tokencnt);
+		if (!strcasecmp(uuid, token)) {
+			uuid_found = 1;
+			break;
+		}
+	}
+
+	if (!uuid_found) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Device [%d:%d] is no longer attached to %s. Nothing to do.\n", span_id, chan_id, name);
 		goto end;
 	}
 
@@ -561,7 +587,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	case FTDM_CHAN_TYPE_FXS:
 		{
 			if (!ftdm_channel_call_check_busy(tech_pvt->ftdmchan) && !ftdm_channel_call_check_done(tech_pvt->ftdmchan)) {
-				tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
 				if (tokencnt) {
 					cycle_foreground(tech_pvt->ftdmchan, 0, NULL);
 				} else {
