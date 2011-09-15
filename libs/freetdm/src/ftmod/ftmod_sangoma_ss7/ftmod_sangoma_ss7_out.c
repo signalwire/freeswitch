@@ -212,7 +212,6 @@ void ft_to_sngss7_cpg (ftdm_channel_t *ftdmchan)
 	sng_cc_con_status  (1, sngss7_info->suInstId, sngss7_info->spInstId, sngss7_info->circuit->id, &cpg, PROGRESS);
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "[CIC:%d]Tx CPG\n", sngss7_info->circuit->cic);
-	ftdm_call_clear_vars(&ftdmchan->caller_data);
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
 }
