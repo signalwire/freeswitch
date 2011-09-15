@@ -570,7 +570,11 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 			char cmd[1024] = "";
 			switch_snprintf(cmd, sizeof(cmd), "%s %s %s", convert_cmd, file, newfile);
 			switch_system(cmd, SWITCH_TRUE);
-			file = newfile;
+			if (strcmp(file, newfile)) {
+				file = newfile;
+			} else {
+				switch_safe_free(newfile);
+			}
 		}
 
 		switch_safe_free(dupfile);
