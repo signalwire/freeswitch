@@ -919,13 +919,14 @@ int ftmod_ss7_mtp3_dlsap_config(int id)
 #endif /* SDT2 */
 	cfg.t.cfg.s.snDLSAP.lnkId			= 0;					/* signalling link allocation procedure identity */
 	cfg.t.cfg.s.snDLSAP.lnkTstSLC		= k->slc;				/* link selection code for link test */
-	cfg.t.cfg.s.snDLSAP.tstLen			= 6;					/* link test pattern length */
-	cfg.t.cfg.s.snDLSAP.tst[0]			= 'K';					/* link test pattern */
-	cfg.t.cfg.s.snDLSAP.tst[1]			= 'O';					/* link test pattern */
+	cfg.t.cfg.s.snDLSAP.tstLen			= 7;					/* link test pattern length */
+	cfg.t.cfg.s.snDLSAP.tst[0]			= 'S';					/* link test pattern */
+	cfg.t.cfg.s.snDLSAP.tst[1]			= 'A';					/* link test pattern */
 	cfg.t.cfg.s.snDLSAP.tst[2]			= 'N';					/* link test pattern */
-	cfg.t.cfg.s.snDLSAP.tst[3]			= 'R';					/* link test pattern */
-	cfg.t.cfg.s.snDLSAP.tst[4]			= 'A';					/* link test pattern */
-	cfg.t.cfg.s.snDLSAP.tst[5]			= 'D';					/* link test pattern */
+	cfg.t.cfg.s.snDLSAP.tst[3]			= 'G';					/* link test pattern */
+	cfg.t.cfg.s.snDLSAP.tst[4]			= 'O';					/* link test pattern */
+	cfg.t.cfg.s.snDLSAP.tst[5]			= 'M';					/* link test pattern */
+	cfg.t.cfg.s.snDLSAP.tst[6]			= 'A';					/* link test pattern */
 	cfg.t.cfg.s.snDLSAP.ssf				= k->ssf;				/* sub service field */ 
 	cfg.t.cfg.s.snDLSAP.dstProcId		= k->mtp2ProcId;		/* destination processor id */
 	cfg.t.cfg.s.snDLSAP.dstEnt			= ENTSD;				/* entity */
