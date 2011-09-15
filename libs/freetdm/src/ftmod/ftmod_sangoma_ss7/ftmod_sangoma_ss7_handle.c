@@ -89,12 +89,13 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt)
 {
-	sngss7_chan_data_t  *sngss7_info = NULL;
-	ftdm_channel_t	  	*ftdmchan = NULL;
-	char				nadi[2];
-	
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
-	memset(nadi, '\0', sizeof(nadi));
+
+	sngss7_chan_data_t *sngss7_info = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	char var[10];
+
+	memset(var, '\0', sizeof(var));
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -209,11 +210,14 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			}
 
 			/* add any special variables for the dialplan */
-			sprintf(nadi, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
-			sngss7_add_var(sngss7_info, "ss7_clg_nadi", nadi);
+			sprintf(var, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
+			sngss7_add_var(sngss7_info, "ss7_clg_nadi", var);
 
-			sprintf(nadi, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
-			sngss7_add_var(sngss7_info, "ss7_cld_nadi", nadi);
+			sprintf(var, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
+			sngss7_add_var(sngss7_info, "ss7_cld_nadi", var);
+
+			sprintf(var, "%d", sngss7_info->circuit->cic);
+			sngss7_add_var(sngss7_info, "ss7_cic", var);
 
 			if (sngss7_info->circuit->transparent_iam) {
 				sngss7_save_iam(ftdmchan, siConEvnt);
