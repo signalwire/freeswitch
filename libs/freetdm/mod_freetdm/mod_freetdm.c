@@ -505,6 +505,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 	ftdm_chan_type_t chantype;
 	const char *name = NULL;
+	int span_id = 0;
+	int chan_id = 0;
 	uint32_t tokencnt;
 
 	channel = switch_core_session_get_channel(session);
@@ -517,9 +519,14 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	
 	name = switch_channel_get_name(channel);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP ENTER\n", name);
+
+	span_id = tech_pvt->ftdmchan ? ftdm_channel_get_span_id(tech_pvt->ftdmchan) : 0;
+	chan_id = tech_pvt->ftdmchan ? ftdm_channel_get_id(tech_pvt->ftdmchan) : 0;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d] %s CHANNEL HANGUP ENTER\n", span_id, chan_id, name);
 
 	if (!tech_pvt->ftdmchan) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s does not have any ftdmchan attached\n", name);
 		goto end;
 	}
 
@@ -534,7 +541,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		symbols = backtrace_symbols(stacktrace, size);
 		tid = syscall(SYS_gettid);
 		for (si = 0; si < size; si++) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d] %s -> %s\n", tid, name, symbols[si]);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d][tid:%d] %s -> %s\n",
+					span_id, chan_id, tid, name, symbols[si]);
 		}
 		free(symbols);
 	}
@@ -588,7 +596,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 	switch_mutex_unlock(globals.mutex);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP EXIT\n", name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d] %s CHANNEL HANGUP EXIT\n", span_id, chan_id, name);
 	return SWITCH_STATUS_SUCCESS;
 }
 
