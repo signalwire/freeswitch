@@ -1050,6 +1050,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		status = SWITCH_STATUS_FALSE;
 	}
 
+	if (switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) {
+		switch_channel_state_t peer_state = switch_channel_get_state(peer_channel);
+
+		while (switch_channel_ready(peer_channel) && switch_channel_get_state(peer_channel) == peer_state) {
+			switch_channel_ready(caller_channel);
+			switch_yield(20000);
+		}
+	}
+
 	if (caller_channel && !switch_channel_up(caller_channel)) {
 		status = SWITCH_STATUS_FALSE;
 	}
