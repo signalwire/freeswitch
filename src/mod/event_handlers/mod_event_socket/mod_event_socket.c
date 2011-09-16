@@ -184,7 +184,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 			} else {
 				switch_log_node_free(&dnode);
 				if (++l->lost_logs > MAX_MISSED) {
-					kill_listener(l, "Disconnected due to log queue failure.\n");
+					kill_listener(l, NULL);
 				}
 			}
 		}
@@ -384,7 +384,7 @@ static void event_handler(switch_event_t *event)
 					}
 				} else {
 					if (++l->lost_events > MAX_MISSED) {
-						kill_listener(l, "Disconnected due to event queue failure.\n");
+						kill_listener(l, NULL);
 					}
 					switch_event_destroy(&clone);
 				}
