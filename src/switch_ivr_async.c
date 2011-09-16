@@ -2229,6 +2229,7 @@ typedef struct {
 	switch_mutex_t *mutex;
 	int read;
 	int ready;
+	int skip;
 } switch_inband_dtmf_generate_t;
 
 static int teletone_dtmf_generate_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
@@ -2257,13 +2258,17 @@ static switch_status_t generate_on_dtmf(switch_core_session_t *session, const sw
 
 		if (pvt) {
 			switch_mutex_lock(pvt->mutex);
+			
 			if (pvt->ready) {
 				switch_dtmf_t *dt = NULL;
 				switch_zmalloc(dt, sizeof(*dt));
 				*dt = *dtmf;
+				if (!switch_buffer_inuse(pvt->audio_buffer)) {
+					pvt->skip = 10;
+				}
 				if (switch_queue_trypush(pvt->digit_queue, dt) == SWITCH_STATUS_SUCCESS) {
 					switch_event_t *event;
-					
+
 					if (switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
 						switch_channel_event_set_data(channel, event);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
@@ -2310,7 +2315,11 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 			pvt->ts.rate = read_impl.actual_samples_per_second;
 			pvt->ts.channels = 1;
 			switch_mutex_init(&pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(pvt->session));
-			switch_core_event_hook_add_recv_dtmf(pvt->session, generate_on_dtmf);
+			if (pvt->read) {
+				switch_core_event_hook_add_recv_dtmf(pvt->session, generate_on_dtmf);
+			} else {
+				switch_core_event_hook_add_send_dtmf(pvt->session, generate_on_dtmf);
+			}
 			switch_mutex_lock(pvt->mutex);
 			pvt->ready = 1;
 			switch_mutex_unlock(pvt->mutex);
@@ -2331,6 +2340,12 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 		{
 			switch_size_t bytes;
 			void *pop;
+			
+			if (pvt->skip) {
+				pvt->skip--;
+				return SWITCH_TRUE;
+			}
+			
 
 			switch_mutex_lock(pvt->mutex);
 
@@ -2348,17 +2363,21 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 			if (!switch_buffer_inuse(pvt->audio_buffer)) {
 				if (switch_queue_trypop(pvt->digit_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 					switch_dtmf_t *dtmf = (switch_dtmf_t *) pop;
+					
+
 					if (dtmf->source != SWITCH_DTMF_INBAND_AUDIO) {
 						char buf[2] = "";
 						int duration = dtmf->duration;
 
 						buf[0] = dtmf->digit;
-						if (duration > 8000) {
-							duration = 4000;
+						if (duration > switch_core_max_dtmf_duration(0)) {
+							duration = switch_core_default_dtmf_duration(0);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)),
-										  SWITCH_LOG_WARNING, "%s Truncating ridiculous DTMF duration %d ms to 1/2 second.\n",
-										  switch_channel_get_name(switch_core_session_get_channel(pvt->session)), dtmf->duration / 8);
+										  SWITCH_LOG_WARNING, "%s Truncating DTMF duration %d ms to %d ms\n",
+											  switch_channel_get_name(switch_core_session_get_channel(pvt->session)), dtmf->duration / 8, duration);
 						}
+						
+
 						pvt->ts.duration = duration;
 						teletone_run(&pvt->ts, buf);
 					}
@@ -2429,7 +2448,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_c
 
 	if ((status = switch_core_media_bug_add(session, "inband_dtmf_generate", NULL,
 											inband_dtmf_generate_callback, pvt, 0,
-											SMBF_NO_PAUSE | pvt->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE , &bug)) != SWITCH_STATUS_SUCCESS) {
+											SMBF_NO_PAUSE | (pvt->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE) , &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 

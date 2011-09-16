@@ -1263,6 +1263,9 @@ SWITCH_DECLARE(uint32_t) switch_core_max_dtmf_duration(uint32_t duration)
 			duration = SWITCH_MIN_DTMF_DURATION;
 		}
 		runtime.max_dtmf_duration = duration;
+		if (duration < runtime.min_dtmf_duration) {
+			runtime.min_dtmf_duration = duration;
+		}
 	}
 	return runtime.max_dtmf_duration;
 }
@@ -1277,6 +1280,15 @@ SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration)
 			duration = SWITCH_MAX_DTMF_DURATION;
 		}
 		runtime.default_dtmf_duration = duration;
+
+		if (duration < runtime.min_dtmf_duration) {
+			runtime.min_dtmf_duration = duration;
+		}
+
+		if (duration > runtime.max_dtmf_duration) {
+			runtime.max_dtmf_duration = duration;
+		}
+
 	}
 	return runtime.default_dtmf_duration;
 }
@@ -1289,6 +1301,12 @@ SWITCH_DECLARE(uint32_t) switch_core_min_dtmf_duration(uint32_t duration)
 		}
 		if (duration > SWITCH_MAX_DTMF_DURATION) {
 			duration = SWITCH_MAX_DTMF_DURATION;
+		}
+
+		runtime.min_dtmf_duration = duration;
+
+		if (duration > runtime.max_dtmf_duration) {
+			runtime.max_dtmf_duration = duration;
 		}
 	}
 	return runtime.min_dtmf_duration;

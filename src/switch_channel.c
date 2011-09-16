@@ -446,7 +446,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 		dur = switch_core_default_dtmf_duration(0) / 8;
 		if ((p = strchr(argv[i], '@'))) {
 			*p++ = '\0';
-			if ((dur = atoi(p)) > 50) {
+			if ((dur = atoi(p)) > switch_core_min_dtmf_duration(0) / 8) {
 				dtmf.duration = dur * 8;
 			}
 		}
