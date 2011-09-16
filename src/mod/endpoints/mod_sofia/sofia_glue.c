@@ -3371,11 +3371,13 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		if (tech_pvt->te) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", tech_pvt->te);
 			switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
+			switch_channel_set_variable_printf(tech_pvt->channel, "sip_2833_send_payload", "%d", tech_pvt->te);
 		}
 
 		if (tech_pvt->recv_te) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set 2833 dtmf receive payload to %u\n", tech_pvt->recv_te);
 			switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, tech_pvt->recv_te);
+			switch_channel_set_variable_printf(tech_pvt->channel, "sip_2833_recv_payload", "%d", tech_pvt->recv_te);
 		}
 
 		if (tech_pvt->audio_recv_pt != tech_pvt->agreed_pt) {
@@ -4853,13 +4855,16 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", best_te);
 					if (tech_pvt->rtp_session) {
 						switch_rtp_set_telephony_event(tech_pvt->rtp_session, (switch_payload_t) best_te);
+						switch_channel_set_variable_printf(tech_pvt->channel, "sip_2833_send_payload", "%d", best_te);
 					}
 				} else {
 					te = tech_pvt->recv_te = tech_pvt->te = (switch_payload_t) best_te;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send/recv payload to %u\n", te);
 					if (tech_pvt->rtp_session) {
 						switch_rtp_set_telephony_event(tech_pvt->rtp_session, te);
+						switch_channel_set_variable_printf(tech_pvt->channel, "sip_2833_send_payload", "%d", te);
 						switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, te);
+						switch_channel_set_variable_printf(tech_pvt->channel, "sip_2833_recv_payload", "%d", te);
 					}
 				}
 			} else {
@@ -5402,9 +5407,19 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 	tech_pvt->remote_port = atoi(switch_str_nil(switch_channel_get_variable(channel, "sip_network_port")));
 	tech_pvt->caller_profile = switch_channel_get_caller_profile(channel);
 
+	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "sip_2833_send_payload"))) {
+		int te = atoi(tmp);
+		if (te > 64) {
+			tech_pvt->te = te;
+		} 
+	}
 
-
-
+	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "sip_2833_recv_payload"))) {
+		int te = atoi(tmp);
+		if (te > 64) {
+			tech_pvt->recv_te = te;
+		} 
+	}
 
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		tech_pvt->dest = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_req_uri"));
