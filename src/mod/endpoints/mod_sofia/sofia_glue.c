@@ -5579,6 +5579,14 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 				}
 			}
 
+			if (tech_pvt->te) {
+				switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
+			}
+
+			if (tech_pvt->recv_te) {
+				switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, tech_pvt->recv_te);
+			}
+
 		}
 
 		if (switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) {
