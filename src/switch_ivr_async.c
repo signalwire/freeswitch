@@ -2364,7 +2364,7 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 						int duration = dtmf->duration;
 
 						buf[0] = dtmf->digit;
-						if (duration > switch_core_max_dtmf_duration(0)) {
+						if (duration > (int)switch_core_max_dtmf_duration(0)) {
 							duration = switch_core_default_dtmf_duration(0);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)),
 										  SWITCH_LOG_WARNING, "%s Truncating DTMF duration %d ms to %d ms\n",
