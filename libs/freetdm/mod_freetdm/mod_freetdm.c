@@ -2440,7 +2440,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, caller_data->hangup_cause);
-				ftdm_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
 		}
