@@ -544,7 +544,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	uuid = switch_core_session_get_uuid(session);
 	tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
 	for (t = 0; t < tokencnt; t++) {
-		token = ftdm_channel_get_token(tech_pvt->ftdmchan, tokencnt);
+		token = ftdm_channel_get_token(tech_pvt->ftdmchan, t);
 		if (!zstr(token) && !strcasecmp(uuid, token)) {
 			uuid_found = 1;
 			break;
