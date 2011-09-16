@@ -1538,6 +1538,9 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		msg.from = __FILE__;
 		msg.string_arg = cid_buf;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending display update [%s] to %s\n", 
+						  cid_buf, switch_channel_get_name(channel));
 		switch_core_session_receive_message(session, &msg);
 		
 		if (!zstr(cbt->cid_number) && (vm_announce_cid = switch_channel_get_variable(channel, "vm_announce_cid"))) {
