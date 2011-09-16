@@ -2968,6 +2968,9 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_safe_free(sql);
 
 
+				switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(other_session));
+				switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
+
 				switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 
 				if (outbound_id) {
