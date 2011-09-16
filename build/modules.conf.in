@@ -2,6 +2,7 @@ loggers/mod_console
 loggers/mod_logfile
 loggers/mod_syslog
 #applications/mod_cidlookup
+#applications/mod_blacklist
 applications/mod_commands
 applications/mod_conference
 applications/mod_dptools
