@@ -3859,7 +3859,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 		uint8_t sln_buf[1024] = {0};
 		int16_t *sln;
 		ftdm_size_t slen = 0;
-		char digit_str[80] = "";
 
 		if (ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
 			sln = data;
@@ -3960,13 +3959,18 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 		}
 
 		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT) && !ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
-			teletone_dtmf_detect(&ftdmchan->dtmf_detect, sln, (int)slen);
-			teletone_dtmf_get(&ftdmchan->dtmf_detect, digit_str, sizeof(digit_str));
+			teletone_hit_type_t hit;
+			char digit_char;
+			uint32_t dur;
 
-			if(*digit_str) {
-				if (ftdmchan->state == FTDM_CHANNEL_STATE_CALLWAITING && (*digit_str == 'D' || *digit_str == 'A')) {
+			teletone_dtmf_detect(&ftdmchan->dtmf_detect, sln, (int)slen);
+			
+			if ((hit = teletone_dtmf_get(&ftdmchan->dtmf_detect, &digit_char, &dur)) == TT_HIT_BEGIN) {
+				if (ftdmchan->state == FTDM_CHANNEL_STATE_CALLWAITING && (digit_char == 'D' || digit_char == 'A')) {
 					ftdmchan->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK]++;
 				} else {
+					char digit_str[2] = { digit_char, 0};
+					
 					if (!ftdmchan->span->sig_dtmf || (ftdmchan->span->sig_dtmf(ftdmchan, (const char*)digit_str) != FTDM_BREAK)) {
 						ftdm_channel_queue_dtmf(ftdmchan, digit_str);
 					}

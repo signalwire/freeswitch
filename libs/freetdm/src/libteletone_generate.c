@@ -1,5 +1,41 @@
 /* 
- * libteletone_generate.c -- Tone Generator
+ * libteletone
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is libteletone
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthm@freeswitch.org>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * 
+ * Anthony Minessale II <anthm@freeswitch.org>
+ *
+ *
+ * libteletone.c -- Tone Generator
+ *
+ *
+ *
+ * Exception:
+ * The author hereby grants the use of this source code under the 
+ * following license if and only if the source code is distributed
+ * as part of the OpenZAP or FreeTDM library.	Any use or distribution of this
+ * source code outside the scope of the OpenZAP or FreeTDM library will nullify the
+ * following license and reinact the MPL 1.1 as stated above.
  *
  * Copyright (c) 2007, Anthony Minessale II
  * All rights reserved.
@@ -34,7 +70,6 @@
  */
 
 #include <libteletone.h>
-#include "private/ftdm_core.h"
 
 #define SMAX 32767
 #define SMIN -32768
@@ -111,7 +146,7 @@ TELETONE_API(int) teletone_init_session(teletone_generation_session_t *ts, int b
 	ts->decay_step = 0;
 	ts->decay_factor = 1;
 	if (buflen) {
-		if ((ts->buffer = ftdm_calloc(buflen, sizeof(teletone_audio_t))) == 0) {
+		if ((ts->buffer = calloc(buflen, sizeof(teletone_audio_t))) == 0) {
 			return -1;
 		}
 		ts->datalen = buflen;
@@ -142,7 +177,7 @@ TELETONE_API(int) teletone_init_session(teletone_generation_session_t *ts, int b
 TELETONE_API(int) teletone_destroy_session(teletone_generation_session_t *ts)
 {
 	if (ts->buffer) {
-		ftdm_safe_free(ts->buffer);
+		free(ts->buffer);
 		ts->buffer = NULL;
 		ts->samples = 0;
 	}
@@ -270,6 +305,19 @@ TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone
 	return ts->samples / ts->channels;
 }
 
+/* don't ask */
+static char *my_strdup (const char *s)
+{
+	size_t len = strlen (s) + 1;
+	void *new = malloc (len);
+	
+	if (new == NULL) {
+		return NULL;
+	}
+
+	return (char *) memcpy (new, s, len);
+}
+
 TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cmd)
 {
 	char *data = NULL, *cur = NULL, *end = NULL;
@@ -280,7 +328,7 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 	}
 
 	do {
-		if (!(data = ftdm_strdup(cmd))) {
+		if (!(data = my_strdup(cmd))) {
 			return -1;
 		}
 
@@ -363,6 +411,9 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 								*e++ = '\0';
 							}
 							do {
+								if (!p) {
+									break;
+								}
 								if ((next = strchr(p, ',')) != 0) {
 									*next++ = '\0';
 								}
@@ -427,7 +478,7 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 			}
 		}
 	bottom:
-		ftdm_safe_free(data);
+		free(data);
 		data = NULL;
 		if (ts->LOOPS > 0) {
 			ts->LOOPS--;

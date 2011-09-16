@@ -92,40 +92,49 @@ static void check_timeouts(void)
 	void *val;
 	time_t now;
 	valet_lot_t *lot;
+	switch_console_callback_match_t *matches = NULL;
+	switch_console_callback_match_node_t *m;
+	switch_hash_index_t *i_hi;
+	const void *i_var;
+	void *i_val;
+	char *i_ext;
+	valet_token_t *token;
 
 	now = switch_epoch_time_now(NULL);
 
 	switch_mutex_lock(globals.mutex);
-
-
 	for (hi = switch_hash_first(NULL, globals.hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_index_t *i_hi;
-		const void *i_var;
-		void *i_val;
-		char *i_ext;
-		valet_token_t *token;
-
 		switch_hash_this(hi, &var, NULL, &val);
-		lot = (valet_lot_t *) val;
-
-		switch_mutex_lock(lot->mutex);
-
-	top:
-		
-		for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
-			switch_hash_this(i_hi, &i_var, NULL, &i_val);
-			i_ext = (char *) i_var;
-			token = (valet_token_t *) i_val;
-			if (token->timeout > 0 && (token->timeout < now || token->timeout == 1)) {
-				switch_core_hash_delete(lot->hash, i_ext);
-				switch_safe_free(token);
-				goto top;
-			}
-		}
-
-		switch_mutex_unlock(lot->mutex);
+		switch_console_push_match(&matches, (const char *) var);
 	}
 	switch_mutex_unlock(globals.mutex);
+
+
+	if (matches) {
+		for (m = matches->head; m; m = m->next) {
+
+			lot = valet_find_lot(m->val);
+			switch_mutex_lock(lot->mutex);
+
+		top:
+		
+			for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
+				switch_hash_this(i_hi, &i_var, NULL, &i_val);
+				i_ext = (char *) i_var;
+				token = (valet_token_t *) i_val;
+				if (token->timeout > 0 && (token->timeout < now || token->timeout == 1)) {
+					switch_core_hash_delete(lot->hash, i_ext);
+					switch_safe_free(token);
+					goto top;
+				}
+			}
+
+			switch_mutex_unlock(lot->mutex);
+		}
+
+		switch_console_free_matches(&matches);
+	}
+
 }
 
 static int next_id(valet_lot_t *lot, int min, int max, int in)

@@ -2139,8 +2139,8 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 {
 	switch_inband_dtmf_t *pvt = (switch_inband_dtmf_t *) user_data;
 	switch_frame_t *frame = NULL;
-	char digit_str[80];
 	switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
+	teletone_hit_type_t hit;
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
@@ -2149,20 +2149,14 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 		if ((frame = switch_core_media_bug_get_read_replace_frame(bug))) {
-			teletone_dtmf_detect(&pvt->dtmf_detect, frame->data, frame->samples);
-			teletone_dtmf_get(&pvt->dtmf_detect, digit_str, sizeof(digit_str));
-			if (digit_str[0]) {
-				char *p = digit_str;
-				while (p && *p) {
-					switch_dtmf_t dtmf = {0};
-					dtmf.digit = *p;
-					dtmf.duration = switch_core_default_dtmf_duration(0);
-					dtmf.source = SWITCH_DTMF_INBAND_AUDIO;
-					switch_channel_queue_dtmf(channel, &dtmf);
-					p++;
-				}
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n",
-								  digit_str);
+			if ((hit = teletone_dtmf_detect(&pvt->dtmf_detect, frame->data, frame->samples)) == TT_HIT_END) {
+				switch_dtmf_t dtmf = {0};
+
+				teletone_dtmf_get(&pvt->dtmf_detect, &dtmf.digit, &dtmf.duration);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG, "DTMF DETECTED: [%c][%d]\n",
+								  dtmf.digit, dtmf.duration);
+				dtmf.source = SWITCH_DTMF_INBAND_AUDIO;
+				switch_channel_queue_dtmf(channel, &dtmf);
 			}
 			switch_core_media_bug_set_read_replace_frame(bug, frame);
 		}

@@ -4,10 +4,10 @@
  *
  * Version: MPL 1.1
  *
- * The contents of this file are subject to the Mftilla Public License Version
+ * The contents of this file are subject to the Mozilla Public License Version
  * 1.1 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- * http://www.mftilla.org/MPL/
+ * http://www.mozilla.org/MPL/
  *
  * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
@@ -33,8 +33,8 @@
  * Exception:
  * The author hereby grants the use of this source code under the 
  * following license if and only if the source code is distributed
- * as part of the freetdm library.  Any use or distribution of this
- * source code outside the scope of the freetdm library will nullify the
+ * as part of the OpenZAP or FreeTDM library.  Any use or distribution of this
+ * source code outside the scope of the OpenZAP or FreeTDM library will nullify the
  * following license and reinact the MPL 1.1 as stated above.
  *
  * Copyright (c) 2007, Anthony Minessale II
@@ -136,8 +136,8 @@ typedef __int16 int16_t;
 #endif
 #endif
 
-#include "libteletone_generate.h"
-#include "libteletone_detect.h"
+#include <libteletone_generate.h>
+#include <libteletone_detect.h>
 
 #ifdef HAVE_STRING_H
 #include <string.h>
