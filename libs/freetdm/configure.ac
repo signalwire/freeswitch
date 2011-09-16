@@ -54,6 +54,9 @@ fi
 
 AC_SUBST([confdir])
 
+DEFAULT_INCLUDES="-I. -I./src/include -I$(srcdir)"
+AC_SUBST([DEFAULT_INCLUDES])
+
 # Where to install the modules
 AC_ARG_WITH([modinstdir],
 	[AS_HELP_STRING([--with-modinstdir=DIR], [Install modules into this location (default: ${prefix}/mod)])],
