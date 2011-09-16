@@ -1,5 +1,5 @@
 //#include "openzap.h"
-#include "libteletone_detect.h"
+#include "../openzap/src/include/libteletone_detect.h"
 
 int main(int argc, char *argv[])
 {

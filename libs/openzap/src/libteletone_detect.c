@@ -57,7 +57,7 @@
  *
  */
 
-#include <libteletone_detect.h>
+#include "../openzap/src/include/libteletone_detect.h"
 
 #ifndef _MSC_VER
 #include <stdint.h>
