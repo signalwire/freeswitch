@@ -188,9 +188,14 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
 	switch_xml_t xml = NULL, x_param, x_params;
 	switch_bool_t allow_empty_password = SWITCH_FALSE;
 	const char *passwd = NULL;
+	switch_event_t *locate_params;
+	
+	switch_event_create(&locate_params, SWITCH_EVENT_GENERAL);
+	switch_assert(locate_params);
+	switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "source", "mod_rtmp");
 	
 	/* Locate user */
-	if (switch_xml_locate_user_merged("id", user, domain, NULL, &xml, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id", user, domain, NULL, &xml, locate_params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING, "Authentication failed. No such user %s@%s\n", user, domain);
 		goto done;
 	}
@@ -231,6 +236,9 @@ done:
 	if (xml) {
 		switch_xml_free(xml);
 	}
+
+	switch_event_destroy(&locate_params);
+
 	return status;
 }
 
