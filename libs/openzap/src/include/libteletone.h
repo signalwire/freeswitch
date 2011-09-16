@@ -136,8 +136,8 @@ typedef __int16 int16_t;
 #endif
 #endif
 
-#include "libteletone_generate.h"
-#include "libteletone_detect.h"
+#include <libteletone_generate.h>
+#include <libteletone_detect.h>
 
 #ifdef HAVE_STRING_H
 #include <string.h>

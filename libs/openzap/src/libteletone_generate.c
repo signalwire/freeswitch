@@ -33,7 +33,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../openzap/src/include/libteletone.h"
+#include <libteletone.h>
 
 #define SMAX 32767
 #define SMIN -32768
