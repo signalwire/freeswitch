@@ -3963,7 +3963,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 			char digit_char;
 			uint32_t dur;
 
-			if ((hit = teletone_dtmf_detect(&ftdmchan->dtmf_detect, sln, (int)slen)) == TT_HIT_BEGIN) {
+			if ((hit = teletone_dtmf_detect(&ftdmchan->dtmf_detect, sln, (int)slen)) == TT_HIT_END) {
 				teletone_dtmf_get(&ftdmchan->dtmf_detect, &digit_char, &dur);
 
 				if (ftdmchan->state == FTDM_CHANNEL_STATE_CALLWAITING && (digit_char == 'D' || digit_char == 'A')) {
