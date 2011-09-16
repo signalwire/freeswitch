@@ -6,6 +6,7 @@ int main(int argc, char *argv[])
 	int fd, b;
 	short sln[512] = {0};
 	teletone_dtmf_detect_state_t dtmf_detect = {0};
+	teletone_hit_type_t hit;
 
 	if (argc < 2) {
 		fprintf(stderr, "Arg Error!\n");
@@ -25,7 +26,7 @@ int main(int argc, char *argv[])
 
 		teletone_dtmf_detect(&dtmf_detect, sln, b / 2);
 		if ((hit = teletone_dtmf_get(&dtmf_detect, &digit_char, &dur))) {
-			char *hs = NULL;
+			const char *hs = NULL;
 			
 
 			switch(hit) {
@@ -40,9 +41,11 @@ int main(int argc, char *argv[])
 			case TT_HIT_END:
 				hs = "end";
 				break;
+			default:
+				break;
 			}
 
-			printf("%s digit: %s\n", hs, digit_str);
+			printf("%s digit: %c\n", hs, digit_char);
 		}
 	}
 	close(fd);
