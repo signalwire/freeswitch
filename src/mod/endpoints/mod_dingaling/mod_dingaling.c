@@ -496,17 +496,13 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	const char *proto;
 	const char *from; 
 	const char *to;
-	const char *subject;
 	const char *body;
-	const char *type;
 	const char *hint;
 
 	proto = switch_event_get_header(message_event, "proto");
 	from = switch_event_get_header(message_event, "from");
 	to = switch_event_get_header(message_event, "to");
-	subject = switch_event_get_header(message_event, "subject");
 	body = switch_event_get_body(message_event);
-	type = switch_event_get_header(message_event, "type");
 	hint = switch_event_get_header(message_event, "hint");
 
 	switch_assert(proto != NULL);
