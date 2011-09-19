@@ -719,12 +719,19 @@ ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt)
 	} else {
 		switch (signal_data->switchtype) {
 		case SNGISDN_SWITCH_NI2:
-			/* TODO: Need to send the caller ID as a facility IE */
-
+#ifdef SNGISDN_SUPPORT_CALLING_NAME_IN_FACILITY
+			{
+				if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
+					sng_isdn_encode_facility_caller_name(caller_data->cid_name, conEvnt->facilityStr.facilityStr.val, &conEvnt->facilityStr.facilityStr.len);
+					conEvnt->facilityStr.eh.pres = PRSNT_NODEF;
+					conEvnt->facilityStr.facilityStr.pres = PRSNT_NODEF;
+				}
+			}
+#endif
 			break;
 		case SNGISDN_SWITCH_EUROISDN:
 			if (signal_data->signalling != SNGISDN_SIGNALING_NET) {
-			break;
+				break;
 			}
 			/* follow through */
 		case SNGISDN_SWITCH_5ESS:
