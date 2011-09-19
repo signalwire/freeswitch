@@ -435,6 +435,7 @@ TELETONE_API(teletone_hit_type_t) teletone_dtmf_detect (teletone_dtmf_detect_sta
 						dtmf_detect_state->zc = ZC;
 						dtmf_detect_state->dur = 0;
 						r = TT_HIT_BEGIN;
+						break;
 					}					
 
 				}
