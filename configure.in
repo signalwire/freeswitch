@@ -871,7 +871,7 @@ then
 		if test "$python_has_distutils" != "no" ; then
 			AC_MSG_CHECKING([location of site-packages])
 
-			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_python_lib(0);'`"
+			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(0));'`"
 
 			if test -z "$PYTHON_SITE_DIR" ; then
 				AC_MSG_ERROR([Unable to detect python site-packages path])
@@ -884,10 +884,10 @@ then
 			#
 			# python distutils found, get settings from python directly
 			#
-			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print \" \".join(flags);'`"
-			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print \" \".join(libs);'`"
-			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print \"python\" + sysconfig.get_config_var(\"VERSION\");'`"
-			PYTHON_LIBDIR="`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_config_var(\"LIBDIR\");'`"
+			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));'`"
+			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print(\" \".join(libs));'`"
+			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print(\"python\" + sysconfig.get_config_var(\"VERSION\"));'`"
+			PYTHON_LIBDIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
 
 			# handle python being installed into /usr/local
 			AC_MSG_CHECKING([python libdir])
