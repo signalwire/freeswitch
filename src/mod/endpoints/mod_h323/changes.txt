@@ -1,3 +1,6 @@
+moves the switch_rtp_request_port() call from the contructor to FSH323Connection::CreateRealTimeLogicalChannel() - fix 
+    rtp port leak. tnx to Peter Olsson.
+fix log printing
 fix small interoperability issues if remote endpoint send progress twice
 make sure dtmfinband gets initialized
 make gk-identifier and gk-interface settings optional (documentation sayed that about gk-identifier already)
