@@ -29,7 +29,7 @@ static zrtp_status_t zrtp_sha_c(zrtp_hash_t *self, const char* msg, uint32_t len
 	
 	switch (self->base.id)
 	{
-		case ZRTP_SRTP_HASH_SHA1: {
+		case ZRTP_SRTP_HASH_HMAC_SHA1: {
 			sha1_ctx ctx;
 			if (dst->max_length < SHA1_DIGEST_SIZE) {
 				return zrtp_status_buffer_size;
@@ -79,7 +79,7 @@ static void* zrtp_sha_begin(zrtp_hash_t *self)
 	void *ctx = NULL;
 	
 	switch (self->base.id) {
-		case ZRTP_SRTP_HASH_SHA1:
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
 			ctx = zrtp_sys_alloc(sizeof(sha1_ctx));
 			if (ctx) {
 				sha1_begin(ctx);
@@ -113,7 +113,7 @@ static zrtp_status_t zrtp_sha_update( zrtp_hash_t *self,
 	}
     
 	switch (self->base.id) {
-		case ZRTP_SRTP_HASH_SHA1:
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
 			sha1_hash((const unsigned char*)msg, length, (sha1_ctx*)ctx);
 			break;
 		case ZRTP_HASH_SHA256:		
@@ -137,7 +137,7 @@ static zrtp_status_t zrtp_sha_end( zrtp_hash_t *self,
 	}
 	
 	switch (self->base.id) {
-		case ZRTP_SRTP_HASH_SHA1:
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
 			if (digest->max_length < SHA1_DIGEST_SIZE) {
 				return zrtp_status_buffer_size;
 			}
@@ -330,7 +330,7 @@ static void* zrtp_hmac_sha1_begin_c( zrtp_hash_t *self,
 static void* zrtp_hmac_begin(zrtp_hash_t *self, const zrtp_stringn_t *key) {
 	switch (self->base.id)
 	{
-		case ZRTP_SRTP_HASH_SHA1:
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
 			return zrtp_hmac_sha1_begin_c(self, key->buffer, key->length);
 		case ZRTP_HASH_SHA256:
 			return zrtp_hmac_sha256_begin_c(self, key->buffer, key->length);
@@ -350,7 +350,7 @@ static zrtp_status_t zrtp_hmac_update(zrtp_hash_t *self, void *ctx, const char *
 	
     if (0 != length) {
 		switch (self->base.id) {
-			case ZRTP_SRTP_HASH_SHA1:
+			case ZRTP_SRTP_HASH_HMAC_SHA1:
 				sha1_hash((const unsigned char*)msg, length, &((hmac_sha1_context_t*)ctx)->context);
 				break;
 			case ZRTP_HASH_SHA256:
@@ -381,7 +381,7 @@ static zrtp_status_t zrtp_hmac_end( zrtp_hash_t *self,
 	
 	switch (self->base.id)
 	{
-		case ZRTP_SRTP_HASH_SHA1:
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
 			/* finish up 1st pass */
 			sha1_end((unsigned char*)dst.buffer, &((hmac_sha1_context_t*)ctx)->context);
 			
@@ -451,7 +451,7 @@ static zrtp_status_t zrtp_hmac_c( zrtp_hash_t *self,
 	}
 	
 	switch (self->base.id) {
-		case ZRTP_SRTP_HASH_SHA1:
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
 			local_key_len = SHA1_BLOCK_SIZE;
 			break;
 		case ZRTP_HASH_SHA256:
@@ -471,7 +471,7 @@ static zrtp_status_t zrtp_hmac_c( zrtp_hash_t *self,
 	if (key_len > local_key_len) {		
 		switch (self->base.id)
 		{
-			case ZRTP_SRTP_HASH_SHA1:
+			case ZRTP_SRTP_HASH_HMAC_SHA1:
 				sha1_begin(&context1);
 				sha1_hash((const unsigned char*)key, key_len, &context1);
 				sha1_end(local_key, &context1);
@@ -519,7 +519,7 @@ static zrtp_status_t zrtp_hmac_c( zrtp_hash_t *self,
     }
 	
 	switch (self->base.id) {
-		case ZRTP_SRTP_HASH_SHA1:
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
 			/* perform inner hash */
 			sha1_begin(&context1);			/* init context for 1st pass */
 			sha1_hash(k_ipad, local_key_len, &context1);/* start with inner pad */
@@ -583,7 +583,7 @@ static zrtp_status_t zrtp_hmac_truncated_c( zrtp_hash_t *self,
 {
     uint32_t necessary_len_max = 0;
 	switch (self->base.id) {
-		case ZRTP_SRTP_HASH_SHA1:
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
 			necessary_len_max = SHA1_DIGEST_SIZE;
 			break;
 		case ZRTP_HASH_SHA256:
@@ -604,7 +604,7 @@ static zrtp_status_t zrtp_hmac_truncated_c( zrtp_hash_t *self,
 		
 		zrtp_hmac_c(self, key, key_len, msg, msg_len, (zrtp_stringn_t *)&dst);
 		switch (self->base.id) {
-			case ZRTP_SRTP_HASH_SHA1:
+			case ZRTP_SRTP_HASH_HMAC_SHA1:
 				necessary_len = ZRTP_MIN(necessary_len, SHA1_DIGEST_SIZE);
 				break;
 			case ZRTP_HASH_SHA256:
@@ -1440,19 +1440,19 @@ zrtp_status_t zrtp_sha1_self_test(zrtp_hash_t *self)
 	ZRTP_LOG(3, (_ZTU_,"SHA1 Testing\n"));
 
 	ZRTP_LOG(3, (_ZTU_, "\t8-bit test... "));
-	res = zrtp_sha_test(self, sha1_msg_8, sizeof(sha1_msg_8), sha1_MD_8, ZRTP_SRTP_HASH_SHA1);
+	res = zrtp_sha_test(self, sha1_msg_8, sizeof(sha1_msg_8), sha1_MD_8, ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 
 	ZRTP_LOG(3, (_ZTU_, "\t128-bit test... "));
-	res = zrtp_sha_test(self, sha1_msg_128, sizeof(sha1_msg_128), sha1_MD_128, ZRTP_SRTP_HASH_SHA1);
+	res = zrtp_sha_test(self, sha1_msg_128, sizeof(sha1_msg_128), sha1_MD_128, ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 
 	ZRTP_LOG(3, (_ZTU_, "\t512-bit test... "));
-	res = zrtp_sha_test(self, sha1_msg_512, sizeof(sha1_msg_512), sha1_MD_512, ZRTP_SRTP_HASH_SHA1);
+	res = zrtp_sha_test(self, sha1_msg_512, sizeof(sha1_msg_512), sha1_MD_512, ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 
 	ZRTP_LOG(3, (_ZTU_, "\t2096-bit test... "));
-	res = zrtp_sha_test(self, sha1_msg_2096, sizeof(sha1_msg_2096), sha1_MD_2096, ZRTP_SRTP_HASH_SHA1);
+	res = zrtp_sha_test(self, sha1_msg_2096, sizeof(sha1_msg_2096), sha1_MD_2096, ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 
 	return res;
@@ -1471,7 +1471,7 @@ zrtp_status_t zrtp_hmac_sha1_self_test(zrtp_hash_t *self)
 						 test_case1_hmac_sha1_data, 
 						 sizeof(test_case1_hmac_sha1_data),
 						 test_case1_hmac_sha1_result,
-						 ZRTP_SRTP_HASH_SHA1);
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 	
 	ZRTP_LOG(3, (_ZTU_, "\t2 case test... "));
@@ -1481,7 +1481,7 @@ zrtp_status_t zrtp_hmac_sha1_self_test(zrtp_hash_t *self)
 						 test_case2_hmac_sha1_data, 
 						 sizeof(test_case2_hmac_sha1_data),
 						 test_case2_hmac_sha1_result,
-						 ZRTP_SRTP_HASH_SHA1);
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 	
 	ZRTP_LOG(3, (_ZTU_, "\t3 case test... "));
@@ -1491,7 +1491,7 @@ zrtp_status_t zrtp_hmac_sha1_self_test(zrtp_hash_t *self)
 						 test_case3_hmac_sha1_data, 
 						 sizeof(test_case3_hmac_sha1_data),
 						 test_case3_hmac_sha1_result,
-						 ZRTP_SRTP_HASH_SHA1);
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 	
 	ZRTP_LOG(3, (_ZTU_, "\t4 case test... "));
@@ -1501,7 +1501,7 @@ zrtp_status_t zrtp_hmac_sha1_self_test(zrtp_hash_t *self)
 						 test_case4_hmac_sha1_data, 
 						 sizeof(test_case4_hmac_sha1_data),
 						 test_case4_hmac_sha1_result,
-						 ZRTP_SRTP_HASH_SHA1);
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 	
 	ZRTP_LOG(3, (_ZTU_, "\t5 case test... "));
@@ -1511,7 +1511,7 @@ zrtp_status_t zrtp_hmac_sha1_self_test(zrtp_hash_t *self)
 						 test_case5_hmac_sha1_data, 
 						 sizeof(test_case5_hmac_sha1_data),
 						 test_case5_hmac_sha1_result,
-						 ZRTP_SRTP_HASH_SHA1);
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 	
 	ZRTP_LOG(3, (_ZTU_, "\t6 case test... "));
@@ -1521,7 +1521,7 @@ zrtp_status_t zrtp_hmac_sha1_self_test(zrtp_hash_t *self)
 						 test_case6_hmac_sha1_data, 
 						 sizeof(test_case6_hmac_sha1_data),
 						 test_case6_hmac_sha1_result,
-						 ZRTP_SRTP_HASH_SHA1);
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 	
 	ZRTP_LOG(3, (_ZTU_, "\t7 case test... "));
@@ -1531,7 +1531,7 @@ zrtp_status_t zrtp_hmac_sha1_self_test(zrtp_hash_t *self)
 						 test_case7_hmac_sha1_data, 
 						 sizeof(test_case7_hmac_sha1_data),
 						 test_case7_hmac_sha1_result,
-						 ZRTP_SRTP_HASH_SHA1);
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
 	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
 	
 	return res;
@@ -1608,7 +1608,7 @@ zrtp_status_t zrtp_defaults_hash(zrtp_global_t* global_ctx)
 	
 
     zrtp_memcpy(hash_sha1->base.type, ZRTP_S160, ZRTP_COMP_TYPE_SIZE);
-	hash_sha1->base.id				= ZRTP_SRTP_HASH_SHA1;
+	hash_sha1->base.id				= ZRTP_SRTP_HASH_HMAC_SHA1;
     hash_sha1->base.zrtp			= global_ctx;
 	hash_sha1->block_length			= SHA1_BLOCK_SIZE;
 	hash_sha1->digest_length		= SHA1_DIGEST_SIZE;

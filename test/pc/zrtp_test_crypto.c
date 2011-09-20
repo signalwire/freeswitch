@@ -34,9 +34,9 @@ static void cipher_test(zrtp_global_t *zrtp)
 /*---------------------------------------------------------------------------*/
 static zrtp_status_t hash_test(zrtp_global_t *zrtp)
 {
-	zrtp_hash_t *hash =  zrtp_comp_find(ZRTP_CC_HASH, ZRTP_SRTP_HASH_SHA1, zrtp);
+	zrtp_hash_t *hash =  zrtp_comp_find(ZRTP_CC_HASH, ZRTP_SRTP_HASH_HMAC_SHA1, zrtp);
 	if (NULL == hash) {
-		ZRTP_LOG(1, (_ZTU_,"ERROR! can't find ZRTP_SRTP_HASH_SHA1 component\n"));
+		ZRTP_LOG(1, (_ZTU_,"ERROR! can't find ZRTP_SRTP_HASH_HMAC_SHA1 component\n"));
 	} else {
 		hash->hash_self_test(hash);
 		hash->hmac_self_test(hash);
@@ -229,7 +229,7 @@ zrtp_status_t dk_test(zrtp_global_t *zrtp)
 
 #define FIRST_TEST_MAP_INIT_WIDTH 24
 
-extern zrtp_rp_node_t *get_rp_node(zrtp_rp_ctx_t *ctx, uint8_t direction, uint32_t ssrc);
+extern zrtp_rp_node_t *get_rp_node_non_lock(zrtp_rp_ctx_t *ctx, uint8_t direction, uint32_t ssrc);
 extern zrtp_rp_node_t *add_rp_node(zrtp_srtp_ctx_t *srtp_ctx, zrtp_rp_ctx_t *ctx, uint8_t direction, uint32_t ssrc);
 extern zrtp_status_t zrtp_srtp_rp_check(zrtp_srtp_rp_t *srtp_rp, zrtp_rtp_info_t *packet);
 extern zrtp_status_t zrtp_srtp_rp_add(zrtp_srtp_rp_t *srtp_rp, zrtp_rtp_info_t *packet);
@@ -273,7 +273,7 @@ void inject_from_map( zrtp_srtp_global_t *srtp_global,
 	int i;
 	zrtp_rtp_info_t pkt;
 	
-	rp_node = get_rp_node(srtp_global->rp_ctx, RP_INCOMING_DIRECTION, ssrc);
+	rp_node = get_rp_node_non_lock(srtp_global->rp_ctx, RP_INCOMING_DIRECTION, ssrc);
 	if (NULL == rp_node) {
 		return;	
 	}

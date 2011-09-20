@@ -32,6 +32,7 @@
 /* Special types and definitions for the embedded implementation */
 #if (!defined(ZRTP_USE_EXTERN_SRTP) || (ZRTP_USE_EXTERN_SRTP == 0))
 #include "zrtp_srtp_builtin.h"
+
 /*!
  * \brief Structure describing an SRTP session.
  * An instance of this structure is created by calling zrtp_srtp_create() 
@@ -57,6 +58,17 @@ typedef struct
 #else
 typedef void zrtp_srtp_global_t;
 #endif /* BUILDIN SRTP */
+
+/*! Defines types of SRTP hmac functions */
+typedef enum zrtp_srtp_hash_id_t
+{
+	/*!
+	 * @warning SHA1 hash algorithm is for internal use only! It used for srtp authentication and does
+	 * not used in ZRTP protocol itself. Don't use it in \ref zrtp_profile_t#hash_schemes configuration.
+	 */
+	ZRTP_SRTP_HASH_HMAC_SHA1	= 10
+} zrtp_srtp_hash_id_t;
+
 
 /*!
  * \brief Structure describing SRTP/SRTCP stream parameters.

@@ -805,7 +805,7 @@ zrtp_status_t _zrtp_set_public_value( zrtp_stream_t *stream,
 
 		iprof.rtp_policy.cipher			= session->blockcipher;
 		iprof.rtp_policy.auth_tag_len	= session->authtaglength;
-		iprof.rtp_policy.hash			= zrtp_comp_find(ZRTP_CC_HASH, ZRTP_SRTP_HASH_SHA1, session->zrtp);
+		iprof.rtp_policy.hash			= zrtp_comp_find(ZRTP_CC_HASH, ZRTP_SRTP_HASH_HMAC_SHA1, session->zrtp);
 		iprof.rtp_policy.auth_key_len	= 20;
 		iprof.rtp_policy.cipher_key_len = cipher_key_length;
 

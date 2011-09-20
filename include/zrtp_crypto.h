@@ -93,12 +93,7 @@ typedef enum zrtp_crypto_comp_t
 typedef enum zrtp_hash_id_t
 {	
 	ZRTP_HASH_SHA256	= 1,
-	/**
-	 * \note SHA1 hash algorithm is for internal use only! It used for srtp authentication and does
-	 * not used in ZRTP protocol itself. Don't use it in \ref zrtp_profile_t#hash_schemes configuration.
-	 */
-	ZRTP_SRTP_HASH_SHA1	= 2,
-	ZRTP_HASH_SHA384	= 3
+	ZRTP_HASH_SHA384	= 2
 } zrtp_hash_id_t;
 
 /*! Defines types of ciphers */
