@@ -526,6 +526,18 @@ static inline char *switch_clean_name_string(char *s)
 
 
 /*!
+  \brief Turn a string into a number (default if NULL)
+  \param nptr the string
+  \param dft the default
+  \return the number version of the string or the default
+*/
+static inline int switch_safe_atoi(const char *nptr, int dft)
+{
+	return nptr ? atoi(nptr) : dft;
+}
+
+
+/*!
   \brief Free a pointer and set it to NULL unless it already is NULL
   \param it the pointer
 */

@@ -48,11 +48,22 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 	uint32_t port = t38_options->local_port;
 	const char *family = "IP4";
 	const char *username = tech_pvt->profile->username;
-	char MMR[32] = "";
-	char JBIG[32] = "";
-	char FILLBIT[32] = "";
+	const char *bit_removal_on = "a=T38FaxFillBitRemoval\n";
+	const char *bit_removal_off = "";
+	
+	const char *mmr_on = "a=T38FaxTranscodingMMR\n";
+	const char *mmr_off = "";
+
+	const char *jbig_on = "a=T38FaxTranscodingJBIG\n";
+	const char *jbig_off = "";
+	const char *var;
+	int broken_boolean;
 
 	//sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+
+	var = switch_channel_get_variable(tech_pvt->channel, "t38_broken_boolean");
+	
+	broken_boolean = switch_true(var);
 
 	if (!ip) {
 		if (!(ip = tech_pvt->adv_sdp_audio_ip)) {
@@ -94,48 +105,6 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					"o=%s %010u %010u IN %s %s\n"
 					"s=%s\n" "c=IN %s %s\n" "t=0 0\n", username, tech_pvt->owner_id, tech_pvt->session_id, family, ip, username, family, ip);
 
-	if(t38_options->T38FaxFillBitRemoval) {
-		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxFillBitRemoval"))) {
-			switch_snprintf(FILLBIT, sizeof(FILLBIT), "a=T38FaxFillBitRemoval:1\n");
-		} else {
-			switch_set_string(FILLBIT, "a=T38FaxFillBitRemoval\n");
-		}
-	} else {
-		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxFillBitRemoval"))) {
-			switch_snprintf(FILLBIT, sizeof(FILLBIT), "a=T38FaxFillBitRemoval:0\n");
-		} else {
-			switch_set_string(FILLBIT, "");
-		}
-	}
-
-	if( t38_options->T38FaxTranscodingMMR) {
-		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxTranscodingMMR"))) {
-			switch_snprintf(MMR, sizeof(MMR), "a=T38FaxTranscodingMMR:1\n");
-		} else {
-			switch_set_string(MMR, "a=T38FaxTranscodingMMR\n");
-		}
-	} else {
-		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxTranscodingMMR"))) {
-			switch_snprintf(MMR, sizeof(MMR), "a=T38FaxTranscodingMMR:0\n");
-		} else {
-			switch_set_string(MMR, "");
-		}
-	}
-
-	if( t38_options->T38FaxTranscodingJBIG) {
-		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxTranscodingJBIG"))) {
-			switch_snprintf(JBIG, sizeof(JBIG), "a=T38FaxTranscodingJBIG:1\n");
-		} else {
-			switch_set_string(JBIG, "a=T38FaxTranscodingJBIG\n");
-		}
-	} else {
-		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "broken_T38FaxTranscodingJBIG"))) {
-			switch_snprintf(JBIG, sizeof(JBIG), "a=T38FaxTranscodingJBIG:0\n");
-		} else {
-			switch_set_string(JBIG, "");
-		}
-	}
-
 	if (t38_options->T38FaxMaxBuffer) {
 		switch_snprintf(max_buf, sizeof(max_buf), "a=T38FaxMaxBuffer:%d\n", t38_options->T38FaxMaxBuffer);
 	};
@@ -144,6 +113,21 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 		switch_snprintf(max_data, sizeof(max_data), "a=T38FaxMaxDatagram:%d\n", t38_options->T38FaxMaxDatagram);
 	};
 
+
+	
+
+	if (broken_boolean) {
+		bit_removal_on = "a=T38FaxFillBitRemoval:1\n";
+		bit_removal_off = "a=T38FaxFillBitRemoval:0\n";
+
+		mmr_on = "a=T38FaxTranscodingMMR:1\n";
+		mmr_off = "a=T38FaxTranscodingMMR:0\n";
+
+		jbig_on = "a=T38FaxTranscodingJBIG:1\n";
+		jbig_off = "a=T38FaxTranscodingJBIG:0\n";
+
+	}
+	
 
 	switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
 					"m=image %d udptl t38\n"
@@ -160,9 +144,9 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					port,
 					t38_options->T38FaxVersion,
 					t38_options->T38MaxBitRate,
-					FILLBIT,
-					MMR,
-					JBIG,
+					t38_options->T38FaxFillBitRemoval ? bit_removal_on : bit_removal_off,
+					t38_options->T38FaxTranscodingMMR ? mmr_on : mmr_off,
+					t38_options->T38FaxTranscodingJBIG ? jbig_on : jbig_off,
 					t38_options->T38FaxRateManagement,
 					max_buf,
 					max_data,
@@ -4006,6 +3990,7 @@ void sofia_glue_copy_t38_options(switch_t38_options_t *t38_options, switch_core_
 	switch_channel_set_private(channel, "t38_options", local_t38_options);
 
 }
+
 static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_session_t *sdp, sdp_media_t *m)
 {
 	switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
@@ -4025,6 +4010,12 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 
 	t38_options->remote_port = (switch_port_t)m->m_port;
 
+	if (sdp->sdp_origin) {
+		t38_options->sdp_o_line = switch_core_session_strdup(tech_pvt->session, sdp->sdp_origin->o_username);
+	} else {
+		t38_options->sdp_o_line = "unknown";
+	}
+	
 	if (m->m_connections && m->m_connections->c_address) {
 		t38_options->remote_ip = switch_core_session_strdup(tech_pvt->session, m->m_connections->c_address);
 	} else if (sdp && sdp->sdp_connection && sdp->sdp_connection->c_address) {
@@ -4037,41 +4028,11 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 		} else if (!strcasecmp(attr->a_name, "T38MaxBitRate") && attr->a_value) {
 			t38_options->T38MaxBitRate = (uint32_t) atoi(attr->a_value);
 		} else if (!strcasecmp(attr->a_name, "T38FaxFillBitRemoval")) {
-			if (switch_stristr("T38FaxFillBitRemoval:", tech_pvt->remote_sdp_str)) {
-				switch_channel_set_variable(tech_pvt->channel, "broken_T38FaxFillBitRemoval", "true");
-				if (atoi(attr->a_value) == 0) {
-					t38_options->T38FaxFillBitRemoval = SWITCH_FALSE;
-				} else {
-					t38_options->T38FaxFillBitRemoval = SWITCH_TRUE;
-				}
-			} else {
-				switch_channel_set_variable(tech_pvt->channel, "broken_T38FaxFillBitRemoval", "false");
-				t38_options->T38FaxFillBitRemoval = SWITCH_TRUE;
-			}
+			t38_options->T38FaxFillBitRemoval = switch_safe_atoi(attr->a_value, 1);
 		} else if (!strcasecmp(attr->a_name, "T38FaxTranscodingMMR")) {
-			if (switch_stristr("T38FaxTranscodingMMR:", tech_pvt->remote_sdp_str)) {
-				switch_channel_set_variable(tech_pvt->channel, "broken_T38FaxTranscodingMMR", "true");
-				if (atoi(attr->a_value) == 0) {
-					t38_options->T38FaxTranscodingMMR = SWITCH_FALSE;
-				} else {
-					t38_options->T38FaxTranscodingMMR = SWITCH_TRUE;
-				}
-			} else {
-				switch_channel_set_variable(tech_pvt->channel, "broken_T38FaxTranscodingMMR", "false");
-				t38_options->T38FaxTranscodingMMR = SWITCH_TRUE;
-			}
+			t38_options->T38FaxTranscodingMMR = switch_safe_atoi(attr->a_value, 1);
 		} else if (!strcasecmp(attr->a_name, "T38FaxTranscodingJBIG")) {
-			if (switch_stristr("T38FaxTranscodingJBIG:", tech_pvt->remote_sdp_str)) {
-				switch_channel_set_variable(tech_pvt->channel, "broken_T38FaxTranscodingJBIG", "true");
-				if (atoi(attr->a_value) == 0) {
-					t38_options->T38FaxTranscodingJBIG = SWITCH_FALSE;
-				} else {
-					t38_options->T38FaxTranscodingJBIG = SWITCH_TRUE;
-				}
-			} else {
-				switch_channel_set_variable(tech_pvt->channel, "broken_T38FaxTranscodingJBIG", "false");
-				t38_options->T38FaxTranscodingJBIG = SWITCH_TRUE;
-			}
+			t38_options->T38FaxTranscodingJBIG = switch_safe_atoi(attr->a_value, 1);
 		} else if (!strcasecmp(attr->a_name, "T38FaxRateManagement") && attr->a_value) {
 			t38_options->T38FaxRateManagement = switch_core_session_strdup(tech_pvt->session, attr->a_value);
 		} else if (!strcasecmp(attr->a_name, "T38FaxMaxBuffer") && attr->a_value) {
@@ -4418,6 +4379,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	if (!reneg && tech_pvt->num_negotiated_codecs) {
 		codec_array = tech_pvt->negotiated_codecs;
 		total_codecs = tech_pvt->num_negotiated_codecs;
+	}
+
+	if (switch_stristr("T38FaxFillBitRemoval:", r_sdp) || switch_stristr("T38FaxTranscodingMMR:", r_sdp) || 
+		switch_stristr("T38FaxTranscodingJBIG:", r_sdp)) {
+		switch_channel_set_variable(tech_pvt->channel, "t38_broken_boolean", "true");
 	}
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
