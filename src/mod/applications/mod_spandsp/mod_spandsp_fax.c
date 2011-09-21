@@ -806,7 +806,7 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
         switch_channel_set_private(channel, "t38_options", NULL);
     } else {
         pvt->t38_mode = T38_MODE_NEGOTIATED;
-
+        switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
 
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38 SDP Origin = %s\n", t38_options->sdp_o_line);        
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxVersion = %d\n", t38_options->T38FaxVersion);
@@ -1211,6 +1211,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
                 } else if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
                     switch_core_session_message_t msg = { 0 };
                     pvt->t38_mode = T38_MODE_NEGOTIATED;
+                    switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
                     spanfax_init(pvt, T38_MODE);
                     configure_t38(pvt);
 
@@ -1493,13 +1494,14 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
         spanfax_init(pvt, T38_GATEWAY_MODE);
         configure_t38(pvt);
         pvt->t38_mode = T38_MODE_NEGOTIATED;
+        switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
     } else {
         if (negotiate_t38(pvt) != T38_MODE_NEGOTIATED) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Could not negotiate T38\n", switch_channel_get_name(channel));
             switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
             goto end_unlock;
         }
-
+        switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
         spanfax_init(pvt, T38_GATEWAY_MODE);
     }
 

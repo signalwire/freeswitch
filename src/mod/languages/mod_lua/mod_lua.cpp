@@ -430,6 +430,24 @@ SWITCH_STANDARD_API(luarun_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_CHAT_APP(lua_chat_function)
+{
+	lua_State *L = lua_init();
+	char *dup = NULL;
+
+	if (data) {
+		dup = strdup(data);
+	}
+
+	mod_lua_conjure_event(L, message, "message", 1);
+	lua_parse_and_execute(L, (char *)dup);
+	lua_uninit(L);
+
+	switch_safe_free(dup);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
 
 SWITCH_STANDARD_API(lua_api_function)
 {
@@ -591,6 +609,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 	switch_dialplan_interface_t *dp_interface;
+	switch_chat_application_interface_t *chat_app_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -600,6 +619,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_DIALPLAN(dp_interface, "LUA", lua_dialplan_hunt);
 
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "lua", "execute a lua script", "execute a lua script", lua_chat_function, "<script>", SCAF_NONE);
 
 
 	globals.pool = pool;

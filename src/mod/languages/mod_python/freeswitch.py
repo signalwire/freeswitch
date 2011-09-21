@@ -175,6 +175,8 @@ class Event(_object):
         except: self.this = this
     __swig_destroy__ = _freeswitch.delete_Event
     __del__ = lambda self : None;
+    def chat_execute(*args): return _freeswitch.Event_chat_execute(*args)
+    def chat_send(*args): return _freeswitch.Event_chat_send(*args)
     def serialize(*args): return _freeswitch.Event_serialize(*args)
     def setPriority(*args): return _freeswitch.Event_setPriority(*args)
     def getHeader(*args): return _freeswitch.Event_getHeader(*args)

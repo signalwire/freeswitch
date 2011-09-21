@@ -5590,6 +5590,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_regex_set_var_callback(char * jarg1, c
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_regex_set_event_header_callback(char * jarg1, char * jarg2, void * jarg3) {
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *arg3 = (void *) 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (void *)jarg3; 
+  switch_regex_set_event_header_callback((char const *)arg1,(char const *)arg2,arg3);
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_MAX_CORE_THREAD_SESSION_OBJS_get() {
   int jresult ;
   int result;
@@ -10542,6 +10554,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_send(char * jarg1, void * jar
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_deliver(char * jarg1, void * jarg2) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_event_t **arg2 = (switch_event_t **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_event_t **)jarg2; 
+  result = (switch_status_t)switch_core_chat_deliver((char const *)arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_preprocess_session(void * jarg1, char * jarg2) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
@@ -11388,6 +11414,29 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_applicatio
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_chat_application_interface_set(void * jarg1, void * jarg2) {
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_chat_application_interface_t *arg2 = (switch_chat_application_interface_t *) 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  arg2 = (switch_chat_application_interface_t *)jarg2; 
+  if (arg1) (arg1)->chat_application_interface = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_interface_chat_application_interface_get(void * jarg1) {
+  void * jresult ;
+  switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
+  switch_chat_application_interface_t *result = 0 ;
+  
+  arg1 = (switch_loadable_module_interface *)jarg1; 
+  result = (switch_chat_application_interface_t *) ((arg1)->chat_application_interface);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_api_interface_set(void * jarg1, void * jarg2) {
   switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
   switch_api_interface_t *arg2 = (switch_api_interface_t *) 0 ;
@@ -11806,6 +11855,34 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_application_inte
   arg1 = (char *)jarg1; 
   result = (switch_application_interface_t *)switch_loadable_module_get_application_interface((char const *)arg1);
   jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_chat_application_interface(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_chat_application_interface_t *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_chat_application_interface_t *)switch_loadable_module_get_chat_application_interface((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_execute_chat_app(void * jarg1, char * jarg2, char * jarg3) {
+  int jresult ;
+  switch_event_t *arg1 = (switch_event_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_event_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (switch_status_t)switch_core_execute_chat_app(arg1,(char const *)arg2,(char const *)arg3);
+  jresult = result; 
   return jresult;
 }
 
@@ -23227,6 +23304,302 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_application_interface(void * ja
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_interface_name_set(void * jarg1, char * jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->interface_name = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->interface_name, (const char *)arg2);
+    } else {
+      arg1->interface_name = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_chat_application_interface_interface_name_get(void * jarg1) {
+  char * jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (char *) ((arg1)->interface_name);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_chat_application_function_set(void * jarg1, void * jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  switch_chat_application_function_t arg2 = (switch_chat_application_function_t) 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (switch_chat_application_function_t)jarg2; 
+  if (arg1) (arg1)->chat_application_function = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_chat_application_interface_chat_application_function_get(void * jarg1) {
+  void * jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  switch_chat_application_function_t result;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (switch_chat_application_function_t) ((arg1)->chat_application_function);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_long_desc_set(void * jarg1, char * jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->long_desc = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->long_desc, (const char *)arg2);
+    } else {
+      arg1->long_desc = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_chat_application_interface_long_desc_get(void * jarg1) {
+  char * jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (char *) ((arg1)->long_desc);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_short_desc_set(void * jarg1, char * jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->short_desc = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->short_desc, (const char *)arg2);
+    } else {
+      arg1->short_desc = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_chat_application_interface_short_desc_get(void * jarg1) {
+  char * jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (char *) ((arg1)->short_desc);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_syntax_set(void * jarg1, char * jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->syntax = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->syntax, (const char *)arg2);
+    } else {
+      arg1->syntax = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_chat_application_interface_syntax_get(void * jarg1) {
+  char * jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (char *) ((arg1)->syntax);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_flags_set(void * jarg1, unsigned long jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->flags = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_chat_application_interface_flags_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (uint32_t) ((arg1)->flags);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_rwlock_set(void * jarg1, void * jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  switch_thread_rwlock_t *arg2 = (switch_thread_rwlock_t *) 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (switch_thread_rwlock_t *)jarg2; 
+  if (arg1) (arg1)->rwlock = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_chat_application_interface_rwlock_get(void * jarg1) {
+  void * jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  switch_thread_rwlock_t *result = 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (switch_thread_rwlock_t *) ((arg1)->rwlock);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_refs_set(void * jarg1, int jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  int arg2 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->refs = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_chat_application_interface_refs_get(void * jarg1) {
+  int jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  int result;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (int) ((arg1)->refs);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_reflock_set(void * jarg1, void * jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  switch_mutex_t *arg2 = (switch_mutex_t *) 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (switch_mutex_t *)jarg2; 
+  if (arg1) (arg1)->reflock = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_chat_application_interface_reflock_get(void * jarg1) {
+  void * jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  switch_mutex_t *result = 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (switch_mutex_t *) ((arg1)->reflock);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_parent_set(void * jarg1, void * jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  switch_loadable_module_interface_t *arg2 = (switch_loadable_module_interface_t *) 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (switch_loadable_module_interface_t *)jarg2; 
+  if (arg1) (arg1)->parent = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_chat_application_interface_parent_get(void * jarg1) {
+  void * jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  switch_loadable_module_interface_t *result = 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (switch_loadable_module_interface_t *) ((arg1)->parent);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_chat_application_interface_next_set(void * jarg1, void * jarg2) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  switch_chat_application_interface *arg2 = (switch_chat_application_interface *) 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  arg2 = (switch_chat_application_interface *)jarg2; 
+  if (arg1) (arg1)->next = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_chat_application_interface_next_get(void * jarg1) {
+  void * jresult ;
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  switch_chat_application_interface *result = 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  result = (switch_chat_application_interface *) ((arg1)->next);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_chat_application_interface() {
+  void * jresult ;
+  switch_chat_application_interface *result = 0 ;
+  
+  result = (switch_chat_application_interface *)new switch_chat_application_interface();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_chat_application_interface(void * jarg1) {
+  switch_chat_application_interface *arg1 = (switch_chat_application_interface *) 0 ;
+  
+  arg1 = (switch_chat_application_interface *)jarg1; 
+  delete arg1;
+  
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_api_interface_interface_name_set(void * jarg1, char * jarg2) {
   switch_api_interface *arg1 = (switch_api_interface *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -26443,6 +26816,22 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_event_get_header_idx(void * jarg1, c
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_rename_header(void * jarg1, char * jarg2, char * jarg3) {
+  int jresult ;
+  switch_event_t *arg1 = (switch_event_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_event_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (switch_status_t)switch_event_rename_header(arg1,(char const *)arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_switch_event_get_body(void * jarg1) {
   char * jresult ;
   switch_event_t *arg1 = (switch_event_t *) 0 ;
@@ -26548,6 +26937,20 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_event_merge(void * jarg1, void * jarg2
   arg1 = (switch_event_t *)jarg1; 
   arg2 = (switch_event_t *)jarg2; 
   switch_event_merge(arg1,arg2);
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_dup_reply(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_event_t **arg1 = (switch_event_t **) 0 ;
+  switch_event_t *arg2 = (switch_event_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_event_t **)jarg1; 
+  arg2 = (switch_event_t *)jarg2; 
+  result = (switch_status_t)switch_event_dup_reply(arg1,arg2);
+  jresult = result; 
+  return jresult;
 }
 
 
@@ -26778,6 +27181,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_running() {
   switch_status_t result;
   
   result = (switch_status_t)switch_event_running();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_set_body(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_event_t *arg1 = (switch_event_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_event_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (switch_status_t)switch_event_set_body(arg1,(char const *)arg2);
   jresult = result; 
   return jresult;
 }
@@ -29758,6 +30175,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_insert_file(void * jarg1, char * ja
   }
   arg4 = *argp4; 
   result = (switch_status_t)switch_ivr_insert_file(arg1,(char const *)arg2,(char const *)arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_create_message_reply(void * jarg1, void * jarg2, char * jarg3) {
+  int jresult ;
+  switch_event_t **arg1 = (switch_event_t **) 0 ;
+  switch_event_t *arg2 = (switch_event_t *) 0 ;
+  char *arg3 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_event_t **)jarg1; 
+  arg2 = (switch_event_t *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (switch_status_t)switch_ivr_create_message_reply(arg1,arg2,(char const *)arg3);
   jresult = result; 
   return jresult;
 }
@@ -34869,6 +35302,36 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_Event(void * jarg1) {
   arg1 = (Event *)jarg1; 
   delete arg1;
   
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Event_chat_execute(void * jarg1, char * jarg2, char * jarg3) {
+  int jresult ;
+  Event *arg1 = (Event *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  int result;
+  
+  arg1 = (Event *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (int)(arg1)->chat_execute((char const *)arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Event_chat_send(void * jarg1, char * jarg2) {
+  int jresult ;
+  Event *arg1 = (Event *) 0 ;
+  char *arg2 = (char *) NULL ;
+  int result;
+  
+  arg1 = (Event *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (int)(arg1)->chat_send((char const *)arg2);
+  jresult = result; 
+  return jresult;
 }
 
 

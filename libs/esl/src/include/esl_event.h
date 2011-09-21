@@ -298,6 +298,7 @@ ESL_DECLARE(esl_status_t) esl_event_create_json(esl_event_t **event, const char 
   \note the body parameter can be shadowed by the esl_event_reserve_subclass_detailed function
 */
 ESL_DECLARE(esl_status_t) esl_event_add_body(esl_event_t *event, const char *fmt, ...);
+ESL_DECLARE(esl_status_t) esl_event_set_body(esl_event_t *event, const char *body);
 
 /*!
   \brief Create a new event assuming it will not be custom event and therefore hiding the unused parameters

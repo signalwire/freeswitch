@@ -931,6 +931,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_release_file_handle(switch_core_sessi
 SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *session, const char *cmd, switch_file_handle_t *fhp);
 SWITCH_DECLARE(switch_status_t) switch_ivr_insert_file(switch_core_session_t *session, const char *file, const char *insert_file, switch_size_t sample_point);
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t **reply, switch_event_t *message, const char *new_proto);
+
 /** @} */
 
 SWITCH_END_EXTERN_C

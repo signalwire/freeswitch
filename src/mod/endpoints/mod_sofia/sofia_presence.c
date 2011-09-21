@@ -99,7 +99,10 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	//const char *subject;
 	const char *body;
 	const char *type;
-	const char *hint;
+	const char *from_full;
+	char header[256] = "";
+	char *route_uri = NULL;
+	const char *network_ip = NULL, *network_port = NULL;
 
 	proto = switch_event_get_header(message_event, "proto");
 	from = switch_event_get_header(message_event, "from");
@@ -107,8 +110,10 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	//subject = switch_event_get_header(message_event, "subject");
 	body = switch_event_get_body(message_event);
 	type = switch_event_get_header(message_event, "type");
-	hint = switch_event_get_header(message_event, "hint");
-
+	from_full = switch_event_get_header(message_event, "from_full");
+	
+	network_ip = switch_event_get_header(message_event, "to_sip_ip");
+	network_port = switch_event_get_header(message_event, "to_sip_port");
 
 	if (!to) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
@@ -130,6 +135,10 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		user = prof;
 		prof = NULL;
 	}
+
+	if (!prof) {
+		prof = switch_event_get_header(message_event, "sip_profile");
+	}
 	
 	if (!strncasecmp(user, "sip:", 4)) {
 		to_uri = user;
@@ -141,8 +150,9 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		} else {
 			host++;
 		}
-		if (!prof)
+		if (!prof) {
 			prof = host;
+		}
 	}
 
 	if (!prof || !(profile = sofia_glue_find_profile(prof))) {
@@ -159,24 +169,34 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		}
 	}
 
+
 	if (to_uri) {
 		switch_console_push_match(&list, to_uri);
 	}  else if (!(list = sofia_reg_find_reg_url_multi(profile, user, host))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find registered user %s@%s\n", user, host);
-		goto end;
+		sofia_profile_t *test;
+
+		if ((test = sofia_glue_find_profile(host))) {
+			sofia_glue_release_profile(test);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not sending to local box for %s@%s\n", user, host);
+			/* our box let's not send it */
+		} else {
+			char *tmp;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't find registered user %s@%s\n", user, host);
+			tmp = switch_mprintf("sip:%s@%s", user, host);
+			switch_console_push_match(&list, tmp);
+			free(tmp);
+		}
+
 	}
 	
 	if (!strcasecmp(proto, SOFIA_CHAT_PROTO)) {
-		from = hint;
+		from = from_full;
 	} else {
 		char *fp, *p = NULL;
 		
 		fp = strdup(from);
+		switch_assert(fp);
 
-		if (!fp) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-			goto end;
-		}
 
 		if ((p = strchr(fp, '@'))) {
 			*p++ = '\0';
@@ -189,10 +209,21 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 			}
 		}
 
-		ffrom = switch_mprintf("\"%s\" <sip:%s+%s@%s>", fp, proto, fp, p);
+		if (switch_stristr("global", proto)) {
+			ffrom = switch_mprintf("\"%s\" <sip:%s@%s>", fp, fp, p);
+		} else {
+			ffrom = switch_mprintf("\"%s\" <sip:%s+%s@%s>", fp, proto, fp, p);
+		}
 
 		from = ffrom;
 		switch_safe_free(fp);
+	}
+
+	if (!list) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+		"Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nNobody to send to: Profile %s\n", proto, from, to,
+						  body ? body : "[no body]", prof ? prof : "NULL");
+		goto end;
 	}
 
 	for (m = list->head; m; m = m->next) {
@@ -250,21 +281,34 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		
 		/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
 
+		//printf("DEBUG To: [%s] From: [%s] Contact: [%s] RURI [%s] ip [%s] port [%s]\n", to, from, contact, dst->route_uri, network_ip, network_port);
+
+		//DUMP_EVENT(message_event);
+
+		if (zstr(dst->route_uri) && !zstr(user) && !zstr(network_ip) && (zstr(host) || strcmp(network_ip, host))) {
+			route_uri = switch_mprintf("sip:%s@%s:%s", user, network_ip, network_port);
+		}
+
 		msg_nh = nua_handle(profile->nua, NULL,
-							TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)),
-							TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
-							SIPTAG_FROM_STR(from),
-							TAG_IF(contact, NUTAG_URL(contact)),
-							SIPTAG_TO_STR(dup_dest),
-							SIPTAG_CONTACT_STR(contact_str),
 							TAG_END());
 
 		nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
 		
+		switch_snprintf(header, sizeof(header), "X-FS-Sending-Message: %s", switch_core_get_uuid());
+
 		nua_message(msg_nh,
+					TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)),
+					TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
+					TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
+					SIPTAG_FROM_STR(from),
+					TAG_IF(contact, NUTAG_URL(contact)),
+					SIPTAG_TO_STR(dup_dest),
+					SIPTAG_CONTACT_STR(contact_str),
+
 					TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 					SIPTAG_CONTENT_TYPE_STR(ct),
 					SIPTAG_PAYLOAD_STR(body),
+					SIPTAG_HEADER_STR(header),
 					TAG_END());
 
 		sofia_glue_free_destination(dst);
@@ -277,6 +321,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
   end:
 	
 	switch_safe_free(contact);
+	switch_safe_free(route_uri);
 	switch_safe_free(ffrom);
 	switch_safe_free(dup);
 
@@ -2873,12 +2918,24 @@ void sofia_presence_handle_sip_i_message(int status,
 		const char *to_host = NULL;
 		sip_payload_t *payload = sip->sip_payload;
 		char *msg = NULL;
+		const char *us;
+		char network_ip[80];
+		int network_port = 0;
+
+		if ((us = sofia_glue_get_unknown_header(sip, "X-FS-Sending-Message")) && !strcmp(us, switch_core_get_uuid())) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not sending message to ourselves!\n");
+			goto end;
+		}
 
 		if (sip->sip_content_type && sip->sip_content_type->c_subtype) {
 			if (strstr(sip->sip_content_type->c_subtype, "composing")) {
-				return;
+				goto end;
 			}
 		}
+
+
+		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
+
 
 		if (from) {
 			from_user = from->a_url->url_user;
@@ -2891,7 +2948,7 @@ void sofia_presence_handle_sip_i_message(int status,
 		}
 
 		if (!to_user) {
-			return;
+			goto end;
 		}
 
 		if (payload) {
@@ -2924,7 +2981,7 @@ void sofia_presence_handle_sip_i_message(int status,
 				to_addr = switch_mprintf("%s@%s", to_user, to_host);
 			}
 
-			from_addr = switch_mprintf("%s/%s@%s", profile->name, from_user, from_host);
+			from_addr = switch_mprintf("%s@%s", from_user, from_host);
 
 			if (sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT)) {
 				sofia_presence_set_hash_key(hash_key, sizeof(hash_key), sip);
@@ -2936,10 +2993,22 @@ void sofia_presence_handle_sip_i_message(int status,
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", from_addr);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", from_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", from_host);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", to_user);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", to_host);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_sip_ip", network_ip);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from_sip_port", "%d", network_port);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to_addr);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "normal");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", full_from);
+
+				
+				if (sip->sip_content_type && sip->sip_content_type->c_subtype) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", sip->sip_content_type->c_type);
+				} else {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "text/plain");
+				}
+
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", full_from);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sip_profile", profile->name);
 				
 				if (msg) {
 					switch_event_add_body(event, "%s", msg);
@@ -2952,7 +3021,6 @@ void sofia_presence_handle_sip_i_message(int status,
 				switch_core_session_queue_event(tech_pvt->session, &event);
 			} else {
 				switch_core_chat_send(proto, event);
-				switch_core_chat_send("GLOBAL", event);
 				switch_event_destroy(&event);
 			}
 
@@ -2964,6 +3032,11 @@ void sofia_presence_handle_sip_i_message(int status,
 			}
 		}
 	}
+
+ end:
+
+	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+
 }
 
 void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip)

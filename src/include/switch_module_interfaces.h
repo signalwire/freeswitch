@@ -681,6 +681,27 @@ struct switch_application_interface {
 	struct switch_application_interface *next;
 };
 
+/*! \brief A module interface to implement a chat application */
+struct switch_chat_application_interface {
+	/*! the name of the interface */
+	const char *interface_name;
+	/*! function the application implements */
+	switch_chat_application_function_t chat_application_function;
+	/*! the long winded description of the application */
+	const char *long_desc;
+	/*! the short and sweet description of the application */
+	const char *short_desc;
+	/*! an example of the application syntax */
+	const char *syntax;
+	/*! flags to control behaviour */
+	uint32_t flags;
+	switch_thread_rwlock_t *rwlock;
+	int refs;
+	switch_mutex_t *reflock;
+	switch_loadable_module_interface_t *parent;
+	struct switch_chat_application_interface *next;
+};
+
 /*! \brief A module interface to implement an api function */
 struct switch_api_interface {
 	/*! the name of the interface */

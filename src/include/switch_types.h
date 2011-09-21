@@ -325,7 +325,8 @@ typedef enum {
 	SWITCH_SAY_INTERFACE,
 	SWITCH_ASR_INTERFACE,
 	SWITCH_MANAGEMENT_INTERFACE,
-	SWITCH_LIMIT_INTERFACE
+	SWITCH_LIMIT_INTERFACE,
+	SWITCH_CHAT_APPLICATION_INTERFACE
 } switch_module_interface_name_t;
 
 typedef enum {
@@ -495,6 +496,7 @@ typedef enum {
 	SWITCH_XML_SECTION_DIRECTORY = (1 << 1),
 	SWITCH_XML_SECTION_DIALPLAN = (1 << 2),
 	SWITCH_XML_SECTION_PHRASES = (1 << 3),
+	SWITCH_XML_SECTION_CHATPLAN = (1 << 4),
 
 	/* Nothing after this line */
 	SWITCH_XML_SECTION_MAX = (1 << 4)
@@ -1179,7 +1181,8 @@ typedef enum {
 	CF_APP_TAGGED = (1 << 0),
 	CF_APP_T38 = (1 << 1),
 	CF_APP_T38_REQ = (1 << 2),
-	CF_APP_T38_FAIL = (1 << 3)
+	CF_APP_T38_FAIL = (1 << 3),
+	CF_APP_T38_NEGOTIATED = (1 << 4)
 } switch_channel_app_flag_t;
 
 
@@ -1220,6 +1223,12 @@ typedef enum {
 	SAF_ZOMBIE_EXEC = (1 << 3)
 } switch_application_flag_enum_t;
 typedef uint32_t switch_application_flag_t;
+
+typedef enum {
+	SCAF_NONE = 0
+} switch_chat_application_flag_enum_t;
+typedef uint32_t switch_chat_application_flag_t;
+
 
 /*!
   \enum switch_signal_t
@@ -1729,6 +1738,7 @@ typedef struct switch_timer_interface switch_timer_interface_t;
 typedef struct switch_dialplan_interface switch_dialplan_interface_t;
 typedef struct switch_codec_interface switch_codec_interface_t;
 typedef struct switch_application_interface switch_application_interface_t;
+typedef struct switch_chat_application_interface switch_chat_application_interface_t;
 typedef struct switch_api_interface switch_api_interface_t;
 typedef struct switch_file_interface switch_file_interface_t;
 typedef struct switch_speech_interface switch_speech_interface_t;
@@ -1780,7 +1790,8 @@ typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp
 typedef switch_status_t (*switch_core_codec_destroy_func_t) (switch_codec_t *);
 
 
-
+typedef switch_status_t (*switch_chat_application_function_t) (switch_event_t *, const char *);
+#define SWITCH_STANDARD_CHAT_APP(name) static switch_status_t name (switch_event_t *message, const char *data)
 
 typedef void (*switch_application_function_t) (switch_core_session_t *, const char *);
 #define SWITCH_STANDARD_APP(name) static void name (switch_core_session_t *session, const char *data)
