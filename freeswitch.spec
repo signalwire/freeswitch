@@ -432,7 +432,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 APPLICATION_MODULES_AE="applications/mod_avmd applications/mod_callcenter applications/mod_cidlookup applications/mod_cluechoo \
                         applications/mod_commands applications/mod_conference applications/mod_curl applications/mod_db applications/mod_directory \
                         applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum \
-                        applications/mod_esf applications/mod_expr"
+                        applications/mod_esf applications/mod_expr applications/mod_blacklist"
 APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit \
                         applications/mod_memcache"
 APPLICATION_MODULES_NY="applications/mod_nibblebill applications/mod_redis applications/mod_rss applications/mod_snom \
@@ -751,6 +751,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/mime.types
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/alsa.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/blacklist.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/callcenter.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_mongodb.conf.xml
@@ -881,6 +882,7 @@ fi
 ######################################################################################################################
 %{prefix}/mod/mod_amrwb.so*
 %{prefix}/mod/mod_avmd.so*
+%{prefix}/mod/mod_blacklist.so*
 %{prefix}/mod/mod_bv.so*
 %{prefix}/mod/mod_callcenter.so*
 %{prefix}/mod/mod_cdr_csv.so*
