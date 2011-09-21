@@ -3102,6 +3102,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_insert_file(switch_core_session_t *se
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t **reply, switch_event_t *message, const char *new_proto)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if ((status = switch_event_dup_reply(reply, message) != SWITCH_STATUS_SUCCESS)) {
+		abort();
+	}
+
+	switch_event_add_header_string(*reply, SWITCH_STACK_BOTTOM, "proto", new_proto);
+
+	return status;
+}
+
 
 /* For Emacs:
  * Local Variables:

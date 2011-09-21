@@ -1397,7 +1397,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 		/* Log line added to support Fail2Ban */
 		if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth challenge (%s) on sofia profile '%s' "
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "SIP auth challenge (%s) on sofia profile '%s' "
 							  "for [%s@%s] from ip %s\n", (regtype == REG_INVITE) ? "INVITE" : "REGISTER", 
 							  profile->name, to_user, to_host, network_ip);
 		}

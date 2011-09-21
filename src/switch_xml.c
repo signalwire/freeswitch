@@ -160,6 +160,7 @@ static struct xml_section_t SECTIONS[] = {
 	{"directory", SWITCH_XML_SECTION_DIRECTORY},
 	{"dialplan", SWITCH_XML_SECTION_DIALPLAN},
 	{"phrases", SWITCH_XML_SECTION_PHRASES},
+	{"chatplan", SWITCH_XML_SECTION_CHATPLAN},
 	{NULL, 0}
 };
 

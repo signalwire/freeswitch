@@ -284,6 +284,19 @@ SWITCH_DECLARE_CONSTRUCTOR Event::~Event()
 	}
 }
 
+SWITCH_DECLARE(int)Event::chat_execute(const char *app, const char *data)
+{
+	return (int) switch_core_execute_chat_app(event, app, data);
+}
+
+SWITCH_DECLARE(int)Event::chat_send(const char *dest_proto)
+{
+	if (zstr(dest_proto)) {
+		dest_proto = switch_event_get_header(event, "dest_proto");
+	}
+
+	return (int) switch_core_chat_send(dest_proto, event);
+}
 
 SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 {

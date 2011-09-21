@@ -256,6 +256,13 @@ SWITCH_DECLARE_NONSTD(void) switch_regex_set_var_callback(const char *var, const
 	switch_channel_add_variable_var_check(channel, var, val, SWITCH_FALSE, SWITCH_STACK_PUSH);
 }
 
+SWITCH_DECLARE_NONSTD(void) switch_regex_set_event_header_callback(const char *var, const char *val, void *user_data)
+{
+
+	switch_event_t *event = (switch_event_t *) user_data;
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
+}
+
 
 
 /* For Emacs:

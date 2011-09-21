@@ -292,6 +292,8 @@ sub DESTROY {
     }
 }
 
+*chat_execute = *freeswitchc::Event_chat_execute;
+*chat_send = *freeswitchc::Event_chat_send;
 *serialize = *freeswitchc::Event_serialize;
 *setPriority = *freeswitchc::Event_setPriority;
 *getHeader = *freeswitchc::Event_getHeader;
