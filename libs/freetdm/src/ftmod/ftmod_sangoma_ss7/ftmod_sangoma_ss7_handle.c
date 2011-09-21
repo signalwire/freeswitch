@@ -1643,8 +1643,8 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* check if the channel is blocked */
-	if (!(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX))) {
-		SS7_WARN("Received UBL on circuit that is not blocked!\n");
+	if (!(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) && !sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) {
+		SS7_WARN("Received UBL on circuit that is not blocked! span= %d, chan= %d , flag = %x \n", g_ftdm_sngss7_data.cfg.isupCkt[circuit].span, g_ftdm_sngss7_data.cfg.isupCkt[circuit].chan,sngss7_info->blk_flags  );
 	}
 
 	/* throw the unblock flag */
@@ -1652,6 +1652,8 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* clear the block flag */
 	sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+	sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+	sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX_DN);
 
 	/* set the channel to suspended state */
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -1691,14 +1693,6 @@ ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 			DECODE_LCC_EVENT(evntType));
 	}
-
-	/* lock the channel */
-	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* KONRAD FIX ME */
-
-	/* unlock the channel again before we exit */
-	ftdm_mutex_unlock(ftdmchan->mutex);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
@@ -2453,6 +2447,8 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			/**********************************************************************/
 			case 0:	/* maintenance oriented */
 				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
 				break;
 			/**********************************************************************/
 			case 1: /* hardware failure oriented */

@@ -31,6 +31,7 @@
  * SOFTWARE|EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 /* INCLUDE ********************************************************************/
 #include "ftmod_sangoma_ss7_main.h"
 /******************************************************************************/
@@ -353,6 +354,8 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 	char	buf[50];
 	int		x = 1;
 
+	SS7_RELAY_DBG_FUN(handle_sng_mtp3_alarm);
+	
 	memset(buf, '\0', sizeof(buf));
 
 	switch (sta->hdr.elmId.elmnt) {
@@ -492,6 +495,8 @@ void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta)
 	char	tmp[25];
 	char	*p = NULL;
 	int		x = 0;
+	
+	SS7_RELAY_DBG_FUN(handle_sng_isup_alarm);
 
 	/* initalize the msg variable to NULLs */
 	memset(&msg[0], '\0', sizeof(&msg));
@@ -501,7 +506,6 @@ void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta)
 		(sta->t.usta.alarm.event == LSI_EVENT_LOCAL)) {
 		return;
 	}
-
 
 	/* point p to the first spot in msg */
 	p = &msg[0];
@@ -742,6 +746,7 @@ void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta)
 void handle_sng_cc_alarm(Pst *pst, CcMngmt *sta)
 {
 
+	SS7_RELAY_DBG_FUN(handle_sng_cc_alarm);
 	return;
 }   /* handle_cc_alarm */
 
@@ -749,6 +754,7 @@ void handle_sng_cc_alarm(Pst *pst, CcMngmt *sta)
 void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
 {
 
+	SS7_RELAY_DBG_FUN(handle_sng_relay_alarm);
 
 	switch (sta->hdr.elmId.elmnt) {
 	/**************************************************************************/
