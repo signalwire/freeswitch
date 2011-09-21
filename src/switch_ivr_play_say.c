@@ -779,9 +779,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		
 	}
 
-	if (read_impl.samples_per_second) {
-		switch_channel_set_variable_printf(channel, "record_seconds", "%d", fh->samples_out / read_impl.samples_per_second);
-		switch_channel_set_variable_printf(channel, "record_ms", "%d", fh->samples_out / (read_impl.samples_per_second / 1000));
+	if (read_impl.actual_samples_per_second) {
+		switch_channel_set_variable_printf(channel, "record_seconds", "%d", fh->samples_out / read_impl.actual_samples_per_second);
+		switch_channel_set_variable_printf(channel, "record_ms", "%d", fh->samples_out / (read_impl.actual_samples_per_second / 1000));
 
 	}
 
