@@ -5605,6 +5605,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 					goto done;
 				} else {
+
+					if (switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_NEGOTIATED)) {
+						nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
+						goto done;
+					}
+
 					sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
 
 					if (tech_pvt->num_codecs) {
@@ -5620,6 +5626,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						if (sofia_glue_tech_choose_port(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 							goto done;
 						}
+						
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 
 						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {

@@ -4404,6 +4404,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		if (got_udptl && m->m_type == sdp_media_image && m->m_port) {
 			switch_t38_options_t *t38_options = tech_process_udptl(tech_pvt, sdp, m);
 
+			if (switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_NEGOTIATED)) {
+				match = 1;
+				goto done;
+			}
+
 			if (switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38)) {
 				sofia_set_flag(tech_pvt, TFLAG_NOREPLY);
 			}
