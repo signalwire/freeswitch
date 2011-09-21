@@ -45,7 +45,9 @@ typedef struct {
 } blacklist_t;
 
 static struct {
+	switch_hash_t *files;
 	switch_hash_t *lists;
+	switch_mutex_t *files_mutex;
 	switch_mutex_t *lists_mutex;
 	switch_memory_pool_t *pool;
 } globals;
@@ -96,6 +98,7 @@ static switch_status_t load_list(const char *name, const char *filename)
 			switch_core_hash_insert(bl->list, buf, (void *)SWITCH_TRUE);
 		}
 
+		switch_core_hash_insert(globals.files, name, filename);
 		switch_core_hash_insert(globals.lists, name, bl);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded list [%s]\n", name);
 
@@ -245,6 +248,44 @@ SWITCH_STANDARD_API(blacklist_api_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Removed [%s] from list [%s]\n", argv[2], argv[1]);
 		switch_mutex_unlock(bl->list_mutex);
 		stream->write_function(stream, "+OK\n");
+	} else if (!strcasecmp(argv[0], "dump"))  {
+		switch_hash_index_t *hi;
+		void *val;
+		const void *var;
+		blacklist_t *bl = NULL;
+		char *filename = NULL;
+		switch_file_t *fd;
+
+		if (argc < 1 || zstr(argv[1])) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Missing blacklist name");
+			goto done;
+		}
+
+		switch_mutex_lock(globals.lists_mutex);
+		bl = switch_core_hash_find(globals.lists, argv[1]);
+		switch_mutex_unlock(globals.lists_mutex);
+
+		switch_mutex_lock(globals.files_mutex);
+		filename = switch_core_hash_find(globals.files, argv[1]);
+		switch_mutex_unlock(globals.files_mutex);
+
+		if (!bl) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown blacklist [%s]\n", argv[1]);
+			stream->write_function(stream, "-ERR Unknown blacklist\n");
+			goto done;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Dumping %s to %s\n", argv[1], filename);
+		
+		switch_mutex_lock(globals.lists_mutex);
+		if (switch_file_open(&fd, filename, SWITCH_FOPEN_WRITE, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, globals.pool) == SWITCH_STATUS_SUCCESS) {
+			for (hi = switch_hash_first(NULL, bl->list); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &var, NULL, &val);
+				switch_file_printf(fd, "%s\n", (char *)var);
+			}
+			stream->write_function(stream, "+OK\n");			
+		}
+		switch_mutex_unlock(globals.lists_mutex);
 	} else if (!strcasecmp(argv[0], "reload"))  {
 		do_config(SWITCH_TRUE);
 		stream->write_function(stream, "+OK\n");
@@ -269,6 +310,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_blacklist_load)
 	
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
+
+	switch_core_hash_init(&globals.files, globals.pool);
+	switch_mutex_init(&globals.files_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	switch_core_hash_init(&globals.lists, globals.pool);
 	switch_mutex_init(&globals.lists_mutex, SWITCH_MUTEX_NESTED, globals.pool);
