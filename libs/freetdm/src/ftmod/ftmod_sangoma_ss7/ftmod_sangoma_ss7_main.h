@@ -64,12 +64,10 @@
 											(switchtype == LSI_SW_ANS92) || \
 											(switchtype == LSI_SW_ANS95)
 
-typedef struct ftdm2trillium
-{
+typedef struct ftdm2trillium {
 	uint8_t ftdm_val;
 	uint8_t trillium_val;
-}ftdm2trillium_t;
-
+} ftdm2trillium_t;
 
 typedef enum {
 	SNGSS7_CON_IND_EVENT = 0,
@@ -609,22 +607,20 @@ typedef enum {
 	"TX CKT BLK DN", \
 	"TX CKT UNBLK", \
 	"TX CKT UNBLK DN", \
-	"RX GRP MN BLK", \
-	"RX GRP MN BLK DN", \
-	"RX GRP MN UNBLK", \
-	"RX GRP MN UNBLK DN", \
-	"TX GRP MN BLK", \
-	"TX GRP MN BLK DN", \
-	"TX GRP MN UNBLK", \
-	"TX GRP MN UNBLK DN", \
 	"RX GRP HW BLK", \
 	"RX GRP HW BLK DN", \
-	"RX GRP HW UNBLK", \
-	"RX GRP HW UNBLK DN", \
 	"TX GRP HW BLK", \
 	"TX GRP HW BLK DN", \
+	"RX GRP MN BLK", \
+	"RX GRP MN BLK DN", \
+	"TX GRP MN BLK", \
+	"TX GRP MN BLK DN", \
 	"TX GRP HW UNBLK", \
-	"TX GRP HW UNBLK DN"
+	"TX GRP HW UNBLK DN", \
+	"TX GRP MN UNBLK", \
+	"TX GRP MN UNBLK DN", \
+	"RX GRP HW UNBLK", \
+	"RX GRP HW UNBLK DN"
 FTDM_STR2ENUM_P(ftmod_ss7_blk_state2flag, ftmod_ss7_blk_flag2str, sng_ckt_block_flag_t)
 
 /* valid for every cfg array except circuits */
@@ -1042,13 +1038,12 @@ if (ftdmchan->state == new_state) { \
 #define sngss7_set_options(obj, option)   ((obj)->options |= (option))
 
 
-#ifdef SS7_PRODUCTION
-# define SS7_ASSERT \
-	SS7_INFO_CHAN(ftdmchan,"Production Mode, continuing%s\n", "");
+#ifdef SMG_RELAY_DBG
+#define SS7_RELAY_DBG(a,...)	printf(a"\n", ##__VA_ARGS__)
+#define SS7_RELAY_DBG_FUN(a)	printf(#a"\n")
 #else
-# define SS7_ASSERT	\
-	SS7_ERROR_CHAN(ftdmchan, "Debugging Mode, ending%s\n", ""); \
-	*(int*)0=0;
+#define SS7_RELAY_DBG(a, ...)  
+#define SS7_RELAY_DBG_FUN(a)
 #endif
 /******************************************************************************/
 

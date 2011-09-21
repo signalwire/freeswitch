@@ -31,6 +31,10 @@
  * SOFTWARE|EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if 0 
+#define SMG_RELAY_DBG
+#endif
+
 /* INCLUDE ********************************************************************/
 #include "ftmod_sangoma_ss7_main.h"
 /******************************************************************************/
@@ -44,7 +48,7 @@
 /* PROTOTYPES *****************************************************************/
 ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data);
 
-static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream);
+static ftdm_status_t handle_print_usage(ftdm_stream_handle_t *stream);
 
 static ftdm_status_t handle_show_procId(ftdm_stream_handle_t *stream);
 
@@ -88,8 +92,31 @@ static ftdm_status_t handle_status_isup_ckt(ftdm_stream_handle_t *stream, char *
 
 static ftdm_status_t extract_span_chan(char *argv[10], int pos, int *span, int *chan);
 static ftdm_status_t check_arg_count(int args, int min);
-/******************************************************************************/
 
+
+
+static ftdm_status_t cli_ss7_show_general(ftdm_stream_handle_t *stream);
+
+static ftdm_status_t cli_ss7_show_mtp2link_by_id(ftdm_stream_handle_t *stream, int rcId);
+static ftdm_status_t cli_ss7_show_mtp2link_by_name(ftdm_stream_handle_t *stream, char *name);
+static ftdm_status_t cli_ss7_show_all_mtp2link(ftdm_stream_handle_t *stream);
+
+static ftdm_status_t cli_ss7_show_mtp3link_by_id(ftdm_stream_handle_t *stream, int rcId);
+static ftdm_status_t cli_ss7_show_mtp3link_by_name(ftdm_stream_handle_t *stream, char *name);
+static ftdm_status_t cli_ss7_show_all_mtp3link(ftdm_stream_handle_t *stream);
+
+static ftdm_status_t cli_ss7_show_relay_by_id(ftdm_stream_handle_t *stream, int rcId);
+static ftdm_status_t cli_ss7_show_relay_by_name(ftdm_stream_handle_t *stream, char *name);
+static ftdm_status_t cli_ss7_show_all_relay(ftdm_stream_handle_t *stream);
+
+static ftdm_status_t cli_ss7_show_channel_detail_of_span(ftdm_stream_handle_t *stream, char *span_id, char *chan_id);
+static ftdm_status_t cli_ss7_show_all_channels_of_span(ftdm_stream_handle_t *stream, char *span_id);
+
+static ftdm_status_t cli_ss7_show_span_by_id(ftdm_stream_handle_t *stream, char *span_id);
+static ftdm_status_t cli_ss7_show_all_spans_general(ftdm_stream_handle_t *stream);
+static ftdm_status_t cli_ss7_show_all_spans_detail(ftdm_stream_handle_t *stream); 
+
+/******************************************************************************/
 /* FUNCTIONS ******************************************************************/
 ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const char *data)
 {
@@ -109,16 +136,72 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 		argc = ftdm_separate_string(mycmd, ' ', argv, ftdm_array_len(argv));
 	}
 
-	if (check_arg_count(argc, 1)) goto handle_cli_error_argc;
-	
+	if (check_arg_count(argc, 1)) {
+		goto handle_cli_error_argc;
+	}
+
 	if (!strcasecmp(argv[c], "show")) {
 	/**************************************************************************/   
-		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
+		if (check_arg_count(argc, 2)) {
+			cli_ss7_show_general(stream); 
+			return FTDM_SUCCESS;
+		}
 		c++;
 
-		if (!strcasecmp(argv[c], "status")) {
+		if (!strcasecmp(argv[c], "relay")) {
 		/**********************************************************************/
-			if (check_arg_count(argc, 3)) goto handle_cli_error_argc;
+			c++;
+			handle_status_relay(stream, argv[c]);
+			
+		} else  if (!strcasecmp(argv[c], "span")) {
+		/**********************************************************************/
+			switch (argc) {
+			case 2:
+				{
+					/* > ftdm ss7 show span */
+					cli_ss7_show_all_spans_general(stream);
+				}
+				break;
+
+			case 3:
+				{
+					if (!strcasecmp(argv[2], "all")) {
+						/* > ftdm ss7 show span all */
+						cli_ss7_show_all_spans_detail(stream);
+					} else {
+						/* > ftdm ss7 show span 1 */
+						cli_ss7_show_span_by_id(stream, argv[2]);
+					}
+				}
+				break;
+
+			case 4:
+				{
+					/* > ftdm ss7 show span 1 chan */
+					cli_ss7_show_all_channels_of_span(stream, argv[2]);
+				}
+				break;
+
+			case 5:
+			default:
+				{
+					if (!strcasecmp(argv[3], "chan")) {
+						/* > ftdm ss7 show span 1 chan 2 */
+						cli_ss7_show_channel_detail_of_span(stream, argv[2], argv[4]);
+					} else {
+						/* > ftdm ss7 show span 1 bla bla  bla*/
+						cli_ss7_show_all_channels_of_span(stream, argv[2]);
+					}
+				}
+				break;
+			}
+		} else  if (!strcasecmp(argv[c], "status")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)) {
+				cli_ss7_show_general(stream); 
+				return FTDM_SUCCESS;
+			}
+
 			c++;
 
 			if (!strcasecmp(argv[c], "mtp3")) {
@@ -675,38 +758,40 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 
 handle_cli_error_argc:
 	stream->write_function(stream, "Invalid # of arguments in command\n");
-	handle_print_usuage(stream);
+	handle_print_usage(stream);
 	return FTDM_SUCCESS;
 
 handle_cli_error_span_chan:
 	stream->write_function(stream, "Unknown \"span\\chan\" command\n");
-	handle_print_usuage(stream);
+	handle_print_usage(stream);
 	return FTDM_SUCCESS;
 
 handle_cli_error:
 	stream->write_function(stream, "Unknown command requested\n");
-	handle_print_usuage(stream);
+	handle_print_usage(stream);
 	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
-static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream)
+static ftdm_status_t handle_print_usage(ftdm_stream_handle_t *stream)
 {
-	stream->write_function(stream, "Sangoma SS7 CLI usuage:\n\n");
+	stream->write_function(stream, "Sangoma SS7 CLI usage:\n\n");
 
-	stream->write_function(stream, "Ftmod_sangoma_ss7 general control:\n");
+	stream->write_function(stream, "ftmod_sangoma_ss7 general control:\n");
 	stream->write_function(stream, "ftdm ss7 set ftrace X Y\n");
 	stream->write_function(stream, "ftdm ss7 set mtrace X Y\n");
 	stream->write_function(stream, "\n");
-	stream->write_function(stream, "Ftmod_sangoma_ss7 information:\n");
+	stream->write_function(stream, "ftmod_sangoma_ss7 information:\n");
 	stream->write_function(stream, "ftdm ss7 show status mtp3 X\n");
 	stream->write_function(stream, "ftdm ss7 show status mtp2 X\n");
 	stream->write_function(stream, "ftdm ss7 show status span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 show free span X chan Y\n");
+	stream->write_function(stream, "ftdm ss7 show blocks span X chan Y\n");
+
 	stream->write_function(stream, "ftdm ss7 show inuse span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 show inreset span X chan Y\n");
 	stream->write_function(stream, "\n");
-	stream->write_function(stream, "Ftmod_sangoma_ss7 circuit control:\n");
+	stream->write_function(stream, "ftmod_sangoma_ss7 circuit control:\n");
 	stream->write_function(stream, "ftdm ss7 blo span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 ubl span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 rsc span X chan Y\n");
@@ -714,7 +799,7 @@ static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, "ftdm ss7 cgb span X chan Y range Z\n");
 	stream->write_function(stream, "ftdm ss7 cgu span X chan Y range Z\n");
 	stream->write_function(stream, "\n");
-	stream->write_function(stream, "Ftmod_sangoma_ss7 link control:\n");
+	stream->write_function(stream, "ftmod_sangoma_ss7 link control:\n");
 	stream->write_function(stream, "ftdm ss7 inhibit link X\n");
 	stream->write_function(stream, "ftdm ss7 uninhibit link X\n");
 	stream->write_function(stream, "ftdm ss7 activate link X\n");
@@ -724,8 +809,14 @@ static ftdm_status_t handle_print_usuage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, "ftdm ss7 lpo link X\n");
 	stream->write_function(stream, "ftdm ss7 lpr link X\n");
 	stream->write_function(stream, "\n");
-	stream->write_function(stream, "Ftmod_sangoma_ss7 Relay status:\n");
+
+	
+	stream->write_function(stream, "ftmod_sangoma_ss7 Relay status:\n");
 	stream->write_function(stream, "ftdm ss7 show status relay X\n");
+	stream->write_function(stream, "ftdm ss7 show relay X\n");
+	stream->write_function(stream, "ftdm ss7 show relay\n");
+	stream->write_function(stream, "\n");
+
 	stream->write_function(stream, "\n");
 
 	return FTDM_SUCCESS;
@@ -1106,6 +1197,9 @@ static ftdm_status_t handle_show_blocks(ftdm_stream_handle_t *stream, int span, 
 					stream->write_function(stream, "l_ucic=N|");
 				} 
 
+#ifdef SMG_RELAY_DBG
+				stream->write_function(stream, " blk_flag= %x     ckt_flag = %d", ss7_info->blk_flags, ss7_info->ckt_flags );
+#endif
 				stream->write_function(stream, "\n");				
 			} /* if ( span and chan) */
 
@@ -1217,6 +1311,9 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 						}
 					}
 		
+#ifdef SMG_RELAY_DBG
+					stream->write_function(stream," blk_flag= %x     ckt_flag = %d", ss7_info->blk_flags, ss7_info->ckt_flags );
+#endif
 					stream->write_function(stream, "\n");
 				} /* if ( hole, sig, voice) */
 			} /* if ( span and chan) */
@@ -1226,6 +1323,7 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 
 	return FTDM_SUCCESS;
 }
+
 /******************************************************************************/
 static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
 {
@@ -1263,7 +1361,7 @@ static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int c
 				if (check_for_state_change(ftdmchan)) {
 					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", ss7_info->circuit->cic);
 					/* check if we need to die */
-					SS7_ASSERT;
+					ftdm_assert(0, "State change not completed\n");
 					/* unlock the channel again before we exit */
 					ftdm_mutex_unlock(ftdmchan->mutex);
 					/* move to the next channel */
@@ -1329,7 +1427,7 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 				if (check_for_state_change(ftdmchan)) {
 					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", ss7_info->circuit->cic);
 					/* check if we need to die */
-					SS7_ASSERT;
+					ftdm_assert(0, "State change not completed\n");
 					/* unlock the channel again before we exit */
 					ftdm_mutex_unlock(ftdmchan->mutex);
 					/* move to the next channel */
@@ -1341,6 +1439,9 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 					/* clear the block flag */
 					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
 
+					/* check group blocking */
+					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX); 
+					
 					/* set the channel to suspended state */
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 				}
@@ -1348,103 +1449,47 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 				/* unlock the channel again before we exit */
 				ftdm_mutex_unlock(ftdmchan->mutex);
 
-			} /* if ( span and chan) */
+			}
 
-		} /* if ( cic != 0) */
+		}
 
 		/* go the next circuit */
 		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+	}
 
 	handle_show_blocks(stream, span, chan, verbose);
 
 	return FTDM_SUCCESS;
 }
 
+
 /******************************************************************************/
 static ftdm_status_t handle_status_mtp3link(ftdm_stream_handle_t *stream, char *name)
 {
-	int 		x = 0;
-	SnMngmt		sta;
+	SS7_RELAY_DBG_FUN(handle_status_mtp3link);
 	
-	/* find the link request by it's name */
-	x = 1;
-	while(x < (MAX_MTP_LINKS+1)) {
-		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Invalid stream\n");
 
-			/* send the status request */
-			if (ftmod_ss7_mtp3link_sta(x, &sta)) {
-				stream->write_function(stream, "Failed to read link=%s status\n", name);
-				return FTDM_FAIL;
-			}
+	if (!name) {
+		return cli_ss7_show_all_mtp3link(stream);
+	}
 
-			/* print the results */
-			stream->write_function(stream, "%s|span=%d|chan=%d|sap=%d|state=%s|l_blk=%s|r_blk=%s|l_inhbt=%s|r_inhbt=%s\n",
-						name,
-						g_ftdm_sngss7_data.cfg.mtp1Link[x].span,
-						g_ftdm_sngss7_data.cfg.mtp1Link[x].chan,
-						g_ftdm_sngss7_data.cfg.mtp3Link[x].id,
-						DECODE_LSN_LINK_STATUS(sta.t.ssta.s.snDLSAP.state),
-						(sta.t.ssta.s.snDLSAP.locBlkd) ? "Y":"N",
-						(sta.t.ssta.s.snDLSAP.remBlkd) ? "Y":"N",
-						(sta.t.ssta.s.snDLSAP.locInhbt) ? "Y":"N",
-						(sta.t.ssta.s.snDLSAP.rmtInhbt) ? "Y":"N");
-
-			goto success;
-		}
-		
-		/* move to the next link */
-		x++;
-	} /* while (x < (MAX_MTP_LINKS+1)) */
-
-	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
-
-success:
-	return FTDM_SUCCESS;
+	return cli_ss7_show_mtp3link_by_name(stream, name);
 }
+
 
 /******************************************************************************/
 static ftdm_status_t handle_status_mtp2link(ftdm_stream_handle_t *stream, char *name)
 {
-	int 		x = 0;
-	SdMngmt		sta;
+	SS7_RELAY_DBG_FUN(handle_status_mtp2link);
 	
-	/* find the link request by it's name */
-	x = 1;
-	while(x < (MAX_MTP_LINKS+1)) {
-		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp2Link[x].name, name)) {
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Invalid stream\n");
 
-			/* send the status request */
-			if (ftmod_ss7_mtp2link_sta(x, &sta)) {
-				stream->write_function(stream, "Failed to read link=%s status\n", name);
-				return FTDM_FAIL;
-			}
+	if (!name) {
+		return cli_ss7_show_all_mtp2link(stream);
+	}
 
-			/* print the results */
-			stream->write_function(stream, "%s|span=%d|chan=%d|sap=%d|state=%s|outsFrm=%d|drpdFrm=%d|lclStatus=%s|rmtStatus=%s|fsn=%d|bsn=%d\n",
-						name,
-						g_ftdm_sngss7_data.cfg.mtp1Link[x].span,
-						g_ftdm_sngss7_data.cfg.mtp1Link[x].chan,
-						g_ftdm_sngss7_data.cfg.mtp2Link[x].id,
-						DECODE_LSD_LINK_STATUS(sta.t.ssta.s.sdDLSAP.hlSt),
-						sta.t.ssta.s.sdDLSAP.psOutsFrm,
-						sta.t.ssta.s.sdDLSAP.cntMaDrop,
-						(sta.t.ssta.s.sdDLSAP.lclBsy) ? "Y":"N",
-						(sta.t.ssta.s.sdDLSAP.remBsy) ? "Y":"N",
-						sta.t.ssta.s.sdDLSAP.fsn,
-						sta.t.ssta.s.sdDLSAP.bsn);
-
-			goto success;
-		}
-		
-		/* move to the next link */
-		x++;
-	} /* while (x < (MAX_MTP_LINKS+1)) */
-
-	stream->write_function(stream, "Failed to find link=\"%s\"\n", name);
-
-success:
-	return FTDM_SUCCESS;
+	return cli_ss7_show_mtp2link_by_name(stream, name);
 }
 
 /******************************************************************************/
@@ -1721,8 +1766,8 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 	memset (&sigev, 0, sizeof (sigev));
 
 
-	if (range > 31) {
-		stream->write_function(stream, "Invalid range value %d", range);
+	if (range <= 1 || range > 31) {
+		stream->write_function(stream, "Invalid range value %d. Range value must be greater than 1 and less than 31. \n", range);
 		return FTDM_SUCCESS;
 	}
 
@@ -1740,7 +1785,7 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
 
 				/* now that we have the right channel...put a lock on it so no-one else can use it */
-				ftdm_mutex_lock(ftdmchan->mutex);
+				ftdm_channel_lock(ftdmchan);
 
 				/* throw the grp maint. block flag */
 				sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
@@ -1753,9 +1798,11 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 					/* attach the cgb information */
 					main_chan = ftdmchan;
 					sngss7_span->tx_cgb.circuit = sngss7_info->circuit->id;
-					sngss7_span->tx_cgb.range = range-1;
+					sngss7_span->tx_cgb.range = 0;
 					sngss7_span->tx_cgb.type = 0; /* maintenace block */
-				} /* if (ftdmchan->physical_chan_id == chan) */
+				} else {
+					((sngss7_span_data_t*)(main_chan->span->signal_data))->tx_cgb.range++;
+				}
 				
 				/* update the status field */
 				sngss7_span->tx_cgb.status[byte] = (sngss7_span->tx_cgb.status[byte] | (1 << bit));
@@ -1768,12 +1815,12 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 				}
 
 				/* unlock the channel again before we exit */
-				ftdm_mutex_unlock(ftdmchan->mutex);
-			} /* if ( span and chan) */
-		} /* if ( cic == voice) */
+				ftdm_channel_unlock(ftdmchan);
+			}
+		}
 		/* go the next circuit */
 		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+	}
 
 	if (!main_chan) {
 		stream->write_function(stream, "Failed to find a voice cic in span %d chan %d range %d", span, chan, range);
@@ -1794,7 +1841,7 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 			if ((ftdmchan->physical_span_id == span) && 
 				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
 
-				handle_show_status(stream, span, chan, verbose);
+				handle_show_status(stream, ftdmchan->physical_span_id, ftdmchan->physical_chan_id, verbose);
 			}
 		} /* if ( cic == voice) */
 
@@ -1809,24 +1856,48 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 /******************************************************************************/
 static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose)
 {
-	int					x;
-	sngss7_chan_data_t	*sngss7_info;
-	ftdm_channel_t		*ftdmchan;
-	ftdm_channel_t		*main_chan = NULL;
-	sngss7_span_data_t	*sngss7_span;
-	int					byte = 0;
-	int					bit = 0;
-	ftdm_sigmsg_t 		sigev;
+	sngss7_chan_data_t *sngss7_info = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	ftdm_channel_t *main_chan = NULL;
+	sngss7_span_data_t *sngss7_span = NULL;
+	sngss7_chan_data_t *ubl_sng_info[MAX_CIC_MAP_LENGTH+1];
+	int x = 0;
+	int byte = 0;
+	int bit = 0;
+	int ubl_sng_info_idx = 1;
+	ftdm_sigmsg_t sigev;
 
+	memset(ubl_sng_info, 0, sizeof(ubl_sng_info));
 	memset (&sigev, 0, sizeof (sigev));
 
-
-	if (range > 31) {
-		stream->write_function(stream, "Invalid range value %d", range);
+	if (range <= 1 || range > 31) {
+		stream->write_function(stream, "Invalid range value %d. Range value must be greater than 1 and less than 31.\n", range);
 		return FTDM_SUCCESS;
 	}
 
-	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
+	/* verify that there is not hardware block in the range. 
+	 * if there is any channel within the group unblock range, do not execute the group unblock */
+	x = (g_ftdm_sngss7_data.cfg.procId * MAX_CIC_MAP_LENGTH) + 1;
+	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
+			sngss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+			ftdmchan = sngss7_info->ftdmchan;
+			sngss7_span = ftdmchan->span->signal_data;
+
+			if ( (ftdmchan->physical_span_id == span) 
+			  && (ftdmchan->physical_chan_id >= chan) 
+			  && (ftdmchan->physical_chan_id < (chan+range))
+			  && sngss7_test_ckt_blk_flag(sngss7_info, (FLAG_GRP_HW_BLOCK_TX | FLAG_GRP_HW_BLOCK_TX_DN))
+			  ) {
+				stream->write_function(stream, "There is at least one channel with hardware block. Group unblock operation not allowed at this time.\n");
+				return FTDM_SUCCESS;
+			}
+		}
+		x++;
+	}
+
+
+	x = (g_ftdm_sngss7_data.cfg.procId * MAX_CIC_MAP_LENGTH) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
 
@@ -1840,10 +1911,15 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
 
 				/* now that we have the right channel...put a lock on it so no-one else can use it */
-				ftdm_mutex_lock(ftdmchan->mutex);
+				ftdm_channel_lock(ftdmchan);
 
 				/* throw the grp maint. block flag */
 				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
+				
+				if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX_DN)) {
+					ubl_sng_info[ubl_sng_info_idx] = sngss7_info;
+					ubl_sng_info_idx++;
+				}
 
 				/* bring the sig status up */
 				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
@@ -1853,9 +1929,11 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 					/* attach the cgb information */
 					main_chan = ftdmchan;
 					sngss7_span->tx_cgu.circuit = sngss7_info->circuit->id;
-					sngss7_span->tx_cgu.range = range-1;
+					sngss7_span->tx_cgu.range = 0;
 					sngss7_span->tx_cgu.type = 0; /* maintenace block */
-				} /* if (ftdmchan->physical_chan_id == chan) */
+				} else {
+					((sngss7_span_data_t*)(main_chan->span->signal_data))->tx_cgu.range++;
+				}
 				
 				/* update the status field */
 				sngss7_span->tx_cgu.status[byte] = (sngss7_span->tx_cgu.status[byte] | (1 << bit));
@@ -1868,12 +1946,12 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 				}
 
 				/* unlock the channel again before we exit */
-				ftdm_mutex_unlock(ftdmchan->mutex);
-			} /* if ( span and chan) */
-		} /* if ( cic == voice) */
+				ftdm_channel_unlock(ftdmchan);
+			}
+		}
 		/* go the next circuit */
 		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+	}
 
 	if (!main_chan) {
 		stream->write_function(stream, "Failed to find a voice cic in span %d chan %d range %d", span, chan, range);
@@ -1882,6 +1960,13 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 
 	/* send the circuit group block */
 	ft_to_sngss7_cgu(main_chan);
+
+	/* clearing blocking flags */
+	for (x = 1; ubl_sng_info[x]; x++) {
+		sngss7_info = ubl_sng_info[x];
+		sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX);
+		sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX_DN);
+	}
 
 	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
 	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
@@ -1894,7 +1979,8 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 			if ((ftdmchan->physical_span_id == span) && 
 				((ftdmchan->physical_chan_id >= chan) && (ftdmchan->physical_chan_id < (chan+range)))) {
 
-				handle_show_status(stream, span, chan, verbose);
+				handle_show_status(stream, ftdmchan->physical_span_id, ftdmchan->physical_chan_id, verbose);
+
 			}
 		} /* if ( cic == voice) */
 
@@ -2158,42 +2244,11 @@ success:
 /******************************************************************************/
 static ftdm_status_t handle_status_relay(ftdm_stream_handle_t *stream, char *name)
 {
-	RyMngmt	sta;
-	int		x = 0;
-
-	memset(&sta, 0x0, sizeof(sta));
-
-
-	/* find the channel request by it's name */
-	x = 1;
-	while(x < (MAX_RELAY_CHANNELS)) {
-		if (!strcasecmp(g_ftdm_sngss7_data.cfg.relay[x].name, name)) {
-
-			if (ftmod_ss7_relay_status(g_ftdm_sngss7_data.cfg.relay[x].id, &sta)) {
-				stream->write_function(stream, "Failed to read relay =%s status\n", name);
-				return FTDM_FAIL;
-			}
-
-			/* print the results */
-			stream->write_function(stream, "%s|sap=%d|type=%d|port=%d|hostname=%s|procId=%d|status=%s\n",
-						name,
-						g_ftdm_sngss7_data.cfg.relay[x].id,	
-						g_ftdm_sngss7_data.cfg.relay[x].type,
-						g_ftdm_sngss7_data.cfg.relay[x].port,
-						g_ftdm_sngss7_data.cfg.relay[x].hostname,
-						g_ftdm_sngss7_data.cfg.relay[x].procId,
-						DECODE_LRY_CHAN_STATUS(sta.t.ssta.rySta.cStatus));
-
-			goto success;
-		}
-		
-		/* move to the next link */
-		x++;
-
-	} /* x < (MAX_RELAY_CHANNELS) */
-
-success:
-	return FTDM_SUCCESS;
+	SS7_RELAY_DBG_FUN(handle_status_relay);
+	if (!name) {
+		return cli_ss7_show_all_relay(stream);
+	}
+	return cli_ss7_show_relay_by_name(stream, name);
 }
 
 /******************************************************************************/
@@ -2425,6 +2480,468 @@ static ftdm_status_t check_arg_count(int args, int min)
 		return FTDM_SUCCESS;
 	}
 }		
+
+
+/******************************************************************************
+* Fun:  cli_ss7_show_mtp2link_by_id()
+* Desc: display mtp3 link information with id
+* Param: 
+*          stream : output stream object
+*          rcId     : mtp2 link's id
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_mtp2link_by_id(ftdm_stream_handle_t *stream, int rcId)
+{
+	SdMngmt sta;
+
+	SS7_RELAY_DBG_FUN(cli_ss7_show_mtp2link_by_id);
+
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+
+	if (ftmod_ss7_mtp2link_sta(rcId, &sta)) {
+		stream->write_function(stream, "Failed to read status of MTP2 link, id=%d \n", rcId);
+		return FTDM_FAIL;
+	}
+    
+	stream->write_function(stream, "name=%s|span=%d|chan=%d|sap=%d|state=%s|outsFrm=%d|drpdFrm=%d|lclStatus=%s|rmtStatus=%s|fsn=%d|bsn=%d\n",
+						g_ftdm_sngss7_data.cfg.mtp2Link[rcId].name,
+						g_ftdm_sngss7_data.cfg.mtp1Link[rcId].span,
+						g_ftdm_sngss7_data.cfg.mtp1Link[rcId].chan,
+						g_ftdm_sngss7_data.cfg.mtp2Link[rcId].id,
+						DECODE_LSD_LINK_STATUS(sta.t.ssta.s.sdDLSAP.hlSt),
+						sta.t.ssta.s.sdDLSAP.psOutsFrm,
+						sta.t.ssta.s.sdDLSAP.cntMaDrop,
+						(sta.t.ssta.s.sdDLSAP.lclBsy) ? "Y":"N",
+						(sta.t.ssta.s.sdDLSAP.remBsy) ? "Y":"N",
+						sta.t.ssta.s.sdDLSAP.fsn,
+						sta.t.ssta.s.sdDLSAP.bsn
+					     );
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************
+* Fun:  cli_ss7_show_mtp2link_by_name()
+* Desc: display all relay channels information
+* Param: 
+*          stream : output stream object
+*          rcName: mtp2 link's name
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_mtp2link_by_name(ftdm_stream_handle_t *stream, char *name)
+{
+	int x = 0;
+	SS7_RELAY_DBG_FUN(cli_ss7_show_mtp2link_by_name);
+
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	ftdm_assert_return(!ftdm_strlen_zero(name), FTDM_FAIL, "Null MTP2 link name\n");
+	
+	for (x = 0; x < (MAX_MTP_LINKS + 1); x++) { 
+		if (0 == strcasecmp(g_ftdm_sngss7_data.cfg.mtp2Link[x].name, name)) {
+			return cli_ss7_show_mtp2link_by_id( stream, x );
+		}
+	}
+
+	stream->write_function (stream, "The MTP2 link with name \'%s\' is not found. \n", name);
+	return FTDM_FAIL;
+}
+
+/******************************************************************************
+* Fun:  cli_ss7_show_all_mtp2link()
+* Desc: display all mtp2 links information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_all_mtp2link(ftdm_stream_handle_t *stream)
+{
+	int x = 0;
+
+	SS7_RELAY_DBG_FUN(cli_ss7_show_all_mtp2link);
+
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	
+	for (x = 0; x < (MAX_MTP_LINKS + 1); x++) {
+		if (!ftdm_strlen_zero( g_ftdm_sngss7_data.cfg.mtp2Link[x].name)) {
+			cli_ss7_show_mtp2link_by_id(stream, x );
+		}
+	}
+
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************
+* Fun:  cli_ss7_show_mtp3link_by_id()
+* Desc: display mtp3 link information with id
+* Param: 
+*          stream : output stream object
+*          rcId     : mtp3 link's id
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_mtp3link_by_id(ftdm_stream_handle_t *stream, int rcId)
+{
+	SnMngmt sta;
+
+	SS7_RELAY_DBG_FUN(cli_ss7_show_mtp3link_by_id);
+
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+    
+	memset(&sta, 0, sizeof(sta));
+	if (ftmod_ss7_mtp3link_sta(rcId, &sta)) {
+		stream->write_function(stream, "Failed to read status of MTP3 link, id=%d \n", rcId);
+		return FTDM_FAIL;
+	}
+
+	stream->write_function(stream, "name=%s|span=%d|chan=%d|sap=%d|state=%s|l_blk=%s|r_blk=%s|l_inhbt=%s|r_inhbt=%s\n",
+					g_ftdm_sngss7_data.cfg.mtp3Link[rcId].name,
+					g_ftdm_sngss7_data.cfg.mtp1Link[rcId].span,
+					g_ftdm_sngss7_data.cfg.mtp1Link[rcId].chan,
+					g_ftdm_sngss7_data.cfg.mtp3Link[rcId].id,
+					DECODE_LSN_LINK_STATUS(sta.t.ssta.s.snDLSAP.state),
+					(sta.t.ssta.s.snDLSAP.locBlkd) ? "Y":"N",
+					(sta.t.ssta.s.snDLSAP.remBlkd) ? "Y":"N",
+					(sta.t.ssta.s.snDLSAP.locInhbt) ? "Y":"N",
+					(sta.t.ssta.s.snDLSAP.rmtInhbt) ? "Y":"N"
+			      );
+
+	return FTDM_SUCCESS;    			
+}
+
+/******************************************************************************
+* Fun:  cli_ss7_show_mtp3link_by_name()
+* Desc: display all relay channels information
+* Param: 
+*          stream : output stream object
+*          rcName: mtp3 link's name
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_mtp3link_by_name(ftdm_stream_handle_t *stream, char *name)
+{
+	int x=0;
+	SS7_RELAY_DBG_FUN(cli_ss7_show_mtp3link_by_name);
+
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	ftdm_assert_return(!ftdm_strlen_zero(name), FTDM_FAIL, "Null MTP3 link name\n");
+
+	for (x = 0; x < (MAX_MTP_LINKS + 1); x++) { 
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.mtp3Link[x].name, name)) {
+			return cli_ss7_show_mtp3link_by_id(stream, x );
+		}
+	}
+
+	stream->write_function(stream, "The MTP3 link with name \'%s\' is not found. \n", name);
+	return FTDM_FAIL;
+}
+/******************************************************************************
+* Fun:  cli_ss7_show_all_mtp3link()
+* Desc: display all mtp3 links information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_all_mtp3link(ftdm_stream_handle_t *stream)
+{
+	int x = 0;
+
+	SS7_RELAY_DBG_FUN(cli_ss7_show_all_mtp3link);
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	
+	for (x = 0; x < (MAX_MTP_LINKS + 1); x++) {
+		if (!ftdm_strlen_zero(g_ftdm_sngss7_data.cfg.mtp3Link[x].name)) {
+			cli_ss7_show_mtp3link_by_id(stream, x);
+		}
+	}
+
+	return FTDM_SUCCESS;
+}
+
+
+/******************************************************************************
+* Fun:  cli_ss7_show_all_linkset()
+* Desc: display all mtp3 linksets information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_all_linkset(ftdm_stream_handle_t *stream)
+{
+	int x = 0;
+	SnMngmt	sta;
+
+	SS7_RELAY_DBG_FUN(cli_ss7_show_all_linkset);
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+
+	x = 1;
+	while(x < (MAX_MTP_LINKSETS+1)) {
+		if (!ftdm_strlen_zero(g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name)) {
+			if (ftmod_ss7_mtplinkSet_sta(x, &sta)) {
+				stream->write_function(stream, "Failed to read linkset=%s status\n", g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name);
+			} else {
+				stream->write_function(stream, "name=%s|state=%s|nmbActLnk=%d\n", 
+								g_ftdm_sngss7_data.cfg.mtpLinkSet[x].name, 
+								DECODE_LSN_LINKSET_STATUS(sta.t.ssta.s.snLnkSet.state), sta.t.ssta.s.snLnkSet.nmbActLnks
+				   		      );
+			}
+		}
+		x++;
+	}
+	return FTDM_SUCCESS;
+}
+
+
+/******************************************************************************
+* Fun:  cli_ss7_show_general()
+* Desc: display all general information about ss7
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_general(ftdm_stream_handle_t *stream)
+{
+	SS7_RELAY_DBG_FUN(cli_ss7_show_general);
+
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+
+	stream->write_function(stream, "MTP2 status: \n");
+	cli_ss7_show_all_mtp2link(stream);
+
+	stream->write_function(stream, "\nMTP3 status: \n");
+	cli_ss7_show_all_mtp3link(stream);
+
+	stream->write_function(stream, "\nMTP3 linkset status: \n");
+	cli_ss7_show_all_linkset(stream);
+
+#if 0
+	stream->write_function(stream, "\nMTP3 link route status: \n");
+
+	stream->write_function(stream, "\nISUP status: \n");
+#endif
+
+	stream->write_function(stream, "\nRelay status: \n");
+	cli_ss7_show_all_relay(stream);
+	
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************
+* Fun:  cli_ss7_show_relay_by_id()
+* Desc: display all relay channels information
+* Param: 
+*          stream : output stream object
+*          rcId     : channel's id
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_relay_by_id(ftdm_stream_handle_t *stream, int rcId)
+{	
+	RyMngmt	sta;
+
+	SS7_RELAY_DBG_FUN(cli_ss7_show_relay_by_id);
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+		
+	memset(&sta, 0x0, sizeof(sta));
+	if (ftmod_ss7_relay_status(g_ftdm_sngss7_data.cfg.relay[rcId].id, &sta)) {
+		stream->write_function(stream, "Failed to read relay =%s status\n", g_ftdm_sngss7_data.cfg.relay[rcId].name);
+		return FTDM_FAIL;
+	}	
+
+	stream->write_function(stream, "name=%s|sap=%d|type=%d|port=%d|hostname=%s|procId=%d|status=%s\n",
+							g_ftdm_sngss7_data.cfg.relay[rcId].name,
+							g_ftdm_sngss7_data.cfg.relay[rcId].id,	
+							g_ftdm_sngss7_data.cfg.relay[rcId].type,
+							g_ftdm_sngss7_data.cfg.relay[rcId].port,
+							g_ftdm_sngss7_data.cfg.relay[rcId].hostname,
+							g_ftdm_sngss7_data.cfg.relay[rcId].procId,
+							DECODE_LRY_CHAN_STATUS(sta.t.ssta.rySta.cStatus)
+						);
+		
+	return FTDM_SUCCESS;
+}
+/******************************************************************************
+* Fun:  cli_ss7_show_relay_by_name()
+* Desc: display all relay channels information
+* Param: 
+*          stream : output stream object
+*          rcName: channel's name
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_relay_by_name(ftdm_stream_handle_t *stream, char *name)
+{
+	int		x = 0;
+	
+	SS7_RELAY_DBG_FUN(cli_ss7_show_relay_by_name);
+	 
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	ftdm_assert_return(!ftdm_strlen_zero(name), FTDM_FAIL, "Null relay link name\n");
+
+	for (x = 1; x < MAX_RELAY_CHANNELS; x++) {
+		if (!strcasecmp(g_ftdm_sngss7_data.cfg.relay[x].name, name)) {
+			return cli_ss7_show_relay_by_id(stream, x);
+		}
+	}
+
+	stream->write_function( stream, "The relay channel with name \'%s\' is not found. \n", name);
+	return FTDM_FAIL;
+	
+}
+/******************************************************************************
+* Fun:  cli_ss7_show_all_relay()
+* Desc: display all relay channels information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_all_relay(ftdm_stream_handle_t *stream)
+{
+	int x = 0;
+	SS7_RELAY_DBG_FUN(cli_ss7_show_relay_by_name);
+
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	
+	for (x = 1; x < MAX_RELAY_CHANNELS; x++) {
+		if (!ftdm_strlen_zero(g_ftdm_sngss7_data.cfg.relay[x].name)) {
+			cli_ss7_show_relay_by_id (stream, x);
+		}
+	}
+		
+	return FTDM_SUCCESS;
+}
+
+
+/******************************************************************************
+* Fun:  cli_ss7_show_channel_detail_of_span()
+* Desc: display span information of a given id
+* Param: 
+*          stream : output stream object
+*          span_id : span id string received from cli
+*          chan_id : channel id string received from cli
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_channel_detail_of_span(ftdm_stream_handle_t *stream, char *span_id, char *chan_id)
+{	
+	int x, y;
+
+	SS7_RELAY_DBG_FUN(cli_ss7_show_channel_detail_of_span);
+	
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	ftdm_assert_return(span_id != 0, FTDM_FAIL, "Invalid span id\n");
+	ftdm_assert_return(chan_id != 0, FTDM_FAIL, "Invalid chan id\n");
+
+	x = atoi(span_id); 
+	y = atoi(chan_id);
+	if (!x) {
+		stream->write_function( stream, "Span \'%s\' does not exist. \n", span_id);
+		return FTDM_FAIL;
+	}
+
+	return handle_show_status(stream, x, y, 1);
+}
+
+/******************************************************************************
+* Fun:  cli_ss7_show_all_channels_of_span()
+* Desc: display span information of a given id
+* Param: 
+*          stream : output stream object
+*          span_id : span id string received from cli
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_all_channels_of_span(ftdm_stream_handle_t *stream, char *span_id)
+{	
+	int x=-1; 
+	SS7_RELAY_DBG_FUN(cli_ss7_show_all_channels_of_span);
+
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	ftdm_assert_return(span_id != 0, FTDM_FAIL, "Invalid span id\n");
+
+	x = atoi(span_id);
+	if (!x) {
+		stream->write_function( stream, "Span \'%s\' does not exist. \n", span_id);
+		return FTDM_FAIL;
+	}
+	return handle_show_status(stream, x, 0, 1);
+}
+
+/******************************************************************************
+* Fun:  cli_ss7_show_span_by_id()
+* Desc: display span information of a given id
+* Param: 
+*          stream : output stream object
+*          span_id : span id string received from cli
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_span_by_id(ftdm_stream_handle_t *stream, char *span_id)
+{	
+	int x = -1; 
+
+	SS7_RELAY_DBG_FUN(cli_ss7_show_span_by_id);
+
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	ftdm_assert_return(span_id != 0, FTDM_FAIL, "Invalid span id\n");
+
+	x = atoi(span_id);
+	if (!x) {
+		stream->write_function(stream, "Span \'%s\' does not exist. \n", span_id);
+		return FTDM_FAIL;
+	}
+
+#if 0
+	stream->write_function( stream, "JZ: we should display span details here \n" );
+#endif
+
+	cli_ss7_show_all_channels_of_span(stream, span_id);
+	
+	return FTDM_FAIL;
+}
+
+
+/******************************************************************************
+* Fun:  cli_ss7_show_all_spans_detail()
+* Desc: display all spans information in detail
+* Param: 
+*          stream : output stream object
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_all_spans_detail(ftdm_stream_handle_t *stream)
+{
+	SS7_RELAY_DBG_FUN(cli_ss7_show_all_spans_detail);
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	return handle_show_status(stream, 0, 0, 1);
+}
+
+/******************************************************************************
+* Fun:  cli_ss7_show_all_spans_general()
+* Desc: display all spans information in general
+* Param: 
+*          stream : output stream object
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: James Zhang
+*******************************************************************************/
+static ftdm_status_t cli_ss7_show_all_spans_general(ftdm_stream_handle_t *stream)
+{
+	SS7_RELAY_DBG_FUN(cli_ss7_show_all_spans_general);
+	ftdm_assert_return(stream != NULL, FTDM_FAIL, "Null stream\n");
+	return FTDM_FAIL;
+}
 
 /******************************************************************************/
 /* For Emacs:
