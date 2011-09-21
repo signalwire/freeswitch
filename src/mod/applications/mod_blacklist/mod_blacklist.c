@@ -86,24 +86,25 @@ void trim(char *string)
 static switch_status_t load_list(const char *name, const char *filename)
 {
 	FILE *f;
-	blacklist_t *bl = blacklist_create(name);
-	/* Create a hashtable + mutex for that list */
-	
+
 	if ((f = fopen(filename, "r"))) {
 		char buf[1024] = {0};
+		blacklist_t *bl = blacklist_create(name);	/* Create a hashtable + mutex for that list */
+
 		while (fgets(buf, 1024, f)) {
 			trim(buf);
-			switch_core_hash_insert(bl->list, buf, (void*)SWITCH_TRUE);
+			switch_core_hash_insert(bl->list, buf, (void *)SWITCH_TRUE);
 		}
+
+		switch_core_hash_insert(globals.lists, name, bl);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded list [%s]\n", name);
+
+		fclose(f);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't open [%s] to load list [%s]\n", filename, name);
 		return SWITCH_STATUS_FALSE;
 	}
-	
-	switch_core_hash_insert(globals.lists, name, bl);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded list [%s]\n", name);
-	
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -133,10 +134,17 @@ static switch_status_t do_config(switch_bool_t reload)
 		for (list = switch_xml_child(lists, "list"); list; list = list->next) {
 			const char *name = switch_xml_attr_soft(list, "name");
 			const char *filename = switch_xml_attr_soft(list, "filename");
-			
-			if (name && filename) {
-				load_list(name, filename);
+
+			if (zstr(name)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "list has no name\n");
+				continue;
 			}
+			if (zstr(filename)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "list [%s] has no filename\n", name);
+				continue;
+			}
+
+			load_list(name, filename);
 		}
 	}
 	
@@ -149,6 +157,13 @@ static switch_status_t do_config(switch_bool_t reload)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+#define BLACKLIST_API_SYNTAX	\
+	"blacklist check <listname> <item>\n"	\
+	"blacklist add <listname> <item>\n"	\
+	"blacklist del <listname> <item>\n"	\
+	"blacklist reload\n"			\
+	"blacklist help\n"
 
 SWITCH_STANDARD_API(blacklist_api_function)
 {
@@ -209,7 +224,7 @@ SWITCH_STANDARD_API(blacklist_api_function)
 		switch_mutex_unlock(bl->list_mutex);
 		stream->write_function(stream, "+OK\n");
 	} else if (!strcasecmp(argv[0], "del")) {
-			blacklist_t *bl = NULL;
+		blacklist_t *bl = NULL;
 		if (argc < 2 || zstr(argv[1]) || zstr(argv[2])) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Wrong syntax");
 			goto done;
@@ -233,6 +248,10 @@ SWITCH_STANDARD_API(blacklist_api_function)
 	} else if (!strcasecmp(argv[0], "reload"))  {
 		do_config(SWITCH_TRUE);
 		stream->write_function(stream, "+OK\n");
+	} else if (!strcasecmp(argv[0], "help")) {
+		stream->write_function(stream, BLACKLIST_API_SYNTAX "+OK\n");
+	} else if (!zstr(argv[0])) {
+		stream->write_function(stream, "-ERR: No such command: %s (see 'blacklist help')\n", argv[0]);
 	}
 	
 done:
