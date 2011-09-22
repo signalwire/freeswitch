@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Mathieu Rene <mrene@avgs.ca>
+ * Raymond Chandler <intralanman@freeswitch.org>
  *
  * mod_blacklist.c -- Blacklist module
  *
