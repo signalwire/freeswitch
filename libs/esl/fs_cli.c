@@ -57,14 +57,18 @@ typedef struct {
 	const char *console_fnkeys[12];
 	char loglevel[128];
 	int quiet;
+	char prompt_color[12];
+	char input_text_color[12];
+	char output_text_color[12];
 } cli_profile_t;
 
 static int warn_stop = 0;
 static int connected = 0;
 static int allow_ctl_c = 0;
 static char prompt_str[512] = "";
-static char *prompt_color = ESL_SEQ_DEFAULT_COLOR;
-static char *text_color = ESL_SEQ_DEFAULT_COLOR;
+static char prompt_color[12] = ESL_SEQ_DEFAULT_COLOR;
+static char input_text_color[12] = ESL_SEQ_DEFAULT_COLOR;
+static char output_text_color[12] = ESL_SEQ_DEFAULT_COLOR;
 static cli_profile_t profiles[128] = {{{0}}};
 static cli_profile_t internal_profile = {{ 0 }};
 static int pcount = 0;
@@ -578,6 +582,17 @@ static void redisplay(void)
 	return;
 }
 
+static int output_printf(const char *fmt, ...)
+{
+	va_list ap;
+	int r;
+	va_start(ap, fmt);
+	printf("%s", output_text_color);
+	r = vprintf(fmt, ap);
+	va_end(ap);
+	return r;
+}
+
 static void *msg_thread_run(esl_thread_t *me, void *obj)
 {
 	esl_handle_t *handle = (esl_handle_t *) obj;
@@ -609,7 +624,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 #ifndef WIN32
 							if (aok) {
 								clear_line();
-								printf("%s%s%s", colors[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
+								printf("%s%s", colors[level], handle->last_event->body);
 								redisplay();
 							}
 #else
@@ -627,7 +642,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 						esl_event_serialize(handle->last_ievent, &s, ESL_FALSE);
 						if (aok) {
 							clear_line();
-							printf("RECV EVENT\n%s\n", s);
+							output_printf("RECV EVENT\n%s\n", s);
 							redisplay();
 						}
 						free(s);
@@ -637,9 +652,9 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 				}
 				if (aok && !known) {
 					char *s;
-					printf("INCOMING DATA [%s]\n%s\n", type, handle->last_event->body ? handle->last_event->body : "");
+					output_printf("INCOMING DATA [%s]\n%s\n", type, handle->last_event->body ? handle->last_event->body : "");
 					esl_event_serialize(handle->last_event, &s, ESL_FALSE);
-					printf("RECV EVENT\n%s\n", s);
+					output_printf("RECV EVENT\n%s\n", s);
 					redisplay();
 					free(s);
 				}
@@ -648,7 +663,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 		if (warn_stop) {
 			if (aok) {
 				clear_line();
-				printf("Type control-D or /exit or /quit or /bye to exit.\n\n");
+				output_printf("Type control-D or /exit or /quit or /bye to exit.\n\n");
 				redisplay();
 			}
 			warn_stop = 0;
@@ -677,7 +692,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 	while (*cmd == ' ') cmd++;
 	if ((*cmd == '/' && cmd++) || !strncasecmp(cmd, "...", 3)) {
 		if (!strcasecmp(cmd, "help")) {
-			printf("%s", cli_usage);
+			output_printf("%s", cli_usage);
 			goto end;
 		}
 		if (!strcasecmp(cmd, "exit") ||
@@ -697,7 +712,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			} else {
 				esl_safe_free(filter_uuid);
 			}
-			printf("UUID filtering %s\n", filter_uuid ? "enabled" : "disabled");
+			output_printf("UUID filtering %s\n", filter_uuid ? "enabled" : "disabled");
 		} else if (!strncasecmp(cmd, "event", 5) ||
 				   !strncasecmp(cmd, "noevents", 8) ||
 				   !strncasecmp(cmd, "nixevent", 8) ||
@@ -711,26 +726,26 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			int tmp_debug = atoi(cmd+6);
 			if (tmp_debug > -1 && tmp_debug < 8) {
 				esl_global_set_default_logger(tmp_debug);
-				printf("fs_cli debug level set to %d\n", tmp_debug);
+				output_printf("fs_cli debug level set to %d\n", tmp_debug);
 			} else {
-				printf("fs_cli debug level must be 0 - 7\n");
+				output_printf("fs_cli debug level must be 0 - 7\n");
 			}
 		} else {
-			printf("Unknown command [%s]\n", cmd);
+			output_printf("Unknown command [%s]\n", cmd);
 		}
 	} else {
 		char cmd_str[1024] = "";
 		const char *err = NULL;
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", cmd);
 		if (esl_send_recv(handle, cmd_str)) {
-			printf("Socket interrupted, bye!\n");
+			output_printf("Socket interrupted, bye!\n");
 			return -1;
 		}
 		if (handle->last_sr_event) {
 			if (handle->last_sr_event->body) {
-				printf("%s\n", handle->last_sr_event->body);
+				output_printf("%s\n", handle->last_sr_event->body);
 			} else if ((err = esl_event_get_header(handle->last_sr_event, "reply-text")) && !strncasecmp(err, "-err", 3)) {
-				printf("Error: %s!\n", err + 4);
+				output_printf("Error: %s!\n", err + 4);
 			}
 		}
 	}
@@ -811,7 +826,7 @@ static const char *banner =
 	"\n"
 	"Type /help <enter> to see a list of commands\n\n\n";
 
-static void print_banner(FILE *stream) { fprintf(stream,banner); }
+static void print_banner(FILE *stream) { fprintf(stream, "%s%s", output_text_color, banner); }
 
 static void set_fn_keys(cli_profile_t *profile)
 {
@@ -927,6 +942,33 @@ static unsigned char complete(EditLine *el, int ch)
 }
 #endif
 
+struct color_map_el {
+	char name[32];
+	char seq[12];
+};
+
+struct color_map_el color_map[] = {
+	{"black", ESL_SEQ_FBLACK}, {"bold-black", ESL_SEQ_BBLACK},
+	{"red", ESL_SEQ_FRED}, {"bold-red", ESL_SEQ_BRED},
+	{"green", ESL_SEQ_FGREEN}, {"bold-green", ESL_SEQ_BGREEN},
+	{"yellow", ESL_SEQ_FYELLOW}, {"bold-yellow", ESL_SEQ_BYELLOW},
+	{"blue", ESL_SEQ_FBLUE}, {"bold-blue", ESL_SEQ_BBLUE},
+	{"magenta", ESL_SEQ_FMAGEN}, {"bold-magenta", ESL_SEQ_BMAGEN},
+	{"cyan", ESL_SEQ_FCYAN}, {"bold-cyan", ESL_SEQ_BCYAN},
+	{"white", ESL_SEQ_FWHITE}, {"bold-white", ESL_SEQ_BWHITE},
+	{{0}}};
+
+static const char* match_color(const char *s) {
+	struct color_map_el *map = color_map;
+	while (map->name) {
+		if (!(strcasecmp(s, map->name))) {
+			return map->seq;
+		}
+		map++;
+	}
+	return ESL_SEQ_DEFAULT_COLOR;
+}
+
 static void read_config(const char *dft_cfile, const char *cfile) {
 	esl_config_t cfg;
 	if (esl_config_open_file(&cfg, cfile) ||
@@ -941,6 +983,9 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 				esl_set_string(profiles[pcount].pass, "ClueCon");
 				profiles[pcount].port = 8021;
 				set_fn_keys(&profiles[pcount]);
+				esl_set_string(profiles[pcount].prompt_color, prompt_color);
+				esl_set_string(profiles[pcount].input_text_color, input_text_color);
+				esl_set_string(profiles[pcount].output_text_color, output_text_color);
 				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[pcount].name);
 				pcount++;
 			}
@@ -964,6 +1009,12 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 				esl_set_string(profiles[pcount-1].loglevel, val);
 			} else if(!strcasecmp(var, "quiet")) {
 				profiles[pcount-1].quiet = esl_true(val);
+			} else if(!strcasecmp(var, "prompt-color")) {
+				esl_set_string(profiles[pcount-1].prompt_color, match_color(val));
+			} else if(!strcasecmp(var, "input-text-color")) {
+				esl_set_string(profiles[pcount-1].input_text_color, match_color(val));
+			} else if(!strcasecmp(var, "output-text-color")) {
+				esl_set_string(profiles[pcount-1].output_text_color, match_color(val));
 			} else if (!strncasecmp(var, "key_F", 5)) {
 				char *key = var + 5;
 				if (key) {
@@ -1034,6 +1085,9 @@ int main(int argc, char *argv[])
 	strncpy(internal_profile.name, "internal", sizeof(internal_profile.name));
 	internal_profile.port = 8021;
 	set_fn_keys(&internal_profile);
+	esl_set_string(internal_profile.prompt_color, prompt_color);
+	esl_set_string(internal_profile.input_text_color, input_text_color);
+	esl_set_string(internal_profile.output_text_color, output_text_color);
 	if (home) {
 		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
 		snprintf(cfile, sizeof(cfile), "%s/.fs_cli_conf", home);
@@ -1146,14 +1200,17 @@ int main(int argc, char *argv[])
 		profile->quiet = 0;
 	}
 	esl_log(ESL_LOG_DEBUG, "Using profile %s [%s]\n", profile->name, profile->host);
+	esl_set_string(prompt_color, profile->prompt_color);
+	esl_set_string(input_text_color, profile->input_text_color);
+	esl_set_string(output_text_color, profile->output_text_color);
 	if (argv_host) {
 		if (argv_port && profile->port != 8021) {
-			snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s:%u@%s> %s", prompt_color, profile->host, profile->port, profile->name, text_color);
+			snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s:%u@%s> %s", prompt_color, profile->host, profile->port, profile->name, input_text_color);
 		} else {
-			snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s@%s> %s", prompt_color, profile->host, profile->name, text_color);
+			snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s@%s> %s", prompt_color, profile->host, profile->name, input_text_color);
 		}
 	} else {
-		snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s> %s", prompt_color, profile->name, text_color);
+		snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s> %s", prompt_color, profile->name, input_text_color);
 	}
  connect:
 	connected = 0;
@@ -1269,7 +1326,7 @@ int main(int argc, char *argv[])
 	}
 	print_banner(stdout);
 	esl_log(ESL_LOG_INFO, "FS CLI Ready.\nenter /help for a list of commands.\n");
-	printf("%s\n", handle.last_sr_reply);
+	output_printf("%s\n", handle.last_sr_reply);
 	while (running > 0) {
 		int r;
 #ifdef HAVE_EDITLINE
