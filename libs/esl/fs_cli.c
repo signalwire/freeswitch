@@ -518,6 +518,27 @@ static int usage(char *name){
 	return 1;
 }
 
+static int stdout_writable(void)
+{
+#ifndef WIN32
+	fd_set set;
+	int fd = fileno(stdout);
+	struct timeval to;
+	memset(&to, 0, sizeof(to));
+	FD_ZERO(&set);
+	FD_SET(fd, &set);
+	to.tv_sec = 0;
+	to.tv_usec = 100000;
+	if (select(fd + 1, NULL, &set, NULL, &to) > 0) {
+		return FD_ISSET(fd, &set);
+	} else {
+		return 0;
+	}
+#else
+	return 1;
+#endif
+}
+
 static void *msg_thread_run(esl_thread_t *me, void *obj)
 {
 	esl_handle_t *handle = (esl_handle_t *) obj;
@@ -529,21 +550,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 			if (aok) esl_log(ESL_LOG_WARNING, "Disconnected.\n");
 			running = -1; thread_running = 0;
 		} else if (status == ESL_SUCCESS) {
-#ifndef WIN32
-			fd_set can_write;
-			int fd = fileno(stdout);
-			struct timeval to;
-			memset(&to, 0, sizeof(to));
-			FD_ZERO(&can_write);
-			FD_SET(fd, &can_write);
-			to.tv_sec = 0;
-			to.tv_usec = 100000;
-			if (select(fd + 1, NULL, &can_write, NULL, &to) > 0) {
-				aok = FD_ISSET(fd, &can_write);
-			} else {
-				aok = 0;
-			}
-#endif
+			aok = stdout_writable();
 			if (handle->last_event) {
 				int known = 1;
 				const char *type = esl_event_get_header(handle->last_event, "content-type");
