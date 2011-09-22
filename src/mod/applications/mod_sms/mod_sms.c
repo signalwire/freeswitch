@@ -445,9 +445,9 @@ SWITCH_STANDARD_CHAT_APP(reply_function)
 
 	if (proto) {
 		switch_ivr_create_message_reply(&reply, message, SMS_CHAT_PROTO);
-		
+
 		if (!zstr(data)) {
-			switch_event_add_body(reply, data);
+			switch_event_add_body(reply, "%s", data);
 		}
 
 		switch_core_chat_deliver(proto, &reply);
