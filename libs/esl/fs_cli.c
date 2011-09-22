@@ -1164,7 +1164,7 @@ int main(int argc, char *argv[])
 	esl_thread_create_detached(msg_thread_run, &handle);
 
 #ifdef HAVE_EDITLINE
-	el = el_init(__FILE__, stdout, stdout, stdout);
+	el = el_init(__FILE__, stdin, stdout, stderr);
 	el_set(el, EL_PROMPT, &prompt);
 	el_set(el, EL_EDITOR, "emacs");
 
