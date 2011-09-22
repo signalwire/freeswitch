@@ -1236,10 +1236,10 @@ int main(int argc, char *argv[])
 #endif
 		if (count > 1 && !esl_strlen_zero(line)) {
 			char *p, *cmd = strdup(line);
+			assert(cmd);
 			if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
 				*p = '\0';
 			}
-			assert(cmd);
 #ifdef HAVE_EDITLINE
 			history(myhistory, &ev, H_ENTER, line);
 #endif
