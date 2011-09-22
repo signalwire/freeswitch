@@ -1260,7 +1260,7 @@ int main(int argc, char *argv[])
 			{
 				const LineInfo *lf = el_line(el);
 				int len = (lf->lastchar - lf->buffer);
-				el_deletestr(el, len + 1);
+				el_deletestr(el, len);
 				memset((char*)lf->buffer, 0, len);
 			}
 #endif
