@@ -102,6 +102,13 @@ static void sleep_s(int secs) { _sleep_ns(secs, 0); }
 
 static int process_command(esl_handle_t *handle, const char *cmd);
 
+static void clear_cli(void) {
+	const LineInfo *lf = el_line(el);
+	int len=(lf->lastchar - lf->buffer);
+	for (; len>0; len--)
+		write(STDOUT_FILENO, "\b", 1);
+}
+
 /* If a fnkey is configured then process the command */
 static unsigned char console_fnkey_pressed(int i)
 {
@@ -112,6 +119,7 @@ static unsigned char console_fnkey_pressed(int i)
 		esl_log(ESL_LOG_ERROR, "FUNCTION KEY F%d IS NOT BOUND, please edit your config.\n", i);
 		return CC_REDISPLAY;
 	}
+	clear_cli();
 	printf("%s\n", c);
 	if (process_command(global_handle, c)) {
 		running = thread_running = 0;
