@@ -640,6 +640,7 @@ static const char *cli_usage =
 
 static int process_command(esl_handle_t *handle, const char *cmd)
 {
+	while (*cmd == ' ') cmd++;
 	if ((*cmd == '/' && cmd++) || !strncasecmp(cmd, "...", 3)) {
 		if (!strcasecmp(cmd, "help")) {
 			printf("%s", cli_usage);
