@@ -564,7 +564,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 		int aok = 1;
 		esl_status_t status = esl_recv_event_timed(handle, 10, 1, NULL);
 		if (status == ESL_FAIL) {
-			if (aok) esl_log(ESL_LOG_WARNING, "Disconnected.\n");
+			esl_log(ESL_LOG_WARNING, "Disconnected.\n");
 			running = -1; thread_running = 0;
 		} else if (status == ESL_SUCCESS) {
 			aok = stdout_writable();
@@ -572,7 +572,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 				int known = 1;
 				const char *type = esl_event_get_header(handle->last_event, "content-type");
 				if (!esl_strlen_zero(type)) {
-					if (aok && !strcasecmp(type, "log/data")) {
+					if (!strcasecmp(type, "log/data")) {
 						const char *userdata = esl_event_get_header(handle->last_event, "user-data");
 						if (esl_strlen_zero(userdata) || esl_strlen_zero(filter_uuid) || !strcasecmp(filter_uuid, userdata)) {
 							int level = 0;
@@ -585,19 +585,21 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 								level = atoi(lname);
 							}
 #ifndef WIN32
-							printf("%s%s%s", colors[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
+							if (aok) printf("%s%s%s", colors[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
 #else
-							SetConsoleTextAttribute(hStdout, colors[level]);
-							WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
-							SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+							if (aok) {
+								SetConsoleTextAttribute(hStdout, colors[level]);
+								WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
+								SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+							}
 #endif
 						}
 					} else if (!strcasecmp(type, "text/disconnect-notice")) {
 						running = -1; thread_running = 0;
-					} else if (aok && !strcasecmp(type, "text/event-plain")) {
+					} else if (!strcasecmp(type, "text/event-plain")) {
 						char *s;
 						esl_event_serialize(handle->last_ievent, &s, ESL_FALSE);
-						printf("RECV EVENT\n%s\n", s);
+						if (aok) printf("RECV EVENT\n%s\n", s);
 						free(s);
 					} else {
 						known = 0;
