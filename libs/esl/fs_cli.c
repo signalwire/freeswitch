@@ -6,17 +6,19 @@
 #include <stdlib.h>
 #include <esl.h>
 #include <signal.h>
+#include <getopt.h>
 
 #define CMD_BUFLEN 1024
-static int WARN_STOP = 0;
 
-#ifdef WIN32
+#ifndef WIN32
+#include <sys/select.h>
+#include <unistd.h>
+#else
 #define strdup(src) _strdup(src)
 #define usleep(time) Sleep(time/1000)
 #define fileno _fileno
 #define read _read
 #include <io.h>
-
 #define CC_NORM         0
 #define CC_NEWLINE      1
 #define CC_EOF          2
@@ -27,7 +29,6 @@ static int WARN_STOP = 0;
 #define CC_FATAL        7
 #define CC_REDISPLAY    8
 #define CC_REFRESH_BEEP 9
-
 #define HISTLEN 10
 #define KEY_UP 1
 #define KEY_DOWN 2
@@ -38,22 +39,13 @@ static int WARN_STOP = 0;
 #define KEY_RIGHT 7
 #define KEY_INSERT 8
 #define PROMPT_OP 9
-
 static int console_bufferInput (char *buf, int len, char *cmd, int key);
 static unsigned char esl_console_complete(const char *buffer, const char *cursor);
-#else
-#include <sys/select.h>
-#include <unistd.h>
 #endif
-
-#include <getopt.h>
 
 #ifdef HAVE_EDITLINE
 #include <histedit.h>
 #endif
-
-static char prompt_str[512] = "";
-static int CONNECTED = 0;
 
 typedef struct {
 	char name[128];
@@ -67,18 +59,22 @@ typedef struct {
 	int quiet;
 } cli_profile_t;
 
+static int warn_stop = 0;
+static int connected = 0;
+static char prompt_str[512] = "";
 static cli_profile_t profiles[128] = {{{0}}};
 static cli_profile_t internal_profile = {{ 0 }};
 static int pcount = 0;
-
 static esl_handle_t *global_handle;
 static cli_profile_t *global_profile;
-
-static int process_command(esl_handle_t *handle, const char *cmd);
-
 static int running = 1;
 static int thread_running = 0;
 static char *filter_uuid;
+static EditLine *el;
+static History *myhistory;
+static HistEvent ev;
+
+static int process_command(esl_handle_t *handle, const char *cmd);
 
 /* If a fnkey is configured then process the command */
 static unsigned char console_fnkey_pressed(int i)
@@ -101,11 +97,6 @@ static unsigned char console_fnkey_pressed(int i)
 
 #ifdef HAVE_EDITLINE
 static char *prompt(EditLine *e) { return prompt_str; }
-
-static EditLine *el;
-static History *myhistory;
-static HistEvent ev;
-
 static unsigned char console_f1key(EditLine *el, int ch) { return console_fnkey_pressed(1); }
 static unsigned char console_f2key(EditLine *el, int ch) { return console_fnkey_pressed(2); }
 static unsigned char console_f3key(EditLine *el, int ch) { return console_fnkey_pressed(3); }
@@ -472,12 +463,11 @@ static BOOL console_readConsole(HANDLE conIn, char *buf, int len, int *pRed, int
 
 static void handle_SIGINT(int sig)
 {
-	if (sig);
-	if (!CONNECTED) {
+	if (!connected) {
 		fprintf(stdout, "Interrupted.\n");
 		exit(1);
 	}
-	WARN_STOP = 1;
+	warn_stop = 1;
 	signal(SIGINT, handle_SIGINT);
 #ifdef SIGTSTP
 	signal(SIGTSTP, handle_SIGINT);
@@ -495,28 +485,36 @@ static void handle_SIGQUIT(int sig)
 static HANDLE hStdout;
 static WORD wOldColorAttrs;
 static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
-static WORD
-#else
-static const char*
 #endif
-COLORS[] = { ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FRED, ESL_SEQ_FRED, ESL_SEQ_FRED,
-			 ESL_SEQ_FMAGEN, ESL_SEQ_FCYAN, ESL_SEQ_FGREEN, ESL_SEQ_FYELLOW };
 
-static int usage(char *name) {
-	printf("Usage: %s [-H <host>] [-P <port>] [-p <secret>] [-d <level>] [-x command] [-t <timeout_ms>] [profile]\n\n", name);
-	printf("  -?,-h --help                    Usage Information\n");
-	printf("  -H, --host=hostname             Host to connect\n");
-	printf("  -P, --port=port                 Port to connect (1 - 65535)\n");
-	printf("  -u, --user=user@domain          user@domain\n");
-	printf("  -p, --password=password         Password\n");
-	printf("  -i, --interrupt                 Allow Control-c to interrupt\n");
-	printf("  -x, --execute=command           Execute Command and Exit\n");
-	printf("  -l, --loglevel=command          Log Level\n");
-	printf("  -q, --quiet                     Disable logging\n");
-	printf("  -r, --retry                     Retry connection on failure\n");
-	printf("  -R, --reconnect                 Reconnect if disconnected\n");
-	printf("  -d, --debug=level               Debug Level (0 - 7)\n");
-	printf("  -t, --timeout                   Timeout for API commands (in miliseconds)\n\n");
+#ifdef WIN32
+static WORD colors[]
+#else
+static const char *colors[]
+#endif
+= {
+	ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FRED, ESL_SEQ_FRED, ESL_SEQ_FRED,
+	ESL_SEQ_FMAGEN, ESL_SEQ_FCYAN, ESL_SEQ_FGREEN, ESL_SEQ_FYELLOW
+};
+
+static const char *usage_str =
+	"Usage: %s [-H <host>] [-P <port>] [-p <secret>] [-d <level>] [-x command] [-t <timeout_ms>] [profile]\n\n"
+	"  -?,-h --help                    Usage Information\n"
+	"  -H, --host=hostname             Host to connect\n"
+	"  -P, --port=port                 Port to connect (1 - 65535)\n"
+	"  -u, --user=user@domain          user@domain\n"
+	"  -p, --password=password         Password\n"
+	"  -i, --interrupt                 Allow Control-c to interrupt\n"
+	"  -x, --execute=command           Execute Command and Exit\n"
+	"  -l, --loglevel=command          Log Level\n"
+	"  -q, --quiet                     Disable logging\n"
+	"  -r, --retry                     Retry connection on failure\n"
+	"  -R, --reconnect                 Reconnect if disconnected\n"
+	"  -d, --debug=level               Debug Level (0 - 7)\n"
+	"  -t, --timeout                   Timeout for API commands (in miliseconds)\n\n";
+
+static int usage(char *name){
+	printf(usage_str, name);
 	return 1;
 }
 
@@ -525,17 +523,16 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 	esl_handle_t *handle = (esl_handle_t *) obj;
 	thread_running = 1;
 	while(thread_running && handle->connected) {
-		esl_status_t status = esl_recv_event_timed(handle, 10, 1, NULL);
 		int aok = 1;
+		esl_status_t status = esl_recv_event_timed(handle, 10, 1, NULL);
 		if (status == ESL_FAIL) {
 			if (aok) esl_log(ESL_LOG_WARNING, "Disconnected.\n");
 			running = -1; thread_running = 0;
 		} else if (status == ESL_SUCCESS) {
 #ifndef WIN32
 			fd_set can_write;
-			int fd;
+			int fd = fileno(stdout);
 			struct timeval to;
-			fd = fileno(stdout);
 			memset(&to, 0, sizeof(to));
 			FD_ZERO(&can_write);
 			FD_SET(fd, &can_write);
@@ -548,8 +545,8 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 			}
 #endif
 			if (handle->last_event) {
+				int known = 1;
 				const char *type = esl_event_get_header(handle->last_event, "content-type");
-				int known = 0;
 				if (!esl_strlen_zero(type)) {
 					if (aok && !strcasecmp(type, "log/data")) {
 						const char *userdata = esl_event_get_header(handle->last_event, "user-data");
@@ -563,38 +560,37 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 							if (lname) {
 								level = atoi(lname);
 							}
-#ifdef WIN32
-							SetConsoleTextAttribute(hStdout, COLORS[level]);
+#ifndef WIN32
+							printf("%s%s%s", colors[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
+#else
+							SetConsoleTextAttribute(hStdout, colors[level]);
 							WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
 							SetConsoleTextAttribute(hStdout, wOldColorAttrs);
-#else
-							printf("%s%s%s", COLORS[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
 #endif
 						}
-						known++;
 					} else if (!strcasecmp(type, "text/disconnect-notice")) {
 						running = -1; thread_running = 0;
-						known++;
 					} else if (aok && !strcasecmp(type, "text/event-plain")) {
-						char *foo;
-						esl_event_serialize(handle->last_ievent, &foo, ESL_FALSE);
-						printf("RECV EVENT\n%s\n", foo);
-						free(foo);
-						known++;
+						char *s;
+						esl_event_serialize(handle->last_ievent, &s, ESL_FALSE);
+						printf("RECV EVENT\n%s\n", s);
+						free(s);
+					} else {
+						known = 0;
 					}
 				}
 				if (aok && !known) {
-					char *foo;
+					char *s;
 					printf("INCOMING DATA [%s]\n%s\n", type, handle->last_event->body ? handle->last_event->body : "");
-					esl_event_serialize(handle->last_event, &foo, ESL_FALSE);
-					printf("RECV EVENT\n%s\n", foo);
-					free(foo);
+					esl_event_serialize(handle->last_event, &s, ESL_FALSE);
+					printf("RECV EVENT\n%s\n", s);
+					free(s);
 				}
 			}
 		}
-		if (WARN_STOP) {
+		if (warn_stop) {
 			if (aok) printf("Type control-D or /exit or /quit or /bye to exit.\n\n");
-			WARN_STOP = 0;
+			warn_stop = 0;
 		}
 		usleep(1000);
 	}
@@ -603,22 +599,23 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 	return NULL;
 }
 
+static const char *cli_usage =
+	"Command                    \tDescription\n"
+	"-----------------------------------------------\n"
+	"/help                      \tHelp\n"
+	"/exit, /quit, /bye, ...    \tExit the program.\n"
+	"/event, /noevents, /nixevent\tEvent commands.\n"
+	"/log, /nolog               \tLog commands.\n"
+	"/uuid                      \tFilter logs for a single call uuid\n"
+	"/filter                    \tFilter commands.\n"
+	"/debug [0-7]               \tSet debug level.\n"
+	"\n";
+
 static int process_command(esl_handle_t *handle, const char *cmd)
 {
 	if ((*cmd == '/' && cmd++) || !strncasecmp(cmd, "...", 3)) {
 		if (!strcasecmp(cmd, "help")) {
-			printf(
-				   "Command                    \tDescription\n"
-				   "-----------------------------------------------\n"
-				   "/help                      \tHelp\n"
-				   "/exit, /quit, /bye, ...    \tExit the program.\n"
-				   "/event, /noevents, /nixevent\tEvent commands.\n"
-				   "/log, /nolog               \tLog commands.\n"
-				   "/uuid                      \tFilter logs for a single call uuid\n"
-				   "/filter                    \tFilter commands.\n"
-				   "/debug [0-7]               \tSet debug level.\n"
-				   "\n"
-				   );
+			printf("%s", cli_usage);
 			goto end;
 		}
 		if (!strcasecmp(cmd, "exit") ||
@@ -736,25 +733,23 @@ static const char *basic_gets(int *cnt)
 }
 #endif
 
-static void print_banner(FILE *stream)
-{
-	fprintf(stream,
-			"            _____ ____     ____ _     ___            \n"
-			"           |  ___/ ___|   / ___| |   |_ _|           \n"
-			"           | |_  \\___ \\  | |   | |    | |            \n"
-			"           |  _|  ___) | | |___| |___ | |            \n"
-			"           |_|   |____/   \\____|_____|___|           \n"
-			"\n"
-			"*******************************************************\n"
-			"* Anthony Minessale II, Ken Rice, Michael Jerris      *\n"
-			"* FreeSWITCH (http://www.freeswitch.org)              *\n"
-			"* Paypal Donations Appreciated: paypal@freeswitch.org *\n"
-			"* Brought to you by ClueCon http://www.cluecon.com/   *\n"
-			"*******************************************************\n"
-			"\n"
-			"Type /help <enter> to see a list of commands\n\n\n"
-			);
-}
+static const char *banner =
+	"            _____ ____     ____ _     ___              \n"
+	"           |  ___/ ___|   / ___| |   |_ _|             \n"
+	"           | |_  \\___ \\  | |   | |    | |            \n"
+	"           |  _|  ___) | | |___| |___ | |              \n"
+	"           |_|   |____/   \\____|_____|___|            \n"
+	"\n"
+	"*******************************************************\n"
+	"* Anthony Minessale II, Ken Rice, Michael Jerris      *\n"
+	"* FreeSWITCH (http://www.freeswitch.org)              *\n"
+	"* Paypal Donations Appreciated: paypal@freeswitch.org *\n"
+	"* Brought to you by ClueCon http://www.cluecon.com/   *\n"
+	"*******************************************************\n"
+	"\n"
+	"Type /help <enter> to see a list of commands\n\n\n";
+
+static void print_banner(FILE *stream) { fprintf(stream,banner); }
 
 static void set_fn_keys(cli_profile_t *profile)
 {
@@ -772,7 +767,7 @@ static void set_fn_keys(cli_profile_t *profile)
 	profile->console_fnkeys[11] = "version";
 }
 
-#define end_of_p(_s) (*_s == '\0' ? _s : _s + strlen(_s) - 1)
+static char* end_of_str(char *s) { return (*s == '\0' ? s : s + strlen(s) - 1); }
 
 static unsigned char esl_console_complete(const char *buffer, const char *cursor)
 {
@@ -798,10 +793,10 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 #ifdef HAVE_EDITLINE
 	if (!*buf && sc) {
 		el_deletestr(el, sc);
+		sc = 0;
 	}
 #endif
-	sc = 0;
-	p = end_of_p(buf);
+	p = end_of_str(buf);
 	while(p >= buf && *p == ' ') {
 		sc++;
 		p--;
@@ -869,7 +864,6 @@ int main(int argc, char *argv[])
 	char cmd_str[1024] = "";
 	esl_config_t cfg;
 	cli_profile_t *profile = NULL;
-	int rv = 0;
 #ifndef WIN32
 	char hfile[512] = "/etc/fs_cli_history";
 	char cfile[512] = "/etc/fs_cli.conf";
@@ -1002,10 +996,8 @@ int main(int argc, char *argv[])
 		printf("\n");
 		return usage(argv[0]);
 	}
-	if (!(rv = esl_config_open_file(&cfg, cfile))) {
-		rv = esl_config_open_file(&cfg, dft_cfile);
-	}
-	if (rv) {
+	if (esl_config_open_file(&cfg, cfile) ||
+		esl_config_open_file(&cfg, dft_cfile)) {
 		char *var, *val;
 		char cur_cat[128] = "";
 		while (esl_config_next_pair(&cfg, &var, &val)) {
@@ -1090,7 +1082,7 @@ int main(int argc, char *argv[])
 		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
 	}
  connect:
-	CONNECTED = 0;
+	connected = 0;
 	while (--loops > 0) {
 		memset(&handle, 0, sizeof(handle));
 		if (esl_connect(&handle, profile->host, profile->port, profile->user, profile->pass)) {
@@ -1109,7 +1101,7 @@ int main(int argc, char *argv[])
 			}
 		} else {
 			if (!ctl_c) {
-				CONNECTED = 1;
+				connected = 1;
 			}
 			if (temp_log < 0 ) {
 				esl_global_set_default_logger(profile->debug);
@@ -1151,8 +1143,6 @@ int main(int argc, char *argv[])
 	el_set(el, EL_PROMPT, &prompt);
 	el_set(el, EL_EDITOR, "emacs");
 
-	myhistory = history_init();
-
 	el_set(el, EL_ADDFN, "f1-key", "F1 KEY PRESS", console_f1key);
 	el_set(el, EL_ADDFN, "f2-key", "F2 KEY PRESS", console_f2key);
 	el_set(el, EL_ADDFN, "f3-key", "F3 KEY PRESS", console_f3key);
@@ -1190,11 +1180,10 @@ int main(int argc, char *argv[])
 	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
 	el_set(el, EL_BIND, "^I", "ed-complete", NULL);
 
-	if (myhistory == 0) {
+	if (!(myhistory = history_init())) {
 		esl_log(ESL_LOG_ERROR, "history could not be initialized\n");
 		goto done;
 	}
-
 	history(myhistory, &ev, H_SETSIZE, 800);
 	el_set(el, EL_HIST, history, myhistory);
 	history(myhistory, &ev, H_LOAD, hfile);
@@ -1220,30 +1209,27 @@ int main(int argc, char *argv[])
 #else
 		line = basic_gets(&count);
 #endif
-		if (count > 1) {
-			if (!esl_strlen_zero(line)) {
-				char *cmd = strdup(line);
-				char *p;
-#ifdef HAVE_EDITLINE
-				const LineInfo *lf = el_line(el);
-				char *foo = (char *) lf->buffer;
-#endif
-				if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
-					*p = '\0';
-				}
-				assert(cmd != NULL);
-#ifdef HAVE_EDITLINE
-				history(myhistory, &ev, H_ENTER, line);
-#endif
-				if ((r = process_command(&handle, cmd))) {
-					running = r;
-				}
-#ifdef HAVE_EDITLINE
-				el_deletestr(el, strlen(foo) + 1);
-				memset(foo, 0, strlen(foo));
-#endif
-				free(cmd);
+		if (count > 1 && !esl_strlen_zero(line)) {
+			char *p, *cmd = strdup(line);
+			if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
+				*p = '\0';
 			}
+			assert(cmd);
+#ifdef HAVE_EDITLINE
+			history(myhistory, &ev, H_ENTER, line);
+#endif
+			if ((r = process_command(&handle, cmd))) {
+				running = r;
+			}
+			free(cmd);
+#ifdef HAVE_EDITLINE
+			{
+				const LineInfo *lf = el_line(el);
+				char *s = (char *) lf->buffer;
+				el_deletestr(el, strlen(s) + 1);
+				memset(s, 0, strlen(s));
+			}
+#endif
 		}
 		usleep(1000);
 	}
@@ -1255,7 +1241,6 @@ int main(int argc, char *argv[])
 #ifdef HAVE_EDITLINE
  done:
 	history(myhistory, &ev, H_SAVE, hfile);
-	/* Clean up our memory */
 	history_end(myhistory);
 	el_end(el);
 #endif
