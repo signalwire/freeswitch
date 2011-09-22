@@ -13,9 +13,9 @@
 #ifndef WIN32
 #include <sys/select.h>
 #include <unistd.h>
+#include <time.h>
 #else
 #define strdup(src) _strdup(src)
-#define usleep(time) Sleep(time/1000)
 #define fileno _fileno
 #define read _read
 #include <io.h>
@@ -73,6 +73,25 @@ static char *filter_uuid;
 static EditLine *el;
 static History *myhistory;
 static HistEvent ev;
+
+static void _sleep_ns(int secs, long nsecs) {
+#ifndef WIN32
+	if (nsecs > 999999999) {
+		secs += nsecs/1000000000;
+		nsecs = nsecs % 1000000000;
+	}
+	{
+		struct timespec ts = { secs, nsecs };
+		nanosleep(&ts, NULL);
+	}
+#else
+	Sleep(secs*1000 + nsecs/1000000);
+#endif
+}
+
+static void sleep_ns(long nsecs) { _sleep_ns(0, nsecs); }
+static void sleep_ms(int msecs) { sleep_ns(msecs*1000000); }
+static void sleep_s(int secs) { _sleep_ns(secs, 0); }
 
 static int process_command(esl_handle_t *handle, const char *cmd);
 
@@ -599,7 +618,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 			if (aok) printf("Type control-D or /exit or /quit or /bye to exit.\n\n");
 			warn_stop = 0;
 		}
-		usleep(1000);
+		sleep_ms(1);
 	}
 	thread_running = 0;
 	esl_log(ESL_LOG_DEBUG, "Thread Done\n");
@@ -733,7 +752,7 @@ static const char *basic_gets(int *cnt)
 				command_buf[0] = 0;
 			}
 		}
-		Sleep(20);
+		sleep_ms(20);
 	}
 #endif
 	return command_buf;
@@ -1103,11 +1122,7 @@ int main(int argc, char *argv[])
 				if (!argv_exec) usage(argv[0]);
 				return -1;
 			} else {
-#ifndef WIN32
-				sleep(1);
-#else
-				Sleep(1000);
-#endif
+				sleep_s(1);
 				esl_log(ESL_LOG_INFO, "Retrying\n");
 			}
 		} else {
@@ -1242,7 +1257,7 @@ int main(int argc, char *argv[])
 			}
 #endif
 		}
-		usleep(1000);
+		sleep_ms(1);
 	}
 	if (running < 0 && reconnect) {
 		running = 1;
