@@ -863,13 +863,63 @@ static unsigned char complete(EditLine *el, int ch)
 }
 #endif
 
+static void read_config(const char *dft_cfile, const char *cfile) {
+	esl_config_t cfg;
+	if (esl_config_open_file(&cfg, cfile) ||
+		esl_config_open_file(&cfg, dft_cfile)) {
+		char *var, *val;
+		char cur_cat[128] = "";
+		while (esl_config_next_pair(&cfg, &var, &val)) {
+			if (strcmp(cur_cat, cfg.category)) {
+				esl_set_string(cur_cat, cfg.category);
+				esl_set_string(profiles[pcount].name, cur_cat);
+				esl_set_string(profiles[pcount].host, "localhost");
+				esl_set_string(profiles[pcount].pass, "ClueCon");
+				profiles[pcount].port = 8021;
+				set_fn_keys(&profiles[pcount]);
+				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[pcount].name);
+				pcount++;
+			}
+			if (!strcasecmp(var, "host")) {
+				esl_set_string(profiles[pcount-1].host, val);
+			} else if (!strcasecmp(var, "user")) {
+				esl_set_string(profiles[pcount-1].user, val);
+			} else if (!strcasecmp(var, "password")) {
+				esl_set_string(profiles[pcount-1].pass, val);
+			} else if (!strcasecmp(var, "port")) {
+				int pt = atoi(val);
+				if (pt > 0) {
+					profiles[pcount-1].port = (esl_port_t)pt;
+				}
+			} else if (!strcasecmp(var, "debug")) {
+				int dt = atoi(val);
+				if (dt > -1 && dt < 8){
+					profiles[pcount-1].debug = dt;
+				}
+			} else if(!strcasecmp(var, "loglevel")) {
+				esl_set_string(profiles[pcount-1].loglevel, val);
+			} else if(!strcasecmp(var, "quiet")) {
+				profiles[pcount-1].quiet = esl_true(val);
+			} else if (!strncasecmp(var, "key_F", 5)) {
+				char *key = var + 5;
+				if (key) {
+					int i = atoi(key);
+					if (i > 0 && i < 13) {
+						profiles[pcount-1].console_fnkeys[i - 1] = strdup(val);
+					}
+				}
+			}
+		}
+		esl_config_close_file(&cfg);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	esl_handle_t handle = {{0}};
 	int count = 0;
 	const char *line = NULL;
 	char cmd_str[1024] = "";
-	esl_config_t cfg;
 	cli_profile_t *profile = NULL;
 #ifndef WIN32
 	char hfile[512] = "/etc/fs_cli_history";
@@ -1003,53 +1053,7 @@ int main(int argc, char *argv[])
 		printf("\n");
 		return usage(argv[0]);
 	}
-	if (esl_config_open_file(&cfg, cfile) ||
-		esl_config_open_file(&cfg, dft_cfile)) {
-		char *var, *val;
-		char cur_cat[128] = "";
-		while (esl_config_next_pair(&cfg, &var, &val)) {
-			if (strcmp(cur_cat, cfg.category)) {
-				esl_set_string(cur_cat, cfg.category);
-				esl_set_string(profiles[pcount].name, cur_cat);
-				esl_set_string(profiles[pcount].host, "localhost");
-				esl_set_string(profiles[pcount].pass, "ClueCon");
-				profiles[pcount].port = 8021;
-				set_fn_keys(&profiles[pcount]);
-				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[pcount].name);
-				pcount++;
-			}
-			if (!strcasecmp(var, "host")) {
-				esl_set_string(profiles[pcount-1].host, val);
-			} else if (!strcasecmp(var, "user")) {
-				esl_set_string(profiles[pcount-1].user, val);
-			} else if (!strcasecmp(var, "password")) {
-				esl_set_string(profiles[pcount-1].pass, val);
-			} else if (!strcasecmp(var, "port")) {
-				int pt = atoi(val);
-				if (pt > 0) {
-					profiles[pcount-1].port = (esl_port_t)pt;
-				}
-			} else if (!strcasecmp(var, "debug")) {
-				int dt = atoi(val);
-				if (dt > -1 && dt < 8) {
-					profiles[pcount-1].debug = dt;
-				}
-			} else if(!strcasecmp(var, "loglevel")) {
-				esl_set_string(profiles[pcount-1].loglevel, val);
-			} else if(!strcasecmp(var, "quiet")) {
-				profiles[pcount-1].quiet = esl_true(val);
-			} else if (!strncasecmp(var, "key_F", 5)) {
-				char *key = var + 5;
-				if (key) {
-					int i = atoi(key);
-					if (i > 0 && i < 13) {
-						profiles[pcount-1].console_fnkeys[i - 1] = strdup(val);
-					}
-				}
-			}
-		}
-		esl_config_close_file(&cfg);
-	}
+	read_config(dft_cfile, cfile);
 	if (optind < argc) {
 		get_profile(argv[optind], &profile);
 	}
