@@ -100,12 +100,12 @@ static unsigned char console_fnkey_pressed(int i)
 {
 	const char *c;
 	assert((i > 0) && (i <= 12));
-	c = global_profile->console_fnkeys[i - 1];
-	printf("%s\n", c);
-	if (c == NULL) {
+	if (!(c = global_profile->console_fnkeys[i - 1])) {
+		printf("\n");
 		esl_log(ESL_LOG_ERROR, "FUNCTION KEY F%d IS NOT BOUND, please edit your config.\n", i);
 		return CC_REDISPLAY;
 	}
+	printf("%s\n", c);
 	if (process_command(global_handle, c)) {
 		running = thread_running = 0;
 	}
