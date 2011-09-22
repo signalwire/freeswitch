@@ -943,7 +943,7 @@ int main(int argc, char *argv[])
 	char cmd_str[1024] = "";
 	cli_profile_t *profile = NULL;
 #ifndef WIN32
-	char hfile[512] = "/etc/fs_cli_history";
+	char hfile[512] = "/tmp/fs_cli_history";
 	char cfile[512] = "/etc/fs_cli.conf";
 	char dft_cfile[512] = "/etc/fs_cli.conf";
 #else
