@@ -63,6 +63,8 @@ static int warn_stop = 0;
 static int connected = 0;
 static int allow_ctl_c = 0;
 static char prompt_str[512] = "";
+static char *prompt_color = ESL_SEQ_DEFAULT_COLOR;
+static char *text_color = ESL_SEQ_DEFAULT_COLOR;
 static cli_profile_t profiles[128] = {{{0}}};
 static cli_profile_t internal_profile = {{ 0 }};
 static int pcount = 0;
@@ -557,6 +559,25 @@ static int stdout_writable(void)
 #endif
 }
 
+static void clear_line(void)
+{
+	const LineInfo *lf = el_line(el);
+	int len=(strlen(prompt_str) + (lf->lastchar - lf->buffer));
+	write(STDOUT_FILENO, "\r", 1);
+	for (; len>0; len--)
+		write(STDOUT_FILENO, " ", 1);
+	write(STDOUT_FILENO, "\r", 1);
+	return;
+}
+
+static void redisplay(void)
+{
+	const LineInfo *lf = el_line(el);
+	write(STDOUT_FILENO, prompt_str, strlen(prompt_str));
+	write(STDOUT_FILENO, lf->buffer, (lf->lastchar - lf->buffer));
+	return;
+}
+
 static void *msg_thread_run(esl_thread_t *me, void *obj)
 {
 	esl_handle_t *handle = (esl_handle_t *) obj;
@@ -586,7 +607,11 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 								level = atoi(lname);
 							}
 #ifndef WIN32
-							if (aok) printf("%s%s%s", colors[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
+							if (aok) {
+								clear_line();
+								printf("%s%s%s", colors[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
+								redisplay();
+							}
 #else
 							if (aok) {
 								SetConsoleTextAttribute(hStdout, colors[level]);
@@ -600,7 +625,11 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 					} else if (!strcasecmp(type, "text/event-plain")) {
 						char *s;
 						esl_event_serialize(handle->last_ievent, &s, ESL_FALSE);
-						if (aok) printf("RECV EVENT\n%s\n", s);
+						if (aok) {
+							clear_line();
+							printf("RECV EVENT\n%s\n", s);
+							redisplay();
+						}
 						free(s);
 					} else {
 						known = 0;
@@ -611,12 +640,17 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 					printf("INCOMING DATA [%s]\n%s\n", type, handle->last_event->body ? handle->last_event->body : "");
 					esl_event_serialize(handle->last_event, &s, ESL_FALSE);
 					printf("RECV EVENT\n%s\n", s);
+					redisplay();
 					free(s);
 				}
 			}
 		}
 		if (warn_stop) {
-			if (aok) printf("Type control-D or /exit or /quit or /bye to exit.\n\n");
+			if (aok) {
+				clear_line();
+				printf("Type control-D or /exit or /quit or /bye to exit.\n\n");
+				redisplay();
+			}
 			warn_stop = 0;
 		}
 		sleep_ms(1);
@@ -1114,12 +1148,12 @@ int main(int argc, char *argv[])
 	esl_log(ESL_LOG_DEBUG, "Using profile %s [%s]\n", profile->name, profile->host);
 	if (argv_host) {
 		if (argv_port && profile->port != 8021) {
-			snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s:%u@%s> ", profile->host, profile->port, profile->name);
+			snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s:%u@%s> %s", prompt_color, profile->host, profile->port, profile->name, text_color);
 		} else {
-			snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s@%s> ", profile->host, profile->name);
+			snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s@%s> %s", prompt_color, profile->host, profile->name, text_color);
 		}
 	} else {
-		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
+		snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s> %s", prompt_color, profile->name, text_color);
 	}
  connect:
 	connected = 0;
