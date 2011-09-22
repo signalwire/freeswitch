@@ -861,17 +861,25 @@ static void set_fn_keys(cli_profile_t *profile)
 
 static char* end_of_str(char *s) { return (*s == '\0' ? s : s + strlen(s) - 1); }
 
-static unsigned char esl_console_complete(const char *buffer, const char *cursor)
+static char* _strndup(const char *s, int n)
+{
+	char *r = (char*)malloc(n + 1), *d=r;
+	while (n > 0 && *s) {
+		*d = *s;
+		d++; s++; n--;
+	}
+	*d = 0;
+	return r;
+}
+
+static unsigned char esl_console_complete(const char *buffer, const char *cursor, const char *lastchar)
 {
 	char cmd_str[2048] = "";
 	unsigned char ret = CC_REDISPLAY;
-	char *dup = strdup(buffer);
+	char *dup = _strndup(buffer, (lastchar - buffer));
 	char *buf = dup;
-	int pos = 0, sc = 0;
+	int sc = 0, offset = (int)(cursor - buffer), pos = (offset > 0) ? offset : 0;
 	char *p;
-	if (!esl_strlen_zero(cursor) && !esl_strlen_zero(buffer)) {
-		pos = (int)(cursor - buffer);
-	}
 	if (pos > 0) {
 		*(buf + pos) = '\0';
 	}
@@ -944,7 +952,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 static unsigned char complete(EditLine *el, int ch)
 {
 	const LineInfo *lf = el_line(el);
-	return esl_console_complete(lf->buffer, lf->cursor);
+	return esl_console_complete(lf->buffer, lf->cursor, lf->lastchar);
 }
 #endif
 
@@ -1033,6 +1041,15 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 		}
 		esl_config_close_file(&cfg);
 	}
+}
+
+static void clear_el_buffer(void) {
+#ifdef HAVE_EDITLINE
+	const LineInfo *lf = el_line(el);
+	int len = (int)(lf->lastchar - lf->buffer);
+	el_deletestr(el, len);
+	memset((char*)lf->buffer, 0, len);
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -1355,14 +1372,7 @@ int main(int argc, char *argv[])
 				running = r;
 			}
 			free(cmd);
-#ifdef HAVE_EDITLINE
-			{
-				const LineInfo *lf = el_line(el);
-				char *s = (char *) lf->buffer;
-				el_deletestr(el, strlen(s) + 1);
-				memset(s, 0, strlen(s));
-			}
-#endif
+			clear_el_buffer();
 		}
 		sleep_ms(1);
 	}
