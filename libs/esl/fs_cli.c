@@ -101,9 +101,7 @@ static unsigned char console_fnkey_pressed(int i)
 	const char *c;
 	assert((i > 0) && (i <= 12));
 	c = global_profile->console_fnkeys[i - 1];
-	/* This new line is necessary to avoid output to begin after the ">" of the CLI's prompt */
 	printf("%s\n", c);
-	printf("\n");
 	if (c == NULL) {
 		esl_log(ESL_LOG_ERROR, "FUNCTION KEY F%d IS NOT BOUND, please edit your config.\n", i);
 		return CC_REDISPLAY;
