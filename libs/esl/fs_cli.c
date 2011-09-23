@@ -106,8 +106,9 @@ static void clear_cli(void) {
 	const LineInfo *lf = el_line(el);
 	int len=(lf->lastchar - lf->buffer);
 	for (; len>0; len--) {
-		write(STDOUT_FILENO, "\b", 1);
+		putchar('\b');
 	}
+	fflush(stdout);
 }
 
 /* If a fnkey is configured then process the command */
@@ -576,19 +577,25 @@ static void clear_line(void)
 {
 	const LineInfo *lf = el_line(el);
 	int len=(strlen(prompt_str) + (lf->lastchar - lf->buffer));
-	write(STDOUT_FILENO, "\r", 1);
+	putchar('\r');
 	for (; len>0; len--) {
-		write(STDOUT_FILENO, " ", 1);
+		putchar(' ');
 	}
-	write(STDOUT_FILENO, "\r", 1);
+	putchar('\r');
+	fflush(stdout);
 	return;
 }
 
 static void redisplay(void)
 {
 	const LineInfo *lf = el_line(el);
-	write(STDOUT_FILENO, prompt_str, strlen(prompt_str));
-	write(STDOUT_FILENO, lf->buffer, (lf->lastchar - lf->buffer));
+	const char *c = lf->buffer;
+	printf("%s",prompt_str);
+	while (*c && c != lf->lastchar) {
+		putchar(*c);
+		c++;
+	}
+	fflush(stdout);
 	return;
 }
 
