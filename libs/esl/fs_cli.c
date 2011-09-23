@@ -105,8 +105,9 @@ static int process_command(esl_handle_t *handle, const char *cmd);
 static void clear_cli(void) {
 	const LineInfo *lf = el_line(el);
 	int len=(lf->lastchar - lf->buffer);
-	for (; len>0; len--)
+	for (; len>0; len--) {
 		write(STDOUT_FILENO, "\b", 1);
+	}
 }
 
 /* If a fnkey is configured then process the command */
@@ -576,8 +577,9 @@ static void clear_line(void)
 	const LineInfo *lf = el_line(el);
 	int len=(strlen(prompt_str) + (lf->lastchar - lf->buffer));
 	write(STDOUT_FILENO, "\r", 1);
-	for (; len>0; len--)
+	for (; len>0; len--) {
 		write(STDOUT_FILENO, " ", 1);
+	}
 	write(STDOUT_FILENO, "\r", 1);
 	return;
 }
