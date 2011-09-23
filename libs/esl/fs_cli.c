@@ -65,6 +65,8 @@ typedef struct {
 static int warn_stop = 0;
 static int connected = 0;
 static int allow_ctl_c = 0;
+static char bare_prompt_str[512] = "";
+static int bare_prompt_str_len = 0;
 static char prompt_str[512] = "";
 static char prompt_color[12] = ESL_SEQ_DEFAULT_COLOR;
 static char input_text_color[12] = ESL_SEQ_DEFAULT_COLOR;
@@ -103,11 +105,9 @@ static void sleep_s(int secs) { _sleep_ns(secs, 0); }
 static int process_command(esl_handle_t *handle, const char *cmd);
 
 static void clear_cli(void) {
-	const LineInfo *lf = el_line(el);
-	int len=(lf->lastchar - lf->buffer);
-	for (; len>0; len--) {
-		putchar('\b');
-	}
+	putchar('\r');
+	printf("\033[%dC", bare_prompt_str_len);
+	printf("\033[K");
 	fflush(stdout);
 }
 
@@ -575,13 +575,9 @@ static int stdout_writable(void)
 
 static void clear_line(void)
 {
-	const LineInfo *lf = el_line(el);
-	int len=(strlen(prompt_str) + (lf->lastchar - lf->buffer));
+	printf("\033[s");
 	putchar('\r');
-	for (; len>0; len--) {
-		putchar(' ');
-	}
-	putchar('\r');
+	printf("\033[K");
 	fflush(stdout);
 	return;
 }
@@ -595,6 +591,7 @@ static void redisplay(void)
 		putchar(*c);
 		c++;
 	}
+	printf("\033[u");
 	fflush(stdout);
 	return;
 }
@@ -1214,13 +1211,15 @@ int main(int argc, char *argv[])
 	esl_set_string(output_text_color, profile->output_text_color);
 	if (argv_host) {
 		if (argv_port && profile->port != 8021) {
-			snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s:%u@%s> %s", prompt_color, profile->host, profile->port, profile->name, input_text_color);
+			snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s:%u@%s> ", profile->host, profile->port, profile->name);
 		} else {
-			snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s@%s> %s", prompt_color, profile->host, profile->name, input_text_color);
+			snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s@%s> ", profile->host, profile->name);
 		}
 	} else {
-		snprintf(prompt_str, sizeof(prompt_str), "%sfreeswitch@%s> %s", prompt_color, profile->name, input_text_color);
+		snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s> ", profile->name);
 	}
+	bare_prompt_str_len = strlen(bare_prompt_str);
+	snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
  connect:
 	connected = 0;
 	while (--loops > 0) {
