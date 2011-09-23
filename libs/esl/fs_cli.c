@@ -587,7 +587,7 @@ static void redisplay(void)
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
 	printf("%s",prompt_str);
-	while (*c && c != lf->lastchar) {
+	while (c <= lf->lastchar && *c) {
 		putchar(*c);
 		c++;
 	}
