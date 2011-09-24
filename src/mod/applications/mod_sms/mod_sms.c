@@ -379,11 +379,9 @@ static switch_status_t chat_send(switch_event_t *message_event)
 		}
 
 		switch_event_destroy(&exten);
+		status = SWITCH_STATUS_BREAK;		
 	}
-
-
-	status = SWITCH_STATUS_BREAK;
-
+	
 
 	return status;
 
