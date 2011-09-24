@@ -194,7 +194,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 					if (xinline) {
 						switch_core_execute_chat_app(event, application, data);
 					} else {
-						switch_event_add_header_string(*extension, SWITCH_STACK_BOTTOM, application, data);
+						switch_event_add_header_string(*extension, SWITCH_STACK_BOTTOM, application, zstr(data) ? "__undef" : data);
 					}
 				}
 				proceed = 1;
@@ -251,7 +251,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 					if (xinline) {
 						switch_core_execute_chat_app(event, application, app_data);
 					} else {
-						switch_event_add_header_string(*extension, SWITCH_STACK_BOTTOM, application, data);
+						switch_event_add_header_string(*extension, SWITCH_STACK_BOTTOM, application, zstr(data) ? "__undef" : data);
 					}
 				}
 				switch_safe_free(substituted);

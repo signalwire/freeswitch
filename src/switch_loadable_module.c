@@ -706,6 +706,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_execute_chat_app(switch_event_t *mes
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
+	if (data && !strcmp(data, "__undef")) {
+		data = NULL;
+	}
+
 	expanded = switch_event_expand_headers(message, data);
 	
 	status = cai->chat_application_function(message, expanded);
