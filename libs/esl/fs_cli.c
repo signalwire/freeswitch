@@ -575,7 +575,6 @@ static int stdout_writable(void)
 
 static void clear_line(void)
 {
-	printf("\033[s");
 	putchar('\r');
 	printf("\033[K");
 	fflush(stdout);
@@ -591,7 +590,12 @@ static void redisplay(void)
 		putchar(*c);
 		c++;
 	}
-	printf("\033[u");
+	{
+		int pos = (int)(lf->cursor - lf->buffer);
+		putchar('\r');
+		printf("\033[%dC", bare_prompt_str_len);
+		if (pos > 0) printf("\033[%dC", pos);
+	}
 	fflush(stdout);
 	return;
 }
