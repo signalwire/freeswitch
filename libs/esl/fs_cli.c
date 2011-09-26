@@ -575,7 +575,7 @@ static int stdout_writable(void)
 #endif
 }
 
-static int write_str(char *s) {
+static int write_str(const char *s) {
 	int n, left = strlen(s);
 	while (1) {
 		n = write(STDOUT_FILENO, s, left);
