@@ -40,7 +40,7 @@
 #define KEY_INSERT 8
 #define PROMPT_OP 9
 static int console_bufferInput (char *buf, int len, char *cmd, int key);
-static unsigned char esl_console_complete(const char *buffer, const char *cursor);
+static unsigned char esl_console_complete(const char *buffer, const char *cursor, const char *lastchar);
 #endif
 
 #ifdef HAVE_EDITLINE
@@ -68,9 +68,9 @@ static int allow_ctl_c = 0;
 static char bare_prompt_str[512] = "";
 static int bare_prompt_str_len = 0;
 static char prompt_str[512] = "";
-static char prompt_color[12] = ESL_SEQ_DEFAULT_COLOR;
-static char input_text_color[12] = ESL_SEQ_DEFAULT_COLOR;
-static char output_text_color[12] = ESL_SEQ_DEFAULT_COLOR;
+static char prompt_color[12] = {ESL_SEQ_DEFAULT_COLOR};
+static char input_text_color[12] = {ESL_SEQ_DEFAULT_COLOR};
+static char output_text_color[12] = {ESL_SEQ_DEFAULT_COLOR};
 static cli_profile_t profiles[128] = {{{0}}};
 static cli_profile_t internal_profile = {{ 0 }};
 static int pcount = 0;
@@ -79,9 +79,11 @@ static cli_profile_t *global_profile;
 static int running = 1;
 static int thread_running = 0;
 static char *filter_uuid;
+#ifndef WIN32
 static EditLine *el;
 static History *myhistory;
 static HistEvent ev;
+#endif
 
 static void _sleep_ns(int secs, long nsecs) {
 #ifndef WIN32
@@ -234,7 +236,7 @@ static int console_bufferInput (char *addchars, int len, char *cmd, int key)
 		return 0;
 	}
 	if (key == KEY_TAB) {
-		esl_console_complete(cmd, cmd+iCmdBuffer);
+		esl_console_complete(cmd, cmd+iCmdBuffer, &cmd[iCmdBuffer-1]);
 		return 0;
 	}
 	if (key == KEY_UP || key == KEY_DOWN || key == CLEAR_OP) {
@@ -583,6 +585,8 @@ static void clear_line(void)
 
 static void redisplay(void)
 {
+#ifdef WIN32
+#else
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
 	printf("%s",prompt_str);
@@ -598,6 +602,7 @@ static void redisplay(void)
 	}
 	fflush(stdout);
 	return;
+#endif
 }
 
 static int output_printf(const char *fmt, ...)
@@ -605,7 +610,9 @@ static int output_printf(const char *fmt, ...)
 	va_list ap;
 	int r;
 	va_start(ap, fmt);
+#ifndef WIN32
 	printf("%s", output_text_color);
+#endif
 	r = vprintf(fmt, ap);
 	va_end(ap);
 	return r;
@@ -984,7 +991,11 @@ static const char* match_color(const char *s) {
 		}
 		map++;
 	}
+#ifdef WIN32
+	return "white";
+#else
 	return ESL_SEQ_DEFAULT_COLOR;
+#endif
 }
 
 static void read_config(const char *dft_cfile, const char *cfile) {
@@ -1240,7 +1251,11 @@ int main(int argc, char *argv[])
 		snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s> ", profile->name);
 	}
 	bare_prompt_str_len = strlen(bare_prompt_str);
+#ifdef WIN32
+	snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str); /* Not supporting this for now */
+#else
 	snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
+#endif
  connect:
 	connected = 0;
 	while (--loops > 0) {
