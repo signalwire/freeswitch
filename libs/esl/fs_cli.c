@@ -887,7 +887,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 {
 	char cmd_str[2048] = "";
 	unsigned char ret = CC_REDISPLAY;
-	char *dup = _strndup(buffer, (lastchar - buffer));
+	char *dup = _strndup(buffer, (int)(lastchar - buffer));
 	char *buf = dup;
 	int sc = 0, offset = (int)(cursor - buffer), pos = (offset > 0) ? offset : 0;
 	char *p;
@@ -1250,7 +1250,7 @@ int main(int argc, char *argv[])
 	} else {
 		snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s> ", profile->name);
 	}
-	bare_prompt_str_len = strlen(bare_prompt_str);
+	bare_prompt_str_len = (int)strlen(bare_prompt_str);
 #ifdef WIN32
 	snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str); /* Not supporting this for now */
 #else
