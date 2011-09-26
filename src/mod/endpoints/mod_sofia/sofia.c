@@ -506,6 +506,7 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	private_object_t *tech_pvt;
 	char *extra_headers;
 	const char *call_info = NULL;
+	const char *vval = NULL;
 #ifdef MANUAL_BYE
 	int cause;
 	char st[80] = "";
@@ -556,6 +557,18 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 
 	extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_BYE_HEADER_PREFIX);
 	sofia_glue_set_extra_headers(channel, sip, SOFIA_SIP_BYE_HEADER_PREFIX);
+
+	if (!(vval = switch_channel_get_variable(channel, "sip_copy_custom_headers")) || switch_true(vval)) { 
+		switch_core_session_t *nsession = NULL; 
+		
+		switch_core_session_get_partner(session, &nsession); 
+		
+		if (nsession) { 
+			switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_BYE_HEADER_PREFIX_T); 
+			switch_core_session_rwunlock(nsession); 
+		} 
+	} 
+
 
 	switch_channel_hangup(channel, cause);
 	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg),

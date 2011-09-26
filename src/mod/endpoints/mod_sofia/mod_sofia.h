@@ -98,6 +98,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX "sip_rh_"
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX_T "~sip_rh_"
 #define SOFIA_SIP_BYE_HEADER_PREFIX "sip_bye_h_"
+#define SOFIA_SIP_BYE_HEADER_PREFIX_T "~sip_bye_h_"
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX "sip_ph_"
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX_T "~sip_ph_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
