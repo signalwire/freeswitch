@@ -575,11 +575,27 @@ static int stdout_writable(void)
 #endif
 }
 
+static int write_str(char *s) {
+	int n, left = strlen(s);
+	while (1) {
+		n = write(STDOUT_FILENO, s, left);
+		if (n == left) return 1;
+		if (n < 0) return 0;
+		s += n; left -= n;
+	}
+	return 1;
+}
+
+static int write_char(int c) {
+	char s[2] = { c, 0 };
+	return write_str(s);
+}
+
 static void clear_line(void)
 {
-	putchar('\r');
-	printf("\033[K");
-	fflush(stdout);
+	if (!(write_char('\r'))) goto done;
+	if (!(write_str("\033[K"))) goto done;
+ done:
 	return;
 }
 
@@ -589,18 +605,21 @@ static void redisplay(void)
 #else
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
-	printf("%s",prompt_str);
+	if (!(write_str(prompt_str))) goto done;
 	while (c < lf->lastchar && *c) {
-		putchar(*c);
+		if (!(write_char(*c))) goto done;
 		c++;
 	}
 	{
 		int pos = (int)(lf->cursor - lf->buffer);
-		putchar('\r');
-		printf("\033[%dC", bare_prompt_str_len);
-		if (pos > 0) printf("\033[%dC", pos);
+		char s1[12], s2[12];
+		if (!(write_char('\r'))) goto done;
+		snprintf(s1, sizeof(s1), "\033[%dC", bare_prompt_str_len);
+		snprintf(s2, sizeof(s2), "\033[%dC", pos);
+		if (!(write_str(s1))) goto done;
+		if (pos > 0) if (!(write_str(s2))) goto done;
 	}
-	fflush(stdout);
+ done:
 	return;
 #endif
 }
