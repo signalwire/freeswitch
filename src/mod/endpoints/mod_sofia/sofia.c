@@ -4203,10 +4203,14 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "alias")) {
 						sip_alias_node_t *node;
-						if ((node = switch_core_alloc(profile->pool, sizeof(*node)))) {
-							if ((node->url = switch_core_strdup(profile->pool, val))) {
-								node->next = profile->aliases;
-								profile->aliases = node;
+						if (zstr(val)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Alias Param has no data...\n");
+						} else {
+							if ((node = switch_core_alloc(profile->pool, sizeof(*node)))) {
+								if ((node->url = switch_core_strdup(profile->pool, val))) {
+									node->next = profile->aliases;
+									profile->aliases = node;
+								}
 							}
 						}
 					} else if (!strcasecmp(var, "dialplan")) {
