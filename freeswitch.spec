@@ -437,7 +437,7 @@ APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/
                         applications/mod_memcache"
 APPLICATION_MODULES_NY="applications/mod_nibblebill applications/mod_redis applications/mod_rss applications/mod_snom \
                         applications/mod_soundtouch applications/mod_spandsp applications/mod_spy applications/mod_stress \
-                        applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail"
+                        applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail applications/mod_sms"
 
 APPLICATIONS_MODULES="$APPLICATION_MODULES_AE $APPLICATION_MODULES_FM $APPLICATION_MODULES_NY $APPLICATION_MODULES_VZ"
 ######################################################################################################################
@@ -809,6 +809,12 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/zeroconf.conf.xml
 ######################################################################################################################
 #
+#						Chatplans
+#
+######################################################################################################################
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/chatplan/default.xml
+######################################################################################################################
+#
 #						Dialplans
 #
 ######################################################################################################################
@@ -935,6 +941,7 @@ fi
 %{prefix}/mod/mod_silk.so*
 %{prefix}/mod/mod_siren.so*
 %{prefix}/mod/mod_skinny.so*
+%{prefix}/mod/mod_sms.so*
 %{prefix}/mod/mod_sndfile.so*
 %{prefix}/mod/mod_snom.so*
 %{prefix}/mod/mod_sofia.so*
