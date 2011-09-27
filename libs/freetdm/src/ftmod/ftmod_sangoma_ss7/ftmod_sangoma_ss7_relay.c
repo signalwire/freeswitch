@@ -49,7 +49,7 @@ ftdm_status_t handle_relay_disconnect(RyMngmt *sta);
 static ftdm_status_t reconfig_all_ckts_for_relay(void);
 static ftdm_status_t disable_all_ckts_for_relay(void);
 static ftdm_status_t block_all_ckts_for_relay(uint32_t procId);
-static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId);
+/* static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId); */
 static ftdm_status_t disable_all_sigs_for_relay(uint32_t procId);
 static ftdm_status_t disble_all_mtp2_sigs_for_relay(void);
 /******************************************************************************/
@@ -59,43 +59,26 @@ ftdm_status_t handle_relay_connect(RyMngmt *sta)
 {
 	sng_relay_t	*sng_relay = &g_ftdm_sngss7_data.cfg.relay[sta->t.usta.s.ryUpUsta.id];
 
-
-	/* test if this is the first time the channel comes up */
 	if (!sngss7_test_flag(sng_relay, SNGSS7_RELAY_INIT)) {
-		SS7_INFO("Relay Channel %d initial connection UP\n", sng_relay->id);
-
-		/* mark the channel as being up */
+		/* SS7_INFO("Relay Channel %d initial connection UP\n", sng_relay->id); */
 		sngss7_set_flag(sng_relay, SNGSS7_RELAY_INIT);
-	} else {
-		SS7_INFO("Relay Channel %d connection UP\n", sng_relay->id);
-
-		/* react based on type of channel */
-		switch (sng_relay->type) {
-		/******************************************************************/
-		case (LRY_CT_TCP_CLIENT):
-			/* reconfigure all ISUP ckts, since the main system would have lost all configs */
+	}
+	
+	SS7_INFO("Relay Channel %d connection UP\n", sng_relay->id);
+	if (sng_relay->type == LRY_CT_TCP_CLIENT) {
+		if (!sngss7_test_flag(sng_relay, SNGSS7_RELAY_INIT)) {
 			if (reconfig_all_ckts_for_relay()) {
 				SS7_ERROR("Failed to reconfigure ISUP Ckts!\n");
 				/* we're done....this is very bad! */
 			}
-			break;
-		/******************************************************************/
-		case (LRY_CT_TCP_SERVER):
-			/* bring the sig links on the client system back up */
-			ftmod_ss7_enable_grp_mtp3Link(sta->t.usta.s.ryUpUsta.id);
-			
-			/* unbloock the ckts on the client system */
-			unblock_all_ckts_for_relay(sta->t.usta.s.ryUpUsta.id);
-			
-			break;
-		/******************************************************************/
-		default:
-			break;
-		/******************************************************************/
-		} /* switch (g_ftdm_sngss7_data.cfg.relay[sta->t.usta.s.ryUpUsta.id].type) */
-	} /* intial up? */
-
-	return FTDM_SUCCESS;
+		}
+		return FTDM_SUCCESS;
+	} else if (sng_relay->type == LRY_CT_TCP_SERVER) {
+		ftmod_ss7_enable_grp_mtp3Link(sta->t.usta.s.ryUpUsta.id);
+		/* unbloock the ckts on the client system */
+		return FTDM_SUCCESS;
+	}
+	return FTDM_FAIL;
 }
 
 /******************************************************************************/
@@ -310,6 +293,7 @@ ftdm_status_t disble_all_mtp2_sigs_for_relay(void)
 
 }
 
+#if 0
 /******************************************************************************/
 static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId)
 {
@@ -345,6 +329,7 @@ static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId)
 
 	return FTDM_SUCCESS;
 }
+#endif
 
 /******************************************************************************/
 /* For Emacs:
