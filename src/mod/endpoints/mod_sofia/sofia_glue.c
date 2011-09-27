@@ -2270,6 +2270,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			use_number = tech_pvt->caller_profile->caller_id_number;
 		}
 
+		check_decode(use_name, session);
 
 		switch (cid_type) {
 		case CID_TYPE_PID:
