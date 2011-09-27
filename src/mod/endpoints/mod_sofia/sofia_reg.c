@@ -241,37 +241,41 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
-	sofia_gateway_t *gateway_ptr, *last = NULL;
+	sofia_gateway_t *check, *gateway_ptr, *last = NULL;
 	switch_event_t *event;
-	char *pkey;
 
 	switch_mutex_lock(profile->gw_mutex);
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-		if (gateway_ptr->deleted && gateway_ptr->state == REG_STATE_NOREG) {
-			if (last) {
-				last->next = gateway_ptr->next;
-			} else {
-				profile->gateways = gateway_ptr->next;
+		if (gateway_ptr->deleted) {
+			if ((check = switch_core_hash_find(mod_sofia_globals.gateway_hash, gateway_ptr->name)) && check == gateway_ptr) {
+				char *pkey = switch_mprintf("%s::%s", profile->name, gateway_ptr->name);
+				switch_assert(pkey);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing gateway %s from hash.\n", pkey);
+				switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
+				switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
+				free(pkey);
 			}
 			
-			pkey = switch_mprintf("%s::%s", profile->name, gateway_ptr->name);
+			if (gateway_ptr->state == REG_STATE_NOREG) {
 
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
-
-			free(pkey);
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_DEL) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile-name", gateway_ptr->profile->name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Gateway", gateway_ptr->name);
-				switch_event_fire(&event);
-			}
-			if (gateway_ptr->ob_vars) {
-				switch_event_destroy(&gateway_ptr->ob_vars);
-			}
-			if (gateway_ptr->ib_vars) {
-				switch_event_destroy(&gateway_ptr->ib_vars);
+				if (last) {
+					last->next = gateway_ptr->next;
+				} else {
+					profile->gateways = gateway_ptr->next;
+				}
+			
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_DEL) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile-name", gateway_ptr->profile->name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Gateway", gateway_ptr->name);
+					switch_event_fire(&event);
+				}
+				if (gateway_ptr->ob_vars) {
+					switch_event_destroy(&gateway_ptr->ob_vars);
+				}
+				if (gateway_ptr->ib_vars) {
+					switch_event_destroy(&gateway_ptr->ib_vars);
+				}
 			}
 		} else {
 			last = gateway_ptr;
@@ -2815,7 +2819,7 @@ sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(NULL, mod_sofia_globals.gateway_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &var, NULL, &val);
-		if (key && (gateway = (sofia_gateway_t *) val) && gateway->register_realm && !strcasecmp(gateway->register_realm, key)) {
+		if (key && (gateway = (sofia_gateway_t *) val) && !gateway->deleted && gateway->register_realm && !strcasecmp(gateway->register_realm, key)) {
 			break;
 		} else {
 			gateway = NULL;
@@ -2869,6 +2873,7 @@ switch_status_t sofia_reg_add_gateway(sofia_profile_t *profile, const char *key,
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *pkey = switch_mprintf("%s::%s", profile->name, key);
+	sofia_gateway_t *gp;
 
 	switch_mutex_lock(profile->gw_mutex);
 
@@ -2878,12 +2883,21 @@ switch_status_t sofia_reg_add_gateway(sofia_profile_t *profile, const char *key,
 	switch_mutex_unlock(profile->gw_mutex);
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, key)) {
-		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
+
+	if ((gp = switch_core_hash_find(mod_sofia_globals.gateway_hash, key))) {
+		if (gp->deleted) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing deleted gateway from hash.\n");
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, key);
+		}
 	}
 
-	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey)) {
+	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, key) && !switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey)) {
+		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
 		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, pkey, gateway);
+	} else {
+		status = SWITCH_STATUS_FALSE;
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
