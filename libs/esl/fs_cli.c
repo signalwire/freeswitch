@@ -575,6 +575,7 @@ static int stdout_writable(void)
 #endif
 }
 
+#ifndef WIN32
 static int write_str(const char *s) {
 	int n, left = strlen(s);
 	while (1) {
@@ -590,7 +591,17 @@ static int write_char(int c) {
 	char s[2] = { c, 0 };
 	return write_str(s);
 }
+#endif
 
+#ifdef WIN32
+static void clear_line(void)
+{
+	putchar('\r');
+	printf("\033[K");
+	fflush(stdout);
+	return;
+}
+#else
 static void clear_line(void)
 {
 	if (!(write_char('\r'))) goto done;
@@ -598,6 +609,7 @@ static void clear_line(void)
  done:
 	return;
 }
+#endif
 
 static void redisplay(void)
 {
