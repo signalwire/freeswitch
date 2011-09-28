@@ -4847,10 +4847,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Disable 2833 dtmf\n");
-				switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "none");
-				tech_pvt->dtmf_type = DTMF_NONE;
-				te = tech_pvt->recv_te = 0;
+				if (tech_pvt->dtmf_type == DTMF_2833) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Disable 2833 dtmf\n");
+					switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "none");
+					tech_pvt->dtmf_type = DTMF_NONE;
+					te = tech_pvt->recv_te = 0;
+				}
 			}
 
 			

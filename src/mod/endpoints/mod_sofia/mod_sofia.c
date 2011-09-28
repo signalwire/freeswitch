@@ -1359,10 +1359,12 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 	switch (dtmf_type) {
 	case DTMF_2833:
 		{
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Enqueuing RFC2833 DTMF %c of length %d\n", dtmf->digit, dtmf->duration);
 			return switch_rtp_queue_rfc2833(tech_pvt->rtp_session, dtmf);
 		}
 	case DTMF_INFO:
 		{
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending INFO DTMF %c of length %d\n", dtmf->digit, dtmf->duration);
 			snprintf(message, sizeof(message), "Signal=%c\r\nDuration=%d\r\n", dtmf->digit, dtmf->duration / 8);
 			switch_mutex_lock(tech_pvt->sofia_mutex);
 			nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("application/dtmf-relay"), SIPTAG_PAYLOAD_STR(message), TAG_END());
@@ -1370,6 +1372,9 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 		}
 		break;
 	case DTMF_NONE:
+		{
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding DTMF %c of length %d, DTMF type is NONE\n", dtmf->digit, dtmf->duration);
+		}
 		break;
 	default:
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Unhandled DTMF type!\n");
