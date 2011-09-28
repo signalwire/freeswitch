@@ -2966,9 +2966,10 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t17		= ccSpan->t17;
 		}
 		if (ccSpan->t35 == 0) {
-			g_ftdm_sngss7_data.cfg.isupCkt[x].t17		= 170;
+			/* Q.764 2.2.5 Address incomplete (T35 is 15-20 seconds according to Table A.1/Q.764) */
+			g_ftdm_sngss7_data.cfg.isupCkt[x].t35		= 170;
 		} else {
-			g_ftdm_sngss7_data.cfg.isupCkt[x].t17		= ccSpan->t35;
+			g_ftdm_sngss7_data.cfg.isupCkt[x].t35		= ccSpan->t35;
 		}
 		if (ccSpan->tval == 0) {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].tval		= 10;

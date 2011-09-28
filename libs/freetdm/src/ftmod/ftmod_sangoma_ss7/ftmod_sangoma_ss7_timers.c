@@ -56,21 +56,22 @@ void handle_isup_t35(void *userdata)
     ftdm_channel_t      *ftdmchan = sngss7_info->ftdmchan;
 
     /* now that we have the right channel...put a lock on it so no-one else can use it */
-    ftdm_mutex_lock(ftdmchan->mutex);
+    ftdm_channel_lock(ftdmchan);
 
+    /* Q.764 2.2.5 Address incomplete (T35 expiry action is hangup with cause 28 according to Table A.1/Q.764) */
     SS7_ERROR("[Call-Control] Timer 35 expired on CIC = %d\n", sngss7_info->circuit->cic);
 
     /* set the flag to indicate this hangup is started from the local side */
     sngss7_set_ckt_flag(sngss7_info, FLAG_LOCAL_REL);
 
     /* hang up on timer expiry */
-    ftdmchan->caller_data.hangup_cause = 28;
+    ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_INVALID_NUMBER_FORMAT;
 
     /* end the call */
     ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
 
     /*unlock*/
-    ftdm_mutex_unlock(ftdmchan->mutex);
+    ftdm_channel_unlock(ftdmchan);
 
     SS7_FUNC_TRACE_EXIT(__FUNCTION__);
     return;
