@@ -288,7 +288,6 @@ typedef struct sng_isup_intf {
 	uint32_t		ssf;
 	uint32_t		isap;
 	uint16_t		t4;
-	uint32_t		t10;
 	uint32_t		t11;
 	uint32_t		t18;
 	uint32_t		t19;
@@ -344,6 +343,7 @@ typedef struct sng_isup_ckt {
 	uint8_t			transparent_iam;
 	void			*obj;
 	uint16_t		t3;
+	uint32_t		t10;
 	uint16_t		t12;
 	uint16_t		t13;
 	uint16_t		t14;
@@ -471,6 +471,7 @@ typedef struct sngss7_chan_data {
 	void					*raw_data;		/* send on next sigevent */
 	sngss7_glare_data_t		glare;
 	sngss7_timer_data_t		t35;
+	sngss7_timer_data_t		t10;
 	sngss7_group_data_t		rx_grs;
 	sngss7_group_data_t		rx_gra;
 	sngss7_group_data_t		tx_grs;
@@ -887,6 +888,7 @@ ftdm_status_t sngss7_add_raw_data(sngss7_chan_data_t *sngss7_info, uint8_t* data
 
 /* in ftmod_sangoma_ss7_timers.c */
 void handle_isup_t35(void *userdata);
+void handle_isup_t10(void *userdata);
 
 /******************************************************************************/
 

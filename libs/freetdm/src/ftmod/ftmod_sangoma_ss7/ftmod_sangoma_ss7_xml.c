@@ -127,6 +127,7 @@ typedef struct sng_ccSpan
 	uint8_t			itx_auto_reply;
 	uint8_t			transparent_iam;
 	uint32_t		t3;
+	uint32_t		t10;
 	uint32_t		t12;
 	uint32_t		t13;
 	uint32_t		t14;
@@ -1570,11 +1571,6 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 			sng_isap.t9 = atoi(parm->val);
 			SS7_DEBUG("Found isup t9 = %d\n",sng_isap.t9);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "isup.t10")) {
-		/**********************************************************************/
-			sng_isup.t10 = atoi(parm->val);
-			SS7_DEBUG("Found isup t10 = %d\n",sng_isup.t10);
-		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "isup.t11")) {
 		/**********************************************************************/
 			sng_isup.t11 = atoi(parm->val);
@@ -1965,6 +1961,10 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 		/**********************************************************************/
 			sng_ccSpan.t3 = atoi(parm->val);
 			SS7_DEBUG("Found isup t3 = %d\n", sng_ccSpan.t3);
+		} else if (!strcasecmp(parm->var, "isup.t10")) {
+		/**********************************************************************/
+			sng_ccSpan.t10 = atoi(parm->val);
+			SS7_DEBUG("Found isup t10 = %d\n", sng_ccSpan.t10);
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "isup.t12")) {
 		/**********************************************************************/
@@ -2584,11 +2584,6 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 	} else {
 		g_ftdm_sngss7_data.cfg.isupIntf[i].t4		= 3000;
 	}
-	if (sng_isup->t10 != 0) {
-		g_ftdm_sngss7_data.cfg.isupIntf[i].t10		= sng_isup->t10;
-	} else {
-		g_ftdm_sngss7_data.cfg.isupIntf[i].t10		= 50;
-	}
 	if (sng_isup->t11 != 0) {
 		g_ftdm_sngss7_data.cfg.isupIntf[i].t11		= sng_isup->t11;
 	} else {
@@ -2935,6 +2930,11 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		} else {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t3			= ccSpan->t3;
 		}
+		if (ccSpan->t10 == 0) {
+			g_ftdm_sngss7_data.cfg.isupCkt[x].t10		= 50;
+		} else {
+			g_ftdm_sngss7_data.cfg.isupCkt[x].t10		= ccSpan->t10;
+		}
 		if (ccSpan->t12 == 0) {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t12		= 300;
 		} else {
@@ -3063,11 +3063,17 @@ static int ftmod_ss7_fill_in_circuits(sng_span_t *sngSpan)
 		ftdmchan->call_data = ss7_info;
 
 		/* prepare the timer structures */
-		ss7_info->t35.sched			= ((sngss7_span_data_t *)(ftdmspan->signal_data))->sched;
+		ss7_info->t35.sched		= ((sngss7_span_data_t *)(ftdmspan->signal_data))->sched;
 		ss7_info->t35.counter		= 1;
-		ss7_info->t35.beat			= (isupCkt->t35) * 100; /* beat is in ms, t35 is in 100ms */
+		ss7_info->t35.beat		= (isupCkt->t35) * 100; /* beat is in ms, t35 is in 100ms */
 		ss7_info->t35.callback		= handle_isup_t35;
 		ss7_info->t35.sngss7_info	= ss7_info;
+
+		ss7_info->t10.sched		= ((sngss7_span_data_t *)(ftdmspan->signal_data))->sched;
+		ss7_info->t10.counter		= 1;
+		ss7_info->t10.beat		= (isupCkt->t10) * 100; /* beat is in ms, t10 is in 100ms */
+		ss7_info->t10.callback		= handle_isup_t10;
+		ss7_info->t10.sngss7_info	= ss7_info;
 
 
 	/**************************************************************************/
