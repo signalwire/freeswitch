@@ -592,6 +592,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			i++;
 		}
 
+		/* kill t10 if active */
+		if (sngss7_info->t10.hb_timer_id) {
+			ftdm_sched_cancel_timer (sngss7_info->t10.sched, sngss7_info->t10.hb_timer_id);
+		}
+
 		/* check if the end of pulsing (ST) character has arrived or the right number of digits */
 		if (ftdmchan->caller_data.dnis.digits[i-1] == 'F') {
 			SS7_DEBUG_CHAN(ftdmchan, "Received the end of pulsing character %s\n", "");
@@ -613,7 +618,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		} else {
 			/* if we are coming from idle state then we have already been here once before */
 			if (ftdmchan->last_state != FTDM_CHANNEL_STATE_IDLE) {
-				SS7_INFO_CHAN(ftdmchan,"Received %d out of %d so far: %s...starting T35\n",
+				SS7_INFO_CHAN(ftdmchan, "Received %d out of %d so far: %s...starting T35\n",
 										i,
 										sngss7_info->circuit->min_digits,
 										ftdmchan->caller_data.dnis.digits);
@@ -628,7 +633,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		
 					SS7_ERROR ("Unable to schedule timer, hanging up call!\n");
 		
-					ftdmchan->caller_data.hangup_cause = 41;
+					ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE;
 		
 					/* set the flag to indicate this hangup is started from the local side */
 					sngss7_set_ckt_flag (sngss7_info, FLAG_LOCAL_REL);
@@ -636,9 +641,29 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 					/* end the call */
 					state_flag = 0;
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
-				} /* if (ftdm_sched_timer(sngss7_info->t35.sched, */
-			} /* if (ftdmchan->last_state != FTDM_CHANNEL_STATE_IDLE) */
-		} /* checking ST/#digits */
+				}
+			}
+
+			/* start ISUP t10 */
+			if (ftdm_sched_timer (sngss7_info->t10.sched,
+									"t10",
+									sngss7_info->t10.beat,
+									sngss7_info->t10.callback,
+									&sngss7_info->t10,
+									&sngss7_info->t10.hb_timer_id)) {
+	
+				SS7_ERROR ("Unable to schedule timer, hanging up call!\n");
+	
+				ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE;
+	
+				/* set the flag to indicate this hangup is started from the local side */
+				sngss7_set_ckt_flag (sngss7_info, FLAG_LOCAL_REL);
+	
+				/* end the call */
+				state_flag = 0;
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
+			}
+		}
 
 	  break;
 
