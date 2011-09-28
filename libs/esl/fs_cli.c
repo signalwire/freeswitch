@@ -867,8 +867,6 @@ static const char *basic_gets(int *cnt)
 }
 #endif
 
-<<<<<<< HEAD
-
 static void print_banner(FILE *stream)
 {
 	fprintf(stream,
@@ -883,27 +881,6 @@ static void print_banner(FILE *stream)
                         "Type /help <enter> to see a list of commands\n\n\n"
 			);
 }
-
-=======
-static const char *banner =
-	"            _____ ____     ____ _     ___              \n"
-	"           |  ___/ ___|   / ___| |   |_ _|             \n"
-	"           | |_  \\___ \\  | |   | |    | |            \n"
-	"           |  _|  ___) | | |___| |___ | |              \n"
-	"           |_|   |____/   \\____|_____|___|            \n"
-	"\n"
-	"*******************************************************\n"
-	"* Anthony Minessale II, Ken Rice,                     *\n"
-	"* Michael Jerris, Travis Cross                        *\n"
-	"* FreeSWITCH (http://www.freeswitch.org)              *\n"
-	"* Paypal Donations Appreciated: paypal@freeswitch.org *\n"
-	"* Brought to you by ClueCon http://www.cluecon.com/   *\n"
-	"*******************************************************\n"
-	"\n"
-	"Type /help <enter> to see a list of commands\n\n\n";
-
-static void print_banner(FILE *stream) { fprintf(stream, "%s%s", output_text_color, banner); }
->>>>>>> master
 
 static void set_fn_keys(cli_profile_t *profile)
 {
@@ -1126,15 +1103,9 @@ int main(int argc, char *argv[])
 	char cmd_str[1024] = "";
 	cli_profile_t *profile = NULL;
 #ifndef WIN32
-<<<<<<< HEAD
 	char hfile[512] = "/etc/nbess7_cli_history";
 	char cfile[512] = "/etc/nbess7_cli.conf";
 	char dft_cfile[512] = "/etc/nbess7_cli.conf";
-=======
-	char hfile[512] = "/tmp/fs_cli_history";
-	char cfile[512] = "/etc/fs_cli.conf";
-	char dft_cfile[512] = "/etc/fs_cli.conf";
->>>>>>> master
 #else
 	char hfile[512] = "nbess7_cli_history";
 	char cfile[512] = "nbess7_cli.conf";
@@ -1265,66 +1236,7 @@ int main(int argc, char *argv[])
 		printf("\n");
 		return usage(argv[0]);
 	}
-<<<<<<< HEAD
-
-	if (!(rv = esl_config_open_file(&cfg, cfile))) {
-		rv = esl_config_open_file(&cfg, dft_cfile);
-	}
-
-	if (rv) {
-		char *var, *val;
-		char cur_cat[128] = "";
-
-		while (esl_config_next_pair(&cfg, &var, &val)) {
-			if (strcmp(cur_cat, cfg.category)) {
-				esl_set_string(cur_cat, cfg.category);
-				esl_set_string(profiles[pcount].name, cur_cat);
-				esl_set_string(profiles[pcount].host, "localhost");
-				esl_set_string(profiles[pcount].pass, "ClueCon");
-				profiles[pcount].port = 8821;
-				set_fn_keys(&profiles[pcount]);
-				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[pcount].name);
-				pcount++;
-			}
-			
-			if (!strcasecmp(var, "host")) {
-				esl_set_string(profiles[pcount-1].host, val);
-			} else if (!strcasecmp(var, "user")) {
-				esl_set_string(profiles[pcount-1].user, val);
-			} else if (!strcasecmp(var, "password")) {
-				esl_set_string(profiles[pcount-1].pass, val);
-			} else if (!strcasecmp(var, "port")) {
-				int pt = atoi(val);
-				if (pt > 0) {
-					profiles[pcount-1].port = (esl_port_t)pt;
-				}
-			} else if (!strcasecmp(var, "debug")) {
-				int dt = atoi(val);
-				if (dt > -1 && dt < 8){
-					 profiles[pcount-1].debug = dt;
-				}	
- 			} else if(!strcasecmp(var, "loglevel")) {
- 				esl_set_string(profiles[pcount-1].loglevel, val);
- 			} else if(!strcasecmp(var, "quiet")) {
- 				profiles[pcount-1].quiet = esl_true(val);
-			} else if (!strncasecmp(var, "key_F", 5)) {
-				char *key = var + 5;
-
-				if (key) {
-					int i = atoi(key);
-				
-					if (i > 0 && i < 13) {
-						profiles[pcount-1].console_fnkeys[i - 1] = strdup(val);
-					}
-				}
-			} 
-		}
-		esl_config_close_file(&cfg);
-	}
-	
-=======
 	read_config(dft_cfile, cfile);
->>>>>>> master
 	if (optind < argc) {
 		get_profile(argv[optind], &profile);
 	}
@@ -1485,15 +1397,10 @@ int main(int argc, char *argv[])
 		esl_send_recv(&handle, cmd_str);
 	}
 	print_banner(stdout);
-<<<<<<< HEAD
 
 	esl_log(ESL_LOG_INFO, "Netborder SS7 CLI Ready.\nenter /help for a list of commands.\n");
-	printf("%s\n", handle.last_sr_reply);
-
-=======
-	esl_log(ESL_LOG_INFO, "FS CLI Ready.\nenter /help for a list of commands.\n");
 	output_printf("%s\n", handle.last_sr_reply);
->>>>>>> master
+
 	while (running > 0) {
 		int r;
 #ifdef HAVE_EDITLINE
