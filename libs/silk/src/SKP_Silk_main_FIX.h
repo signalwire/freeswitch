@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -32,7 +32,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SKP_Silk_SigProc_FIX.h"
 #include "SKP_Silk_structs_FIX.h"
 #include "SKP_Silk_main.h"
-#include "SKP_Silk_define_FIX.h"
 #include "SKP_Silk_PLC.h"
 #define TIC(TAG_NAME)
 #define TOC(TAG_NAME)
@@ -50,20 +49,17 @@ extern "C"
 
 /* Initializes the Silk encoder state */
 SKP_int SKP_Silk_init_encoder_FIX(
-    SKP_Silk_encoder_state_FIX  *psEnc              /* I/O  Pointer to Silk FIX encoder state           */
+    SKP_Silk_encoder_state_FIX  *psEnc                  /* I/O  Pointer to Silk FIX encoder state       */
 );
 
 /* Control the Silk encoder */
 SKP_int SKP_Silk_control_encoder_FIX( 
-    SKP_Silk_encoder_state_FIX  *psEnc,             /* I/O  Pointer to Silk FIX encoder state               */
-    const SKP_int               API_fs_kHz,         /* I    External (API) sampling rate (kHz)              */
-    const SKP_int               PacketSize_ms,      /* I    Packet length (ms)                              */
-    SKP_int32                   TargetRate_bps,     /* I    Target max bitrate (bps) (used if SNR_dB == 0)  */
-    const SKP_int               PacketLoss_perc,    /* I    Packet loss rate (in percent)                   */
-    const SKP_int               INBandFec_enabled,  /* I    Enable (1) / disable (0) inband FEC             */
-    const SKP_int               DTX_enabled,        /* I    Enable / disable DTX                            */
-    const SKP_int               InputFramesize_ms,  /* I    Inputframe in ms                                */
-    const SKP_int               Complexity          /* I    Complexity (0->low; 1->medium; 2->high)         */
+    SKP_Silk_encoder_state_FIX  *psEnc,                 /* I/O  Pointer to Silk encoder state           */
+    const SKP_int               PacketSize_ms,          /* I    Packet length (ms)                      */
+    const SKP_int32             TargetRate_bps,         /* I    Target max bitrate (bps)                */
+    const SKP_int               PacketLoss_perc,        /* I    Packet loss rate (in percent)           */
+    const SKP_int               DTX_enabled,            /* I    Enable / disable DTX                    */
+    const SKP_int               Complexity              /* I    Complexity (0->low; 1->medium; 2->high) */
 );
 
 /* Encoder main function */
@@ -106,10 +102,20 @@ void SKP_Silk_prefilter_FIX(
 /* Compute noise shaping coefficients and initial gain values */
 /**************************************************************/
 void SKP_Silk_noise_shape_analysis_FIX(
-    SKP_Silk_encoder_state_FIX      *psEnc,         /* I/O  Encoder state                               */
-    SKP_Silk_encoder_control_FIX    *psEncCtrl,     /* I/O  Encoder control                             */
+    SKP_Silk_encoder_state_FIX      *psEnc,         /* I/O  Encoder state FIX                           */
+    SKP_Silk_encoder_control_FIX    *psEncCtrl,     /* I/O  Encoder control FIX                         */
     const SKP_int16                 *pitch_res,     /* I    LPC residual from pitch analysis            */
-    const SKP_int16                 *x              /* I    Input signal [ 2 * frame_length + la_shape ]*/
+    const SKP_int16                 *x              /* I    Input signal [ frame_length + la_shape ]    */
+);
+
+/* Autocorrelations for a warped frequency axis */
+void SKP_Silk_warped_autocorrelation_FIX(
+          SKP_int32                 *corr,              /* O    Result [order + 1]                      */
+          SKP_int                   *scale,             /* O    Scaling of the correlation vector       */
+    const SKP_int16                 *input,             /* I    Input data to correlate                 */
+    const SKP_int16                 warping_Q16,        /* I    Warping coefficient                     */
+    const SKP_int                   length,             /* I    Length of input                         */
+    const SKP_int                   order               /* I    Correlation order (even)                */
 );
 
 /* Processing of gains */
@@ -118,11 +124,10 @@ void SKP_Silk_process_gains_FIX(
     SKP_Silk_encoder_control_FIX    *psEncCtrl      /* I/O  Encoder control                             */
 );
 
-
 /* Control low bitrate redundancy usage */
 void SKP_Silk_LBRR_ctrl_FIX(
     SKP_Silk_encoder_state_FIX      *psEnc,         /* I/O  encoder state                               */
-    SKP_Silk_encoder_control_FIX    *psEncCtrl      /* I/O  encoder control                             */
+    SKP_Silk_encoder_control        *psEncCtrlC     /* I/O  encoder control                             */
 );
 
 /* Calculation of LTP state scaling */
@@ -150,9 +155,9 @@ void SKP_Silk_find_pred_coefs_FIX(
 );
 
 void SKP_Silk_find_LPC_FIX(
-    SKP_int             NLSF_Q15[],             /* O    LSFs                                                                        */
-    SKP_int             *interpIndex,           /* O    LSF interpolation index, only used for LSF interpolation                    */
-    const SKP_int       prev_NLSFq_Q15[],       /* I    previous LSFs, only used for LSF interpolation                              */
+    SKP_int             NLSF_Q15[],             /* O    NLSFs                                                                       */
+    SKP_int             *interpIndex,           /* O    NLSF interpolation index, only used for NLSF interpolation                  */
+    const SKP_int       prev_NLSFq_Q15[],       /* I    previous NLSFs, only used for NLSF interpolation                            */
     const SKP_int       useInterpolatedLSFs,    /* I    Flag                                                                        */
     const SKP_int       LPC_order,              /* I    LPC order                                                                   */
     const SKP_int16     x[],                    /* I    Input signal                                                                */
@@ -164,8 +169,7 @@ void SKP_Silk_LTP_analysis_filter_FIX(
     const SKP_int16 *x,                                 /* I:   Pointer to input signal with at least max( pitchL ) preceeding samples  */
     const SKP_int16 LTPCoef_Q14[ LTP_ORDER * NB_SUBFR ],/* I:   LTP_ORDER LTP coefficients for each NB_SUBFR subframe                   */
     const SKP_int   pitchL[ NB_SUBFR ],                 /* I:   Pitch lag, one for each subframe                                        */
-    const SKP_int32 invGains_Qxx[ NB_SUBFR ],           /* I:   Inverse quantization gains, one for each subframe                       */
-    const SKP_int   Qxx,                                /* I:   Inverse quantization gains Q domain                                     */
+    const SKP_int32 invGains_Q16[ NB_SUBFR ],           /* I:   Inverse quantization gains, one for each subframe                       */
     const SKP_int   subfr_length,                       /* I:   Length of each subframe                                                 */
     const SKP_int   pre_length                          /* I:   Length of the preceeding samples starting at &x[0] for each subframe    */
 );
@@ -205,7 +209,7 @@ void SKP_Silk_process_NLSFs_FIX(
     SKP_int                         *pNLSF_Q15  /* I/O  Normalized LSFs (quant out) (0 - (2^15-1))  */
 );
 
-/* LSF vector encoder */
+/* NLSF vector encoder */
 void SKP_Silk_NLSF_MSVQ_encode_FIX(
           SKP_int                   *NLSFIndices,           /* O    Codebook path vector [ CB_STAGES ]      */
           SKP_int                   *pNLSF_Q15,             /* I/O  Quantized NLSF vector [ LPC_ORDER ]     */
@@ -263,6 +267,7 @@ void SKP_Silk_corrMatrix_FIX(
     const SKP_int16                 *x,         /* I    x vector [L + order - 1] used to form data matrix X */
     const SKP_int                   L,          /* I    Length of vectors                                   */
     const SKP_int                   order,      /* I    Max lag for correlation                             */
+    const SKP_int                   head_room,  /* I    Desired headroom                                    */
     SKP_int32                       *XX,        /* O    Pointer to X'*X correlation matrix [ order x order ]*/
     SKP_int                         *rshifts    /* I/O  Right shifts of correlations                        */
 );
@@ -270,7 +275,7 @@ void SKP_Silk_corrMatrix_FIX(
 /* Calculates correlation vector X'*t */
 void SKP_Silk_corrVector_FIX(
     const SKP_int16                 *x,         /* I    x vector [L + order - 1] used to form data matrix X */
-    const SKP_int16                 *t,         /* I    target vector [L]                                   */
+    const SKP_int16                 *t,         /* I    Target vector [L]                                   */
     const SKP_int                   L,          /* I    Length of vectors                                   */
     const SKP_int                   order,      /* I    Max lag for correlation                             */
     SKP_int32                       *Xt,        /* O    Pointer to X'*t correlation vector [order]          */
@@ -309,9 +314,8 @@ void SKP_Silk_residual_energy_FIX(
           SKP_int32 nrgs[ NB_SUBFR ],           /* O    Residual energy per subframe    */
           SKP_int   nrgsQ[ NB_SUBFR ],          /* O    Q value per subframe            */
     const SKP_int16 x[],                        /* I    Input signal                    */
-    const SKP_int16 a_Q12[ 2 ][ MAX_LPC_ORDER ],/* I    AR coefs for each frame half    */
-    const SKP_int32 gains_Qx[ NB_SUBFR ],       /* I    Quantization gains in Qx        */
-    const SKP_int   Qx,                         /* I    Quantization gains Q value      */
+          SKP_int16 a_Q12[ 2 ][ MAX_LPC_ORDER ],/* I    AR coefs for each frame half    */
+    const SKP_int32 gains[ NB_SUBFR ],          /* I    Quantization gains              */
     const SKP_int   subfr_length,               /* I    Subframe length                 */
     const SKP_int   LPC_order                   /* I    LPC order                       */
 );

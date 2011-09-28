@@ -169,7 +169,7 @@ struct switch_core_session {
 	uint32_t track_id;
 	switch_log_level_t loglevel;
 	uint32_t soft_lock;
-	switch_ivr_dmachine_t *dmachine;
+	switch_ivr_dmachine_t *dmachine[2];
 	plc_state_t *plc;
 };
 
@@ -255,6 +255,7 @@ struct switch_runtime {
 	uint32_t db_handle_timeout;
 	int curl_count;
 	int ssl_count;
+	int cpu_count;
 };
 
 extern struct switch_runtime runtime;

@@ -284,6 +284,19 @@ SWITCH_DECLARE_CONSTRUCTOR Event::~Event()
 	}
 }
 
+SWITCH_DECLARE(int)Event::chat_execute(const char *app, const char *data)
+{
+	return (int) switch_core_execute_chat_app(event, app, data);
+}
+
+SWITCH_DECLARE(int)Event::chat_send(const char *dest_proto)
+{
+	if (zstr(dest_proto)) {
+		dest_proto = switch_event_get_header(event, "dest_proto");
+	}
+
+	return (int) switch_core_chat_send(dest_proto, event);
+}
 
 SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 {
@@ -509,7 +522,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid, CoreSession *a_
 		other_channel = switch_core_session_get_channel(a_leg->session);
 	}
 
-	if (!strchr(nuuid, '/') && (session = switch_core_session_locate(nuuid))) {
+	if (!strchr(nuuid, '/') && (session = switch_core_session_force_locate(nuuid))) {
 		uuid = strdup(nuuid);
 		channel = switch_core_session_get_channel(session);
 		allocated = 1;
@@ -825,7 +838,8 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 													 char *bad_input_audio_files,
 													 char *digits_regex,
 													 const char *var_name,
-													 int digit_timeout)
+													 int digit_timeout,
+													 const char *transfer_on_failure)
 {
     switch_status_t status;
 	sanity_check((char *)"");
@@ -844,7 +858,8 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 										 dtmf_buf, 
 										 sizeof(dtmf_buf), 
 										 digits_regex,
-										 (uint32_t) digit_timeout);
+										 (uint32_t) digit_timeout,
+										 transfer_on_failure);
 
 	end_allow_threads();
 	return dtmf_buf;

@@ -61,12 +61,22 @@ typedef enum {
 
 #ifdef WIN32
 #define ESL_SEQ_FWHITE FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY
+#define ESL_SEQ_BWHITE FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
 #define ESL_SEQ_FRED FOREGROUND_RED | FOREGROUND_INTENSITY
-#define ESL_SEQ_FMAGEN FOREGROUND_BLUE | FOREGROUND_RED
-#define ESL_SEQ_FCYAN FOREGROUND_GREEN | FOREGROUND_BLUE
-#define ESL_SEQ_FGREEN FOREGROUND_GREEN
+#define ESL_SEQ_BRED FOREGROUND_RED
+#define ESL_SEQ_FMAGEN FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY
+#define ESL_SEQ_BMAGEN FOREGROUND_BLUE | FOREGROUND_RED
+#define ESL_SEQ_FCYAN FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY
+#define ESL_SEQ_BCYAN FOREGROUND_GREEN | FOREGROUND_BLUE
+#define ESL_SEQ_FGREEN FOREGROUND_GREEN | FOREGROUND_INTENSITY
+#define ESL_SEQ_BGREEN FOREGROUND_GREEN 
 #define ESL_SEQ_FYELLOW FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY
+#define ESL_SEQ_BYELLOW FOREGROUND_RED | FOREGROUND_GREEN
 #define ESL_SEQ_DEFAULT_COLOR ESL_SEQ_FWHITE
+#define ESL_SEQ_FBLUE FOREGROUND_BLUE | FOREGROUND_INTENSITY
+#define ESL_SEQ_BBLUE FOREGROUND_BLUE 
+#define ESL_SEQ_FBLACK 0 | FOREGROUND_INTENSITY
+#define ESL_SEQ_BBLACK 0 
 #else
 #define ESL_SEQ_ESC "\033["
 /* Ansi Control character suffixes */
@@ -396,6 +406,14 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
     \param event Event to be sent
 */
 ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event);
+
+/*!
+    \brief Send an event as a message to be parsed
+    \param handle Handle to which the event should be sent
+    \param event Event to be sent
+	\param uuid a specific uuid if not the default
+*/
+ESL_DECLARE(esl_status_t) esl_sendmsg(esl_handle_t *handle, esl_event_t *event, const char *uuid);
 
 /*!
     \brief Connect a handle to a host/port with a specific password. This will also authenticate against the server

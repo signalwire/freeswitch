@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -28,21 +28,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef SKP_SILK_MAIN_H
 #define SKP_SILK_MAIN_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include "SKP_Silk_SigProc_FIX.h"
 #include "SKP_Silk_define.h"
 #include "SKP_Silk_structs.h"
 #include "SKP_Silk_tables.h"
 #include "SKP_Silk_PLC.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 /* Encodes signs of excitation */
 void SKP_Silk_encode_signs(
     SKP_Silk_range_coder_state  *psRC,              /* I/O  Range coder state                           */
-    const SKP_int               q[],                /* I    pulse signal                                */
+    const SKP_int8              q[],                /* I    pulse signal                                */
     const SKP_int               length,             /* I    length of input                             */
     const SKP_int               sigtype,            /* I    Signal type                                 */
     const SKP_int               QuantOffsetType,    /* I    Quantization offset type                    */
@@ -59,6 +60,12 @@ void SKP_Silk_decode_signs(
     const SKP_int               RateLevelIndex      /* I    Rate Level Index                            */
 );
 
+/* Control internal sampling rate */
+SKP_int SKP_Silk_control_audio_bandwidth(
+    SKP_Silk_encoder_state      *psEncC,            /* I/O  Pointer to Silk encoder state               */
+    const SKP_int32             TargetRate_bps      /* I    Target max bitrate (bps)                    */
+);
+
 /***************/
 /* Shell coder */
 /***************/
@@ -68,7 +75,7 @@ void SKP_Silk_encode_pulses(
     SKP_Silk_range_coder_state  *psRC,              /* I/O  Range coder state                           */
     const SKP_int               sigtype,            /* I    Sigtype                                     */
     const SKP_int               QuantOffsetType,    /* I    QuantOffsetType                             */
-    const SKP_int               q[],                /* I    quantization indices                        */
+    const SKP_int8              q[],                /* I    quantization indices                        */
     const SKP_int               frame_length        /* I    Frame length                                */
 );
 
@@ -188,11 +195,11 @@ void SKP_Silk_NSQ(
     SKP_Silk_encoder_control        *psEncCtrlC,                                /* I    Encoder Control                     */
     SKP_Silk_nsq_state              *NSQ,                                       /* I/O  NSQ state                           */
     const SKP_int16                 x[],                                        /* I    prefiltered input signal            */
-    SKP_int                         q[],                                        /* O    quantized qulse signal              */
+    SKP_int8                        q[],                                        /* O    quantized qulse signal              */
     const SKP_int                   LSFInterpFactor_Q2,                         /* I    LSF interpolation factor in Q2      */
     const SKP_int16                 PredCoef_Q12[ 2 * MAX_LPC_ORDER ],          /* I    Short term prediction coefficients  */
     const SKP_int16                 LTPCoef_Q14[ LTP_ORDER * NB_SUBFR ],        /* I    Long term prediction coefficients   */
-    const SKP_int16                 AR2_Q13[ NB_SUBFR * SHAPE_LPC_ORDER_MAX ],  /* I                                        */
+    const SKP_int16                 AR2_Q13[ NB_SUBFR * MAX_SHAPE_LPC_ORDER ],  /* I                                        */
     const SKP_int                   HarmShapeGain_Q14[ NB_SUBFR ],              /* I                                        */
     const SKP_int                   Tilt_Q14[ NB_SUBFR ],                       /* I    Spectral tilt                       */
     const SKP_int32                 LF_shp_Q14[ NB_SUBFR ],                     /* I                                        */
@@ -207,11 +214,11 @@ void SKP_Silk_NSQ_del_dec(
     SKP_Silk_encoder_control        *psEncCtrlC,                                /* I    Encoder Control                     */
     SKP_Silk_nsq_state              *NSQ,                                       /* I/O  NSQ state                           */
     const SKP_int16                 x[],                                        /* I    Prefiltered input signal            */
-    SKP_int                         q[],                                        /* O    Quantized pulse signal              */
+    SKP_int8                        q[],                                        /* O    Quantized pulse signal              */
     const SKP_int                   LSFInterpFactor_Q2,                         /* I    LSF interpolation factor in Q2      */
     const SKP_int16                 PredCoef_Q12[ 2 * MAX_LPC_ORDER ],          /* I    Prediction coefs                    */
     const SKP_int16                 LTPCoef_Q14[ LTP_ORDER * NB_SUBFR ],        /* I    LT prediction coefs                 */
-    const SKP_int16                 AR2_Q13[ NB_SUBFR * SHAPE_LPC_ORDER_MAX ],  /* I                                        */
+    const SKP_int16                 AR2_Q13[ NB_SUBFR * MAX_SHAPE_LPC_ORDER ],  /* I                                        */
     const SKP_int                   HarmShapeGain_Q14[ NB_SUBFR ],              /* I                                        */
     const SKP_int                   Tilt_Q14[ NB_SUBFR ],                       /* I    Spectral tilt                       */
     const SKP_int32                 LF_shp_Q14[ NB_SUBFR ],                     /* I                                        */
@@ -306,19 +313,6 @@ void SKP_Silk_decode_parameters(
     const SKP_int               fullDecoding        /* I    Flag to tell if only arithmetic decoding    */
 );
 
-/* Decode indices from payload v4 Bitstream */
-void SKP_Silk_decode_indices_v4(
-    SKP_Silk_decoder_state      *psDec              /* I/O  State                                       */
-);
-
-/* Decode parameters from payload v4 Bitstream */
-void SKP_Silk_decode_parameters_v4(
-    SKP_Silk_decoder_state      *psDec,                                 /* I/O  State                                    */
-    SKP_Silk_decoder_control    *psDecCtrl,                             /* I/O  Decoder control                          */
-    SKP_int                     q[ MAX_FRAME_LENGTH ],                  /* O    Excitation signal                        */
-    const SKP_int               fullDecoding                            /* I    Flag to tell if only arithmetic decoding */
-);
-
 /* Core decoder. Performs inverse NSQ operation LTP + LPC */
 void SKP_Silk_decode_core(
     SKP_Silk_decoder_state      *psDec,                             /* I/O  Decoder state               */
@@ -369,14 +363,7 @@ void SKP_Silk_encode_parameters(
     SKP_Silk_encoder_state      *psEncC,            /* I/O  Encoder state                               */
     SKP_Silk_encoder_control    *psEncCtrlC,        /* I/O  Encoder control                             */
     SKP_Silk_range_coder_state  *psRC,              /* I/O  Range coder state                           */
-    const SKP_int               *q                  /* I    Quantization indices                        */
-);
-
-/* Encoding of various parameters */
-void SKP_Silk_encode_parameters_v4(
-    SKP_Silk_encoder_state      *psEncC,            /* I/O  Encoder state                               */
-    SKP_Silk_encoder_control    *psEncCtrlC,        /* I/O  Encoder control                             */
-    SKP_Silk_range_coder_state  *psRC               /* I/O  Range encoder state                         */
+    const SKP_int8               *q                 /* I    Quantization indices                        */
 );
 
 /* Extract lowest layer encoding */
@@ -392,11 +379,6 @@ void SKP_Silk_LBRR_reset(
     SKP_Silk_encoder_state      *psEncC             /* I/O  Pointer to Silk encoder state               */
 );
 
-/* Predict number of bytes used to encode q */
-SKP_int SKP_Silk_pulses_to_bytes( /* O  Return value, predicted number of bytes used to encode q */ 
-    SKP_Silk_encoder_state      *psEncC,            /* I/O  Encoder State*/
-    SKP_int                     q[]                 /* I     Pulse signal */
-);
 
 #ifdef __cplusplus
 }

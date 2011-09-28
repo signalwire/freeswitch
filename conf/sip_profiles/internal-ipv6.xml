@@ -24,6 +24,7 @@
     <param name="sip-ip" value="$${local_ip_v6}"/>
     <param name="hold-music" value="$${hold_music}"/>
     <!--<param name="enable-100rel" value="false"/>-->
+    <!--<param name="disable-srv503" value="true"/>-->
     <param name="apply-inbound-acl" value="domains"/>
     <!--<param name="apply-register-acl" value="domains"/>-->
     <!--<param name="dtmf-type" value="info"/>-->

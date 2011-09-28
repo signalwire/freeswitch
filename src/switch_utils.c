@@ -465,6 +465,7 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 	for (x = 0; x < ilen; x++) {
 		b = (b << 8) + in[x];
 		l += 8;
+
 		while (l >= 6) {
 			out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
 			if (++y != 72) {
@@ -569,7 +570,11 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 			char cmd[1024] = "";
 			switch_snprintf(cmd, sizeof(cmd), "%s %s %s", convert_cmd, file, newfile);
 			switch_system(cmd, SWITCH_TRUE);
-			file = newfile;
+			if (strcmp(file, newfile)) {
+				file = newfile;
+			} else {
+				switch_safe_free(newfile);
+			}
 		}
 
 		switch_safe_free(dupfile);
@@ -654,8 +659,10 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 				}
 				if (write(fd, &out, bytes) != bytes) {
 					rval = -1;
-				} else
+					break;
+				} else {
 					bytes = 0;
+				}
 
 			}
 
@@ -1868,7 +1875,7 @@ static char *cleanup_separated_string(char *str, char delim)
 			}
 		}
 		if (!esc) {
-			if (*ptr == '\'') {
+			if (*ptr == '\'' && (inside_quotes || ((ptr+1) && strchr(ptr+1, '\'')))) {
 				if ((inside_quotes = (1 - inside_quotes))) {
 					end = dest;
 				}
@@ -1931,7 +1938,7 @@ static unsigned int separate_string_char_delim(char *buf, char delim, char **arr
 			/* escaped characters are copied verbatim to the destination string */
 			if (*ptr == ESCAPE_META) {
 				++ptr;
-			} else if (*ptr == '\'') {
+			} else if (*ptr == '\'' && (inside_quotes || ((ptr+1) && strchr(ptr+1, '\'')))) {
 				inside_quotes = (1 - inside_quotes);
 			} else if (*ptr == delim && !inside_quotes) {
 				*ptr = '\0';

@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -28,7 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef SKP_SILK_PLC_FIX_H
 #define SKP_SILK_PLC_FIX_H
 
-#include "SKP_Silk_main_FIX.h"
+#include "SKP_Silk_main.h"
 
 #define BWE_COEF_Q16                    64880           /* 0.99 in Q16                      */
 #define V_PITCH_GAIN_START_MIN_Q14      11469           /* 0.7 in Q14                       */
@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_SINGLE_TAP                  1
 #define RAND_BUF_SIZE                   128
 #define RAND_BUF_MASK                   (RAND_BUF_SIZE - 1)
-#define LOG2_INV_LPC_GAIN_HIGH_THRES    4               /* 2^4 = 12 dB LPC gain             */
+#define LOG2_INV_LPC_GAIN_HIGH_THRES    3               /* 2^3 = 8 dB LPC gain              */
 #define LOG2_INV_LPC_GAIN_LOW_THRES     8               /* 2^8 = 24 dB LPC gain             */
 #define PITCH_DRIFT_FAC_Q16             655             /* 0.01 in Q16                      */
 

@@ -6,18 +6,20 @@
 #include <stdlib.h>
 #include <esl.h>
 #include <signal.h>
+#include <getopt.h>
 
 #define CMD_BUFLEN 1024
 #define PROMPT_PREFIX "netborder-ss7"
-static int WARN_STOP = 0;
 
-#ifdef WIN32
+#ifndef WIN32
+#include <sys/select.h>
+#include <unistd.h>
+#include <time.h>
+#else
 #define strdup(src) _strdup(src)
-#define usleep(time) Sleep(time/1000)
 #define fileno _fileno
 #define read _read
 #include <io.h>
-
 #define CC_NORM         0
 #define CC_NEWLINE      1
 #define CC_EOF          2
@@ -28,7 +30,6 @@ static int WARN_STOP = 0;
 #define CC_FATAL        7
 #define CC_REDISPLAY    8
 #define CC_REFRESH_BEEP 9
-
 #define HISTLEN 10
 #define KEY_UP 1
 #define KEY_DOWN 2
@@ -39,22 +40,13 @@ static int WARN_STOP = 0;
 #define KEY_RIGHT 7
 #define KEY_INSERT 8
 #define PROMPT_OP 9
-
-static int console_bufferInput (char* buf, int len, char *cmd, int key);
-static unsigned char esl_console_complete(const char *buffer, const char *cursor);
-#else
-#include <sys/select.h>
-#include <unistd.h>
+static int console_bufferInput (char *buf, int len, char *cmd, int key);
+static unsigned char esl_console_complete(const char *buffer, const char *cursor, const char *lastchar);
 #endif
-
-#include <getopt.h>
 
 #ifdef HAVE_EDITLINE
 #include <histedit.h>
 #endif
-
-static char prompt_str[512] = "";
-static int CONNECTED = 0;
 
 typedef struct {
 	char name[128];
@@ -66,109 +58,96 @@ typedef struct {
 	const char *console_fnkeys[12];
 	char loglevel[128];
 	int quiet;
+	char prompt_color[12];
+	char input_text_color[12];
+	char output_text_color[12];
 } cli_profile_t;
 
+static int warn_stop = 0;
+static int connected = 0;
+static int allow_ctl_c = 0;
+static char bare_prompt_str[512] = "";
+static int bare_prompt_str_len = 0;
+static char prompt_str[512] = "";
+static char prompt_color[12] = {ESL_SEQ_DEFAULT_COLOR};
+static char input_text_color[12] = {ESL_SEQ_DEFAULT_COLOR};
+static char output_text_color[12] = {ESL_SEQ_DEFAULT_COLOR};
 static cli_profile_t profiles[128] = {{{0}}};
 static cli_profile_t internal_profile = {{ 0 }};
 static int pcount = 0;
-
 static esl_handle_t *global_handle;
 static cli_profile_t *global_profile;
-
-static int process_command(esl_handle_t *handle, const char *cmd);
-
 static int running = 1;
 static int thread_running = 0;
 static char *filter_uuid;
+#ifndef WIN32
+static EditLine *el;
+static History *myhistory;
+static HistEvent ev;
+#endif
 
+static void _sleep_ns(int secs, long nsecs) {
+#ifndef WIN32
+	if (nsecs > 999999999) {
+		secs += nsecs/1000000000;
+		nsecs = nsecs % 1000000000;
+	}
+	{
+		struct timespec ts = { secs, nsecs };
+		nanosleep(&ts, NULL);
+	}
+#else
+	Sleep(secs*1000 + nsecs/1000000);
+#endif
+}
 
-/*
- * If a fnkey is configured then process the command
- */
+static void sleep_ns(long nsecs) { _sleep_ns(0, nsecs); }
+static void sleep_ms(int msecs) { sleep_ns(msecs*1000000); }
+static void sleep_s(int secs) { _sleep_ns(secs, 0); }
+
+static int process_command(esl_handle_t *handle, const char *cmd);
+
+static void clear_cli(void) {
+	putchar('\r');
+	printf("\033[%dC", bare_prompt_str_len);
+	printf("\033[K");
+	fflush(stdout);
+}
+
+/* If a fnkey is configured then process the command */
 static unsigned char console_fnkey_pressed(int i)
 {
 	const char *c;
-
 	assert((i > 0) && (i <= 12));
-
-	c = global_profile->console_fnkeys[i - 1];
-
-	/* This new line is necessary to avoid output to begin after the ">" of the CLI's prompt */
-	printf("%s\n", c);
-	printf("\n");
-	
-	if (c == NULL) {
+	if (!(c = global_profile->console_fnkeys[i - 1])) {
+		printf("\n");
 		esl_log(ESL_LOG_ERROR, "FUNCTION KEY F%d IS NOT BOUND, please edit your config.\n", i);
 		return CC_REDISPLAY;
 	}
-
+	clear_cli();
+	printf("%s\n", c);
 	if (process_command(global_handle, c)) {
 		running = thread_running = 0;
 	}
-
 	return CC_REDISPLAY;
 }
 
 #ifdef HAVE_EDITLINE
-static char *prompt(EditLine * e)
-{
-    return prompt_str;
-}
+static char *prompt(EditLine *e) { return prompt_str; }
+static unsigned char console_f1key(EditLine *el, int ch) { return console_fnkey_pressed(1); }
+static unsigned char console_f2key(EditLine *el, int ch) { return console_fnkey_pressed(2); }
+static unsigned char console_f3key(EditLine *el, int ch) { return console_fnkey_pressed(3); }
+static unsigned char console_f4key(EditLine *el, int ch) { return console_fnkey_pressed(4); }
+static unsigned char console_f5key(EditLine *el, int ch) { return console_fnkey_pressed(5); }
+static unsigned char console_f6key(EditLine *el, int ch) { return console_fnkey_pressed(6); }
+static unsigned char console_f7key(EditLine *el, int ch) { return console_fnkey_pressed(7); }
+static unsigned char console_f8key(EditLine *el, int ch) { return console_fnkey_pressed(8); }
+static unsigned char console_f9key(EditLine *el, int ch) { return console_fnkey_pressed(9); }
+static unsigned char console_f10key(EditLine *el, int ch) { return console_fnkey_pressed(10); }
+static unsigned char console_f11key(EditLine *el, int ch) { return console_fnkey_pressed(11); }
+static unsigned char console_f12key(EditLine *el, int ch) { return console_fnkey_pressed(12); }
 
-static EditLine *el;
-static History *myhistory;
-static HistEvent ev;
-
-static unsigned char console_f1key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(1);
-}
-static unsigned char console_f2key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(2);
-}
-static unsigned char console_f3key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(3);
-}
-static unsigned char console_f4key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(4);
-}
-static unsigned char console_f5key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(5);
-}
-static unsigned char console_f6key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(6);
-}
-static unsigned char console_f7key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(7);
-}
-static unsigned char console_f8key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(8);
-}
-static unsigned char console_f9key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(9);
-}
-static unsigned char console_f10key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(10);
-}
-static unsigned char console_f11key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(11);
-}
-static unsigned char console_f12key(EditLine * el, int ch)
-{
-	return console_fnkey_pressed(12);
-}
-
-static unsigned char console_eofkey(EditLine * el, int ch)
+static unsigned char console_eofkey(EditLine *el, int ch)
 {
 	LineInfo *line;
 	/* only exit if empty line */
@@ -195,7 +174,6 @@ static int console_history (char *cmd, int direction)
 {
 	int i;
 	static int first;
-
 	if (direction == 0) {
 		first = 1;
 		if (iHistory < HISTLEN) {
@@ -210,8 +188,7 @@ static int console_history (char *cmd, int direction)
 		}
 		else {
 			iHistory = HISTLEN-1;
-			for (i = 0; i < HISTLEN-1; i++)
-			{
+			for (i = 0; i < HISTLEN-1; i++) {
 				strcpy(history[i], history[i+1]);
 			}
 			iHistorySel = iHistory;
@@ -234,17 +211,16 @@ static int console_history (char *cmd, int direction)
 	return (0);
 }
 
-static int console_bufferInput (char* addchars, int len, char *cmd, int key)
+static int console_bufferInput (char *addchars, int len, char *cmd, int key)
 {
-    static int iCmdBuffer = 0;
+	static int iCmdBuffer = 0;
 	static int iCmdCursor = 0;
-    static int ignoreNext = 0;
+	static int ignoreNext = 0;
 	static int insertMode = 1;
 	static COORD orgPosition;
 	static char prompt [80];
-    int iBuf;
+	int iBuf;
 	int i;
-
 	HANDLE hOut;
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	COORD position;
@@ -254,16 +230,14 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 	if (iCmdCursor == 0) {
 		orgPosition = position;
 	}
-
 	if (key == PROMPT_OP) {
 		if (strlen(cmd) < sizeof(prompt)) {
 			strcpy(prompt, cmd);
 		}
 		return 0;
 	}
-
 	if (key == KEY_TAB) {
-		esl_console_complete(cmd, cmd+iCmdBuffer);
+		esl_console_complete(cmd, cmd+iCmdBuffer, &cmd[iCmdBuffer-1]);
 		return 0;
 	}
 	if (key == KEY_UP || key == KEY_DOWN || key == CLEAR_OP) {
@@ -288,7 +262,6 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 		printf("%s", cmd);
 		return 0;
 	}
-
 	if (key == KEY_LEFT) {
 		if (iCmdCursor) {
 			if (position.X == 0) {
@@ -298,7 +271,6 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 			else {
 				position.X -= 1;
 			}
-
 			SetConsoleCursorPosition(hOut, position);
 			iCmdCursor--;
 		}
@@ -312,7 +284,6 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 			else {
 				position.X += 1;
 			}
-
 			SetConsoleCursorPosition(hOut, position);
 			iCmdCursor++;
 		}
@@ -320,7 +291,7 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 	if (key == KEY_INSERT) {
 		insertMode = !insertMode;
 	}
-    for (iBuf = 0; iBuf < len; iBuf++) {
+	for (iBuf = 0; iBuf < len; iBuf++) {
 		switch (addchars[iBuf]) {
 			case '\r':
 			case '\n':
@@ -356,20 +327,19 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 					}
 					printf(" ");
 					if (iCmdCursor < iCmdBuffer) {
-							int pos;
-							iCmdCursor--;
-							for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
-								cmd[pos] = cmd[pos+1];
-							}
-							cmd[pos] = 0;
-							iCmdBuffer--;
-
-							SetConsoleCursorPosition(hOut, position);
-							for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
-								printf("%c", cmd[pos]);
-							}
-							printf(" ");
-							SetConsoleCursorPosition(hOut, position);
+						int pos;
+						iCmdCursor--;
+						for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+							cmd[pos] = cmd[pos+1];
+						}
+						cmd[pos] = 0;
+						iCmdBuffer--;
+						SetConsoleCursorPosition(hOut, position);
+						for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+							printf("%c", cmd[pos]);
+						}
+						printf(" ");
+						SetConsoleCursorPosition(hOut, position);
 					}
 					else {
 						SetConsoleCursorPosition(hOut, position);
@@ -383,7 +353,6 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 				if (!ignoreNext) {
 					if (iCmdCursor < iCmdBuffer) {
 						int pos;
-
 						if (position.X == info.dwSize.X-1) {
 							position.Y += 1;
 							position.X = 0;
@@ -391,7 +360,6 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 						else {
 							position.X += 1;
 						}
-
 						if (insertMode) {
 							for (pos = iCmdBuffer-1; pos >= iCmdCursor; pos--) {
 								cmd[pos+1] = cmd[pos];
@@ -425,33 +393,29 @@ static int console_bufferInput (char* addchars, int len, char *cmd, int key)
 			iCmdBuffer = 0;
 			ignoreNext = 1;
 		}
-    }
-    return (0);
+	}
+	return (0);
 }
 
-
-static BOOL console_readConsole(HANDLE conIn, char* buf, int len, int* pRed, int *key)
+static BOOL console_readConsole(HANDLE conIn, char *buf, int len, int *pRed, int *key)
 {
-    DWORD recordIndex, bufferIndex, toRead, red;
-    PINPUT_RECORD pInput;
-
-    GetNumberOfConsoleInputEvents(conIn, &toRead);
+	DWORD recordIndex, bufferIndex, toRead, red;
+	PINPUT_RECORD pInput;
+	GetNumberOfConsoleInputEvents(conIn, &toRead);
 	if (len < (int)toRead) {
 		toRead = len;
 	}
 	if (toRead == 0) {
 		return(FALSE);
 	}
-
 	if ((pInput = (PINPUT_RECORD) malloc(toRead * sizeof(INPUT_RECORD))) == NULL) {
 		return (FALSE);
 	}
 	*key = 0;
-    ReadConsoleInput(conIn, pInput, toRead, &red);
-
-    for (recordIndex = bufferIndex = 0; recordIndex < red; recordIndex++) {
-        KEY_EVENT_RECORD keyEvent = pInput[recordIndex].Event.KeyEvent;
-    	if (pInput[recordIndex].EventType == KEY_EVENT && keyEvent.bKeyDown) {
+	ReadConsoleInput(conIn, pInput, toRead, &red);
+	for (recordIndex = bufferIndex = 0; recordIndex < red; recordIndex++) {
+		KEY_EVENT_RECORD keyEvent = pInput[recordIndex].Event.KeyEvent;
+		if (pInput[recordIndex].EventType == KEY_EVENT && keyEvent.bKeyDown) {
 			if (keyEvent.wVirtualKeyCode == 38 && keyEvent.wVirtualScanCode == 72) {
 				buf[0] = 0;
 				console_history(buf, -1);
@@ -517,35 +481,30 @@ static BOOL console_readConsole(HANDLE conIn, char* buf, int len, int* pRed, int
 			if (keyEvent.wVirtualKeyCode == 45 && keyEvent.wVirtualScanCode == 82) {
 				*key = KEY_INSERT;
 			}
-    	    while (keyEvent.wRepeatCount && keyEvent.uChar.AsciiChar) {
-    			buf[bufferIndex] = keyEvent.uChar.AsciiChar;
+			while (keyEvent.wRepeatCount && keyEvent.uChar.AsciiChar) {
+				buf[bufferIndex] = keyEvent.uChar.AsciiChar;
 				if (buf[bufferIndex] == '\r') {
-    				buf[bufferIndex] = '\n';
+					buf[bufferIndex] = '\n';
 				}
-    			bufferIndex++;
-    			keyEvent.wRepeatCount--;
-    	    }
-    	}
-    }
-
-    free(pInput);
-    *pRed = bufferIndex;
-    return (TRUE);
+				bufferIndex++;
+				keyEvent.wRepeatCount--;
+			}
+		}
+	}
+	free(pInput);
+	*pRed = bufferIndex;
+	return (TRUE);
 }
 #endif
 #endif
 
 static void handle_SIGINT(int sig)
 {
-	if (sig);
-
-	if (!CONNECTED) {
+	if (!connected || allow_ctl_c) {
 		fprintf(stdout, "Interrupted.\n");
 		exit(1);
 	}
-
-	WARN_STOP = 1;
-
+	warn_stop = 1;
 	signal(SIGINT, handle_SIGINT);
 #ifdef SIGTSTP
 	signal(SIGTSTP, handle_SIGINT);
@@ -563,154 +522,237 @@ static void handle_SIGQUIT(int sig)
 static HANDLE hStdout;
 static WORD wOldColorAttrs;
 static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
-
-static WORD 
-#else
-static const char*
 #endif
-COLORS[] = { ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FRED, ESL_SEQ_FRED, 
-			ESL_SEQ_FRED, ESL_SEQ_FMAGEN, ESL_SEQ_FCYAN, ESL_SEQ_FGREEN, ESL_SEQ_FYELLOW };
+
+#ifdef WIN32
+static WORD colors[]
+#else
+static const char *colors[]
+#endif
+= {
+	ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FRED, ESL_SEQ_FRED, ESL_SEQ_FRED,
+	ESL_SEQ_FMAGEN, ESL_SEQ_FCYAN, ESL_SEQ_FGREEN, ESL_SEQ_FYELLOW
+};
+
+static const char *usage_str =
+	"Usage: %s [-H <host>] [-P <port>] [-p <secret>] [-d <level>] [-x command] [-t <timeout_ms>] [profile]\n\n"
+	"  -?,-h --help                    Usage Information\n"
+	"  -H, --host=hostname             Host to connect\n"
+	"  -P, --port=port                 Port to connect (1 - 65535)\n"
+	"  -u, --user=user@domain          user@domain\n"
+	"  -p, --password=password         Password\n"
+	"  -i, --interrupt                 Allow Control-c to interrupt\n"
+	"  -x, --execute=command           Execute Command and Exit\n"
+	"  -l, --loglevel=command          Log Level\n"
+	"  -q, --quiet                     Disable logging\n"
+	"  -r, --retry                     Retry connection on failure\n"
+	"  -R, --reconnect                 Reconnect if disconnected\n"
+	"  -d, --debug=level               Debug Level (0 - 7)\n"
+	"  -t, --timeout                   Timeout for API commands (in miliseconds)\n\n";
 
 static int usage(char *name){
-	printf("Usage: %s [-H <host>] [-P <port>] [-p <secret>] [-d <level>] [-x command] [-t <timeout_ms>] [profile]\n\n", name);
-	printf("  -?,-h --help                    Usage Information\n");
-	printf("  -H, --host=hostname             Host to connect\n");
-	printf("  -P, --port=port                 Port to connect (1 - 65535)\n");
-	printf("  -u, --user=user@domain          user@domain\n");
-	printf("  -p, --password=password         Password\n");
-	printf("  -i, --interrupt                 Allow Control-c to interrupt\n");
-	printf("  -x, --execute=command           Execute Command and Exit\n");
-	printf("  -l, --loglevel=command          Log Level\n");
-	printf("  -q, --quiet                     Disable logging\n");
-	printf("  -r, --retry                     Retry connection on failure\n");
-	printf("  -R, --reconnect                 Reconnect if disconnected\n");
-	printf("  -d, --debug=level               Debug Level (0 - 7)\n");
-	printf("  -t, --timeout                   Timeout for API commands (in miliseconds)\n\n");
+	printf(usage_str, name);
 	return 1;
+}
+
+static int stdout_writable(void)
+{
+#ifndef WIN32
+	fd_set set;
+	int fd = fileno(stdout);
+	struct timeval to;
+	memset(&to, 0, sizeof(to));
+	FD_ZERO(&set);
+	FD_SET(fd, &set);
+	to.tv_sec = 0;
+	to.tv_usec = 100000;
+	if (select(fd + 1, NULL, &set, NULL, &to) > 0) {
+		return FD_ISSET(fd, &set);
+	} else {
+		return 0;
+	}
+#else
+	return 1;
+#endif
+}
+
+#ifndef WIN32
+static int write_str(const char *s) {
+	int n, left = strlen(s);
+	while (1) {
+		n = write(STDOUT_FILENO, s, left);
+		if (n == left) return 1;
+		if (n < 0) return 0;
+		s += n; left -= n;
+	}
+	return 1;
+}
+
+static int write_char(int c) {
+	char s[2] = { c, 0 };
+	return write_str(s);
+}
+#endif
+
+#ifdef WIN32
+static void clear_line(void)
+{
+	putchar('\r');
+	printf("\033[K");
+	fflush(stdout);
+	return;
+}
+#else
+static void clear_line(void)
+{
+	if (!(write_char('\r'))) goto done;
+	if (!(write_str("\033[K"))) goto done;
+ done:
+	return;
+}
+#endif
+
+static void redisplay(void)
+{
+#ifdef WIN32
+#else
+	const LineInfo *lf = el_line(el);
+	const char *c = lf->buffer;
+	if (!(write_str(prompt_str))) goto done;
+	while (c < lf->lastchar && *c) {
+		if (!(write_char(*c))) goto done;
+		c++;
+	}
+	{
+		int pos = (int)(lf->cursor - lf->buffer);
+		char s1[12], s2[12];
+		if (!(write_char('\r'))) goto done;
+		snprintf(s1, sizeof(s1), "\033[%dC", bare_prompt_str_len);
+		snprintf(s2, sizeof(s2), "\033[%dC", pos);
+		if (!(write_str(s1))) goto done;
+		if (pos > 0) if (!(write_str(s2))) goto done;
+	}
+ done:
+	return;
+#endif
+}
+
+static int output_printf(const char *fmt, ...)
+{
+	va_list ap;
+	int r;
+	va_start(ap, fmt);
+#ifndef WIN32
+	printf("%s", output_text_color);
+#endif
+	r = vprintf(fmt, ap);
+	va_end(ap);
+	return r;
 }
 
 static void *msg_thread_run(esl_thread_t *me, void *obj)
 {
-
 	esl_handle_t *handle = (esl_handle_t *) obj;
-
 	thread_running = 1;
-
 	while(thread_running && handle->connected) {
+		int aok = 1;
 		esl_status_t status = esl_recv_event_timed(handle, 10, 1, NULL);
-		int aok = 1;		
-
 		if (status == ESL_FAIL) {
-			if (aok) esl_log(ESL_LOG_WARNING, "Disconnected.\n");
+			esl_log(ESL_LOG_WARNING, "Disconnected.\n");
 			running = -1; thread_running = 0;
 		} else if (status == ESL_SUCCESS) {
-#ifndef WIN32
-			fd_set can_write;
-			int fd;
-			struct timeval to;
-
-			fd = fileno(stdout);
-			memset(&to, 0, sizeof(to));
-			FD_ZERO(&can_write);
-			FD_SET(fd, &can_write);
-			to.tv_sec = 0;
-			to.tv_usec = 100000;
-			if (select(fd + 1, NULL, &can_write, NULL, &to) > 0) {
-				aok = FD_ISSET(fd, &can_write);
-			} else {
-				aok = 0;
-			}
-#endif
-			
+			aok = stdout_writable();
 			if (handle->last_event) {
+				int known = 1;
 				const char *type = esl_event_get_header(handle->last_event, "content-type");
-				int known = 0;
-
 				if (!esl_strlen_zero(type)) {
-					if (aok && !strcasecmp(type, "log/data")) {
+					if (!strcasecmp(type, "log/data")) {
 						const char *userdata = esl_event_get_header(handle->last_event, "user-data");
-						
 						if (esl_strlen_zero(userdata) || esl_strlen_zero(filter_uuid) || !strcasecmp(filter_uuid, userdata)) {
 							int level = 0;
 							const char *lname = esl_event_get_header(handle->last_event, "log-level");
-	#ifdef WIN32
+#ifdef WIN32
 							DWORD len = (DWORD) strlen(handle->last_event->body);
 							DWORD outbytes = 0;
-	#endif			
+#endif
 							if (lname) {
 								level = atoi(lname);
 							}
-						
-						
-	#ifdef WIN32
-							SetConsoleTextAttribute(hStdout, COLORS[level]);
-							WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
-							SetConsoleTextAttribute(hStdout, wOldColorAttrs);
-	#else
-							printf("%s%s%s", COLORS[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
-	#endif
+#ifndef WIN32
+							if (aok) {
+								clear_line();
+								printf("%s%s", colors[level], handle->last_event->body);
+								redisplay();
+							}
+#else
+							if (aok) {
+								SetConsoleTextAttribute(hStdout, colors[level]);
+								WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
+								SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+							}
+#endif
 						}
-						known++;
 					} else if (!strcasecmp(type, "text/disconnect-notice")) {
 						running = -1; thread_running = 0;
-						known++;
-					} else if (aok && !strcasecmp(type, "text/event-plain")) {
-						char *foo;
-						esl_event_serialize(handle->last_ievent, &foo, ESL_FALSE);
-						printf("RECV EVENT\n%s\n", foo);
-						free(foo);
-
-						known++;
+					} else if (!strcasecmp(type, "text/event-plain")) {
+						char *s;
+						esl_event_serialize(handle->last_ievent, &s, ESL_FALSE);
+						if (aok) {
+							clear_line();
+							output_printf("RECV EVENT\n%s\n", s);
+							redisplay();
+						}
+						free(s);
+					} else {
+						known = 0;
 					}
 				}
-				
 				if (aok && !known) {
-					char *foo;
-					printf("INCOMING DATA [%s]\n%s\n", type, handle->last_event->body ? handle->last_event->body : "");
-					esl_event_serialize(handle->last_event, &foo, ESL_FALSE);
-					printf("RECV EVENT\n%s\n", foo);
-					free(foo);
+					char *s;
+					output_printf("INCOMING DATA [%s]\n%s\n", type, handle->last_event->body ? handle->last_event->body : "");
+					esl_event_serialize(handle->last_event, &s, ESL_FALSE);
+					output_printf("RECV EVENT\n%s\n", s);
+					redisplay();
+					free(s);
 				}
 			}
 		}
-
-		if (WARN_STOP) {
-			if (aok) printf("Type control-D or /exit or /quit or /bye to exit.\n\n");
-			WARN_STOP = 0;
+		if (warn_stop) {
+			if (aok) {
+				clear_line();
+				output_printf("Type control-D or /exit or /quit or /bye to exit.\n\n");
+				redisplay();
+			}
+			warn_stop = 0;
 		}
-
-		usleep(1000);
+		sleep_ms(1);
 	}
-
 	thread_running = 0;
 	esl_log(ESL_LOG_DEBUG, "Thread Done\n");
-
 	return NULL;
 }
 
-static int process_command(esl_handle_t *handle, const char *cmd) 
-{
-	if ((*cmd == '/' && cmd++) || !strncasecmp(cmd, "...", 3)) {
-		
-		if (!strcasecmp(cmd, "help")) {
-			printf(
-				   "Command                    \tDescription\n"
-				   "-----------------------------------------------\n"
-				   "/help                      \tHelp\n"
-				   "/exit, /quit, /bye, ...    \tExit the program.\n"
-				   "/event, /noevents, /nixevent\tEvent commands.\n"
-				   "/log, /nolog               \tLog commands.\n"
-				   "/uuid                      \tFilter logs for a single call uuid\n"
-				   "/filter                    \tFilter commands.\n"
-				   "/debug [0-7]               \tSet debug level.\n"
-				   "\n"
-				   );
+static const char *cli_usage =
+	"Command                    \tDescription\n"
+	"-----------------------------------------------\n"
+	"/help                      \tHelp\n"
+	"/exit, /quit, /bye, ...    \tExit the program.\n"
+	"/event, /noevents, /nixevent\tEvent commands.\n"
+	"/log, /nolog               \tLog commands.\n"
+	"/uuid                      \tFilter logs for a single call uuid\n"
+	"/filter                    \tFilter commands.\n"
+	"/debug [0-7]               \tSet debug level.\n"
+	"\n";
 
+static int process_command(esl_handle_t *handle, const char *cmd)
+{
+	while (*cmd == ' ') cmd++;
+	if ((*cmd == '/' && cmd++) || !strncasecmp(cmd, "...", 3)) {
+		if (!strcasecmp(cmd, "help")) {
+			output_printf("%s", cli_usage);
 			goto end;
 		}
-
-		if (
-			!strcasecmp(cmd, "exit") ||
+		if (!strcasecmp(cmd, "exit") ||
 			!strcasecmp(cmd, "quit") ||
 			!strcasecmp(cmd, "...") ||
 			!strcasecmp(cmd, "bye")
@@ -719,77 +761,64 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			return -1;
 		} else if (!strncasecmp(cmd, "uuid", 4)) {
 			cmd += 4;
-			
 			while (*cmd && *cmd == ' ') {
 				cmd++;
 			}
-
 			if (!esl_strlen_zero(cmd)) {
 				filter_uuid = strdup(cmd);
 			} else {
 				esl_safe_free(filter_uuid);
 			}
-			
-			printf("UUID filtering %s\n", filter_uuid ? "enabled" : "disabled");
-
-		} else if (
-			!strncasecmp(cmd, "event", 5) || 
-			!strncasecmp(cmd, "noevents", 8) ||
-			!strncasecmp(cmd, "nixevent", 8) ||
-			!strncasecmp(cmd, "log", 3) || 
-			!strncasecmp(cmd, "nolog", 5) || 
-			!strncasecmp(cmd, "filter", 6)
-			) {
-
-			esl_send_recv(handle, cmd);	
-
+			output_printf("UUID filtering %s\n", filter_uuid ? "enabled" : "disabled");
+		} else if (!strncasecmp(cmd, "event", 5) ||
+				   !strncasecmp(cmd, "noevents", 8) ||
+				   !strncasecmp(cmd, "nixevent", 8) ||
+				   !strncasecmp(cmd, "log", 3) ||
+				   !strncasecmp(cmd, "nolog", 5) ||
+				   !strncasecmp(cmd, "filter", 6)
+				   ) {
+			esl_send_recv(handle, cmd);
 			printf("%s\n", handle->last_sr_reply);
-		} else if (!strncasecmp(cmd, "debug", 5)){
+		} else if (!strncasecmp(cmd, "debug", 5)) {
 			int tmp_debug = atoi(cmd+6);
-			if (tmp_debug > -1 && tmp_debug < 8){
+			if (tmp_debug > -1 && tmp_debug < 8) {
 				esl_global_set_default_logger(tmp_debug);
-				printf("fs_cli debug level set to %d\n", tmp_debug);
+				output_printf("fs_cli debug level set to %d\n", tmp_debug);
 			} else {
-				printf("fs_cli debug level must be 0 - 7\n");
+				output_printf("fs_cli debug level must be 0 - 7\n");
 			}
 		} else {
-			printf("Unknown command [%s]\n", cmd);	
+			output_printf("Unknown command [%s]\n", cmd);
 		}
 	} else {
 		char cmd_str[1024] = "";
 		const char *err = NULL;
-		
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", cmd);
 		if (esl_send_recv(handle, cmd_str)) {
-			printf("Socket interrupted, bye!\n");
+			output_printf("Socket interrupted, bye!\n");
 			return -1;
 		}
 		if (handle->last_sr_event) {
 			if (handle->last_sr_event->body) {
-				printf("%s\n", handle->last_sr_event->body);
+				output_printf("%s\n", handle->last_sr_event->body);
 			} else if ((err = esl_event_get_header(handle->last_sr_event, "reply-text")) && !strncasecmp(err, "-err", 3)) {
-				printf("Error: %s!\n", err + 4);
+				output_printf("Error: %s!\n", err + 4);
 			}
 		}
 	}
-	
  end:
-
 	return 0;
-
 }
 
 static int get_profile(const char *name, cli_profile_t **profile)
 {
 	int x;
-
 	for (x = 0; x < pcount; x++) {
 		if (!strcmp(profiles[x].name, name)) {
 			*profile = &profiles[x];
 			return 0;
 		}
 	}
-
 	return -1;
 }
 
@@ -800,9 +829,7 @@ static const char *basic_gets(int *cnt)
 {
 #ifndef _MSC_VER
 	int x = 0;
-
 	printf("%s", prompt_str);
-
 	memset(&command_buf, 0, sizeof(command_buf));
 	for (x = 0; x < (sizeof(command_buf) - 1); x++) {
 		int c = getchar();
@@ -811,27 +838,21 @@ static const char *basic_gets(int *cnt)
 			command_buf[y - 1] = '\0';
 			break;
 		}
-		
 		command_buf[x] = (char) c;
-		
 		if (command_buf[x] == '\n') {
 			command_buf[x] = '\0';
 			break;
 		}
 	}
-
 	*cnt = x;
 #else
 	int read, key;
 	char keys[CMD_BUFLEN];
 	HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
-
 	console_bufferInput (0, 0, prompt_str, PROMPT_OP);
 	printf("%s", prompt_str);
-
 	*cnt = 0;
 	memset(&command_buf, 0, sizeof(command_buf));
-
 	while (!*cnt) {
 		if (console_readConsole(stdinHandle, keys, (int)sizeof(keys), &read, &key)) {
 			*cnt = console_bufferInput(keys, read, command_buf, key);
@@ -839,14 +860,14 @@ static const char *basic_gets(int *cnt)
 				command_buf[0] = 0;
 			}
 		}
-		Sleep(20);
+		sleep_ms(20);
 	}
 #endif
-
 	return command_buf;
 }
 #endif
 
+<<<<<<< HEAD
 
 static void print_banner(FILE *stream)
 {
@@ -863,6 +884,26 @@ static void print_banner(FILE *stream)
 			);
 }
 
+=======
+static const char *banner =
+	"            _____ ____     ____ _     ___              \n"
+	"           |  ___/ ___|   / ___| |   |_ _|             \n"
+	"           | |_  \\___ \\  | |   | |    | |            \n"
+	"           |  _|  ___) | | |___| |___ | |              \n"
+	"           |_|   |____/   \\____|_____|___|            \n"
+	"\n"
+	"*******************************************************\n"
+	"* Anthony Minessale II, Ken Rice,                     *\n"
+	"* Michael Jerris, Travis Cross                        *\n"
+	"* FreeSWITCH (http://www.freeswitch.org)              *\n"
+	"* Paypal Donations Appreciated: paypal@freeswitch.org *\n"
+	"* Brought to you by ClueCon http://www.cluecon.com/   *\n"
+	"*******************************************************\n"
+	"\n"
+	"Type /help <enter> to see a list of commands\n\n\n";
+
+static void print_banner(FILE *stream) { fprintf(stream, "%s%s", output_text_color, banner); }
+>>>>>>> master
 
 static void set_fn_keys(cli_profile_t *profile)
 {
@@ -880,82 +921,73 @@ static void set_fn_keys(cli_profile_t *profile)
 	profile->console_fnkeys[11] = "version";
 }
 
-#define end_of_p(_s) (*_s == '\0' ? _s : _s + strlen(_s) - 1)
+static char* end_of_str(char *s) { return (*s == '\0' ? s : s + strlen(s) - 1); }
 
-static unsigned char esl_console_complete(const char *buffer, const char *cursor)
+static char* _strndup(const char *s, int n)
+{
+	char *r = (char*)malloc(n + 1), *d=r;
+	while (n > 0 && *s) {
+		*d = *s;
+		d++; s++; n--;
+	}
+	*d = 0;
+	return r;
+}
+
+static unsigned char esl_console_complete(const char *buffer, const char *cursor, const char *lastchar)
 {
 	char cmd_str[2048] = "";
 	unsigned char ret = CC_REDISPLAY;
-	char *dup = strdup(buffer);
+	char *dup = _strndup(buffer, (int)(lastchar - buffer));
 	char *buf = dup;
-	int pos = 0, sc = 0;
+	int sc = 0, offset = (int)(cursor - buffer), pos = (offset > 0) ? offset : 0;
 	char *p;
-
-	if (!esl_strlen_zero(cursor) && !esl_strlen_zero(buffer)) {
-		pos = (int)(cursor - buffer);
-	}
 	if (pos > 0) {
 		*(buf + pos) = '\0';
 	}
-
 	if ((p = strchr(buf, '\r')) || (p = strchr(buf, '\n'))) {
 		*p = '\0';
 	}
-
 	while (*buf == ' ') {
 		buf++;
 		sc++;
 	}
-
 #ifdef HAVE_EDITLINE
 	if (!*buf && sc) {
 		el_deletestr(el, sc);
+		sc = 0;
 	}
 #endif
-
-	sc = 0;
-
-	p = end_of_p(buf);
+	p = end_of_str(buf);
 	while(p >= buf && *p == ' ') {
 		sc++;
 		p--;
 	}
-
 #ifdef HAVE_EDITLINE
 	if (sc > 1) {
 		el_deletestr(el, sc - 1);
 		*(p + 2) = '\0';
 	}
 #endif
-	
-
 	if (*cursor) {
 		snprintf(cmd_str, sizeof(cmd_str), "api console_complete c=%ld;%s\n\n", (long)pos, buf);
 	} else {
 		snprintf(cmd_str, sizeof(cmd_str), "api console_complete %s\n\n", buf);
 	}
-
 	esl_send_recv(global_handle, cmd_str);
-
-
 	if (global_handle->last_sr_event && global_handle->last_sr_event->body) {
 		char *r = global_handle->last_sr_event->body;
 		char *w, *p1;
-		
 		if (r) {
 			if ((w = strstr(r, "\n\nwrite="))) {
 				int len = 0;
 				*w = '\0';
 				w += 8;
-
 				len = atoi(w);
-
 				if ((p1= strchr(w, ':'))) {
 					w = p1+ 1;
 				}
-				
 				printf("%s\n\n\n", r);
-
 #ifdef HAVE_EDITLINE
 				el_deletestr(el, len);
 				el_insertstr(el, w);
@@ -965,7 +997,6 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 				console_bufferInput(w, (int)strlen(w), (char*)buffer, 0);
 #endif
 #endif
-				
 			} else {
 				printf("%s\n", r);
 #ifdef _MSC_VER
@@ -973,24 +1004,119 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 #endif
 			}
 		}
-
 		fflush(stdout);
-	}	
-
+	}
 	esl_safe_free(dup);
-
 	return ret;
 }
 
 #ifdef HAVE_EDITLINE
-static unsigned char complete(EditLine * el, int ch)
+static unsigned char complete(EditLine *el, int ch)
 {
 	const LineInfo *lf = el_line(el);
-
-	return esl_console_complete(lf->buffer, lf->cursor);
+	return esl_console_complete(lf->buffer, lf->cursor, lf->lastchar);
 }
 #endif
 
+struct color_map_el {
+	char name[32];
+	char seq[12];
+};
+
+struct color_map_el color_map[] = {
+	{"black", ESL_SEQ_FBLACK}, {"bold-black", ESL_SEQ_BBLACK},
+	{"red", ESL_SEQ_FRED}, {"bold-red", ESL_SEQ_BRED},
+	{"green", ESL_SEQ_FGREEN}, {"bold-green", ESL_SEQ_BGREEN},
+	{"yellow", ESL_SEQ_FYELLOW}, {"bold-yellow", ESL_SEQ_BYELLOW},
+	{"blue", ESL_SEQ_FBLUE}, {"bold-blue", ESL_SEQ_BBLUE},
+	{"magenta", ESL_SEQ_FMAGEN}, {"bold-magenta", ESL_SEQ_BMAGEN},
+	{"cyan", ESL_SEQ_FCYAN}, {"bold-cyan", ESL_SEQ_BCYAN},
+	{"white", ESL_SEQ_FWHITE}, {"bold-white", ESL_SEQ_BWHITE},
+	{{0}}};
+
+static const char* match_color(const char *s) {
+	struct color_map_el *map = color_map;
+	while (map->name) {
+		if (!(strcasecmp(s, map->name))) {
+			return map->seq;
+		}
+		map++;
+	}
+#ifdef WIN32
+	return "white";
+#else
+	return ESL_SEQ_DEFAULT_COLOR;
+#endif
+}
+
+static void read_config(const char *dft_cfile, const char *cfile) {
+	esl_config_t cfg;
+	if (esl_config_open_file(&cfg, cfile) ||
+		esl_config_open_file(&cfg, dft_cfile)) {
+		char *var, *val;
+		char cur_cat[128] = "";
+		while (esl_config_next_pair(&cfg, &var, &val)) {
+			if (strcmp(cur_cat, cfg.category)) {
+				esl_set_string(cur_cat, cfg.category);
+				esl_set_string(profiles[pcount].name, cur_cat);
+				esl_set_string(profiles[pcount].host, "localhost");
+				esl_set_string(profiles[pcount].pass, "ClueCon");
+				profiles[pcount].port = 8021;
+				set_fn_keys(&profiles[pcount]);
+				esl_set_string(profiles[pcount].prompt_color, prompt_color);
+				esl_set_string(profiles[pcount].input_text_color, input_text_color);
+				esl_set_string(profiles[pcount].output_text_color, output_text_color);
+				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[pcount].name);
+				pcount++;
+			}
+			if (!strcasecmp(var, "host")) {
+				esl_set_string(profiles[pcount-1].host, val);
+			} else if (!strcasecmp(var, "user")) {
+				esl_set_string(profiles[pcount-1].user, val);
+			} else if (!strcasecmp(var, "password")) {
+				esl_set_string(profiles[pcount-1].pass, val);
+			} else if (!strcasecmp(var, "port")) {
+				int pt = atoi(val);
+				if (pt > 0) {
+					profiles[pcount-1].port = (esl_port_t)pt;
+				}
+			} else if (!strcasecmp(var, "debug")) {
+				int dt = atoi(val);
+				if (dt > -1 && dt < 8){
+					profiles[pcount-1].debug = dt;
+				}
+			} else if(!strcasecmp(var, "loglevel")) {
+				esl_set_string(profiles[pcount-1].loglevel, val);
+			} else if(!strcasecmp(var, "quiet")) {
+				profiles[pcount-1].quiet = esl_true(val);
+			} else if(!strcasecmp(var, "prompt-color")) {
+				esl_set_string(profiles[pcount-1].prompt_color, match_color(val));
+			} else if(!strcasecmp(var, "input-text-color")) {
+				esl_set_string(profiles[pcount-1].input_text_color, match_color(val));
+			} else if(!strcasecmp(var, "output-text-color")) {
+				esl_set_string(profiles[pcount-1].output_text_color, match_color(val));
+			} else if (!strncasecmp(var, "key_F", 5)) {
+				char *key = var + 5;
+				if (key) {
+					int i = atoi(key);
+					if (i > 0 && i < 13) {
+						profiles[pcount-1].console_fnkeys[i - 1] = strdup(val);
+					}
+				}
+			}
+		}
+		esl_config_close_file(&cfg);
+	}
+}
+
+static void clear_el_buffer(void) {
+#ifdef HAVE_EDITLINE
+	const LineInfo *lf = el_line(el);
+	int len = (int)(lf->lastchar - lf->buffer);
+	el_deletestr(el, len);
+	memset((char*)lf->buffer, 0, len);
+#endif
+}
 
 int main(int argc, char *argv[])
 {
@@ -998,14 +1124,17 @@ int main(int argc, char *argv[])
 	int count = 0;
 	const char *line = NULL;
 	char cmd_str[1024] = "";
-	esl_config_t cfg;
 	cli_profile_t *profile = NULL;
-	int rv = 0;
-
 #ifndef WIN32
+<<<<<<< HEAD
 	char hfile[512] = "/etc/nbess7_cli_history";
 	char cfile[512] = "/etc/nbess7_cli.conf";
 	char dft_cfile[512] = "/etc/nbess7_cli.conf";
+=======
+	char hfile[512] = "/tmp/fs_cli_history";
+	char cfile[512] = "/etc/fs_cli.conf";
+	char dft_cfile[512] = "/etc/fs_cli.conf";
+>>>>>>> master
 #else
 	char hfile[512] = "nbess7_cli_history";
 	char cfile[512] = "nbess7_cli.conf";
@@ -1030,7 +1159,6 @@ int main(int argc, char *argv[])
 		{"timeout", 1, 0, 't'},
 		{0, 0, 0, 0}
 	};
-
 	char temp_host[128];
 	int argv_host = 0;
 	char temp_user[256];
@@ -1042,7 +1170,6 @@ int main(int argc, char *argv[])
 	int temp_log = -1;
 	int argv_error = 0;
 	int argv_exec = 0;
-	int ctl_c = 0;
 	char argv_command[1024] = "";
 	char argv_loglevel[128] = "";
 	int argv_quiet = 0;
@@ -1053,13 +1180,13 @@ int main(int argc, char *argv[])
 	strncpy(internal_profile.name, "internal", sizeof(internal_profile.name));
 	internal_profile.port = 8821;
 	set_fn_keys(&internal_profile);
-
-
+	esl_set_string(internal_profile.prompt_color, prompt_color);
+	esl_set_string(internal_profile.input_text_color, input_text_color);
+	esl_set_string(internal_profile.output_text_color, output_text_color);
 	if (home) {
 		snprintf(hfile, sizeof(hfile), "%s/.nbess7_cli_history", home);
 		snprintf(cfile, sizeof(cfile), "%s/.nbess7_cli_conf", home);
 	}
-	
 	signal(SIGINT, handle_SIGINT);
 #ifdef SIGTSTP
 	signal(SIGTSTP, handle_SIGINT);
@@ -1068,20 +1195,18 @@ int main(int argc, char *argv[])
 	signal(SIGQUIT, handle_SIGQUIT);
 #endif
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
-	
 	for(;;) {
 		int option_index = 0;
 		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:t:qrRhi?", options, &option_index);
 		if (opt == -1) break;
-		switch (opt)
-		{
+		switch (opt) {
 			case 'H':
 				esl_set_string(temp_host, optarg);
 				argv_host = 1;
 				break;
 			case 'P':
 				temp_port= atoi(optarg);
-				if (temp_port > 0 && temp_port < 65536){
+				if (temp_port > 0 && temp_port < 65536) {
 					argv_port = 1;
 				} else {
 					printf("ERROR: Port must be in range 1 - 65535\n");
@@ -1098,7 +1223,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'd':
 				temp_log=atoi(optarg);
-				if (temp_log < 0 || temp_log > 7){
+				if (temp_log < 0 || temp_log > 7) {
 					printf("ERROR: Debug level should be 0 - 7.\n");
 					argv_error = 1;
 				} else {
@@ -1116,12 +1241,12 @@ int main(int argc, char *argv[])
 				argv_quiet = 1;
 				break;
 			case 'i':
-				ctl_c = 1;
+				allow_ctl_c = 1;
 				break;
-		    case 'r':
+			case 'r':
 				loops += 120;
 				break;
-		    case 'R':
+			case 'R':
 				reconnect = 1;
 				break;
 			case 't':
@@ -1136,11 +1261,11 @@ int main(int argc, char *argv[])
 				opt = 0;
 		}
 	}
-	
-	if (argv_error){
+	if (argv_error) {
 		printf("\n");
 		return usage(argv[0]);
 	}
+<<<<<<< HEAD
 
 	if (!(rv = esl_config_open_file(&cfg, cfile))) {
 		rv = esl_config_open_file(&cfg, dft_cfile);
@@ -1197,43 +1322,41 @@ int main(int argc, char *argv[])
 		esl_config_close_file(&cfg);
 	}
 	
+=======
+	read_config(dft_cfile, cfile);
+>>>>>>> master
 	if (optind < argc) {
 		get_profile(argv[optind], &profile);
 	}
-	
 	if (!profile) {
 		if (get_profile("default", &profile)) {
 			esl_log(ESL_LOG_DEBUG, "profile default does not exist using builtin profile\n");
 			profile = &internal_profile;
 		}
 	}
-
 	if (temp_log < 0 ) {
 		esl_global_set_default_logger(profile->debug);
-	}	
-
+	}
 	if (argv_host) {
 		esl_set_string(profile->host, temp_host);
 	}
 	if (argv_port) {
 		profile->port = (esl_port_t)temp_port;
 	}
-
 	if (argv_user) {
 		esl_set_string(profile->user, temp_user);
 	}
-
 	if (argv_pass) {
 		esl_set_string(profile->pass, temp_pass);
 	}
-	
 	if (*argv_loglevel) {
 		esl_set_string(profile->loglevel, argv_loglevel);
 		profile->quiet = 0;
 	}
-
 	esl_log(ESL_LOG_DEBUG, "Using profile %s [%s]\n", profile->name, profile->host);
-	
+	esl_set_string(prompt_color, profile->prompt_color);
+	esl_set_string(input_text_color, profile->input_text_color);
+	esl_set_string(output_text_color, profile->output_text_color);
 	if (argv_host) {
 		if (argv_port && profile->port != 8821) {
 			snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s:%u@%s> ", profile->host, profile->port, profile->name);
@@ -1243,11 +1366,14 @@ int main(int argc, char *argv[])
 	} else {
 		snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s> ", profile->name);
 	}
-
+	bare_prompt_str_len = (int)strlen(bare_prompt_str);
+#ifdef WIN32
+	snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str); /* Not supporting this for now */
+#else
+	snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
+#endif
  connect:
-
-	CONNECTED = 0;
-
+	connected = 0;
 	while (--loops > 0) {
 		memset(&handle, 0, sizeof(handle));
 		if (esl_connect(&handle, profile->host, profile->port, profile->user, profile->pass)) {
@@ -1257,18 +1383,11 @@ int main(int argc, char *argv[])
 				if (!argv_exec) usage(argv[0]);
 				return -1;
 			} else {
-#ifndef WIN32
-				sleep(1);
-#else
-				Sleep(1000);
-#endif
+				sleep_s(1);
 				esl_log(ESL_LOG_INFO, "Retrying\n");
 			}
 		} else {
-			if (!ctl_c) {
-				CONNECTED = 1;
-			}
-
+			connected = 1;
 			if (temp_log < 0 ) {
 				esl_global_set_default_logger(profile->debug);
 			} else {
@@ -1277,11 +1396,8 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
-
-
-	if (argv_exec){
+	if (argv_exec) {
 		const char *err = NULL;
-
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", argv_command);
 		if (timeout) {
 			esl_status_t status = esl_send_recv_timed(&handle, cmd_str, timeout);
@@ -1289,11 +1405,10 @@ int main(int argc, char *argv[])
 				printf("Request timed out.\n");
 				esl_disconnect(&handle);
 				return -2;
-			} 
+			}
 		} else {
 			esl_send_recv(&handle, cmd_str);
 		}
-		
 		if (handle.last_sr_event) {
 			if (handle.last_sr_event->body) {
 				printf("%s\n", handle.last_sr_event->body);
@@ -1301,22 +1416,17 @@ int main(int argc, char *argv[])
 				printf("Error: %s!\n", err + 4);
 			}
 		}
-
 		esl_disconnect(&handle);
 		return 0;
-	} 
-
+	}
 	global_handle = &handle;
 	global_profile = profile;
-
 	esl_thread_create_detached(msg_thread_run, &handle);
 
 #ifdef HAVE_EDITLINE
-	el = el_init(__FILE__, stdout, stdout, stdout);
+	el = el_init(__FILE__, stdin, stdout, stderr);
 	el_set(el, EL_PROMPT, &prompt);
 	el_set(el, EL_EDITOR, "emacs");
-
-	myhistory = history_init();
 
 	el_set(el, EL_ADDFN, "f1-key", "F1 KEY PRESS", console_f1key);
 	el_set(el, EL_ADDFN, "f2-key", "F2 KEY PRESS", console_f2key);
@@ -1330,14 +1440,12 @@ int main(int argc, char *argv[])
 	el_set(el, EL_ADDFN, "f10-key", "F10 KEY PRESS", console_f10key);
 	el_set(el, EL_ADDFN, "f11-key", "F11 KEY PRESS", console_f11key);
 	el_set(el, EL_ADDFN, "f12-key", "F12 KEY PRESS", console_f12key);
-
 	el_set(el, EL_ADDFN, "EOF-key", "EOF (^D) KEY PRESS", console_eofkey);
 
 	el_set(el, EL_BIND, "\033OP", "f1-key", NULL);
 	el_set(el, EL_BIND, "\033OQ", "f2-key", NULL);
 	el_set(el, EL_BIND, "\033OR", "f3-key", NULL);
 	el_set(el, EL_BIND, "\033OS", "f4-key", NULL);
-
 
 	el_set(el, EL_BIND, "\033[11~", "f1-key", NULL);
 	el_set(el, EL_BIND, "\033[12~", "f2-key", NULL);
@@ -1357,17 +1465,14 @@ int main(int argc, char *argv[])
 	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
 	el_set(el, EL_BIND, "^I", "ed-complete", NULL);
 
-	if (myhistory == 0) {
+	if (!(myhistory = history_init())) {
 		esl_log(ESL_LOG_ERROR, "history could not be initialized\n");
 		goto done;
 	}
-
 	history(myhistory, &ev, H_SETSIZE, 800);
 	el_set(el, EL_HIST, history, myhistory);
 	history(myhistory, &ev, H_LOAD, hfile);
-
 	el_source(el, NULL);
-
 #endif
 #ifdef WIN32
 	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -1375,80 +1480,67 @@ int main(int argc, char *argv[])
 		wOldColorAttrs = csbiInfo.wAttributes;
 	}
 #endif
-
 	if (!argv_quiet && !profile->quiet) {
-		snprintf(cmd_str, sizeof(cmd_str), "log %s\n\n", profile->loglevel);	
+		snprintf(cmd_str, sizeof(cmd_str), "log %s\n\n", profile->loglevel);
 		esl_send_recv(&handle, cmd_str);
 	}
-
 	print_banner(stdout);
+<<<<<<< HEAD
 
 	esl_log(ESL_LOG_INFO, "Netborder SS7 CLI Ready.\nenter /help for a list of commands.\n");
 	printf("%s\n", handle.last_sr_reply);
 
+=======
+	esl_log(ESL_LOG_INFO, "FS CLI Ready.\nenter /help for a list of commands.\n");
+	output_printf("%s\n", handle.last_sr_reply);
+>>>>>>> master
 	while (running > 0) {
 		int r;
-		
 #ifdef HAVE_EDITLINE
 		line = el_gets(el, &count);
 #else
 		line = basic_gets(&count);
 #endif
-
-		if (count > 1) {
-			if (!esl_strlen_zero(line)) {
-				char *cmd = strdup(line);
-				char *p;
-
-#ifdef HAVE_EDITLINE
-				const LineInfo *lf = el_line(el);
-				char *foo = (char *) lf->buffer;
-#endif
-
-				if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
-					*p = '\0';
-				}
-				assert(cmd != NULL);
-
-#ifdef HAVE_EDITLINE
-				history(myhistory, &ev, H_ENTER, line);
-#endif
-				
-				if ((r = process_command(&handle, cmd))) {
-					running = r;
-				}
-
-#ifdef HAVE_EDITLINE
-				el_deletestr(el, strlen(foo) + 1);
-				memset(foo, 0, strlen(foo));
-#endif
-				free(cmd);
+		if (count > 1 && !esl_strlen_zero(line)) {
+			char *p, *cmd = strdup(line);
+			assert(cmd);
+			if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
+				*p = '\0';
 			}
+#ifdef HAVE_EDITLINE
+			history(myhistory, &ev, H_ENTER, line);
+#endif
+			if ((r = process_command(&handle, cmd))) {
+				running = r;
+			}
+			free(cmd);
+			clear_el_buffer();
 		}
-
-		usleep(1000);
-
+		sleep_ms(1);
 	}
-
 	if (running < 0 && reconnect) {
 		running = 1;
 		loops = 120;
 		goto connect;
 	}
-
-
 #ifdef HAVE_EDITLINE
  done:
 	history(myhistory, &ev, H_SAVE, hfile);
-
-	/* Clean up our memory */
 	history_end(myhistory);
 	el_end(el);
 #endif
-
 	esl_disconnect(&handle);
-	
 	thread_running = 0;
-
 	return 0;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */

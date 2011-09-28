@@ -252,7 +252,7 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 	char *argv[6];
 	int argc;
 	char *lbuf = NULL;
-	int x;
+	int x, n;
 
 	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_soundtouch_"))) {
 		if (!zstr(data) && !strcasecmp(data, "stop")) {
@@ -275,24 +275,36 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 		sth->tempo = 1;
 		sth->hook_dtmf = false;
 		sth->send_not_recv = false;
+		n = 0;
 		for (x = 0; x < argc; x++) {
 			if (!strncasecmp(argv[x], "send_leg", 8)) {
 				sth->send_not_recv = true;
 			} else if (!strncasecmp(argv[x], "hook_dtmf", 9)) {
 				sth->hook_dtmf = true;
+				n++;
 			} else if (strchr(argv[x], 'p')) {
-				sth->pitch = normalize_soundtouch_value('p',atof(argv[x]));
+				sth->pitch = normalize_soundtouch_value('p', atof(argv[x]));
+				n++;
 			} else if (strchr(argv[x], 'r')) {
-				sth->rate = normalize_soundtouch_value('r',atof(argv[x]));
+				sth->rate = normalize_soundtouch_value('r', atof(argv[x]));
+				n++;
 			} else if (strchr(argv[x], 'o')) {
 				sth->pitch = normalize_soundtouch_value('p', compute_pitch_from_octaves(atof(argv[x])) );
+				n++;
 			} else if (strchr(argv[x], 's')) {
 				/*12.0f taken from soundtouch conversion to octaves*/
 				sth->pitch = normalize_soundtouch_value('p', compute_pitch_from_octaves(atof(argv[x]) / 12.0f) ); 
+				n++;
 			} else if (strchr(argv[x], 't')) {
-				sth->tempo = normalize_soundtouch_value('t',atof(argv[x]));
+				sth->tempo = normalize_soundtouch_value('t', atof(argv[x]));
+				n++;
 			}
 		}
+	}
+
+	if (n < 1) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot run, no pitch set\n");
+		return;
 	}
 
 
@@ -308,15 +320,144 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 
 }
 
+/* API Interface Function */
+#define SOUNDTOUCH_API_SYNTAX "<uuid> [start|stop] [send_leg] [hook_dtmf] [-]<X>s [-]<X>o <X>p <X>r <X>t"
+SWITCH_STANDARD_API(soundtouch_api_function)
+{
+	switch_core_session_t *rsession = NULL;
+	switch_channel_t *channel = NULL;
+        switch_media_bug_t *bug;
+        switch_status_t status;
+        struct soundtouch_helper *sth;
+	char *mycmd = NULL;
+        int argc = 0;
+        char *argv[10] = { 0 };
+	char *uuid = NULL;
+	char *action = NULL;
+	char *lbuf = NULL;
+	int x, n;
+
+	if (zstr(cmd)) {
+		goto usage;
+	}
+
+        if (!(mycmd = strdup(cmd))) {
+                goto usage;
+        }
+
+        if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+                goto usage;
+        }
+
+        uuid = argv[0];
+        action = argv[1];
+
+        if (!(rsession = switch_core_session_locate(uuid))) {
+                stream->write_function(stream, "-ERR Cannot locate session!\n");
+                goto done;
+        }
+
+	channel = switch_core_session_get_channel(rsession);
+
+	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_soundtouch_"))) {
+		if (!zstr(action) && !strcasecmp(action, "stop")) {
+			switch_channel_set_private(channel, "_soundtouch_", NULL);
+			switch_core_media_bug_remove(rsession, &bug);
+			stream->write_function(stream, "+OK Success\n");
+		} else {
+			stream->write_function(stream, "-ERR Cannot run 2 at once on the same channel!\n");
+		}
+		goto done;
+	}
+
+	if (!zstr(action) && strcasecmp(action, "start")) {
+		goto usage;
+	}
+
+	if (argc < 3) {
+		goto usage;
+	}
+
+	sth = (struct soundtouch_helper *) switch_core_session_alloc(rsession, sizeof(*sth));
+	assert(sth != NULL);
+
+
+	sth->pitch = 1;
+	sth->rate = 1;
+	sth->tempo = 1;
+	sth->hook_dtmf = false;
+	sth->send_not_recv = false;
+	n = 0;
+	for (x = 2; x < argc; x++) {
+		if (!strncasecmp(argv[x], "send_leg", 8)) {
+			sth->send_not_recv = true;
+		} else if (!strncasecmp(argv[x], "hook_dtmf", 9)) {
+			sth->hook_dtmf = true;
+			n++;
+		} else if (strchr(argv[x], 'p')) {
+			sth->pitch = normalize_soundtouch_value('p', atof(argv[x]));
+			n++;
+		} else if (strchr(argv[x], 'r')) {
+			sth->rate = normalize_soundtouch_value('r', atof(argv[x]));
+			n++;
+		} else if (strchr(argv[x], 'o')) {
+			sth->pitch = normalize_soundtouch_value('p', compute_pitch_from_octaves(atof(argv[x])) );
+			n++;
+		} else if (strchr(argv[x], 's')) {
+			/*12.0f taken from soundtouch conversion to octaves*/
+			sth->pitch = normalize_soundtouch_value('p', compute_pitch_from_octaves(atof(argv[x]) / 12.0f) ); 
+			n++;
+		} else if (strchr(argv[x], 't')) {
+			sth->tempo = normalize_soundtouch_value('t', atof(argv[x]));
+			n++;
+		}
+	}
+
+	if (n < 1) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rsession), SWITCH_LOG_WARNING, "Cannot run, no pitch set\n");
+		goto usage;
+	}
+
+	sth->session = rsession;
+
+	if ((status = switch_core_media_bug_add(rsession, "soundtouch", NULL, soundtouch_callback, sth, 0,
+											sth->send_not_recv ? SMBF_WRITE_REPLACE : SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "-ERR Failure!\n");
+		goto done;
+	} else {
+		switch_channel_set_private(channel, "_soundtouch_", bug);
+		stream->write_function(stream, "+OK Success\n");
+		goto done;
+	}
+
+
+  usage:
+        stream->write_function(stream, "-USAGE: %s\n", SOUNDTOUCH_API_SYNTAX);
+
+  done:
+        if (rsession) {
+                switch_core_session_rwunlock(rsession);
+        }
+
+        switch_safe_free(mycmd);
+        return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_soundtouch_load)
 {
 	switch_application_interface_t *app_interface;
+	switch_api_interface_t *api_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname); 
 
 	SWITCH_ADD_APP(app_interface, "soundtouch", "Alter the audio stream", "Alter the audio stream pitch/rate/tempo", 
                    soundtouch_start_function, "[send_leg] [hook_dtmf] [-]<X>s [-]<X>o <X>p <X>r <X>t", SAF_NONE);
+
+	SWITCH_ADD_API(api_interface, "soundtouch", "soundtouch", soundtouch_api_function, SOUNDTOUCH_API_SYNTAX);
+
+	switch_console_set_complete("add soundtouch ::console::list_uuid ::[start:stop");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

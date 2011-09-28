@@ -87,6 +87,10 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 
 #define switch_channel_up(_channel) (switch_channel_check_signal(_channel, SWITCH_TRUE) || switch_channel_get_state(_channel) < CS_HANGUP)
 #define switch_channel_down(_channel) (switch_channel_check_signal(_channel, SWITCH_TRUE) || switch_channel_get_state(_channel) >= CS_HANGUP)
+
+#define switch_channel_up_nosig(_channel) switch_channel_get_state(_channel) < CS_HANGUP
+#define switch_channel_down_nosig(_channel) switch_channel_get_state(_channel) >= CS_HANGUP
+
 #define switch_channel_media_ack(_channel) (!switch_channel_test_cap(_channel, CC_MEDIA_ACK) || switch_channel_test_flag(_channel, CF_MEDIA_ACK))
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);
@@ -625,7 +629,10 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 /** @} */
 
 SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix);
+SWITCH_DECLARE(switch_status_t) switch_channel_api_on(switch_channel_t *channel, const char *variable_prefix);
 
+SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_queued_extension(switch_channel_t *channel);
+SWITCH_DECLARE(void) switch_channel_transfer_to_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension);
 
 SWITCH_END_EXTERN_C
 #endif

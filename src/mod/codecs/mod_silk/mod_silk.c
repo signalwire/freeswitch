@@ -192,7 +192,9 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 			return SWITCH_STATUS_FALSE;
 		}
 		
-		context->encoder_object.sampleRate = codec->implementation->actual_samples_per_second;
+
+		context->encoder_object.API_sampleRate = codec->implementation->actual_samples_per_second;
+		context->encoder_object.maxInternalSampleRate = codec->implementation->actual_samples_per_second;
 		context->encoder_object.packetSize = codec->implementation->samples_per_packet;
 		context->encoder_object.useInBandFEC = silk_codec_settings.useinbandfec;
 		context->encoder_object.complexity = 0;
@@ -210,7 +212,7 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 		if (SKP_Silk_SDK_InitDecoder(context->dec_state)) {
 			return SWITCH_STATUS_FALSE;
 		}
-		context->decoder_object.sampleRate = codec->implementation->actual_samples_per_second;
+		context->decoder_object.API_sampleRate = codec->implementation->actual_samples_per_second;
 	}
 
 	codec->private_info = context;
@@ -241,22 +243,22 @@ void printSilkError(SKP_int16 ret){
 		case SKP_SILK_ENC_PAYLOAD_BUF_TOO_SHORT: 
 			message = "Allocated payload buffer too short";
 			break;
-		case SKP_SILK_ENC_WRONG_LOSS_RATE: 
+		case SKP_SILK_ENC_INVALID_LOSS_RATE: 
 			message = " Loss rate not between  0 and 100 % ";
 			break;
-		case SKP_SILK_ENC_WRONG_COMPLEXITY_SETTING:
+		case SKP_SILK_ENC_INVALID_COMPLEXITY_SETTING:
 			message = "Complexity setting not valid, use 0 ,1 or 2";
 			break;
-		case SKP_SILK_ENC_WRONG_INBAND_FEC_SETTING: 
+		case SKP_SILK_ENC_INVALID_INBAND_FEC_SETTING: 
 			message = "Inband FEC setting not valid, use 0 or 1	";
 			break;
-		case SKP_SILK_ENC_WRONG_DTX_SETTING:
+		case SKP_SILK_ENC_INVALID_DTX_SETTING:
 			message = "DTX setting not valid, use 0 or 1";
 			break;
 		case SKP_SILK_ENC_INTERNAL_ERROR:
 			message = "Internal Encoder Error ";
 			break;
-		case SKP_SILK_DEC_WRONG_SAMPLING_FREQUENCY:
+		case SKP_SILK_DEC_INVALID_SAMPLING_FREQUENCY:
 			message = "Output sampling frequency lower than internal decoded sampling frequency";
 			break;
 		case SKP_SILK_DEC_PAYLOAD_TOO_LARGE: 

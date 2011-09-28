@@ -413,7 +413,7 @@ bool FSH323EndPoint::Initialise(switch_loadable_module_interface_t *iface)
 			}		
 		}
 	}
-
+	
 	if (m_fax_old_asn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "--->fax_old_asn\n");
 		SetT38_IFP_PRE();
@@ -714,6 +714,7 @@ FSH323Connection::FSH323Connection(FSH323EndPoint& endpoint, H323Transport* tran
 	, m_rtp_resetting(0)
 	, m_isRequst_fax(false)
 	, m_channel_hangup(false)
+	, m_RTPlocalPort(0)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::FSH323Connection [%p]\n",this);
 
@@ -739,8 +740,6 @@ FSH323Connection::FSH323Connection(FSH323EndPoint& endpoint, H323Transport* tran
 
 		switch_channel_set_state(m_fsChannel, CS_INIT);
 	}
-	
-	m_RTPlocalPort = switch_rtp_request_port((const char *)m_RTPlocalIP.AsString());
 }	
 
 FSH323Connection::~FSH323Connection()
@@ -974,6 +973,9 @@ H323Channel* FSH323Connection::CreateRealTimeLogicalChannel(const H323Capability
 	
 	H323TransportAddress m_h323transportadd = GetSignallingChannel()->GetLocalAddress();
 	m_h323transportadd.GetIpAddress(m_RTPlocalIP);
+	if (!m_RTPlocalPort) {
+		m_RTPlocalPort = switch_rtp_request_port((const char *)m_RTPlocalIP.AsString());
+	}
 
 	return new FSH323_ExternalRTPChannel(*this, capability, dir, sessionID,m_RTPlocalIP,m_RTPlocalPort);
 }
@@ -2044,7 +2046,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 			, GetMainTypes[m_capability->GetMainType()],(const char*)(m_capability->GetFormatName()),this);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"%s initialise %s codec %s for connection [%p]\n",switch_channel_get_name(m_fsChannel),((GetDirection() == IsReceiver)? " read" : " write")
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"%s Unsupported ptime of %u on %s %s codec %s for connection [%p]\n",switch_channel_get_name(m_fsChannel),((GetDirection() == IsReceiver)? " read" : " write")
 		, GetMainTypes[m_capability->GetMainType()],(const char*)(m_capability->GetFormatName()),this);
 	
 	if (GetDirection() == IsReceiver) {

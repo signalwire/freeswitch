@@ -1249,25 +1249,35 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	for (i = 0; i < cbh->rowcount; i++) {
 		struct call_helper *h = cbh->rows[i];
 		char *parsed = NULL;
+		int use_ent = 0;
 
-		switch_event_create_brackets(h->originate_string, '{', '}', ',', &ovars, &parsed, SWITCH_TRUE);
+		if (strstr(h->originate_string, "user/")) {
+			switch_event_create_brackets(h->originate_string, '<', '>', ',', &ovars, &parsed, SWITCH_TRUE);
+			use_ent = 1;
+		} else {
+			switch_event_create_brackets(h->originate_string, '{', '}', ',', &ovars, &parsed, SWITCH_TRUE);
+		}
+
 		switch_event_del_header(ovars, "fifo_outbound_uuid");
 
 		if (!h->timeout) h->timeout = node->ring_timeout;
 		if (timeout < h->timeout) timeout = h->timeout;
 
-		stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s]%s,",
-							  h->timeout, h->uuid, node->name, parsed ? parsed : h->originate_string);
+		if (use_ent) {
+			stream.write_function(&stream, "{ignore_early_media=true,outbound_redirect_fatal=true,leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s}%s%s",
+								  h->timeout, h->uuid, node->name, 
+								  parsed ? parsed : h->originate_string, (i == cbh->rowcount - 1) ? "" : SWITCH_ENT_ORIGINATE_DELIM);
+		} else {
+			stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s]%s,",
+								  h->timeout, h->uuid, node->name, parsed ? parsed : h->originate_string);
+		}
+
 		stream2.write_function(&stream2, "%s,", h->uuid);
 		switch_safe_free(parsed);
 
 	}
 
 	originate_string = (char *) stream.data;
-
-	if (originate_string) {
-		end_of(originate_string) = '\0';
-	}
 
 	uuid_list = (char *) stream2.data;
 
@@ -2957,6 +2967,9 @@ SWITCH_STANDARD_APP(fifo_function)
 				fifo_execute_sql(sql, globals.sql_mutex);
 				switch_safe_free(sql);
 
+
+				switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(other_session));
+				switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 
 				switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 

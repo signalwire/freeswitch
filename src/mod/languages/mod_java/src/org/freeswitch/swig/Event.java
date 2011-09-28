@@ -66,6 +66,14 @@ public class Event {
     this(freeswitchJNI.new_Event__SWIG_1(SWIGTYPE_p_switch_event_t.getCPtr(wrap_me), free_me), true);
   }
 
+  public int chat_execute(String app, String data) {
+    return freeswitchJNI.Event_chat_execute(swigCPtr, this, app, data);
+  }
+
+  public int chat_send(String dest_proto) {
+    return freeswitchJNI.Event_chat_send(swigCPtr, this, dest_proto);
+  }
+
   public String serialize(String format) {
     return freeswitchJNI.Event_serialize(swigCPtr, this, format);
   }

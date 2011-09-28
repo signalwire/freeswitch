@@ -238,6 +238,8 @@ struct nta_agent_s
   unsigned sa_use_naptr : 1;	/**< Use NAPTR lookup */
   unsigned sa_use_srv : 1;	/**< Use SRV lookup */
 
+  unsigned sa_srv_503 : 1;     /**<  SRV: choice another destination on 503 RFC 3263 */
+  
   unsigned sa_tport_threadpool:1; /**< Transports use threadpool */
 
   unsigned sa_rport:1;		/**< Use rport at client */
@@ -905,6 +907,7 @@ nta_agent_t *nta_agent_create(su_root_t *root,
     agent->sa_timestamp       = 0;
     agent->sa_use_naptr       = 1;
     agent->sa_use_srv         = 1;
+    agent->sa_srv_503         = 1;
     agent->sa_auto_comp       = 0;
     agent->sa_server_rport    = 1;
 
@@ -1476,6 +1479,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   int use_timestamp   = agent->sa_timestamp;
   int use_naptr       = agent->sa_use_naptr;
   int use_srv         = agent->sa_use_srv;
+  int srv_503         = agent->sa_srv_503;
   void *smime         = agent->sa_smime;
   uint32_t flags      = agent->sa_flags;
   int rport           = agent->sa_rport;
@@ -1540,6 +1544,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
 	      /* If threadpool is enabled, start a separate "reaper thread" */
 	      TPTAG_THRPSIZE_REF(threadpool),
 #endif
+              NTATAG_SRV_503_REF(srv_503),
 	      TAG_END());
   nC = tl_gets(tags,
 	       NTATAG_TIMER_C_REF(timer_c),
@@ -1698,6 +1703,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   agent->sa_timestamp = use_timestamp != 0;
   agent->sa_use_naptr = use_naptr != 0;
   agent->sa_use_srv = use_srv != 0;
+  agent->sa_srv_503 = srv_503 != 0;
   agent->sa_smime = smime;
   agent->sa_flags = flags & MSG_FLG_USERMASK;
   agent->sa_rport = rport != 0;
@@ -1821,6 +1827,7 @@ int agent_get_params(nta_agent_t *agent, tagi_t *tags)
 	     NTATAG_USE_NAPTR(agent->sa_use_naptr),
 	     NTATAG_USE_SRV(agent->sa_use_srv),
 	     NTATAG_USE_TIMESTAMP(agent->sa_timestamp),
+	     NTATAG_SRV_503(agent->sa_srv_503),
 	     TAG_END());
 }
 
@@ -2734,6 +2741,18 @@ static void agent_recv_response(nta_agent_t*, msg_t *, sip_t *,
 				sip_via_t *, tport_t*);
 static void agent_recv_garbage(nta_agent_t*, msg_t*, tport_t*);
 
+#if HAVE_SOFIA_SRESOLV
+static void outgoing_resolve(nta_outgoing_t *orq,
+			     int explicit_transport,
+			     enum nta_res_order_e order);
+su_inline void outgoing_cancel_resolver(nta_outgoing_t *orq);
+su_inline void outgoing_destroy_resolver(nta_outgoing_t *orq);
+static int outgoing_other_destinations(nta_outgoing_t const *orq);
+static int outgoing_try_another(nta_outgoing_t *orq);
+#else
+#define outgoing_other_destinations(orq) (0)
+#define outgoing_try_another(orq) (0)
+#endif
 
 /** Handle incoming message. */
 static
@@ -3182,6 +3201,9 @@ void agent_recv_response(nta_agent_t *agent,
     sip->sip_cseq ? sip->sip_cseq->cs_method_name : "<UNKNOWN>";
   uint32_t cseq = sip->sip_cseq ? sip->sip_cseq->cs_seq : 0;
   nta_outgoing_t *orq;
+  su_home_t *home;
+  char const *branch = NONE;
+
 
   agent->sa_stats->as_recv_msg++;
   agent->sa_stats->as_recv_response++;
@@ -3251,9 +3273,25 @@ void agent_recv_response(nta_agent_t *agent,
   if ((orq = outgoing_find(agent, msg, sip, sip->sip_via))) {
     SU_DEBUG_5(("nta: %03d %s %s\n",
 		status, phrase, "is going to a transaction"));
-    if (outgoing_recv(orq, status, msg, sip) == 0)
+      /* RFC3263 4.3 "503 error response" */
+      if(agent->sa_srv_503 && status == 503 && outgoing_other_destinations(orq)) {
+              SU_DEBUG_5(("%s(%p): <%03d> for <%s>, %s\n", "nta", (void *)orq, status, method, "try next after timeout"));
+              home = msg_home(msg);
+              if (agent->sa_is_stateless)
+                    branch = stateless_branch(agent, msg, sip, orq->orq_tpn);
+              else
+                    branch = stateful_branch(home, agent);
+
+             orq->orq_branch = branch;
+             orq->orq_via_branch = branch;
+             outgoing_try_another(orq);
+             return;
+      }						
+      		
+     if (outgoing_recv(orq, status, msg, sip) == 0)
       return;
   }
+
 
   agent->sa_stats->as_trless_response++;
 
@@ -7113,18 +7151,6 @@ static int outgoing_default_cb(nta_outgoing_magic_t *magic,
 			       nta_outgoing_t *request,
 			       sip_t const *sip);
 
-#if HAVE_SOFIA_SRESOLV
-static void outgoing_resolve(nta_outgoing_t *orq,
-			     int explicit_transport,
-			     enum nta_res_order_e order);
-su_inline void outgoing_cancel_resolver(nta_outgoing_t *orq);
-su_inline void outgoing_destroy_resolver(nta_outgoing_t *orq);
-static int outgoing_other_destinations(nta_outgoing_t const *orq);
-static int outgoing_try_another(nta_outgoing_t *orq);
-#else
-#define outgoing_other_destinations(orq) (0)
-#define outgoing_try_another(orq) (0)
-#endif
 
 /** Create a default outgoing transaction.
  *

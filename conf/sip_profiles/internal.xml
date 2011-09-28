@@ -102,6 +102,11 @@
 	It is not recommended to enable 100rel at this time.
     -->
     <!--<param name="enable-100rel" value="true"/>-->
+
+    <!-- uncomment if you don't wish to try a next SRV destination on 503 response -->
+    <!-- RFC3263 Section 4.3 -->	    
+    <!--<param name="disable-srv503" value="true"/>-->    
+    
     <!-- Enable Compact SIP headers. -->
     <!--<param name="enable-compact-headers" value="true"/>-->
     <!--

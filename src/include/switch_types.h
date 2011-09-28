@@ -131,12 +131,21 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_COPY_XML_CDR_VARIABLE "copy_xml_cdr"
 #define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"
 #define SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE "proto_specific_hangup_cause"
+
 #define SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE "execute_on_answer"
 #define SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE "execute_on_pre_answer"
 #define SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE "execute_on_media"
-#define SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE "api_on_answer"
 #define SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE "execute_on_ring"
 #define SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIABLE "execute_on_tone_detect"
+#define SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE "execute_on_originate"
+
+#define SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE "api_on_answer"
+#define SWITCH_CHANNEL_API_ON_PRE_ANSWER_VARIABLE "api_on_pre_answer"
+#define SWITCH_CHANNEL_API_ON_MEDIA_VARIABLE "api_on_media"
+#define SWITCH_CHANNEL_API_ON_RING_VARIABLE "api_on_ring"
+#define SWITCH_CHANNEL_API_ON_TONE_DETECT_VARIABLE "api_on_tone_detect"
+#define SWITCH_CHANNEL_API_ON_ORIGINATE_VARIABLE "api_on_originate"
+
 #define SWITCH_CALL_TIMEOUT_VARIABLE "call_timeout"
 #define SWITCH_HOLDING_UUID_VARIABLE "holding_uuid"
 #define SWITCH_SOFT_HOLDING_UUID_VARIABLE "soft_holding_uuid"
@@ -173,6 +182,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE "originator_video_codec"
 #define SWITCH_LOCAL_MEDIA_IP_VARIABLE "local_media_ip"
 #define SWITCH_LOCAL_MEDIA_PORT_VARIABLE "local_media_port"
+#define SWITCH_ADVERTISED_MEDIA_IP_VARIABLE "advertised_media_ip"
 #define SWITCH_REMOTE_MEDIA_IP_VARIABLE "remote_media_ip"
 #define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "remote_media_port"
 #define SWITCH_REMOTE_VIDEO_IP_VARIABLE "remote_video_ip"
@@ -193,6 +203,33 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_DTMF_LOG_LEN 1000
 typedef uint8_t switch_byte_t;
 
+/*!
+  \enum switch_dtmf_source_t
+  \brief DTMF sources
+<pre>
+    SWITCH_DTMF_UNKNOWN             - Unknown source
+    SWITCH_DTMF_INBAND_AUDIO        - From audio
+    SWITCH_DTMF_RTP                 - From RTP as a telephone event
+    SWITCH_DTMF_ENDPOINT            - From endpoint signaling
+    SWITCH_DTMF_APP                 - From application
+</pre>
+ */
+typedef enum {
+	SWITCH_DTMF_UNKNOWN,
+	SWITCH_DTMF_INBAND_AUDIO,
+	SWITCH_DTMF_RTP,
+	SWITCH_DTMF_ENDPOINT,
+	SWITCH_DTMF_APP
+} switch_dtmf_source_t;
+
+typedef enum {
+	DIGIT_TARGET_SELF,
+	DIGIT_TARGET_PEER,
+	DIGIT_TARGET_BOTH
+} switch_digit_action_target_t;
+
+
+
 typedef enum {
 	DTMF_FLAG_SKIP_PROCESS = (1 << 0)
 } dtmf_flag_t;
@@ -201,6 +238,7 @@ typedef struct {
 	char digit;
 	uint32_t duration;
 	int32_t flags;
+	switch_dtmf_source_t source;
 } switch_dtmf_t;
 
 typedef enum {
@@ -267,7 +305,9 @@ typedef enum {
 	SCF_USE_WIN32_MONOTONIC = (1 << 12),
 	SCF_AUTO_SCHEMAS = (1 << 13),
 	SCF_MINIMAL = (1 << 14),
-	SCF_USE_NAT_MAPPING = (1 << 15)
+	SCF_USE_NAT_MAPPING = (1 << 15),
+	SCF_CLEAR_SQL = (1 << 16),
+	SCF_THREADED_SYSTEM_EXEC = (1 << 17)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -285,7 +325,8 @@ typedef enum {
 	SWITCH_SAY_INTERFACE,
 	SWITCH_ASR_INTERFACE,
 	SWITCH_MANAGEMENT_INTERFACE,
-	SWITCH_LIMIT_INTERFACE
+	SWITCH_LIMIT_INTERFACE,
+	SWITCH_CHAT_APPLICATION_INTERFACE
 } switch_module_interface_name_t;
 
 typedef enum {
@@ -455,6 +496,7 @@ typedef enum {
 	SWITCH_XML_SECTION_DIRECTORY = (1 << 1),
 	SWITCH_XML_SECTION_DIALPLAN = (1 << 2),
 	SWITCH_XML_SECTION_PHRASES = (1 << 3),
+	SWITCH_XML_SECTION_CHATPLAN = (1 << 4),
 
 	/* Nothing after this line */
 	SWITCH_XML_SECTION_MAX = (1 << 4)
@@ -634,13 +676,23 @@ typedef enum {
 	  This flag will never send any. Sheesh....
 	 */
 	
-	RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6)
+	RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6),
 	
 	/*
 	  Guess Who? ... Yep, Sonus (and who know's who else) likes to interweave DTMF with the audio stream making it take
 	  2X as long as it should and sending an incorrect duration making the DTMF very delayed.
 	  This flag will treat every dtmf as if it were 50ms and queue it on recipt of the leading packet rather than at the end.
 	 */
+
+
+	RTP_BUG_ACCEPT_ANY_PACKETS = (1 << 7)
+
+	/*
+	  Oracle's Contact Center Anywhere (CCA) likes to use a single RTP socket to send all its outbound audio.
+	  This messes up our ability to auto adjust to NATTED RTP and causes us to ignore its audio packets.
+	  This flag will allow compatibility with this dying product.
+	*/
+
 
 } switch_rtp_bug_flag_t;
 
@@ -818,6 +870,7 @@ typedef struct {
 	uint16_t remote_port;
 	const char *local_ip;
 	uint16_t local_port;
+	const char *sdp_o_line;
 } switch_t38_options_t;
 
 /*!
@@ -1048,6 +1101,7 @@ typedef enum {
 	CC_PROXY_MEDIA,
 	CC_JITTERBUFFER,
 	CC_FS_RTP,
+	CC_QUEUEABLE_DTMF_DELAY,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CC_FLAG_MAX
 } switch_channel_cap_t;
@@ -1116,7 +1170,9 @@ typedef enum {
 	CF_LAZY_ATTENDED_TRANSFER,
 	CF_SIGNAL_DATA,
 	CF_SIMPLIFY,
+	CF_ZOMBIE_EXEC,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
+	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
 } switch_channel_flag_t;
 
@@ -1125,7 +1181,8 @@ typedef enum {
 	CF_APP_TAGGED = (1 << 0),
 	CF_APP_T38 = (1 << 1),
 	CF_APP_T38_REQ = (1 << 2),
-	CF_APP_T38_FAIL = (1 << 3)
+	CF_APP_T38_FAIL = (1 << 3),
+	CF_APP_T38_NEGOTIATED = (1 << 4)
 } switch_channel_app_flag_t;
 
 
@@ -1152,7 +1209,8 @@ typedef enum {
 	SFF_PROXY_PACKET = (1 << 5),
 	SFF_DYNAMIC = (1 << 6),
 	SFF_ZRTP = (1 << 7),
-	SFF_UDPTL_PACKET = (1 << 8)
+	SFF_UDPTL_PACKET = (1 << 8),
+	SFF_NOT_AUDIO = (1 << 9)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
@@ -1161,9 +1219,16 @@ typedef enum {
 	SAF_NONE = 0,
 	SAF_SUPPORT_NOMEDIA = (1 << 0),
 	SAF_ROUTING_EXEC = (1 << 1),
-	SAF_MEDIA_TAP = (1 << 2)
+	SAF_MEDIA_TAP = (1 << 2),
+	SAF_ZOMBIE_EXEC = (1 << 3)
 } switch_application_flag_enum_t;
 typedef uint32_t switch_application_flag_t;
+
+typedef enum {
+	SCAF_NONE = 0
+} switch_chat_application_flag_enum_t;
+typedef uint32_t switch_chat_application_flag_t;
+
 
 /*!
   \enum switch_signal_t
@@ -1625,7 +1690,8 @@ typedef enum {
 	SCSC_VERBOSE_EVENTS,
 	SCSC_SHUTDOWN_CHECK,
 	SCSC_PAUSE_CHECK,
-	SCSC_READY_CHECK
+	SCSC_READY_CHECK,
+	SCSC_THREADED_SYSTEM_EXEC
 } switch_session_ctl_t;
 
 typedef enum {
@@ -1672,6 +1738,7 @@ typedef struct switch_timer_interface switch_timer_interface_t;
 typedef struct switch_dialplan_interface switch_dialplan_interface_t;
 typedef struct switch_codec_interface switch_codec_interface_t;
 typedef struct switch_application_interface switch_application_interface_t;
+typedef struct switch_chat_application_interface switch_chat_application_interface_t;
 typedef struct switch_api_interface switch_api_interface_t;
 typedef struct switch_file_interface switch_file_interface_t;
 typedef struct switch_speech_interface switch_speech_interface_t;
@@ -1723,7 +1790,8 @@ typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp
 typedef switch_status_t (*switch_core_codec_destroy_func_t) (switch_codec_t *);
 
 
-
+typedef switch_status_t (*switch_chat_application_function_t) (switch_event_t *, const char *);
+#define SWITCH_STANDARD_CHAT_APP(name) static switch_status_t name (switch_event_t *message, const char *data)
 
 typedef void (*switch_application_function_t) (switch_core_session_t *, const char *);
 #define SWITCH_STANDARD_APP(name) static void name (switch_core_session_t *session, const char *data)

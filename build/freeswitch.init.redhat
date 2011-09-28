@@ -43,8 +43,8 @@ start() {
         fi
 	cd $FS_HOME
         daemon --user $FS_USER --pidfile $PID_FILE "$FS_FILE $FREESWITCH_ARGS $FREESWITCH_PARAMS >/dev/null 2>&1"
-		echo
 		RETVAL=$?
+		echo
         [ $RETVAL -eq 0 ] && touch $LOCK_FILE;
 	echo
         return $RETVAL

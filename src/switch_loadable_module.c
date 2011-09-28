@@ -63,6 +63,7 @@ struct switch_loadable_module_container {
 	switch_hash_t *dialplan_hash;
 	switch_hash_t *timer_hash;
 	switch_hash_t *application_hash;
+	switch_hash_t *chat_application_hash;
 	switch_hash_t *api_hash;
 	switch_hash_t *file_hash;
 	switch_hash_t *speech_hash;
@@ -261,6 +262,28 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_fire(&event);
 				}
 				switch_core_hash_insert(loadable_modules.application_hash, ptr->interface_name, (const void *) ptr);
+			}
+		}
+	}
+
+	if (new_module->module_interface->chat_application_interface) {
+		const switch_chat_application_interface_t *ptr;
+
+		for (ptr = new_module->module_interface->chat_application_interface; ptr; ptr = ptr->next) {
+			if (!ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load application interface from %s due to no interface name.\n", key);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Chat Application '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "application");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->short_desc));
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_fire(&event);
+				}
+				switch_core_hash_insert(loadable_modules.chat_application_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -468,6 +491,303 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 }
 
+#define CHAT_MAX_MSG_QUEUE 101
+#define CHAT_QUEUE_SIZE 5000
+
+static struct {
+	switch_queue_t *msg_queue[CHAT_MAX_MSG_QUEUE];
+	switch_thread_t *msg_queue_thread[CHAT_MAX_MSG_QUEUE];
+	int msg_queue_len;
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
+	int running;
+} chat_globals;
+
+static int IDX = 0;
+
+
+static switch_status_t do_chat_send(switch_event_t *message_event)
+
+{
+	switch_chat_interface_t *ci;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	const char *proto;
+	const char *replying;
+	const char *dest_proto;
+	int do_skip = 0;
+
+	/*
+
+	const char *from; 
+	const char *to;
+	const char *subject;
+	const char *body;
+	const char *type;
+	const char *hint;
+	*/		
+
+
+
+	dest_proto = switch_event_get_header(message_event, "dest_proto");
+
+	if (!dest_proto) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/*
+
+	from = switch_event_get_header(message_event, "from");
+	to = switch_event_get_header(message_event, "to");
+	subject = switch_event_get_header(message_event, "subject");
+	body = switch_event_get_body(message_event);
+	type = switch_event_get_header(message_event, "type");
+	hint = switch_event_get_header(message_event, "hint");
+	*/
+
+	proto = switch_event_get_header(message_event, "proto");
+	replying = switch_event_get_header(message_event, "replying");
+	
+	if (!switch_true(replying) && !switch_stristr("global", proto)) {
+		switch_mutex_lock(loadable_modules.mutex);
+		for (hi = switch_hash_first(NULL, loadable_modules.chat_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &var, NULL, &val);
+			
+			if ((ci = (switch_chat_interface_t *) val)) {
+				if (ci->chat_send && !strncasecmp(ci->interface_name, "GLOBAL_", 7)) {
+					status = ci->chat_send(message_event);
+
+					if (status == SWITCH_STATUS_BREAK) {
+						do_skip = 1;
+					}
+					
+					if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Chat Interface Error [%s]!\n", dest_proto);
+						break;
+					}
+				}
+			}
+		}
+		switch_mutex_unlock(loadable_modules.mutex);
+	}
+	
+	if (!do_skip && !switch_stristr("GLOBAL", dest_proto)) {
+		if (!(ci = switch_loadable_module_get_chat_interface(dest_proto)) || !ci->chat_send) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid chat interface [%s]!\n", dest_proto);
+			return SWITCH_STATUS_FALSE;
+		}
+		status = ci->chat_send(message_event);
+		UNPROTECT_INTERFACE(ci);
+	}
+
+	return status;
+}
+
+static void chat_process_event(switch_event_t **eventp)
+{
+	switch_event_t *event;
+
+	switch_assert(eventp);
+
+	event = *eventp;
+	*eventp = NULL;
+
+	do_chat_send(event);
+	switch_event_destroy(&event);
+}
+
+
+void *SWITCH_THREAD_FUNC chat_thread_run(switch_thread_t *thread, void *obj)
+{
+	void *pop;
+	switch_queue_t *q = (switch_queue_t *) obj;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Chat Thread Started\n");
+
+
+	while(switch_queue_pop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		switch_event_t *event = (switch_event_t *) pop;
+		chat_process_event(&event);
+		switch_cond_next();
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Chat Thread Ended\n");
+
+	return NULL;	
+}
+
+
+static void chat_thread_start(int idx)
+{
+
+	if (idx >= CHAT_MAX_MSG_QUEUE || (idx < chat_globals.msg_queue_len && chat_globals.msg_queue_thread[idx])) {
+		return;
+	}
+
+	switch_mutex_lock(chat_globals.mutex);
+	
+	if (idx >= chat_globals.msg_queue_len) {
+		int i;
+		chat_globals.msg_queue_len = idx + 1;
+
+		for (i = 0; i < chat_globals.msg_queue_len; i++) {
+			if (!chat_globals.msg_queue[i]) {
+				switch_threadattr_t *thd_attr = NULL;
+
+				switch_queue_create(&chat_globals.msg_queue[i], CHAT_QUEUE_SIZE, chat_globals.pool);
+
+				switch_threadattr_create(&thd_attr, chat_globals.pool);
+				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+				//switch_threadattr_priority_increase(thd_attr);
+				switch_thread_create(&chat_globals.msg_queue_thread[i], 
+									 thd_attr, 
+									 chat_thread_run, 
+									 chat_globals.msg_queue[i], 
+									 chat_globals.pool);
+			}
+		}
+	}
+
+	switch_mutex_unlock(chat_globals.mutex);
+}
+
+
+static void chat_queue_message(switch_event_t **eventp)
+{
+	int idx = 0;
+	switch_event_t *event;
+
+	switch_assert(eventp);
+
+	event = *eventp;
+	*eventp = NULL;
+	
+	if (chat_globals.running == 0) {
+		chat_process_event(&event);
+		return;
+	}
+
+ again:
+
+	switch_mutex_lock(chat_globals.mutex);
+	idx = IDX;
+	IDX++; 
+	if (IDX >= chat_globals.msg_queue_len) IDX = 0;
+	switch_mutex_unlock(chat_globals.mutex);
+	
+	chat_thread_start(idx);
+
+	if (switch_queue_trypush(chat_globals.msg_queue[idx], event) != SWITCH_STATUS_SUCCESS) {
+		if (chat_globals.msg_queue_len < CHAT_MAX_MSG_QUEUE) {
+			chat_thread_start(idx + 1);
+			goto again;
+		} else {
+			switch_queue_push(chat_globals.msg_queue[idx], event);
+		}
+	}
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_execute_chat_app(switch_event_t *message, const char *app, const char *data)
+{
+	switch_chat_application_interface_t *cai;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char *expanded;
+
+	if (!(cai = switch_loadable_module_get_chat_application_interface(app)) || !cai->chat_application_function) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid chat application interface [%s]!\n", app);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_test_flag(message, EF_NO_CHAT_EXEC)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Message is not allowed to execute apps\n");
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
+
+	if (data && !strcmp(data, "__undef")) {
+		data = NULL;
+	}
+
+	expanded = switch_event_expand_headers(message, data);
+	
+	status = cai->chat_application_function(message, expanded);
+
+	if (expanded != data) {
+		free(expanded);
+	}
+
+ end:
+
+	UNPROTECT_INTERFACE(cai);
+
+	return status;
+
+}
+
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_proto, const char *proto, const char *from, const char *to,
+														   const char *subject, const char *body, const char *type, const char *hint)
+{
+	switch_event_t *message_event;
+	switch_status_t status;
+
+	if (switch_event_create(&message_event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "from", from);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "to", to);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "subject", subject);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "type", type);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
+		
+		if (body) {
+			switch_event_add_body(message_event, "%s", body);
+		}
+	} else {
+		abort();
+	}	
+
+	if (dest_proto) {
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
+	}
+
+	chat_queue_message(&message_event);
+	status = SWITCH_STATUS_SUCCESS;
+
+	return status;
+	
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *dest_proto, switch_event_t *message_event)
+{
+	switch_event_t *dup;
+
+	switch_event_dup(&dup, message_event);
+
+	if (dest_proto) {
+		switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
+	}
+
+	chat_queue_message(&dup);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_chat_deliver(const char *dest_proto, switch_event_t **message_event)
+{
+
+	if (dest_proto) {
+		switch_event_add_header_string(*message_event, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
+	}
+
+	chat_queue_message(message_event);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t *old_module)
 {
@@ -590,6 +910,32 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 					switch_event_fire(&event);
 				}
 				switch_core_hash_delete(loadable_modules.application_hash, ptr->interface_name);
+			}
+		}
+	}
+
+	if (old_module->module_interface->chat_application_interface) {
+		const switch_chat_application_interface_t *ptr;
+		for (ptr = old_module->module_interface->chat_application_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Application '%s'\n", ptr->interface_name);
+				switch_core_session_hupall_matching_var(SWITCH_CURRENT_APPLICATION_VARIABLE, ptr->interface_name, SWITCH_CAUSE_MANAGER_REQUEST);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
+				}
+
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "application");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->short_desc));
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_fire(&event);
+				}
+				switch_core_hash_delete(loadable_modules.chat_application_hash, ptr->interface_name);
 			}
 		}
 	}
@@ -994,8 +1340,8 @@ static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fn
 		switch_snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 	}
 
-	switch_mutex_lock(loadable_modules.mutex);
-	if (switch_core_hash_find(loadable_modules.module_hash, file)) {
+
+	if (switch_core_hash_find_locked(loadable_modules.module_hash, file, loadable_modules.mutex)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s Already Loaded!\n", file);
 		*err = "Module already loaded";
 		status = SWITCH_STATUS_FALSE;
@@ -1010,7 +1356,7 @@ static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fn
 	} else {
 		*err = "module load file routine returned an error";
 	}
-	switch_mutex_unlock(loadable_modules.mutex);
+
 
 	return status;
 
@@ -1265,6 +1611,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	switch_core_hash_init_nocase(&loadable_modules.codec_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.timer_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.application_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.chat_application_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.api_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.file_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.speech_hash, loadable_modules.pool);
@@ -1380,6 +1727,13 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 
 	switch_loadable_module_runtime();
 
+	chat_globals.running = 1;
+	memset(&chat_globals, 0, sizeof(chat_globals));
+	chat_globals.pool = loadable_modules.pool;
+	switch_mutex_init(&chat_globals.mutex, SWITCH_MUTEX_NESTED, chat_globals.pool);
+
+	chat_thread_start(1);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1439,10 +1793,23 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_hash_index_t *hi;
 	void *val;
 	switch_loadable_module_t *module;
+	int i;
 
 	if (!loadable_modules.module_hash) {
 		return;
 	}
+
+	chat_globals.running = 0;
+
+	for (i = 0; i < chat_globals.msg_queue_len; i++) {	
+		switch_queue_push(chat_globals.msg_queue[i], NULL);
+	}
+
+	for (i = 0; i < chat_globals.msg_queue_len; i++) {
+		switch_status_t st;
+		switch_thread_join(&st, chat_globals.msg_queue_thread[i]);
+	}
+
 
 	for (hi = switch_hash_first(NULL, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
@@ -1467,6 +1834,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_core_hash_destroy(&loadable_modules.codec_hash);
 	switch_core_hash_destroy(&loadable_modules.timer_hash);
 	switch_core_hash_destroy(&loadable_modules.application_hash);
+	switch_core_hash_destroy(&loadable_modules.chat_application_hash);
 	switch_core_hash_destroy(&loadable_modules.api_hash);
 	switch_core_hash_destroy(&loadable_modules.file_hash);
 	switch_core_hash_destroy(&loadable_modules.speech_hash);
@@ -1535,6 +1903,7 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 HASH_FUNC(dialplan)
 HASH_FUNC(timer)
 HASH_FUNC(application)
+HASH_FUNC(chat_application)
 HASH_FUNC(api)
 HASH_FUNC(file)
 HASH_FUNC(speech)
@@ -1891,6 +2260,9 @@ SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_m
 
 	case SWITCH_APPLICATION_INTERFACE:
 		ALLOC_INTERFACE(application)
+
+	case SWITCH_CHAT_APPLICATION_INTERFACE:
+		ALLOC_INTERFACE(chat_application)
 
 	case SWITCH_API_INTERFACE:
 		ALLOC_INTERFACE(api)

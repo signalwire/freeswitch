@@ -649,9 +649,6 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 		if (span->fio->span_destroy(span) != FTDM_SUCCESS) {
 			status = FTDM_FAIL;
 		}
-		ftdm_safe_free(span->type);
-		ftdm_safe_free(span->name);
-		ftdm_safe_free(span->dtmf_hangup);
 	}
 
 	/* destroy final basic resources of the span data structure */
@@ -1858,7 +1855,14 @@ static ftdm_status_t _ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm
 		goto done;
 	}
 
-	ftdm_mutex_lock(check->mutex);
+	ftdm_channel_lock(check);
+
+	if (ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
+		/* let them know is already open, but return the channel anyway */
+		status = FTDM_EBUSY;
+		*ftdmchan = check;
+		goto unlockchan;
+	}
 
 	/* The following if's and gotos replace a big if (this || this || this || this) else { nothing; } */
 
@@ -1905,7 +1909,7 @@ openchan:
 	goto done;
 
 unlockchan:
-	ftdm_mutex_unlock(check->mutex);
+	ftdm_channel_unlock(check);
 
 done:
 	ftdm_mutex_unlock(globals.mutex);
@@ -3855,7 +3859,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 		uint8_t sln_buf[1024] = {0};
 		int16_t *sln;
 		ftdm_size_t slen = 0;
-		char digit_str[80] = "";
 
 		if (ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
 			sln = data;
@@ -3956,13 +3959,18 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 		}
 
 		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT) && !ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
-			teletone_dtmf_detect(&ftdmchan->dtmf_detect, sln, (int)slen);
-			teletone_dtmf_get(&ftdmchan->dtmf_detect, digit_str, sizeof(digit_str));
+			teletone_hit_type_t hit;
+			char digit_char;
+			uint32_t dur;
 
-			if(*digit_str) {
-				if (ftdmchan->state == FTDM_CHANNEL_STATE_CALLWAITING && (*digit_str == 'D' || *digit_str == 'A')) {
+			if ((hit = teletone_dtmf_detect(&ftdmchan->dtmf_detect, sln, (int)slen)) == TT_HIT_END) {
+				teletone_dtmf_get(&ftdmchan->dtmf_detect, &digit_char, &dur);
+
+				if (ftdmchan->state == FTDM_CHANNEL_STATE_CALLWAITING && (digit_char == 'D' || digit_char == 'A')) {
 					ftdmchan->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK]++;
 				} else {
+					char digit_str[2] = { digit_char, 0};
+					
 					if (!ftdmchan->span->sig_dtmf || (ftdmchan->span->sig_dtmf(ftdmchan, (const char*)digit_str) != FTDM_BREAK)) {
 						ftdm_channel_queue_dtmf(ftdmchan, digit_str);
 					}
@@ -4568,7 +4576,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 	*configured = 0;
 	*configured = span->fio->configure_span(span, str, chan_config->type, chan_config->name, chan_config->number);
 	if (!*configured) {
-		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to configure span", span->span_id);
+		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to configure span\n", span->span_id);
 		return FTDM_FAIL;
 	}
 
@@ -5468,10 +5476,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	if (sigmsg->channel) {
 		fchan = sigmsg->channel;
 		ftdm_channel_lock(fchan);
-		sigmsg->chan_id = fchan->chan_id;
-		sigmsg->span_id = fchan->span_id;
-		sigmsg->call_id = fchan->caller_data.call_id;
-		sigmsg->call_priv = fchan->caller_data.priv;
 	}
 	
 	/* some core things to do on special events */
@@ -5559,6 +5563,14 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	default:
 		break;	
 
+	}
+
+	if (fchan) {
+		/* set members of the sigmsg that must be present for all events */
+		sigmsg->chan_id = fchan->chan_id;
+		sigmsg->span_id = fchan->span_id;
+		sigmsg->call_id = fchan->caller_data.call_id;
+		sigmsg->call_priv = fchan->caller_data.priv;
 	}
 
 	/* if the signaling module uses a queue for signaling notifications, then enqueue it */
@@ -5774,6 +5786,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 			}
 
 			hashtable_remove(globals.span_hash, (void *)cur_span->name);
+			ftdm_safe_free(cur_span->dtmf_hangup);
 			ftdm_safe_free(cur_span->type);
 			ftdm_safe_free(cur_span->name);
 			ftdm_safe_free(cur_span);

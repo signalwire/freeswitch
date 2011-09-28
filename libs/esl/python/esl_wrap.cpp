@@ -4370,6 +4370,58 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_ESLconnection_sendMSG(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *arg2 = (ESLevent *) 0 ;
+  char *arg3 = (char *) NULL ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  if (!PyArg_ParseTuple(args,(char *)"OO|O:ESLconnection_sendMSG",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_sendMSG" "', argument " "1"" of type '" "ESLconnection *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_sendMSG" "', argument " "2"" of type '" "ESLevent *""'"); 
+  }
+  arg2 = reinterpret_cast< ESLevent * >(argp2);
+  if (obj2) {
+    res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_sendMSG" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+  }
+  {
+    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
+    result = (int)(arg1)->sendMSG(arg2,(char const *)arg3);
+    SWIG_PYTHON_THREAD_END_ALLOW;
+  }
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return resultobj;
+fail:
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  SWIG_PYTHON_THREAD_END_BLOCK;
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_ESLconnection_recvEvent(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
@@ -4859,6 +4911,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"ESLconnection_api", _wrap_ESLconnection_api, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_bgapi", _wrap_ESLconnection_bgapi, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_sendEvent", _wrap_ESLconnection_sendEvent, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_sendMSG", _wrap_ESLconnection_sendMSG, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_recvEvent", _wrap_ESLconnection_recvEvent, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_recvEventTimed", _wrap_ESLconnection_recvEventTimed, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_filter", _wrap_ESLconnection_filter, METH_VARARGS, NULL},

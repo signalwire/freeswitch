@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -34,6 +34,7 @@ Signal Processing, pp. 641-644, 1991.
 */
 
 #define Q_OUT                       6
+#define MIN_NDELTA                  3
 
 /* Laroia low complexity NLSF weights */
 void SKP_Silk_NLSF_VQ_weights_laroia(
@@ -50,28 +51,28 @@ void SKP_Silk_NLSF_VQ_weights_laroia(
     SKP_assert( ( D & 1 ) == 0 );
     
     /* First value */
-    tmp1_int = SKP_max_int( pNLSF_Q15[ 0 ], 1 );
+    tmp1_int = SKP_max_int( pNLSF_Q15[ 0 ], MIN_NDELTA );
     tmp1_int = SKP_DIV32_16( 1 << ( 15 + Q_OUT ), tmp1_int );
-    tmp2_int = SKP_max_int( pNLSF_Q15[ 1 ] - pNLSF_Q15[ 0 ], 1 );
+    tmp2_int = SKP_max_int( pNLSF_Q15[ 1 ] - pNLSF_Q15[ 0 ], MIN_NDELTA );
     tmp2_int = SKP_DIV32_16( 1 << ( 15 + Q_OUT ), tmp2_int );
     pNLSFW_Q6[ 0 ] = (SKP_int)SKP_min_int( tmp1_int + tmp2_int, SKP_int16_MAX );
     SKP_assert( pNLSFW_Q6[ 0 ] > 0 );
     
     /* Main loop */
     for( k = 1; k < D - 1; k += 2 ) {
-        tmp1_int = SKP_max_int( pNLSF_Q15[ k + 1 ] - pNLSF_Q15[ k ], 1 );
+        tmp1_int = SKP_max_int( pNLSF_Q15[ k + 1 ] - pNLSF_Q15[ k ], MIN_NDELTA );
         tmp1_int = SKP_DIV32_16( 1 << ( 15 + Q_OUT ), tmp1_int );
         pNLSFW_Q6[ k ] = (SKP_int)SKP_min_int( tmp1_int + tmp2_int, SKP_int16_MAX );
         SKP_assert( pNLSFW_Q6[ k ] > 0 );
 
-        tmp2_int = SKP_max_int( pNLSF_Q15[ k + 2 ] - pNLSF_Q15[ k + 1 ], 1 );
+        tmp2_int = SKP_max_int( pNLSF_Q15[ k + 2 ] - pNLSF_Q15[ k + 1 ], MIN_NDELTA );
         tmp2_int = SKP_DIV32_16( 1 << ( 15 + Q_OUT ), tmp2_int );
         pNLSFW_Q6[ k + 1 ] = (SKP_int)SKP_min_int( tmp1_int + tmp2_int, SKP_int16_MAX );
         SKP_assert( pNLSFW_Q6[ k + 1 ] > 0 );
     }
     
     /* Last value */
-    tmp1_int = SKP_max_int( ( 1 << 15 ) - pNLSF_Q15[ D - 1 ], 1 );
+    tmp1_int = SKP_max_int( ( 1 << 15 ) - pNLSF_Q15[ D - 1 ], MIN_NDELTA );
     tmp1_int = SKP_DIV32_16( 1 << ( 15 + Q_OUT ), tmp1_int );
     pNLSFW_Q6[ D - 1 ] = (SKP_int)SKP_min_int( tmp1_int + tmp2_int, SKP_int16_MAX );
     SKP_assert( pNLSFW_Q6[ D - 1 ] > 0 );

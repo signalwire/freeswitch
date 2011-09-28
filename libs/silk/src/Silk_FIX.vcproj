@@ -164,15 +164,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_allpass_int.c"
-				>
-			</File>
-			<File
 				RelativePath=".\SKP_Silk_ana_filt_bank_1.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_apply_sine_window.c"
+				RelativePath=".\SKP_Silk_apply_sine_window_new.c"
 				>
 			</File>
 			<File
@@ -212,6 +208,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SKP_Silk_control_audio_bandwidth.c"
+				>
+			</File>
+			<File
 				RelativePath=".\SKP_Silk_control_codec_FIX.c"
 				>
 			</File>
@@ -236,15 +236,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_decode_indices_v4.c"
-				>
-			</File>
-			<File
 				RelativePath=".\SKP_Silk_decode_parameters.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_decode_parameters_v4.c"
+				RelativePath=".\SKP_Silk_decode_pitch.c"
 				>
 			</File>
 			<File
@@ -269,10 +265,6 @@
 			</File>
 			<File
 				RelativePath=".\SKP_Silk_encode_parameters.c"
-				>
-			</File>
-			<File
-				RelativePath=".\SKP_Silk_encode_parameters_v4.c"
 				>
 			</File>
 			<File
@@ -336,23 +328,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_lowpass_int.c"
-				>
-			</File>
-			<File
-				RelativePath=".\SKP_Silk_lowpass_short.c"
-				>
-			</File>
-			<File
 				RelativePath=".\SKP_Silk_LP_variable_cutoff.c"
 				>
 			</File>
 			<File
 				RelativePath=".\SKP_Silk_LPC_inv_pred_gain.c"
-				>
-			</File>
-			<File
-				RelativePath=".\SKP_Silk_LPC_stabilize.c"
 				>
 			</File>
 			<File
@@ -448,10 +428,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_pulses_to_bytes.c"
-				>
-			</File>
-			<File
 				RelativePath=".\SKP_Silk_quant_LTP_gains_FIX.c"
 				>
 			</File>
@@ -464,59 +440,59 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_1_2.c"
+				RelativePath=".\SKP_Silk_resampler.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_1_2_coarse.c"
+				RelativePath=".\SKP_Silk_resampler_down2.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_1_2_coarsest.c"
+				RelativePath=".\SKP_Silk_resampler_down2_3.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_1_3.c"
+				RelativePath=".\SKP_Silk_resampler_down3.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_2_1_coarse.c"
+				RelativePath=".\SKP_Silk_resampler_private_AR2.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_2_3.c"
+				RelativePath=".\SKP_Silk_resampler_private_ARMA4.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_2_3_coarse.c"
+				RelativePath=".\SKP_Silk_resampler_private_copy.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_2_3_coarsest.c"
+				RelativePath=".\SKP_Silk_resampler_private_down4.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_2_3_rom.c"
+				RelativePath=".\SKP_Silk_resampler_private_down_FIR.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_3_1.c"
+				RelativePath=".\SKP_Silk_resampler_private_IIR_FIR.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_3_2.c"
+				RelativePath=".\SKP_Silk_resampler_private_up2_HQ.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_3_2_rom.c"
+				RelativePath=".\SKP_Silk_resampler_private_up4.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_3_4.c"
+				RelativePath=".\SKP_Silk_resampler_rom.c"
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_4_3.c"
+				RelativePath=".\SKP_Silk_resampler_up2.c"
 				>
 			</File>
 			<File
@@ -615,6 +591,10 @@
 				RelativePath=".\SKP_Silk_VQ_nearest_neighbor_FIX.c"
 				>
 			</File>
+			<File
+				RelativePath=".\SKP_Silk_warped_autocorrelation_FIX.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -622,19 +602,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\interface\SKP_Silk_control.h"
+				RelativePath=".\SKP_Silk_common_pitch_est_defines.h"
 				>
 			</File>
 			<File
 				RelativePath=".\SKP_Silk_define.h"
-				>
-			</File>
-			<File
-				RelativePath=".\SKP_Silk_define_FIX.h"
-				>
-			</File>
-			<File
-				RelativePath="..\interface\SKP_Silk_errors.h"
 				>
 			</File>
 			<File
@@ -654,10 +626,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_perceptual_parameters_FIX.h"
-				>
-			</File>
-			<File
 				RelativePath=".\SKP_Silk_pitch_est_defines.h"
 				>
 			</File>
@@ -666,11 +634,19 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SKP_Silk_resample_rom.h"
+				RelativePath=".\SKP_Silk_resampler_private.h"
 				>
 			</File>
 			<File
-				RelativePath="..\interface\SKP_Silk_SDK_API.h"
+				RelativePath=".\SKP_Silk_resampler_rom.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SKP_Silk_resampler_structs.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SKP_Silk_setup_complexity.h"
 				>
 			</File>
 			<File
@@ -690,7 +666,23 @@
 				>
 			</File>
 			<File
-				RelativePath="..\interface\SKP_Silk_typedef.h"
+				RelativePath=".\SKP_Silk_tables_NLSF_CB0_10.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SKP_Silk_tables_NLSF_CB0_16.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SKP_Silk_tables_NLSF_CB1_10.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SKP_Silk_tables_NLSF_CB1_16.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SKP_Silk_tuning_parameters.h"
 				>
 			</File>
 		</Filter>

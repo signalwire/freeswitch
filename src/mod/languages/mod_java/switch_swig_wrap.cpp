@@ -1054,6 +1054,57 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_delete_1Event(JNI
 }
 
 
+SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1chat_1execute(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jstring jarg3) {
+  jint jresult = 0 ;
+  Event *arg1 = (Event *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(Event **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return 0;
+  }
+  arg3 = 0;
+  if (jarg3) {
+    arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
+    if (!arg3) return 0;
+  }
+  result = (int)(arg1)->chat_execute((char const *)arg2,(char const *)arg3);
+  jresult = (jint)result; 
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+  if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
+  return jresult;
+}
+
+
+SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1chat_1send(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  jint jresult = 0 ;
+  Event *arg1 = (Event *) 0 ;
+  char *arg2 = (char *) NULL ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(Event **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return 0;
+  }
+  result = (int)(arg1)->chat_send((char const *)arg2);
+  jresult = (jint)result; 
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+  return jresult;
+}
+
+
 SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1serialize(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   jstring jresult = 0 ;
   Event *arg1 = (Event *) 0 ;
@@ -2534,7 +2585,7 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1r
 }
 
 
-SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1playAndGetDigits(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3, jint jarg4, jint jarg5, jstring jarg6, jstring jarg7, jstring jarg8, jstring jarg9, jstring jarg10, jint jarg11) {
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1playAndGetDigits(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3, jint jarg4, jint jarg5, jstring jarg6, jstring jarg7, jstring jarg8, jstring jarg9, jstring jarg10, jint jarg11, jstring jarg12) {
   jstring jresult = 0 ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
@@ -2547,6 +2598,7 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1p
   char *arg9 = (char *) 0 ;
   char *arg10 = (char *) NULL ;
   int arg11 = (int) 0 ;
+  char *arg12 = (char *) NULL ;
   char *result = 0 ;
   
   (void)jenv;
@@ -2583,13 +2635,19 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1p
     if (!arg10) return 0;
   }
   arg11 = (int)jarg11; 
-  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10,arg11);
+  arg12 = 0;
+  if (jarg12) {
+    arg12 = (char *)jenv->GetStringUTFChars(jarg12, 0);
+    if (!arg12) return 0;
+  }
+  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10,arg11,(char const *)arg12);
   if(result) jresult = jenv->NewStringUTF((const char *)result);
   if (arg6) jenv->ReleaseStringUTFChars(jarg6, (const char *)arg6);
   if (arg7) jenv->ReleaseStringUTFChars(jarg7, (const char *)arg7);
   if (arg8) jenv->ReleaseStringUTFChars(jarg8, (const char *)arg8);
   if (arg9) jenv->ReleaseStringUTFChars(jarg9, (const char *)arg9);
   if (arg10) jenv->ReleaseStringUTFChars(jarg10, (const char *)arg10);
+  if (arg12) jenv->ReleaseStringUTFChars(jarg12, (const char *)arg12);
   return jresult;
 }
 

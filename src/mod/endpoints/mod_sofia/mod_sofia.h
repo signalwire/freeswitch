@@ -45,7 +45,7 @@
 #define HAVE_APR
 #include <switch.h>
 #include <switch_version.h>
-#define SOFIA_NAT_SESSION_TIMEOUT 1800
+#define SOFIA_NAT_SESSION_TIMEOUT 90
 #define SOFIA_MAX_ACL 100
 #ifdef _MSC_VER
 #define HAVE_FUNCTION 1
@@ -98,6 +98,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX "sip_rh_"
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX_T "~sip_rh_"
 #define SOFIA_SIP_BYE_HEADER_PREFIX "sip_bye_h_"
+#define SOFIA_SIP_BYE_HEADER_PREFIX_T "~sip_bye_h_"
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX "sip_ph_"
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX_T "~sip_ph_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
@@ -143,6 +144,7 @@ typedef struct sofia_dispatch_event_s {
 	nua_t *nua;
 	sofia_profile_t *profile;
 	int save;
+	switch_core_session_t *session;
 } sofia_dispatch_event_t;
 
 struct sofia_private {
@@ -214,6 +216,7 @@ typedef enum {
 	PFLAG_MANAGE_SHARED_APPEARANCE,
 	PFLAG_MANAGE_SHARED_APPEARANCE_SYLANTRO,
 	PFLAG_DISABLE_SRV,
+	PFLAG_DISABLE_SRV503,
 	PFLAG_DISABLE_NAPTR,
 	PFLAG_AUTOFLUSH,
 	PFLAG_NAT_OPTIONS_PING,
@@ -249,6 +252,7 @@ typedef enum {
 	PFLAG_LIBERAL_DTMF,
  	PFLAG_AUTO_ASSIGN_PORT,
  	PFLAG_AUTO_ASSIGN_TLS_PORT,
+	PFLAG_SHUTDOWN,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -320,7 +324,7 @@ typedef enum {
 	TFLAG_MAX
 } TFLAGS;
 
-#define SOFIA_MAX_MSG_QUEUE 51
+#define SOFIA_MAX_MSG_QUEUE 101
 #define SOFIA_MSG_QUEUE_SIZE 5000
 
 struct mod_sofia_globals {
@@ -353,6 +357,7 @@ struct mod_sofia_globals {
 	int debug_presence;
 	int debug_sla;
 	int auto_restart;
+	int reg_deny_binding_fetch_and_no_lookup; /* backwards compatibility */
 	int auto_nat;
 	int tracelevel;
 	char *capture_server;	
@@ -764,6 +769,8 @@ struct private_object {
 	sofia_cid_type_t cid_type;
 	switch_payload_t payload_space;
 	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
+	uint32_t session_timeout;
+	enum nua_session_refresher session_refresher;
 };
 
 struct callback_t {
@@ -866,8 +873,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 void launch_sofia_profile_thread(sofia_profile_t *profile);
 
-switch_status_t sofia_presence_chat_send(const char *proto, const char *from, const char *to, const char *subject,
-										 const char *body, const char *type, const char *hint);
+switch_status_t sofia_presence_chat_send(switch_event_t *message_event);
+										 
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
 
 /*
@@ -1115,6 +1122,7 @@ switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *sess
 char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type);
 void sofia_glue_tech_simplify(private_object_t *tech_pvt);
 switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *profile, const char *user, const char *host);
+switch_console_callback_match_t *sofia_reg_find_reg_url_with_positive_expires_multi(sofia_profile_t *profile, const char *user, const char *host);
 switch_bool_t sofia_glue_profile_exists(const char *key);
 void sofia_glue_global_siptrace(switch_bool_t on);
 void sofia_glue_global_capture(switch_bool_t on);

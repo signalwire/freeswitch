@@ -8,4 +8,78 @@
 			</match>
 		</input>
 	</macro>
+
+	<macro name="has_called_conf">
+		<input pattern="^(\d+)$">
+			<match>
+				<action function="play-file" data="$1"/>
+                <action function="sleep" data="100"/>
+				<action function="play-file" data="conference/conf-has_joined.wav"/>
+			</match>
+		</input>
+	</macro>
+	
+	<macro name="has_left_conf">
+		<input pattern="^(\d+)$">
+			<match>
+				<action function="play-file" data="$1"/>
+                <action function="sleep" data="100"/>
+				<action function="play-file" data="conference/conf-has_left.wav"/>
+			</match>
+		</input>
+	</macro>
+
+    <macro name="enter_dest_number">
+      <input pattern="^(.*)$">
+        <match>
+          <action function="sleep" data="1000"/>
+          <action function="play-file" data="ivr/ivr-enter_destination_telephone_number.wav"/>
+          <action function="sleep" data="1000"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="enter_src_number">
+      <input pattern="^(.*)$">
+        <match>
+          <action function="sleep" data="1000"/>
+          <action function="play-file" data="ivr/ivr-enter_source_telephone_number.wav"/>
+          <action function="sleep" data="1000"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="call_forward_set">
+      <input pattern="^(\d+):(\d+)$">
+        <match>
+          <action function="sleep" data="1000"/>
+          <action function="play-file" data="ivr/ivr-extension_number.wav"/>
+          <action function="sleep" data="400"/>
+          <action function="say" data="$1" method="iterated" type="number"/>
+          <action function="sleep" data="400"/>
+          <action function="play-file" data="digits/2.wav"/>                                                                                                
+          <action function="sleep" data="1000"/>
+          <action function="play-file" data="ivr/ivr-extension_number.wav"/>
+          <action function="sleep" data="400"/>
+          <action function="say" data="$2" method="iterated" type="number"/>
+          <action function="sleep" data="1000"/>
+          <action function="play-file" data="ivr/ivr-call_forwarding_has_been_set.wav"/>
+          <action function="sleep" data="1500"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="call_forward_cancel">
+      <input pattern="^(\d+)$">
+        <match>
+          <action function="sleep" data="1000"/>
+          <action function="play-file" data="ivr/ivr-extension_number.wav"/>
+          <action function="sleep" data="400"/>
+          <action function="say" data="$1" method="iterated" type="number"/>
+          <action function="play-file" data="ivr/ivr-call_forwarding_has_been_cancelled.wav"/>
+          <action function="sleep" data="1500"/>
+        </match>
+      </input>
+    </macro>
+
 </include>

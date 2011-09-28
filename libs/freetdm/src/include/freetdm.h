@@ -926,20 +926,20 @@ typedef enum {
 /*! \brief IO statistics */
 typedef struct {
 	struct {
+		uint64_t packets;
 		uint32_t errors;
 		uint16_t flags;
 		uint8_t	 queue_size;	/*!< max queue size configured */
 		uint8_t	 queue_len;	/*!< Current number of elements in queue */
-		uint64_t packets;
 	} rx;
 
 	struct {
+		uint64_t idle_packets;
+		uint64_t packets;
 		uint32_t errors;
 		uint16_t flags;
-		uint8_t  idle_packets;
 		uint8_t	 queue_size;	/*!< max queue size configured */
 		uint8_t	 queue_len;	/*!< Current number of elements in queue */
-		uint64_t packets;
 	} tx;
 } ftdm_channel_iostats_t;
 

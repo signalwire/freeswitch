@@ -377,7 +377,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	int divisor = 0;
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 	int restart_limit_on_dtmf = 0;
-	const char *prefix;
+	const char *prefix, *var;
 
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
 
@@ -756,9 +756,32 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	switch_core_file_close(fh);
 
-	if (read_impl.samples_per_second) {
-		switch_channel_set_variable_printf(channel, "record_seconds", "%d", fh->samples_out / read_impl.samples_per_second);
-		switch_channel_set_variable_printf(channel, "record_ms", "%d", fh->samples_out / (read_impl.samples_per_second / 1000));
+
+	if ((var = switch_channel_get_variable(channel, "record_post_process_exec_api"))) {
+		char *cmd = switch_core_session_strdup(session, var);
+		char *data, *expanded = NULL;
+		switch_stream_handle_t stream = { 0 };
+		
+		SWITCH_STANDARD_STREAM(stream);
+		
+		if ((data = strchr(cmd, ':'))) {
+			*data++ = '\0';
+			expanded = switch_channel_expand_variables(channel, data);
+		}
+		
+		switch_api_execute(cmd, expanded, session, &stream);
+		
+		if (expanded && expanded != data) {
+			free(expanded);
+		}
+		
+		switch_safe_free(stream.data);
+		
+	}
+
+	if (read_impl.actual_samples_per_second) {
+		switch_channel_set_variable_printf(channel, "record_seconds", "%d", fh->samples_out / read_impl.actual_samples_per_second);
+		switch_channel_set_variable_printf(channel, "record_ms", "%d", fh->samples_out / (read_impl.actual_samples_per_second / 1000));
 
 	}
 
@@ -1958,7 +1981,8 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   char *digit_buffer, 
 														   uint32_t digit_buffer_length, 
 														   const char *digits_regex,
-														   uint32_t digit_timeout)
+														   uint32_t digit_timeout,
+														   const char *transfer_on_failure)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -2008,7 +2032,45 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 	}
 
 	memset(digit_buffer, 0, digit_buffer_length);
-	return SWITCH_STATUS_FALSE;
+	
+	/* If we get here then check for transfer-on-failure ext/dp/context */
+	/* split this arg on spaces to get ext, dp, and context */
+		
+	if (!zstr(transfer_on_failure)) {
+		const char *failure_ext = NULL;
+		const char *failure_dialplan = NULL;
+		const char *failure_context = NULL;
+		char *target[4];
+		char *mydata = switch_core_session_strdup(session, transfer_on_failure);
+		int argc;
+		
+		argc = switch_separate_string(mydata, ' ', target, (sizeof(target) / sizeof(target[0])));
+		
+		if ( argc < 1 ) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,"Bad target for PAGD failure: [%s]\n", transfer_on_failure);
+			return SWITCH_STATUS_FALSE;
+		}
+		
+		if ( argc > 0 ) {
+			failure_ext = target[0];
+		}
+		
+		if ( argc > 1 ) {
+			failure_dialplan = target[1];
+		}
+
+		if ( argc > 2 ) {
+			failure_context = target[2];
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+			"PAGD failure! Transfer to: %s / %s / %s\n", failure_ext, failure_dialplan, failure_context);
+			
+		switch_ivr_session_transfer(session,failure_ext, failure_dialplan, failure_context);
+		return SWITCH_STATUS_FALSE;
+	} 
+	
+	return SWITCH_STATUS_FALSE;	
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,

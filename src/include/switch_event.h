@@ -103,7 +103,8 @@ struct switch_event {
 };
 
 typedef enum {
-	EF_UNIQ_HEADERS = (1 << 0)
+	EF_UNIQ_HEADERS = (1 << 0),
+	EF_NO_CHAT_EXEC = (1 << 1)
 } switch_event_flag_t;
 
 
@@ -157,6 +158,8 @@ _Ret_opt_z_ SWITCH_DECLARE(char *) switch_event_get_header_idx(switch_event_t *e
 
 #define switch_event_get_header_nil(e, h) switch_str_nil(switch_event_get_header(e,h))
 
+SWITCH_DECLARE(switch_status_t) switch_event_rename_header(switch_event_t *event, const char *header_name, const char *new_header_name);
+
 /*!
   \brief Retrieve the body value from an event
   \param event the event to read the body from
@@ -207,6 +210,8 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event);
 */
 SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup);
 SWITCH_DECLARE(void) switch_event_merge(switch_event_t *event, switch_event_t *tomerge);
+SWITCH_DECLARE(switch_status_t) switch_event_dup_reply(switch_event_t **event, switch_event_t *todup);
+
 /*!
   \brief Fire an event with full arguement list
   \param file the calling file
@@ -321,6 +326,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_running(void);
 */
 SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, const char *fmt, ...) PRINTF_FUNCTION(2, 3);
 #endif
+
+SWITCH_DECLARE(switch_status_t) switch_event_set_body(switch_event_t *event, const char *body);
+
 SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const char *in);
 
 SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char *file, _In_z_ char *func, _In_ int line,

@@ -29,6 +29,12 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ * W McRoberts <fs@whmcr.com>
+ *
  */
 
 #ifndef FTDM_ZT_H
@@ -349,6 +355,7 @@ ZT_ABIT = 8
 #define DAHDI_SETTXBITS _IOW (DAHDI_CODE, 43, int)
 #define DAHDI_GETRXBITS _IOR (DAHDI_CODE, 43, int)
 
+#define DAHDI_SETPOLARITY _IOW (DAHDI_CODE, 92, int) /* Polarity setting for FXO lines */
 
 #endif
 
