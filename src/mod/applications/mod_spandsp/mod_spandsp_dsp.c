@@ -52,11 +52,12 @@ static void spandsp_dtmf_rx_realtime_callback(void *user_data, int code, int lev
 	if (digit) {
 		/* prevent duplicate DTMF */
 		if (digit != pvt->last_digit || (pvt->samples - pvt->last_digit_end) > pvt->min_dup_digit_spacing) {
-			switch_dtmf_t dtmf;
+			switch_dtmf_t dtmf = {0};
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "DTMF BEGIN DETECTED: [%c]\n", digit);
 			pvt->last_digit = digit;
 			dtmf.digit = digit;
 			dtmf.duration = switch_core_default_dtmf_duration(0);
+			dtmf.source = SWITCH_DTMF_INBAND_AUDIO;
 			switch_channel_queue_dtmf(switch_core_session_get_channel(pvt->session), &dtmf);
 			pvt->digit_begin = pvt->samples;
 		} else {

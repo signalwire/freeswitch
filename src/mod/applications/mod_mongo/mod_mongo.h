@@ -1,7 +1,6 @@
 #ifndef MOD_MONGO_H
 #define MOD_MONGO_H
 
-
 #include <client/dbclient.h>
 #include <client/connpool.h>
 #include <db/json.h>
@@ -10,7 +9,7 @@
 using namespace mongo;
 
 typedef struct {
-  char *host;
+  char *conn_str;
 
   switch_size_t min_connections;
   switch_size_t max_connections;
@@ -22,16 +21,16 @@ typedef struct {
 } mongo_connection_pool_t;
 
 
-switch_status_t mongo_connection_create(DBClientConnection **connection, const char *host);
-void mongo_connection_destroy(DBClientConnection **conn);
+switch_status_t mongo_connection_create(DBClientBase **connection, const char *conn_str);
+void mongo_connection_destroy(DBClientBase **conn);
 
 switch_status_t mongo_connection_pool_create(mongo_connection_pool_t **conn_pool, switch_size_t min_connections, switch_size_t max_connections,
-					     const char *host);
+					     const char *conn_str);
 void mongo_connection_pool_destroy(mongo_connection_pool_t **conn_pool);
 
 
-DBClientConnection *mongo_connection_pool_get(mongo_connection_pool_t *conn_pool);
-switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DBClientConnection *conn);
+DBClientBase *mongo_connection_pool_get(mongo_connection_pool_t *conn_pool);
+switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DBClientBase *conn);
 
 
 #endif

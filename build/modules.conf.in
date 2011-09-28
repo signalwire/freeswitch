@@ -2,6 +2,7 @@ loggers/mod_console
 loggers/mod_logfile
 loggers/mod_syslog
 #applications/mod_cidlookup
+#applications/mod_blacklist
 applications/mod_commands
 applications/mod_conference
 applications/mod_dptools
@@ -38,6 +39,7 @@ applications/mod_valet_parking
 #applications/mod_fsk
 #applications/mod_ladspa
 #applications/mod_mongo
+applications/mod_sms
 codecs/mod_g723_1
 codecs/mod_amr
 #codecs/mod_amrwb
@@ -81,6 +83,7 @@ event_handlers/mod_event_socket
 #event_handlers/mod_event_zmq
 event_handlers/mod_cdr_csv
 event_handlers/mod_cdr_sqlite
+#event_handlers/mod_cdr_mongodb
 #event_handlers/mod_cdr_pg_csv
 #event_handlers/mod_radius_cdr
 #event_handlers/mod_erlang_event

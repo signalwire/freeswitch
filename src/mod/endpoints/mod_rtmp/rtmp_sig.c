@@ -301,7 +301,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_makeCall)
 			amf_object_to_event(argv[3], &event);
 		}
 		
-		if (rtmp_session_create_call(rsession, &newsession, 0, RTMP_DEFAULT_STREAM_AUDIO, number, user, domain, event) != SWITCH_CAUSE_NONE) {
+		if (rtmp_session_create_call(rsession, &newsession, 0, RTMP_DEFAULT_STREAM_AUDIO, number, user, domain, event) != SWITCH_CAUSE_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Couldn't create call.\n");
 		}
 		

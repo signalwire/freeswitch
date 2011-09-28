@@ -534,6 +534,39 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 }
 
 
+ESL_DECLARE(esl_status_t) esl_sendmsg(esl_handle_t *handle, esl_event_t *event, const char *uuid)
+{
+	char cmd_buf[128] = "sendmsg\n";
+	char *txt;
+	
+    if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
+        return ESL_FAIL;
+    }
+
+	if (uuid) {
+		snprintf(cmd_buf, sizeof(cmd_buf), "sendmsg %s\n", uuid);
+	}
+	
+	esl_event_serialize(event, &txt, ESL_FALSE);
+	esl_log(ESL_LOG_DEBUG, "%s%s\n", cmd_buf, txt);
+
+	if (send(handle->sock, cmd_buf, strlen(cmd_buf), 0) <= 0) goto fail;
+	if (send(handle->sock, txt, strlen(txt), 0) <= 0) goto fail;
+	
+	free(txt);
+
+	return esl_recv(handle);
+
+ fail:
+
+	handle->connected = 0;
+
+	free(txt);
+
+	return ESL_FAIL;
+}
+
+
 ESL_DECLARE(esl_status_t) esl_filter(esl_handle_t *handle, const char *header, const char *value)
 {
 	char send_buf[1024] = "";

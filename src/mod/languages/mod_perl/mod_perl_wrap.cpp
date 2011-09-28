@@ -3679,6 +3679,99 @@ XS(_wrap_delete_Event) {
 }
 
 
+XS(_wrap_Event_chat_execute) {
+  {
+    Event *arg1 = (Event *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) NULL ;
+    int result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 3)) {
+      SWIG_croak("Usage: Event_chat_execute(self,app,data);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_chat_execute" "', argument " "1"" of type '" "Event *""'"); 
+    }
+    arg1 = reinterpret_cast< Event * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Event_chat_execute" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    if (items > 2) {
+      res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+      if (!SWIG_IsOK(res3)) {
+        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Event_chat_execute" "', argument " "3"" of type '" "char const *""'");
+      }
+      arg3 = reinterpret_cast< char * >(buf3);
+    }
+    result = (int)(arg1)->chat_execute((char const *)arg2,(char const *)arg3);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Event_chat_send) {
+  {
+    Event *arg1 = (Event *) 0 ;
+    char *arg2 = (char *) NULL ;
+    int result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 2)) {
+      SWIG_croak("Usage: Event_chat_send(self,dest_proto);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_chat_send" "', argument " "1"" of type '" "Event *""'"); 
+    }
+    arg1 = reinterpret_cast< Event * >(argp1);
+    if (items > 1) {
+      res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Event_chat_send" "', argument " "2"" of type '" "char const *""'");
+      }
+      arg2 = reinterpret_cast< char * >(buf2);
+    }
+    result = (int)(arg1)->chat_send((char const *)arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_Event_serialize) {
   {
     Event *arg1 = (Event *) 0 ;
@@ -6899,6 +6992,7 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     char *arg9 = (char *) 0 ;
     char *arg10 = (char *) NULL ;
     int arg11 = (int) 0 ;
+    char *arg12 = (char *) NULL ;
     char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -6927,11 +7021,14 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     int alloc10 = 0 ;
     int val11 ;
     int ecode11 = 0 ;
+    int res12 ;
+    char *buf12 = 0 ;
+    int alloc12 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 9) || (items > 11)) {
-      SWIG_croak("Usage: CoreSession_playAndGetDigits(self,min_digits,max_digits,max_tries,timeout,terminators,audio_files,bad_input_audio_files,digits_regex,var_name,digit_timeout);");
+    if ((items < 9) || (items > 12)) {
+      SWIG_croak("Usage: CoreSession_playAndGetDigits(self,min_digits,max_digits,max_tries,timeout,terminators,audio_files,bad_input_audio_files,digits_regex,var_name,digit_timeout,transfer_on_failure);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -6992,7 +7089,14 @@ XS(_wrap_CoreSession_playAndGetDigits) {
       } 
       arg11 = static_cast< int >(val11);
     }
-    result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10,arg11);
+    if (items > 11) {
+      res12 = SWIG_AsCharPtrAndSize(ST(11), &buf12, NULL, &alloc12);
+      if (!SWIG_IsOK(res12)) {
+        SWIG_exception_fail(SWIG_ArgError(res12), "in method '" "CoreSession_playAndGetDigits" "', argument " "12"" of type '" "char const *""'");
+      }
+      arg12 = reinterpret_cast< char * >(buf12);
+    }
+    result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10,arg11,(char const *)arg12);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     
@@ -7005,6 +7109,7 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
     if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
     
+    if (alloc12 == SWIG_NEWOBJ) delete[] buf12;
     XSRETURN(argvi);
   fail:
     
@@ -7018,6 +7123,7 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
     if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
     
+    if (alloc12 == SWIG_NEWOBJ) delete[] buf12;
     SWIG_croak_null();
   }
 }
@@ -9479,6 +9585,8 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::Event_mine_get", _wrap_Event_mine_get},
 {"freeswitchc::new_Event", _wrap_new_Event},
 {"freeswitchc::delete_Event", _wrap_delete_Event},
+{"freeswitchc::Event_chat_execute", _wrap_Event_chat_execute},
+{"freeswitchc::Event_chat_send", _wrap_Event_chat_send},
 {"freeswitchc::Event_serialize", _wrap_Event_serialize},
 {"freeswitchc::Event_setPriority", _wrap_Event_setPriority},
 {"freeswitchc::Event_getHeader", _wrap_Event_getHeader},
@@ -9899,17 +10007,17 @@ XS(SWIG_init) {
   SWIG_TypeClientData(SWIGTYPE_p_IVRMenu, (void*) "freeswitch::IVRMenu");
   SWIG_TypeClientData(SWIGTYPE_p_API, (void*) "freeswitch::API");
   SWIG_TypeClientData(SWIGTYPE_p_input_callback_state, (void*) "freeswitch::input_callback_state_t");
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_HUP", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_HUP)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_FREE", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_FREE)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_RDLOCK", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_RDLOCK)));
     SvREADONLY_on(sv);

@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -47,11 +47,10 @@ void SKP_Silk_decoder_set_fs(
             psDec->psNLSF_CB[ 1 ] = &SKP_Silk_NLSF_CB1_16;
         }
         /* Reset part of the decoder state */
-        SKP_memset( psDec->sLPC_Q14,     0, MAX_LPC_ORDER      * sizeof( SKP_int32 ) );
-        SKP_memset( psDec->outBuf,       0, MAX_FRAME_LENGTH   * sizeof( SKP_int16 ) );
-        SKP_memset( psDec->prevNLSF_Q15, 0, MAX_LPC_ORDER      * sizeof( SKP_int )   );
+        SKP_memset( psDec->sLPC_Q14,     0, MAX_LPC_ORDER    * sizeof( SKP_int32 ) );
+        SKP_memset( psDec->outBuf,       0, MAX_FRAME_LENGTH * sizeof( SKP_int16 ) );
+        SKP_memset( psDec->prevNLSF_Q15, 0, MAX_LPC_ORDER    * sizeof( SKP_int )   );
 
-        psDec->sLTP_buf_idx            = 0;
         psDec->lagPrev                 = 100;
         psDec->LastGainIndex           = 1;
         psDec->prev_sigtype            = 0;

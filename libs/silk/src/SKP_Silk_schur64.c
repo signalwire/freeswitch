@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@ SKP_int32 SKP_Silk_schur64(                    /* O:    Returns residual energy 
 )
 {
     SKP_int   k, n;
-    SKP_int32 C[ SigProc_MAX_ORDER_LPC + 1 ][ 2 ];
+    SKP_int32 C[ SKP_Silk_MAX_ORDER_LPC + 1 ][ 2 ];
     SKP_int32 Ctmp1_Q30, Ctmp2_Q30, rc_tmp_Q31;
 
     /* Check for invalid input */
@@ -76,5 +76,5 @@ SKP_int32 SKP_Silk_schur64(                    /* O:    Returns residual energy 
         }
     }
 
-    return( C[ 0 ][ 1 ] );
+    return C[ 0 ][ 1 ];
 }

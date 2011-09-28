@@ -111,6 +111,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_event(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_messages(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_process_indications(switch_core_session_t *session, switch_core_session_message_t *message);
+
 /*!
   \brief Wait for time to pass for a specified number of milliseconds
   \param session the session to wait for.
@@ -407,7 +409,8 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   const char *bad_input_audio_file,
 														   const char *var_name, char *digit_buffer, uint32_t digit_buffer_length,
 														   const char *digits_regex,
-														   uint32_t digit_timeout);
+														   uint32_t digit_timeout,
+														   const char *transfer_on_failure);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
 															 switch_speech_handle_t *sh,
@@ -461,7 +464,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 																const char *cid_name_override,
 																const char *cid_num_override,
 																switch_caller_profile_t *caller_profile_override,
-																switch_event_t *ovars, switch_originate_flag_t flags);
+																switch_event_t *ovars, switch_originate_flag_t flags,
+																switch_call_cause_t *cancel_cause);
 
 SWITCH_DECLARE(void) switch_ivr_bridge_display(switch_core_session_t *session, switch_core_session_t *peer_session);
 
@@ -926,6 +930,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_get_file_handle(switch_core_session_t
 SWITCH_DECLARE(switch_status_t) switch_ivr_release_file_handle(switch_core_session_t *session, switch_file_handle_t **fh);
 SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *session, const char *cmd, switch_file_handle_t *fhp);
 SWITCH_DECLARE(switch_status_t) switch_ivr_insert_file(switch_core_session_t *session, const char *file, const char *insert_file, switch_size_t sample_point);
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t **reply, switch_event_t *message, const char *new_proto);
 
 /** @} */
 

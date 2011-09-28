@@ -54,6 +54,9 @@ fi
 
 AC_SUBST([confdir])
 
+DEFAULT_INCLUDES="-I. -I./src/include -I$(srcdir)"
+AC_SUBST([DEFAULT_INCLUDES])
+
 # Where to install the modules
 AC_ARG_WITH([modinstdir],
 	[AS_HELP_STRING([--with-modinstdir=DIR], [Install modules into this location (default: ${prefix}/mod)])],
@@ -364,6 +367,42 @@ then
 fi
 AM_CONDITIONAL([HAVE_LIBISDN], [test "${HAVE_LIBISDN}" = "yes"])
 
+
+##
+# mISDN dependencies
+#
+HAVE_MISDN="no"
+AC_ARG_WITH([misdn],
+	[AS_HELP_STRING([--with-misdn], [Install ftmod_misdn (mISDN I/O plugin)])],
+	[case "${withval}" in
+	 no|yes) with_misdn="${withval}" ;;
+	 *)      AC_MSG_ERROR([Invalid value \"${with_misdn}\" for --with-misdn option]) ;;
+	 esac],
+	[with_misdn="auto"]
+)
+AS_IF([test "${with_misdn}" != "no"],
+	[AC_MSG_RESULT([${as_nl}<<>> ftmod_misdn (Linux mISDN I/O plugin)])
+	 AC_CHECK_FUNCS([timerfd_create],,
+		[AS_IF([test "${with_misdn}" = "yes"],
+			[AC_MSG_ERROR([no timerfd support in libc])],
+			[AC_MSG_NOTICE([no timerfd support in libc])]
+		 )]
+	 )
+	 AC_CHECK_HEADER([mISDN/mISDNif.h],,
+		[AS_IF([test "${with_misdn}" = "yes"],
+			[AC_MSG_ERROR([mISDN/mISDNif.h not found])],
+			[AC_MSG_NOTICE([mISDN/mISDNif.h not found])]
+		)],
+		[#include <sys/socket.h>]
+	 )
+	 AS_IF([test "${ac_cv_func_timerfd_create}" = "yes" -a "${ac_cv_header_mISDN_mISDNif_h}" = "yes"],
+		[HAVE_MISDN="yes"],
+		[AC_MSG_NOTICE([Some required dependencies are missing, module disabled])]
+	 )]
+)
+AM_CONDITIONAL([HAVE_MISDN], [test "${HAVE_MISDN}" = "yes"])
+
+
 AC_MSG_RESULT([${as_nl}<<>> Creating output files])
 AC_CONFIG_FILES([
 	Makefile
@@ -389,6 +428,7 @@ AC_MSG_RESULT([
 	ftmod_pritap....................... ${HAVE_PRITAP}
   I/O:
 	ftmod_wanpipe...................... ${HAVE_LIBSANGOMA}
+	ftmod_misdn........................ ${HAVE_MISDN}
 
 ===============================================================================
 ])

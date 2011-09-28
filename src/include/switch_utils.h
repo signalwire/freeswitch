@@ -426,6 +426,8 @@ static inline char *switch_sanitize_number(char *number)
 	char warp[] = "/:";
 	int i;
 
+	switch_assert(number);
+
 	if (!(strchr(p, '/') || strchr(p, ':') || strchr(p, '@'))) {
 		return number;
 	}
@@ -521,6 +523,18 @@ static inline char *switch_clean_name_string(char *s)
 	return s;
 }
 
+
+
+/*!
+  \brief Turn a string into a number (default if NULL)
+  \param nptr the string
+  \param dft the default
+  \return the number version of the string or the default
+*/
+static inline int switch_safe_atoi(const char *nptr, int dft)
+{
+	return nptr ? atoi(nptr) : dft;
+}
 
 
 /*!

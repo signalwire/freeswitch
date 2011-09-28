@@ -54,8 +54,8 @@
  * Exception:
  * The author hereby grants the use of this source code under the 
  * following license if and only if the source code is distributed
- * as part of the openzap library.	Any use or distribution of this
- * source code outside the scope of the openzap library will nullify the
+ * as part of the OpenZAP or FreeTDM library.	Any use or distribution of this
+ * source code outside the scope of the OpenZAP or FreeTDM library will nullify the
  * following license and reinact the MPL 1.1 as stated above.
  *
  * Copyright (c) 2007, Anthony Minessale II
@@ -134,6 +134,14 @@ extern "C" {
 #define BLOCK_LEN 102
 #define M_TWO_PI 2.0*M_PI
 
+	typedef enum {
+		TT_HIT_NONE = 0,
+		TT_HIT_BEGIN = 1,
+		TT_HIT_MIDDLE = 2,
+		TT_HIT_END = 3
+	} teletone_hit_type_t;
+
+
 	/*! \brief A continer for the elements of a Goertzel Algorithm (The names are from his formula) */
 	typedef struct {
 		float v2;
@@ -147,16 +155,19 @@ extern "C" {
 		int hit2;
 		int hit3;
 		int hit4;
-		int mhit;
+		int dur;
+		int zc;
+		
 
 		teletone_goertzel_state_t row_out[GRID_FACTOR];
 		teletone_goertzel_state_t col_out[GRID_FACTOR];
 		teletone_goertzel_state_t row_out2nd[GRID_FACTOR];
 		teletone_goertzel_state_t col_out2nd[GRID_FACTOR];
 		float energy;
+		float lenergy;
 	
 		int current_sample;
-		char digits[TELETONE_MAX_DTMF_DIGITS + 1];
+		char digit;
 		int current_digits;
 		int detected_digits;
 		int lost_digits;
@@ -229,7 +240,7 @@ TELETONE_API(void) teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf
 	  \param samples the number of samples present in sample_buffer
 	  \return true when DTMF was detected or false when it is not
 	*/
-TELETONE_API(int) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
+TELETONE_API(teletone_hit_type_t) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
 							  int16_t sample_buffer[],
 							  int samples);
 	/*! 
@@ -239,9 +250,7 @@ TELETONE_API(int) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detec
 	  \param max the maximum length of buf
 	  \return the number of characters written to buf
 	*/
-TELETONE_API(int) teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
-						   char *buf,
-						   int max);
+TELETONE_API(int) teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state, char *buf, unsigned int *dur);
 
 	/*! 
 	  \brief Step through the Goertzel Algorithm for each sample in a buffer

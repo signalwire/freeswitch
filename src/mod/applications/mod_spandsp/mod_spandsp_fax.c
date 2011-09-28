@@ -806,7 +806,9 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
         switch_channel_set_private(channel, "t38_options", NULL);
     } else {
         pvt->t38_mode = T38_MODE_NEGOTIATED;
-        
+        switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
+
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38 SDP Origin = %s\n", t38_options->sdp_o_line);        
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxVersion = %d\n", t38_options->T38FaxVersion);
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38MaxBitRate = %d\n", t38_options->T38MaxBitRate);
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxFillBitRemoval = %d\n", t38_options->T38FaxFillBitRemoval);
@@ -827,7 +829,12 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
             t38_options->T38FaxVersion = 3;
         }
         t38_options->T38MaxBitRate = (pvt->disable_v17)  ?  9600  :  14400;
-        t38_options->T38FaxFillBitRemoval = 1;
+
+        /* cisco gets mad when we set this to one in a response where they set it to 0, are we allowed to hardcode this to 1 on responses?  */
+        if (!zstr(t38_options->sdp_o_line) && !switch_stristr("cisco", t38_options->sdp_o_line)) {
+            t38_options->T38FaxFillBitRemoval = 1;
+        }
+
         t38_options->T38FaxTranscodingMMR = 0;
         t38_options->T38FaxTranscodingJBIG = 0;
         t38_options->T38FaxRateManagement = "transferredTCF";
@@ -997,13 +1004,25 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_ident"))) {
-		pvt->ident = switch_core_session_strdup(session, tmp);
+        char *data = NULL;
+
+        data = strdup(tmp);
+        switch_url_decode(data);
+		pvt->ident = switch_core_session_strdup(session, data);
+
+        switch_safe_free(data);
 	} else {
 		pvt->ident = switch_core_session_strdup(session, globals.ident);
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_header"))) {
-		pvt->header = switch_core_session_strdup(session, tmp);
+        char *data = NULL;
+
+        data = strdup(tmp);
+        switch_url_decode(data);
+        pvt->header = switch_core_session_strdup(session, data);
+
+        switch_safe_free(data);
 	} else {
 		pvt->header = switch_core_session_strdup(session, globals.header);
 	}
@@ -1192,6 +1211,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
                 } else if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
                     switch_core_session_message_t msg = { 0 };
                     pvt->t38_mode = T38_MODE_NEGOTIATED;
+                    switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
                     spanfax_init(pvt, T38_MODE);
                     configure_t38(pvt);
 
@@ -1474,13 +1494,14 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
         spanfax_init(pvt, T38_GATEWAY_MODE);
         configure_t38(pvt);
         pvt->t38_mode = T38_MODE_NEGOTIATED;
+        switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
     } else {
         if (negotiate_t38(pvt) != T38_MODE_NEGOTIATED) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Could not negotiate T38\n", switch_channel_get_name(channel));
             switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
             goto end_unlock;
         }
-
+        switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
         spanfax_init(pvt, T38_GATEWAY_MODE);
     }
 
@@ -1570,6 +1591,8 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
     switch_core_session_receive_message(session, &msg);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", peer_uuid);
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
 	}

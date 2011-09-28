@@ -127,6 +127,7 @@ struct nua_handle_preferences
   sip_allow_events_t *nhp_allow_events;
   char const         *nhp_user_agent;
   char const         *nhp_organization;
+  char const         *nhp_via;
 
   char const         *nhp_m_display;
   char const         *nhp_m_username;
@@ -195,6 +196,7 @@ struct nua_handle_preferences
     unsigned nhb_allow_events:1;
     unsigned nhb_user_agent:1;
     unsigned nhb_organization:1;
+    unsigned nhb_via:1;
 
     unsigned nhb_m_display:1;
     unsigned nhb_m_username:1;

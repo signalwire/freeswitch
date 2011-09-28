@@ -303,12 +303,12 @@ SWITCH_STANDARD_APP(easyroute_app_function)
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		destnum = argv[0];
-		if (argc == 2) {
+		if (argc >= 2) {
 			if (!strcasecmp(argv[1], "noat")) {
 				noat = 1;
 			} else if (!strcasecmp(argv[1], "separator")) {
 				if (argc == 3) {
-					switch_set_string(separator, argv[2]);
+					separator = argv[2];
 				}
 			}
 		}
@@ -358,13 +358,13 @@ SWITCH_STANDARD_API(easyroute_function)
 			status = SWITCH_STATUS_SUCCESS;
 			goto done;
 		}
-		if (argc == 2) {
+		if (argc >= 2) {
 			if (!strcasecmp(argv[1], "noat")) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Entering noat.\n");
 				noat = 1;
 			} else if (!strcasecmp(argv[1], "separator")) {
 				if (argc == 3) {
-					switch_set_string(separator, argv[2]);
+					separator = argv[2];
 				}
 			}
 		}

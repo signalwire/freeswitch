@@ -428,7 +428,7 @@ case "$host" in
 	fi
     ;;
     *-solaris2*)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048 -D__EXTENSIONS__)
         APR_ADDTO(SWITCH_AM_LDFLAGS, -lsendfile -lresolv -lsocket -lnsl -luuid)
         APR_ADDTO(ESL_LDFLAGS, -lnsl -lsocket)
     ;;
@@ -474,7 +474,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs timerfd_create])
+AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs timerfd_create getdtablesize])
 AC_CHECK_FUNCS([sched_setscheduler setpriority setrlimit setgroups initgroups])
 AC_CHECK_FUNCS([wcsncmp setgroups asprintf setenv pselect gettimeofday localtime_r gmtime_r strcasecmp stricmp _stricmp])
 
@@ -871,7 +871,7 @@ then
 		if test "$python_has_distutils" != "no" ; then
 			AC_MSG_CHECKING([location of site-packages])
 
-			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_python_lib(0);'`"
+			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(0));'`"
 
 			if test -z "$PYTHON_SITE_DIR" ; then
 				AC_MSG_ERROR([Unable to detect python site-packages path])
@@ -884,10 +884,10 @@ then
 			#
 			# python distutils found, get settings from python directly
 			#
-			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print \" \".join(flags);'`"
-			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print \" \".join(libs);'`"
-			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print \"python\" + sysconfig.get_config_var(\"VERSION\");'`"
-			PYTHON_LIBDIR="`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_config_var(\"LIBDIR\");'`"
+			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));'`"
+			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print(\" \".join(libs));'`"
+			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print(\"python\" + sysconfig.get_config_var(\"VERSION\"));'`"
+			PYTHON_LIBDIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
 
 			# handle python being installed into /usr/local
 			AC_MSG_CHECKING([python libdir])

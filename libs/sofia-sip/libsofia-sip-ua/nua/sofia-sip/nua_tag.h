@@ -437,6 +437,11 @@ SOFIAPUBVAR tag_typedef_t nutag_user_agent;
 #define NUTAG_USER_AGENT_REF(x) nutag_user_agent_ref, tag_str_vr(&(x))
 SOFIAPUBVAR tag_typedef_t nutag_user_agent_ref;
 
+#define NUTAG_VIA(x)     nutag_via, tag_str_v(x)
+SOFIAPUBVAR tag_typedef_t nutag_via;
+#define NUTAG_VIA_REF(x) nutag_via_ref, tag_str_vr(&(x))
+SOFIAPUBVAR tag_typedef_t nutag_via_ref;
+
 #define NUTAG_ALLOW(x)     nutag_allow, tag_str_v(x)
 SOFIAPUBVAR tag_typedef_t nutag_allow;
 #define NUTAG_ALLOW_REF(x) nutag_allow_ref, tag_str_vr(&(x))

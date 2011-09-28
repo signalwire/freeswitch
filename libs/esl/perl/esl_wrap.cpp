@@ -3282,6 +3282,57 @@ XS(_wrap_ESLconnection_sendEvent) {
 }
 
 
+XS(_wrap_ESLconnection_sendMSG) {
+  {
+    ESLconnection *arg1 = (ESLconnection *) 0 ;
+    ESLevent *arg2 = (ESLevent *) 0 ;
+    char *arg3 = (char *) NULL ;
+    int result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 3)) {
+      SWIG_croak("Usage: ESLconnection_sendMSG(self,send_me,uuid);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_sendMSG" "', argument " "1"" of type '" "ESLconnection *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLconnection * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_ESLevent, 0 |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_sendMSG" "', argument " "2"" of type '" "ESLevent *""'"); 
+    }
+    arg2 = reinterpret_cast< ESLevent * >(argp2);
+    if (items > 2) {
+      res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+      if (!SWIG_IsOK(res3)) {
+        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_sendMSG" "', argument " "3"" of type '" "char const *""'");
+      }
+      arg3 = reinterpret_cast< char * >(buf3);
+    }
+    result = (int)(arg1)->sendMSG(arg2,(char const *)arg3);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    
+    
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    XSRETURN(argvi);
+  fail:
+    
+    
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_ESLconnection_recvEvent) {
   {
     ESLconnection *arg1 = (ESLconnection *) 0 ;
@@ -3785,6 +3836,7 @@ static swig_command_info swig_commands[] = {
 {"ESLc::ESLconnection_api", _wrap_ESLconnection_api},
 {"ESLc::ESLconnection_bgapi", _wrap_ESLconnection_bgapi},
 {"ESLc::ESLconnection_sendEvent", _wrap_ESLconnection_sendEvent},
+{"ESLc::ESLconnection_sendMSG", _wrap_ESLconnection_sendMSG},
 {"ESLc::ESLconnection_recvEvent", _wrap_ESLconnection_recvEvent},
 {"ESLc::ESLconnection_recvEventTimed", _wrap_ESLconnection_recvEventTimed},
 {"ESLc::ESLconnection_filter", _wrap_ESLconnection_filter},

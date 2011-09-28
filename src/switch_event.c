@@ -45,7 +45,7 @@ struct switch_event_node {
 	/*! the event id enumeration to bind to */
 	switch_event_types_t event_id;
 	/*! the event subclass to bind to for custom events */
-	switch_event_subclass_t *subclass;
+	char *subclass_name;
 	/*! a callback function to execute when the event is triggered */
 	switch_event_callback_t callback;
 	/*! private data */
@@ -205,28 +205,28 @@ static int switch_events_match(switch_event_t *event, switch_event_node_t *node)
 	if (node->event_id == SWITCH_EVENT_ALL) {
 		match++;
 
-		if (!node->subclass) {
+		if (!node->subclass_name) {
 			return match;
 		}
 	}
 
 	if (match || event->event_id == node->event_id) {
 
-		if (event->subclass_name && node->subclass) {
-			if (!strncasecmp(node->subclass->name, "file:", 5)) {
+		if (event->subclass_name && node->subclass_name) {
+			if (!strncasecmp(node->subclass_name, "file:", 5)) {
 				char *file_header;
 				if ((file_header = switch_event_get_header(event, "file")) != 0) {
-					match = strstr(node->subclass->name + 5, file_header) ? 1 : 0;
+					match = strstr(node->subclass_name + 5, file_header) ? 1 : 0;
 				}
-			} else if (!strncasecmp(node->subclass->name, "func:", 5)) {
+			} else if (!strncasecmp(node->subclass_name, "func:", 5)) {
 				char *func_header;
 				if ((func_header = switch_event_get_header(event, "function")) != 0) {
-					match = strstr(node->subclass->name + 5, func_header) ? 1 : 0;
+					match = strstr(node->subclass_name + 5, func_header) ? 1 : 0;
 				}
-			} else if (event->subclass_name && node->subclass->name) {
-				match = strstr(event->subclass_name, node->subclass->name) ? 1 : 0;
+			} else if (event->subclass_name && node->subclass_name) {
+				match = strstr(event->subclass_name, node->subclass_name) ? 1 : 0;
 			}
-		} else if ((event->subclass_name && !node->subclass) || (!event->subclass_name && !node->subclass)) {
+		} else if ((event->subclass_name && !node->subclass_name) || (!event->subclass_name && !node->subclass_name)) {
 			match = 1;
 		} else {
 			match = 0;
@@ -333,17 +333,11 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 
 
 			if (++loops > 2) {
-				uint32_t last_sps = 0, sess_count = switch_core_session_count();
 				if (auto_pause) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event system *still* overloading.\n");
 				} else {
-					switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
-					last_sps = (uint32_t) (float) (last_sps * 0.75f);
-					sess_count = (uint32_t) (float) (sess_count * 0.75f);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-									  "Event system overloading. Taking a 10 second break, Reducing max_sessions to %d %dsps\n", sess_count, last_sps);
-					switch_core_session_limit(sess_count);
-					switch_core_session_ctl(SCSC_SPS, &last_sps);
+									  "Event system overloading. Taking a 10 second break\n");
 					auto_pause = 10;
 					switch_core_session_ctl(SCSC_PAUSE_INBOUND, &auto_pause);
 				}
@@ -703,7 +697,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 
 	memset(*event, 0, sizeof(switch_event_t));
 
-	if (event_id == SWITCH_EVENT_REQUEST_PARAMS || event_id == SWITCH_EVENT_CHANNEL_DATA) {
+	if (event_id == SWITCH_EVENT_REQUEST_PARAMS || event_id == SWITCH_EVENT_CHANNEL_DATA || event_id == SWITCH_EVENT_MESSAGE) {
 		(*event)->flags |= EF_UNIQ_HEADERS;
 	}
 
@@ -726,6 +720,35 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
 	switch_event_add_header_string(event, SWITCH_STACK_TOP, "priority", switch_priority_name(priority));
 	return SWITCH_STATUS_SUCCESS;
 }
+
+SWITCH_DECLARE(switch_status_t) switch_event_rename_header(switch_event_t *event, const char *header_name, const char *new_header_name)
+{
+	switch_event_header_t *hp;
+	switch_ssize_t hlen = -1;
+	unsigned long hash = 0;
+	int x = 0;
+
+	switch_assert(event);
+
+	if (!header_name) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	hash = switch_ci_hashfunc_default(header_name, &hlen);
+
+	for (hp = event->headers; hp; hp = hp->next) {
+		if ((!hp->hash || hash == hp->hash) && !strcasecmp(hp->name, header_name)) {
+			FREE(hp->name);
+			hp->name = DUP(new_header_name);
+			hlen = -1;
+			hp->hash = switch_ci_hashfunc_default(hp->name, &hlen);
+			x++;
+		}
+	}
+
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
 
 SWITCH_DECLARE(switch_event_header_t *) switch_event_get_header_ptr(switch_event_t *event, const char *header_name)
 {
@@ -762,6 +785,8 @@ SWITCH_DECLARE(char *) switch_event_get_header_idx(switch_event_t *event, const 
 		}
 
 		return hp->value;			
+	} else if (!strcmp(header_name, "_body")) {
+		return event->body;
 	}
 
 	return NULL;
@@ -905,6 +930,11 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 	char *index_ptr;
 	int index = 0;
 	char *real_header_name = NULL;
+
+
+	if (!strcmp(header_name, "_body")) {
+		switch_event_set_body(event, data);
+	}
 
 	if ((index_ptr = strchr(header_name, '['))) {
 		index_ptr++;
@@ -1108,6 +1138,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header_string(switch_event_t *e
 	return SWITCH_STATUS_GENERR;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_event_set_body(switch_event_t *event, const char *body)
+{
+	switch_safe_free(event->body);
+
+	if (body) {
+		event->body = DUP(body);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, const char *fmt, ...)
 {
 	int ret = 0;
@@ -1227,6 +1268,64 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 
 	if (todup->body) {
 		(*event)->body = DUP(todup->body);
+	}
+
+	(*event)->key = todup->key;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_event_dup_reply(switch_event_t **event, switch_event_t *todup)
+{
+	switch_event_header_t *hp;
+	char hname[1024] = "";
+	char *p;
+
+	if (switch_event_create_subclass(event, SWITCH_EVENT_CLONE, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	(*event)->event_id = todup->event_id;
+	(*event)->event_user_data = todup->event_user_data;
+	(*event)->bind_user_data = todup->bind_user_data;
+	(*event)->flags = todup->flags;
+
+	for (hp = todup->headers; hp; hp = hp->next) {
+		char *name = hp->name, *value = hp->value;
+		
+		if (todup->subclass_name && !strcmp(hp->name, "Event-Subclass")) {
+			continue;
+		}
+		
+		if (!strncasecmp(hp->name, "from_", 5)) {
+			p = hp->name + 5;
+			switch_snprintf(hname, sizeof(hname), "to_%s", p);
+			name = hname;
+		} else if (!strncasecmp(hp->name, "to_", 3)) {
+			p = hp->name + 3;
+			switch_snprintf(hname, sizeof(hname), "from_%s", p);
+			name = hname;
+		} else if (!strcasecmp(name, "to")) {
+			name = "from";
+		} else if (!strcasecmp(name, "from")) {
+			name = "to";
+		}
+		
+		if (hp->idx) {
+			int i;
+			for (i = 0; i < hp->idx; i++) {
+				switch_event_add_header_string(*event, SWITCH_STACK_PUSH, name, hp->array[i]);
+			}
+		} else {
+			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, name, value);
+		}
+	}
+
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "replying", "true");
+
+	if (todup->body) {
+		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "orig_body", todup->body);
 	}
 
 	(*event)->key = todup->key;
@@ -1732,7 +1831,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
 		/* <LOCKED> ----------------------------------------------- */
 		event_node->id = DUP(id);
 		event_node->event_id = event;
-		event_node->subclass = subclass;
+		if (subclass_name) {
+			event_node->subclass_name = DUP(subclass_name);
+		}
 		event_node->callback = callback;
 		event_node->user_data = user_data;
 
@@ -1786,6 +1887,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_unbind_callback(switch_event_callba
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
+				FREE(n->subclass_name);
 				FREE(n->id);
 				FREE(n);
 				status = SWITCH_STATUS_SUCCESS;
@@ -1825,7 +1927,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_unbind(switch_event_node_t **node)
 				EVENT_NODES[n->event_id] = n->next;
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Event Binding deleted for %s:%s\n", n->id, switch_event_name(n->event_id));
-			n->subclass = NULL;
+			FREE(n->subclass_name);
 			FREE(n->id);
 			FREE(n);
 			*node = NULL;

@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -119,8 +119,8 @@ void SKP_Silk_LP_variable_cutoff(
     const SKP_int                   frame_length    /* I    Frame length                        */
 )
 {
-    SKP_int32   B_Q28[ TRANSITION_NB ], A_Q28[ TRANSITION_NA ];
-    SKP_int     fac_Q16 = 0, ind = 0;
+    SKP_int32   B_Q28[ TRANSITION_NB ], A_Q28[ TRANSITION_NA ], fac_Q16 = 0;
+    SKP_int     ind = 0;
 
     SKP_assert( psLP->transition_frame_no >= 0 );
     SKP_assert( ( ( ( psLP->transition_frame_no <= TRANSITION_FRAMES_DOWN ) && ( psLP->mode == 0 ) ) || 
@@ -148,11 +148,13 @@ void SKP_Silk_LP_variable_cutoff(
                 /* Increment transition frame number for next frame */
                 psLP->transition_frame_no++;
 
-            } else if( psLP->transition_frame_no == TRANSITION_FRAMES_DOWN ) {
+            } else {
+                SKP_assert( psLP->transition_frame_no == TRANSITION_FRAMES_DOWN );
                 /* End of transition phase */
                 SKP_Silk_LP_interpolate_filter_taps( B_Q28, A_Q28, TRANSITION_INT_NUM - 1, 0 );
             }
-        } else if( psLP->mode == 1 ) {
+        } else {
+            SKP_assert( psLP->mode == 1 );
             if( psLP->transition_frame_no < TRANSITION_FRAMES_UP ) {
                 /* Calculate index and interpolation factor for interpolation */
 #if( TRANSITION_INT_STEPS_UP == 64 )
@@ -172,7 +174,8 @@ void SKP_Silk_LP_variable_cutoff(
                 /* Increment transition frame number for next frame */
                 psLP->transition_frame_no++;
             
-            } else if( psLP->transition_frame_no == TRANSITION_FRAMES_UP ) {
+            } else {
+                SKP_assert( psLP->transition_frame_no == TRANSITION_FRAMES_UP );
                 /* End of transition phase */
                 SKP_Silk_LP_interpolate_filter_taps( B_Q28, A_Q28, 0, 0 );
             }

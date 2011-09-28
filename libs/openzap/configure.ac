@@ -107,7 +107,10 @@ case "$host" in
     ;;
 esac
 
+DEFAULT_INCLUDES="-I. -I./src/include -I$(srcdir)"
+
 AC_SUBST(SOLINK)
+AC_SUBST(DEFAULT_INCLUDES)
 AC_SUBST(DYNAMIC_LIB_EXTEN)
 
 AC_CHECK_LIB([dl], [dlopen])

@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -53,12 +53,12 @@ void SKP_Silk_gains_quant(
         /* Compute delta indices and limit */
         if( k == 0 && conditional == 0 ) {
             /* Full index */
-            ind[ k ] = SKP_LIMIT( ind[ k ], 0, N_LEVELS_QGAIN - 1 );
+            ind[ k ] = SKP_LIMIT_int( ind[ k ], 0, N_LEVELS_QGAIN - 1 );
             ind[ k ] = SKP_max_int( ind[ k ], *prev_ind + MIN_DELTA_GAIN_QUANT );
             *prev_ind = ind[ k ];
         } else {
             /* Delta index */
-            ind[ k ] = SKP_LIMIT( ind[ k ] - *prev_ind, MIN_DELTA_GAIN_QUANT, MAX_DELTA_GAIN_QUANT );
+            ind[ k ] = SKP_LIMIT_int( ind[ k ] - *prev_ind, MIN_DELTA_GAIN_QUANT, MAX_DELTA_GAIN_QUANT );
             /* Accumulate deltas */
             *prev_ind += ind[ k ];
             /* Shift to make non-negative */

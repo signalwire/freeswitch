@@ -957,6 +957,16 @@ static int nhp_set_tags(su_home_t *home,
 	value = 0;
       NHP_SET_STR(nhp, organization, value);
     }
+    /* SIPTAG_VIA(via) */
+    else if (tag == siptag_via) {
+      NHP_SET_STR_BY_HEADER(nhp, via, value);
+    }
+    /* SIPTAG_VIA_STR(via_str) */
+    else if (tag == siptag_via_str) {
+      if (value == -1)
+	value = 0;
+      NHP_SET_STR(nhp, via, value);
+    }
     /* NUTAG_REGISTRAR(registrar) */
     else if (tag == nutag_registrar) {
       NHP_SET_STR_BY_URL(nhp, char, registrar, value);
@@ -1134,6 +1144,7 @@ int nhp_save_params(nua_handle_t *nh,
   NHP_ZAP_OVERRIDEN(old, dst, msg_header_free, allow_events);
   NHP_ZAP_OVERRIDEN(old, dst, su_free, user_agent);
   NHP_ZAP_OVERRIDEN(old, dst, su_free, organization);
+  NHP_ZAP_OVERRIDEN(old, dst, su_free, via);
   NHP_ZAP_OVERRIDEN(old, dst, su_free, m_display);
   NHP_ZAP_OVERRIDEN(old, dst, su_free, m_username);
   NHP_ZAP_OVERRIDEN(old, dst, su_free, m_params);
@@ -1672,6 +1683,9 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 
      TIF_SIP(SIPTAG_ORGANIZATION, organization),
      TIF(SIPTAG_ORGANIZATION_STR, organization),
+
+     TIF_SIP(SIPTAG_VIA, via),
+     TIF(SIPTAG_VIA_STR, via),
 
      TIF(NUTAG_INITIAL_ROUTE, initial_route),
      TIF_STR(NUTAG_INITIAL_ROUTE_STR, initial_route),

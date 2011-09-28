@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -141,7 +141,7 @@ SKP_int SKP_Silk_VAD_GetSA_Q8(                                      /* O    Retu
         for( s = 0; s < VAD_INTERNAL_SUBFRAMES; s++ ) {
             sumSquared = 0;
             for( i = 0; i < dec_subframe_length; i++ ) {
-                /* The energy will be less than dec_subframe_length * ( SKP_int16_MIN / 8 )^2.              */
+                /* The energy will be less than dec_subframe_length * ( SKP_int16_MIN / 8 ) ^ 2.            */
                 /* Therefore we can accumulate with no risk of overflow (unless dec_subframe_length > 128)  */
                 x_tmp = SKP_RSHIFT( X[ b ][ i + dec_subframe_offset ], 3 );
                 sumSquared = SKP_SMLABB( sumSquared, x_tmp, x_tmp );
@@ -150,11 +150,11 @@ SKP_int SKP_Silk_VAD_GetSA_Q8(                                      /* O    Retu
                 SKP_assert( sumSquared >= 0 );
             }
 
-            /* add/saturate summed energy of current subframe */
+            /* Add/saturate summed energy of current subframe */
             if( s < VAD_INTERNAL_SUBFRAMES - 1 ) {
                 Xnrg[ b ] = SKP_ADD_POS_SAT32( Xnrg[ b ], sumSquared );
             } else {
-                /* look-ahead subframe */
+                /* Look-ahead subframe */
                 Xnrg[ b ] = SKP_ADD_POS_SAT32( Xnrg[ b ], SKP_RSHIFT( sumSquared, 1 ) );
             }
 
@@ -201,7 +201,7 @@ SKP_int SKP_Silk_VAD_GetSA_Q8(                                      /* O    Retu
     }
 
     /* Mean-of-squares */
-    sumSquared = SKP_DIV32_16( sumSquared, VAD_N_BANDS );           /* Q14 */
+    sumSquared = SKP_DIV32_16( sumSquared, VAD_N_BANDS ); /* Q14 */
 
     /* Root-mean-square approximation, scale to dBs, and write to output pointer */
     *pSNR_dB_Q7 = ( SKP_int16 )( 3 * SKP_Silk_SQRT_APPROX( sumSquared ) );  /* Q7 */
@@ -240,7 +240,7 @@ SKP_int SKP_Silk_VAD_GetSA_Q8(                                      /* O    Retu
     /***********************************/
     /* Energy Level and SNR estimation */
     /***********************************/
-    /* smoothing coefficient */
+    /* Smoothing coefficient */
     smooth_coef_Q16 = SKP_SMULWB( VAD_SNR_SMOOTH_COEF_Q18, SKP_SMULWB( SA_Q15, SA_Q15 ) );
     for( b = 0; b < VAD_N_BANDS; b++ ) {
         /* compute smoothed energy-to-noise ratio per band */

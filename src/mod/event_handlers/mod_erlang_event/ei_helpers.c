@@ -64,7 +64,6 @@ void ei_link(listener_t *listener, erlang_pid * from, erlang_pid * to)
 	char msgbuf[2048];
 	char *s;
 	int index = 0;
-	int ret;
 
 	index = 5;					/* max sizes: */
 	ei_encode_version(msgbuf, &index);	/*   1 */
@@ -81,9 +80,11 @@ void ei_link(listener_t *listener, erlang_pid * from, erlang_pid * to)
 
 	switch_mutex_lock(listener->sock_mutex);
 #ifdef WIN32
-	ret = send(listener->sockfd, msgbuf, index, 0);
+	send(listener->sockfd, msgbuf, index, 0);
 #else
-	ret = write(listener->sockfd, msgbuf, index);
+	if (write(listener->sockfd, msgbuf, index) == -1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to link to process on %s\n", listener->peer_nodename);
+	}
 #endif
 	switch_mutex_unlock(listener->sock_mutex);
 }

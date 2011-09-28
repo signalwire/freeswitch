@@ -687,7 +687,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(_In_ switch_co
 /*! 
   \brief Signal a session's state machine thread that a state change has occured
 */
-SWITCH_DECLARE(void) switch_core_session_wake_session_thread(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_wake_session_thread(_In_ switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(_In_ switch_core_session_t *session);
 
 /*! 
@@ -712,12 +712,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_loglevel(switch_core_ses
   \return the log level
 */
 SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_session_t *session);
-
+								   
 
 SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec);
 SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *session);
-SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine);
-SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target);
+SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_core_session_t *session, switch_digit_action_target_t target);
+SWITCH_DECLARE(switch_digit_action_target_t) switch_ivr_dmachine_get_target(switch_ivr_dmachine_t *dmachine);
+SWITCH_DECLARE(void) switch_ivr_dmachine_set_target(switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target);
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_session_t *session, switch_slin_data_t *data);
 
 /*! 
@@ -1975,8 +1978,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, 
   \brief Set the maximum priority the process can obtain
   \return 0 on success
 */
-SWITCH_DECLARE(int32_t) set_high_priority(void);
+
 SWITCH_DECLARE(int32_t) set_normal_priority(void);
+SWITCH_DECLARE(int32_t) set_auto_priority(void);
+SWITCH_DECLARE(int32_t) set_realtime_priority(void);
+SWITCH_DECLARE(int32_t) set_low_priority(void);
 
 /*! 
   \brief Change user and/or group of the running process
@@ -2101,8 +2107,10 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string);
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 SWITCH_DECLARE(void) switch_cond_yield(switch_interval_time_t t);
 SWITCH_DECLARE(void) switch_cond_next(void);
-SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *name, const char *proto, const char *from, const char *to,
-													  const char *subject, const char *body, const char *type, const char *hint);
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_proto, const char *proto, const char *from, const char *to,
+														   const char *subject, const char *body, const char *type, const char *hint);
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *dest_proto, switch_event_t *message_event);
+SWITCH_DECLARE(switch_status_t) switch_core_chat_deliver(const char *dest_proto, switch_event_t **message_event);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_session_t *session, const char *cmds);
 

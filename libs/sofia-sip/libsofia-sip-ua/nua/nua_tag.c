@@ -2458,6 +2458,31 @@ tag_typedef_t nutag_user_agent = STRTAG_TYPEDEF(user_agent);
  */
 
 
+/**@def NUTAG_VIA()
+ *
+ * Via string.
+ *
+ * Indicate the Via header used by the stack.
+ *
+ * @par Used with
+ *    nua_set_params(), nua_set_hparams() \n
+ *    nua_get_params(), nua_get_hparams(), #nua_r_get_params \n
+ *    any handle-specific nua call
+ *
+ * @par Parameter type
+ *    char const *
+ *
+ * @par Values
+ *    See @RFC3261 \n
+ *
+ * Corresponding tag taking reference parameter is NUTAG_VIA_REF().
+ */
+tag_typedef_t nutag_via = STRTAG_TYPEDEF(via);
+
+/**@def NUTAG_VIA_REF(x)
+ * Reference tag for NUTAG_VIA().
+ */
+
 /**@def NUTAG_ALLOW()
  *
  * Allow a method (or methods).

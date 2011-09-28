@@ -184,7 +184,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 			} else {
 				switch_log_node_free(&dnode);
 				if (++l->lost_logs > MAX_MISSED) {
-					kill_listener(l, "Disconnected due to log queue failure.\n");
+					kill_listener(l, NULL);
 				}
 			}
 		}
@@ -384,7 +384,7 @@ static void event_handler(switch_event_t *event)
 					}
 				} else {
 					if (++l->lost_events > MAX_MISSED) {
-						kill_listener(l, "Disconnected due to event queue failure.\n");
+						kill_listener(l, NULL);
 					}
 					switch_event_destroy(&clone);
 				}
@@ -1180,7 +1180,6 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 								}
 							}
 							if (var && val) {
-								switch_event_del_header(*event, var);
 								switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, var, val);
 								if (!strcasecmp(var, "content-length")) {
 									clen = atoi(val);
@@ -1884,11 +1883,30 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				char *uuid;
 
 				if ((uuid = cmd + 9)) {
+					char *fmt;
 					strip_cr(uuid);
-
+					
+					if ((fmt = strchr(uuid, ' '))) {
+						*fmt++ = '\0';
+					}
+						
 					if (!(listener->session = switch_core_session_locate(uuid))) {
-						switch_snprintf(reply, reply_len, "-ERR invalid uuid");
-						goto done;
+						if (fmt) {
+							switch_snprintf(reply, reply_len, "-ERR invalid uuid");
+							goto done;
+						} else {
+							fmt = uuid;
+						}
+					}
+
+					if ((fmt = strchr(uuid, ' '))) {
+						if (!strcasecmp(fmt, "xml")) {
+							listener->format = EVENT_FORMAT_XML;
+						} else if (!strcasecmp(fmt, "plain")) {
+							listener->format = EVENT_FORMAT_PLAIN;
+						} else if (!strcasecmp(fmt, "json")) {
+							listener->format = EVENT_FORMAT_JSON;
+						}						
 					}
 
 					switch_set_flag_locked(listener, LFLAG_SESSION);

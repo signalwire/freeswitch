@@ -31,6 +31,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+typedef enum {
+        SERVICE_CHANGE_STATUS_INSERVICE = 0,
+        SERVICE_CHANGE_STATUS_MAINTENANCE = 1,
+        SERVICE_CHANGE_STATUS_OUTOFSERVICE = 2
+} service_change_status_t;     
 
 #ifndef FTMOD_LIBPRI_H
 #define FTMOD_LIBPRI_H
@@ -69,6 +74,7 @@ struct ftdm_libpri_data {
 	int overlap;		/*!< Overlap dial flags */
 	unsigned int layer1;
 	unsigned int ton;
+	unsigned int service_message_support;
 
 	lpwrap_pri_t spri;
 };
