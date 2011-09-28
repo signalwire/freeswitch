@@ -1004,7 +1004,7 @@ static unsigned char console_f12key(EditLine * el, int ch)
 char *prompt(EditLine * e)
 {
 	if (*prompt_str == '\0') {
-		switch_snprintf(prompt_str, sizeof(prompt_str), "sangoma-media-gateway@%s> ", switch_core_get_switchname());
+		switch_snprintf(prompt_str, sizeof(prompt_str), "nsg@%s> ", switch_core_get_switchname());
 	}
 
 	return prompt_str;
