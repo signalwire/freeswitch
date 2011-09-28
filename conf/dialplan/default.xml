@@ -181,7 +181,7 @@
     <extension name="eavesdrop">
       <condition field="destination_number" expression="^88(\d{4})$|^\*0(.*)$">
 	<action application="answer"/>
-	<action application="eavesdrop" data="${hash(select/${domain_name}-spymap/$1)}"/>
+	<action application="eavesdrop" data="${hash(select/${domain_name}-spymap/$1$2)}"/>
       </condition>
     </extension>
 
