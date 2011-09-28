@@ -405,6 +405,8 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 				append_tknStr_from_sngss7(siCnStEvnt->subNum.addrSig, 
 											ftdmchan->caller_data.dnis.digits, 
 											siCnStEvnt->subNum.oddEven);
+				SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Rx SAM (digits = %s)\n", sngss7_info->circuit->cic,
+						ftdmchan->caller_data.dnis.digits);
 			} else {
 				SS7_INFO_CHAN(ftdmchan,"No Called party (DNIS) information in SAM!%s\n", " ");
 			}

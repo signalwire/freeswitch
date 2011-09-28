@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2009, Konrad Hammel <konrad@sangoma.com>
+ * Copyright (c) 2009, Sangoma Technologies
+ * Konrad Hammel <konrad@sangoma.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,6 +30,11 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ *
  */
 
 /* INCLUDE ********************************************************************/
@@ -70,12 +76,39 @@ void handle_isup_t35(void *userdata)
     /* end the call */
     ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
 
+    /* kill t10 if active */
+    if (sngss7_info->t10.hb_timer_id) {
+        ftdm_sched_cancel_timer (sngss7_info->t10.sched, sngss7_info->t10.hb_timer_id);
+    }
+
     /*unlock*/
     ftdm_channel_unlock(ftdmchan);
 
     SS7_FUNC_TRACE_EXIT(__FUNCTION__);
     return;
 }
+
+
+void handle_isup_t10(void *userdata)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+
+	sngss7_timer_data_t *timer = userdata;
+	sngss7_chan_data_t  *sngss7_info = timer->sngss7_info;
+	ftdm_channel_t      *ftdmchan = sngss7_info->ftdmchan;
+
+	ftdm_channel_lock(ftdmchan);
+
+	SS7_DEBUG("[Call-Control] Timer 10 expired on CIC = %d\n", sngss7_info->circuit->cic);
+
+	/* send the call to the user */
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+
+	ftdm_channel_unlock(ftdmchan);
+
+	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+}
+ 
 /******************************************************************************/
 /* For Emacs:
  * Local Variables:
