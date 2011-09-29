@@ -2534,7 +2534,10 @@ SWITCH_STANDARD_APP(fifo_function)
 			if (orbit_ann) {
 				switch_ivr_play_file(session, NULL, orbit_ann, NULL);
 			}
-			switch_ivr_session_transfer(session, cd.orbit_exten, cd.orbit_dialplan, cd.orbit_context);
+
+			if (strcmp(cd.orbit_exten, "_continue_")) {
+				switch_ivr_session_transfer(session, cd.orbit_exten, cd.orbit_dialplan, cd.orbit_context);
+			}
 		}
 
 		check_ocancel(session);
