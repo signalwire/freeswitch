@@ -138,7 +138,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	unsigned char *abuf = NULL;
 	switch_codec_implementation_t imp = { 0 };
 	switch_codec_t codec = { 0 };
-	int sval = 0;
+	int sval = -1;
 	const char *var;
 
 	/*
@@ -192,6 +192,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 		write_frame.codec = &codec;
 		switch_zmalloc(abuf, SWITCH_RECOMMENDED_BUFFER_SIZE);
+		memset(abuf, 255, SWITCH_RECOMMENDED_BUFFER_SIZE);
 		write_frame.data = abuf;
 		write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 		write_frame.datalen = imp.decoded_bytes_per_packet;
@@ -294,7 +295,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		}
 
 		if (sval && write_frame.datalen) {
-			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, sval);
+			if (sval > 0) {
+				switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, sval);
+			}
 			switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 		} else {
 			switch_core_session_write_frame(session, &cng_frame, SWITCH_IO_FLAG_NONE, 0);
