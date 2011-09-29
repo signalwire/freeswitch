@@ -695,6 +695,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 
 	if ((val = sofia_glue_get_unknown_header(sip, "X-FS-Display-Name"))) {
 		name = (char *) val;
+		check_decode(name, session);
 		fs++;
 	}
 	
