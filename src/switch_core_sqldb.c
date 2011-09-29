@@ -733,7 +733,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 
 			if ((result = switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 0)) != SWITCH_ODBC_SUCCESS) {
 				char tmp[100];
-				switch_snprintf(tmp, sizeof(tmp), "%s-%i", "Unable to Set AutoCommit Off", result);
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to Set AutoCommit Off", result);
 				errmsg = strdup(tmp);
 			}
 		}
@@ -1144,7 +1144,7 @@ static char *parse_presence_data_cols(switch_event_t *event)
 	SWITCH_STANDARD_STREAM(stream);
 
 	for (i = 0; i < col_count; i++) {
-		switch_snprintf(col_name, sizeof(col_name), "variable_%s", cols[i]);
+		switch_snprintfv(col_name, sizeof(col_name), "variable_%q", cols[i]);
 		stream.write_function(&stream, "%q='%q',", cols[i], switch_event_get_header_nil(event, col_name));
 	}
 
@@ -1906,7 +1906,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			const char *hostname = switch_core_get_switchname();
 
 			for (i = 0; tables[i]; i++) {
-				switch_snprintf(sql, sizeof(sql), "delete from %s where hostname='%s'", tables[i], hostname);
+				switch_snprintfv(sql, sizeof(sql), "delete from %q where hostname='%q'", tables[i], hostname);
 				switch_cache_db_execute_sql(dbh, sql, NULL);
 			}
 		}

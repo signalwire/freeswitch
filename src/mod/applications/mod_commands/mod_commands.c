@@ -4078,11 +4078,11 @@ SWITCH_STANDARD_API(show_function)
 		holder.print_title = 0;
 		if ((cmdname = strchr(command, ' ')) && strcasecmp(cmdname, "as")) {
 			*cmdname++ = '\0';
-			switch_snprintf(sql, sizeof(sql) - 1,
-							"select name, syntax, description, ikey from interfaces where hostname='%s' and type = 'api' and name = '%s' order by name", 
+			switch_snprintfv(sql, sizeof(sql),
+							"select name, syntax, description, ikey from interfaces where hostname='%s' and type = 'api' and name = '%q' order by name", 
 							hostname, cmdname);
 		} else {
-			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description, ikey from interfaces where hostname='%s' and type = 'api' order by name", hostname);
+			switch_snprintfv(sql, sizeof(sql), "select name, syntax, description, ikey from interfaces where hostname='%q' and type = 'api' order by name", hostname);
 		}
 	} else if (!strcasecmp(command, "nat_map")) {
 		switch_snprintf(sql, sizeof(sql) - 1,
