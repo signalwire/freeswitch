@@ -3677,7 +3677,6 @@ void node_dump(switch_stream_handle_t *stream)
 #define FIFO_API_SYNTAX "list|list_verbose|count|debug|status|importance [<fifo name>]|reparse [del_all]"
 SWITCH_STANDARD_API(fifo_api_function)
 {
-	int len = 0;
 	fifo_node_t *node;
 	char *data = NULL;
 	int argc = 0;
@@ -3772,9 +3771,8 @@ SWITCH_STANDARD_API(fifo_api_function)
 			for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, &var, NULL, &val);
 				node = (fifo_node_t *) val;
-				len = node_caller_count(node);
 				switch_mutex_lock(node->update_mutex);
-				stream->write_function(stream, "%s:%d:%d:%d\n", (char *) var, node->consumer_count, node_caller_count(node), len);
+				stream->write_function(stream, "%s:%d:%d\n", (char *) var, node->consumer_count, node_caller_count(node));
 				switch_mutex_unlock(node->update_mutex);
 				x++;
 			}
@@ -3783,9 +3781,8 @@ SWITCH_STANDARD_API(fifo_api_function)
 				stream->write_function(stream, "none\n");
 			}
 		} else if ((node = switch_core_hash_find(globals.fifo_hash, argv[1]))) {
-			len = node_caller_count(node);
 			switch_mutex_lock(node->update_mutex);
-			stream->write_function(stream, "%s:%d:%d:%d\n", argv[1], node->consumer_count, node_caller_count(node), len);
+			stream->write_function(stream, "%s:%d:%d\n", argv[1], node->consumer_count, node_caller_count(node));
 			switch_mutex_unlock(node->update_mutex);
 		} else {
 			stream->write_function(stream, "none\n");
@@ -3795,7 +3792,6 @@ SWITCH_STANDARD_API(fifo_api_function)
 			for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, &var, NULL, &val);
 				node = (fifo_node_t *) val;
-				len = node_caller_count(node);
 				switch_mutex_lock(node->update_mutex);
 				stream->write_function(stream, "%s:%d\n", (char *) var, node->has_outbound);
 				switch_mutex_unlock(node->update_mutex);
@@ -3806,7 +3802,6 @@ SWITCH_STANDARD_API(fifo_api_function)
 				stream->write_function(stream, "none\n");
 			}
 		} else if ((node = switch_core_hash_find(globals.fifo_hash, argv[1]))) {
-			len = node_caller_count(node);
 			switch_mutex_lock(node->update_mutex);
 			stream->write_function(stream, "%s:%d\n", argv[1], node->has_outbound);
 			switch_mutex_unlock(node->update_mutex);
