@@ -865,7 +865,7 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 
 	/* Override TEI teiAlloc Option if user specified it */
 	if (signal_data->dynamic_tei != SNGISDN_OPT_DEFAULT ) {
-		ftdm_log(FTDM_LOG_DEBUG, "%s: TEI allocation set to %s\n", (signal_data->dynamic_tei == SNGISDN_OPT_TRUE)? "dynamic": "static");
+		ftdm_log(FTDM_LOG_DEBUG, "%s: TEI allocation set to %s\n", span->name, (signal_data->dynamic_tei == SNGISDN_OPT_TRUE)? "dynamic": "static");
 		cfg.t.cfg.s.inDLSAP.teiAlloc = (signal_data->dynamic_tei==SNGISDN_OPT_TRUE)?IN_DYNAMIC:IN_STATIC;
 	}
 
