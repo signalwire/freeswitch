@@ -846,7 +846,7 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 			cfg.t.cfg.s.inDLSAP.dChannelNum = 0; /* Unused for BRI */
 			cfg.t.cfg.s.inDLSAP.nmbBearChan = NUM_BRI_CHANNELS_PER_SPAN;
 			cfg.t.cfg.s.inDLSAP.firstBChanNum = 1;
-			cfg.t.cfg.s.inDLSAP.callRefLen = 1;
+			cfg.t.cfg.s.inDLSAP.callRefLen = 1;			
 			cfg.t.cfg.s.inDLSAP.teiAlloc = IN_STATIC;
 			cfg.t.cfg.s.inDLSAP.intCfg = IN_INTCFG_PTPT;
 			break;
@@ -861,6 +861,12 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 		default:
 			ftdm_log(FTDM_LOG_ERROR, "%s: Unsupported trunk_type\n", span->name);
 			return FTDM_FAIL;
+	}
+
+	/* Override TEI teiAlloc Option if user specified it */
+	if (signal_data->dynamic_tei != SNGISDN_OPT_DEFAULT ) {
+		ftdm_log(FTDM_LOG_DEBUG, "%s: TEI allocation set to %s\n", (signal_data->dynamic_tei == SNGISDN_OPT_TRUE)? "dynamic": "static");
+		cfg.t.cfg.s.inDLSAP.teiAlloc = (signal_data->dynamic_tei==SNGISDN_OPT_TRUE)?IN_DYNAMIC:IN_STATIC;
 	}
 
 	if (sng_isdn_q931_config(&pst, &cfg)) {

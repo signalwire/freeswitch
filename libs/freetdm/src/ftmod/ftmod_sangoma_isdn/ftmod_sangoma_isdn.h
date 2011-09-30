@@ -262,6 +262,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			raw_trace_q921; /* TODO: combine with trace_flags */
 	uint8_t			timer_t3;
 	uint8_t			restart_opt;
+	uint8_t			dynamic_tei;
 	uint8_t			restart_timeout;
 	uint8_t			force_sending_complete;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
