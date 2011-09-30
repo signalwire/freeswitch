@@ -51,7 +51,7 @@
 
 /* DEFINES ********************************************************************/
 #define MAX_NAME_LEN			25
-#define MAX_PATH				255
+#define MAX_PATH				4096
 
 #define MAX_CIC_LENGTH			5
 #define MAX_CIC_MAP_LENGTH		1000 
