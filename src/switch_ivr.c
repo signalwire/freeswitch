@@ -2449,7 +2449,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	interval = read_impl.microseconds_per_packet / 1000;
 	//samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
 
-	qlen = delay_ms / (interval);
+	qlen = delay_ms / (interval) / 2;
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
 	jb = stfu_n_init(qlen, qlen, read_impl.samples_per_packet, read_impl.samples_per_second, 0);
 
