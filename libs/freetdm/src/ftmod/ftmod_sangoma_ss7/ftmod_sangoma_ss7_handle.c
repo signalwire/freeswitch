@@ -273,8 +273,9 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			sngss7_add_var(sngss7_info, "ss7_opc", var);
 			
 			if (siConEvnt->callRef.callId.pres) {
-				sprintf(var, "%u", (unsigned int)siConEvnt->callRef.callId.val);
-				sngss7_add_var(sngss7_info, "ss7_crn", var);
+				ftdmchan->caller_data.call_reference = (unsigned int)siConEvnt->callRef.callId.val;
+			} else {
+				ftdmchan->caller_data.call_reference = 0;
 			}
 			
 			if (sngss7_info->circuit->transparent_iam) {

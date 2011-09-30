@@ -1830,20 +1830,11 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Screen", "%d", channel_caller_data->screen);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Presentation", "%d", channel_caller_data->pres);
-		
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CallReference", "%d", channel_caller_data->call_reference);
+
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_opc");
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OPC", "%s", var_value);
-		}
-		
-		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_lac");
-		if (!ftdm_strlen_zero(var_value)) {
-			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-LAC", "%s", var_value);
-		}
-		
-		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_crn");
-		if (!ftdm_strlen_zero(var_value)) {
-			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CRN", "%s", var_value);
 		}
 	}
 
