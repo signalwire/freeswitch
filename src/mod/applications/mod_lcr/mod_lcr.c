@@ -605,6 +605,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	char *key = NULL;
 	int i = 0;
 	int r = 0;
+	switch_bool_t lcr_skipped = SWITCH_TRUE; /* assume we'll throw it away, paranoid about leak */
 
 	switch_memory_pool_t *pool = cbt->pool;
 	
@@ -669,6 +670,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 			r = -1; goto end;
 		}
+		lcr_skipped = SWITCH_FALSE;
 		r = 0; goto end;
 	}
 
@@ -698,6 +700,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 					r = -1; goto end;
 				}
+				lcr_skipped = SWITCH_FALSE;
 				break;
 			}
 		} else {
@@ -719,6 +722,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 					r = -1; goto end;
 				}
+				lcr_skipped = SWITCH_FALSE;
 				break;
 			} else if (current->next == NULL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "adding %s to end of list after %s\n",
@@ -729,6 +733,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 					r = -1; goto end;
 				}
+				lcr_skipped = SWITCH_FALSE;
 				break;
 			}
 		}
@@ -736,8 +741,13 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 
  end:
 
-	/* event is freed in lcr_destroy() switch_event_destroy(&additional->fields); */
-
+	/* lcr was not added to any lists, so destroy lcr object here */
+	if (lcr_skipped == SWITCH_TRUE) {
+		/* ensure we didn't accidentally add additional to the list */
+		switch_assert(additional->prev == NULL && current->next != additional);
+		lcr_destroy(additional);
+	}
+	
 	return r;
 
 }
