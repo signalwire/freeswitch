@@ -219,6 +219,14 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			sprintf(var, "%d", sngss7_info->circuit->cic);
 			sngss7_add_var(sngss7_info, "ss7_cic", var);
 
+			sprintf(var, "%d", g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].spc );
+			sngss7_add_var(sngss7_info, "ss7_opc", var);
+			
+			if (siConEvnt->callRef.callId.pres) {
+				sprintf(var, "%u", (unsigned int)siConEvnt->callRef.callId.val);
+				sngss7_add_var(sngss7_info, "ss7_crn", var);
+			}
+			
 			if (sngss7_info->circuit->transparent_iam) {
 				sngss7_save_iam(ftdmchan, siConEvnt);
 			}
