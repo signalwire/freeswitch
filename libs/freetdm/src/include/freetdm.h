@@ -362,6 +362,7 @@ typedef struct ftdm_caller_data {
 	/* user information layer 1 protocol */
 	ftdm_user_layer1_prot_t bearer_layer1;
 	ftdm_calling_party_category_t cpc; /*!< Calling party category */
+	uint32_t call_reference;
 
 	ftdm_channel_t *fchan; /*!< FreeTDM channel associated (can be NULL) */
 
