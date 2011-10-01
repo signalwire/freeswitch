@@ -389,6 +389,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 		if (!ptr->listener) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NULL pointer binding!\n");
+			switch_thread_rwlock_unlock(globals.bindings_rwlock);
 			goto cleanup; /* our pointer is trash */
 		}
 
@@ -820,7 +821,7 @@ static void listener_main_loop(listener_t *listener)
 
 		/* do we need the mutex when reading? */
 		/*switch_mutex_lock(listener->sock_mutex); */
-		status = ei_xreceive_msg_tmo(listener->sockfd, &msg, &buf, 100);
+		status = ei_xreceive_msg_tmo(listener->sockfd, &msg, &buf, 500);
 		/*switch_mutex_unlock(listener->sock_mutex); */
 
 		switch (status) {
@@ -1818,7 +1819,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 #else
 		errno = 0;
 #endif
-		if ((clientfd = ei_accept_tmo(&ec, (int) listen_list.sockfd, &conn, 100)) == ERL_ERROR) {
+		if ((clientfd = ei_accept_tmo(&ec, (int) listen_list.sockfd, &conn, 500)) == ERL_ERROR) {
 			if (prefs.done) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 			} else if (erl_errno == ETIMEDOUT) {
