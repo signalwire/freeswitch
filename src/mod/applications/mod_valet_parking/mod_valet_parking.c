@@ -39,6 +39,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_valet_parking_load);
 SWITCH_MODULE_DEFINITION(mod_valet_parking, mod_valet_parking_load, NULL, NULL);
 
 typedef struct {
+	char ext[256];
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	time_t timeout;
 } valet_token_t;
@@ -47,6 +48,7 @@ typedef struct {
 	switch_hash_t *hash;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
+	time_t last_timeout_check;
 } valet_lot_t;
 
 static valet_lot_t globals = { 0 };
@@ -92,46 +94,61 @@ static void check_timeouts(void)
 	void *val;
 	time_t now;
 	valet_lot_t *lot;
+	switch_console_callback_match_t *matches = NULL;
+	switch_console_callback_match_node_t *m;
+	switch_hash_index_t *i_hi;
+	const void *i_var;
+	void *i_val;
+	char *i_ext;
+	valet_token_t *token;
 
 	now = switch_epoch_time_now(NULL);
 
 	switch_mutex_lock(globals.mutex);
+	if (now - globals.last_timeout_check < 30) {
+		switch_mutex_unlock(globals.mutex);
+		return;
+	}
 
-
+	globals.last_timeout_check = now;
 	for (hi = switch_hash_first(NULL, globals.hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_index_t *i_hi;
-		const void *i_var;
-		void *i_val;
-		char *i_ext;
-		valet_token_t *token;
-
 		switch_hash_this(hi, &var, NULL, &val);
-		lot = (valet_lot_t *) val;
-
-		switch_mutex_lock(lot->mutex);
-
-	top:
-		
-		for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
-			switch_hash_this(i_hi, &i_var, NULL, &i_val);
-			i_ext = (char *) i_var;
-			token = (valet_token_t *) i_val;
-			if (token->timeout > 0 && (token->timeout < now || token->timeout == 1)) {
-				switch_core_hash_delete(lot->hash, i_ext);
-				switch_safe_free(token);
-				goto top;
-			}
-		}
-
-		switch_mutex_unlock(lot->mutex);
+		switch_console_push_match(&matches, (const char *) var);
 	}
 	switch_mutex_unlock(globals.mutex);
+
+
+	if (matches) {
+		for (m = matches->head; m; m = m->next) {
+
+			lot = valet_find_lot(m->val);
+			switch_mutex_lock(lot->mutex);
+
+		top:
+		
+			for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
+				switch_hash_this(i_hi, &i_var, NULL, &i_val);
+				i_ext = (char *) i_var;
+				token = (valet_token_t *) i_val;
+				if (token->timeout > 0 && (token->timeout < now || token->timeout == 1)) {
+					switch_core_hash_delete(lot->hash, i_ext);
+					switch_safe_free(token);
+					goto top;
+				}
+			}
+
+			switch_mutex_unlock(lot->mutex);
+		}
+
+		switch_console_free_matches(&matches);
+	}
+
 }
 
-static int next_id(valet_lot_t *lot, int min, int max, int in)
+static valet_token_t *next_id(switch_core_session_t *session, valet_lot_t *lot, int min, int max, int in)
 {
 	int i, r = 0;
-	char buf[128] = "";
+	char buf[256] = "";
 	valet_token_t *token;
 
 	if (!min) {
@@ -148,9 +165,20 @@ static int next_id(valet_lot_t *lot, int min, int max, int in)
 			break;
 		}
 	}
+
+	token = NULL;
+
+	if (r) {
+		switch_snprintf(buf, sizeof(buf), "%d", r);
+		switch_zmalloc(token, sizeof(*token));
+		switch_set_string(token->uuid, switch_core_session_get_uuid(session));
+		switch_set_string(token->ext, buf);
+		switch_core_hash_insert(lot->hash, buf, token);
+	}
+
 	switch_mutex_unlock(globals.mutex);
 
-	return r;
+	return token;
 }
 
 
@@ -166,11 +194,12 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	const char *var;
 	valet_token_t *token = NULL;
 
+
+	check_timeouts();
+
 	if ((var = switch_channel_get_variable(channel, "valet_announce_slot"))) {
 		play_announce = switch_true(var);
 	}
-
-	check_timeouts();
 
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
@@ -192,7 +221,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			const char *io = argv[2];
 			const char *min = argv[3];
 			const char *max = argv[4];
-			int min_i, max_i, id, in = -1;
+			int min_i, max_i, in = -1;
 
 			if (argc < 5) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", VALET_APP_SYNTAX);
@@ -217,13 +246,13 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			min_i = atoi(min);
 			max_i = atoi(max);
 
-			if (!(id = next_id(lot, min_i, max_i, in))) {
+			if (!(token = next_id(session, lot, min_i, max_i, in))) {
 				switch_ivr_phrase_macro(session, in ? "valet_lot_full" : "valet_lot_empty", "", NULL, NULL);
 				switch_mutex_unlock(lot->mutex);
 				return;
 			}
 
-			switch_snprintf(dtmf_buf, sizeof(dtmf_buf), "%d", id);
+			switch_snprintf(dtmf_buf, sizeof(dtmf_buf), "%s", token->ext);
 			ext = dtmf_buf;
 		} else if (!strcasecmp(ext, "ask")) {
 			const char *prompt = "ivr/ivr-enter_ext_pound.wav";
@@ -269,60 +298,63 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			}
 		}
 
-		switch_mutex_lock(lot->mutex);
-		if ((token = (valet_token_t *) switch_core_hash_find(lot->hash, ext))) {
-			switch_core_session_t *b_session;
+		if (!token) {
+			switch_mutex_lock(lot->mutex);
+			if ((token = (valet_token_t *) switch_core_hash_find(lot->hash, ext))) {
+				switch_core_session_t *b_session;
 			
-			if (token->timeout) {
-				const char *var = switch_channel_get_variable(channel, "valet_ticket");
+				if (token->timeout) {
+					const char *var = switch_channel_get_variable(channel, "valet_ticket");
 				
-				if (!zstr(var)) {
-					if (!strcmp(var, token->uuid)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Valet ticket %s accepted.\n", var);
+					if (!zstr(var)) {
+						if (!strcmp(var, token->uuid)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Valet ticket %s accepted.\n", var);
+							token->timeout = 0;
+							switch_channel_set_variable(channel, "valet_ticket", NULL);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid token %s\n", token->uuid);
+							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+							return;
+						}
+					}
+				}
+
+				if (!zstr(token->uuid) && (b_session = switch_core_session_locate(token->uuid))) {
+					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bridge");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-To-UUID", switch_core_session_get_uuid(session));
+						switch_channel_event_set_data(switch_core_session_get_channel(b_session), event);
+						switch_event_fire(&event);
+						switch_core_session_rwunlock(b_session);
 						token->timeout = 0;
-						switch_channel_set_variable(channel, "valet_ticket", NULL);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid token %s\n", token->uuid);
-						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), token->uuid);
+						switch_mutex_unlock(lot->mutex);
 						return;
 					}
 				}
 			}
 
-			if (!zstr(token->uuid) && (b_session = switch_core_session_locate(token->uuid))) {
-				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bridge");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-To-UUID", switch_core_session_get_uuid(session));
-					switch_channel_event_set_data(switch_core_session_get_channel(b_session), event);
-					switch_event_fire(&event);
-					switch_core_session_rwunlock(b_session);
-					token->timeout = 0;
-					switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), token->uuid);
-					switch_mutex_unlock(lot->mutex);
-					return;
-				}
-			}
+			token = NULL;
+
+			switch_zmalloc(token, sizeof(*token));
+			switch_set_string(token->uuid, switch_core_session_get_uuid(session));
+			switch_core_hash_insert(lot->hash, ext, token);
 		}
-
-
-		token = NULL;
 
 		if (!(tmp = switch_channel_get_variable(channel, "valet_hold_music"))) {
 			tmp = switch_channel_get_hold_music(channel);
 		}
-		if (tmp)
+
+		if (tmp) {
 			music = tmp;
+		}
 
 		if (!strcasecmp(music, "silence")) {
 			music = "silence_stream://-1";
 		}
-
-		switch_zmalloc(token, sizeof(*token));
-		switch_set_string(token->uuid, switch_core_session_get_uuid(session));
-		switch_core_hash_insert(lot->hash, ext, token);
-
+		
 		dest = switch_core_session_sprintf(session, "set:valet_ticket=%s,set:valet_hold_music=%s,sleep:1000,valet_park:%s %s", 
 										   token->uuid, music, lot_name, ext);
 		switch_channel_set_variable(channel, "inline_destination", dest);
@@ -337,6 +369,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				if ((b_session = switch_core_session_locate(uuid))) {
 					token->timeout = switch_epoch_time_now(NULL) + 10;		
 					if (play_announce) {
+						switch_ivr_sleep(session, 1500, SWITCH_TRUE, NULL);
 						switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
 					}
 					switch_ivr_session_transfer(b_session, dest, "inline", NULL);
@@ -348,6 +381,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			}
 
 			if (play_announce) {
+				switch_ivr_sleep(session, 1500, SWITCH_TRUE, NULL);
 				switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
 			}
 		}
@@ -451,6 +485,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_valet_parking_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", VALET_EVENT);
 		return SWITCH_STATUS_TERM;
 	}
+
+	memset(&globals, 0, sizeof(globals));
 
 	globals.pool = pool;
 	switch_core_hash_init(&globals.hash, NULL);

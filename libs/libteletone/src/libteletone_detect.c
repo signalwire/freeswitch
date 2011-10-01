@@ -54,8 +54,8 @@
  * Exception:
  * The author hereby grants the use of this source code under the 
  * following license if and only if the source code is distributed
- * as part of the openzap library.	Any use or distribution of this
- * source code outside the scope of the openzap library will nullify the
+ * as part of the OpenZAP or FreeTDM library.	Any use or distribution of this
+ * source code outside the scope of the OpenZAP or FreeTDM library will nullify the
  * following license and reinact the MPL 1.1 as stated above.
  *
  * Copyright (c) 2007, Anthony Minessale II
@@ -100,7 +100,8 @@
 #include <time.h>
 #include <fcntl.h>
 
-
+#define LOW_ENG 10000000
+#define ZC 2
 static teletone_detection_descriptor_t dtmf_detect_row[GRID_FACTOR];
 static teletone_detection_descriptor_t dtmf_detect_col[GRID_FACTOR];
 static teletone_detection_descriptor_t dtmf_detect_row_2nd[GRID_FACTOR];
@@ -165,8 +166,8 @@ TELETONE_API(void) teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf
 	dtmf_detect_state->current_sample = 0;
 	dtmf_detect_state->detected_digits = 0;
 	dtmf_detect_state->lost_digits = 0;
-	dtmf_detect_state->digits[0] = '\0';
-	dtmf_detect_state->mhit = 0;
+	dtmf_detect_state->digit = 0;
+	dtmf_detect_state->dur = 0;
 }
 
 TELETONE_API(void) teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *map)
@@ -299,7 +300,7 @@ TELETONE_API(int) teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 }
 
 
-TELETONE_API(int) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
+TELETONE_API(teletone_hit_type_t) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
 						  int16_t sample_buffer[],
 						  int samples)
 {
@@ -314,6 +315,7 @@ TELETONE_API(int) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detec
 	int best_col;
 	char hit;
 	int limit;
+	teletone_hit_type_t r = 0;
 
 	hit = 0;
 	for (sample = 0;  sample < samples;	 sample = limit) {
@@ -349,6 +351,32 @@ TELETONE_API(int) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detec
 			}
 
 		}
+
+		if (dtmf_detect_state->zc > 0) {
+			if (dtmf_detect_state->energy < LOW_ENG && dtmf_detect_state->lenergy < LOW_ENG) {
+				if (!--dtmf_detect_state->zc) {
+					/* Reinitialise the detector for the next block */
+					dtmf_detect_state->hit1 = dtmf_detect_state->hit2 = 0;
+					for (i = 0;	 i < GRID_FACTOR;  i++) {
+						goertzel_init (&dtmf_detect_state->row_out[i], &dtmf_detect_row[i]);
+						goertzel_init (&dtmf_detect_state->col_out[i], &dtmf_detect_col[i]);
+						goertzel_init (&dtmf_detect_state->row_out2nd[i], &dtmf_detect_row_2nd[i]);
+						goertzel_init (&dtmf_detect_state->col_out2nd[i], &dtmf_detect_col_2nd[i]);
+					}
+					dtmf_detect_state->dur -= samples;
+					return TT_HIT_END;
+				}
+			}
+			
+			dtmf_detect_state->dur += samples;
+			dtmf_detect_state->lenergy = dtmf_detect_state->energy;
+			dtmf_detect_state->energy = 0.0;
+			dtmf_detect_state->current_sample = 0;
+			return TT_HIT_MIDDLE;
+		} else if (dtmf_detect_state->digit) {
+			return TT_HIT_END;
+		}
+		
 
 		dtmf_detect_state->current_sample += (limit - sample);
 		if (dtmf_detect_state->current_sample < BLOCK_LEN) {
@@ -394,58 +422,55 @@ TELETONE_API(int) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detec
 				   back to back differing digits. More importantly, it
 				   can work with nasty phones that give a very wobbly start
 				   to a digit. */
-				if (hit == dtmf_detect_state->hit3	&&	dtmf_detect_state->hit3 != dtmf_detect_state->hit2) {
-					dtmf_detect_state->mhit = hit;
+				if (! r && hit == dtmf_detect_state->hit3 && dtmf_detect_state->hit3 != dtmf_detect_state->hit2) {
 					dtmf_detect_state->digit_hits[(best_row << 2) + best_col]++;
 					dtmf_detect_state->detected_digits++;
 					if (dtmf_detect_state->current_digits < TELETONE_MAX_DTMF_DIGITS) {
-						dtmf_detect_state->digits[dtmf_detect_state->current_digits++] = hit;
-						dtmf_detect_state->digits[dtmf_detect_state->current_digits] = '\0';
+						dtmf_detect_state->digit = hit;
+					} else {
+						dtmf_detect_state->lost_digits++;
 					}
-					else
-						{
-							dtmf_detect_state->lost_digits++;
-						}
+					
+					if (!dtmf_detect_state->zc) {
+						dtmf_detect_state->zc = ZC;
+						dtmf_detect_state->dur = 0;
+						r = TT_HIT_BEGIN;
+						break;
+					}					
+
 				}
 			}
 		}
+
 		dtmf_detect_state->hit1 = dtmf_detect_state->hit2;
 		dtmf_detect_state->hit2 = dtmf_detect_state->hit3;
 		dtmf_detect_state->hit3 = hit;
-		/* Reinitialise the detector for the next block */
-		for (i = 0;	 i < GRID_FACTOR;  i++) {
-			goertzel_init (&dtmf_detect_state->row_out[i], &dtmf_detect_row[i]);
-			goertzel_init (&dtmf_detect_state->col_out[i], &dtmf_detect_col[i]);
-			goertzel_init (&dtmf_detect_state->row_out2nd[i], &dtmf_detect_row_2nd[i]);
-			goertzel_init (&dtmf_detect_state->col_out2nd[i], &dtmf_detect_col_2nd[i]);
-		}
+
 		dtmf_detect_state->energy = 0.0;
 		dtmf_detect_state->current_sample = 0;
+		
 	}
-	if ((!dtmf_detect_state->mhit) || (dtmf_detect_state->mhit != hit)) {
-		dtmf_detect_state->mhit = 0;
-		return(0);
-	}
-	return (hit);
+
+	return r;
 }
 
 
-TELETONE_API(int) teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
-					   char *buf,
-					   int max)
+TELETONE_API(int) teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state, char *buf, unsigned int *dur)
 {
-	teletone_assert(dtmf_detect_state->current_digits <= TELETONE_MAX_DTMF_DIGITS);
+	if (!dtmf_detect_state->digit) {
+		return 0;
+	}
 
-	if (max > dtmf_detect_state->current_digits) {
-		max = dtmf_detect_state->current_digits;
+	*buf = dtmf_detect_state->digit;
+
+	*dur = dtmf_detect_state->dur;
+
+	if (!dtmf_detect_state->zc) {
+		dtmf_detect_state->dur = 0;
+		dtmf_detect_state->digit = 0;
 	}
-	if (max > 0) {
-		memcpy (buf, dtmf_detect_state->digits, max);
-		memmove (dtmf_detect_state->digits, dtmf_detect_state->digits + max, dtmf_detect_state->current_digits - max);
-		dtmf_detect_state->current_digits -= max;
-	}
-	buf[max] = '\0';
-	return	max;
+	
+	return 1;
 }
 
 /* For Emacs:

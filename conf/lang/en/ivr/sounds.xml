@@ -9,6 +9,26 @@
 		</input>
 	</macro>
 
+	<macro name="has_called_conf">
+		<input pattern="^(\d+)$">
+			<match>
+				<action function="play-file" data="$1"/>
+                <action function="sleep" data="100"/>
+				<action function="play-file" data="conference/conf-has_joined.wav"/>
+			</match>
+		</input>
+	</macro>
+	
+	<macro name="has_left_conf">
+		<input pattern="^(\d+)$">
+			<match>
+				<action function="play-file" data="$1"/>
+                <action function="sleep" data="100"/>
+				<action function="play-file" data="conference/conf-has_left.wav"/>
+			</match>
+		</input>
+	</macro>
+
     <macro name="enter_dest_number">
       <input pattern="^(.*)$">
         <match>

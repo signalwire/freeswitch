@@ -300,7 +300,7 @@ endif
 fs_encode_SOURCES = src/fs_encode.c
 fs_encode_CFLAGS = $(AM_CFLAGS)
 fs_encode_LDFLAGS = $(AM_LDFLAGS) $(CORE_LIBS)
-fs_encode_LDADD = libfreeswitch.la
+fs_encode_LDADD = libfreeswitch.la -lcrypt -lrt
 
 ##
 ## tone2wav ()
@@ -308,7 +308,7 @@ fs_encode_LDADD = libfreeswitch.la
 tone2wav_SOURCES = src/tone2wav.c
 tone2wav_CFLAGS  = $(AM_CFLAGS)
 tone2wav_LDFLAGS = $(AM_LDFLAGS) $(CORE_LIBS)
-tone2wav_LDADD   = libfreeswitch.la
+tone2wav_LDADD   = libfreeswitch.la -lcrypt -lrt
 
 ##
 ## fs_ivrd ()

@@ -174,6 +174,14 @@ class ESLconnection {
 		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
+	function sendMSG($send_me,$uuid=null) {
+		switch (func_num_args()) {
+		case 1: $r=ESLconnection_sendMSG($this->_cPtr,$send_me); break;
+		default: $r=ESLconnection_sendMSG($this->_cPtr,$send_me,$uuid);
+		}
+		return $r;
+	}
+
 	function recvEvent() {
 		$r=ESLconnection_recvEvent($this->_cPtr);
 		return is_resource($r) ? new ESLevent($r) : $r;

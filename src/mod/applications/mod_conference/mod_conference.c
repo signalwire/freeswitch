@@ -436,8 +436,8 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 static switch_status_t conference_member_say(conference_member_t *member, char *text, uint32_t leadin);
 static uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop);
 static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_core_session_t *session, switch_memory_pool_t *pool);
-static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject,
-								 const char *body, const char *type, const char *hint);
+static switch_status_t chat_send(switch_event_t *message_event);
+								 
 
 static void launch_conference_record_thread(conference_obj_t *conference, char *path);
 static void launch_conference_video_bridge_thread(conference_member_t *member_a, conference_member_t *member_b);
@@ -2705,19 +2705,16 @@ static void conference_loop_output(conference_member_t *member)
 			if (event->event_id == SWITCH_EVENT_MESSAGE) {
 				char *from = switch_event_get_header(event, "from");
 				char *to = switch_event_get_header(event, "to");
-				char *proto = switch_event_get_header(event, "proto");
-				char *subject = switch_event_get_header(event, "subject");
-				char *hint = switch_event_get_header(event, "hint");
 				char *body = switch_event_get_body(event);
-				char *p, *freeme = NULL;
+				char *p;
 
 				if (to && from && body) {
 					if ((p = strchr(to, '+')) && strncmp(to, CONF_CHAT_PROTO, strlen(CONF_CHAT_PROTO))) {
-						freeme = switch_mprintf("%s+%s@%s", CONF_CHAT_PROTO, member->conference->name, member->conference->domain);
-						to = freeme;
+						switch_event_del_header(event, "to");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM,
+												"to", "%s+%s@%s", CONF_CHAT_PROTO, member->conference->name, member->conference->domain);
 					}
-					chat_send(proto, from, to, subject, body, NULL, hint);
-					switch_safe_free(freeme);
+					chat_send(event);
 				}
 			}
 			switch_event_destroy(&event);
@@ -6379,12 +6376,26 @@ static void launch_conference_record_thread(conference_obj_t *conference, char *
 	switch_thread_create(&thread, thd_attr, conference_record_thread_run, rec, rec->pool);
 }
 
-static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject,
-								 const char *body, const char *type, const char *hint)
+static switch_status_t chat_send(switch_event_t *message_event)
 {
 	char name[512] = "", *p, *lbuf = NULL;
 	conference_obj_t *conference = NULL;
 	switch_stream_handle_t stream = { 0 };
+	const char *proto;
+	const char *from; 
+	const char *to;
+	//const char *subject;
+	const char *body;
+	//const char *type;
+	const char *hint;
+
+	proto = switch_event_get_header(message_event, "proto");
+	from = switch_event_get_header(message_event, "from");
+	to = switch_event_get_header(message_event, "to");
+	//subject = switch_event_get_header(message_event, "subject");
+	body = switch_event_get_body(message_event);
+	//type = switch_event_get_header(message_event, "type");
+	hint = switch_event_get_header(message_event, "hint");
 
 	if ((p = strchr(to, '+'))) {
 		to = ++p;
@@ -6401,7 +6412,7 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 	}
 
 	if (!(conference = conference_find(name))) {
-		switch_core_chat_send(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL, NULL);
+		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL, NULL);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -6419,7 +6430,7 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 
 	switch_safe_free(lbuf);
 
-	switch_core_chat_send(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL, NULL);
+	switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL, NULL);
 	switch_safe_free(stream.data);
 
 	return SWITCH_STATUS_SUCCESS;

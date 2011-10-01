@@ -395,7 +395,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 				}
 			}
 		}
-
 		fh->samples_out += orig_len;
 		return status;
 	} else {
@@ -550,7 +549,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 					if (fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
-					fh->samples_out += blen;
 				}
 			}
 		}

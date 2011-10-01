@@ -156,6 +156,8 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE_CONSTRUCTOR Event(const char *type, const char *subclass_name = NULL);
 		 SWITCH_DECLARE_CONSTRUCTOR Event(switch_event_t *wrap_me, int free_me = 0);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ Event();
+		 SWITCH_DECLARE(int) chat_execute(const char *app, const char *data = NULL);
+		 SWITCH_DECLARE(int) chat_send(const char *dest_proto = NULL);
 		 SWITCH_DECLARE(const char *) serialize(const char *format = NULL);
 		 SWITCH_DECLARE(bool) setPriority(switch_priority_t priority = SWITCH_PRIORITY_NORMAL);
 		 SWITCH_DECLARE(const char *) getHeader(const char *header_name);

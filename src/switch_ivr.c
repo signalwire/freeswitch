@@ -138,7 +138,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	unsigned char *abuf = NULL;
 	switch_codec_implementation_t imp = { 0 };
 	switch_codec_t codec = { 0 };
-	int sval = 0;
+	int sval = -1;
 	const char *var;
 
 	/*
@@ -192,6 +192,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 		write_frame.codec = &codec;
 		switch_zmalloc(abuf, SWITCH_RECOMMENDED_BUFFER_SIZE);
+		memset(abuf, 255, SWITCH_RECOMMENDED_BUFFER_SIZE);
 		write_frame.data = abuf;
 		write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 		write_frame.datalen = imp.decoded_bytes_per_packet;
@@ -241,7 +242,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 
 		if (args) {
-			switch_dtmf_t dtmf;
+			switch_dtmf_t dtmf = {0};
 
 			/*
 			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
@@ -294,7 +295,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		}
 
 		if (sval && write_frame.datalen) {
-			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, sval);
+			if (sval > 0) {
+				switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, sval);
+			}
 			switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 		} else {
 			switch_core_session_write_frame(session, &cng_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -484,6 +487,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	unsigned long CMD_HANGUP = switch_hashfunc_default("hangup", &hlen);
 	unsigned long CMD_NOMEDIA = switch_hashfunc_default("nomedia", &hlen);
 	unsigned long CMD_UNICAST = switch_hashfunc_default("unicast", &hlen);
+	unsigned long CMD_XFEREXT = switch_hashfunc_default("xferext", &hlen);
 	char *lead_frames = switch_event_get_header(event, "lead-frames");
 	char *event_lock = switch_event_get_header(event, "event-lock");
 	char *event_lock_pri = switch_event_get_header(event, "event-lock-pri");
@@ -623,6 +627,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 		switch_ivr_activate_unicast(session, local_ip, (switch_port_t) atoi(local_port), remote_ip, (switch_port_t) atoi(remote_port), transport, flags);
 
+	} else if (cmd_hash == CMD_XFEREXT) {
+		switch_event_header_t *hp;
+		switch_caller_extension_t *extension = NULL;
+
+
+		if ((extension = switch_caller_extension_new(session, "xferext", "xferext")) == 0) {
+			abort();
+		}
+		
+		for (hp = event->headers; hp; hp = hp->next) {
+			char *app;
+			char *data;
+			
+			if (!strcasecmp(hp->name, "application")) {
+				app = strdup(hp->value);
+				data = strchr(app, ' ');
+			
+				if (data) {
+					*data++ = '\0';
+				}
+			
+				switch_caller_extension_add_application(session, extension, app, data);
+			}
+		}
+
+		switch_channel_transfer_to_extension(channel, extension);
+		
 	} else if (cmd_hash == CMD_HANGUP) {
 		char *cause_name = switch_event_get_header(event, "hangup-cause");
 		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -1661,7 +1692,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 		switch_channel_set_caller_profile(channel, new_profile);
 		switch_channel_set_flag(channel, CF_TRANSFER);
-
+		
 		switch_channel_set_state(channel, CS_ROUTING);
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSFER;
@@ -1972,6 +2003,21 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	}
 	switch_xml_set_txt_d(param, caller_profile->caller_id_name);
 
+	if (!(param = switch_xml_add_child_d(xml, "caller_id_number", off++))) {
+		return -1;
+	}
+	switch_xml_set_txt_d(param, caller_profile->caller_id_number);
+
+	if (!(param = switch_xml_add_child_d(xml, "callee_id_name", off++))) {
+		return -1;
+	}
+	switch_xml_set_txt_d(param, caller_profile->callee_id_name);
+
+	if (!(param = switch_xml_add_child_d(xml, "callee_id_number", off++))) {
+		return -1;
+	}
+	switch_xml_set_txt_d(param, caller_profile->callee_id_number);
+
 	if (!(param = switch_xml_add_child_d(xml, "ani", off++))) {
 		return -1;
 	}
@@ -1982,10 +2028,6 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	}
 	switch_xml_set_txt_d(param, caller_profile->aniii);
 
-	if (!(param = switch_xml_add_child_d(xml, "caller_id_number", off++))) {
-		return -1;
-	}
-	switch_xml_set_txt_d(param, caller_profile->caller_id_number);
 
 	if (!(param = switch_xml_add_child_d(xml, "network_addr", off++))) {
 		return -1;
@@ -2407,7 +2449,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	interval = read_impl.microseconds_per_packet / 1000;
 	//samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
 
-	qlen = delay_ms / (interval);
+	qlen = delay_ms / (interval) / 2;
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
 	jb = stfu_n_init(qlen, qlen, read_impl.samples_per_packet, read_impl.samples_per_second, 0);
 
@@ -3062,6 +3104,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_insert_file(switch_core_session_t *se
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t **reply, switch_event_t *message, const char *new_proto)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if ((status = switch_event_dup_reply(reply, message) != SWITCH_STATUS_SUCCESS)) {
+		abort();
+	}
+
+	switch_event_add_header_string(*reply, SWITCH_STACK_BOTTOM, "proto", new_proto);
+
+	return status;
+}
 
 
 /* For Emacs:

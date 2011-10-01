@@ -1,5 +1,6 @@
 /Makefile
 /Makefile.in
+/applications/mod_blacklist/Makefile
 /applications/mod_commands/Makefile
 /applications/mod_conference/Makefile
 /applications/mod_db/Makefile
@@ -14,6 +15,7 @@
 /applications/mod_fifo/Makefile
 /applications/mod_fsv/Makefile
 /applications/mod_limit/Makefile
+/applications/mod_sms/Makefile
 /applications/mod_spandsp/Makefile
 /applications/mod_spandsp/Makefile.in
 /applications/mod_spandsp/mod_spandsp.log

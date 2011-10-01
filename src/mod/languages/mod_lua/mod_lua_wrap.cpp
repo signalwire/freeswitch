@@ -2890,6 +2890,69 @@ fail:
 }
 
 
+static int _wrap_Event_chat_execute(lua_State* L) {
+  int SWIG_arg = -1;
+  Event *arg1 = (Event *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  int result;
+  
+  SWIG_check_num_args("chat_execute",2,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("chat_execute",1,"Event *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("chat_execute",2,"char const *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("chat_execute",3,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_chat_execute",1,SWIGTYPE_p_Event);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
+  result = (int)(arg1)->chat_execute((char const *)arg2,(char const *)arg3);
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_Event_chat_send(lua_State* L) {
+  int SWIG_arg = -1;
+  Event *arg1 = (Event *) 0 ;
+  char *arg2 = (char *) NULL ;
+  int result;
+  
+  SWIG_check_num_args("chat_send",1,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("chat_send",1,"Event *");
+  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("chat_send",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_chat_send",1,SWIGTYPE_p_Event);
+  }
+  
+  if(lua_gettop(L)>=2){
+    arg2 = (char *)lua_tostring(L, 2);
+  }
+  result = (int)(arg1)->chat_send((char const *)arg2);
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_Event_serialize(lua_State* L) {
   int SWIG_arg = -1;
   Event *arg1 = (Event *) 0 ;
@@ -3149,6 +3212,8 @@ Event *arg1 = (Event *) obj;
 delete arg1;
 }
 static swig_lua_method swig_Event_methods[] = {
+    {"chat_execute", _wrap_Event_chat_execute}, 
+    {"chat_send", _wrap_Event_chat_send}, 
     {"serialize", _wrap_Event_serialize}, 
     {"setPriority", _wrap_Event_setPriority}, 
     {"getHeader", _wrap_Event_getHeader}, 

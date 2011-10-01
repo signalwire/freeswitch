@@ -22,34 +22,41 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_CC_C99
 AC_PROG_LIBTOOL
 
 # pkgconfig
 AC_PATH_PROG([PKG_CONFIG], [pkg-config], ["no"])
-if test "x${PKG_CONFIG}" = "xno"
-then
-	AC_MSG_ERROR([Cannot find pkg-config, make sure it is installed in your PATH])
-fi
+AS_IF([test "x${PKG_CONFIG}" = "xno"],
+	[AC_MSG_ERROR([Cannot find pkg-config, make sure it is installed in your PATH])]
+)
 PKG_PROG_PKG_CONFIG
 
-# Checks for cflags
+
+##
+## Checks for cflags
+##
 AC_MSG_RESULT([${as_nl}<<>> Compiler vendor and features])
+
+AX_COMPILER_VENDOR
+
+AM_CONDITIONAL([CC_VENDOR_GNU], [test "x${ax_cv_c_compiler_vendor}" = "xgnu"])
+AM_CONDITIONAL([CC_VENDOR_SUN], [test "x${ax_cv_c_compiler_vendor}" = "xsun"])
+
 
 ##
 ## Compiler vendor and flag checks
 ##
 HAVE_VISIBILITY="no"
+
 AC_ARG_ENABLE([visibility],
 	[AS_HELP_STRING([--disable-visibility], [Disable symbol visibility support (default: enabled, if available)])],
 	[case "${enableval}" in
-	 yes) enable_visibility="yes" ;;
-	 no)  enable_visibility="no" ;;
-	 *)   AC_MSG_ERROR([Invalid value ${enableval} for parameter --disable-visibility]) ;;
+	 yes|no) enable_visibility="${enableval}" ;;
+	 *)      AC_MSG_ERROR([Invalid value ${enableval} for parameter --disable-visibility]) ;;
 	 esac],
 	[enable_visibility="yes"]
 )
-
-AX_COMPILER_VENDOR
 
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
@@ -63,36 +70,16 @@ gnu)
 				[;]
 			)],
 
-			[AC_MSG_RESULT([yes])
-			 AC_DEFINE([HAVE_VISIBILITY],[1],[GCC visibility support])
-			 HAVE_VISIBILITY="yes"],
-
-			[AC_MSG_RESULT([no])
-			 HAVE_VISIBILITY="no"]
+			[HAVE_VISIBILITY="yes"
+			 AC_DEFINE([HAVE_VISIBILITY], [1], [Symbol visibility support])
+			 AC_SUBST([VISIBILITY_CFLAGS],   [-fvisibility=hidden])
+			 AC_SUBST([VISIBILITY_CXXFLAGS], [-fvisibility=hidden])],
+			[HAVE_VISIBILITY="no"]
 		 )
+		 AC_MSG_RESULT([${HAVE_VISIBILITY}])
 		 CFLAGS="${save_CFLAGS}"],
 		[AC_MSG_RESULT([disabled by user])]
 	)
-
-	AS_IF([test "x${HAVE_VISIBILITY}" != "xno"],
-		[save_CFLAGS="${CFLAGS}"
-		 CFLAGS="${CFLAGS} -fvisibility-inlines-hidden"
-		 AC_MSG_CHECKING([whether the compiler supports -fvisibility-inlines-hidden])
-		 AC_COMPILE_IFELSE(
-			[AC_LANG_PROGRAM(
-				[;], [;]
-			)],
-
-			[AC_MSG_RESULT([yes])
-			 HAVE_VISIBILITY_INLINES_HIDDEN="yes"],
-
-			[AC_MSG_RESULT([no])
-			 HAVE_VISIBILITY_INLINES_HIDDEN="no"]
-		 )
-		 CFLAGS="${save_CFLAGS}"],
-		[:]
-	)
-	AC_DEFINE([COMPILER_GCC], [1], [Compiler is GCC])
 	;;
 sun)
 	AC_MSG_CHECKING([whether the compiler supports -xldscope=hidden])
@@ -105,28 +92,24 @@ sun)
 				[;]
 			)],
 
-			[AC_MSG_RESULT([yes])
-			 AC_DEFINE([HAVE_VISIBILITY],[1],[SUNCC visibility support])
-			 HAVE_VISIBILITY="yes"],
-
-			[AC_MSG_RESULT([no])
-			 HAVE_VISIBILITY="no"]
+			[HAVE_VISIBILITY="yes"
+			 AC_DEFINE([HAVE_VISIBILITY], [1], [Symbol visibility support])
+			 AC_SUBST([VISIBILITY_CFLAGS],   [-xldscope=hidden])
+			 AC_SUBST([VISIBILITY_CXXFLAGS], [-xldscope=hidden])],
+			[HAVE_VISIBILITY="no"]
 		 )
+		 AC_MSG_RESULT([${HAVE_VISIBILITY}])
 		 CFLAGS="${save_CFLAGS}"],
 		[AC_MSG_RESULT([disabled by user])]
 	)
-	AC_DEFINE([COMPILER_SUNCC], [1], [Compiler is SunCC])
 	;;
 *)
 	AC_MSG_WARN([No visibility checks for this compiler defined])
 	;;
 esac
 
-AM_CONDITIONAL([COMPILER_GCC],   [test "x${ax_cv_c_compiler_vendor}" = "xgnu"])
-AM_CONDITIONAL([COMPILER_SUNCC], [test "x${ax_cv_c_compiler_vendor}" = "xsun"])
+AM_CONDITIONAL([CC_HAS_VISIBILITY], [test "x${HAVE_VISIBILITY}" = "xyes"])
 
-AM_CONDITIONAL([HAVE_VISIBILITY], [test "x${HAVE_VISIBILITY}" = "xyes"])
-AM_CONDITIONAL([HAVE_VISIBILITY_INLINES_HIDDEN], [test "x${HAVE_VISIBILITY_INLINES_HIDDEN}" = "xyes"])
 
 ##
 ## pkgconfig based freeswitch detection code
@@ -210,6 +193,7 @@ PKG_CHECK_MODULES([freeswitch], [freeswitch],
 	[AC_MSG_ERROR([FreeSWITCH not found])]
 )
 
+
 ##
 ## Add your other dependency checks here
 ##
@@ -221,6 +205,10 @@ AC_MSG_RESULT([${as_nl}<<>> Other dependencies])
 
 # Checks for library functions.
 
+
+##
+## Done, create output files and print summary
+##
 AC_MSG_RESULT([${as_nl}<<>> Create output files])
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT

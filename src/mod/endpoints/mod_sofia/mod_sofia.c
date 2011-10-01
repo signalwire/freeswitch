@@ -282,6 +282,8 @@ char *generate_pai_str(private_object_t *tech_pvt)
 	header = (tech_pvt->cid_type == CID_TYPE_RPID && !switch_stristr("aastra", ua)) ? "Remote-Party-ID" : "P-Asserted-Identity";
 
 	if (!zstr(callee_name) && !zstr(callee_number)) {
+		check_decode(callee_name, tech_pvt->session);
+
 		if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
 			pai = switch_core_session_sprintf(tech_pvt->session, "%s: \"%s\" <%s>%s\n"
 											  "X-FS-Display-Name: %s\nX-FS-Display-Number: %s\n",
@@ -1981,12 +1983,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				char message[256] = "";
 				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 				switch_event_t *event;
-
+				
 				if (zstr(number)) {
 					number = tech_pvt->caller_profile->destination_number;
 				}
 
-				if (!sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY)) {
+				if (sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, 
+									  "Cannot send display update to %s Did not receive reply to last update\n", switch_channel_get_name(tech_pvt->channel));
+				} else {
 					if (zstr(tech_pvt->last_sent_callee_id_name) || strcmp(tech_pvt->last_sent_callee_id_name, name) ||
 						zstr(tech_pvt->last_sent_callee_id_number) || strcmp(tech_pvt->last_sent_callee_id_number, number)) {
 
@@ -2047,7 +2052,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						switch_channel_set_variable(channel, "last_sent_callee_id_name", name);
 						switch_channel_set_variable(channel, "last_sent_callee_id_number", number);
 						
-						
+
 						if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
 							const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "SEND");
@@ -3616,12 +3621,12 @@ SWITCH_STANDARD_API(sofia_count_reg_function)
 			if (zstr(user)) {
 				sql = switch_mprintf("select count(*) "
 									 "from sip_registrations where (sip_host='%q' or presence_hosts like '%%%q%%')",
-									 (concat != NULL) ? concat : "", domain, domain);
+									 domain, domain);
 
 			} else {
 				sql = switch_mprintf("select count(*) "
-									 "from sip_registrations where (sip_user='%q' or dir_user='%q') and (sip_host='%q' or presence_hosts like '%%%q%%')",
-									 (concat != NULL) ? concat : "", user, user, domain, domain);
+									 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
+									 user, domain, domain);
 			}
 			switch_assert(sql);
 			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);

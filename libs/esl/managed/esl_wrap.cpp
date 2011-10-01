@@ -743,6 +743,22 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_ESLconnection_SendEvent(void * jarg1, void 
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_ESLconnection_sendMSG(void * jarg1, void * jarg2, char * jarg3) {
+  int jresult ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *arg2 = (ESLevent *) 0 ;
+  char *arg3 = (char *) NULL ;
+  int result;
+  
+  arg1 = (ESLconnection *)jarg1; 
+  arg2 = (ESLevent *)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (int)(arg1)->sendMSG(arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_ESLconnection_RecvEvent(void * jarg1) {
   void * jresult ;
   ESLconnection *arg1 = (ESLconnection *) 0 ;

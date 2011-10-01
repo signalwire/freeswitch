@@ -15,7 +15,7 @@ static struct {
 SWITCH_STANDARD_API(mongo_mapreduce_function)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	DBClientConnection *conn = NULL;
+	DBClientBase *conn = NULL;
 	char *ns = NULL, *json_query = NULL;
 
 	ns = strdup(cmd);
@@ -88,7 +88,7 @@ SWITCH_STANDARD_API(mongo_find_one_function)
 
   if (!zstr(ns) && !zstr(json_query) && !zstr(json_fields)) {
 
-	  DBClientConnection *conn = NULL;
+	  DBClientBase *conn = NULL;
 
 	  try {
 		  BSONObj query = fromjson(json_query);
@@ -124,7 +124,7 @@ static switch_status_t config(void)
 	const char *cf = "mongo.conf";
 	switch_xml_t cfg, xml, settings, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	const char *host = "127.0.0.1";
+	const char *conn_str = "127.0.0.1";
 	switch_size_t min_connections = 1, max_connections = 1;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -139,7 +139,10 @@ static switch_status_t config(void)
 			int tmp;
 
 			if (!strcmp(var, "host")) {
-				host = val;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "'host' is deprecated. use 'connection-string'\n"); 
+				conn_str = val;
+			} else if (!strcmp(var, "connection-string")) {
+				conn_str = val;
 			} else if (!strcmp(var, "min-connections")) {
 				if ((tmp = atoi(val)) > 0) {
 					min_connections = tmp;
@@ -158,11 +161,11 @@ static switch_status_t config(void)
 		}
 	}
 
-	if (mongo_connection_pool_create(&globals.conn_pool, min_connections, max_connections, host) != SWITCH_STATUS_SUCCESS) {
+	if (mongo_connection_pool_create(&globals.conn_pool, min_connections, max_connections, conn_str) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Can't create connection pool\n");
 		status = SWITCH_STATUS_GENERR;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Mongo connection pool created [%s %d/%d]\n", host, (int)min_connections, (int)max_connections);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Mongo connection pool created [%s %d/%d]\n", conn_str, (int)min_connections, (int)max_connections);
 	}
 
 	switch_xml_free(xml);

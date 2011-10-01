@@ -10,24 +10,31 @@
     scoped_conn.done();
   */
 
-switch_status_t mongo_connection_create(DBClientConnection **connection, const char *host)
+switch_status_t mongo_connection_create(DBClientBase **connection, const char *conn_str)
 {
-  DBClientConnection *conn = new DBClientConnection();
+  DBClientBase *conn = NULL;
+  string conn_string(conn_str), err_msg;
+  ConnectionString cs = ConnectionString::parse(conn_string, err_msg);
+ 
+  if (!cs.isValid()) {
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't parse url: %s\n", err_msg.c_str());
+    return SWITCH_STATUS_GENERR;
+  }
 
   try {
-    conn->connect(host);
+    conn = cs.connect(err_msg);
   } catch (DBException &e) {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't connect to mongo [%s]\n", host);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't connect to mongo [%s]: %s\n", conn_str, err_msg.c_str());
     return SWITCH_STATUS_GENERR;
   }
 
   *connection = conn;
-  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to mongo [%s]\n", host);
+  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to mongo [%s]\n", conn_str);
 
   return SWITCH_STATUS_SUCCESS;
 }
 
-void mongo_connection_destroy(DBClientConnection **conn) 
+void mongo_connection_destroy(DBClientBase **conn) 
 {
   switch_assert(*conn != NULL);
   delete *conn;
@@ -36,12 +43,12 @@ void mongo_connection_destroy(DBClientConnection **conn)
 }
 
 switch_status_t mongo_connection_pool_create(mongo_connection_pool_t **conn_pool, switch_size_t min_connections, switch_size_t max_connections,
-					     const char *host)
+					     const char *conn_str)
 {
   switch_memory_pool_t *pool = NULL;
   switch_status_t status = SWITCH_STATUS_SUCCESS;
   mongo_connection_pool_t *cpool = NULL;
-  DBClientConnection *conn = NULL;
+  DBClientBase *conn = NULL;
 
   if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
     return status;
@@ -61,13 +68,13 @@ switch_status_t mongo_connection_pool_create(mongo_connection_pool_t **conn_pool
 
   cpool->min_connections = min_connections;
   cpool->max_connections = max_connections;
-  cpool->host = switch_core_strdup(pool, host);
+  cpool->conn_str = switch_core_strdup(pool, conn_str);
   
   cpool->pool = pool;
 
   for (cpool->size = 0; cpool->size < min_connections; cpool->size++) {
 
-    if (mongo_connection_create(&conn, host) == SWITCH_STATUS_SUCCESS) {
+    if (mongo_connection_create(&conn, conn_str) == SWITCH_STATUS_SUCCESS) {
       mongo_connection_pool_put(cpool, conn);
     } else {
       break;
@@ -94,7 +101,7 @@ void mongo_connection_pool_destroy(mongo_connection_pool_t **conn_pool)
   switch_assert(cpool != NULL);
 
   while (switch_queue_trypop(cpool->connections, &data) == SWITCH_STATUS_SUCCESS) {
-    mongo_connection_destroy((DBClientConnection **)&data);
+    mongo_connection_destroy((DBClientBase **)&data);
   }
 
   switch_mutex_destroy(cpool->mutex);
@@ -104,9 +111,9 @@ void mongo_connection_pool_destroy(mongo_connection_pool_t **conn_pool)
 }
 
 
-DBClientConnection *mongo_connection_pool_get(mongo_connection_pool_t *conn_pool)
+DBClientBase *mongo_connection_pool_get(mongo_connection_pool_t *conn_pool)
 {
-  DBClientConnection *conn = NULL;
+  DBClientBase *conn = NULL;
   void *data = NULL;
 
   switch_assert(conn_pool != NULL);
@@ -114,8 +121,8 @@ DBClientConnection *mongo_connection_pool_get(mongo_connection_pool_t *conn_pool
   switch_mutex_lock(conn_pool->mutex);
 
   if (switch_queue_trypop(conn_pool->connections, &data) == SWITCH_STATUS_SUCCESS) {
-    conn = (DBClientConnection *) data;
-  } else if (mongo_connection_create(&conn, conn_pool->host) == SWITCH_STATUS_SUCCESS) {
+    conn = (DBClientBase *) data;
+  } else if (mongo_connection_create(&conn, conn_pool->conn_str) == SWITCH_STATUS_SUCCESS) {
     if (++conn_pool->size > conn_pool->max_connections) {
       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Connection pool is empty. You may want to increase 'max-connections'\n");
     }
@@ -130,7 +137,7 @@ DBClientConnection *mongo_connection_pool_get(mongo_connection_pool_t *conn_pool
   return conn;
 }
 
-switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DBClientConnection *conn)
+switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DBClientBase *conn)
 {
   switch_status_t status = SWITCH_STATUS_SUCCESS;
 

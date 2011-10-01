@@ -241,37 +241,41 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
-	sofia_gateway_t *gateway_ptr, *last = NULL;
+	sofia_gateway_t *check, *gateway_ptr, *last = NULL;
 	switch_event_t *event;
-	char *pkey;
 
 	switch_mutex_lock(profile->gw_mutex);
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-		if (gateway_ptr->deleted && gateway_ptr->state == REG_STATE_NOREG) {
-			if (last) {
-				last->next = gateway_ptr->next;
-			} else {
-				profile->gateways = gateway_ptr->next;
+		if (gateway_ptr->deleted) {
+			if ((check = switch_core_hash_find(mod_sofia_globals.gateway_hash, gateway_ptr->name)) && check == gateway_ptr) {
+				char *pkey = switch_mprintf("%s::%s", profile->name, gateway_ptr->name);
+				switch_assert(pkey);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing gateway %s from hash.\n", pkey);
+				switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
+				switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
+				free(pkey);
 			}
 			
-			pkey = switch_mprintf("%s::%s", profile->name, gateway_ptr->name);
+			if (gateway_ptr->state == REG_STATE_NOREG) {
 
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
-
-			free(pkey);
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_DEL) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile-name", gateway_ptr->profile->name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Gateway", gateway_ptr->name);
-				switch_event_fire(&event);
-			}
-			if (gateway_ptr->ob_vars) {
-				switch_event_destroy(&gateway_ptr->ob_vars);
-			}
-			if (gateway_ptr->ib_vars) {
-				switch_event_destroy(&gateway_ptr->ib_vars);
+				if (last) {
+					last->next = gateway_ptr->next;
+				} else {
+					profile->gateways = gateway_ptr->next;
+				}
+			
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_DEL) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile-name", gateway_ptr->profile->name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Gateway", gateway_ptr->name);
+					switch_event_fire(&event);
+				}
+				if (gateway_ptr->ob_vars) {
+					switch_event_destroy(&gateway_ptr->ob_vars);
+				}
+				if (gateway_ptr->ib_vars) {
+					switch_event_destroy(&gateway_ptr->ib_vars);
+				}
 			}
 		} else {
 			last = gateway_ptr;
@@ -672,10 +676,10 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_del_callback, profile);
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires <= %ld and hostname='%s'",
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires <= %ld and hostname='%q'",
 						(long) now, mod_sofia_globals.hostname);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and hostname='%q'", mod_sofia_globals.hostname);
 	}
 
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
@@ -683,11 +687,11 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "select call_id from sip_shared_appearance_dialogs where hostname='%s' "
+		switch_snprintfv(sql, sizeof(sql), "select call_id from sip_shared_appearance_dialogs where hostname='%q' "
 						"and profile_name='%s' and expires <= %ld", mod_sofia_globals.hostname, profile->name, (long) now);
 
 		sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_sla_dialog_del_callback, profile);
-		switch_snprintf(sql, sizeof(sql), "delete from sip_shared_appearance_dialogs where expires > 0 and hostname='%s' and expires <= %ld",
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_shared_appearance_dialogs where expires > 0 and hostname='%q' and expires <= %ld",
 						mod_sofia_globals.hostname, (long) now);
 
 
@@ -696,19 +700,19 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_presence where expires > 0 and expires <= %ld and hostname='%s'",
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_presence where expires > 0 and expires <= %ld and hostname='%q'",
 						(long) now, mod_sofia_globals.hostname);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_presence where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_presence where expires > 0 and hostname='%q'", mod_sofia_globals.hostname);
 	}
 
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld and hostname='%s'",
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld and hostname='%q'",
 						(long) now, mod_sofia_globals.hostname);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and hostname='%q'", mod_sofia_globals.hostname);
 	}
 
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
@@ -718,27 +722,27 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 						"select call_id from sip_subscriptions where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%s'", (long) now,
 						mod_sofia_globals.hostname);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "select sub_to_user,sub_to_host,call_id from sip_subscriptions where expires >= -1 and hostname='%s'", 
+		switch_snprintfv(sql, sizeof(sql), "select sub_to_user,sub_to_host,call_id from sip_subscriptions where expires >= -1 and hostname='%q'", 
 						mod_sofia_globals.hostname);
 	}
 
 	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_sub_del_callback, profile);
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%s'",
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_subscriptions where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%q'",
 						(long) now, mod_sofia_globals.hostname);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires >= -1 and hostname='%s'", mod_sofia_globals.hostname);
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_subscriptions where expires >= -1 and hostname='%q'", mod_sofia_globals.hostname);
 	}
 
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_dialogs where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%s'",
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_dialogs where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%q'",
 						(long) now, mod_sofia_globals.hostname);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "delete from sip_dialogs where expires >= -1 and hostname='%s'", mod_sofia_globals.hostname);
+		switch_snprintfv(sql, sizeof(sql), "delete from sip_dialogs where expires >= -1 and hostname='%q'", mod_sofia_globals.hostname);
 	}
 
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
@@ -829,24 +833,24 @@ void sofia_reg_check_sync(sofia_profile_t *profile)
 
 
 	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_reg_del_callback, profile);
-	switch_snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+	switch_snprintfv(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and hostname='%q'", mod_sofia_globals.hostname);
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
 
-	switch_snprintf(sql, sizeof(sql), "delete from sip_presence where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+	switch_snprintfv(sql, sizeof(sql), "delete from sip_presence where expires > 0 and hostname='%q'", mod_sofia_globals.hostname);
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
-	switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+	switch_snprintfv(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and hostname='%q'", mod_sofia_globals.hostname);
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
 	
-	switch_snprintf(sql, sizeof(sql), "select sub_to_user,sub_to_host,call_id from sip_subscriptions where expires >= -1 and hostname='%s'", 
+	switch_snprintfv(sql, sizeof(sql), "select sub_to_user,sub_to_host,call_id from sip_subscriptions where expires >= -1 and hostname='%q'", 
 					mod_sofia_globals.hostname);
 	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_sub_del_callback, profile);
 
-	switch_snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires >= -1 and hostname='%s'", mod_sofia_globals.hostname);
+	switch_snprintfv(sql, sizeof(sql), "delete from sip_subscriptions where expires >= -1 and hostname='%q'", mod_sofia_globals.hostname);
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
-	switch_snprintf(sql, sizeof(sql), "delete from sip_dialogs where expires >= -1 and hostname='%s'", mod_sofia_globals.hostname);
+	switch_snprintfv(sql, sizeof(sql), "delete from sip_dialogs where expires >= -1 and hostname='%q'", mod_sofia_globals.hostname);
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
 	switch_mutex_unlock(profile->ireg_mutex);
@@ -867,10 +871,10 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 	cbt.len = len;
 
 	if (host) {
-		switch_snprintf(sql, sizeof(sql), "select contact from sip_registrations where sip_user='%s' and (sip_host='%s' or presence_hosts like '%%%s%%')",
+		switch_snprintfv(sql, sizeof(sql), "select contact from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
 						user, host, host);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "select contact from sip_registrations where sip_user='%s'", user);
+		switch_snprintfv(sql, sizeof(sql), "select contact from sip_registrations where sip_user='%q'", user);
 	}
 
 
@@ -896,10 +900,10 @@ switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *p
 	}
 
 	if (host) {
-		switch_snprintf(sql, sizeof(sql), "select contact from sip_registrations where sip_user='%s' and (sip_host='%s' or presence_hosts like '%%%s%%')",
+		switch_snprintfv(sql, sizeof(sql), "select contact from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
 						user, host, host);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "select contact from sip_registrations where sip_user='%s'", user);
+		switch_snprintfv(sql, sizeof(sql), "select contact from sip_registrations where sip_user='%q'", user);
 	}
 
 
@@ -920,10 +924,10 @@ switch_console_callback_match_t *sofia_reg_find_reg_url_with_positive_expires_mu
 	}
 
 	if (host) {
-		switch_snprintf(sql, sizeof(sql), "select contact,expires from sip_registrations where sip_user='%s' and (sip_host='%s' or presence_hosts like '%%%s%%')",
+		switch_snprintfv(sql, sizeof(sql), "select contact,expires from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
 						user, host, host);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "select contact,expires from sip_registrations where sip_user='%s'", user);
+		switch_snprintfv(sql, sizeof(sql), "select contact,expires from sip_registrations where sip_user='%q'", user);
 	}
 
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_find_reg_with_positive_expires_callback, &cbt);
@@ -1397,7 +1401,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 		/* Log line added to support Fail2Ban */
 		if (sofia_test_pflag(profile, PFLAG_LOG_AUTH_FAIL)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth challenge (%s) on sofia profile '%s' "
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "SIP auth challenge (%s) on sofia profile '%s' "
 							  "for [%s@%s] from ip %s\n", (regtype == REG_INVITE) ? "INVITE" : "REGISTER", 
 							  profile->name, to_user, to_host, network_ip);
 		}
@@ -1708,10 +1712,16 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					}
 				}
 			} else {
+				const char *username = "unknown";
+				if (auth_params) {
+					username = switch_event_get_header(auth_params, "sip_auth_username");
+				}
+
 				switch_core_del_registration(to_user, reg_host, call_id);
 
 				if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "username", username);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", to_user);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", reg_host);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
@@ -2809,7 +2819,7 @@ sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(NULL, mod_sofia_globals.gateway_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &var, NULL, &val);
-		if (key && (gateway = (sofia_gateway_t *) val) && gateway->register_realm && !strcasecmp(gateway->register_realm, key)) {
+		if (key && (gateway = (sofia_gateway_t *) val) && !gateway->deleted && gateway->register_realm && !strcasecmp(gateway->register_realm, key)) {
 			break;
 		} else {
 			gateway = NULL;
@@ -2863,6 +2873,7 @@ switch_status_t sofia_reg_add_gateway(sofia_profile_t *profile, const char *key,
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *pkey = switch_mprintf("%s::%s", profile->name, key);
+	sofia_gateway_t *gp;
 
 	switch_mutex_lock(profile->gw_mutex);
 
@@ -2872,12 +2883,21 @@ switch_status_t sofia_reg_add_gateway(sofia_profile_t *profile, const char *key,
 	switch_mutex_unlock(profile->gw_mutex);
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, key)) {
-		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
+
+	if ((gp = switch_core_hash_find(mod_sofia_globals.gateway_hash, key))) {
+		if (gp->deleted) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing deleted gateway from hash.\n");
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
+			switch_core_hash_delete(mod_sofia_globals.gateway_hash, key);
+		}
 	}
 
-	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey)) {
+	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, key) && !switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey)) {
+		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
 		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, pkey, gateway);
+	} else {
+		status = SWITCH_STATUS_FALSE;
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 

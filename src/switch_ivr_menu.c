@@ -304,13 +304,18 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 	switch_channel_t *channel;
 	char *sound_expanded = sound;
 	switch_size_t menu_buf_len = 0;
+	const char *terminator_str = "#";
 
 	if (!session || !menu || zstr(sound)) {
 		return status;
 	}
 
 	if ((channel = switch_core_session_get_channel(session))) {
+		const char *tmp;
 		sound_expanded = switch_channel_expand_variables(channel, sound);
+		if ((tmp = switch_channel_get_variable(channel, "ivr_menu_terminator")) && !zstr(tmp)) {
+			terminator_str = tmp;
+		}
 	}
 
 	memset(menu->buf, 0, menu->inlen + 1);
@@ -343,7 +348,7 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "waiting for %u/%u digits t/o %d\n",
 						  (uint32_t) (menu->inlen - strlen(menu->buf)), (uint32_t) need, menu->inter_timeout);
 		status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf),
-												 need, "#", &terminator, menu_buf_len ? menu->inter_timeout : menu->timeout,
+												 need, terminator_str, &terminator, menu_buf_len ? menu->inter_timeout : menu->timeout,
 												 menu->inter_timeout, menu->timeout);
 	}
 
@@ -365,7 +370,7 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 			switch_ivr_phrase_macro(session, menu->confirm_macro, menu->buf, NULL, ap);
 
 			if (menu->confirm_key && *buf == '\0') {
-				switch_ivr_collect_digits_count(session, buf, sizeof(buf), 1, "#", &terminator_key, menu->timeout, 0, 0);
+				switch_ivr_collect_digits_count(session, buf, sizeof(buf), 1, terminator_str, &terminator_key, menu->timeout, 0, 0);
 			}
 
 			if (menu->confirm_key && *buf != '\0') {

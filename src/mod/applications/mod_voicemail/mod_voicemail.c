@@ -853,6 +853,7 @@ struct call_control {
 	switch_file_handle_t *fh;
 	char buf[4];
 	int noexit;
+	int playback_controls_active;
 };
 typedef struct call_control cc_t;
 
@@ -871,7 +872,13 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 					|| dtmf->digit == *cc->profile->prev_msg_key || dtmf->digit == *cc->profile->next_msg_key 
 					|| dtmf->digit == *cc->profile->repeat_msg_key
 					|| dtmf->digit == *cc->profile->terminator_key || dtmf->digit == *cc->profile->skip_info_key
-					|| dtmf->digit == *cc->profile->email_key || dtmf->digit == *cc->profile->forward_key)) {
+					|| dtmf->digit == *cc->profile->forward_key)) {
+				*cc->buf = dtmf->digit;
+				return SWITCH_STATUS_BREAK;
+			}
+
+			if (!cc->playback_controls_active
+				&& (dtmf->digit == *cc->profile->email_key)) {
 				*cc->buf = dtmf->digit;
 				return SWITCH_STATUS_BREAK;
 			}
@@ -906,10 +913,6 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 				int samps = -48000;
 				switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
 				return SWITCH_STATUS_SUCCESS;
-			}
-			if (!cc->noexit && dtmf->digit == *cc->profile->terminator_key) {
-				*cc->buf = dtmf->digit;
-				return SWITCH_STATUS_BREAK;
 			}
 		}
 		break;
@@ -1535,6 +1538,9 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		msg.from = __FILE__;
 		msg.string_arg = cid_buf;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending display update [%s] to %s\n", 
+						  cid_buf, switch_channel_get_name(channel));
 		switch_core_session_receive_message(session, &msg);
 		
 		if (!zstr(cbt->cid_number) && (vm_announce_cid = switch_channel_get_variable(channel, "vm_announce_cid"))) {
@@ -1568,11 +1574,11 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 			*cc.buf = '\0';
 			memset(&fh, 0, sizeof(fh));
 			cc.fh = &fh;
-			cc.noexit = 1;
+			cc.playback_controls_active = 1;
 			if (switch_file_exists(cbt->file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 				TRY_CODE(switch_ivr_play_file(session, &fh, cbt->file_path, &args));
 			}
-			cc.noexit = 0;
+			cc.playback_controls_active = 0;
 		}
 
 		if (!*cc.buf && (profile->play_date_announcement == VM_DATE_LAST)) {
@@ -2010,10 +2016,10 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 								"username='%s' and domain='%s' and flags='save'",
 								(long) switch_epoch_time_now(NULL), myid, domain_name);
 				vm_execute_sql(profile, sql, profile->mutex);
-				switch_snprintf(sql, sizeof(sql), "select file_path from voicemail_msgs where username='%s' and domain='%s' and flags='delete'", myid,
+				switch_snprintfv(sql, sizeof(sql), "select file_path from voicemail_msgs where username='%q' and domain='%q' and flags='delete'", myid,
 								domain_name);
 				vm_execute_sql_callback(profile, profile->mutex, sql, unlink_callback, NULL);
-				switch_snprintf(sql, sizeof(sql), "delete from voicemail_msgs where username='%s' and domain='%s' and flags='delete'", myid, domain_name);
+				switch_snprintfv(sql, sizeof(sql), "delete from voicemail_msgs where username='%q' and domain='%q' and flags='delete'", myid, domain_name);
 				vm_execute_sql(profile, sql, profile->mutex);
 				vm_check_state = VM_CHECK_FOLDER_SUMMARY;
 
@@ -2299,7 +2305,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				}
 
 				thepass = thehash = NULL;
-				switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", myid, domain_name);
+				switch_snprintfv(sql, sizeof(sql), "select * from voicemail_prefs where username='%q' and domain='%q'", myid, domain_name);
 				vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
 
 				x_params = switch_xml_child(x_user, "variables");
@@ -2773,6 +2779,10 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 
 		if (send_notify) {
+			if (zstr(vm_notify_email)) {
+				vm_notify_email = vm_email;
+			}
+	
 			if (zstr(profile->notify_email_headers)) {
 				headers = switch_mprintf("From: FreeSWITCH mod_voicemail <%s@%s>\n"
 										 "Subject: Voicemail from %s %s\nX-Priority: %d", myid, domain_name, caller_id_name, caller_id_number, priority);
@@ -2841,7 +2851,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
   failed:
 
-	if (del_file && file_path) {
+	if (del_file && file_path && switch_file_exists(file_path, pool)) {
 		if (unlink(file_path) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 		}
@@ -3215,7 +3225,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		goto end;
 	}
 
-	switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", id, domain_name);
+	switch_snprintfv(sql, sizeof(sql), "select * from voicemail_prefs where username='%q' and domain='%q'", id, domain_name);
 	vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
 
 	if (!vm_ext) {
@@ -3317,7 +3327,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		callback.buf = disk_usage;
 		callback.len = sizeof(disk_usage);
 
-		switch_snprintf(sqlstmt, sizeof(sqlstmt), "select sum(message_len) from voicemail_msgs where username='%s' and domain='%s'", id, domain_name);
+		switch_snprintfv(sqlstmt, sizeof(sqlstmt), "select sum(message_len) from voicemail_msgs where username='%q' and domain='%q'", id, domain_name);
 		vm_execute_sql_callback(profile, profile->mutex, sqlstmt, sql2str_callback, &callback);
 
 		if (atoi(disk_usage) >= disk_quota) {
@@ -3623,7 +3633,7 @@ SWITCH_STANDARD_API(prefs_api_function)
 
 	}
 
-	switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", id, domain);
+	switch_snprintfv(sql, sizeof(sql), "select * from voicemail_prefs where username='%q' and domain='%q'", id, domain);
 	vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
 
 	if (!strcasecmp(how, "greeting_path")) {

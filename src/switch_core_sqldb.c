@@ -733,7 +733,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 
 			if ((result = switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 0)) != SWITCH_ODBC_SUCCESS) {
 				char tmp[100];
-				switch_snprintf(tmp, sizeof(tmp), "%s-%i", "Unable to Set AutoCommit Off", result);
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to Set AutoCommit Off", result);
 				errmsg = strdup(tmp);
 			}
 		}
@@ -1144,7 +1144,7 @@ static char *parse_presence_data_cols(switch_event_t *event)
 	SWITCH_STANDARD_STREAM(stream);
 
 	for (i = 0; i < col_count; i++) {
-		switch_snprintf(col_name, sizeof(col_name), "variable_%s", cols[i]);
+		switch_snprintfv(col_name, sizeof(col_name), "variable_%q", cols[i]);
 		stream.write_function(&stream, "%q='%q',", cols[i], switch_event_get_header_nil(event, col_name));
 	}
 
@@ -1640,6 +1640,7 @@ static char create_registrations_sql[] =
 	"   reg_user      VARCHAR(256),\n"
 	"   realm     VARCHAR(256),\n"
 	"   token     VARCHAR(256),\n"
+/* If url is modified please check for code in switch_core_sqldb_start for dependencies for MSSQL" */
 	"   url      TEXT,\n"
 	"   expires  INTEGER,\n"
 	"   network_ip VARCHAR(256),\n"
@@ -1905,7 +1906,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			const char *hostname = switch_core_get_switchname();
 
 			for (i = 0; tables[i]; i++) {
-				switch_snprintf(sql, sizeof(sql), "delete from %s where hostname='%s'", tables[i], hostname);
+				switch_snprintfv(sql, sizeof(sql), "delete from %q where hostname='%q'", tables[i], hostname);
 				switch_cache_db_execute_sql(dbh, sql, NULL);
 			}
 		}
@@ -1942,17 +1943,18 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			switch_cache_db_test_reactive(dbh, "select call_uuid, read_bit_rate, sent_callee_name from channels", "DROP TABLE channels", create_channels_sql);
 			switch_cache_db_test_reactive(dbh, "select * from detailed_calls where sent_callee_name=''", "DROP VIEW detailed_calls", detailed_calls_sql);
 			switch_cache_db_test_reactive(dbh, "select * from basic_calls where sent_callee_name=''", "DROP VIEW basic_calls", basic_calls_sql);
+			switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
 			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
-				switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
+				switch_cache_db_test_reactive(dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
+											  "DROP TABLE registrations", create_registrations_sql);
 			} else {
-				char *tmp = switch_string_replace(create_calls_sql, "function", "call_function");
-				switch_cache_db_test_reactive(dbh, "select call_uuid from calls", "DROP TABLE calls", tmp);
+				char *tmp = switch_string_replace(create_registrations_sql, "url      TEXT", "url      VARCHAR(max)");
+				switch_cache_db_test_reactive(dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
+											  "DROP TABLE registrations", tmp);
 				free(tmp);
 			}
 			switch_cache_db_test_reactive(dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
-			switch_cache_db_test_reactive(dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
-										  "DROP TABLE registrations", create_registrations_sql);
 
 			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
 				switch_cache_db_execute_sql(dbh, "begin;delete from channels where hostname='';delete from channels where hostname='';commit;", &err);
@@ -2112,6 +2114,14 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 	stream->write_function(stream, "%d total. %d in use.\n", count, used);
 
 	switch_mutex_unlock(sql_manager.dbh_mutex);
+}
+
+SWITCH_DECLARE(char*)switch_sql_concat(void)
+{
+	if(runtime.odbc_dbtype == DBTYPE_MSSQL)
+		return "+";
+
+	return "||";
 }
 
 /* For Emacs:

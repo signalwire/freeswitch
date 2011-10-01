@@ -1840,6 +1840,15 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_VERBOSE_EVENTS, &arg);
 
 			stream->write_function(stream, "+OK verbose_events is %s \n", arg ? "on" : "off");
+		} else if (!strcasecmp(argv[0], "threaded_system_exec")) {
+			arg = -1;
+			if (argv[1]) {
+				arg = switch_true(argv[1]);
+			}
+
+			switch_core_session_ctl(SCSC_THREADED_SYSTEM_EXEC, &arg);
+
+			stream->write_function(stream, "+OK threaded_system_exec is %s \n", arg ? "true" : "false");
 			
 		} else if (!strcasecmp(argv[0], "save_history")) {
 			switch_core_session_ctl(SCSC_SAVE_HISTORY, NULL);
@@ -4020,12 +4029,12 @@ SWITCH_STANDARD_API(show_function)
 			}
 			if (strchr(argv[2], '%')) {
 				sprintf(sql,
-						"select * from channels where hostname='%s' and uuid like '%s' or name like '%s' or cid_name like '%s' or cid_num like '%s' order by created_epoch",
-						hostname, argv[2], argv[2], argv[2], argv[2]);
+						"select * from channels where hostname='%s' and uuid like '%s' or name like '%s' or cid_name like '%s' or cid_num like '%s' or presence_data like '%s' order by created_epoch",
+						hostname, argv[2], argv[2], argv[2], argv[2], argv[2]);
 			} else {
 				sprintf(sql,
-						"select * from channels where hostname='%s' and uuid like '%%%s%%' or name like '%%%s%%' or cid_name like '%%%s%%' or cid_num like '%%%s%%' order by created_epoch",
-						hostname, argv[2], argv[2], argv[2], argv[2]);
+						"select * from channels where hostname='%s' and uuid like '%%%s%%' or name like '%%%s%%' or cid_name like '%%%s%%' or cid_num like '%%%s%%' or presence_data like '%%%s%%' order by created_epoch",
+						hostname, argv[2], argv[2], argv[2], argv[2], argv[2]);
 
 			}
 
@@ -4069,11 +4078,11 @@ SWITCH_STANDARD_API(show_function)
 		holder.print_title = 0;
 		if ((cmdname = strchr(command, ' ')) && strcasecmp(cmdname, "as")) {
 			*cmdname++ = '\0';
-			switch_snprintf(sql, sizeof(sql) - 1,
-							"select name, syntax, description, ikey from interfaces where hostname='%s' and type = 'api' and name = '%s' order by name", 
+			switch_snprintfv(sql, sizeof(sql),
+							"select name, syntax, description, ikey from interfaces where hostname='%s' and type = 'api' and name = '%q' order by name", 
 							hostname, cmdname);
 		} else {
-			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description, ikey from interfaces where hostname='%s' and type = 'api' order by name", hostname);
+			switch_snprintfv(sql, sizeof(sql), "select name, syntax, description, ikey from interfaces where hostname='%q' and type = 'api' order by name", hostname);
 		}
 	} else if (!strcasecmp(command, "nat_map")) {
 		switch_snprintf(sql, sizeof(sql) - 1,
@@ -4255,6 +4264,21 @@ SWITCH_STANDARD_API(uuid_flush_dtmf_function)
 		switch_channel_flush_dtmf(switch_core_session_get_channel(fsession));
 		switch_core_session_rwunlock(fsession);
 		stream->write_function(stream, "+OK\n");
+	} else {
+		stream->write_function(stream, "-ERR no such session\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(uuid_zombie_exec_function)
+{
+	switch_core_session_t *fsession;
+
+	if (!zstr(cmd) && (fsession = switch_core_session_locate(cmd))) {
+		switch_channel_set_flag(switch_core_session_get_channel(fsession), CF_ZOMBIE_EXEC);
+		switch_core_session_rwunlock(fsession);
+		stream->write_function(stream, "+OK MMM Brains...\n");
 	} else {
 		stream->write_function(stream, "-ERR no such session\n");
 	}
@@ -5322,6 +5346,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_simplify", "Try to cut out of a call path / attended xfer", uuid_simplify_function, SIMPLIFY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_jitterbuffer", "Try to cut out of a call path / attended xfer", 
 				   uuid_jitterbuffer_function, JITTERBUFFER_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_zombie_exec", "Set zombie_exec flag on the specified uuid", uuid_zombie_exec_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "xml_flush_cache", "clear xml cache", xml_flush_function, "<id> <key> <val>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
@@ -5389,7 +5414,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show codec");
 	switch_console_set_complete("add show complete");
 	switch_console_set_complete("add show dialplan");
-	switch_console_set_complete("add show distinct_channels");
+	switch_console_set_complete("add show detailed_calls");
+	switch_console_set_complete("add show bridged_calls");
+	switch_console_set_complete("add show detailed_bridged_calls");
 	switch_console_set_complete("add show endpoint");
 	switch_console_set_complete("add show file");
 	switch_console_set_complete("add show interfaces");

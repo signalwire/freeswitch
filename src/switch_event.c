@@ -697,7 +697,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 
 	memset(*event, 0, sizeof(switch_event_t));
 
-	if (event_id == SWITCH_EVENT_REQUEST_PARAMS || event_id == SWITCH_EVENT_CHANNEL_DATA) {
+	if (event_id == SWITCH_EVENT_REQUEST_PARAMS || event_id == SWITCH_EVENT_CHANNEL_DATA || event_id == SWITCH_EVENT_MESSAGE) {
 		(*event)->flags |= EF_UNIQ_HEADERS;
 	}
 
@@ -720,6 +720,35 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
 	switch_event_add_header_string(event, SWITCH_STACK_TOP, "priority", switch_priority_name(priority));
 	return SWITCH_STATUS_SUCCESS;
 }
+
+SWITCH_DECLARE(switch_status_t) switch_event_rename_header(switch_event_t *event, const char *header_name, const char *new_header_name)
+{
+	switch_event_header_t *hp;
+	switch_ssize_t hlen = -1;
+	unsigned long hash = 0;
+	int x = 0;
+
+	switch_assert(event);
+
+	if (!header_name) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	hash = switch_ci_hashfunc_default(header_name, &hlen);
+
+	for (hp = event->headers; hp; hp = hp->next) {
+		if ((!hp->hash || hash == hp->hash) && !strcasecmp(hp->name, header_name)) {
+			FREE(hp->name);
+			hp->name = DUP(new_header_name);
+			hlen = -1;
+			hp->hash = switch_ci_hashfunc_default(hp->name, &hlen);
+			x++;
+		}
+	}
+
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
 
 SWITCH_DECLARE(switch_event_header_t *) switch_event_get_header_ptr(switch_event_t *event, const char *header_name)
 {
@@ -756,6 +785,8 @@ SWITCH_DECLARE(char *) switch_event_get_header_idx(switch_event_t *event, const 
 		}
 
 		return hp->value;			
+	} else if (!strcmp(header_name, "_body")) {
+		return event->body;
 	}
 
 	return NULL;
@@ -899,6 +930,11 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 	char *index_ptr;
 	int index = 0;
 	char *real_header_name = NULL;
+
+
+	if (!strcmp(header_name, "_body")) {
+		switch_event_set_body(event, data);
+	}
 
 	if ((index_ptr = strchr(header_name, '['))) {
 		index_ptr++;
@@ -1102,6 +1138,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header_string(switch_event_t *e
 	return SWITCH_STATUS_GENERR;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_event_set_body(switch_event_t *event, const char *body)
+{
+	switch_safe_free(event->body);
+
+	if (body) {
+		event->body = DUP(body);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, const char *fmt, ...)
 {
 	int ret = 0;
@@ -1221,6 +1268,64 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 
 	if (todup->body) {
 		(*event)->body = DUP(todup->body);
+	}
+
+	(*event)->key = todup->key;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_event_dup_reply(switch_event_t **event, switch_event_t *todup)
+{
+	switch_event_header_t *hp;
+	char hname[1024] = "";
+	char *p;
+
+	if (switch_event_create_subclass(event, SWITCH_EVENT_CLONE, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	(*event)->event_id = todup->event_id;
+	(*event)->event_user_data = todup->event_user_data;
+	(*event)->bind_user_data = todup->bind_user_data;
+	(*event)->flags = todup->flags;
+
+	for (hp = todup->headers; hp; hp = hp->next) {
+		char *name = hp->name, *value = hp->value;
+		
+		if (todup->subclass_name && !strcmp(hp->name, "Event-Subclass")) {
+			continue;
+		}
+		
+		if (!strncasecmp(hp->name, "from_", 5)) {
+			p = hp->name + 5;
+			switch_snprintf(hname, sizeof(hname), "to_%s", p);
+			name = hname;
+		} else if (!strncasecmp(hp->name, "to_", 3)) {
+			p = hp->name + 3;
+			switch_snprintf(hname, sizeof(hname), "from_%s", p);
+			name = hname;
+		} else if (!strcasecmp(name, "to")) {
+			name = "from";
+		} else if (!strcasecmp(name, "from")) {
+			name = "to";
+		}
+		
+		if (hp->idx) {
+			int i;
+			for (i = 0; i < hp->idx; i++) {
+				switch_event_add_header_string(*event, SWITCH_STACK_PUSH, name, hp->array[i]);
+			}
+		} else {
+			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, name, value);
+		}
+	}
+
+	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "replying", "true");
+
+	if (todup->body) {
+		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "orig_body", todup->body);
 	}
 
 	(*event)->key = todup->key;

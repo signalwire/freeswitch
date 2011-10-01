@@ -42,9 +42,35 @@ static void switch_core_standard_on_init(switch_core_session_t *session)
 
 static void switch_core_standard_on_hangup(switch_core_session_t *session)
 {
+	switch_caller_extension_t *extension;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
+	
+	if (!switch_channel_test_flag(session->channel, CF_ZOMBIE_EXEC)) {
+		return;
+	}
+
+	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
+		return;
+	}
+
+	while(extension->current_application) {
+		switch_caller_application_t *current_application = extension->current_application;
+		switch_status_t status;
+
+		extension->current_application = extension->current_application->next;
+
+		status = switch_core_session_execute_application(session,
+														 current_application->application_name, current_application->application_data);
+														 
+		
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_IGNORE) {
+			return;
+		}
+	}
+
+
 }
 
 static void switch_core_standard_on_reporting(switch_core_session_t *session)
@@ -92,6 +118,12 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 	} else {
 		char *dp[25];
 		int argc, x, count = 0;
+
+		if ((extension = switch_channel_get_queued_extension(session->channel))) {
+			switch_channel_set_caller_extension(session->channel, extension);
+			switch_channel_set_state(session->channel, CS_EXECUTE);
+			goto end;
+		}
 
 		if (!zstr(caller_profile->dialplan)) {
 			if ((dpstr = switch_core_session_strdup(session, caller_profile->dialplan))) {

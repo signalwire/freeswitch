@@ -146,6 +146,7 @@ struct switch_channel {
 	int profile_index;
 	opaque_channel_flag_t opaque_flags;
 	switch_originator_type_t last_profile_type;
+	switch_caller_extension_t *queued_extension;
 };
 
 
@@ -429,9 +430,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (*dtmf_string == '!') {
+
+	dtmf.flags = DTMF_FLAG_SKIP_PROCESS;
+
+	if (*dtmf_string == '~') {
 		dtmf_string++;
-		dtmf.flags = DTMF_FLAG_SKIP_PROCESS;
+		dtmf.flags = 0;
 	}
 
 	string = switch_core_session_strdup(channel->session, dtmf_string);
@@ -442,25 +446,25 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(switch_channel_
 		dur = switch_core_default_dtmf_duration(0) / 8;
 		if ((p = strchr(argv[i], '@'))) {
 			*p++ = '\0';
-			if ((dur = atoi(p)) > 50) {
+			if ((dur = atoi(p)) > (int)switch_core_min_dtmf_duration(0) / 8) {
 				dtmf.duration = dur * 8;
 			}
 		}
 
-		if (dtmf.duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "EXCESSIVE DTMF DIGIT LEN %c %d\n", dtmf.digit, dtmf.duration);
-			dtmf.duration = switch_core_max_dtmf_duration(0);
-		} else if (dtmf.duration < switch_core_min_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "SHORT DTMF DIGIT LEN %c %d\n", dtmf.digit, dtmf.duration);
-			dtmf.duration = switch_core_min_dtmf_duration(0);
-		} else if (!dtmf.duration) {
-			dtmf.duration = switch_core_default_dtmf_duration(0);
-		}
-
-
 		for (p = argv[i]; p && *p; p++) {
 			if (is_dtmf(*p)) {
 				dtmf.digit = *p;
+
+				if (dtmf.duration > switch_core_max_dtmf_duration(0)) {
+					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "EXCESSIVE DTMF DIGIT LEN %c %d\n", dtmf.digit, dtmf.duration);
+					dtmf.duration = switch_core_max_dtmf_duration(0);
+				} else if (dtmf.duration < switch_core_min_dtmf_duration(0)) {
+					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "SHORT DTMF DIGIT LEN %c %d\n", dtmf.digit, dtmf.duration);
+					dtmf.duration = switch_core_min_dtmf_duration(0);
+				} else if (!dtmf.duration) {
+					dtmf.duration = switch_core_default_dtmf_duration(0);
+				}
+
 				if (switch_channel_queue_dtmf(channel, &dtmf) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s Queue dtmf\ndigit=%c ms=%u samples=%u\n",
 									  switch_channel_get_name(channel), dtmf.digit, dur, dtmf.duration);
@@ -1859,7 +1863,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 											   switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND ||
 											   switch_channel_test_flag(channel, CF_DIALPLAN) ? "true" : "false");
 				
-				if (switch_channel_down(channel)) {
+				if (switch_channel_down_nosig(channel)) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "hangup");
 				} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
@@ -2149,7 +2153,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", switch_core_session_get_uuid(channel->session));
 	}
 
-	if (switch_channel_down(channel)) {
+	if (switch_channel_down_nosig(channel)) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "hangup");
 	} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
@@ -2688,6 +2692,27 @@ SWITCH_DECLARE(void) switch_channel_sort_cid(switch_channel_t *channel, switch_b
 	
 }
 
+SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_queued_extension(switch_channel_t *channel)
+{
+	switch_caller_extension_t *caller_extension;
+
+	switch_mutex_lock(channel->profile_mutex);
+	caller_extension = channel->queued_extension;
+	channel->queued_extension = NULL;
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return caller_extension;
+}
+
+SWITCH_DECLARE(void) switch_channel_transfer_to_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension)
+{
+	switch_mutex_lock(channel->profile_mutex);
+	channel->queued_extension = caller_extension;
+	switch_mutex_unlock(channel->profile_mutex);
+
+	switch_channel_set_flag(channel, CF_TRANSFER);
+	switch_channel_set_state(channel, CS_ROUTING);	
+}
 
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension)
 {

@@ -34,6 +34,15 @@
 #include <switch.h>
 #include "freetdm.h"
 
+//#define CUDATEL_DEBUG
+#ifdef CUDATEL_DEBUG
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#include <execinfo.h>
+#include <syscall.h>
+#endif
+
 #ifndef __FUNCTION__
 #define __FUNCTION__ __SWITCH_FUNC__
 #endif
@@ -495,7 +504,14 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	ftdm_chan_type_t chantype;
+	const char *name = NULL;
+	int span_id = 0;
+	int chan_id = 0;
+	int t = 0;
 	uint32_t tokencnt;
+	char *uuid = NULL;
+	const char *token = NULL;
+	uint8_t uuid_found = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -503,13 +519,64 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	/* ignore any further I/O requests, we're hanging up already! */
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+	
+	name = switch_channel_get_name(channel);
+
+	span_id = tech_pvt->ftdmchan ? ftdm_channel_get_span_id(tech_pvt->ftdmchan) : 0;
+	chan_id = tech_pvt->ftdmchan ? ftdm_channel_get_id(tech_pvt->ftdmchan) : 0;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d] %s CHANNEL HANGUP ENTER\n", span_id, chan_id, name);
+
+	/* First verify this call has a device attached */
 	if (!tech_pvt->ftdmchan) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s does not have any ftdmchan attached\n", name);
 		goto end;
-	} 
+	}
+
+	/* Now verify the device is still attached to this call :-) 
+	 * Sometimes the FS core takes too long (more than 3 seconds) in calling
+	 * channel_on_hangup() and the FreeTDM core decides to take the brute
+	 * force approach and hangup and detach themselves from the call. Later
+	 * when FS finally comes around, we might end up hanging up the device
+	 * attached to another call, this verification avoids that. */
+	uuid = switch_core_session_get_uuid(session);
+	tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
+	for (t = 0; t < tokencnt; t++) {
+		token = ftdm_channel_get_token(tech_pvt->ftdmchan, t);
+		if (!zstr(token) && !strcasecmp(uuid, token)) {
+			uuid_found = 1;
+			break;
+		}
+	}
+
+	if (!uuid_found) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Device [%d:%d] is no longer attached to %s. Nothing to do.\n", span_id, chan_id, name);
+		goto end;
+	}
+
+#ifdef CUDATEL_DEBUG
+	{
+		pid_t tid = 0;
+		size_t size = 0;
+		char **symbols = NULL;
+		void *stacktrace[50];
+		int si = 0;
+		size = backtrace(stacktrace, ftdm_array_len(stacktrace));
+		symbols = backtrace_symbols(stacktrace, size);
+		tid = syscall(SYS_gettid);
+		for (si = 0; si < size; si++) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d][tid:%d] %s -> %s\n",
+					span_id, chan_id, tid, name, symbols[si]);
+		}
+		free(symbols);
+	}
+#endif
 
 	ftdm_channel_clear_token(tech_pvt->ftdmchan, switch_core_session_get_uuid(session));
 
-	chantype = ftdm_channel_get_type(tech_pvt->ftdmchan);	
+	chantype = ftdm_channel_get_type(tech_pvt->ftdmchan);
 	switch (chantype) {
 	case FTDM_CHAN_TYPE_FXO:
 	case FTDM_CHAN_TYPE_EM:
@@ -520,7 +587,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	case FTDM_CHAN_TYPE_FXS:
 		{
 			if (!ftdm_channel_call_check_busy(tech_pvt->ftdmchan) && !ftdm_channel_call_check_done(tech_pvt->ftdmchan)) {
-				tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
 				if (tokencnt) {
 					cycle_foreground(tech_pvt->ftdmchan, 0, NULL);
 				} else {
@@ -548,9 +614,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
  end:
 
-	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 	switch_mutex_lock(globals.mutex);
 	globals.calls--;
 	if (globals.calls < 0) {
@@ -558,6 +621,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 	switch_mutex_unlock(globals.mutex);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d] %s CHANNEL HANGUP EXIT\n", span_id, chan_id, name);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -629,6 +693,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	int total_to;
 	int chunk, do_break = 0;
 	uint32_t span_id, chan_id;
+	const char *name = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -636,17 +701,18 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-		ftdm_log(FTDM_LOG_DEBUG, "TFLAG_DEAD is set\n");
-		return SWITCH_STATUS_FALSE;
-	} 
-
+	name = switch_channel_get_name(channel);
 	if (!tech_pvt->ftdmchan) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no ftdmchan set in channel %s!\n", name);
 		return SWITCH_STATUS_FALSE;
 	} 
 
 	span_id = ftdm_channel_get_span_id(tech_pvt->ftdmchan);
 	chan_id = ftdm_channel_get_id(tech_pvt->ftdmchan);
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_DEAD is set in channel %s device %d:%d!\n", name, span_id, chan_id);
+		return SWITCH_STATUS_FALSE;
+	} 
 
 	/* Digium Cards sometimes timeout several times in a row here. 
 	   Yes, we support digium cards, ain't we nice.......
@@ -678,7 +744,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 	
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-		ftdm_log(FTDM_LOG_DEBUG, "TFLAG_IO is not set\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_IO is not set in channel %s device %d:%d!\n", name, span_id, chan_id);
 		goto fail;
 	}
 
@@ -686,7 +752,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, chunk);
 	
 	if (status == FTDM_FAIL) {
-		ftdm_log(FTDM_LOG_ERROR, "Failed to wait for I/O\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read from channel %s device %d:%d!\n", name, span_id, chan_id);
 		goto fail;
 	}
 	
@@ -694,7 +760,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		if (!switch_test_flag(tech_pvt, TFLAG_HOLD)) {
 			total_to -= chunk;
 			if (total_to <= 0) {
-				ftdm_log(FTDM_LOG_WARNING, "Too many timeouts while waiting for I/O\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Too many timeouts while waiting I/O in channel %s device %d:%d!\n", name, span_id, chan_id);
 				goto fail;
 			}
 		}
@@ -707,9 +773,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	len = tech_pvt->read_frame.buflen;
 	if (ftdm_channel_read(tech_pvt->ftdmchan, tech_pvt->read_frame.data, &len) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_WARNING, "failed to read from device %d:%d\n", span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to read from channel %s device %d:%d!\n", name, span_id, chan_id);
 		if (++tech_pvt->read_error > FTDM_MAX_READ_WRITE_ERRORS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "too many I/O read errors on device %d:%d!\n", span_id, chan_id);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "too many I/O read errors on channel %s device %d:%d!\n", name, span_id, chan_id);
 			goto fail;
 		}
 	} else {
@@ -730,18 +796,18 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		for (p = dtmf; p && *p; p++) {
 			if (is_dtmf(*p)) {
 				_dtmf.digit = *p;
-				ftdm_log(FTDM_LOG_DEBUG, "Queuing DTMF [%c] in channel %s\n", *p, switch_channel_get_name(channel));
+				ftdm_log(FTDM_LOG_DEBUG, "Queuing DTMF [%c] in channel %s device %d:%d\n", *p, name, span_id, chan_id);
 				switch_channel_queue_dtmf(channel, &_dtmf);
 			}
 		}
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 
- fail:
+fail:
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "clearing IO in channel %s device %d:%d!\n", name, span_id, chan_id);
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	return SWITCH_STATUS_GENERR;
-	
-
 }
 
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
@@ -750,8 +816,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	private_t *tech_pvt = NULL;
 	ftdm_size_t len;
 	unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
+	const char *name = "(none)";
 	ftdm_wait_flag_t wflags = FTDM_WRITE;
-	uint32_t span_id, chan_id;
+	uint32_t span_id = 0, chan_id = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -759,7 +826,17 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	name = switch_channel_get_name(channel);
+	if (!tech_pvt->ftdmchan) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no ftdmchan set in channel %s!\n", name);
+		return SWITCH_STATUS_FALSE;
+	} 
+
+	span_id = ftdm_channel_get_span_id(tech_pvt->ftdmchan);
+	chan_id = ftdm_channel_get_id(tech_pvt->ftdmchan);
+	
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_DEAD is set in channel %s device %d:%d!\n", name, span_id, chan_id);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -768,17 +845,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_IO is not set in channel %s device %d:%d!\n", name, span_id, chan_id);
 		goto fail;
 	}
 
-	if (!tech_pvt->ftdmchan) {
-		return SWITCH_STATUS_FALSE;
-	} 
-
-	span_id = ftdm_channel_get_span_id(tech_pvt->ftdmchan);
-	chan_id = ftdm_channel_get_id(tech_pvt->ftdmchan);
-
-	
 	if (switch_test_flag(frame, SFF_CNG)) {
 		frame->data = data;
 		frame->buflen = sizeof(data);
@@ -793,16 +863,16 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 10);
 	
 	if (!(wflags & FTDM_WRITE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write not ready)\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write note ready) in channel %s device %d:%d!\n", name, span_id, chan_id);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	len = frame->datalen;
 	if (ftdm_channel_write(tech_pvt->ftdmchan, frame->data, frame->buflen, &len) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_WARNING, "failed to write to device %d:%d\n", span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failed to write to channel %s device %d:%d!\n", name, span_id, chan_id);
 		if (++tech_pvt->write_error > FTDM_MAX_READ_WRITE_ERRORS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, 
-					SWITCH_LOG_ERROR, "too many I/O write errors on device %d:%d!\n", span_id, chan_id);
+					SWITCH_LOG_ERROR, "Too many I/O write errors on channel %s device %d:%d!\n", name, span_id, chan_id);
 			goto fail;
 		}
 	} else {
@@ -812,7 +882,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	return SWITCH_STATUS_SUCCESS;
 
  fail:
-	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error writing to channel %s device %d:%d!\n", name, span_id, chan_id);
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	return SWITCH_STATUS_GENERR;
 
@@ -2370,7 +2440,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, caller_data->hangup_cause);
-				ftdm_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -3802,9 +3871,139 @@ typedef switch_status_t (*ftdm_cli_function_t)(ftdm_cli_entry_t *cli, const char
 							   int argc, char *argv[])
 static void print_usage(switch_stream_handle_t *stream, ftdm_cli_entry_t *cli);
 
-FTDM_CLI_DECLARE(ftdm_cmd_voice_detect)
+
+typedef struct cmd_ioread_data {
+	int num_times;
+	uint32_t interval;
+	ftdm_span_t *span;
+	ftdm_channel_t *fchan;
+	switch_memory_pool_t *pool;
+	int already_open;
+} cmd_ioread_data_t;
+
+static void *SWITCH_THREAD_FUNC ioread_thread(switch_thread_t *thread, void *obj)
 {
-	print_usage(stream, cli);
+	ftdm_wait_flag_t wflags = FTDM_READ;
+	ftdm_status_t status = FTDM_FAIL;
+	unsigned char iobuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	cmd_ioread_data_t *data = obj;
+	int span_id = ftdm_span_get_id(data->span);
+	int chan_id = ftdm_channel_get_id(data->fchan);
+	ftdm_size_t len = ftdm_channel_get_io_packet_len(data->fchan);
+	ftdm_size_t origlen = len;
+	unsigned int pbuf[5];
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+	         "Started ioread thread (times = %d, interval = %ums, len = %"FTDM_SIZE_FMT", span = %d, chan = %d\n", 
+		 data->num_times, data->interval, len, span_id, chan_id);
+
+	while (ftdm_running() && data->num_times > 0) {
+		data->num_times--;
+
+		wflags = FTDM_READ;	
+
+		status = ftdm_channel_wait(data->fchan, &wflags, (data->interval * 10));
+		
+		if (status == FTDM_FAIL) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to wait for IO in device %d:%d!\n", span_id, chan_id);
+			continue;
+		}
+		
+		if (status == FTDM_TIMEOUT) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out while waiting I/O in device %d:%d!\n", span_id, chan_id);
+			continue;
+		}
+
+		len = origlen;
+		if (ftdm_channel_read(data->fchan, iobuf, &len) != FTDM_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to read from device %d:%d!\n", span_id, chan_id);
+			continue;
+		}
+		pbuf[0] = iobuf[0];
+		pbuf[1] = iobuf[1];
+		pbuf[2] = iobuf[2];
+		pbuf[3] = iobuf[3];
+		pbuf[4] = iobuf[4];
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read 0x%1X 0x%1X 0x%1X 0x%1X 0x%1X\n", 
+				pbuf[0], pbuf[1], pbuf[2], pbuf[3], pbuf[4]);
+	}
+
+	if (!data->already_open) {
+		ftdm_channel_close(&data->fchan);
+	}
+
+	switch_core_destroy_memory_pool(&data->pool);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+	         "Done ioread thread (times = %d, interval = %ums, len = %"FTDM_SIZE_FMT", span = %d, chan = %d\n", 
+		 data->num_times, data->interval, origlen, span_id, chan_id);
+	return NULL;
+}
+
+FTDM_CLI_DECLARE(ftdm_cmd_ioread)
+{
+	char *span_name = NULL;
+	int channo = 0;
+	ftdm_status_t status = FTDM_SUCCESS;
+	switch_threadattr_t *attr = NULL;
+	switch_thread_t *thread = NULL;
+
+	cmd_ioread_data_t *thdata;
+	cmd_ioread_data_t data;
+
+	memset(&data, 0, sizeof(data));
+	data.num_times = 1;
+
+	if (argc < 3) {
+		print_usage(stream, cli);
+		goto end;
+	}
+
+	span_name = argv[1];
+
+	ftdm_span_find_by_name(span_name, &data.span);
+	if (!data.span) {
+		stream->write_function(stream, "-ERR span %s not found\n", span_name);
+		goto end;
+	}
+
+	channo = atoi(argv[2]);
+
+	status = ftdm_channel_open(ftdm_span_get_id(data.span), channo, &data.fchan);
+	if (!data.fchan || (status != FTDM_SUCCESS && status != FTDM_EBUSY)) {
+		stream->write_function(stream, "-ERR Failed to open channel %d in span %s\n", channo, span_name);
+		goto end;
+	}
+
+	if (status == FTDM_EBUSY) {
+		data.already_open = 1;
+	}
+
+	if (argc > 3) {
+		data.num_times = atoi(argv[3]);
+		if (data.num_times < 1) {
+			data.num_times = 1;
+		}
+	}
+
+	if (argc > 4) {
+		data.interval = atoi(argv[4]);
+	}
+
+	if (data.interval <= 0 || data.interval > 10000) {
+		data.interval = ftdm_channel_get_io_interval(data.fchan);
+	}
+
+	switch_core_new_memory_pool(&data.pool);
+
+	thdata = switch_core_alloc(data.pool, sizeof(data));
+	memcpy(thdata, &data, sizeof(*thdata));
+
+	switch_threadattr_create(&attr, data.pool);
+	switch_threadattr_detach_set(attr, 1);
+	switch_threadattr_stacksize_set(attr, SWITCH_THREAD_STACKSIZE);
+	switch_thread_create(&thread, attr, ioread_thread, thdata, data.pool);
+
+end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -4452,7 +4651,7 @@ static ftdm_cli_entry_t ftdm_cli_options[] =
 	{ "dtmf", "on|off <span_id|span_name> [<chan_id>]", "::[on:off", ftdm_cmd_dtmf },
 	{ "queuesize", "<rxsize> <txsize> <span_id|span_name> [<chan_id>]", "", ftdm_cmd_queuesize },
 	{ "iostats", "enable|disable|flush|print <span_id|span_name> <chan_id>", "::[enable:disable:flush:print", ftdm_cmd_iostats },
-	{ "voice_detect", "[on|off] <span_id|span_name> [<chan_id>]", "::[on:off", ftdm_cmd_voice_detect },
+	{ "ioread", "<span_id|span_name> <chan_id> [num_times] [interval]", "", ftdm_cmd_ioread },
 
 	/* Fake handlers as they are handled within freetdm library,
 	 * we should provide a way inside freetdm to query for completions from signaling modules */

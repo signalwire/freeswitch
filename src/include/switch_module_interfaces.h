@@ -483,8 +483,8 @@ struct switch_chat_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the directory interface */
-	switch_status_t (*chat_send) (const char *proto, const char *from, const char *to,
-								  const char *subject, const char *body, const char *type, const char *hint);
+	switch_status_t (*chat_send) (switch_event_t *message_event);
+								  
 	switch_thread_rwlock_t *rwlock;
 	int refs;
 	switch_mutex_t *reflock;
@@ -679,6 +679,27 @@ struct switch_application_interface {
 	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_application_interface *next;
+};
+
+/*! \brief A module interface to implement a chat application */
+struct switch_chat_application_interface {
+	/*! the name of the interface */
+	const char *interface_name;
+	/*! function the application implements */
+	switch_chat_application_function_t chat_application_function;
+	/*! the long winded description of the application */
+	const char *long_desc;
+	/*! the short and sweet description of the application */
+	const char *short_desc;
+	/*! an example of the application syntax */
+	const char *syntax;
+	/*! flags to control behaviour */
+	uint32_t flags;
+	switch_thread_rwlock_t *rwlock;
+	int refs;
+	switch_mutex_t *reflock;
+	switch_loadable_module_interface_t *parent;
+	struct switch_chat_application_interface *next;
 };
 
 /*! \brief A module interface to implement an api function */

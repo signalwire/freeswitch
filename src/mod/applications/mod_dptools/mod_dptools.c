@@ -102,37 +102,50 @@ struct action_binding {
 	char *input;
 	char *string;
 	char *value;
+	switch_digit_action_target_t target;
 	switch_core_session_t *session;
 };
 
 static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t *match)
 {
 	switch_core_session_t *session = (switch_core_session_t *) match->user_data;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char str[DMACHINE_MAX_DIGIT_LEN + 2];
+	switch_channel_t *channel;
 	switch_event_t *event;
 	switch_status_t status;
+	switch_core_session_t *use_session = session;
+
+	if (switch_ivr_dmachine_get_target(match->dmachine) == DIGIT_TARGET_PEER) {
+		if (switch_core_session_get_partner(session, &use_session) != SWITCH_STATUS_SUCCESS) {
+			use_session = session;
+		}
+	}
+
+	channel = switch_core_session_get_channel(use_session);
+
 
 	switch_channel_set_variable(channel, "last_non_matching_digits", match->match_digits);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Digit NOT match binding [%s]\n", 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(use_session), SWITCH_LOG_DEBUG, "%s Digit NOT match binding [%s]\n", 
 					  switch_channel_get_name(channel), match->match_digits);
 
 	if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
 
-		if ((status = switch_core_session_queue_event(session, &event)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_core_session_queue_event(use_session, &event)) != SWITCH_STATUS_SUCCESS) {
 			switch_event_destroy(&event);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
-							  switch_core_session_get_name(session));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(use_session), SWITCH_LOG_WARNING, "%s event queue failure.\n", 
+							  switch_core_session_get_name(use_session));
 		}
 	}
 
-	/* send it back around flagged to skip the dmachine */
-	switch_snprintf(str, sizeof(str), "!%s", match->match_digits);
+	/* send it back around and skip the dmachine */
+	switch_channel_queue_dtmf_string(channel, match->match_digits);
 	
-	switch_channel_queue_dtmf_string(channel, str);
-	
+	if (use_session != session) {
+		switch_core_session_rwunlock(use_session);
+	}
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -143,9 +156,25 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	switch_status_t status;
 	int exec = 0;
 	char *string = act->string;
-	switch_channel_t *channel = switch_core_session_get_channel(act->session);
+	switch_channel_t *channel;
+	switch_core_session_t *use_session = act->session;
+	int x = 0;
+	if (switch_ivr_dmachine_get_target(match->dmachine) == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_BOTH) {
+		if (switch_core_session_get_partner(act->session, &use_session) != SWITCH_STATUS_SUCCESS) {
+			use_session = act->session;
+		}
+	}
+
+ top:
+	x++;
+
+	string = act->string;
+	exec = 0;
+
+	channel = switch_core_session_get_channel(use_session);
 
 	switch_channel_set_variable(channel, "last_matching_digits", match->match_digits);
+
 	
 	if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_DEBUG, "%s Digit match binding [%s][%s]\n", 
@@ -163,31 +192,62 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute", exec == 2 ? "non-blocking" : "blocking");
 		} 
 
-		if ((status = switch_core_session_queue_event(act->session, &event)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_core_session_queue_event(use_session, &event)) != SWITCH_STATUS_SUCCESS) {
 			switch_event_destroy(&event);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
-							  switch_core_session_get_name(act->session));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(use_session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
+							  switch_core_session_get_name(use_session));
 		}
 	}
 
 	if (exec) {
-		char *cmd = switch_core_session_sprintf(act->session, "%s::%s", string, act->value);
-		switch_ivr_broadcast_in_thread(act->session, cmd, SMF_ECHO_ALEG|SMF_HOLD_BLEG);
+		char *cmd = switch_core_session_sprintf(use_session, "%s::%s", string, act->value);
+		switch_ivr_broadcast_in_thread(use_session, cmd, SMF_ECHO_ALEG | (act->target == DIGIT_TARGET_BOTH ? 0 : SMF_HOLD_BLEG));
 	}
 	
+
+	if (use_session != act->session) {
+		switch_core_session_rwunlock(use_session);
+
+		if (act->target == DIGIT_TARGET_BOTH) {
+			use_session = act->session;
+			goto top;
+		}
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CLEAR_DIGIT_ACTION_USAGE "<realm>|all"
+static switch_digit_action_target_t str2target(const char *target_str)
+{
+	if (!strcasecmp(target_str, "peer")) {
+		return DIGIT_TARGET_PEER;
+	}
+
+	if (!strcasecmp(target_str, "both")) {
+		return DIGIT_TARGET_BOTH;
+	}
+	
+	return DIGIT_TARGET_SELF;
+}
+
+#define CLEAR_DIGIT_ACTION_USAGE "<realm>|all[,target]"
 SWITCH_STANDARD_APP(clear_digit_action_function)
 {
 	//switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_ivr_dmachine_t *dmachine;
-	char *realm = (char *) data;
+	char *realm = switch_core_session_strdup(session, data);
+	char *target_str;
+	switch_digit_action_target_t target = DIGIT_TARGET_SELF;
 
-	if ((dmachine = switch_core_session_get_dmachine(session))) {
+	if ((target_str = strchr(realm, ','))) {
+		*target_str++ = '\0';
+		target = str2target(target_str);
+	}
+
+
+	if ((dmachine = switch_core_session_get_dmachine(session, target))) {
 		if (zstr(realm) || !strcasecmp(realm, "all")) {
-			switch_core_session_set_dmachine(session, NULL);
+			switch_core_session_set_dmachine(session, NULL, target);
 			switch_ivr_dmachine_destroy(&dmachine);
 		} else {
 			switch_ivr_dmachine_clear_realm(dmachine, realm);
@@ -195,49 +255,41 @@ SWITCH_STANDARD_APP(clear_digit_action_function)
 	}
 }
 
-#define DIGIT_ACTION_SET_REALM_USAGE "<realm>"
+#define DIGIT_ACTION_SET_REALM_USAGE "<realm>[,<target>]"
 SWITCH_STANDARD_APP(digit_action_set_realm_function)
 {
 	switch_ivr_dmachine_t *dmachine;
-	char *realm = (char *) data;
+	char *realm = switch_core_session_strdup(session, data);
+	char *target_str;
+	switch_digit_action_target_t target = DIGIT_TARGET_SELF;
+
+	if ((target_str = strchr(realm, ','))) {
+		*target_str++ = '\0';
+		target = str2target(target_str);
+	}
 
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", DIGIT_ACTION_SET_REALM_USAGE);
 		return;
 	}
+
 	
-	if ((dmachine = switch_core_session_get_dmachine(session))) {
+	if ((dmachine = switch_core_session_get_dmachine(session, target))) {
 		switch_ivr_dmachine_set_realm(dmachine, realm);
 	}
 
 }
 
-#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>,<value>"
-SWITCH_STANDARD_APP(bind_digit_action_function)
+
+static void bind_to_session(switch_core_session_t *session, 
+							const char *arg0, const char *arg1, const char *arg2, const char *arg3,
+							switch_digit_action_target_t target, switch_digit_action_target_t bind_target)
 {
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_ivr_dmachine_t *dmachine;
-	char *mydata;
-	int argc = 0;
-	char *argv[4] = { 0 };
 	struct action_binding *act;
+	switch_ivr_dmachine_t *dmachine;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (zstr(data)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
-		return;
-	}
-
-	mydata = switch_core_session_strdup(session, data);
-
-	argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-	
-	if (argc < 4 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2]) || zstr(argv[3])) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
-		return;
-	}
-
-	
-	if (!(dmachine = switch_core_session_get_dmachine(session))) {
+	if (!(dmachine = switch_core_session_get_dmachine(session, target))) {
 		uint32_t digit_timeout = 1500;
 		uint32_t input_timeout = 0;
 		const char *var;
@@ -256,20 +308,69 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 		}
 		
 		switch_ivr_dmachine_create(&dmachine, "DPTOOLS", NULL, digit_timeout, input_timeout, NULL, digit_nomatch_action_callback, session);
-		switch_core_session_set_dmachine(session, dmachine);
+		switch_core_session_set_dmachine(session, dmachine, target);
 	}
 
 	
 	act = switch_core_session_alloc(session, sizeof(*act));
-	act->realm = argv[0];
-	act->input = argv[1];
-	act->string = argv[2];
-	act->value = argv[3];
+	act->realm = switch_core_session_strdup(session, arg0);
+	act->input = switch_core_session_strdup(session, arg1);
+	act->string = switch_core_session_strdup(session, arg2);
+	act->value = switch_core_session_strdup(session, arg3);
+	act->target = bind_target;
 	act->session = session;
-	
 	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, 0, digit_action_callback, act);
 }
 
+#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>,<value>[,<dtmf target leg>][,<event target leg>]"
+SWITCH_STANDARD_APP(bind_digit_action_function)
+{
+
+	char *mydata;
+	int argc = 0;
+	char *argv[6] = { 0 };
+	switch_digit_action_target_t target, bind_target;
+	char *target_str = "self", *bind_target_str = "self";
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
+		return;
+	}
+
+	mydata = switch_core_session_strdup(session, data);
+
+	argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+	
+	if (argc < 4 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2]) || zstr(argv[3])) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
+		return;
+	}
+
+	if (argv[4]) {
+		target_str = argv[4];
+	}
+
+	if (argv[5]) {
+		bind_target_str = argv[5];
+	}
+
+	target = str2target(target_str);
+	bind_target = str2target(bind_target_str);
+
+
+	switch(target) {
+	case DIGIT_TARGET_PEER:
+		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_PEER, bind_target);
+		break;
+	case DIGIT_TARGET_BOTH:
+		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_PEER, bind_target);
+		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_SELF, bind_target);
+		break;
+	default:
+		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_SELF, bind_target);
+		break;
+	}
+}
 
 #define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR nogrammar <gram_name> OR grammaron/grammaroff <gram_name> OR grammarsalloff OR pause OR resume OR start_input_timers OR stop OR param <name> <value>"
 SWITCH_STANDARD_APP(detect_speech_function)
@@ -904,6 +1005,18 @@ SWITCH_STANDARD_APP(eval_function)
 	return;
 }
 
+SWITCH_STANDARD_APP(zombie_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (switch_channel_up(channel)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MMM Brains....\n", switch_channel_get_name(channel));
+		switch_channel_set_flag(channel, CF_ZOMBIE_EXEC);
+	}
+
+	return;
+}
+
 
 SWITCH_STANDARD_APP(hangup_function)
 {
@@ -1271,6 +1384,7 @@ SWITCH_STANDARD_APP(event_function)
 							switch_assert(new);
 							memcpy(new, val, len);
 							event->subclass_name = new;
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
 						} else {
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
 						}
@@ -1447,7 +1561,7 @@ SWITCH_STANDARD_API(chat_api_function)
 	if (!zstr(cmd) && (lbuf = strdup(cmd))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) >= 4) {
 
-		if (switch_core_chat_send(argv[0], "dp", argv[1], argv[2], "", argv[3], !zstr(argv[4]) ? argv[4] : NULL, "") == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_chat_send_args(argv[0], "dp", argv[1], argv[2], "", argv[3], !zstr(argv[4]) ? argv[4] : NULL, "") == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "Sent");
 		} else {
 			stream->write_function(stream, "Error! Message Not Sent");
@@ -3270,44 +3384,51 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", WAIT_FOR_SILENCE_SYNTAX);
 }
 
-static switch_status_t event_chat_send(const char *proto, const char *from, const char *to, const char *subject,
-									   const char *body, const char *type, const char *hint)
+static switch_status_t event_chat_send(switch_event_t *message_event)
+									   
 {
 	switch_event_t *event;
+	const char *to;
 
-	if (switch_event_create(&event, SWITCH_EVENT_RECV_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		if (proto)
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Proto", proto);
-		if (from)
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "From", from);
-		if (subject)
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Subject", subject);
-		if (hint)
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hint", hint);
-		if (body)
-			switch_event_add_body(event, "%s", body);
-		if (to) {
-			char *v;
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "To", to);
-			if ((v = switch_core_get_variable_dup(to))) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Command", v);
-				free(v);
-			}
+	switch_event_dup(&event, message_event);
+	event->event_id = SWITCH_EVENT_RECV_MESSAGE;
+
+	if ((to = switch_event_get_header(event, "to"))) {
+		char *v;
+		if ((v = switch_core_get_variable_dup(to))) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Command", v);
+			free(v);
 		}
-
-		if (switch_event_fire(&event) == SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_SUCCESS;
-		}
-
-		switch_event_destroy(&event);
 	}
+
+	if (switch_event_fire(&event) == SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	switch_event_destroy(&event);
 
 	return SWITCH_STATUS_MEMERR;
 }
 
-static switch_status_t api_chat_send(const char *proto, const char *from, const char *to, const char *subject,
-									 const char *body, const char *type, const char *hint)
+static switch_status_t api_chat_send(switch_event_t *message_event)
 {
+	const char *proto;
+	const char *from; 
+	const char *to;
+	//const char *subject;
+	//const char *body;
+	const char *type;
+	const char *hint;
+
+	proto = switch_event_get_header(message_event, "proto");
+	from = switch_event_get_header(message_event, "from");
+	to = switch_event_get_header(message_event, "to");
+	//subject = switch_event_get_header(message_event, "subject");
+	//body = switch_event_get_body(message_event);
+	type = switch_event_get_header(message_event, "type");
+	hint = switch_event_get_header(message_event, "hint");	
+
+
 	if (to) {
 		char *v = NULL;
 		switch_stream_handle_t stream = { 0 };
@@ -3330,7 +3451,7 @@ static switch_status_t api_chat_send(const char *proto, const char *from, const 
 		switch_api_execute(cmd, arg, NULL, &stream);
 
 		if (proto) {
-			switch_core_chat_send(proto, "api", to, hint && strchr(hint, '/') ? hint : from, !zstr(type) ? type : NULL, (char *) stream.data, NULL, NULL);
+			switch_core_chat_send_args(proto, "api", to, hint && strchr(hint, '/') ? hint : from, !zstr(type) ? type : NULL, (char *) stream.data, NULL, NULL);
 		}
 
 		switch_safe_free(stream.data);
@@ -3788,7 +3909,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 
 	SWITCH_ADD_APP(app_interface, "digit_action_set_realm", "change binding realm", "", 
 				   digit_action_set_realm_function, DIGIT_ACTION_SET_REALM_USAGE, SAF_SUPPORT_NOMEDIA);
-	
 
 	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number",
 				   SAF_SUPPORT_NOMEDIA);
@@ -3812,7 +3932,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "delay_echo", "echo audio at a specified delay", "Delay n ms", delay_function, "<delay ms>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "strftime", "strftime", "strftime", strftime_function, "[<epoch>|]<format string>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "phrase", "Say a Phrase", "Say a Phrase", phrase_function, "<macro_name>,<data>", SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "eval", "Do Nothing", "Do Nothing", eval_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "eval", "Do Nothing", "Do Nothing", eval_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "stop", "Do Nothing", "Do Nothing", eval_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "set_zombie_exec", "Enable Zombie Execution", "Enable Zombie Execution", 
+				   zombie_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "pre_answer", "Pre-Answer the call", "Pre-Answer the call for a channel.", pre_answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "answer", "Answer the call", "Answer the call for a channel.", answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hangup", "Hangup the call", "Hangup the call for a channel.", hangup_function, "[<cause>]", SAF_SUPPORT_NOMEDIA);
@@ -3820,29 +3943,29 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "presence", "Send Presence", "Send Presence.", presence_function, "<rpid> <status> [<id>]",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "log", "Logs to the logger", LOG_LONG_DESC, log_function, "<log_level> <log_string>",
-				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
-	SWITCH_ADD_APP(app_interface, "info", "Display Call Info", "Display Call Info", info_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
-	SWITCH_ADD_APP(app_interface, "event", "Fire an event", "Fire an event", event_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "info", "Display Call Info", "Display Call Info", info_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "event", "Fire an event", "Fire an event", event_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "sound_test", "Analyze Audio", "Analyze Audio", sound_test_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "export", "Export a channel variable across a bridge", EXPORT_LONG_DESC, export_function, "<varname>=<value>",
-				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "bridge_export", "Export a channel variable across a bridge", EXPORT_LONG_DESC, bridge_export_function, "<varname>=<value>",
-				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel variable", SET_LONG_DESC, set_function, "<varname>=<value>",
-				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 
 	SWITCH_ADD_APP(app_interface, "push", "Set a channel variable", SET_LONG_DESC, push_function, "<varname>=<value>",
-				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 
 	SWITCH_ADD_APP(app_interface, "unshift", "Set a channel variable", SET_LONG_DESC, unshift_function, "<varname>=<value>",
-				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 
 	SWITCH_ADD_APP(app_interface, "set_global", "Set a global variable", SET_GLOBAL_LONG_DESC, set_global_function, "<varname>=<value>",
-				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "set_profile_var", "Set a caller profile variable", SET_PROFILE_VAR_LONG_DESC, set_profile_var_function,
-				   "<varname>=<value>", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+				   "<varname>=<value>", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel variable", UNSET_LONG_DESC, unset_function, "<varname>",
-				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "ring_ready", "Indicate Ring_Ready", "Indicate Ring_Ready on a channel.", ring_ready_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "remove_bugs", "Remove media bugs", "Remove all media bugs from a channel.", remove_bugs_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "break", "Break", "Set the break flag.", break_function, "", SAF_SUPPORT_NOMEDIA);

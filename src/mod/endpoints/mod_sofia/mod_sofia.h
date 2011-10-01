@@ -98,6 +98,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX "sip_rh_"
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX_T "~sip_rh_"
 #define SOFIA_SIP_BYE_HEADER_PREFIX "sip_bye_h_"
+#define SOFIA_SIP_BYE_HEADER_PREFIX_T "~sip_bye_h_"
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX "sip_ph_"
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX_T "~sip_ph_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
@@ -251,6 +252,7 @@ typedef enum {
 	PFLAG_LIBERAL_DTMF,
  	PFLAG_AUTO_ASSIGN_PORT,
  	PFLAG_AUTO_ASSIGN_TLS_PORT,
+	PFLAG_SHUTDOWN,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -871,8 +873,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 void launch_sofia_profile_thread(sofia_profile_t *profile);
 
-switch_status_t sofia_presence_chat_send(const char *proto, const char *from, const char *to, const char *subject,
-										 const char *body, const char *type, const char *hint);
+switch_status_t sofia_presence_chat_send(switch_event_t *message_event);
+										 
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
 
 /*

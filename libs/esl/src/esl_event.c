@@ -270,8 +270,9 @@ ESL_DECLARE(char *) esl_event_get_header_idx(esl_event_t *event, const char *hea
 		}
 
 		return hp->value;
-		
-	}
+	} else if (!strcmp(header_name, "_body")) {
+		return event->body;
+	}		
 
 	return NULL;
 }
@@ -413,6 +414,10 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 	char *index_ptr;
 	int index = 0;
 	char *real_header_name = NULL;
+
+	if (!strcmp(header_name, "_body")) {
+		esl_event_set_body(event, data);
+	}
 
 	if ((index_ptr = strchr(header_name, '['))) {
 		index_ptr++;
@@ -604,6 +609,17 @@ ESL_DECLARE(esl_status_t) esl_event_add_header_string(esl_event_t *event, esl_st
 	return ESL_FAIL;
 }
 
+ESL_DECLARE(esl_status_t) esl_event_set_body(esl_event_t *event, const char *body)
+{
+	esl_safe_free(event->body);
+
+	if (body) {
+		event->body = DUP(body);
+	}
+	
+	return ESL_SUCCESS;
+}
+
 ESL_DECLARE(esl_status_t) esl_event_add_body(esl_event_t *event, const char *fmt, ...)
 {
 	int ret = 0;
@@ -791,7 +807,7 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 		if (encode) {
 			esl_url_encode(hp->value, encode_buf, encode_len);
 		} else {
-			esl_snprintf(encode_buf, encode_len, "[%s]", hp->value);
+			esl_snprintf(encode_buf, encode_len, "%s", hp->value);
 		}
 
 
