@@ -45,6 +45,8 @@
 
       <!-- Name of the caller control group to use for this profile -->
       <!-- <param name="caller-controls" value="some name"/> -->
+      <!-- Name of the caller control group to use for the moderator in this profile -->
+      <!-- <param name="moderator-controls" value="some name"/> -->
       <!-- TTS Engine to use -->
       <!--<param name="tts-engine" value="cepstral"/>-->
       <!-- TTS Voice to use -->
@@ -87,6 +89,9 @@
       <param name="bad-pin-sound" value="conference/conf-bad-pin.wav"/>
       <!-- Conference pin -->
       <!--<param name="pin" value="12345"/>-->
+      <!--<param name="moderator-pin" value="54321"/>-->
+      <!-- Max number of times the user can be prompted for PIN -->
+      <!--<param name="pin-retries" value="3"/>-->
       <!-- Default Caller ID Name for outbound calls -->
       <param name="caller-id-name" value="$${outbound_caller_name}"/>
       <!-- Default Caller ID Number for outbound calls -->
@@ -100,6 +105,12 @@
       <!--
       <param name="auto-record" value="$${recordings_dir}/${conference_name}_${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
       -->
+
+      <!-- IVR digit machine timeouts -->
+      <!-- How much to wait between DTMF digits to match caller-controls -->
+      <!-- <param name="ivr-dtmf-timeout" value="500"/> -->
+      <!-- How much to wait for the first DTMF, 0 forever -->
+      <!-- <param name="ivr-input-timeout" value="0" /> -->
     </profile>
 
     <profile name="wideband">
