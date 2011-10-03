@@ -625,6 +625,7 @@ struct sofia_profile {
 	uint32_t event_timeout;
 	int watchdog_enabled;
 	switch_mutex_t *gw_mutex;
+	uint32_t queued_events;
 };
 
 struct private_object {

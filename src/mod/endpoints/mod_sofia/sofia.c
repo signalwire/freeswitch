@@ -1137,7 +1137,8 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 	sofia_dispatch_event_t *de = *dep;
 	nua_handle_t *nh = de->nh;
 	nua_t *nua = de->nua;
-	
+	sofia_profile_t *profile = de->profile;
+
 	*dep = NULL;
 
 	our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
@@ -1145,6 +1146,10 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 
 	nua_destroy_event(de->event);	
 	su_free(nh->nh_home, de);
+
+	switch_mutex_lock(profile->flag_mutex);
+	profile->queued_events--;
+	switch_mutex_unlock(profile->flag_mutex);
 	
 	nua_handle_unref(nh);
 	nua_stack_unref(nua);
@@ -1244,6 +1249,10 @@ void sofia_event_callback(nua_event_t event,
 						  tagi_t tags[])
 {
 	sofia_dispatch_event_t *de;
+
+	switch_mutex_lock(profile->flag_mutex);
+	profile->queued_events++;
+	switch_mutex_unlock(profile->flag_mutex);
 
 	de = su_alloc(nh->nh_home, sizeof(*de));
 	memset(de, 0, sizeof(*de));
@@ -1972,7 +1981,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	nua_shutdown(profile->nua);
 
 	sanity = 10;
-	while (!sofia_test_pflag(profile, PFLAG_SHUTDOWN)) {
+	while (!sofia_test_pflag(profile, PFLAG_SHUTDOWN) || profile->queued_events > 0) {
 		su_root_step(profile->s_root, 1000);
 		if (!--sanity) {
 			break;
