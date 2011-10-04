@@ -681,7 +681,11 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 			cfg.t.cfg.s.inDLSAP.clrGlr = FALSE;			/* in case of glare, do not clear local call */
 			cfg.t.cfg.s.inDLSAP.statEnqOpt = TRUE;
 
-			cfg.t.cfg.s.inDLSAP.rstOpt = TRUE;
+			if (signal_data->ftdm_span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
+				cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
+			} else {
+				cfg.t.cfg.s.inDLSAP.rstOpt = TRUE;
+			}
 		} else {
 			cfg.t.cfg.s.inDLSAP.ackOpt = FALSE;
 			cfg.t.cfg.s.inDLSAP.intType = USER;
@@ -772,15 +776,13 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	cfg.t.cfg.s.inDLSAP.tmr.t307.val = 35;
 	cfg.t.cfg.s.inDLSAP.tmr.t308.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t308.val = 4;
+	cfg.t.cfg.s.inDLSAP.tmr.t310.enb = TRUE;
+	cfg.t.cfg.s.inDLSAP.tmr.t310.val = 120;
 
 	if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
-		cfg.t.cfg.s.inDLSAP.tmr.t310.enb = TRUE;
-		cfg.t.cfg.s.inDLSAP.tmr.t310.val = 10;
 		cfg.t.cfg.s.inDLSAP.tmr.t312.enb = TRUE;
 		cfg.t.cfg.s.inDLSAP.tmr.t312.val = cfg.t.cfg.s.inDLSAP.tmr.t303.val+2;
 	} else {
-		cfg.t.cfg.s.inDLSAP.tmr.t310.enb = TRUE;
-		cfg.t.cfg.s.inDLSAP.tmr.t310.val = 120;
 		cfg.t.cfg.s.inDLSAP.tmr.t312.enb = FALSE;
 	}
 
@@ -908,7 +910,14 @@ ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span)
 
 	cfg.t.cfg.s.inLCe.sapId = signal_data->dchan_id;
 
-	cfg.t.cfg.s.inLCe.lnkUpDwnInd = TRUE;
+	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
+		/* Stack will send Restart CFM's each time link is established (TEI negotiated),
+                   and we do not want thi s event */
+		cfg.t.cfg.s.inLCe.lnkUpDwnInd = FALSE;
+	} else {
+		cfg.t.cfg.s.inLCe.lnkUpDwnInd = TRUE;
+	}
+
 	cfg.t.cfg.s.inLCe.tCon.enb = TRUE;
 	cfg.t.cfg.s.inLCe.tCon.val = 35;
 	cfg.t.cfg.s.inLCe.tDisc.enb = TRUE;
