@@ -132,7 +132,7 @@ typedef enum {
 	MFLAG_ITHREAD = (1 << 4),
 	MFLAG_NOCHANNEL = (1 << 5),
 	MFLAG_INTREE = (1 << 6),
-	MFLAG_WASTE_BANDWIDTH = (1 << 7),
+	MFLAG_WASTE_FLAG = (1 << 7),
 	MFLAG_FLUSH_BUFFER = (1 << 8),
 	MFLAG_ENDCONF = (1 << 9),
 	MFLAG_HAS_AUDIO = (1 << 10),
@@ -159,7 +159,7 @@ typedef enum {
 	CFLAG_BRIDGE_TO = (1 << 6),
 	CFLAG_WAIT_MOD = (1 << 7),
 	CFLAG_VID_FLOOR = (1 << 8),
-	CFLAG_WASTE_BANDWIDTH = (1 << 9),
+	CFLAG_WASTE_FLAG = (1 << 9),
 	CFLAG_OUTCALL = (1 << 10),
 	CFLAG_INHASH = (1 << 11),
 	CFLAG_EXIT_SOUND = (1 << 12),
@@ -1344,17 +1344,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			}
 		}
 
-		if (switch_test_flag(conference, CFLAG_WASTE_BANDWIDTH) && !has_file_data) {
-			file_sample_len = bytes / 2;
-
-			if (conference->comfort_noise_level) {
-				switch_generate_sln_silence((int16_t *) file_frame, file_sample_len, conference->comfort_noise_level);
-			} else {
-				memset(file_frame, 255, bytes);
-			}
-			has_file_data = 1;
-		}
-		
 		if (ready || has_file_data) {
 			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
 			int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
@@ -1427,8 +1416,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					continue;
 				}
 
-				if (!switch_test_flag(omember, MFLAG_CAN_HEAR) && !switch_test_flag(omember, MFLAG_WASTE_BANDWIDTH)
-					&& !switch_test_flag(conference, CFLAG_WASTE_BANDWIDTH)) {
+				if (!switch_test_flag(omember, MFLAG_CAN_HEAR)) {
 					continue;
 				}
 
@@ -2817,22 +2805,21 @@ static void conference_loop_output(conference_member_t *member)
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				break;
 			}
-		} else if (!switch_test_flag(member->conference, CFLAG_WASTE_BANDWIDTH)) {
-			if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
-				if (member->conference->comfort_noise_level) {
-					switch_generate_sln_silence(write_frame.data, samples, member->conference->comfort_noise_level);
-				} else {
-					memset(write_frame.data, 255, bytes);
-				}
-
-				write_frame.datalen = bytes;
-				write_frame.samples = samples;
-				write_frame.timestamp = timer.samplecount;
-
-				if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					break;
-				}
+		} else {
+			
+			if (member->conference->comfort_noise_level) {
+				switch_generate_sln_silence(write_frame.data, samples, member->conference->comfort_noise_level);
+			} else {
+				memset(write_frame.data, 255, bytes);
+			}
+			
+			write_frame.datalen = bytes;
+			write_frame.samples = samples;
+			write_frame.timestamp = timer.samplecount;
+			
+			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				break;
 			}
 		}
 
@@ -5523,8 +5510,6 @@ static void set_mflags(const char *flags, member_flag_t *f)
 				*f &= ~MFLAG_TALKING;
 			} else if (!strcasecmp(argv[i], "deaf")) {
 				*f &= ~MFLAG_CAN_HEAR;
-			} else if (!strcasecmp(argv[i], "waste")) {
-				*f |= MFLAG_WASTE_BANDWIDTH;
 			} else if (!strcasecmp(argv[i], "mute-detect")) {
 				*f |= MFLAG_MUTE_DETECT;
 			} else if (!strcasecmp(argv[i], "dist-dtmf")) {
@@ -5569,8 +5554,6 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_WAIT_MOD;
 			} else if (!strcasecmp(argv[i], "video-floor-only")) {
 				*f |= CFLAG_VID_FLOOR;
-			} else if (!strcasecmp(argv[i], "waste-bandwidth")) {
-				*f |= CFLAG_WASTE_BANDWIDTH;
 			} else if (!strcasecmp(argv[i], "video-bridge")) {
 				*f |= CFLAG_VIDEO_BRIDGE;
 			}
