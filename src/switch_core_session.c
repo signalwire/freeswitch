@@ -43,7 +43,9 @@ SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *ses
 	int i = (int) target;
 
 	if (i == 0 || i == 1) {
-		switch_ivr_dmachine_set_target(dmachine, target);
+		if (dmachine) {
+			switch_ivr_dmachine_set_target(dmachine, target);
+		}
 		session->dmachine[i] = dmachine;
 	}
 }
