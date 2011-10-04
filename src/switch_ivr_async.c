@@ -78,11 +78,13 @@ struct switch_ivr_dmachine {
 
 SWITCH_DECLARE(switch_digit_action_target_t) switch_ivr_dmachine_get_target(switch_ivr_dmachine_t *dmachine)
 {
+	switch_assert(dmachine);
 	return dmachine->target;
 }
 
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_target(switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target)
 {
+	switch_assert(dmachine);
 	dmachine->target = target;
 }
 
@@ -90,6 +92,7 @@ SWITCH_DECLARE(void) switch_ivr_dmachine_set_target(switch_ivr_dmachine_t *dmach
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_match_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t match_callback)
 {
 
+	switch_assert(dmachine);
 	dmachine->match_callback = match_callback;
 
 }
@@ -97,6 +100,7 @@ SWITCH_DECLARE(void) switch_ivr_dmachine_set_match_callback(switch_ivr_dmachine_
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_nonmatch_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t nonmatch_callback)
 {
 
+	switch_assert(dmachine);
 	dmachine->nonmatch_callback = nonmatch_callback;
 
 }
