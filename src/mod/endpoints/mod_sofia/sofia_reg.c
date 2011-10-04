@@ -68,6 +68,10 @@ static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
 static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 {
 
+	if (gateway_ptr->nh) {
+		nua_handle_bind(gateway_ptr->nh, NULL);
+	}
+
 	if (gateway_ptr->state != REG_STATE_REGED) {
 		if (gateway_ptr->nh) {
 			nua_handle_destroy(gateway_ptr->nh);
@@ -76,19 +80,10 @@ static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 		return;
 	}
 
-	/*
-	   if (!gateway_ptr->nh) {
-	   sofia_reg_new_handle(gateway_ptr, SWITCH_FALSE);
-	   }
-	 */
-
 	if (gateway_ptr->nh) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UN-Registering %s\n", gateway_ptr->name);
 		nua_unregister(gateway_ptr->nh, NUTAG_URL(gateway_ptr->register_url), NUTAG_REGISTRAR(gateway_ptr->register_proxy), TAG_END());
 	}
-
-
-
 }
 
 void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int status, const char *phrase)
@@ -113,6 +108,10 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 	sofia_gateway_t *gateway_ptr;
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+
+		if (gateway_ptr->nh) {
+			nua_handle_bind(gateway_ptr->nh, NULL);
+		}
 
 		if (gateway_ptr->sofia_private) {
 			sofia_private_free(gateway_ptr->sofia_private);

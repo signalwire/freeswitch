@@ -808,7 +808,7 @@ static void our_sofia_event_callback(nua_event_t event,
 	int check_destroy = 1;
 
 
-	if (sofia_private && sofia_private->de) {
+	if (sofia_private && sofia_private->is_call && sofia_private->de) {
 		sofia_dispatch_event_t *qde = sofia_private->de;
 		sofia_private->de = NULL;
 		sofia_process_dispatch_event(&qde);
