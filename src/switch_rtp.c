@@ -3666,7 +3666,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 
 
-		if ((rtp_session->ts != RTP_TS_RESET && rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
+		if ((rtp_session->last_write_ts != RTP_TS_RESET && rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
 			|| rtp_session->ts == rtp_session->samples_per_interval) {
 			m++;
 		}
