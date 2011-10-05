@@ -404,6 +404,8 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 #else
 			ftdm_log(FTDM_LOG_WARNING, "chan-id-invert-extend-bit is not supported in your version of libsng_isdn\n");
 #endif
+		} else if (!strcasecmp(var, "cid-name-in-display-ie")) {
+			parse_yesno(var, val, &signal_data->cid_name_in_display_ie);
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}
