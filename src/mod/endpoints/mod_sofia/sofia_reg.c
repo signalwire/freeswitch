@@ -72,7 +72,7 @@ static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 		nua_handle_bind(gateway_ptr->nh, NULL);
 	}
 
-	if (gateway_ptr->state != REG_STATE_REGED) {
+	if (gateway_ptr->state != REG_STATE_REGED && gateway_ptr->state != REG_STATE_UNREGISTER) {
 		if (gateway_ptr->nh) {
 			nua_handle_destroy(gateway_ptr->nh);
 			gateway_ptr->nh = NULL;
