@@ -265,6 +265,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			dynamic_tei;
 	uint8_t			restart_timeout;
 	uint8_t			force_sending_complete;
+	uint8_t			cid_name_in_display_ie;	/* In BRI, send the CID-name inside Display IE instead of Usr-usr */
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_timer_id_t timers[SNGISDN_NUM_SPAN_TIMERS];
 	ftdm_sched_t 	*sched;
