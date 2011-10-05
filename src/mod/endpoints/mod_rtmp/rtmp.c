@@ -23,6 +23,7 @@
  * Contributor(s):
  * 
  * Mathieu Rene <mrene@avgs.ca>
+ * Joao Mesquita <jmesquita@freeswitch.org>
  *
  * rtmp.c -- RTMP Protocol Handler
  *
@@ -188,6 +189,7 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
 	switch_xml_t xml = NULL, x_param, x_params;
 	switch_bool_t allow_empty_password = SWITCH_FALSE;
 	const char *passwd = NULL;
+    switch_bool_t disallow_multiple_registration = SWITCH_FALSE;
 	switch_event_t *locate_params;
 	
 	switch_event_create(&locate_params, SWITCH_EVENT_GENERAL);
@@ -211,6 +213,9 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
 			if (!strcasecmp(var, "allow-empty-password")) {
 				allow_empty_password = switch_true(val);
 			}
+            if (!strcasecmp(var, "disallow-multiple-registration")) {
+				disallow_multiple_registration = switch_true(val);
+			}
 		}
 	}
 	
@@ -231,6 +236,28 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING, "Authentication failed for %s@%s\n", user, domain);
 	}
+    
+    if (disallow_multiple_registration) {
+        switch_hash_index_t *hi;
+        switch_thread_rwlock_rdlock(rsession->profile->session_rwlock);
+        for (hi = switch_hash_first(NULL, rsession->profile->session_hash); hi; hi = switch_hash_next(hi)) {
+            void *val;	
+            const void *key;
+            switch_ssize_t keylen;
+            rtmp_session_t *item;
+            switch_hash_this(hi, &key, &keylen, &val);
+            
+            item = (rtmp_session_t *)val;
+            if (rtmp_session_check_user(item, user, domain) == SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Logging out %s@%s on RTMP sesssion [%s]\n", user, domain, item->uuid);
+                if (rtmp_session_logout(item, user, domain) != SWITCH_STATUS_SUCCESS) {
+                    switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Unable to logout %s@%s on RTMP sesssion [%s]\n", user, domain, item->uuid);
+                }
+            }
+            
+        }
+        switch_thread_rwlock_unlock(rsession->profile->session_rwlock);
+    }
 	
 done:
 	if (xml) {
