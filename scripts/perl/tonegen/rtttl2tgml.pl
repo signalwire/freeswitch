@@ -18,8 +18,19 @@ our $NOTES = {
 
 
 my $file = shift or die "no file\n";
+my $rtttl;
+my $cr = "\n";
 
-my $rtttl = `cat $file`;
+if ($file eq "-nocr") {
+  $cr = "";
+  $file = shift;
+}
+
+if ($file eq "-") {
+  $rtttl = <STDIN>;
+} else {
+  $rtttl = `cat $file`;
+}
 
 $rtttl =~ s/\n//g;
 
@@ -53,7 +64,7 @@ foreach (@{$all}) {
 
   #print STDERR "$_->[0] $_->[1] $_->[2] $_->[3]\n";
   
-  print "%($ms, 0, $NOTES->{$_->[1]}->[$_->[2]]);\n";
+  print "%($ms,0,$NOTES->{$_->[1]}->[$_->[2]]);" . $cr;
 
 }
 

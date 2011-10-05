@@ -8129,6 +8129,7 @@ void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t 
 				if (zstr(acp->caller_id_name)) {
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", acp->caller_id_number, acp->caller_id_number);
 				} else {
+					check_decode(acp->caller_id_name, aleg);
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", acp->caller_id_name, acp->caller_id_number);
 				}
 
