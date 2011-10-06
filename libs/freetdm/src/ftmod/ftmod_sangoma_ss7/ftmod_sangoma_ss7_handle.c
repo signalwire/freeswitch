@@ -223,6 +223,28 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					copy_tknStr_from_sngss7(siConEvnt->cgPtyNum1.addrSig, var, siConEvnt->cgPtyNum1.oddEven);
 					sngss7_add_var(sngss7_info, "ss7_loc_digits", var);
 				}
+				if (siConEvnt->cgPtyNum1.scrnInd.pres) {
+					/* fill in the screening indication value */
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.scrnInd.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_screen_ind", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.presRest.pres) {
+					/* fill in the presentation value */
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.presRest.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_pres_ind", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.natAddrInd.pres) {
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.natAddrInd.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_nadi", var);
+				}
+			} else {
+				SS7_DEBUG_CHAN(ftdmchan, "No Location Number information in IAM%s\n", " ");
+			}
+
+			sprintf(var, "%d", sngss7_info->circuit->cic);
+			sngss7_add_var(sngss7_info, "ss7_cic", var);
 
 				if (siConEvnt->cgPtyNum1.scrnInd.pres) {
 					/* fill in the screening indication value */
