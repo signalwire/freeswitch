@@ -842,9 +842,18 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		if (sngss7_test_ckt_flag (sngss7_info, FLAG_REMOTE_REL)) {
 			/* check if this hangup is from a tx RSC */
 			if (sngss7_test_ckt_flag (sngss7_info, FLAG_RESET_TX)) {
-				/* go to RESTART State until RSCa is received */
-				state_flag = 0;
-				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				if (!sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_SENT)) {
+					ft_to_sngss7_rsc (ftdmchan);
+					sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_SENT);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				} else if (sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX_RSP)) {
+					state_flag = 0;
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+				} else {
+					/* go to RESTART State until RSCa is received */
+					state_flag = 0;
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				}	
 			} else {
 				/* if the hangup is from a rx RSC, rx GRS, or glare don't sent RLC */
 				if (!(sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_RX)) &&
@@ -1040,9 +1049,12 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		if ((sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX)) &&
 			!(sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_SENT))) {
 
-			/* send a reset request */
-			ft_to_sngss7_rsc (ftdmchan);
-			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_SENT);
+			/* don't send out reset before finished hanging up if I'm in-use. */
+			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
+				/* send a reset request */
+				ft_to_sngss7_rsc (ftdmchan);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_SENT);
+			}
 
 		} /* if (sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX)) */
 
