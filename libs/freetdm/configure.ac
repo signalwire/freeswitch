@@ -54,7 +54,7 @@ fi
 
 AC_SUBST([confdir])
 
-DEFAULT_INCLUDES="-I. -I./src/include -I$(srcdir)"
+DEFAULT_INCLUDES="-I. -I./src/include -I\$(srcdir)"
 AC_SUBST([DEFAULT_INCLUDES])
 
 # Where to install the modules
