@@ -56,16 +56,11 @@ if ($r->has_errors()) {
 
 $all = $r->get_notes();
 
-$ms_per_beat = int (60000 / $r->get_bpm());
+$ms_per_beat = int (6000 / $r->get_bpm());
 
 foreach (@{$all}) {
-
-  my $ms = $ms_per_beat * (1 / $_->[0]) * 4;
-
-  #print STDERR "$_->[0] $_->[1] $_->[2] $_->[3]\n";
-  
+  my $ms = ($ms_per_beat * $_->[2]);
   print "%($ms,0,$NOTES->{$_->[1]}->[$_->[2]]);" . $cr;
-
 }
 
 
