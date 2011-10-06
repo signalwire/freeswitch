@@ -990,27 +990,27 @@ void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...)
 
     switch (level) {
 		case SNG_LOGLEVEL_DEBUG:
-			ftdm_log(FTDM_LOG_DEBUG, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_DEBUG, "sng_isdn->%s\n", data);
 			break;
 		case SNG_LOGLEVEL_WARN:
-			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s\n", data);
 			break;
 		case SNG_LOGLEVEL_INFO:
-			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s\n", data);
 			break;
 		case SNG_LOGLEVEL_STATS:
-			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s\n", data);
 			break;
 		case SNG_LOGLEVEL_ERROR:
-			ftdm_log(FTDM_LOG_ERROR, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_ERROR, "sng_isdn->%s\n", data);
 			/*ftdm_assert(0, "Got an error from stack");*/
 			break;
 		case SNG_LOGLEVEL_CRIT:
-   			ftdm_log(FTDM_LOG_CRIT, "sng_isdn->%s", data);
+   			ftdm_log(FTDM_LOG_CRIT, "sng_isdn->%s\n", data);
 			/* ftdm_assert(0, "Got an error from stack"); */
 			break;
 		default:
-			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s\n", data);
 			break;
     }
 	ftdm_safe_free(data);

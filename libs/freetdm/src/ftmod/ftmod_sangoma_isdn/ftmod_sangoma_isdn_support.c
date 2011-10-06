@@ -705,8 +705,8 @@ ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt)
 		return FTDM_SUCCESS;
 	}
 
-	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI ||
-		ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
+	if (FTDM_SPAN_IS_BRI(ftdmchan->span) &&
+		signal_data->cid_name_in_display_ie != SNGISDN_OPT_TRUE) {
 
 		conEvnt->usrUsr.eh.pres = PRSNT_NODEF;
 		conEvnt->usrUsr.protocolDisc.pres = PRSNT_NODEF;

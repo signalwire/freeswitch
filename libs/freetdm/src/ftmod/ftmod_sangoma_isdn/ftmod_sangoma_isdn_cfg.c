@@ -284,6 +284,7 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	signal_data->ignore_cause_value = SNGISDN_OPT_DEFAULT;
 	signal_data->timer_t3 = 8;
 	signal_data->restart_opt = SNGISDN_OPT_DEFAULT;
+	signal_data->dynamic_tei = SNGISDN_OPT_DEFAULT;
 	signal_data->link_id = span->span_id;
 	signal_data->transfer_timeout = 20000;
 	signal_data->att_remove_dtmf = SNGISDN_OPT_DEFAULT;
@@ -361,7 +362,9 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			parse_yesno(var, val, &signal_data->restart_opt);
 		} else if (!strcasecmp(var, "channel-restart-timeout")) {
 			signal_data->restart_timeout = atoi(val);
-		} else if (!strcasecmp(var, "local-number")) {			
+		} else if (!strcasecmp(var, "dynamic-tei")) {
+			parse_yesno(var, val, &signal_data->dynamic_tei);
+		} else if (!strcasecmp(var, "local-number")) {
 			if (add_local_number(val, span) != FTDM_SUCCESS) {
 				return FTDM_FAIL;
 			}
@@ -401,6 +404,8 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 #else
 			ftdm_log(FTDM_LOG_WARNING, "chan-id-invert-extend-bit is not supported in your version of libsng_isdn\n");
 #endif
+		} else if (!strcasecmp(var, "cid-name-in-display-ie")) {
+			parse_yesno(var, val, &signal_data->cid_name_in_display_ie);
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}
