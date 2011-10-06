@@ -1984,6 +1984,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 				switch_event_t *event;
 				
+				check_decode(name, tech_pvt->session);
+
+
 				if (zstr(number)) {
 					number = tech_pvt->caller_profile->destination_number;
 				}
