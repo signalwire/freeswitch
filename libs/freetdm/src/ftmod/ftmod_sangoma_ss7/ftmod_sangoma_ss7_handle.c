@@ -93,7 +93,7 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t *sngss7_info = NULL;
 	ftdm_channel_t *ftdmchan = NULL;
-	char var[10];
+	char var[FTDM_DIGITS_LIMIT];
 
 	memset(var, '\0', sizeof(var));
 
@@ -215,6 +215,34 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 			sprintf(var, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
 			sngss7_add_var(sngss7_info, "ss7_cld_nadi", var);
+
+			/* Retrieve the Location Number if present (see ITU Q.763, 3.30) */
+			if (siConEvnt->cgPtyNum1.eh.pres) {
+				if (siConEvnt->cgPtyNum1.addrSig.pres) {
+					/* fill in the ss7 location address number */
+					copy_tknStr_from_sngss7(siConEvnt->cgPtyNum1.addrSig, var, siConEvnt->cgPtyNum1.oddEven);
+					sngss7_add_var(sngss7_info, "ss7_loc_digits", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.scrnInd.pres) {
+					/* fill in the screening indication value */
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.scrnInd.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_screen_ind", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.presRest.pres) {
+					/* fill in the presentation value */
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.presRest.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_pres_ind", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.natAddrInd.pres) {
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.natAddrInd.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_nadi", var);
+				}
+			} else {
+				SS7_DEBUG_CHAN(ftdmchan, "No Location Number information in IAM%s\n", " ");
+			}
 
 			sprintf(var, "%d", sngss7_info->circuit->cic);
 			sngss7_add_var(sngss7_info, "ss7_cic", var);
