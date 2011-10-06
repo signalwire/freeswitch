@@ -247,6 +247,7 @@ SWITCH_STANDARD_APP(clear_digit_action_function)
 
 	if ((dmachine = switch_core_session_get_dmachine(session, target))) {
 		if (zstr(realm) || !strcasecmp(realm, "all")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: Clearing all realms\n", switch_ivr_dmachine_get_name(dmachine));
 			switch_core_session_set_dmachine(session, NULL, target);
 			switch_ivr_dmachine_destroy(&dmachine);
 		} else {

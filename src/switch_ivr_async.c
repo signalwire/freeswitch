@@ -105,6 +105,11 @@ SWITCH_DECLARE(void) switch_ivr_dmachine_set_nonmatch_callback(switch_ivr_dmachi
 
 }
 
+SWITCH_DECLARE(const char *) switch_ivr_dmachine_get_name(switch_ivr_dmachine_t *dmachine)
+{
+	return (const char *) dmachine->name;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t **dmachine_p, 
 														   const char *name,
 														   switch_memory_pool_t *pool,
@@ -179,21 +184,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_set_realm(switch_ivr_dmachin
 	dm_binding_head_t *headp = switch_core_hash_find(dmachine->binding_hash, realm);
 
 	if (headp) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: Setting realm to %s\n", dmachine->name, realm);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: Setting realm to '%s'\n", dmachine->name, realm);
 		dmachine->realm = headp;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Digit parser %s: Error Setting realm to %s\n", dmachine->name, realm);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Digit parser %s: Error Setting realm to '%s'\n", dmachine->name, realm);
 
 	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_clear_realm(switch_ivr_dmachine_t *dmachine, const char *realm)
 {
+	dm_binding_head_t *headp;
+
 	if (zstr(realm)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Digit parser %s: Error unknown realm: %s\n", dmachine->name, realm);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Digit parser %s: Error unknown realm: '%s'\n", dmachine->name, realm);
 		return SWITCH_STATUS_FALSE;
+	}
+
+	headp = switch_core_hash_find(dmachine->binding_hash, realm);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: Clearing realm '%s'\n", dmachine->name, realm);
+
+	if (headp == dmachine->realm) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+						  "Digit parser %s: '%s' was the active realm, no realm currently selected.\n", dmachine->name, realm);
+		dmachine->realm = NULL;
 	}
 
 	/* pool alloc'd just ditch it and it will give back the memory when we destroy ourselves */
