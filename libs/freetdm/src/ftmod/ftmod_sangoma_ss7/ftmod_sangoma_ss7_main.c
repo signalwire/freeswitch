@@ -944,7 +944,9 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 		/* check if we came from reset (aka we just processed a reset) */
 		if ((ftdmchan->last_state == FTDM_CHANNEL_STATE_RESTART) || 
-			(ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED)) {
+			(ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) || 
+			(ftdmchan->last_state == FTDM_CHANNEL_STATE_HANGUP_COMPLETE)) {
+				
 
 			/* check if reset flags are up indicating there is more processing to do yet */
 			if (!(sngss7_test_ckt_flag (sngss7_info, FLAG_RESET_TX)) &&
