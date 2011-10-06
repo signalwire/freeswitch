@@ -445,18 +445,20 @@ static char *url_cache_get(url_cache_t *cache, switch_core_session_t *session, c
 	url_cache_lock(cache, session);
 	u = switch_core_hash_find(cache->map, url);
 
-	/* check if expired */
-	if (u && switch_time_now() >= (u->download_time + u->max_age)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL has expired.\n");
-		url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
-		u = NULL;
-	}
+	if (u && u->status == CACHED_URL_AVAILABLE) {
+		/* check if expired */
+		if (switch_time_now() >= (u->download_time + u->max_age)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL has expired.\n");
+			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
+			u = NULL;
+		}
 
-	/* make sure file hasn't been deleted */
-	if (u && switch_file_exists(u->filename, pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL file is missing.\n");
-		url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
-		u = NULL;
+		/* make sure file hasn't been deleted */
+		if (switch_file_exists(u->filename, pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL file is missing.\n");
+			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
+			u = NULL;
+		}
 	}
 
 	if (!u && download) {
@@ -872,8 +874,6 @@ SWITCH_STANDARD_API(http_cache_put)
 	char *args = NULL;
 	char *argv[10] = { 0 };
 	int argc = 0;
-	//switch_memory_pool_t *pool = NULL;
-	switch_memory_pool_t *lpool = NULL;
 
 	if (zstr(cmd) || strncmp("http://", cmd, strlen("http://"))) {
 		stream->write_function(stream, "USAGE: %s\n", HTTP_PUT_SYNTAX);
@@ -889,15 +889,6 @@ SWITCH_STANDARD_API(http_cache_put)
 		goto done;
 	}
 
-	/*
-	if (session) {
-		pool = switch_core_session_get_pool(session);
-	} else {
-		switch_core_new_memory_pool(&lpool);
-		pool = lpool;
-	}
-	*/
-
 	status = http_put(session, argv[0], argv[1]);
 	if (status == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK\n");
@@ -905,10 +896,6 @@ SWITCH_STANDARD_API(http_cache_put)
 		stream->write_function(stream, "-ERR\n");
 	}
 
-	if (lpool) {
-		switch_core_destroy_memory_pool(&lpool);
-	}
-	
 done:
 	switch_safe_free(args);
 	return status;
