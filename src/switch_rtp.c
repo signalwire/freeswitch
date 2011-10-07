@@ -4175,6 +4175,11 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 	fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && switch_test_flag(frame, SFF_RAW_RTP)) ? 1 : 0;
 
+	if (!fwd && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && (rtp_session->rtp_bugs & RTP_BUG_GEN_ONE_GEN_ALL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Generating RTP locally but timestamp passthru is configured, disabling....\n");
+		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE);
+	}
+
 	switch_assert(frame != NULL);
 
 	if (switch_test_flag(frame, SFF_CNG)) {

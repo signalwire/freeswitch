@@ -685,13 +685,28 @@ typedef enum {
 	 */
 
 
-	RTP_BUG_ACCEPT_ANY_PACKETS = (1 << 7)
+	RTP_BUG_ACCEPT_ANY_PACKETS = (1 << 7),
 
 	/*
 	  Oracle's Contact Center Anywhere (CCA) likes to use a single RTP socket to send all its outbound audio.
 	  This messes up our ability to auto adjust to NATTED RTP and causes us to ignore its audio packets.
 	  This flag will allow compatibility with this dying product.
 	*/
+
+
+	RTP_BUG_GEN_ONE_GEN_ALL = (1 << 8)
+
+	/*
+	  Some RTP endpoints (and by some we mean *cough* _SONUS_!) do not like it when the timestamps jump forward or backwards in time.
+	  So say you are generating a file that says "please wait for me to complete your call, or generating ringback"
+	  Now you place and outbound call and you are bridging.  Well, while you were playing the file, you were generating your own RTP timestamps.
+	  But, now that you have a remote RTP stream, you'd rather send those timestamps as-is in case they will be fed to a remote jitter buffer......
+	  Ok, so this causes the audio to completely fade out despite the fact that we send the mark bit which should give them heads up its happening.
+
+	  Sigh, This flag will tell FreeSWITCH that if it ever generates even one RTP packet itself, to continue to generate all of them and ignore the
+	  actual timestamps in the frames.
+
+	 */
 
 
 } switch_rtp_bug_flag_t;

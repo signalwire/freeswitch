@@ -3730,8 +3730,8 @@ static int next_file(switch_file_handle_t *handle)
 	}
 
 	handle->samples = context->fh.samples;
-	handle->samplerate = context->fh.samplerate;
-	handle->channels = context->fh.channels;
+	//handle->samplerate = context->fh.samplerate;
+	//handle->channels = context->fh.channels;
 	handle->format = context->fh.format;
 	handle->sections = context->fh.sections;
 	handle->seekable = context->fh.seekable;
