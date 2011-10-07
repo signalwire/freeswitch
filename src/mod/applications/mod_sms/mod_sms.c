@@ -42,6 +42,7 @@ SWITCH_MODULE_DEFINITION(mod_sms, mod_sms_load, mod_sms_shutdown, NULL);
 static void event_handler(switch_event_t *event) 
 {
 	const char *dest_proto = switch_event_get_header(event, "dest_proto");
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
 	switch_core_chat_send(dest_proto, event);
 }
 
