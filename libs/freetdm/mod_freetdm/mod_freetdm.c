@@ -507,7 +507,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	const char *name = NULL;
 	int span_id = 0;
 	int chan_id = 0;
-	int t = 0;
+	uint32_t t = 0;
 	uint32_t tokencnt;
 	char *uuid = NULL;
 	const char *token = NULL;
