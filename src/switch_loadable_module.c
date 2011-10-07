@@ -549,7 +549,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 
 	if (!(proto = switch_event_get_header(message_event, "proto"))) {
 		proto = "global";
-		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
 	}
 
 
