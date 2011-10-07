@@ -2416,14 +2416,16 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				}
 			}
 
-			if (zstr(username)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: username param is REQUIRED!\n");
-				goto skip;
-			}
+			if (switch_true(register_str)) {
+				if (zstr(username)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: username param is REQUIRED!\n");
+					goto skip;
+				}
 
-			if (zstr(password)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: password param is REQUIRED!\n");
-				goto skip;
+				if (zstr(password)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: password param is REQUIRED!\n");
+					goto skip;
+				}
 			}
 
 			if (zstr(from_user)) {
