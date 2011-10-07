@@ -236,7 +236,7 @@ static int console_bufferInput (char *addchars, int len, char *cmd, int key)
 		return 0;
 	}
 	if (key == KEY_TAB) {
-		esl_console_complete(cmd, cmd+iCmdBuffer, &cmd[iCmdBuffer-1]);
+		esl_console_complete(cmd, cmd+iCmdBuffer, cmd+iCmdBuffer);
 		return 0;
 	}
 	if (key == KEY_UP || key == KEY_DOWN || key == CLEAR_OP) {
@@ -883,7 +883,14 @@ static const char *banner =
 	"\n"
 	"Type /help <enter> to see a list of commands\n\n\n";
 
-static void print_banner(FILE *stream) { fprintf(stream, "%s%s", output_text_color, banner); }
+static void print_banner(FILE *stream)
+{
+#ifndef WIN32
+	fprintf(stream, "%s%s", output_text_color, banner);
+#else
+	fprintf(stream, "%s", banner);
+#endif
+}
 
 static void set_fn_keys(cli_profile_t *profile)
 {
