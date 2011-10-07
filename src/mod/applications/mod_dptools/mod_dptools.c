@@ -3986,7 +3986,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_dtmf", "Send dtmf to be sent", "Send dtmf to be sent from a session", send_dtmf_function, "<dtmf_data>",
 				   SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "sched_cencel", "cancel scheduled tasks", "cancel scheduled tasks", sched_cancel_function, "[group]",
+	SWITCH_ADD_APP(app_interface, "sched_cancel", "cancel scheduled tasks", "cancel scheduled tasks", sched_cancel_function, "[group]",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_hangup", SCHED_HANGUP_DESCR, SCHED_HANGUP_DESCR, sched_hangup_function, "[+]<time> [<cause>]",
 				   SAF_SUPPORT_NOMEDIA);
