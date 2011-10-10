@@ -2131,7 +2131,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 	}
 	
 	if ((!m_conn->m_startRTP)) {			
-		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT|SWITCH_RTP_FLAG_AUTO_CNG|SWITCH_RTP_FLAG_RAW_WRITE);
+		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT|SWITCH_RTP_FLAG_RAW_WRITE);
 
 		if (mod_h323_globals.use_rtp_timer) {
 			flags |= SWITCH_RTP_FLAG_USE_TIMER;
