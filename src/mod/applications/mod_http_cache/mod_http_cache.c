@@ -465,7 +465,7 @@ static char *url_cache_get(url_cache_t *cache, switch_core_session_t *session, c
 		/* URL is not cached, let's add it.*/
 		/* Set up URL entry and add to map to prevent simultaneous downloads */
 		cache->misses++;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cache MISS: size = %z (%z MB), hit ratio = %d/%d\n", cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cache MISS: size = %zu (%auz MB), hit ratio = %d/%d\n", cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses);
 		u = cached_url_create(cache, url);
 		if (url_cache_add(cache, session, u) != SWITCH_STATUS_SUCCESS) {
 			/* This error should never happen */
@@ -510,7 +510,7 @@ static char *url_cache_get(url_cache_t *cache, switch_core_session_t *session, c
 			filename = switch_core_strdup(pool, u->filename);
 			cache->hits++;
 			u->used = 1;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Cache HIT: size = %z (%z MB), hit ratio = %d/%d\n", cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Cache HIT: size = %zu (%zu MB), hit ratio = %d/%d\n", cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses);
 		}
 	}
 	url_cache_unlock(cache, session);
