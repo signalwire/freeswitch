@@ -434,7 +434,7 @@ APPLICATION_MODULES_AE="applications/mod_avmd applications/mod_callcenter applic
                         applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum \
                         applications/mod_esf applications/mod_expr applications/mod_blacklist"
 APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit \
-                        applications/mod_memcache"
+                        applications/mod_memcache applications/mod_http_cache"
 APPLICATION_MODULES_NY="applications/mod_nibblebill applications/mod_redis applications/mod_rss applications/mod_snom \
                         applications/mod_soundtouch applications/mod_spandsp applications/mod_spy applications/mod_stress \
                         applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail applications/mod_sms"
@@ -774,6 +774,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/fax.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/fifo.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/hash.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/http_cache.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/java.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/lcr.conf.xml
@@ -919,6 +920,7 @@ fi
 %{prefix}/mod/mod_flite.so*
 %{prefix}/mod/mod_fsv.so*
 %{prefix}/mod/mod_hash.so*
+%{prefix}/mod/mod_http_cache.so*
 %{prefix}/mod/mod_h26x.so*
 %{prefix}/mod/mod_ilbc.so*
 %{prefix}/mod/mod_lcr.so*
@@ -1141,6 +1143,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Jun 14 2011 - michal.bielicki@seventhsignal.de
+- added mod_http_cache
 * Tue Jun 14 2011 - michal.bielicki@seventhsignal.de
 - added mod_rtmp
 * Fri Apr 01 2011 - michal.bielicki@seventhsignal.de
