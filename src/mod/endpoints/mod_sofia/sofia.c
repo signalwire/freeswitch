@@ -2778,6 +2778,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 
 			/* you could change profile->foo here if it was a minor change like context or dialplan ... */
 			profile->acl_count = 0;
+			profile->nat_acl_count = 0;
 			profile->reg_acl_count = 0;
 			profile->proxy_acl_count = 0;
 			sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
