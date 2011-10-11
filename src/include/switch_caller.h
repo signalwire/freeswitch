@@ -120,6 +120,9 @@ typedef struct profile_node_s {
 	struct switch_caller_profile *next;
 	switch_call_direction_t direction;
 	profile_node_t *soft;
+	char *uuid_str;
+	char *clone_of;
+	char *transfer_source;
 };
 
 /*! \brief An Abstract Representation of a dialplan Application */

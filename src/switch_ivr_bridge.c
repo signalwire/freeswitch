@@ -1506,6 +1506,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			switch_channel_clear_flag(originator_channel, CF_ORIGINATING);
 			switch_channel_clear_flag(originatee_channel, CF_ORIGINATING);
 
+
+			originator_cp->transfer_source = switch_core_sprintf(originator_cp->pool, 
+																 "%ld:%s:uuid_br:%s", (long)switch_epoch_time_now(NULL), originator_cp->uuid_str, 
+																 switch_core_session_get_uuid(originatee_session));
+			switch_channel_add_variable_var_check(originator_channel, SWITCH_TRANSFER_HISTORY_VARIABLE, 
+												  originator_cp->transfer_source, SWITCH_FALSE, SWITCH_STACK_PUSH);
+
+
+			originatee_cp->transfer_source = switch_core_sprintf(originatee_cp->pool,
+																 "%ld:%s:uuid_br:%s", (long)switch_epoch_time_now(NULL), originatee_cp->uuid_str, 
+																 switch_core_session_get_uuid(originator_session));
+			switch_channel_add_variable_var_check(originatee_channel, SWITCH_TRANSFER_HISTORY_VARIABLE, 
+												  originatee_cp->transfer_source, SWITCH_FALSE, SWITCH_STACK_PUSH);
+
+
 			/* change the states and let the chips fall where they may */
 
 			//switch_channel_set_variable(originator_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, NULL);

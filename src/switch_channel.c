@@ -3500,7 +3500,7 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 	switch_stream_handle_t stream = { 0 };
 	switch_size_t encode_len = 1024, new_len = 0;
 	char *encode_buf = NULL;
-	const char *prof[12] = { 0 }, *prof_names[12] = {
+	const char *prof[13] = { 0 }, *prof_names[13] = {
 	0};
 	char *e = NULL;
 	switch_event_header_t *hi;
@@ -3532,7 +3532,8 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 	prof[8] = caller_profile->source;
 	prof[9] = caller_profile->chan_name;
 	prof[10] = caller_profile->uuid;
-
+	prof[11] = caller_profile->transfer_source;
+	
 	prof_names[0] = "context";
 	prof_names[1] = "destination_number";
 	prof_names[2] = "caller_id_name";
@@ -3544,6 +3545,7 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 	prof_names[8] = "source";
 	prof_names[9] = "chan_name";
 	prof_names[10] = "uuid";
+	prof_names[11] = "transfer_source";
 
 	for (x = 0; prof[x]; x++) {
 		if (zstr(prof[x])) {
@@ -3563,6 +3565,30 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 		}
 		switch_url_encode(prof[x], encode_buf, encode_len);
 		stream.write_function(&stream, "%s=%s&", prof_names[x], encode_buf);
+	}
+
+	if (channel->caller_profile->soft) {
+		profile_node_t *pn;
+
+		for(pn = channel->caller_profile->soft; pn; pn = pn->next) {
+			char *var = pn->var;
+			char *val = pn->val;
+
+			new_len = (strlen((char *) var) * 3) + 1;
+			if (encode_len < new_len) {
+				char *tmp;
+
+				encode_len = new_len;
+
+				tmp = realloc(encode_buf, encode_len);
+				switch_assert(tmp);
+				encode_buf = tmp;
+			}
+
+			switch_url_encode((char *) val, encode_buf, encode_len);
+			stream.write_function(&stream, "%s=%s&", (char *) var, encode_buf);
+
+		}
 	}
 
 	if ((hi = switch_channel_variable_first(channel))) {

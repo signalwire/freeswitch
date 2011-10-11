@@ -2825,6 +2825,21 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 }
 
 
+SWITCH_DECLARE(char *) switch_uuid_str(char *buf, switch_size_t len)
+{
+	switch_uuid_t uuid;
+
+	if (len < (SWITCH_UUID_FORMATTED_LENGTH + 1)) {
+		switch_snprintf(buf, len, "INVALID");
+	} else {
+		switch_uuid_get(&uuid);
+		switch_uuid_format(buf, &uuid);
+	}
+
+	return buf;
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

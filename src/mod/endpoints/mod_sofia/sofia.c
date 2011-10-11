@@ -5093,6 +5093,81 @@ static void launch_media_on_hold(switch_core_session_t *session)
 	switch_thread_create(&thread, thd_attr, media_on_hold_thread_run, session, switch_core_session_get_pool(session));
 }
 
+static void mark_transfer_record(switch_core_session_t *session, const char *br_a, const char *br_b)
+{
+	switch_core_session_t *br_b_session, *br_a_session;
+	switch_channel_t *channel;
+	const char *uvar1, *dvar1, *uvar2, *dvar2;
+
+	channel = switch_core_session_get_channel(session);
+	
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		uvar1 = "sip_from_user";
+		dvar1 = "sip_from_host";
+	} else {
+		uvar1 = "sip_to_user";
+		dvar1 = "sip_to_host";
+	}
+
+	
+	if ((br_b_session = switch_core_session_locate(br_b)) ) {
+		switch_channel_t *br_b_channel = switch_core_session_get_channel(br_b_session);
+		switch_caller_profile_t *cp = switch_channel_get_caller_profile(br_b_channel);
+
+		if (switch_channel_direction(br_b_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+			uvar2 = "sip_from_user";
+			dvar2 = "sip_from_host";
+		} else {
+			uvar2 = "sip_to_user";
+			dvar2 = "sip_to_host";
+		}
+
+		cp->transfer_source = switch_core_sprintf(cp->pool,
+												  "%ld:%s:att_xfer:%s@%s/%s@%s",
+												  (long) switch_epoch_time_now(NULL),
+												  cp->uuid_str,
+												  switch_channel_get_variable(channel, uvar1),
+												  switch_channel_get_variable(channel, dvar1),
+												  switch_channel_get_variable(br_b_channel, uvar2),
+												  switch_channel_get_variable(br_b_channel, dvar2));
+		
+		switch_channel_add_variable_var_check(br_b_channel, SWITCH_TRANSFER_HISTORY_VARIABLE, cp->transfer_source, SWITCH_FALSE, SWITCH_STACK_PUSH);
+
+		switch_core_session_rwunlock(br_b_session);
+	}
+
+
+
+	if ((br_a_session = switch_core_session_locate(br_a)) ) {
+		switch_channel_t *br_a_channel = switch_core_session_get_channel(br_a_session);
+		switch_caller_profile_t *cp = switch_channel_get_caller_profile(br_a_channel);
+
+		if (switch_channel_direction(br_a_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+			uvar2 = "sip_from_user";
+			dvar2 = "sip_from_host";
+		} else {
+			uvar2 = "sip_to_user";
+			dvar2 = "sip_to_host";
+		}
+
+		cp->transfer_source = switch_core_sprintf(cp->pool,
+												  "%ld:%s:att_xfer:%s@%s/%s@%s",
+												  (long) switch_epoch_time_now(NULL),
+												  cp->uuid_str,
+												  switch_channel_get_variable(channel, uvar1),
+												  switch_channel_get_variable(channel, dvar1),
+												  switch_channel_get_variable(br_a_channel, uvar2),
+												  switch_channel_get_variable(br_a_channel, dvar2));
+		
+		switch_channel_add_variable_var_check(br_a_channel, SWITCH_TRANSFER_HISTORY_VARIABLE, cp->transfer_source, SWITCH_FALSE, SWITCH_STACK_PUSH);
+		
+		switch_core_session_rwunlock(br_a_session);
+	}
+										
+	
+}
+
+
 static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									 char const *phrase,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
@@ -5414,15 +5489,17 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									const char *br_b = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 									char *br_a = b_private->uuid;
 
+									
 									if (br_b) {
-										switch_core_session_t *tmp;
-
-										if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer")) && 
+                                        switch_core_session_t *tmp;
+										
+										if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer")) &&
 											(tmp = switch_core_session_locate(br_a))) {
 											switch_core_media_bug_transfer_recordings(session, tmp);
 											switch_core_session_rwunlock(tmp);
 										}
 
+										mark_transfer_record(session, br_a, br_b);
 										switch_ivr_uuid_bridge(br_a, br_b);
 										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 										sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
@@ -5986,12 +6063,13 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 			if ((status = switch_ivr_originate(NULL, &tsession, &cause, nhelper->exten_with_params, timeout, NULL, NULL, NULL,
 											   switch_channel_get_caller_profile(channel_a), nhelper->vars, SOF_NONE, NULL)) == SWITCH_STATUS_SUCCESS) {
 				if (switch_channel_up(channel_a)) {
-
+					
 					if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer"))) {
 						switch_core_media_bug_transfer_recordings(session, a_session);
 					}
 
 					tuuid_str = switch_core_session_get_uuid(tsession);
+					mark_transfer_record(session, nhelper->bridge_to_uuid, tuuid_str);
 					switch_ivr_uuid_bridge(nhelper->bridge_to_uuid, tuuid_str);
 					switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 					sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
@@ -6355,6 +6433,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_core_session_rwunlock(tmp);
 							}
 
+
+							mark_transfer_record(session, br_b, br_a);
 							
 							switch_ivr_uuid_bridge(br_b, br_a);
 							switch_channel_set_variable(channel_b, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");

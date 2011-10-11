@@ -830,6 +830,8 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 SWITCH_DECLARE(const char *) switch_inet_ntop(int af, void const *src, char *dst, size_t size);
 #endif
 
+SWITCH_DECLARE(char *) switch_uuid_str(char *buf, switch_size_t len);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

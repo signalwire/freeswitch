@@ -2435,12 +2435,11 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 
 SWITCH_STANDARD_API(uuid_function)
 {
-	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
-	switch_uuid_get(&uuid);
-	switch_uuid_format(uuid_str, &uuid);
-	stream->write_function(stream, "%s", uuid_str);
+	switch_uuid_str(uuid_str, sizeof(uuid_str));
+	
+	stream->write_function(stream, "%s", uuid_str);	
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -1698,6 +1698,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Transfer %s to %s[%s@%s]\n", switch_channel_get_name(channel), use_dialplan,
 						  extension, use_context);
+
+
+		new_profile->transfer_source = switch_core_sprintf(new_profile->pool, "%ld:%s:bl_xfer:%s/%s/%s", 
+														   (long) switch_epoch_time_now(NULL), new_profile->uuid_str,
+														   extension, use_context, use_dialplan);
+		switch_channel_add_variable_var_check(channel, SWITCH_TRANSFER_HISTORY_VARIABLE, new_profile->transfer_source, SWITCH_FALSE, SWITCH_STACK_PUSH);
+		
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2051,6 +2058,13 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	}
 	switch_xml_set_txt_d(param, caller_profile->source);
 
+	if (caller_profile->transfer_source) {
+		if (!(param = switch_xml_add_child_d(xml, "transfer_source", off++))) {
+			return -1;
+		}
+		switch_xml_set_txt_d(param, caller_profile->transfer_source);
+	}
+
 	if (!(param = switch_xml_add_child_d(xml, "context", off++))) {
 		return -1;
 	}
@@ -2210,6 +2224,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 		if (!zstr(caller_profile->dialplan)) {
 			switch_xml_set_attr_d(x_callflow, "dialplan", caller_profile->dialplan);
+		}
+
+		if (!zstr(caller_profile->uuid_str)) {
+			switch_xml_set_attr_d(x_callflow, "unique-id", caller_profile->uuid_str);
+		}
+
+		if (!zstr(caller_profile->clone_of)) {
+			switch_xml_set_attr_d(x_callflow, "clone-of", caller_profile->clone_of);
 		}
 
 		if (!zstr(caller_profile->profile_index)) {
