@@ -4439,10 +4439,16 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				
 				if (pass && switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 					private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+					switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 					switch_core_session_message_t *msg;
 					char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
 					switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
 					char tmp[32] = "";
+
+					if (switch_true(switch_channel_get_variable(tech_pvt->channel, "t38_broken_boolean")) && 
+						switch_true(switch_channel_get_variable(tech_pvt->channel, "t38_pass_broken_boolean"))) {
+						switch_channel_set_variable(other_channel, "t38_broken_boolean", "true");
+					}
 					
 					tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, t38_options->remote_ip);
 					tech_pvt->remote_sdp_audio_port = t38_options->remote_port;
@@ -4469,7 +4475,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						
 					}
 
-
+					
 
 					sofia_glue_copy_t38_options(t38_options, other_session);
 
