@@ -308,7 +308,8 @@ typedef enum {
 	SCF_MINIMAL = (1 << 14),
 	SCF_USE_NAT_MAPPING = (1 << 15),
 	SCF_CLEAR_SQL = (1 << 16),
-	SCF_THREADED_SYSTEM_EXEC = (1 << 17)
+	SCF_THREADED_SYSTEM_EXEC = (1 << 17),
+	SCF_SYNC_CLOCK_REQUESTED = (1 << 18)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -1707,7 +1708,8 @@ typedef enum {
 	SCSC_SHUTDOWN_CHECK,
 	SCSC_PAUSE_CHECK,
 	SCSC_READY_CHECK,
-	SCSC_THREADED_SYSTEM_EXEC
+	SCSC_THREADED_SYSTEM_EXEC,
+	SCSC_SYNC_CLOCK_WHEN_IDLE
 } switch_session_ctl_t;
 
 typedef enum {

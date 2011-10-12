@@ -1187,6 +1187,26 @@ SWITCH_DECLARE(unsigned int) switch_core_session_started(switch_core_session_t *
 	return switch_test_flag(session, SSF_THREAD_STARTED) ? 1 : 0;
 }
 
+SWITCH_DECLARE(int) switch_core_session_sync_clock(void)
+{
+	int doit = 0;
+
+	switch_mutex_lock(runtime.session_hash_mutex);
+	if (session_manager.session_count == 0) {
+		doit = 1;
+	} else {
+		switch_set_flag((&runtime), SCF_SYNC_CLOCK_REQUESTED);
+	}
+	switch_mutex_unlock(runtime.session_hash_mutex);
+
+	if (doit)  {
+		switch_time_sync();
+	}
+
+	return doit;
+
+}
+
 SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t **session, const char *file, const char *func, int line)
 {
 	switch_memory_pool_t *pool;
@@ -1209,6 +1229,12 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_core_hash_delete(session_manager.session_table, (*session)->uuid_str);
 	if (session_manager.session_count) {
 		session_manager.session_count--;
+		if (session_manager.session_count == 0) {
+			if (switch_test_flag((&runtime), SCF_SYNC_CLOCK_REQUESTED)) {
+				switch_time_sync();
+				switch_clear_flag((&runtime), SCF_SYNC_CLOCK_REQUESTED);
+			}
+		}
 	}
 	switch_mutex_unlock(runtime.session_hash_mutex);
 

@@ -467,6 +467,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(_Out_ switch
 */
 #define switch_core_new_memory_pool(p) switch_core_perform_new_memory_pool(p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+SWITCH_DECLARE(int) switch_core_session_sync_clock(void);
 SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(_Inout_ switch_memory_pool_t **pool,
 																		_In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 /*! 
