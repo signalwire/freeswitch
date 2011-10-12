@@ -123,6 +123,7 @@ typedef struct sng_ccSpan
 	uint32_t		clg_nadi;
 	uint32_t		cld_nadi;
 	uint32_t		rdnis_nadi;
+	uint32_t		loc_nadi;
 	uint32_t		min_digits;
 	uint8_t			itx_auto_reply;
 	uint8_t			transparent_iam;
@@ -1844,6 +1845,7 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 	int						flag_clg_nadi = 0;
 	int						flag_cld_nadi = 0;
 	int						flag_rdnis_nadi = 0;
+	int						flag_loc_nadi = 0;
 	int						i;
 	int						ret;
 
@@ -1945,6 +1947,14 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 				SS7_DEBUG("Invalid parm->value for obci_bita option\n");
 			}
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "loc_nadi")) {
+			/* add location reference number */
+			flag_loc_nadi = 1;
+			sng_ccSpan.loc_nadi = atoi(parm->val);
+			SS7_DEBUG("Found default LOC_NADI parm->value = %d\n", sng_ccSpan.loc_nadi);
+			printf( " --- jz: we got loc nadi from XML, val = %d \n" , sng_ccSpan.loc_nadi);
+		
+		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "lpa_on_cot")) {
 		/**********************************************************************/
 			if (*parm->val == '1') {
@@ -2032,6 +2042,11 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 	if (!flag_rdnis_nadi) {
 		/* default the nadi value to national */
 		sng_ccSpan.rdnis_nadi = 0x03;
+	}
+
+	if (!flag_loc_nadi) {
+		/* default the nadi value to national */
+		sng_ccSpan.loc_nadi = 0x03;
 	}
 
 	/* pull up the SSF and Switchtype from the isup interface */
@@ -2918,12 +2933,13 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		g_ftdm_sngss7_data.cfg.isupCkt[x].ssf						= ccSpan->ssf;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].cld_nadi					= ccSpan->cld_nadi;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].clg_nadi					= ccSpan->clg_nadi;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].rdnis_nadi				= ccSpan->rdnis_nadi;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].rdnis_nadi					= ccSpan->rdnis_nadi;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].loc_nadi					= ccSpan->loc_nadi;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].options					= ccSpan->options;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].switchType				= ccSpan->switchType;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].min_digits				= ccSpan->min_digits;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].itx_auto_reply			= ccSpan->itx_auto_reply;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].transparent_iam			= ccSpan->transparent_iam;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].switchType					= ccSpan->switchType;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].min_digits					= ccSpan->min_digits;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].itx_auto_reply				= ccSpan->itx_auto_reply;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].transparent_iam				= ccSpan->transparent_iam;
 
 		if (ccSpan->t3 == 0) {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t3			= 1200;

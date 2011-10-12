@@ -213,9 +213,6 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			sprintf(var, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
 			sngss7_add_var(sngss7_info, "ss7_clg_nadi", var);
 
-			sprintf(var, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
-			sngss7_add_var(sngss7_info, "ss7_cld_nadi", var);
-
 			/* Retrieve the Location Number if present (see ITU Q.763, 3.30) */
 			if (siConEvnt->cgPtyNum1.eh.pres) {
 				if (siConEvnt->cgPtyNum1.addrSig.pres) {

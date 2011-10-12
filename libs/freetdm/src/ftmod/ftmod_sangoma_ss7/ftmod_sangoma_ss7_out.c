@@ -79,6 +79,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		/* Calling Number information */
 		copy_cgPtyNum_to_sngss7(ftdmchan, &iam.cgPtyNum);
 
+		/* Location Number information */
+		copy_locPtyNum_to_sngss7(ftdmchan, &iam.cgPtyNum1);
+
 		/* Generic Number information */
 		copy_genNmb_to_sngss7(ftdmchan, &iam.genNmb);
 
@@ -91,12 +94,14 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		/* Access Transport */
 		copy_accTrnspt_to_sngss7(ftdmchan, &iam.accTrnspt);
 
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM clg = \"%s\" (NADI=%d), cld = \"%s\" (NADI=%d)\n",
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM clg = \"%s\" (NADI=%d), cld = \"%s\" (NADI=%d), loc = %s (NADI=%d)\n",
 									sngss7_info->circuit->cic,
 									ftdmchan->caller_data.cid_num.digits,
 									iam.cgPtyNum.natAddrInd.val,
 									ftdmchan->caller_data.dnis.digits,
-									iam.cdPtyNum.natAddrInd.val);
+									iam.cdPtyNum.natAddrInd.val,
+									ftdmchan->caller_data.loc.digits,
+									iam.cgPtyNum1.natAddrInd.val);
 	}
 
 	sng_cc_con_request (sngss7_info->spId,

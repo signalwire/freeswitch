@@ -225,6 +225,62 @@ ftdm_status_t copy_cdPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPt
 	return copy_tknStr_to_sngss7(caller_data->dnis.digits, &cdPtyNum->addrSig, &cdPtyNum->oddEven);
 }
 
+ftdm_status_t copy_locPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *locPtyNum)
+{
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *locPtyNum)
+{
+        const char *val = NULL;
+        const char *loc_nadi = NULL;
+
+        sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+        ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+
+        locPtyNum->eh.pres = PRSNT_NODEF;
+        locPtyNum->natAddrInd.pres = PRSNT_NODEF;
+        locPtyNum->natAddrInd.val = g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].loc_nadi;
+
+        locPtyNum->scrnInd.pres = PRSNT_NODEF;
+        val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_loc_screen_ind");
+        if (!ftdm_strlen_zero(val)) {
+                locPtyNum->scrnInd.val = atoi(val);
+        } else {
+                locPtyNum->scrnInd.val = caller_data->screen;
+        }
+        ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Location Reference Code Screening Ind %d\n", locPtyNum->scrnInd.val);
+
+        locPtyNum->presRest.pres = PRSNT_NODEF;
+        val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_pres_ind");
+        if (!ftdm_strlen_zero(val)) {
+                locPtyNum->presRest.val = atoi(val);
+        } else {
+                locPtyNum->presRest.val = caller_data->pres;
+        }
+        ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Presentation Ind %d\n", locPtyNum->presRest.val);
+
+        locPtyNum->numPlan.pres	= PRSNT_NODEF;
+        locPtyNum->numPlan.val = 0x01;
+
+        locPtyNum->niInd.pres = PRSNT_NODEF;
+        locPtyNum->niInd.val = 0x00;
+
+		/* check if the user would like a custom NADI value for the Location Reference */
+        loc_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_loc_nadi");
+        if (!ftdm_strlen_zero(loc_nadi)) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Location Reference NADI value \"%s\"\n", loc_nadi);
+			locPtyNum->natAddrInd.val = atoi(loc_nadi);
+        } else {
+			locPtyNum->natAddrInd.val = g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].loc_nadi;
+			locPtyNum->natAddrInd.val = 0x03;
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied NADI value found for LOC, using \"%d\"\n", locPtyNum->natAddrInd.val);
+		}
+        ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Location Reference Presentation Ind %d\n", locPtyNum->presRest.val);
+
+        return copy_tknStr_to_sngss7(caller_data->loc.digits, &locPtyNum->addrSig, &locPtyNum->oddEven);
+}
+
 ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
 {	
 	const char *val = NULL;

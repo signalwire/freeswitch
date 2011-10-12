@@ -351,6 +351,7 @@ typedef struct ftdm_caller_data {
 	ftdm_number_t ani; /*!< ANI (Automatic Number Identification) */
 	ftdm_number_t dnis; /*!< DNIS (Dialed Number Identification Service) */
 	ftdm_number_t rdnis; /*!< RDNIS (Redirected Dialed Number Identification Service) */
+	ftdm_number_t loc; /*!< LOC (Location Reference Code) */
 	char aniII[FTDM_DIGITS_LIMIT]; /*! ANI II */
 	uint8_t screen; /*!< Screening */
 	uint8_t pres; /*!< Presentation*/
