@@ -250,6 +250,11 @@ char *generate_pai_str(private_object_t *tech_pvt)
 	const char *callee_name = NULL, *callee_number = NULL;
 	const char *var, *header, *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 	char *pai = NULL;
+	const char *host = switch_channel_get_variable(tech_pvt->channel, "sip_to_host");
+
+	if (zstr(host)) {
+		host = tech_pvt->profile->sipip;
+	}
 
 	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID) || !sofia_test_pflag(tech_pvt->profile, PFLAG_CID_IN_1XX) ||
 		((var = switch_channel_get_variable(tech_pvt->channel, "sip_cid_in_1xx")) && switch_false(var))) {
@@ -276,7 +281,7 @@ char *generate_pai_str(private_object_t *tech_pvt)
 	callee_name = switch_sanitize_number(switch_core_session_strdup(session, callee_name));
 
 	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("polycom", ua))) {
-		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, tech_pvt->profile->sipip);
+		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, host);
 	}
 
 	header = (tech_pvt->cid_type == CID_TYPE_RPID && !switch_stristr("aastra", ua)) ? "Remote-Party-ID" : "P-Asserted-Identity";
