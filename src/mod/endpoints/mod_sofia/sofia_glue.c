@@ -2051,7 +2051,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if (!zstr(tech_pvt->gateway_from_str)) {
 			rpid_domain = switch_core_session_strdup(session, tech_pvt->gateway_from_str);
 		} else if (!zstr(tech_pvt->from_str)) {
-			rpid_domain = switch_core_session_strdup(session, tech_pvt->from_str);
+			rpid_domain = switch_core_session_strdup(session, use_from_str);
 		}
 
 		sofia_glue_get_url_from_contact(rpid_domain, 0);
