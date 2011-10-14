@@ -662,6 +662,13 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, cbt->cid, additional, cbt->profile, cbt->session);
 
 	if (cbt->head == NULL) {
+		if (cbt->max_rate && (cbt->max_rate < additional->rate)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Skipping [%s] because [%f] is higher than the max_rate of [%f]\n", 
+							  additional->carrier_name, additional->rate, cbt->max_rate);
+			lcr_skipped = SWITCH_FALSE;
+			r = 0; goto end;
+		}
+
 		key = switch_core_sprintf(pool, "%s:%s", additional->gw_prefix, additional->gw_suffix);
 		additional->next = cbt->head;
 		cbt->head = additional;
