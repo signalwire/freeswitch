@@ -29,6 +29,13 @@
   <profiles>
     <!--If no profile is specified it will default to "default"-->
     <profile name="default">
+      <!-- Directory to drop CDR's 
+	   'auto' means $PREFIX/logs/conference_cdr/<confernece_uuid>.cdr.xml
+	   a non-absolute path means $PREFIX/logs/<value>/<confernece_uuid>.cdr.xml
+	   absolute path means <value>/<confernece_uuid>.cdr.xml
+      -->
+      <!-- <param name="cdr-log-dir" value="auto"/> -->
+      
       <!-- Domain (for presence) -->
       <param name="domain" value="$${domain}"/>
       <!-- Sample Rate-->

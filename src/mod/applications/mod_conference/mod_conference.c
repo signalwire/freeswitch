@@ -43,6 +43,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
 SWITCH_MODULE_DEFINITION(mod_conference, mod_conference_load, mod_conference_shutdown, NULL);
 
+typedef struct conference_cdr_node_s {
+	switch_caller_profile_t *cp;
+	char *record_path;
+	switch_time_t join_time;
+	switch_time_t leave_time;
+	struct conference_cdr_node_s *next;
+} conference_cdr_node_t;
+
+
+
 typedef enum {
 	CONF_SILENT_REQ = (1 << 0),
 	CONF_SILENT_DONE = (1 << 1)
@@ -308,6 +318,10 @@ typedef struct conference_obj {
 	char *uuid_str;
 	uint32_t originating;
 	switch_call_cause_t cancel_cause;
+	conference_cdr_node_t *cdr_nodes;
+	switch_time_t start_time;
+	switch_time_t end_time;
+	char *log_dir;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -369,6 +383,7 @@ struct conference_member {
 	uint32_t avg_tally;
 	struct conference_member *next;
 	switch_ivr_dmachine_t *dmachine;
+	conference_cdr_node_t *cdr_node;
 };
 
 /* Record Node */
@@ -465,6 +480,173 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 
 //#define lock_member(_member) switch_mutex_lock(_member->write_mutex)
 //#define unlock_member(_member) switch_mutex_unlock(_member->write_mutex)
+
+
+static void conference_cdr_del(conference_member_t *member)
+{
+	member->cdr_node->leave_time = switch_epoch_time_now(NULL);
+}
+
+static void conference_cdr_add(conference_member_t *member)
+{
+	conference_cdr_node_t *np;
+	switch_caller_profile_t *cp;
+	switch_channel_t *channel;
+
+	np = switch_core_alloc(member->conference->pool, sizeof(*np));
+
+	np->next = member->conference->cdr_nodes;
+	member->conference->cdr_nodes = member->cdr_node = np;
+	member->cdr_node->join_time = switch_epoch_time_now(NULL);
+
+	if (!member->session) {
+		member->cdr_node->record_path = switch_core_strdup(member->conference->pool, member->rec_path);
+		return;
+	}
+
+	channel = switch_core_session_get_channel(member->session);
+
+	if (!(cp = switch_channel_get_caller_profile(channel))) {
+		return;
+	}
+
+	member->cdr_node->cp = switch_caller_profile_dup(member->conference->pool, cp);
+}
+
+static void conference_cdr_render(conference_obj_t *conference)
+{
+	switch_xml_t cdr, x_ptr, x_member, x_members, x_conference, x_cp;
+	conference_cdr_node_t *np;
+	int cdr_off = 0, conf_off = 0;
+	char str[512];
+	char *path, *xml_text;
+	int fd;
+
+	if (zstr(conference->log_dir)) return;
+
+	if (!conference->cdr_nodes) return;
+
+	if (!(cdr = switch_xml_new("cdr"))) {
+		abort();
+	}
+
+	if (!(x_conference = switch_xml_add_child_d(cdr, "conference", cdr_off++))) {
+		abort();
+	}
+	
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "name", conf_off++))) {
+		abort();
+	}
+	switch_xml_set_txt_d(x_ptr, conference->name);
+	
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "rate", conf_off++))) {
+		abort();
+	}
+	switch_snprintf(str, sizeof(str), "%d", conference->rate);
+	switch_xml_set_txt_d(x_ptr, str);
+	
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "interval", conf_off++))) {
+		abort();
+	}
+	switch_snprintf(str, sizeof(str), "%d", conference->interval);
+	switch_xml_set_txt_d(x_ptr, str);
+	
+	
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "start_time", conf_off++))) {
+		abort();
+	}
+	switch_xml_set_attr_d(x_ptr, "type", "UNIX-epoch");
+	switch_snprintf(str, sizeof(str), "%ld", (long)conference->start_time);
+	switch_xml_set_txt_d(x_ptr, str);
+	
+	
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "end_time", conf_off++))) {
+		abort();
+	}
+	switch_xml_set_attr_d(x_ptr, "type", "UNIX-epoch");
+	switch_snprintf(str, sizeof(str), "%ld", (long)conference->end_time);
+	switch_xml_set_txt_d(x_ptr, str);
+
+
+	if (!(x_members = switch_xml_add_child_d(x_conference, "members", conf_off++))) {
+		abort();
+	}
+
+	
+	for (np = conference->cdr_nodes; np; np = np->next) {
+		int member_off = 0;
+
+
+		if (!(x_member = switch_xml_add_child_d(x_members, "member", conf_off++))) {
+			abort();
+		}
+
+		switch_xml_set_attr_d(x_member, "type", np->cp ? "caller" : "recording_node");
+		
+		if (!(x_ptr = switch_xml_add_child_d(x_member, "join_time", member_off++))) {
+			abort();
+		}
+		switch_xml_set_attr_d(x_ptr, "type", "UNIX-epoch");
+		switch_snprintf(str, sizeof(str), "%ld", (long) np->join_time);
+		switch_xml_set_txt_d(x_ptr, str);
+
+
+		if (!(x_ptr = switch_xml_add_child_d(x_member, "leave_time", member_off++))) {
+			abort();
+		}
+		switch_xml_set_attr_d(x_ptr, "type", "UNIX-epoch");
+		switch_snprintf(str, sizeof(str), "%ld", (long) np->leave_time);
+		switch_xml_set_txt_d(x_ptr, str);
+
+		if (np->cp) {
+			if (!(x_cp = switch_xml_add_child_d(x_member, "caller_profile", member_off++))) {
+				abort();
+			}
+			switch_ivr_set_xml_profile_data(x_cp, np->cp, 0);
+		}
+
+		if (!zstr(np->record_path)) {
+			if (!(x_ptr = switch_xml_add_child_d(x_member, "record_path", member_off++))) {
+				abort();
+			}
+			switch_xml_set_txt_d(x_ptr, np->record_path);
+		}
+	}
+
+	
+	xml_text = switch_xml_toxml(cdr, SWITCH_TRUE);
+
+	
+   	path = switch_mprintf("%s%s%s.cdr.xml", conference->log_dir, SWITCH_PATH_SEPARATOR, conference->uuid_str);
+	
+
+
+#ifdef _MSC_VER
+	if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+#else
+	if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
+#endif
+		int wrote;
+		wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
+		wrote++;
+		close(fd);
+		fd = -1;
+	} else {
+		char ebuf[512] = { 0 };
+#ifdef WIN32
+		strerror_s(ebuf, sizeof(ebuf), errno);
+#else
+		strerror_r(errno, ebuf, sizeof(ebuf));
+#endif
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n", path, ebuf);
+	}
+
+
+   	switch_safe_free(path);
+	switch_safe_free(xml_text);
+}
+	
+
 
 static switch_status_t conference_add_event_data(conference_obj_t *conference, switch_event_t *event)
 {
@@ -692,6 +874,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	conference->members = member;
 	switch_set_flag_locked(member, MFLAG_INTREE);
 	switch_mutex_unlock(conference->member_mutex);
+	conference_cdr_add(member);
 
 	if (!switch_test_flag(member, MFLAG_NOCHANNEL)) {
 		conference->count++;
@@ -847,6 +1030,11 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 
 	lock_member(member);
+
+
+	conference_cdr_del(member);
+
+
 	member_fnode = member->fnode;
 	member_sh = member->sh;
 	member->fnode = NULL;
@@ -1608,6 +1796,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_core_speech_close(&conference->lsh, &flags);
 		conference->sh = NULL;
 	}
+
+	conference->end_time = switch_epoch_time_now(NULL);
+	conference_cdr_render(conference);
 
 	if (conference->pool) {
 		switch_memory_pool_t *pool = conference->pool;
@@ -3095,6 +3286,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_safe_free(data_buf);
 	switch_core_timer_destroy(&timer);
 	conference_del_member(conference, member);
+
 	switch_buffer_destroy(&member->audio_buffer);
 	switch_buffer_destroy(&member->mux_buffer);
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
@@ -6513,6 +6705,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *suppress_events = NULL;
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
+	char *conference_log_dir = NULL;
 	char *terminate_on_silence = NULL;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
 	switch_uuid_t uuid;
@@ -6642,6 +6835,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				member_flags = val;
 			} else if (!strcasecmp(var, "conference-flags") && !zstr(val)) {
 				conference_flags = val;
+			} else if (!strcasecmp(var, "cdr-log-dir") && !zstr(val)) {
+				conference_log_dir = val;
 			} else if (!strcasecmp(var, "kicked-sound") && !zstr(val)) {
 				kicked_sound = val;
 			} else if (!strcasecmp(var, "pin") && !zstr(val)) {
@@ -6755,6 +6950,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		goto end;
 	}
 
+	conference->start_time = switch_epoch_time_now(NULL);
+
 	/* initialize the conference object with settings from the specified profile */
 	conference->pool = pool;
 	conference->profile_name = switch_core_strdup(conference->pool, cfg.profile ? switch_xml_attr_soft(cfg.profile, "name") : "none");
@@ -6775,6 +6972,22 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference->caller_controls = switch_core_strdup(conference->pool, caller_controls);
 	conference->moderator_controls = switch_core_strdup(conference->pool, moderator_controls);
 	conference->run_time = switch_epoch_time_now(NULL);
+
+	if (!zstr(conference_log_dir)) {
+		char *path;
+
+		if (!strcmp(conference_log_dir, "auto")) {
+			path = switch_core_sprintf(conference->pool, "%s%sconference_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+		} else if (!switch_is_file_path(conference_log_dir)) {
+			path = switch_core_sprintf(conference->pool, "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, conference_log_dir);
+		} else {
+			path = switch_core_strdup(conference->pool, conference_log_dir);
+		}
+
+		switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, conference->pool);
+		conference->log_dir = path;
+
+	}
 	
 
 	if (!zstr(perpetual_sound)) {
