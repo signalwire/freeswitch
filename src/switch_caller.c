@@ -137,6 +137,29 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 	profile->pool = pool;
 	profile->direction = tocopy->direction;
 
+
+	if (tocopy->soft) {
+		profile_node_t *pn;
+
+		for (pn = tocopy->soft; pn; pn = pn->next) {
+			profile_node_t *pp, *n = switch_core_alloc(profile->pool, sizeof(*n));
+
+			n->var = switch_core_strdup(profile->pool, pn->var);
+			n->val = switch_core_strdup(profile->pool, pn->val);
+
+			if (!profile->soft) {
+				profile->soft = n;
+			} else {
+				for(pp = profile->soft; pp && pp->next; pp = pp->next);
+			
+				if (pp) {
+					pp->next = n;
+				}	
+			}
+		}
+
+	}
+
 	return profile;
 }
 
