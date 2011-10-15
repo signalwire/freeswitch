@@ -1,4 +1,4 @@
-LAME=lame-3.97
+LAME=lame-3.98.4
 SHOUT=libshout-2.2.2
 MPG123=mpg123-1.13.2
 BASE=../../../..
