@@ -19,6 +19,19 @@
 #include <gnutls/gnutls.h>
 #endif
 
+#ifdef HAVE_SSL
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#ifdef WIN32
+typedef unsigned __int32 uint32_t;
+#else
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+#include <poll.h>
+#endif
+#endif
+
 #define SF_FOREIGN 1
 #define SF_TRY_SECURE 2
 #define SF_SECURE 4
@@ -41,8 +54,62 @@ struct stream_data {
 #ifdef HAVE_GNUTLS
 	gnutls_session sess;
 	gnutls_certificate_credentials cred;
+#elif HAVE_SSL
+	SSL* ssl;
+	SSL_CTX* ssl_ctx; 
 #endif
 };
+
+#ifdef HAVE_SSL
+#ifdef WIN32
+static int sock_read_ready(struct stream_data *data, uint32_t ms)
+{
+	int r = 0;
+	fd_set fds;
+	struct timeval tv;
+
+	FD_ZERO(&fds);
+
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	FD_SET(SSL_get_fd(data->ssl), &fds);
+#pragma warning( pop ) 
+#else
+	FD_SET(SSL_get_fd(data->ssl), &fds);
+#endif
+
+	tv.tv_sec = ms / 1000;
+	tv.tv_usec = (ms % 1000) * ms;
+	
+	r = select (SSL_get_fd(data->ssl) + 1, &fds, NULL, NULL, &tv); 
+
+	return r;
+}
+#else
+static int sock_read_ready(struct stream_data *data, int ms)
+{
+	struct pollfd pfds[2] = { { 0 } };
+	int s = 0, r = 0;
+	
+	pfds[0].fd = SSL_get_fd(data->ssl);
+	pfds[0].events |= POLLIN;
+	
+	s = poll(pfds, 1, ms);
+
+
+	if (s < 0) {
+		r = s;
+	} else if (s > 0) {
+		if ((pfds[0].revents & POLLIN)) {
+			r = 1;
+		}
+	}
+
+	return r;
+}
+#endif
+#endif
 
 #ifdef HAVE_GNUTLS
 #ifndef WIN32
@@ -120,6 +187,86 @@ handshake (struct stream_data *data)
 	iks_send_header (data->prs, data->server);
 
 	return IKS_OK;
+} // HAVE_GNUTLS
+#elif HAVE_SSL
+static int wait_for_data(struct stream_data *data, int ret, int timeout)
+{
+	struct timeval tv;
+	fd_set fds;
+	int err;
+	int retval = IKS_OK;
+
+	err = SSL_get_error(data->ssl, ret);
+	
+	switch(err)
+	{
+		case SSL_ERROR_WANT_READ:
+		case SSL_ERROR_WANT_WRITE:
+			ret = sock_read_ready(data, timeout*1000);
+			
+			if (ret == -1) {
+				retval = IKS_NET_TLSFAIL;
+			}
+				
+			break;
+		default:
+			if(data->logHook)
+				data->logHook(data->user_data, ERR_error_string(err, NULL), strlen(ERR_error_string(err, NULL)), 1); 
+			retval = IKS_NET_TLSFAIL;
+			break;
+	}
+	
+	ERR_clear_error();
+				
+	return retval;
+}
+
+static int
+handshake (struct stream_data *data)
+{
+	int ret;
+	int finished;
+	
+	SSL_library_init();
+	SSL_load_error_strings();
+	
+	data->ssl_ctx = SSL_CTX_new(TLSv1_method());
+	if(!data->ssl_ctx) return IKS_NOMEM;
+	
+	data->ssl = SSL_new(data->ssl_ctx);
+	if(!data->ssl) return IKS_NOMEM;
+	
+	if( SSL_set_fd(data->ssl, (int)data->sock) != 1 ) return IKS_NOMEM;
+	
+	/* Set both the read and write BIO's to non-blocking mode */
+	BIO_set_nbio(SSL_get_rbio(data->ssl), 1);
+	BIO_set_nbio(SSL_get_wbio(data->ssl), 1);
+	
+	finished = 0;
+	
+	do
+	{
+		ret = SSL_connect(data->ssl);
+		
+		if( ret != 1 ) 
+		{
+			if( wait_for_data(data, ret, 1) != IKS_OK ) 
+			{
+				finished = 1; 
+				SSL_free(data->ssl);
+			}
+		}
+	} while( ret != 1 && finished != 1 );
+	
+	if( ret == 1 )
+	{
+		data->flags &= (~SF_TRY_SECURE);
+		data->flags |= SF_SECURE;
+	
+		iks_send_header (data->prs, data->server);
+	}
+	
+	return ret == 1 ? IKS_OK : IKS_NET_TLSFAIL;
 }
 #endif
 
@@ -295,6 +442,15 @@ tagHook (struct stream_data *data, char *name, char **atts, int type)
 					return IKS_NET_TLSFAIL;
 				}
 			}
+#elif HAVE_SSL
+			if (data->flags & SF_TRY_SECURE) {
+				if (strcmp (name, "proceed") == 0) {
+					err = handshake (data);
+					return err;
+				} else if (strcmp (name, "failure") == 0){
+					return IKS_NET_TLSFAIL;
+				}
+			}
 #endif
 			if (data->current) {
 				x = iks_insert (data->current, name);
@@ -350,6 +506,11 @@ deleteHook (struct stream_data *data)
 		gnutls_bye (data->sess, GNUTLS_SHUT_WR);
 		gnutls_deinit (data->sess);
 		gnutls_certificate_free_credentials (data->cred);
+	}
+#elif HAVE_SSL
+	if (data->flags & SF_SECURE) {
+		if( SSL_shutdown(data->ssl) == 0 ) SSL_shutdown(data->ssl);
+		SSL_free(data->ssl);
 	}
 #endif
 	if (data->trans) data->trans->close (data->sock);
@@ -507,12 +668,46 @@ iks_recv (iksparser *prs, int timeout)
 {
 	struct stream_data *data = iks_user_data (prs);
 	int len, ret;
+	
+#ifdef HAVE_SSL
+	int   err;
+	struct timeval tv;
+	fd_set fds;
+#endif
 
 	while (1) {
 #ifdef HAVE_GNUTLS
 		if (data->flags & SF_SECURE) {
 			len = gnutls_record_recv (data->sess, data->buf, NET_IO_BUF_SIZE - 1);
 			if (len == 0) len = -1;
+		} else
+#elif HAVE_SSL
+		if (data->flags & SF_SECURE) {
+			ret = sock_read_ready(data, timeout*1000);
+			
+			if (ret == -1) {
+				return IKS_NET_TLSFAIL;
+			} else if( ret == 0 ) {
+				return IKS_OK;
+			} else {
+				len = SSL_read(data->ssl, data->buf, NET_IO_BUF_SIZE - 1);
+			}
+			
+			if( len <= 0 ) 
+			{
+				switch( err = SSL_get_error(data->ssl, len) ) 
+				{
+					case SSL_ERROR_WANT_READ:
+					case SSL_ERROR_WANT_WRITE:
+						return IKS_OK;
+						break;
+					default:
+						if(data->logHook)
+							data->logHook(data->user_data, ERR_error_string(err, NULL), strlen(ERR_error_string(err, NULL)), 1); 
+						return IKS_NET_TLSFAIL;
+						break;
+				}
+			}
 		} else
 #endif
 		{
@@ -523,6 +718,7 @@ iks_recv (iksparser *prs, int timeout)
 		data->buf[len] = '\0';
 		if (data->logHook) data->logHook (data->user_data, data->buf, len, 1);
 		ret = iks_parse (prs, data->buf, len, 0);
+
 		if (ret != IKS_OK) return ret;
 		if (!data->trans) {
 			/* stream hook called iks_disconnect */
@@ -569,6 +765,10 @@ iks_send_raw (iksparser *prs, const char *xmlstr)
 	if (data->flags & SF_SECURE) {
 		if (gnutls_record_send (data->sess, xmlstr, strlen (xmlstr)) < 0) return IKS_NET_RWERR;
 	} else
+#elif HAVE_SSL
+	if (data->flags & SF_SECURE) {
+		if (SSL_write(data->ssl, xmlstr, strlen (xmlstr)) < 0) return IKS_NET_RWERR;
+	} else
 #endif
 	{
 		ret = data->trans->send (data->sock, xmlstr, strlen (xmlstr));
@@ -591,6 +791,8 @@ iks_has_tls (void)
 {
 #ifdef HAVE_GNUTLS
 	return 1;
+#elif HAVE_SSL
+	return 1;
 #else
 	return 0;
 #endif
@@ -602,6 +804,10 @@ iks_is_secure (iksparser *prs)
 #ifdef HAVE_GNUTLS
 	struct stream_data *data = iks_user_data (prs);
 
+	return data->flags & SF_SECURE;
+#elif HAVE_SSL
+	struct stream_data *data = iks_user_data (prs);
+	
 	return data->flags & SF_SECURE;
 #else
 	return 0;
@@ -641,6 +847,14 @@ iks_start_tls (iksparser *prs)
 	int ret;
 	struct stream_data *data = iks_user_data (prs);
 
+	ret = iks_send_raw (prs, "<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>");
+	if (ret) return ret;
+	data->flags |= SF_TRY_SECURE;
+	return IKS_OK;
+#elif HAVE_SSL
+	int ret;
+	struct stream_data *data = iks_user_data (prs);
+	
 	ret = iks_send_raw (prs, "<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>");
 	if (ret) return ret;
 	data->flags |= SF_TRY_SECURE;

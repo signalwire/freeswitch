@@ -121,10 +121,8 @@ typedef enum {
 	LDL_FLAG_AUTHORIZED = (1 << 2),
 	LDL_FLAG_READY = (1 << 3),
 	LDL_FLAG_CONNECTED = (1 << 4),
-	LDL_FLAG_QUEUE_RUNNING = (1 << 5),
-	LDL_FLAG_STOPPED = (1 << 6),
-	LDL_FLAG_QUEUE_STOP = (1 << 7),
-	LDL_FLAG_BREAK = (1 << 8)
+	LDL_FLAG_STOPPED = (1 << 5),
+	LDL_FLAG_BREAK = (1 << 6)
 } ldl_flag_t;
 
 typedef enum {

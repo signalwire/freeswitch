@@ -1498,59 +1498,11 @@ static ldl_queue_t ldl_flush_queue(ldl_handle_t *handle, int done)
 }
 
 
-static void *APR_THREAD_FUNC queue_thread(apr_thread_t *thread, void *obj)
-{
-	ldl_handle_t *handle = (ldl_handle_t *) obj;
-	int timeout_ka = LDL_KEEPALIVE_TIMEOUT;
-	int count_ka = timeout_ka;
-
-	ldl_set_flag_locked(handle, LDL_FLAG_QUEUE_RUNNING);
-
-	while (ldl_test_flag(handle, LDL_FLAG_RUNNING) && !ldl_test_flag(handle, LDL_FLAG_QUEUE_STOP)) {
-		if (ldl_flush_queue(handle, 0) == LDL_QUEUE_SENT) {
-			count_ka = timeout_ka;
-		};
-
-		if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS || !ldl_test_flag((&globals), LDL_FLAG_READY)) {
-			int fd;
-
-			if ((fd = iks_fd(handle->parser)) > -1) {
-				shutdown(fd, 0x02);
-			}
-			ldl_set_flag_locked(handle, LDL_FLAG_BREAK);	
-			break;
-		}
-
-		if (count_ka-- <= 0) {
-			if( iks_send_raw(handle->parser, " ") == IKS_OK) {
-				count_ka = timeout_ka;
-				globals.logger(DL_LOG_DEBUG, "Sent keep alive signal\n");
-			}
-		}
-		microsleep(100);
-	}
-	
-	ldl_clear_flag_locked(handle, LDL_FLAG_QUEUE_RUNNING);
-	ldl_clear_flag_locked(handle, LDL_FLAG_QUEUE_STOP);
-
-	return NULL;
-}
-
-static void launch_queue_thread(ldl_handle_t *handle)
-{
-    apr_thread_t *thread;
-    apr_threadattr_t *thd_attr;;
-    apr_threadattr_create(&thd_attr, handle->pool);
-    apr_threadattr_detach_set(thd_attr, 1);
-
-	apr_threadattr_stacksize_set(thd_attr, 512 * 1024);
-	apr_thread_create(&thread, thd_attr, queue_thread, handle, handle->pool);
-
-}
-
-
 static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 {
+	int timeout_ka = LDL_KEEPALIVE_TIMEOUT;
+	int count_ka = timeout_ka;	
+
 	while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 		int e;
 		char tmp[512], *sl;
@@ -1603,13 +1555,18 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		}
 
 		handle->counter = opt_timeout;
-		if (ldl_test_flag(handle, LDL_FLAG_TLS)) {
-			launch_queue_thread(handle);
-		}
 
 		while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 			e = iks_recv(handle->parser, 1);
-			if (!ldl_test_flag(handle, LDL_FLAG_TLS) && handle->loop_callback) {
+
+			if (count_ka-- <= 0) {
+				if( iks_send_raw(handle->parser, " ") == IKS_OK) {
+					count_ka = timeout_ka;
+					globals.logger(DL_LOG_DEBUG, "Sent keep alive signal\n");
+				}
+			}
+
+			if (handle->loop_callback) {
 				if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS) {
 					ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);	
 					break;
@@ -1630,7 +1587,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 				goto fail;
 			}
 
-			if (!ldl_test_flag(handle, LDL_FLAG_TLS) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
+			if (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 				ldl_flush_queue(handle, 0);
 			}
 
@@ -1648,11 +1605,12 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 					break;
 				}
 			}
+
+			microsleep(100);
 		}
 
 	fail:
 		
-		ldl_set_flag_locked(handle, LDL_FLAG_QUEUE_STOP);
 		ldl_clear_flag_locked(handle, LDL_FLAG_CONNECTED);
 		ldl_clear_flag_locked(handle, LDL_FLAG_AUTHORIZED);
 		ldl_clear_flag_locked(handle, LDL_FLAG_BREAK);
@@ -1662,23 +1620,12 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 			shutdown(fd, 0x02);
 		}
 
-		
-
-		while(ldl_test_flag(handle, LDL_FLAG_QUEUE_RUNNING)) {
-			microsleep(100);
-		}
-
 		iks_disconnect(handle->parser);
 		iks_parser_delete(handle->parser);
 	}
 	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
-	if (!ldl_test_flag(handle, LDL_FLAG_TLS)) {
-		ldl_flush_queue(handle, 1);
-	}
 	
-	while(ldl_test_flag(handle, LDL_FLAG_QUEUE_RUNNING)) {
-		microsleep(100);
-	}
+	ldl_flush_queue(handle, 1);
 
 	ldl_set_flag_locked(handle, LDL_FLAG_STOPPED);
 
@@ -2529,13 +2476,15 @@ int ldl_handle_authorized(ldl_handle_t *handle)
 void ldl_handle_stop(ldl_handle_t *handle)
 {
 	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
+#if 0
 	if (ldl_test_flag(handle, LDL_FLAG_TLS)) {
 		int fd;
 		if ((fd = iks_fd(handle->parser)) > -1) {
 			shutdown(fd, 0x02);
 		}
 	}
-	
+#endif
+
 	while(!ldl_test_flag(handle, LDL_FLAG_STOPPED)) {
 		microsleep(100);
 	}
