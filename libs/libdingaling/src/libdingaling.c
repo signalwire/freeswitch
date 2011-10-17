@@ -1431,11 +1431,13 @@ static void j_setup_filter(ldl_handle_t *handle)
 	}
 }
 
-static void ldl_flush_queue(ldl_handle_t *handle, int done)
+static ldl_queue_t ldl_flush_queue(ldl_handle_t *handle, int done)
 {
 	iks *msg;
 	void *pop = NULL;
 	unsigned int len = 0, x = 0;
+
+	ldl_queue_t sent_data = LDL_QUEUE_NONE;
 
 	apr_thread_mutex_lock(handle->lock);
 
@@ -1445,6 +1447,7 @@ static void ldl_flush_queue(ldl_handle_t *handle, int done)
 			if (!done) iks_send(handle->parser, msg);
 			iks_delete(msg);
 			pop = NULL;
+			sent_data = LDL_QUEUE_SENT;
 		} else {
 			break;
 		}
@@ -1473,6 +1476,7 @@ static void ldl_flush_queue(ldl_handle_t *handle, int done)
 					}
 					iks_send(handle->parser, packet_node->xml);
 					packet_node->next = now + 5000000;
+					sent_data = LDL_QUEUE_SENT;
 				}
 			}
 			if (packet_node->retries == 0 || done) {
@@ -1490,17 +1494,22 @@ static void ldl_flush_queue(ldl_handle_t *handle, int done)
 		}
 	}
 	apr_thread_mutex_unlock(handle->lock);
+	return sent_data;
 }
 
 
 static void *APR_THREAD_FUNC queue_thread(apr_thread_t *thread, void *obj)
 {
 	ldl_handle_t *handle = (ldl_handle_t *) obj;
+	int timeout_ka = LDL_KEEPALIVE_TIMEOUT;
+	int count_ka = timeout_ka;
 
 	ldl_set_flag_locked(handle, LDL_FLAG_QUEUE_RUNNING);
 
 	while (ldl_test_flag(handle, LDL_FLAG_RUNNING) && !ldl_test_flag(handle, LDL_FLAG_QUEUE_STOP)) {
-		ldl_flush_queue(handle, 0);
+		if (ldl_flush_queue(handle, 0) == LDL_QUEUE_SENT) {
+			count_ka = timeout_ka;
+		};
 
 		if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS || !ldl_test_flag((&globals), LDL_FLAG_READY)) {
 			int fd;
@@ -1510,6 +1519,13 @@ static void *APR_THREAD_FUNC queue_thread(apr_thread_t *thread, void *obj)
 			}
 			ldl_set_flag_locked(handle, LDL_FLAG_BREAK);	
 			break;
+		}
+
+		if (count_ka-- <= 0) {
+			if( iks_send_raw(handle->parser, " ") == IKS_OK) {
+				count_ka = timeout_ka;
+				globals.logger(DL_LOG_DEBUG, "Sent keep alive signal\n");
+			}
 		}
 		microsleep(100);
 	}
@@ -1618,6 +1634,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 				ldl_flush_queue(handle, 0);
 			}
 
+			handle->counter--;
 			if (!ldl_test_flag(handle, LDL_FLAG_CONNECTED)) {
 				if (IKS_NET_TLSFAIL == e) {
 					globals.logger(DL_LOG_DEBUG, "tls handshake failed\n");
