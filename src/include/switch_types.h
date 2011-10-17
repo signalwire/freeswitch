@@ -309,7 +309,8 @@ typedef enum {
 	SCF_USE_NAT_MAPPING = (1 << 15),
 	SCF_CLEAR_SQL = (1 << 16),
 	SCF_THREADED_SYSTEM_EXEC = (1 << 17),
-	SCF_SYNC_CLOCK_REQUESTED = (1 << 18)
+	SCF_SYNC_CLOCK_REQUESTED = (1 << 18),
+	SCF_CORE_ODBC_REQ = (1 << 19)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 

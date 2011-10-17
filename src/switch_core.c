@@ -1493,7 +1493,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_state_machine_init(runtime.memory_pool);
 
 	if (switch_core_sqldb_start(runtime.memory_pool, switch_test_flag((&runtime), SCF_USE_SQL) ? SWITCH_TRUE : SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
-		abort();
+		*err = "Error activating database";
+		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_scheduler_task_thread_start();
@@ -1783,6 +1784,8 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 					}
+				} else if (!strcasecmp(var, "core-odbc-required") && !zstr(val)) {
+					switch_set_flag((&runtime), SCF_CORE_ODBC_REQ);
 				} else if (!strcasecmp(var, "core-dbtype") && !zstr(val)) {
 					if (!strcasecmp(val, "MSSQL")) {
 						runtime.odbc_dbtype = DBTYPE_MSSQL;

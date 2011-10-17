@@ -188,19 +188,24 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!zstr(runtime.odbc_dsn)) {
-		options.odbc_options.dsn = runtime.odbc_dsn;
-		options.odbc_options.user = runtime.odbc_user;
-		options.odbc_options.pass = runtime.odbc_pass;
+	if (zstr(runtime.odbc_dsn)) {
+		if (switch_test_flag((&runtime), SCF_CORE_ODBC_REQ)) {
+			return SWITCH_STATUS_FALSE;
+		}
 
-		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_ODBC, &options, file, func, line);
-	} else {
 		if (runtime.dbname) {
 			options.core_db_options.db_path = runtime.dbname;
 		} else {
 			options.core_db_options.db_path = SWITCH_CORE_DB;
 		}
 		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_CORE_DB, &options, file, func, line);
+		
+	} else {
+		options.odbc_options.dsn = runtime.odbc_dsn;
+		options.odbc_options.user = runtime.odbc_user;
+		options.odbc_options.pass = runtime.odbc_pass;
+
+		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_ODBC, &options, file, func, line);
 	}
 
 	/* I *think* we can do without this now, if not let me know 
@@ -1879,6 +1884,11 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	/* Activate SQL database */
 	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+
+		if (switch_test_flag((&runtime), SCF_CORE_ODBC_REQ)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure! ODBC IS REQUIRED!\n");
+			return SWITCH_STATUS_FALSE;
+		}
 
 		if (runtime.odbc_dsn) {
 			runtime.odbc_dsn = NULL;
