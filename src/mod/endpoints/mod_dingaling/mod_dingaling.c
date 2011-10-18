@@ -40,6 +40,7 @@
 #define DL_EVENT_LOGIN_FAILURE "dingaling::login_failure"
 #define DL_EVENT_CONNECTED "dingaling::connected"
 #define MDL_CHAT_PROTO "jingle"
+#define MDL_CHAT_FROM_GUESS "auto_from"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown);
@@ -550,7 +551,12 @@ static switch_status_t chat_send(switch_event_t *message_event)
 					*p = '\0';
 				}
 			}
-			ldl_handle_send_msg(profile->handle, (char *) from, (char *) to, NULL, switch_str_nil(body));
+			if (!(profile->user_flags & LDL_FLAG_COMPONENT) && !strcmp(f_user, MDL_CHAT_FROM_GUESS)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using auto_from jid address for profile %s\n", profile->name);
+				ldl_handle_send_msg(profile->handle, NULL, (char *) to, NULL, switch_str_nil(body));
+			} else {
+				ldl_handle_send_msg(profile->handle, (char *) from, (char *) to, NULL, switch_str_nil(body));
+			}
 			switch_safe_free(ffrom);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", f_host ? f_host : "NULL");
