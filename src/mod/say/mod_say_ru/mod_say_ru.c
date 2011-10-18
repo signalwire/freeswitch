@@ -290,14 +290,14 @@ static switch_status_t ru_say_money(switch_say_file_handle_t *sh, char *tosay, s
 	}
 	if (iruble<5) {
 	    if ((irubles>10)&&(irubles<15)) {
-		switch_say_file(sh, "currency/%s",matrix_currency->first[5]);
+		switch_say_file(sh, "currency/%s",matrix_currency[say_opt->currency].first[5]);
 	    }
 	    else {
-		switch_say_file(sh, "currency/%s",matrix_currency->first[iruble]);
+		switch_say_file(sh, "currency/%s",matrix_currency[say_opt->currency].first[iruble]);
 	    }
 	}
 	else {
-	    switch_say_file(sh, "currency/%s",matrix_currency->first[5]);
+	    switch_say_file(sh, "currency/%s",matrix_currency[say_opt->currency].first[5]);
 	}
 	    
 	    
@@ -311,14 +311,14 @@ static switch_status_t ru_say_money(switch_say_file_handle_t *sh, char *tosay, s
 
 	if (ikopeck<5) {
 	    if ((ikopecks>10)&&(ikopecks<15)) {
-		switch_say_file(sh, "currency/%s",matrix_currency->second[5]);
+		switch_say_file(sh, "currency/%s",matrix_currency[say_opt->currency].second[5]);
 	    }
 	    else {
-    		switch_say_file(sh, "currency/%s",matrix_currency->second[ikopeck]);
+    		switch_say_file(sh, "currency/%s",matrix_currency[say_opt->currency].second[ikopeck]);
 	    }
 	}
 	else {
-	    switch_say_file(sh, "currency/%s",matrix_currency->second[5]);
+	    switch_say_file(sh, "currency/%s",matrix_currency[say_opt->currency].second[5]);
 	}
 
 
@@ -718,7 +718,7 @@ static switch_status_t run_callback(switch_new_say_callback_ru_t say_cb, char *t
 			say_opt.currency=(currency_t)1;
 		    }
 		}
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!   say_opt.gender=%d   say_opt.cases=%d\n", tosay,say_opt.gender,say_opt.cases);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ru_say!!!  %s!   say_opt.gender=%d   say_opt.cases=%d\n", tosay,say_opt.gender,say_opt.cases);
                                                                                 
 	}
         switch_say_file_handle_create(&sh, say_args->ext, &var_event);
