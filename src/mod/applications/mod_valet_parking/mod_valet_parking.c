@@ -447,7 +447,6 @@ SWITCH_STANDARD_API(valet_info_function)
 		const void *i_var;
 		void *i_val;
 		char *i_ext;
-		char *i_uuid;
 
 		switch_hash_this(hi, &var, NULL, &val);
 		name = (char *) var;
@@ -459,10 +458,12 @@ SWITCH_STANDARD_API(valet_info_function)
 		stream->write_function(stream, "  <lot name=\"%s\">\n", name);
 
 		for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
+			valet_token_t *token;
+
 			switch_hash_this(i_hi, &i_var, NULL, &i_val);
 			i_ext = (char *) i_var;
-			i_uuid = (char *) i_val;
-			stream->write_function(stream, "    <extension uuid=\"%s\">%s</extension>\n", i_uuid, i_ext);
+			token = (valet_token_t *) i_val;
+			stream->write_function(stream, "    <extension uuid=\"%s\">%s</extension>\n", token->uuid, i_ext);
 		}
 		stream->write_function(stream, "  </lot>\n");
 	}
