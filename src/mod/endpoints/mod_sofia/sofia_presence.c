@@ -1298,7 +1298,7 @@ static char *translate_rpid(char *in)
 	}
 
 	if (!strcasecmp(in, "idle")) {
-		r = "online";
+		r = "busy";
 	}
 
   end:

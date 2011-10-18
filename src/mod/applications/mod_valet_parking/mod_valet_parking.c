@@ -256,7 +256,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
@@ -292,7 +292,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", token->ext);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", token->ext, domain_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
@@ -672,7 +672,7 @@ static void pres_event_handler(switch_event_t *event)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
@@ -733,7 +733,7 @@ static void pres_event_handler(switch_event_t *event)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", to);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);

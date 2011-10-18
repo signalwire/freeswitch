@@ -1703,7 +1703,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Inactive");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
@@ -7210,7 +7210,7 @@ static void pres_event_handler(switch_event_t *event)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conf_name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", to);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
@@ -7251,7 +7251,7 @@ static void send_presence(switch_event_types_t id)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", status ? status : "Available");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 				switch_event_fire(&event);
 			}
