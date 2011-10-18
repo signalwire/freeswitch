@@ -1298,7 +1298,7 @@ static char *translate_rpid(char *in)
 	}
 
 	if (!strcasecmp(in, "idle")) {
-		r = "busy";
+		r = "online";
 	}
 
   end:
@@ -1555,6 +1555,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *force_direction = switch_str_nil(switch_event_get_header(helper->event, "force-direction"));
 		const char *uuid = switch_str_nil(switch_event_get_header(helper->event, "unique-id"));
 		const char *event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));
+		const char *force_event_status = switch_str_nil(switch_event_get_header(helper->event, "force-status"));
 		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
 		const char *answer_state = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 		const char *dft_state;
@@ -1564,6 +1565,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		char *clean_to_user = NULL;
 		char *clean_from_user = NULL;
 		int force_status = 0;
+
+
+		if (force_event_status && !event_status) {
+			event_status = force_event_status;
+		}
 
 		if (!strcasecmp(direction, "inbound")) {
 			from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Destination-Number"));
@@ -1767,6 +1773,13 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				status = dialog_status;
 				switch_set_string(status_line, status);
 			}
+
+
+
+			if (!zstr(force_event_status)) {
+				switch_set_string(status_line, force_event_status);
+			}
+
 			
 			if (!zstr(dialog_rpid)) {
 				prpid = rpid = dialog_rpid;

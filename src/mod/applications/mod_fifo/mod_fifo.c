@@ -1928,7 +1928,7 @@ static void send_presence(fifo_node_t *node)
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "park");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "queue");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", node->name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", node->name);
 		if ((wait_count = node_caller_count(node)) > 0) {
@@ -1959,7 +1959,7 @@ static void pres_event_handler(switch_event_t *event)
 		return;
 	}
 
-	if (!to || strncasecmp(to, "park+", 5)) {
+	if (!to || strncasecmp(to, "queue+", 5)) {
 		return;
 	}
 
