@@ -403,10 +403,20 @@ SWITCH_STANDARD_API(launch_python)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_CHAT_APP(python_chat_function)
+{
+	eval_some_python("chat", (char *) data, NULL, NULL, message, NULL, NULL);
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
+	switch_chat_application_interface_t *chat_app_interface;
+
 	char *pp = getenv("PYTHONPATH");
 
 	if (pp) {
@@ -416,6 +426,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 	} else {
 		setenv("PYTHONPATH", SWITCH_GLOBAL_dirs.script_dir, 1);
 	}
+
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "python", "execute a python script", "execute a python script", python_chat_function, "<script>", SCAF_NONE);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Python Framework Loading...\n");
 
