@@ -70,7 +70,7 @@ switch_status_t callprogress_detector_start(switch_core_session_t *session, cons
 switch_status_t callprogress_detector_stop(switch_core_session_t *session);
 
 switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
-														   const char *flags, time_t timeout,
+														   const char *flags, int timeout,
 														   int hits, const char *app, const char *data, switch_tone_detect_callback_t callback);
 
 switch_status_t spandsp_fax_stop_detect_session(switch_core_session_t *session);
