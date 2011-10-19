@@ -2018,16 +2018,21 @@ switch_status_t spandsp_fax_stop_detect_session(switch_core_session_t *session)
 }
 
 switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
-														   const char *flags, time_t timeout,
+														   const char *flags, int timeout,
 														   int hits, const char *app, const char *data, switch_tone_detect_callback_t callback)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
+	time_t to = 0;
 	spandsp_fax_tone_container_t *cont = switch_channel_get_private(channel, "_fax_tone_detect_");
 	switch_media_bug_flag_t bflags = 0;
 	const char *var;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
+
+	if (timeout) {
+		to = switch_epoch_time_now(NULL) + timeout;
+	}
 
 	if (cont) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Max Tones Reached!\n");
@@ -2089,7 +2094,7 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 
 
 	if ((status = switch_core_media_bug_add(session, "fax_tone_detect", "",
-											tone_detect_callback, cont, timeout, bflags, &cont->bug)) != SWITCH_STATUS_SUCCESS) {
+											tone_detect_callback, cont, to, bflags, &cont->bug)) != SWITCH_STATUS_SUCCESS) {
 		cont->bug_running = 0;
 		return status;
 	}
