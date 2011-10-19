@@ -244,7 +244,12 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+			if (strchr(lot_name, '@')) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
+			} else {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+			}
+			
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", count, count == 1 ? "" : "s");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -260,7 +265,12 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+			if (strchr(lot_name, '@')) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
+			} else {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+			}
+			
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -660,7 +670,11 @@ static void pres_event_handler(switch_event_t *event)
 				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+					if (strchr(lot_name, '@')) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
+					} else {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+					}
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", count, count == 1 ? "" : "s");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -676,8 +690,12 @@ static void pres_event_handler(switch_event_t *event)
 		} else {
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+				if (strchr(lot_name, '@')) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
+				} else {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+				}
+
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -715,7 +733,12 @@ static void pres_event_handler(switch_event_t *event)
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+						if (strchr(lot_name, '@')) {
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
+						} else {
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+						}
+
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Active");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
@@ -738,7 +761,11 @@ static void pres_event_handler(switch_event_t *event)
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", to);
+		if (strchr(lot_name, '@')) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
+		} else {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+		}
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");

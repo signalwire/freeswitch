@@ -886,7 +886,12 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+            if (strchr(conference->name, '@')) {
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", conference->name);
+            } else {
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+            }
+
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
@@ -1107,7 +1112,12 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+            if (strchr(conference->name, '@')) {
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", conference->name);
+            } else {
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+            }
+
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
@@ -1701,7 +1711,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+		if (strchr(conference->name, '@')) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", conference->name);
+		} else {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+		}
+
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Inactive");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -6057,7 +6072,7 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	/* is there profile specification ? */
-	if ((profile_name = strchr(conf_name, '@'))) {
+	if ((profile_name = strrchr(conf_name, '@'))) {
 		*profile_name++ = '\0';
 	} else {
 		profile_name = "default";
@@ -6665,6 +6680,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_xml_t xml_kvp;
 	char *timer_name = NULL;
 	char *domain = NULL;
+	char *name_domain = NULL;
 	char *tts_engine = NULL;
 	char *tts_voice = NULL;
 	char *enter_sound = NULL;
@@ -7116,7 +7132,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference->announce_count = announce_count;
 
 	conference->name = switch_core_strdup(conference->pool, name);
-	if (domain) {
+
+	if ((name_domain = strchr(conference->name, '@'))) {
+		conference->domain = switch_core_strdup(conference->pool, name_domain);
+	} else if (domain) {
 		conference->domain = switch_core_strdup(conference->pool, domain);
 	} else {
 		conference->domain = "cluecon.com";
@@ -7173,7 +7192,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 static void pres_event_handler(switch_event_t *event)
 {
 	char *to = switch_event_get_header(event, "to");
-	char *dup_to = NULL, *conf_name, *e;
+	char *dup_to = NULL, *conf_name;
 	conference_obj_t *conference;
 
 	if (!to || strncasecmp(to, "conf+", 5)) {
@@ -7186,15 +7205,16 @@ static void pres_event_handler(switch_event_t *event)
 
 	conf_name = dup_to + 5;
 
-	if ((e = strchr(conf_name, '@'))) {
-		*e = '\0';
-	}
-
 	if ((conference = conference_find(conf_name))) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+			if (strchr(conference->name, '@')) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", conference->name);
+			} else {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+			}
+
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");

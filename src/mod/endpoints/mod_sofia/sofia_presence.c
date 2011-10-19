@@ -912,6 +912,10 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
 				switch_safe_free(sql);
 				
+				if (zstr(proto)) {
+					proto = SOFIA_CHAT_PROTO;
+				}
+
 				if ((sql = switch_mprintf("select distinct sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
 										  "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
 										  "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
@@ -925,12 +929,13 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 										  "sip_subscriptions.profile_name=sip_presence.profile_name) "
 										  
 										  "where sip_subscriptions.version > -1 and sip_subscriptions.expires > -1 and "
+										  "sip_subscriptions.proto='%q' and "
 										  "(event='%q' or event='%q') and sub_to_user='%q' "
 										  "and (sub_to_host='%q' or presence_hosts like '%%%q%%') "
 										  "and (sip_subscriptions.profile_name = '%q' or sip_subscriptions.presence_hosts != sip_subscriptions.sub_to_host) ",
 										  
 										  switch_str_nil(status), switch_str_nil(rpid), host,
-										  dh.status,dh.rpid,dh.presence_id,
+										  dh.status,dh.rpid,dh.presence_id, proto,
 										  event_type, alt_event_type, euser, host, host, profile->name))) {
 					
 					struct presence_helper helper = { 0 };			
@@ -1476,7 +1481,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		user = free_me;
 	}
 	
-
 	in = helper->event && helper->event->event_id == SWITCH_EVENT_PRESENCE_IN;
 
 	if (zstr(rpid)) {
