@@ -234,6 +234,7 @@ struct perl_o {
 	switch_stream_handle_t *stream;
 	switch_core_session_t *session;
 	char *cmd;
+	switch_event_t *message;
 	int d;
 };
 
@@ -247,6 +248,7 @@ static void *SWITCH_THREAD_FUNC perl_thread_run(switch_thread_t *thread, void *o
 	char *cmd = po->cmd;
 	switch_stream_handle_t *stream = po->stream;
 	switch_core_session_t *session = po->session;
+	switch_event_t *message = po->message;
 
 	if (session) {
 		uuid = switch_core_session_get_uuid(session);
@@ -271,6 +273,11 @@ static void *SWITCH_THREAD_FUNC perl_thread_run(switch_thread_t *thread, void *o
 				mod_perl_conjure_event(my_perl, stream->param_event, "env");
 			}
 		}
+
+		if (message) {
+			mod_perl_conjure_event(my_perl, message, "message");
+		}
+
 		//Perl_safe_eval(my_perl, cmd);
 		perl_parse_and_execute(my_perl, cmd, NULL);
 	}
@@ -431,6 +438,27 @@ static switch_xml_t perl_fetch(const char *section,
 
 	return xml;
 }
+
+
+SWITCH_STANDARD_CHAT_APP(perl_chat_function)
+{
+
+	struct perl_o po = { 0 };
+
+	if (zstr(data)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	po.cmd = strdup(data);
+	po.stream = NULL;
+	po.session = NULL;
+	po.message = message;
+	perl_thread_run(NULL, &po);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 
 static switch_status_t do_config(void)
 {
