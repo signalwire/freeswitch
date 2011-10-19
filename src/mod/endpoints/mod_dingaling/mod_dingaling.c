@@ -1603,8 +1603,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		channel_answer_channel(session);
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+		rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
 		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+		rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
 		break;
 	default:
 		break;
