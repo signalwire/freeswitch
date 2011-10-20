@@ -427,8 +427,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 		setenv("PYTHONPATH", SWITCH_GLOBAL_dirs.script_dir, 1);
 	}
 
-	SWITCH_ADD_CHAT_APP(chat_app_interface, "python", "execute a python script", "execute a python script", python_chat_function, "<script>", SCAF_NONE);
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Python Framework Loading...\n");
 
 	globals.pool = pool;
@@ -466,6 +464,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 	SWITCH_ADD_API(api_interface, "python", "run a python script", api_python, "python </path/to/script>");
 	SWITCH_ADD_APP(app_interface, "python", "Launch python ivr", "Run a python ivr on a channel", python_function, "<script> [additional_vars [...]]",
 				   SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "python", "execute a python script", "execute a python script", python_chat_function, "<script>", SCAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
