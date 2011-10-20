@@ -384,6 +384,7 @@ struct conference_member {
 	struct conference_member *next;
 	switch_ivr_dmachine_t *dmachine;
 	conference_cdr_node_t *cdr_node;
+	char *kicked_sound;
 };
 
 /* Record Node */
@@ -4100,6 +4101,10 @@ static switch_status_t conf_api_sub_kick(conference_member_t *member, switch_str
 	switch_set_flag_locked(member, MFLAG_KICKED);
 	switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
 
+	if (data && member->session) {
+		member->kicked_sound = switch_core_session_strdup(member->session, (char *) data);
+	}
+
 	if (stream != NULL) {
 		stream->write_function(stream, "OK kicked %u\n", member->id);
 	}
@@ -5165,7 +5170,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"saymember", (void_fn_t) & conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "saymember", "<member_id> <text>"},
 	{"stop", (void_fn_t) & conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "stop", "<[current|all|async|last]> [<member_id>]"},
 	{"dtmf", (void_fn_t) & conf_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET, "dtmf", "<[member_id|all|last]> <digits>"},
-	{"kick", (void_fn_t) & conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "kick", "<[member_id|all|last]>"},
+	{"kick", (void_fn_t) & conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "kick", "<[member_id|all|last]> [<optional sound file>]"},
 	{"hup", (void_fn_t) & conf_api_sub_hup, CONF_API_SUB_MEMBER_TARGET, "hup", "<[member_id|all|last]>"},
 	{"mute", (void_fn_t) & conf_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "mute", "<[member_id|all]|last>"},
 	{"unmute", (void_fn_t) & conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "unmute", "<[member_id|all]|last>"},
@@ -6479,17 +6484,19 @@ SWITCH_STANDARD_APP(conference_function)
 		char *toplay = NULL;
 		char *dfile = NULL;
 		char *expanded = NULL;
+		char *src = member.kicked_sound ? member.kicked_sound : conference->kicked_sound;
 
-		if (!strncasecmp(conference->kicked_sound, "say:", 4)) {
+
+		if (!strncasecmp(src, "say:", 4)) {
 			if (conference->tts_engine && conference->tts_voice) {
-				switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, conference->kicked_sound + 4, NULL);
+				switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, src + 4, NULL);
 			}
 		} else {
-			if ((expanded = switch_channel_expand_variables(switch_core_session_get_channel(session), conference->kicked_sound)) != conference->kicked_sound) {
+			if ((expanded = switch_channel_expand_variables(switch_core_session_get_channel(session), src)) != src) {
 				toplay = expanded;
 			} else {
 				expanded = NULL;
-				toplay = conference->kicked_sound; 
+				toplay = src; 
 			}
 
 			if (!switch_is_file_path(toplay) && conference->sound_prefix) {
