@@ -759,12 +759,21 @@ static conference_member_t *conference_member_get(conference_obj_t *conference, 
 		}
 	}
 
-	if (member && !switch_test_flag(member, MFLAG_INTREE)) {
-		member = NULL;
+	if (member) {
+		if (!switch_test_flag(member, MFLAG_INTREE) || 
+			switch_test_flag(member, MFLAG_KICKED) || 
+			(member->session && !switch_channel_up(switch_core_session_get_channel(member->session)))) {
+
+			/* member is kicked or hanging up so forget it */
+			member = NULL;
+		}
 	}
 
 	if (member) {
-		switch_thread_rwlock_rdlock(member->rwlock);
+		if (switch_thread_rwlock_tryrdlock(member->rwlock) != SWITCH_STATUS_SUCCESS) {
+			/* if you cant readlock it's way to late to do anything */
+			member = NULL;
+		}
 	}
 
 	switch_mutex_unlock(conference->member_mutex);
@@ -3554,7 +3563,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	conference_file_node_t *fnode, *nptr = NULL;
 	switch_memory_pool_t *pool;
 
-	if (member == NULL || file == NULL)
+	if (member == NULL || file == NULL || switch_test_flag(member, MFLAG_KICKED))
 		return status;
 
 	if ((expanded = switch_channel_expand_variables(switch_core_session_get_channel(member->session), file)) != file) {
