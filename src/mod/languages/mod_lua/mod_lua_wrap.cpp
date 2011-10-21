@@ -1539,6 +1539,51 @@ typedef struct{} LANGUAGE_OBJ;
 #ifdef __cplusplus
 extern "C" {
 #endif
+static int _wrap_setGlobalVariable(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("setGlobalVariable",2,2)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("setGlobalVariable",1,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("setGlobalVariable",2,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  setGlobalVariable(arg1,arg2);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_getGlobalVariable(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("getGlobalVariable",1,1)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("getGlobalVariable",1,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  result = (char *)getGlobalVariable(arg1);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  free(result);
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_consoleLog(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
@@ -7642,6 +7687,8 @@ static swig_lua_class _wrap_class_LUA_Dbh = { "Dbh", &SWIGTYPE_p_LUA__Dbh,_wrap_
 #endif
 
 static const struct luaL_reg swig_commands[] = {
+    { "setGlobalVariable", _wrap_setGlobalVariable},
+    { "getGlobalVariable", _wrap_getGlobalVariable},
     { "consoleLog", _wrap_consoleLog},
     { "consoleCleanLog", _wrap_consoleCleanLog},
     { "email", _wrap_email},

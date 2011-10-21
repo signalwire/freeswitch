@@ -1190,6 +1190,17 @@ SWITCH_DECLARE(int) globalSetVariable(const char *var, const char *val, const ch
 	}
 }
 
+SWITCH_DECLARE(void) setGlobalVariable(char *var_name, char *var_val)
+{
+	switch_core_set_variable(var_name, var_val);
+}
+
+SWITCH_DECLARE(char *) getGlobalVariable(char *var_name)
+{
+	return switch_core_get_variable_dup(var_name);
+}
+
+
 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg)
 {
 	return console_log(level_str, msg);

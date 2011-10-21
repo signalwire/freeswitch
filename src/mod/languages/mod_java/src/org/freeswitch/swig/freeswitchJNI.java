@@ -9,6 +9,8 @@
 package org.freeswitch.swig;
 
 class freeswitchJNI {
+  public final static native void setGlobalVariable(String jarg1, String jarg2);
+  public final static native String getGlobalVariable(String jarg1);
   public final static native void consoleLog(String jarg1, String jarg2);
   public final static native void consoleCleanLog(String jarg1);
   public final static native boolean email(String jarg1, String jarg2, String jarg3, String jarg4, String jarg5, String jarg6, String jarg7);

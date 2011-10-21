@@ -9,6 +9,14 @@
 package org.freeswitch.swig;
 
 public class freeswitch {
+  public static void setGlobalVariable(String var_name, String var_val) {
+    freeswitchJNI.setGlobalVariable(var_name, var_val);
+  }
+
+  public static String getGlobalVariable(String var_name) {
+    return freeswitchJNI.getGlobalVariable(var_name);
+  }
+
   public static void consoleLog(String level_str, String msg) {
     freeswitchJNI.consoleLog(level_str, msg);
   }

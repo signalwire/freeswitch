@@ -1,5 +1,7 @@
 %module freeswitch
 
+%include ../../../../swig_common.i
+
 /** String fix - copied from csharphead.swg with fix for multiple appdomains **/
 /* Must pass -DSWIG_CSHARP_NO_STRING_HELPER to swig */
 

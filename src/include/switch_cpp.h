@@ -65,6 +65,10 @@ Note that the first parameter to the new operator is implicitly handled by c++..
 
 */
 
+
+SWITCH_DECLARE(void) setGlobalVariable(char *var_name, char *var_val);
+SWITCH_DECLARE(char *) getGlobalVariable(char *var_name);
+
 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg);
 SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
