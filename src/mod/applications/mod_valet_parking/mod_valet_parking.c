@@ -58,12 +58,13 @@ typedef struct {
 static valet_lot_t globals = { 0 };
 
 
-static valet_lot_t *valet_find_lot(const char *name)
+static valet_lot_t *valet_find_lot(const char *name, switch_bool_t create)
 {
 	valet_lot_t *lot;
 
 	switch_mutex_lock(globals.mutex);
-	if (!(lot = switch_core_hash_find(globals.hash, name))) {
+	lot = switch_core_hash_find(globals.hash, name);
+	if (!lot && create) {
 		switch_zmalloc(lot, sizeof(*lot));
 		switch_mutex_init(&lot->mutex, SWITCH_MUTEX_NESTED, globals.pool);
 		switch_core_hash_init(&lot->hash, NULL);
@@ -125,7 +126,7 @@ static void check_timeouts(void)
 	if (matches) {
 		for (m = matches->head; m; m = m->next) {
 
-			lot = valet_find_lot(m->val);
+			lot = valet_find_lot(m->val, SWITCH_FALSE);
 			switch_mutex_lock(lot->mutex);
 
 		top:
@@ -358,7 +359,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		char *dest;
 		int in = -1;
 
-		lot = valet_find_lot(lot_name);
+		lot = valet_find_lot(lot_name, SWITCH_TRUE);
 		switch_assert(lot);
 
 		if (!strcasecmp(ext, "auto")) {
@@ -619,7 +620,10 @@ SWITCH_STANDARD_API(valet_info_function)
 			switch_hash_this(i_hi, &i_var, NULL, &i_val);
 			i_ext = (char *) i_var;
 			token = (valet_token_t *) i_val;
-			stream->write_function(stream, "    <extension uuid=\"%s\">%s</extension>\n", token->uuid, i_ext);
+
+			if (!token->timeout) {
+				stream->write_function(stream, "    <extension uuid=\"%s\">%s</extension>\n", token->uuid, i_ext);
+			}
 		}
 		stream->write_function(stream, "  </lot>\n");
 	}
@@ -662,7 +666,7 @@ static void pres_event_handler(switch_event_t *event)
 		domain_name = "cluecon.com";
 	}
 
-	if ((lot = valet_find_lot(lot_name))) {
+	if ((lot = valet_find_lot(lot_name, SWITCH_FALSE))) {
 		int count = valet_lot_count(lot);
 		
 		if (count) {
@@ -726,7 +730,7 @@ static void pres_event_handler(switch_event_t *event)
 			valet_token_t *token;
 			
 			for (m = matches->head; m; m = m->next) {
-				lot = valet_find_lot(m->val);
+				lot = valet_find_lot(m->val, SWITCH_FALSE);
 				switch_mutex_lock(lot->mutex);
 				
 				if ((token = (valet_token_t *) switch_core_hash_find(lot->hash, lot_name))) {
