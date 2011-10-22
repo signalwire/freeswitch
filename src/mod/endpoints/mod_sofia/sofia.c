@@ -3539,7 +3539,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
-				sofia_set_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
+				sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
 				profile->shutdown_type = "false";
 				profile->local_network = "localnet.auto";
 				sofia_set_flag(profile, TFLAG_ENABLE_SOA);
@@ -3646,7 +3646,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
 						}
 					} else if (!strcasecmp(var, "send-presence-on-register")) {
-						if (switch_true(val)) {
+						if (switch_true(val) || !strcasecmp(val, "all")) {
 							sofia_set_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
 						} else if (!strcasecmp(val, "first-only")) {
 							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
@@ -4964,6 +4964,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				!switch_channel_test_flag(channel, CF_RING_READY)) {
 				const char *from_user = "", *from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
 				const char *user_agent = "", *call_id = "";
+				const char *to_tag = "";
+				const char *from_tag = "";
 				char *sql = NULL;
 
 				if (sip->sip_user_agent) {
@@ -4976,12 +4978,14 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 				if (to) {
 					from_user = switch_str_nil(to->url_user);
+					from_tag = switch_str_nil(sip->sip_to->a_tag);
 				}
 
 				if (from) {
 					from_host = switch_str_nil(from->url_host);
 					to_user = switch_str_nil(from->url_user);
 					to_host = switch_str_nil(from->url_host);
+					to_tag = switch_str_nil(sip->sip_from->a_tag);
 				}
 
 				if (contact) {
@@ -5003,12 +5007,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						p++;
 					}
 					sql = switch_mprintf("insert into sip_dialogs "
-										 "(call_id,uuid,sip_to_user,sip_to_host,sip_from_user,sip_from_host,contact_user,"
+										 "(call_id,uuid,sip_to_user,sip_to_host,sip_to_tag,sip_from_user,sip_from_host,sip_from_tag,contact_user,"
 										 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,call_info) "
-										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
 										 call_id,
 										 switch_core_session_get_uuid(session),
-										 to_user, to_host, from_user, from_host, contact_user,
+										 to_user, to_host, to_tag, from_user, from_host, from_tag, contact_user,
 										 contact_host, astate, "outbound", user_agent,
 										 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
 										 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p));
@@ -5299,6 +5303,19 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 	if (status == 180 && r_sdp) {
 		status = 183;
+	}
+
+	if (channel && profile->pres_type && ss_state == nua_callstate_ready && status == 200) {
+		const char* to_tag = "";
+		char *sql = NULL;
+		to_tag = switch_str_nil(switch_channel_get_variable(channel, "sip_to_tag"));
+		sql = switch_mprintf("update sip_dialogs set sip_to_tag='%q' "
+				"where uuid='%q' and sip_to_tag = ''", to_tag, switch_core_session_get_uuid(session));
+
+		if (mod_sofia_globals.debug_presence > 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "QUERY SQL %s\n", sql);
+		}
+		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 	}
 
 	if (channel && (status == 180 || status == 183) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
@@ -8065,6 +8082,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		const char *dialog_from_user = "", *dialog_from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
 		const char *user_agent = "", *call_id = "";
 		url_t *from = NULL, *to = NULL, *contact = NULL;
+		const char *to_tag = "";
+		const char *from_tag = "";
 		char *sql = NULL;
 
 		if (sip->sip_to) {
@@ -8088,11 +8107,13 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (to) {
 			to_user = switch_str_nil(to->url_user);
 			to_host = switch_str_nil(to->url_host);
+			to_tag = switch_str_nil(sip->sip_to->a_tag);
 		}
 
 		if (from) {
 			dialog_from_user = switch_str_nil(from->url_user);
 			dialog_from_host = switch_str_nil(from->url_host);
+			from_tag = switch_str_nil(sip->sip_from->a_tag);
 		}
 
 		if (contact) {
@@ -8121,12 +8142,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 
 			sql = switch_mprintf("insert into sip_dialogs "
-								 "(call_id,uuid,sip_to_user,sip_to_host,sip_from_user,sip_from_host,contact_user,"
+								 "(call_id,uuid,sip_to_user,sip_to_host,sip_to_tag,sip_from_user,sip_from_host,sip_from_tag,contact_user,"
 								 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,call_info) "
-								 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+								 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
 								 call_id,
 								 tech_pvt->sofia_private->uuid,
-								 to_user, to_host, dialog_from_user, dialog_from_host,
+								 to_user, to_host, to_tag, dialog_from_user, dialog_from_host, from_tag,
 								 contact_user, contact_host, "confirmed", "inbound", user_agent,
 								 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
 								 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p));

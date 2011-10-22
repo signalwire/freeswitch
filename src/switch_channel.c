@@ -605,8 +605,12 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 	call_info = switch_channel_get_variable(channel, "presence_call_info");
 
 	if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
+		if (!strcasecmp(status, "CS_HANGUP")) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "refresh", "true");
+		}
+
 		switch_channel_event_set_data(channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", __FILE__);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "any");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", __FILE__);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", id);
 		if (type == SWITCH_EVENT_PRESENCE_IN) {
@@ -1828,7 +1832,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 
 	channel->running_state = state;
 
-	if (channel->state == CS_ROUTING || channel->state == CS_HANGUP) {
+	if (state == CS_ROUTING || state == CS_HANGUP) {
 		switch_channel_presence(channel, "unknown", (const char *) state_names[state], NULL);
 	}
 
