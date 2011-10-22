@@ -313,7 +313,6 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 					SIPTAG_FROM_STR(from),
 					TAG_IF(contact, NUTAG_URL(contact)),
 					SIPTAG_TO_STR(dup_dest),
-					SIPTAG_CONTACT_STR(contact_str),
 
 					TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 					SIPTAG_CONTENT_TYPE_STR(ct),

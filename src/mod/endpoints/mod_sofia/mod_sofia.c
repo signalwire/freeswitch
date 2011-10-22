@@ -2572,7 +2572,7 @@ static switch_status_t sofia_receive_event(switch_core_session_t *session, switc
 		switch_mutex_lock(tech_pvt->sofia_mutex);
 		msg_nh = nua_handle(tech_pvt->profile->nua, NULL,
 							SIPTAG_FROM_STR(tech_pvt->chat_from),
-							NUTAG_URL(tech_pvt->chat_to), SIPTAG_TO_STR(tech_pvt->chat_to), SIPTAG_CONTACT_STR(tech_pvt->profile->url), TAG_END());
+							NUTAG_URL(tech_pvt->chat_to), SIPTAG_TO_STR(tech_pvt->chat_to), TAG_END());
 		nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
 		nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR("text/html"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
