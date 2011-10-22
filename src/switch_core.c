@@ -2023,7 +2023,6 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		break;
 	case SCSC_SYNC_CLOCK_WHEN_IDLE:
 		newintval = switch_core_session_sync_clock();
-		printf("WTF [%d]\n", newintval);
 		break;
 	case SCSC_PAUSE_INBOUND:
 		if (oldintval) {
