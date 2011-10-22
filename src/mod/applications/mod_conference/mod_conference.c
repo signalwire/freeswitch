@@ -430,6 +430,7 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
 static conference_obj_t *conference_find(char *name);
 static void member_bind_controls(conference_member_t *member, const char *controls);
+static void conference_send_presence(conference_obj_t *conference);
 
 SWITCH_STANDARD_API(conf_api_main);
 
@@ -893,25 +894,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			if (conference->end_count++);
 		}
 
-		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
-            if (strchr(conference->name, '@')) {
-                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", conference->name);
-            } else {
-                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
-            }
-
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference->name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", conference->count == 1 ? "outbound" : "inbound");
-			switch_event_fire(&event);
-		}
+		conference_send_presence(conference);
 
 		channel = switch_core_session_get_channel(member->session);
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
@@ -1119,25 +1102,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 		}
 
 
-		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
-            if (strchr(conference->name, '@')) {
-                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", conference->name);
-            } else {
-                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
-            }
-
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference->name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", conference->count == 1 ? "outbound" : "inbound");
-			switch_event_fire(&event);
-		}
+		conference_send_presence(conference);
 
 		if ((conference->min && switch_test_flag(conference, CFLAG_ENFORCE_MIN) && conference->count < conference->min)
 			|| (switch_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0)) {
@@ -1718,26 +1683,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 	}
 
-	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
-		if (strchr(conference->name, '@')) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", conference->name);
-		} else {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
-		}
-
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Inactive");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
-		switch_event_fire(&event);
-	}
+	conference_send_presence(conference);
 
 	switch_mutex_lock(conference->mutex);
 	conference_stop_file(conference, FILE_STOP_ASYNC);
@@ -7205,31 +7151,75 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	return conference;
 }
 
+static void conference_send_presence(conference_obj_t *conference)
+{
+	switch_event_t *event;
+
+	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
+		if (strchr(conference->name, '@')) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", conference->name);
+		} else {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+		}
+
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference->name);
+
+		if (conference->count) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", conference->count == 1 ? "outbound" : "inbound");
+		} else {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Inactive");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+		}
+
+
+
+		switch_event_fire(&event);
+	}
+	
+}
+
+
 static void pres_event_handler(switch_event_t *event)
 {
 	char *to = switch_event_get_header(event, "to");
-	char *dup_to = NULL, *conf_name;
+	char *domain_name = NULL;
+	char *dup_to = NULL, *conf_name, *dup_conf_name = NULL;
 	conference_obj_t *conference;
 
-	if (!to || strncasecmp(to, "conf+", 5)) {
+	if (!to || strncasecmp(to, "conf+", 5) || !strchr(to, '@')) {
 		return;
 	}
 
 	if (!(dup_to = strdup(to))) {
 		return;
 	}
+	
 
 	conf_name = dup_to + 5;
 
-	if ((conference = conference_find(conf_name))) {
+	if ((domain_name = strchr(conf_name, '@'))) {
+		*domain_name++ = '\0';
+	}
+
+	dup_conf_name = switch_mprintf("%q@%q", conf_name, domain_name);
+	
+
+	if ((conference = conference_find(conf_name)) || (conference = conference_find(dup_conf_name))) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
-			if (strchr(conference->name, '@')) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", conference->name);
-			} else {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
-			}
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+
 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -7258,6 +7248,7 @@ static void pres_event_handler(switch_event_t *event)
 	}
 
 	switch_safe_free(dup_to);
+	switch_safe_free(dup_conf_name);
 }
 
 static void send_presence(switch_event_types_t id)

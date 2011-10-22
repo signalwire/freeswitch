@@ -311,6 +311,7 @@ struct fifo_node {
 	outbound_strategy_t outbound_strategy;
 	int ring_timeout;
 	int default_lag;
+	char *domain_name;
 };
 
 typedef struct fifo_node fifo_node_t;
@@ -814,7 +815,8 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	char outbound_count[80] = "";
 	callback_t cbt = { 0 };
 	char *sql = NULL;
-
+	char *domain_name = NULL;
+	
 	if (!globals.running) {
 		return NULL;
 	}
@@ -826,6 +828,12 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	node->pool = pool;
 	node->outbound_strategy = default_strategy;
 	node->name = switch_core_strdup(node->pool, name);
+
+	if (!strchr(name, '@')) {
+		domain_name = switch_core_get_variable_dup("domain");
+		node->domain_name = switch_core_strdup(node->pool, domain_name);
+	}
+
 	for (x = 0; x < MAX_PRI; x++) {
 		fifo_queue_create(&node->fifo_list[x], 1000, node->pool);
 		switch_assert(node->fifo_list[x]);
@@ -849,6 +857,9 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	switch_mutex_lock(globals.mutex);
 	switch_core_hash_insert(globals.fifo_hash, name, node);
 	switch_mutex_unlock(globals.mutex);
+
+	switch_safe_free(domain_name);
+
 	return node;
 }
 
@@ -1929,8 +1940,15 @@ static void send_presence(fifo_node_t *node)
 
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "queue");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", node->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", node->name);
+
+		if (node->domain_name) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s@%s", node->name, node->domain_name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", node->name, node->domain_name);
+		} else {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", node->name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", node->name);
+		}
+
 		if ((wait_count = node_caller_count(node)) > 0) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d waiting)", wait_count);
 		} else {
@@ -1952,25 +1970,34 @@ static void send_presence(fifo_node_t *node)
 static void pres_event_handler(switch_event_t *event)
 {
 	char *to = switch_event_get_header(event, "to");
-	char *dup_to = NULL, *node_name;
+	char *domain_name = NULL;
+	char *dup_to = NULL, *node_name , *dup_node_name;
 	fifo_node_t *node;
 
 	if (!globals.running) {
 		return;
 	}
 
-	if (!to || strncasecmp(to, "queue+", 5)) {
+	if (!to || strncasecmp(to, "queue+", 6) || !strchr(to, '@')) {
 		return;
 	}
 
 	dup_to = strdup(to);
 	switch_assert(dup_to);
 
-	node_name = dup_to + 5;
+	node_name = dup_to + 6;
+
+	if ((domain_name = strchr(node_name, '@'))) {
+		*domain_name++ = '\0';
+	}
+
+	dup_node_name = switch_mprintf("%q@%q", node_name, domain_name);
+
 
 	switch_mutex_lock(globals.mutex);
-	if (!(node = switch_core_hash_find(globals.fifo_hash, node_name))) {
+	if (!(node = switch_core_hash_find(globals.fifo_hash, node_name)) && !(node = switch_core_hash_find(globals.fifo_hash, dup_node_name))) {
 		node = create_node(node_name, 0, globals.sql_mutex);
+		node->domain_name = switch_core_strdup(node->pool, domain_name);
 		node->ready = 1;
 	}
 
@@ -1979,6 +2006,7 @@ static void pres_event_handler(switch_event_t *event)
 	switch_mutex_unlock(globals.mutex);
 
 	switch_safe_free(dup_to);
+	switch_safe_free(dup_node_name);
 }
 
 static uint32_t fifo_add_outbound(const char *node_name, const char *url, uint32_t priority)

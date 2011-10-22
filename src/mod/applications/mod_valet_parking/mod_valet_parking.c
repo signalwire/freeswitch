@@ -53,6 +53,7 @@ typedef struct {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	time_t last_timeout_check;
+	char *name;
 } valet_lot_t;
 
 static valet_lot_t globals = { 0 };
@@ -66,6 +67,7 @@ static valet_lot_t *valet_find_lot(const char *name, switch_bool_t create)
 	lot = switch_core_hash_find(globals.hash, name);
 	if (!lot && create) {
 		switch_zmalloc(lot, sizeof(*lot));
+		lot->name = strdup(name);
 		switch_mutex_init(&lot->mutex, SWITCH_MUTEX_NESTED, globals.pool);
 		switch_core_hash_init(&lot->hash, NULL);
 		switch_core_hash_insert(globals.hash, name, lot);
@@ -222,12 +224,16 @@ static int EC = 0;
 static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_token_t *token, switch_bool_t in)
 {
 
-	char *domain_name, *dup_domain_name = NULL;
+	char *domain_name, *dup_lot_name = NULL, *dup_domain_name = NULL;
 	switch_event_t *event;
 	int count;
 
-	if ((domain_name = strchr(lot_name, '@'))) {
-		domain_name++;
+	
+	dup_lot_name = strdup(lot_name);
+	lot_name = dup_lot_name;
+
+	if ((domain_name = strchr(dup_lot_name, '@'))) {
+		*domain_name++ = '\0';
 	}
 	
 	if (zstr(domain_name)) {
@@ -245,11 +251,8 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-			if (strchr(lot_name, '@')) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
-			} else {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
-			}
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+
 			
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", count, count == 1 ? "" : "s");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
@@ -266,11 +269,8 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-			if (strchr(lot_name, '@')) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
-			} else {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
-			}
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+
 			
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
@@ -322,6 +322,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 	}
 
 	switch_safe_free(dup_domain_name);
+	switch_safe_free(dup_lot_name);
 						
 }
 
@@ -639,11 +640,11 @@ SWITCH_STANDARD_API(valet_info_function)
 static void pres_event_handler(switch_event_t *event)
 {
 	char *to = switch_event_get_header(event, "to");
-	char *dup_to = NULL, *lot_name, *domain_name, *dup_domain_name = NULL;
+	char *dup_to = NULL, *lot_name, *dup_lot_name = NULL, *domain_name;
 	valet_lot_t *lot;
-
-
-	if (!to || strncasecmp(to, "park+", 5)) {
+	int found = 0;
+	
+	if (!to || strncasecmp(to, "park+", 5) || !strchr(to, '@')) {
 		return;
 	}
 
@@ -654,31 +655,21 @@ static void pres_event_handler(switch_event_t *event)
 	lot_name = dup_to + 5;
 
 	if ((domain_name = strchr(lot_name, '@'))) {
-		domain_name++;
+		*domain_name++ = '\0';
 	}
 
-	if (zstr(domain_name)) {
-		dup_domain_name = switch_core_get_variable_dup("domain");
-		domain_name = dup_domain_name;
-	}
+	dup_lot_name = switch_mprintf("%q@%q", lot_name, domain_name);
 
-	if (zstr(domain_name)) {
-		domain_name = "cluecon.com";
-	}
-
-	if ((lot = valet_find_lot(lot_name, SWITCH_FALSE))) {
+	if ((lot = valet_find_lot(lot_name, SWITCH_FALSE)) || (dup_lot_name && (lot = valet_find_lot(dup_lot_name, SWITCH_FALSE)))) {
 		int count = valet_lot_count(lot);
-		
+
 		if (count) {
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-					if (strchr(lot_name, '@')) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
-					} else {
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
-					}
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", count, count == 1 ? "" : "s");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -690,15 +681,12 @@ static void pres_event_handler(switch_event_t *event)
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
 					switch_event_fire(&event);
 				}
+				found++;
 			}
 		} else {
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
-				if (strchr(lot_name, '@')) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
-				} else {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
-				}
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
@@ -718,32 +706,35 @@ static void pres_event_handler(switch_event_t *event)
 		switch_hash_index_t *hi;
 		const void *var;
 		void *val;
+		const char *nvar;
 
 		switch_mutex_lock(globals.mutex);
 		for (hi = switch_hash_first(NULL, globals.hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &var, NULL, &val);
-			switch_console_push_match(&matches, (const char *) var);
+			nvar = (const char *) var;
+
+			if (!strchr(nvar, '@') || switch_stristr(domain_name, nvar)) {
+				switch_console_push_match(&matches, nvar);
+			}
 		}
 		switch_mutex_unlock(globals.mutex);		
 		
 		if (matches) {
 			valet_token_t *token;
 			
-			for (m = matches->head; m; m = m->next) {
+			for (m = matches->head; !found && m; m = m->next) {
 				lot = valet_find_lot(m->val, SWITCH_FALSE);
 				switch_mutex_lock(lot->mutex);
-				
-				if ((token = (valet_token_t *) switch_core_hash_find(lot->hash, lot_name))) {
+
+				if ((token = (valet_token_t *) switch_core_hash_find(lot->hash, lot_name)) && !token->timeout) {
+					found++;
+					
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-						if (strchr(lot_name, '@')) {
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
-						} else {
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
-						}
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Active");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", token->bridged == 0 ? "Holding" : "Active");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
@@ -758,18 +749,14 @@ static void pres_event_handler(switch_event_t *event)
 				switch_mutex_unlock(lot->mutex);
 			}
 		}
-		
 	}
 
 
-	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+	if (!found && switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-		if (strchr(lot_name, '@')) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", lot_name);
-		} else {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
-		}
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -783,7 +770,7 @@ static void pres_event_handler(switch_event_t *event)
 	}
 
 	switch_safe_free(dup_to);
-	switch_safe_free(dup_domain_name);
+	switch_safe_free(dup_lot_name);
 }
 
 /* Macro expands to: switch_status_t mod_valet_parking_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
