@@ -99,7 +99,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	switch_console_callback_match_node_t *m;
 	char *remote_ip = NULL;
 	char *user_via = NULL;
-	char *contact_str = NULL;
+	//char *contact_str = NULL;
 	char *dup_dest = NULL;
 	char *p = NULL;
 	char *remote_host = NULL;
@@ -265,22 +265,16 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 				//transport_str = sofia_glue_transport2str(transport);
 				switch (transport) {
 				case SOFIA_TRANSPORT_TCP:
-					contact_str = profile->tcp_public_contact;
 					break;
 				case SOFIA_TRANSPORT_TCP_TLS:
-					contact_str = profile->tls_public_contact;
 					break;
 				default:
-					contact_str = profile->public_url;
 					break;
 				}
 				user_via = sofia_glue_create_external_via(NULL, profile, transport);
 			} else {
 				user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
-				contact_str = profile->public_url;
 			}
-		} else {
-			contact_str = profile->url;
 		}
 
 		status = SWITCH_STATUS_SUCCESS;
