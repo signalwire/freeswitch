@@ -3137,6 +3137,57 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t *
 	return status;
 }
 
+SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name, const char *domain_name)
+{
+	char *cf = "presence_map.conf";
+	switch_xml_t cfg, xml, x_domains, x_domain, x_exten;
+	char *r = NULL;
+	switch_regex_t *re = NULL;
+	int proceed = 0, ovector[100];
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
+		return NULL;
+	}
+
+	if (!(x_domains = switch_xml_child(cfg, "domains"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find any domains!\n");
+		return NULL;
+	}
+
+	for (x_domain = switch_xml_child(x_domains, "domain"); x_domain; x_domain = x_domain->next) {
+		const char *dname = switch_xml_attr(x_domain, "name");
+		if (!dname || strcasecmp(domain_name, dname)) continue;
+		
+		for (x_exten = switch_xml_child(x_domain, "exten"); x_exten; x_exten = x_exten->next) {
+			const char *regex = switch_xml_attr(x_exten, "regex");
+			const char *proto = switch_xml_attr(x_exten, "proto");
+			
+			if (regex && proto) {
+				proceed = switch_regex_perform(exten_name, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+				switch_regex_safe_free(re);
+				
+				if (proceed) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Mapping %s@%s to proto %s matching expression [%s]\n", 
+									  exten_name, domain_name, proto, regex);
+					r = strdup(proto);
+					goto end;
+				}
+				
+			}
+		}
+	}
+
+ end:
+	
+	if (xml) {
+		switch_xml_free(xml);
+	}
+
+	return r;
+	
+}
+
 
 /* For Emacs:
  * Local Variables:

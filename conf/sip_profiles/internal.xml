@@ -43,6 +43,9 @@
 	<!-- <param name="shutdown-on-fail" value="true"/> -->
     <param name="sip-trace" value="no"/>
     <param name="sip-capture" value="no"/>
+
+    <!-- Use presence_map.conf.xml to convert extension regex to presence protos for routing -->
+    <!-- <param name="presence-proto-lookup" value="true"/> -->
     
 
     <!-- Don't be picky about negotiated DTMF just always offer 2833 and accept both 2833 and INFO -->

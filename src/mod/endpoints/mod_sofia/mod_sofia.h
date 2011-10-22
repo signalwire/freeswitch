@@ -253,6 +253,7 @@ typedef enum {
  	PFLAG_AUTO_ASSIGN_PORT,
  	PFLAG_AUTO_ASSIGN_TLS_PORT,
 	PFLAG_SHUTDOWN,
+	PFLAG_PRESENCE_MAP,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;

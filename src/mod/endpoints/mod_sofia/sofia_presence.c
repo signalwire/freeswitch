@@ -2632,6 +2632,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	char *my_to_user = NULL;
 	char *sql, *event = NULL;
 	char *proto = "sip";
+	char *alt_proto = NULL;
 	char *d_user = NULL;
 	char *contact_str = "";
 	const char *call_id = NULL;
@@ -2647,6 +2648,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	const char *ipv6;
 	const char *contact_user;
 	sofia_nat_parse_t np = { { 0 } };
+	int found_proto = 0;
 
 	if (!sip) {
 		return;
@@ -2730,6 +2732,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			nua_respond(nh, SIP_404_NOT_FOUND, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			goto end;
 		}
+
+		found_proto++;
 	}
 
 	call_id = sip->sip_call_id->i_id;
@@ -2740,6 +2744,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		sip->sip_expires->ex_delta = 31536000;
 	}
 
+	if (sofia_test_pflag(profile, PFLAG_PRESENCE_MAP) && !found_proto && (alt_proto = switch_ivr_check_presence_mapping(to_user, to_host))) {
+		proto = alt_proto;
+	}
 	
 	if ((sub_state == nua_substate_active) && (switch_stristr("dialog", (const char *) event))) {
 		
@@ -3047,6 +3054,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	switch_safe_free(d_user);
 	switch_safe_free(to_str);
 	switch_safe_free(contact_str);
+	switch_safe_free(alt_proto);
 
 	if (!sent_reply) {
 		nua_respond(nh, 481, "INVALID SUBSCRIPTION", TAG_END());

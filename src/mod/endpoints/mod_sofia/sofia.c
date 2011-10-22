@@ -2875,6 +2875,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						}
+					} else if (!strcasecmp(var, "presence-proto-lookup")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PRESENCE_MAP);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_MAP);
+						}
 					} else if (!strcasecmp(var, "liberal-dtmf")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_LIBERAL_DTMF);
@@ -3589,6 +3595,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
+						}
+					} else if (!strcasecmp(var, "presence-proto-lookup")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PRESENCE_MAP);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_MAP);
 						}
 					} else if (!strcasecmp(var, "liberal-dtmf")) {
 						if (switch_true(val)) {
