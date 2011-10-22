@@ -112,9 +112,10 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	const char *from_full;
 	char header[256] = "";
 	char *route_uri = NULL;
-	const char *network_ip = NULL, *network_port = NULL;
-
+	const char *network_ip = NULL, *network_port = NULL, *from_proto;
+	
 	proto = switch_event_get_header(message_event, "proto");
+	from_proto = switch_event_get_header(message_event, "from_proto");
 	from = switch_event_get_header(message_event, "from");
 	to = switch_event_get_header(message_event, "to");
 	//subject = switch_event_get_header(message_event, "subject");
@@ -204,6 +205,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	} else {
 		char *fp, *p = NULL;
 		
+
 		fp = strdup(from);
 		switch_assert(fp);
 
@@ -220,9 +222,14 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		}
 
 		if (switch_stristr("global", proto)) {
-			ffrom = switch_mprintf("\"%s\" <sip:%s@%s>", fp, fp, p);
+			if (!from_proto || !strcasecmp(from_proto, SOFIA_CHAT_PROTO)) {
+				ffrom = switch_mprintf("\"%s\" <sip:%s@%s>", fp, fp, p);
+			} else {
+				ffrom = switch_mprintf("\"%s\" <sip:%s+%s@%s>", fp, from_proto, fp, p);
+			}
+
 		} else {
-			ffrom = switch_mprintf("\"%s\" <sip:%s+%s@%s>", fp, proto, fp, p);
+			ffrom = switch_mprintf("\"%s\" <sip:%s+%s@%s>", fp, from_proto ? from_proto : proto, fp, p);
 		}
 
 		from = ffrom;
@@ -3441,6 +3448,9 @@ void sofia_presence_handle_sip_i_message(int status,
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", proto);
+
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", from_addr);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", from_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", from_host);
