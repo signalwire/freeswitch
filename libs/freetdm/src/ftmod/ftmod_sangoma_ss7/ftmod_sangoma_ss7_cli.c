@@ -29,6 +29,10 @@
  * LIABILITY|WHETHER IN CONTRACT|STRICT LIABILITY|OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE|EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors:
+ * James Zhang <jzhang@sangoma.com>
+ *
  */
 
 #if 0 
@@ -1198,7 +1202,7 @@ static ftdm_status_t handle_show_blocks(ftdm_stream_handle_t *stream, int span, 
 				} 
 
 #ifdef SMG_RELAY_DBG
-				stream->write_function(stream, " blk_flag= %x     ckt_flag = %d", ss7_info->blk_flags, ss7_info->ckt_flags );
+				stream->write_function(stream," blk_flag=%x | ckt_flag=%x | chan_flag=%x", ss7_info->blk_flags, ss7_info->ckt_flags, ftdmchan->flags);
 #endif
 				stream->write_function(stream, "\n");				
 			} /* if ( span and chan) */
@@ -1304,7 +1308,9 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 							stream->write_function(stream, "r_hw=N|");
 						}
 	
-						if (sngss7_test_ckt_blk_flag(ss7_info, FLAG_RELAY_DOWN)) {
+
+						if (g_ftdm_sngss7_data.cfg.procId != 1) {
+						/* if (sngss7_test_ckt_blk_flag(ss7_info, FLAG_RELAY_DOWN)) { */
 							stream->write_function(stream, "relay=Y|");
 						}else {
 							stream->write_function(stream, "relay=N");
@@ -1312,7 +1318,7 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 					}
 		
 #ifdef SMG_RELAY_DBG
-					stream->write_function(stream," blk_flag= %x     ckt_flag = %d", ss7_info->blk_flags, ss7_info->ckt_flags );
+					stream->write_function(stream," blk_flag=%x | ckt_flag=%x | chan_flag=%x", ss7_info->blk_flags, ss7_info->ckt_flags, ftdmchan->flags);
 #endif
 					stream->write_function(stream, "\n");
 				} /* if ( hole, sig, voice) */
