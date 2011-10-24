@@ -370,12 +370,19 @@ end:
 	}
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE);
 
-	ftdm_mutex_lock(ftdmchan->span->mutex);
-	ftdm_set_flag(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
 	if (ftdmchan->span->pendingchans) {
 		ftdm_queue_enqueue(ftdmchan->span->pendingchans, ftdmchan);
+	} else {
+		/* there is a potential deadlock here, if a signaling module is processing
+		 * state changes while the ftdm_span_stop() function is called, the signaling
+		 * thread will block until it can acquire the span lock, but the thread calling
+		 * ftdm_span_stop() which holds the span lock is waiting on the signaling thread
+		 * to finish ... The only reason to acquire the span lock is this flag, new
+		 * signaling modules should use the pendingchans queue instead of this flag,
+		 * as of today a few modules need still to be updated before we can get rid of
+		 * this flag (ie, ftmod_libpri, ftmod_isdn, ftmod_analog) */
+		ftdm_set_flag_locked(ftdmchan->span, FTDM_SPAN_STATE_CHANGE);
 	}
-	ftdm_mutex_unlock(ftdmchan->span->mutex);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NONBLOCK)) {
 		/* the channel should not block waiting for state processing */

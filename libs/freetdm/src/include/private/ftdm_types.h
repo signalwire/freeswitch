@@ -173,6 +173,12 @@ typedef enum {
 	FTDM_SPAN_SUSPENDED = (1 << 3),
 	FTDM_SPAN_IN_THREAD = (1 << 4),
 	FTDM_SPAN_STOP_THREAD = (1 << 5),
+	/*! Signaling modules set this flag to use fchan->pendingchans queue instead
+	 *  of the FTDM_SPAN_STATE_CHANGE flag to detect when there is channels with
+	 *  a state change pending in the span. If you set this member you can't rely
+	 *  on FTDM_SPAN_STATE_CHANGE anymore and must use the queue only instead. This
+	 *  is the new way of detecting state changes, new modules should always set this
+	 *  flag, the old modules still relying on FTDM_SPAN_STATE_CHANGE should be updated */
 	FTDM_SPAN_USE_CHAN_QUEUE = (1 << 6),
 	FTDM_SPAN_SUGGEST_CHAN_ID = (1 << 7),
 	FTDM_SPAN_USE_AV_RATE = (1 << 8),
