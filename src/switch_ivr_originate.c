@@ -231,7 +231,9 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
   wbreak:
 
 	switch_core_session_rwunlock(collect->session);
+
 	UNPROTECT_INTERFACE(application_interface);
+
 	return NULL;
 }
 
