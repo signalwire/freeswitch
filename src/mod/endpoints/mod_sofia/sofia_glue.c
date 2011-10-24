@@ -5826,7 +5826,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   status          VARCHAR(255),\n"
 		"   rpid            VARCHAR(255),\n"
 		"   sip_to_tag      VARCHAR(255),\n"
-		"   sip_from_tag    VARCHAR(255)\n"
+		"   sip_from_tag    VARCHAR(255),\n"
+		"   rcd             INTEGER not null default 0\n"
 		");\n";
 
 	char sub_sql[] =
@@ -5970,12 +5971,14 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	free(test_sql);
 
 
-	test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and version < 0 and orig_proto like '%%' and network_ip like '%%' and network_port like '%%'",
+	test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' "
+							  "and (version < 0 or orig_proto like '%%' or network_ip like '%%' or network_port like '%%')",
 							  mod_sofia_globals.hostname);
 	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
 
 	free(test_sql);
-	test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and expires <> -9999 or rpid='' or sip_from_tag=''", mod_sofia_globals.hostname);
+	test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and (expires <> -9999 or rpid='' or sip_from_tag='' || rcd > 0)",
+							  mod_sofia_globals.hostname);
 
 
 	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_dialogs", dialog_sql);

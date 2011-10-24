@@ -3544,8 +3544,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 				sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
-				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
 				sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
+				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
+
 				profile->shutdown_type = "false";
 				profile->local_network = "localnet.auto";
 				sofia_set_flag(profile, TFLAG_ENABLE_SOA);
@@ -5010,7 +5011,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					const char *presence_id = switch_channel_get_variable(channel, "presence_id");
 					char *full_contact = "";
 					char *p = NULL;
-
+					time_t now;
+					
 					if (sip->sip_contact) {
 						full_contact = sip_header_as_string(nua_handle_home(tech_pvt->nh), (void *) sip->sip_contact);
 					}
@@ -5018,16 +5020,19 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					if (call_info && (p = strchr(call_info, ';'))) {
 						p++;
 					}
+					
+					now = switch_epoch_time_now(NULL);
+					
 					sql = switch_mprintf("insert into sip_dialogs "
 										 "(call_id,uuid,sip_to_user,sip_to_host,sip_to_tag,sip_from_user,sip_from_host,sip_from_tag,contact_user,"
-										 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,call_info) "
-										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+										 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,call_info,rcd) "
+										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
 										 call_id,
 										 switch_core_session_get_uuid(session),
 										 to_user, to_host, to_tag, from_user, from_host, from_tag, contact_user,
 										 contact_host, astate, "outbound", user_agent,
 										 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
-										 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p));
+										 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p), (long) now);
 					switch_assert(sql);
 
 					sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
@@ -8138,7 +8143,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			const char *presence_id = switch_channel_get_variable(channel, "presence_id");
 			char *full_contact = "";
 			char *p = NULL;
-
+			time_t now;
 
 			if (sip->sip_contact) {
 				full_contact = sip_header_as_string(nua_handle_home(tech_pvt->nh), (void *) sip->sip_contact);
@@ -8152,17 +8157,18 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				}
 			}
 
+			now = switch_epoch_time_now(NULL);
 
 			sql = switch_mprintf("insert into sip_dialogs "
 								 "(call_id,uuid,sip_to_user,sip_to_host,sip_to_tag,sip_from_user,sip_from_host,sip_from_tag,contact_user,"
-								 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,call_info) "
-								 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+								 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,call_info,rcd) "
+								 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
 								 call_id,
 								 tech_pvt->sofia_private->uuid,
 								 to_user, to_host, to_tag, dialog_from_user, dialog_from_host, from_tag,
 								 contact_user, contact_host, "confirmed", "inbound", user_agent,
 								 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
-								 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p));
+								 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p), now);
 
 			switch_assert(sql);
 

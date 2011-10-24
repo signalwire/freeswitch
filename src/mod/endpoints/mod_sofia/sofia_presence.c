@@ -58,6 +58,7 @@ struct dialog_helper {
 	char status[512];
 	char rpid[512];
 	char presence_id[1024];
+	int hits;
 };
 
 struct resub_helper {
@@ -585,6 +586,7 @@ static int sofia_presence_dialog_callback(void *pArg, int argc, char **argv, cha
 		switch_set_string(helper->status, argv[0]);
 		switch_set_string(helper->rpid, argv[1]);
 		switch_set_string(helper->presence_id, argv[2]);
+		helper->hits++;
 	}
 
 	return -1;
@@ -600,6 +602,8 @@ static void do_normal_probe(sofia_profile_t *profile, switch_event_t *event)
 	char *probe_user = NULL, *probe_euser, *probe_host, *p;
 	struct dialog_helper dh = { { 0 } };
 
+	//DUMP_EVENT(event);
+	
 	if (!proto || strcasecmp(proto, SOFIA_CHAT_PROTO) != 0) {
 		return;
 	}
@@ -618,7 +622,7 @@ static void do_normal_probe(sofia_profile_t *profile, switch_event_t *event)
 
 	if (probe_euser && probe_host && (profile = sofia_glue_find_profile(probe_host))) {
 		sql = switch_mprintf("select status,rpid,presence_id from sip_dialogs "
-							 "where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q')", 
+							 "where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
 							 probe_euser, probe_host, probe_euser, probe_host);
 		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
 
@@ -842,6 +846,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	char *sql = NULL;
 	char *euser = NULL, *user = NULL, *host = NULL;
 	char *call_info = switch_event_get_header(event, "presence-call-info");
+	char *presence_source = switch_event_get_header(event, "presence-source");
 	char *call_info_state = switch_event_get_header(event, "presence-call-info-state");
 	switch_console_callback_match_t *matches;
 
@@ -1023,6 +1028,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 											 call_info, call_info_state, mod_sofia_globals.hostname, euser, host, euser, host, call_info);
 						
 					}
+					//printf("WTF %s\n", sql);
 					
 					if (mod_sofia_globals.debug_sla > 1) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STATE SQL %s\n", sql);
@@ -1044,10 +1050,17 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 				}
 				
-				sql = switch_mprintf("select status,rpid,presence_id from sip_dialogs where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q')", 
+				sql = switch_mprintf("select status,rpid,presence_id from sip_dialogs "
+									 "where ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
 									 euser, host, euser, host);
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
 				switch_safe_free(sql);
+
+
+				if (dh.hits && presence_source && (!strcasecmp(presence_source, "register") || switch_stristr("register", status))) {
+					goto done;
+				}
+
 				
 				if ((sql = switch_mprintf("select distinct sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
 										  "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
@@ -1111,7 +1124,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 										  event->event_id == SWITCH_EVENT_PRESENCE_IN ? "IN" : "OUT", profile->name);
 					}
 
-#if 0
+#if 1
 					if (event) {
 						const char *refresh = switch_event_get_header(event, "refresh");
 						if (switch_true(refresh)) {
@@ -1386,6 +1399,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Force-Direction", "inbound");
 		}
 
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "resub", "true");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", status);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -2009,6 +2023,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		//const char *force_direction = switch_str_nil(switch_event_get_header(helper->event, "force-direction"));
 		const char *uuid = switch_str_nil(switch_event_get_header(helper->event, "unique-id"));
 		const char *event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));
+		const char *resub = switch_str_nil(switch_event_get_header(helper->event, "resub"));
 		const char *force_event_status = switch_str_nil(switch_event_get_header(helper->event, "force-status"));
 		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
 		const char *answer_state = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
@@ -2202,9 +2217,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			ct = "application/dialog-info+xml";
 		}
 
-		if (!zstr(astate) && !zstr(uuid) && helper && helper->stream.data && strcmp(helper->last_uuid, uuid)) {
+		if (!zstr(astate) && !zstr(uuid) && 
+			helper && helper->stream.data && strcmp(helper->last_uuid, uuid) && strcasecmp(astate, "terminated") && strchr(uuid, '-')) {
 			helper->stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where uuid='%s';", astate, uuid);
-
+			//printf("WTF update sip_dialogs set state='%s' where uuid='%s';\n", astate, uuid);
 			switch_copy_string(helper->last_uuid, uuid, sizeof(helper->last_uuid));
 		}
 
@@ -2213,52 +2229,58 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			switch_set_string(status_line, status);
 
 			if (in) {
-				const char *direction = switch_event_get_header(helper->event, "Caller-Direction");
-				const char *op, *what = "Ring";
-				
-				if (direction && !strcasecmp(direction, "outbound")) {
-					op = switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number");
-				} else {
-					op = switch_event_get_header(helper->event, "Caller-Callee-ID-Number");
-				}
-
-				if (zstr(op)) {
-					op = switch_event_get_header(helper->event, "Caller-Destination-Number");
-				}
-
-				if (direction) {
-					what = strcasecmp(direction, "outbound") ? "Call" : "Ring";
-				}
-
-				if (!strcmp(astate, "early")) {
-					if (zstr(op)) {
-						switch_snprintf(status_line, sizeof(status_line), "%sing", what);
-					} else {
-						switch_snprintf(status_line, sizeof(status_line), "%s %s", what, op);
-					}
-
-					rpid = "on-the-phone";
-					force_status = 1;
-
-				} else if (!strcmp(astate, "confirmed")) {
-					if (zstr(op)) {
-						switch_snprintf(status_line, sizeof(status_line), "On The Phone");
-					} else {
-						switch_snprintf(status_line, sizeof(status_line), "Talk %s", op);
-					}
-
-					rpid = "on-the-phone";
-					force_status = 1;
-				}
-
 				open = "open";
 
-				if (!strcmp(status, "hold")) {
-					rpid = "on-the-phone";
-					switch_snprintf(status_line, sizeof(status_line), "Hold %s", op);
-					force_status = 1;
-				}
+				if (switch_false(resub)) {
 
+					const char *direction = switch_event_get_header(helper->event, "Caller-Direction");
+					const char *op, *what = "Ring";
+				
+					if (direction && !strcasecmp(direction, "outbound")) {
+						op = switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number");
+					} else {
+						op = switch_event_get_header(helper->event, "Caller-Callee-ID-Number");
+					}
+
+					if (zstr(op)) {
+						op = switch_event_get_header(helper->event, "Caller-Destination-Number");
+					}
+
+					if (direction) {
+						what = strcasecmp(direction, "outbound") ? "Call" : "Ring";
+					}
+
+					if (!strcmp(astate, "early")) {
+						if (!zstr(op)) {
+							//switch_snprintf(status_line, sizeof(status_line), "%sing", what);
+							//} else {
+							switch_snprintf(status_line, sizeof(status_line), "%s %s", what, op);
+						}
+
+						rpid = "on-the-phone";
+						force_status = 1;
+
+					} else if (!strcmp(astate, "confirmed")) {
+						if (!zstr(op)) {
+							//switch_snprintf(status_line, sizeof(status_line), "On The Phone");
+							//} else {
+							switch_snprintf(status_line, sizeof(status_line), "Talk %s", op);
+						}
+
+						rpid = "on-the-phone";
+						force_status = 1;
+					}
+
+				
+
+					if (!strcmp(status, "hold")) {
+						rpid = "on-the-phone";
+						if (!zstr(op)) {
+							switch_snprintf(status_line, sizeof(status_line), "Hold %s", op);
+							force_status = 1;
+						}
+					}
+				}
 			} else {
 				open = "closed";
 			}
@@ -2315,11 +2337,13 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	}
 
 
-	if (helper->event){ 
+	if (!is_dialog && helper->event && !switch_stristr("registered", status_line)){ 
 		const char *uuid = switch_event_get_header_nil(helper->event, "unique-id");
-
-		if (!zstr(uuid) && strchr(uuid, '-')) {
+		const char *register_source = switch_event_get_header_nil(helper->event, "register-source");
+		
+		if (!zstr(uuid) && strchr(uuid, '-') && !zstr(status_line) && !zstr(rpid) && (zstr(register_source) || strcasecmp(register_source, "register"))) {
 		    char *sql = switch_mprintf("update sip_dialogs set rpid='%q',status='%q' where uuid='%q'", rpid, status_line, uuid);
+			//printf("WTF %s\n", sql);
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 	}
@@ -2985,6 +3009,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		if (!strcasecmp(event, "line-seize")) {
 			char *full_call_info = NULL;
 			char *p;
+			switch_time_t now;
 
 			if (sip->sip_call_info) {
 				full_call_info = sip_header_as_string(nh->nh_home, (void *) sip->sip_call_info);
@@ -3009,9 +3034,10 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				}
 				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
-				sql = switch_mprintf("insert into sip_dialogs (sip_from_user,sip_from_host,call_info,call_info_state,hostname,expires) "
-									 "values ('%q','%q','%q','seized','%q',%ld)",
-									 to_user, to_host, switch_str_nil(p), mod_sofia_globals.hostname, switch_epoch_time_now(NULL) + exp_delta);
+				now = switch_epoch_time_now(NULL);
+				sql = switch_mprintf("insert into sip_dialogs (sip_from_user,sip_from_host,call_info,call_info_state,hostname,expires,rcd) "
+									 "values ('%q','%q','%q','seized','%q',%ld,%ld)",
+									 to_user, to_host, switch_str_nil(p), mod_sofia_globals.hostname, switch_epoch_time_now(NULL) + exp_delta, (long)now);
 
 				if (mod_sofia_globals.debug_sla > 1) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SEIZE SQL %s\n", sql);

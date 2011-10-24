@@ -4468,6 +4468,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	if (profile->pres_type) {
 		char *sql;
+		time_t now;
+
 		const char *presence_id = switch_channel_get_variable(nchannel, "presence_id");
 		const char *presence_data = switch_channel_get_variable(nchannel, "presence_data");
 
@@ -4479,9 +4481,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			presence_data = switch_event_get_header(var_event, "presence_data");
 		}
 
-		sql = switch_mprintf("insert into sip_dialogs (uuid,presence_id,presence_data,profile_name,hostname) "
-							 "values ('%q', '%q', '%q', '%q', '%q')", switch_core_session_get_uuid(nsession),
-							 switch_str_nil(presence_id), switch_str_nil(presence_data), profile->name, mod_sofia_globals.hostname);
+		now = switch_epoch_time_now(NULL);
+		sql = switch_mprintf("insert into sip_dialogs (uuid,presence_id,presence_data,profile_name,hostname,rcd) "
+							 "values ('%q', '%q', '%q', '%q', '%q', %ld)", switch_core_session_get_uuid(nsession),
+							 switch_str_nil(presence_id), switch_str_nil(presence_data), profile->name, mod_sofia_globals.hostname, (long) now);
 		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
 		switch_safe_free(sql);
 	}
