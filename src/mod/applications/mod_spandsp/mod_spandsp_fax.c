@@ -1861,6 +1861,7 @@ typedef struct {
 	char *data;
 	char *key;
 	int up;
+	int tone_type;
 	int total_hits;
 	int hits;
 	int sleep;
@@ -1910,7 +1911,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 	case SWITCH_ABC_TYPE_INIT:
 		if (cont) {
 			cont->bug_running = 1;
-			modem_connect_tones_rx_init(&cont->rx_tones, MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE, NULL, NULL);
+			modem_connect_tones_rx_init(&cont->rx_tones, cont->tone_type, NULL, NULL);
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
@@ -2018,7 +2019,7 @@ switch_status_t spandsp_fax_stop_detect_session(switch_core_session_t *session)
 }
 
 switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
-														   const char *flags, int timeout,
+														   const char *flags, int timeout, int tone_type,
 														   int hits, const char *app, const char *data, switch_tone_detect_callback_t callback)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -2051,6 +2052,7 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 		cont->data = switch_core_session_strdup(session, data);
 	}
 
+	cont->tone_type = tone_type;
 	cont->callback = callback;
 	cont->up = 1;
 	cont->session = session;
