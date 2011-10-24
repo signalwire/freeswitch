@@ -1494,9 +1494,10 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 	char remote_display_buf[512];
 	char *buf_to_free = NULL;
 	int bInternal = 0;
+	int i;
 
 	if (mod_sofia_globals.debug_presence > 1) {
-		for (int i = 0; i < argc; i++) {
+		for (i = 0; i < argc; i++) {
 			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_DEBUG,  "sofia_dialog_probe_callback: %d [%s]=[%s]\n", i, columnNames[i], argv[i]);
 		}
 	}
