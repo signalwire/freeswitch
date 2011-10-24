@@ -2877,7 +2877,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 					(g_ftdm_sngss7_data.cfg.isupCkt[x].chan == count)) {
 
 					/* we are processing a circuit that already exists */
-					SS7_DEBUG("Found an existing circuit %d, ccSpanId=%d, chan%d\n",
+					SS7_DEVEL_DEBUG("Found an existing circuit %d, ccSpanId=%d, chan%d\n",
 								x, 
 								ccSpan->id, 
 								count);
@@ -2886,7 +2886,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 					flag = 1;
 
 					/* not supporting reconfig at this time */
-					SS7_DEBUG("Not supporting ckt reconfig at this time!\n");
+					SS7_DEVEL_DEBUG("Not supporting ckt reconfig at this time!\n");
 					goto move_along;
 				} else {
 					/* this is not the droid you are looking for */

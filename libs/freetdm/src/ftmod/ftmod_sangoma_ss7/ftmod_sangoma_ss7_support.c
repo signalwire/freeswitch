@@ -922,11 +922,6 @@ int check_for_state_change(ftdm_channel_t *ftdmchan)
 /******************************************************************************/
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan)
 {
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj == NULL) {
-		SS7_ERROR("sngss7_info is Null for circuit #%d\n", circuit);
-		return FTDM_FAIL;
-	}
-
 	if (!g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj) {
 		SS7_ERROR("No ss7 info for circuit #%d\n", circuit);
 		return FTDM_FAIL;
@@ -935,8 +930,19 @@ ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_in
 	*sngss7_info = g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj;
 
 	if (!(*sngss7_info)->ftdmchan) {
-		SS7_ERROR("No channel for circuit #%d\n", circuit);
+		SS7_ERROR("No ftdmchan for circuit #%d\n", circuit);
 		return FTDM_FAIL;
+	}
+
+	if (!(*sngss7_info)->ftdmchan->span) {
+		SS7_CRITICAL("ftdmchan->span = NULL for circuit #%d\n",circuit);
+		return FTDM_FAIL;
+		
+	}
+	if (!(*sngss7_info)->ftdmchan->span->signal_data) {
+		SS7_CRITICAL("ftdmchan->span->signal_data = NULL for circuit #%d\n",circuit);
+		return FTDM_FAIL;
+		
 	}
 
 	*ftdmchan = (*sngss7_info)->ftdmchan;

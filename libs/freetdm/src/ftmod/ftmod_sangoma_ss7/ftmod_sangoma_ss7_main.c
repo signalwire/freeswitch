@@ -1651,6 +1651,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 static ftdm_status_t ftdm_sangoma_ss7_stop(ftdm_span_t * span)
 {
 	/*this function is called by the FT-Core to stop this span */
+	int timeout=0;
 
 	ftdm_log (FTDM_LOG_INFO, "Stopping span %s:%u.\n", span->name,span->span_id);
 
@@ -1659,10 +1660,17 @@ static ftdm_status_t ftdm_sangoma_ss7_stop(ftdm_span_t * span)
 
 	/* wait for the thread to stop */
 	while (ftdm_test_flag (span, FTDM_SPAN_IN_THREAD)) {
-		ftdm_log (FTDM_LOG_DEBUG,"Waiting for monitor thread to end for %s:%u.\n",
+		ftdm_set_flag (span, FTDM_SPAN_STOP_THREAD);
+		ftdm_log (FTDM_LOG_DEBUG,"Waiting for monitor thread to end for %s:%u. [flags=0x%08X]\n",
 									span->name,
-									span->span_id);
-		ftdm_sleep (1);
+									span->span_id,
+									span->flags);
+		/* Wait 50ms */
+		ftdm_sleep (50);
+		timeout++;
+
+		/* timeout after 5 sec, better to crash than hang */
+		ftdm_assert_return(timeout < 100, FTDM_FALSE, "SS7 Span stop timeout!\n");
 	}
 
 	/* KONRAD FIX ME - deconfigure any circuits, links, attached to this span */
@@ -1725,12 +1733,14 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	/* parse the configuration and apply to the global config structure */
 	if (ftmod_ss7_parse_xml(ftdm_parameters, span)) {
 		ftdm_log (FTDM_LOG_CRIT, "Failed to parse configuration!\n");
+		ftdm_sleep (1000);
 		return FTDM_FAIL;
 	}
 
 	/* configure libsngss7 */
 	if (ft_to_sngss7_cfg_all()) {
 		ftdm_log (FTDM_LOG_CRIT, "Failed to configure LibSngSS7!\n");
+		ftdm_sleep (1000);
 		return FTDM_FAIL;
 	}
 
