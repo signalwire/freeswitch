@@ -3175,7 +3175,7 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 			const char *regex = switch_xml_attr(x_exten, "regex");
 			const char *proto = switch_xml_attr(x_exten, "proto");
 			
-			if (regex && proto) {
+			if (!zstr(regex) && !zstr(proto)) {
 				proceed = switch_regex_perform(exten_name, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
 				switch_regex_safe_free(re);
 				
