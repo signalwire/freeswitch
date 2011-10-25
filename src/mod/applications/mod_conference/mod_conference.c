@@ -2790,7 +2790,10 @@ static void conference_loop_output(conference_member_t *member)
 		const char *profile = switch_channel_get_variable(channel, "conference_auto_outcall_profile");
 		const char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
 		const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
+		const char *maxwait = switch_channel_get_variable(channel, "conference_auto_outcall_maxwait");
 		int to = 60;
+		int wait_sec = 2;
+		int loops = 0;
 
 		if (ann && !switch_channel_test_app_flag_key("conf_silent", channel, CONF_SILENT_REQ)) {
 			member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
@@ -2825,10 +2828,20 @@ static void conference_loop_output(conference_member_t *member)
 			switch_safe_free(cpstr);
 		}
 
+		if (maxwait) {
+			int tmp = atoi(maxwait);
+			if (tmp > 0) {
+				wait_sec = tmp;
+			}
+		}
+
+
+		loops = wait_sec * 10;
+		
 		switch_channel_set_app_flag(channel, CF_APP_TAGGED);
 		do {
-			switch_ivr_sleep(member->session, 500, SWITCH_TRUE, NULL);
-		} while(switch_channel_up(channel) && member->conference->originating);
+			switch_ivr_sleep(member->session, 100, SWITCH_TRUE, NULL);
+		} while(switch_channel_up(channel) && (member->conference->originating && --loops));
 		switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
 
 		if (!switch_channel_ready(channel)) {
