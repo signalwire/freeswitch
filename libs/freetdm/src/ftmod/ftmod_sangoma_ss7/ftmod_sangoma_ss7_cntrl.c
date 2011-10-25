@@ -790,7 +790,14 @@ int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId)
 	cntrl.t.cntrl.action		= ABND_ENA;			/* bind and enable */
 	cntrl.t.cntrl.subAction		= SAGR_DSTPROCID;			/* specificed element */
 
-	return (sng_cntrl_mtp3(&pst, &cntrl));
+	if (g_ftdm_sngss7_data.cfg.procId == procId) {
+		SS7_DEBUG("Executing MTP3 cntrl command local pid =%i\n",procId);
+		return (sng_cntrl_mtp3(&pst, &cntrl));
+	} else {
+		SS7_WARN("Executing MTP3 cntrl command different local=%i target=%i\n",
+				g_ftdm_sngss7_data.cfg.procId,procId);
+		return (sng_cntrl_mtp3_nowait(&pst, &cntrl));
+	}
 
 }
 
