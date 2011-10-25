@@ -368,7 +368,31 @@ static switch_status_t chat_send(switch_event_t *message_event)
 								 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_event_t *exten;
-	
+	int forwards = 0;
+	const char *var;
+
+	var = switch_event_get_header(message_event, "max_forwards");
+
+	if (!var) {
+		forwards = 70;
+	} else {
+		forwards = atoi(var);
+		
+		if (forwards) {
+			forwards--;
+		}
+
+		if (!forwards) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max forwards reached\n");
+			DUMP_EVENT(message_event);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	if (forwards) {
+		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "max_forwards", "%d", forwards);
+	}
+
 	if ((exten = chatplan_hunt(message_event))) {
 		switch_event_header_t *hp;
 		
@@ -401,6 +425,8 @@ SWITCH_STANDARD_CHAT_APP(send_function)
 	if (zstr(dest_proto)) {
 		dest_proto = switch_event_get_header(message, "dest_proto");
 	}
+
+	switch_event_add_header(message, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
 
 	switch_core_chat_send(dest_proto, message);
 
