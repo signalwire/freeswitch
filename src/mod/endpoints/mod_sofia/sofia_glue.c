@@ -5919,6 +5919,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"create index sd_call_info on sip_dialogs (call_info)",
 		"create index sd_call_info_state on sip_dialogs (call_info_state)",
 		"create index sd_expires on sip_dialogs (expires)",
+		"create index sd_rcd on sip_dialogs (rcd)",
 		"create index sp_hostname on sip_presence (hostname)",
 		"create index sa_nonce on sip_authentication (nonce)",
 		"create index sa_hostname on sip_authentication (hostname)",
