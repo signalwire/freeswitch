@@ -10,7 +10,6 @@
 
 /* Callback for returning strings to C# without leaking memory */
 #ifndef _MANAGED
-#include <glib.h>
 #include <mono/jit/jit.h>
 #include <mono/metadata/environment.h>
 #include <mono/metadata/mono-config.h>

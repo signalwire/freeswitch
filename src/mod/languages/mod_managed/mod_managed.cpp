@@ -190,6 +190,7 @@ switch_status_t loadRuntime()
 	// So linux can find the .so
 	char xmlConfig[300];
 	switch_snprintf(xmlConfig, 300, "<configuration><dllmap dll=\"mod_managed\" target=\"%s%smod_managed.so\"/></configuration>", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR);
+	mono_config_parse(NULL);
 	mono_config_parse_memory(xmlConfig);
 #endif
 
@@ -208,18 +209,13 @@ switch_status_t loadRuntime()
 	}
 
 	/* Already loaded? */
-	MonoAssemblyName name;
-	name.name = MOD_MANAGED_ASM_NAME;
-	name.major = MOD_MANAGED_ASM_V1;
-	name.minor = MOD_MANAGED_ASM_V2;
-	name.revision = MOD_MANAGED_ASM_V3;
-	name.build = MOD_MANAGED_ASM_V4;
-	name.culture = "";
-	name.hash_value = "";
-
+	MonoAssemblyName *name = mono_assembly_name_new (MOD_MANAGED_ASM_NAME);
+	//Note also that it can't be allocated on the stack anymore and you'll need to create and destroy it with the following API:
+	//mono_assembly_name_free (name);
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_assembly_loaded.\n");
 
-	if (!(globals.mod_mono_asm = mono_assembly_loaded(&name))) {
+	if (!(globals.mod_mono_asm = mono_assembly_loaded(name))) {
 		/* Open the assembly */ 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_domain_assembly_open.\n");
 		globals.mod_mono_asm = mono_domain_assembly_open(globals.domain, filename);

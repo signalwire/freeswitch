@@ -40,7 +40,6 @@ typedef void (*hangupFunction) (void);
 typedef char *(*inputFunction) (void *, switch_input_type_t);
 
 #ifndef _MANAGED
-#include <glib.h>
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/environment.h>
@@ -73,7 +72,7 @@ extern mod_managed_globals globals;
 #ifdef WIN32
 #define RESULT_FREE(x) CoTaskMemFree(x)
 #else
-#define RESULT_FREE(x) g_free(x)
+#define RESULT_FREE(x) mono_free(x)
 #endif
 
 SWITCH_END_EXTERN_C
