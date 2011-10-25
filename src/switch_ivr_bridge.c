@@ -1636,6 +1636,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 
 	if (bchannel) {
 		switch_channel_set_state_flag(bchannel, CF_TRANSFER);
+		switch_channel_set_flag(bchannel, CF_INTERCEPT);
 		switch_channel_set_state(bchannel, CS_PARK);
 	}
 
