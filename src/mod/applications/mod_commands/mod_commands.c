@@ -2128,7 +2128,6 @@ SWITCH_STANDARD_API(reload_xml_function)
 #define KILL_SYNTAX "<uuid> [cause]"
 SWITCH_STANDARD_API(kill_function)
 {
-	switch_core_session_t *ksession = NULL;
 	char *mycmd = NULL, *kcause = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
@@ -2139,17 +2138,14 @@ SWITCH_STANDARD_API(kill_function)
 
 	if ((kcause = strchr(mycmd, ' '))) {
 		*kcause++ = '\0';
-	}
-
-	if (zstr(mycmd) || !(ksession = switch_core_session_locate(mycmd))) {
-		stream->write_function(stream, "-ERR No Such Channel!\n");
-	} else {
-		switch_channel_t *channel = switch_core_session_get_channel(ksession);
 		if (!zstr(kcause)) {
 			cause = switch_channel_str2cause(kcause);
-		}
-		switch_channel_hangup(channel, cause);
-		switch_core_session_rwunlock(ksession);
+		}		
+	}
+
+	if (switch_ivr_kill_uuid(mycmd, cause) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "-ERR No Such Channel!\n");
+	} else {
 		stream->write_function(stream, "+OK\n");
 	}
 

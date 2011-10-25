@@ -934,6 +934,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_insert_file(switch_core_session_t *se
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t **reply, switch_event_t *message, const char *new_proto);
 SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name, const char *domain_name);
+SWITCH_DECLARE(switch_status_t) switch_ivr_kill_uuid(const char *uuid, switch_call_cause_t cause);
 
 /** @} */
 

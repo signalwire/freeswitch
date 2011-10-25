@@ -3201,6 +3201,20 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 	
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_kill_uuid(const char *uuid, switch_call_cause_t cause)
+{
+	switch_core_session_t *session;
+
+	if (zstr(uuid) || !(session = switch_core_session_locate(uuid))) {
+		return SWITCH_STATUS_FALSE;
+	} else {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_channel_hangup(channel, cause);
+		switch_core_session_rwunlock(session);
+		return SWITCH_STATUS_SUCCESS;
+	}
+}
+
 
 /* For Emacs:
  * Local Variables:
