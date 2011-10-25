@@ -1865,8 +1865,6 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 
 			if (this_node->outbound_priority == 0) this_node->outbound_priority = 5;
 
-			globals.debug = 1;
-
 			if (this_node->has_outbound && !this_node->busy && this_node->outbound_priority == cur_priority) {
 				ppl_waiting = node_caller_count(this_node);
 				consumer_total = this_node->consumer_count;
