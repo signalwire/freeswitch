@@ -87,6 +87,8 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 /* FUNCTIONS ******************************************************************/
 
+#define ftdm_running_return(var) if (!ftdm_running()) { SS7_ERROR("Error: ftdm_running is not set! Ignoring\n"); return var; } 
+
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt)
 {
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
@@ -96,6 +98,8 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	char var[FTDM_DIGITS_LIMIT];
 
 	memset(var, '\0', sizeof(var));
+
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -341,6 +345,8 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -596,6 +602,8 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -671,6 +679,8 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -793,6 +803,8 @@ ftdm_status_t handle_rel_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -844,6 +856,8 @@ ftdm_status_t handle_dat_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -871,6 +885,8 @@ ftdm_status_t handle_fac_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -898,6 +914,8 @@ ftdm_status_t handle_fac_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -925,6 +943,8 @@ ftdm_status_t handle_umsg_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -952,6 +972,8 @@ ftdm_status_t handle_susp_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -979,6 +1001,8 @@ ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 	
 	sngss7_chan_data_t  *sngss7_info ;
 	ftdm_channel_t	  *ftdmchan;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -1003,6 +1027,8 @@ ftdm_status_t handle_resm_ind(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint8_t globalFlg, uint8_t evntType, SiStaEvnt *siStaEvnt)
 {
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is active on our side otherwise move to the next circuit */
 	if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[circuit], SNGSS7_ACTIVE)) {
@@ -1203,6 +1229,8 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1265,6 +1293,8 @@ ftdm_status_t handle_pause(uint32_t suInstId, uint32_t spInstId, uint32_t circui
 	ftdm_channel_t	  *ftdmchan = NULL;
 	int				 infId;
 	int				 i;
+	
+	ftdm_running_return(FTDM_FAIL);
 	
 	/* extract the affected infId from the circuit structure */
 	infId = g_ftdm_sngss7_data.cfg.isupCkt[circuit].infId;
@@ -1330,6 +1360,8 @@ ftdm_status_t handle_resume(uint32_t suInstId, uint32_t spInstId, uint32_t circu
 	ftdm_channel_t	  *ftdmchan = NULL;
 	int				 infId;
 	int				 i;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* extract the affect infId from the circuit structure */
 	infId = g_ftdm_sngss7_data.cfg.isupCkt[circuit].infId;
@@ -1394,6 +1426,8 @@ ftdm_status_t handle_cot_start(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1449,6 +1483,8 @@ ftdm_status_t handle_cot_stop(uint32_t suInstId, uint32_t spInstId, uint32_t cir
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1494,6 +1530,8 @@ ftdm_status_t handle_cot(uint32_t suInstId, uint32_t spInstId, uint32_t circuit,
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1562,6 +1600,8 @@ ftdm_status_t handle_blo_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1612,6 +1652,8 @@ ftdm_status_t handle_blo_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1653,6 +1695,8 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1741,6 +1785,8 @@ ftdm_status_t handle_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1800,6 +1846,8 @@ ftdm_status_t handle_local_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1858,6 +1906,8 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -1948,6 +1998,8 @@ ftdm_status_t handle_grs_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t *ftdmchan = NULL;
 	sngss7_span_data_t *sngss7_span = NULL;
 	int range = 0;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -2005,6 +2057,8 @@ ftdm_status_t handle_grs_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_channel_t *ftdmchan = NULL;
 	sngss7_span_data_t *sngss7_span = NULL; 
 	int range = 0;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -2069,6 +2123,8 @@ ftdm_status_t handle_local_blk(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -2119,6 +2175,8 @@ ftdm_status_t handle_local_ubl(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 
 	sngss7_chan_data_t  *sngss7_info = NULL;
 	ftdm_channel_t	  *ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -2174,6 +2232,7 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 	sngss7_span_data_t *sngss7_span = NULL;
 	ftdm_channel_t *ftdmchan = NULL;
 
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {
@@ -2254,6 +2313,8 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	int					byte = 0;
 	int					bit = 0;
 	int 				x;
+
+	ftdm_running_return(FTDM_FAIL);
 
 	memset(&status[0], '\0', sizeof(status));
 
@@ -2401,6 +2462,8 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	int					bit = 0;
 	int 				x;
 	ftdm_sigmsg_t 		sigev;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	memset(&sigev, 0, sizeof (sigev));
 	memset(&status[0], '\0', sizeof(status));
@@ -2538,6 +2601,8 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	ftdm_channel_t		*ftdmchan = NULL;
+	
+	ftdm_running_return(FTDM_FAIL);
 
 	/* confirm that the circuit is voice channel */
 	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].type != SNG_CKT_VOICE) {

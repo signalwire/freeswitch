@@ -248,7 +248,7 @@ ftdm_status_t block_all_ckts_for_relay(uint32_t procId)
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
 
 			/* send a block request via stack manager */
-			ret = ftmod_ss7_block_isup_ckt(g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			ret = ftmod_ss7_block_isup_ckt_nowait(g_ftdm_sngss7_data.cfg.isupCkt[x].id);
 			if (ret) {
 				SS7_INFO("Successfully BLOcked CIC:%d(ckt:%d) due to Relay failure\n", 
 							g_ftdm_sngss7_data.cfg.isupCkt[x].cic,
