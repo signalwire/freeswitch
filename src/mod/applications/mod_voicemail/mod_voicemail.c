@@ -911,8 +911,17 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 
 			if (dtmf->digit == *cc->profile->rew_key) {
 				int samps = -48000;
-				switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
-				return SWITCH_STATUS_SUCCESS;
+				int target_pos = fh->offset_pos + samps;
+				if (target_pos < 1) {
+					/* too close to beginning of the file, just restart instead of rewind */
+					unsigned int seekpos = 0;
+					fh->speed = 0;
+					switch_core_file_seek(fh, &seekpos, 0, SEEK_SET);
+					return SWITCH_STATUS_SUCCESS;
+				} else {
+					switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
+					return SWITCH_STATUS_SUCCESS;
+				}
 			}
 		}
 		break;
