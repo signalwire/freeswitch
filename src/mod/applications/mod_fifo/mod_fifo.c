@@ -859,6 +859,7 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	node->importance = importance;
 
 	switch_mutex_lock(globals.mutex);
+
 	switch_core_hash_insert(globals.fifo_hash, name, node);
 	node->next = globals.nodes;
 	globals.nodes = node;
@@ -1820,8 +1821,7 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 		while(node) {
 			int x = 0;
 			switch_event_t *pop;
-			int nuke = 0;
-			
+
 			this_node = node;
 			node = node->next;
 
@@ -1858,12 +1858,10 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 				switch_mutex_unlock(this_node->update_mutex);
 				switch_thread_rwlock_unlock(this_node->rwlock);
 				switch_core_destroy_memory_pool(&this_node->pool);
-				nuke++;
+				continue;
 			}
 
 			last = this_node;
-
-			if (nuke) continue;
 
 			if (this_node->outbound_priority == 0) this_node->outbound_priority = 5;
 
@@ -3805,6 +3803,7 @@ SWITCH_STANDARD_API(fifo_api_function)
 			for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, &var, NULL, &val);
 				node = (fifo_node_t *) val;
+
 				switch_mutex_lock(node->mutex);
 				list_node(node, x_report, &x, verbose);
 				switch_mutex_unlock(node->mutex);
@@ -4062,6 +4061,7 @@ static switch_status_t load_config(int reload, int del_all)
 
 	if (!(node = switch_core_hash_find(globals.fifo_hash, MANUAL_QUEUE_NAME))) {
 		node = create_node(MANUAL_QUEUE_NAME, 0, globals.sql_mutex);
+		node->ready = 2;
 		node->is_static = 0;
 	}
 
