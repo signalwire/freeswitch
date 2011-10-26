@@ -31,7 +31,7 @@
 #include <switch.h>
 #define VALET_EVENT "valet_parking::info"
 #define VALET_PROTO "park"
-
+#define TOKEN_FREQ 5
 
 /* Prototypes */
 SWITCH_MODULE_LOAD_FUNCTION(mod_valet_parking_load);
@@ -112,7 +112,7 @@ static void check_timeouts(void)
 	now = switch_epoch_time_now(NULL);
 
 	switch_mutex_lock(globals.mutex);
-	if (now - globals.last_timeout_check < 30) {
+	if (now - globals.last_timeout_check < TOKEN_FREQ) {
 		switch_mutex_unlock(globals.mutex);
 		return;
 	}
@@ -137,6 +137,7 @@ static void check_timeouts(void)
 				switch_hash_this(i_hi, &i_var, NULL, &i_val);
 				i_ext = (char *) i_var;
 				token = (valet_token_t *) i_val;
+
 				if (token->timeout > 0 && (token->timeout < now || token->timeout == 1)) {
 					switch_core_hash_delete(lot->hash, i_ext);
 					switch_safe_free(token);
@@ -393,6 +394,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 			if (!(token = next_id(session, lot, min_i, max_i, in))) {
 				switch_ivr_phrase_macro(session, in ? "valet_lot_full" : "valet_lot_empty", "", NULL, NULL);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s lot is %s.\n", switch_channel_get_name(channel), in ? "full" : "empty");
 				return;
 			}
 
@@ -520,7 +522,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				switch_core_session_t *b_session;
 
 				if ((b_session = switch_core_session_locate(uuid))) {
-					token->timeout = switch_epoch_time_now(NULL) + 10;		
+					token->timeout = switch_epoch_time_now(NULL) + TOKEN_FREQ;		
 					if (play_announce) {
 						switch_ivr_sleep(session, 1500, SWITCH_TRUE, NULL);
 						switch_ivr_phrase_macro(session, "valet_announce_ext", tmp, NULL, NULL);
@@ -554,8 +556,6 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		args.buf = dbuf;
 		args.buflen = sizeof(dbuf);
 
-
-		
 		while(switch_channel_ready(channel)) {
 			switch_status_t pstatus = switch_ivr_play_file(session, NULL, music, &args);
 			if (pstatus == SWITCH_STATUS_BREAK || pstatus == SWITCH_STATUS_TIMEOUT) {
