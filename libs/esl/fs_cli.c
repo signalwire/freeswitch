@@ -1320,7 +1320,7 @@ int main(int argc, char *argv[])
 	}
 	if (argv_exec) {
 		const char *err = NULL;
-		snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", argv_command);
+		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", argv_command);
 		if (timeout) {
 			esl_status_t status = esl_send_recv_timed(&handle, cmd_str, timeout);
 			if (status != ESL_SUCCESS) {
