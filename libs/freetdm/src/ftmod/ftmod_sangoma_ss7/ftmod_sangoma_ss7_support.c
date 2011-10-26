@@ -1428,7 +1428,7 @@ ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan)
 			/* lock the channel */
 			ftdm_channel_lock(ftdmchan);
 
-			SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx UCIC\n", sngss7_info->circuit->cic);
+			SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx Span UCIC\n", sngss7_info->circuit->cic);
 
 			/* clear up any pending state changes */
 			while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {

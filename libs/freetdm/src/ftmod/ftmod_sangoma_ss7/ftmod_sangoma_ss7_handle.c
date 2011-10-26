@@ -2271,6 +2271,8 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 			cinfo->ucic.range = cinfo->tx_grs.range;
 			ftdm_set_flag(sngss7_span, SNGSS7_UCIC_PENDING);
 
+			SS7_WARN("Set span SNGSS7_UCIC_PENDING for ISUP circuit = %d!\n", circuit);
+
 			ftdm_channel_unlock(fchan);
 
 			goto done;
@@ -2283,6 +2285,7 @@ ftdm_status_t handle_ucic(uint32_t suInstId, uint32_t spInstId, uint32_t circuit
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* throw the ckt block flag */
+	SS7_DEBUG("Set FLAG_CKT_UCIC_BLOCK for ISUP circuit = %d!\n", circuit);
 	sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK);
 
 	/* set the channel to suspended state */

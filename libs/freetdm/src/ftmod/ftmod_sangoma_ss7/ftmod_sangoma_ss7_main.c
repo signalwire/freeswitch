@@ -1024,6 +1024,10 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		break;
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_RESTART:	/* CICs needs a Reset */
+		  
+		SS7_DEBUG_CHAN(ftdmchan,"RESTART: Current flags: ckt=0x%X, blk=0x%X\n", 
+									sngss7_info->ckt_flags,
+									sngss7_info->blk_flags);
 
 		if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK)) {
 			if ((sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_RX)) ||
@@ -1139,7 +1143,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_SUSPENDED:	/* circuit has been blocked */
 
-		  SS7_DEBUG_CHAN(ftdmchan,"Current flags: ckt=0x%X, blk=0x%X\n", 
+		  SS7_DEBUG_CHAN(ftdmchan,"SUSPEND: Current flags: ckt=0x%X, blk=0x%X\n", 
 									sngss7_info->ckt_flags,
 									sngss7_info->blk_flags);
 
@@ -1256,6 +1260,8 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
    								   | FLAG_CKT_MN_BLOCK_RX_DN
    								   | FLAG_GRP_MN_BLOCK_RX
    								   | FLAG_GRP_MN_BLOCK_RX_DN
+								   | FLAG_CKT_UCIC_BLOCK
+								   | FLAG_CKT_UCIC_BLOCK_DN
    								   )
    						      )
 			) {
@@ -1410,6 +1416,14 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_UNBLK);
 
 			/* throw the channel into reset to sync states */
+			
+			clear_rx_grs_flags(sngss7_info);
+			clear_rx_grs_data(sngss7_info);
+			clear_tx_grs_flags(sngss7_info);
+			clear_tx_grs_data(sngss7_info);
+			clear_rx_rsc_flags(sngss7_info);
+			clear_tx_rsc_flags(sngss7_info);
+
 			clear_tx_rsc_flags(sngss7_info);
 			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
