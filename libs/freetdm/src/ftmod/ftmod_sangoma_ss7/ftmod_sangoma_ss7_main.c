@@ -1410,6 +1410,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_UNBLK);
 
 			/* throw the channel into reset to sync states */
+			clear_tx_rsc_flags(sngss7_info);
 			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
 			/* bring the channel into restart again */
