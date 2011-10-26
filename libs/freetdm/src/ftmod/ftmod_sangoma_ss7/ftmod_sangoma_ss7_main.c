@@ -307,10 +307,12 @@ static void handle_hw_alarm(ftdm_event_t *e)
 					}
 				} else {
 					SS7_DEBUG("handle_hw_alarm: Clear\n");
-					sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_UNBLK_TX);
-					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX);
-					if (ftdmchan->state != FTDM_CHANNEL_STATE_SUSPENDED) {
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					if (sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
+						sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_UNBLK_TX);
+						sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX);
+						if (ftdmchan->state != FTDM_CHANNEL_STATE_SUSPENDED) {
+							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+						}
 					}
 				}
 			}
