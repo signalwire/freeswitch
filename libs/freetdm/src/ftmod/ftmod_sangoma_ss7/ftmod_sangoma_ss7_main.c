@@ -305,12 +305,12 @@ static void handle_hw_alarm(ftdm_event_t *e)
 					if (ftdmchan->state != FTDM_CHANNEL_STATE_SUSPENDED) {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 					}
-				} else {
+				} else if (e->enum_id == FTDM_OOB_ALARM_CLEAR) {
 					SS7_DEBUG("handle_hw_alarm: Clear\n");
 					if (sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX)) {
 						sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_UNBLK_TX);
 						sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX);
-						SS7_DEBUG("handle_hw_alarm: Setting FLAG_GRP_HW_BLOCK_TX\n");
+						SS7_DEBUG("handle_hw_alarm: Setting FLAG_GRP_HW_UNBLK_TX\n");
 						if (ftdmchan->state != FTDM_CHANNEL_STATE_SUSPENDED) {
 							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 						}
