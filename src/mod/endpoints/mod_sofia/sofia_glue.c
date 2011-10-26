@@ -1959,6 +1959,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
+	if (!caller_profile) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		return SWITCH_STATUS_FALSE;
+	}
+
+
 	cid_name = caller_profile->caller_id_name;
 	cid_num = caller_profile->caller_id_number;
 	sofia_glue_tech_prepare_codecs(tech_pvt);
@@ -5368,7 +5374,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 		return 0;
 
 	if (!(session = switch_core_session_request_xml(sofia_endpoint_interface, NULL, xml))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "skipping non-bridged entry\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid cdr data, call not recovered\n");
 		return 0;
 	}
 

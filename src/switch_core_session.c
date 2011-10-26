@@ -1748,6 +1748,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	}
 
 
+	if (!channel || !switch_channel_get_caller_profile(channel)) {
+		if (session) {
+			switch_core_session_destroy(&session);
+		}
+	}
+
+
 	return session;
 }
 
