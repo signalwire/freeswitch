@@ -1568,6 +1568,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 	sngss7_span_data_t 	*sngss7_span = NULL;
 	sng_isup_inf_t		*sngss7_intf = NULL;
 	int 				x;
+	int					first_channel=0;
 
 
 	SS7_INFO ("Starting span %s:%u.\n", span->name, span->span_id);
@@ -1612,13 +1613,15 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
 		}
-#if 0
+#if 1
 		/* throw the grp reset flag */
 		sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX);
-		if (x == 1) {
-			sngss7_set_flag(sngss7_info, FLAG_GRP_RESET_BASE);
-			sngss7_span->tx_grs.circuit = sngss7_info->circuit->id;
-			sngss7_span->tx_grs.range = span->chan_count -1;
+		if (first_channel == 0) {
+			sngss7_chan_data_t *cinfo = ftdmchan->call_data;
+			sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_BASE);
+			cinfo->tx_grs.circuit = sngss7_info->circuit->id;
+			cinfo->tx_grs.range = span->chan_count -1;
+			first_channel=1;
 		}
 #else
 		/* throw the channel into reset */
