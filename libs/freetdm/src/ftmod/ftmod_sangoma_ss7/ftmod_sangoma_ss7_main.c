@@ -366,10 +366,12 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 					if (ftdmchan->alarm_flags != 0) { /* we'll send out block */
 						sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX );
 					}  else { /* we'll send out reset */
-						sngss7_clear_ckt_blk_flag( ss7_info, FLAG_GRP_HW_BLOCK_TX );
-						sngss7_clear_ckt_blk_flag( ss7_info, FLAG_GRP_HW_BLOCK_TX_DN );
-						sngss7_set_ckt_blk_flag (ss7_info, FLAG_GRP_HW_UNBLK_TX);
-						SS7_DEBUG("b_alarm_test FLAG_GRP_HW_UNBLK_TX\n");
+						if (sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX )) {
+							sngss7_clear_ckt_blk_flag( ss7_info, FLAG_GRP_HW_BLOCK_TX );
+							sngss7_clear_ckt_blk_flag( ss7_info, FLAG_GRP_HW_BLOCK_TX_DN );
+							sngss7_set_ckt_blk_flag (ss7_info, FLAG_GRP_HW_UNBLK_TX);
+							SS7_DEBUG("b_alarm_test FLAG_GRP_HW_UNBLK_TX\n");
+						}
 					}
 				}
 				usleep(50);
