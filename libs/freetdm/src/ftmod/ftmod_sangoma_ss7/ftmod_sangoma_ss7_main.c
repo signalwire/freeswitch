@@ -1247,6 +1247,25 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_UNBLK_TX)) {
 			SS7_DEBUG_CHAN(ftdmchan, "Processing FLAG_GRP_HW_UNBLK_TX flag %s\n", "");
 
+			if (sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_TX) &&
+			     sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_TX_DN)) {
+				
+				/* Block was sent out we must send an unblock */
+				/* Do not send an unblock if we also have Management block
+				   enabled */
+   			
+				if (!sngss7_test_ckt_blk_flag(sngss7_info, ( FLAG_CKT_MN_BLOCK_TX
+   								   | FLAG_CKT_MN_BLOCK_TX
+   								   | FLAG_GRP_MN_BLOCK_TX
+   								   | FLAG_GRP_MN_BLOCK_TX_DN
+   								   )
+   						      )
+				) {
+					ft_to_sngss7_ubl(ftdmchan);
+				}	
+				
+			}
+
 			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_TX);
 			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_TX_DN);
 			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_UNBLK_TX);
