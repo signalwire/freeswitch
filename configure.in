@@ -764,6 +764,8 @@ case $host in
        ;;
 esac
 
+AC_PATH_PROGS(BZIP, bzip2)
+AC_PATH_PROGS(XZ, xz)
 AC_PATH_PROGS(TAR, gtar tar)
 AC_PATH_PROGS(WGET, wget)
 AC_PATH_PROGS(CURL, curl)
