@@ -194,28 +194,46 @@ AM_CONDITIONAL([HAVE_OPENR2], [test "${HAVE_OPENR2}" = "yes"])
 #
 HAVE_LIBPRI="no"
 AC_ARG_WITH([libpri],
-	[AS_HELP_STRING([--with-libpri], [Install ftmod_libpri])],
+	[AS_HELP_STRING([--with-libpri@<:@=PREFIX@:>@], [Install ftmod_libpri])],
 	[case "${withval}" in
-	 no)	enable_libpri="no" ;;
-	 *)	enable_libpri="yes" ;;
+	 no|yes) with_libpri="${withval}" ;;
+	 *) AS_IF([test -d "${withval}"],
+		[with_libpri="${withval}"],
+		[AC_MSG_ERROR([Invalid argument for --with-libpri, \"${withval}\" is not a directory])]
+	    ) ;;
 	 esac],
-	[enable_libpri="no"]
+	[with_libpri="no"]
 )
-if test "${enable_libpri}" != "no"
+if test "x${with_libpri}" != "xno"
 then
+	save_LIBS="${LIBS}"
+	save_CPPFLAGS="${CPPFLAGS}"
+	save_LDFLAGS="${LDFLAGS}"
+
+	LIBPRI_CPPFLAGS=""
+	LIBPRI_LDFLAGS=""
+
 	AC_MSG_RESULT([${as_nl}<<>> Digium libpri])
 
-	save_LIBS="${LIBS}"
+	AS_IF([test "x${with_libpri}" != "xyes"],
+		[LIBPRI_CPPFLAGS="-I${with_libpri}/include"
+		 LIBPRI_LDFLAGS="-L${with_libpri}/lib"],
+	)
+
+	LDFLAGS="${save_LDFLAGS} ${LIBPRI_LDFLAGS}"
+	CPPFLAGS="${save_CPPFLAGS} ${LIBPRI_CPPFLAGS}"
 	LIBS="${LIBS} -lpri"
+
 	AC_MSG_CHECKING([whether libpri is usable])
 	AC_LINK_IFELSE(
 		[AC_LANG_PROGRAM(
 			[#include <libpri.h>],
 			[const char *version = pri_get_version();]
 		)],
-		[AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([yes])
+		 HAVE_LIBPRI="yes"],
 		[AC_MSG_RESULT([no])
-		 AC_MSG_ERROR([libpri is not installed or unusable (see config.log for details)])]
+		 AC_MSG_ERROR([libpri not found or unusable (see config.log for details)])]
 	)
 
 	AC_MSG_CHECKING([whether libpri has BRI support])
@@ -241,10 +259,17 @@ then
 		[AC_MSG_RESULT([no])
 		 AC_MSG_NOTICE([You will need libpri-1.4.12_beta1 or newer for AOC event support])]
 	)
+
+	# libpri is available, set variables for Makefile(.am)
+	AC_SUBST([LIBPRI_LIBS], [-lpri])
+	AC_SUBST([LIBPRI_LDFLAGS])
+	AC_SUBST([LIBPRI_CPPFLAGS])
+
 	LIBS="${save_LIBS}"
+	LDFLAGS="${save_LDFLAGS}"
+	CPPFLAGS="${save_CPPFLAGS}"
 fi
-HAVE_LIBPRI="${enable_libpri}"
-AM_CONDITIONAL([HAVE_LIBPRI],[test "${enable_libpri}" = "yes"])
+AM_CONDITIONAL([HAVE_LIBPRI],[test "x${HAVE_LIBPRI}" = "xyes"])
 
 ##
 # Sangoma Wanpipe
