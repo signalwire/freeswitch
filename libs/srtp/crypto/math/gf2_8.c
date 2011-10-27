@@ -50,7 +50,7 @@
 
 /* gf2_8_shift() moved to gf2_8.h as an inline function */
 
-inline gf2_8
+gf2_8
 gf2_8_multiply(gf2_8 x, gf2_8 y) {
   gf2_8 z = 0;
 

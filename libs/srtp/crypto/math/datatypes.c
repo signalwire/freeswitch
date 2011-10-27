@@ -124,7 +124,7 @@ octet_string_hex_string(const void *s, int length) {
   return bit_string;
 }
 
-inline int
+static inline int
 hex_char_to_nibble(uint8_t c) {
   switch(c) {
   case ('0'): return 0x0;
