@@ -1165,7 +1165,7 @@ static int on_proceeding(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
 
 	if (chan) {
 		/* Open channel if inband information is available */
-		if (pevent->proceeding.progressmask & PRI_PROG_INBAND_AVAILABLE) {
+		if (pevent->proceeding.progressmask & PRI_PROG_INBAND_AVAILABLE || pevent->proceeding.progressmask & PRI_PROG_CALL_NOT_E2E_ISDN) {
 			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, B-Channel %d:%d\n",
 				ftdm_channel_get_span_id(chan),
 				ftdm_channel_get_id(chan));
@@ -1207,7 +1207,7 @@ static int on_progress(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 
 	if (chan) {
 		/* Open channel if inband information is available */
-		if (pevent->proceeding.progressmask & PRI_PROG_INBAND_AVAILABLE) {
+		if (pevent->proceeding.progressmask & PRI_PROG_INBAND_AVAILABLE || pevent->proceeding.progressmask & PRI_PROG_CALL_NOT_E2E_ISDN) {
 			ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, B-Channel %d:%d\n",
 				ftdm_channel_get_span_id(chan),
 				ftdm_channel_get_id(chan));
