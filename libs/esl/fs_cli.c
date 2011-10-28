@@ -1159,8 +1159,8 @@ int main(int argc, char *argv[])
 	int argv_quiet = 0;
 	int loops = 2, reconnect = 0, timeout = 0;
 
-	if (!strncasecmp("screen", term, 6) ||
-		!strncasecmp("vt100", term, 5)) {
+	if (term && (!strncasecmp("screen", term, 6) ||
+		!strncasecmp("vt100", term, 5))) {
 		feature_level = 1;
 	} else {
 		feature_level = 0;
