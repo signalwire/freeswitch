@@ -450,6 +450,9 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			if (!token) {
 				switch_mutex_lock(lot->mutex);
 				token = (valet_token_t *) switch_core_hash_find(lot->hash, ext);
+				if (token->bridged) {
+					token = NULL;
+				}
 				switch_mutex_unlock(lot->mutex);
 			}
 
@@ -483,8 +486,9 @@ SWITCH_STANDARD_APP(valet_parking_function)
 						switch_core_session_rwunlock(b_session);
 						token->timeout = 0;
 						token->bridged = 1;
-
+						
 						switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), token->uuid);
+
 						return;
 					}
 				}
