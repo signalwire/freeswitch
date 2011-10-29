@@ -48,35 +48,7 @@ static int ftmod_ss7_enable_isap(int suId);
 static int ftmod_ss7_enable_nsap(int suId);
 static int ftmod_ss7_enable_mtpLinkSet(int lnkSetId);
 
-int ftmod_ss7_inhibit_mtp3link(uint32_t id);
-int ftmod_ss7_uninhibit_mtp3link(uint32_t id);
 
-int ftmod_ss7_bind_mtp3link(uint32_t id);
-int ftmod_ss7_unbind_mtp3link(uint32_t id);
-int ftmod_ss7_activate_mtp3link(uint32_t id);
-int ftmod_ss7_deactivate_mtp3link(uint32_t id);
-int ftmod_ss7_deactivate2_mtp3link(uint32_t id);
-
-int ftmod_ss7_activate_mtplinkSet(uint32_t id);
-int ftmod_ss7_deactivate_mtplinkSet(uint32_t id);
-int ftmod_ss7_deactivate2_mtplinkSet(uint32_t id);
-
-int ftmod_ss7_lpo_mtp3link(uint32_t id);
-int ftmod_ss7_lpr_mtp3link(uint32_t id);
-
-int ftmod_ss7_shutdown_isup(void);
-int ftmod_ss7_shutdown_mtp3(void);
-int ftmod_ss7_shutdown_mtp2(void);
-int ftmod_ss7_shutdown_relay(void);
-int ftmod_ss7_disable_relay_channel(uint32_t chanId);
-
-int ftmod_ss7_disable_grp_mtp3Link(uint32_t procId);
-int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId);
-
-int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId);
-
-int ftmod_ss7_block_isup_ckt(uint32_t cktId);
-int ftmod_ss7_unblock_isup_ckt(uint32_t cktId);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -779,7 +751,14 @@ int ftmod_ss7_disable_grp_mtp3Link(uint32_t procId)
 	cntrl.t.cntrl.action		= AUBND_DIS;		/* disable and unbind */
 	cntrl.t.cntrl.subAction		= SAGR_DSTPROCID;			/* specificed element */
 
-	return (sng_cntrl_mtp3(&pst, &cntrl));
+	if (g_ftdm_sngss7_data.cfg.procId == procId) {
+		SS7_DEBUG("Executing MTP3 cntrl command local pid =%i\n",procId);
+		return (sng_cntrl_mtp3(&pst, &cntrl));
+	} else {
+		SS7_WARN("Executing MTP3 cntrl command different local=%i target=%i\n",
+				g_ftdm_sngss7_data.cfg.procId,procId);
+		return (sng_cntrl_mtp3_nowait(&pst, &cntrl));
+	}
 
 }
 
@@ -811,7 +790,14 @@ int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId)
 	cntrl.t.cntrl.action		= ABND_ENA;			/* bind and enable */
 	cntrl.t.cntrl.subAction		= SAGR_DSTPROCID;			/* specificed element */
 
-	return (sng_cntrl_mtp3(&pst, &cntrl));
+	if (g_ftdm_sngss7_data.cfg.procId == procId) {
+		SS7_DEBUG("Executing MTP3 cntrl command local pid =%i\n",procId);
+		return (sng_cntrl_mtp3(&pst, &cntrl));
+	} else {
+		SS7_WARN("Executing MTP3 cntrl command different local=%i target=%i\n",
+				g_ftdm_sngss7_data.cfg.procId,procId);
+		return (sng_cntrl_mtp3_nowait(&pst, &cntrl));
+	}
 
 }
 
@@ -848,7 +834,7 @@ int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId)
 }
 
 /******************************************************************************/
-int ftmod_ss7_block_isup_ckt(uint32_t cktId)
+int __ftmod_ss7_block_isup_ckt(uint32_t cktId, ftdm_bool_t wait)
 {
 	SiMngmt cntrl;
 	Pst pst;
@@ -876,7 +862,11 @@ int ftmod_ss7_block_isup_ckt(uint32_t cktId)
 	cntrl.t.cntrl.action					= ADISIMM;		/* block via BLO */
 	cntrl.t.cntrl.subAction					= SAELMNT;		/* specificed element */
 
-	return (sng_cntrl_isup(&pst, &cntrl));
+	if (wait == FTDM_TRUE) {
+		return (sng_cntrl_isup(&pst, &cntrl));
+	} else {
+		return (sng_cntrl_isup_nowait(&pst, &cntrl));
+	}
 }
 
 /******************************************************************************/

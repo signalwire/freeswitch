@@ -523,8 +523,6 @@ void ft_to_sngss7_grs (ftdm_channel_t *fchan)
 		cinfo->circuit->cic,
 		(cinfo->circuit->cic + cinfo->tx_grs.range));
 
-	memset(&cinfo->tx_grs, 0, sizeof(cinfo->tx_grs));
-
 	sngss7_set_ckt_flag(cinfo, FLAG_GRP_RESET_SENT);
 
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);

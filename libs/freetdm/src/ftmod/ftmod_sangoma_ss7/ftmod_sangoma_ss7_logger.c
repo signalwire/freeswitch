@@ -791,7 +791,7 @@ void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
 		break;
 	/**************************************************************************/
 	case (LRY_USTA_UP): /* channel up */
-		ftdm_log(FTDM_LOG_ERROR,"[RELAY] Channel UP: tx procId %d: channel %d\n",
+		ftdm_log(FTDM_LOG_INFO,"[RELAY] Channel UP: tx procId %d: channel %d\n",
 												sta->t.usta.s.ryUpUsta.sendPid,
 												sta->t.usta.s.ryUpUsta.id);
 

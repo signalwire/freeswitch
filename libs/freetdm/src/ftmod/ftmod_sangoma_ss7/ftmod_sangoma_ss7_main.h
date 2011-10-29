@@ -732,7 +732,9 @@ int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId);
 
 int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId);
 
-int ftmod_ss7_block_isup_ckt(uint32_t cktId);
+#define ftmod_ss7_block_isup_ckt(x) 		__ftmod_ss7_block_isup_ckt(x,FTDM_TRUE)
+#define ftmod_ss7_block_isup_ckt_nowait(x) 	__ftmod_ss7_block_isup_ckt(x,FTDM_FALSE)
+int __ftmod_ss7_block_isup_ckt(uint32_t cktId, ftdm_bool_t wait);
 int ftmod_ss7_unblock_isup_ckt(uint32_t cktId);
 
 
@@ -915,7 +917,7 @@ if (ftdmchan->state == new_state) { \
 #define SS7_ERROR_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_ERROR, msg , ##args)
 #define SS7_CTRIT_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_CRIT, msg , ##args)
 
-#ifdef KONRAD_DEVEL
+#ifdef SS7_CODE_DEVEL
 #define SS7_DEVEL_DEBUG(a,...)   ftdm_log(FTDM_LOG_DEBUG,a,##__VA_ARGS__ );
 #else
 #define SS7_DEVEL_DEBUG(a,...)
