@@ -349,6 +349,7 @@ struct conference_member {
 	switch_mutex_t *audio_in_mutex;
 	switch_mutex_t *audio_out_mutex;
 	switch_mutex_t *read_mutex;
+	switch_mutex_t *fnode_mutex;
 	switch_thread_rwlock_t *rwlock;
 	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t orig_read_impl;
@@ -2640,8 +2641,11 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 	switch_size_t file_sample_len = file_data_len / 2;
 	int16_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
 
+
+	switch_mutex_lock(member->fnode_mutex);
+
 	if (!member->fnode) {
-		return;
+		goto done;
 	}
 
 	/* if we are done, clean it up */
@@ -2706,6 +2710,10 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 			}
 		}
 	}
+
+ done:
+
+	switch_mutex_unlock(member->fnode_mutex);
 }
 
 
@@ -3134,6 +3142,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
 	switch_mutex_init(&member->write_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->flag_mutex, SWITCH_MUTEX_NESTED, rec->pool);
+	switch_mutex_init(&member->fnode_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->audio_in_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->audio_out_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->read_mutex, SWITCH_MUTEX_NESTED, rec->pool);
@@ -3344,7 +3353,8 @@ static uint32_t conference_member_stop_file(conference_member_t *member, file_st
 	if (member == NULL)
 		return count;
 
-	lock_member(member);
+
+	switch_mutex_lock(member->fnode_mutex);
 
 	if (stop == FILE_STOP_ALL) {
 		for (nptr = member->fnode; nptr; nptr = nptr->next) {
@@ -3358,7 +3368,7 @@ static uint32_t conference_member_stop_file(conference_member_t *member, file_st
 		}
 	}
 
-	unlock_member(member);
+	switch_mutex_unlock(member->fnode_mutex);
 
 	return count;
 }
@@ -3575,14 +3585,14 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	fnode->file = switch_core_strdup(fnode->pool, file);
 	/* Queue the node */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Queueing file '%s' for play\n", file);
-	lock_member(member);
+	switch_mutex_lock(member->fnode_mutex);
 	for (nptr = member->fnode; nptr && nptr->next; nptr = nptr->next);
 	if (nptr) {
 		nptr->next = fnode;
 	} else {
 		member->fnode = fnode;
 	}
-	unlock_member(member);
+	switch_mutex_unlock(member->fnode_mutex);
 	status = SWITCH_STATUS_SUCCESS;
 
   done:
@@ -3640,7 +3650,7 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 	}
 
 	/* Queue the node */
-	lock_member(member);
+	switch_mutex_unlock(member->fnode_mutex);
 	for (nptr = member->fnode; nptr && nptr->next; nptr = nptr->next);
 
 	if (nptr) {
@@ -3666,7 +3676,7 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 	}
 
 	switch_core_speech_feed_tts(fnode->sh, text, &flags);
-	unlock_member(member);
+	switch_mutex_unlock(member->fnode_mutex);
 
 	status = SWITCH_STATUS_SUCCESS;
 
@@ -6371,6 +6381,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_mutex_init(&member.flag_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.write_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.read_mutex, SWITCH_MUTEX_NESTED, member.pool);
+	switch_mutex_init(&member.fnode_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.audio_in_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.audio_out_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_thread_rwlock_create(&member.rwlock, member.pool);
