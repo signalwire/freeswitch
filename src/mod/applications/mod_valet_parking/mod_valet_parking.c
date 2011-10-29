@@ -166,8 +166,10 @@ static valet_token_t *next_id(switch_core_session_t *session, valet_lot_t *lot, 
 	switch_mutex_lock(globals.mutex);
 	for (i = min; (i < max || max == 0); i++) {
 		switch_snprintf(buf, sizeof(buf), "%d", i);
+		switch_mutex_lock(lot->mutex);
 		token = (valet_token_t *) switch_core_hash_find(lot->hash, buf);
-		
+		switch_mutex_unlock(lot->mutex);
+
 		if ((!in && token && !token->timeout)) {
 			goto end;
 		}
@@ -185,7 +187,9 @@ static valet_token_t *next_id(switch_core_session_t *session, valet_lot_t *lot, 
 		switch_zmalloc(token, sizeof(*token));
 		switch_set_string(token->uuid, switch_core_session_get_uuid(session));
 		switch_set_string(token->ext, buf);
+		switch_mutex_lock(lot->mutex);
 		switch_core_hash_insert(lot->hash, buf, token);
+		switch_mutex_unlock(lot->mutex);
 	}
 
  end:
@@ -450,13 +454,10 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			if (!token) {
 				switch_mutex_lock(lot->mutex);
 				token = (valet_token_t *) switch_core_hash_find(lot->hash, ext);
-				if (token->bridged) {
-					token = NULL;
-				}
 				switch_mutex_unlock(lot->mutex);
 			}
 
-			if (token) {
+			if (token && !token->bridged) {
 				switch_core_session_t *b_session;
 			
 				if (token->timeout) {
@@ -494,12 +495,19 @@ SWITCH_STANDARD_APP(valet_parking_function)
 				}
 			}
 
-			token = NULL;
-
-			switch_zmalloc(token, sizeof(*token));
+			if (token) {
+				switch_mutex_lock(lot->mutex);
+				switch_core_hash_delete(lot->hash, token->ext);
+				switch_mutex_unlock(lot->mutex);
+				memset(token, 0, sizeof(*token));
+			} else {
+				switch_zmalloc(token, sizeof(*token));
+			}
 			switch_set_string(token->uuid, switch_core_session_get_uuid(session));
 			switch_set_string(token->ext, ext);
+			switch_mutex_lock(lot->mutex);
 			switch_core_hash_insert(lot->hash, ext, token);
+			switch_mutex_unlock(lot->mutex);
 		}
 
 		if (!(tmp = switch_channel_get_variable(channel, "valet_hold_music"))) {
@@ -619,6 +627,7 @@ SWITCH_STANDARD_API(valet_info_function)
 
 		stream->write_function(stream, "  <lot name=\"%s\">\n", name);
 
+		switch_mutex_lock(lot->mutex);
 		for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
 			valet_token_t *token;
 
@@ -630,6 +639,8 @@ SWITCH_STANDARD_API(valet_info_function)
 				stream->write_function(stream, "    <extension uuid=\"%s\">%s</extension>\n", token->uuid, i_ext);
 			}
 		}
+		switch_mutex_unlock(lot->mutex);
+
 		stream->write_function(stream, "  </lot>\n");
 	}
 
