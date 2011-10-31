@@ -3650,7 +3650,7 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 	}
 
 	/* Queue the node */
-	switch_mutex_unlock(member->fnode_mutex);
+	switch_mutex_lock(member->fnode_mutex);
 	for (nptr = member->fnode; nptr && nptr->next; nptr = nptr->next);
 
 	if (nptr) {
