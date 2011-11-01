@@ -1610,8 +1610,10 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 	sngss7_chan_data_t	*sngss7_info = NULL;
 	sngss7_span_data_t 	*sngss7_span = NULL;
 	sng_isup_inf_t		*sngss7_intf = NULL;
-	int 				x;
-	int					first_channel=0;
+	int 			x;
+	int			first_channel;
+
+	first_channel=0;
 
 
 	SS7_INFO ("Starting span %s:%u.\n", span->name, span->span_id);
