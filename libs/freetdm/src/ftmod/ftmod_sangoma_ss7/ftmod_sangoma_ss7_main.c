@@ -1656,7 +1656,7 @@ static ftdm_status_t ftdm_sangoma_ss7_start(ftdm_span_t * span)
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
 		}
-#if 1
+#if 0
 		/* throw the grp reset flag */
 		sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX);
 		if (first_channel == 0) {
