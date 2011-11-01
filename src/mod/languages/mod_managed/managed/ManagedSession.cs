@@ -50,7 +50,7 @@ namespace FreeSWITCH.Native
     public partial class ManagedSession
     {
         // SWITCH_DECLARE(void) InitManagedSession(ManagedSession *session, MonoObject *dtmfDelegate, MonoObject *hangupDelegate)
-        [DllImport("mod_managed.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("mod_managed", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern void InitManagedSession(IntPtr sessionPtr, DtmfCallback dtmfDelegate, CdeclAction hangupDelegate);
 
         /// <summary>Initializes the native ManagedSession. Called after Originate completes successfully .</summary>
