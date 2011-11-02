@@ -638,9 +638,6 @@ static void cancel_caller_outbound_call(const char *key, switch_call_cause_t cau
 		*cancel_cause = cause;
 	}
 	switch_mutex_unlock(globals.caller_orig_mutex);
-
-	fifo_caller_del(key);
-
 }
 
 
@@ -2564,8 +2561,6 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		switch_channel_clear_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_BRIDGE_TAG);
 
-		fifo_caller_del(switch_core_session_get_uuid(session));
-
 		if (!aborted && switch_channel_ready(channel)) {
 			switch_channel_set_state(channel, CS_HIBERNATE);
 			goto done;
@@ -2604,6 +2599,8 @@ SWITCH_STANDARD_APP(fifo_function)
 		}
 
 		check_ocancel(session);
+
+		fifo_caller_del(switch_core_session_get_uuid(session));
 
 		goto done;
 
@@ -3031,6 +3028,8 @@ SWITCH_STANDARD_APP(fifo_function)
 
 
 				fifo_execute_sql(sql, globals.sql_mutex);
+				fifo_caller_del(switch_core_session_get_uuid(other_session));
+
 				switch_safe_free(sql);
 
 
