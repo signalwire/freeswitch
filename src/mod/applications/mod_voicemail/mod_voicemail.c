@@ -1856,6 +1856,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	switch_input_args_t args = { 0 };
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
+	int auth_only = 0, authed = 0;
 
 	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
 		caller_id_name = caller_profile->caller_id_name;
@@ -1863,6 +1864,13 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 	if (!(caller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
 		caller_id_number = caller_profile->caller_id_number;
+	}
+
+	if (auth == 2) {
+		auth_only = 1;
+		auth = 0;
+	} else {
+		auth_only = switch_true(switch_channel_get_variable(channel, "vm_auth_only"));
 	}
 
 	timeout = profile->digit_timeout;
@@ -2440,6 +2448,10 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						}
 					}
 
+					authed = 1;
+
+					if (auth_only) goto end;
+
 					vm_check_state = VM_CHECK_FOLDER_SUMMARY;
 				} else {
 					goto failed;
@@ -2472,7 +2484,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 		tmp_file_path = NULL;
 	}
 
-	if (switch_channel_ready(channel)) {
+	if (switch_channel_ready(channel) && !auth_only) {
 		if (failed) {
 			status = switch_ivr_phrase_macro(session, VM_ABORT_MACRO, NULL, NULL, NULL);
 		}
@@ -2483,6 +2495,15 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 		switch_xml_free(x_user);
 		x_user = NULL;
 	}
+
+	if (auth_only) {
+		if (authed) {
+			switch_channel_set_variable(channel, "user_pin_authenticated", "true");
+		} else {
+			switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
+		}
+	}
+
 }
 
 
@@ -3449,6 +3470,9 @@ SWITCH_STANDARD_APP(voicemail_function)
 			x++;
 		} else if (argv[x] && !strcasecmp(argv[x], "auth")) {
 			auth++;
+			x++;
+		} else if (argv[x] && !strcasecmp(argv[x], "auth_only")) {
+			auth = 2;
 			x++;
 		} else {
 			break;
