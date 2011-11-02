@@ -836,6 +836,11 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 				goto error;
 			}
+			if (!context->lame_ready) {
+				lame_init_params(context->gfp);
+				lame_print_config(context->gfp);
+				context->lame_ready = 1;
+			}
 		}
 	}
 
