@@ -46,6 +46,7 @@ typedef struct {
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	time_t timeout;
 	int bridged;
+	time_t start_time;
 } valet_token_t;
 
 typedef struct {
@@ -153,6 +154,34 @@ static void check_timeouts(void)
 
 }
 
+static int find_longest(valet_lot_t *lot, int min, int max)
+{
+
+	switch_hash_index_t *i_hi;
+	const void *i_var;
+	void *i_val;
+	valet_token_t *token;
+	int longest = 0, cur = 0, longest_ext = 0;
+	time_t now = switch_epoch_time_now(NULL);
+
+	switch_mutex_lock(lot->mutex);
+	for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
+		int i;
+		switch_hash_this(i_hi, &i_var, NULL, &i_val);
+		token = (valet_token_t *) i_val;
+		cur = (now - token->start_time);
+		i = atoi(token->ext);
+		
+		if (cur > longest && i >= min && i <= max) {
+			longest = cur;
+			longest_ext = i;
+		}
+	}
+	switch_mutex_unlock(lot->mutex);
+
+	return longest_ext;
+}
+
 static valet_token_t *next_id(switch_core_session_t *session, valet_lot_t *lot, int min, int max, int in)
 {
 	int i, r = 0;
@@ -164,6 +193,20 @@ static valet_token_t *next_id(switch_core_session_t *session, valet_lot_t *lot, 
 	}
 
 	switch_mutex_lock(globals.mutex);
+
+	if (!in) {
+		int longest = find_longest(lot, min, max);
+		if (longest > 0) {
+			switch_snprintf(buf, sizeof(buf), "%d", longest);
+			switch_mutex_lock(lot->mutex);
+			token = (valet_token_t *) switch_core_hash_find(lot->hash, buf);
+			switch_mutex_unlock(lot->mutex);
+			if (token) {
+				goto end;
+			}
+		}
+	}
+
 	for (i = min; (i < max || max == 0); i++) {
 		switch_snprintf(buf, sizeof(buf), "%d", i);
 		switch_mutex_lock(lot->mutex);
@@ -187,6 +230,7 @@ static valet_token_t *next_id(switch_core_session_t *session, valet_lot_t *lot, 
 		switch_zmalloc(token, sizeof(*token));
 		switch_set_string(token->uuid, switch_core_session_get_uuid(session));
 		switch_set_string(token->ext, buf);
+		token->start_time = switch_epoch_time_now(NULL);
 		switch_mutex_lock(lot->mutex);
 		switch_core_hash_insert(lot->hash, buf, token);
 		switch_mutex_unlock(lot->mutex);
@@ -505,6 +549,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			}
 			switch_set_string(token->uuid, switch_core_session_get_uuid(session));
 			switch_set_string(token->ext, ext);
+			token->start_time = switch_epoch_time_now(NULL);
 			switch_mutex_lock(lot->mutex);
 			switch_core_hash_insert(lot->hash, ext, token);
 			switch_mutex_unlock(lot->mutex);
