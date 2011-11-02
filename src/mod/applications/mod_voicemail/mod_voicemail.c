@@ -2484,7 +2484,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 		tmp_file_path = NULL;
 	}
 
-	if (switch_channel_ready(channel) && !auth_only) {
+	if (switch_channel_ready(channel) && (!auth_only || !authed)) {
 		if (failed) {
 			status = switch_ivr_phrase_macro(session, VM_ABORT_MACRO, NULL, NULL, NULL);
 		}
