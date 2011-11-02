@@ -1433,6 +1433,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_agent", "%s", h->agent_name);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_agent_type", "%s", h->agent_type);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_side", "%s", "agent");
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout", "false");
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout_on_execute", "false");
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
 
 		t_agent_called = local_epoch_time_now(NULL);
@@ -1496,8 +1498,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 			if ((other_loopback_session = switch_core_session_locate(other_loopback_leg_uuid))) {
 				switch_channel_t *other_loopback_channel = switch_core_session_get_channel(other_loopback_session);
-				const char *real_uuid = switch_channel_get_variable(other_loopback_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+				const char *real_uuid = NULL;
 
+				/* Wait for the real channel to be fully bridged */
+				switch_channel_wait_for_flag(other_loopback_channel, CF_BRIDGED, SWITCH_TRUE, 5000, member_channel);
+
+				real_uuid = switch_channel_get_variable(other_loopback_channel, SWITCH_SIGNAL_BOND_VARIABLE);
 				switch_channel_set_variable(other_loopback_channel, "cc_member_pre_answer_uuid", NULL);
 
 				/* Switch the agent session */
@@ -1506,9 +1512,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 					agent_session = switch_core_session_locate(real_uuid);
 					agent_uuid = switch_core_session_get_uuid(agent_session);
 					agent_channel = switch_core_session_get_channel(agent_session);
-
-					/* Wait for the real channel to be fully bridged */
-					switch_channel_wait_for_flag(agent_channel, CF_BRIDGED, SWITCH_TRUE, 5000, member_channel);
 
 					if (!switch_channel_test_flag(agent_channel, CF_BRIDGED)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Timeout waiting for real channel to be bridged (agent '%s')\n", h->agent_name);
