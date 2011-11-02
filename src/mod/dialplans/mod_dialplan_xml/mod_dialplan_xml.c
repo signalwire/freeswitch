@@ -144,8 +144,10 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		
 		if ((regex_rule = (char *) switch_xml_attr(xcond, "regex"))) {
 			int all = !strcasecmp(regex_rule, "all");
+			int xor = !strcasecmp(regex_rule, "xor");
 			int pass = 0;
 			int fail = 0;
+			int total = 0;
 
 			for (xregex = switch_xml_child(xcond, "regex"); xregex; xregex = xregex->next) {
 				time_match = switch_xml_std_datetime_check(xregex);
@@ -174,6 +176,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					expression = expression_expanded;
 				}
 				
+				total++;
 				
 				field = (char *) switch_xml_attr(xregex, "field");
 
@@ -191,25 +194,28 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					if (!field_data) {
 						field_data = "";
 					}
-
+					
 					if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 										  "Dialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ match=%s\n",
 										  switch_channel_get_name(channel), exten_name, field, field_data, expression, all ? "all" : "any");
 						pass++;
-						if (!all) break;
+						if (!all && !xor) break;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 										  "Dialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ match=%s\n",
 										  switch_channel_get_name(channel), exten_name, field, field_data, expression, all ? "all" : "any");
 						fail++;
-						if (all) break;
+						if (all && !xor) break;
 					}
 				} else if (time_match == -1) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 									  "Dialplan: %s Absolute Condition [%s] match=%s\n", switch_channel_get_name(channel), exten_name, all ? "all" : "any");
 					pass++;
-					if (!all) break;
+					if (!all && !xor) break;
+				} else if (time_match == 1) {
+					pass++;
+					if (!all && !xor) break;
 				}
 				
 				if (field && strchr(expression, '(')) {
@@ -234,8 +240,14 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				
 			}
 
-			if ((all && !fail) || (!all && pass)) {
-				anti_action = SWITCH_FALSE; 
+			if (xor) {
+				if (pass == 1) {
+					anti_action = SWITCH_FALSE;
+				}
+			} else {
+				if ((all && !fail) || (!all && pass)) {
+					anti_action = SWITCH_FALSE; 
+				}
 			}
 
 			switch_safe_free(field_expanded);
