@@ -111,6 +111,9 @@ namespace FreeSWITCH {
                         return false;
                     }
                 }
+            } catch (Exception ex) {
+                Log.WriteLine(LogLevel.Error, "Error in plugin execute: " + ex.ToString());
+                return false;
             } finally {
                 DecreaseUse();
             }
