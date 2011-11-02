@@ -1877,6 +1877,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	session_manager.session_count++;
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
+	switch_channel_set_variable_printf(session->channel, "session_id", "%u", session->id);
+
 	return session;
 }
 
