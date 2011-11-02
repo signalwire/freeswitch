@@ -3310,6 +3310,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_channel_set_variable(caller_channel, buf, buf2);
 				}
 
+				if (caller_channel && switch_channel_test_flag(caller_channel, CF_INTERCEPTED)) {
+					*cause = SWITCH_CAUSE_PICKED_OFF;
+				}
+
 				if (!*cause) {
 					if (reason) {
 						*cause = reason;
@@ -3419,6 +3423,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (!(state == CS_RESET || switch_channel_test_flag(originate_status[i].peer_channel, CF_TRANSFER) ||
 						  switch_channel_test_flag(originate_status[i].peer_channel, CF_REDIRECT) ||
 						  switch_channel_test_flag(originate_status[i].peer_channel, CF_BRIDGED))) {
+						if (caller_channel && switch_channel_test_flag(caller_channel, CF_INTERCEPTED)) {
+							switch_channel_set_flag(originate_status[i].peer_channel, CF_INTERCEPT);
+						}
 						switch_channel_hangup(originate_status[i].peer_channel, *cause);
 					}
 				}
