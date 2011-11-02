@@ -149,6 +149,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			int fail = 0;
 			int total = 0;
 
+			switch_channel_del_variable_prefix(channel, "DP_REGEX_MATCH");
+
 			for (xregex = switch_xml_child(xcond, "regex"); xregex; xregex = xregex->next) {
 				time_match = switch_xml_std_datetime_check(xregex);
 
@@ -219,6 +221,11 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				}
 				
 				if (field && strchr(expression, '(')) {
+					char var[256];
+					switch_snprintf(var, sizeof(var), "DP_REGEX_MATCH_%d", total);
+
+					switch_channel_set_variable(channel, var, NULL);
+					switch_capture_regex(re, proceed, field_data, ovector, var, switch_regex_set_var_callback, session);
 					
 					switch_safe_free(save_expression);
 					switch_safe_free(save_field_data);

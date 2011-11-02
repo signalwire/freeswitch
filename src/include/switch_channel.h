@@ -271,6 +271,8 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_
 SWITCH_DECLARE(const char *) switch_channel_get_hold_music(switch_channel_t *channel);
 SWITCH_DECLARE(const char *) switch_channel_get_hold_music_partner(switch_channel_t *channel);
 
+SWITCH_DECLARE(uint32_t) switch_channel_del_variable_prefix(switch_channel_t *channel, const char *prefix);
+
 #define switch_channel_set_variable(_channel, _var, _val) switch_channel_set_variable_var_check(_channel, _var, _val, SWITCH_TRUE)
 #define switch_channel_set_variable_partner(_channel, _var, _val) switch_channel_set_variable_partner_var_check(_channel, _var, _val, SWITCH_TRUE)
 

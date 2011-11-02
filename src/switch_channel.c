@@ -1127,6 +1127,28 @@ SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_cha
 	return status;
 }
 
+
+SWITCH_DECLARE(uint32_t) switch_channel_del_variable_prefix(switch_channel_t *channel, const char *prefix)
+{
+	switch_event_t *event;
+	switch_event_header_t *hp;
+	uint32_t r = 0;
+
+	switch_channel_get_variables(channel, &event);
+
+	if (event) {
+		for (hp = event->headers; hp; hp = hp->next) {
+			if (zstr(prefix) || !strncasecmp(hp->name, prefix, strlen(prefix))) {
+				switch_channel_set_variable(channel, hp->name, NULL);
+			}
+		}
+	}
+
+	switch_event_destroy(&event);
+
+	return r;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check)
 {
