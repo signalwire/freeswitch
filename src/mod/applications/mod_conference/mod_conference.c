@@ -5094,7 +5094,11 @@ static switch_status_t conf_api_sub_pin(conference_obj_t *conference, switch_str
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
 
-	if ((argc == 3) && (!strcmp(argv[1], "pin"))) {
+	if ((argc == 4) && (!strcmp(argv[2], "mod"))) {
+		conference->mpin = switch_core_strdup(conference->pool, argv[3]);
+		stream->write_function(stream, "Moderator Pin for conference %s set: %s\n", argv[0], conference->mpin);
+		return SWITCH_STATUS_SUCCESS;
+	} else if ((argc == 3) && (!strcmp(argv[1], "pin"))) {
 		conference->pin = switch_core_strdup(conference->pool, argv[2]);
 		stream->write_function(stream, "Pin for conference %s set: %s\n", argv[0], conference->pin);
 		return SWITCH_STATUS_SUCCESS;
@@ -5957,8 +5961,8 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 }
 
 #define validate_pin(buf, pin, mpin) \
-	pin_valid = (pin && strcmp(buf, pin) == 0); \
-	if (!pin_valid && mpin && strcmp(buf, mpin) == 0) { \
+	pin_valid = (!zstr(pin) && strcmp(buf, pin) == 0);	\
+	if (!pin_valid && !zstr(mpin) && strcmp(buf, mpin) == 0) {			\
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Moderator PIN found!\n"); \
 		pin_valid = 1; \
 		mpin_matched = 1; \
@@ -6052,7 +6056,7 @@ SWITCH_STANDARD_APP(conference_function)
 	/* is there a conference pin ? */
 	if ((dpin = strchr(conf_name, '+'))) {
 		*dpin++ = '\0';
-	}
+	} else dpin = "";
 
 	/* is there profile specification ? */
 	if ((profile_name = strrchr(conf_name, '@'))) {
@@ -6291,6 +6295,7 @@ SWITCH_STANDARD_APP(conference_function)
 				if (status == SWITCH_STATUS_SUCCESS) {
 					validate_pin(pin_buf, dpin, mdpin);
 				}
+
 				if (!pin_valid) {
 					/* zero the collected pin */
 					memset(pin_buf, 0, sizeof(pin_buf));
