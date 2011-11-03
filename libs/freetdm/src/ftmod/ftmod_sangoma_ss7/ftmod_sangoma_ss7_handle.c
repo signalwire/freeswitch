@@ -2571,7 +2571,9 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		sigev.channel = ftdmchan;
 
 		/* bring the sig status down */
-		sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
+		if (sngss7_channel_status_clear(sngss7_info)) {
+			sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
+		}
 	
 		/* unlock the channel again before we exit */
 		ftdm_mutex_unlock(ftdmchan->mutex);

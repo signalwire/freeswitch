@@ -1032,13 +1032,6 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		SS7_DEBUG_CHAN(ftdmchan,"RESTART: Current flags: ckt=0x%X, blk=0x%X\n", 
 									sngss7_info->ckt_flags,
 									sngss7_info->blk_flags);
-	
-#if 0	
-		if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_UNBLK_TX) && sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_RESUME)) {
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
-			break;
-		}
-#endif
 
 		if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK)) {
 			if ((sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_RX)) ||
@@ -1175,8 +1168,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				if (!sngss7_reset_status_clear(sngss7_info)) {
 					goto suspend_goto_restart;
 				} else if (!sngss7_block_status_clear(sngss7_info)) {
-					/* Do nothing just go and handle blocks */
+					/* Do nothing just go through and handle blocks below */
 				} else {
+					/* This should not happen as above function tests
+					 * for reset and blocks */
+					SS7_ERROR_CHAN(ftdmchan, "Invalid code path: sngss7_channel_status_clear reset and block are both cleared%s\n", "");
 					goto suspend_goto_restart;
 				}
 			} else {
@@ -1195,6 +1191,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			}
 
 			/* Wait for RESUME */
+			/* FIXME: Check if this is a correct action to wait for RESUME */
 			goto suspend_goto_last;
 		} /* if (sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED)) { */
 
@@ -1290,19 +1287,20 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			goto suspend_goto_last;
 		}
-#if 0
-//jz: there is no such thing of "remote hw block". for receiver, there are only block and unblock
-//nc: yes there is: its part of the CGB - however its handled in ss7_handle.c
 
 		/**********************************************************************/
-		// jz: hardware block/unblock rx
+#if 0
+		/* This logic is handled in the handle_cgu_req and handle_cgb_req */
+
 		if (sngss7_test_ckt_blk_flag (sngss7_info, FLAG_GRP_HW_BLOCK_RX ) &&
 			!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX_DN )) {
 
 			SS7_DEBUG_CHAN(ftdmchan, "Processing FLAG_GRP_HW_BLOCK_RX flag %s\n", "");
 
 			sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
-			ft_to_sngss7_bla(ftdmchan);
+			
+			/* FIXME: Transmit CRG Ack */
+
 			sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX_DN);
 
 			goto suspend_goto_last;
@@ -1319,14 +1317,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
 			}
 
-			if (sngss7_tx_block_status_clear(sngss7_info)) {
-				ft_to_sngss7_uba(ftdmchan);
-			}
+			/* Transmit CRU Ack */
 
 			goto suspend_goto_last;
 		}
 #endif
-
 
 
 		/**********************************************************************/
@@ -1860,9 +1855,6 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 	/* print the version of the library being used */
 	sng_isup_version(&major, &minor, &build);
 	SS7_INFO("Loaded LibSng-SS7 %d.%d.%d\n", major, minor, build);
-
-	/* crash on assert fail */
-	ftdm_global_set_crash_policy (FTDM_CRASH_ON_ASSERT);
 
 	return FTDM_SUCCESS;
 }
