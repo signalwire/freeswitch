@@ -1640,7 +1640,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 		switch_channel_set_state(bchannel, CS_PARK);
 	}
 
-	switch_channel_set_flag(channel, CF_INTERCEPTED);
+	switch_channel_set_flag(rchannel, CF_INTERCEPTED);
 	switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), uuid);
 	switch_core_session_rwunlock(rsession);
 
