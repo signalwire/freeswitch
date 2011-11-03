@@ -1044,6 +1044,22 @@ if (ftdmchan->state == new_state) { \
 #define sngss7_clear_options(obj, option) ((obj)->options &= ~(option))
 #define sngss7_set_options(obj, option)   ((obj)->options |= (option))
 
+#define sngss7_tx_block_status_clear(obj) (!sngss7_test_ckt_blk_flag(obj, (FLAG_CKT_MN_BLOCK_TX | \
+													  		       FLAG_CKT_MN_BLOCK_TX_DN | \
+														  	       FLAG_GRP_MN_BLOCK_TX | \
+														  	       FLAG_GRP_MN_BLOCK_TX_DN | \
+															       FLAG_GRP_HW_BLOCK_TX | \
+															       FLAG_GRP_HW_BLOCK_TX_DN ))) 
+
+#define sngss7_block_status_clear(obj) (obj->blk_flags == 0)
+
+#define sngss7_reset_status_clear(obj) (!sngss7_test_ckt_flag(obj, (FLAG_RESET_TX | \
+														    FLAG_RESET_RX | \
+														  	FLAG_GRP_RESET_TX | \
+														  	FLAG_GRP_RESET_RX )))
+
+#define sngss7_channel_status_clear(obj) ((sngss7_block_status_clear(obj)) && (sngss7_reset_status_clear(obj)))
+
 
 #ifdef SMG_RELAY_DBG
 #define SS7_RELAY_DBG(a,...)	printf(a"\n", ##__VA_ARGS__)
