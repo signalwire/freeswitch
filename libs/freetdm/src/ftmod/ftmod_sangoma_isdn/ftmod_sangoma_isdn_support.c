@@ -696,70 +696,61 @@ ftdm_status_t set_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb)
 ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt)
 {
 	uint8_t len;
-	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
-	/* sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data; */
+	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;	
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+	
 
 	len = strlen(caller_data->cid_name);
 	if (!len) {
 		return FTDM_SUCCESS;
 	}
 
-	if (ftdmchan->span->trunk_type == FTDM_TRUNK_BRI ||
-		ftdmchan->span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
+	if (signal_data->send_cid_name == SNGISDN_OPT_FALSE) {
+		return FTDM_SUCCESS;
+	}
 
-		conEvnt->usrUsr.eh.pres = PRSNT_NODEF;
-		conEvnt->usrUsr.protocolDisc.pres = PRSNT_NODEF;
-		conEvnt->usrUsr.protocolDisc.val = PD_IA5; /* IA5 chars */
-		conEvnt->usrUsr.usrInfo.pres = PRSNT_NODEF;
-		conEvnt->usrUsr.usrInfo.len = len;
-		/* in sangoma_brid we used to send usr-usr info as <cid_name>!<calling_number>,
-		change to previous style if current one does not work */
-		memcpy(conEvnt->usrUsr.usrInfo.val, caller_data->cid_name, len);
-	} else {
-		switch (signal_data->switchtype) {
-		case SNGISDN_SWITCH_NI2:
+	switch(signal_data->cid_name_method) {
+		case SNGISDN_CID_NAME_FACILITY_IE:
 #ifdef SNGISDN_SUPPORT_CALLING_NAME_IN_FACILITY
-			{
-				if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
-					sng_isdn_encode_facility_caller_name(caller_data->cid_name, conEvnt->facilityStr.facilityStr.val, &conEvnt->facilityStr.facilityStr.len);
-					conEvnt->facilityStr.eh.pres = PRSNT_NODEF;
-					conEvnt->facilityStr.facilityStr.pres = PRSNT_NODEF;
-				}
-			}
+			/* Note: The Facility IE will be overwritten if user chose to transmit a Raw Facility IE */
+			sng_isdn_encode_facility_caller_name(caller_data->cid_name, conEvnt->facilityStr.facilityStr.val, &conEvnt->facilityStr.facilityStr.len);
+			conEvnt->facilityStr.eh.pres = PRSNT_NODEF;
+			conEvnt->facilityStr.facilityStr.pres = PRSNT_NODEF;
 #endif
 			break;
-		case SNGISDN_SWITCH_EUROISDN:
-			if (signal_data->signalling != SNGISDN_SIGNALING_NET) {
-				break;
+		case SNGISDN_CID_NAME_USR_USR_IE:
+			conEvnt->usrUsr.eh.pres = PRSNT_NODEF;
+			conEvnt->usrUsr.protocolDisc.pres = PRSNT_NODEF;
+			conEvnt->usrUsr.protocolDisc.val = PD_IA5; /* IA5 chars */
+			conEvnt->usrUsr.usrInfo.pres = PRSNT_NODEF;
+			conEvnt->usrUsr.usrInfo.len = len;
+			/* in sangoma_brid we used to send usr-usr info as <cid_name>!<calling_number>,
+			change to previous style if current one does not work */
+			memcpy(conEvnt->usrUsr.usrInfo.val, caller_data->cid_name, len);
+			break;
+		case SNGISDN_CID_NAME_DISPLAY_IE:
+			if (signal_data->switchtype == SNGISDN_SWITCH_DMS100) {
+				conEvnt->ntDisplay[0].eh.pres = PRSNT_NODEF;
+				conEvnt->ntDisplay[0].dispTypeNt.pres = PRSNT_NODEF;
+				conEvnt->ntDisplay[0].dispTypeNt.val = 0x01; /* Calling Party Name */
+				conEvnt->ntDisplay[0].assocInfo.pres = PRSNT_NODEF;
+				conEvnt->ntDisplay[0].assocInfo.val  = 0x03; /* Included */
+				conEvnt->ntDisplay[0].eh.pres = PRSNT_NODEF;
+				conEvnt->ntDisplay[0].eh.pres = PRSNT_NODEF;
+				conEvnt->ntDisplay[0].dispInfo.pres = PRSNT_NODEF;
+				conEvnt->ntDisplay[0].dispInfo.len = len;
+				memcpy(conEvnt->ntDisplay[0].dispInfo.val, caller_data->cid_name, len);
+			} else {
+				conEvnt->display.eh.pres = PRSNT_NODEF;
+				conEvnt->display.dispInfo.pres = PRSNT_NODEF;
+				conEvnt->display.dispInfo.len = len;
+				memcpy(conEvnt->display.dispInfo.val, caller_data->cid_name, len);
 			}
-			/* follow through */
-		case SNGISDN_SWITCH_5ESS:
-		case SNGISDN_SWITCH_4ESS:
-			conEvnt->display.dispInfo.pres = PRSNT_NODEF;
-			conEvnt->display.dispInfo.len = len;
-			memcpy(conEvnt->display.dispInfo.val, caller_data->cid_name, len);
 			break;
-		case SNGISDN_SWITCH_DMS100:
-			conEvnt->ntDisplay[0].eh.pres = PRSNT_NODEF;
-			conEvnt->ntDisplay[0].dispTypeNt.pres = PRSNT_NODEF;
-			conEvnt->ntDisplay[0].dispTypeNt.val = 0x01; /* Calling Party Name */
-			conEvnt->ntDisplay[0].assocInfo.pres = PRSNT_NODEF;
-			conEvnt->ntDisplay[0].assocInfo.val  = 0x03; /* Included */
-			conEvnt->ntDisplay[0].eh.pres = PRSNT_NODEF;
-			conEvnt->ntDisplay[0].eh.pres = PRSNT_NODEF;
-			conEvnt->ntDisplay[0].dispInfo.pres = PRSNT_NODEF;
-			conEvnt->ntDisplay[0].dispInfo.len = len;
-			memcpy(conEvnt->ntDisplay[0].dispInfo.val, caller_data->cid_name, len);
+		default:
 			break;
-		case SNGISDN_SWITCH_QSIG:
-			/* It seems like QSIG does not support Caller ID Name */
-			break;
-		case SNGISDN_SWITCH_INSNET:
-			/* Don't know how to transmit caller ID name on INSNET */
-			break;
-		}
 	}
+
 	return FTDM_SUCCESS;
 }
 

@@ -133,6 +133,13 @@ typedef enum {
 } sngisdn_avail_t;
 
 typedef enum {
+	SNGISDN_CID_NAME_AUTO,
+	SNGISDN_CID_NAME_DISPLAY_IE,
+	SNGISDN_CID_NAME_USR_USR_IE,
+	SNGISDN_CID_NAME_FACILITY_IE,
+} sngisdn_cid_name_t;
+
+typedef enum {
 	SNGISDN_EVENT_CON_IND = 1,
 	SNGISDN_EVENT_CON_CFM,
 	SNGISDN_EVENT_CNST_IND,
@@ -264,6 +271,8 @@ typedef struct sngisdn_span_data {
 	uint8_t			restart_opt;
 	uint8_t			restart_timeout;
 	uint8_t			force_sending_complete;
+	uint8_t			cid_name_method;
+	uint8_t			send_cid_name;
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_timer_id_t timers[SNGISDN_NUM_SPAN_TIMERS];
 	ftdm_sched_t 	*sched;
