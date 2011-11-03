@@ -1155,6 +1155,77 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 		return FTDM_FAIL;
 	}
 
+	if (span_data->cid_name_method == SNGISDN_CID_NAME_AUTO) {
+		switch (span_data->switchtype) {
+			case SNGISDN_SWITCH_EUROISDN:
+				if (FTDM_SPAN_IS_BRI(span)) {
+					span_data->cid_name_method = SNGISDN_CID_NAME_USR_USR_IE;
+				} else {
+					span_data->cid_name_method = SNGISDN_CID_NAME_DISPLAY_IE;
+				}
+				break;
+			case SNGISDN_SWITCH_DMS100:
+				span_data->cid_name_method = SNGISDN_CID_NAME_DISPLAY_IE;
+				break;
+			case SNGISDN_SWITCH_NI2:
+			case SNGISDN_SWITCH_5ESS:
+			case SNGISDN_SWITCH_4ESS:
+				span_data->cid_name_method = SNGISDN_CID_NAME_FACILITY_IE;
+				break;
+			default:
+				break;
+		}
+	}
+
+	if (span_data->send_cid_name == SNGISDN_OPT_DEFAULT) {
+		switch (span_data->switchtype) {
+			case SNGISDN_SWITCH_EUROISDN:
+#ifdef SNGISDN_SUPPORT_CALLING_NAME_IN_FACILITY
+			case SNGISDN_SWITCH_NI2:
+			case SNGISDN_SWITCH_5ESS:
+			case SNGISDN_SWITCH_4ESS:
+#endif
+				if (span_data->signalling == SNGISDN_SIGNALING_NET) {
+					span_data->send_cid_name = SNGISDN_OPT_TRUE;
+				} else {
+					span_data->send_cid_name = SNGISDN_OPT_FALSE;
+				}
+				break;
+			case SNGISDN_SWITCH_DMS100:
+				span_data->send_cid_name = SNGISDN_OPT_TRUE;
+				break;
+#ifndef SNGISDN_SUPPORT_CALLING_NAME_IN_FACILITY
+			case SNGISDN_SWITCH_NI2:
+			case SNGISDN_SWITCH_5ESS:
+			case SNGISDN_SWITCH_4ESS:
+				span_data->send_cid_name = SNGISDN_OPT_FALSE;
+				break;
+#endif
+			default:
+				span_data->send_cid_name = SNGISDN_OPT_FALSE;
+				break;
+		}
+	} else if (span_data->send_cid_name == SNGISDN_OPT_TRUE) {
+		switch (span_data->switchtype) {
+			case SNGISDN_SWITCH_NI2:
+			case SNGISDN_SWITCH_5ESS:
+			case SNGISDN_SWITCH_4ESS:
+#ifndef SNGISDN_SUPPORT_CALLING_NAME_IN_FACILITY
+				ftdm_log(FTDM_LOG_WARNING, "Sending Calling Name in Facility IE not supported, please update your libsng_isdn library\n");
+				span_data->send_cid_name = SNGISDN_OPT_FALSE;
+#endif
+				break;
+			case SNGISDN_SWITCH_INSNET: /* Don't know how to transmit caller ID name on INSNET */
+			case SNGISDN_SWITCH_QSIG: /* It seems like QSIG does not support Caller ID */
+				span_data->send_cid_name = SNGISDN_OPT_FALSE;
+				break;
+			case SNGISDN_SWITCH_EUROISDN:
+				break;
+			default:
+				span_data->send_cid_name = SNGISDN_OPT_FALSE;
+				break;
+		}
+	}
 
 	span->start = ftdm_sangoma_isdn_start;
 	span->stop = ftdm_sangoma_isdn_stop;
