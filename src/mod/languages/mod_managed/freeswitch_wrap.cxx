@@ -25029,6 +25029,20 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_hold_music_partner(void 
 }
 
 
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_channel_del_variable_prefix(void * jarg1, char * jarg2) {
+  unsigned long jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (uint32_t)switch_channel_del_variable_prefix(arg1,(char const *)arg2);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_export_variable_var_check(void * jarg1, char * jarg2, char * jarg3, char * jarg4, int jarg5) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
@@ -30376,6 +30390,34 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_create_message_reply(void * jarg1, 
   arg2 = (switch_event_t *)jarg2; 
   arg3 = (char *)jarg3; 
   result = (switch_status_t)switch_ivr_create_message_reply(arg1,arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_ivr_check_presence_mapping(char * jarg1, char * jarg2) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (char *)switch_ivr_check_presence_mapping((char const *)arg1,(char const *)arg2);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_kill_uuid(char * jarg1, int jarg2) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_call_cause_t arg2 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_call_cause_t)jarg2; 
+  result = (switch_status_t)switch_ivr_kill_uuid((char const *)arg1,arg2);
   jresult = result; 
   return jresult;
 }
@@ -36906,3 +36948,4 @@ SWIGEXPORT CoreSession * SWIGSTDCALL CSharp_ManagedSessionUpcast(ManagedSession 
 #ifdef __cplusplus
 }
 #endif
+

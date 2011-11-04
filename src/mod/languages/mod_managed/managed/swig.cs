@@ -3555,6 +3555,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static uint switch_channel_del_variable_prefix(SWIGTYPE_p_switch_channel channel, string prefix) {
+    uint ret = freeswitchPINVOKE.switch_channel_del_variable_prefix(SWIGTYPE_p_switch_channel.getCPtr(channel), prefix);
+    return ret;
+  }
+
   public static switch_status_t switch_channel_export_variable_var_check(SWIGTYPE_p_switch_channel channel, string varname, string val, string export_varname, switch_bool_t var_check) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_export_variable_var_check(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, val, export_varname, (int)var_check);
     return ret;
@@ -4919,6 +4924,16 @@ public class freeswitch {
 
   public static switch_status_t switch_ivr_create_message_reply(SWIGTYPE_p_p_switch_event reply, switch_event message, string new_proto) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_create_message_reply(SWIGTYPE_p_p_switch_event.getCPtr(reply), switch_event.getCPtr(message), new_proto);
+    return ret;
+  }
+
+  public static string switch_ivr_check_presence_mapping(string exten_name, string domain_name) {
+    string ret = freeswitchPINVOKE.switch_ivr_check_presence_mapping(exten_name, domain_name);
+    return ret;
+  }
+
+  public static switch_status_t switch_ivr_kill_uuid(string uuid, switch_call_cause_t cause) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_kill_uuid(uuid, (int)cause);
     return ret;
   }
 
@@ -12110,6 +12125,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_hold_music_partner")]
   public static extern string switch_channel_get_hold_music_partner(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_del_variable_prefix")]
+  public static extern uint switch_channel_del_variable_prefix(HandleRef jarg1, string jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_export_variable_var_check")]
   public static extern int switch_channel_export_variable_var_check(HandleRef jarg1, string jarg2, string jarg3, string jarg4, int jarg5);
 
@@ -13225,6 +13243,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_create_message_reply")]
   public static extern int switch_ivr_create_message_reply(HandleRef jarg1, HandleRef jarg2, string jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_check_presence_mapping")]
+  public static extern string switch_ivr_check_presence_mapping(string jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_kill_uuid")]
+  public static extern int switch_ivr_kill_uuid(string jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_MAX_BUF_LEN_get")]
   public static extern int SWITCH_RTP_MAX_BUF_LEN_get();
@@ -22741,6 +22765,8 @@ public enum switch_channel_flag_t {
   CF_SIGNAL_DATA,
   CF_SIMPLIFY,
   CF_ZOMBIE_EXEC,
+  CF_INTERCEPT,
+  CF_INTERCEPTED,
   CF_FLAG_MAX
 }
 
