@@ -1,6 +1,6 @@
 EXTRA_DIST =
 SUBDIRS = . src
-AUTOMAKE_OPTS = foreign
+AUTOMAKE_OPTIONS = foreign
 NAME = freeswitch
 
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS)
