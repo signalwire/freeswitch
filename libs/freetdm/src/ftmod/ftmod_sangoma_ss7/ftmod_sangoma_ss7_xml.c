@@ -128,6 +128,8 @@ typedef struct sng_ccSpan
 	uint32_t		min_digits;
 	uint8_t			itx_auto_reply;
 	uint8_t			transparent_iam;
+	uint8_t         cpg_on_progress_media;
+	uint8_t         cpg_on_progress;
 	uint32_t		t3;
 	uint32_t		t10;
 	uint32_t		t12;
@@ -1906,6 +1908,14 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 			sng_ccSpan.transparent_iam = ftdm_true(parm->val);
 			SS7_DEBUG("Found transparent_iam %d\n", sng_ccSpan.transparent_iam);
 #endif
+		} else if (!strcasecmp(parm->var, "cpg_on_progress_media")) {
+			sng_ccSpan.cpg_on_progress_media = ftdm_true(parm->val);
+			SS7_DEBUG("Found cpg_on_progress_media %d\n", sng_ccSpan.cpg_on_progress_media);
+
+		} else if (!strcasecmp(parm->var, "cpg_on_progress")) {
+			sng_ccSpan.cpg_on_progress = ftdm_true(parm->val);
+			SS7_DEBUG("Found cpg_on_progress_media %d\n", sng_ccSpan.cpg_on_progress);
+
 		} else if (!strcasecmp(parm->var, "cicbase")) {
 		/**********************************************************************/
 			sng_ccSpan.cicbase = atoi(parm->val);
@@ -2941,6 +2951,8 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		g_ftdm_sngss7_data.cfg.isupCkt[x].min_digits					= ccSpan->min_digits;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].itx_auto_reply				= ccSpan->itx_auto_reply;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].transparent_iam				= ccSpan->transparent_iam;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].cpg_on_progress_media			= ccSpan->cpg_on_progress_media;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].cpg_on_progress	 		    = ccSpan->cpg_on_progress;
 
 		if (ccSpan->t3 == 0) {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t3			= 1200;

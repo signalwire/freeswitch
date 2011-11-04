@@ -342,6 +342,8 @@ typedef struct sng_isup_ckt {
 	uint32_t		min_digits;
 	uint8_t			itx_auto_reply;
 	uint8_t			transparent_iam;
+	uint8_t			cpg_on_progress_media;
+	uint8_t			cpg_on_progress;
 	void			*obj;
 	uint16_t		t3;
 	uint32_t		t10;
@@ -534,6 +536,7 @@ typedef enum {
 	FLAG_INFID_RESUME		= (1 << 14),
 	FLAG_INFID_PAUSED		= (1 << 15),
 	FLAG_SENT_ACM			= (1 << 16),
+	FLAG_SENT_CPG			= (1 << 17),
 	FLAG_RELAY_DOWN			= (1 << 30),
 	FLAG_CKT_RECONFIG		= (1 << 31)
 } sng_ckt_flag_t;
@@ -542,14 +545,14 @@ typedef enum {
 	"RX_RSC", \
 	"TX_RSC", \
 	"TX_RSC_REQ_SENT", \
-	"TX_RSC_RSP_RECIEVED", \
+	"TX_RSC_RSP_RECEIVED", \
 	"RX_GRS", \
 	"RX_GRS_DONE", \
 	"RX_GRS_CMPLT", \
 	"GRS_BASE", \
 	"TX_GRS", \
 	"TX_GRS_REQ_SENT", \
-	"TX_GRS_RSP_RECIEVED", \
+	"TX_GRS_RSP_RECEIVED", \
 	"REMOTE_REL", \
 	"LOCAL_REL", \
 	"GLARE", \
@@ -1058,6 +1061,11 @@ if (ftdmchan->state == new_state) { \
 														  	FLAG_GRP_RESET_TX | \
 														  	FLAG_GRP_RESET_RX )))
 
+#define sngss7_tx_reset_status_pending(obj) ((sngss7_test_ckt_flag(obj, (FLAG_RESET_TX)) && \
+											  sngss7_test_ckt_flag(obj, (FLAG_RESET_SENT))) || \
+											 (sngss7_test_ckt_flag(obj, (FLAG_GRP_RESET_TX)) && \
+											  sngss7_test_ckt_flag(obj, (FLAG_GRP_RESET_SENT))))
+	
 #define sngss7_channel_status_clear(obj) ((sngss7_block_status_clear(obj)) && (sngss7_reset_status_clear(obj)))
 
 

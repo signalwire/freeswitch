@@ -94,7 +94,7 @@ int  ft_to_sngss7_cfg_all(void)
 			/* set the desired procID value */
 			sng_set_procId((uint16_t)g_ftdm_sngss7_data.cfg.procId);
 		}
-
+			
 		/* start up the stack manager */
 		if (sng_isup_init_sm()) {
 			SS7_CRITICAL("Failed to start Stack Manager\n");

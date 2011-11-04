@@ -308,10 +308,14 @@ static void handle_hw_alarm(ftdm_event_t *e)
 					}
 				} else if (e->enum_id == FTDM_OOB_ALARM_CLEAR) {
 					SS7_DEBUG("handle_hw_alarm: Clear\n");
-					sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_UNBLK_TX);
-					SS7_DEBUG("handle_hw_alarm: Setting FLAG_GRP_HW_UNBLK_TX\n");
-					if (ftdmchan->state != FTDM_CHANNEL_STATE_SUSPENDED) {
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX);
+					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_HW_UNBLK_TX);
+					if (sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX_DN)) {
+						sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_UNBLK_TX);
+						SS7_DEBUG("handle_hw_alarm: Setting FLAG_GRP_HW_UNBLK_TX\n");
+						if (ftdmchan->state != FTDM_CHANNEL_STATE_SUSPENDED) {
+							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+						}
 					}
 				}
 			}
@@ -737,6 +741,12 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				sngss7_set_ckt_flag(sngss7_info, FLAG_SENT_ACM);
 				ft_to_sngss7_acm(ftdmchan);
 			}
+			if (g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].cpg_on_progress == FTDM_TRUE) {
+				if (!sngss7_test_ckt_flag(sngss7_info, FLAG_SENT_CPG)) {
+					sngss7_set_ckt_flag(sngss7_info, FLAG_SENT_CPG);
+					ft_to_sngss7_cpg(ftdmchan);
+				}
+			}
 		}
 
 		break;
@@ -756,7 +766,12 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				sngss7_set_ckt_flag(sngss7_info, FLAG_SENT_ACM);
 				ft_to_sngss7_acm(ftdmchan);
 			}
-			ft_to_sngss7_cpg(ftdmchan);
+			if (g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].cpg_on_progress_media == FTDM_TRUE) {
+				if (!sngss7_test_ckt_flag(sngss7_info, FLAG_SENT_CPG)) {
+					sngss7_set_ckt_flag(sngss7_info, FLAG_SENT_CPG);
+					ft_to_sngss7_cpg(ftdmchan);
+				}
+			}
 		}
 
 		break;
@@ -973,7 +988,10 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 						/* all flags are down so we can bring up the sig status */
 						sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
 					} /* if (!ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) */
-				} /* if !blocked */
+				} else {
+					state_flag = 0;
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+				}	/* if !blocked */
 			} else {
 				SS7_DEBUG_CHAN(ftdmchan,"Reset flags present (0x%X)\n", sngss7_info->ckt_flags);
 			
@@ -998,6 +1016,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		sngss7_clear_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
 		sngss7_clear_ckt_flag (sngss7_info, FLAG_LOCAL_REL);
 		sngss7_clear_ckt_flag (sngss7_info, FLAG_SENT_ACM);
+		sngss7_clear_ckt_flag (sngss7_info, FLAG_SENT_CPG);
 
 
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_OPEN)) {
@@ -1161,6 +1180,22 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			/* clear the PAUSE flag */
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
+
+			/* We have transmitted Reset/GRS but have not gotten a
+			 * Response. In mean time we got a RESUME. We cannot be sure
+			 * that our reset has been trasmitted, thus restart reset procedure. */ 
+			if (sngss7_tx_reset_status_pending(sngss7_info)) {
+				SS7_DEBUG_CHAN(ftdmchan, "Channel transmitted RSC/GRS before RESUME, restart Reset procedure%s\n", "");
+				clear_rx_grs_flags(sngss7_info);
+				clear_rx_grs_data(sngss7_info);
+				clear_tx_grs_flags(sngss7_info);
+				clear_tx_grs_data(sngss7_info);
+				clear_rx_rsc_flags(sngss7_info);
+				clear_tx_rsc_flags(sngss7_info);
+
+				clear_tx_rsc_flags(sngss7_info);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
+			}
 
 			/* if there are any resets present */
 			if (!sngss7_channel_status_clear(sngss7_info)) {
