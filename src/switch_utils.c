@@ -163,7 +163,7 @@ SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param,
 
 		if (next) {
 			ptr = next + 1;
-		}
+		} else break;
 	}
 
 	return r;
