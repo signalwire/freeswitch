@@ -122,6 +122,53 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param, switch_memory_pool_t *pool)
+{
+	char *e, *r = NULL, *ptr = NULL, *next = NULL;
+	size_t len;
+
+	ptr = (char *) str;
+
+	while (ptr) {
+		len = strlen(param);
+		e = ptr+len;
+		next = strchr(ptr, ';');
+
+		if (!strncasecmp(ptr, param, len) && *e == '=') {
+			int mlen;
+
+			ptr = ++e;
+
+			if (next) {
+				e = next;
+			} else {
+				e = ptr + strlen(ptr);
+			}
+			
+			mlen = (e - ptr) + 1;
+
+			if (pool) {
+				r = switch_core_alloc(pool, mlen);
+			} else {
+				r = malloc(mlen);
+			}
+
+			*(r + mlen) = '\0';
+
+			switch_snprintf(r, mlen, "%s", ptr);
+
+			break;
+		}
+
+		if (next) {
+			ptr = next + 1;
+		}
+	}
+
+	return r;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type,
 														   switch_memory_pool_t *pool)
 {
