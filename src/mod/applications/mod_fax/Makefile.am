@@ -13,7 +13,7 @@ mod_LTLIBRARIES = mod_fax.la
 mod_fax_la_SOURCES  = mod_fax.c udptl.c
 mod_fax_la_CFLAGS   = $(AM_CFLAGS) -I$(SPANDSP_DIR)/src -I$(TIFF_DIR)/libtiff -I$(SPANDSP_BUILDDIR)/src -I$(TIFF_BUILDDIR)/libtiff -I.
 mod_fax_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(SPANDSP_LA) $(TIFF_LA)
-mod_fax_la_LDFLAGS  = -avoid-version -module -no-undefined -shared -ljpeg
+mod_fax_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
 $(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
 	cd $(SPANDSP_BUILDDIR) && $(MAKE) -j1
