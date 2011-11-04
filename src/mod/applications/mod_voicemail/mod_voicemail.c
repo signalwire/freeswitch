@@ -1963,7 +1963,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				if (!informed) {
 					switch_snprintf(msg_count, sizeof(msg_count), "0:new");
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &folder_args));
-					switch_snprintf(msg_count, sizeof(msg_count), "%d:saved", total_saved_messages + total_saved_urgent_messages);
+					switch_snprintf(msg_count, sizeof(msg_count), "%d:saved", total_saved_messages);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, &folder_args));
 					informed++;
 				}
