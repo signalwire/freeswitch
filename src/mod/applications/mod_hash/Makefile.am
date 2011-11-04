@@ -4,6 +4,7 @@ MODNAME=mod_hash
 ESL_DIR=$(switch_srcdir)/libs/esl
 
 mod_LTLIBRARIES = mod_hash.la
+mod_hash_la_DEPENDENCIES = $(ESL_DIR)/libesl.so
 mod_hash_la_SOURCES  = mod_hash.c
 mod_hash_la_CFLAGS   = $(AM_CFLAGS) -I$(ESL_DIR)/src/include
 mod_hash_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
