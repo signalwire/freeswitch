@@ -407,7 +407,8 @@ APR_ADDTO(SWITCH_AM_LDFLAGS, -lresolv)
 fi
 
 ESL_LDFLAGS=
-PLATFORM_CORE_DEPLIBS=
+PLATFORM_CORE_LDFLAGS=
+PLATFORM_CORE_LIBS=
 # tweak platform specific flags
 case "$host" in
     *darwin10.*)
@@ -417,23 +418,30 @@ case "$host" in
         APR_ADDTO(CXXFLAGS, -pipe)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
 	if test "x$enable_core_odbc_support" != "xno"; then
-	        APR_ADDTO(PLATFORM_CORE_DEPLIBS, --framework CoreFoundation)
+	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
     ;;
     *darwin*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
 	if test "x$enable_core_odbc_support" != "xno"; then
-	        APR_ADDTO(PLATFORM_CORE_DEPLIBS, --framework CoreFoundation)
+	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
     ;;
     *-solaris2*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048 -D__EXTENSIONS__)
         APR_ADDTO(SWITCH_AM_LDFLAGS, -lsendfile -lresolv -lsocket -lnsl -luuid)
         APR_ADDTO(ESL_LDFLAGS, -lnsl -lsocket)
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt -lsendfile -lresolv -lsocket -lnsl -luuid])
     ;;
     *bsd*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
+    ;;
+    *linux*)
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
     ;;
 esac
 
@@ -444,7 +452,8 @@ AC_SUBST(SWITCH_ANSI_CFLAGS)
 AC_SUBST(SWITCH_AM_CXXFLAGS)
 AC_SUBST(SWITCH_AM_LDFLAGS)
 AC_SUBST(ESL_LDFLAGS)
-AC_SUBST(PLATFORM_CORE_DEPLIBS)
+AC_SUBST(PLATFORM_CORE_LDFLAGS)
+AC_SUBST(PLATFORM_CORE_LIBS)
 AC_SUBST(SOLINK)
 AC_SUBST(DYNAMIC_LIB_EXTEN)
 AC_SUBST(LIBTOOL_LIB_EXTEN)
