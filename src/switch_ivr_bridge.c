@@ -603,6 +603,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_channel_clear_flag(chan_a, CF_LEG_HOLDING);
 	}
 
+	if (switch_channel_test_flag(chan_a, CF_INTERCEPTED)) {
+		switch_channel_set_flag(chan_b, CF_INTERCEPT);
+	}
+
+
 	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 	switch_core_session_rwunlock(session_b);
 	return NULL;
@@ -655,7 +660,11 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 		if (!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) &&
 			!switch_channel_test_flag(channel, CF_XFER_ZOMBIE) && bd && !bd->clean_exit
 			&& state != CS_PARK && state != CS_ROUTING && state == CS_EXCHANGE_MEDIA && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
-			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			if (switch_channel_test_flag(channel, CF_INTERCEPT)) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_PICKED_OFF);
+			} else {
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			}
 		}
 	}
 
@@ -989,6 +998,10 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 				if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
 					if (switch_channel_test_flag(channel, CF_ANSWERED) &&
 						switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
+
+						if (switch_channel_test_flag(channel, CF_INTERCEPTED)) {
+							switch_channel_set_flag(other_channel, CF_INTERCEPT);
+						}
 						switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
 					} else {
 						switch_channel_set_state(other_channel, CS_EXECUTE);
@@ -1351,6 +1364,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_call_cause_t cause = switch_channel_get_cause(peer_channel);
 				if (cause == SWITCH_CAUSE_NONE) {
 					cause = SWITCH_CAUSE_NORMAL_CLEARING;
+				}
+
+				if (switch_channel_test_flag(peer_channel, CF_INTERCEPTED)) {
+					switch_channel_set_flag(peer_channel, CF_INTERCEPT);
 				}
 				switch_channel_hangup(caller_channel, cause);
 			}
