@@ -81,7 +81,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 		switch_bool_t anti_action = SWITCH_TRUE;
 		break_t do_break_i = BREAK_ON_FALSE;
 
-		int time_match = switch_xml_std_datetime_check(xcond);
+		int time_match = switch_xml_std_datetime_check(xcond, NULL);
 
 		switch_safe_free(field_expanded);
 		switch_safe_free(expression_expanded);

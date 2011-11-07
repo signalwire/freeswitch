@@ -87,6 +87,14 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	int proceed = 0, save_proceed = 0;
 	char *expression_expanded = NULL, *field_expanded = NULL;
 	switch_regex_t *re = NULL, *save_re = NULL;
+	int offset = 0;
+	const char *tzoff = switch_channel_get_variable(channel, "tod_tz_offset");
+
+	if (!zstr(tzoff) && switch_is_number(tzoff)) {
+		offset = atoi(tzoff);
+	} else {
+		tzoff = NULL;
+	}
 
 	if (!exten_name) {
 		exten_name = "_anon_";
@@ -102,7 +110,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		switch_bool_t anti_action = SWITCH_TRUE;
 		break_t do_break_i = BREAK_ON_FALSE;
 
-		int time_match = switch_xml_std_datetime_check(xcond);
+		int time_match = switch_xml_std_datetime_check(xcond, tzoff ? &offset : NULL);
 
 		switch_safe_free(field_expanded);
 		switch_safe_free(expression_expanded);
@@ -152,7 +160,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			switch_channel_del_variable_prefix(channel, "DP_REGEX_MATCH");
 
 			for (xregex = switch_xml_child(xcond, "regex"); xregex; xregex = xregex->next) {
-				time_match = switch_xml_std_datetime_check(xregex);
+				time_match = switch_xml_std_datetime_check(xregex, tzoff ? &offset : NULL);
 
 				if (time_match == 1) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
