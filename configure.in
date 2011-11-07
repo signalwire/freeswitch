@@ -438,7 +438,7 @@ case "$host" in
     ;;
     *bsd*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-lcrypt -lrt])
     ;;
     *linux*)
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
