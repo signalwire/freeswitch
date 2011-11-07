@@ -389,9 +389,9 @@ static void stfu_n_swap(stfu_instance_t *i)
     
     i->ready = 1;
     
-    i->in_queue = last_out;
-    i->out_queue = last_old;
-    i->old_queue = last_in;
+    i->in_queue = last_old;
+    i->out_queue = last_in;
+    i->old_queue = last_out;
 
     i->in_queue->array_len = 0;
     i->out_queue->wr_len = 0;
