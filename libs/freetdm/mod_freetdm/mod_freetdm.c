@@ -1725,36 +1725,36 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_digits");
 		if (!ftdm_strlen_zero(var_value)) {
-			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN", "%d", var_value);
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN", "%s", var_value);
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_numqual");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumQual", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumQual", "%s", var_value);
 			}
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_nadi");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NADI", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NADI", "%s", var_value);
 			}
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_screen_ind");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Screen", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Screen", "%s", var_value);
 			}
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_pres_ind");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Presentation", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Presentation", "%s", var_value);
 			}
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_npi");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Plan", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Plan", "%s", var_value);
 			}
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_num_inc_ind");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumInComp", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumInComp", "%s", var_value);
 			}
 		} /* End - var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_digits"); */
 

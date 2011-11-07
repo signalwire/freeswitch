@@ -375,7 +375,7 @@ ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb
 
 	if (genNmb->nmbQual.pres == PRSNT_NODEF) {
 		snprintf(val, sizeof(val), "%d", genNmb->nmbQual.val);
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"number qualifier\" \n", val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"number qualifier\" \"%s\" \n", val);
 		sngss7_add_var(sngss7_info, "ss7_gn_numqual", val);
 	}
 
