@@ -2532,8 +2532,9 @@ ftdm_status_t sngss7_save_iam(ftdm_channel_t *ftdmchan, SiConEvnt *siConEvnt)
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "IAM variable length:%d\n", strlen(url_encoded_iam));
 
-	if (strlen(url_encoded_iam) > g_ftdm_sngss7_data.cfg.transparent_iam_max_size) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "IAM variable length exceeds max size (len:%d max:%d) \n", strlen(url_encoded_iam), g_ftdm_sngss7_data.cfg.transparent_iam_max_size);
+	if (strlen(url_encoded_iam) > sngss7_info->circuit->transparent_iam_max_size) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "IAM variable length exceeds max size (len:%d max:%d) \n", 
+			strlen(url_encoded_iam), sngss7_info->circuit->transparent_iam_max_size);
 		ret_val = FTDM_FAIL;
 		goto done;
 	}

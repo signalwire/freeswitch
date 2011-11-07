@@ -340,10 +340,11 @@ typedef struct sng_isup_ckt {
 	/* END - Generic Number defaults */
 			
 	uint32_t		min_digits;
-	uint8_t			itx_auto_reply;
+	uint32_t		transparent_iam_max_size;
 	uint8_t			transparent_iam;
 	uint8_t			cpg_on_progress_media;
 	uint8_t			cpg_on_progress;
+	uint8_t			itx_auto_reply;
 	void			*obj;
 	uint16_t		t3;
 	uint32_t		t10;
