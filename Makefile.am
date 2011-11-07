@@ -294,13 +294,19 @@ fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
 fs_cli_LDADD   = libs/libedit/src/.libs/libedit.a
 endif
 
+
 ##
 ## fs_encode ()
 ##
 fs_encode_SOURCES = src/fs_encode.c
-fs_encode_CFLAGS = $(AM_CFLAGS)
+fs_encode_CFLAGS  = $(AM_CFLAGS)
 fs_encode_LDFLAGS = $(AM_LDFLAGS)
-fs_encode_LDADD = libfreeswitch.la
+fs_encode_LDADD   = libfreeswitch.la $(CORE_LIBS)
+
+if HAVE_ODBC
+fs_encode_LDADD += $(ODBC_LIB_FLAGS)
+endif
+
 
 ##
 ## tone2wav ()
@@ -308,7 +314,12 @@ fs_encode_LDADD = libfreeswitch.la
 tone2wav_SOURCES = src/tone2wav.c
 tone2wav_CFLAGS  = $(AM_CFLAGS)
 tone2wav_LDFLAGS = $(AM_LDFLAGS)
-tone2wav_LDADD   = libfreeswitch.la
+tone2wav_LDADD   = libfreeswitch.la $(CORE_LIBS)
+
+if HAVE_ODBC
+tone2wav_LDADD += $(ODBC_LIB_FLAGS)
+endif
+
 
 ##
 ## fs_ivrd ()
@@ -330,6 +341,10 @@ freeswitch_LDADD   = libfreeswitch.la libs/apr/libapr-1.la
 if HAVE_LIBEDIT
 freeswitch_CFLAGS += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
 freeswitch_LDADD  += libs/libedit/src/.libs/libedit.a
+endif
+
+if HAVE_ODBC
+freeswitch_LDADD += $(ODBC_LIB_FLAGS)
 endif
 
 
