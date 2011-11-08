@@ -2996,6 +2996,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static string switch_find_parameter(string str, string param, SWIGTYPE_p_apr_pool_t pool) {
+    string ret = freeswitchPINVOKE.switch_find_parameter(str, param, SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+    return ret;
+  }
+
   public static int switch_true(string expr) {
     int ret = freeswitchPINVOKE.switch_true(expr);
     return ret;
@@ -3562,6 +3567,11 @@ public class freeswitch {
 
   public static string switch_channel_get_hold_music_partner(SWIGTYPE_p_switch_channel channel) {
     string ret = freeswitchPINVOKE.switch_channel_get_hold_music_partner(SWIGTYPE_p_switch_channel.getCPtr(channel));
+    return ret;
+  }
+
+  public static uint switch_channel_del_variable_prefix(SWIGTYPE_p_switch_channel channel, string prefix) {
+    uint ret = freeswitchPINVOKE.switch_channel_del_variable_prefix(SWIGTYPE_p_switch_channel.getCPtr(channel), prefix);
     return ret;
   }
 
@@ -4937,6 +4947,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_ivr_kill_uuid(string uuid, switch_call_cause_t cause) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_kill_uuid(uuid, (int)cause);
+    return ret;
+  }
+
   public static switch_status_t switch_rtp_add_crypto_key(SWIGTYPE_p_switch_rtp rtp_session, switch_rtp_crypto_direction_t direction, uint index, switch_rtp_crypto_key_type_t type, SWIGTYPE_p_unsigned_char key, SWIGTYPE_p_switch_size_t keylen) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_add_crypto_key(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), (int)direction, index, (int)type, SWIGTYPE_p_unsigned_char.getCPtr(key), SWIGTYPE_p_switch_size_t.getCPtr(keylen));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -5543,8 +5558,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static int switch_xml_std_datetime_check(switch_xml xcond) {
-    int ret = freeswitchPINVOKE.switch_xml_std_datetime_check(switch_xml.getCPtr(xcond));
+  public static int switch_xml_std_datetime_check(switch_xml xcond, SWIGTYPE_p_int offset) {
+    int ret = freeswitchPINVOKE.switch_xml_std_datetime_check(switch_xml.getCPtr(xcond), SWIGTYPE_p_int.getCPtr(offset));
     return ret;
   }
 
@@ -9198,6 +9213,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_is_number")]
   public static extern int switch_is_number(string jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_find_parameter")]
+  public static extern string switch_find_parameter(string jarg1, string jarg2, HandleRef jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_true")]
   public static extern int switch_true(string jarg1);
 
@@ -12129,6 +12147,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_hold_music_partner")]
   public static extern string switch_channel_get_hold_music_partner(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_del_variable_prefix")]
+  public static extern uint switch_channel_del_variable_prefix(HandleRef jarg1, string jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_export_variable_var_check")]
   public static extern int switch_channel_export_variable_var_check(HandleRef jarg1, string jarg2, string jarg3, string jarg4, int jarg5);
 
@@ -13248,6 +13269,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_check_presence_mapping")]
   public static extern string switch_ivr_check_presence_mapping(string jarg1, string jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_kill_uuid")]
+  public static extern int switch_ivr_kill_uuid(string jarg1, int jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_MAX_BUF_LEN_get")]
   public static extern int SWITCH_RTP_MAX_BUF_LEN_get();
 
@@ -13810,7 +13834,7 @@ class freeswitchPINVOKE {
   public static extern uint switch_xml_parse_section_string(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_std_datetime_check")]
-  public static extern int switch_xml_std_datetime_check(HandleRef jarg1);
+  public static extern int switch_xml_std_datetime_check(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_locate_language")]
   public static extern int switch_xml_locate_language(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5, HandleRef jarg6, string jarg7);
@@ -22803,6 +22827,8 @@ public enum switch_channel_flag_t {
   CF_SIGNAL_DATA,
   CF_SIMPLIFY,
   CF_ZOMBIE_EXEC,
+  CF_INTERCEPT,
+  CF_INTERCEPTED,
   CF_FLAG_MAX
 }
 

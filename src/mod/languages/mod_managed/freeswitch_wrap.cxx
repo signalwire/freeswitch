@@ -12958,6 +12958,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_is_number(char * jarg1) {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_find_parameter(char * jarg1, char * jarg2, void * jarg3) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_memory_pool_t *arg3 = (switch_memory_pool_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_memory_pool_t *)jarg3; 
+  result = (char *)switch_find_parameter((char const *)arg1,(char const *)arg2,arg3);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_true(char * jarg1) {
   int jresult ;
   char *arg1 = (char *) 0 ;
@@ -32936,13 +32952,15 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_xml_parse_section_string(char
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_std_datetime_check(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_std_datetime_check(void * jarg1, void * jarg2) {
   int jresult ;
   switch_xml_t arg1 = (switch_xml_t) 0 ;
+  int *arg2 = (int *) 0 ;
   int result;
   
   arg1 = (switch_xml_t)jarg1; 
-  result = (int)switch_xml_std_datetime_check(arg1);
+  arg2 = (int *)jarg2; 
+  result = (int)switch_xml_std_datetime_check(arg1,arg2);
   jresult = result; 
   return jresult;
 }
