@@ -252,7 +252,9 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			sngss7_add_var(sngss7_info, "ss7_opc", var);
 			
 			if (siConEvnt->callRef.callId.pres) {
-				sprintf(var, "%x", siConEvnt->callRef.callId.val);
+        /* %x expect an unsigned int so as callId is a U32, casting to uint32_t
+         * is safe */
+				sprintf(var, "%x", (uint32_t)siConEvnt->callRef.callId.val);
 				sngss7_add_var(sngss7_info, "ss7_callref", var);
 			} 
 			
