@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2003-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@ static void	string_multi_set_test (const char *filename, int typemajor) ;
 static void	string_rdwr_test (const char *filename, int typemajor) ;
 static void	string_short_rdwr_test (const char *filename, int typemajor) ;
 
+static void	software_string_test (const char *filename) ;
+
 static int str_count (const char * haystack, const char * needle) ;
 
 int
@@ -75,6 +77,8 @@ main (int argc, char *argv [])
 		string_multi_set_test ("multi.rifx", SF_ENDIAN_BIG | SF_FORMAT_WAV) ;
 		string_rdwr_test ("rdwr.rifx", SF_ENDIAN_BIG | SF_FORMAT_WAV) ;
 		string_short_rdwr_test ("short_rdwr.rifx", SF_ENDIAN_BIG | SF_FORMAT_WAV) ;
+
+		software_string_test ("software_string.wav") ;
 		test_count++ ;
 		} ;
 
@@ -140,7 +144,9 @@ static const char
 	license		[]	= "The license",
 	title		[]	= "This is the title",
 	long_title	[]	= "This is a very long and very boring title for this file",
-	long_artist	[]	= "The artist who kept on changing its name" ;
+	long_artist	[]	= "The artist who kept on changing its name",
+	genre		[]	= "The genre",
+	trackno		[]	= "Track three" ;
 
 
 static	short	data_out [BUFFER_LEN] ;
@@ -150,7 +156,7 @@ string_start_end_test (const char *filename, int typemajor)
 {	const char	*cptr ;
 	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
-	int			frames, errors = 0 ;
+	int			errors = 0 ;
 
 	typemajor = typemajor ;
 
@@ -161,14 +167,14 @@ string_start_end_test (const char *filename, int typemajor)
 	sfinfo.frames		= 0 ;
 	sfinfo.format		= typemajor | SF_FORMAT_PCM_16 ;
 
-	frames = BUFFER_LEN / sfinfo.channels ;
-
 	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
 
 	/* Write stuff at start of file. */
 	sf_set_string (file, SF_STR_TITLE, filename) ;
 	sf_set_string (file, SF_STR_SOFTWARE, software) ;
 	sf_set_string (file, SF_STR_ARTIST, artist) ;
+	sf_set_string (file, SF_STR_GENRE, genre) ;
+	sf_set_string (file, SF_STR_TRACKNUMBER, trackno) ;
 
 	/* Write data to file. */
 	test_write_short_or_die (file, 0, data_out, BUFFER_LEN, __LINE__) ;
@@ -240,6 +246,13 @@ string_start_end_test (const char *filename, int typemajor)
 				puts ("\n") ;
 			printf ("    Bad date      : %s\n", cptr) ;
 			} ;
+
+		cptr = sf_get_string (file, SF_STR_GENRE) ;
+		if (cptr == NULL || strcmp (genre, cptr) != 0)
+		{	if (errors++ == 0)
+				puts ("\n") ;
+			printf ("    Bad genre     : %s\n", cptr) ;
+			} ;
 		} ;
 
 	switch (typemajor)
@@ -264,6 +277,12 @@ string_start_end_test (const char *filename, int typemajor)
 				printf ("    Bad license : %s\n", cptr) ;
 				} ;
 
+			cptr = sf_get_string (file, SF_STR_TRACKNUMBER) ;
+			if (cptr == NULL || strcmp (genre, cptr) != 0)
+			{	if (errors++ == 0)
+					puts ("\n") ;
+				printf ("    Bad track no. : %s\n", cptr) ;
+				} ;
 			break ;
 		} ;
 
@@ -284,7 +303,7 @@ string_start_test (const char *filename, int typemajor)
 {	const char	*cptr ;
 	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
-	int			frames, errors = 0 ;
+	int			errors = 0 ;
 
 	print_test_name ("string_start_test", filename) ;
 
@@ -301,8 +320,6 @@ string_start_test (const char *filename, int typemajor)
 			sfinfo.format = typemajor | SF_FORMAT_PCM_16 ;
 			break ;
 		} ;
-
-	frames = BUFFER_LEN / sfinfo.channels ;
 
 	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
 
@@ -606,3 +623,41 @@ str_count (const char * haystack, const char * needle)
 	return count ;
 } /* str_count */
 
+#define MIN(a,b)  ((a) < (b) ? (a) : (b))
+
+
+static void
+software_string_test (const char *filename)
+{	size_t k ;
+
+	print_test_name (__func__, filename) ;
+
+	for (k = 0 ; k < 50 ; k++)
+	{	const char *result ;
+		char sfname [64] ;
+		SNDFILE *file ;
+		SF_INFO info ;
+
+		sf_info_setup (&info, SF_FORMAT_WAV | SF_FORMAT_PCM_16, 44100, 1) ;
+		file = test_open_file_or_die (filename, SFM_WRITE, &info, SF_TRUE, __LINE__) ;
+
+		snprintf (sfname, MIN (k, sizeof (sfname)), "%s", "abcdefghijklmnopqrestvwxyz0123456789abcdefghijklmnopqrestvwxyz") ;
+
+		exit_if_true (sf_set_string (file, SF_STR_SOFTWARE, sfname),
+			"\n\nLine %d : sf_set_string (f, SF_STR_SOFTWARE, '%s') failed : %s\n", __LINE__, sfname, sf_strerror (file)) ;
+
+		sf_close (file) ;
+
+		file = test_open_file_or_die (filename, SFM_READ, &info, SF_TRUE, __LINE__) ;
+		result = sf_get_string (file, SF_STR_SOFTWARE) ;
+
+		exit_if_true (result == NULL, "\n\nLine %d : sf_get_string (file, SF_STR_SOFTWARE) returned NULL.\n\n", __LINE__) ;
+
+		exit_if_true (strstr (result, sfname) != result,
+			"\n\nLine %d : String '%s''%s' -> '%s'\n\n", sfname, result) ;
+		sf_close (file) ;
+		} ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+} /* new_test_test */

@@ -8,14 +8,14 @@ endif
 
 INCLUDES = -I$(top_srcdir)/src
 
-noinst_PROGRAMS = sfversion floating_point_test write_read_test \
+check_PROGRAMS = sfversion floating_point_test write_read_test \
 	lossy_comp_test error_test ulaw_test alaw_test dwvw_test \
 	peak_chunk_test command_test stdin_test stdout_test stdio_test \
 	pcm_test headerless_test pipe_test benchmark header_test misc_test \
 	raw_test string_test multi_file_test dither_test \
 	scale_clip_test win32_test fix_this aiff_rw_test virtual_io_test \
 	locale_test largefile_test win32_ordinal_test ogg_test vorbis_test \
-	checksum_test external_libs_test $(CPP_TEST)
+	checksum_test external_libs_test rdwr_test format_check_test $(CPP_TEST)
 
 noinst_HEADERS = dft_cmp.h utils.h generate.h
 
@@ -25,10 +25,37 @@ autogen_sources = write_read_test.tpl write_read_test.def	\
 					utils.tpl utils.def						\
 					scale_clip_test.tpl scale_clip_test.def	\
 					pipe_test.tpl pipe_test.def				\
+					rdwr_test.tpl rdwr_test.def				\
 					floating_point_test.tpl floating_point_test.def	\
 					benchmark.tpl benchmark.def
 
 EXTRA_DIST = $(autogen_sources)
+
+CLEANFILES = *~
+
+#===============================================================================
+# If we're cross compiling from Linux to Windows and running the test suite
+# under Wine, we need a symbolic link to the generated libsndfile DLL.
+
+if LINUX_MINGW_CROSS_TEST
+
+$(check_PROGRAMS) : libsndfile-1.dll
+
+libsndfile-1.dll :
+	ln -s $(top_builddir)/src/.libs/$@ $@
+
+clean-local :
+	-rm -f libsndfile-1.dll
+
+endif
+
+#===============================================================================
+
+check: test_wrapper.sh
+	sh test_wrapper.sh
+
+# Need this target to force building of test programs.
+checkprograms : $(check_PROGRAMS)
 
 #===============================================================================
 
@@ -113,14 +140,21 @@ ogg_test_LDADD = $(top_builddir)/src/libsndfile.la
 vorbis_test_SOURCES = vorbis_test.c utils.c
 vorbis_test_LDADD = $(top_builddir)/src/libsndfile.la
 
+rdwr_test_SOURCES = rdwr_test.c utils.c
+rdwr_test_LDADD = $(top_builddir)/src/libsndfile.la
+
 win32_test_SOURCES = win32_test.c
-win32_test_LDADD =
+# Link lib here so that generating the testsuite tarball works correctly.
+win32_test_LDADD = $(top_builddir)/src/libsndfile.la
 
 win32_ordinal_test_SOURCES = win32_ordinal_test.c utils.c
 win32_ordinal_test_LDADD = $(top_builddir)/src/libsndfile.la
 
 external_libs_test_SOURCES = external_libs_test.c utils.c
 external_libs_test_LDADD = $(top_builddir)/src/libsndfile.la
+
+format_check_test_SOURCES = format_check_test.c utils.c
+format_check_test_LDADD = $(top_builddir)/src/libsndfile.la
 
 cpp_test_SOURCES = cpp_test.cc utils.c
 cpp_test_LDADD = $(top_builddir)/src/libsndfile.la
@@ -162,6 +196,9 @@ scale_clip_test.c: scale_clip_test.def scale_clip_test.tpl
 pipe_test.c: pipe_test.def pipe_test.tpl
 	autogen --writable pipe_test.def
 
+rdwr_test.c: rdwr_test.def rdwr_test.tpl
+	autogen --writable rdwr_test.def
+
 floating_point_test.c: floating_point_test.def floating_point_test.tpl
 	autogen --writable floating_point_test.def
 
@@ -169,27 +206,6 @@ benchmark.c: benchmark.def benchmark.tpl
 	autogen --writable benchmark.def
 
 genfiles : write_read_test.c pcm_test.c header_test.c utils.c \
-		scale_clip_test.c pipe_test.c floating_point_test.c benchmark.c
+		scale_clip_test.c pipe_test.c floating_point_test.c rdwr_test.c \
+		benchmark.c
 
-#===============================================================================
-# If we're cross compiling from Linux to Windows and running the test suite
-# under Wine, we need a symbolic link to the generated libsndfile DLL.
-
-if LINUX_MINGW_CROSS_TEST
-
-$(noinst_PROGRAMS) : libsndfile-1.dll
-
-libsndfile-1.dll :
-	ln -s $(top_builddir)/src/.libs/$@ $@
-
-clean-local :
-	-rm -f libsndfile-1.dll
-
-endif
-
-#===============================================================================
-
-check: $(noinst_PROGRAMS) test_wrapper.sh
-	sh test_wrapper.sh
-
-	

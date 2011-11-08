@@ -19,10 +19,8 @@ elif [ -f "../src/libsndfile.dylib" ]; then
 	libsndfile_lib_location="../src/"
 else
 	echo
-	echo
 	echo "Not able to find the libsndfile shared lib we've just built."
 	echo "This may cause the following test to fail."
-	echo
 	echo
 	fi
 
