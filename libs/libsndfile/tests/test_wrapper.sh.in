@@ -1,83 +1,21 @@
 #!/bin/sh
 
-# Copyright (C) 2008-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
-#
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in
-#       the documentation and/or other materials provided with the
-#       distribution.
-#     * Neither the author nor the names of any contributors may be used
-#       to endorse or promote products derived from this software without
-#       specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-HOST_TRIPLET=@HOST_TRIPLET@
-PACKAGE_VERSION=@PACKAGE_VERSION@
-LIB_VERSION=`echo $PACKAGE_VERSION | sed "s/[a-z].*//"`
-
-if test -f tests/sfversion@EXEEXT@ ; then
+if [ -f tests/sfversion@EXEEXT@ ]; then
 	cd tests
 	fi
 
-if test ! -f sfversion@EXEEXT@ ; then
+if [ ! -f sfversion@EXEEXT@ ]; then
 	echo "Not able to find test executables."
 	exit 1
 	fi
 
-if test -f libsndfile.so.$LIB_VERSION ; then
-	# This will work on Linux, but not on Mac.
-	# Windows is already sorted out.
-	export LD_LIBRARY_PATH=`pwd`
-	if test ! -f libsndfile.so.1 ; then
-		ln -s libsndfile.so.$LIB_VERSION libsndfile.so.1
-		fi
-	fi
-
-sfversion=`./sfversion@EXEEXT@ | sed "s/-exp$//"`
-
-if test $sfversion != libsndfile-$PACKAGE_VERSION ; then
-	echo "Error : sfversion ($sfversion) and PACKAGE_VERSION ($PACKAGE_VERSION) don't match."
-	exit 1
-	fi
+sfversion=`./sfversion@EXEEXT@`
 
 # Force exit on errors.
 set -e
 
-# Generic-tests
+# generic-tests
 uname -a
-
-# Check the header file.
-sh pedantic-header-test.sh
-
-# Need this for when we're running from files collected into the
-# libsndfile-testsuite-@PACKAGE_VERSION@ tarball.
-if test -x test_main@EXEEXT@ ; then
-	echo "Running unit tests from src/ directory of source code tree."
-	./test_main@EXEEXT@
-	echo
-	echo "Running end-to-end tests from tests/ directory."
-	fi
-
 ./error_test@EXEEXT@
 ./pcm_test@EXEEXT@
 ./ulaw_test@EXEEXT@
@@ -92,29 +30,14 @@ if test -x test_main@EXEEXT@ ; then
 ./command_test@EXEEXT@ current_sf_info
 ./command_test@EXEEXT@ bext
 ./command_test@EXEEXT@ bextch
-./command_test@EXEEXT@ chanmap
 ./floating_point_test@EXEEXT@
 ./checksum_test@EXEEXT@
 ./scale_clip_test@EXEEXT@
 ./headerless_test@EXEEXT@
-./rdwr_test@EXEEXT@
 ./locale_test@EXEEXT@
 ./win32_ordinal_test@EXEEXT@
 ./external_libs_test@EXEEXT@
-./format_check_test@EXEEXT@
-
-# The w64 G++ compiler requires an extra runtime DLL which we don't have,
-# so skip this test.
-case "$HOST_TRIPLET" in
-	x86_64-w64-mingw32)
-		;;
-	i686-w64-mingw32)
-		;;
-	*)
-		./cpp_test@EXEEXT@
-		;;
-	esac
-
+./cpp_test@EXEEXT@
 echo "----------------------------------------------------------------------"
 echo "  $sfversion passed common tests."
 echo "----------------------------------------------------------------------"
@@ -155,7 +78,6 @@ echo "----------------------------------------------------------------------"
 ./lossy_comp_test@EXEEXT@ caf_ulaw
 ./lossy_comp_test@EXEEXT@ caf_alaw
 ./header_test@EXEEXT@ caf
-./peak_chunk_test@EXEEXT@ caf
 ./misc_test@EXEEXT@ caf
 echo "----------------------------------------------------------------------"
 echo "  $sfversion passed tests on CAF files."

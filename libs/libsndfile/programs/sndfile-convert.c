@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** All rights reserved.
 **
@@ -45,18 +45,93 @@ typedef	struct
 	SF_INFO	infileinfo, outfileinfo ;
 } OptionData ;
 
-static void copy_metadata (SNDFILE *outfile, SNDFILE *infile, int channels) ;
+typedef struct
+{	const char	*ext ;
+	int			len ;
+	int			format ;
+} OUTPUT_FORMAT_MAP ;
+
+static void copy_metadata (SNDFILE *outfile, SNDFILE *infile) ;
+
+static OUTPUT_FORMAT_MAP format_map [] =
+{
+	{	"aif",		3,	SF_FORMAT_AIFF	},
+	{	"wav", 		0,	SF_FORMAT_WAV	},
+	{	"au",		0,	SF_FORMAT_AU	},
+	{	"caf",		0,	SF_FORMAT_CAF	},
+	{	"flac",		0,	SF_FORMAT_FLAC	},
+	{	"snd",		0,	SF_FORMAT_AU	},
+	{	"svx",		0,	SF_FORMAT_SVX	},
+	{	"paf",		0,	SF_ENDIAN_BIG | SF_FORMAT_PAF	},
+	{	"fap",		0,	SF_ENDIAN_LITTLE | SF_FORMAT_PAF	},
+	{	"gsm",		0,	SF_FORMAT_RAW	},
+	{	"nist", 	0,	SF_FORMAT_NIST	},
+	{	"htk",		0,	SF_FORMAT_HTK	},
+	{	"ircam",	0,	SF_FORMAT_IRCAM	},
+	{	"sf",		0, 	SF_FORMAT_IRCAM	},
+	{	"voc",		0, 	SF_FORMAT_VOC	},
+	{	"w64", 		0, 	SF_FORMAT_W64	},
+	{	"raw",		0,	SF_FORMAT_RAW	},
+	{	"mat4", 	0,	SF_FORMAT_MAT4	},
+	{	"mat5", 	0, 	SF_FORMAT_MAT5 	},
+	{	"mat",		0, 	SF_FORMAT_MAT4 	},
+	{	"pvf",		0, 	SF_FORMAT_PVF 	},
+	{	"sds",		0, 	SF_FORMAT_SDS 	},
+	{	"sd2",		0, 	SF_FORMAT_SD2 	},
+	{	"vox",		0, 	SF_FORMAT_RAW 	},
+	{	"xi",		0, 	SF_FORMAT_XI 	},
+	{	"wve",		0,	SF_FORMAT_WVE	},
+	{	"oga",		0,	SF_FORMAT_OGG	},
+	{	"mpc",		0,	SF_FORMAT_MPC2K	},
+	{	"rf64",		0,	SF_FORMAT_RF64	},
+} ; /* format_map */
+
+static int
+guess_output_file_type (char *str, int format)
+{	char	buffer [16], *cptr ;
+	int		k ;
+
+	format &= SF_FORMAT_SUBMASK ;
+
+	if ((cptr = strrchr (str, '.')) == NULL)
+		return 0 ;
+
+	strncpy (buffer, cptr + 1, 15) ;
+	buffer [15] = 0 ;
+
+	for (k = 0 ; buffer [k] ; k++)
+		buffer [k] = tolower ((buffer [k])) ;
+
+	if (strcmp (buffer, "gsm") == 0)
+		return SF_FORMAT_RAW | SF_FORMAT_GSM610 ;
+
+	if (strcmp (buffer, "vox") == 0)
+		return SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM ;
+
+	for (k = 0 ; k < (int) (sizeof (format_map) / sizeof (format_map [0])) ; k++)
+	{	if (format_map [k].len > 0 && strncmp (buffer, format_map [k].ext, format_map [k].len) == 0)
+			return format_map [k].format | format ;
+		else if (strcmp (buffer, format_map [k].ext) == 0)
+			return format_map [k].format | format ;
+		} ;
+
+	return	0 ;
+} /* guess_output_file_type */
+
 
 static void
-usage_exit (const char *progname)
-{
+print_usage (char *progname)
+{	SF_FORMAT_INFO	info ;
+
+	int k ;
+
 	printf ("\nUsage : %s [options] [encoding] <input file> <output file>\n", progname) ;
 	puts ("\n"
 		"    where [option] may be:\n\n"
-		"        -override-sample-rate=X  : force sample rate of input to X\n"
+		"        -override-sample-rate=X  : force sample rate of input to X\n\n"
 		) ;
 
-	puts (
+	puts ("\n"
 		"    where [encoding] may be one of the following:\n\n"
 		"        -pcms8     : force the output to signed 8 bit pcm\n"
 		"        -pcmu8     : force the output to unsigned 8 bit pcm\n"
@@ -82,24 +157,28 @@ usage_exit (const char *progname)
 		"    output file name. The following extensions are currently understood:\n"
 		) ;
 
-	sfe_dump_format_map () ;
+	for (k = 0 ; k < (int) (sizeof (format_map) / sizeof (format_map [0])) ; k++)
+	{	info.format = format_map [k].format ;
+		sf_command (NULL, SFC_GET_FORMAT_INFO, &info, sizeof (info)) ;
+		printf ("        %-10s : %s\n", format_map [k].ext, info.name) ;
+		} ;
 
 	puts ("") ;
-	exit (0) ;
-} /* usage_exit */
+} /* print_usage */
 
 int
 main (int argc, char * argv [])
-{	const char	*progname, *infilename, *outfilename ;
+{	char 		*progname, *infilename, *outfilename ;
 	SNDFILE	 	*infile = NULL, *outfile = NULL ;
 	SF_INFO	 	sfinfo ;
 	int			k, outfilemajor, outfileminor = 0, infileminor ;
 	int			override_sample_rate = 0 ; /* assume no sample rate override. */
 
-	progname = program_name (argv [0]) ;
+	progname = strrchr (argv [0], '/') ;
+	progname = progname ? progname + 1 : argv [0] ;
 
 	if (argc < 3 || argc > 5)
-	{	usage_exit (progname) ;
+	{	print_usage (progname) ;
 		return 1 ;
 		} ;
 
@@ -108,19 +187,19 @@ main (int argc, char * argv [])
 
 	if (strcmp (infilename, outfilename) == 0)
 	{	printf ("Error : Input and output filenames are the same.\n\n") ;
-		usage_exit (progname) ;
+		print_usage (progname) ;
 		return 1 ;
 		} ;
 
-	if (strlen (infilename) > 1 && infilename [0] == '-')
+	if (infilename [0] == '-')
 	{	printf ("Error : Input filename (%s) looks like an option.\n\n", infilename) ;
-		usage_exit (progname) ;
+		print_usage (progname) ;
 		return 1 ;
 		} ;
 
 	if (outfilename [0] == '-')
 	{	printf ("Error : Output filename (%s) looks like an option.\n\n", outfilename) ;
-		usage_exit (progname) ;
+		print_usage (progname) ;
 		return 1 ;
 		} ;
 
@@ -198,8 +277,6 @@ main (int argc, char * argv [])
 		exit (1) ;
 		} ;
 
-	memset (&sfinfo, 0, sizeof (sfinfo)) ;
-
 	if ((infile = sf_open (infilename, SFM_READ, &sfinfo)) == NULL)
 	{	printf ("Not able to open input file %s.\n", infilename) ;
 		puts (sf_strerror (NULL)) ;
@@ -212,7 +289,7 @@ main (int argc, char * argv [])
 
 	infileminor = sfinfo.format & SF_FORMAT_SUBMASK ;
 
-	if ((sfinfo.format = sfe_file_type_of_ext (outfilename, sfinfo.format)) == 0)
+	if ((sfinfo.format = guess_output_file_type (outfilename, sfinfo.format)) == 0)
 	{	printf ("Error : Not able to determine output file type for %s.\n", outfilename) ;
 		return 1 ;
 		} ;
@@ -251,7 +328,7 @@ main (int argc, char * argv [])
 		} ;
 
 	/* Copy the metadata */
-	copy_metadata (outfile, infile, sfinfo.channels) ;
+	copy_metadata (outfile, infile) ;
 
 	if ((outfileminor == SF_FORMAT_DOUBLE) || (outfileminor == SF_FORMAT_FLOAT)
 			|| (infileminor == SF_FORMAT_DOUBLE) || (infileminor == SF_FORMAT_FLOAT)
@@ -267,27 +344,20 @@ main (int argc, char * argv [])
 } /* main */
 
 static void
-copy_metadata (SNDFILE *outfile, SNDFILE *infile, int channels)
+copy_metadata (SNDFILE *outfile, SNDFILE *infile)
 {	SF_INSTRUMENT inst ;
 	SF_BROADCAST_INFO_2K binfo ;
 	const char *str ;
-	int k, chanmap [256] ;
+	int k, err = 0 ;
 
 	for (k = SF_STR_FIRST ; k <= SF_STR_LAST ; k++)
 	{	str = sf_get_string (infile, k) ;
 		if (str != NULL)
-			sf_set_string (outfile, k, str) ;
+			err = sf_set_string (outfile, k, str) ;
 		} ;
 
 	memset (&inst, 0, sizeof (inst)) ;
 	memset (&binfo, 0, sizeof (binfo)) ;
-
-	if (channels < ARRAY_LEN (chanmap))
-	{	size_t size = channels * sizeof (chanmap [0]) ;
-
-		if (sf_command (infile, SFC_GET_CHANNEL_MAP_INFO, chanmap, size) == SF_TRUE)
-			sf_command (outfile, SFC_SET_CHANNEL_MAP_INFO, chanmap, size) ;
-		} ;
 
 	if (sf_command (infile, SFC_GET_INSTRUMENT, &inst, sizeof (inst)) == SF_TRUE)
 		sf_command (outfile, SFC_SET_INSTRUMENT, &inst, sizeof (inst)) ;

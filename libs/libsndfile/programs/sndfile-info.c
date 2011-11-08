@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** All rights reserved.
 **
@@ -45,15 +45,15 @@
 
 #if (defined (WIN32) || defined (_WIN32))
 #include <windows.h>
+#define	snprintf	_snprintf
 #endif
 
 static void print_version (void) ;
-static void usage_exit (const char *progname) ;
+static void print_usage (const char *progname) ;
 
 static void info_dump (const char *filename) ;
 static int	instrument_dump (const char *filename) ;
 static int	broadcast_dump (const char *filename) ;
-static int	chanmap_dump (const char *filename) ;
 static void total_dump (void) ;
 
 static double total_seconds = 0.0 ;
@@ -65,7 +65,12 @@ main (int argc, char *argv [])
 	print_version () ;
 
 	if (argc < 2 || strcmp (argv [1], "--help") == 0 || strcmp (argv [1], "-h") == 0)
-	{	usage_exit (program_name (argv [0])) ;
+	{	char *progname ;
+
+		progname = strrchr (argv [0], '/') ;
+		progname = progname ? progname + 1 : argv [0] ;
+
+		print_usage (progname) ;
 		return 1 ;
 		} ;
 
@@ -82,14 +87,6 @@ main (int argc, char *argv [])
 
 		for (k = 2 ; k < argc ; k++)
 			error += broadcast_dump (argv [k]) ;
-		return error ;
-		} ;
-
-	if (strcmp (argv [1], "-c") == 0)
-	{	int error = 0 ;
-
-		for (k = 2 ; k < argc ; k++)
-			error += chanmap_dump (argv [k]) ;
 		return error ;
 		} ;
 
@@ -118,7 +115,7 @@ print_version (void)
 
 
 static void
-usage_exit (const char *progname)
+print_usage (const char *progname)
 {	printf ("Usage :\n  %s <file> ...\n", progname) ;
 	printf ("    Prints out information about one or more sound files.\n\n") ;
 	printf ("  %s -i <file>\n", progname) ;
@@ -138,9 +135,7 @@ usage_exit (const char *progname)
 		*/
 		Sleep (5 * 1000) ;
 #endif
-	printf ("Using %s.\n\n", sf_version_string ()) ;
-	exit (0) ;
-} /* usage_exit */
+} /* print_usage */
 
 /*==============================================================================
 **	Dumping of sndfile info.
@@ -253,12 +248,7 @@ info_dump (const char *filename)
 	printf ("----------------------------------------\n") ;
 
 	printf ("Sample Rate : %d\n", sfinfo.samplerate) ;
-
-	if (sfinfo.frames == SF_COUNT_MAX)
-		printf ("Frames      : unknown\n") ;
-	else
-		printf ("Frames      : %" PRId64 "\n", sfinfo.frames) ;
-
+	printf ("Frames      : %" PRId64 "\n", sfinfo.frames) ;
 	printf ("Channels    : %d\n", sfinfo.channels) ;
 	printf ("Format      : 0x%08X\n", sfinfo.format) ;
 	printf ("Sections    : %d\n", sfinfo.sections) ;
@@ -388,82 +378,6 @@ broadcast_dump (const char *filename)
 
 	return 0 ;
 } /* broadcast_dump */
-
-static int
-chanmap_dump (const char *filename)
-{	SNDFILE	 *file ;
-	SF_INFO	 sfinfo ;
-	int * channel_map ;
-	int got_chanmap, k ;
-
-	memset (&sfinfo, 0, sizeof (sfinfo)) ;
-
-	if ((file = sf_open (filename, SFM_READ, &sfinfo)) == NULL)
-	{	printf ("Error : Not able to open input file %s.\n", filename) ;
-		fflush (stdout) ;
-		memset (data, 0, sizeof (data)) ;
-		puts (sf_strerror (NULL)) ;
-		return 1 ;
-		} ;
-
-	if ((channel_map = calloc (sfinfo.channels, sizeof (int))) == NULL)
-	{	printf ("Error : malloc failed.\n\n") ;
-		return 1 ;
-		} ;
-
-	got_chanmap = sf_command (file, SFC_GET_CHANNEL_MAP_INFO, channel_map, sfinfo.channels * sizeof (int)) ;
-	sf_close (file) ;
-
-	if (got_chanmap == SF_FALSE)
-	{	printf ("Error : File '%s' does not contain channel map information.\n\n", filename) ;
-		free (channel_map) ;
-		return 1 ;
-		} ;
-
-	printf ("File : %s\n\n", filename) ;
-
-	puts ("    Chan    Position") ;
-	for (k = 0 ; k < sfinfo.channels ; k ++)
-	{	const char * name ;
-
-#define CASE_NAME(x)	case x : name = #x ; break ;
-		switch (channel_map [k])
-		{	CASE_NAME (SF_CHANNEL_MAP_INVALID) ;
-			CASE_NAME (SF_CHANNEL_MAP_MONO) ;
-			CASE_NAME (SF_CHANNEL_MAP_LEFT) ;
-			CASE_NAME (SF_CHANNEL_MAP_RIGHT) ;
-			CASE_NAME (SF_CHANNEL_MAP_CENTER) ;
-			CASE_NAME (SF_CHANNEL_MAP_FRONT_LEFT) ;
-			CASE_NAME (SF_CHANNEL_MAP_FRONT_RIGHT) ;
-			CASE_NAME (SF_CHANNEL_MAP_FRONT_CENTER) ;
-			CASE_NAME (SF_CHANNEL_MAP_REAR_CENTER) ;
-			CASE_NAME (SF_CHANNEL_MAP_REAR_LEFT) ;
-			CASE_NAME (SF_CHANNEL_MAP_REAR_RIGHT) ;
-			CASE_NAME (SF_CHANNEL_MAP_LFE) ;
-			CASE_NAME (SF_CHANNEL_MAP_FRONT_LEFT_OF_CENTER) ;
-			CASE_NAME (SF_CHANNEL_MAP_FRONT_RIGHT_OF_CENTER) ;
-			CASE_NAME (SF_CHANNEL_MAP_SIDE_LEFT) ;
-			CASE_NAME (SF_CHANNEL_MAP_SIDE_RIGHT) ;
-			CASE_NAME (SF_CHANNEL_MAP_TOP_CENTER) ;
-			CASE_NAME (SF_CHANNEL_MAP_TOP_FRONT_LEFT) ;
-			CASE_NAME (SF_CHANNEL_MAP_TOP_FRONT_RIGHT) ;
-			CASE_NAME (SF_CHANNEL_MAP_TOP_FRONT_CENTER) ;
-			CASE_NAME (SF_CHANNEL_MAP_TOP_REAR_LEFT) ;
-			CASE_NAME (SF_CHANNEL_MAP_TOP_REAR_RIGHT) ;
-			CASE_NAME (SF_CHANNEL_MAP_TOP_REAR_CENTER) ;
-			CASE_NAME (SF_CHANNEL_MAP_MAX) ;
-			default : name = "default" ;
-				break ;
-			} ;
-
-		printf ("    %3d     %s\n", k, name) ;
-		} ;
-
-	putchar ('\n') ;
-	free (channel_map) ;
-
-	return 0 ;
-} /* chanmap_dump */
 
 static void
 total_dump (void)

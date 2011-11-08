@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 ** Copyright (C) 2004-2005 David Viens <davidv@plogue.com>
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -72,32 +72,6 @@ static const EXT_SUBFORMAT MSGUID_SUBTYPE_PVOCEX =
 } ;
 #endif
 
-/* This stores which bit in dwChannelMask maps to which channel */
-static const struct chanmap_s
-{	int id ;
-	const char * name ;
-} channel_mask_bits [] =
-{	/* WAVEFORMATEXTENSIBLE doesn't distuingish FRONT_LEFT from LEFT */
-	{	SF_CHANNEL_MAP_LEFT, "L" },
-	{	SF_CHANNEL_MAP_RIGHT, "R" },
-	{	SF_CHANNEL_MAP_CENTER, "C" },
-	{	SF_CHANNEL_MAP_LFE, "LFE" },
-	{	SF_CHANNEL_MAP_REAR_LEFT, "Ls" },
-	{	SF_CHANNEL_MAP_REAR_RIGHT, "Rs" },
-	{	SF_CHANNEL_MAP_FRONT_LEFT_OF_CENTER, "Lc" },
-	{	SF_CHANNEL_MAP_FRONT_RIGHT_OF_CENTER, "Rc" },
-	{	SF_CHANNEL_MAP_REAR_CENTER, "Cs" },
-	{	SF_CHANNEL_MAP_SIDE_LEFT, "Sl" },
-	{	SF_CHANNEL_MAP_SIDE_RIGHT, "Sr" },
-	{	SF_CHANNEL_MAP_TOP_CENTER, "Tc" },
-	{	SF_CHANNEL_MAP_TOP_FRONT_LEFT, "Tfl" },
-	{	SF_CHANNEL_MAP_TOP_FRONT_CENTER, "Tfc" },
-	{	SF_CHANNEL_MAP_TOP_FRONT_RIGHT, "Tfr" },
-	{	SF_CHANNEL_MAP_TOP_REAR_LEFT, "Trl" },
-	{	SF_CHANNEL_MAP_TOP_REAR_CENTER, "Trc" },
-	{	SF_CHANNEL_MAP_TOP_REAR_RIGHT, "Trr" },
-} ;
-
 /*------------------------------------------------------------------------------
  * Private static functions.
  */
@@ -135,15 +109,12 @@ wav_w64_read_fmt_chunk (SF_PRIVATE *psf, int fmtsize)
 	psf_log_printf (psf, "  Format        : 0x%X => %s\n", wav_fmt->format, wav_w64_format_str (wav_fmt->format)) ;
 	psf_log_printf (psf, "  Channels      : %d\n", wav_fmt->min.channels) ;
 	psf_log_printf (psf, "  Sample Rate   : %d\n", wav_fmt->min.samplerate) ;
+	psf_log_printf (psf, "  Block Align   : %d\n", wav_fmt->min.blockalign) ;
 
-	if (wav_fmt->format == WAVE_FORMAT_PCM && wav_fmt->min.blockalign == 0
-		&& wav_fmt->min.bitwidth > 0 && wav_fmt->min.channels > 0)
-	{	wav_fmt->min.blockalign = wav_fmt->min.bitwidth / 8 + (wav_fmt->min.bitwidth % 8 > 0 ? 1 : 0) ;
-		wav_fmt->min.blockalign *= wav_fmt->min.channels ;
-		psf_log_printf (psf, "  Block Align   : 0 (should be %d)\n", wav_fmt->min.blockalign) ;
-		}
-	else
-		psf_log_printf (psf, "  Block Align   : %d\n", wav_fmt->min.blockalign) ;
+	if (wav_fmt->min.blockalign == 0)
+	{	psf_log_printf (psf, "*** Error : wav_fmt->min.blockalign should not be zero.\n") ;
+		return SFE_INTERNAL ;
+		} ;
 
 	if (wav_fmt->format == WAVE_FORMAT_PCM && wav_fmt->min.bitwidth == 24 &&
 			wav_fmt->min.blockalign == 4 * wav_fmt->min.channels)
@@ -247,6 +218,7 @@ wav_w64_read_fmt_chunk (SF_PRIVATE *psf, int fmtsize)
 				else
 					psf_log_printf (psf, "  Bytes/sec     : %d (should be %d)\n", wav_fmt->min.bytespersec, bytespersec) ;
 
+
 				psf->bytewidth = 2 ;
 				psf_log_printf (psf, "  Extra Bytes   : %d\n", wav_fmt->msadpcm.extrabytes) ;
 				psf_log_printf (psf, "  Samples/Block : %d\n", wav_fmt->msadpcm.samplesperblock) ;
@@ -298,50 +270,11 @@ wav_w64_read_fmt_chunk (SF_PRIVATE *psf, int fmtsize)
 						&(wav_fmt->ext.channelmask)) ;
 
 				psf_log_printf (psf, "  Valid Bits    : %d\n", wav_fmt->ext.validbits) ;
+				psf_log_printf (psf, "  Channel Mask  : 0x%X\n", wav_fmt->ext.channelmask) ;
 
-				if (wav_fmt->ext.channelmask == 0)
-					psf_log_printf (psf, "  Channel Mask  : 0x0 (should not be zero)\n") ;
-				else
-				{	unsigned bit ;
-
-					wpriv->wavex_channelmask = wav_fmt->ext.channelmask ;
-
-					/* It's probably wise to ignore the channel mask if it is all zero */
-					free (psf->channel_map) ;
-
-					if ((psf->channel_map = calloc (psf->sf.channels, sizeof (psf->channel_map [0]))) == NULL)
-						return SFE_MALLOC_FAILED ;
-
-					/* Terminate the buffer we're going to append_snprintf into. */
-					psf->u.cbuf [0] = 0 ;
-
-					for (bit = k = 0 ; bit < ARRAY_LEN (channel_mask_bits) ; bit++)
-					{
-						if (wav_fmt->ext.channelmask & (1 << bit))
-						{	if (k > psf->sf.channels)
-							{	psf_log_printf (psf, "*** More channel map bits than there are channels.\n") ;
-								break ;
-								} ;
-
-							psf->channel_map [k++] = channel_mask_bits [bit].id ;
-							append_snprintf (psf->u.cbuf, sizeof (psf->u.cbuf), "%s, ", channel_mask_bits [bit].name) ;
-							} ;
-						} ;
-
-					/* Remove trailing ", ". */
-					bit = strlen (psf->u.cbuf) ;
-					psf->u.cbuf [--bit] = 0 ;
-					psf->u.cbuf [--bit] = 0 ;
-
-					if (k != psf->sf.channels)
-					{	psf_log_printf (psf, "  Channel Mask  : 0x%X\n", wav_fmt->ext.channelmask) ;
-						psf_log_printf (psf, "*** Less channel map bits than there are channels.\n") ;
-						}
-					else
-						psf_log_printf (psf, "  Channel Mask  : 0x%X (%s)\n", wav_fmt->ext.channelmask, psf->u.cbuf) ;
-					} ;
-
-				bytesread += psf_binheader_readf (psf, "422", &(wav_fmt->ext.esf.esf_field1), &(wav_fmt->ext.esf.esf_field2), &(wav_fmt->ext.esf.esf_field3)) ;
+				bytesread +=
+				psf_binheader_readf (psf, "422", &(wav_fmt->ext.esf.esf_field1), &(wav_fmt->ext.esf.esf_field2),
+						&(wav_fmt->ext.esf.esf_field3)) ;
 
 				/* compare the esf_fields with each known GUID? and print? */
 				psf_log_printf (psf, "  Subformat\n") ;
@@ -434,34 +367,6 @@ wavex_write_guid (SF_PRIVATE *psf, const EXT_SUBFORMAT * subformat)
 					subformat->esf_field2, subformat->esf_field3,
 					subformat->esf_field4, make_size_t (8)) ;
 } /* wavex_write_guid */
-
-
-int
-wavex_gen_channel_mask (const int *chan_map, int channels)
-{	int chan, mask = 0, bit = -1, last_bit = -1 ;
-
-	if (chan_map == NULL)
-		return 0 ;
-
-	for (chan = 0 ; chan < channels ; chan ++)
-	{	int k ;
-
-		for (k = bit + 1 ; k < ARRAY_LEN (channel_mask_bits) ; k++)
-			if (chan_map [chan] == channel_mask_bits [k].id)
-			{	bit = k ;
-				break ;
-				} ;
-
-		/* Check for bad sequence. */
-		if (bit <= last_bit)
-			return 0 ;
-
-		mask += 1 << bit ;
-		last_bit = bit ;
-		} ;
-
-	return mask ;
-} /* wavex_gen_channel_mask */
 
 void
 wav_w64_analyze (SF_PRIVATE *psf)

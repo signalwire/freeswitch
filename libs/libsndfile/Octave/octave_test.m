@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
+# Copyright (C) 2007 Erik de Castro Lopo <erikd@mega-nerd.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -16,7 +16,9 @@
 
 # These tests are nowhere near comprehensive.
 
-printf ("    Running Octave tests                     : ") ;
+printf ("\n\n\n\n\n\n\n") ;
+
+printf ("    Running Octave tests : ") ;
 fflush (stdout) ;
 
 filename = "whatever" ;
@@ -48,5 +50,7 @@ if (err > 1e-7)
 	endif
 
 printf ("ok") ;
+
+printf ("\n\n\n\n\n\n\n") ;
 
 unlink (filename) ;

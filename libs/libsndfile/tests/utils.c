@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -340,7 +340,7 @@ check_log_buffer_or_die (SNDFILE *file, int line_num)
 {	static char	buffer [LOG_BUFFER_SIZE] ;
 	int			count ;
 
-	memset (buffer, 0, sizeof (buffer)) ;
+	memset (buffer, 0, LOG_BUFFER_SIZE) ;
 
 	/* Get the log buffer data. */
 	count = sf_command	(file, SFC_GET_LOG_INFO, buffer, LOG_BUFFER_SIZE) ;
@@ -379,7 +379,7 @@ string_in_log_buffer (SNDFILE *file, const char *s)
 {	static char	buffer [LOG_BUFFER_SIZE] ;
 	int			count ;
 
-	memset (buffer, 0, sizeof (buffer)) ;
+	memset (buffer, 0, LOG_BUFFER_SIZE) ;
 
 	/* Get the log buffer data. */
 	count = sf_command	(file, SFC_GET_LOG_INFO, buffer, LOG_BUFFER_SIZE) ;
@@ -448,11 +448,12 @@ hexdump_file (const char * filename, sf_count_t offset, sf_count_t length)
 void
 dump_log_buffer (SNDFILE *file)
 {	static char	buffer [LOG_BUFFER_SIZE] ;
+	int			count ;
 
-	memset (buffer, 0, sizeof (buffer)) ;
+	memset (buffer, 0, LOG_BUFFER_SIZE) ;
 
 	/* Get the log buffer data. */
-	sf_command	(file, SFC_GET_LOG_INFO, buffer, LOG_BUFFER_SIZE) ;
+	count = sf_command	(file, SFC_GET_LOG_INFO, buffer, LOG_BUFFER_SIZE) ;
 
 	if (strlen (buffer) < 1)
 		puts ("Log buffer empty.\n") ;
@@ -468,7 +469,7 @@ test_open_file_or_die (const char *filename, int mode, SF_INFO *sfinfo, int allo
 
 	SNDFILE *file ;
 	const char *modestr, *func_name ;
-	int oflags = 0, omode = 0, err ;
+	int oflags = 0, omode = 0 ;
 
 	/*
 	** Need to test both sf_open() and sf_open_fd().
@@ -499,20 +500,17 @@ test_open_file_or_die (const char *filename, int mode, SF_INFO *sfinfo, int allo
 		} ;
 
 	if (OS_IS_WIN32)
-	{	/* Windows does not understand and ignores the S_IRGRP flag, but Wine
-		** gives a run time warning message, so just clear it.
-		*/
-		omode &= ~S_IRGRP ;
+	{	/* Windows doesn't support Unix file permissions so set it to zero. */
+		omode = 0 ;
 		} ;
 
 	if (allow_fd && ((++count) & 1) == 1)
 	{	int fd ;
 
-		/* Only use the three argument open() function if omode != 0. */
-		fd = (omode == 0) ? open (filename, oflags) : open (filename, oflags, omode) ;
+		fd = open (filename, oflags, omode) ;
 
 		if (fd < 0)
-		{	printf ("\n\n%s : open failed : %s\n", __func__, strerror (errno)) ;
+		{	perror ("open") ;
 			exit (1) ;
 			} ;
 
@@ -526,13 +524,6 @@ test_open_file_or_die (const char *filename, int mode, SF_INFO *sfinfo, int allo
 
 	if (file == NULL)
 	{	printf ("\n\nLine %d: %s (%s) failed : %s\n\n", line_num, func_name, modestr, sf_strerror (NULL)) ;
-		dump_log_buffer (file) ;
-		exit (1) ;
-		} ;
-
-	err = sf_error (file) ;
-	if (err != SF_ERR_NO_ERROR)
-	{	printf ("\n\nLine %d : sf_error : %s\n\n", line_num, sf_error_number (err)) ;
 		dump_log_buffer (file) ;
 		exit (1) ;
 		} ;
@@ -638,7 +629,7 @@ test_read_short_or_die (SNDFILE *file, int pass, short *test, sf_count_t items, 
 		} ;
 
 	return ;
-} /* test_read_short_or_die */
+} /* test_read_short */
 
 void
 test_read_int_or_die (SNDFILE *file, int pass, int *test, sf_count_t items, int line_num)
@@ -656,7 +647,7 @@ test_read_int_or_die (SNDFILE *file, int pass, int *test, sf_count_t items, int 
 		} ;
 
 	return ;
-} /* test_read_int_or_die */
+} /* test_read_int */
 
 void
 test_read_float_or_die (SNDFILE *file, int pass, float *test, sf_count_t items, int line_num)
@@ -674,7 +665,7 @@ test_read_float_or_die (SNDFILE *file, int pass, float *test, sf_count_t items, 
 		} ;
 
 	return ;
-} /* test_read_float_or_die */
+} /* test_read_float */
 
 void
 test_read_double_or_die (SNDFILE *file, int pass, double *test, sf_count_t items, int line_num)
@@ -692,7 +683,7 @@ test_read_double_or_die (SNDFILE *file, int pass, double *test, sf_count_t items
 		} ;
 
 	return ;
-} /* test_read_double_or_die */
+} /* test_read_double */
 
 
 void
@@ -711,7 +702,7 @@ test_readf_short_or_die (SNDFILE *file, int pass, short *test, sf_count_t frames
 		} ;
 
 	return ;
-} /* test_readf_short_or_die */
+} /* test_readf_short */
 
 void
 test_readf_int_or_die (SNDFILE *file, int pass, int *test, sf_count_t frames, int line_num)
@@ -729,7 +720,7 @@ test_readf_int_or_die (SNDFILE *file, int pass, int *test, sf_count_t frames, in
 		} ;
 
 	return ;
-} /* test_readf_int_or_die */
+} /* test_readf_int */
 
 void
 test_readf_float_or_die (SNDFILE *file, int pass, float *test, sf_count_t frames, int line_num)
@@ -747,7 +738,7 @@ test_readf_float_or_die (SNDFILE *file, int pass, float *test, sf_count_t frames
 		} ;
 
 	return ;
-} /* test_readf_float_or_die */
+} /* test_readf_float */
 
 void
 test_readf_double_or_die (SNDFILE *file, int pass, double *test, sf_count_t frames, int line_num)
@@ -765,26 +756,8 @@ test_readf_double_or_die (SNDFILE *file, int pass, double *test, sf_count_t fram
 		} ;
 
 	return ;
-} /* test_readf_double_or_die */
+} /* test_readf_double */
 
-
-void
-test_read_raw_or_die (SNDFILE *file, int pass, void *test, sf_count_t items, int line_num)
-{	sf_count_t count ;
-
-	if ((count = sf_read_raw (file, test, items)) != items)
-	{	printf ("\n\nLine %d", line_num) ;
-		if (pass > 0)
-			printf (" (pass %d)", pass) ;
-		printf (" : sf_read_raw failed with short read (%ld => %ld).\n",
-						SF_COUNT_TO_LONG (items), SF_COUNT_TO_LONG (count)) ;
-		fflush (stdout) ;
-		puts (sf_strerror (file)) ;
-		exit (1) ;
-		} ;
-
-	return ;
-} /* test_read_raw_or_die */
 
 
 
@@ -804,7 +777,7 @@ test_write_short_or_die (SNDFILE *file, int pass, const short *test, sf_count_t 
 		} ;
 
 	return ;
-} /* test_write_short_or_die */
+} /* test_write_short */
 
 void
 test_write_int_or_die (SNDFILE *file, int pass, const int *test, sf_count_t items, int line_num)
@@ -822,7 +795,7 @@ test_write_int_or_die (SNDFILE *file, int pass, const int *test, sf_count_t item
 		} ;
 
 	return ;
-} /* test_write_int_or_die */
+} /* test_write_int */
 
 void
 test_write_float_or_die (SNDFILE *file, int pass, const float *test, sf_count_t items, int line_num)
@@ -840,7 +813,7 @@ test_write_float_or_die (SNDFILE *file, int pass, const float *test, sf_count_t 
 		} ;
 
 	return ;
-} /* test_write_float_or_die */
+} /* test_write_float */
 
 void
 test_write_double_or_die (SNDFILE *file, int pass, const double *test, sf_count_t items, int line_num)
@@ -858,7 +831,7 @@ test_write_double_or_die (SNDFILE *file, int pass, const double *test, sf_count_
 		} ;
 
 	return ;
-} /* test_write_double_or_die */
+} /* test_write_double */
 
 
 void
@@ -877,7 +850,7 @@ test_writef_short_or_die (SNDFILE *file, int pass, const short *test, sf_count_t
 		} ;
 
 	return ;
-} /* test_writef_short_or_die */
+} /* test_writef_short */
 
 void
 test_writef_int_or_die (SNDFILE *file, int pass, const int *test, sf_count_t frames, int line_num)
@@ -895,7 +868,7 @@ test_writef_int_or_die (SNDFILE *file, int pass, const int *test, sf_count_t fra
 		} ;
 
 	return ;
-} /* test_writef_int_or_die */
+} /* test_writef_int */
 
 void
 test_writef_float_or_die (SNDFILE *file, int pass, const float *test, sf_count_t frames, int line_num)
@@ -913,7 +886,7 @@ test_writef_float_or_die (SNDFILE *file, int pass, const float *test, sf_count_t
 		} ;
 
 	return ;
-} /* test_writef_float_or_die */
+} /* test_writef_float */
 
 void
 test_writef_double_or_die (SNDFILE *file, int pass, const double *test, sf_count_t frames, int line_num)
@@ -931,26 +904,7 @@ test_writef_double_or_die (SNDFILE *file, int pass, const double *test, sf_count
 		} ;
 
 	return ;
-} /* test_writef_double_or_die */
-
-
-void
-test_write_raw_or_die (SNDFILE *file, int pass, const void *test, sf_count_t items, int line_num)
-{	sf_count_t count ;
-
-	if ((count = sf_write_raw (file, test, items)) != items)
-	{	printf ("\n\nLine %d", line_num) ;
-		if (pass > 0)
-			printf (" (pass %d)", pass) ;
-		printf (" : sf_write_raw failed with short write (%ld => %ld).\n",
-						SF_COUNT_TO_LONG (items), SF_COUNT_TO_LONG (count)) ;
-		fflush (stdout) ;
-		puts (sf_strerror (file)) ;
-		exit (1) ;
-		} ;
-
-	return ;
-} /* test_write_raw_or_die */
+} /* test_writef_double */
 
 
 void
@@ -1042,7 +996,7 @@ static int allowed_open_files = -1 ;
 void
 count_open_files (void)
 {
-#if OS_IS_WIN32
+#if (defined (WIN32) || defined (_WIN32))
 	return ;
 #else
 	int k, count = 0 ;
@@ -1067,7 +1021,7 @@ increment_open_file_count (void)
 void
 check_open_file_count_or_die (int lineno)
 {
-#if OS_IS_WIN32
+#if (defined (WIN32) || defined (_WIN32))
 	lineno = 0 ;
 	return ;
 #else

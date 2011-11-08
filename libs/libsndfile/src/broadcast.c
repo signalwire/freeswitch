@@ -1,6 +1,6 @@
 /*
-** Copyright (C) 2006-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
 ** Copyright (C) 2006 Paul Davis <paul@linuxaudiosystems.com>
+** Copyright (C) 2006-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -17,15 +17,13 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-#include "sfconfig.h"
-
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
 
 #include "common.h"
 
-
+static void strncpy_crlf (char *dest, const char *src, size_t destmax, size_t srcmax) ;
 static int gen_coding_history (char * added_history, int added_history_max, const SF_INFO * psfinfo) ;
 
 static inline size_t
@@ -34,16 +32,29 @@ bc_min_size (const SF_BROADCAST_INFO* info)
 		return 0 ;
 
 	return offsetof (SF_BROADCAST_INFO, coding_history) + info->coding_history_size ;
-} /* bc_min_size */
+} /* broadcast_size */
 
-SF_BROADCAST_INFO_16K*
-broadcast_var_alloc (void)
-{	return calloc (1, sizeof (SF_BROADCAST_INFO_16K)) ;
+
+static inline size_t
+bc_var_coding_hist_size (const SF_BROADCAST_VAR* var)
+{	return var->size - offsetof (SF_BROADCAST_VAR, binfo.coding_history) ;
+} /* broadcast_size */
+
+SF_BROADCAST_VAR*
+broadcast_var_alloc (size_t datasize)
+{	SF_BROADCAST_VAR * data ;
+
+	if ((data = calloc (1, datasize)) != NULL)
+		data->size = datasize ;
+
+	return data ;
 } /* broadcast_var_alloc */
+
 
 int
 broadcast_var_set (SF_PRIVATE *psf, const SF_BROADCAST_INFO * info, size_t datasize)
-{	size_t len ;
+{	char added_history [256] ;
+	int added_history_len, len ;
 
 	if (info == NULL)
 		return SF_FALSE ;
@@ -53,40 +64,42 @@ broadcast_var_set (SF_PRIVATE *psf, const SF_BROADCAST_INFO * info, size_t datas
 		return SF_FALSE ;
 		} ;
 
-	if (datasize >= sizeof (SF_BROADCAST_INFO_16K))
-	{	psf->error = SFE_BAD_BROADCAST_INFO_TOO_BIG ;
-		return SF_FALSE ;
-		} ;
+	added_history_len = gen_coding_history (added_history, sizeof (added_history), &(psf->sf)) ;
 
-	if (psf->broadcast_16k == NULL)
-	{	if ((psf->broadcast_16k = broadcast_var_alloc ()) == NULL)
-		{	psf->error = SFE_MALLOC_FAILED	 ;
-			return SF_FALSE ;
+	if (psf->broadcast_var != NULL)
+	{	size_t coding_hist_offset = offsetof (SF_BROADCAST_INFO, coding_history) ;
+
+		if (psf->broadcast_var->binfo.coding_history_size + added_history_len < datasize - coding_hist_offset)
+		{	free (psf->broadcast_var) ;
+			psf->broadcast_var = NULL ;
 			} ;
 		} ;
 
-	memcpy (psf->broadcast_16k, info, offsetof (SF_BROADCAST_INFO, coding_history)) ;
+	if (psf->broadcast_var == NULL)
+	{	int size = datasize + added_history_len + 512 ;
 
-	psf_strlcpy_crlf (psf->broadcast_16k->coding_history, info->coding_history, sizeof (psf->broadcast_16k->coding_history), datasize - offsetof (SF_BROADCAST_INFO, coding_history)) ;
-	len = strlen (psf->broadcast_16k->coding_history) ;
-
-	if (len > 0 && psf->broadcast_16k->coding_history [len - 1] != '\n')
-		psf_strlcat (psf->broadcast_16k->coding_history, sizeof (psf->broadcast_16k->coding_history), "\r\n") ;
-
-	if (psf->file.mode == SFM_WRITE)
-	{	char added_history [256] ;
-
-		gen_coding_history (added_history, sizeof (added_history), &(psf->sf)) ;
-		psf_strlcat (psf->broadcast_16k->coding_history, sizeof (psf->broadcast_16k->coding_history), added_history) ;
+		psf->broadcast_var = calloc (1, size) ;
+		psf->broadcast_var->size = size ;
 		} ;
 
-	/* Force coding_history_size to be even. */
-	len = strlen (psf->broadcast_16k->coding_history) ;
-	len += (len & 1) ? 1 : 2 ;
-	psf->broadcast_16k->coding_history_size = len ;
+	memcpy (&(psf->broadcast_var->binfo), info, offsetof (SF_BROADCAST_INFO, coding_history)) ;
+
+	strncpy_crlf (psf->broadcast_var->binfo.coding_history, info->coding_history, bc_var_coding_hist_size (psf->broadcast_var), info->coding_history_size) ;
+	len = strlen (psf->broadcast_var->binfo.coding_history) ;
+
+	if (len > 0 && psf->broadcast_var->binfo.coding_history [len] != '\n')
+		strncat (psf->broadcast_var->binfo.coding_history, "\r\n", 2) ;
+
+	if (psf->mode == SFM_WRITE)
+		strncat (psf->broadcast_var->binfo.coding_history, added_history, strlen (added_history)) ;
+
+	psf->broadcast_var->binfo.coding_history_size = strlen (psf->broadcast_var->binfo.coding_history) ;
+
+	/* Fore coding_history_size to be even. */
+	psf->broadcast_var->binfo.coding_history_size += (psf->broadcast_var->binfo.coding_history_size & 1) ? 1 : 0 ;
 
 	/* Currently writing this version. */
-	psf->broadcast_16k->version = 1 ;
+	psf->broadcast_var->binfo.version = 1 ;
 
 	return SF_TRUE ;
 } /* broadcast_var_set */
@@ -96,18 +109,53 @@ int
 broadcast_var_get (SF_PRIVATE *psf, SF_BROADCAST_INFO * data, size_t datasize)
 {	size_t size ;
 
-	if (psf->broadcast_16k == NULL)
+	if (psf->broadcast_var == NULL)
 		return SF_FALSE ;
 
-	size = SF_MIN (datasize, bc_min_size ((const SF_BROADCAST_INFO *) psf->broadcast_16k)) ;
+	size = SF_MIN (datasize, bc_min_size (&(psf->broadcast_var->binfo))) ;
 
-	memcpy (data, psf->broadcast_16k, size) ;
+	memcpy (data, &(psf->broadcast_var->binfo), size) ;
 
 	return SF_TRUE ;
-} /* broadcast_var_get */
+} /* broadcast_var_set */
 
 /*------------------------------------------------------------------------------
+**	Strncpy which converts all line endings to CR/LF.
 */
+
+static void
+strncpy_crlf (char *dest, const char *src, size_t destmax, size_t srcmax)
+{	char * destend = dest + destmax - 1 ;
+	const char * srcend = src + srcmax ;
+
+	while (dest < destend && src < srcend)
+	{	if ((src [0] == '\r' && src [1] == '\n') || (src [0] == '\n' && src [1] == '\r'))
+		{	*dest++ = '\r' ;
+			*dest++ = '\n' ;
+			src += 2 ;
+			continue ;
+			} ;
+
+		if (src [0] == '\r')
+		{	*dest++ = '\r' ;
+			*dest++ = '\n' ;
+			src += 1 ;
+			continue ;
+			} ;
+
+		if (src [0] == '\n')
+		{	*dest++ = '\r' ;
+			*dest++ = '\n' ;
+			src += 1 ;
+			continue ;
+			} ;
+
+		*dest++ = *src++ ;
+		} ;
+
+	/* Make sure dest is terminated. */
+	*dest = 0 ;
+} /* strncpy_crlf */
 
 static int
 gen_coding_history (char * added_history, int added_history_max, const SF_INFO * psfinfo)
@@ -137,11 +185,11 @@ gen_coding_history (char * added_history, int added_history_max, const SF_INFO *
 			return SF_FALSE ;
 
 		case 1 :
-			psf_strlcpy (chnstr, sizeof (chnstr), "mono") ;
+			strncpy (chnstr, "mono", sizeof (chnstr)) ;
 			break ;
 
 		case 2 :
-			psf_strlcpy (chnstr, sizeof (chnstr), "stereo") ;
+			strncpy (chnstr, "stereo", sizeof (chnstr)) ;
 			break ;
 
 		default :

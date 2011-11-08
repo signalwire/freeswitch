@@ -1,5 +1,5 @@
 /*
-**	Copyright (C) 2005-2011 Erik de Castro Lopo
+**	Copyright (C) 2005-2009 Erik de Castro Lopo
 **
 **	This program is free software; you can redistribute it and/or modify
 **	it under the terms of the GNU General Public License as published by
@@ -146,7 +146,7 @@ db_file_exists (REG_DB * db_handle, const char * filename)
 
 	db->count = 0 ;
 	err = sqlite3_exec (db->sql, db->cmdbuf, (sqlite3_callback) count_callback, db, &errmsg) ;
-	if (err == 0 && db->count == 1)
+	if (db->count == 1)
 		return 1 ;
 
 	return 0 ;

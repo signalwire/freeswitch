@@ -1,6 +1,6 @@
 /*
-** Copyright (C) 2008-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
-** Copyright (C) 2008-2010 George Blood Audio
+** Copyright (C) 2008 George Blood Audio
+** Written by Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** All rights reserved.
 **
@@ -60,7 +60,8 @@ main (int argc, char *argv [])
 	int	k ;
 
 	/* Store the program name. */
-	progname = program_name (argv [0]) ;
+	progname = strrchr (argv [0], '/') ;
+	progname = progname ? progname + 1 : argv [0] ;
 
 	/* Check if we've been asked for help. */
 	if (argc < 3 || strcmp (argv [1], "--help") == 0 || strcmp (argv [1], "-h") == 0)
@@ -102,7 +103,6 @@ main (int argc, char *argv [])
 		HANDLE_BEXT_ARG ("--bext-orig-date", origination_date) ;
 		HANDLE_BEXT_ARG ("--bext-orig-time", origination_time) ;
 		HANDLE_BEXT_ARG ("--bext-coding-hist", coding_history) ;
-		HANDLE_BEXT_ARG ("--bext-time-ref", time_ref) ;
 
 #define HANDLE_STR_ARG(cmd,field) \
 	if (strcmp (argv [k], cmd) == 0) \
@@ -112,7 +112,6 @@ main (int argc, char *argv [])
 		continue ; \
 		} ;
 
-		HANDLE_STR_ARG ("--str-comment", comment) ;
 		HANDLE_STR_ARG ("--str-title", title) ;
 		HANDLE_STR_ARG ("--str-copyright", copyright) ;
 		HANDLE_STR_ARG ("--str-artist", artist) ;
@@ -207,10 +206,8 @@ usage_exit (const char *progname, int exit_code)
 		"    --bext-umid              Set the 'bext' UMID.\n"
 		"    --bext-orig-date         Set the 'bext' origination date.\n"
 		"    --bext-orig-time         Set the 'bext' origination time.\n"
-		"    --bext-coding-hist       Set the 'bext' coding history.\n"
-		"    --bext-time-raf          Set the 'bext' Time ref.\n"
+		"    --bext-coding-hist       Set the 'bext' coding history\n"
 		"\n"
-		"    --str-comment            Set the metadata comment.\n"
 		"    --str-title              Set the metadata title.\n"
 		"    --str-copyright          Set the metadata copyright.\n"
 		"    --str-artist             Set the metadata artist.\n"
@@ -234,7 +231,6 @@ usage_exit (const char *progname, int exit_code)
 		"exit with an appropriate error message.\n"
 		) ;
 
-	printf ("Using %s.\n\n", sf_version_string ()) ;
 	exit (exit_code) ;
 } /* usage_exit */
 
@@ -254,7 +250,7 @@ has_bext_fields_set (const METADATA_INFO * info)
 	if (info->description || info->originator || info->originator_reference)
 		return 1 ;
 
-	if (info->origination_date || info->origination_time || info->umid || info->coding_history || info->time_ref)
+	if (info->origination_date || info->origination_time || info->umid || info->coding_history)
 		return 1 ;
 
 	return 0 ;

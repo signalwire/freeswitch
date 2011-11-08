@@ -1,6 +1,5 @@
 /*
-** Copyright (C) 2008-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
-** Copyright (C) 2008 Conrad Parker <conrad@metadecks.org>
+** Copyright (C) 2008-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** All rights reserved.
 **
@@ -31,31 +30,27 @@
 ** ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/* sndfile-cmp.c
+ * Conrad Parker 2008
+ */
+
+
 #include "sfconfig.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
 #include <sndfile.h>
-
-#include "common.h"
 
 /* Length of comparison data buffers in units of items */
 #define BUFLEN 65536
 
-static const char * progname = NULL ;
-static char * filename1 = NULL, * filename2 = NULL ;
+static char * progname ;
+static char * filename1, * filename2 ;
 
 static int
-comparison_error (const char * what, sf_count_t frame_offset)
-{	char buffer [128] = "" ;
-
-	if (frame_offset >= 0)
-		snprintf (buffer, sizeof (buffer), " (at frame offset %" PRId64 ")", frame_offset) ;
-
-	printf ("%s: %s of files %s and %s differ%s.\n", progname, what, filename1, filename2, buffer) ;
+comparison_error (const char * what)
+{	printf ("%s: %s of files %s and %s differ\n", progname, what, filename1, filename2) ;
 	return 1 ;
 } /* comparison_error */
 
@@ -65,7 +60,7 @@ compare (void)
 	double buf1 [BUFLEN], buf2 [BUFLEN] ;
 	SF_INFO sfinfo1, sfinfo2 ;
 	SNDFILE * sf1 = NULL, * sf2 = NULL ;
-	sf_count_t items, i, nread1, nread2, offset = 0 ;
+	sf_count_t len, i, nread1, nread2 ;
 	int retval = 0 ;
 
 	memset (&sfinfo1, 0, sizeof (SF_INFO)) ;
@@ -85,35 +80,34 @@ compare (void)
 		} ;
 
 	if (sfinfo1.samplerate != sfinfo2.samplerate)
-	{	retval = comparison_error ("Samplerates", -1) ;
+	{	retval = comparison_error ("Samplerates") ;
 		goto out ;
 		} ;
 
 	if (sfinfo1.channels != sfinfo2.channels)
-	{	retval = comparison_error ("Number of channels", -1) ;
+	{	retval = comparison_error ("Number of channels") ;
 		goto out ;
 		} ;
 
 	/* Calculate the framecount that will fit in our data buffers */
-	items = BUFLEN / sfinfo1.channels ;
+	len = BUFLEN / sfinfo1.channels ;
 
-	while ( (nread1 = sf_readf_double (sf1, buf1, items)) > 0)
+	while ( (nread1 = sf_readf_double (sf1, buf1, len)) > 0)
 	{	nread2 = sf_readf_double (sf2, buf2, nread1) ;
 		if (nread2 != nread1)
-		{	retval = comparison_error ("PCM data lengths", -1) ;
+		{	retval = comparison_error ("PCM data lengths") ;
 			goto out ;
 			} ;
-		for (i = 0 ; i < nread1 * sfinfo1.channels ; i++)
+		for (i = 0 ; i < nread1 ; i++)
 		{	if (buf1 [i] != buf2 [i])
-			{	retval = comparison_error ("PCM data", offset + i / sfinfo1.channels) ;
+			{	retval = comparison_error ("PCM data") ;
 				goto out ;
 				} ;
 			} ;
-		offset += nread1 ;
 		} ;
 
 	if ( (nread2 = sf_readf_double (sf2, buf2, nread1)) != 0)
-	{	retval = comparison_error ("PCM data lengths", -1) ;
+	{	retval = comparison_error ("PCM data lengths") ;
 		goto out ;
 		} ;
 
@@ -133,22 +127,22 @@ print_version (void)
 } /* print_version */
 
 static void
-usage_exit (void)
+print_usage (void)
 {
 	print_version () ;
 
 	printf ("Usage : %s <filename> <filename>\n", progname) ;
 	printf ("	Compare the PCM data of two sound files.\n\n") ;
-	exit (0) ;
-} /* usage_exit */
+} /* print_usage */
 
 int
 main (int argc, char *argv [])
 {
-	progname = program_name (argv [0]) ;
+	progname = strrchr (argv [0], '/') ;
+	progname = progname ? progname + 1 : argv [0] ;
 
 	if (argc != 3)
-	{	usage_exit () ;
+	{	print_usage () ;
 		return 1 ;
 		} ;
 
@@ -157,7 +151,7 @@ main (int argc, char *argv [])
 
 	if (strcmp (filename1, filename2) == 0)
 	{	printf ("Error : Input filenames are the same.\n\n") ;
-		usage_exit () ;
+		print_usage () ;
 		return 1 ;
 		} ;
 

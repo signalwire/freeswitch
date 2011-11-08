@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software ; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -220,6 +220,7 @@ static void
 zero_data_test (const char *filename, int format)
 {	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
+	int			frames ;
 
 	switch (format & SF_FORMAT_TYPEMASK)
 	{	case SF_FORMAT_OGG :
@@ -236,6 +237,8 @@ zero_data_test (const char *filename, int format)
 	sfinfo.format = format ;
 	sfinfo.channels = 1 ;
 	sfinfo.frames = 0 ;
+
+	frames = BUFFER_LEN / sfinfo.channels ;
 
 	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
 
@@ -258,6 +261,7 @@ filesystem_full_test (int format)
 	struct stat buf ;
 
 	const char	*filename = "/dev/full", *errorstr ;
+	int			frames ;
 
 #if (defined (WIN32) || defined (_WIN32))
 	/* Can't run this test on Win32 so return. */
@@ -283,6 +287,8 @@ filesystem_full_test (int format)
 	sfinfo.format = format ;
 	sfinfo.channels = 1 ;
 	sfinfo.frames = 0 ;
+
+	frames = BUFFER_LEN / sfinfo.channels ;
 
 	if ((file = sf_open (filename, SFM_WRITE, &sfinfo)) != NULL)
 	{	printf ("\n\nLine %d : Error, file should not have openned.\n", __LINE__ - 1) ;
@@ -315,6 +321,7 @@ permission_test (const char *filename, int typemajor)
 	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
 	const char	*errorstr ;
+	int			frames ;
 
 	/* Make sure errno is zero before doing anything else. */
 	errno = 0 ;
@@ -352,6 +359,8 @@ permission_test (const char *filename, int typemajor)
 	sfinfo.format = (typemajor | SF_FORMAT_PCM_16) ;
 	sfinfo.channels = 1 ;
 	sfinfo.frames = 0 ;
+
+	frames = BUFFER_LEN / sfinfo.channels ;
 
 	if ((file = sf_open (filename, SFM_WRITE, &sfinfo)) != NULL)
 	{	printf ("\n\nLine %d : Error, file should not have opened.\n", __LINE__ - 1) ;

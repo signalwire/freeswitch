@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2008-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
+# Copyright (C) 2008 Erik de Castro Lopo <erikd@mega-nerd.com>
 #
 # All rights reserved.
 #
@@ -176,8 +176,7 @@ test_post_mod (tests)
 
 test_update ([ ("--str-artist", "Fox") ])
 
-# This never worked.
-# test_coding_history ()
+test_coding_history ()
 
 test_rewrite ()
 

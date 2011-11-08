@@ -30,19 +30,13 @@ oct_module_files = sndfile.oct PKG_ADD
 noinst_DATA = $(oct_module_files)
 
 
-# Used by shave which cleans up automake generated Makefile output.
-V         = @
-Q         = $(V:1=)
-QUIET_GEN = $(Q:@=@echo '  GEN   '$@;)
-
-
 # Use Octave's mkoctfile to do all the heavy lifting. Unfortunately, its
 # a little dumb so we need to guide it carefully.
 sndfile.oct : sndfile.o
-	$(QUIET_GEN) $(MKOCTFILE) -v $(INCLUDES) $(top_builddir)/Octave/$+ -L$(SNDFILEDIR)/.libs -L$(SNDFILEDIR) -lsndfile -o $(top_builddir)/Octave/$@ > /dev/null
+	$(MKOCTFILE) -v $(INCLUDES) $(top_builddir)/Octave/$+ -L$(SNDFILEDIR)/.libs -L$(SNDFILEDIR) -lsndfile -o $(top_builddir)/Octave/$@
 
 sndfile.o : sndfile.cc
-	$(QUIET_GEN) $(MKOCTFILE) -v $(INCLUDES) -c $+ -o $(top_builddir)/Octave/$@ > /dev/null
+	$(MKOCTFILE) -v $(INCLUDES) -c $+ -o $(top_builddir)/Octave/$@
 
 # Allow for the test being run in the build dir, but the test script
 # being located in the source dir.
