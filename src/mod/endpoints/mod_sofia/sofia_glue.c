@@ -3324,6 +3324,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
 									  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);
 					switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
+					if (!switch_false(switch_channel_get_variable(tech_pvt->channel, "sip_jitter_buffer_plc"))) {
+						switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER_PLC);
+					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
 									  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);

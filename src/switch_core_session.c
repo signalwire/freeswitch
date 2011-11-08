@@ -1611,6 +1611,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	flags[CF_BRIDGE_NOWRITE] = 0;
 	flags[CF_RECOVERED] = 0;
 	flags[CF_JITTERBUFFER] = 0;
+	flags[CF_JITTERBUFFER_PLC] = 0;
 	flags[CF_DIALPLAN] = 0;
 	flags[CF_BLOCK_BROADCAST_UNTIL_MEDIA] = 0;
 	flags[CF_CNG_PLC] = 0;
