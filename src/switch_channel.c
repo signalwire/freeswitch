@@ -2811,6 +2811,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	if (channel->state < CS_HANGUP) {
 		switch_channel_state_t last_state;
 		switch_event_t *event;
+		const char *var;
 
 		switch_mutex_lock(channel->state_mutex);
 		last_state = channel->state;
@@ -2827,6 +2828,14 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
 						  channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
+
+
+		switch_channel_set_variable_partner(channel, "last_bridge_hangup_cause", switch_channel_cause2str(hangup_cause));
+
+		if ((var = switch_channel_get_variable(channel, SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE))) {
+			printf("WTF %s\n", var);
+			switch_channel_set_variable_partner(channel, "last_bridge_" SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE, var);
+		}
 
 
 		if (!switch_core_session_running(channel->session) && !switch_core_session_started(channel->session)) {
