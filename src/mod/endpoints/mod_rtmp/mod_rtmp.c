@@ -515,13 +515,13 @@ switch_status_t rtmp_receive_message(switch_core_session_t *session, switch_core
 			const char *name = msg->string_array_arg[0], *number = msg->string_array_arg[1];
 			char *arg = NULL;
 			char *argv[2] = { 0 };
-			int argc;
+			//int argc;
 
 			if (zstr(name) && !zstr(msg->string_arg)) {
 				arg = strdup(msg->string_arg);
 				switch_assert(arg);
 
-				argc = switch_separate_string(arg, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+				switch_separate_string(arg, '|', argv, (sizeof(argv) / sizeof(argv[0])));
 				name = argv[0];
 				number = argv[1];
 

@@ -639,7 +639,7 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 	}
 end:
 	switch_mutex_unlock(rsession->socket_mutex);
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 /* Returns SWITCH_STATUS_SUCCESS of the connection is still active or SWITCH_STATUS_FALSE to tear it down */
