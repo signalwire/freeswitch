@@ -2462,9 +2462,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					
 					if (fail_on_single_reject_var) {
 						const char *cause_str = switch_channel_cause2str(reason);
+						int neg = *fail_on_single_reject_var == '!';
+						int pos = !!switch_stristr(cause_str, fail_on_single_reject_var);
+
+						if (neg) {
+							pos = !pos;
+						}
+
 						check_reject = 0;
 
-						if (fail_on_single_reject == 1 || switch_stristr(cause_str, fail_on_single_reject_var)) {
+						if (fail_on_single_reject == 1 || pos) {
 							force_reason = reason;
 							status = SWITCH_STATUS_FALSE;
 							goto outer_for;
@@ -2747,8 +2754,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
 
 								if (switch_channel_down(pchannel)) {
+									int neg, pos;
 									cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
-									if (switch_stristr(cause_str, fail_on_single_reject_var)) {
+									neg = *fail_on_single_reject_var == '!';
+									pos = !!switch_stristr(cause_str, fail_on_single_reject_var);
+
+									if (neg) {
+										pos = !pos;
+									}
+									
+									if (pos) {
 										ok = 0;
 										break;
 									}
@@ -3454,8 +3469,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
 							wait_for_cause(pchannel);
 							if (switch_channel_down(pchannel)) {
+								int neg, pos;
+								
 								cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
-								if (switch_stristr(cause_str, fail_on_single_reject_var)) {
+
+								neg = *fail_on_single_reject_var == '!';
+								pos = !!switch_stristr(cause_str, fail_on_single_reject_var);
+
+								if (neg) {
+									pos = !pos;
+								}
+								
+								
+								if (pos) {
 									ok = 0;
 									break;
 								}
