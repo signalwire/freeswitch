@@ -32,7 +32,7 @@
  *
  * mod_h323.h -- H323 endpoint
  *
- *	Version 0.0.57
+ *	Version 0.0.58
 */
 
 #if defined(__GNUC__) && defined(HAVE_VISIBILITY)

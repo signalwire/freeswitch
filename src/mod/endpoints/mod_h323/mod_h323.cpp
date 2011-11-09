@@ -33,7 +33,7 @@
  *
  * mod_h323.cpp -- H323 endpoint
  *
- *	Version 0.0.57
+ *	Version 0.0.58
 */
 
 //#define DEBUG_RTP_PACKETS
@@ -1333,7 +1333,19 @@ void FSH323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 					const char *uuid = switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE); 
 					if (uuid != NULL) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"uuid:%s\n",uuid);
-						switch_channel_set_private(switch_core_session_get_channel(switch_core_session_locate(switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE))), "t38_options", t38_options);
+						
+						switch_core_session_t *session = switch_core_session_locate(switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE));
+						if (session) {
+							switch_channel_t * channel = switch_core_session_get_channel(session);
+							if (channel) {
+								switch_channel_set_private(channel, "t38_options", t38_options);
+							}else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no channel?\n");
+							}
+							switch_core_session_rwunlock(session);
+						}else{
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no session\n");
+						}						
 					
 					
 						switch_core_session_message_t msg = { 0 };

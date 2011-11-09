@@ -1505,6 +1505,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames) (%d max drift)\n", 
 										  len, qlen, maxqlen, max_drift);
 						switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
+						if (!switch_false(switch_channel_get_variable(tech_pvt->channel, "sip_jitter_buffer_plc"))) {
+							switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER_PLC);
+						}
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
 										  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);

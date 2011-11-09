@@ -2783,7 +2783,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 	return xml;
 }
 
-SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
+SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offset) 
+{
 
 	const char *xdt = switch_xml_attr(xcond, "date-time");
 	const char *xyear = switch_xml_attr(xcond, "year");
@@ -2797,12 +2798,24 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 	const char *xminute = switch_xml_attr(xcond, "minute");
 	const char *xminday = switch_xml_attr(xcond, "minute-of-day");
 	const char *xtod = switch_xml_attr(xcond, "time-of-day");
+	const char *tzoff = switch_xml_attr(xcond, "tz-offset");
+	int loffset = 0;
 
 	switch_time_t ts = switch_micro_time_now();
 	int time_match = -1;
 	switch_time_exp_t tm;
 
-	switch_time_exp_lt(&tm, ts);
+	if (!zstr(tzoff) && switch_is_number(tzoff)) {
+		loffset = atoi(tzoff);
+		offset = &loffset;
+	}
+
+
+	if (offset) {
+		switch_time_exp_tz(&tm, ts, *offset);
+	} else {
+		switch_time_exp_lt(&tm, ts);
+	}
 
 	if (time_match && xdt) {
 		char tmpdate[80];
