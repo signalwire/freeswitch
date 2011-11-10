@@ -3211,6 +3211,7 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 	/* Update the subscription status for the subscription */
 	switch (status) {
 	case 200:
+	case 202:
 		/* TODO: in the spec it is possible for the other side to change the original expiry time,
 		 * this needs to be researched (eg, what sip header this information will be in) and implemented.
 		 * Although, since it seems the sofia stack is pretty much handling the subscription expiration
