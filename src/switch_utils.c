@@ -2887,6 +2887,32 @@ SWITCH_DECLARE(char *) switch_uuid_str(char *buf, switch_size_t len)
 }
 
 
+SWITCH_DECLARE(char *) switch_format_number(const char *num)
+{
+	char *r;
+	size_t len;
+	const char *p = num;
+	
+	if(*p == '+') {
+		p++;
+	}
+
+	len = strlen(p);
+	
+	/* region 1, TBD add more....*/
+	if (len == 11 && p[0] == '1') {
+		r = switch_mprintf("%c (%c%c%c) %c%c%c-%c%c%c%c", p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10]);
+	} else if (len == 10) {
+		r = switch_mprintf("1 (%c%c%c) %c%c%c-%c%c%c%c", p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9]);
+	} else {
+		r = strdup(num);
+	}
+	
+
+	return r;
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

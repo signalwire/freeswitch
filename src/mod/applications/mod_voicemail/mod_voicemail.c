@@ -1693,7 +1693,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					switch_time_t l_duration = 0;
 					switch_core_time_duration_t duration;
 					char duration_str[80];
-
+					char *formatted_cid_num = NULL;
 					if (!strcasecmp(cbt->read_flags, URGENT_FLAG_STRING)) {
 						priority = 1;
 					}
@@ -1703,6 +1703,8 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 
 					switch_time_exp_lt(&tm, switch_time_make(atol(cbt->created_epoch), 0));
 					switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
+
+					formatted_cid_num = switch_format_number(cbt->cid_number);
 
 					switch_snprintf(tmp, sizeof(tmp), "%d", total_new_messages);
 					switch_channel_set_variable(channel, "voicemail_total_new_messages", tmp);
@@ -1716,6 +1718,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					switch_channel_set_variable(channel, "voicemail_account", cbt->user);
 					switch_channel_set_variable(channel, "voicemail_domain", cbt->domain);
 					switch_channel_set_variable(channel, "voicemail_caller_id_number", cbt->cid_number);
+					switch_channel_set_variable(channel, "voicemail_formatted_caller_id_number", formatted_cid_num);
 					switch_channel_set_variable(channel, "voicemail_caller_id_name", cbt->cid_name);
 					switch_channel_set_variable(channel, "voicemail_file_path", cbt->file_path);
 					switch_channel_set_variable(channel, "voicemail_read_flags", cbt->read_flags);
@@ -1723,6 +1726,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					switch_snprintf(tmp, sizeof(tmp), "%d", priority);
 					switch_channel_set_variable(channel, "voicemail_priority", tmp);
 					message_len = atoi(cbt->message_len);
+					switch_safe_free(formatted_cid_num);
 
 					l_duration = switch_time_make(atol(cbt->message_len), 0);
 					switch_core_measure_time(l_duration, &duration);
@@ -2707,6 +2711,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_time_exp_t tm;
 		char date[80] = "";
 		switch_size_t retsize;
+		char *formatted_cid_num = NULL;
 
 		message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages,
 					  &total_new_urgent_messages, &total_saved_urgent_messages);
@@ -2716,6 +2721,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
 		}
 
+		formatted_cid_num = switch_format_number(caller_id_number);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_current_folder", myfolder);
 		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", total_new_messages);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_total_new_messages", tmpvar);
@@ -2728,10 +2734,13 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_account", myid);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_domain", domain_name);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_caller_id_number", caller_id_number);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_formatted_caller_id_number", formatted_cid_num);		
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_caller_id_name", caller_id_name);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_file_path", file_path);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_read_flags", read_flags);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
+
+		switch_safe_free(formatted_cid_num);
 
 		switch_snprintf(tmpvar, sizeof(tmpvar), "%d", priority);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_priority", tmpvar);
