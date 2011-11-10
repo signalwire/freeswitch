@@ -3171,7 +3171,7 @@ sofia_gateway_subscription_t *sofia_find_gateway_subscription(sofia_gateway_t *g
 void sofia_presence_handle_sip_r_subscribe(int status,
 										   char const *phrase,
 										   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
-								sofia_dispatch_event_t *de,
+										   sofia_dispatch_event_t *de,
 										   tagi_t tags[])
 {
 	sip_event_t const *o = NULL;
@@ -3227,10 +3227,11 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 		gw_sub_ptr->state = SUB_STATE_FAILED;
 
 		if (sofia_private) {
-			nua_handle_destroy(sofia_private->gateway->sub_nh);
-			sofia_private->gateway->sub_nh = NULL;
-			nua_handle_bind(sofia_private->gateway->sub_nh, NULL);
-			sofia_private_free(sofia_private);
+			if (sofia_private->gateway->sub_nh) {
+				nua_handle_bind(sofia_private->gateway->sub_nh, NULL);
+				nua_handle_destroy(sofia_private->gateway->sub_nh);
+				sofia_private->gateway->sub_nh = NULL;
+			}
 		} else {
 			nua_handle_destroy(nh);
 		}
