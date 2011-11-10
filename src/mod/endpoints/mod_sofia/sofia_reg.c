@@ -110,7 +110,7 @@ static void sofia_reg_kill_sub(sofia_gateway_t *gateway_ptr)
 		nua_handle_bind(gateway_ptr->sub_nh, NULL);
 	}
 
-	if (gateway_ptr->state != SUB_STATE_SUBED && gateway_ptr->state != SUB_STATE_UNSUBSCRIBE) {
+	if (gateway_ptr->sub_state != SUB_STATE_SUBED && gateway_ptr->sub_state != SUB_STATE_UNSUBSCRIBE) {
 		if (gateway_ptr->sub_nh) {
 			nua_handle_destroy(gateway_ptr->sub_nh);
 			gateway_ptr->sub_nh = NULL;
@@ -212,6 +212,8 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 				gw_sub_ptr->state = ostate = SUB_STATE_UNSUBED;
 				gw_sub_ptr->expires_str = "0";
 			}
+
+			gateway_ptr->sub_state = gw_sub_ptr->state;
 
 			switch (ostate) {
 			case SUB_STATE_NOSUB:
