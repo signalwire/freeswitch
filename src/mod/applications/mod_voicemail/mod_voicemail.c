@@ -625,7 +625,7 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "email_email-from", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->email_from, NULL, &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "email_date-fmt", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
-						   &profile->date_fmt, "%A, %B %d %Y, %I %M %p", &profile->config_str_pool, NULL, NULL);
+						   &profile->date_fmt, "%A, %B %d %Y, %I:%M %p", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "odbc-dsn", SWITCH_CONFIG_STRING, 0, &profile->odbc_dsn, NULL, &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM_CALLBACK(profile->config[i++], "email_template-file", SWITCH_CONFIG_CUSTOM, CONFIG_RELOADABLE,
 									NULL, NULL, profile, vm_config_email_callback, NULL, NULL);
