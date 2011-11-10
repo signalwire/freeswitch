@@ -3452,45 +3452,42 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			if (status == SWITCH_STATUS_SUCCESS) {
 				goto outer_for;
 			} else {
-				int ok = 0;
+				int ok = 1;
 
-				if (fail_on_single_reject && check_reject) {
-
-					if (!switch_true(fail_on_single_reject_var)) {
-						ok = 1;
-
-						for (i = 0; i < and_argc; i++) {
-							switch_channel_t *pchannel;
-							const char *cause_str;
+				if (fail_on_single_reject && check_reject && !switch_true(fail_on_single_reject_var)) {
+					for (i = 0; i < and_argc; i++) {
+						switch_channel_t *pchannel;
+						const char *cause_str;
 							
-							if (!originate_status[i].peer_session) {
-								continue;
+						if (!originate_status[i].peer_session) {
+							continue;
+						}
+							
+						pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
+						wait_for_cause(pchannel);
+
+						if (switch_channel_down(pchannel)) {
+							int neg, pos;
+								
+							cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
+
+							neg = *fail_on_single_reject_var == '!';
+							pos = !!switch_stristr(cause_str, fail_on_single_reject_var);
+
+							if (neg) {
+								pos = !pos;
 							}
-							pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
-							wait_for_cause(pchannel);
-							if (switch_channel_down(pchannel)) {
-								int neg, pos;
-								
-								cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
-
-								neg = *fail_on_single_reject_var == '!';
-								pos = !!switch_stristr(cause_str, fail_on_single_reject_var);
-
-								if (neg) {
-									pos = !pos;
-								}
 								
 								
-								if (pos) {
-									ok = 0;
-									break;
-								}
+							if (pos) {
+								ok = 0;
+								break;
 							}
 						}
 					}
 				}
-
-				if (ok) {
+				
+				if (!ok) {
 					goto outer_for;
 				}
 
