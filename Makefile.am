@@ -575,7 +575,9 @@ libs/openzap/Makefile:
 	cd libs/openzap && autoconf
 	cd libs/openzap && ./configure
 
-update-clean: clean modwipe uninstall libs/openzap/Makefile python-reconf
+reinstall: modwipe uninstall install
+
+update-clean: clean libs/openzap/Makefile python-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
 	cd libs/portaudio && $(MAKE) clean
@@ -653,14 +655,14 @@ cluecon:
 current: cluecon update-clean is-scm
 	$(MAKE) update
 	$(MAKE) all
-	$(MAKE) install
+	$(MAKE) reinstall
 
 installall: current
 
 speedy-current: update-clean is-scm
 	$(MAKE) update
 	$(MAKE) speedy-sure
-	$(MAKE) install
+	$(MAKE) reinstall
 
 wayclean: clean
 
