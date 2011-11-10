@@ -7355,7 +7355,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 		transport = sofia_glue_url2transport(sip->sip_contact->m_url);
 
-		tech_pvt->record_route =
+		tech_pvt->record_route=
 			switch_core_session_sprintf(session,
 										"sip:%s@%s%s%s:%d;transport=%s",
 										sip->sip_contact->m_url->url_user,
@@ -7432,6 +7432,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		} else {
 			displayname = zstr(from_user) ? "unknown" : from_user;
 		}
+	}
+
+	if (sip->sip_record_route) {
+		char *rr = sip_header_as_string(nh->nh_home, (void *) sip->sip_record_route);
+		switch_channel_set_variable(channel, "sip_invite_record_route", rr);
+	}
+
+	if (sip->sip_via) {
+		char *via = sip_header_as_string(nh->nh_home, (void *) sip->sip_via);
+		switch_channel_set_variable(channel, "sip_invite_via", via);
 	}
 
 	if ((rpid = sip_remote_party_id(sip))) {
