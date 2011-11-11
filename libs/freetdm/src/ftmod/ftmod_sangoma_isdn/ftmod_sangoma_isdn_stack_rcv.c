@@ -1000,7 +1000,7 @@ void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...)
 			ftdm_log(FTDM_LOG_DEBUG, "sng_isdn->%s", data);
 			break;
 		case SNG_LOGLEVEL_WARN:
-			if ( strncmp(data, 'Invalid Q.921/Q.931 frame', 25) ) {
+			if ( strncmp(data, "Invalid Q.921/Q.931 frame", 25) ) {
 				ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
 			}
 			break;
