@@ -1919,20 +1919,6 @@ static int stop_node_thread(void)
 	return 0;
 }
 
-static void check_ocancel(switch_core_session_t *session)
-{
-	//switch_channel_t *channel;
-	//const char *var;
-
-	switch_assert(session);
-
-	//channel = switch_core_session_get_channel(session);
-
-	cancel_caller_outbound_call(switch_core_session_get_uuid(session), SWITCH_CAUSE_ORIGINATOR_CANCEL);
-
-}
-
-
 static void check_cancel(fifo_node_t *node)
 {
 	int ppl_waiting;
@@ -2288,11 +2274,11 @@ SWITCH_STANDARD_APP(fifo_function)
 	char *list_string;
 	int nlist_count;
 	char *nlist[MAX_NODES_PER_CONSUMER];
-	int consumer = 0;
+	int consumer = 0, in_table = 0;
 	const char *arg_fifo_name = NULL;
 	const char *arg_inout = NULL;
 	const char *serviced_uuid = NULL;
-
+	
 	if (!globals.running) {
 		return;
 	}
@@ -2465,6 +2451,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		fifo_queue_push(node->fifo_list[p], call_event);
 		fifo_caller_add(node, session);
+		in_table = 1;
 
 		call_event = NULL;
 		switch_snprintf(tmp, sizeof(tmp), "%d", fifo_queue_size(node->fifo_list[p]));
@@ -2598,9 +2585,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 
-		check_ocancel(session);
-
-		fifo_caller_del(switch_core_session_get_uuid(session));
+		cancel_caller_outbound_call(switch_core_session_get_uuid(session), SWITCH_CAUSE_ORIGINATOR_CANCEL);
 
 		goto done;
 
@@ -3028,8 +3013,6 @@ SWITCH_STANDARD_APP(fifo_function)
 
 
 				fifo_execute_sql(sql, globals.sql_mutex);
-				fifo_caller_del(switch_core_session_get_uuid(other_session));
-
 				switch_safe_free(sql);
 
 
@@ -3212,6 +3195,10 @@ SWITCH_STANDARD_APP(fifo_function)
 	}
 
   done:
+
+	if (!consumer && in_table) {
+		fifo_caller_del(switch_core_session_get_uuid(session));
+	}
 
 	if (switch_true(switch_channel_get_variable(channel, "fifo_destroy_after_use"))) {
 		do_destroy = 1;
