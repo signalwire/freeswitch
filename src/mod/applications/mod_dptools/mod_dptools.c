@@ -159,6 +159,8 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	switch_channel_t *channel;
 	switch_core_session_t *use_session = act->session;
 	int x = 0;
+	char *flags = "";
+
 	if (switch_ivr_dmachine_get_target(match->dmachine) == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_BOTH) {
 		if (switch_core_session_get_partner(act->session, &use_session) != SWITCH_STATUS_SUCCESS) {
 			use_session = act->session;
@@ -168,7 +170,7 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
  top:
 	x++;
 
-	string = act->string;
+	string = switch_core_session_strdup(use_session, act->string);
 	exec = 0;
 
 	channel = switch_core_session_get_channel(use_session);
@@ -180,16 +182,31 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_DEBUG, "%s Digit match binding [%s][%s]\n", 
 						  switch_channel_get_name(channel), act->string, act->value);
 
-		if (!strncasecmp(string, "exec:", 5)) {
-			string += 5;
-			exec = 1;
+		if (!strncasecmp(string, "exec", 4)) {
+			char *e;
+			
+			string += 4;
+			if (*string == ':') {
+				string++;
+				exec = 1;
+			} else if (*string == '[') {
+				flags = string;
+				if ((e = switch_find_end_paren(flags, '[', ']'))) {
+					if (e && *++e == ':') {
+						flags++;
+						*e++ = '\0';
+						string = e;
+						exec = strchr(flags, 'i') ? 2 : 1;
+					}
+				}
+			}
 		}
 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, string, act->value);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
 
 		if (exec) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute", exec == 2 ? "non-blocking" : "blocking");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute", exec == 1 ? "non-blocking" : "blocking");
 		} 
 
 		if ((status = switch_core_session_queue_event(use_session, &event)) != SWITCH_STATUS_SUCCESS) {
@@ -200,8 +217,18 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	}
 
 	if (exec) {
-		char *cmd = switch_core_session_sprintf(use_session, "%s::%s", string, act->value);
-		switch_ivr_broadcast_in_thread(use_session, cmd, SMF_ECHO_ALEG | (act->target == DIGIT_TARGET_BOTH ? 0 : SMF_HOLD_BLEG));
+		if (exec == 2) {
+			switch_core_session_execute_application(use_session, string, act->value);
+		} else {
+			char *cmd = switch_core_session_sprintf(use_session, "%s::%s", string, act->value);
+			switch_media_flag_enum_t exec_flags = SMF_ECHO_ALEG;
+
+			if (act->target != DIGIT_TARGET_BOTH && !strchr(flags, 'H')) {
+				exec_flags = SMF_HOLD_BLEG;
+			}
+
+			switch_ivr_broadcast_in_thread(use_session, cmd, exec_flags);
+		}
 	}
 	
 
