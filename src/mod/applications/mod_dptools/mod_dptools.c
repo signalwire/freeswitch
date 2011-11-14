@@ -224,7 +224,7 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 			switch_media_flag_enum_t exec_flags = SMF_ECHO_ALEG;
 
 			if (act->target != DIGIT_TARGET_BOTH && !strchr(flags, 'H')) {
-				exec_flags = SMF_HOLD_BLEG;
+				exec_flags |= SMF_HOLD_BLEG;
 			}
 
 			switch_ivr_broadcast_in_thread(use_session, cmd, exec_flags);
