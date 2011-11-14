@@ -810,7 +810,7 @@ static void our_sofia_event_callback(nua_event_t event,
 	if (sofia_private && sofia_private->is_call && sofia_private->de) {
 		sofia_dispatch_event_t *qde = sofia_private->de;
 		sofia_private->de = NULL;
-		sofia_process_dispatch_event(&qde);
+		sofia_process_dispatch_event(&qde, SWITCH_TRUE);
 	}
 
 	profile->last_sip_event = switch_time_now();
@@ -1132,7 +1132,7 @@ static void our_sofia_event_callback(nua_event_t event,
 	}
 }
 
-void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
+void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t do_callback)
 {
 	sofia_dispatch_event_t *de = *dep;
 	nua_handle_t *nh = de->nh;
@@ -1141,8 +1141,10 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 
 	*dep = NULL;
 
-	our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
-							 de->nh, nua_handle_magic(de->nh), de->sip, de, (tagi_t *) de->data->e_tags);
+	if (do_callback) {
+		our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
+								 de->nh, nua_handle_magic(de->nh), de->sip, de, (tagi_t *) de->data->e_tags);
+	}
 
 	nua_destroy_event(de->event);	
 	su_free(nh->nh_home, de);
@@ -1166,7 +1168,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 
 	while(switch_queue_pop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
-		sofia_process_dispatch_event(&de);
+		sofia_process_dispatch_event(&de, SWITCH_TRUE);
 		switch_cond_next();
 	}
 
@@ -1217,7 +1219,7 @@ static void sofia_queue_message(sofia_dispatch_event_t *de)
 	int idx = 0;
 
 	if (mod_sofia_globals.running == 0) {
-		sofia_process_dispatch_event(&de);
+		sofia_process_dispatch_event(&de, SWITCH_TRUE);
 		return;
 	}
 
@@ -1280,9 +1282,13 @@ void sofia_event_callback(nua_event_t event,
 		switch_core_session_t *session;
 
 		if (!zstr(sofia_private->uuid)) {
-			if ((session = switch_core_session_locate(sofia_private->uuid))) {
+			if ((session = switch_core_session_force_locate(sofia_private->uuid))) {
 				if (switch_core_session_running(session)) {
-					switch_core_session_queue_signal_data(session, de);
+					if (switch_channel_down_nosig(switch_core_session_get_channel(session))) {
+						sofia_process_dispatch_event(&de, SWITCH_FALSE);
+					} else {
+						switch_core_session_queue_signal_data(session, de);
+					}
 				} else {
 					switch_core_session_message_t msg = { 0 };
 					msg.message_id = SWITCH_MESSAGE_INDICATE_SIGNAL_DATA;

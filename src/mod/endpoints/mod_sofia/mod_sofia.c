@@ -1414,7 +1414,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (switch_core_session_in_thread(session)) {
 			de->session = session;
 		}
-		sofia_process_dispatch_event(&de);
+		sofia_process_dispatch_event(&de, SWITCH_TRUE);
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
 		goto end;
 	}
