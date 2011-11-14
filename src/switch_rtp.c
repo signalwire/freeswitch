@@ -185,7 +185,7 @@ struct switch_rtp {
 	uint32_t last_read_ts;
 	uint32_t last_cng_ts;
 	uint32_t last_write_samplecount;
-	uint32_t next_write_samplecount;
+	uint32_t delay_samples;
 	uint32_t max_next_write_samplecount;
 	uint32_t queue_delay;
 	switch_time_t last_write_timestamp;
@@ -2318,7 +2318,6 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 
 			rtp_session->dtmf_data.out_digit_dur = 0;
 			set_dtmf_delay(rtp_session, 40, 500);
-			
 			return;
 		}
 	}
@@ -2327,16 +2326,23 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 		void *pop;
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-			if (rtp_session->last_write_ts < rtp_session->next_write_samplecount && rtp_session->timer.samplecount < rtp_session->max_next_write_samplecount) {
+			if (rtp_session->timer.samplecount < rtp_session->max_next_write_samplecount) {
 				return;
 			}
+
 			if (rtp_session->timer.samplecount >= rtp_session->max_next_write_samplecount) {
 				rtp_session->queue_delay = 0;
 			}
 
-		} else {
-			if (rtp_session->last_write_ts < rtp_session->next_write_samplecount) {
-				return;
+		} else if (rtp_session->queue_delay) {
+			if (rtp_session->delay_samples >= rtp_session->samples_per_interval) {
+				rtp_session->delay_samples -= rtp_session->samples_per_interval;
+			} else {
+				rtp_session->delay_samples = 0;
+			}
+
+			if (!rtp_session->delay_samples) {
+				rtp_session->queue_delay = 0;
 			}
 		}
 		
@@ -3926,7 +3932,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->last_write_ts = this_ts;
 
 		if (rtp_session->queue_delay) {
-			rtp_session->next_write_samplecount = rtp_session->last_write_ts + rtp_session->queue_delay;
+			rtp_session->delay_samples = rtp_session->queue_delay;
 			rtp_session->queue_delay = 0;
 		}
 
@@ -4175,9 +4181,11 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 	fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && switch_test_flag(frame, SFF_RAW_RTP)) ? 1 : 0;
 
-	if (!fwd && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && (rtp_session->rtp_bugs & RTP_BUG_GEN_ONE_GEN_ALL)) {
+	if (!fwd && !rtp_session->sending_dtmf && !rtp_session->queue_delay && 
+		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && (rtp_session->rtp_bugs & RTP_BUG_GEN_ONE_GEN_ALL)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Generating RTP locally but timestamp passthru is configured, disabling....\n");
 		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE);
+		rtp_session->last_write_ts = RTP_TS_RESET;
 	}
 
 	switch_assert(frame != NULL);

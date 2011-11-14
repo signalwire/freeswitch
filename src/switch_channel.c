@@ -380,18 +380,23 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		char str[2] = "";
 
 		str[0] = new_dtmf.digit;
+
+		if (new_dtmf.digit != 'w' && new_dtmf.digit != 'W') {
+			if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s EXCESSIVE DTMF DIGIT [%s] LEN [%d]\n",
+								  switch_channel_get_name(channel), str, new_dtmf.duration);
+				new_dtmf.duration = switch_core_max_dtmf_duration(0);
+			} else if (new_dtmf.duration < switch_core_min_dtmf_duration(0)) {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s SHORT DTMF DIGIT [%s] LEN [%d]\n",
+								  switch_channel_get_name(channel), str, new_dtmf.duration);
+				new_dtmf.duration = switch_core_min_dtmf_duration(0);
+			} 
+		}
 		
-		if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s EXCESSIVE DTMF DIGIT [%s] LEN [%d]\n",
-							  switch_channel_get_name(channel), str, new_dtmf.duration);
-			new_dtmf.duration = switch_core_max_dtmf_duration(0);
-		} else if (new_dtmf.duration < switch_core_min_dtmf_duration(0)) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s SHORT DTMF DIGIT [%s] LEN [%d]\n",
-							  switch_channel_get_name(channel), str, new_dtmf.duration);
-			new_dtmf.duration = switch_core_min_dtmf_duration(0);
-		} else if (!new_dtmf.duration) {
+		if (!new_dtmf.duration) {
 			new_dtmf.duration = switch_core_default_dtmf_duration(0);
 		}
+		
 
 		switch_zmalloc(dt, sizeof(*dt));
 		*dt = new_dtmf;
