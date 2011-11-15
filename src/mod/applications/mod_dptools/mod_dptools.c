@@ -3339,6 +3339,10 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
   done:
 
+	if (x_user) {
+		switch_xml_free(x_user);
+	}
+
 	switch_xml_free(xml);
 
 	if (params) {
