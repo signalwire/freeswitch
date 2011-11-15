@@ -515,7 +515,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_feed(switch_ivr_dmachine_t *dmachine, const char *digits, switch_ivr_dmachine_match_t **match)
 {
 	const char *p;
-	printf("WTF feed %s %s\n", dmachine->name, digits);
+
 	for (p = digits; p && *p; p++) {
 		switch_mutex_lock(dmachine->mutex);
 		if (dmachine->cur_digit_len < dmachine->max_digit_len) {
