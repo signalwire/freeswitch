@@ -30,6 +30,7 @@
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  * Cesar Cepeda <cesar@auronix.com>
+ * Chris Rienzo <chris@rienzo.net>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -437,6 +438,51 @@ SWITCH_STANDARD_APP(detect_speech_function)
 	}
 }
 
+#define PLAY_AND_DETECT_SPEECH_SYNTAX "<file> detect:<engine> {param1=val1,param2=val2}<grammar>"
+SWITCH_STANDARD_APP(play_and_detect_speech_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *argv[2];
+	char *lbuf = NULL;
+	const char *response = "DONE";
+	char *detect = NULL;
+
+	switch_channel_set_variable(channel, "detect_speech_result", "");
+
+	if (zstr(data) || !(lbuf = switch_core_session_strdup(session, data)) || !(detect = strstr(lbuf, "detect:"))) {
+		/* bad input */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", PLAY_AND_DETECT_SPEECH_SYNTAX);
+		response = "USAGE ERROR";
+		goto done;
+	}
+
+	/* split input at "detect:" */
+	detect[0] = '\0';
+	detect += 7;
+	if (zstr(detect)) {
+		/* bad input */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", PLAY_AND_DETECT_SPEECH_SYNTAX);
+		response = "USAGE ERROR";
+		goto done;
+	}
+
+	/* need to have at 2 parameters for detect */
+	if (switch_separate_string(detect, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) == 2) {
+		char *file = lbuf;
+		char *engine = argv[0];
+		char *grammar = argv[1];
+		char *result = NULL;
+		switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result);
+		switch_channel_set_variable(channel, "detect_speech_result", result);
+	} else {
+		/* bad input */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", PLAY_AND_DETECT_SPEECH_SYNTAX);
+		response = "USAGE ERROR";
+	}
+
+done:
+	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, response);
+}
 
 #define SCHED_HEARTBEAT_SYNTAX "[0|<seconds>]"
 SWITCH_STANDARD_APP(sched_heartbeat_function)
@@ -4000,6 +4046,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "remove_bugs", "Remove media bugs", "Remove all media bugs from a channel.", remove_bugs_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "break", "Break", "Set the break flag.", break_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "detect_speech", "Detect speech", "Detect speech on a channel.", detect_speech_function, DETECT_SPEECH_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "play_and_detect_speech", "Play and do speech recognition", "Play and do speech recognition", play_and_detect_speech_function, PLAY_AND_DETECT_SPEECH_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>",
 				   SAF_SUPPORT_NOMEDIA);

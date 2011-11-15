@@ -156,6 +156,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 																uint32_t first_timeout, uint32_t digit_timeout, uint32_t abs_timeout);
 
 /*!
+  \brief play a file to the session while doing speech recognition.
+  \param session the session to play and detect on
+  \param file the path to the file
+  \param mod_name the module name of the ASR library
+  \param grammar the grammar text, URI, or local file name
+  \param result of speech recognition, allocated from the session pool
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_session_t *session, 
+														const char *file,
+														const char *mod_name,
+														const char *grammar,
+														char **result);
+
+/*!
   \brief Engage background Speech detection on a session
   \param session the session to attach
   \param mod_name the module name of the ASR library
