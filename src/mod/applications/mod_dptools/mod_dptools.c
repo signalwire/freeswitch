@@ -3161,7 +3161,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
 												 switch_call_cause_t *cancel_cause)
 {
-	switch_xml_t xml = NULL, x_user = NULL, x_param, x_params;
+	switch_xml_t x_user = NULL, x_param, x_params;
 	char *user = NULL, *domain = NULL, *dup_domain = NULL;
 	const char *dest = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
@@ -3326,8 +3326,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			switch_safe_free(d_dest);
 		}
 	}
-
-	if (new_channel && xml) {
+	
+	if (new_channel && x_user) {
 		if ((x_params = switch_xml_child(x_user, "variables"))) {
 			for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
 				const char *pvar = switch_xml_attr(x_param, "name");
@@ -3342,8 +3342,6 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	if (x_user) {
 		switch_xml_free(x_user);
 	}
-
-	switch_xml_free(xml);
 
 	if (params) {
 		switch_event_destroy(&params);
