@@ -1796,7 +1796,8 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-LOC-Presentation", "%s", var_value);
 		}
 
-		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_loc_pres_nadi");
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_loc_nadi");
+		printf ( "ss7_loc_nadi = %s \n " , var_value );
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-LOC-NADI", "%s", var_value);
 		}
