@@ -5429,13 +5429,18 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 		switch_channel_set_variable(channel, "sip_handle_full_from", switch_channel_get_variable(channel, "sip_full_from"));
 		switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, "sip_full_to"));
 	} else {
+		const char *rr;
 
 		tech_pvt->redirected = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_contact_uri"));
 
-		switch_channel_set_variable_printf(channel, "sip_invite_route_uri", "<sip:%s@%s:%s;lr>",
-										   switch_channel_get_variable(channel, "sip_from_user"),
-										   switch_channel_get_variable(channel, "sip_network_ip"), switch_channel_get_variable(channel, "sip_network_port")
-										   );
+		if ((rr = switch_channel_get_variable(channel, "sip_invite_record_route"))) {
+			switch_channel_set_variable(channel, "sip_invite_route_uri", rr);
+		} else {
+			switch_channel_set_variable_printf(channel, "sip_invite_route_uri", "<sip:%s@%s:%s;lr>",
+											   switch_channel_get_variable(channel, "sip_from_user"),
+											   switch_channel_get_variable(channel, "sip_network_ip"), switch_channel_get_variable(channel, "sip_network_port")
+											   );
+		}
 
 		tech_pvt->dest = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_from_uri"));
 
