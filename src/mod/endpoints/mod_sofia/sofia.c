@@ -3349,6 +3349,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							profile->timer_t4 = 4000;
 						}
 						nua_set_params(profile->nua, NTATAG_SIP_T4(profile->timer_t4), TAG_END());
+					} else if (!strcasecmp(var, "sip-options-respond-503-on-busy")) {
+                                                if (switch_true(val)) {
+                                                        sofia_set_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
+                                                } else {
+                                                        sofia_clear_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
+                                                }
 					}
 				}
 			}
@@ -4352,6 +4358,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							profile->timer_t4 = 4000;
 						}
+                                        } else if (!strcasecmp(var, "sip-options-respond-503-on-busy")) {
+                                                if (switch_true(val)) {
+                                                        sofia_set_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
+                                                } else {
+                                                        sofia_clear_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
+                                                }
 					} else if (!strcasecmp(var, "reuse-connections")) {
 						switch_bool_t value = switch_true(val);
 						if (!value) {
@@ -8253,7 +8265,16 @@ void sofia_handle_sip_i_options(int status,
 								sofia_dispatch_event_t *de,
 								tagi_t tags[])
 {
-	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+	uint32_t sess_count = switch_core_session_count();
+	uint32_t sess_max = switch_core_session_limit(0);
+
+	if (sofia_test_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY) &&
+			(sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready())) {
+		nua_respond(nh, 503, "Maximum Calls In Progress", NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+	} else {
+		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+	}
+
 }
 
 void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t *bleg)
