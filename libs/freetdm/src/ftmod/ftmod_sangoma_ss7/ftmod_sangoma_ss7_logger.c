@@ -810,6 +810,11 @@ void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
 
 		break;
 	/**************************************************************************/
+	case (LRY_USTA_TCP_CONN_FAILED):
+		ftdm_log(FTDM_LOG_ERROR,"[RELAY] TCP connection failed \n" );
+
+		break;
+	/**************************************************************************/
 	default:
 		ftdm_log(FTDM_LOG_ERROR,"Unknown Relay Alram\n");
 		break;

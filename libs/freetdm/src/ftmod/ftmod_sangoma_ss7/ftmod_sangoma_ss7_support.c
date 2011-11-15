@@ -1943,6 +1943,7 @@ ftdm_status_t check_status_of_all_isup_intf(void)
 
 		if (ftmod_ss7_isup_intf_sta(sngss7_intf->id, &status)) {
 			SS7_ERROR("Failed to get status of ISUP intf %d\n", sngss7_intf->id);
+			sngss7_set_flag(sngss7_intf, SNGSS7_PAUSED);
 			continue;
 		}
 

@@ -1166,10 +1166,24 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_SUSPENDED:	/* circuit has been blocked */
 
-		  SS7_DEBUG_CHAN(ftdmchan,"SUSPEND: Current flags: ckt=0x%X, blk=0x%X\n", 
-									sngss7_info->ckt_flags,
-									sngss7_info->blk_flags);
-
+		SS7_DEBUG_CHAN(ftdmchan,"SUSPEND: Current flags: ckt=0x%X, blk=0x%X, circuit->flag=0x%X\n", 
+					sngss7_info->ckt_flags, sngss7_info->blk_flags,
+					sngss7_info->circuit->flags );
+		
+		if (!(sngss7_info->circuit->flags & SNGSS7_CONFIGURED)) {
+			if (  !sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED) 
+			    ||(sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_RESUME))) {
+				if (ftmod_ss7_isup_ckt_config(sngss7_info->circuit->id)) {
+					SS7_CRITICAL("ISUP CKT %d configuration FAILED!\n", sngss7_info->circuit->id);
+					*(int*)0=0;
+					return 1;
+				} else {
+					SS7_INFO("ISUP CKT %d configuration DONE!\n", sngss7_info->circuit->id);
+				}
+				sngss7_info->circuit->flags |= SNGSS7_CONFIGURED;
+			}
+		}
+		 
 		/**********************************************************************/
 		if (sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_RESUME)) {
 
