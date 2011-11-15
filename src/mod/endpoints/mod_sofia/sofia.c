@@ -182,15 +182,47 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 				su_free(nh->nh_home, full);
 			}
 		}
-		if (sip->sip_via) {
-			if ((full = sip_header_as_string(nh->nh_home, (void *) sip->sip_via))) {
-				const char *v = switch_channel_get_variable(channel, "sip_full_via");
-				if (!v) {
-					switch_channel_set_variable(channel, "sip_full_via", full);
-				}
-				su_free(nh->nh_home, full);
+
+		if (sip->sip_record_route) {
+			sip_record_route_t *rrp;
+			switch_stream_handle_t stream = { 0 };
+			int x = 0;
+
+			SWITCH_STANDARD_STREAM(stream);
+
+			for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
+				char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
+
+				stream.write_function(&stream, x == 0 ? "%s" : ",%s", rr);
+				su_free(nh->nh_home, rr);
+				
+				x++;
 			}
+
+			switch_channel_set_variable(channel, "sip_invite_record_route", (char *)stream.data);
+			free(stream.data);
 		}
+
+		if (sip->sip_via) {
+			sip_via_t *vp;
+			switch_stream_handle_t stream = { 0 };
+			int x = 0;
+
+			SWITCH_STANDARD_STREAM(stream);
+
+			for(vp = sip->sip_via; vp; vp = vp->v_next) {
+				char *v = sip_header_as_string(nh->nh_home, (void *) vp);
+
+				stream.write_function(&stream, x == 0 ? "%s" : ",%s", v);
+				su_free(nh->nh_home, v);
+				
+				x++;
+			}
+
+			switch_channel_set_variable(channel, "sip_invite_via", (char *)stream.data);
+			free(stream.data);
+		}
+		
 		if (sip->sip_from) {
 			char *p = strip_quotes(sip->sip_from->a_display);
 
@@ -7438,16 +7470,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		} else {
 			displayname = zstr(from_user) ? "unknown" : from_user;
 		}
-	}
-
-	if (sip->sip_record_route) {
-		char *rr = sip_header_as_string(nh->nh_home, (void *) sip->sip_record_route);
-		switch_channel_set_variable(channel, "sip_invite_record_route", rr);
-	}
-
-	if (sip->sip_via) {
-		char *via = sip_header_as_string(nh->nh_home, (void *) sip->sip_via);
-		switch_channel_set_variable(channel, "sip_invite_via", via);
 	}
 
 	if ((rpid = sip_remote_party_id(sip))) {
