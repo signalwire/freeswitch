@@ -140,8 +140,26 @@ static switch_status_t en_say_general_count(switch_say_file_handle_t *sh, char *
 				in -= places[(uint32_t) x] * num;
 			}
 		}
+		
 
 		switch (say_args->method) {
+		case SSM_PRONOUNCED_YEAR:
+			{
+				int num = atoi(tosay);
+				int a = num / 100;
+				int b = num % 100;
+
+				if (!b || !(a % 10)) {
+					say_num(sh, num, SSM_PRONOUNCED);
+					return SWITCH_STATUS_SUCCESS;
+				}
+
+				say_num(sh, a, SSM_PRONOUNCED);
+				say_num(sh, b, SSM_PRONOUNCED);
+
+				return SWITCH_STATUS_SUCCESS;
+			}
+			break;
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
 			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million", sh)) != SWITCH_STATUS_SUCCESS) {
@@ -340,7 +358,7 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		say_num(sh, tm.tm_mday, SSM_COUNTED);
 	}
 	if (say_year) {
-		say_num(sh, tm.tm_year + 1900, SSM_PRONOUNCED);
+		say_num(sh, tm.tm_year + 1900, SSM_PRONOUNCED_YEAR);
 	}
 
 	if (say_time) {

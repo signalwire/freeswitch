@@ -350,7 +350,8 @@ typedef enum {
 	SSM_NA,
 	SSM_PRONOUNCED,
 	SSM_ITERATED,
-	SSM_COUNTED
+	SSM_COUNTED,
+	SSM_PRONOUNCED_YEAR
 } switch_say_method_t;
 
 /* WARNING, Do not forget to update *SAY_TYPE_NAMES[] in src/switch_ivr_say.c */
