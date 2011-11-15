@@ -290,7 +290,8 @@ typedef enum {
 	DM_MATCH_NONE,
 	DM_MATCH_EXACT,
 	DM_MATCH_PARTIAL,
-	DM_MATCH_BOTH
+	DM_MATCH_BOTH,
+	DM_MATCH_NEVER
 } dm_match_t;
 
 
@@ -298,6 +299,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 {
 	dm_match_t best = DM_MATCH_NONE;
 	switch_ivr_dmachine_binding_t *bp, *exact_bp = NULL, *partial_bp = NULL, *both_bp = NULL, *r_bp = NULL;
+	int pmatches = 0;
 	
 	if (!dmachine->cur_digit_len || !dmachine->realm) goto end;
 
@@ -311,19 +313,24 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 					exact_bp = bp;
 					break;
 				}
-
+				pmatches = 1;
 				best = DM_MATCH_PARTIAL;
 			}
 		} else {
+			int pmatch = !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits));
 
-			if (!exact_bp && !strcmp(bp->digits, dmachine->digits)) {
+			if (pmatch) {
+				pmatches++;
+			}
+
+			if (!exact_bp && pmatch && !strcmp(bp->digits, dmachine->digits)) {
 				best = DM_MATCH_EXACT;
 				exact_bp = bp;
 				if (dmachine->cur_digit_len == dmachine->max_digit_len) break;
 			} 
 
-			if (!(both_bp && partial_bp) && strlen(bp->digits) != strlen(dmachine->digits) && 
-				!strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
+			if (!(both_bp && partial_bp) && strlen(bp->digits) != strlen(dmachine->digits) && pmatch) {
+				
 				if (exact_bp) {
 					best = DM_MATCH_BOTH;
 					both_bp = bp;
@@ -336,6 +343,11 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 			if (both_bp && exact_bp && partial_bp) break;
 		}
 	}
+
+	if (!pmatches) {
+		best = DM_MATCH_NEVER;
+	}
+
 	
  end:
 
@@ -399,6 +411,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	switch_status_t r, s;
 	int clear = 0;
 
+	if (is_match == DM_MATCH_NEVER) {
+		is_timeout++;
+	}
+	
 	switch_mutex_lock(dmachine->mutex);
 
 	if (zstr(dmachine->digits) && !is_timeout) {
@@ -498,16 +514,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_feed(switch_ivr_dmachine_t *dmachine, const char *digits, switch_ivr_dmachine_match_t **match)
 {
-	if (strlen(digits) + strlen(dmachine->digits) > dmachine->max_digit_len) {
-		return SWITCH_STATUS_FALSE;
+	const char *p;
+	printf("WTF feed %s %s\n", dmachine->name, digits);
+	for (p = digits; p && *p; p++) {
+		switch_mutex_lock(dmachine->mutex);
+		if (dmachine->cur_digit_len < dmachine->max_digit_len) {
+			char *e = dmachine->digits + strlen(dmachine->digits);
+			*e++ = *p;
+			*e = '\0';
+			dmachine->cur_digit_len++;
+			switch_mutex_unlock(dmachine->mutex);
+			dmachine->last_digit_time = switch_time_now();
+			switch_ivr_dmachine_ping(dmachine, match);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "dmachine overflow error!\n");
+		}
 	}
-	
-	switch_mutex_lock(dmachine->mutex);
-	strncat(dmachine->digits, digits, dmachine->max_digit_len);
-	switch_mutex_unlock(dmachine->mutex);
-	dmachine->cur_digit_len = strlen(dmachine->digits);
-	dmachine->last_digit_time = switch_time_now();
-	
+		
 	return switch_ivr_dmachine_ping(dmachine, match);
 }
 
