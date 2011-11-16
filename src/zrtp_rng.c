@@ -158,7 +158,7 @@ int zrtp_add_system_state(zrtp_global_t* zrtp, MD_CTX *ctx) {
 	return entropy_length;
 }
 
-#elif ( (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD) )
+#elif ( (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD) ||  (ZRTP_PLATFORM == ZP_ANDROID) )
 
 #if ZRTP_HAVE_STDIO_H == 1
 #	include <stdio.h>

@@ -79,10 +79,7 @@ typedef struct zrtp_session_info_t	zrtp_session_info_t;
  * big-endian (most significant byte first).
  */
 
-ZRTP_INLINE uint16_t zrtp_swap16(uint16_t x) {
-	return (x >> 8 | x << 8);
-}
-
+uint16_t zrtp_swap16(uint16_t x);
 uint32_t zrtp_swap32(uint32_t x);
 uint64_t zrtp_swap64(uint64_t x);
 

@@ -86,6 +86,10 @@ void zrtp_v128_xor(zrtp_v128_t *z, zrtp_v128_t *x, zrtp_v128_t *y)
 }
 
 /*---------------------------------------------------------------------------*/
+uint16_t zrtp_swap16(uint16_t x) {
+	return (x >> 8 | x << 8);
+}
+
 uint32_t zrtp_swap32(uint32_t x)
 {
 	uint32_t res = (x >> 8 & 0x0000ff00) | (x << 8 & 0x00ff0000);

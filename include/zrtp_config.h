@@ -17,7 +17,9 @@
  * If platworm is not specified manually in zrtp_config_user.h - try to detect it aytomatically
  */
 #if !defined(ZRTP_PLATFORM)
-#	if defined(linux) || defined(__linux)
+#	if defined(ANDROID_NDK)
+#		define ZRTP_PLATFORM ZP_ANDROID
+#	elif defined(linux) || defined(__linux)
 #		include <linux/version.h>
 #		define ZRTP_PLATFORM ZP_LINUX
 #	elif defined(__MACOSX__) || defined (__APPLE__) || defined (__MACH__)
@@ -38,7 +40,9 @@
 #	endif
 #endif
 
-#if (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD) || defined(ZRTP_AUTOMAKE)
+#if ZRTP_PLATFORM == ZP_ANDROID
+#	include "zrtp_config_android.h"
+#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD) || defined(ZRTP_AUTOMAKE)
 #	include "zrtp_config_unix.h"
 #elif (ZRTP_PLATFORM == ZP_WIN32) || (ZRTP_PLATFORM == ZP_WIN32_KERNEL) || (ZRTP_PLATFORM == ZP_WINCE)
 #	include "zrtp_config_win.h"
@@ -59,7 +63,7 @@
 
 /* 
  * ZRTP BYTEORDER DETECTION
- * If the byte order is not specified manually in zrtp_config_user.h - try to detect it aytomatically
+ * If the byte order is not specified manually in zrtp_config_user.h - try to detect it automatically
  */
 #if !defined(ZRTP_BYTE_ORDER)
 
@@ -139,7 +143,7 @@
 #	endif
 #endif
 
-#if (ZRTP_PLATFORM == ZP_WINCE) || (ZRTP_PLATFORM == ZP_SYMBIAN)
+#if (ZRTP_PLATFORM == ZP_WINCE) || (ZRTP_PLATFORM == ZP_SYMBIAN) || (ZRTP_PLATFORM == ZP_ANDROID)
 #	define ALIGNMENT_32BIT_REQUIRED
 #endif
 

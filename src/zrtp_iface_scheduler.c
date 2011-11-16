@@ -79,7 +79,7 @@ int zrtp_thread_create(zrtp_thread_routine_t start_routine, void *arg)
 	return 0;
 }
 
-#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD)
+#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD) || (ZRTP_PLATFORM == ZP_ANDROID)
 #if ZRTP_HAVE_UNISTD_H == 1
 #include <unistd.h>
 #else
@@ -93,7 +93,8 @@ int zrtp_thread_create(zrtp_thread_routine_t start_routine, void *arg)
 
 int zrtp_sleep(unsigned int msec)
 {
-	return usleep(msec*1000);
+	usleep(msec*1000);
+	return 0;
 }
 
 int zrtp_thread_create(zrtp_thread_routine_t start_routine, void *arg)

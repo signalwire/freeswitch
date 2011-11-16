@@ -105,7 +105,7 @@ static void zrtp_log(uint8_t is_clean, const char *sender, uint32_t level,  cons
 #	endif
 #elif (ZRTP_PLATFORM == ZP_WIN32_KERNEL)
 	RtlStringCchVPrintfA(sline, ZRTP_LOG_BUFFER_SIZE-offset, format, marker);
-#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD)	
+#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD) || (ZRTP_PLATFORM == ZP_ANDROID)
 	len = vsnprintf(sline, ZRTP_LOG_BUFFER_SIZE-offset, format, marker);
 #elif (ZRTP_PLATFORM == ZP_SYMBIAN)
 	len = vsprintf(sline, format, marker);
@@ -408,6 +408,8 @@ void zrtp_print_env_settings(zrtp_config_t* config)
 	char* platform = "Linux OS";
 #elif (ZRTP_PLATFORM == ZP_SYMBIAN) 
 	char* platform = "Symbian OS";
+#elif (ZRTP_PLATFORM == ZP_ANDROID) 
+	char* platform = "Android OS";
 #endif
 	
 	ZRTP_LOG(3,("zrtp","============================================================\n"));

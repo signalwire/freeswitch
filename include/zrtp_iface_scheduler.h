@@ -41,7 +41,7 @@ extern "C"
 #if (ZRTP_PLATFORM == ZP_WIN32) || (ZRTP_PLATFORM == ZP_WINCE)
 #include <windows.h>
 	typedef LPTHREAD_START_ROUTINE zrtp_thread_routine_t;
-#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD)
+#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD) || (ZRTP_PLATFORM == ZP_ANDROID)
 	typedef	void *(*zrtp_thread_routine_t)(void*);
 #elif (ZRTP_PLATFORM == ZP_SYMBIAN)
 	typedef int(*zrtp_thread_routine_t)(void*);

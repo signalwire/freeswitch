@@ -53,7 +53,8 @@
 #define ZP_SYMBIAN					105
 /** \brief Constant to define ZRTP BSD platform */
 #define ZP_BSD						107
-
+/** \brief Constant to define ZRTP Android platform */
+#define ZP_ANDROID					108
 
 /** \brief Define Platform manually there */
 //#undefine ZRTP_PLATFORM

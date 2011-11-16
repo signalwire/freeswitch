@@ -95,7 +95,7 @@ zrtp_status_t zrtp_mutex_unlock(zrtp_mutex_t* mutex)
 }
 
 /*---------------------------------------------------------------------------*/
-#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD)
+#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD) || (ZRTP_PLATFORM == ZP_ANDROID)
 
 #if defined ZRTP_HAVE_PTHREAD_H
 #	include <pthread.h>
@@ -236,7 +236,7 @@ zrtp_status_t zrtp_sem_post(zrtp_sem_t* sem)
 	return (0 == ReleaseSemaphore(sem->sem, 1, NULL)) ? zrtp_status_fail : zrtp_status_ok;
 } 
 
-#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD)
+#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD) || (ZRTP_PLATFORM == ZP_ANDROID)
 
 #if defined ZRTP_HAVE_STDIO_H
 #	include <stdio.h>
@@ -445,7 +445,7 @@ zrtp_time_t zrtp_time_now()
 }
 
 /*---------------------------------------------------------------------------*/
-#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_SYMBIAN) || (ZRTP_PLATFORM == ZP_BSD)
+#elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_SYMBIAN) || (ZRTP_PLATFORM == ZP_BSD) || (ZRTP_PLATFORM == ZP_ANDROID)
 
 #if defined ZRTP_HAVE_SYS_TIME_H
 #	include <sys/time.h>
