@@ -189,7 +189,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(const char *event_name = NULL, const char *subclass_name = "");
 		 SWITCH_DECLARE_CONSTRUCTOR ~ EventConsumer();
 		 SWITCH_DECLARE(int) bind(const char *event_name, const char *subclass_name = "");
-		 SWITCH_DECLARE(Event *) pop(int block = 0);
+		 SWITCH_DECLARE(Event *) pop(int block = 0, int timeout = 0);
 	 };
 
 #ifdef SWIG
