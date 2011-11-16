@@ -1954,12 +1954,19 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	char *record_route = NULL;
 
 	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
+		const char *recover_contact = switch_channel_get_variable(tech_pvt->channel, "sip_recover_contact");
+
 		if (!zstr(invite_record_route)) {
 			record_route = switch_core_session_sprintf(session, "Record-Route: %s", invite_record_route);
 		}
+		
+		if (recover_contact) {
+			char *tmp = switch_core_session_strdup(session, recover_contact);
+			tech_pvt->redirected = sofia_glue_get_url_from_contact(tmp, 0);
+		}
 	}
-	
-	
+
+
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
 	switch_assert(tech_pvt != NULL);
@@ -5384,6 +5391,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 	switch_channel_t *channel;
 	private_object_t *tech_pvt = NULL;
 	const char *tmp;
+	const char *rr;
 
 	xml = switch_xml_parse_str_dynamic(argv[3], SWITCH_TRUE);
 
@@ -5424,18 +5432,17 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 		} 
 	}
 
+	rr = switch_channel_get_variable(channel, "sip_invite_record_route");
+
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		tech_pvt->dest = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_req_uri"));
 		switch_channel_set_variable(channel, "sip_handle_full_from", switch_channel_get_variable(channel, "sip_full_from"));
 		switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, "sip_full_to"));
 	} else {
-		const char *rr;
-
+		
 		tech_pvt->redirected = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_contact_uri"));
 
-		if ((rr = switch_channel_get_variable(channel, "sip_invite_record_route"))) {
-			switch_channel_set_variable(channel, "sip_invite_route_uri", rr);
-		} else {
+		if (zstr(rr)) {
 			switch_channel_set_variable_printf(channel, "sip_invite_route_uri", "<sip:%s@%s:%s;lr>",
 											   switch_channel_get_variable(channel, "sip_from_user"),
 											   switch_channel_get_variable(channel, "sip_network_ip"), switch_channel_get_variable(channel, "sip_network_port")
@@ -5451,6 +5458,10 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 		if (!switch_channel_get_variable_dup(channel, "sip_handle_full_to", SWITCH_FALSE, -1)) {
 			switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, "sip_full_from"));
 		}
+	}
+
+	if (rr) {
+		switch_channel_set_variable(channel, "sip_invite_route_uri", rr);
 	}
 
 	tech_pvt->dest_to = tech_pvt->dest;

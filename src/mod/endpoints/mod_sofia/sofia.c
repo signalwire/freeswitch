@@ -183,6 +183,12 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 			}
 		}
 
+		if (sip->sip_contact) {
+			char *c = sip_header_as_string(nh->nh_home, (void *) sip->sip_contact);
+			switch_channel_set_variable(channel, "sip_invite_contact", c);
+			su_free(nh->nh_home, c);
+		}
+
 		if (sip->sip_record_route) {
 			sip_record_route_t *rrp;
 			switch_stream_handle_t stream = { 0 };
@@ -192,13 +198,13 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 
 			for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
 				char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
-
+				
 				stream.write_function(&stream, x == 0 ? "%s" : ",%s", rr);
 				su_free(nh->nh_home, rr);
 				
 				x++;
 			}
-
+			
 			switch_channel_set_variable(channel, "sip_invite_record_route", (char *)stream.data);
 			free(stream.data);
 		}
@@ -235,6 +241,7 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 				su_free(nh->nh_home, full);
 			}
 		}
+
 		if (sip->sip_to) {
 			char *p = strip_quotes(sip->sip_to->a_display);
 
