@@ -283,7 +283,7 @@ namespace FreeSWITCH {
         protected override bool LoadInternal(string fileName) {
             Assembly asm;
             try {
-                asm = Assembly.LoadFrom(fileName);
+                asm = Assembly.Load(System.IO.File.ReadAllBytes(fileName));
             } catch (Exception ex) {
                 Log.WriteLine(LogLevel.Info, "Couldn't load {0}: {1}", fileName, ex.Message);
                 return false;
