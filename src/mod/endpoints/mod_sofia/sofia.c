@@ -1177,8 +1177,17 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t do
 	nua_handle_t *nh = de->nh;
 	nua_t *nua = de->nua;
 	sofia_profile_t *profile = de->profile;
-
+	nua_event_t event;
 	*dep = NULL;
+
+	event = de->data->e_event;
+
+	if (de->session && switch_channel_down_nosig(switch_core_session_get_channel(de->session))) {
+		if (event == nua_i_invite) {
+			nua_respond(nh, 481, "Channel Hanging Up", TAG_END());
+		}
+		do_callback = SWITCH_FALSE;
+	}
 
 	if (do_callback) {
 		our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
@@ -1323,11 +1332,7 @@ void sofia_event_callback(nua_event_t event,
 		if (!zstr(sofia_private->uuid)) {
 			if ((session = switch_core_session_force_locate(sofia_private->uuid))) {
 				if (switch_core_session_running(session)) {
-					if (switch_channel_down_nosig(switch_core_session_get_channel(session))) {
-						sofia_process_dispatch_event(&de, SWITCH_FALSE);
-					} else {
-						switch_core_session_queue_signal_data(session, de);
-					}
+					switch_core_session_queue_signal_data(session, de);
 				} else {
 					switch_core_session_message_t msg = { 0 };
 					msg.message_id = SWITCH_MESSAGE_INDICATE_SIGNAL_DATA;
@@ -7168,8 +7173,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	char sip_acl_authed_by[512] = "";
 	char sip_acl_token[512] = "";
 
-	profile->ib_calls++;
-
 	if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING)) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 		goto fail;
@@ -8233,6 +8236,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting NAT mode based on %s\n", is_nat);
 			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
+
+		profile->ib_calls++;
 		return;
 	}
 

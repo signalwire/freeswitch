@@ -508,6 +508,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+				switch_ivr_parse_all_signal_data(session);
 				nua_bye(tech_pvt->nh,
 						TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
@@ -521,6 +522,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_cancel");
 				}
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+					switch_ivr_parse_all_signal_data(session);
 					nua_cancel(tech_pvt->nh,
 							   TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
 				}
@@ -955,10 +957,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	if (sofia_test_flag(tech_pvt, TFLAG_HUP)) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session) && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
+	for(;;) {
+	//while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session) && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
 		switch_ivr_parse_all_messages(tech_pvt->session);
-
 		if (--sanity && switch_channel_up(channel)) {
 			switch_yield(10000);
 		} else {
