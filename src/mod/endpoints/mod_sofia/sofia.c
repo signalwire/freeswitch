@@ -196,13 +196,34 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 
 			SWITCH_STANDARD_STREAM(stream);
 
-			for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
-				char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+				char *tmp[128] = { 0 };
+				int y = 0;
 				
-				stream.write_function(&stream, x == 0 ? "%s" : ",%s", rr);
-				su_free(nh->nh_home, rr);
+				for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
+					char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
+					tmp[y++] = rr;
+					if (y == 127) break;
+				}
 				
-				x++;
+				y--;
+
+				while(y >= 0) {
+					stream.write_function(&stream, x == 0 ? "%s" : ",%s", tmp[y]);
+					su_free(nh->nh_home, tmp[y]);
+					y--;
+					x++;
+				}
+
+			} else {
+				for(rrp = sip->sip_record_route; rrp; rrp = rrp->r_next) {
+					char *rr = sip_header_as_string(nh->nh_home, (void *) rrp);
+				
+					stream.write_function(&stream, x == 0 ? "%s" : ",%s", rr);
+					su_free(nh->nh_home, rr);
+				
+					x++;
+				}
 			}
 			
 			switch_channel_set_variable(channel, "sip_invite_record_route", (char *)stream.data);
