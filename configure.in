@@ -420,7 +420,7 @@ case "$host" in
 	if test "x$enable_core_odbc_support" != "xno"; then
 	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lrt])
     ;;
     *darwin*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
@@ -428,7 +428,7 @@ case "$host" in
 	if test "x$enable_core_odbc_support" != "xno"; then
 	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lrt])
     ;;
     *-solaris2*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048 -D__EXTENSIONS__)
