@@ -1374,7 +1374,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 
  end:
 
-	//switch_safe_free(mbuf);
+	switch_safe_free(mbuf);
 	return status;
 
 }
