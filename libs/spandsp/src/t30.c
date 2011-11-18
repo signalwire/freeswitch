@@ -781,11 +781,11 @@ static int send_next_ecm_frame(t30_state_t *s)
         }
         s->ecm_current_tx_frame = s->ecm_frames;
     }
-    if (s->ecm_current_tx_frame <= s->ecm_frames + 3)
+    if (s->ecm_current_tx_frame < s->ecm_frames + 3)
     {
-        /* We have sent all the FCD frames. Send some RCP frames. Three seems to be
-           a popular number, to minimise the risk of a bit error stopping the receiving
-           end from recognising the RCP. */
+        /* We have sent all the FCD frames. Send three RCP frames, as per
+           T.4/A.1 and T.4/A.2. The repeats are to minimise the risk of a bit
+           error stopping the receiving end from recognising the RCP. */
         s->ecm_current_tx_frame++;
         /* The RCP frame is an odd man out, as its a simple 1 byte control
            frame, but is specified to not have the final bit set. It doesn't
@@ -794,7 +794,8 @@ static int send_next_ecm_frame(t30_state_t *s)
         frame[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         frame[2] = T4_RCP;
         send_frame(s, frame, 3);
-        /* In case we are just after a CTC/CTR exchange, which kicked us back to long training */
+        /* In case we are just after a CTC/CTR exchange, which kicked us back
+           to long training */
         s->short_train = TRUE;
         return 0;
     }
