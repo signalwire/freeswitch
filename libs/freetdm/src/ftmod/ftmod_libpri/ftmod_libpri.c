@@ -319,7 +319,8 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				ftdm_libpri_data_t *isdn_data = span->signal_data;
 
 				if (span->start != ftdm_libpri_start) {
-					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					stream->write_function(stream, "%s: -ERR '%s' is not a libpri span.\n",
+						__FILE__, ftdm_span_get_name(span));
 					goto done;
 				}
 
@@ -327,7 +328,8 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				stream->write_function(stream, "%s: +OK killed.\n", __FILE__);
 				goto done;
 			} else {
-				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+				stream->write_function(stream, "%s: -ERR span '%s' not found.\n",
+					__FILE__, argv[0]);
 				goto done;
 			}
 		}
@@ -340,7 +342,8 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				uint32_t flags = 0;
 
 				if (span->start != ftdm_libpri_start) {
-					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					stream->write_function(stream, "%s: -ERR '%s' is not a libpri span.\n",
+						__FILE__, ftdm_span_get_name(span));
 					goto done;
 				}
 
@@ -360,7 +363,8 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				stream->write_function(stream, "%s: +OK debug %s.\n", __FILE__, (flags) ? "enabled" : "disabled");
 				goto done;
 			} else {
-				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+				stream->write_function(stream, "%s: -ERR span '%s' not found.\n",
+					__FILE__, argv[0]);
 				goto done;
 			}
 		}
@@ -368,8 +372,10 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 			ftdm_span_t *span = NULL;
 			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS) {
 				ftdm_libpri_data_t *isdn_data = span->signal_data;
+
 				if (span->start != ftdm_libpri_start) {
-					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					stream->write_function(stream, "%s: -ERR '%s' is not a libpri span.\n",
+						__FILE__, ftdm_span_get_name(span));
 					goto done;
 				}
 
@@ -377,7 +383,8 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				stream->write_function(stream, "%s: +OK reset.\n", __FILE__);
 				goto done;
 			} else {
-				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+				stream->write_function(stream, "%s: -ERR span '%s' not found.\n",
+					__FILE__, argv[0]);
 				goto done;
 			}
 		}
@@ -385,8 +392,10 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 			ftdm_span_t *span = NULL;
 			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS) {
 				ftdm_libpri_data_t *isdn_data = span->signal_data;
+
 				if (span->start != ftdm_libpri_start) {
-					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					stream->write_function(stream, "%s: -ERR '%s' is not a libpri span.\n",
+						__FILE__, ftdm_span_get_name(span));
 					goto done;
 				}
 				if (!strcasecmp(argv[2], "all")) {
@@ -401,7 +410,8 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				stream->write_function(stream, "%s: +OK restart set.\n", __FILE__);
 				goto done;
 			} else {
-				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+				stream->write_function(stream, "%s: -ERR span '%s' not found.\n",
+					__FILE__, argv[0]);
 				goto done;
 			}
 		}
@@ -409,8 +419,10 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 			ftdm_span_t *span = NULL;
 			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS) {
 				ftdm_libpri_data_t *isdn_data = span->signal_data;
+
 				if (span->start != ftdm_libpri_start) {
-					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					stream->write_function(stream, "%s: -ERR '%s' is not a libpri span.\n",
+						__FILE__, ftdm_span_get_name(span));
 					goto done;
 				}
 				if (!isdn_data->service_message_support) {
@@ -429,7 +441,8 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				stream->write_function(stream, "%s: +OK change status set.\n", __FILE__);
 				goto done;
 			} else {
-				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+				stream->write_function(stream, "%s: -ERR span '%s' not found.\n",
+					__FILE__, argv[0]);
 				goto done;
 			}
 		}
