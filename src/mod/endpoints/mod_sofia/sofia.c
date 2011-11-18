@@ -870,7 +870,7 @@ static void our_sofia_event_callback(nua_event_t event,
 	if (sofia_private && sofia_private->is_call && sofia_private->de) {
 		sofia_dispatch_event_t *qde = sofia_private->de;
 		sofia_private->de = NULL;
-		sofia_process_dispatch_event(&qde, SWITCH_TRUE);
+		sofia_process_dispatch_event(&qde);
 	}
 
 	profile->last_sip_event = switch_time_now();
@@ -1192,28 +1192,17 @@ static void our_sofia_event_callback(nua_event_t event,
 	}
 }
 
-void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t do_callback)
+void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 {
 	sofia_dispatch_event_t *de = *dep;
 	nua_handle_t *nh = de->nh;
 	nua_t *nua = de->nua;
 	sofia_profile_t *profile = de->profile;
-	nua_event_t event;
+
 	*dep = NULL;
 
-	event = de->data->e_event;
-
-	if (de->session && switch_channel_down_nosig(switch_core_session_get_channel(de->session))) {
-		if (event == nua_i_invite) {
-			nua_respond(nh, 481, "Channel Hanging Up", TAG_END());
-		}
-		do_callback = SWITCH_FALSE;
-	}
-
-	if (do_callback) {
-		our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
-								 de->nh, nua_handle_magic(de->nh), de->sip, de, (tagi_t *) de->data->e_tags);
-	}
+	our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
+							 de->nh, nua_handle_magic(de->nh), de->sip, de, (tagi_t *) de->data->e_tags);
 
 	nua_destroy_event(de->event);	
 	su_free(nh->nh_home, de);
@@ -1237,7 +1226,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 
 	while(switch_queue_pop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
-		sofia_process_dispatch_event(&de, SWITCH_TRUE);
+		sofia_process_dispatch_event(&de);
 		switch_cond_next();
 	}
 
@@ -1288,7 +1277,7 @@ static void sofia_queue_message(sofia_dispatch_event_t *de)
 	int idx = 0;
 
 	if (mod_sofia_globals.running == 0) {
-		sofia_process_dispatch_event(&de, SWITCH_TRUE);
+		sofia_process_dispatch_event(&de);
 		return;
 	}
 
@@ -1351,7 +1340,7 @@ void sofia_event_callback(nua_event_t event,
 		switch_core_session_t *session;
 
 		if (!zstr(sofia_private->uuid)) {
-			if ((session = switch_core_session_force_locate(sofia_private->uuid))) {
+			if ((session = switch_core_session_locate(sofia_private->uuid))) {
 				if (switch_core_session_running(session)) {
 					switch_core_session_queue_signal_data(session, de);
 				} else {
@@ -7194,6 +7183,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	char sip_acl_authed_by[512] = "";
 	char sip_acl_token[512] = "";
 
+	profile->ib_calls++;
+
 	if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING)) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 		goto fail;
@@ -8257,8 +8248,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting NAT mode based on %s\n", is_nat);
 			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
-
-		profile->ib_calls++;
 		return;
 	}
 

@@ -508,7 +508,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-				switch_ivr_parse_all_signal_data(session);
 				nua_bye(tech_pvt->nh,
 						TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
@@ -522,7 +521,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_cancel");
 				}
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-					switch_ivr_parse_all_signal_data(session);
 					nua_cancel(tech_pvt->nh,
 							   TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
 				}
@@ -1415,7 +1413,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (switch_core_session_in_thread(session)) {
 			de->session = session;
 		}
-		sofia_process_dispatch_event(&de, SWITCH_TRUE);
+		sofia_process_dispatch_event(&de);
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
 		goto end;
 	}
@@ -1907,6 +1905,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_PHONE_EVENT:
 		{
+
+			switch_channel_set_flag(channel, CF_REQ_MEDIA);
+			sofia_glue_do_invite(session);
+
+
+#if 0
 			const char *event = "talk";
 
 			if (!zstr(msg->string_arg) && strcasecmp(msg->string_arg, event)) {
@@ -1923,6 +1927,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			} else { 
 				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR(event), TAG_END());
 			}
+#endif
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_SIMPLIFY:
