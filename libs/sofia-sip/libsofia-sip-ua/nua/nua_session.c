@@ -3801,23 +3801,24 @@ static int nua_bye_client_request(nua_client_request_t *cr,
   ss = nua_dialog_usage_private(du);
   reason = ss->ss_reason;
 
-
-  nua_dialog_usage_reset_refresh(du);
-  ss->ss_timer->timer_set = 0;
-  
-  /* Terminate server transactions associated with session, too. */
-  for (sr = du->du_dialog->ds_sr; sr; sr = sr->sr_next) {
-      if (sr->sr_usage == du && nua_server_request_is_pending(sr) &&
-		  sr->sr_method != sip_method_bye) {
-		  sr_status(sr, SIP_486_BUSY_HERE);
-		  nua_server_respond(sr, 0);
-      }
-  }
-  
   error = nua_base_client_trequest(cr, msg, sip,
-								   SIPTAG_REASON_STR(reason),
-								   TAG_NEXT(tags));  
-  
+				    SIPTAG_REASON_STR(reason),
+				    TAG_NEXT(tags));
+
+  if (error == 0) {
+    nua_dialog_usage_reset_refresh(du);
+    ss->ss_timer->timer_set = 0;
+
+    /* Terminate server transactions associated with session, too. */
+    for (sr = du->du_dialog->ds_sr; sr; sr = sr->sr_next) {
+      if (sr->sr_usage == du && nua_server_request_is_pending(sr) &&
+	  sr->sr_method != sip_method_bye) {
+	sr_status(sr, SIP_486_BUSY_HERE);
+	nua_server_respond(sr, 0);
+      }
+    }
+  }
+
   return error;
 }
 static int nua_bye_client_response(nua_client_request_t *cr,
