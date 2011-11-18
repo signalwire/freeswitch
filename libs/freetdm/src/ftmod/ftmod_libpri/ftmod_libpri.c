@@ -310,9 +310,7 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 			stream->write_function(stream, ftdm_libpri_usage);
 			goto done;
 		}
-	}
-
-	if (argc == 2) {
+	} else if (argc == 2) {
 		if (!strcasecmp(argv[0], "kill")) {
 			int span_id = atoi(argv[1]);
 			ftdm_span_t *span = NULL;
@@ -333,9 +331,7 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				goto done;
 			}
 		}
-	}
-
-	if (argc >= 2) {
+	} else if (argc >= 2) {
 		if (!strcasecmp(argv[0], "debug")) {
 			ftdm_span_t *span = NULL;
 
@@ -437,7 +433,10 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				goto done;
 			}
 		}
-
+	} else {
+		/* zero args print usage */
+		stream->write_function(stream, ftdm_libpri_usage);
+		goto done;
 	}
 
 	stream->write_function(stream, "%s: -ERR invalid command.\n", __FILE__);
