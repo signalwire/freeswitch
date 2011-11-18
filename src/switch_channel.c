@@ -631,7 +631,7 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 		if (call_info) {
 			char *call_info_state = "active";
 
-			if (!switch_channel_up(channel)) {
+			if (!switch_channel_up_nosig(channel)) {
 				call_info_state = "idle";
 			} else if (!strcasecmp(status, "hold-private")) {
 				call_info_state = "held-private";
@@ -1374,7 +1374,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 	
 	for (;;) {
 		if ((channel->state == channel->running_state && channel->running_state == want_state) ||
-			(other_channel && switch_channel_down(other_channel)) || switch_channel_down(channel)) {
+			(other_channel && switch_channel_down_nosig(other_channel)) || switch_channel_down_nosig(channel)) {
 			break;
 		}
 		switch_yield(20000);
@@ -1427,7 +1427,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (switch_channel_down(channel)) {
+		if (switch_channel_down_nosig(channel)) {
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -1745,7 +1745,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_c
 
 SWITCH_DECLARE(int) switch_channel_state_change_pending(switch_channel_t *channel) 
 {
-	if (switch_channel_down(channel) || !switch_core_session_in_thread(channel->session)) {
+	if (switch_channel_down_nosig(channel) || !switch_core_session_in_thread(channel->session)) {
 		return 0;
 	}
 

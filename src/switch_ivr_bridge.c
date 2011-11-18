@@ -311,7 +311,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			goto end_of_bridge_loop;
 		}
 
-		if ((b_state = switch_channel_down(chan_b))) {
+		if ((b_state = switch_channel_down_nosig(chan_b))) {
 			goto end_of_bridge_loop;
 		}
 		
@@ -542,7 +542,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_safe_free(stream.data);
 	}
 
-	if (!inner_bridge && switch_channel_up(chan_a)) {
+	if (!inner_bridge && switch_channel_up_nosig(chan_a)) {
 		if ((app_name = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE))) {
 			switch_caller_extension_t *extension = NULL;
 			if ((extension = switch_caller_extension_new(session_a, app_name, app_name)) == 0) {
@@ -987,7 +987,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 			switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, "call_uuid", switch_core_session_get_uuid(other_session));
 
-			if (switch_channel_up(other_channel)) {
+			if (switch_channel_up_nosig(other_channel)) {
 
 				if (switch_true(switch_channel_get_variable(other_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 					switch_ivr_park_session(other_session);
@@ -1051,12 +1051,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 	switch_event_t *event;
 
-	if (switch_channel_down(peer_channel)) {
+	if (switch_channel_down_nosig(peer_channel)) {
 		switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!switch_channel_up(caller_channel)) {
+	if (!switch_channel_up_nosig(caller_channel)) {
 		switch_channel_hangup(peer_channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1297,7 +1297,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE, switch_channel_cause2str(cause));
 			}
 			
-			if (switch_channel_down(peer_channel) && switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
+			if (switch_channel_down_nosig(peer_channel) && switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
 				switch_xml_t cdr = NULL;
 				char *xml_text;
 
@@ -1449,7 +1449,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			}
 
 
-			if (switch_channel_down(originator_channel)) {
+			if (switch_channel_down_nosig(originator_channel)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s is hungup refusing to bridge.\n", switch_channel_get_name(originatee_channel));
 				switch_core_session_rwunlock(originator_session);
 				switch_core_session_rwunlock(originatee_session);
