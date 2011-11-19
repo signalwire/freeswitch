@@ -1372,18 +1372,18 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			if (imember->session) {
 				if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
 					members_with_video++;
+					
+					if (switch_test_flag(imember, MFLAG_VIDEO_BRIDGE)) {
+						if (!video_bridge_members[0]) {
+							video_bridge_members[0] = imember;
+						} else {
+							video_bridge_members[1] = imember;
+						}
+					}
 				}
 
 				if (switch_test_flag(imember, MFLAG_NOMOH)) {
 					nomoh++;
-				}
-				
-				if (switch_test_flag(imember, MFLAG_VIDEO_BRIDGE)) {
-					if (!video_bridge_members[0]) {
-						video_bridge_members[0] = imember;
-					} else {
-						video_bridge_members[1] = imember;
-					}
 				}
 			}
 
