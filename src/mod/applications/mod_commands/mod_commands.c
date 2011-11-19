@@ -45,6 +45,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, mod_commands_shutdown, NULL);
 
+static switch_mutex_t *reload_mutex = NULL;
 
 struct cb_helper {
 	uint32_t row_process;
@@ -2004,6 +2005,8 @@ SWITCH_STANDARD_API(load_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	switch_mutex_lock(reload_mutex);
+
 	if (switch_xml_reload(&err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK Reloading XML\n");
 	}
@@ -2013,6 +2016,8 @@ SWITCH_STANDARD_API(load_function)
 	} else {
 		stream->write_function(stream, "-ERR [%s]\n", err);
 	}
+
+	switch_mutex_unlock(reload_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2053,11 +2058,15 @@ SWITCH_STANDARD_API(unload_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	switch_mutex_lock(reload_mutex);
+	
 	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, force, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK\n");
 	} else {
 		stream->write_function(stream, "-ERR [%s]\n", err);
 	}
+
+	switch_mutex_unlock(reload_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2096,6 +2105,8 @@ SWITCH_STANDARD_API(reload_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	switch_mutex_lock(reload_mutex);
+
 	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, force, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK module unloaded\n");
 	} else {
@@ -2111,6 +2122,8 @@ SWITCH_STANDARD_API(reload_function)
 	} else {
 		stream->write_function(stream, "-ERR loading module [%s]\n", err);
 	}
+
+	switch_mutex_unlock(reload_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -5238,6 +5251,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_thread_rwlock_create(&bgapi_rwlock, pool);
+	switch_mutex_init(&reload_mutex, SWITCH_MUTEX_NESTED, pool);
+	
 
 	SWITCH_ADD_API(commands_api_interface, "acl", "compare an ip to an acl list", acl_function, "<ip> <list_name>");
 	SWITCH_ADD_API(commands_api_interface, "alias", "Alias", alias_function, ALIAS_SYNTAX);
