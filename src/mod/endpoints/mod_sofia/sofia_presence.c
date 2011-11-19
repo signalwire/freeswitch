@@ -3097,7 +3097,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			if (!zstr(orig_proto)) {
 				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "orig_proto", orig_proto);
 			}
-			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "long", profile->name);
+			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "login", profile->name);
 			switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
 			switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "to", "%s%s%s@%s", proto, "+", to_user, to_host);
 			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "proto-specific-event-name", event);
