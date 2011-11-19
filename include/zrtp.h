@@ -115,6 +115,24 @@ typedef enum zrtp_license_mode_t
 	ZRTP_LICENSE_MODE_UNLIMITED
 } zrtp_license_mode_t;
 
+/**
+ * @brief Enumeration to define Signaling initiator/responder roles.
+ * 
+ * Used by libzrtp to optimize some internal processes and protocol handshake.
+ *
+ * @sas zrtp_stream_start().
+ */
+typedef enum zrtp_signaling_role_t
+{
+	/** @brief Unknown Signaling role, should be used when the app can't determine the role. */
+	ZRTP_SIGNALING_ROLE_UNKNOWN	= 0,
+	/** @brief Signaling Initiator. */	
+	ZRTP_SIGNALING_ROLE_INITIATOR,
+	/** @brief Signaling Responder. */
+	ZRTP_SIGNALING_ROLE_RESPONDER,	
+	ZRTP_SIGNALING_ROLE_COUNT
+} zrtp_signaling_role_t;
+
 
 /** @brief 12-byte ZID for unique ZRTP endpoint identification. */
 typedef unsigned char zrtp_zid_t[12];
@@ -123,9 +141,9 @@ typedef unsigned char zrtp_zid_t[12];
 typedef char zrtp_client_id_t[16];
 	
 /**
- * \brief ZRTP global configuration options
- * \ingroup zrtp_main_init
- * \warning Use \ref zrtp_config_defaults() before start configuring this structure.
+ * @brief ZRTP global configuration options
+ * @ingroup zrtp_main_init
+ * @warning Use \ref zrtp_config_defaults() before start configuring this structure.
  */
 typedef struct zrtp_config_t
 {	
@@ -431,10 +449,9 @@ zrtp_status_t zrtp_down(zrtp_global_t* zrtp);
  * \param profile - the session configuration profile. If value of this parameter is NULL, default 
  *     profile will be used. NULL profile usage is equivalent to calling zrtp_profile_defaults().
  * \param zid - ZRTP peer identificator.  
- * \param is_initiator - identifies if the endpoint was the signaling initiator of the call. Used to 
+ * \param role - identifies if the endpoint was the signaling initiator of the call. Used to 
  *    provide Passive Mode options to the developer. If your application doesn't control signaling 
- *    or you don't want to support Passive Mode features - set this flag to 1. Check \ref XXX for 
- *    more information.
+ *    or you don't want to support Passive Mode features - set it to ZRTP_SIGNALING_ROLE_UNKNOWN.
  * \param session - allocated session structure.
  * \return 
  *  - zrtp_status_ok if initialization is successful;
@@ -444,7 +461,7 @@ zrtp_status_t zrtp_down(zrtp_global_t* zrtp);
 zrtp_status_t zrtp_session_init( zrtp_global_t* zrtp,
 								 zrtp_profile_t* profile,
 								 zrtp_zid_t zid,
-								 uint8_t is_initiator,
+								 zrtp_signaling_role_t role,
 								 zrtp_session_t **session);
 /**
  * \brief ZRTP Session context deinitialization
@@ -461,8 +478,8 @@ void zrtp_session_down(zrtp_session_t *session);
 /**
  * \brief Obtain information about ZRTP session
  *
- * Function initialize and fills all fields of zrtp_session_info_t structure accordint to
- * current state of ZRTP session.
+ * Function initialize and fills all fields of zrtp_session_info_t structure according to
+ * the current state of ZRTP session.
  *
  * \param session - zrtp session which parameters should be extracted;
  * \param info - out structure to be initialized.
@@ -530,7 +547,8 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
  *  - \ref XXX_GUIDE_CB \ref XXX_GUIDE_MANAGEMENT
  *  - zrtp_stream_stop() zrtp_stream_secure() zrtp_stream_clear()
  */
-zrtp_status_t zrtp_stream_start(zrtp_stream_t* stream, uint32_t ssrc);
+zrtp_status_t zrtp_stream_start(zrtp_stream_t* stream,
+								uint32_t ssrc);
 
 /**
  * \brief ZRTP protocol stopping
@@ -751,7 +769,7 @@ zrtp_status_t  zrtp_process_srtcp( zrtp_stream_t *stream,
 /* \} */
 
 /**
- * \defgroup zrtp_main_utils Utilites
+ * \defgroup zrtp_main_utils Utilities
  * \ingroup zrtp_api
  * \{
  */
@@ -768,7 +786,7 @@ zrtp_status_t  zrtp_process_srtcp( zrtp_stream_t *stream,
  * starting the protocol from the ZRTP_STATE_ACTIVE state.
  * 
  * \param stream - stream for operating with;
- * \param hash_buff - signaling hash buffer. Function accpt string, not a binary value!;
+ * \param hash_buff - signaling hash buffer. Function accepts string, not a binary value!;
  * \param hash_buff_length - signaling hash length in bytes (must be 64 bytes);
  * \return:
  *  - zrtp_status_ok if the operation finished successfully

@@ -91,6 +91,19 @@ zrtp_status_t zrtp_register_with_trusted_mitm(zrtp_stream_t* stream);
  * \ref XXX_DRAFT, XXX_GUIDE
  */
 zrtp_status_t zrtp_resolve_mitm_call(zrtp_stream_t* stream1, zrtp_stream_t* stream2);
+	
+/**
+ * @brief Links two lags of Trusted ZRTP MiTM call together.
+ * 
+ * This function allows libzrtp2 to optimize protocol behavior of one leg depending on the state and
+ * parameters of the other lag. MitM boxes should use this API whenever possible.
+ *
+ * @param stream1 - one leg of the trusted MiTM call;
+ * @param stream2 - another leg of the trusted MiTM call.
+ *
+ * @return zrtp_status_ok in case of success.
+ */
+zrtp_status_t zrtp_link_mitm_calls(zrtp_stream_t* stream1, zrtp_stream_t* stream2);
 
 /**
  * \brief Updates remote-side SAS value and rendering scheme

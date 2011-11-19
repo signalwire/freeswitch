@@ -333,6 +333,15 @@ zrtp_status_t zrtp_stream_stop(zrtp_stream_t* stream)
 	 */
 	 ZRTP_LOG(3,(_ZTU_,"STOP STREAM ID=%u mode=%s state=%s.\n",
 				stream->id, zrtp_log_mode2str(stream->mode), zrtp_log_state2str(stream->state)));
+	
+	/*
+	 * Unlink deleted stream for the peer MiTM stream if necessary. It may
+	 * prevent some recae-conditions as we always test for NULL before
+	 * accessing linked_mitm.
+	 */
+	if (stream->linked_mitm) {
+		stream->linked_mitm->linked_mitm = NULL;
+	}
 
     if (stream->state != ZRTP_STATE_NONE) {
 		/*
@@ -352,7 +361,9 @@ zrtp_status_t zrtp_stream_stop(zrtp_stream_t* stream)
 		zrtp_mutex_destroy(stream->stream_protector);
 
 		zrtp_memset(stream, 0, sizeof(zrtp_stream_t));
+		
 		stream->mode = ZRTP_STREAM_MODE_UNKN;
+		
 		_zrtp_change_state(stream, ZRTP_STATE_NONE);
     } else {
 		s = zrtp_status_wrong_state;
@@ -601,6 +612,7 @@ zrtp_status_t _zrtp_machine_process_while_in_wait4hello( zrtp_stream_t* stream,
 				if (stream->zrtp->cb.event_cb.on_zrtp_protocol_event) {
 					stream->zrtp->cb.event_cb.on_zrtp_protocol_event(stream, ZRTP_EVENT_IS_PASSIVE_RESTRICTION);
 				}
+				ZRTP_LOG(2,(_ZTU_,"\tINFO: Switching to Clear due to Active/Passive restrictions.\n"));
 			}
 			
 			s = _zrtp_machine_enter_clear(stream);
@@ -663,6 +675,7 @@ zrtp_status_t _zrtp_machine_process_while_in_wait4helloack( zrtp_stream_t* strea
 				if (stream->zrtp->cb.event_cb.on_zrtp_protocol_event) {
 					stream->zrtp->cb.event_cb.on_zrtp_protocol_event(stream, ZRTP_EVENT_IS_PASSIVE_RESTRICTION);
 				}
+				ZRTP_LOG(2,(_ZTU_,"\tINFO: Switching to Clear due to Active/Passive restrictions.\n"));
 			}
 			status = _zrtp_machine_enter_clear(stream);
 		}
@@ -1035,6 +1048,22 @@ static zrtp_status_t _zrtp_machine_enter_clear(zrtp_stream_t* stream)
 	if (stream->zrtp->cb.event_cb.on_zrtp_protocol_event) {
 		stream->zrtp->cb.event_cb.on_zrtp_protocol_event(stream, ZRTP_EVENT_IS_CLEAR);
 	}
+	
+	/*
+	 * Now, let's check if the transition to CLEAR was caused by Active/Passive rules.
+	 * If local endpoint is a MitM and peer MiTM linked stream is Unlimited, we
+	 * could break the rules and send commit to Passive endpoint.
+	 */
+	if (stream->zrtp->is_mitm && stream->peer_passive) {
+		if (stream->linked_mitm && stream->linked_mitm->peer_super_flag) {
+			ZRTP_LOG(2,(_ZTU_,"INFO: Current stream ID=%u was switched to CLEAR-mode due to Active/Passive"
+						" restrictions, but we are running in MiTM mode and peer linked stream is"
+						" Super-active. Go Secure!\n", stream->id));
+			
+			/* @note: don't use zrtp_secure_stream() wrapper as it checks for Active/Passive stuff. */
+			_zrtp_machine_start_initiating_secure(stream);
+		}
+	}
 
 	return zrtp_status_ok;
 }
@@ -1211,8 +1240,17 @@ zrtp_status_t _zrtp_machine_process_hello(zrtp_stream_t* stream, zrtp_rtp_info_t
 		zrtp_zstrncpyc(ZSTR_GV(session->peer_zid), (const char*) peer_hello->zid, sizeof(zrtp_zid_t));
 	}
 
-	/* Remember remote Passive flag */
-	stream->peer_passive = peer_hello->pasive;	
+	/*
+	 * Process Remote flags.
+	 */
+	if (peer_hello->pasive && peer_hello->uflag) {
+		ZRTP_LOG(2,(_ZTU_,"\tWARNING! Received HELLO which both P and U flags set.\n"));
+		return zrtp_status_fail;
+	}
+	
+	stream->peer_passive = peer_hello->pasive;		
+	stream->peer_super_flag = peer_hello->uflag;
+	
 	stream->peer_mitm_flag = peer_hello->mitmflag;
 	if (stream->peer_mitm_flag) {
 		stream->mitm_mode = ZRTP_MITM_MODE_CLIENT;

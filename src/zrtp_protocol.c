@@ -1098,6 +1098,24 @@ zrtp_status_t _zrtp_machine_enter_secure(zrtp_stream_t* stream)
 	}
 	
 	/*
+	 * Now, let's check if the transition to CLEAR was caused by Active/Passive rules.
+	 * If local endpoint is a MitM and peer MiTM linked stream is Unlimited, we
+	 * could break the rules and send commit to Passive endpoint.
+	 */
+	if (stream->zrtp->is_mitm && stream->peer_super_flag) {
+		if (stream->linked_mitm && stream->linked_mitm->peer_passive) {
+			if (stream->linked_mitm->state == ZRTP_STATE_CLEAR) {
+				ZRTP_LOG(2,(_ZTU_,"INFO: Linked Peer stream id=%u suspended in CLEAR-state due to"
+							" Active/Passive restrictions, but we are running in MiTM mode and "
+							"current peer endpoint is Super-Active. Let's Go Secure for the linked stream.\n", stream->id));
+				
+				/* @note: don't use zrtp_secure_stream() wrapper as it checks for Active/Passive stuff. */
+				_zrtp_machine_start_initiating_secure(stream->linked_mitm);
+			}
+		}
+	}
+	
+	/*
 	 * Increase calls counter for Preshared mode and reset it on DH
 	 */
 	if (session->zrtp->cb.cache_cb.on_presh_counter_get && session->zrtp->cb.cache_cb.on_presh_counter_set) {
@@ -1249,6 +1267,7 @@ zrtp_status_t _zrtp_machine_process_confirm( zrtp_stream_t *stream,
     
     
     // MARK: TRACE CONFIRM HMAC ERROR
+#if 0
     {
         char buff[512];
         ZRTP_LOG(3,(_ZTU_,"HMAC TRACE. VERIFY\n"));
@@ -1261,6 +1280,7 @@ zrtp_status_t _zrtp_machine_process_confirm( zrtp_stream_t *stream,
         ZRTP_LOG(3,(_ZTU_,"\t      hmac:%s.\n",
                     hex2str((const char*)confirm->hmac, ZRTP_HMAC_SIZE, buff, sizeof(buff))));
     }
+#endif
     
 
 	if (0 != zrtp_memcmp(confirm->hmac, hmac.buffer, ZRTP_HMAC_SIZE)) {
@@ -1366,8 +1386,13 @@ zrtp_status_t _zrtp_machine_process_confirm( zrtp_stream_t *stream,
 			_zrtp_machine_enter_initiatingerror(stream, zrtp_error_invalid_packet, 1);
 			return zrtp_status_fail;
 		}
-
-		stream->mitm_mode = ZRTP_MITM_MODE_REG_CLIENT;
+		
+		/* Passive endpoint should ignore PBX Enrollment. */
+		if (ZRTP_LICENSE_MODE_PASSIVE != stream->zrtp->lic_mode) {
+			stream->mitm_mode = ZRTP_MITM_MODE_REG_CLIENT;
+		} else {
+			ZRTP_LOG(2,(_ZTU_,"\tINFO: Ignore PBX Enrollment flag as we are Passive ID=%u\n", stream->id));			
+		}
 	}
 
 	stream->cache_ttl = ZRTP_MIN(session->profile.cache_ttl, zrtp_ntoh32(confirm->expired_interval));

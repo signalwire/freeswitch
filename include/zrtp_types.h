@@ -51,7 +51,7 @@ typedef enum zrtp_state_t
 	ZRTP_STATE_PENDINGCLEAR,			/** CLEAR request have been received */
 	ZRTP_STATE_INITIATINGERROR,			/** Protocol ERROR detected on local side */
 	ZRTP_STATE_PENDINGERROR,			/** Protocol ERROR received from the remote peer */
-	ZRTP_STATE_ERROR,					/** Protcol ERROR state. Check zrtp_stream_info#last_error*/
+	ZRTP_STATE_ERROR,					/** Protocol ERROR state. Check zrtp_stream_info#last_error*/
 #if (defined(ZRTP_BUILD_FOR_CSD) && (ZRTP_BUILD_FOR_CSD == 1))
 	ZRTP_STATE_DRIVEN_INITIATOR,
 	ZRTP_STATE_DRIVEN_RESPONDER,
@@ -404,7 +404,7 @@ struct zrtp_global_t
     /** This object is used to synchronize sessions list operations */
     zrtp_mutex_t*			sessions_protector;
 		
-	/** Set of feedback callbacks used by libzrtp to interact witrh the user-space.*/
+	/** Set of feedback callbacks used by libzrtp to interact with the user-space.*/
 	zrtp_callback_t			cb;
 };
 
@@ -471,7 +471,7 @@ typedef struct zrtp_secrets_t
 	uint32_t				wrongs;
 	uint32_t				wrongs_curr;
 	
-	/** This flag equals one iff the secrets have been uploaded from the cache. */
+	/** This flag equals one if the secrets have been uploaded from the cache. */
     uint8_t					is_ready;	
 } zrtp_secrets_t;
 
@@ -543,7 +543,7 @@ typedef struct zrtp_dh_crypto_context_t
 	/** DH public value */
 	struct BigNum			pv;
 	
-	/** DH public value precalculated for remote side */
+	/** DH public value recalculated for remote side */
 	struct BigNum			peer_pv;
 	
 	/** DH shared secret. DHSS = hash(DHResult) */
@@ -742,7 +742,7 @@ struct zrtp_stream_t
 	uint8_t					allowclear;
 	
 	/*!
-	 * This flag shows when remote side is "pasice" (has license mode PASSIVE)
+	 * This flag shows when remote side is "passive" (has license mode PASSIVE)
 	 * Available for reading in CLEAR state.      
 	 */
 	uint8_t					peer_passive;
@@ -780,6 +780,11 @@ struct zrtp_stream_t
 	 */
 	uint8_t					peer_mitm_flag;
 	
+	/**
+	 * Duplicates U flag from peer Hello message
+	 */
+	uint8_t					peer_super_flag;
+	
 	/*!
 	 * \brief Pointer to the concurrent DH stream
 	 * If Commit messages are sent by both ZRTP endpoints at the same time, but
@@ -796,7 +801,7 @@ struct zrtp_stream_t
 	/** Back-pointer to the ZRTP global data */
 	zrtp_global_t			*zrtp;
 	
-	/** Pointer to paren t-session context. Used for back capability */
+	/** Pointer to parent session context. Used for back capability */
 	zrtp_session_t			*session;
 	
 	/*!< Public key exchange component used within current stream */
@@ -807,6 +812,12 @@ struct zrtp_stream_t
 	 * some additional data attached to this ZRTP stream by the user application
 	 */
 	void					*usr_data;
+	
+	/*!
+	 * Pointer to the peer stream during a trusted MiTM call.
+	 * @sa zrtp_link_mitm_calls()
+	 */
+	zrtp_stream_t			*linked_mitm;
 	
 	/*!
 	 * \brief Stream data protector
@@ -846,11 +857,13 @@ struct zrtp_session_t
 	 */
 	zrtp_string16_t			peer_zid;
 	
-	/*!< ZRTP profile, defined crypto options and behavior for every stream within cirrent session */
+	/*!< ZRTP profile, defined crypto options and behavior for every stream within current session */
 	zrtp_profile_t			profile;
 	
-	/**	Define endpoint Signaling role. Different from ZRTP Initiator/Responder role */
-	uint8_t					is_initiator;
+	/*
+	 * Signaling Role which protocol was started with, one of zrtp_signaling_role_t values.
+	 */
+	unsigned				signaling_role;
 	
 	/*!
 	 * \brief Set of retained secrets and flags for the current ZRTP session.
@@ -859,7 +872,7 @@ struct zrtp_session_t
 	 */
 	zrtp_secrets_t			secrets;
 	
-	/*!< ZRTP session key used to extand ZRTP session without additional DH exchange */
+	/*!< ZRTP session key used to extend ZRTP session without additional DH exchange */
 	zrtp_string64_t			zrtpsess;    	
 	
 	/** First SAS base32/256 string */

@@ -72,7 +72,7 @@ zrtp_status_t zrtp_init(zrtp_config_t* config, zrtp_global_t** zrtp)
 		return zrtp_status_alloc_fail;
     }	
 	zrtp_memset(new_zrtp, 0, sizeof(zrtp_global_t));
-	
+		
 	/*
 	 * Apply configuration according to the config
 	 */		
@@ -188,7 +188,7 @@ zrtp_status_t zrtp_down(zrtp_global_t* zrtp)
 zrtp_status_t zrtp_session_init( zrtp_global_t* zrtp,
 								zrtp_profile_t* profile,
 								zrtp_zid_t zid,
-								uint8_t is_initiator,
+								zrtp_signaling_role_t role,
 								zrtp_session_t **session)
 {
     uint32_t i = 0;
@@ -243,6 +243,7 @@ zrtp_status_t zrtp_session_init( zrtp_global_t* zrtp,
 		ZRTP_LOG(3, (_ZTU_,"   allowclear: %s\n", profile->allowclear?"ON":"OFF"));
 		ZRTP_LOG(3, (_ZTU_,"   autosecure: %s\n", profile->autosecure?"ON":"OFF"));
 		ZRTP_LOG(3, (_ZTU_," disclose_bit: %s\n", profile->disclose_bit?"ON":"OFF"));
+		ZRTP_LOG(3, (_ZTU_," signal. role: %s\n", zrtp_log_sign_role2str(role)));	
 		ZRTP_LOG(3, (_ZTU_,"          TTL: %u\n", profile->cache_ttl));
 				
 		ZRTP_LOG(3, (_ZTU_,"  SAS schemes: "));
@@ -280,7 +281,7 @@ zrtp_status_t zrtp_session_init( zrtp_global_t* zrtp,
 	zrtp_zstrncpyc(ZSTR_GV(new_session->zid), (const char*)zid, sizeof(zrtp_zid_t));	
 
 	new_session->zrtp = zrtp;
-	new_session->is_initiator = is_initiator;
+	new_session->signaling_role = role;
 	new_session->mitm_alert_detected = 0;
 
 	/*
@@ -356,7 +357,8 @@ void zrtp_session_down(zrtp_session_t *session)
 	/* Stop ZRTP engine and clear all crypto sources for every stream in the session. */
 	zrtp_mutex_lock(session->streams_protector);
 	for(i=0; i<ZRTP_MAX_STREAMS_PER_SESSION; i++) {
-		zrtp_stream_stop(&session->streams[i]);			
+		zrtp_stream_t *the_stream = &session->streams[i]; 		
+		zrtp_stream_stop(the_stream);
 	}
 	zrtp_mutex_unlock(session->streams_protector);
 
@@ -437,7 +439,7 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
 	
 	new_stream->dh_cc.initialized_with	= ZRTP_COMP_UNKN;
 	bnBegin(&new_stream->dh_cc.peer_pv);
-	ZSTR_SET_EMPTY(new_stream->dh_cc.dhss);
+	ZSTR_SET_EMPTY(new_stream->dh_cc.dhss);		
 	
 	ZRTP_LOG(3, (_ZTU_,"\tEmpty slot was found - initializing new stream with ID=%u.\n", new_stream->id));
 
@@ -507,11 +509,16 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
 	uint8_t i = 0;
 	int8_t* comp_ptr = NULL;
 
+	/* Set Protocol Version and ClientID */
 	zrtp_memcpy(hello->version, ZRTP_PROTOCOL_VERSION, ZRTP_VERSION_SIZE);
 	zrtp_memcpy(hello->cliend_id, session->zrtp->client_id.buffer, session->zrtp->client_id.length);
-	hello->pasive =  (ZRTP_LICENSE_MODE_PASSIVE == session->zrtp->lic_mode) ? 1 : 0;
-	hello->mitmflag = session->zrtp->is_mitm;
-	hello->sigflag	= 0;
+		
+	/* Set flags. */
+	hello->pasive	=  (ZRTP_LICENSE_MODE_PASSIVE == session->zrtp->lic_mode) ? 1 : 0;
+	hello->uflag	= (ZRTP_LICENSE_MODE_UNLIMITED == session->zrtp->lic_mode) ? 1 : 0;
+	hello->mitmflag = session->zrtp->is_mitm;	
+	hello->sigflag	= 0;	
+		
 	zrtp_memcpy(hello->zid, session->zid.buffer, session->zid.length);
 	
 	comp_ptr = (int8_t*)hello->comp;

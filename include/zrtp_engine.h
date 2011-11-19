@@ -58,7 +58,7 @@ extern "C"
  */
 #define ZRTP_PASSIVE2_TEST(stream) \
 ( !((ZRTP_LICENSE_MODE_PASSIVE == stream->zrtp->lic_mode) && \
-	stream->session->is_initiator) )
+	(stream->session->signaling_role == ZRTP_SIGNALING_ROLE_INITIATOR)) )
 	
 /**
  * @brief Test Passive Rule N3
@@ -128,7 +128,7 @@ zrtp_status_t _zrtp_protocol_decrypt( zrtp_protocol_t *self,
 	
 	
 /*===========================================================================*/
-/*	CRTPTO Utilites														     */
+/*	CRTPTO Utilities														     */
 /*===========================================================================*/
 
 /**
@@ -237,7 +237,7 @@ int _zrtp_can_start_stream( zrtp_stream_t* stream,
 						    zrtp_stream_t** conc,
 						    zrtp_stream_mode_t mode);
 
-/** Return ZRTP Stream mode which sould be used for current stream. */
+/** Return ZRTP Stream mode which should be used for current stream. */
 zrtp_stream_mode_t _zrtp_define_stream_mode(zrtp_stream_t* stream);
 
 /*!
@@ -257,7 +257,7 @@ uint8_t _zrtp_choose_best_comp( zrtp_profile_t* profile,
 
 /*!
  * \brief Computes replay timeouts
- * This function computes messages replays schedule. There are some recomended
+ * This function computes messages replays schedule. There are some recommended
  * values by ZRTP specification, but in some network environments values may be
  * sligh different
  */

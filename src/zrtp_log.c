@@ -384,6 +384,21 @@ const char* zrtp_log_event2str(uint8_t event)
 	}
 }
 
+static char* _sign_role_name[] =
+{
+	"Unknown",
+	"Initiator",
+	"Responder"
+};
+
+const char* zrtp_log_sign_role2str(unsigned role) {
+	if (role < ZRTP_SIGNALING_ROLE_COUNT) {
+		return _sign_role_name[role];
+	} else {
+		return k_unknown;
+	}
+}
+
 /*---------------------------------------------------------------------------*/
 typedef struct _zrtp_aling_test
 {

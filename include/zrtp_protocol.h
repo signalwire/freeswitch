@@ -282,7 +282,8 @@ typedef struct zrtp_packet_Hello
 	
 	/** Signature support flag */
 	uint8_t			sigflag:1;
-	uint8_t			padding1:1;
+		
+	uint8_t			uflag:1;
 	
 	/** Hash scheme count */	
 	uint8_t			hc:4;	
@@ -300,7 +301,7 @@ typedef struct zrtp_packet_Hello
 	/** PK Type count */
 	uint8_t			kc:4;
 #elif ZRTP_BYTE_ORDER == ZBO_BIG_ENDIAN
-	uint8_t			padding1:1;
+	uint8_t			uflag:1;
 	uint8_t			sigflag:1;
 	uint8_t			mitmflag:1;
 	uint8_t			pasive:1;
@@ -400,7 +401,7 @@ typedef struct zrtp_packet_Confirm
 	/** Unused (Set to zero and ignored) */
 	uint8_t				pad[2];
 	
-	/** Length of optionas signature field  */
+	/** Length of optional signature field  */
 	uint8_t				sig_length;
 	
 	/** boolean flags for allowclear, SAS verified and disclose */	
@@ -478,7 +479,7 @@ typedef struct
 	zrtp_msg_hdr_t	hdr;
 	zrtp_uchar4_t	version;			/** Zfone discovery protocol version */
 	zrtp_uchar8_t	endpointhash;		/** Zfone endpoint unique identifier */
-	zrtp_uchar8_t	peerendpointhash;	/**    EndpointHash copied from Ping message */
+	zrtp_uchar8_t	peerendpointhash;	/** EndpointHash copied from Ping message */
 	uint32_t		peerssrc;
 } zrtp_packet_zfonepingack_t;
 

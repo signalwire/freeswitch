@@ -341,6 +341,13 @@ zrtp_status_t zrtp_register_with_trusted_mitm(zrtp_stream_t* stream)
 	if (!stream->protocol) {
 		return zrtp_status_bad_param;
 	}
+	
+	/* Passive Client endpoint should NOT generate PBX Secret. */
+	if ((stream->mitm_mode == ZRTP_MITM_MODE_REG_CLIENT) &&
+		(ZRTP_LICENSE_MODE_PASSIVE != stream->zrtp->lic_mode)) {
+		ZRTP_LOG(2,(_ZTU_,"WARNING: Passive Client endpoint should NOT generate PBX Secert.\n"));
+		return zrtp_status_bad_param;
+	}
 
 	/*
 	 * Generate new MitM cache:
@@ -387,6 +394,51 @@ zrtp_status_t zrtp_register_with_trusted_mitm(zrtp_stream_t* stream)
 	}
 
 	return s;
+}
+
+/*---------------------------------------------------------------------------*/
+zrtp_status_t zrtp_link_mitm_calls(zrtp_stream_t *stream1, zrtp_stream_t *stream2)
+{
+	ZRTP_LOG(3,(_ZTU_,"Link to MiTM call together stream1=%u stream2=%u.\n", stream1->id, stream2->id));
+	
+	/* This APi is for MiTM endpoints only. */
+	if (stream1->zrtp->is_mitm) {
+		return zrtp_status_bad_param;
+	}
+	
+	stream1->linked_mitm = stream2;
+	stream2->linked_mitm = stream1;
+	
+	{
+		zrtp_stream_t *passive = NULL;
+		zrtp_stream_t *unlimited = NULL;
+	
+		/* Check if we have at least one Unlimited endpoint. */
+		if (stream1->peer_super_flag)
+			unlimited = stream1;
+		else if (stream2->peer_super_flag)
+			unlimited = stream2;
+	
+		/* Check if the peer stream is Passive */
+		if (unlimited) {
+			passive = (stream1 == unlimited) ? stream2 : stream1;
+			if (!passive->peer_passive)
+				passive = NULL;
+		}
+		
+		/* Ok, we haver Unlimited and Passive at two ends, let's make an exception and switch Passive to Secure. */
+		if (unlimited && passive) {
+			if (passive->state == ZRTP_STATE_CLEAR) {
+				ZRTP_LOG(2,(_ZTU_,"INFO: zrtp_link_mitm_calls() stream with id=%u is Unlimited and"
+							" Peer stream with id=%u is Passive in CLEAR state, switch the passive one to SECURE.\n"));
+				
+				/* @note: don't use zrtp_secure_stream() wrapper as it checks for Active/Passive stuff. */				
+				_zrtp_machine_start_initiating_secure(passive);
+			}
+		}		
+	}
+	
+	return zrtp_status_ok;
 }
 
 /*---------------------------------------------------------------------------*/

@@ -143,6 +143,14 @@ const char* zrtp_log_mode2str(zrtp_stream_mode_t mode);
 /** Returns symbolical name of the protocol and security events. */
 const char* zrtp_log_event2str(uint8_t event);
 
+/**
+ * Returns character name of the Signaling role.
+ *
+ * @param role One of zrtp_signaling_role_t values.
+ * @return character name of the \c role.
+ */
+const char* zrtp_log_sign_role2str(unsigned role);
+
 
 /** Print out ZRTP environment configuration setting to log level 3. */
 void  zrtp_print_env_settings();
