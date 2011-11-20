@@ -4935,7 +4935,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						sip->sip_content_type && sip->sip_content_type->c_subtype && switch_stristr("sdp", sip->sip_content_type->c_subtype)) {
 						tech_pvt->remote_sdp_str = switch_core_session_strdup(tech_pvt->session, sip->sip_payload->pl_data);
 						r_sdp = tech_pvt->remote_sdp_str;
-						sofia_glue_tech_proxy_remote_addr(tech_pvt);
+						sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL);
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
@@ -5778,6 +5778,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 							switch_core_session_rwunlock(other_session);
 							goto done;
+						}
+
+						if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+							sofia_glue_tech_proxy_remote_addr(tech_pvt, r_sdp);
 						}
 
 						msg = switch_core_session_alloc(other_session, sizeof(*msg));

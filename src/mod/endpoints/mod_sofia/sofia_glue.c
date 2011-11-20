@@ -1374,7 +1374,7 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 }
 
 #define RA_PTR_LEN 512
-switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
+switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, const char *sdp_str)
 {
 	const char *err;
 	char rip[RA_PTR_LEN] = "";
@@ -1384,23 +1384,27 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 	int x;
 	const char *val;
 
-	if (zstr(tech_pvt->remote_sdp_str)) {
+	if (zstr(sdp_str)) {
+		sdp_str = tech_pvt->remote_sdp_str;
+	}
+
+	if (zstr(sdp_str)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((p = (char *) switch_stristr("c=IN IP4 ", tech_pvt->remote_sdp_str)) || (p = (char *) switch_stristr("c=IN IP6 ", tech_pvt->remote_sdp_str))) {
+	if ((p = (char *) switch_stristr("c=IN IP4 ", sdp_str)) || (p = (char *) switch_stristr("c=IN IP6 ", sdp_str))) {
 		ip_ptr = p + 9;
 	}
 
-	if ((p = (char *) switch_stristr("m=audio ", tech_pvt->remote_sdp_str))) {
+	if ((p = (char *) switch_stristr("m=audio ", sdp_str))) {
 		port_ptr = p + 8;
 	}
 
-	if ((p = (char *) switch_stristr("m=image ", tech_pvt->remote_sdp_str))) {
+	if ((p = (char *) switch_stristr("m=image ", sdp_str))) {
 		port_ptr = p + 8;
 	}
 
-	if ((p = (char *) switch_stristr("m=video ", tech_pvt->remote_sdp_str))) {
+	if ((p = (char *) switch_stristr("m=video ", sdp_str))) {
 		vid_port_ptr = p + 8;
 	}
 
@@ -2399,7 +2403,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
-			sofia_glue_tech_proxy_remote_addr(tech_pvt);
+			sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL);
 		}
 		sofia_glue_tech_patch_sdp(tech_pvt);
 	}
@@ -3167,7 +3171,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	}
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
-		if ((status = sofia_glue_tech_proxy_remote_addr(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL)) != SWITCH_STATUS_SUCCESS) {
 			goto end;
 		}
 
@@ -3490,7 +3494,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			}
 
 			if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
-				if ((status = sofia_glue_tech_proxy_remote_addr(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL)) != SWITCH_STATUS_SUCCESS) {
 					goto end;
 				}
 
