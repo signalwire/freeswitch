@@ -93,7 +93,7 @@ static int iblockingIOCallback(const void *inputBuffer, void *outputBuffer,
 			}
 			if (PaUtil_WriteRingBuffer(&data->inFIFOs[c], chanSamples, numBytes) != numBytes) {
 				PaUtil_FlushRingBuffer(&data->inFIFOs[c]);
-				PaUtil_WriteRingBuffer(&data->inFIFOs[c], inputBuffer, numBytes);
+				PaUtil_WriteRingBuffer(&data->inFIFOs[c], chanSamples, numBytes);
 			}
 		}
 	}
