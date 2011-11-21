@@ -4460,14 +4460,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 				}
 
-
-				if (pass == 2 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) {
-					pass = 0;
-				}
-
-
-				if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || 
-					switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || !switch_rtp_ready(tech_pvt->rtp_session)) {
+				if ((pass == 2 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) || 
+					!sofia_test_flag(tech_pvt, TFLAG_REINVITE) ||
+					switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || 
+					switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || 
+					!switch_rtp_ready(tech_pvt->rtp_session)) {
 					pass = 0;
 				}
 				
