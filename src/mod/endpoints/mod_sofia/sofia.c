@@ -1312,6 +1312,11 @@ void sofia_event_callback(nua_event_t event,
 {
 	sofia_dispatch_event_t *de;
 
+	if (event == nua_r_invite && status >= 900) {
+		return;
+	}
+
+
 	switch_mutex_lock(profile->flag_mutex);
 	profile->queued_events++;
 	switch_mutex_unlock(profile->flag_mutex);
