@@ -4919,10 +4919,15 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 
-		if (sip->sip_payload && sip->sip_payload->pl_data && switch_stristr("m=image", sip->sip_payload->pl_data)) {
+		if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && 
+			sip->sip_payload && sip->sip_payload->pl_data && switch_stristr("m=image", sip->sip_payload->pl_data)) {
 			has_t38 = 1;
 		}
 		
+		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+			sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
+		}
+
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE) || 
 			switch_channel_test_flag(channel, CF_PROXY_MEDIA) || 
 			(sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && (has_t38 || status > 299))) {
@@ -4942,7 +4947,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						r_sdp = tech_pvt->remote_sdp_str;
 						sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL);
 					}
-
+					
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
 
 					if (status > 299) {
