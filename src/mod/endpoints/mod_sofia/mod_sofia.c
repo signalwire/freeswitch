@@ -1907,10 +1907,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 
 			switch_channel_set_flag(channel, CF_REQ_MEDIA);
-			sofia_glue_do_invite(session);
-
-
-#if 0
 			const char *event = "talk";
 
 			if (!zstr(msg->string_arg) && strcasecmp(msg->string_arg, event)) {
@@ -1927,7 +1923,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			} else { 
 				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR(event), TAG_END());
 			}
-#endif
+
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_SIMPLIFY:
