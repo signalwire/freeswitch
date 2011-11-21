@@ -2892,9 +2892,21 @@ SWITCH_DECLARE(char *) switch_format_number(const char *num)
 	char *r;
 	size_t len;
 	const char *p = num;
-	
-	if(*p == '+') {
+
+	if (!p) {
+		return p;
+	}
+
+	if (zstr(p)) {
+		return strdup(p);
+	}
+
+	if (*p == '+') {
 		p++;
+	}
+
+	if (!switch_is_number(p)) {
+		return strdup(p);
 	}
 
 	len = strlen(p);
@@ -2907,7 +2919,6 @@ SWITCH_DECLARE(char *) switch_format_number(const char *num)
 	} else {
 		r = strdup(num);
 	}
-	
 
 	return r;
 }
