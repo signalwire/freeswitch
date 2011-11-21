@@ -1308,11 +1308,11 @@ SWITCH_DECLARE(void *) switch_core_hash_find_rdlock(_In_ switch_hash_t *hash, _I
 
 /*!
  \brief Gets the first element of a hashtable
- \param depricate_me [deprecated] NULL
+ \param deprecate_me [deprecated] NULL
  \param hash the hashtable to use
  \return The element, or NULL if it wasn't found 
 */
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *depricate_me, _In_ switch_hash_t *hash);
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *deprecate_me, _In_ switch_hash_t *hash);
 
 /*!
  \brief Gets the next element of a hashtable

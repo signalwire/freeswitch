@@ -420,7 +420,7 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 	runtime.offset = runtime.reference - time_now(0);
 	runtime.reference = time_now(runtime.offset);
 	if (runtime.reference - last_time > 1000000 || last_time == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Clock syncronized to system time.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Clock synchronized to system time.\n");
 	}
 	last_time = runtime.reference;
 }
