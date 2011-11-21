@@ -1905,9 +1905,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_PHONE_EVENT:
 		{
-
-			switch_channel_set_flag(channel, CF_REQ_MEDIA);
 			const char *event = "talk";
+			switch_channel_set_flag(channel, CF_REQ_MEDIA);
 
 			if (!zstr(msg->string_arg) && strcasecmp(msg->string_arg, event)) {
 				if (!strcasecmp(msg->string_arg, "hold")) {

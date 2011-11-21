@@ -2894,7 +2894,7 @@ SWITCH_DECLARE(char *) switch_format_number(const char *num)
 	const char *p = num;
 
 	if (!p) {
-		return p;
+		return (char*)p;
 	}
 
 	if (zstr(p)) {
