@@ -2240,6 +2240,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 			switch_channel_set_variable(channel, "sip_req_uri", s);
 		}
+		
+		switch_channel_set_variable(channel, "sip_to_host", sofia_glue_get_host(to_str, switch_core_session_get_pool(session)));
+		switch_channel_set_variable(channel, "sip_from_host", sofia_glue_get_host(from_str, switch_core_session_get_pool(session)));
 
 		if (!(tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 										NUTAG_URL(url_str),
@@ -6785,6 +6788,31 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sof
 	return contact_str;
 }
 
+char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool)
+{
+	char *s, *p;
+
+	if ((p = strchr(str, '@'))) {
+		p++;
+	} else {
+		return NULL;
+	}
+
+	if (pool) {
+		s = switch_core_strdup(pool, p);
+	} else {
+		s = strdup(p);
+	}
+
+	for (p = s; p && *p; p++) {
+		if ((*p == ';') || (*p == '>')) {
+			*p = '\0';
+			break;
+		}
+	}
+
+	return s;
+}
 
 
 /* For Emacs:
