@@ -306,6 +306,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
 			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
+			pmatches = 1;
 
 			if (r_status == SWITCH_STATUS_SUCCESS) {
 				if (is_timeout) {
@@ -313,7 +314,6 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 					exact_bp = bp;
 					break;
 				}
-				pmatches = 1;
 				best = DM_MATCH_PARTIAL;
 			}
 		} else {
