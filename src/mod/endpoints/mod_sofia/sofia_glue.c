@@ -1908,11 +1908,14 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 	return extra_headers;
 }
 
-void sofia_glue_set_extra_headers(switch_channel_t *channel, sip_t const *sip, const char *prefix)
+void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *sip, const char *prefix)
 {
 	sip_unknown_t *un;
 	char name[512] = "";
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *pstr;
 
+	
 	if (!sip || !channel) {
 		return;
 	}
@@ -1925,6 +1928,13 @@ void sofia_glue_set_extra_headers(switch_channel_t *channel, sip_t const *sip, c
 			}
 		}
 	}
+
+	pstr = switch_core_session_sprintf(session, "execute_on_%sprefix", prefix);
+	switch_channel_execute_on(channel, pstr);
+	switch_channel_api_on(channel, pstr);
+
+	switch_channel_execute_on(channel, "execute_on_sip_extra_headers");
+	switch_channel_api_on(channel, "api_on_sip_extra_headers");
 }
 
 

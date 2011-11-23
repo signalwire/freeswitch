@@ -1906,7 +1906,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_PHONE_EVENT:
 		{
 			const char *event = "talk";
-			switch_channel_set_flag(channel, CF_REQ_MEDIA);
 
 			if (!zstr(msg->string_arg) && strcasecmp(msg->string_arg, event)) {
 				if (!strcasecmp(msg->string_arg, "hold")) {
@@ -1923,6 +1922,27 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR(event), TAG_END());
 			}
 
+		}
+	case SWITCH_MESSAGE_INDICATE_INFO:
+		{
+			char *headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_INFO_HEADER_PREFIX);
+			char *ct = "freeswitch/data";
+			const char *pl = NULL;
+
+			if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+				ct = switch_core_session_sprintf(session, "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
+			}
+
+			if (!zstr(msg->string_array_arg[2])) {
+				pl = msg->string_array_arg[2];
+			}
+
+			nua_info(tech_pvt->nh,
+					 SIPTAG_CONTENT_TYPE_STR(ct),
+					 TAG_IF(!zstr(headers), SIPTAG_HEADER_STR(headers)),
+					 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), 
+					 TAG_IF(pl, SIPTAG_PAYLOAD_STR(pl)),
+					 TAG_END());
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_SIMPLIFY:
