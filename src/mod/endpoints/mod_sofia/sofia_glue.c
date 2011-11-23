@@ -1383,13 +1383,14 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 	char *p, *ip_ptr = NULL, *port_ptr = NULL, *vid_port_ptr = NULL, *pe;
 	int x;
 	const char *val;
-
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
 	if (zstr(sdp_str)) {
 		sdp_str = tech_pvt->remote_sdp_str;
 	}
 
 	if (zstr(sdp_str)) {
-		return SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
 	if ((p = (char *) switch_stristr("c=IN IP4 ", sdp_str)) || (p = (char *) switch_stristr("c=IN IP6 ", sdp_str))) {
@@ -1409,7 +1410,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 	}
 
 	if (!(ip_ptr && port_ptr)) {
-		return SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
 	p = ip_ptr;
@@ -1419,7 +1420,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 		rip[x++] = *p;
 		p++;
 		if (p >= pe) {
-			return SWITCH_STATUS_FALSE;
+			goto end;
 		}
 	}
 
@@ -1429,7 +1430,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 		rp[x++] = *p;
 		p++;
 		if (p >= pe) {
-			return SWITCH_STATUS_FALSE;
+			goto end;
 		}
 	}
 
@@ -1439,13 +1440,13 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 		rvp[x++] = *p;
 		p++;
 		if (p >= pe) {
-			return SWITCH_STATUS_FALSE;
+			goto end;
 		}
 	}
 
 	if (!(*rip && *rp)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "invalid SDP\n");
-		return SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
 	tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, rip);
@@ -1500,7 +1501,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 		if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && remote_port == tech_pvt->remote_sdp_audio_port) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
 							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
-			return SWITCH_STATUS_SUCCESS;
+			switch_goto_status(SWITCH_STATUS_BREAK, end);
 		}
 
 		if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port"))) {
@@ -1511,6 +1512,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip,
 										  tech_pvt->remote_sdp_audio_port, remote_rtcp_port, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
+			status = SWITCH_STATUS_GENERR;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "AUDIO RTP CHANGING DEST TO: [%s:%d]\n",
 							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
@@ -1522,10 +1524,13 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 			if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING)) {
 				tech_pvt->check_frames = 0;
 			}
+			status = SWITCH_STATUS_SUCCESS;
 		}
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+ end:
+
+	return status;
 }
 
 
@@ -3174,9 +3179,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	}
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
-		if ((status = sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL)) != SWITCH_STATUS_SUCCESS) {
-			goto end;
-		}
+		sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL);
 
 		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
 			!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
@@ -3497,9 +3500,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			}
 
 			if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
-				if ((status = sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL)) != SWITCH_STATUS_SUCCESS) {
-					goto end;
-				}
+				sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL);
 
 				if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
 					!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
