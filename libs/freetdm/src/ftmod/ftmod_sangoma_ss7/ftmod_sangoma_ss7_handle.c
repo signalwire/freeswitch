@@ -322,12 +322,14 @@ handle_glare:
 	default:	/* should not have gotten an IAM while in this state */
 		SS7_ERROR_CHAN(ftdmchan, "Got IAM on channel in invalid state(%s)...reset!\n", ftdm_channel_state2str (ftdmchan->state));
 
-		/* reset the cic */
-		sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
+		/* throw the TX reset flag */
+		if (!sngss7_tx_reset_status_pending(sngss7_info)) {
+			sngss7_info->ckt_flags=0;
+			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
-		/* move the state of the channel to RESTART to force a reset */
-		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
-
+			/* go to RESTART */
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+		}
 		break;
 	/**************************************************************************/
 	} /* switch (ftdmchan->state) */
@@ -393,11 +395,14 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			SS7_ERROR_CHAN(ftdmchan, "RX ACM in invalid state :%s...resetting CIC\n", 
 									ftdm_channel_state2str (ftdmchan->state));
 
-			/* reset the cic */
-			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
+			/* throw the TX reset flag */
+			if (!sngss7_tx_reset_status_pending(sngss7_info)) {
+				sngss7_info->ckt_flags=0;
+				sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
-			/* go to RESTART */
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				/* go to RESTART */
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+			}
 			break;
 		/**********************************************************************/
 		} /* switch (ftdmchan->state) */
@@ -657,10 +662,13 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx ANM/CON\n", sngss7_info->circuit->cic);
 
 		/* throw the TX reset flag */
-		sngss7_set_ckt_flag(sngss7_info, FLAG_GRP_RESET_TX);
+		if (!sngss7_tx_reset_status_pending(sngss7_info)) {
+			sngss7_info->ckt_flags=0;
+			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
-		/* go to RESTART */
-		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+			/* go to RESTART */
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+		}
 
 		break;
 	/**************************************************************************/
