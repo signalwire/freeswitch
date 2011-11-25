@@ -663,6 +663,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				wrote = write(fd, json_text, (unsigned) strlen(json_text));
 				close(fd);
 				fd = -1;
+				if(wrote < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
+				}
 			} else {
 				char ebuf[512] = { 0 };
 #ifdef WIN32
@@ -816,6 +819,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 					wrote = write(fd, json_text, (unsigned) strlen(json_text));
 					close(fd);
 					fd = -1;
+					if(wrote < 0) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
+					}
 					break;
 				} else {
 					char ebuf[512] = { 0 };
