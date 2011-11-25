@@ -34,8 +34,8 @@ extern "C"
  */
 typedef uint8_t zrtp_cache_id_t[24];
 	
-#define ZRTP_MITMCACHE_ELEM_LENGTH (sizeof(zrtp_cache_id_t) + sizeof(zrtp_string64_t))
-#define ZRTP_CACHE_ELEM_LENGTH (sizeof(zrtp_cache_elem_t) - sizeof(mlist_t))
+#define ZRTP_MITMCACHE_ELEM_LENGTH ( sizeof(zrtp_cache_id_t) + sizeof(zrtp_string64_t) )
+#define ZRTP_CACHE_ELEM_LENGTH ( sizeof(zrtp_cache_elem_t) - sizeof(mlist_t) - (sizeof(uint32_t)*2) )
 #define ZFONE_CACHE_NAME_LENGTH    256
 		
 /**
@@ -51,10 +51,12 @@ typedef struct zrtp_cache_elem
 	uint32_t           	verified;		/** Verified flag for the cache value */
 	uint32_t		   	lastused_at;	/** Last usage time-stamp in seconds */
 	uint32_t			ttl;			/** Cache TTL since lastused_at in seconds */
-	uint32_t           	secure_since;	/** Secure since date in seconds. Utility field. Doen't required by libzrtp. */
+	uint32_t           	secure_since;	/** Secure since date in seconds. Utility field. Don't required by libzrtp. */
 	char				name[ZFONE_CACHE_NAME_LENGTH]; /** name of the user associated with this cache entry */
 	uint32_t           	name_length;	/** cache name lengths */
-	uint32_t			presh_counter;	/** number of Preshared streams made since last DH echange */
+	uint32_t			presh_counter;	/** number of Preshared streams made since last DH exchange */
+	uint32_t			_index;			/** cache element index in the cache file */
+	uint32_t			_is_dirty;		/** dirty flag means the entry has unsaved changes */
 	mlist_t            	_mlist;
 } zrtp_cache_elem_t;
 	
