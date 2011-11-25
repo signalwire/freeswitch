@@ -95,6 +95,8 @@ typedef struct private_object private_object_t;
 #define SOFIA_MULTIPART_PREFIX "sip_mp_"
 #define SOFIA_MULTIPART_PREFIX_T "~sip_mp_"
 #define SOFIA_SIP_HEADER_PREFIX "sip_h_"
+#define SOFIA_SIP_INFO_HEADER_PREFIX "sip_info_h_"
+#define SOFIA_SIP_INFO_HEADER_PREFIX_T "~sip_info_h_"
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX "sip_rh_"
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX_T "~sip_rh_"
 #define SOFIA_SIP_BYE_HEADER_PREFIX "sip_bye_h_"
@@ -1108,7 +1110,7 @@ void sofia_glue_free_destination(sofia_destination_t *dst);
 switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *user, const char *host, const char *event, const char *contenttype,
 									   const char *body, const char *o_contact, const char *network_ip);
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix);
-void sofia_glue_set_extra_headers(switch_channel_t *channel, sip_t const *sip, const char *prefix);
+void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *sip, const char *prefix);
 void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t *bleg);
 void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t send);
 void sofia_send_callee_id(switch_core_session_t *session, const char *name, const char *number);
@@ -1139,4 +1141,4 @@ void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
-
+char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool);

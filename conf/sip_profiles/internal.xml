@@ -73,7 +73,7 @@
     <param name="watchdog-step-timeout" value="30000"/>
     <param name="watchdog-event-timeout" value="30000"/>
 
-    <param name="log-auth-failures" value="true"/>
+    <param name="log-auth-failures" value="false"/>
     <param name="forward-unsolicited-mwi-notify" value="false"/>
 
     <param name="context" value="public"/>
