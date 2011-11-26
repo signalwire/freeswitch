@@ -2110,6 +2110,7 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 	uint8_t				bits_ef = 0;
 	int 				x;
 	int					ret;
+	ret=0;
 
 	for (x = 1; x < (ftdmspan->chan_count + 1); x++) {
 	/**************************************************************************/
@@ -2147,6 +2148,10 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 
 			/* query for the status of the ckt */
 			if (ftmod_ss7_isup_ckt_sta(sngss7_info->circuit->id, &state)) {
+				/* NC: Circuit statistic failed: does not exist. Must re-configure circuit
+				       Reset the circuit CONFIGURED flag so that RESUME will reconfigure
+				       this circuit. */
+				sngss7_info->circuit->flags &= ~SNGSS7_CONFIGURED;
 				SS7_ERROR("Failed to read isup ckt = %d status\n", sngss7_info->circuit->id);
 				continue;
 			}
@@ -2159,6 +2164,14 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 			if (bits_cd == 0x0) {
 				/* check if circuit is UCIC or transient */
 				if (bits_ab == 0x3) {
+					SS7_INFO("ISUP CKT %d re-configuration pending!\n", x);
+					sngss7_info->circuit->flags &= ~SNGSS7_CONFIGURED;
+					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+
+					/* NC: The code below should be deleted. Its here for hitorical
+					       reason. The RESUME code will reconfigure the channel since
+					       the CONFIGURED flag has been reset */
+#if 0
 					/* bit a and bit b are set, unequipped */
 					ret = ftmod_ss7_isup_ckt_config(sngss7_info->circuit->id);
 					if (ret) {
@@ -2181,6 +2194,7 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 			
 					/* unlock the channel */
 					ftdm_mutex_unlock(ftdmchan->mutex);
+#endif
 
 				} /* if (bits_ab == 0x3) */
 			} else {
@@ -2192,8 +2206,8 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 					break;
 				/**************************************************************************/
 				case (1):
-					/* locally blocked */
-					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
+					/* locally blocked: Therefore we need to state machine to send an unblock */
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
 
 					/* set the channel to suspended state */
 					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -2209,7 +2223,7 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 				/**************************************************************************/
 				case (3):
 					/* both locally and remotely blocked */
-					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
 					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
 
 					/* set the channel to suspended state */

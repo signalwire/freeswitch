@@ -1171,16 +1171,19 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 					sngss7_info->circuit->flags );
 		
 		if (!(sngss7_info->circuit->flags & SNGSS7_CONFIGURED)) {
-			if (  !sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED) 
-			    ||(sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_RESUME))) {
+			/* Configure the circuit if RESUME and PAUSED are not set.
+			   And also in a case when RESUME is set */
+			if (!sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED) ||
+			     sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_RESUME)) {
 				if (ftmod_ss7_isup_ckt_config(sngss7_info->circuit->id)) {
 					SS7_CRITICAL("ISUP CKT %d configuration FAILED!\n", sngss7_info->circuit->id);
-					*(int*)0=0;
-					return 1;
+					sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
+					sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
 				} else {
 					SS7_INFO("ISUP CKT %d configuration DONE!\n", sngss7_info->circuit->id);
+					sngss7_info->circuit->flags |= SNGSS7_CONFIGURED;
+					sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 				}
-				sngss7_info->circuit->flags |= SNGSS7_CONFIGURED;
 			}
 		}
 		 
@@ -1391,7 +1394,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			/* check the last state and return to it to allow the call to finish */
 			goto suspend_goto_last;
 		}
-
+		
 		if (sngss7_test_ckt_blk_flag (sngss7_info, FLAG_CKT_MN_UNBLK_TX)) {
 
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_MN_UNBLK_TX flag %s\n", "");

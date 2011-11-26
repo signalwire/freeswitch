@@ -64,11 +64,9 @@ ftdm_status_t handle_relay_connect(RyMngmt *sta)
 	
 	SS7_INFO("Relay Channel %d connection UP\n", sng_relay->id);
 	if (sng_relay->type == LRY_CT_TCP_CLIENT) {
-		if (!sngss7_test_flag(sng_relay, SNGSS7_RELAY_INIT)) {
-			if (reconfig_all_ckts_for_relay()) {
-				SS7_ERROR("Failed to reconfigure ISUP Ckts!\n");
-				/* we're done....this is very bad! */
-			}
+		if (reconfig_all_ckts_for_relay()) {
+			SS7_ERROR("Failed to reconfigure ISUP Ckts!\n");
+			/* we're done....this is very bad! */
 		}
 		return FTDM_SUCCESS;
 	} else if (sng_relay->type == LRY_CT_TCP_SERVER) {
