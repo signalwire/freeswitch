@@ -136,7 +136,7 @@ void zrtp_def_cache_foreach( zrtp_global_t *global,
  * May be used in server solutions for periodically flushing the cache to prevent data loss.
  *
  * @return 
- *  - zrtp_status_ok - if operation complited successfully;
+ *  - zrtp_status_ok - if operation completed successfully;
  *	- zrtp_status_wrong_state - if a call is performed from a routine which
  *	  doesn't use the default cache.
  */

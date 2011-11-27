@@ -424,13 +424,13 @@ static zrtp_status_t init_test_session( zrtp_test_session_t *session,
 									    unsigned nstreams)
 {
 	unsigned i = 0;
-	zrtp_zid_t zid;
+	g_zrtp_cfg zid;
 	zrtp_status_t s = zrtp_status_fail;
 	
 	session->streams_count = nstreams;
 	
 	/* Allocate ZRTP session */
-	zrtp_randstr(zrtp_global, (unsigned char*)&zid, sizeof(zrtp_zid_t));
+	zrtp_randstr(zrtp_global, (unsigned char*)&zid, sizeof(g_zrtp_cfg));
 	
 	ZRTP_LOG(3, (_ZTU_,"INITIALIZE NEW SESSION ctx=%p:\n", session));
 	ZRTP_LOG(3, (_ZTU_,"---------------------------------------------------\n"));
