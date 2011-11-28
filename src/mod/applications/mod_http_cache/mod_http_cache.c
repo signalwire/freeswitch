@@ -300,7 +300,7 @@ static char *trim(char *str)
 static void process_cache_control_header(cached_url_t *url, char *data)
 {
 	char *max_age_str;
-	int max_age;
+	switch_time_t max_age;
 
 	/* trim whitespace and check if empty */
 	data = trim(data);
@@ -334,8 +334,8 @@ static void process_cache_control_header(cached_url_t *url, char *data)
 		return;
 	}
 
-	url->max_age = switch_time_now() + (1000 * 1000 * max_age);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting max age to %u seconds from now\n", max_age);
+	url->max_age = switch_time_now() + (max_age * 1000 * 1000);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting max age to %u seconds from now\n", (int)max_age);
 }
 
 #define CACHE_CONTROL_HEADER "cache-control:"
@@ -446,15 +446,11 @@ static char *url_cache_get(url_cache_t *cache, switch_core_session_t *session, c
 	u = switch_core_hash_find(cache->map, url);
 
 	if (u && u->status == CACHED_URL_AVAILABLE) {
-		/* check if expired */
 		if (switch_time_now() >= (u->download_time + u->max_age)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL has expired.\n");
 			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
 			u = NULL;
-		}
-
-		/* make sure file hasn't been deleted */
-		if (switch_file_exists(u->filename, pool) != SWITCH_STATUS_SUCCESS) {
+		} else if (switch_file_exists(u->filename, pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cached URL file is missing.\n");
 			url_cache_remove_soft(cache, session, u); /* will get permanently deleted upon replacement */
 			u = NULL;
@@ -690,6 +686,7 @@ static cached_url_t *cached_url_create(url_cache_t *cache, const char *url)
 static void cached_url_destroy(cached_url_t *url, switch_memory_pool_t *pool)
 {
 	if (!zstr(url->filename)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleting %s from cache\n", url->filename);
 		switch_file_remove(url->filename, pool);
 	}
 	switch_safe_free(url->filename);
@@ -775,11 +772,8 @@ static void setup_dir(url_cache_t *cache)
 				switch_safe_free(path);
 			}
 			switch_dir_close(dir);
-			switch_safe_free(dirname);
-		} else {
-			switch_safe_free(dirname);
-			break;
 		}
+		switch_safe_free(dirname);
 	}
 }
 
@@ -927,7 +921,7 @@ static switch_status_t do_config(url_cache_t *cache)
 	switch_xml_t cfg, xml, param, settings;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int max_urls;
-	int default_max_age_sec;
+	switch_time_t default_max_age_sec;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
