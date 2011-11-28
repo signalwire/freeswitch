@@ -1961,7 +1961,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	sofia_cid_type_t cid_type = tech_pvt->profile->cid_type;
 	sip_cseq_t *cseq = NULL;
 	const char *invite_record_route = switch_channel_get_variable(tech_pvt->channel, "sip_invite_record_route");
-	const char *invite_via = switch_channel_get_variable(tech_pvt->channel, "sip_invite_via");
 	const char *invite_route_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_route_uri");
 	const char *invite_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_from");
 	const char *invite_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_to");
@@ -1971,9 +1970,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *force_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_to");
 	char *mp = NULL, *mp_type = NULL;
 	char *record_route = NULL;
+	const char *recover_via = NULL;
 
 	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
 		const char *recover_contact = switch_channel_get_variable(tech_pvt->channel, "sip_recover_contact");
+		recover_via = switch_channel_get_variable(tech_pvt->channel, "sip_recover_via");
 
 		if (!zstr(invite_record_route)) {
 			record_route = switch_core_session_sprintf(session, "Record-Route: %s", invite_record_route);
@@ -2486,7 +2487,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
 				   TAG_IF(tech_pvt->redirected, NUTAG_URL(tech_pvt->redirected)),
 				   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
-				   TAG_IF(!zstr(invite_via), SIPTAG_VIA_STR(invite_via)),
+				   TAG_IF(!zstr(recover_via), SIPTAG_VIA_STR(recover_via)),
 				   TAG_IF(!zstr(tech_pvt->rpid), SIPTAG_REMOTE_PARTY_ID_STR(tech_pvt->rpid)),
 				   TAG_IF(!zstr(tech_pvt->preferred_id), SIPTAG_P_PREFERRED_IDENTITY_STR(tech_pvt->preferred_id)),
 				   TAG_IF(!zstr(tech_pvt->asserted_id), SIPTAG_P_ASSERTED_IDENTITY_STR(tech_pvt->asserted_id)),
@@ -2520,7 +2521,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
 				   TAG_IF(tech_pvt->redirected, NUTAG_URL(tech_pvt->redirected)),
 				   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
-				   TAG_IF(!zstr(invite_via), SIPTAG_VIA_STR(invite_via)),
+				   TAG_IF(!zstr(recover_via), SIPTAG_VIA_STR(recover_via)),
 				   TAG_IF(!zstr(tech_pvt->rpid), SIPTAG_REMOTE_PARTY_ID_STR(tech_pvt->rpid)),
 				   TAG_IF(!zstr(tech_pvt->preferred_id), SIPTAG_P_PREFERRED_IDENTITY_STR(tech_pvt->preferred_id)),
 				   TAG_IF(!zstr(tech_pvt->asserted_id), SIPTAG_P_ASSERTED_IDENTITY_STR(tech_pvt->asserted_id)),
