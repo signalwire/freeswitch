@@ -72,6 +72,7 @@ static struct {
 	int auth_scheme;
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
+	int encode_values;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load);
@@ -249,24 +250,27 @@ static void set_json_chan_vars(struct json_object *json, switch_channel_t *chann
 
 	for (; hi; hi = hi->next) {
 		if (!zstr(hi->name) && !zstr(hi->value)) {
-			char *data;
-			switch_size_t dlen = strlen(hi->value) * 3;
+			char *data = hi->value;
+			if (globals.encode_values == ENCODING_DEFAULT) {
+				switch_size_t dlen = strlen(hi->value) * 3;
 
-			if ((data = malloc(dlen))) {
-				memset(data, 0, dlen);
-				switch_url_encode(hi->value, data, dlen);
-
-				variable = json_object_new_string(data);
-				if (!is_error(variable)) {
-					json_object_object_add(json, hi->name, variable);
+				if ((data = malloc(dlen))) {
+					memset(data, 0, dlen);
+					switch_url_encode(hi->value, data, dlen);
 				}
-				free(data);
+			}
+
+			variable = json_object_new_string(data);			
+			if (!is_error(variable)) {
+				json_object_object_add(json, hi->name, variable);
+			}
+
+			if (data != hi->value) {
+				switch_safe_free(data);
 			}
 		}
 	}
 	switch_channel_variable_last(channel);
-
-	return;
 }
 
 
@@ -708,7 +712,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			}
 
 		} else {
-			headers = curl_slist_append(headers, "Content-Type: application/x-www-form-plaintext");
+			headers = curl_slist_append(headers, "Content-Type: application/json");
 			curl_json_text = (char *)json_text;
 		}
 
@@ -909,6 +913,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 	globals.disable100continue = 0;
 	globals.pool = pool;
 	globals.auth_scheme = CURLAUTH_BASIC;
+	globals.encode_values = ENCODING_DEFAULT;
 
 	switch_thread_rwlock_create(&globals.log_path_lock, pool);
 
@@ -1008,6 +1013,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 				} else if (!strcasecmp(val, "any")) {
 					globals.auth_scheme = CURLAUTH_ANY;
 				}
+			} else if (!strcasecmp(var, "encode-values") && !zstr(val)) {
+				globals.encode_values = switch_true(val) ? ENCODING_DEFAULT : ENCODING_NONE;
 			}
 
 		}
