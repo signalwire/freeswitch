@@ -316,6 +316,8 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	char *fax_transfer_rate = NULL;
 	char *fax_result_code = NULL;
 	switch_event_t *event;
+    const char *var;
+    char *expanded;
 
 	pvt = (pvt_t *) user_data;
 	switch_assert(pvt);
@@ -432,14 +434,36 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 		switch_event_fire(&event);
 	}
 
+    if ((var = switch_channel_get_variable(channel, "system_on_fax_result"))) {
+        expanded = switch_channel_expand_variables(channel, var);
+        switch_system(expanded, SWITCH_FALSE);
+        if (expanded != var) {
+            free(expanded);
+        }
+    }
+
     switch_channel_execute_on(channel, "execute_on_fax_result");
 
     if (result == T30_ERR_OK) {
+        if ((var = switch_channel_get_variable(channel, "system_on_fax_success"))) {
+            expanded = switch_channel_expand_variables(channel, var);
+            switch_system(expanded, SWITCH_FALSE);
+            if (expanded != var) {
+                free(expanded);
+            }
+        }
         switch_channel_execute_on(channel, "execute_on_fax_success");
     } else {
+        if ((var = switch_channel_get_variable(channel, "system_on_fax_failure"))) {
+            expanded = switch_channel_expand_variables(channel, var);
+            switch_system(expanded, SWITCH_FALSE);
+            if (expanded != var) {
+                free(expanded);
+            }
+        }
         switch_channel_execute_on(channel, "execute_on_fax_failure");
     }
-
+    
 }
 
 static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count)
