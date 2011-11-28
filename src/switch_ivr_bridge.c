@@ -663,7 +663,11 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 			if (switch_channel_test_flag(channel, CF_INTERCEPT)) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_PICKED_OFF);
 			} else {
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+				} else {
+					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				}
 			}
 		}
 	}
@@ -1175,10 +1179,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_channel_test_flag(peer_channel, CF_RING_READY)) {
 		const char *app, *data;
 		
+		if (switch_channel_get_state(peer_channel) == CS_CONSUME_MEDIA) {
+			switch_channel_set_state(peer_channel, CS_RESET);
+			switch_channel_wait_for_state(peer_channel, caller_channel, CS_RESET);
+		}
+
+		if (!switch_channel_ready(caller_channel)) {
+			switch_call_cause_t cause = switch_channel_get_cause(caller_channel);
+
+			if (cause) {
+				switch_channel_hangup(peer_channel, cause);
+				goto done;
+			}
+		}
+
+
 		switch_channel_set_state(peer_channel, CS_CONSUME_MEDIA);
 
 		switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(session));
-
+		
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", switch_core_session_get_uuid(peer_session));

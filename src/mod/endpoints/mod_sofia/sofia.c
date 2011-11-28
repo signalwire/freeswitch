@@ -1312,10 +1312,6 @@ void sofia_event_callback(nua_event_t event,
 {
 	sofia_dispatch_event_t *de;
 
-	if (event == nua_r_invite && status >= 900) {
-		return;
-	}
-
 
 	switch_mutex_lock(profile->flag_mutex);
 	profile->queued_events++;
@@ -4615,6 +4611,14 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		switch_caller_profile_t *caller_profile = NULL;
 		int has_t38 = 0;
 
+		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
+
+		if (status >= 900) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s status %d received.\n", 
+							  switch_channel_get_name(channel), status);
+			return;
+		}
+
 		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
 		switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
@@ -4627,8 +4631,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		if ((caller_profile = switch_channel_get_caller_profile(channel))) {
 			caller_profile->network_addr = switch_core_strdup(caller_profile->pool, network_ip);
 		}
-
-		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
 
 		tech_pvt->last_sdp_str = NULL;
 		if (!sofia_use_soa(tech_pvt) && sip->sip_payload && sip->sip_payload->pl_data) {
