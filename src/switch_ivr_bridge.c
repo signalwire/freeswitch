@@ -1180,8 +1180,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		const char *app, *data;
 		
 		if (switch_channel_get_state(peer_channel) == CS_CONSUME_MEDIA) {
-			switch_channel_set_state(peer_channel, CS_RESET);
-			switch_channel_wait_for_state(peer_channel, caller_channel, CS_RESET);
+			switch_channel_set_state(peer_channel, CS_HIBERNATE);
+			switch_channel_wait_for_state(peer_channel, caller_channel, CS_HIBERNATE);
 		}
 
 		if (!switch_channel_ready(caller_channel)) {
