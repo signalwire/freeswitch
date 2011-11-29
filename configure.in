@@ -809,6 +809,8 @@ if test "$ac_cv_use_system_curl" != "yes" ; then
  LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'
 fi
 
+AM_CONDITIONAL([CURL_BUILTIN],[test "${ac_cv_use_system_curl}" != "yes"])
+
 AC_SUBST(LIBCURL_DEPS)
 
 

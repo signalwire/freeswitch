@@ -103,9 +103,11 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-3.8.2/libtiff
+CORE_CFLAGS += $(LIBCURL_CPPFLAGS)
 
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
+
 if ENABLE_SRTP
 CORE_CFLAGS += -DENABLE_SRTP
 CORE_LIBS += libs/srtp/libsrtp.la
@@ -128,12 +130,20 @@ if ENABLE_TIMERFD_WRAPPER
 CORE_CFLAGS += -DTIMERFD_WRAP
 endif
 
+CORE_LDFLAGS=
+
+if CURL_BUILTIN
+CORE_LIBS += libs/curl/lib/libcurl.la
+else
+CORE_LDFLAGS += $(LIBCURL)
+endif
+
 ##
 ## libfreeswitch
 ##
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(AM_CFLAGS)
-libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS)
+libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) $(CORE_LDFLAGS)
 libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
@@ -429,6 +439,10 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 ##
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
+
+libs/curl/lib/libcurl.la: libs/curl
+	@cd libs/curl && $(MAKE)
+	@$(TOUCH_TARGET)
 
 libs/apr/libapr-1.la: libs/apr libs/apr/.update
 	@cd libs/apr && $(MAKE)
