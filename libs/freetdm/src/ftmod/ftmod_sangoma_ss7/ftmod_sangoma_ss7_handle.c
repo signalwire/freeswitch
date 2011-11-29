@@ -325,6 +325,7 @@ handle_glare:
 		/* throw the TX reset flag */
 		if (!sngss7_tx_reset_status_pending(sngss7_info)) {
 			sngss7_info->ckt_flags=0;
+			sngss7_set_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
 			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
 			/* go to RESTART */
@@ -398,6 +399,7 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			/* throw the TX reset flag */
 			if (!sngss7_tx_reset_status_pending(sngss7_info)) {
 				sngss7_info->ckt_flags=0;
+				sngss7_set_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
 				sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
 				/* go to RESTART */
@@ -664,6 +666,7 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		/* throw the TX reset flag */
 		if (!sngss7_tx_reset_status_pending(sngss7_info)) {
 			sngss7_info->ckt_flags=0;
+			sngss7_set_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
 			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
 			/* go to RESTART */
@@ -788,11 +791,15 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	default:
 
-		/* throw the reset flag */
-		sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_RX);
+		/* throw the TX reset flag */
+		if (!sngss7_tx_reset_status_pending(sngss7_info)) {
+		    sngss7_info->ckt_flags=0;
+				sngss7_set_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
+		    sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
-		/* set the state to RESTART */
-		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+		    /* go to RESTART */
+		    ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+		}
 		break;
 	/**************************************************************************/
 	} /* switch (ftdmchan->state) */
@@ -1836,6 +1843,7 @@ ftdm_status_t handle_rsc_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	default:
 
 		/* set the state of the channel to restart...the rest is done by the chan monitor */
+		sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 		break;
 	/**************************************************************************/

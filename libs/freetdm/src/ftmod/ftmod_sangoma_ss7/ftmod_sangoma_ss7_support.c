@@ -2135,12 +2135,12 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 
 			/* check if the interface is paused or resumed */
 			if (sngss7_test_flag(sngss7_intf, SNGSS7_PAUSED)) {
-				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "ISUP intf %d is PAUSED\n", sngss7_intf->id);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Circuit set to PAUSED %s\n"," ");
 				/* throw the pause flag */
 				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
 				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			} else {
-				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "ISUP intf %d is RESUMED\n", sngss7_intf->id);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Circuit set to RESUMED %s\n"," ");
 				/* throw the resume flag */
 				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
@@ -2152,7 +2152,7 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 				       Reset the circuit CONFIGURED flag so that RESUME will reconfigure
 				       this circuit. */
 				sngss7_info->circuit->flags &= ~SNGSS7_CONFIGURED;
-				SS7_ERROR("Failed to read isup ckt = %d status\n", sngss7_info->circuit->id);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR,"Failed to read isup ckt = %d status\n", sngss7_info->circuit->id);
 				continue;
 			}
 
@@ -2160,6 +2160,8 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 			bits_ab = (state & (SNG_BIT_A + SNG_BIT_B)) >> 0;
 			bits_cd = (state & (SNG_BIT_C + SNG_BIT_D)) >> 2;
 			bits_ef = (state & (SNG_BIT_E + SNG_BIT_F)) >> 4;
+					
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Circuit state=0x%X ab=0x%X cd=0x%X ef=0x%X\n",state,bits_ab,bits_cd,bits_ef);
 
 			if (bits_cd == 0x0) {
 				/* check if circuit is UCIC or transient */
@@ -2196,7 +2198,20 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 					ftdm_mutex_unlock(ftdmchan->mutex);
 #endif
 
-				} /* if (bits_ab == 0x3) */
+				} else { /* if (bits_ab == 0x3) */
+					/* The stack status is not blocked.  However this is possible if
+					   the circuit state was UP. So even though Master sent out the BLO
+					   the status command is not showing it.  
+					   
+					   As a kudge. We will try to send out an UBL even though the status
+					   indicates that there is no BLO.  */
+					if (!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) {
+						sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
+
+						/* set the channel to suspended state */
+						SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					}
+				}
 			} else {
 				/* check the maintenance block status in bits A and B */
 				switch (bits_ab) {
@@ -2206,11 +2221,17 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 					break;
 				/**************************************************************************/
 				case (1):
-					/* locally blocked: Therefore we need to state machine to send an unblock */
-					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
+					/* The stack status is Blocked.  Check if the block was sent
+					   by user via console.  If the block was not sent by user then, it 
+					   was sent out by Master due to relay down.  
+					   Therefore send out the unblock to clear it */
+					if (!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) {
+						sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
 
-					/* set the channel to suspended state */
-					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+						/* set the channel to suspended state */
+						SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					}
+
 					break;
 				/**************************************************************************/
 				case (2):
@@ -2276,7 +2297,7 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 			/* clear the re-config flag ... no matter what */
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_CKT_RECONFIG);
 
-		} /* if ((sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_RECONFIG)) */
+		} 
 	} /* for (x = 1; x < (span->chan_count + 1); x++) */
 
 	return FTDM_SUCCESS;

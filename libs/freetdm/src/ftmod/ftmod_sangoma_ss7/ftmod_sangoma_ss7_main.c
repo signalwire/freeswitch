@@ -588,7 +588,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 	int state_flag = 1; 
 	int i = 0;
 
-	SS7_DEBUG_CHAN(ftdmchan, "ftmod_sangoma_ss7 processing state %s\n", ftdm_channel_state2str (ftdmchan->state));
+	SS7_DEBUG_CHAN(ftdmchan, "ftmod_sangoma_ss7 processing state %s: ckt=0x%X, blk=0x%X\n", 
+						ftdm_channel_state2str (ftdmchan->state),
+									sngss7_info->ckt_flags,
+									sngss7_info->blk_flags);
+
 
 	/*check what state we are supposed to be in */
 	switch (ftdmchan->state) {
@@ -863,6 +867,9 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		}
 
 		if (sngss7_test_ckt_flag (sngss7_info, FLAG_REMOTE_REL)) {
+		
+			sngss7_clear_ckt_flag (sngss7_info, FLAG_LOCAL_REL);
+
 			/* check if this hangup is from a tx RSC */
 			if (sngss7_test_ckt_flag (sngss7_info, FLAG_RESET_TX)) {
 				if (!sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_SENT)) {
