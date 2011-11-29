@@ -445,30 +445,30 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 #define MY_BLOCK_SIZE MY_BUF_LEN
 static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void *obj)
 {
-	CURL *curl_handle = NULL;
-	CURLcode cc;
+	switch_CURL *curl_handle = NULL;
+	switch_CURLcode cc;
 	shout_context_t *context = (shout_context_t *) obj;
 
 	switch_thread_rwlock_rdlock(context->rwlock);
 
-	curl_handle = curl_easy_init();
-	curl_easy_setopt(curl_handle, CURLOPT_URL, context->stream_url);
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, stream_callback);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) context);
-	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "FreeSWITCH(mod_shout)/1.0");
-	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 30);	/* eventually timeout connect */
-	curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT, 100);	/* handle trickle connections */
-	curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, 30);
-	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, context->curl_error_buff);
-	cc = curl_easy_perform(curl_handle);
+	curl_handle = switch_curl_easy_init();
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, context->stream_url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, stream_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) context);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "FreeSWITCH(mod_shout)/1.0");
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 30);	/* eventually timeout connect */
+	switch_curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT, 100);	/* handle trickle connections */
+	switch_curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, 30);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, context->curl_error_buff);
+	cc = switch_curl_easy_perform(curl_handle);
 	if (cc && cc != CURLE_WRITE_ERROR) {	/* write error is ok, we just exited from callback early */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s : %s [%s]\n", cc, curl_easy_strerror(cc),
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s : %s [%s]\n", cc, switch_curl_easy_strerror(cc),
 						  context->curl_error_buff, context->stream_url);
 	}
-	curl_easy_cleanup(curl_handle);
+	switch_curl_easy_cleanup(curl_handle);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read Thread Done\n");
 
 	context->eof++;
@@ -1550,8 +1550,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	supported_formats[0] = "shout";
 	supported_formats[1] = "mp3";
 
-	switch_curl_init();
-
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
@@ -1577,7 +1575,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown)
 {
-	switch_curl_destroy();
 	mpg123_exit();
 	return SWITCH_STATUS_SUCCESS;
 }

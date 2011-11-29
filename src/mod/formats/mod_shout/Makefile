@@ -3,8 +3,6 @@ SHOUT=libshout-2.2.2
 MPG123=mpg123-1.13.2
 BASE=../../../..
 
-WANT_CURL=yes
-
 LAME_DIR=$(switch_srcdir)/libs/$(LAME)
 SHOUT_DIR=$(switch_srcdir)/libs/$(SHOUT)
 MPG123_DIR=$(switch_srcdir)/libs/$(MPG123)

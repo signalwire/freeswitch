@@ -1377,8 +1377,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	memset(&runtime, 0, sizeof(runtime));
 	gethostname(runtime.hostname, sizeof(runtime.hostname));
 
-	switch_ssl_init_ssl_locks();
-	
 	runtime.max_db_handles = 50;
 	runtime.db_handle_timeout = 5000000;;
 	
@@ -1454,6 +1452,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	if (console) {
 		runtime.console = stdout;
 	}
+
+	switch_ssl_init_ssl_locks();
+	switch_curl_init();
 
 	switch_core_set_variable("hostname", runtime.hostname);
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);

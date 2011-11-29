@@ -57,7 +57,7 @@ struct http_data_obj {
 	int err;
 	long http_response_code;
 	char *http_response;
-	struct curl_slist *headers;
+	switch_curl_slist_t *headers;
 };
 typedef struct http_data_obj http_data_t;
 
@@ -94,7 +94,7 @@ static size_t header_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	switch_copy_string(header, ptr, realsize);
 	header[realsize] = '\0';
 
-	http_data->headers = curl_slist_append(http_data->headers, header);
+	http_data->headers = switch_curl_slist_append(http_data->headers, header);
 
 	return realsize;
 }
@@ -102,7 +102,7 @@ static size_t header_callback(void *ptr, size_t size, size_t nmemb, void *data)
 static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, const char *method, const char *data)
 {
 
-	CURL *curl_handle = NULL;
+	switch_CURL *curl_handle = NULL;
 	long httpRes = 0;
 
 	http_data_t *http_data = NULL;
@@ -165,7 +165,7 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 	struct json_object *top = NULL;
 	struct json_object *headers = NULL;
 	char *data = NULL;
-	struct curl_slist *header = http_data->headers;
+	switch_curl_slist_t *header = http_data->headers;
 
 	top = json_object_new_object();
 	headers = json_object_new_array();
@@ -240,7 +240,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 	switch_bool_t do_headers = SWITCH_FALSE;
 	switch_bool_t do_json = SWITCH_FALSE;
 	http_data_t *http_data = NULL;
-	struct curl_slist *slist = NULL;
+	switch_curl_slist_t *slist = NULL;
 	switch_stream_handle_t stream = { 0 };
 	int i = 0;
 
@@ -308,7 +308,7 @@ SWITCH_STANDARD_APP(curl_app_function)
   done:
 	switch_safe_free(stream.data);
 	if (http_data && http_data->headers) {
-		curl_slist_free_all(http_data->headers);
+		switch_curl_slist_free_all(http_data->headers);
 	}
 	if (!session && pool) {
 		switch_core_destroy_memory_pool(&pool);
@@ -326,7 +326,7 @@ SWITCH_STANDARD_API(curl_function)
 	char *postdata = NULL;
 	switch_bool_t do_headers = SWITCH_FALSE;
 	switch_bool_t do_json = SWITCH_FALSE;
-	struct curl_slist *slist = NULL;
+	switch_curl_slist_t *slist = NULL;
 	http_data_t *http_data = NULL;
 	int i = 0;
 
@@ -391,7 +391,7 @@ SWITCH_STANDARD_API(curl_function)
 
   done:
 	if (http_data && http_data->headers) {
-		curl_slist_free_all(http_data->headers);
+		switch_curl_slist_free_all(http_data->headers);
 	}
 	switch_safe_free(mydata);
 	if (!session && pool) {
@@ -412,8 +412,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load)
 
 	globals.pool = pool;
 
-	switch_curl_init();
-
 	SWITCH_ADD_API(api_interface, "curl", "curl API", curl_function, SYNTAX);
 	SWITCH_ADD_APP(app_interface, "curl", "Perform a http request", "Perform a http request",
 				   curl_app_function, SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
@@ -428,7 +426,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_curl_shutdown)
 {
 	/* Cleanup dynamically allocated config settings */
-	switch_curl_destroy();
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -614,8 +614,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	uint32_t cur_try;
 	long httpRes;
 	CURL *curl_handle = NULL;
-	struct curl_slist *headers = NULL;
-	struct curl_slist *slist = NULL;
+	switch_curl_slist_t *headers = NULL;
+	switch_curl_slist_t *slist = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int is_b;
@@ -688,7 +688,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	/* try to post it to the web server */
 	if (globals.url_count) {
 		char *destUrl = NULL;
-		curl_handle = curl_easy_init();
+		curl_handle = switch_curl_easy_init();
 
 		if (globals.encode) {
 			switch_size_t need_bytes = strlen(json_text) * 3;
@@ -697,10 +697,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			switch_assert(json_text_escaped);
 			memset(json_text_escaped, 0, need_bytes);
 			if (globals.encode == ENCODING_DEFAULT) {
-				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
+				headers = switch_curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
 				switch_url_encode(json_text, json_text_escaped, need_bytes);
 			} else {
-				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-base64-encoded");
+				headers = switch_curl_slist_append(headers, "Content-Type: application/x-www-form-base64-encoded");
 				switch_b64_encode((unsigned char *) json_text, need_bytes / 3, (unsigned char *) json_text_escaped, need_bytes);
 			}
 
@@ -712,55 +712,55 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			}
 
 		} else {
-			headers = curl_slist_append(headers, "Content-Type: application/json");
+			headers = switch_curl_slist_append(headers, "Content-Type: application/json");
 			curl_json_text = (char *)json_text;
 		}
 
 
 		if (!zstr(globals.cred)) {
-			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, globals.auth_scheme);
-			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, globals.cred);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, globals.auth_scheme);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_USERPWD, globals.cred);
 		}
 
-		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-		curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
-		curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, curl_json_text);
-		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-json/1.0");
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, curl_json_text);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-json/1.0");
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
 
 		if (globals.disable100continue) {
-			slist = curl_slist_append(slist, "Expect:");
-			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
+			slist = switch_curl_slist_append(slist, "Expect:");
+			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
 		}
 
 		if (globals.ssl_cert_file) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, globals.ssl_cert_file);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, globals.ssl_cert_file);
 		}
 
 		if (globals.ssl_key_file) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, globals.ssl_key_file);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, globals.ssl_key_file);
 		}
 
 		if (globals.ssl_key_password) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, globals.ssl_key_password);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, globals.ssl_key_password);
 		}
 
 		if (globals.ssl_version) {
 			if (!strcasecmp(globals.ssl_version, "SSLv3")) {
-				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
 			} else if (!strcasecmp(globals.ssl_version, "TLSv1")) {
-				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
 			}
 		}
 
 		if (globals.ssl_cacert_file) {
-			curl_easy_setopt(curl_handle, CURLOPT_CAINFO, globals.ssl_cacert_file);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, globals.ssl_cacert_file);
 		}
 
 		/* these were used for testing, optionally they may be enabled if someone desires
-		   curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
-		   curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
+		   switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
+		   switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
 		 */
 
 		for (cur_try = 0; cur_try < globals.retries; cur_try++) {
@@ -769,23 +769,23 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			}
 
 			destUrl = switch_mprintf("%s?uuid=%s", globals.urls[globals.url_index], switch_core_session_get_uuid(session));
-			curl_easy_setopt(curl_handle, CURLOPT_URL, destUrl);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_URL, destUrl);
 
 			if (!strncasecmp(destUrl, "https", 5)) {
-				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 			}
 
 			if (globals.enable_cacert_check) {
-				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, TRUE);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, TRUE);
 			}
 
 			if (globals.enable_ssl_verifyhost) {
-				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
 			}
 
-			curl_easy_perform(curl_handle);
-			curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+			switch_curl_easy_perform(curl_handle);
+			switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 			switch_safe_free(destUrl);
 			if (httpRes == 200) {
 				goto success;
@@ -800,9 +800,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retry will be with url [%s]\n", globals.urls[globals.url_index]);
 			}
 		}
-		curl_easy_cleanup(curl_handle);
-		curl_slist_free_all(headers);
-		curl_slist_free_all(slist);
+		switch_curl_easy_cleanup(curl_handle);
+		switch_curl_slist_free_all(headers);
+		switch_curl_slist_free_all(slist);
 		slist = NULL;
 		headers = NULL;
 		curl_handle = NULL;
@@ -848,13 +848,13 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
   error:
 	if (curl_handle) {
-		curl_easy_cleanup(curl_handle);
+		switch_curl_easy_cleanup(curl_handle);
 	}
 	if (headers) {
-		curl_slist_free_all(headers);
+		switch_curl_slist_free_all(headers);
 	}
 	if (slist) {
-		curl_slist_free_all(slist);
+		switch_curl_slist_free_all(slist);
 	}
 	if (curl_json_text != json_text) {
 		switch_safe_free(curl_json_text);
@@ -1041,7 +1041,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 
 	globals.retries++;
 
-	switch_curl_init();
 	set_json_cdr_log_dirs();
 
 	switch_xml_free(xml);
@@ -1054,7 +1053,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_json_cdr_shutdown)
 
 	globals.shutdown = 1;
 
-	switch_curl_destroy();
 	switch_safe_free(globals.log_dir);
 	
 	for (;err_dir_index < globals.err_dir_count; err_dir_index++) {
