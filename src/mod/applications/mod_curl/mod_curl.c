@@ -30,7 +30,7 @@
  */
 
 #include <switch.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
 #include <json.h>
 
 /* Prototypes */
@@ -412,6 +412,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load)
 
 	globals.pool = pool;
 
+	switch_curl_init();
+
 	SWITCH_ADD_API(api_interface, "curl", "curl API", curl_function, SYNTAX);
 	SWITCH_ADD_APP(app_interface, "curl", "Perform a http request", "Perform a http request",
 				   curl_app_function, SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
@@ -426,7 +428,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_curl_shutdown)
 {
 	/* Cleanup dynamically allocated config settings */
-
+	switch_curl_destroy();
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -32,7 +32,7 @@
  */
 #include <sys/stat.h>
 #include <switch.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
 #include <json.h>
 
 #define MAX_URLS 20
@@ -724,6 +724,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, curl_json_text);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-json/1.0");
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
@@ -1040,6 +1041,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 
 	globals.retries++;
 
+	switch_curl_init();
 	set_json_cdr_log_dirs();
 
 	switch_xml_free(xml);
@@ -1052,6 +1054,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_json_cdr_shutdown)
 
 	globals.shutdown = 1;
 
+	switch_curl_destroy();
 	switch_safe_free(globals.log_dir);
 	
 	for (;err_dir_index < globals.err_dir_count; err_dir_index++) {

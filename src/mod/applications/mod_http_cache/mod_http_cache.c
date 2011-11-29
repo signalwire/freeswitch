@@ -30,7 +30,7 @@
  *
  */
 #include <switch.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
 
 /* Defines module interface to FreeSWITCH */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_http_cache_shutdown);
@@ -205,6 +205,7 @@ static switch_status_t http_put(switch_core_session_t *session, const char *url,
 	}
 	curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
+	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 	curl_easy_setopt(curl_handle, CURLOPT_READDATA, file_to_put);
 	curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)file_info.st_size);
@@ -1011,7 +1012,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 	setup_dir(&gcache);
 
 	/* init CURL */
-	curl_global_init(CURL_GLOBAL_ALL);
+	switch_curl_init();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -1022,6 +1023,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_http_cache_shutdown)
 {
+	switch_curl_destroy();
 	url_cache_clear(&gcache, NULL);
 	switch_core_hash_destroy(&gcache.map);
 	switch_mutex_destroy(gcache.mutex);

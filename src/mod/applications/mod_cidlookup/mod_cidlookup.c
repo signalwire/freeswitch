@@ -30,7 +30,7 @@
  */
 
 #include <switch.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
 
 #define SWITCH_REWIND_STREAM(s) s.end = s.data
 
@@ -839,6 +839,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 		return SWITCH_STATUS_TERM;
 	}
 
+	switch_curl_init();
+
 	SWITCH_ADD_API(api_interface, "cidlookup", "cidlookup API", cidlookup_function, SYNTAX);
 	SWITCH_ADD_APP(app_interface, "cidlookup", "Perform a CID lookup", "Perform a CID lookup",
 				   cidlookup_app_function, "[number [skipurl]]", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
@@ -852,7 +854,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
   Macro expands to: switch_status_t mod_cidlookup_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown)
 {
-
+	switch_curl_destroy();
 	switch_event_unbind(&reload_xml_event);
 	return SWITCH_STATUS_SUCCESS;
 }

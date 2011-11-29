@@ -2520,6 +2520,7 @@ static JSBool js_fetchurl_hash(JSContext * cx, JSObject * obj, uintN argc, jsval
 		}
 		curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 		curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, hash_callback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);

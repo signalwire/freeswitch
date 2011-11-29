@@ -297,6 +297,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, curl_xml_text);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
