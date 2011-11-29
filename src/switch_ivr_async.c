@@ -515,23 +515,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_feed(switch_ivr_dmachine_t *dmachine, const char *digits, switch_ivr_dmachine_match_t **match)
 {
 	const char *p;
+	switch_status_t status = SWITCH_STATUS_BREAK;
+	
+	if (!zstr(digits)) {
+		status = SWITCH_STATUS_SUCCESS;
+	}
 
 	for (p = digits; p && *p; p++) {
 		switch_mutex_lock(dmachine->mutex);
 		if (dmachine->cur_digit_len < dmachine->max_digit_len) {
+			switch_status_t istatus;
 			char *e = dmachine->digits + strlen(dmachine->digits);
+			
 			*e++ = *p;
 			*e = '\0';
 			dmachine->cur_digit_len++;
 			switch_mutex_unlock(dmachine->mutex);
 			dmachine->last_digit_time = switch_time_now();
-			switch_ivr_dmachine_ping(dmachine, match);
+			if (status == SWITCH_STATUS_SUCCESS && (istatus = switch_ivr_dmachine_ping(dmachine, match)) != SWITCH_STATUS_SUCCESS) {
+				status = istatus;
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "dmachine overflow error!\n");
+			status = SWITCH_STATUS_FALSE;
 		}
 	}
 		
-	return switch_ivr_dmachine_ping(dmachine, match);
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_clear(switch_ivr_dmachine_t *dmachine)
