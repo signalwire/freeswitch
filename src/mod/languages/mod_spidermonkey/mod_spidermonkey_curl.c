@@ -183,6 +183,7 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 					  method, url_p, data, switch_str_nil(cred), co->function ? "yes" : "no");
 
 	curl_easy_setopt(co->curl_handle, CURLOPT_URL, url_p);
+	curl_easy_setopt(co->curl_handle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(co->curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 	curl_easy_setopt(co->curl_handle, CURLOPT_WRITEDATA, (void *) co);
 

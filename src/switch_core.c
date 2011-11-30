@@ -1453,6 +1453,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		runtime.console = stdout;
 	}
 
+	switch_ssl_init_ssl_locks();
+	switch_curl_init();
+
 	switch_core_set_variable("hostname", runtime.hostname);
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
 	switch_core_set_variable("local_ip_v4", guess_ip);
@@ -1512,7 +1515,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(runtime.uuid_str, &uuid);
-	switch_ssl_init_ssl_locks();
+
 
 	return SWITCH_STATUS_SUCCESS;
 }

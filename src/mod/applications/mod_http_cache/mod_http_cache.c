@@ -30,7 +30,7 @@
  *
  */
 #include <switch.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
 
 /* Defines module interface to FreeSWITCH */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_http_cache_shutdown);
@@ -197,23 +197,24 @@ static switch_status_t http_put(switch_core_session_t *session, const char *url,
 		goto done;
 	}
 	
-	curl_handle = curl_easy_init();
+	curl_handle = switch_curl_easy_init();
 	if (!curl_handle) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "curl_easy_init() failure\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_curl_easy_init() failure\n");
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-	curl_easy_setopt(curl_handle, CURLOPT_READDATA, file_to_put);
-	curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)file_info.st_size);
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
-	curl_easy_perform(curl_handle);
-	curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-	curl_easy_cleanup(curl_handle);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, file_to_put);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)file_info.st_size);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+	switch_curl_easy_perform(curl_handle);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+	switch_curl_easy_cleanup(curl_handle);
 
 	if (httpRes == 200 || httpRes == 201 || httpRes == 204) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s saved to %s\n", filename, url);
@@ -703,7 +704,7 @@ static void cached_url_destroy(cached_url_t *url, switch_memory_pool_t *pool)
 static switch_status_t http_get(cached_url_t *url, switch_core_session_t *session)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	CURL *curl_handle = NULL;
+	switch_CURL *curl_handle = NULL;
 	http_get_data_t get_data = {0};
 	long httpRes = 0;
 	int start_time_ms = switch_time_now() / 1000;
@@ -712,20 +713,20 @@ static switch_status_t http_get(cached_url_t *url, switch_core_session_t *sessio
 	get_data.fd = 0;
 	get_data.url = url;
 	
-	curl_handle = curl_easy_init();
+	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache\n", get_data.url->filename);
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-		curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-		curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-		curl_easy_setopt(curl_handle, CURLOPT_URL, get_data.url->url);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
-		curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
-		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
-		curl_easy_perform(curl_handle);
-		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-		curl_easy_cleanup(curl_handle);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, get_data.url->url);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+		switch_curl_easy_perform(curl_handle);
+		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+		switch_curl_easy_cleanup(curl_handle);
 		close(get_data.fd);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "open() error: %s\n", strerror(errno));
@@ -1009,9 +1010,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 	gcache.queue.size = 0;
 
 	setup_dir(&gcache);
-
-	/* init CURL */
-	curl_global_init(CURL_GLOBAL_ALL);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

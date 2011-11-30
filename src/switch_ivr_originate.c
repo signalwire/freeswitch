@@ -3511,8 +3511,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_channel_t *bchan = switch_core_session_get_channel(*bleg);
 
 		if (switch_channel_get_state(bchan) == CS_CONSUME_MEDIA) {
-			switch_channel_set_state(bchan, CS_RESET);
-			switch_channel_wait_for_state(bchan, caller_channel, CS_RESET);
+			switch_channel_set_state(bchan, CS_HIBERNATE);
+			switch_channel_wait_for_state(bchan, caller_channel, CS_HIBERNATE);
 		}
 
 		if (session && caller_channel) {

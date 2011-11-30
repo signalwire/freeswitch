@@ -106,6 +106,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-
 
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
+
 if ENABLE_SRTP
 CORE_CFLAGS += -DENABLE_SRTP
 CORE_LIBS += libs/srtp/libsrtp.la
@@ -126,6 +127,10 @@ endif
 
 if ENABLE_TIMERFD_WRAPPER
 CORE_CFLAGS += -DTIMERFD_WRAP
+endif
+
+if CURL_BUILTIN
+CORE_LIBS += libs/curl/lib/libcurl.la
 endif
 
 ##
@@ -244,6 +249,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_pcm.c \
 	src/switch_profile.c \
 	src/switch_json.c \
+	src/switch_curl.c \
 	libs/stfu/stfu.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
@@ -429,6 +435,10 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 ##
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
+
+libs/curl/lib/libcurl.la: libs/curl
+	@cd libs/curl && $(MAKE)
+	@$(TOUCH_TARGET)
 
 libs/apr/libapr-1.la: libs/apr libs/apr/.update
 	@cd libs/apr && $(MAKE)

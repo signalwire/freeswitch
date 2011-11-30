@@ -475,7 +475,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	/* dispatch freeswitch event */
 	if (switch_event_create(&s_event, SWITCH_EVENT_NOTIFY_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event", sip->sip_event->o_type);
-		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "pl_data", sip->sip_payload->pl_data);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "pl_data", sip->sip_payload ? sip->sip_payload->pl_data : "");
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "sip_content_type", sip->sip_content_type->c_type);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", sofia_private->gateway->profile->sip_port);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "module_name", "mod_sofia");
@@ -6967,31 +6967,37 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 		sofia_glue_set_extra_headers(session, sip, SOFIA_SIP_INFO_HEADER_PREFIX);
 
-		if (!(vval = switch_channel_get_variable(channel, "sip_copy_custom_headers")) || switch_true(vval)) { 
-			switch_core_session_t *nsession = NULL; 
 
-			switch_core_session_get_partner(session, &nsession); 
+
+		if (sip && sip->sip_content_type && sip->sip_content_type->c_type && !strcasecmp(sip->sip_content_type->c_type, "freeswitch/data")) {
+			char *data = NULL;
 			
-			if (nsession) { 
-				switch_core_session_message_t *msg;
+			if (sip->sip_payload && sip->sip_payload->pl_data) {
+				data = sip->sip_payload->pl_data;
+			}
+
+			if ((vval = switch_channel_get_variable(channel, "sip_copy_custom_headers")) && switch_true(vval)) { 
+				switch_core_session_t *nsession = NULL; 
 				
-				switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_INFO_HEADER_PREFIX_T); 
-				msg = switch_core_session_alloc(nsession, sizeof(*msg));
-				MESSAGE_STAMP_FFL(msg);
-				msg->message_id = SWITCH_MESSAGE_INDICATE_INFO;
+				switch_core_session_get_partner(session, &nsession); 
+			
+				if (nsession) { 
+					switch_core_session_message_t *msg;
 				
-				if (sip && sip->sip_content_type && sip->sip_content_type->c_type && sip->sip_content_type->c_subtype &&
-					sip->sip_payload && sip->sip_payload->pl_data) {
-					msg->string_array_arg[0] = switch_core_session_strdup(nsession, sip->sip_content_type->c_type);
-					msg->string_array_arg[1] = switch_core_session_strdup(nsession, sip->sip_content_type->c_subtype);
-					msg->string_array_arg[0] = switch_core_session_strdup(nsession, sip->sip_payload->pl_data);
-				}
-				msg->from = __FILE__;
-				switch_core_session_queue_message(nsession, msg);
+					switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_INFO_HEADER_PREFIX_T); 
+					msg = switch_core_session_alloc(nsession, sizeof(*msg));
+					MESSAGE_STAMP_FFL(msg);
+					msg->message_id = SWITCH_MESSAGE_INDICATE_INFO;
+					
+					msg->string_array_arg[2] = switch_core_session_strdup(nsession, data);
+					
+					msg->from = __FILE__;
+					switch_core_session_queue_message(nsession, msg);
 				
-				switch_core_session_rwunlock(nsession);
+					switch_core_session_rwunlock(nsession);
+				} 
 			} 
-		} 
+		}
 		
 		if (sip && sip->sip_content_type && sip->sip_content_type->c_subtype && sip->sip_content_type->c_type &&
 			!strncasecmp(sip->sip_content_type->c_type, "message", 7) &&

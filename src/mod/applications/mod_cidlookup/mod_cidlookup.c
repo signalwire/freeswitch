@@ -30,7 +30,7 @@
  */
 
 #include <switch.h>
-#include <curl/curl.h>
+#include <switch_curl.h>
 
 #define SWITCH_REWIND_STREAM(s) s.end = s.data
 
@@ -360,7 +360,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 }
 
 static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, char **response, const char *query, struct curl_httppost *post,
-						  struct curl_slist *headers, int timeout)
+						  switch_curl_slist_t *headers, int timeout)
 {
 	switch_time_t start_time = switch_micro_time_now();
 	switch_time_t time_diff = 0;
@@ -375,49 +375,49 @@ static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, cha
 	SWITCH_STANDARD_STREAM(http_data.stream);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "url: %s\n", query);
-	curl_handle = curl_easy_init();
+	curl_handle = switch_curl_easy_init();
 
-	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
-	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 
 	if (!strncasecmp(query, "https", 5)) {
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 	if (post) {
-		curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, post);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, post);
 	} else {
-		curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 	}
 	if (headers) {
-		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	}
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	/*
 	   TIMEOUT_MS is introduced in 7.16.2, we have 7.16.0 in tree 
 	 */
 #ifdef CURLOPT_TIMEOUT_MS
 	if (timeout > 0) {
-		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, timeout);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, timeout);
 	} else {
-		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, globals.curl_timeout);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT_MS, globals.curl_timeout);
 	}
 #else
 	if (timeout > 0) {
-		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, timeout);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, timeout);
 	} else {
-		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.curl_timeout / 1000);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.curl_timeout / 1000);
 	}
 #endif
-	curl_easy_setopt(curl_handle, CURLOPT_URL, query);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &http_data);
-	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-cidlookup/1.0");
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, query);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &http_data);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-cidlookup/1.0");
 
-	curl_easy_perform(curl_handle);
-	curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-	curl_easy_cleanup(curl_handle);
+	switch_curl_easy_perform(curl_handle);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+	switch_curl_easy_cleanup(curl_handle);
 
 	if (http_data.stream.data && !zstr((char *) http_data.stream.data) && strcmp(" ", http_data.stream.data)) {
 
@@ -852,7 +852,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
   Macro expands to: switch_status_t mod_cidlookup_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown)
 {
-
 	switch_event_unbind(&reload_xml_event);
 	return SWITCH_STATUS_SUCCESS;
 }

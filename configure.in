@@ -807,7 +807,14 @@ if test "$ac_cv_use_system_curl" != "yes" ; then
  LIBCURL_DEPS='${switch_builddir}/libs/curl/lib/libcurl.la'
  LIBCURL='${switch_builddir}/libs/curl/lib/libcurl.la'
  LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'
+else
+ SWITCH_AM_LDFLAGS="$LIBCURL $SWITCH_AM_LDFLAGS"
 fi
+
+SWITCH_AM_CFLAGS="$LIBCURL_CPPFLAGS $SWITCH_AM_CFLAGS"
+SWITCH_AM_CXXFLAGS="$LIBCURL_CPPFLAGS $SWITCH_AM_CXXFLAGS"
+
+AM_CONDITIONAL([CURL_BUILTIN],[test "${ac_cv_use_system_curl}" != "yes"])
 
 AC_SUBST(LIBCURL_DEPS)
 
