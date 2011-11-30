@@ -344,10 +344,6 @@ freeswitch_CFLAGS  = $(AM_CFLAGS) $(CORE_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -lpthread -rpath $(libdir)
 freeswitch_LDADD   = libfreeswitch.la libs/apr/libapr-1.la
 
-if CURL_BUILTIN
-freeswitch_LDFLAGS += libs/curl/lib/libcurl.la
-endif
-
 if HAVE_LIBEDIT
 freeswitch_CFLAGS += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
 freeswitch_LDADD  += libs/libedit/src/.libs/libedit.a
@@ -440,7 +436,10 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
 
-libs/curl/lib/libcurl.la: libs/curl
+libs/curl/Makefile:
+	cd libs/curl && sh ./configure.gnu --prefix=$(prefix)
+
+libs/curl/lib/libcurl.la: libs/curl libs/curl/Makefile
 	@cd libs/curl && $(MAKE)
 	@$(TOUCH_TARGET)
 

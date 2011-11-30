@@ -1059,10 +1059,7 @@ AC_CONFIG_SUBDIRS([libs/pcre])
 AC_CONFIG_SUBDIRS([libs/apr])
 AC_CONFIG_SUBDIRS([libs/apr-util])
 AC_CONFIG_SUBDIRS([libs/ilbc])
-
-if test "$ac_cv_use_system_curl" != "yes" ; then 
-   AC_CONFIG_SUBDIRS([libs/curl])
-fi
+AC_CONFIG_SUBDIRS([libs/curl])
 AC_CONFIG_SUBDIRS([libs/iksemel])
 AC_CONFIG_SUBDIRS([libs/js/nsprpub])
 AC_CONFIG_SUBDIRS([libs/js])
