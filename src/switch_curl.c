@@ -1,6 +1,8 @@
 #include <switch.h>
 #include <curl/curl.h>
 
+CURLcode Curl_setopt(switch_CURL *curl, CURLoption option, va_list arg);
+
 
 SWITCH_DECLARE(switch_CURL *) switch_curl_easy_init(void) 
 {
@@ -19,7 +21,7 @@ SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_getinfo(switch_CURL *curl, swit
 	switch_CURLcode code;
 
 	va_start(ap, info);
-	code = curl_easy_getinfo(curl, info, ap);
+	code = curl_easy_getinfo(curl, info, va_arg(ap, void *));
 	va_end(ap);
 
 	return code;
@@ -51,7 +53,7 @@ SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_setopt(CURL *handle, switch_CUR
 	switch_CURLcode code;
 
 	va_start(ap, option);
-	code = curl_easy_setopt(handle, option, ap);
+	code = Curl_setopt(handle, option, ap);
 	va_end(ap);
 
 	return code;
