@@ -37,40 +37,40 @@
 /* OSP Buffer Size Constants */
 #define OSP_SIZE_NORSTR		256		/* OSP normal string buffer size */
 #define OSP_SIZE_KEYSTR		1024	/* OSP certificate string buffer size */
-#define OSP_SIZE_ROUSTR		2048	/* OSP route buffer size */
+#define OSP_SIZE_ROUSTR		4096	/* OSP route buffer size */
 #define OSP_SIZE_TOKSTR		4096	/* OSP token string buffer size */
 
 /* OSP Settings Constants */
-#define OSP_MAX_SP			8			/* Max number of OSP service points */
-#define OSP_AUDIT_URL		"localhost"	/* OSP default Audit URL */
-#define OSP_LOCAL_VALID		1			/* OSP token validating method, locally */
-#define OSP_DEF_LIFETIME	300			/* OSP default SSL lifetime */
-#define OSP_DEF_MAXCONN		20			/* OSP default max connections */
-#define OSP_MIN_MAXCONN		1			/* OSP min max connections */
-#define OSP_MAX_MAXCONN		1000		/* OSP max max connections */
-#define OSP_DEF_PERSIST		60			/* OSP default HTTP persistence in seconds */
-#define OSP_DEF_RETRYDELAY	0			/* OSP default retry delay in seconds */
-#define OSP_MIN_RETRYDELAY	0			/* OSP min retry delay */
-#define OSP_MAX_RETRYDELAY	10			/* OSP max retry delay */
-#define OSP_DEF_RETRYLIMIT	2			/* OSP default retry times */
-#define OSP_MIN_RETRYLIMIT	0			/* OSP min retry times */
-#define OSP_MAX_RETRYLIMIT	100			/* OSP max retry times */
-#define OSP_DEF_TIMEOUT		10000		/* OSP default timeout in ms */
-#define OSP_MIN_TIMEOUT		200			/* OSP min timeout in ms */
-#define OSP_MAX_TIMEOUT		60000		/* OSP max timeout in ms */
-#define OSP_CUSTOMER_ID		""			/* OSP customer ID */
-#define OSP_DEVICE_ID		""			/* OSP device ID */
-#define OSP_DEF_MAXDEST		5			/* OSP default max destinations */
-#define OSP_MIN_MAXDEST		1			/* OSP min max destinations */
-#define OSP_MAX_MAXDEST		12			/* OSP max max destinations */
-#define OSP_DEF_PROFILE		"default"	/* OSP default profile name */
-#define OSP_DEF_STRING		""			/* OSP default empty string */
-#define OSP_DEF_CALLID		"UNDEFINED"	/* OSP default Call-ID */
-#define OSP_DEF_STATS		-1			/* OSP default statistics */
-#define OSP_URI_DELIM		'@'			/* URI delimit */
-#define OSP_USER_DELIM		";:"		/* URI userinfo delimit */
-#define OSP_HOST_DELIM		";>"		/* URI hostport delimit */
-#define OSP_MAX_CINFO		8			/* Max number of custom info */
+#define OSP_MAX_SP			8					/* Max number of OSP service points */
+#define OSP_AUDIT_URL		"localhost"			/* OSP default Audit URL */
+#define OSP_LOCAL_VALID		1					/* OSP token validating method, locally */
+#define OSP_DEF_LIFETIME	300					/* OSP default SSL lifetime */
+#define OSP_MIN_MAXCONN		1					/* OSP min max connections */
+#define OSP_MAX_MAXCONN		1000				/* OSP max max connections */
+#define OSP_DEF_MAXCONN		20					/* OSP default max connections */
+#define OSP_DEF_PERSIST		60					/* OSP default HTTP persistence in seconds */
+#define OSP_MIN_RETRYDELAY	0					/* OSP min retry delay */
+#define OSP_MAX_RETRYDELAY	10					/* OSP max retry delay */
+#define OSP_DEF_RETRYDELAY	OSP_MIN_RETRYDELAY	/* OSP default retry delay in seconds */
+#define OSP_MIN_RETRYLIMIT	0					/* OSP min retry times */
+#define OSP_MAX_RETRYLIMIT	100					/* OSP max retry times */
+#define OSP_DEF_RETRYLIMIT	2					/* OSP default retry times */
+#define OSP_MIN_TIMEOUT		200					/* OSP min timeout in ms */
+#define OSP_MAX_TIMEOUT		60000				/* OSP max timeout in ms */
+#define OSP_DEF_TIMEOUT		10000				/* OSP default timeout in ms */
+#define OSP_CUSTOMER_ID		""					/* OSP customer ID */
+#define OSP_DEVICE_ID		""					/* OSP device ID */
+#define OSP_MIN_MAXDEST		1					/* OSP min max destinations */
+#define OSP_MAX_MAXDEST		12					/* OSP max max destinations */
+#define OSP_DEF_MAXDEST		OSP_MAX_MAXDEST		/* OSP default max destinations */
+#define OSP_DEF_PROFILE		"default"			/* OSP default profile name */
+#define OSP_DEF_STRING		""					/* OSP default empty string */
+#define OSP_DEF_CALLID		"UNDEFINED"			/* OSP default Call-ID */
+#define OSP_DEF_STATS		-1					/* OSP default statistics */
+#define OSP_URI_DELIM		'@'					/* URI delimit */
+#define OSP_USER_DELIM		";:"				/* URI userinfo delimit */
+#define OSP_HOST_DELIM		";>"				/* URI hostport delimit */
+#define OSP_MAX_CINFO		8					/* Max number of custom info */
 
 /* OSP Handle Constant */
 #define OSP_INVALID_HANDLE	-1	/* Invalid OSP handle, provider, transaction etc. */
@@ -207,16 +207,16 @@ typedef struct osp_destination {
 } osp_destination_t;
 
 typedef struct osp_results {
-	const char *profile;					/* Profile name */
-	uint64_t transid;						/* Transaction ID */
-	switch_time_t start;					/* Call start time */
-	char calling[OSP_SIZE_NORSTR];			/* Original calling number */
-	char called[OSP_SIZE_NORSTR];			/* Original called number */
-	const char *srcdev;						/* Source device IP */
-	const char *srcnid;						/* Source network ID */
-	int status;								/* AuthReq status */
-	int numdest;							/* Number of destinations */
-	osp_destination_t dests[OSP_MAX_SP];	/* Destinations */
+	const char *profile;						/* Profile name */
+	uint64_t transid;							/* Transaction ID */
+	switch_time_t start;						/* Call start time */
+	char calling[OSP_SIZE_NORSTR];				/* Original calling number */
+	char called[OSP_SIZE_NORSTR];				/* Original called number */
+	const char *srcdev;							/* Source device IP */
+	const char *srcnid;							/* Source network ID */
+	int status;									/* AuthReq status */
+	int numdest;								/* Number of destinations */
+	osp_destination_t dests[OSP_MAX_MAXDEST];	/* Destinations */
 } osp_results_t;
 
 typedef struct osp_cookie {
@@ -2286,11 +2286,14 @@ static switch_status_t osp_report_usage(
 		OSPPTransactionSetPackets(transaction, OSPC_SMETRIC_RTP, OSPC_SDIR_DESTREP, usage->rtpdestreppackets);
 	}
 
+/* TODO: The logic to identify the last call attempt needs improvement.
 	if ((cookie->destcount == cookie->desttotal) || (usage->cause == SWITCH_CAUSE_NORMAL_CLEARING)) {
 		OSPPTransactionSetRoleInfo(transaction, OSPC_RSTATE_STOP, OSPC_RFORMAT_OSP, OSPC_RVENDOR_FREESWITCH);
 	} else {
 		OSPPTransactionSetRoleInfo(transaction, OSPC_RSTATE_INTERIM, OSPC_RFORMAT_OSP, OSPC_RVENDOR_FREESWITCH);
 	}
+*/
+	OSPPTransactionSetRoleInfo(transaction, OSPC_RSTATE_STOP, OSPC_RFORMAT_OSP, OSPC_RVENDOR_FREESWITCH);
 
 	info = (osp_threadarg_t *)malloc(sizeof(osp_threadarg_t));
 	info->transaction = transaction;
