@@ -2234,12 +2234,14 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 
 					/* Only locally blocked, thus remove a remote block */
 					sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+					sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
 
 					break;
 				/**************************************************************************/
 				case (2):
 					/* remotely blocked */
 					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
 
 					/* set the channel to suspended state */
 					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -2247,8 +2249,11 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 				/**************************************************************************/
 				case (3):
 					/* both locally and remotely blocked */
-					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
+					if (!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) {
+						sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
+					}
 					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
 
 					/* set the channel to suspended state */
 					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
