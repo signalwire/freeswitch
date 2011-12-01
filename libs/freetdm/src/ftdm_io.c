@@ -5594,15 +5594,15 @@ static void *ftdm_cpu_monitor_run(ftdm_thread_t *me, void *obj)
 
 		if (monitor->alarm) {
 			if ((int)time >= (100 - monitor->set_alarm_threshold)) {
-				ftdm_log(FTDM_LOG_DEBUG, "CPU alarm OFF (idle:%d)\n", (int) time);
+				ftdm_log(FTDM_LOG_DEBUG, "CPU alarm is OFF (cpu usage:%d)\n", (int) (100-time));
 				monitor->alarm = 0;
 			}
-			if (monitor->alarm_action_flags & FTDM_CPU_ALARM_ACTION_WARN) {
+			if (monitor->alarm && (monitor->alarm_action_flags & FTDM_CPU_ALARM_ACTION_WARN)) {
 			ftdm_log(FTDM_LOG_WARNING, "CPU alarm is ON (cpu usage:%d)\n", (int) (100-time));
 			}
 		} else {
 			if ((int)time <= (100-monitor->reset_alarm_threshold)) {
-				ftdm_log(FTDM_LOG_DEBUG, "CPU alarm ON (idle:%d)\n", (int) time);
+				ftdm_log(FTDM_LOG_DEBUG, "CPU alarm is ON (cpu usage:%d)\n", (int) (100-time));
 				monitor->alarm = 1;
 			}
 		}
