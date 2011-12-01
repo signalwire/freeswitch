@@ -120,6 +120,7 @@ say/mod_say_en
 #say/mod_say_th
 #say/mod_say_he
 #timers/mod_timerfd
+#timers/mod_posix_timer
 
 ## Experimental Modules (don't cry if they're broken)
 #../../contrib/mod/xml_int/mod_xml_odbc
