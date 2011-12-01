@@ -122,8 +122,11 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* as per Q.764, 2.8.2.3 xiv ... remove the block from this channel */
 		sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+		sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
 		sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+		sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX_DN);
 		sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+		sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX_DN);
 
 		/* KONRAD FIX ME : check in case there is a ckt and grp block */
 	}
@@ -324,9 +327,8 @@ handle_glare:
 
 		/* throw the TX reset flag */
 		if (!sngss7_tx_reset_status_pending(sngss7_info)) {
-			sngss7_info->ckt_flags=0;
+			sngss7_tx_reset_restart(sngss7_info);
 			sngss7_set_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
-			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
 			/* go to RESTART */
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
@@ -398,9 +400,8 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 			/* throw the TX reset flag */
 			if (!sngss7_tx_reset_status_pending(sngss7_info)) {
-				sngss7_info->ckt_flags=0;
+				sngss7_tx_reset_restart(sngss7_info);
 				sngss7_set_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
-				sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
 				/* go to RESTART */
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
@@ -665,9 +666,8 @@ ftdm_status_t handle_con_cfm(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* throw the TX reset flag */
 		if (!sngss7_tx_reset_status_pending(sngss7_info)) {
-			sngss7_info->ckt_flags=0;
+			sngss7_tx_reset_restart(sngss7_info);
 			sngss7_set_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
-			sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
 
 			/* go to RESTART */
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
@@ -769,6 +769,10 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 			/* send out the release complete */
 			ft_to_sngss7_rlc (ftdmchan);
+		} else {
+			SS7_DEBUG_CHAN(ftdmchan, "Collision of REL messages - resetting state.\n", " ");
+			ft_to_sngss7_rlc (ftdmchan);
+			goto rel_ind_reset;
 		}
 		break;
 	/**************************************************************************/
@@ -791,11 +795,11 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	default:
 
+rel_ind_reset:
 		/* throw the TX reset flag */
 		if (!sngss7_tx_reset_status_pending(sngss7_info)) {
-		    sngss7_info->ckt_flags=0;
-				sngss7_set_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
-		    sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
+			sngss7_set_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
+			sngss7_tx_reset_restart(sngss7_info);
 
 		    /* go to RESTART */
 		    ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
@@ -1650,6 +1654,7 @@ ftdm_status_t handle_blo_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* throw the ckt block flag */
 	sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+	sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
 
 	/* set the channel to suspended state */
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -1981,7 +1986,7 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX_RSP);
 
 		/* go to DOWN */
-		/*ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);*/
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 
 		break;
 	/**********************************************************************/

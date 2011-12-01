@@ -87,6 +87,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 	ftdm_assert(!fchan->history[hindex].end_time, "End time should be zero!\n");
 
 	fchan->history[hindex].end_time = ftdm_current_time_in_ms();
+	fchan->last_state_change_time = ftdm_current_time_in_ms();
 
 	fchan->state_status = FTDM_STATE_STATUS_COMPLETED;
 
