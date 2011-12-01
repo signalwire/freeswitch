@@ -1049,11 +1049,13 @@ if (ftdmchan->state == new_state) { \
 #define sngss7_set_options(obj, option)   ((obj)->options |= (option))
 
 #define sngss7_tx_block_status_clear(obj) (!sngss7_test_ckt_blk_flag(obj, (FLAG_CKT_MN_BLOCK_TX | \
-													  		       FLAG_CKT_MN_BLOCK_TX_DN | \
-														  	       FLAG_GRP_MN_BLOCK_TX | \
-														  	       FLAG_GRP_MN_BLOCK_TX_DN | \
-															       FLAG_GRP_HW_BLOCK_TX | \
-															       FLAG_GRP_HW_BLOCK_TX_DN ))) 
+								           FLAG_CKT_MN_BLOCK_TX_DN | \
+									   FLAG_GRP_MN_BLOCK_TX | \
+									   FLAG_GRP_MN_BLOCK_TX_DN | \
+									   FLAG_GRP_HW_BLOCK_TX | \
+									   FLAG_GRP_HW_BLOCK_TX_DN | \
+			       						   FLAG_GRP_HW_UNBLK_TX | \
+									   FLAG_CKT_MN_UNBLK_TX	))) 
 
 #define sngss7_block_status_clear(obj) (obj->blk_flags == 0)
 
@@ -1062,10 +1064,12 @@ if (ftdmchan->state == new_state) { \
 														  	FLAG_GRP_RESET_TX | \
 														  	FLAG_GRP_RESET_RX )))
 
-#define sngss7_tx_reset_status_pending(obj) ((sngss7_test_ckt_flag(obj, (FLAG_RESET_TX)) && \
+#define sngss7_tx_reset_sent(obj) ((sngss7_test_ckt_flag(obj, (FLAG_RESET_TX)) && \
 											  sngss7_test_ckt_flag(obj, (FLAG_RESET_SENT))) || \
 											 (sngss7_test_ckt_flag(obj, (FLAG_GRP_RESET_TX)) && \
 											  sngss7_test_ckt_flag(obj, (FLAG_GRP_RESET_SENT))))
+
+#define sngss7_tx_reset_status_pending(obj) (sngss7_test_ckt_flag(obj, (FLAG_RESET_TX)) || sngss7_test_ckt_flag(obj, (FLAG_GRP_RESET_TX))) 
 	
 #define sngss7_channel_status_clear(obj) ((sngss7_block_status_clear(obj)) && (sngss7_reset_status_clear(obj)))
 

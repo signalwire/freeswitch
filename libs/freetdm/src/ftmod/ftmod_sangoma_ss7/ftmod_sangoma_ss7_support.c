@@ -2232,6 +2232,9 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 						SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 					}
 
+					/* Only locally blocked, thus remove a remote block */
+					sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+
 					break;
 				/**************************************************************************/
 				case (2):
