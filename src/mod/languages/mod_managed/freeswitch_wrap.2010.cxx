@@ -6859,30 +6859,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_add_state_handler(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_curl_count(void * jarg1) {
-  int jresult ;
-  int *arg1 = (int *) 0 ;
-  int result;
-  
-  arg1 = (int *)jarg1; 
-  result = (int)switch_core_curl_count(arg1);
-  jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_ssl_count(void * jarg1) {
-  int jresult ;
-  int *arg1 = (int *) 0 ;
-  int result;
-  
-  arg1 = (int *)jarg1; 
-  result = (int)switch_core_ssl_count(arg1);
-  jresult = result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_remove_state_handler(void * jarg1) {
   switch_state_handler_table_t *arg1 = (switch_state_handler_table_t *) 0 ;
   
@@ -13640,6 +13616,18 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_uuid_str(char * jarg1, void * jarg2)
   }
   arg2 = *argp2; 
   result = (char *)switch_uuid_str(arg1,arg2);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_format_number(char * jarg1) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (char *)switch_format_number((char const *)arg1);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
@@ -27835,6 +27823,26 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_collect_digits_count(void * jarg1, 
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_play_and_detect_speech(void * jarg1, char * jarg2, char * jarg3, char * jarg4, void * jarg5) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  char **arg5 = (char **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  arg5 = (char **)jarg5; 
+  result = (switch_status_t)switch_ivr_play_and_detect_speech(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,arg5);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_detect_speech(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, void * jarg6) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
@@ -35133,15 +35141,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_EventConsumer_bind(void * jarg1, char * jarg2,
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_EventConsumer_pop(void * jarg1, int jarg2) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_EventConsumer_pop(void * jarg1, int jarg2, int jarg3) {
   void * jresult ;
   EventConsumer *arg1 = (EventConsumer *) 0 ;
   int arg2 = (int) 0 ;
+  int arg3 = (int) 0 ;
   Event *result = 0 ;
   
   arg1 = (EventConsumer *)jarg1; 
   arg2 = (int)jarg2; 
-  result = (Event *)(arg1)->pop(arg2);
+  arg3 = (int)jarg3; 
+  result = (Event *)(arg1)->pop(arg2,arg3);
   jresult = (void *)result; 
   return jresult;
 }

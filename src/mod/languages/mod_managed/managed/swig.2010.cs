@@ -796,8 +796,8 @@ public class EventConsumer : IDisposable {
     return ret;
   }
 
-  public Event pop(int block) {
-    IntPtr cPtr = freeswitchPINVOKE.EventConsumer_pop(swigCPtr, block);
+  public Event pop(int block, int timeout) {
+    IntPtr cPtr = freeswitchPINVOKE.EventConsumer_pop(swigCPtr, block, timeout);
     Event ret = (cPtr == IntPtr.Zero) ? null : new Event(cPtr, true);
     return ret;
   }
@@ -1190,16 +1190,6 @@ public class freeswitch {
 
   public static int switch_core_add_state_handler(switch_state_handler_table state_handler) {
     int ret = freeswitchPINVOKE.switch_core_add_state_handler(switch_state_handler_table.getCPtr(state_handler));
-    return ret;
-  }
-
-  public static int switch_core_curl_count(SWIGTYPE_p_int val) {
-    int ret = freeswitchPINVOKE.switch_core_curl_count(SWIGTYPE_p_int.getCPtr(val));
-    return ret;
-  }
-
-  public static int switch_core_ssl_count(SWIGTYPE_p_int val) {
-    int ret = freeswitchPINVOKE.switch_core_ssl_count(SWIGTYPE_p_int.getCPtr(val));
     return ret;
   }
 
@@ -1807,8 +1797,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static SWIGTYPE_p_HashElem switch_hash_first(string depricate_me, SWIGTYPE_p_switch_hash hash) {
-    IntPtr cPtr = freeswitchPINVOKE.switch_hash_first(depricate_me, SWIGTYPE_p_switch_hash.getCPtr(hash));
+  public static SWIGTYPE_p_HashElem switch_hash_first(string deprecate_me, SWIGTYPE_p_switch_hash hash) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_hash_first(deprecate_me, SWIGTYPE_p_switch_hash.getCPtr(hash));
     SWIGTYPE_p_HashElem ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_HashElem(cPtr, false);
     return ret;
   }
@@ -3332,6 +3322,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static string switch_format_number(string num) {
+    string ret = freeswitchPINVOKE.switch_format_number(num);
+    return ret;
+  }
+
   public static switch_caller_extension switch_caller_extension_new(SWIGTYPE_p_switch_core_session session, string extension_name, string extension_number) {
     IntPtr cPtr = freeswitchPINVOKE.switch_caller_extension_new(SWIGTYPE_p_switch_core_session.getCPtr(session), extension_name, extension_number);
     switch_caller_extension ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_extension(cPtr, false);
@@ -4378,6 +4373,11 @@ public class freeswitch {
   public static switch_status_t switch_ivr_collect_digits_count(SWIGTYPE_p_switch_core_session session, string buf, SWIGTYPE_p_switch_size_t buflen, SWIGTYPE_p_switch_size_t maxdigits, string terminators, string terminator, uint first_timeout, uint digit_timeout, uint abs_timeout) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_collect_digits_count(SWIGTYPE_p_switch_core_session.getCPtr(session), buf, SWIGTYPE_p_switch_size_t.getCPtr(buflen), SWIGTYPE_p_switch_size_t.getCPtr(maxdigits), terminators, terminator, first_timeout, digit_timeout, abs_timeout);
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public static switch_status_t switch_ivr_play_and_detect_speech(SWIGTYPE_p_switch_core_session session, string file, string mod_name, string grammar, ref string result) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_play_and_detect_speech(SWIGTYPE_p_switch_core_session.getCPtr(session), file, mod_name, grammar, ref result);
     return ret;
   }
 
@@ -7905,12 +7905,6 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_add_state_handler")]
   public static extern int switch_core_add_state_handler(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_curl_count")]
-  public static extern int switch_core_curl_count(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_ssl_count")]
-  public static extern int switch_core_ssl_count(HandleRef jarg1);
-
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_remove_state_handler")]
   public static extern void switch_core_remove_state_handler(HandleRef jarg1);
 
@@ -9410,6 +9404,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_uuid_str")]
   public static extern string switch_uuid_str(string jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_format_number")]
+  public static extern string switch_format_number(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_profile_node_t_var_set")]
   public static extern void profile_node_t_var_set(HandleRef jarg1, string jarg2);
@@ -12927,6 +12924,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_collect_digits_count")]
   public static extern int switch_ivr_collect_digits_count(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, string jarg5, string jarg6, uint jarg7, uint jarg8, uint jarg9);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_play_and_detect_speech")]
+  public static extern int switch_ivr_play_and_detect_speech(HandleRef jarg1, string jarg2, string jarg3, string jarg4, ref string jarg5);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_detect_speech")]
   public static extern int switch_ivr_detect_speech(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, HandleRef jarg6);
 
@@ -14578,7 +14578,7 @@ class freeswitchPINVOKE {
   public static extern int EventConsumer_bind(HandleRef jarg1, string jarg2, string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_EventConsumer_pop")]
-  public static extern IntPtr EventConsumer_pop(HandleRef jarg1, int jarg2);
+  public static extern IntPtr EventConsumer_pop(HandleRef jarg1, int jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_CoreSession")]
   public static extern void delete_CoreSession(HandleRef jarg1);
@@ -22819,6 +22819,7 @@ public enum switch_channel_flag_t {
   CF_BRIDGE_NOWRITE,
   CF_RECOVERED,
   CF_JITTERBUFFER,
+  CF_JITTERBUFFER_PLC,
   CF_DIALPLAN,
   CF_BLOCK_BROADCAST_UNTIL_MEDIA,
   CF_CNG_PLC,
@@ -24741,6 +24742,7 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_JITTER_BUFFER,
   SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH,
   SWITCH_MESSAGE_INDICATE_SIGNAL_DATA,
+  SWITCH_MESSAGE_INDICATE_INFO,
   SWITCH_MESSAGE_INVALID
 }
 
@@ -30875,7 +30877,8 @@ public enum switch_say_method_t {
   SSM_NA,
   SSM_PRONOUNCED,
   SSM_ITERATED,
-  SSM_COUNTED
+  SSM_COUNTED,
+  SSM_PRONOUNCED_YEAR
 }
 
 }
