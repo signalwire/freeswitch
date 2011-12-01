@@ -1358,6 +1358,8 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			}
 
 			if (sngss7_tx_block_status_clear(sngss7_info) && !skip_unblock) {
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX_DN);
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
 				ft_to_sngss7_ubl(ftdmchan);
 			}
 
@@ -1434,6 +1436,8 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 			if (sngss7_tx_block_status_clear(sngss7_info)) {
 				/* send a ubl */
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX_DN);
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
 				ft_to_sngss7_ubl(ftdmchan);
 			}
 
@@ -1446,13 +1450,19 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			SS7_DEBUG_CHAN(ftdmchan, "Processing CKT_LC_BLOCK_RX flag %s\n", "");
 
 			/* send a BLA */
-			/*ft_to_sngss7_bla(ftdmchan);*/
+			ft_to_sngss7_bla(ftdmchan);
 
 			/* throw the done flag */
 			sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX_DN);
-
-			/* bring the sig status down */
-			sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
+			
+			if (sngss7_tx_block_status_clear(sngss7_info)) {
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX_DN);
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
+				ft_to_sngss7_ubl(ftdmchan);
+			} else {
+				/* bring the sig status down */
+				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
+			}
 
 		}
 
@@ -1468,7 +1478,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_UNBLK_RX);
 
 			/* send a uba */
-			/*ft_to_sngss7_uba(ftdmchan);*/
+			ft_to_sngss7_uba(ftdmchan);
 			
 			if (sngss7_channel_status_clear(sngss7_info)) {
 				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
@@ -1530,14 +1540,14 @@ suspend_goto_last:
 		if (ftdmchan->last_state == FTDM_CHANNEL_STATE_UP) {
 			/* proceed to UP */
 		} else if (!sngss7_channel_status_clear(sngss7_info)) {
-			SS7_DEBUG_CHAN(ftdmchan,"Channel opted to stay in RESTART due to blocks!%s\n", "");
+			SS7_DEBUG_CHAN(ftdmchan,"Channel opted to stay in RESTART due to reset/blocks!%s\n", "");
 			SS7_DEBUG_CHAN(ftdmchan,"Current flags: ckt=0x%X, blk=0x%X, circuit->flag=0x%X\n",
 			                                         sngss7_info->ckt_flags, sngss7_info->blk_flags,
 			                                         sngss7_info->circuit->flags );
 
 			goto suspend_goto_restart;
 		} else { 	
-			SS7_DEBUG_CHAN(ftdmchan,"Channel signaling is up proceed to DOWN! [Last State=%i]\n", ftdmchan->last_state);
+			SS7_DEBUG_CHAN(ftdmchan,"Channel signaling is up proceed to DOWN! [Last State=%s]\n", ftdm_channel_state2str(ftdmchan->last_state));
 			SS7_DEBUG_CHAN(ftdmchan,"Current flags: ckt=0x%X, blk=0x%X, circuit->flag=0x%X\n",
 			                                         sngss7_info->ckt_flags, sngss7_info->blk_flags,
 			                                         sngss7_info->circuit->flags );

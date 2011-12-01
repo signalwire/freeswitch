@@ -2098,6 +2098,55 @@ void sngss7_set_sig_status(sngss7_chan_data_t *sngss7_info, ftdm_signaling_statu
 	return;
 }
 
+#if 0
+ftdm_status_t check_for_invalid_states(ftdm_channel_t *ftmchan)
+{
+	sngss7_chan_data_t  *sngss7_info = ftdmchan->call_data;
+
+	if (!sngss7_info) {
+			SS7_WARN_CHAN(ftdmchan, "Found ftdmchan with no sig module data!%s\n", " ");
+			return FTDM_FAIL;
+	}	
+		
+	if (sngss7_test_flag(sngss7_intf, SNGSS7_PAUSED)) {
+		return FTDM_SUCCESS;
+	}
+
+	switch (ftdmchan->state) {
+	case UP:
+	case DOWN:	
+		return FTDM_SUCCESS;
+
+	default:
+		if ((ftdm_current_time_in_ms() - ftdmchan->last_state_change_time) > 30000) {
+			SS7_WARN_CHAN(ftdmchan, "Circuite in state=%s too long - resetting!%s\n", 
+								ftdm_channel_state2str(ftdmchan->state));
+
+			ftdm_channel_lock(ftdmchan);
+				
+			if (sngss7_channel_status_clear(sngss7_info)) {
+				sngss7_tx_reset_restart(sngss7_info);
+
+				if (ftdmchan->state == FTDM_CHANNEL_STATE_RESTART) { 
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+				} else {
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				}
+			} else {
+
+			}	
+
+
+			
+			ftdm_channel_unlock(ftdmchan);
+		}	
+	}	
+
+	return FTDM_SUCCESS;
+}
+#endif
+	
+
 /******************************************************************************/
 ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 {

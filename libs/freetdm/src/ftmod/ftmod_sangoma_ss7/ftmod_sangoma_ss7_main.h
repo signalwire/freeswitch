@@ -1071,7 +1071,16 @@ if (ftdmchan->state == new_state) { \
 
 #define sngss7_tx_reset_status_pending(obj) (sngss7_test_ckt_flag(obj, (FLAG_RESET_TX)) || sngss7_test_ckt_flag(obj, (FLAG_GRP_RESET_TX))) 
 	
-#define sngss7_channel_status_clear(obj) ((sngss7_block_status_clear(obj)) && (sngss7_reset_status_clear(obj)))
+#define sngss7_channel_status_clear(obj) ((sngss7_block_status_clear(obj)) && \
+					  					  (sngss7_reset_status_clear(obj)) && \
+										  (!sngss7_test_ckt_flag((obj),FLAG_INFID_PAUSED)))
+
+#define sngss7_tx_reset_restart(obj) do { clear_tx_grs_flags((obj)); \
+										  clear_tx_grs_data((obj)); \
+            							  clear_tx_rsc_flags((obj)); \
+										  sngss7_set_ckt_flag((obj), (FLAG_RESET_TX)); \
+								     } while (0);
+ 
 
 
 #ifdef SMG_RELAY_DBG
