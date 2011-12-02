@@ -223,7 +223,7 @@ typedef struct {
 	uint32_t        interval;
 	uint8_t         alarm_action_flags;
 	uint8_t         set_alarm_threshold;
-	uint8_t         reset_alarm_threshold;
+	uint8_t         clear_alarm_threshold;
 	ftdm_interrupt_t *interrupt;
 } cpu_monitor_t;
 
@@ -4834,14 +4834,15 @@ static ftdm_status_t load_config(void)
 				} else {
 					ftdm_log(FTDM_LOG_ERROR, "Invalid cpu alarm set threshold %s\n", val);
 				}
-			} else if (!strncasecmp(var, "cpu_reset_alarm_threshold", sizeof("cpu_reset_alarm_threshold")-1)) {
+			} else if (!strncasecmp(var, "cpu_reset_alarm_threshold", sizeof("cpu_reset_alarm_threshold")-1) ||
+			           !strncasecmp(var, "cpu_clear_alarm_threshold", sizeof("cpu_clear_alarm_threshold")-1)) {
 				intparam = atoi(val);
 				if (intparam > 0 && intparam < 100) {
-					globals.cpu_monitor.reset_alarm_threshold = (uint8_t)intparam;
-					if (globals.cpu_monitor.reset_alarm_threshold > globals.cpu_monitor.set_alarm_threshold) {
-						globals.cpu_monitor.reset_alarm_threshold = globals.cpu_monitor.set_alarm_threshold - 10;
-						ftdm_log(FTDM_LOG_ERROR, "Cpu alarm reset threshold must be lower than set threshold"
-								", setting threshold to %d\n", globals.cpu_monitor.reset_alarm_threshold);
+					globals.cpu_monitor.clear_alarm_threshold = (uint8_t)intparam;
+					if (globals.cpu_monitor.clear_alarm_threshold > globals.cpu_monitor.set_alarm_threshold) {
+						globals.cpu_monitor.clear_alarm_threshold = globals.cpu_monitor.set_alarm_threshold - 10;
+						ftdm_log(FTDM_LOG_ERROR, "Cpu alarm clear threshold must be lower than set threshold, "
+								"setting clear threshold to %d\n", globals.cpu_monitor.clear_alarm_threshold);
 					}
 				} else {
 					ftdm_log(FTDM_LOG_ERROR, "Invalid cpu alarm reset threshold %s\n", val);
@@ -5581,28 +5582,32 @@ static void *ftdm_cpu_monitor_run(ftdm_thread_t *me, void *obj)
 {
 	cpu_monitor_t *monitor = (cpu_monitor_t *)obj;
 	struct ftdm_cpu_monitor_stats *cpu_stats = ftdm_new_cpu_monitor();
+
+	ftdm_log(FTDM_LOG_DEBUG, "CPU monitor thread is now running\n");
 	if (!cpu_stats) {
-		return NULL;
+		goto done;
 	}
 	monitor->running = 1;
 
-	while(ftdm_running()) {
-		double time;
-		if (ftdm_cpu_get_system_idle_time(cpu_stats, &time)) {
+	while (ftdm_running()) {
+		double idle_time = 0.0;
+		int cpu_usage = 0;
+
+		if (ftdm_cpu_get_system_idle_time(cpu_stats, &idle_time)) {
 			break;
 		}
 
+		cpu_usage = (int)(100 - idle_time);
 		if (monitor->alarm) {
-			if ((int)time >= (100 - monitor->set_alarm_threshold)) {
-				ftdm_log(FTDM_LOG_DEBUG, "CPU alarm OFF (idle:%d)\n", (int) time);
+			if (cpu_usage <= monitor->clear_alarm_threshold) {
+				ftdm_log(FTDM_LOG_DEBUG, "CPU alarm is now OFF (cpu usage: %d)\n", cpu_usage);
 				monitor->alarm = 0;
-			}
-			if (monitor->alarm_action_flags & FTDM_CPU_ALARM_ACTION_WARN) {
-			ftdm_log(FTDM_LOG_WARNING, "CPU alarm is ON (cpu usage:%d)\n", (int) (100-time));
+			} else if (monitor->alarm_action_flags & FTDM_CPU_ALARM_ACTION_WARN) {
+				ftdm_log(FTDM_LOG_WARNING, "CPU alarm is still ON (cpu usage: %d)\n", cpu_usage);
 			}
 		} else {
-			if ((int)time <= (100-monitor->reset_alarm_threshold)) {
-				ftdm_log(FTDM_LOG_DEBUG, "CPU alarm ON (idle:%d)\n", (int) time);
+			if (cpu_usage >= monitor->set_alarm_threshold) {
+				ftdm_log(FTDM_LOG_WARNING, "CPU alarm is now ON (cpu usage: %d)\n", cpu_usage);
 				monitor->alarm = 1;
 			}
 		}
@@ -5611,7 +5616,11 @@ static void *ftdm_cpu_monitor_run(ftdm_thread_t *me, void *obj)
 
 	ftdm_delete_cpu_monitor(cpu_stats);
 	monitor->running = 0;
+
+done:
+	ftdm_log(FTDM_LOG_DEBUG, "CPU monitor thread is now terminating\n");
 	return NULL;
+
 #ifdef __WINDOWS__
 	UNREFERENCED_PARAMETER(me);
 #endif
@@ -5714,7 +5723,7 @@ FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
 	globals.cpu_monitor.interval = 1000;
 	globals.cpu_monitor.alarm_action_flags = 0;
 	globals.cpu_monitor.set_alarm_threshold = 80;
-	globals.cpu_monitor.reset_alarm_threshold = 70;
+	globals.cpu_monitor.clear_alarm_threshold = 70;
 
 	if (load_config() != FTDM_SUCCESS) {
 		globals.running = 0;
@@ -5723,10 +5732,10 @@ FT_DECLARE(ftdm_status_t) ftdm_global_configuration(void)
 	}
 
 	if (globals.cpu_monitor.enabled) {
-		ftdm_log(FTDM_LOG_INFO, "CPU Monitor is running interval:%d lo-thres:%d hi-thres:%d\n", 
+		ftdm_log(FTDM_LOG_INFO, "CPU Monitor is running interval:%d set-thres:%d clear-thres:%d\n", 
 					globals.cpu_monitor.interval, 
 					globals.cpu_monitor.set_alarm_threshold, 
-					globals.cpu_monitor.reset_alarm_threshold);
+					globals.cpu_monitor.clear_alarm_threshold);
 
 		if (ftdm_cpu_monitor_start() != FTDM_SUCCESS) {
 			return FTDM_FAIL;
