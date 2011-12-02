@@ -30,12 +30,12 @@
  *
  */
 #include "mod_spidermonkey.h"
-#include <switch_curl.h>
+
 
 static const char modname[] = "CURL";
 
 struct curl_obj {
-	CURL *curl_handle;
+	switch_CURL *curl_handle;
 	JSContext *cx;
 	JSObject *obj;
 	JSFunction *function;
@@ -123,10 +123,10 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 	method = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 	url = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 
-	co->curl_handle = curl_easy_init();
+	co->curl_handle = switch_curl_easy_init();
 	if (!strncasecmp(url, "https", 5)) {
-		curl_easy_setopt(co->curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(co->curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		switch_curl_easy_setopt(co->curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+		switch_curl_easy_setopt(co->curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 
 
@@ -145,15 +145,15 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 	if (argc > 5) {
 		cred = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
 		if (!zstr(cred)) {
-			curl_easy_setopt(co->curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-			curl_easy_setopt(co->curl_handle, CURLOPT_USERPWD, cred);
+			switch_curl_easy_setopt(co->curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+			switch_curl_easy_setopt(co->curl_handle, CURLOPT_USERPWD, cred);
 		}
 	}
 
 	if (argc > 6) {
 		JS_ValueToInt32(cx, argv[6], &timeout);
 		if (timeout > 0) {
-			curl_easy_setopt(co->curl_handle, CURLOPT_TIMEOUT, timeout);
+			switch_curl_easy_setopt(co->curl_handle, CURLOPT_TIMEOUT, timeout);
 		}
 	}
 
@@ -164,16 +164,16 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 
 	headers = curl_slist_append(headers, ct);
 
-	curl_easy_setopt(co->curl_handle, CURLOPT_HTTPHEADER, headers);
+	switch_curl_easy_setopt(co->curl_handle, CURLOPT_HTTPHEADER, headers);
 
 	url_p = url;
 
 	if (!strcasecmp(method, "post")) {
-		curl_easy_setopt(co->curl_handle, CURLOPT_POST, 1);
+		switch_curl_easy_setopt(co->curl_handle, CURLOPT_POST, 1);
 		if (!data) {
 			data = "";
 		}
-		curl_easy_setopt(co->curl_handle, CURLOPT_POSTFIELDS, data);
+		switch_curl_easy_setopt(co->curl_handle, CURLOPT_POSTFIELDS, data);
 	} else if (!zstr(data)) {
 		durl = switch_mprintf("%s?%s", url, data);
 		url_p = durl;
@@ -182,18 +182,18 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Running: method: [%s] url: [%s] data: [%s] cred=[%s] cb: [%s]\n",
 					  method, url_p, data, switch_str_nil(cred), co->function ? "yes" : "no");
 
-	curl_easy_setopt(co->curl_handle, CURLOPT_URL, url_p);
-	curl_easy_setopt(co->curl_handle, CURLOPT_NOSIGNAL, 1);
-	curl_easy_setopt(co->curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
-	curl_easy_setopt(co->curl_handle, CURLOPT_WRITEDATA, (void *) co);
+	switch_curl_easy_setopt(co->curl_handle, CURLOPT_URL, url_p);
+	switch_curl_easy_setopt(co->curl_handle, CURLOPT_NOSIGNAL, 1);
+	switch_curl_easy_setopt(co->curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
+	switch_curl_easy_setopt(co->curl_handle, CURLOPT_WRITEDATA, (void *) co);
 
-	curl_easy_setopt(co->curl_handle, CURLOPT_USERAGENT, "freeswitch-spidermonkey-curl/1.0");
+	switch_curl_easy_setopt(co->curl_handle, CURLOPT_USERAGENT, "freeswitch-spidermonkey-curl/1.0");
 
 	co->saveDepth = JS_SuspendRequest(cx);
-	curl_easy_perform(co->curl_handle);
+	switch_curl_easy_perform(co->curl_handle);
 
-	curl_easy_getinfo(co->curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-	curl_easy_cleanup(co->curl_handle);
+	switch_curl_easy_getinfo(co->curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+	switch_curl_easy_cleanup(co->curl_handle);
 	curl_slist_free_all(headers);
 	co->curl_handle = NULL;
 	co->function = NULL;
@@ -243,7 +243,6 @@ const sm_module_interface_t curl_module_interface = {
 
 SWITCH_MOD_DECLARE_NONSTD(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
 {
-	switch_curl_init();
 	*module_interface = &curl_module_interface;
 	return SWITCH_STATUS_SUCCESS;
 }

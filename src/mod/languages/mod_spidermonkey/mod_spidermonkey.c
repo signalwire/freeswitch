@@ -3802,8 +3802,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]",
 				   SAF_SUPPORT_NOMEDIA);
 
-	switch_curl_init();
-
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
 }
