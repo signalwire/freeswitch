@@ -472,9 +472,8 @@ static int ftmod_ss7_parse_sng_gen(ftdm_conf_node_t *sng_gen)
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "license")) {
 		/**********************************************************************/
-			strcpy(g_ftdm_sngss7_data.cfg.license, parm->val);
-			strcpy(g_ftdm_sngss7_data.cfg.signature, parm->val);
-			strcat(g_ftdm_sngss7_data.cfg.signature, ".sig");
+			ftdm_set_string(g_ftdm_sngss7_data.cfg.license, parm->val);
+			snprintf(g_ftdm_sngss7_data.cfg.signature, sizeof(g_ftdm_sngss7_data.cfg.signature), "%s.sig", parm->val);
 			SS7_DEBUG("Found license file = %s\n", g_ftdm_sngss7_data.cfg.license);
 			SS7_DEBUG("Found signature file = %s\n", g_ftdm_sngss7_data.cfg.signature);	
 		/**********************************************************************/

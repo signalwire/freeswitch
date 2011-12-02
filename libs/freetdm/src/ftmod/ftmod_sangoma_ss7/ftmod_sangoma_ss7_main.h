@@ -51,7 +51,6 @@
 
 /* DEFINES ********************************************************************/
 #define MAX_NAME_LEN			25
-#define MAX_PATH				4096
 
 #define MAX_CIC_LENGTH			5
 #define MAX_CIC_MAP_LENGTH		1000 
@@ -411,8 +410,8 @@ typedef struct sng_relay {
 typedef struct sng_ss7_cfg {
 	uint32_t			spc;
 	uint32_t			procId;
-	char				license[MAX_PATH];
-	char				signature[MAX_PATH];
+	char				license[MAX_SNGSS7_PATH];
+	char				signature[MAX_SNGSS7_PATH];
 	uint32_t			transparent_iam_max_size;
 	uint32_t			flags;
 	sng_relay_t			relay[MAX_RELAY_CHANNELS+1];
