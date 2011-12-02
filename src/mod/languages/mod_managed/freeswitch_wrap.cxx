@@ -7162,30 +7162,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_add_state_handler(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_curl_count(void * jarg1) {
-  int jresult ;
-  int *arg1 = (int *) 0 ;
-  int result;
-  
-  arg1 = (int *)jarg1; 
-  result = (int)switch_core_curl_count(arg1);
-  jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_ssl_count(void * jarg1) {
-  int jresult ;
-  int *arg1 = (int *) 0 ;
-  int result;
-  
-  arg1 = (int *)jarg1; 
-  result = (int)switch_core_ssl_count(arg1);
-  jresult = result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_remove_state_handler(void * jarg1) {
   switch_state_handler_table_t *arg1 = (switch_state_handler_table_t *) 0 ;
   

@@ -1183,16 +1183,6 @@ public class freeswitch {
     return ret;
   }
 
-  public static int switch_core_curl_count(SWIGTYPE_p_int val) {
-    int ret = freeswitchPINVOKE.switch_core_curl_count(SWIGTYPE_p_int.getCPtr(val));
-    return ret;
-  }
-
-  public static int switch_core_ssl_count(SWIGTYPE_p_int val) {
-    int ret = freeswitchPINVOKE.switch_core_ssl_count(SWIGTYPE_p_int.getCPtr(val));
-    return ret;
-  }
-
   public static void switch_core_remove_state_handler(switch_state_handler_table state_handler) {
     freeswitchPINVOKE.switch_core_remove_state_handler(switch_state_handler_table.getCPtr(state_handler));
   }
@@ -7900,12 +7890,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_add_state_handler")]
   public static extern int switch_core_add_state_handler(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_curl_count")]
-  public static extern int switch_core_curl_count(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_ssl_count")]
-  public static extern int switch_core_ssl_count(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_remove_state_handler")]
   public static extern void switch_core_remove_state_handler(HandleRef jarg1);
