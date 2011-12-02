@@ -883,7 +883,9 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				if (!sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_SENT)) {
 					ft_to_sngss7_rsc (ftdmchan);
 					sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_SENT);
-					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+
+					/* Wait for Reset in HANGUP Complete nothing to do until we
+					   get reset response back */
 				} else if (sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_TX_RSP)) {
 					state_flag = 0;
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
@@ -910,7 +912,6 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			SS7_DEBUG_CHAN(ftdmchan,"Completing remotely requested hangup!%s\n", "");
 		} else if (sngss7_test_ckt_flag (sngss7_info, FLAG_LOCAL_REL)) {
 			
-
 			/* if this hang up is do to a rx RESET we need to sit here till the RSP arrives */
 			if (sngss7_test_ckt_flag (sngss7_info, FLAG_RESET_TX_RSP)) {
 				/* go to the down state as we have already received RSC-RLC */
@@ -926,6 +927,9 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		} else {
 			SS7_DEBUG_CHAN(ftdmchan,"Completing requested hangup for unknown reason!%s\n", "");
+			if (sngss7_channel_status_clear(sngss7_info)) {
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+			} 
 		}
 
 		break;
@@ -1180,6 +1184,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 				state_flag = 0;
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 			} else {
+					
 				SS7_DEBUG_CHAN(ftdmchan, "Waiting on Reset Rsp/Grp Reset to move to DOWN (0x%X)\n", sngss7_info->ckt_flags);
 			}
 		}
@@ -1539,19 +1544,49 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 suspend_goto_last:
 		if (ftdmchan->last_state == FTDM_CHANNEL_STATE_UP) {
 			/* proceed to UP */
-		} else if (!sngss7_channel_status_clear(sngss7_info)) {
-			SS7_DEBUG_CHAN(ftdmchan,"Channel opted to stay in RESTART due to reset/blocks!%s\n", "");
+		} else if (!sngss7_reset_status_clear(sngss7_info) || 
+				   sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED)) {
+
+			/* At this point the circuit is in reset, if the call is 
+			   in use make sure that at least REMOTE REL flag is set
+			   in order to drop the call on the sip side */
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE)) {
+				if (!sngss7_test_ckt_flag (sngss7_info, FLAG_LOCAL_REL) &&
+                    !sngss7_test_ckt_flag (sngss7_info, FLAG_REMOTE_REL)) {
+					sngss7_set_ckt_flag (sngss7_info, FLAG_REMOTE_REL);	
+				}
+			}
+			SS7_DEBUG_CHAN(ftdmchan,"Channel opted to stay in RESTART due to reset!%s\n", "");
 			SS7_DEBUG_CHAN(ftdmchan,"Current flags: ckt=0x%X, blk=0x%X, circuit->flag=0x%X\n",
 			                                         sngss7_info->ckt_flags, sngss7_info->blk_flags,
 			                                         sngss7_info->circuit->flags );
 
 			goto suspend_goto_restart;
-		} else { 	
-			SS7_DEBUG_CHAN(ftdmchan,"Channel signaling is up proceed to DOWN! [Last State=%s]\n", ftdm_channel_state2str(ftdmchan->last_state));
+
+		} else if (sngss7_channel_status_clear(sngss7_info)) {
+			   
+			/* In this case all resets and blocks are clear sig state is up, thus go to DOWN */
+			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_RESTART ||
+				ftdmchan->last_state == FTDM_CHANNEL_STATE_TERMINATING) {
+				ftdmchan->last_state = FTDM_CHANNEL_STATE_DOWN;
+			}
+
+			SS7_DEBUG_CHAN(ftdmchan,"Channel signallig is UP: proceed to State %s!\n", 
+							ftdm_channel_state2str(ftdmchan->last_state));
 			SS7_DEBUG_CHAN(ftdmchan,"Current flags: ckt=0x%X, blk=0x%X, circuit->flag=0x%X\n",
 			                                         sngss7_info->ckt_flags, sngss7_info->blk_flags,
 			                                         sngss7_info->circuit->flags );
-			ftdmchan->last_state = FTDM_CHANNEL_STATE_DOWN;				
+
+		} else { 	
+
+			if (ftdmchan->last_state == FTDM_CHANNEL_STATE_DOWN) {
+				ftdmchan->last_state = FTDM_CHANNEL_STATE_RESTART;
+			}
+			SS7_DEBUG_CHAN(ftdmchan,"Channel signaling is in block state: proceed to State=%s]\n", 
+							ftdm_channel_state2str(ftdmchan->last_state));
+			SS7_DEBUG_CHAN(ftdmchan,"Current flags: ckt=0x%X, blk=0x%X, circuit->flag=0x%X\n",
+			                                         sngss7_info->ckt_flags, sngss7_info->blk_flags,
+			                                         sngss7_info->circuit->flags);
 		}
 
 		state_flag = 0;
