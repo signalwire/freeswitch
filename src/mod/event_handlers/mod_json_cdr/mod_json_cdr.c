@@ -787,7 +787,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			switch_curl_easy_perform(curl_handle);
 			switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 			switch_safe_free(destUrl);
-			if (httpRes == 200) {
+			if (httpRes >= 200 && httpRes < 300) {
 				goto success;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n",
