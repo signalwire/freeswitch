@@ -334,6 +334,15 @@ then
 fi
 echo lpc10_tests completed OK
 
+./math_fixed_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo math_fixed_tests failed!
+    exit $RETVAL
+fi
+echo math_fixed_tests completed OK
+
 ./modem_echo_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]

@@ -131,8 +131,8 @@ int main(int argc, char *argv[])
     int16_t noise_sound[8830];
     int16_t silence_sound[8192];
     int i;
-    int outframes;
     int voiced_length;
+    int randy;
     double f;
     double pk;
     double ms;
@@ -155,6 +155,18 @@ int main(int argc, char *argv[])
     }
 
     printf("Generate C1\n");
+    /* The sequence is
+            48.62ms  of voiced sound from table C.1 of G.168
+            200.0ms  of pseudo-noise
+            101.38ms of silence
+       The above is then repeated phase inverted.
+
+       The voice comes straight from C.1, repeated enough times to
+       fill out the 48.62ms period - i.e. 16 copies of the sequence.
+
+       The pseudo noise section is random numbers filtered by the spectral
+       pattern in Figure C.2 */
+
     /* The set of C1 voice samples is ready for use in the output file. */
     voiced_length = sizeof(css_c1)/sizeof(css_c1[0]);
     for (i = 0;  i < voiced_length;  i++)
@@ -208,13 +220,12 @@ int main(int argc, char *argv[])
 #else
         scale = 0.0;
 #endif
+        randy = ((rand() >> 10) & 0x1)  ?  1.0  :  -1.0;
 #if defined(HAVE_FFTW3_H)
-        in[i][0] = ((rand() >> 10) & 0x1)  ?  1.0  :  -1.0;
-        in[i][0] *= pow(10.0, scale/20.0)*35.0; //305360
+        in[i][0] = randy*pow(10.0, scale/20.0)*35.0;
         in[8192 - i][0] = -in[i][0];
 #else
-        in[i].re = ((rand() >> 10) & 0x1)  ?  1.0  :  -1.0;
-        in[i].re *= pow(10.0, scale/20.0)*35.0; //305360
+        in[i].re = randy*pow(10.0, scale/20.0)*35.0;
         in[8192 - i].re = -in[i].re;
 #endif
     }
@@ -233,38 +244,34 @@ int main(int argc, char *argv[])
     }
     pk = peak(noise_sound, 8192);
     ms = rms(noise_sound, 8192);
-    printf("Noise level = %.2fdB, crest factor = %.2fdB\n", rms_to_dbm0(ms), rms_to_db(pk/ms));
+    printf("Filtered noise level = %.2fdB, crest factor = %.2fdB\n", rms_to_dbm0(ms), rms_to_db(pk/ms));
     
     for (i = 0;  i < 8192;  i++)
         silence_sound[i] = 0.0;
 
     for (i = 0;  i < 16;  i++)
-        outframes = sf_writef_short(filehandle, voiced_sound, voiced_length);
+        sf_writef_short(filehandle, voiced_sound, voiced_length);
     printf("%d samples of voice\n", 16*voiced_length);
-    outframes = sf_writef_short(filehandle, noise_sound, 8192);
-    outframes = sf_writef_short(filehandle, noise_sound, C1_NOISE_SAMPLES - 8192);
+    sf_writef_short(filehandle, noise_sound, 8192);
+    sf_writef_short(filehandle, noise_sound, C1_NOISE_SAMPLES - 8192);
     printf("%d samples of noise\n", C1_NOISE_SAMPLES);
-    outframes = sf_writef_short(filehandle, silence_sound, C1_SILENCE_SAMPLES);
+    sf_writef_short(filehandle, silence_sound, C1_SILENCE_SAMPLES);
     printf("%d samples of silence\n", C1_SILENCE_SAMPLES);
 
-    /* Now phase invert the C1 set of voice samples. */
+    /* Now phase invert the C1 set of samples. */
     voiced_length = sizeof(css_c1)/sizeof(css_c1[0]);
     for (i = 0;  i < voiced_length;  i++)
         voiced_sound[i] = -css_c1[i];
-    pk = peak(voiced_sound, voiced_length);
-    ms = rms(voiced_sound, voiced_length);
-    printf("Voiced level = %.2fdB, crest factor = %.2fdB\n", rms_to_dbm0(ms), rms_to_db(pk/ms));
-
     for (i = 0;  i < 8192;  i++)
         noise_sound[i] = -noise_sound[i];
 
     for (i = 0;  i < 16;  i++)
-        outframes = sf_writef_short(filehandle, voiced_sound, voiced_length);
+        sf_writef_short(filehandle, voiced_sound, voiced_length);
     printf("%d samples of voice\n", 16*voiced_length);
-    outframes = sf_writef_short(filehandle, noise_sound, 8192);
-    outframes = sf_writef_short(filehandle, noise_sound, C1_NOISE_SAMPLES - 8192);
+    sf_writef_short(filehandle, noise_sound, 8192);
+    sf_writef_short(filehandle, noise_sound, C1_NOISE_SAMPLES - 8192);
     printf("%d samples of noise\n", C1_NOISE_SAMPLES);
-    outframes = sf_writef_short(filehandle, silence_sound, C1_SILENCE_SAMPLES);
+    sf_writef_short(filehandle, silence_sound, C1_SILENCE_SAMPLES);
     printf("%d samples of silence\n", C1_SILENCE_SAMPLES);
 
     if (sf_close(filehandle))
@@ -287,6 +294,21 @@ int main(int argc, char *argv[])
     }
 
     printf("Generate C3\n");
+    /* The sequence is
+            72.69ms  of voiced sound from table C.3 of G.168
+            200.0ms  of pseudo-noise
+            127.31ms of silence
+       The above is then repeated phase inverted.
+
+       The voice comes straight from C.3, repeated enough times to
+       fill out the 72.69ms period - i.e. 14 copies of the sequence.
+
+       The pseudo noise section is AWGN filtered by the spectral
+       pattern in Figure C.2. Since AWGN has the quality of being its
+       own Fourier transform, we can use an approach like the one above
+       for the C1 signal, using AWGN samples instead of randomly alternating
+       ones and zeros. */
+
     /* Take the supplied set of C3 voice samples. */
     voiced_length = (sizeof(css_c3)/sizeof(css_c3[0]));
     for (i = 0;  i < voiced_length;  i++)
@@ -300,37 +322,102 @@ int main(int argc, char *argv[])
         noise_sound[i] = awgn(&noise_source);
     pk = peak(noise_sound, 8192);
     ms = rms(noise_sound, 8192);
-    printf("Noise level = %.2fdB, crest factor = %.2fdB\n", rms_to_dbm0(ms), rms_to_db(pk/ms));
+    printf("Unfiltered noise level = %.2fdB, crest factor = %.2fdB\n", rms_to_dbm0(ms), rms_to_db(pk/ms));
+
+    /* Now filter them */
+#if defined(HAVE_FFTW3_H)
+    p = fftw_plan_dft_1d(8192, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+#else
+    p = fftw_create_plan(8192, FFTW_BACKWARD, FFTW_ESTIMATE);
+#endif
+    for (i = 0;  i < 8192;  i++)
+    {
+#if defined(HAVE_FFTW3_H)
+        in[i][0] = 0.0;
+        in[i][1] = 0.0;
+#else
+        in[i].re = 0.0;
+        in[i].im = 0.0;
+#endif
+    }
+    for (i = 1;  i <= 3715;  i++)
+    {
+        f = FAST_SAMPLE_RATE*i/8192.0;
+
+#if 1
+        if (f < 50.0)
+            scale = -60.0;
+        else if (f < 100.0)
+            scale = scaling(f, 50.0, 100.0, -25.8, -12.8);
+        else if (f < 200.0)
+            scale = scaling(f, 100.0, 200.0, -12.8, 17.4);
+        else if (f < 215.0)
+            scale = scaling(f, 200.0, 215.0, 17.4, 17.8);
+        else if (f < 500.0)
+            scale = scaling(f, 215.0, 500.0, 17.8, 12.2);
+        else if (f < 1000.0)
+            scale = scaling(f, 500.0, 1000.0, 12.2, 7.2);
+        else if (f < 2850.0)
+            scale = scaling(f, 1000.0, 2850.0, 7.2, 0.0);
+        else if (f < 3600.0)
+            scale = scaling(f, 2850.0, 3600.0, 0.0, -2.0);
+        else if (f < 3660.0)
+            scale = scaling(f, 3600.0, 3660.0, -2.0, -20.0);
+        else if (f < 3680.0)
+            scale = scaling(f, 3600.0, 3680.0, -20.0, -30.0);
+        else
+            scale = -60.0;
+#else
+        scale = 0.0;
+#endif
+#if defined(HAVE_FFTW3_H)
+        in[i][0] = noise_sound[i]*pow(10.0, scale/20.0)*0.0106;
+        in[8192 - i][0] = -in[i][0];
+#else
+        in[i].re = noise_sound[i]*pow(10.0, scale/20.0)*0.0106;
+        in[8192 - i].re = -in[i].re;
+#endif
+    }
+#if defined(HAVE_FFTW3_H)
+    fftw_execute(p);
+#else
+    fftw_one(p, in, out);
+#endif
+    for (i = 0;  i < 8192;  i++)
+    {
+#if defined(HAVE_FFTW3_H)
+        noise_sound[i] = out[i][1];
+#else
+        noise_sound[i] = out[i].im;
+#endif
+    }
+    pk = peak(noise_sound, 8192);
+    ms = rms(noise_sound, 8192);
+    printf("Filtered noise level = %.2fdB, crest factor = %.2fdB\n", rms_to_dbm0(ms), rms_to_db(pk/ms));
 
     for (i = 0;  i < 14;  i++)
-        outframes = sf_writef_short(filehandle, voiced_sound, voiced_length);
+        sf_writef_short(filehandle, voiced_sound, voiced_length);
     printf("%d samples of voice\n", 14*voiced_length);
-
-    outframes = sf_writef_short(filehandle, noise_sound, 8192);
-    outframes = sf_writef_short(filehandle, noise_sound, C3_NOISE_SAMPLES - 8192);
+    sf_writef_short(filehandle, noise_sound, 8192);
+    sf_writef_short(filehandle, noise_sound, C3_NOISE_SAMPLES - 8192);
     printf("%d samples of noise\n", C3_NOISE_SAMPLES);
-    outframes = sf_writef_short(filehandle, silence_sound, C3_SILENCE_SAMPLES);
+    sf_writef_short(filehandle, silence_sound, C3_SILENCE_SAMPLES);
     printf("%d samples of silence\n", C3_SILENCE_SAMPLES);
 
-    /* Now phase invert the set of voice samples. */
+    /* Now phase invert the C3 set of samples. */
     voiced_length = (sizeof(css_c3)/sizeof(css_c3[0]));
     for (i = 0;  i < voiced_length;  i++)
         voiced_sound[i] = -css_c3[i];
-    pk = peak(voiced_sound, voiced_length);
-    ms = rms(voiced_sound, voiced_length);
-    printf("Voiced level = %.2fdB, crest factor = %.2fdB\n", rms_to_dbm0(ms), rms_to_db(pk/ms));
-
-    /* Now phase invert the set of noise samples. */
     for (i = 0;  i < 8192;  i++)
         noise_sound[i] = -noise_sound[i];
 
     for (i = 0;  i < 14;  i++)
-        outframes = sf_writef_short(filehandle, voiced_sound, voiced_length);
-    printf("%d samples of voice\n", 14*i);
-    outframes = sf_writef_short(filehandle, noise_sound, 8192);
-    outframes = sf_writef_short(filehandle, noise_sound, C3_NOISE_SAMPLES - 8192);
+        sf_writef_short(filehandle, voiced_sound, voiced_length);
+    printf("%d samples of voice\n", 14*voiced_length);
+    sf_writef_short(filehandle, noise_sound, 8192);
+    sf_writef_short(filehandle, noise_sound, C3_NOISE_SAMPLES - 8192);
     printf("%d samples of noise\n", C3_NOISE_SAMPLES);
-    outframes = sf_writef_short(filehandle, silence_sound, C3_SILENCE_SAMPLES);
+    sf_writef_short(filehandle, silence_sound, C3_SILENCE_SAMPLES);
     printf("%d samples of silence\n", C3_SILENCE_SAMPLES);
 
     if (sf_close(filehandle))
