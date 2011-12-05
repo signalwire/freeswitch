@@ -193,7 +193,15 @@ ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPt
 
 ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum)
 {
-	/* TODO: Implement me */
+	char var[FTDM_DIGITS_LIMIT];
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	if (cdPtyNum->eh.pres == PRSNT_NODEF &&
+	    cdPtyNum->natAddrInd.pres 	== PRSNT_NODEF) {
+		sprintf(var, "%d", cdPtyNum->natAddrInd.val);
+		sngss7_add_var(sngss7_info, "ss7_cld_nadi", var);
+	}
+		
 	return FTDM_SUCCESS;
 }
 

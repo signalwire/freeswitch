@@ -1355,7 +1355,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		/* Used by ftmod_sangoma_ss7 only */
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS-NADI");
 		if (sipvar) {
-			ftdm_usrmsg_add_var(&usrmsg, "ss7_clg_nadi", sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_cld_nadi", sipvar);
 		}
 		
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS");
@@ -1711,6 +1711,12 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_clg_nadi");
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-NADI", "%s", var_value);
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ANI-NADI", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_cld_nadi");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-NADI", "%s", var_value);
 		}
 
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdnis_screen_ind");
