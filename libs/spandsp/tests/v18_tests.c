@@ -228,7 +228,6 @@ static int test_x_06(void)
     char dtmf[1024];
     char result[1024];
     const char *ref;
-    int len;
     int i;
 
     /* III.5.4.5.6 DTMF character conversion */
@@ -237,14 +236,14 @@ static int test_x_06(void)
     msg[127] = '\0';
     printf("%s\n", msg);
     
-    len = v18_encode_dtmf(NULL, dtmf, msg);
+    v18_encode_dtmf(NULL, dtmf, msg);
     printf("%s\n", dtmf);
 
-    len = v18_decode_dtmf(NULL, result, dtmf);
+    v18_decode_dtmf(NULL, result, dtmf);
 
     ref = "\b \n\n\n?\n\n\n  %+().+,-.0123456789:;(=)"
-          "?XABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ"
-          " abcdefghijklmnopqrstuvwxyzæøå \b";
+          "?XABCDEFGHIJKLMNOPQRSTUVWXYZ\xC6\xD8\xC5"
+          " abcdefghijklmnopqrstuvwxyz\xE6\xF8\xE5 \b";
 
     printf("Result:\n%s\n", result);
     printf("Reference result:\n%s\n", ref);

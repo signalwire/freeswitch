@@ -224,6 +224,7 @@ int main(int argc, char *argv[])
     int log_audio;
     int channel_codec;
     int rbs_pattern;
+    int guard_tone_option;
     int opt;
     
     channel_codec = MUNGE_CODEC_NONE;
@@ -234,8 +235,9 @@ int main(int argc, char *argv[])
     noise_level = -70;
     signal_level = -13;
     bits_per_test = 50000;
+    guard_tone_option = V22BIS_GUARD_TONE_1800HZ;
     log_audio = FALSE;
-    while ((opt = getopt(argc, argv, "b:B:c:d:glm:n:r:s:")) != -1)
+    while ((opt = getopt(argc, argv, "b:B:c:d:gG:lm:n:r:s:")) != -1)
     {
         switch (opt)
         {
@@ -263,6 +265,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Graphical monitoring not available\n");
             exit(2);
 #endif
+            break;
+        case 'G':
+            guard_tone_option = atoi(optarg);
             break;
         case 'l':
             log_audio = TRUE;
@@ -309,7 +314,7 @@ int main(int argc, char *argv[])
 
     for (i = 0;  i < 2;  i++)
     {
-        endpoint[i].v22bis = v22bis_init(NULL, test_bps, V22BIS_GUARD_TONE_1800HZ, (i == 0), v22bis_getbit, &endpoint[i], v22bis_putbit, &endpoint[i]);
+        endpoint[i].v22bis = v22bis_init(NULL, test_bps, guard_tone_option, (i == 0), v22bis_getbit, &endpoint[i], v22bis_putbit, &endpoint[i]);
         v22bis_tx_power(endpoint[i].v22bis, signal_level);
         /* Move the carrier off a bit */
         endpoint[i].v22bis->tx.carrier_phase_rate = dds_phase_ratef((i == 0)  ?  1207.0f  :  2407.0f);
@@ -420,7 +425,7 @@ int main(int argc, char *argv[])
     }
     if (log_audio)
     {
-        if (sf_close_telephony(outhandle) != 0)
+        if (sf_close_telephony(outhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
