@@ -1183,7 +1183,7 @@ static void reset_lapm(v42_state_t *ss)
 }
 /*- End of function --------------------------------------------------------*/
 
-void v42_stop(v42_state_t *ss)
+SPAN_DECLARE(void) v42_stop(v42_state_t *ss)
 {
     lapm_state_t *s;
 
