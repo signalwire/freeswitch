@@ -82,35 +82,38 @@ static switch_status_t posix_timer_start_interval(interval_timer_t *it, int inte
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (it->users <= 0) {
+		/* reset */
+		it->tick = 0;
+		it->users = 0;
+
+		/* reuse, if possible */
+		if (it->mutex == NULL) {
+			switch_mutex_init(&it->mutex, SWITCH_MUTEX_NESTED, globals.pool);
+			switch_thread_cond_create(&it->cond, globals.pool);
+		}
+
+		/* create the POSIX timer.  Will notify the posix_timer_notify thread on ticks. */
+		memset(&sigev, 0, sizeof(sigev));
+		sigev.sigev_notify = SIGEV_THREAD;
+		sigev.sigev_notify_function = posix_timer_notify;
+		sigev.sigev_value.sival_ptr = (void *)it;
+		if (timer_create(CLOCK_MONOTONIC, &sigev, &it->timer) == -1) {
+			return SWITCH_STATUS_GENERR;
+		}
+
+		/* start the timer to tick at interval */
+		memset(&val, 0, sizeof(val));
+		val.it_interval.tv_sec = interval / 1000;
+		val.it_interval.tv_nsec = (interval % 1000) * 1000000;
+		val.it_value.tv_sec = 0;
+		val.it_value.tv_nsec = 100000;
+		if (timer_settime(it->timer, 0, &val, NULL) == -1) {
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+
 	it->users++;
-	if (it->users > 1) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	it->tick = 0;
-
-	switch_mutex_init(&it->mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_thread_cond_create(&it->cond, globals.pool);
-
-	/* create the POSIX timer.  Will notify the posix_timer_notify thread on ticks. */
-	memset(&sigev, 0, sizeof(sigev));
-	sigev.sigev_notify = SIGEV_THREAD;
-	sigev.sigev_notify_function = posix_timer_notify;
-	sigev.sigev_value.sival_ptr = (void *)it;
-	if (timer_create(CLOCK_MONOTONIC, &sigev, &it->timer) == -1) {
-		return SWITCH_STATUS_GENERR;
-	}
-
-	/* start the timer to tick at interval */
-	memset(&val, 0, sizeof(val));
-	val.it_interval.tv_sec = interval / 1000;
-	val.it_interval.tv_nsec = (interval % 1000) * 1000000;
-	val.it_value.tv_sec = 0;
-	val.it_value.tv_nsec = 100000;
-	if (timer_settime(it->timer, 0, &val, NULL) == -1) {
-		return SWITCH_STATUS_GENERR;
-	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -119,12 +122,13 @@ static switch_status_t posix_timer_start_interval(interval_timer_t *it, int inte
  */
 static switch_status_t posix_timer_stop_interval(interval_timer_t *it)
 {
-	it->users--;
-	if (it->users > 0)
-		return SWITCH_STATUS_SUCCESS;
-
-	timer_delete(it->timer);
-	memset(&it->timer, 0, sizeof(it->timer));
+	if (it->users > 0) {
+		it->users--;
+		if (it->users == 0) {
+			timer_delete(it->timer);
+			memset(&it->timer, 0, sizeof(it->timer));
+		}
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
