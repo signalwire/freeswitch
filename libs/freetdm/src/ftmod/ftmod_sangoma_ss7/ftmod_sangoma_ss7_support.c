@@ -198,6 +198,7 @@ ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cd
 
 	if (cdPtyNum->eh.pres == PRSNT_NODEF &&
 	    cdPtyNum->natAddrInd.pres 	== PRSNT_NODEF) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Called Party Number NADI %d\n", cdPtyNum->natAddrInd.val);
 		sprintf(var, "%d", cdPtyNum->natAddrInd.val);
 		sngss7_add_var(sngss7_info, "ss7_cld_nadi", var);
 	}
@@ -533,6 +534,90 @@ ftdm_status_t copy_redirgNum_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *r
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Numbering plan:%s\n", val);
 		sngss7_add_var(sngss7_info, "ss7_rdnis_plan", val);
 		caller_data->rdnis.plan = redirgNum->numPlan.val;
+	}
+
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_redirgInfo_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *redirInfo)
+{
+	char val[20];
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	if (redirInfo->eh.pres != PRSNT_NODEF ) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Redirecting Information available\n");
+		return FTDM_SUCCESS;
+	}
+
+	
+	if (redirInfo->redirInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirInfo->redirInd.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirection Information - redirection indicator:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdinfo_indicator", val);
+	}
+
+	if (redirInfo->origRedirReas.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirInfo->origRedirReas.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirection Information - original redirection reason:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdinfo_orig", val);
+	}
+
+	if (redirInfo->redirCnt.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirInfo->redirCnt.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirection Information - redirection count:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdinfo_count", val);
+	}
+
+	if (redirInfo->redirReas.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirInfo->redirReas.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirection Information - redirection reason:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdinfo_reason", val);
+	}
+		
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *redirInfo)
+{
+	const char* val = NULL;
+	int bProceed = 0;
+
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_indicator");
+	if (!ftdm_strlen_zero(val)) {
+		redirInfo->redirInd.val = atoi(val);
+		bProceed = 1;
+	} else {		
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Redirection Indicator\n");
+	}
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_orig");
+	if (!ftdm_strlen_zero(val)) {
+		redirInfo->origRedirReas.val = atoi(val);
+		bProceed = 1;
+	} else {		
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Original Reasons\n");
+	}
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_count");
+	if (!ftdm_strlen_zero(val)) {
+		redirInfo->redirCnt.val = atoi(val);
+		bProceed = 1;
+	} else {		
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Redirection Count\n");
+	}
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_reason");
+	if (!ftdm_strlen_zero(val)) {
+		redirInfo->redirReas.val = atoi(val);
+		bProceed = 1;
+	} else {		
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Redirection Reasons\n");
+	}
+
+	if( bProceed == 1 ) {
+		redirInfo->eh.pres = PRSNT_NODEF;
+	} else {
+		redirInfo->eh.pres = NOTPRSNT;
 	}
 
 	return FTDM_SUCCESS;

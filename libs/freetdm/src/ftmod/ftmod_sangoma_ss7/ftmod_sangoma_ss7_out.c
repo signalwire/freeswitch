@@ -91,6 +91,10 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		/* Redirecting Number */
 		copy_redirgNum_to_sngss7(ftdmchan, &iam.redirgNum);
 
+		/* Redirecting Information */
+		copy_redirgInfo_to_sngss7(ftdmchan, &iam.redirInfo);
+
+
 		/* Access Transport */
 		copy_accTrnspt_to_sngss7(ftdmchan, &iam.accTrnspt);
 
