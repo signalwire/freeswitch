@@ -49,8 +49,8 @@ struct t4_state_s
     /*! \brief The text which will be used in FAX page header. No text results
                in no header line. */
     const char *header_info;
-    /*! \brief Optional per instance time zone for the FAX pager header timestamp. */
-    struct tz_s *tz;
+    /*! \brief Optional per instance time zone for the FAX page header timestamp. */
+    tz_t *tz;
 
     /*! \brief The size of the compressed image on the line side, in bits. */
     int line_image_size;

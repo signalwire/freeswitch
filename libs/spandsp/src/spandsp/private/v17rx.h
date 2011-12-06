@@ -72,77 +72,6 @@ struct v17_rx_state_s
                routine. */
     void *qam_user_data;
 
-    /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
-#if defined(SPANDSP_USE_FIXED_POINT)
-    int16_t rrc_filter[V17_RX_FILTER_STEPS];
-#else
-    float rrc_filter[V17_RX_FILTER_STEPS];
-#endif
-    /*! \brief Current offset into the RRC pulse shaping filter buffer. */
-    int rrc_filter_step;
-
-    /*! \brief The state of the differential decoder */
-    int diff;
-    /*! \brief The register for the data scrambler. */
-    uint32_t scramble_reg;
-    /*! \brief Scrambler tap */
-    int scrambler_tap;
-
-    /*! \brief TRUE if the short training sequence is to be used. */
-    int short_train;
-    /*! \brief The section of the training data we are currently in. */
-    int training_stage;
-    /*! \brief A count of how far through the current training step we are. */
-    int training_count;
-    /*! \brief A measure of how much mismatch there is between the real constellation,
-        and the decoded symbol positions. */
-    float training_error;
-    /*! \brief The value of the last signal sample, using the a simple HPF for signal power estimation. */
-    int16_t last_sample;
-    /*! \brief >0 if a signal above the minimum is present. It may or may not be a V.17 signal. */
-    int signal_present;
-    /*! \brief Whether or not a carrier drop was detected and the signal delivery is pending. */
-    int carrier_drop_pending;
-    /*! \brief A count of the current consecutive samples below the carrier off threshold. */
-    int low_samples;
-    /*! \brief A highest magnitude sample seen. */
-    int16_t high_sample;
-
-    /*! \brief The current phase of the carrier (i.e. the DDS parameter). */
-    uint32_t carrier_phase;
-    /*! \brief The update rate for the phase of the carrier (i.e. the DDS increment). */
-    int32_t carrier_phase_rate;
-    /*! \brief The carrier update rate saved for reuse when using short training. */
-    int32_t carrier_phase_rate_save;
-#if defined(SPANDSP_USE_FIXED_POINTx)
-    /*! \brief The proportional part of the carrier tracking filter. */
-    float carrier_track_p;
-    /*! \brief The integral part of the carrier tracking filter. */
-    float carrier_track_i;
-#else
-    /*! \brief The proportional part of the carrier tracking filter. */
-    float carrier_track_p;
-    /*! \brief The integral part of the carrier tracking filter. */
-    float carrier_track_i;
-#endif
-
-    /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */    
-    power_meter_t power;
-    /*! \brief The power meter level at which carrier on is declared. */
-    int32_t carrier_on_power;
-    /*! \brief The power meter level at which carrier off is declared. */
-    int32_t carrier_off_power;
-
-    /*! \brief Current read offset into the equalizer buffer. */
-    int eq_step;
-    /*! \brief Current write offset into the equalizer buffer. */
-    int eq_put_step;
-    /*! \brief Symbol count to the next equalizer update. */
-    int eq_skip;
-
-    /*! \brief The current half of the baud. */
-    int baud_half;
-
 #if defined(SPANDSP_USE_FIXED_POINTx)
     /*! \brief The scaling factor accessed by the AGC algorithm. */
     float agc_scaling;
@@ -166,6 +95,20 @@ struct v17_rx_state_s
     int32_t symbol_sync_dc_filter[2];
     /*! Baud phase for symbol sync. */
     int32_t baud_phase;
+
+    /*! \brief A measure of how much mismatch there is between the real constellation,
+        and the decoded symbol positions. */
+    float training_error;
+
+    /*! \brief The proportional part of the carrier tracking filter. */
+    float carrier_track_p;
+    /*! \brief The integral part of the carrier tracking filter. */
+    float carrier_track_i;
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
+    int16_t rrc_filter[V17_RX_FILTER_STEPS];
+
+    /*! \brief A pointer to the current constellation. */
+    const complexi16_t *constellation;
 #else
     /*! \brief The scaling factor accessed by the AGC algorithm. */
     float agc_scaling;
@@ -189,7 +132,71 @@ struct v17_rx_state_s
     float symbol_sync_dc_filter[2];
     /*! Baud phase for symbol sync. */
     float baud_phase;
+
+    /*! \brief A measure of how much mismatch there is between the real constellation,
+        and the decoded symbol positions. */
+    float training_error;
+
+    /*! \brief The proportional part of the carrier tracking filter. */
+    float carrier_track_p;
+    /*! \brief The integral part of the carrier tracking filter. */
+    float carrier_track_i;
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
+    float rrc_filter[V17_RX_FILTER_STEPS];
+
+    /*! \brief A pointer to the current constellation. */
+    const complexf_t *constellation;
 #endif
+    /*! \brief Current offset into the RRC pulse shaping filter buffer. */
+    int rrc_filter_step;
+
+    /*! \brief The state of the differential decoder */
+    int diff;
+    /*! \brief The register for the data scrambler. */
+    uint32_t scramble_reg;
+    /*! \brief Scrambler tap */
+    int scrambler_tap;
+
+    /*! \brief TRUE if the short training sequence is to be used. */
+    int short_train;
+    /*! \brief The section of the training data we are currently in. */
+    int training_stage;
+    /*! \brief A count of how far through the current training step we are. */
+    int training_count;
+    /*! \brief The value of the last signal sample, using the a simple HPF for signal power estimation. */
+    int16_t last_sample;
+    /*! \brief >0 if a signal above the minimum is present. It may or may not be a V.17 signal. */
+    int signal_present;
+    /*! \brief Whether or not a carrier drop was detected and the signal delivery is pending. */
+    int carrier_drop_pending;
+    /*! \brief A count of the current consecutive samples below the carrier off threshold. */
+    int low_samples;
+    /*! \brief A highest magnitude sample seen. */
+    int16_t high_sample;
+
+    /*! \brief The current phase of the carrier (i.e. the DDS parameter). */
+    uint32_t carrier_phase;
+    /*! \brief The update rate for the phase of the carrier (i.e. the DDS increment). */
+    int32_t carrier_phase_rate;
+    /*! \brief The carrier update rate saved for reuse when using short training. */
+    int32_t carrier_phase_rate_save;
+
+    /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */    
+    power_meter_t power;
+    /*! \brief The power meter level at which carrier on is declared. */
+    int32_t carrier_on_power;
+    /*! \brief The power meter level at which carrier off is declared. */
+    int32_t carrier_off_power;
+
+    /*! \brief Current read offset into the equalizer buffer. */
+    int eq_step;
+    /*! \brief Current write offset into the equalizer buffer. */
+    int eq_put_step;
+    /*! \brief Symbol count to the next equalizer update. */
+    int eq_skip;
+
+    /*! \brief The current half of the baud. */
+    int baud_half;
 
     /*! \brief The total symbol timing correction since the carrier came up.
                This is only for performance analysis purposes. */
@@ -199,12 +206,7 @@ struct v17_rx_state_s
     int32_t start_angles[2];
     /*! \brief History list of phase angles for the coarse carrier aquisition step. */
     int32_t angles[16];
-    /*! \brief A pointer to the current constellation. */
-#if defined(SPANDSP_USE_FIXED_POINTx)
-    const complexi16_t *constellation;
-#else
-    const complexf_t *constellation;
-#endif
+
     /*! \brief A pointer to the current space map. There is a space map for
                each trellis state. */
     int space_map;
@@ -217,13 +219,16 @@ struct v17_rx_state_s
     int full_path_to_past_state_locations[V17_TRELLIS_STORAGE_DEPTH][8];
     /*! \brief The trellis. */
     int past_state_locations[V17_TRELLIS_STORAGE_DEPTH][8];
+#if defined(SPANDSP_USE_FIXED_POINTx)
     /*! \brief Euclidean distances (actually the squares of the distances)
                from the last states of the trellis. */
-#if defined(SPANDSP_USE_FIXED_POINTx)
     uint32_t distances[8];
 #else
+    /*! \brief Euclidean distances (actually the squares of the distances)
+               from the last states of the trellis. */
     float distances[8];
 #endif
+
     /*! \brief Error and flow logging control */
     logging_state_t logging;
 };

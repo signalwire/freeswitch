@@ -72,6 +72,7 @@
 /*#include <spandsp/private/v34.h>*/
 #include <spandsp/private/at_interpreter.h>
 #include <spandsp/private/fax_modems.h>
+#include <spandsp/private/timezone.h>
 #include <spandsp/private/image_translate.h>
 #include <spandsp/private/t4_t6_decode.h>
 #include <spandsp/private/t4_t6_encode.h>
@@ -88,7 +89,6 @@
 #include <spandsp/private/t38_gateway.h>
 #include <spandsp/private/t38_terminal.h>
 #include <spandsp/private/t31.h>
-#include <spandsp/private/timezone.h>
 #include <spandsp/private/v18.h>
 #include <spandsp/private/v42.h>
 #include <spandsp/private/v42bis.h>

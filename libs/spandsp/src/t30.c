@@ -58,9 +58,10 @@
 #include "spandsp/v29tx.h"
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v27ter_tx.h"
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  |  defined(SPANDSP_SUPPORT_T85)
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t81_t82_arith_coding.h"
 #endif
 #if defined(SPANDSP_SUPPORT_T85)
@@ -81,7 +82,8 @@
 #include "spandsp/t30_logging.h"
 
 #include "spandsp/private/logging.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  |  defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/private/timezone.h"
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
 #endif
 #if defined(SPANDSP_SUPPORT_T85)
@@ -1975,6 +1977,8 @@ static int start_sending_document(t30_state_t *s)
     t4_tx_set_tx_encoding(&s->t4.tx, s->line_encoding);
     t4_tx_set_local_ident(&s->t4.tx, s->tx_info.ident);
     t4_tx_set_header_info(&s->t4.tx, s->header_info);
+    if (s->use_own_tz)
+        t4_tx_set_header_tz(&s->t4.tx, &s->tz);
 
     s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
     s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);

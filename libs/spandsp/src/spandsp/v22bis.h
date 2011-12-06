@@ -61,8 +61,6 @@ enum
 */
 typedef struct v22bis_state_s v22bis_state_t;
 
-extern const complexf_t v22bis_constellation[16];
-
 #if defined(__cplusplus)
 extern "C"
 {
