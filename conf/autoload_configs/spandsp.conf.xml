@@ -1,5 +1,40 @@
-<configuration name="spandsp.conf" description="Tone detector descriptors">
-   <descriptors>
+<configuration name="spandsp.conf" description="SpanDSP config">
+    <modem-settings>
+<!--
+    total-modems set to N will create that many soft-modems.  
+    If you use them with Hylafax you need the following for each one numbered 0..N:
+
+    1) A line like this in /etc/inittab:
+
+      f0:2345:respawn:/usr/lib/fax/faxgetty /dev/FS0
+
+    2) copy conf/config.FS0 to /var/spool/hylafax/etc (or wherver the appropriate dir is on your system)
+
+    Subsequent modem configs would incrment the 0 to 1 and so on.
+
+-->
+      <param name="total-modems" value="1"/>
+
+      <!-- Default context and dialplan to use on inbound calls from the modems -->
+      <param name="context" value="default"/>
+      <param name="dialplan" value="XML"/>
+
+      <!-- Extra tracing for debugging -->
+      <param name="verbose" value="false"/>
+    </modem-settings>
+
+    <fax-settings>
+	<param name="use-ecm"		value="true"/>
+	<param name="verbose"		value="false"/>
+	<param name="disable-v17"	value="false"/>
+	<param name="ident"		value="SpanDSP Fax Ident"/>
+	<param name="header"		value="SpanDSP Fax Header"/>
+
+	<param name="spool-dir"		value="/tmp"/>
+	<param name="file-prefix"	value="faxrx"/>
+    </fax-settings>
+
+    <descriptors>
 
      <!-- These tones are defined in Annex to ITU Operational Bulletin No. 781 - 1.II.2003 -->
      <!-- Various Tones Used in National Networks (According to ITU-T Recommendation E.180)(03/1998) -->

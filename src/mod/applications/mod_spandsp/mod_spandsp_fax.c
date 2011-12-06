@@ -60,26 +60,6 @@ typedef enum {
     T38_MODE_REFUSED = -1,
 } t38_mode_t;
 
-/* The global stuff */
-static struct {
-	switch_memory_pool_t *pool;
-	switch_mutex_t *mutex;
-
-	uint32_t total_sessions;
-
-	short int use_ecm;
-	short int verbose;
-	short int disable_v17;
-    short int enable_t38;
-    short int enable_t38_request;
-    short int enable_t38_insist;
-	char ident[20];
-	char header[50];
-	char *prepend_string;
-	char *spool;
-	switch_thread_cond_t *cond;
-	switch_mutex_t *cond_mutex;    
-} globals;
 
 struct pvt_s {
 	switch_core_session_t *session;
@@ -128,13 +108,13 @@ static struct {
 static void wake_thread(int force)
 {
 	if (force) {
-        switch_thread_cond_signal(globals.cond);
+        switch_thread_cond_signal(spandsp_globals.cond);
 		return;
 	}
 
-	if (switch_mutex_trylock(globals.cond_mutex) == SWITCH_STATUS_SUCCESS) {
-		switch_thread_cond_signal(globals.cond);
-		switch_mutex_unlock(globals.cond_mutex);
+	if (switch_mutex_trylock(spandsp_globals.cond_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_signal(spandsp_globals.cond);
+		switch_mutex_unlock(spandsp_globals.cond_mutex);
 	}
 }
 
@@ -206,7 +186,7 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
         goto end;
     }
 
-    switch_mutex_lock(globals.cond_mutex);
+    switch_mutex_lock(spandsp_globals.cond_mutex);
 
     while(t38_state_list.thread_running) {
 
@@ -214,7 +194,7 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
 
         if (!t38_state_list.head) {
             switch_mutex_unlock(t38_state_list.mutex);
-			switch_thread_cond_wait(globals.cond, globals.cond_mutex);
+			switch_thread_cond_wait(spandsp_globals.cond, spandsp_globals.cond_mutex);
             switch_core_timer_sync(&timer);
             continue;
         }
@@ -230,7 +210,7 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
         switch_core_timer_next(&timer);
     }
 
-    switch_mutex_unlock(globals.cond_mutex);
+    switch_mutex_unlock(spandsp_globals.cond_mutex);
     
  end:
 
@@ -252,9 +232,9 @@ static void launch_timer_thread(void)
 
 	switch_threadattr_t *thd_attr = NULL;
 
-	switch_threadattr_create(&thd_attr, globals.pool);
+	switch_threadattr_create(&thd_attr, spandsp_globals.pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&t38_state_list.thread, thd_attr, timer_thread_run, NULL, globals.pool);
+	switch_thread_create(&t38_state_list.thread, thd_attr, timer_thread_run, NULL, spandsp_globals.pool);
 }
 
 
@@ -264,12 +244,12 @@ static void launch_timer_thread(void)
 
 static void counter_increment(void)
 {
-	switch_mutex_lock(globals.mutex);
-	globals.total_sessions++;
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_lock(spandsp_globals.mutex);
+	spandsp_globals.total_sessions++;
+	switch_mutex_unlock(spandsp_globals.mutex);
 }
 
-static void spanfax_log_message(int level, const char *msg)
+void spanfax_log_message(int level, const char *msg)
 {
 	int fs_log_level;
 
@@ -821,7 +801,7 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
     } else if ((v = switch_channel_get_variable(channel, "fax_enable_t38"))) {
         enabled = switch_true(v);
     } else {
-        enabled = globals.enable_t38;
+        enabled = spandsp_globals.enable_t38;
     }
 
     if (!(enabled && t38_options)) {
@@ -877,7 +857,7 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
     if ((v = switch_channel_get_variable(channel, "fax_enable_t38_insist"))) {
         insist = switch_true(v);
     } else {
-        insist = globals.enable_t38_insist;
+        insist = spandsp_globals.enable_t38_insist;
     }
 
     /* This will send the options back in a response */
@@ -907,14 +887,14 @@ static t38_mode_t request_t38(pvt_t *pvt)
     } else if ((v = switch_channel_get_variable(channel, "fax_enable_t38"))) {
         enabled = switch_true(v);
     } else {
-        enabled = globals.enable_t38;
+        enabled = spandsp_globals.enable_t38;
     }
 
     if (enabled) {
         if ((v = switch_channel_get_variable(channel, "fax_enable_t38_request"))) {
             enabled = switch_true(v);
         } else {
-            enabled = globals.enable_t38_request;
+            enabled = spandsp_globals.enable_t38_request;
         }
     }
 
@@ -922,7 +902,7 @@ static t38_mode_t request_t38(pvt_t *pvt)
     if ((v = switch_channel_get_variable(channel, "fax_enable_t38_insist"))) {
         insist = switch_true(v);
     } else {
-        insist = globals.enable_t38_insist;
+        insist = spandsp_globals.enable_t38_insist;
     }
 
     if ((t38_options = switch_channel_get_private(channel, "t38_options"))) {
@@ -1004,19 +984,19 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 	if ((tmp = switch_channel_get_variable(channel, "fax_use_ecm"))) {
 		pvt->use_ecm = switch_true(tmp);
 	} else {
-		pvt->use_ecm = globals.use_ecm;
+		pvt->use_ecm = spandsp_globals.use_ecm;
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_disable_v17"))) {
 		pvt->disable_v17 = switch_true(tmp);
 	} else {
-		pvt->disable_v17 = globals.disable_v17;
+		pvt->disable_v17 = spandsp_globals.disable_v17;
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_verbose"))) {
 		pvt->verbose = switch_true(tmp);
 	} else {
-		pvt->verbose = globals.verbose;
+		pvt->verbose = spandsp_globals.verbose;
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_force_caller"))) {
@@ -1036,7 +1016,7 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 
         switch_safe_free(data);
 	} else {
-		pvt->ident = switch_core_session_strdup(session, globals.ident);
+		pvt->ident = switch_core_session_strdup(session, spandsp_globals.ident);
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_header"))) {
@@ -1048,7 +1028,7 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 
         switch_safe_free(data);
 	} else {
-		pvt->header = switch_core_session_strdup(session, globals.header);
+		pvt->header = switch_core_session_strdup(session, spandsp_globals.header);
 	}
 
 	if (pvt->app_mode == FUNCTION_TX) {
@@ -1118,10 +1098,10 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 			time = switch_time_now();
 
 			if (!(prefix = switch_channel_get_variable(channel, "fax_prefix"))) {
-				prefix = globals.prepend_string;
+				prefix = spandsp_globals.prepend_string;
 			}
 
-			if (!(pvt->filename = switch_core_session_sprintf(session, "%s/%s-%ld-%ld.tif", globals.spool, prefix, globals.total_sessions, time))) {
+			if (!(pvt->filename = switch_core_session_sprintf(session, "%s/%s-%ld-%ld.tif", spandsp_globals.spool, prefix, spandsp_globals.total_sessions, time))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot automatically set fax RX destination file\n");
 				goto done;
 			}
@@ -1338,108 +1318,18 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 	}
 }
 
-/* **************************************************************************
-   CONFIGURATION
-   ************************************************************************* */
-
-void load_configuration(switch_bool_t reload)
-{
-	switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, cfg = NULL;
-
-	if ((xml = switch_xml_open_cfg("fax.conf", &cfg, NULL))) {
-		if ((x_lists = switch_xml_child(cfg, "settings"))) {
-			for (x_list = switch_xml_child(x_lists, "param"); x_list; x_list = x_list->next) {
-				const char *name = switch_xml_attr(x_list, "name");
-				const char *value = switch_xml_attr(x_list, "value");
-
-				if (zstr(name)) {
-					continue;
-				}
-
-				if (zstr(value)) {
-					continue;
-				}
-
-				if (!strcmp(name, "use-ecm")) {
-					if (switch_true(value))
-						globals.use_ecm = 1;
-					else
-						globals.use_ecm = 0;
-				} else if (!strcmp(name, "verbose")) {
-					if (switch_true(value))
-						globals.verbose = 1;
-					else
-						globals.verbose = 0;
-				} else if (!strcmp(name, "disable-v17")) {
-					if (switch_true(value))
-						globals.disable_v17 = 1;
-					else
-						globals.disable_v17 = 0;
-				} else if (!strcmp(name, "enable-t38")) {
-					if (switch_true(value)) {
-						globals.enable_t38= 1;
-                    } else {
-						globals.enable_t38 = 0;
-                    }
-				} else if (!strcmp(name, "enable-t38-request")) {
-					if (switch_true(value)) {
-						globals.enable_t38_request = 1;
-                    } else {
-						globals.enable_t38_request = 0;
-                    }
-				} else if (!strcmp(name, "ident")) {
-					strncpy(globals.ident, value, sizeof(globals.ident) - 1);
-				} else if (!strcmp(name, "header")) {
-					strncpy(globals.header, value, sizeof(globals.header) - 1);
-				} else if (!strcmp(name, "spool-dir")) {
-					globals.spool = switch_core_strdup(globals.pool, value);
-				} else if (!strcmp(name, "file-prefix")) {
-					globals.prepend_string = switch_core_strdup(globals.pool, value);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown parameter %s\n", name);
-				}
-
-			}
-		}
-
-		switch_xml_free(xml);
-	}
-}
-
-void mod_spandsp_fax_event_handler(switch_event_t *event)
-{
-	load_configuration(1);
-}
-
-
 void mod_spandsp_fax_load(switch_memory_pool_t *pool)
 {
     uint32_t sanity = 200;
 
-	memset(&globals, 0, sizeof(globals));
     memset(&t38_state_list, 0, sizeof(t38_state_list));
 
-    globals.pool = pool;
+	switch_mutex_init(&spandsp_globals.mutex, SWITCH_MUTEX_NESTED, spandsp_globals.pool);
+	switch_mutex_init(&t38_state_list.mutex, SWITCH_MUTEX_NESTED, spandsp_globals.pool);
 
-	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_mutex_init(&t38_state_list.mutex, SWITCH_MUTEX_NESTED, globals.pool);
-
-	switch_mutex_init(&globals.cond_mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_thread_cond_create(&globals.cond, globals.pool);
+	switch_mutex_init(&spandsp_globals.cond_mutex, SWITCH_MUTEX_NESTED, spandsp_globals.pool);
+	switch_thread_cond_create(&spandsp_globals.cond, spandsp_globals.pool);
     
-    globals.enable_t38 = 1;
-	globals.total_sessions = 0;
-	globals.verbose = 1;
-	globals.use_ecm = 1;
-	globals.disable_v17 = 0;
-	globals.prepend_string = switch_core_strdup(globals.pool, "fax");
-	globals.spool = switch_core_strdup(globals.pool, "/tmp");
-	strncpy(globals.ident, "SpanDSP Fax Ident", sizeof(globals.ident) - 1);
-	strncpy(globals.header, "SpanDSP Fax Header", sizeof(globals.header) - 1);
-
-	load_configuration(0);
-
-
     launch_timer_thread();
 
     while(--sanity && !t38_state_list.thread_running) {
@@ -1454,7 +1344,7 @@ void mod_spandsp_fax_shutdown(void)
     t38_state_list.thread_running = 0;
     wake_thread(1);
     switch_thread_join(&tstatus, t38_state_list.thread);
-	memset(&globals, 0, sizeof(globals));
+	memset(&spandsp_globals, 0, sizeof(spandsp_globals));
 }
 
 static const switch_state_handler_table_t t38_gateway_state_handlers;

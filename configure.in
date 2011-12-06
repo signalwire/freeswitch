@@ -483,7 +483,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs timerfd_create getdtablesize])
+AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs timerfd_create getdtablesize posix_openpt])
 AC_CHECK_FUNCS([sched_setscheduler setpriority setrlimit setgroups initgroups])
 AC_CHECK_FUNCS([wcsncmp setgroups asprintf setenv pselect gettimeofday localtime_r gmtime_r strcasecmp stricmp _stricmp])
 
@@ -493,6 +493,9 @@ AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you
 AC_CHECK_LIB(rt, clock_getres, [AC_DEFINE(HAVE_CLOCK_GETRES, 1, [Define if you have clock_getres()])])
 AC_CHECK_LIB(rt, clock_nanosleep, [AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1, [Define if you have clock_nanosleep()])])
 AC_CHECK_FUNC(socket, , AC_CHECK_LIB(socket, socket))
+
+AC_CHECK_FILE(/dev/ptmx, [AC_DEFINE(HAVE_DEV_PTMX, 1, [Define if you have /dev/ptmx])])
+AC_CHECK_LIB(util, openpty, [AC_DEFINE(HAVE_OPENPTY, 1, [Define if you have openpty()])])
 
 AC_CHECK_MEMBERS([struct tm.tm_gmtoff],,,[
 #include <sys/types.h>

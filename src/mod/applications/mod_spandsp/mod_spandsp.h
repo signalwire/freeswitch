@@ -42,8 +42,39 @@ typedef HANDLE zap_socket_t;
 typedef int zap_socket_t;
 #endif
 
+#define MAX_MODEMS 1024
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 #include <spandsp.h>
+
+/* The global stuff */
+struct spandsp_globals {
+	switch_memory_pool_t *pool;
+	switch_memory_pool_t *config_pool;
+	switch_mutex_t *mutex;
+
+	uint32_t total_sessions;
+
+	short int use_ecm;
+	short int verbose;
+	short int disable_v17;
+    short int enable_t38;
+    short int enable_t38_request;
+    short int enable_t38_insist;
+	char *ident;
+	char *header;
+	char *prepend_string;
+	char *spool;
+	switch_thread_cond_t *cond;
+	switch_mutex_t *cond_mutex;
+	int modem_count;
+	int modem_verbose;
+	char *modem_context;
+	char *modem_dialplan;
+	switch_hash_t *tones;
+	int tonedebug;
+};
+
+extern struct spandsp_globals spandsp_globals;
 
 
 typedef enum {
@@ -51,6 +82,37 @@ typedef enum {
 	FUNCTION_RX,
     FUNCTION_GW
 } mod_spandsp_fax_application_mode_t;
+
+/******************************************************************************
+ * TONE DETECTION WITH CADENCE
+ */
+
+#define MAX_TONES 32
+#define STRLEN 128
+/**
+ * Tone descriptor
+ *
+ * Defines a set of tones to look for
+ */
+struct tone_descriptor {
+	/** The name of this descriptor set */
+	const char *name;
+
+	/** Describes the tones to watch */
+	super_tone_rx_descriptor_t *spandsp_tone_descriptor;
+
+	/** The mapping of tone id to key */
+	char tone_keys[MAX_TONES][STRLEN];
+    int idx;
+
+};
+typedef struct tone_descriptor tone_descriptor_t;
+
+
+switch_status_t tone_descriptor_create(tone_descriptor_t **descriptor, const char *name, switch_memory_pool_t *memory_pool);
+int tone_descriptor_add_tone(tone_descriptor_t *descriptor, const char *name);
+switch_status_t tone_descriptor_add_tone_element(tone_descriptor_t *descriptor, int tone_id, int freq1, int freq2, int min, int max);
+
 
 void mod_spandsp_fax_load(switch_memory_pool_t *pool);
 switch_status_t mod_spandsp_codecs_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool);
@@ -74,3 +136,5 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 														   int hits, const char *app, const char *data, switch_tone_detect_callback_t callback);
 
 switch_status_t spandsp_fax_stop_detect_session(switch_core_session_t *session);
+void spanfax_log_message(int level, const char *msg);
+switch_status_t load_configuration(switch_bool_t reload);
