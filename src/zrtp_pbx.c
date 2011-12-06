@@ -299,6 +299,10 @@ zrtp_status_t _zrtp_machine_process_while_in_sasrelaying( zrtp_stream_t* stream,
 /*---------------------------------------------------------------------------*/
 zrtp_status_t zrtp_stream_registration_start(zrtp_stream_t* stream, uint32_t ssrc)
 {
+	if (!stream) {
+		return zrtp_status_bad_param;
+	}
+	
 	ZRTP_LOG(3,(_ZTU_,"START REGISTRATION STREAM ID=%u mode=%s state=%s.\n",
 				stream->id, zrtp_log_mode2str(stream->mode), zrtp_log_state2str(stream->state)));
 				
@@ -313,6 +317,10 @@ zrtp_status_t zrtp_stream_registration_start(zrtp_stream_t* stream, uint32_t ssr
 
 zrtp_status_t zrtp_stream_registration_secure(zrtp_stream_t* stream)
 {
+	if (!stream) {
+		return zrtp_status_bad_param;
+	}
+	
 	ZRTP_LOG(3,(_ZTU_,"SECURE REGISTRATION STREAM ID=%u mode=%s state=%s.\n",
 				stream->id, zrtp_log_mode2str(stream->mode), zrtp_log_state2str(stream->state)));
 	
@@ -330,6 +338,10 @@ zrtp_status_t zrtp_register_with_trusted_mitm(zrtp_stream_t* stream)
 {
 	zrtp_session_t *session = stream->session;
 	zrtp_status_t s = zrtp_status_bad_param;
+	
+	if (!stream) {
+		return zrtp_status_bad_param;
+	}
 	
 	ZRTP_LOG(3,(_ZTU_,"MARKING this call as REGISTRATION ID=%u\n", stream->id));
 	
@@ -399,7 +411,11 @@ zrtp_status_t zrtp_register_with_trusted_mitm(zrtp_stream_t* stream)
 /*---------------------------------------------------------------------------*/
 zrtp_status_t zrtp_link_mitm_calls(zrtp_stream_t *stream1, zrtp_stream_t *stream2)
 {
-	ZRTP_LOG(3,(_ZTU_,"Link to MiTM call together stream1=%u stream2=%u.\n", stream1->id, stream2->id));
+	if (!stream1 || !stream2) {
+		return zrtp_status_bad_param;
+	}
+	
+	ZRTP_LOG(3,(_ZTU_,"Link to MiTM call together stream1=%u stream2=%u.\n", stream1->id, stream2->id));		
 	
 	/* This APi is for MiTM endpoints only. */
 	if (stream1->zrtp->is_mitm) {
@@ -451,6 +467,10 @@ zrtp_status_t zrtp_update_remote_options( zrtp_stream_t* stream,
 	zrtp_retry_task_t* task = &stream->messages.sasrelay_task;
 	zrtp_status_t s = zrtp_status_ok;
 	char buff[256];
+	
+	if (!stream) {
+		return zrtp_status_bad_param;
+	}
 	
 	ZRTP_LOG(3,(_ZTU_,"UPDATE REMOTE SAS OPTIONS mode. ID=%u\n", stream->id));
 	ZRTP_LOG(3,(_ZTU_,"transf_sas=%s scheme=%d.\n", transf_sas_value ?
@@ -515,6 +535,10 @@ zrtp_status_t zrtp_resolve_mitm_call( zrtp_stream_t* stream1,
 	zrtp_stream_t* non_enrolled = NULL;
 	zrtp_sas_id_t mitm_sas_scheme = ZRTP_COMP_UNKN;
 	zrtp_status_t s = zrtp_status_ok;
+	
+	if (!stream1 || !stream2) {
+		return zrtp_status_bad_param;
+	}
 
 	ZRTP_LOG(3,(_ZTU_,"RESOLVE MITM CALL s1=%u, s2=%u...\n", stream1->id, stream2->id));
 
@@ -605,8 +629,9 @@ zrtp_status_t zrtp_resolve_mitm_call( zrtp_stream_t* stream1,
 		return s;
 	}
 
+	/* NOTE: new request from Philip Zimmermann - always send SASRelay to BOTH parties. */
 	/* If non-enrolled party has SAS scheme different from chosen one - update */
-	if (non_enrolled->session->sasscheme->base.id != mitm_sas_scheme) {
+	/*if (non_enrolled->session->sasscheme->base.id != mitm_sas_scheme) { */
 		s = zrtp_update_remote_options( non_enrolled,
 										mitm_sas_scheme,
 										NULL,
@@ -615,7 +640,7 @@ zrtp_status_t zrtp_resolve_mitm_call( zrtp_stream_t* stream1,
 		if (zrtp_status_ok != s) {
 			return s;
 		}
-	}
+	/*}*/
 
 	return s;
 }
@@ -623,12 +648,20 @@ zrtp_status_t zrtp_resolve_mitm_call( zrtp_stream_t* stream1,
 /*---------------------------------------------------------------------------*/
 uint8_t zrtp_is_user_enrolled(zrtp_stream_t* stream)
 {
+	if (!stream) {
+		return zrtp_status_bad_param;
+	}
+	
 	return ( (stream->session->secrets.cached & ZRTP_BIT_PBX) &&
 		     (stream->session->secrets.matches & ZRTP_BIT_PBX) );
 }
 
 zrtp_stream_t* zrtp_choose_one_enrolled(zrtp_stream_t* stream1, zrtp_stream_t* stream2)
 {
+	if (!stream1 || !stream2) {
+		return NULL;
+	}
+	
 	if (zrtp_memcmp( stream1->session->zid.buffer,
 					 stream2->session->zid.buffer,
 					 stream1->session->zid.length) > 0) {

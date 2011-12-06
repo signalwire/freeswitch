@@ -912,8 +912,8 @@ void zrtp_def_cache_foreach( zrtp_global_t *global,
 		if (delete) {
 			{
 			char idstr[24*2+1];
-			ZRTP_LOG(3,(_ZTU_,"\zrtp_def_cache_foreach() Delete element id=%s index=%u\n",
-					hex2str(elem->id, sizeof(elem->id), idstr, sizeof(idstr)),
+			ZRTP_LOG(3,(_ZTU_,"\trtp_def_cache_foreach() Delete element id=%s index=%u\n",
+					hex2str((const char*)elem->id, sizeof(elem->id), idstr, sizeof(idstr)),
 					elem->_index));
 			}
 			

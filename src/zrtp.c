@@ -831,6 +831,10 @@ zrtp_status_t zrtp_profile_check(const zrtp_profile_t* profile, zrtp_global_t* z
 {
     uint8_t i = 0;
 	
+	if (!profile || !zrtp) {
+		return zrtp_status_bad_param;
+	}
+	
     /*
      * Fail if the required base components are not present in the profile.
      */
