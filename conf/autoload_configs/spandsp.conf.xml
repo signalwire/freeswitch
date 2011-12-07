@@ -13,7 +13,7 @@
     Subsequent modem configs would incrment the 0 to 1 and so on.
 
 -->
-      <param name="total-modems" value="1"/>
+      <param name="total-modems" value="0"/>
 
       <!-- Default context and dialplan to use on inbound calls from the modems -->
       <param name="context" value="default"/>
