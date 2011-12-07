@@ -1151,6 +1151,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void abort_call(switch_channel_t *caller_channel, switch_channel_t *peer_channel)
+{
+	switch_call_cause_t cause = switch_channel_get_cause(caller_channel);
+	
+	if (!cause) {
+		cause = SWITCH_CAUSE_ORIGINATOR_CANCEL;
+	}
+	
+	switch_channel_hangup(peer_channel, cause);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_session_t *session,
 																 switch_core_session_t *peer_session,
 																 switch_input_callback_function_t input_callback, void *session_data,
@@ -1208,20 +1219,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_channel_test_flag(peer_channel, CF_RING_READY)) {
 		const char *app, *data;
 		
-		if (switch_channel_get_state(peer_channel) == CS_CONSUME_MEDIA) {
-			switch_channel_set_state(peer_channel, CS_HIBERNATE);
-			switch_channel_wait_for_state(peer_channel, caller_channel, CS_HIBERNATE);
+ 		if (!switch_channel_ready(caller_channel)) {
+			abort_call(caller_channel, peer_channel);
+			goto done;
 		}
-
-		if (!switch_channel_ready(caller_channel)) {
-			switch_call_cause_t cause = switch_channel_get_cause(caller_channel);
-
-			if (cause) {
-				switch_channel_hangup(peer_channel, cause);
-				goto done;
-			}
-		}
-
 
 		switch_channel_set_state(peer_channel, CS_CONSUME_MEDIA);
 
@@ -1240,6 +1241,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_variable(peer_channel, SWITCH_BRIDGE_VARIABLE, switch_core_session_get_uuid(session));
 			switch_channel_set_variable(caller_channel, SWITCH_LAST_BRIDGE_VARIABLE, switch_core_session_get_uuid(peer_session));
 			switch_channel_set_variable(peer_channel, SWITCH_LAST_BRIDGE_VARIABLE, switch_core_session_get_uuid(session));
+
+			if (!switch_channel_ready(caller_channel)) {
+				abort_call(caller_channel, peer_channel);
+				goto done;
+			}
 
 			if (!switch_channel_media_ready(caller_channel) ||
 				(!switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
@@ -1260,6 +1266,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 							switch_channel_hangup(caller_channel, SWITCH_CAUSE_ALLOTTED_TIMEOUT);
 						}
 					}
+					abort_call(caller_channel, peer_channel);
 					switch_core_session_rwunlock(peer_session);
 					goto done;
 				}
@@ -1279,6 +1286,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 			if (switch_core_session_receive_message(peer_session, &msg) != SWITCH_STATUS_SUCCESS) {
 				status = SWITCH_STATUS_FALSE;
+				abort_call(caller_channel, peer_channel);
 				switch_core_session_rwunlock(peer_session);
 				goto done;
 			}
@@ -1286,6 +1294,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			msg.string_arg = switch_core_session_strdup(session, switch_core_session_get_uuid(peer_session));
 			if (switch_core_session_receive_message(session, &msg) != SWITCH_STATUS_SUCCESS) {
 				status = SWITCH_STATUS_FALSE;
+				abort_call(caller_channel, peer_channel);
 				switch_core_session_rwunlock(peer_session);
 				goto done;
 			}
