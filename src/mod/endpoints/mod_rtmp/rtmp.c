@@ -887,7 +887,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 								uint16_t len = state->origlen;
 								
 								switch_mutex_lock(rsession->tech_pvt->readbuf_mutex);
-								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > rsession->tech_pvt->maxlen * 5) {
+								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > rsession->tech_pvt->maxlen * 40) {
 									rsession->tech_pvt->over_size++;
 								} else {
 									rsession->tech_pvt->over_size = 0;
@@ -895,7 +895,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 								if (rsession->tech_pvt->over_size > 10) {
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 													  "%s buffer > %u for 10 consecutive packets... Flushing buffer\n", 
-													  switch_core_session_get_name(rsession->tech_pvt->session), rsession->tech_pvt->maxlen * 5);
+													  switch_core_session_get_name(rsession->tech_pvt->session), rsession->tech_pvt->maxlen * 40);
 									switch_buffer_zero(rsession->tech_pvt->readbuf);
 									#ifdef RTMP_DEBUG_IO
 									fprintf(rsession->io_debug_in, "[chunk_stream=%d type=0x%x ts=%d stream_id=0x%x] FLUSH BUFFER [exceeded %u]\n", rsession->amfnumber, state->type, (int)state->ts, state->stream_id, rsession->tech_pvt->maxlen * 5);
