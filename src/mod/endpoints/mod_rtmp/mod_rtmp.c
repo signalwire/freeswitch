@@ -407,6 +407,7 @@ switch_status_t rtmp_read_frame(switch_core_session_t *session, switch_frame_t *
 	return SWITCH_STATUS_SUCCESS;
 	
 cng:
+
 	data = (switch_byte_t *) tech_pvt->read_frame.data;
 	data[0] = 65;
 	data[1] = 0;
@@ -414,7 +415,7 @@ cng:
 	tech_pvt->read_frame.flags = SFF_CNG;
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
-	switch_core_timer_sync(&tech_pvt->timer);
+	//switch_core_timer_sync(&tech_pvt->timer);
 
 	*frame = &tech_pvt->read_frame;
 	

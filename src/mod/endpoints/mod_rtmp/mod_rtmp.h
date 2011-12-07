@@ -520,6 +520,7 @@ struct rtmp_private {
 	const char *auth;
 
 	uint16_t maxlen;
+	int over_size;
 };
 
 struct rtmp_reg;
