@@ -31,8 +31,8 @@
  *
  */
 
-#include "switch_private.h"
 #if defined(HAVE_OPENPTY) || defined(HAVE_DEV_PTMX) || defined(HAVE_POSIX_OPENPT)
+#include "switch_private.h"
 #define MODEM_SUPPORT 1
 #if !defined(HAVE_POSIX_OPENPT) && !defined(HAVE_DEV_PTMX)
 #define USE_OPENPTY 1
