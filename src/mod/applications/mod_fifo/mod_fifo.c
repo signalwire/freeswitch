@@ -1610,7 +1610,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	if (status != SWITCH_STATUS_SUCCESS) {
 
 		sql = switch_mprintf("update fifo_outbound set ring_count=ring_count-1, "
-							 "outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag + 1 where uuid='%q' and use_count > 0",
+							 "outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag + 1 where uuid='%q'",
 							 (long) switch_epoch_time_now(NULL), h->uuid);
 		fifo_execute_sql(sql, globals.sql_mutex);
 		switch_safe_free(sql);
