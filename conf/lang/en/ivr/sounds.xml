@@ -82,4 +82,25 @@
       </input>
     </macro>
 
+    <macro name="screen_confirm">
+      <input pattern="^(.*)$">
+        <match>
+          <action function="sleep" data="500"/>
+          <action function="play-file" data="ivr/ivr-call_from.wav"/>
+          <action function="sleep" data="250"/>
+          <!-- Note, be sure to pass in the full path to the file or else!! -->
+          <action function="play-file" data="$1"/>
+          <action function="sleep" data="500"/>
+          <action function="play-file" data="ivr/ivr-accept_reject_voicemail.wav"/>
+          <action function="sleep" data="1500"/>
+          <action function="play-file" data="ivr/ivr-call_from.wav"/>
+          <action function="sleep" data="250"/>
+          <action function="play-file" data="$1"/>
+          <action function="sleep" data="500"/>
+          <action function="play-file" data="ivr/ivr-accept_reject_voicemail.wav"/>
+          <action function="sleep" data="1500"/>
+        </match>
+      </input>
+    </macro>
+
 </include>
