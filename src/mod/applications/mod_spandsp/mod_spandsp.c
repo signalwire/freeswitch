@@ -288,7 +288,7 @@ switch_status_t load_configuration(switch_bool_t reload)
 
     spandsp_globals.modem_dialplan = "XML";
     spandsp_globals.modem_context = "default";
-    spandsp_globals.modem_count = 1;
+    spandsp_globals.modem_count = 0;
 
 
     spandsp_globals.enable_t38 = 1;
@@ -324,7 +324,7 @@ switch_status_t load_configuration(switch_bool_t reload)
 				if (!reload && !strcmp(name, "total-modems")) {
                     int tmp = atoi(value);
 
-                    if (tmp > 0 && tmp < MAX_MODEMS) {
+                    if (tmp > -1 && tmp < MAX_MODEMS) {
                         spandsp_globals.modem_count = tmp;
                     } else {
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%d] for total-modems\n", tmp);
@@ -533,9 +533,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 		/* Not such severe to prevent loading */
 	}
 
-#if defined(MODEM_SUPPORT) 
+    //#if defined(MODEM_SUPPORT) 
 	modem_global_init(module_interface, pool);
-#endif
+    //#endif
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_spandsp loaded, using spandsp library version [%s]\n", SPANDSP_RELEASE_DATETIME_STRING);
 
 	return SWITCH_STATUS_SUCCESS;

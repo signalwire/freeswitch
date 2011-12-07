@@ -1232,11 +1232,8 @@ switch_status_t modem_global_init(switch_loadable_module_interface_t **module_in
 {
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
-	globals.SOFT_MAX_MODEMS = 1;
 
-	if (spandsp_globals.modem_count > 0) {
-		globals.SOFT_MAX_MODEMS = spandsp_globals.modem_count;
-	}
+	globals.SOFT_MAX_MODEMS = spandsp_globals.modem_count;
 	
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
 
