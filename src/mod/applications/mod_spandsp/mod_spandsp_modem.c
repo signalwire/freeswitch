@@ -77,8 +77,9 @@ static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf,
 	wrote = write(modem->master, buf, len);
 
     if (wrote != len) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to pass the full buffer onto the device file. %zd bytes of %ld written: %s\n",
-						  wrote, len, strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to pass the full buffer onto the device file. " 
+						  "%"SWITCH_SSIZE_T_FMT " bytes of " "%"SWITCH_SIZE_T_FMT " written: %s\n", wrote, len, strerror(errno));
+						  
 		if (wrote == -1) wrote = 0;
 
 		if (tcflush(modem->master, TCOFLUSH)) {
