@@ -835,9 +835,11 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
         t38_options->T38MaxBitRate = (pvt->disable_v17)  ?  9600  :  14400;
 
         /* cisco gets mad when we set this to one in a response where they set it to 0, are we allowed to hardcode this to 1 on responses?  */
+        /*
         if (!zstr(t38_options->sdp_o_line) && !switch_stristr("cisco", t38_options->sdp_o_line)) {
             t38_options->T38FaxFillBitRemoval = 1;
         }
+        */
 
         t38_options->T38FaxTranscodingMMR = 0;
         t38_options->T38FaxTranscodingJBIG = 0;
