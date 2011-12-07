@@ -31,7 +31,9 @@
  *
  */
 
+#ifndef WIN32
 #include "switch_private.h"
+#endif
 #if defined(HAVE_OPENPTY) || defined(HAVE_DEV_PTMX) || defined(HAVE_POSIX_OPENPT)
 #define MODEM_SUPPORT 1
 #if !defined(HAVE_POSIX_OPENPT) && !defined(HAVE_DEV_PTMX)
