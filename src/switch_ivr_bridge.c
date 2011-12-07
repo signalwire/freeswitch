@@ -763,21 +763,48 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
-
 	if ((other_uuid = switch_channel_get_variable(channel, SWITCH_UUID_BRIDGE)) && (other_session = switch_core_session_locate(other_uuid))) {
 		switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 		switch_event_t *event;
 		int ready_a, ready_b;
-		switch_channel_state_t state;
+		switch_channel_state_t state, running_state;
+		int max = 1000, loops = max;
 
 		switch_channel_set_variable(channel, SWITCH_UUID_BRIDGE, NULL);
+		
+		for (;;) {
+			state = switch_channel_get_state(other_channel);
+			running_state = switch_channel_get_running_state(other_channel);
 
-		switch_channel_wait_for_state(other_channel, channel, CS_RESET);
+			if (state == running_state) {
+				
+				if (--loops < 1) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					switch_channel_hangup(other_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				}
 
-		if (switch_channel_get_state(other_channel) == CS_RESET) {
-			switch_channel_set_state(other_channel, CS_SOFT_EXECUTE);
-			switch_channel_wait_for_state(other_channel, channel, CS_SOFT_EXECUTE);
+				if (switch_channel_down_nosig(other_channel) || switch_channel_down_nosig(channel)) {
+					break;
+				}
+
+				if (running_state == CS_RESET) {
+					switch_channel_set_state(other_channel, CS_SOFT_EXECUTE);
+				}
+
+				if (running_state == CS_SOFT_EXECUTE) {
+
+					if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
+						goto done;
+					} else {
+						break;
+					}
+				}
+
+			} else {
+				loops = max;
+			}
+
+			switch_yield(20000);
 		}
 
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -789,7 +816,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			} else {
 				switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
 			}
-			return SWITCH_STATUS_FALSE;
+			goto done;
 		}
 
 		ready_a = switch_channel_ready(channel);
@@ -809,7 +836,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 				}
 			}
 			switch_core_session_rwunlock(other_session);
-			return SWITCH_STATUS_FALSE;
+			goto done;
 		}
 
 		/* fire events that will change the data table from "show channels" */
@@ -839,7 +866,9 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 
+ done:
 
+	switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
 
 	return SWITCH_STATUS_FALSE;
 }
@@ -1563,8 +1592,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			//switch_channel_set_variable(originatee_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, NULL);
 			switch_channel_clear_state_handler(originator_channel, NULL);
 			switch_channel_clear_state_handler(originatee_channel, NULL);
-			switch_channel_set_state_flag(originator_channel, CF_BRIDGE_ORIGINATOR);
+			switch_channel_clear_flag_recursive(originator_channel, CF_BRIDGE_ORIGINATOR);
 			switch_channel_clear_flag_recursive(originatee_channel, CF_BRIDGE_ORIGINATOR);
+			switch_channel_set_state_flag(originator_channel, CF_BRIDGE_ORIGINATOR);
+			switch_channel_clear_state_flag(originatee_channel, CF_BRIDGE_ORIGINATOR);
 			switch_channel_add_state_handler(originator_channel, &uuid_bridge_state_handlers);
 			switch_channel_add_state_handler(originatee_channel, &uuid_bridge_state_handlers);
 

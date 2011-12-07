@@ -389,6 +389,7 @@ SWITCH_DECLARE(uint32_t) switch_channel_test_flag_partner(switch_channel_t *chan
   \param flag flag to set
 */
 SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flag);
+SWITCH_DECLARE(void) switch_channel_clear_state_flag(switch_channel_t *channel, switch_channel_flag_t flag);
 
 /*!
   \brief Clear given flag(s) from a channel

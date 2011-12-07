@@ -1674,6 +1674,15 @@ SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, sw
 	switch_mutex_unlock(channel->flag_mutex);
 }
 
+SWITCH_DECLARE(void) switch_channel_clear_state_flag(switch_channel_t *channel, switch_channel_flag_t flag)
+{
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->flag_mutex);
+	channel->state_flags[flag] = 0;
+	switch_mutex_unlock(channel->flag_mutex);
+}
+
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flag)
 {
 	int ACTIVE = 0;
