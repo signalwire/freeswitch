@@ -533,9 +533,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 		/* Not such severe to prevent loading */
 	}
 
-    //#if defined(MODEM_SUPPORT) 
+
 	modem_global_init(module_interface, pool);
-    //#endif
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_spandsp loaded, using spandsp library version [%s]\n", SPANDSP_RELEASE_DATETIME_STRING);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -547,9 +547,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spandsp_shutdown)
 
 	mod_spandsp_fax_shutdown();
 	mod_spandsp_dsp_shutdown();
-#if defined(MODEM_SUPPORT) 
 	modem_global_shutdown();
-#endif
 
     if (spandsp_globals.tones) {
         switch_core_hash_destroy(&spandsp_globals.tones);
