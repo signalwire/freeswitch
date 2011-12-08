@@ -94,6 +94,7 @@ struct listener {
 	char remote_ip[50];
 	switch_port_t remote_port;
 	switch_event_t *filters;
+	time_t linger_timeout;
 	struct listener *next;
 };
 
@@ -1343,6 +1344,12 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			}
 		}
 
+		if (switch_test_flag(listener, LFLAG_HANDLE_DISCO) && switch_epoch_time_now(NULL) > listener->linger_timeout) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_DEBUG, "linger timeout, closing socket\n");
+			status = SWITCH_STATUS_FALSE;
+			break;
+		}
+
 		if (channel && switch_channel_down(channel) && !switch_test_flag(listener, LFLAG_HANDLE_DISCO)) {
 			switch_set_flag_locked(listener, LFLAG_HANDLE_DISCO);
 			if (switch_test_flag(listener, LFLAG_LINGER)) {
@@ -2260,8 +2267,15 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 	} else if (!strncasecmp(cmd, "linger", 6)) {
 		if (listener->session) {
+			uint32_t linger_time = 600; /* sounds reasonable? */
+			if (*(cmd+6) == ' ' && *(cmd+7)) { /*how long do you want to linger?*/
+				linger_time = (uint32_t)atoi(cmd+7);
+			}
+
+			/*do we need a mutex to update linger_timeout ?*/
+			listener->linger_timeout = switch_epoch_time_now(NULL) + linger_time;
 			switch_set_flag_locked(listener, LFLAG_LINGER);
-			switch_snprintf(reply, reply_len, "+OK will linger");
+			switch_snprintf(reply, reply_len, "+OK will linger %d seconds", linger_time);
 		} else {
 			switch_snprintf(reply, reply_len, "-ERR not controlling a session");
 		}
