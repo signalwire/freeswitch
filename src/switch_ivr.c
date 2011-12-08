@@ -1716,7 +1716,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 														   (long) switch_epoch_time_now(NULL), new_profile->uuid_str,
 														   extension, use_context, use_dialplan);
 		switch_channel_add_variable_var_check(channel, SWITCH_TRANSFER_HISTORY_VARIABLE, new_profile->transfer_source, SWITCH_FALSE, SWITCH_STACK_PUSH);
-		
+		switch_channel_set_variable(channel, SWITCH_TRANSFER_SOURCE_VARIABLE, new_profile->transfer_source);
 		return SWITCH_STATUS_SUCCESS;
 	}
 

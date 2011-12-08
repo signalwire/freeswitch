@@ -5267,7 +5267,8 @@ static void mark_transfer_record(switch_core_session_t *session, const char *br_
 												  switch_channel_get_variable(br_a_channel, dvar2));
 		
 		switch_channel_add_variable_var_check(br_a_channel, SWITCH_TRANSFER_HISTORY_VARIABLE, cp->transfer_source, SWITCH_FALSE, SWITCH_STACK_PUSH);
-		
+		switch_channel_set_variable(br_a_channel, SWITCH_TRANSFER_SOURCE_VARIABLE, cp->transfer_source);
+
 		switch_core_session_rwunlock(br_a_session);
 	}
 										
