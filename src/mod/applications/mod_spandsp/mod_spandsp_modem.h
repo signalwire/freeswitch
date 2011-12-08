@@ -34,9 +34,9 @@
 #ifndef WIN32
 #include "switch_private.h"
 #endif
-#if defined(HAVE_OPENPTY) || defined(HAVE_DEV_PTMX) || defined(HAVE_POSIX_OPENPT)
+#if defined(HAVE_OPENPTY) || defined(HAVE_DEV_PTMX) || defined(HAVE_POSIX_OPENPT) || WIN32
 #define MODEM_SUPPORT 1
-#if !defined(HAVE_POSIX_OPENPT) && !defined(HAVE_DEV_PTMX)
+#if !defined(HAVE_POSIX_OPENPT) && !defined(HAVE_DEV_PTMX) && !defined(WIN32)
 #define USE_OPENPTY 1
 #endif
 #ifndef _MOD_SPANDSP_MODEM_H
@@ -44,16 +44,22 @@
 
 #include <stdio.h>
 #include <string.h>
+#ifndef WIN32
 #include <pty.h>
 #include <unistd.h>
+#endif
 #include <fcntl.h>
 #include <errno.h>
+#ifndef WIN32
 #include <byteswap.h>
 #include <sys/time.h>
 #include <sys/signal.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <stdint.h>
+#endif
 #include <tiffio.h>
 #include <spandsp.h>
 

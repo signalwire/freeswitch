@@ -35,7 +35,9 @@
 #include "mod_spandsp_modem.h"
 
 #if defined(MODEM_SUPPORT)
+#ifndef WIN32
 #include <poll.h>
+#endif
 
 static struct {
 	int NEXT_ID;
@@ -72,7 +74,7 @@ static modem_t *acquire_modem(int index);
 static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, size_t len)
 {   
 	modem_t *modem = user_data;
-    ssize_t wrote;
+    switch_size_t wrote;
 
 	wrote = write(modem->master, buf, len);
 
@@ -82,6 +84,7 @@ static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf,
 						  
 		if (wrote == -1) wrote = 0;
 
+#ifndef WIN32
 		if (tcflush(modem->master, TCOFLUSH)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to flush pty master buffer: %s\n", strerror(errno));
 		} else if (tcflush(modem->slave, TCOFLUSH)) {
@@ -89,6 +92,7 @@ static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf,
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Successfully flushed pty buffer\n");
 		}
+#endif
     }
     return wrote;
 }
@@ -179,6 +183,9 @@ int modem_close(modem_t *modem)
 
 int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 {
+#ifdef WIN32
+	u_long arg = 1;
+#endif
 	
 	memset(modem, 0, sizeof(*modem));
 
@@ -212,6 +219,7 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 		
     }
 
+#ifndef WIN32
     if (grantpt(modem->master) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to grant access to slave pty\n");
 		
@@ -223,6 +231,7 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
     }
 
     modem->stty = ptsname(modem->master);
+#endif
 
     if (modem->stty == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to obtain slave pty filename\n");
@@ -246,6 +255,7 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 	
     unlink(modem->devlink);
 
+#ifndef WIN32
     if (symlink(modem->stty, modem->devlink)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to create %s symbolic link\n", modem->devlink);
 		modem_close(modem);
@@ -257,6 +267,13 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 		modem_close(modem);
         return -1;
     }
+#else
+	if (ioctlsocket(modem->master, FIONBIO, &arg) == SOCKET_ERROR) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set up non-blocking read on %s\n", "Unknown"); /* need ttyname(modem->master)); */
+		modem_close(modem);
+		return -1;
+	}
+#endif
 	
     if (!(modem->t31_state = t31_init(NULL, t31_at_tx_handler, modem, t31_call_control_handler, modem, NULL, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot initialize the T.31 modem\n");
@@ -355,9 +372,11 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_strftime(call_date, &retsize, sizeof(call_date), "%m%d", &tm);
 		switch_strftime(call_time, &retsize, sizeof(call_time), "%H%M", &tm);
 
+#ifndef WIN32
 		ioctl(tech_pvt->modem->slave, TIOCMGET, &tioflags);
 		tioflags |= TIOCM_RI;
 		ioctl(tech_pvt->modem->slave, TIOCMSET, &tioflags);
+#endif
 
 		at_reset_call_info(&tech_pvt->modem->t31_state->at_state);
 		at_set_call_info(&tech_pvt->modem->t31_state->at_state, "DATE", call_date);
@@ -1038,6 +1057,7 @@ typedef enum {
 	MODEM_POLL_ERROR = (1 << 2)
 } modem_poll_t;
 
+#ifndef WIN32
 static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
 {
 	struct pollfd pfds[2] = { { 0 } };
@@ -1076,6 +1096,71 @@ static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
 	return r;
 
 }
+#else
+#pragma warning( push )
+#pragma warning( disable : 6262 ) /* warning C6262: Function uses '98348' bytes of stack: exceeds /analyze:stacksize'16384'. Consider moving some data to heap */
+static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
+{
+	int s = 0, r = 0;
+	fd_set rfds;
+	fd_set wfds;
+	fd_set efds;
+	struct timeval tv;
+
+	FD_ZERO(&rfds);
+	FD_ZERO(&wfds);
+	FD_ZERO(&efds);
+
+	/* Wouldn't you rather know?? */
+	assert(sock <= FD_SETSIZE);
+
+	
+	if ((flags & MODEM_POLL_READ)) {
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	FD_SET(sock, &rfds);
+	}
+
+	if ((flags & MODEM_POLL_WRITE)) {
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	FD_SET(sock, &wfds);
+#pragma warning( pop ) 
+	}
+
+	if ((flags & MODEM_POLL_ERROR)) {
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+	FD_SET(sock, &efds);
+#pragma warning( pop ) 
+	}
+
+	tv.tv_sec = ms / 1000;
+	tv.tv_usec = (ms % 1000) * ms;
+	
+	s = select(sock + 1, (flags & MODEM_POLL_READ) ? &rfds : NULL, (flags & MODEM_POLL_WRITE) ? &wfds : NULL, (flags & MODEM_POLL_ERROR) ? &efds : NULL, &tv);
+
+	if (s < 0) {
+		r = s;
+	} else if (s > 0) {
+		if ((flags & MODEM_POLL_READ) && FD_ISSET(sock, &rfds)) {
+			r |= MODEM_POLL_READ;
+		}
+
+		if ((flags & MODEM_POLL_WRITE) && FD_ISSET(sock, &wfds)) {
+			r |= MODEM_POLL_WRITE;
+		}
+
+		if ((flags & MODEM_POLL_ERROR) && FD_ISSET(sock, &efds)) {
+			r |= MODEM_POLL_ERROR;
+		}
+	}
+
+	return r;
+
+}
+#pragma warning( pop ) 
+#endif
 
 static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 {
