@@ -346,6 +346,7 @@ SPAN_DECLARE(void) dtmf_rx_set_realtime_callback(dtmf_rx_state_t *s,
 {
     s->realtime_callback = callback;
     s->realtime_callback_data = user_data;
+    s->duration = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -395,6 +396,7 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
         if ((s = (dtmf_rx_state_t *) malloc(sizeof (*s))) == NULL)
             return  NULL;
     }
+    memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "DTMF");
     s->digits_callback = callback;
@@ -547,6 +549,7 @@ SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s)
         if ((s = (dtmf_tx_state_t *) malloc(sizeof (*s))) == NULL)
             return  NULL;
     }
+    memset(s, 0, sizeof(*s));
     if (!dtmf_tx_inited)
         dtmf_tx_initialise();
     tone_gen_init(&(s->tones), &dtmf_digit_tones[0]);
