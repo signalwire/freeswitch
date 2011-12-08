@@ -650,7 +650,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
-	
+
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
@@ -661,16 +661,23 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		t31_call_event(tech_pvt->modem->t31_state, AT_CALL_EVENT_CONNECTED);
 		modem_set_state(tech_pvt->modem, MODEM_STATE_CONNECTED);
+		mod_spandsp_indicate_data(session, SWITCH_FALSE, SWITCH_TRUE);
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		t31_call_event(tech_pvt->modem->t31_state, AT_CALL_EVENT_CONNECTED);
 		modem_set_state(tech_pvt->modem, MODEM_STATE_CONNECTED);
+		mod_spandsp_indicate_data(session, SWITCH_FALSE, SWITCH_TRUE);
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+		mod_spandsp_indicate_data(session, SWITCH_FALSE, SWITCH_TRUE);
+				
 		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+
+		mod_spandsp_indicate_data(session, SWITCH_FALSE, SWITCH_TRUE);
+
 		break;
 	default:
 		break;
@@ -743,6 +750,7 @@ static void tech_attach(private_t *tech_pvt, modem_t *modem)
 	switch_channel_set_variable_printf(tech_pvt->channel, "modem_slot", "%d", modem->slot);
 	switch_channel_set_variable(tech_pvt->channel, "modem_devlink", modem->devlink);
 	switch_channel_set_variable(tech_pvt->channel, "modem_digits", modem->digits);
+	switch_channel_export_variable(tech_pvt->channel, "rtp_autoflush_during_bridge", "false", SWITCH_EXPORT_VARS_VARIABLE);
 }
 
 

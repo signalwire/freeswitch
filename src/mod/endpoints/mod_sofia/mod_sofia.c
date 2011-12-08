@@ -1785,6 +1785,28 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 
+	case SWITCH_MESSAGE_INDICATE_AUDIO_DATA:
+		{
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				if (msg->numeric_arg) {
+					if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER)) {
+						switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_TRUE);
+						sofia_set_flag(tech_pvt, TFLAG_JB_PAUSED);
+					}
+
+					rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
+					
+				} else {
+					if (sofia_test_flag(tech_pvt, TFLAG_JB_PAUSED)) {
+						sofia_clear_flag(tech_pvt, TFLAG_JB_PAUSED);
+						if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER)) {
+							switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_FALSE);
+						}
+					}
+				}
+			}
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
 		{
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Sending media re-direct:\n%s\n",

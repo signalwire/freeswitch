@@ -264,6 +264,40 @@ SWITCH_STANDARD_API(stop_tone_detect_api)
 }
 
 
+void mod_spandsp_indicate_data(switch_core_session_t *session, switch_bool_t self, switch_bool_t on)
+{
+    switch_core_session_t *target_session = NULL;
+    int locked = 0;
+
+    if (self) {
+        target_session = session;
+    } else {
+        if (switch_core_session_get_partner(session, &target_session) == SWITCH_STATUS_SUCCESS) {
+            locked = 1;
+        } else {
+            target_session = NULL;
+        }
+    }
+
+    if (target_session) {
+        switch_core_session_message_t *msg;
+        
+        msg = switch_core_session_alloc(target_session, sizeof(*msg));
+        MESSAGE_STAMP_FFL(msg);
+        msg->message_id = SWITCH_MESSAGE_INDICATE_AUDIO_DATA;
+        msg->from = __FILE__;
+        msg->numeric_arg = on;
+		
+        switch_core_session_queue_message(target_session, msg);
+
+        if (locked) {
+            switch_core_session_rwunlock(target_session);
+            locked = 0;
+        }
+    }
+}
+
+
 /* **************************************************************************
    CONFIGURATION
    ************************************************************************* */
