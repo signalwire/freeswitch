@@ -43,6 +43,13 @@
 #define SPANDSP_EVENT_TXFAXRESULT "spandsp::txfaxresult"
 #define SPANDSP_EVENT_RXFAXRESULT "spandsp::rxfaxresult"
 
+#define SPANDSP_EVENT_TXFAXPAGERESULT "spandsp::txfaxpageresult"
+#define SPANDSP_EVENT_RXFAXPAGERESULT "spandsp::rxfaxpageresult"
+
+#define SPANDSP_EVENT_TXFAXNEGOCIATERESULT "spandsp::txfaxnegociateresult"
+#define SPANDSP_EVENT_RXFAXNEGOCIATERESULT "spandsp::rxfaxnegociateresult"
+
+
 /*****************************************************************************
 	OUR DEFINES AND STRUCTS
 *****************************************************************************/
@@ -275,6 +282,170 @@ void spanfax_log_message(int level, const char *msg)
 	if (!zstr(msg)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, fs_log_level, "%s", msg);
 	}
+}
+
+static int phase_b_handler(t30_state_t *s, void *user_data, int result)
+{
+	t30_stats_t t30_stats;
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+	const char *local_ident;
+	const char *far_ident;
+	char *fax_transfer_rate = NULL;
+	pvt_t *pvt;
+	switch_event_t *event;
+
+	pvt = (pvt_t *) user_data;
+	switch_assert(pvt);
+
+	session = pvt->session;
+	switch_assert(session);
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel);
+
+	t30_get_transfer_statistics(s, &t30_stats);
+
+	local_ident = switch_str_nil(t30_get_tx_ident(s));
+	far_ident = switch_str_nil(t30_get_rx_ident(s));
+
+	fax_transfer_rate = switch_core_session_sprintf(session, "%i", t30_stats.bit_rate);
+	if (fax_transfer_rate) {
+		switch_channel_set_variable(channel, "fax_transfer_rate", fax_transfer_rate);
+	}
+	switch_channel_set_variable(channel, "fax_ecm_used", (t30_stats.error_correcting_mode) ? "on" : "off");
+	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
+	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
+	switch_channel_set_variable(channel, "fax_remote_country", switch_str_nil(t30_get_rx_country(s)));
+	switch_channel_set_variable(channel, "fax_remote_vendor", switch_str_nil(t30_get_rx_vendor(s)));
+	switch_channel_set_variable(channel, "fax_remote_model", switch_str_nil(t30_get_rx_model(s)));
+
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "=== Negociation Result =======================================================\n"); 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t30_stats.bit_rate);
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ECM status         %s\n", (t30_stats.error_correcting_mode) ? "on" : "off");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:   %s\n", switch_str_nil(t30_get_rx_country(s)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(s)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(s)));
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n"); 
+
+	switch_channel_execute_on(channel, "execute_on_fax_phase_b");
+
+	/* Fire event */
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXNEGOCIATERESULT : SPANDSP_EVENT_RXFAXNEGOCIATERESULT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-transfer-rate", fax_transfer_rate);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t30_stats.error_correcting_mode) ? "on" : "off");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-local-station-id", local_ident);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-country", switch_str_nil(t30_get_rx_country(s)));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-vendor", switch_str_nil(t30_get_rx_vendor(s)));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-model", switch_str_nil(t30_get_rx_model(s)));
+		switch_event_fire(&event);
+	}
+
+	return T30_ERR_OK;
+}
+
+static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
+{
+	t4_stats_t t4_stats;
+	char *fax_image_resolution = NULL;
+	char *fax_image_size = NULL;
+	char *fax_image_pixel_size = NULL;
+	char *fax_bad_rows = NULL;
+	char *fax_encoding = NULL;
+	char *fax_longest_bad_row_run = NULL;
+	char *fax_document_transferred_pages = NULL;
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+	pvt_t *pvt;
+	switch_event_t *event;
+
+	pvt = (pvt_t *) user_data;
+	switch_assert(pvt);
+
+	session = pvt->session;
+	switch_assert(session);
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel);
+
+	if (pvt->app_mode == FUNCTION_TX) {
+		t4_tx_get_transfer_statistics(&s->t4.tx, &t4_stats);
+	} else {
+		t4_rx_get_transfer_statistics(&s->t4.rx, &t4_stats);
+	}
+
+	/* Set Channel Variable */
+
+	fax_image_resolution = switch_core_session_sprintf(session, "%ix%i", t4_stats.x_resolution, t4_stats.y_resolution);
+	if (fax_image_resolution) {
+		switch_channel_set_variable(channel, "fax_image_resolution", fax_image_resolution);
+	}
+
+	fax_image_pixel_size = switch_core_session_sprintf(session, "%ix%i", t4_stats.width, t4_stats.length);
+	if (fax_image_pixel_size) {
+		switch_channel_set_variable(channel, "fax_image_pixel_size", fax_image_pixel_size);;
+	}
+
+	fax_image_size = switch_core_session_sprintf(session, "%d", t4_stats.line_image_size);
+	if (fax_image_size) {
+		switch_channel_set_variable(channel, "fax_image_size", fax_image_size);
+	}
+
+	fax_bad_rows = switch_core_session_sprintf(session, "%d", t4_stats.bad_rows);
+	if (fax_bad_rows) {
+		switch_channel_set_variable(channel, "fax_bad_rows", fax_bad_rows);
+	}
+
+	fax_longest_bad_row_run = switch_core_session_sprintf(session, "%d", t4_stats.longest_bad_row_run);
+	if (fax_longest_bad_row_run) {
+		switch_channel_set_variable(channel, "fax_longest_bad_row_run", fax_longest_bad_row_run);
+	}
+
+	fax_encoding = switch_core_session_sprintf(session, "%d", t4_stats.encoding);
+	if (fax_encoding) {
+		switch_channel_set_variable(channel, "fax_encoding", fax_encoding);
+	}
+
+	switch_channel_set_variable(channel, "fax_encoding_name", t4_encoding_to_str(t4_stats.encoding));
+
+	fax_document_transferred_pages = switch_core_session_sprintf(session, "%d", t4_stats.pages_transferred);
+	if (fax_document_transferred_pages) {
+		switch_channel_set_variable(channel, "fax_document_transferred_pages", fax_document_transferred_pages);
+	}
+
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==== Page %s===========================================================\n", pvt->app_mode == FUNCTION_TX ? "Sent ====": "Received ");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Page no = %d\n", t4_stats.pages_transferred);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image size = %d x %d pixels\n", t4_stats.width, t4_stats.length);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution = %d/m x %d/m\n", t4_stats.x_resolution, t4_stats.y_resolution);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compression = %s (%d)\n", t4_encoding_to_str(t4_stats.encoding), t4_stats.encoding);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compressed image size = %d bytes\n", t4_stats.line_image_size);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Bad rows = %d\n", t4_stats.bad_rows);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Longest bad row run = %d\n", t4_stats.longest_bad_row_run);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
+
+	switch_channel_execute_on(channel, "execute_on_fax_phase_d");
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXPAGERESULT : SPANDSP_EVENT_RXFAXPAGERESULT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-transferred-pages", fax_document_transferred_pages);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_image_resolution);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-size", fax_image_size);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-pixel-size", fax_image_pixel_size);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-bad-rows", fax_bad_rows);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-longest-bad-row-run", fax_longest_bad_row_run);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-encoding", fax_encoding);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-encoding-name", t4_encoding_to_str(t4_stats.encoding));
+		switch_event_fire(&event);
+	}
+
+	return T30_ERR_OK; /* I don't think this does anything */
 }
 
 /*
@@ -661,6 +832,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	t30_set_tx_page_header_info(t30, pvt->header);
 
 	t30_set_phase_e_handler(t30, phase_e_handler, pvt);
+	t30_set_phase_d_handler(t30, phase_d_handler, pvt);
+	t30_set_phase_b_handler(t30, phase_b_handler, pvt);
 
 	t30_set_supported_image_sizes(t30,
 								  T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
