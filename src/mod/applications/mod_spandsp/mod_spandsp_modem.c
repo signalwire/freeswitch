@@ -299,6 +299,9 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 	switch_set_flag(modem, MODEM_FLAG_RUNNING);
 
 	switch_mutex_init(&modem->mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	switch_mutex_init(&modem->cond_mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	switch_thread_cond_create(&modem->cond, globals.pool);
+
 	modem_set_state(modem, MODEM_STATE_INIT);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Modem [%s]->[%s] Ready\n", modem->devlink, modem->stty);
@@ -947,6 +950,13 @@ static switch_status_t create_session(switch_core_session_t **new_session, modem
 	return status;
 }
 
+static void wake_modem_thread(modem_t *modem)
+{
+	if (switch_mutex_trylock(modem->cond_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_signal(modem->cond);
+		switch_mutex_unlock(modem->cond_mutex);
+	}
+}
 
 static int control_handler(modem_t *modem, const char *num, int op)
 {
@@ -968,7 +978,8 @@ static int control_handler(modem_t *modem, const char *num, int op)
 							  "Modem %s [%s] - Dialing '%s'\n", modem->devlink, modem_state2name(modem_get_state(modem)), num);
 			modem_set_state(modem, MODEM_STATE_DIALING);
 			switch_clear_flag(modem, MODEM_FLAG_XOFF);
-			
+			wake_modem_thread(modem);
+
 			switch_set_string(modem->digits, num);
 			
 			if (create_session(&session, modem) != SWITCH_STATUS_SUCCESS) {
@@ -991,6 +1002,7 @@ static int control_handler(modem_t *modem, const char *num, int op)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 							  "Modem %s [%s] - Hanging up\n", modem->devlink, modem_state2name(modem_get_state(modem)));
 			switch_clear_flag(modem, MODEM_FLAG_XOFF);
+			wake_modem_thread(modem);
 
 			modem_set_state(modem, MODEM_STATE_HANGUP);			
 
@@ -1031,6 +1043,7 @@ static int control_handler(modem_t *modem, const char *num, int op)
 				x[0] = 0x11;
 				t31_at_tx_handler(&modem->t31_state->at_state, modem, x, 1);
 				switch_clear_flag(modem, MODEM_FLAG_XOFF);
+				wake_modem_thread(modem);
 			} else {
 				x[0] = 0x13;
 				t31_at_tx_handler(&modem->t31_state->at_state, modem, x, 1);
@@ -1181,6 +1194,8 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 	globals.THREADCOUNT++;
 	switch_mutex_unlock(globals.mutex);
 
+	switch_mutex_lock(modem->cond_mutex);
+
 	while (switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
 		
 		r = modem_wait_sock(modem->master, -1, MODEM_POLL_READ | MODEM_POLL_ERROR);
@@ -1196,10 +1211,16 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 
 		modem->last_event = switch_time_now();
 
+		if (switch_test_flag(modem, MODEM_FLAG_XOFF)) {
+			switch_thread_cond_wait(modem->cond, modem->cond_mutex);
+			modem->last_event = switch_time_now();
+		}
+
 		avail = sizeof(buf) - modem->t31_state->tx.in_bytes + modem->t31_state->tx.out_bytes - 1;
 
-		if (avail == 0 || switch_test_flag(modem, MODEM_FLAG_XOFF)) {
-			switch_yield(100000);
+		if (avail == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Buffer Full, retrying....\n");
+			switch_yield(10000);
 			continue;
 		}
 		
@@ -1220,6 +1241,8 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1,   "Command on %s [%s]\n", modem->devlink, tmp);
 		}
 	}
+
+	switch_mutex_unlock(modem->cond_mutex);
 
 	if (switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
 		modem_close(modem);

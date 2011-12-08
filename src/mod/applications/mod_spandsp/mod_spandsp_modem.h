@@ -103,6 +103,8 @@ struct modem {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	switch_time_t last_event;
 	int slot;
+	switch_thread_cond_t *cond;
+	switch_mutex_t *cond_mutex;
 };
 
 typedef struct modem modem_t;
