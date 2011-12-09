@@ -76,7 +76,23 @@ static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf,
 	modem_t *modem = user_data;
     switch_size_t wrote;
 
+#ifndef WIN32
 	wrote = write(modem->master, buf, len);
+#else
+		OVERLAPPED o;
+		o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+		/* Initialize the rest of the OVERLAPPED structure to zero. */
+		o.Internal = 0;
+		o.InternalHigh = 0;
+		o.Offset = 0;
+		o.OffsetHigh = 0;
+		assert(o.hEvent);
+		if (!WriteFile((HANDLE)modem->master, buf, len, (LPDWORD)&wrote, &o)) {
+			GetOverlappedResult((HANDLE)modem->master,&o,(LPDWORD)&wrote,TRUE);
+		}
+		CloseHandle (o.hEvent);
+#endif
 
     if (wrote != len) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to pass the full buffer onto the device file. " 
@@ -152,8 +168,13 @@ int modem_close(modem_t *modem)
 	switch_clear_flag(modem, MODEM_FLAG_RUNNING);
 
 	if (modem->master > -1) {
+#ifndef WIN32
 		shutdown(modem->master, 2);
 		close(modem->master);
+#else
+		SetCommMask((HANDLE)modem->master, 0);
+		CloseHandle((HANDLE)modem->master);
+#endif
 		modem->master = -1;
 		r++;
 	}
@@ -184,7 +205,7 @@ int modem_close(modem_t *modem)
 int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 {
 #ifdef WIN32
-	u_long arg = 1;
+	COMMTIMEOUTS timeouts={0};
 #endif
 	
 	memset(modem, 0, sizeof(*modem));
@@ -207,19 +228,37 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 
 	modem->stty = ttyname(modem->slave);
 #else
+#if WIN32
+	modem->slot = 4+globals.NEXT_ID++; /* need work here we start at COM4 for now*/
+	snprintf(modem->devlink, sizeof(modem->devlink), "COM%d", modem->slot);
 
-#if !defined(HAVE_POSIX_OPENPT)
+	modem->master = (int)CreateFile(modem->devlink,
+	GENERIC_READ | GENERIC_WRITE,
+	0,
+	0,
+	OPEN_EXISTING,
+	FILE_FLAG_OVERLAPPED,
+	0);
+	if(modem->master==(int)INVALID_HANDLE_VALUE) {
+		if(GetLastError()==ERROR_FILE_NOT_FOUND) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: Serial port does not exist\n");
+			return -1;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: Serial port open error\n");
+		return -1;
+	}
+#elif !defined(HAVE_POSIX_OPENPT)
     modem->master = open("/dev/ptmx", O_RDWR);
 #else
     modem->master = posix_openpt(O_RDWR | O_NOCTTY);
 #endif
 
+#ifndef WIN32
     if (modem->master < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to initialize UNIX98 master pty\n");
 		
     }
 
-#ifndef WIN32
     if (grantpt(modem->master) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to grant access to slave pty\n");
 		
@@ -231,7 +270,6 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
     }
 
     modem->stty = ptsname(modem->master);
-#endif
 
     if (modem->stty == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to obtain slave pty filename\n");
@@ -243,6 +281,7 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
     if (modem->slave < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to open slave pty %s\n", modem->stty);
     }
+#endif
 
 #ifdef SOLARIS
     ioctl(modem->slave, I_PUSH, "ptem");  /* push ptem */
@@ -250,12 +289,12 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 #endif
 #endif
 
+#ifndef WIN32
 	modem->slot = globals.NEXT_ID++;
 	snprintf(modem->devlink, sizeof(modem->devlink), "/dev/FS%d", modem->slot);
 	
     unlink(modem->devlink);
 
-#ifndef WIN32
     if (symlink(modem->stty, modem->devlink)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to create %s symbolic link\n", modem->devlink);
 		modem_close(modem);
@@ -268,8 +307,15 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
         return -1;
     }
 #else
-	if (ioctlsocket(modem->master, FIONBIO, &arg) == SOCKET_ERROR) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set up non-blocking read on %s\n", "Unknown"); /* need ttyname(modem->master)); */
+	timeouts.ReadIntervalTimeout=50;
+	timeouts.ReadTotalTimeoutConstant=50;
+	timeouts.ReadTotalTimeoutMultiplier=10;
+
+	timeouts.WriteTotalTimeoutConstant=50;
+	timeouts.WriteTotalTimeoutMultiplier=10;
+
+	if(!SetCommTimeouts((HANDLE)modem->master, &timeouts)){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set up non-blocking read on %s\n", modem->devlink);
 		modem_close(modem);
 		return -1;
 	}
@@ -365,7 +411,9 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_assert(channel != NULL);
 
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+#ifndef WIN32
 		int tioflags;
+#endif
 		char call_time[16];
 		char call_date[16];
 		switch_size_t retsize;
@@ -1118,75 +1166,62 @@ static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
 
 }
 #else
-#pragma warning( push )
-#pragma warning( disable : 6262 ) /* warning C6262: Function uses '98348' bytes of stack: exceeds /analyze:stacksize'16384'. Consider moving some data to heap */
-static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
+static int modem_wait_sock(int handle, int ms, modem_poll_t flags)
 {
-	int s = 0, r = 0;
-	fd_set rfds;
-	fd_set wfds;
-	fd_set efds;
-	struct timeval tv;
+/* this method ignores ms and waits infinitely */
+	DWORD dwEvtMask;
+	OVERLAPPED o;
+	BOOL result;
 
-	FD_ZERO(&rfds);
-	FD_ZERO(&wfds);
-	FD_ZERO(&efds);
+	result = SetCommMask((HANDLE)handle, EV_RXCHAR);
 
-	/* Wouldn't you rather know?? */
-	assert(sock <= FD_SETSIZE);
-
-	
-	if ((flags & MODEM_POLL_READ)) {
-#pragma warning( push )
-#pragma warning( disable : 4127 )
-	FD_SET(sock, &rfds);
+	if (!result) 
+	{
+		/* failed */
+		return 0;
 	}
 
-	if ((flags & MODEM_POLL_WRITE)) {
-#pragma warning( push )
-#pragma warning( disable : 4127 )
-	FD_SET(sock, &wfds);
-#pragma warning( pop ) 
-	}
+	o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-	if ((flags & MODEM_POLL_ERROR)) {
-#pragma warning( push )
-#pragma warning( disable : 4127 )
-	FD_SET(sock, &efds);
-#pragma warning( pop ) 
-	}
+	/* Initialize the rest of the OVERLAPPED structure to zero. */
+	o.Internal = 0;
+	o.InternalHigh = 0;
+	o.Offset = 0;
+	o.OffsetHigh = 0;
+	assert(o.hEvent);
 
-	tv.tv_sec = ms / 1000;
-	tv.tv_usec = (ms % 1000) * ms;
-	
-	s = select(sock + 1, (flags & MODEM_POLL_READ) ? &rfds : NULL, (flags & MODEM_POLL_WRITE) ? &wfds : NULL, (flags & MODEM_POLL_ERROR) ? &efds : NULL, &tv);
+	result = WaitCommEvent((HANDLE)handle, &dwEvtMask, &o);
 
-	if (s < 0) {
-		r = s;
-	} else if (s > 0) {
-		if ((flags & MODEM_POLL_READ) && FD_ISSET(sock, &rfds)) {
-			r |= MODEM_POLL_READ;
+	if (result == 0)
+	{
+		if (GetLastError() != ERROR_IO_PENDING) {
+			/* something went horribly wrong with WaitCommEvent(), so 
+			clear all errors and try again */
+			DWORD comerrors;
+			ClearCommError((HANDLE)handle,&comerrors,0);
+			CloseHandle (o.hEvent);
+		} else {
+			/* IO is pending, wait for it to finish */
+			WaitForSingleObject(o.hEvent,INFINITE);
+			CloseHandle (o.hEvent);
+			return MODEM_POLL_READ;
 		}
-
-		if ((flags & MODEM_POLL_WRITE) && FD_ISSET(sock, &wfds)) {
-			r |= MODEM_POLL_WRITE;
-		}
-
-		if ((flags & MODEM_POLL_ERROR) && FD_ISSET(sock, &efds)) {
-			r |= MODEM_POLL_ERROR;
-		}
+		return 0;
 	}
 
-	return r;
-
+	CloseHandle (o.hEvent);
+	return MODEM_POLL_READ;
 }
-#pragma warning( pop ) 
 #endif
 
 static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 {
 	modem_t *modem = obj;
 	int r, avail;
+#ifdef WIN32
+	DWORD readBytes;
+	OVERLAPPED o;
+#endif
 	char buf[T31_TX_BUF_LEN], tmp[80];
 
 	switch_mutex_lock(globals.mutex);
@@ -1224,7 +1259,23 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 			continue;
 		}
 		
+#ifndef WIN32		
 		r = read(modem->master, buf, avail);
+#else
+		o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+		/* Initialize the rest of the OVERLAPPED structure to zero. */
+		o.Internal = 0;
+		o.InternalHigh = 0;
+		o.Offset = 0;
+		o.OffsetHigh = 0;
+		assert(o.hEvent);
+		if (!ReadFile((HANDLE)modem->master, buf, avail, &readBytes, &o)) {
+			GetOverlappedResult((HANDLE)modem->master,&o,&readBytes,TRUE);
+		}
+		CloseHandle (o.hEvent);
+		r = readBytes;
+#endif
 
 		t31_at_rx(modem->t31_state, buf, r);
 
