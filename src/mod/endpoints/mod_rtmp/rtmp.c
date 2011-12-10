@@ -708,14 +708,10 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 	}  else if (rsession->state == RS_ESTABLISHED) {
 		/* Process RTMP packet */
 		switch(rsession->parse_state) {
-			switch_status_t rstatus;
-
 			case 0:
 				// Read the header's first byte
 				s = 1;
-				rstatus = rsession->profile->io->read(rsession, (unsigned char*)buf, &s);
-
-				if (rstatus != SWITCH_STATUS_SUCCESS && !SWITCH_STATUS_IS_BREAK(rstatus)) {
+				if (rsession->profile->io->read(rsession, (unsigned char*)buf, &s) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error\n");
 					return SWITCH_STATUS_FALSE;
 				}

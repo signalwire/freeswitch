@@ -85,7 +85,10 @@ static switch_status_t rtmp_tcp_read(rtmp_session_t *rsession, unsigned char *bu
 	switch_size_t olen = *len;
 #endif	
 	switch_assert(*len > 0 && *len < 1024000);
-	status = switch_socket_recv(io_pvt->socket, (char*)buf, len);	
+
+	do {
+		status = switch_socket_recv(io_pvt->socket, (char*)buf, len);	
+	} while(status != SWITCH_STATUS_SUCCESS && SWITCH_STATUS_IS_BREAK(status));
 	
 #ifdef RTMP_DEBUG_IO
 	{
