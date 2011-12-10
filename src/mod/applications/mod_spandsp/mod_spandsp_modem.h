@@ -95,6 +95,7 @@ struct modem {
 	int master;
 #else
 	HANDLE master;
+	HANDLE threadAbort;
 #endif
 	int slave;
 	char *stty;

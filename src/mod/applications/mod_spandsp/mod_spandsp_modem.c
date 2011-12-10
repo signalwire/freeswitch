@@ -168,15 +168,19 @@ int modem_close(modem_t *modem)
 
 	switch_clear_flag(modem, MODEM_FLAG_RUNNING);
 
-	if (modem->master > -1) {
 #ifndef WIN32
+	if (modem->master > -1) {
 		shutdown(modem->master, 2);
 		close(modem->master);
-#else
-		SetCommMask(modem->master, 0);
-		CloseHandle(modem->master);
-#endif
 		modem->master = -1;
+#else
+	if (modem->master) {
+		SetEvent(modem->threadAbort);
+		CloseHandle(modem->threadAbort);
+		CloseHandle(modem->master);
+		modem->master = 0;
+#endif
+		
 		r++;
 	}
 
@@ -315,11 +319,14 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 	timeouts.WriteTotalTimeoutConstant=50;
 	timeouts.WriteTotalTimeoutMultiplier=10;
 
+	SetCommMask(modem->master, EV_RXCHAR);
+
 	if(!SetCommTimeouts(modem->master, &timeouts)){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set up non-blocking read on %s\n", modem->devlink);
 		modem_close(modem);
 		return -1;
 	}
+	modem->threadAbort = CreateEvent(NULL, TRUE, FALSE, NULL);
 #endif
 	
     if (!(modem->t31_state = t31_init(NULL, t31_at_tx_handler, modem, t31_call_control_handler, modem, NULL, NULL))) {
@@ -1167,22 +1174,19 @@ static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
 
 }
 #else
-static int modem_wait_sock(HANDLE handle, int ms, modem_poll_t flags)
+static int modem_wait_sock(modem_t *modem, int ms, modem_poll_t flags)
 {
 /* this method ignores ms and waits infinitely */
-	DWORD dwEvtMask;
+	DWORD dwEvtMask, dwWait;
 	OVERLAPPED o;
 	BOOL result;
+	int ret = MODEM_POLL_ERROR;
+	HANDLE arHandles[2];
 
-	result = SetCommMask(handle, EV_RXCHAR);
-
-	if (!result) 
-	{
-		/* failed */
-		return 0;
-	}
+	arHandles[0] = modem->threadAbort;
 
 	o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	arHandles[1] = o.hEvent;
 
 	/* Initialize the rest of the OVERLAPPED structure to zero. */
 	o.Internal = 0;
@@ -1191,7 +1195,7 @@ static int modem_wait_sock(HANDLE handle, int ms, modem_poll_t flags)
 	o.OffsetHigh = 0;
 	assert(o.hEvent);
 
-	result = WaitCommEvent(handle, &dwEvtMask, &o);
+	result = WaitCommEvent(modem->master, &dwEvtMask, &o);
 
 	if (result == 0)
 	{
@@ -1199,19 +1203,18 @@ static int modem_wait_sock(HANDLE handle, int ms, modem_poll_t flags)
 			/* something went horribly wrong with WaitCommEvent(), so 
 			clear all errors and try again */
 			DWORD comerrors;
-			ClearCommError(handle,&comerrors,0);
-			CloseHandle (o.hEvent);
+			ClearCommError(modem->master,&comerrors,0);
 		} else {
 			/* IO is pending, wait for it to finish */
-			WaitForSingleObject(o.hEvent,INFINITE);
-			CloseHandle (o.hEvent);
-			return MODEM_POLL_READ;
+			dwWait = WaitForMultipleObjects(2, arHandles, FALSE, INFINITE);
+			if (dwWait == WAIT_OBJECT_0 + 1) {
+				ret = MODEM_POLL_READ;
+			}
 		}
-		return 0;
 	}
 
 	CloseHandle (o.hEvent);
-	return MODEM_POLL_READ;
+	return ret;
 }
 #endif
 
@@ -1234,7 +1237,11 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 
 	while (switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
 		
+#ifndef WIN32
 		r = modem_wait_sock(modem->master, -1, MODEM_POLL_READ | MODEM_POLL_ERROR);
+#else
+		r = modem_wait_sock(modem, -1, MODEM_POLL_READ | MODEM_POLL_ERROR);
+#endif
 
 		if (!switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
 			break;
