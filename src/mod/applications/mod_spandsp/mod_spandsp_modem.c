@@ -74,11 +74,12 @@ static modem_t *acquire_modem(int index);
 static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, size_t len)
 {   
 	modem_t *modem = user_data;
-    switch_size_t wrote;
 
 #ifndef WIN32
+	switch_size_t wrote;
 	wrote = write(modem->master, buf, len);
 #else
+		DWORD wrote;
 		OVERLAPPED o;
 		o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
@@ -88,8 +89,8 @@ static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf,
 		o.Offset = 0;
 		o.OffsetHigh = 0;
 		assert(o.hEvent);
-		if (!WriteFile((HANDLE)modem->master, buf, len, (LPDWORD)&wrote, &o)) {
-			GetOverlappedResult((HANDLE)modem->master,&o,(LPDWORD)&wrote,TRUE);
+		if (!WriteFile(modem->master, buf, (DWORD)len, &wrote, &o)) {
+			GetOverlappedResult(modem->master, &o, &wrote, TRUE);
 		}
 		CloseHandle (o.hEvent);
 #endif
@@ -172,8 +173,8 @@ int modem_close(modem_t *modem)
 		shutdown(modem->master, 2);
 		close(modem->master);
 #else
-		SetCommMask((HANDLE)modem->master, 0);
-		CloseHandle((HANDLE)modem->master);
+		SetCommMask(modem->master, 0);
+		CloseHandle(modem->master);
 #endif
 		modem->master = -1;
 		r++;
@@ -232,14 +233,14 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 	modem->slot = 4+globals.NEXT_ID++; /* need work here we start at COM4 for now*/
 	snprintf(modem->devlink, sizeof(modem->devlink), "COM%d", modem->slot);
 
-	modem->master = (int)CreateFile(modem->devlink,
+	modem->master = CreateFile(modem->devlink,
 	GENERIC_READ | GENERIC_WRITE,
 	0,
 	0,
 	OPEN_EXISTING,
 	FILE_FLAG_OVERLAPPED,
 	0);
-	if(modem->master==(int)INVALID_HANDLE_VALUE) {
+	if(modem->master==INVALID_HANDLE_VALUE) {
 		if(GetLastError()==ERROR_FILE_NOT_FOUND) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: Serial port does not exist\n");
 			return -1;
@@ -314,7 +315,7 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 	timeouts.WriteTotalTimeoutConstant=50;
 	timeouts.WriteTotalTimeoutMultiplier=10;
 
-	if(!SetCommTimeouts((HANDLE)modem->master, &timeouts)){
+	if(!SetCommTimeouts(modem->master, &timeouts)){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set up non-blocking read on %s\n", modem->devlink);
 		modem_close(modem);
 		return -1;
@@ -1166,14 +1167,14 @@ static int modem_wait_sock(int sock, uint32_t ms, modem_poll_t flags)
 
 }
 #else
-static int modem_wait_sock(int handle, int ms, modem_poll_t flags)
+static int modem_wait_sock(HANDLE handle, int ms, modem_poll_t flags)
 {
 /* this method ignores ms and waits infinitely */
 	DWORD dwEvtMask;
 	OVERLAPPED o;
 	BOOL result;
 
-	result = SetCommMask((HANDLE)handle, EV_RXCHAR);
+	result = SetCommMask(handle, EV_RXCHAR);
 
 	if (!result) 
 	{
@@ -1190,7 +1191,7 @@ static int modem_wait_sock(int handle, int ms, modem_poll_t flags)
 	o.OffsetHigh = 0;
 	assert(o.hEvent);
 
-	result = WaitCommEvent((HANDLE)handle, &dwEvtMask, &o);
+	result = WaitCommEvent(handle, &dwEvtMask, &o);
 
 	if (result == 0)
 	{
@@ -1198,7 +1199,7 @@ static int modem_wait_sock(int handle, int ms, modem_poll_t flags)
 			/* something went horribly wrong with WaitCommEvent(), so 
 			clear all errors and try again */
 			DWORD comerrors;
-			ClearCommError((HANDLE)handle,&comerrors,0);
+			ClearCommError(handle,&comerrors,0);
 			CloseHandle (o.hEvent);
 		} else {
 			/* IO is pending, wait for it to finish */
@@ -1270,8 +1271,8 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 		o.Offset = 0;
 		o.OffsetHigh = 0;
 		assert(o.hEvent);
-		if (!ReadFile((HANDLE)modem->master, buf, avail, &readBytes, &o)) {
-			GetOverlappedResult((HANDLE)modem->master,&o,&readBytes,TRUE);
+		if (!ReadFile(modem->master, buf, avail, &readBytes, &o)) {
+			GetOverlappedResult(modem->master,&o,&readBytes,TRUE);
 		}
 		CloseHandle (o.hEvent);
 		r = readBytes;

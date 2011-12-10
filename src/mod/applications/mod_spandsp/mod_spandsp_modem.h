@@ -91,7 +91,11 @@ struct modem {
 	t31_state_t *t31_state;
 	char digits[512];
 	modem_flags flags;
+#ifndef WIN32
 	int master;
+#else
+	HANDLE master;
+#endif
 	int slave;
 	char *stty;
 	char devlink[128];
