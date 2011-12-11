@@ -4939,13 +4939,6 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 	vm_execute_sql2str(profile, profile->mutex, sql, res, sizeof(res));
 	switch_safe_free(sql);
 
-	if (atoi(res) == 0) {
-		sql = switch_mprintf("INSERT INTO voicemail_prefs (username, domain, name_path) VALUES('%q', '%q', '%q')", id, domain, file_path);
-	} else {
-		sql = switch_mprintf("UPDATE voicemail_prefs SET name_path = '%q' WHERE username = '%q' AND domain = '%q'", file_path, id, domain);
-	}
-	vm_execute_sql(profile, sql, profile->mutex);
-	switch_safe_free(sql);
 	{
 		char *dir_path = switch_core_sprintf(pool, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 				SWITCH_PATH_SEPARATOR,
@@ -4960,6 +4953,14 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 		}
 
 		switch_file_rename(file_path, final_file_path, pool);
+		if (atoi(res) == 0) {
+			sql = switch_mprintf("INSERT INTO voicemail_prefs (username, domain, name_path) VALUES('%q', '%q', '%q')", id, domain, final_file_path);
+		} else {
+			sql = switch_mprintf("UPDATE voicemail_prefs SET name_path = '%q' WHERE username = '%q' AND domain = '%q'", final_file_path, id, domain);
+		}
+		vm_execute_sql(profile, sql, profile->mutex);
+		switch_safe_free(sql);
+
 
 	}
 	profile_rwunlock(profile);
@@ -5034,14 +5035,14 @@ done:
 
 /* Message API */
 
-#define VM_FSDB_MSG_LIST_USAGE "<format> <profile> <domain> <user>"
+#define VM_FSDB_MSG_LIST_USAGE "<format> <profile> <domain> <user> <folder> <filter>"
 SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 {
 	char *sql;
 	msg_lst_callback_t cbt = { 0 };
 	char *ebuf = NULL;
 
-	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	const char *id = NULL, *domain = NULL, *profile_name = NULL, *folder = NULL, *msg_type = NULL;
 	vm_profile_t *profile = NULL;
 
 	char *argv[6] = { 0 };
@@ -5062,8 +5063,12 @@ SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 		domain = argv[2];
 	if (argv[3])
 		id = argv[3];
+	if (argv[4])
+		folder = argv[4]; /* TODO add Support */
+	if (argv[5])
+		msg_type = argv[5];
 
-	if (!profile_name || !domain || !id) {
+	if (!profile_name || !domain || !id || !folder || !msg_type) {
 		stream->write_function(stream, "-ERR Missing Arguments\n");
 		goto done;
 	}
@@ -5072,8 +5077,15 @@ SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 		stream->write_function(stream, "-ERR Profile not found\n");
 		goto done;
 	}
-	sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND read_epoch = 0 ORDER BY read_flags, created_epoch", id, domain);
-
+	if (!strcasecmp(msg_type, "not-read")) {
+		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND read_epoch = 0 ORDER BY read_flags, created_epoch", id, domain);
+	} else if (!strcasecmp(msg_type, "new")) {
+		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND flags='' ORDER BY read_flags, created_epoch", id, domain);
+	} else if (!strcasecmp(msg_type, "save")) {
+		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND flags='save' ORDER BY read_flags, created_epoch", id, domain);
+	} else {
+		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND read_epoch != 0 ORDER BY read_flags, created_epoch", id, domain);
+	}
 	memset(&cbt, 0, sizeof(cbt));
 
 	switch_event_create(&cbt.my_params, SWITCH_EVENT_REQUEST_PARAMS);
@@ -5573,7 +5585,7 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define VM_FSDB_MSG_COUNT_USAGE "<format> <profile> <domain> <user>"
+#define VM_FSDB_MSG_COUNT_USAGE "<format> <profile> <domain> <user> <folder>"
 SWITCH_STANDARD_API(vm_fsdb_msg_count_function)
 {
 	char *sql;
@@ -5581,7 +5593,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_count_function)
 	switch_event_t *my_params = NULL;
 	char *ebuf = NULL;
 
-	const char *id = NULL, *domain = NULL, *profile_name = NULL;
+	const char *id = NULL, *domain = NULL, *profile_name = NULL, *folder = NULL;
 	vm_profile_t *profile = NULL;
 
 	char *argv[6] = { 0 };
@@ -5602,8 +5614,10 @@ SWITCH_STANDARD_API(vm_fsdb_msg_count_function)
 		domain = argv[2];
 	if (argv[3])
 		id = argv[3];
+	if (argv[4])
+		folder = argv[4];
 
-	if (!profile_name || !domain || !id) {
+	if (!profile_name || !domain || !id || !folder) {
 		stream->write_function(stream, "-ERR Missing Arguments\n");
 		goto done;
 	}
@@ -5614,11 +5628,11 @@ SWITCH_STANDARD_API(vm_fsdb_msg_count_function)
 	}
 
 	sql = switch_mprintf(
-			"SELECT 1, read_flags, count(read_epoch) FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND in_folder = '%q' AND read_epoch = 0 GROUP BY read_flags "
+			"SELECT 1, read_flags, count(read_epoch) FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND in_folder = '%q' AND flags = '' AND in_folder = '%q' GROUP BY read_flags "
 			"UNION "
-			"SELECT 0, read_flags, count(read_epoch) FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND in_folder = '%q' AND read_epoch <> 0 GROUP BY read_flags;",
-			id, domain, "inbox",
-			id, domain, "inbox");
+			"SELECT 0, read_flags, count(read_epoch) FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND in_folder = '%q' AND flags = 'save' AND in_folder= '%q' GROUP BY read_flags;",
+			id, domain, "inbox", folder,
+			id, domain, "inbox", folder);
 
 
 	vm_execute_sql_callback(profile, profile->mutex, sql, message_count_callback, &cbt);
