@@ -362,7 +362,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 	ip_t *maskv = mask;
 	ip_t *ipv = ip;
 
-	memcpy(host, string, sizeof(host));
+	switch_copy_string(host, string, sizeof(host)-1);
 	bit_str = strchr(host, '/');
 
 	if (!bit_str) {
