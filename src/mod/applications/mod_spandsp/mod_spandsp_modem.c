@@ -1212,6 +1212,9 @@ static int modem_wait_sock(modem_t *modem, int ms, modem_poll_t flags)
 			}
 		}
 	}
+	else {
+		ret = MODEM_POLL_READ;
+	}
 
 	CloseHandle (o.hEvent);
 	return ret;
