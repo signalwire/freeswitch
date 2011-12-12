@@ -1149,8 +1149,15 @@ static char *parse_presence_data_cols(switch_event_t *event)
 	SWITCH_STANDARD_STREAM(stream);
 
 	for (i = 0; i < col_count; i++) {
+		const char *val = NULL;
+
 		switch_snprintfv(col_name, sizeof(col_name), "variable_%q", cols[i]);
-		stream.write_function(&stream, "%q='%q',", cols[i], switch_event_get_header_nil(event, col_name));
+		val = switch_event_get_header_nil(event, col_name);
+		if (zstr(val)) {
+			stream.write_function(&stream, "%q=NULL,", cols[i]);
+		} else {
+			stream.write_function(&stream, "%q='%q',", cols[i], val);
+		}
 	}
 
 	r = (char *) stream.data;
@@ -1328,9 +1335,17 @@ static void core_event_handler(switch_event_t *event)
 			}
 
 			if (callstate != CCS_DOWN && callstate != CCS_HANGUP) {
-				new_sql() = switch_mprintf("update channels set callstate='%q' where uuid='%q'",
-										   switch_event_get_header_nil(event, "channel-call-state"),
-										   switch_event_get_header_nil(event, "unique-id"));
+				if ((extra_cols = parse_presence_data_cols(event))) {
+					new_sql() = switch_mprintf("update channels set callstate='%q',%s where uuid='%q'",
+											   switch_event_get_header_nil(event, "channel-call-state"),
+											   extra_cols,
+											   switch_event_get_header_nil(event, "unique-id"));
+					free(extra_cols);
+				} else {
+					new_sql() = switch_mprintf("update channels set callstate='%q' where uuid='%q'",
+											   switch_event_get_header_nil(event, "channel-call-state"),
+											   switch_event_get_header_nil(event, "unique-id"));
+				}
 			}
 
 		}
@@ -1416,9 +1431,14 @@ static void core_event_handler(switch_event_t *event)
 				b_uuid = switch_event_get_header_nil(event, "other-leg-unique-id");
 			}
 
-			new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' or uuid='%s'",
-									   switch_event_get_header_nil(event, "channel-call-uuid"), a_uuid, b_uuid);
-									   
+			if ((extra_cols = parse_presence_data_cols(event))) {
+				new_sql() = switch_mprintf("update channels set call_uuid='%q',%s where uuid='%s' or uuid='%s'",
+										   switch_event_get_header_nil(event, "channel-call-uuid"), extra_cols, a_uuid, b_uuid);
+				free(extra_cols);
+			} else {
+				new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' or uuid='%s'",
+										   switch_event_get_header_nil(event, "channel-call-uuid"), a_uuid, b_uuid);
+			}
 
 			new_sql() = switch_mprintf("insert into calls (call_uuid,call_created,call_created_epoch,"
 									   "caller_uuid,callee_uuid,hostname) "
@@ -1436,8 +1456,15 @@ static void core_event_handler(switch_event_t *event)
 		{
 			char *uuid = switch_event_get_header_nil(event, "caller-unique-id");
 
-			new_sql() = switch_mprintf("update channels set call_uuid=uuid where call_uuid='%s'",
-									   switch_event_get_header_nil(event, "channel-call-uuid"));
+			if ((extra_cols = parse_presence_data_cols(event))) {
+				new_sql() = switch_mprintf("update channels set call_uuid=uuid,%s where call_uuid='%s'",
+										   extra_cols,
+										   switch_event_get_header_nil(event, "channel-call-uuid"));
+				free(extra_cols);
+			} else {
+				new_sql() = switch_mprintf("update channels set call_uuid=uuid where call_uuid='%s'",
+										   switch_event_get_header_nil(event, "channel-call-uuid"));
+			}
 
 			new_sql() = switch_mprintf("delete from calls where (caller_uuid='%q' or callee_uuid='%q')",
 									   uuid, uuid);
