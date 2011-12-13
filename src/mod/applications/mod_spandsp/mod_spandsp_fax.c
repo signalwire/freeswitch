@@ -83,6 +83,7 @@ struct pvt_s {
 	char *filename;
 	char *ident;
 	char *header;
+	char *timezone;
 
 	int use_ecm;
 	int disable_v17;
@@ -830,6 +831,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	/* All the things which are common to audio and T.38 FAX setup */
 	t30_set_tx_ident(t30, pvt->ident);
 	t30_set_tx_page_header_info(t30, pvt->header);
+        if (pvt->timezone && pvt->timezone[0])
+		t30_set_tx_page_header_tz(t30, pvt->timezone);
 
 	t30_set_phase_e_handler(t30, phase_e_handler, pvt);
 	t30_set_phase_d_handler(t30, phase_d_handler, pvt);
@@ -1204,6 +1207,18 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
         switch_safe_free(data);
 	} else {
 		pvt->header = switch_core_session_strdup(session, spandsp_globals.header);
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "fax_timezone"))) {
+        char *data = NULL;
+
+        data = strdup(tmp);
+        switch_url_decode(data);
+        pvt->timezone = switch_core_session_strdup(session, data);
+
+        switch_safe_free(data);
+	} else {
+		pvt->timezone = switch_core_session_strdup(session, spandsp_globals.timezone);
 	}
 
 	if (pvt->app_mode == FUNCTION_TX) {

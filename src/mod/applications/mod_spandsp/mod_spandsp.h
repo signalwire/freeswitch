@@ -62,6 +62,7 @@ struct spandsp_globals {
     short int enable_t38_insist;
 	char *ident;
 	char *header;
+	char *timezone;
 	char *prepend_string;
 	char *spool;
 	switch_thread_cond_t *cond;
