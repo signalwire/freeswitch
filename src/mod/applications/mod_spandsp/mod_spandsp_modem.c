@@ -1068,7 +1068,8 @@ static int control_handler(modem_t *modem, const char *num, int op)
 				if ((session = switch_core_session_force_locate(modem->uuid_str))) {
 					switch_channel_t *channel = switch_core_session_get_channel(session);
 
-					if (switch_channel_up(channel)) {
+					if (switch_channel_up(channel) && 
+						(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND)) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 						set_state = 0;
 					}
