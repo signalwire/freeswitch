@@ -1053,32 +1053,36 @@ static int control_handler(modem_t *modem, const char *num, int op)
     case AT_MODEM_CONTROL_ONHOOK:
     case AT_MODEM_CONTROL_HANGUP: 
 		{
-			int set_state = 1;
+			if (modem_get_state(modem) != MODEM_STATE_RINGING) {
+				int set_state = 1;
+				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+								  "Modem %s [%s] - Hanging up\n", modem->devlink, modem_state2name(modem_get_state(modem)));
+				switch_clear_flag(modem, MODEM_FLAG_XOFF);
+				wake_modem_thread(modem);
+				
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-							  "Modem %s [%s] - Hanging up\n", modem->devlink, modem_state2name(modem_get_state(modem)));
-			switch_clear_flag(modem, MODEM_FLAG_XOFF);
-			wake_modem_thread(modem);
+				modem_set_state(modem, MODEM_STATE_HANGUP);
+			
 
-			modem_set_state(modem, MODEM_STATE_HANGUP);			
-
-			if (!zstr(modem->uuid_str)) {
-				switch_core_session_t *session;
-
-				if ((session = switch_core_session_force_locate(modem->uuid_str))) {
-					switch_channel_t *channel = switch_core_session_get_channel(session);
-
-					if (switch_channel_up(channel) && 
-						(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND)) {
-						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-						set_state = 0;
+				if (!zstr(modem->uuid_str)) {
+					switch_core_session_t *session;
+					
+					if ((session = switch_core_session_force_locate(modem->uuid_str))) {
+						switch_channel_t *channel = switch_core_session_get_channel(session);
+						
+						if (switch_channel_up(channel)) {
+							switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+							set_state = 0;
+						}
+						switch_core_session_rwunlock(session);
 					}
-					switch_core_session_rwunlock(session);
 				}
-			}
+				
 
-			if (set_state) {
-				modem_set_state(modem, MODEM_STATE_ONHOOK);
+				if (set_state) {
+					modem_set_state(modem, MODEM_STATE_ONHOOK);
+				}
 			}
 		}
         break;
