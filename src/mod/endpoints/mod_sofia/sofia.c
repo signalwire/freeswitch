@@ -31,6 +31,7 @@
  * Norman Brandinger
  * Raymond Chandler <intralanman@gmail.com>
  * Nathan Patrick <npatrick at corp.sonic.net>
+ * Joseph Sullivan <jossulli@amazon.com>
  *
  *
  * sofia.c -- SOFIA SIP Endpoint (sofia code)
@@ -936,7 +937,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		uint32_t sess_count = switch_core_session_count();
 		uint32_t sess_max = switch_core_session_limit(0);
 		
-		if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready()) {
+		if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound()) {
 			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No more sessions allowed at this time.\n");
@@ -8351,7 +8352,7 @@ void sofia_handle_sip_i_options(int status,
 	uint32_t sess_max = switch_core_session_limit(0);
 
 	if (sofia_test_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY) &&
-			(sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready())) {
+			(sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound())) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 	} else {
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());

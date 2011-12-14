@@ -27,6 +27,7 @@
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
+ * Joseph Sullivan <jossulli@amazon.com>
  *
  *
  * switch_core.c -- Main Core Library
@@ -2000,11 +2001,25 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	case SCSC_SYNC_CLOCK_WHEN_IDLE:
 		newintval = switch_core_session_sync_clock();
 		break;
-	case SCSC_PAUSE_INBOUND:
+	case SCSC_PAUSE_ALL:
 		if (oldintval) {
 			switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 		} else {
 			switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
+		}
+		break;
+	case SCSC_PAUSE_INBOUND:
+		if (oldintval) {
+			switch_set_flag((&runtime), SCF_NO_NEW_INBOUND_SESSIONS);
+		} else {
+			switch_clear_flag((&runtime), SCF_NO_NEW_INBOUND_SESSIONS);
+		}
+		break;
+	case SCSC_PAUSE_OUTBOUND:
+		if (oldintval) {
+			switch_set_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS);
+		} else {
+			switch_clear_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS);
 		}
 		break;
 	case SCSC_HUPALL:
@@ -2069,7 +2084,13 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		}
 		break;
 	case SCSC_PAUSE_CHECK:
-		newintval = !!switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS);
+		newintval = !!(switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS) == SCF_NO_NEW_SESSIONS);
+		break;
+	case SCSC_PAUSE_INBOUND_CHECK:
+		newintval = !!switch_test_flag((&runtime), SCF_NO_NEW_INBOUND_SESSIONS);
+		break;
+	case SCSC_PAUSE_OUTBOUND_CHECK:
+		newintval = !!switch_test_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS);
 		break;
 	case SCSC_READY_CHECK:
 		newintval = switch_core_ready();
@@ -2169,7 +2190,17 @@ SWITCH_DECLARE(switch_core_flag_t) switch_core_flags(void)
 
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void)
 {
-	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
+	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS) == SCF_NO_NEW_SESSIONS) ? SWITCH_FALSE : SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_core_ready_inbound(void)
+{
+	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_INBOUND_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_core_ready_outbound(void)
+{
+	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)

@@ -32,6 +32,7 @@
  * Cesar Cepeda <cesar@auronix.com>
  * Massimo Cetra <devel@navynet.it>
  * Rupa Schomaker <rupa@rupa.com>
+ * Joseph Sullivan <jossulli@amazon.com>
  *
  * 
  * mod_commands.c -- Misc. Command Module
@@ -1792,7 +1793,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[send_sighup|hupall|pause|resume|shutdown [cancel|elegant|asap|now|restart]|sps|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]]"
+#define CTL_SYNTAX "[send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -1815,16 +1816,32 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_FLUSH_DB_HANDLES, NULL);
 			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "pause")) {
+			switch_session_ctl_t command = SCSC_PAUSE_ALL;
 			arg = 1;
-			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+			if (argv[1]) {
+				if (!strcasecmp(argv[1], "inbound")) {
+					command = SCSC_PAUSE_INBOUND;
+				} else if (!strcasecmp(argv[1], "outbound")) {
+					command = SCSC_PAUSE_OUTBOUND;
+				}
+			}
+			switch_core_session_ctl(command, &arg);
 			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "send_sighup")) {
 			arg = 1;
 			switch_core_session_ctl(SCSC_SEND_SIGHUP, &arg);
 			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "resume")) {
+			switch_session_ctl_t command = SCSC_PAUSE_ALL;
 			arg = 0;
-			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+			if (argv[1]) {
+				if (!strcasecmp(argv[1], "inbound")) {
+					command = SCSC_PAUSE_INBOUND;
+				} else if (!strcasecmp(argv[1], "outbound")) {
+					command = SCSC_PAUSE_OUTBOUND;
+				}
+			}
+			switch_core_session_ctl(command, &arg);
 			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "calibrate_clock")) {
 			switch_core_session_ctl(SCSC_CALIBRATE_CLOCK, NULL);
@@ -1855,7 +1872,15 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_SAVE_HISTORY, NULL);
 			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "pause_check")) {
-			switch_core_session_ctl(SCSC_PAUSE_CHECK, &arg);
+			switch_session_ctl_t command = SCSC_PAUSE_CHECK;
+			if (argv[1]) {
+				if (!strcasecmp(argv[1], "inbound")) {
+					command = SCSC_PAUSE_INBOUND_CHECK;
+				} else if (!strcasecmp(argv[1], "outbound")) {
+					command = SCSC_PAUSE_OUTBOUND_CHECK;
+				}
+			}
+			switch_core_session_ctl(command, &arg);
 			stream->write_function(stream, arg ? "true" : "false");
 		} else if (!strcasecmp(argv[0], "ready_check")) {
 			switch_core_session_ctl(SCSC_READY_CHECK, &arg);
@@ -5431,13 +5456,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl max_sessions");
 	switch_console_set_complete("add fsctl min_dtmf_duration");
 	switch_console_set_complete("add fsctl pause");
+	switch_console_set_complete("add fsctl pause inbound");
+	switch_console_set_complete("add fsctl pause outbound");
 	switch_console_set_complete("add fsctl reclaim_mem");
 	switch_console_set_complete("add fsctl resume");
+	switch_console_set_complete("add fsctl resume inbound");
+	switch_console_set_complete("add fsctl resume outbound");
 	switch_console_set_complete("add fsctl calibrate_clock");
 	switch_console_set_complete("add fsctl crash");
 	switch_console_set_complete("add fsctl verbose_events");
 	switch_console_set_complete("add fsctl save_history");
 	switch_console_set_complete("add fsctl pause_check");
+	switch_console_set_complete("add fsctl pause_check inbound");
+	switch_console_set_complete("add fsctl pause_check outbound");
 	switch_console_set_complete("add fsctl ready_check");
 	switch_console_set_complete("add fsctl shutdown_check");
 	switch_console_set_complete("add fsctl shutdown");

@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
+ * Joseph Sullivan <jossulli@amazon.com>
  *
  *
  * switch_core_session.c -- Main Core Library (session routines)
@@ -1778,6 +1779,16 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 
 	if (use_uuid && switch_core_hash_find(session_manager.session_table, use_uuid)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
+		return NULL;
+	}
+
+	if (direction == SWITCH_CALL_DIRECTION_INBOUND && !switch_core_ready_inbound()) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The system cannot create any inbound sessions at this time.\n");
+		return NULL;
+	}
+
+	if (direction == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_core_ready_outbound()) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The system cannot create any outbound sessions at this time.\n");
 		return NULL;
 	}
 

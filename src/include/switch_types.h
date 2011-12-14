@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
+ * Joseph Sullivan <jossulli@amazon.com>
  *
  * switch_types.h -- Data Types
  *
@@ -293,25 +294,27 @@ typedef uint32_t switch_eavesdrop_flag_t;
 typedef enum {
 	SCF_NONE = 0,
 	SCF_USE_SQL = (1 << 0),
-	SCF_NO_NEW_SESSIONS = (1 << 1),
-	SCF_SHUTTING_DOWN = (1 << 2),
-	SCF_VG = (1 << 3),
-	SCF_RESTART = (1 << 4),
-	SCF_SHUTDOWN_REQUESTED = (1 << 5),
-	SCF_USE_AUTO_NAT = (1 << 6),
-	SCF_EARLY_HANGUP = (1 << 7),
-	SCF_CALIBRATE_CLOCK = (1 << 8),
-	SCF_USE_HEAVY_TIMING = (1 << 9),
-	SCF_USE_CLOCK_RT = (1 << 10),
-	SCF_VERBOSE_EVENTS = (1 << 11),
-	SCF_USE_WIN32_MONOTONIC = (1 << 12),
-	SCF_AUTO_SCHEMAS = (1 << 13),
-	SCF_MINIMAL = (1 << 14),
-	SCF_USE_NAT_MAPPING = (1 << 15),
-	SCF_CLEAR_SQL = (1 << 16),
-	SCF_THREADED_SYSTEM_EXEC = (1 << 17),
-	SCF_SYNC_CLOCK_REQUESTED = (1 << 18),
-	SCF_CORE_ODBC_REQ = (1 << 19)
+	SCF_NO_NEW_OUTBOUND_SESSIONS = (1 << 1),
+	SCF_NO_NEW_INBOUND_SESSIONS = (1 << 2),
+	SCF_NO_NEW_SESSIONS = (SCF_NO_NEW_OUTBOUND_SESSIONS | SCF_NO_NEW_INBOUND_SESSIONS),
+	SCF_SHUTTING_DOWN = (1 << 3),
+	SCF_VG = (1 << 4),
+	SCF_RESTART = (1 << 5),
+	SCF_SHUTDOWN_REQUESTED = (1 << 6),
+	SCF_USE_AUTO_NAT = (1 << 7),
+	SCF_EARLY_HANGUP = (1 << 8),
+	SCF_CALIBRATE_CLOCK = (1 << 9),
+	SCF_USE_HEAVY_TIMING = (1 << 10),
+	SCF_USE_CLOCK_RT = (1 << 11),
+	SCF_VERBOSE_EVENTS = (1 << 12),
+	SCF_USE_WIN32_MONOTONIC = (1 << 13),
+	SCF_AUTO_SCHEMAS = (1 << 14),
+	SCF_MINIMAL = (1 << 15),
+	SCF_USE_NAT_MAPPING = (1 << 16),
+	SCF_CLEAR_SQL = (1 << 17),
+	SCF_THREADED_SYSTEM_EXEC = (1 << 18),
+	SCF_SYNC_CLOCK_REQUESTED = (1 << 19),
+	SCF_CORE_ODBC_REQ = (1 << 20)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -1689,6 +1692,8 @@ typedef enum {
 
 typedef enum {
 	SCSC_PAUSE_INBOUND,
+	SCSC_PAUSE_OUTBOUND,
+	SCSC_PAUSE_ALL,
 	SCSC_HUPALL,
 	SCSC_SHUTDOWN,
 	SCSC_CHECK_RUNNING,
@@ -1714,6 +1719,8 @@ typedef enum {
 	SCSC_MIN_IDLE_CPU,
 	SCSC_VERBOSE_EVENTS,
 	SCSC_SHUTDOWN_CHECK,
+	SCSC_PAUSE_INBOUND_CHECK,
+	SCSC_PAUSE_OUTBOUND_CHECK,
 	SCSC_PAUSE_CHECK,
 	SCSC_READY_CHECK,
 	SCSC_THREADED_SYSTEM_EXEC,

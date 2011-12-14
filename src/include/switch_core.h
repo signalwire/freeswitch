@@ -25,7 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
- *
+ * Joseph Sullivan <jossulli@amazon.com>
  *
  * switch_core.h -- Core Library
  *
@@ -1954,6 +1954,18 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
   \return SWITCH_TRUE or SWITCH_FALSE
 */
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void);
+
+/*! 
+  \brief Determines if the core is ready to take inbound calls
+  \return SWITCH_TRUE or SWITCH_FALSE
+*/
+SWITCH_DECLARE(switch_bool_t) switch_core_ready_inbound(void);
+
+/*! 
+  \brief Determines if the core is ready to place outbound calls
+  \return SWITCH_TRUE or SWITCH_FALSE
+*/
+SWITCH_DECLARE(switch_bool_t) switch_core_ready_outbound(void);
 
 /*! 
   \brief return core flags
