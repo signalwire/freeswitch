@@ -899,7 +899,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		conference->count++;
 
 		if (switch_test_flag(member, MFLAG_ENDCONF)) {
-			if (conference->end_count++);
+			if (conference->end_count++) {};
 		}
 
 		conference_send_presence(conference);

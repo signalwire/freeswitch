@@ -1500,7 +1500,7 @@ static void handle_SIGCHLD(int sig)
 	int status = 0;
 	int pid = 0;
 
-	if (sig);
+	if (sig) {};
 
 	pid = wait(&status);
 	
