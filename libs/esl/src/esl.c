@@ -675,6 +675,8 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 		}
 		
 		handler = malloc(sizeof(*handler));
+		esl_assert(handler);
+
 		memset(handler, 0, sizeof(*handler));
 		handler->callback = callback;
 		handler->server_sock = server_sock;
