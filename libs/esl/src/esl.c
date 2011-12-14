@@ -612,12 +612,31 @@ static int esl_socket_reuseaddr(esl_socket_t socket)
 #endif
 }
 
-ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback)
+struct thread_handler {
+	esl_listen_callback_t callback;
+	int server_sock;
+	int client_sock;
+	struct sockaddr_in addr;
+};
+
+static void *client_thread(esl_thread_t *me, void *obj)
+{
+	struct thread_handler *handler = (struct thread_handler *) obj;
+
+	handler->callback(handler->server_sock, handler->client_sock, &handler->addr);
+	free(handler);
+
+	return NULL;
+
+}
+
+ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback, int max)
 {
 	esl_socket_t server_sock = ESL_SOCK_INVALID;
 	struct sockaddr_in addr;
 	esl_status_t status = ESL_SUCCESS;
-	
+	struct thread_handler *handler = NULL;
+
 	if ((server_sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 		return ESL_FAIL;
 	}
@@ -634,7 +653,7 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 		goto end;
 	}
 
-    if (listen(server_sock, 10000) < 0) {
+    if (listen(server_sock, max) < 0) {
 		status = ESL_FAIL;
 		goto end;
 	}
@@ -655,7 +674,14 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 			goto end;
 		}
 		
-		callback(server_sock, client_sock, &echoClntAddr);
+		handler = malloc(sizeof(*handler));
+		memset(handler, 0, sizeof(*handler));
+		handler->callback = callback;
+		handler->server_sock = server_sock;
+		handler->client_sock = client_sock;
+		handler->addr = echoClntAddr;
+
+		esl_thread_create_detached(client_thread, handler);
 	}
 
  end:
