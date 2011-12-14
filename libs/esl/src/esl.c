@@ -614,8 +614,8 @@ static int esl_socket_reuseaddr(esl_socket_t socket)
 
 struct thread_handler {
 	esl_listen_callback_t callback;
-	int server_sock;
-	int client_sock;
+	esl_socket_t server_sock;
+	esl_socket_t client_sock;
 	struct sockaddr_in addr;
 };
 
