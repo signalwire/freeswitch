@@ -268,6 +268,7 @@ typedef struct conference_obj {
 	char *sound_prefix;
 	char *special_announce;
 	char *auto_record;
+	char *record_filename;
 	uint32_t terminate_on_silence;
 	uint32_t max_members;
 	char *maxmember_sound;
@@ -907,6 +908,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		channel = switch_core_session_get_channel(member->session);
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
 		switch_channel_set_variable_printf(channel, "conference_moderator", "%s", switch_test_flag(member, MFLAG_MOD) ? "true" : "false");
+		switch_channel_set_variable(channel, "conference_recording", conference->record_filename);
 		switch_channel_set_variable(channel, CONFERENCE_UUID_VARIABLE, conference->uuid_str);
 		
 		if (switch_test_flag(conference, CFLAG_WAIT_MOD) && switch_test_flag(member, MFLAG_MOD)) {
@@ -1436,6 +1438,13 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				launch_conference_record_thread(conference, rfile);
 				if (rfile != conference->auto_record) {
 					switch_safe_free(rfile);
+				} else {
+					conference->record_filename = switch_core_strdup(conference->pool, conference->auto_record);
+				}
+				/* Set the conference recording variable for each member */
+				for (omember = conference->members; omember; omember = omember->next) {
+					channel = switch_core_session_get_channel(omember->session);
+					switch_channel_set_variable(channel, "conference_recording", conference->record_filename);
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Auto Record Failed.  No members in conference.\n");
@@ -3300,7 +3309,8 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		switch_mutex_unlock(member->audio_out_mutex);
 	}
 
-
+	conference->is_recording = 0;
+	
 	switch_safe_free(data_buf);
 	switch_core_timer_destroy(&timer);
 	conference_del_member(conference, member);
@@ -5065,6 +5075,15 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 	return ret_status;
 }
 
+static switch_status_t conf_api_sub_check_record(conference_obj_t *conference, switch_stream_handle_t *stream, int arc, char **argv)
+{
+	if (conference->is_recording) {
+		stream->write_function(stream, "Record file %s\n", conference->record_filename);
+	} else {
+		stream->write_function(stream, "Conference is not being recorded.\n");
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static switch_status_t conf_api_sub_record(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
@@ -5075,6 +5094,7 @@ static switch_status_t conf_api_sub_record(conference_obj_t *conference, switch_
 		return SWITCH_STATUS_GENERR;
 
 	stream->write_function(stream, "Record file %s\n", argv[2]);
+	conference->record_filename = switch_core_strdup(conference->pool, argv[2]);
 	conference->record_count++;
 	launch_conference_record_thread(conference, argv[2]);
 	return SWITCH_STATUS_SUCCESS;
@@ -5191,6 +5211,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"bgdial", (void_fn_t) & conf_api_sub_bgdial, CONF_API_SUB_ARGS_SPLIT, "bgdial", "<endpoint_module_name>/<destination> <callerid number> <callerid name>"},
 	{"transfer", (void_fn_t) & conf_api_sub_transfer, CONF_API_SUB_ARGS_SPLIT, "transfer", "<conference_name> <member id> [...<member id>]"},
 	{"record", (void_fn_t) & conf_api_sub_record, CONF_API_SUB_ARGS_SPLIT, "record", "<filename>"},
+	{"chkrecord", (void_fn_t) & conf_api_sub_check_record, CONF_API_SUB_ARGS_SPLIT, "chkrecord", "<confname>"},
 	{"norecord", (void_fn_t) & conf_api_sub_norecord, CONF_API_SUB_ARGS_SPLIT, "norecord", "<[filename|all]>"},
 	{"exit_sound", (void_fn_t) & conf_api_sub_exit_sound, CONF_API_SUB_ARGS_SPLIT, "exit_sound", "on|off|none|file <filename>"},
 	{"enter_sound", (void_fn_t) & conf_api_sub_enter_sound, CONF_API_SUB_ARGS_SPLIT, "enter_sound", "on|off|none|file <filename>"},
@@ -6614,6 +6635,8 @@ static void launch_conference_record_thread(conference_obj_t *conference, char *
 		switch_core_destroy_memory_pool(&pool);
 		return;
 	}
+
+	conference->is_recording = 1;
 
 	rec->conference = conference;
 	rec->path = switch_core_strdup(pool, path);
