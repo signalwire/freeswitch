@@ -91,11 +91,12 @@ static int init_upnp(void)
 	char *descXML;
 	int descXMLsize = 0;
 	const char *multicastif = 0;
-	const char *minissdpdpath = 0;
+	const char *minissdpdpath = switch_core_get_variable("local_ip_v4");
 
 	memset(&nat_globals.urls, 0, sizeof(struct UPNPUrls));
 	memset(&nat_globals.data, 0, sizeof(struct IGDdatas));
-	devlist = upnpDiscover(3000, multicastif, minissdpdpath, 0);
+
+	devlist = upnpDiscover(3000, (multicastif?multicastif:0) , minissdpdpath, 0);
 
 	if (devlist) {
 		dev = devlist;
