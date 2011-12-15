@@ -1878,6 +1878,7 @@ static ftdm_status_t ftdm_sangoma_ss7_stop(ftdm_span_t * span)
 static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 {
 	sngss7_span_data_t	*ss7_span_info;
+	int sngss7_retry_cnt=5;
 
 	ftdm_log (FTDM_LOG_INFO, "Configuring ftmod_sangoma_ss7 span = %s(%d)...\n",
 								span->name,
@@ -1932,7 +1933,13 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	}
 
 	/* configure libsngss7 */
+try_cfg_again:
 	if (ft_to_sngss7_cfg_all()) {
+		if (sngss7_retry_cnt--) {
+			ftdm_sleep (500);
+			ftdm_log (FTDM_LOG_DEBUG, "Failed to configure LibSngSS7 - retrying!\n");
+			goto try_cfg_again;
+		}
 		ftdm_log (FTDM_LOG_CRIT, "Failed to configure LibSngSS7!\n");
 		ftdm_sleep (1000);
 		return FTDM_FAIL;
