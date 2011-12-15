@@ -4177,10 +4177,23 @@ SWITCH_STANDARD_API(sofia_function)
 			stream->write_function(stream, "Flushing recovery database.\n");
 		} else {
 			int x = sofia_glue_recover(SWITCH_FALSE);
+			switch_event_t *event = NULL;
 
 			if (x) {
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM,
+					MY_EVENT_RECOVERY_RECOVERED) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "recovered_calls", "%d", x);
+					switch_event_fire(&event);
+				}
+
 				stream->write_function(stream, "Recovered %d call(s)\n", x);
 			} else {
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM,
+					MY_EVENT_RECOVERY_RECOVERED) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "recovered_calls", "0");
+					switch_event_fire(&event);
+				}
+
 				stream->write_function(stream, "No calls to recover.\n");
 			}
 		}
