@@ -295,24 +295,35 @@ static void handle_hw_alarm(ftdm_event_t *e)
 	for (x = (g_ftdm_sngss7_data.cfg.procId * MAX_CIC_MAP_LENGTH) + 1; g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0; x++) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
 			ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+
+			/* NC. Its possible for alarms to come in the middle of configuration
+			   especially on large systems */
+			if (!ss7_info || !ss7_info->ftdmchan) {
+				SS7_DEBUG("handle_hw_alarm: span=%i chan=%i ckt=%i x=%i - ss7_info=%p ftdmchan=%p\n",
+						ftdmchan->physical_span_id,ftdmchan->physical_chan_id,
+						g_ftdm_sngss7_data.cfg.isupCkt[x].id,x,
+						ss7_info,ss7_info?ss7_info->ftdmchan:NULL);
+				continue;
+			}
+
 			ftdmchan = ss7_info->ftdmchan;
 			
 			if (e->channel->physical_span_id == ftdmchan->physical_span_id && 
 			    e->channel->physical_chan_id == ftdmchan->physical_chan_id) {
-				SS7_DEBUG("handle_hw_alarm: span=%i chan=%i ckt=%i x=%i\n",ftdmchan->physical_span_id,ftdmchan->physical_chan_id,g_ftdm_sngss7_data.cfg.isupCkt[x].id,x);
+				SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: span=%i chan=%i ckt=%i x=%i\n",ftdmchan->physical_span_id,ftdmchan->physical_chan_id,g_ftdm_sngss7_data.cfg.isupCkt[x].id,x);
 				if (e->enum_id == FTDM_OOB_ALARM_TRAP) {
-					SS7_DEBUG("handle_hw_alarm: Set FLAG_GRP_HW_BLOCK_TX\n");
+					SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: Set FLAG_GRP_HW_BLOCK_TX\n");
 					sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX);
 					if (ftdmchan->state != FTDM_CHANNEL_STATE_SUSPENDED) {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 					}
 				} else if (e->enum_id == FTDM_OOB_ALARM_CLEAR) {
-					SS7_DEBUG("handle_hw_alarm: Clear\n");
+					SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: Clear\n");
 					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX);
 					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_HW_UNBLK_TX);
 					if (sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX_DN)) {
 						sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_UNBLK_TX);
-						SS7_DEBUG("handle_hw_alarm: Setting FLAG_GRP_HW_UNBLK_TX\n");
+						SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: Setting FLAG_GRP_HW_UNBLK_TX\n");
 						if (ftdmchan->state != FTDM_CHANNEL_STATE_SUSPENDED) {
 							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 						}
@@ -1077,6 +1088,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 		SS7_DEBUG_CHAN(ftdmchan,"RESTART: Current flags: ckt=0x%X, blk=0x%X\n", 
 									sngss7_info->ckt_flags,
 									sngss7_info->blk_flags);
+		
+		if (sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED)) {
+			SS7_DEBUG_CHAN(ftdmchan,"Circuit PAUSED stay in RESTART%s\n", "");
+			break;
+		}
 
 		if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK)) {
 			if ((sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_RX)) ||
@@ -1225,6 +1241,8 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 			/* clear the PAUSE flag */
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 
+			/* We tried to hangup the call while in PAUSED state.
+			   We must send a RESET to clear this circuit */
 			if (sngss7_test_ckt_flag (sngss7_info, FLAG_LOCAL_REL)) {
 				SS7_DEBUG_CHAN(ftdmchan, "Channel local release on RESUME, restart Reset procedure%s\n", "");
 				/* By setting RESET_TX flag the check below sngss7_tx_reset_status_pending() will
