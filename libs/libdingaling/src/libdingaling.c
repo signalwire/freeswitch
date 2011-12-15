@@ -606,7 +606,7 @@ static int on_disco_default(void *user_data, ikspak *pak)
 		if ((iq = iks_new("iq"))) {
 			int all = 0;
 			
-			iks_insert_attrib(iq, "from", handle->login);
+			iks_insert_attrib(iq, "from", iks_find_attrib(pak->x, "to"));
 			if (pak->from) {
 				iks_insert_attrib(iq, "to", pak->from->full);
 			}
