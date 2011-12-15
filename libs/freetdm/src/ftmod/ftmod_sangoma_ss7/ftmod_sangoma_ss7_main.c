@@ -1090,11 +1090,6 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 									sngss7_info->ckt_flags,
 									sngss7_info->blk_flags);
 		
-		if (sngss7_test_ckt_flag(sngss7_info, FLAG_INFID_PAUSED)) {
-			SS7_DEBUG_CHAN(ftdmchan,"Circuit PAUSED stay in RESTART%s\n", "");
-			break;
-		}
-
 		if (sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_UCIC_BLOCK)) {
 			if ((sngss7_test_ckt_flag(sngss7_info, FLAG_RESET_RX)) ||
 				(sngss7_test_ckt_flag(sngss7_info, FLAG_GRP_RESET_RX))) {
