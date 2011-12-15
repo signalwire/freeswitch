@@ -5904,7 +5904,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   network_port    VARCHAR(6),\n"
 		"   network_ip      VARCHAR(255),\n"
 		"   version         INTEGER DEFAULT 0 NOT NULL,\n"
-		"   orig_proto      VARCHAR(255)\n"
+		"   orig_proto      VARCHAR(255),\n"
+		"   full_to         VARCHAR(255)\n"
 		");\n";
 
 	char auth_sql[] =
@@ -6047,10 +6048,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 	free(test_sql);
 
-
-	test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' "
-							  "and (version < 0 or orig_proto like '%%' or network_ip like '%%' or network_port like '%%')",
-							  mod_sofia_globals.hostname);
+	test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and full_to='XXX'", mod_sofia_globals.hostname);
+							  
 	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
 
 	free(test_sql);
