@@ -1818,6 +1818,7 @@ SWITCH_DECLARE(const char *) switch_core_banner(void)
 SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_event_t *event;
+	char *cmd;
 
 	if (switch_core_init(flags, console, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
@@ -1860,6 +1861,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 					  switch_core_sessions_per_second(0), switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled");
 
 	switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
+
+	if ((cmd = switch_core_get_variable_dup("api_on_startup"))) {
+		switch_stream_handle_t stream = { 0 };
+		SWITCH_STANDARD_STREAM(stream);
+		switch_console_execute(cmd, 0, &stream);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Startup command [%s] executed. Output:\n%s\n", cmd, (char *)stream.data);
+		free(stream.data);
+		free(cmd);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 
