@@ -898,7 +898,9 @@ int main(int argc, char *argv[])
 
 	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Failed to initialize modules: %s\n", err);
-		return 1;
+		/* 65 is EX_DATAERR (see sysexits.h), meaning some input from the user failed, some init scripts use
+		 * this to tell when fs fails to start due to configuration error */
+		return 65;
 	}
 
 	if (switch_file_open(&fd, pid_path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, pool) == SWITCH_STATUS_SUCCESS) {
