@@ -3383,6 +3383,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_channel_set_variable(caller_channel, "DIALSTATUS", "NOANSWER");
 					break;
 				case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
+				case SWITCH_CAUSE_INVALID_PROFILE:
 					switch_channel_set_variable(caller_channel, "DIALSTATUS", "INVALIDARGS");
 					break;
 				case SWITCH_CAUSE_CALL_REJECTED:

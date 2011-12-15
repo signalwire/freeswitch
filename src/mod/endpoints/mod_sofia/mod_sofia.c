@@ -326,8 +326,11 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 	case SWITCH_CAUSE_REDIRECTION_TO_NEW_DESTINATION:
 		return 410;
 	case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
+	case SWITCH_CAUSE_INVALID_PROFILE:
 		return 502;
 	case SWITCH_CAUSE_INVALID_NUMBER_FORMAT:
+	case SWITCH_CAUSE_INVALID_URL:
+	case SWITCH_CAUSE_INVALID_GATEWAY:
 		return 484;
 	case SWITCH_CAUSE_FACILITY_REJECTED:
 		return 501;
@@ -338,6 +341,7 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 	case SWITCH_CAUSE_NETWORK_OUT_OF_ORDER:
 	case SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE:
 	case SWITCH_CAUSE_SWITCH_CONGESTION:
+	case SWITCH_CAUSE_GATEWAY_DOWN:
 		return 503;
 	case SWITCH_CAUSE_OUTGOING_CALL_BARRED:
 	case SWITCH_CAUSE_INCOMING_CALL_BARRED:
@@ -4266,7 +4270,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	*new_session = NULL;
 
 	if (!outbound_profile || zstr(outbound_profile->destination_number)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid Destination\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid Empty Destination\n");
 		goto error;
 	}
 
@@ -4303,30 +4307,30 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		char *gw, *params;
 
 		if (!(gw = strchr(profile_name, '/'))) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid URL\n");
-			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid URL \'%s\'\n", gw);
+			cause = SWITCH_CAUSE_INVALID_URL;
 			goto error;
 		}
 
 		*gw++ = '\0';
 
 		if (!(dest = strchr(gw, '/'))) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid URL\n");
-			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid URL \'%s\'\n", gw);
+			cause = SWITCH_CAUSE_INVALID_URL;
 			goto error;
 		}
 
 		*dest++ = '\0';
 
 		if (!(gateway_ptr = sofia_reg_find_gateway(gw))) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Gateway\n");
-			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Gateway \'%s\'\n", gw);
+			cause = SWITCH_CAUSE_INVALID_GATEWAY;
 			goto error;
 		}
 
 		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway is down!\n");
-			cause = SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway \'%s\' is down!\n", gw);
+			cause = SWITCH_CAUSE_GATEWAY_DOWN;
 			gateway_ptr->ob_failed_calls++;
 			goto error;
 		}
@@ -4433,14 +4437,14 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	} else {
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid URL\n");
-			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			cause = SWITCH_CAUSE_INVALID_URL;
 			goto error;
 		}
 		*dest++ = '\0';
 
 		if (!(profile = sofia_glue_find_profile(profile_name))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Profile\n");
-			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			cause = SWITCH_CAUSE_INVALID_PROFILE;
 			goto error;
 		}
 
