@@ -2288,6 +2288,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 					switch_event_create(&params, SWITCH_EVENT_GENERAL);
 					switch_assert(params);
+					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "voicemail-lookup");
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "destination_number", caller_profile->destination_number);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "caller_id_number", caller_id_number);
 
@@ -3170,10 +3171,10 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		int ok = 1;
 		switch_event_t *locate_params = NULL;
 		const char *email_addr = NULL;
-		
 
 		switch_event_create(&locate_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(locate_params);
+		switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "action", "voicemail-lookup");
 
 		if (switch_xml_locate_user_merged("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
 										  &x_user, locate_params) == SWITCH_STATUS_SUCCESS) {
