@@ -1589,6 +1589,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_STEREO")) && switch_true(p)) {
 		flags |= SMBF_STEREO;
+		flags &= ~SMBF_STEREO_SWAP;
+		channels = 2;
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_STEREO_SWAP")) && switch_true(p)) {
+		flags |= SMBF_STEREO;
+		flags |= SMBF_STEREO_SWAP;
 		channels = 2;
 	}
 
