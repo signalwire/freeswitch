@@ -157,6 +157,7 @@
     <!-- Name of the db to use for this profile -->
     <!--<param name="dbname" value="share_presence"/>-->
     <param name="presence-hosts" value="$${domain},$${local_ip_v4}"/>
+    <param name="presence-privacy" value="$${presence_privacy}"/>
     <!-- ************************************************* -->
     
     <!-- This setting is for AAL2 bitpacking on G726 -->

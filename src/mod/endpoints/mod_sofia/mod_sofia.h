@@ -233,6 +233,7 @@ typedef enum {
 	PFLAG_AUTO_NAT,
 	PFLAG_SIPCOMPACT,
 	PFLAG_SQL_IN_TRANS,
+	PFLAG_PRESENCE_PRIVACY,
 	PFLAG_PASS_CALLEE_ID,
 	PFLAG_LOG_AUTH_FAIL,
 	PFLAG_FORWARD_MWI_NOTIFY,
@@ -549,6 +550,7 @@ struct sofia_profile {
 	char *record_template;
 	char *record_path;
 	char *presence_hosts;
+	char *presence_privacy;
 	char *challenge_realm;
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;

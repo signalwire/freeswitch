@@ -2262,9 +2262,13 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 					} else if (!strcmp(astate, "confirmed")) {
 						if (!zstr(op)) {
-							//switch_snprintf(status_line, sizeof(status_line), "On The Phone");
-							//} else {
-							switch_snprintf(status_line, sizeof(status_line), "Talk %s", op);
+							if (sofia_test_pflag(profile, PFLAG_PRESENCE_PRIVACY)) {
+								switch_snprintf(status_line, sizeof(status_line), "On The Phone");
+							} else {
+								switch_snprintf(status_line, sizeof(status_line), "Talk %s", op);
+							}
+						} else {
+							switch_snprintf(status_line, sizeof(status_line), "On The Phone");
 						}
 
 						rpid = "on-the-phone";
