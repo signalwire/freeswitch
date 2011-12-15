@@ -310,20 +310,21 @@ static void handle_hw_alarm(ftdm_event_t *e)
 			
 			if (e->channel->physical_span_id == ftdmchan->physical_span_id && 
 			    e->channel->physical_chan_id == ftdmchan->physical_chan_id) {
-				SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: span=%i chan=%i ckt=%i x=%i\n",ftdmchan->physical_span_id,ftdmchan->physical_chan_id,g_ftdm_sngss7_data.cfg.isupCkt[x].id,x);
+				SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: span=%i chan=%i ckt=%i x=%i\n",
+						ftdmchan->physical_span_id,ftdmchan->physical_chan_id,g_ftdm_sngss7_data.cfg.isupCkt[x].id,x);
 				if (e->enum_id == FTDM_OOB_ALARM_TRAP) {
-					SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: Set FLAG_GRP_HW_BLOCK_TX\n");
+					SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: Set FLAG_GRP_HW_BLOCK_TX %s\n", " ");
 					sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX);
 					if (ftdmchan->state != FTDM_CHANNEL_STATE_SUSPENDED) {
 						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 					}
 				} else if (e->enum_id == FTDM_OOB_ALARM_CLEAR) {
-					SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: Clear\n");
+					SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: Clear %s \n", " ");
 					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX);
 					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_HW_UNBLK_TX);
 					if (sngss7_test_ckt_blk_flag(ss7_info, FLAG_GRP_HW_BLOCK_TX_DN)) {
 						sngss7_set_ckt_blk_flag(ss7_info, FLAG_GRP_HW_UNBLK_TX);
-						SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: Setting FLAG_GRP_HW_UNBLK_TX\n");
+						SS7_DEBUG_CHAN(ftdmchan,"handle_hw_alarm: Setting FLAG_GRP_HW_UNBLK_TX %s\n"," ");
 						if (ftdmchan->state != FTDM_CHANNEL_STATE_SUSPENDED) {
 							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 						}
