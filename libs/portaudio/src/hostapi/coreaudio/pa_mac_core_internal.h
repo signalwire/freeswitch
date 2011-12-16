@@ -63,6 +63,7 @@
 
 #include <AudioUnit/AudioUnit.h>
 #include <AudioToolbox/AudioToolbox.h>
+#include <CoreServices/CoreServices.h>
 
 
 #include "portaudio.h"
