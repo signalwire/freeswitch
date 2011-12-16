@@ -4799,16 +4799,19 @@ XS(_wrap_EventConsumer_pop) {
   {
     EventConsumer *arg1 = (EventConsumer *) 0 ;
     int arg2 = (int) 0 ;
+    int arg3 = (int) 0 ;
     Event *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int val2 ;
     int ecode2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 1) || (items > 2)) {
-      SWIG_croak("Usage: EventConsumer_pop(self,block);");
+    if ((items < 1) || (items > 3)) {
+      SWIG_croak("Usage: EventConsumer_pop(self,block,timeout);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -4822,12 +4825,21 @@ XS(_wrap_EventConsumer_pop) {
       } 
       arg2 = static_cast< int >(val2);
     }
-    result = (Event *)(arg1)->pop(arg2);
+    if (items > 2) {
+      ecode3 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(2), &val3);
+      if (!SWIG_IsOK(ecode3)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "EventConsumer_pop" "', argument " "3"" of type '" "int""'");
+      } 
+      arg3 = static_cast< int >(val3);
+    }
+    result = (Event *)(arg1)->pop(arg2,arg3);
     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    
     
     
     XSRETURN(argvi);
   fail:
+    
     
     
     SWIG_croak_null();
@@ -10078,17 +10090,17 @@ XS(SWIG_init) {
   SWIG_TypeClientData(SWIGTYPE_p_IVRMenu, (void*) "freeswitch::IVRMenu");
   SWIG_TypeClientData(SWIGTYPE_p_API, (void*) "freeswitch::API");
   SWIG_TypeClientData(SWIGTYPE_p_input_callback_state, (void*) "freeswitch::input_callback_state_t");
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_HUP", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_HUP)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_FREE", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_FREE)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_RDLOCK", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_RDLOCK)));
     SvREADONLY_on(sv);

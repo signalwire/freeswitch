@@ -1653,10 +1653,11 @@ SWIGEXPORT jint JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1bi
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1pop(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1pop(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jint jarg3) {
   jlong jresult = 0 ;
   EventConsumer *arg1 = (EventConsumer *) 0 ;
   int arg2 = (int) 0 ;
+  int arg3 = (int) 0 ;
   Event *result = 0 ;
   
   (void)jenv;
@@ -1664,7 +1665,8 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1p
   (void)jarg1_;
   arg1 = *(EventConsumer **)&jarg1; 
   arg2 = (int)jarg2; 
-  result = (Event *)(arg1)->pop(arg2);
+  arg3 = (int)jarg3; 
+  result = (Event *)(arg1)->pop(arg2,arg3);
   *(Event **)&jresult = result; 
   return jresult;
 }

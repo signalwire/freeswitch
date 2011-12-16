@@ -5517,15 +5517,19 @@ SWIGINTERN PyObject *_wrap_EventConsumer_pop(PyObject *SWIGUNUSEDPARM(self), PyO
   PyObject *resultobj = 0;
   EventConsumer *arg1 = (EventConsumer *) 0 ;
   int arg2 = (int) 0 ;
+  int arg3 = (int) 0 ;
   Event *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int val2 ;
   int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"O|O:EventConsumer_pop",&obj0,&obj1)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"O|OO:EventConsumer_pop",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_pop" "', argument " "1"" of type '" "EventConsumer *""'"); 
@@ -5538,7 +5542,14 @@ SWIGINTERN PyObject *_wrap_EventConsumer_pop(PyObject *SWIGUNUSEDPARM(self), PyO
     } 
     arg2 = static_cast< int >(val2);
   }
-  result = (Event *)(arg1)->pop(arg2);
+  if (obj2) {
+    ecode3 = SWIG_AsVal_int(obj2, &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "EventConsumer_pop" "', argument " "3"" of type '" "int""'");
+    } 
+    arg3 = static_cast< int >(val3);
+  }
+  result = (Event *)(arg1)->pop(arg2,arg3);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:

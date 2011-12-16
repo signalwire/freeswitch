@@ -99,8 +99,8 @@ public class EventConsumer {
     return freeswitchJNI.EventConsumer_bind(swigCPtr, this, event_name, subclass_name);
   }
 
-  public Event pop(int block) {
-    long cPtr = freeswitchJNI.EventConsumer_pop(swigCPtr, this, block);
+  public Event pop(int block, int timeout) {
+    long cPtr = freeswitchJNI.EventConsumer_pop(swigCPtr, this, block, timeout);
     return (cPtr == 0) ? null : new Event(cPtr, true);
   }
 

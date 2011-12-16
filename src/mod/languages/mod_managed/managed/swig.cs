@@ -2186,6 +2186,16 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_bool_t switch_core_ready_inbound() {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_core_ready_inbound();
+    return ret;
+  }
+
+  public static switch_bool_t switch_core_ready_outbound() {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_core_ready_outbound();
+    return ret;
+  }
+
   public static uint switch_core_flags() {
     uint ret = freeswitchPINVOKE.switch_core_flags();
     return ret;
@@ -3683,6 +3693,10 @@ public class freeswitch {
 
   public static void switch_channel_set_state_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
     freeswitchPINVOKE.switch_channel_set_state_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
+  }
+
+  public static void switch_channel_clear_state_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
+    freeswitchPINVOKE.switch_channel_clear_state_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
   }
 
   public static void switch_channel_clear_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
@@ -5852,6 +5866,7 @@ public class freeswitch {
   public static readonly string SWITCH_COPY_XML_CDR_VARIABLE = freeswitchPINVOKE.SWITCH_COPY_XML_CDR_VARIABLE_get();
   public static readonly string SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE = freeswitchPINVOKE.SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE_get();
   public static readonly string SWITCH_TRANSFER_HISTORY_VARIABLE = freeswitchPINVOKE.SWITCH_TRANSFER_HISTORY_VARIABLE_get();
+  public static readonly string SWITCH_TRANSFER_SOURCE_VARIABLE = freeswitchPINVOKE.SWITCH_TRANSFER_SOURCE_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE_get();
@@ -6399,6 +6414,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_TRANSFER_HISTORY_VARIABLE_get")]
   public static extern string SWITCH_TRANSFER_HISTORY_VARIABLE_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_TRANSFER_SOURCE_VARIABLE_get")]
+  public static extern string SWITCH_TRANSFER_SOURCE_VARIABLE_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get")]
   public static extern string SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get();
@@ -8496,6 +8514,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_ready")]
   public static extern int switch_core_ready();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_ready_inbound")]
+  public static extern int switch_core_ready_inbound();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_ready_outbound")]
+  public static extern int switch_core_ready_outbound();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_flags")]
   public static extern uint switch_core_flags();
@@ -12213,6 +12237,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_state_flag")]
   public static extern void switch_channel_set_state_flag(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_clear_state_flag")]
+  public static extern void switch_channel_clear_state_flag(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_clear_flag")]
   public static extern void switch_channel_clear_flag(HandleRef jarg1, int jarg2);
@@ -21952,7 +21979,11 @@ public enum switch_call_cause_t {
   SWITCH_CAUSE_MEDIA_TIMEOUT = 604,
   SWITCH_CAUSE_PICKED_OFF = 605,
   SWITCH_CAUSE_USER_NOT_REGISTERED = 606,
-  SWITCH_CAUSE_PROGRESS_TIMEOUT = 607
+  SWITCH_CAUSE_PROGRESS_TIMEOUT = 607,
+  SWITCH_CAUSE_INVALID_GATEWAY = 608,
+  SWITCH_CAUSE_GATEWAY_DOWN = 609,
+  SWITCH_CAUSE_INVALID_URL = 610,
+  SWITCH_CAUSE_INVALID_PROFILE = 611
 }
 
 }
@@ -24339,25 +24370,27 @@ namespace FreeSWITCH.Native {
 [System.Flags] public enum switch_core_flag_enum_t {
   SCF_NONE = 0,
   SCF_USE_SQL = (1 << 0),
-  SCF_NO_NEW_SESSIONS = (1 << 1),
-  SCF_SHUTTING_DOWN = (1 << 2),
-  SCF_VG = (1 << 3),
-  SCF_RESTART = (1 << 4),
-  SCF_SHUTDOWN_REQUESTED = (1 << 5),
-  SCF_USE_AUTO_NAT = (1 << 6),
-  SCF_EARLY_HANGUP = (1 << 7),
-  SCF_CALIBRATE_CLOCK = (1 << 8),
-  SCF_USE_HEAVY_TIMING = (1 << 9),
-  SCF_USE_CLOCK_RT = (1 << 10),
-  SCF_VERBOSE_EVENTS = (1 << 11),
-  SCF_USE_WIN32_MONOTONIC = (1 << 12),
-  SCF_AUTO_SCHEMAS = (1 << 13),
-  SCF_MINIMAL = (1 << 14),
-  SCF_USE_NAT_MAPPING = (1 << 15),
-  SCF_CLEAR_SQL = (1 << 16),
-  SCF_THREADED_SYSTEM_EXEC = (1 << 17),
-  SCF_SYNC_CLOCK_REQUESTED = (1 << 18),
-  SCF_CORE_ODBC_REQ = (1 << 19)
+  SCF_NO_NEW_OUTBOUND_SESSIONS = (1 << 1),
+  SCF_NO_NEW_INBOUND_SESSIONS = (1 << 2),
+  SCF_NO_NEW_SESSIONS = (SCF_NO_NEW_OUTBOUND_SESSIONS|SCF_NO_NEW_INBOUND_SESSIONS),
+  SCF_SHUTTING_DOWN = (1 << 3),
+  SCF_VG = (1 << 4),
+  SCF_RESTART = (1 << 5),
+  SCF_SHUTDOWN_REQUESTED = (1 << 6),
+  SCF_USE_AUTO_NAT = (1 << 7),
+  SCF_EARLY_HANGUP = (1 << 8),
+  SCF_CALIBRATE_CLOCK = (1 << 9),
+  SCF_USE_HEAVY_TIMING = (1 << 10),
+  SCF_USE_CLOCK_RT = (1 << 11),
+  SCF_VERBOSE_EVENTS = (1 << 12),
+  SCF_USE_WIN32_MONOTONIC = (1 << 13),
+  SCF_AUTO_SCHEMAS = (1 << 14),
+  SCF_MINIMAL = (1 << 15),
+  SCF_USE_NAT_MAPPING = (1 << 16),
+  SCF_CLEAR_SQL = (1 << 17),
+  SCF_THREADED_SYSTEM_EXEC = (1 << 18),
+  SCF_SYNC_CLOCK_REQUESTED = (1 << 19),
+  SCF_CORE_ODBC_REQ = (1 << 20)
 }
 
 }
@@ -24665,6 +24698,7 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH,
   SWITCH_MESSAGE_INDICATE_SIGNAL_DATA,
   SWITCH_MESSAGE_INDICATE_INFO,
+  SWITCH_MESSAGE_INDICATE_AUDIO_DATA,
   SWITCH_MESSAGE_INVALID
 }
 
@@ -29548,7 +29582,8 @@ namespace FreeSWITCH.Native {
   SMBF_ANSWER_REQ = (1 << 6),
   SMBF_THREAD_LOCK = (1 << 7),
   SMBF_PRUNE = (1 << 8),
-  SMBF_NO_PAUSE = (1 << 9)
+  SMBF_NO_PAUSE = (1 << 9),
+  SMBF_STEREO_SWAP = (1 << 10)
 }
 
 }
@@ -30889,6 +30924,8 @@ namespace FreeSWITCH.Native {
 
 public enum switch_session_ctl_t {
   SCSC_PAUSE_INBOUND,
+  SCSC_PAUSE_OUTBOUND,
+  SCSC_PAUSE_ALL,
   SCSC_HUPALL,
   SCSC_SHUTDOWN,
   SCSC_CHECK_RUNNING,
@@ -30914,6 +30951,8 @@ public enum switch_session_ctl_t {
   SCSC_MIN_IDLE_CPU,
   SCSC_VERBOSE_EVENTS,
   SCSC_SHUTDOWN_CHECK,
+  SCSC_PAUSE_INBOUND_CHECK,
+  SCSC_PAUSE_OUTBOUND_CHECK,
   SCSC_PAUSE_CHECK,
   SCSC_READY_CHECK,
   SCSC_THREADED_SYSTEM_EXEC,

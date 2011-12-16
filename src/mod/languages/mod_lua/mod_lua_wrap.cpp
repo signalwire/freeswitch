@@ -3791,11 +3791,13 @@ static int _wrap_EventConsumer_pop(lua_State* L) {
   int SWIG_arg = -1;
   EventConsumer *arg1 = (EventConsumer *) 0 ;
   int arg2 = (int) 0 ;
+  int arg3 = (int) 0 ;
   Event *result = 0 ;
   
-  SWIG_check_num_args("pop",1,2)
+  SWIG_check_num_args("pop",1,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("pop",1,"EventConsumer *");
   if(lua_gettop(L)>=2 && !lua_isnumber(L,2)) SWIG_fail_arg("pop",2,"int");
+  if(lua_gettop(L)>=3 && !lua_isnumber(L,3)) SWIG_fail_arg("pop",3,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_EventConsumer,0))){
     SWIG_fail_ptr("EventConsumer_pop",1,SWIGTYPE_p_EventConsumer);
@@ -3804,7 +3806,10 @@ static int _wrap_EventConsumer_pop(lua_State* L) {
   if(lua_gettop(L)>=2){
     arg2 = (int)lua_tonumber(L, 2);
   }
-  result = (Event *)(arg1)->pop(arg2);
+  if(lua_gettop(L)>=3){
+    arg3 = (int)lua_tonumber(L, 3);
+  }
+  result = (Event *)(arg1)->pop(arg2,arg3);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
   return SWIG_arg;
