@@ -1018,39 +1018,66 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 				switch_event_t *event;
 
 				if (switch_event_create(&event, SWITCH_EVENT_RECV_RTCP_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-					char buf[30];
+					char value[30];
+					char header[50];
+					int i;
 
 					char *uuid = switch_core_session_get_uuid(session);
 					if (uuid) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
 					}
 
-					snprintf(buf, sizeof(buf), "%.8x", rtcp_frame.ssrc);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SSRC", buf);
+					snprintf(value, sizeof(value), "%.8x", rtcp_frame.ssrc);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SSRC", value);
 
-					snprintf(buf, sizeof(buf), "%u", rtcp_frame.ntp_msw);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Most-Significant-Word", buf);
+					snprintf(value, sizeof(value), "%u", rtcp_frame.ntp_msw);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Most-Significant-Word", value);
 
-					snprintf(buf, sizeof(buf), "%u", rtcp_frame.ntp_lsw);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Least-Significant-Word", buf);
+					snprintf(value, sizeof(value), "%u", rtcp_frame.ntp_lsw);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Least-Significant-Word", value);
 
-					snprintf(buf, sizeof(buf), "%u", rtcp_frame.timestamp);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Timestamp", buf);
+					snprintf(value, sizeof(value), "%u", rtcp_frame.timestamp);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Timestamp", value);
 
-					snprintf(buf, sizeof(buf), "%u", rtcp_frame.packet_count);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Sender-Packet-Count", buf);
+					snprintf(value, sizeof(value), "%u", rtcp_frame.packet_count);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Sender-Packet-Count", value);
 
-					snprintf(buf, sizeof(buf), "%u", rtcp_frame.octect_count);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Octect-Packet-Count", buf);
+					snprintf(value, sizeof(value), "%u", rtcp_frame.octect_count);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Octect-Packet-Count", value);
 
-					snprintf(buf, sizeof(buf), "%" SWITCH_SIZE_T_FMT, tech_pvt->read_frame.timestamp);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Last-RTP-Timestamp", buf);
+					snprintf(value, sizeof(value), "%" SWITCH_SIZE_T_FMT, tech_pvt->read_frame.timestamp);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Last-RTP-Timestamp", value);
 
-					snprintf(buf, sizeof(buf), "%u", tech_pvt->read_frame.rate);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Rate", buf);
+					snprintf(value, sizeof(value), "%u", tech_pvt->read_frame.rate);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Rate", value);
 
-					snprintf(buf, sizeof(buf), "%" SWITCH_TIME_T_FMT, switch_time_now());
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Capture-Time", buf);
+					snprintf(value, sizeof(value), "%" SWITCH_TIME_T_FMT, switch_time_now());
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Capture-Time", value);
+
+					 // Add sources info
+					for (i = 0; i < rtcp_frame.report_count; i++) {
+						snprintf(header, sizeof(header), "Source%u-SSRC", i);
+						snprintf(value, sizeof(value), "%.8x", rtcp_frame.reports[i].ssrc);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+						snprintf(header, sizeof(header), "Source%u-Fraction", i);
+						snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].fraction);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+						snprintf(header, sizeof(header), "Source%u-Lost", i);
+						snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].lost);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+						snprintf(header, sizeof(header), "Source%u-Highest-Sequence-Number-Received", i);
+						snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].highest_sequence_number_received);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+						snprintf(header, sizeof(header), "Source%u-Jitter", i);
+						snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].jitter);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+						snprintf(header, sizeof(header), "Source%u-LSR", i);
+						snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].lsr);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+						snprintf(header, sizeof(header), "Source%u-DLSR", i);
+						snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].dlsr);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					}
 
 					switch_event_fire(&event);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Dispatched RTCP event\n");
