@@ -857,7 +857,6 @@ static void our_sofia_event_callback(nua_event_t event,
 	int locked = 0;
 	int check_destroy = 1;
 
-
 	if (sofia_private && sofia_private->is_call && sofia_private->de) {
 		sofia_dispatch_event_t *qde = sofia_private->de;
 		sofia_private->de = NULL;
@@ -1302,6 +1301,14 @@ void sofia_event_callback(nua_event_t event,
 	sofia_dispatch_event_t *de;
 
 
+	if (sofia_test_pflag(profile, PFLAG_STANDBY)) {
+		if (event < nua_r_set_params || event > nua_r_authenticate) {
+			nua_respond(nh, 503, "System Paused", TAG_END());
+		}
+		return;
+	}
+
+
 	switch_mutex_lock(profile->flag_mutex);
 	profile->queued_events++;
 	switch_mutex_unlock(profile->flag_mutex);
@@ -1586,6 +1593,12 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 	/* While we're running, or there is a pending sql statment that we haven't appended to sqlbuf yet, because of a lack of buffer space */
 	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || sql) {
+
+		if (sofia_test_pflag(profile, PFLAG_STANDBY)) {
+			switch_yield(1000000);
+			continue;
+		}
+
 		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
 			/* Do we have enough statements or is the timeout expired */
 			while (sql || (sofia_test_pflag(profile, PFLAG_RUNNING) && mod_sofia_globals.running == 1 &&
@@ -2965,6 +2978,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_PRESENCE_MAP);
 						}
+					} else if (!strcasecmp(var, "profile-standby")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_STANDBY);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_STANDBY);
+						}
 					} else if (!strcasecmp(var, "liberal-dtmf")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_LIBERAL_DTMF);
@@ -3694,6 +3713,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_PRESENCE_MAP);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_PRESENCE_MAP);
+						}
+					} else if (!strcasecmp(var, "profile-standby")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_STANDBY);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_STANDBY);
 						}
 					} else if (!strcasecmp(var, "liberal-dtmf")) {
 						if (switch_true(val)) {

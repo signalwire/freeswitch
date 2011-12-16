@@ -219,7 +219,7 @@ typedef enum {
 	PFLAG_UUID_AS_CALLID,
 	PFLAG_SCROOGE,
 	PFLAG_MANAGE_SHARED_APPEARANCE,
-	PFLAG_MANAGE_SHARED_APPEARANCE_SYLANTRO_DELETED_USE_ME,
+	PFLAG_STANDBY,
 	PFLAG_DISABLE_SRV,
 	PFLAG_DISABLE_SRV503,
 	PFLAG_DISABLE_NAPTR,
@@ -842,6 +842,8 @@ switch_mutex_unlock(obj->flag_mutex);
 
 /* Function Prototypes */
 /*************************************************************************************************************************************************************/
+
+void sofia_glue_global_standby(switch_bool_t on);
 
 switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_flag_t myflags);
 

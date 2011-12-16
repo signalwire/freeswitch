@@ -4139,6 +4139,7 @@ SWITCH_STANDARD_API(sofia_function)
 		int ston = -1;
 		int cton = -1;
 		int wdon = -1;
+		int stbyon = -1;
 
 		if (argc > 1) {
 			if (!strcasecmp(argv[1], "debug")) {
@@ -4174,6 +4175,12 @@ SWITCH_STANDARD_API(sofia_function)
 				}
 			}
 
+			if (!strcasecmp(argv[1], "standby")) {
+				if (argc > 2) {
+					stbyon = switch_true(argv[2]);
+				}
+			}
+
 			if (!strcasecmp(argv[1], "capture")) {
 	                        if (argc > 2) {
                                         cton = switch_true(argv[2]);
@@ -4191,11 +4198,14 @@ SWITCH_STANDARD_API(sofia_function)
 			sofia_glue_global_siptrace(ston);
 			stream->write_function(stream, "+OK Global siptrace %s", ston ? "on" : "off");
 		} else if (cton != -1) {
-                        sofia_glue_global_capture(cton);
-                        stream->write_function(stream, "+OK Global capture %s", cton ? "on" : "off");
+			sofia_glue_global_capture(cton);
+			stream->write_function(stream, "+OK Global capture %s", cton ? "on" : "off");
 		} else if (wdon != -1) {
 			sofia_glue_global_watchdog(wdon);
 			stream->write_function(stream, "+OK Global watchdog %s", wdon ? "on" : "off");
+		} else if (stbyon != -1) {
+			sofia_glue_global_standby(stbyon);
+			stream->write_function(stream, "+OK Global standby %s", stbyon ? "on" : "off");
 		} else {
 			stream->write_function(stream, "-ERR Usage: siptrace <on|off>|capture <on|off>|watchdog <on|off>|debug <sla|presence|none");
 		}
@@ -4295,6 +4305,11 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	sofia_gateway_t *gateway_ptr = NULL;
 
 	*new_session = NULL;
+
+	if (sofia_test_pflag(profile, PFLAG_STANDBY)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "System Paused\n");
+		goto error;
+	}
 
 	if (!outbound_profile || zstr(outbound_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid Empty Destination\n");
@@ -5406,6 +5421,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia tracelevel ::[console:alert:crit:err:warning:notice:info:debug");
 
 	switch_console_set_complete("add sofia global siptrace ::[on:off");
+	switch_console_set_complete("add sofia global standby ::[on:off");
 	switch_console_set_complete("add sofia global capture  ::[on:off");
 	switch_console_set_complete("add sofia global watchdog ::[on:off");
 

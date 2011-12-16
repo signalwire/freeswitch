@@ -5312,6 +5312,30 @@ void sofia_glue_global_siptrace(switch_bool_t on)
 
 }
 
+void sofia_glue_global_standby(switch_bool_t on)
+{
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	sofia_profile_t *pptr;
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	if (mod_sofia_globals.profile_hash) {
+		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &var, NULL, &val);
+			if ((pptr = (sofia_profile_t *) val)) {
+				if (on) {
+					sofia_set_pflag_locked(pptr, PFLAG_STANDBY);
+				} else {
+					sofia_clear_pflag_locked(pptr, PFLAG_STANDBY);
+				}
+			}
+		}
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+}
+
 void sofia_glue_global_capture(switch_bool_t on)
 {
        switch_hash_index_t *hi;
@@ -5673,6 +5697,8 @@ int sofia_glue_recover(switch_bool_t flush)
 				struct recover_helper h = { 0 };
 				h.profile = profile;
 				h.total = 0;
+
+				sofia_clear_pflag_locked(profile, PFLAG_STANDBY);
 
 				if (flush) {
 					sql = switch_mprintf("delete from sip_recovery where profile_name='%q'", profile->name);
