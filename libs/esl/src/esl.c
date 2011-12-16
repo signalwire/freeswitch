@@ -59,7 +59,12 @@
 /* These warnings need to be ignored warning in sdk header */
 #include <Ws2tcpip.h>
 #include <windows.h>
+#ifndef errno
 #define errno WSAGetLastError()
+#endif
+#ifndef EINTR
+#define EINTR WSAEINTR
+#endif
 #pragma warning (default:6386)
 #endif
 

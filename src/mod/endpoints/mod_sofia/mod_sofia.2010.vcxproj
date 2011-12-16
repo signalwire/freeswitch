@@ -143,7 +143,6 @@
     <ClCompile Include="sofia_glue.c" />
     <ClCompile Include="sofia_presence.c" />
     <ClCompile Include="sofia_reg.c" />
-    <ClCompile Include="sofia_sla.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mod_sofia.h" />

@@ -102,7 +102,7 @@ void globfree(glob_t *);
 #define SWITCH_XML_ERRL 128		/* maximum error string length */
 
 /* Use UTF-8 as the general encoding */
-#define USE_UTF_8_ENCODING SWITCH_TRUE
+static switch_bool_t USE_UTF_8_ENCODING = SWITCH_TRUE;
 
 static int preprocess(const char *cwd, const char *file, int write_fd, int rlevel);
 

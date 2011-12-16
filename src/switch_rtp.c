@@ -3497,6 +3497,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rt
 		unsigned packet_length = (ntohs((uint16_t) rtp_session->rtcp_recv_msg.header.length) + 1) * 4 - sizeof(switch_rtcp_hdr_t);
 		unsigned int reportsOffset = sizeof(struct switch_rtcp_senderinfo);
 		int i = 0;
+		unsigned int offset;
 
 		/* turn the flag off! */
 		rtp_session->rtcp_fresh_frame = 0;
@@ -3509,10 +3510,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rt
 		frame->packet_count =  ntohl(sr->pc);
 		frame->octect_count = ntohl(sr->oc);
 
-		for (int offset = reportsOffset; offset < packet_length; offset += sizeof(struct switch_rtcp_report_block)) {
+		for (offset = reportsOffset; offset < packet_length; offset += sizeof(struct switch_rtcp_report_block)) {
 			struct switch_rtcp_report_block* report = (struct switch_rtcp_report_block*) (rtp_session->rtcp_recv_msg.body + offset);
 			frame->reports[i].ssrc = ntohl(report->ssrc);
-			frame->reports[i].fraction = ntohl(report->fraction);
+			frame->reports[i].fraction = (uint8_t)ntohl(report->fraction);
 			frame->reports[i].lost = ntohl(report->lost);
 			frame->reports[i].highest_sequence_number_received = ntohl(report->highest_sequence_number_received);
 			frame->reports[i].jitter = ntohl(report->jitter);
@@ -3523,7 +3524,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rt
 				break;
 			}
 		}
-		frame->report_count = i;
+		frame->report_count = (uint16_t)i;
 
 		return SWITCH_STATUS_SUCCESS;
 	}
