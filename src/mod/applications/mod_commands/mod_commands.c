@@ -3491,9 +3491,14 @@ SWITCH_STANDARD_API(originate_function)
 	uint8_t machine = 1;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (session || zstr(cmd)) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "-USAGE %s\n", ORIGINATE_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* log warning if part of ongoing session, as we'll block the session */
+	if (session){
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Originate can take 60 seconds to complete, and blocks the existing session. Do not confuse with a lockup.\n");
 	}
 
 	mycmd = strdup(cmd);
