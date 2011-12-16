@@ -3243,9 +3243,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		  done:
 
-			switch_safe_free(oglobals.file);
-			switch_safe_free(oglobals.error_file);
-
 			*cause = SWITCH_CAUSE_NONE;
 
 			if (caller_channel && !switch_channel_ready(caller_channel)) {
