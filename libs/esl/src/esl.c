@@ -53,10 +53,13 @@
 #ifndef WIN32
 #define closesocket(x) close(x)
 #include <fcntl.h>
+#include <errno.h>
 #else
 #pragma warning (disable:6386)
 /* These warnings need to be ignored warning in sdk header */
 #include <Ws2tcpip.h>
+#include <windows.h>
+#define errno WSAGetLastError()
 #pragma warning (default:6386)
 #endif
 
@@ -1083,7 +1086,21 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 
 static esl_ssize_t handle_recv(esl_handle_t *handle, void *data, esl_size_t datalen)
 {
-	return recv(handle->sock, data, datalen, 0);
+	int activity;
+	
+	while (handle->connected) {
+		activity = esl_wait_sock(handle->sock, 1000, ESL_POLL_READ|ESL_POLL_ERROR);
+		
+		if (activity > 0 && (activity & ESL_POLL_READ)) {
+			return recv(handle->sock, data, datalen, 0);
+		}
+
+		if (activity < 0) {
+			return errno == EINTR ? 0 : -1;
+		}
+	}
+
+	return -1;
 }
 
 ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_event_t **save_event)
