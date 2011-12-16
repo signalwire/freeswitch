@@ -1039,7 +1039,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	char contact_str[1024] = "";
 	uint8_t multi_reg = 0, multi_reg_contact = 0, avoid_multi_reg = 0;
 	uint8_t stale = 0, forbidden = 0;
-	auth_res_t auth_res;
+	auth_res_t auth_res = AUTH_OK;
 	long exptime = 300;
 	switch_event_t *event;
 	const char *rpid = "unknown";
