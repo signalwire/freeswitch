@@ -40,10 +40,10 @@ AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modulesdir}",[where to install the module
 
 if test "$localstatedir" = "\${prefix}/var" ; then
     rundir="$prefix/run"
-    logfiledir="${prefix}/log"
+    logdir="${prefix}/log"
 else
     rundir="$localstatedir/run/freeswitch"
-    logfiledir="$localstatedir/log/freeswitch"
+    logdir="$localstatedir/log/freeswitch"
 fi
 # Where to put pidfile
 AC_ARG_WITH([rundir],
@@ -51,30 +51,38 @@ AC_ARG_WITH([rundir],
 AC_SUBST(runtimedir)
 AC_DEFINE_UNQUOTED([SWITCH_RUN_DIR],"${runtimedir}",[where to put pidfile to])
 
+AC_ARG_WITH([logfiledir],
+	[AS_HELP_STRING([--with-logfiledir=DIR], [Put logfiles into this location (default: $localstatedir/log)])], [logfiledir="$withval"], [logfiledir="$logdir"])
 AC_SUBST(logfiledir)
 AC_DEFINE_UNQUOTED([SWITCH_LOG_DIR],"${logfiledir}",[where to put log files])
 
-dbdir="${prefix}/db"
+AC_ARG_WITH([dbdir],
+	[AS_HELP_STRING([--with-dbdir=DIR], [Put database files into this location (default: $prefix/db)])], [dbdir="$withval"], [dbdir="$prefix/db"])
 AC_SUBST(dbdir)
 AC_DEFINE_UNQUOTED([SWITCH_DB_DIR],"${dbdir}",[where to put db files])
 
-htdocsdir="${prefix}/htdocs"
+AC_ARG_WITH([htdocsdir],
+	[AS_HELP_STRING([--with-htdocsdir=DIR], [Put html files into this location (default: $prefix/htdocs)])], [htdocsdir="$withval"], [htdocsdir="$prefix/htdocs"])
 AC_SUBST(htdocsdir)
 AC_DEFINE_UNQUOTED([SWITCH_HTDOCS_DIR],"${htdocsdir}",[where to put htdocs files])
 
-soundsdir="${prefix}/sounds"
+AC_ARG_WITH([soundsdir],
+	[AS_HELP_STRING([--with-soundsdir=DIR], [Put sound files into this location (default: $prefix/sounds)])], [soundsdir="$withval"], [soundsdir="$prefix/sounds"])
 AC_SUBST(soundsdir)
 AC_DEFINE_UNQUOTED([SWITCH_SOUNDS_DIR],"${soundsdir}",[where to put sounds files])
 
-grammardir="${prefix}/grammar"
+AC_ARG_WITH([grammardir],
+	[AS_HELP_STRING([--with-grammardir=DIR], [Put grammar files into this location (default: $prefix/grammar)])], [grammardir="$withval"], [grammardir="$prefix/grammar"])
 AC_SUBST(grammardir)
 AC_DEFINE_UNQUOTED([SWITCH_GRAMMAR_DIR],"${grammardir}",[where to put grammar files])
 
-scriptdir="${prefix}/scripts"
+AC_ARG_WITH([scriptdir],
+	[AS_HELP_STRING([--with-scriptdir=DIR], [Put script files into this location (default: $prefix/script)])], [scriptdir="$withval"], [scriptdir="$prefix/script"])
 AC_SUBST(scriptdir)
 AC_DEFINE_UNQUOTED([SWITCH_SCRIPT_DIR],"${scriptdir}",[where to put script files])
 
-recordingsdir="${prefix}/recordings"
+AC_ARG_WITH([recordingsdir],
+	[AS_HELP_STRING([--with-recordingsdir=DIR], [Put recordings files into this location (default: $prefix/recordings)])], [recordingsdir="$withval"], [recordingsdir="$prefix/recordings"])
 AC_SUBST(recordingsdir)
 AC_DEFINE_UNQUOTED([SWITCH_RECORDINGS_DIR],"${recordingsdir}",[where to put recording files])
 
