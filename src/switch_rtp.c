@@ -99,6 +99,11 @@ typedef struct {
 	char body[SWITCH_RTCP_MAX_BUF_LEN];
 } rtcp_msg_t;
 
+typedef enum {
+	VAD_FIRE_TALK = (1 << 0),
+	VAD_FIRE_NOT_TALK = (1 << 1)
+} vad_talk_mask_t;
+
 struct switch_rtp_vad_data {
 	switch_core_session_t *session;
 	switch_codec_t vad_codec;
@@ -119,6 +124,7 @@ struct switch_rtp_vad_data {
 	uint8_t start_count;
 	uint8_t scan_freq;
 	time_t next_scan;
+	int fire_events;
 };
 
 struct switch_rtp_rfc2833_data {
@@ -3805,8 +3811,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 								}
 								rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;
 								if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_TALK)) {
-									const char *val = switch_channel_get_variable(switch_core_session_get_channel(rtp_session->vad_data.session), "fire_talk_events");
-									if (val && switch_true(val)) {
+
+									if ((rtp_session->vad_data.fire_events & VAD_FIRE_TALK)) {
 										switch_event_t *event;
 										if (switch_event_create(&event, SWITCH_EVENT_TALK) == SWITCH_STATUS_SUCCESS) {
 											switch_channel_event_set_data(switch_core_session_get_channel(rtp_session->vad_data.session), event);
@@ -3824,8 +3830,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 									switch_clear_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
 									rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;
 									if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_NOTALK)) {
-										const char *val = switch_channel_get_variable(switch_core_session_get_channel(rtp_session->vad_data.session), "fire_notalk_events");
-										if (val && switch_true(val)) {
+
+										if ((rtp_session->vad_data.fire_events & VAD_FIRE_NOT_TALK)) {
 											switch_event_t *event;
 											if (switch_event_create(&event, SWITCH_EVENT_NOTALK) == SWITCH_STATUS_SUCCESS) {
 												switch_channel_event_set_data(switch_core_session_get_channel(rtp_session->vad_data.session), event);
@@ -4097,6 +4103,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 		return SWITCH_STATUS_GENERR;
 	}
 	memset(&rtp_session->vad_data, 0, sizeof(rtp_session->vad_data));
+
+	if (switch_true(switch_channel_get_variable(switch_core_session_get_channel(rtp_session->vad_data.session), "fire_talk_events"))) {
+		rtp_session->vad_data.fire_events |= VAD_FIRE_TALK;
+	}
+
+	if (switch_true(switch_channel_get_variable(switch_core_session_get_channel(rtp_session->vad_data.session), "fire_not_talk_events"))) {
+		rtp_session->vad_data.fire_events |= VAD_FIRE_NOT_TALK;
+	}
+	
 
 	if (switch_core_codec_init(&rtp_session->vad_data.vad_codec,
 							   codec->implementation->iananame,
