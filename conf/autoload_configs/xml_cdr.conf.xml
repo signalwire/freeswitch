@@ -27,7 +27,7 @@
     <!-- true or false if a leg files are prefixed "a_" -->
     <param name="prefix-a-leg" value="true"/>
 
-    <!-- encode the post data may be 'true' for url encoding, 'false' for no encoding or 'base64' for base64 encoding -->
+    <!-- encode the post data may be 'true' for url encoding, 'false' for no encoding, 'base64' for base64 encoding or 'textxml' for text/xml -->
     <param name="encode" value="true"/>
 
     <!-- optional: set to true to disable Expect: 100-continue lighttpd requires this setting --> 

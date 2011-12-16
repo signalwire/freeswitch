@@ -38,7 +38,7 @@
 #define ENCODING_NONE 0
 #define ENCODING_DEFAULT 1
 #define ENCODING_BASE64 2
-#define ENCODING_TEXTXML 2
+#define ENCODING_TEXTXML 3
 
 static struct {
 	char *cred;
