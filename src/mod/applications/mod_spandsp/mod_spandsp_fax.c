@@ -39,6 +39,8 @@
 #define LOCAL_FAX_MAX_DATAGRAM      400
 #define MAX_FEC_ENTRIES             4
 #define MAX_FEC_SPAN                4
+#define DEFAULT_FEC_ENTRIES         3
+#define DEFAULT_FEC_SPAN            3
 
 #define SPANDSP_EVENT_TXFAXRESULT "spandsp::txfaxresult"
 #define SPANDSP_EVENT_RXFAXRESULT "spandsp::rxfaxresult"
@@ -670,6 +672,9 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	fax_state_t *fax;
 	t38_terminal_state_t *t38;
 	t30_state_t *t30;
+	const char *tmp;
+	int fec_entries = DEFAULT_FEC_ENTRIES;
+	int fec_span = DEFAULT_FEC_SPAN;
 
 
 	session = (switch_core_session_t *) pvt->session;
@@ -678,6 +683,13 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
 
+	if ((tmp = switch_channel_get_variable(channel, "t38_gateway_redundancy"))) {
+			int tmp_value;
+			tmp_value = atoi(tmp);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX changing redundancy from %d:%d to %d:%d\n", fec_span, fec_entries, tmp_value, tmp_value );
+			fec_entries = tmp_value;
+			fec_span = tmp_value;
+	}
 
 	switch (trans_mode) {
 	case AUDIO_MODE:
@@ -738,7 +750,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
             pvt->t38_core = t38_terminal_get_t38_core_state(pvt->t38_state);
 
-            if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, 3, 3, 
+            if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, fec_span, fec_entries, 
                            (udptl_rx_packet_handler_t *) t38_core_rx_ifp_packet, (void *) pvt->t38_core) == NULL) {
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my UDPTL structs\n");
                 return SWITCH_STATUS_FALSE;
@@ -783,7 +795,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 	 pvt->t38_core = t38_gateway_get_t38_core_state(pvt->t38_gateway_state);
 
-	 if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, 3, 3, 
+	 if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, fec_span, fec_entries, 
 					(udptl_rx_packet_handler_t *) t38_core_rx_ifp_packet, (void *) pvt->t38_core) == NULL) {
 		 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my UDPTL structs\n");
 		 t38_gateway_free(pvt->t38_gateway_state);
