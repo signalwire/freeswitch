@@ -375,6 +375,24 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 						
 }
 
+struct read_frame_data {
+	const char *dp;
+	const char *exten;
+	const char *context;
+	long to;
+};
+
+static switch_status_t read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
+{
+	struct read_frame_data *rf = (struct read_frame_data *) user_data;
+
+	if (--rf->to <= 0) {
+		rf->to = -1;
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
 
 #define VALET_APP_SYNTAX "<lotname> <extension>|[ask [<min>] [<max>] [<to>] [<prompt>]|auto in [min] [max]]"
 SWITCH_STANDARD_APP(valet_parking_function)
@@ -387,7 +405,8 @@ SWITCH_STANDARD_APP(valet_parking_function)
 	int is_auto = 0, play_announce = 1;
 	const char *var;
 	valet_token_t *token = NULL;
-
+	struct read_frame_data rf = { 0 };
+	long to_val = 0;
 
 	check_timeouts();
 
@@ -607,14 +626,48 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		}
 
 		valet_send_presence(lot_name, lot, token, SWITCH_TRUE);
-		
+
+		if ((rf.exten = switch_channel_get_variable(channel, "valet_parking_orbit_exten"))) {
+			to_val = 60;
+		}
+
+		if ((var = switch_channel_get_variable(channel, "valet_parking_timeout"))) {
+			long tmp = atol(var);
+
+			if (tmp > 0) {
+				to_val = tmp;
+			}
+		}
+	
+		if (to_val) {
+			switch_codec_implementation_t read_impl;
+			switch_core_session_get_read_impl(session, &read_impl);
+			
+			rf.to = (1000 / (read_impl.microseconds_per_packet / 1000)) * to_val;
+			rf.dp = switch_channel_get_variable(channel, "valet_parking_orbit_dialplan");
+			rf.context = switch_channel_get_variable(channel, "valet_parking_orbit_context");
+		}
+
 
 		args.input_callback = valet_on_dtmf;
 		args.buf = dbuf;
 		args.buflen = sizeof(dbuf);
 
+		if (rf.to) {
+			args.read_frame_callback = read_frame_callback;
+			args.user_data = &rf;
+		}
+
 		while(switch_channel_ready(channel)) {
 			switch_status_t pstatus = switch_ivr_play_file(session, NULL, music, &args);
+
+			if (rf.to == -1) {
+				if (!zstr(rf.exten)) {
+					switch_ivr_session_transfer(session, rf.exten, rf.dp, rf.context);
+				}
+				break;
+			}
+
 			if (pstatus == SWITCH_STATUS_BREAK || pstatus == SWITCH_STATUS_TIMEOUT) {
 				break;
 			}
