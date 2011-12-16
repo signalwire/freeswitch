@@ -156,6 +156,7 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	switch_event_t *event;
 	switch_status_t status;
 	int exec = 0;
+	int api = 0;
 	char *string = act->string;
 	switch_channel_t *channel;
 	switch_core_session_t *use_session = act->session;
@@ -173,6 +174,7 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 
 	string = switch_core_session_strdup(use_session, act->string);
 	exec = 0;
+	api = 0;
 
 	channel = switch_core_session_get_channel(use_session);
 
@@ -201,6 +203,9 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 					}
 				}
 			}
+		} else if (!strncasecmp(string, "api:", 4)) {
+			string += 4;
+			api = 1;
 		}
 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, string, act->value);
@@ -208,11 +213,11 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 
 		if (exec) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute", exec == 1 ? "non-blocking" : "blocking");
-		} 
+		}
 
 		if ((status = switch_core_session_queue_event(use_session, &event)) != SWITCH_STATUS_SUCCESS) {
 			switch_event_destroy(&event);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(use_session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(use_session), SWITCH_LOG_WARNING, "%s event queue failure.\n", 
 							  switch_core_session_get_name(use_session));
 		}
 	}
@@ -230,6 +235,19 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 
 			switch_ivr_broadcast_in_thread(use_session, cmd, exec_flags);
 		}
+	} else if (api) {
+		switch_stream_handle_t stream = { 0 };
+		SWITCH_STANDARD_STREAM(stream);
+		switch_api_execute(string, act->value, NULL, &stream);
+		if (stream.data) {
+			switch_channel_set_variable(channel, "bind_digit_action_api_result", (char *)stream.data);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_DEBUG, "%s Digit match binding [%s][%s] api executed, %s\n", 
+				switch_core_session_get_name(use_session), act->string, act->value, (char *)stream.data);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_DEBUG, "%s Digit match binding [%s][%s] api executed\n",
+				switch_core_session_get_name(use_session), act->string, act->value);
+		}
+		switch_safe_free(stream.data);
 	}
 	
 
@@ -351,7 +369,7 @@ static void bind_to_session(switch_core_session_t *session,
 	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, 0, digit_action_callback, act);
 }
 
-#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>,<value>[,<dtmf target leg>][,<event target leg>]"
+#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>[,<value>][,<dtmf target leg>][,<event target leg>]"
 SWITCH_STANDARD_APP(bind_digit_action_function)
 {
 
@@ -360,6 +378,7 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 	char *argv[6] = { 0 };
 	switch_digit_action_target_t target, bind_target;
 	char *target_str = "self", *bind_target_str = "self";
+	char *value = "";
 
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
@@ -369,10 +388,14 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 	mydata = switch_core_session_strdup(session, data);
 
 	argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-	
-	if (argc < 4 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2]) || zstr(argv[3])) {
+
+	if (argc < 3 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2])) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
 		return;
+	}
+
+	if (argv[3]) {
+		value = argv[3];
 	}
 
 	if (argv[4]) {
@@ -389,14 +412,14 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 
 	switch(target) {
 	case DIGIT_TARGET_PEER:
-		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_PEER, bind_target);
+		bind_to_session(session, argv[0], argv[1], argv[2], value, DIGIT_TARGET_PEER, bind_target);
 		break;
 	case DIGIT_TARGET_BOTH:
-		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_PEER, bind_target);
-		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_SELF, bind_target);
+		bind_to_session(session, argv[0], argv[1], argv[2], value, DIGIT_TARGET_PEER, bind_target);
+		bind_to_session(session, argv[0], argv[1], argv[2], value, DIGIT_TARGET_SELF, bind_target);
 		break;
 	default:
-		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_SELF, bind_target);
+		bind_to_session(session, argv[0], argv[1], argv[2], value, DIGIT_TARGET_SELF, bind_target);
 		break;
 	}
 }
