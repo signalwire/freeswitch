@@ -266,10 +266,6 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	rtmp_notify_call_state(session);
 	rtmp_send_onhangup(session);
 	
-	switch_mutex_lock(tech_pvt->rtmp_session->count_mutex);
-	tech_pvt->rtmp_session->active_sessions--;
-	switch_mutex_unlock(tech_pvt->rtmp_session->count_mutex);
-	
 	switch_core_hash_delete_wrlock(tech_pvt->rtmp_session->session_hash, switch_core_session_get_uuid(session), tech_pvt->rtmp_session->session_rwlock);
 	
 	switch_mutex_lock(tech_pvt->rtmp_session->profile->mutex);
@@ -278,6 +274,10 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 		tech_pvt->rtmp_session->profile->calls = 0;
 	}
 	switch_mutex_unlock(tech_pvt->rtmp_session->profile->mutex);
+
+        switch_mutex_lock(tech_pvt->rtmp_session->count_mutex);
+        tech_pvt->rtmp_session->active_sessions--;
+        switch_mutex_unlock(tech_pvt->rtmp_session->count_mutex);
 
 #ifndef RTMP_DONT_HOLD
 	if (switch_channel_test_flag(channel, CF_HOLD)) {
