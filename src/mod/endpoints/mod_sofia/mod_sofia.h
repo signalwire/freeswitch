@@ -131,6 +131,7 @@ typedef struct private_object private_object_t;
 #include "sofia-sip/sip_parser.h"
 #include "sofia-sip/tport_tag.h"
 #include <sofia-sip/msg.h>
+#include <sofia-sip/uniqueid.h>
 
 typedef enum {
 	DTMF_2833,
@@ -203,6 +204,7 @@ typedef enum {
 	PFLAG_WORKER_RUNNING,
 	PFLAG_UNREG_OPTIONS_FAIL,
 	PFLAG_DISABLE_TIMER,
+	PFLAG_ENABLE_RFC5626,
 	PFLAG_DISABLE_100REL,
 	PFLAG_AGGRESSIVE_NAT_DETECTION,
 	PFLAG_RECIEVED_IN_NAT_REG_CONTACT,

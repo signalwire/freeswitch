@@ -1807,6 +1807,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_event_t *s_event;
 	int use_100rel = !sofia_test_pflag(profile, PFLAG_DISABLE_100REL);
 	int use_timer = !sofia_test_pflag(profile, PFLAG_DISABLE_TIMER);
+	int use_rfc_5626 = sofia_test_pflag(profile, PFLAG_ENABLE_RFC5626);
 	const char *supported = NULL;
 	int sanity;
 	switch_thread_t *worker_thread;
@@ -1828,7 +1829,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		goto end;
 	}
 
-	supported = switch_core_sprintf(profile->pool, "%s%sprecondition, path, replaces", use_100rel ? "100rel, " : "", use_timer ? "timer, " : "");
+	supported = switch_core_sprintf(profile->pool, "%s%s%sprecondition, path, replaces", use_100rel ? "100rel, " : "", use_timer ? "timer, " : "", use_rfc_5626 ? "outbound, " : "");
 
 	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_nat_get_type()) {
 		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
@@ -2293,7 +2294,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
 			const char *sipip, *format;
 			switch_uuid_t uuid;
-			uint32_t ping_freq = 0, extension_in_contact = 0, distinct_to = 0;
+			uint32_t ping_freq = 0, extension_in_contact = 0, distinct_to = 0, rfc_5626 = 0;
 			int ping_max = 1, ping_min = -1;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
@@ -2308,7 +2309,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*retry_seconds = "30",
 				*timeout_seconds = "60",
 				*from_user = "", *from_domain = NULL, *outbound_proxy = NULL, *register_proxy = NULL, *contact_host = NULL,
-				*contact_params = NULL, *params = NULL, *register_transport = NULL;
+				*contact_params = NULL, *params = NULL, *register_transport = NULL,
+				*reg_id = NULL, *str_rfc_5626 = NULL;
 
 			if (!context) {
 				context = "default";
@@ -2431,6 +2433,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					outbound_proxy = val;
 				} else if (!strcmp(var, "distinct-to")) {
 					distinct_to = switch_true(val);
+				} else if (!strcmp(var, "rfc-5626")) {
+					rfc_5626 = switch_true(val);
+				} else if (!strcmp(var, "reg-id")) {
+					reg_id = val;
 				} else if (!strcmp(var, "contact-params")) {
 					contact_params = val;
 				} else if (!strcmp(var, "register-transport")) {
@@ -2443,6 +2449,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 					gateway->register_transport = transport;
 				}
+			}
+			/* RFC 5626 enable in the GW profile and the UA profile */
+			if (rfc_5626 && sofia_test_pflag(profile, PFLAG_ENABLE_RFC5626)) {
+				char str_guid[su_guid_strlen + 1];
+				su_guid_t guid[1];
+				su_guid_generate(guid);
+				su_guid_sprintf(str_guid, su_guid_strlen + 1, guid);
+				str_rfc_5626 = switch_core_sprintf(gateway->pool, ";reg-id=%s;+sip.instance=\"<urn:uuid:%s>\"",reg_id,str_guid);
 			}
 
 			if (ping_freq) {
@@ -2610,17 +2624,36 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			}
 
 			if (extension_in_contact) {
-				format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
-				gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
-																sipip,
-																sofia_glue_transport_has_tls(gateway->register_transport) ?
-																profile->tls_sip_port : profile->sip_port, params);
+				if (rfc_5626) {
+					format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d>%s" : "<sip:%s@%s:%d%s>%s";
+					gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
+							sipip,
+							sofia_glue_transport_has_tls(gateway->register_transport) ?
+							profile->tls_sip_port : profile->sip_port, params, str_rfc_5626);
+
+				} else {
+					format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s%s>";
+					gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
+							sipip,
+							sofia_glue_transport_has_tls(gateway->register_transport) ?
+							profile->tls_sip_port : profile->sip_port, params,contact_params);
+				}
 			} else {
-				format = strchr(sipip, ':') ? "<sip:gw+%s@[%s]:%d%s>" : "<sip:gw+%s@%s:%d%s>";
-				gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
-																sipip,
-																sofia_glue_transport_has_tls(gateway->register_transport) ?
-																profile->tls_sip_port : profile->sip_port, params);
+				if (rfc_5626) {
+					format = strchr(sipip, ':') ? "<sip:gw+%s@[%s]:%d%s>%s" : "<sip:gw+%s@%s:%d%s>%s";
+					gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
+							sipip,
+							sofia_glue_transport_has_tls(gateway->register_transport) ?
+							profile->tls_sip_port : profile->sip_port, params, str_rfc_5626);
+
+				} else {
+					format = strchr(sipip, ':') ? "<sip:gw+%s@[%s]:%d%s>" : "<sip:gw+%s@%s:%d%s>";
+					gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
+							sipip,
+							sofia_glue_transport_has_tls(gateway->register_transport) ?
+							profile->tls_sip_port : profile->sip_port, params);
+
+				}
 			}
 
 			gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
@@ -4215,6 +4248,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "enable-timer")) {
 						if (!switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_DISABLE_TIMER);
+						}
+					} else if (!strcasecmp(var, "enable-rfc-5626")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ENABLE_RFC5626);
 						}
 					} else if (!strcasecmp(var, "minimum-session-expires")) {
 						profile->minimum_session_expires = atoi(val);
