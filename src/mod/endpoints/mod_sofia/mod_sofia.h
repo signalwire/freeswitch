@@ -800,6 +800,7 @@ typedef enum {
 	AUTH_OK,
 	AUTH_FORBIDDEN,
 	AUTH_STALE,
+	AUTH_RENEWED,
 } auth_res_t;
 
 typedef struct {

@@ -952,7 +952,7 @@ static void our_sofia_event_callback(nua_event_t event,
 											REG_INVITE, NULL, NULL, NULL);
 		}
 
-		if (auth_res != AUTH_OK) {
+		if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
 			//switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
 			goto done;

@@ -1371,7 +1371,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 		}
 
-		if (auth_res != AUTH_OK && !stale) {
+		if (auth_res != AUTH_OK && auth_res != AUTH_RENEWED && !stale) {
 			if (auth_res == AUTH_FORBIDDEN) {
 				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 				forbidden = 1;
@@ -1483,41 +1483,49 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		const char *realm = reg_host;
 		char *url = NULL;
 		char *contact = NULL;
+		switch_bool_t update_registration = SWITCH_FALSE;
 
 		if (auth_params) {
 			username = switch_event_get_header(auth_params, "sip_auth_username");
 			realm = switch_event_get_header(auth_params, "sip_auth_realm");
 		}
+		if (auth_res != AUTH_RENEWED) {
+			if (multi_reg) {
 
-		if (multi_reg) {
+				if (delete_subs) {
+					if (reg_count == 1) {
+						sql = switch_mprintf("update sip_subscriptions set expires=%ld where sip_user='%q' and sip_host='%q' and contact='%q'", 
+								(long) switch_epoch_time_now(NULL), to_user, sub_host, contact_str);
+						sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+					}
+				}
 
-			if (delete_subs) {
-				if (reg_count == 1) {
-					sql = switch_mprintf("update sip_subscriptions set expires=%ld where sip_user='%q' and sip_host='%q' and contact='%q'", 
-										 (long) switch_epoch_time_now(NULL), to_user, sub_host, contact_str);
+
+				if (multi_reg_contact) {
+					sql =
+						switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and contact='%q'", to_user, reg_host, contact_str);
+				} else {
+					sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
+				}
+			} else {
+				if (delete_subs) {
+					sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q'", to_user, sub_host);
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 				}
+				sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, reg_host);
 			}
-				
-
-			if (multi_reg_contact) {
-				sql =
-					switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and contact='%q'", 
-								   to_user, reg_host, contact_str);
-			} else {
-				sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
-			}
+			switch_mutex_lock(profile->ireg_mutex);
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		} else {
-			if (delete_subs) {
-				sql = switch_mprintf("update sip_subscriptions set expires=%ld where sip_user='%q' and sip_host='%q'", 
-									 (long) switch_epoch_time_now(NULL), to_user, sub_host);
-				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+			char buf[32] = "";
+			sql = switch_mprintf("select count(*) from sip_registrations where sip_user='%q' and sip_host='%q' and contact='%q'", to_user, reg_host, contact_str);
+
+			sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
+			switch_safe_free(sql);
+			if (atoi(buf) > 0) {
+				update_registration = SWITCH_TRUE;
 			}
-			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", 
-								 to_user, reg_host);
 		}
-		switch_mutex_lock(profile->ireg_mutex);
-		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 
@@ -1530,21 +1538,25 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_safe_free(url);
 		switch_safe_free(contact);
 
-		sql = switch_mprintf("insert into sip_registrations "
-							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
-							 "user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm,"
-							 "mwi_user,mwi_host, orig_server_host, orig_hostname) "
-							 "values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q')", 
-							 call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : reg_host, 
-							 contact_str, reg_desc, rpid, (long) switch_epoch_time_now(NULL) + (long) exptime + 60, 
-							 agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm, 
-							 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname);
-							 
+		if (!update_registration) {
+			sql = switch_mprintf("insert into sip_registrations "
+					"(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
+					"user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm,"
+					"mwi_user,mwi_host, orig_server_host, orig_hostname) "
+					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q')", 
+					call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : reg_host, 
+					contact_str, reg_desc, rpid, (long) switch_epoch_time_now(NULL) + (long) exptime + 60, 
+					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm, 
+					mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname);
+		} else {
+			sql = switch_mprintf("update sip_registrations set expires = %ld where sip_user='%q' and sip_host='%q' and contact='%q'", (long) switch_epoch_time_now(NULL) + (long) exptime + 60, to_user, reg_host, contact_str);
+		}				 
+
 		if (sql) {
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
 
-		if (sofia_reg_reg_count(profile, to_user, reg_host) == 1) {
+		if (!update_registration && sofia_reg_reg_count(profile, to_user, reg_host) == 1) {
 			sql = switch_mprintf("delete from sip_presence where sip_user='%q' and sip_host='%q' and profile_name='%q' and open_closed='closed'", 
 								 to_user, reg_host, profile->name);
 			if (mod_sofia_globals.debug_presence > 0) {
@@ -2658,8 +2670,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	switch_safe_free(input2);
 
   skip_auth:
-
-	if (first && ret == AUTH_OK) {
+	if (first && (ret == AUTH_OK || ret == AUTH_RENEWED)) {
 		if (v_event) {
 			switch_event_create_plain(v_event, SWITCH_EVENT_REQUEST_PARAMS);
 		}
@@ -2785,6 +2796,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		switch_assert(sql != NULL);
 		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
 		switch_safe_free(sql);
+
+		if (ret == AUTH_OK)
+			ret = AUTH_RENEWED;
 	}
 
 	switch_event_destroy(&params);
@@ -2804,7 +2818,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	switch_safe_free(response);
 
 	if (reg_count && !*reg_count) {
-		if (ret == AUTH_OK) {
+		if ((ret == AUTH_OK || ret == AUTH_RENEWED)) {
 			if (ncl) {
 				*reg_count = ncl;
 			} else {
