@@ -2463,6 +2463,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					gateway->register_transport = transport;
 				}
 			}
+#ifndef WIN32
+			/* Windows todo figure this out! */
 			/* RFC 5626 enable in the GW profile and the UA profile */
 			if (rfc_5626 && sofia_test_pflag(profile, PFLAG_ENABLE_RFC5626)) {
 				char str_guid[su_guid_strlen + 1];
@@ -2471,6 +2473,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				su_guid_sprintf(str_guid, su_guid_strlen + 1, guid);
 				str_rfc_5626 = switch_core_sprintf(gateway->pool, ";reg-id=%s;+sip.instance=\"<urn:uuid:%s>\"",reg_id,str_guid);
 			}
+#endif
 
 			if (ping_freq) {
 				if (ping_freq >= 5) {
