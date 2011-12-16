@@ -1857,6 +1857,9 @@ static void conference_loop_fn_lock_toggle(conference_member_t *member, caller_c
 	if (member == NULL)
 		return;
 
+	if (switch_test_flag(member->conference, CFLAG_WAIT_MOD) && !switch_test_flag(member, MFLAG_MOD) )
+		return; 
+
 	if (!switch_test_flag(member->conference, CFLAG_LOCKED)) {
 		if (member->conference->is_locked_sound) {
 			conference_play_file(member->conference, member->conference->is_locked_sound, CONF_DEFAULT_LEADIN, NULL, 0);
