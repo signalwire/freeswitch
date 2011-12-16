@@ -4306,11 +4306,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	*new_session = NULL;
 
-	if (sofia_test_pflag(profile, PFLAG_STANDBY)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "System Paused\n");
-		goto error;
-	}
-
 	if (!outbound_profile || zstr(outbound_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid Empty Destination\n");
 		goto error;
@@ -4412,6 +4407,13 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		profile = gateway_ptr->profile;
+
+		if (profile && sofia_test_pflag(profile, PFLAG_STANDBY)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "System Paused\n");
+			cause = SWITCH_CAUSE_SYSTEM_SHUTDOWN;
+			goto error;
+		}
+		
 		tech_pvt->gateway_name = switch_core_session_strdup(nsession, gateway_ptr->name);
 		switch_channel_set_variable(nchannel, "sip_gateway_name", gateway_ptr->name);
 
@@ -4487,6 +4489,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		if (!(profile = sofia_glue_find_profile(profile_name))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Profile\n");
 			cause = SWITCH_CAUSE_INVALID_PROFILE;
+			goto error;
+		}
+
+		if (profile && sofia_test_pflag(profile, PFLAG_STANDBY)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "System Paused\n");
+			cause = SWITCH_CAUSE_SYSTEM_SHUTDOWN;
 			goto error;
 		}
 
