@@ -1520,6 +1520,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			char buf[32] = "";
 			sql = switch_mprintf("select count(*) from sip_registrations where sip_user='%q' and sip_host='%q' and contact='%q'", to_user, reg_host, contact_str);
 
+			switch_mutex_lock(profile->ireg_mutex);
+
 			sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
 			switch_safe_free(sql);
 			if (atoi(buf) > 0) {
