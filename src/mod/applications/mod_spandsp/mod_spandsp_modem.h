@@ -57,6 +57,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #ifndef WIN32
+#ifdef __UCLIBC__
+#else
 #if defined(HAVE_BYTESWAP_H)
 #include <byteswap.h>
 #elif defined(USE_SYS_ENDIAN_H)
@@ -81,6 +83,7 @@
 #endif
 #include <sys/time.h>
 #include <sys/signal.h>
+#endif
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
