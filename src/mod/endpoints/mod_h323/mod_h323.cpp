@@ -201,10 +201,14 @@ SWITCH_END_EXTERN_C
 
 void h_timer(unsigned sec)
 {
+#ifdef WIN32
+	switch_sleep(sec * 1000000);
+#else
 	timeval timeout;
 	timeout.tv_sec = sec;
 	timeout.tv_usec = 0; 
 	select(0, NULL, NULL, NULL, &timeout);
+#endif
 }
 
 
@@ -1098,7 +1102,7 @@ bool FSH323Connection::OnSendReleaseComplete(H323SignalPDU & pdu)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::OnSendReleaseComplete cause = %u\n",(switch_call_cause_t)pdu.GetQ931().GetCause());	
 
-	switch_channel_hangup(m_fsChannel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);			
+	switch_channel_hangup(m_fsChannel, (switch_call_cause_t) pdu.GetQ931().GetCause());
 	return H323Connection::OnSendReleaseComplete(pdu);
 }
 
@@ -1899,6 +1903,7 @@ FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel(FSH323Connection& connectio
 	, m_capability(&capability)
 	, m_RTPlocalPort(dataPort)
 	, m_sessionID(sessionID)
+	, m_rtp_resetting(0)
 { 
 	m_RTPlocalIP = (const char *)ip.AsString();
 	SetExternalAddress(H323TransportAddress(ip, dataPort), H323TransportAddress(ip, dataPort+1));
@@ -2058,9 +2063,6 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 			, GetMainTypes[m_capability->GetMainType()],(const char*)(m_capability->GetFormatName()),this);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"%s Unsupported ptime of %u on %s %s codec %s for connection [%p]\n",switch_channel_get_name(m_fsChannel),((GetDirection() == IsReceiver)? " read" : " write")
-		, GetMainTypes[m_capability->GetMainType()],(const char*)(m_capability->GetFormatName()),this);
-	
 	if (GetDirection() == IsReceiver) {
 		//m_readFrame.rate = tech_pvt->read_codec.implementation->actual_samples_per_second;
 		
@@ -2125,7 +2127,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 	
 	bool ch_port = false;
 	if (tech_pvt->rtp_session != NULL){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->old remot port = %d new remote port = %d\n",switch_rtp_get_remote_port(tech_pvt->rtp_session),m_RTPremotePort);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->old remote port = %d new remote port = %d\n",switch_rtp_get_remote_port(tech_pvt->rtp_session),m_RTPremotePort);
 		if ((switch_rtp_get_remote_port(tech_pvt->rtp_session) != m_RTPremotePort) && (GetDirection() != IsReceiver) && (m_conn->m_rtp_resetting == 1)){
 			ch_port = true;
 			m_conn->m_startRTP = false;
@@ -2413,9 +2415,13 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 	switch_mutex_lock(tech_pvt->h323_mutex);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 	switch_mutex_unlock(tech_pvt->h323_mutex);
+
 	while (tech_pvt->active_connection){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Wait clear h323 connection\n");
 		h_timer(1);
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "H323 connection was cleared successfully\n");
+	
 	return SWITCH_STATUS_SUCCESS;
 }
