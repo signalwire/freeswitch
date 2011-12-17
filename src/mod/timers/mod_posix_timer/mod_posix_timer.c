@@ -61,12 +61,20 @@ static void posix_timer_notify(sigval_t data)
 {
 	interval_timer_t *it = (interval_timer_t *)data.sival_ptr;
 	switch_mutex_lock(it->mutex);
-	it->tick += 1 + timer_getoverrun(it->timer);
-	switch_thread_cond_broadcast(it->cond);
+	if (it->users) {
+		it->tick += 1 + timer_getoverrun(it->timer);
+		switch_thread_cond_broadcast(it->cond);
+	}
 	switch_mutex_unlock(it->mutex);
 
 	if (globals.shutdown) {
-		timer_delete(it->timer);
+		switch_mutex_lock(it->mutex);
+		if (it->users) {
+			timer_delete(it->timer);
+			memset(&it->timer, 0, sizeof(it->timer));
+			it->users = 0;
+		}
+		switch_mutex_unlock(it->mutex);
 	}
 }
 
