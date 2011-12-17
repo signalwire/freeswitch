@@ -77,7 +77,7 @@ AC_SUBST(grammardir)
 AC_DEFINE_UNQUOTED([SWITCH_GRAMMAR_DIR],"${grammardir}",[where to put grammar files])
 
 AC_ARG_WITH([scriptdir],
-	[AS_HELP_STRING([--with-scriptdir=DIR], [Put script files into this location (default: $prefix/script)])], [scriptdir="$withval"], [scriptdir="$prefix/script"])
+	[AS_HELP_STRING([--with-scriptdir=DIR], [Put script files into this location (default: $prefix/scripts)])], [scriptdir="$withval"], [scriptdir="$prefix/scripts"])
 AC_SUBST(scriptdir)
 AC_DEFINE_UNQUOTED([SWITCH_SCRIPT_DIR],"${scriptdir}",[where to put script files])
 
