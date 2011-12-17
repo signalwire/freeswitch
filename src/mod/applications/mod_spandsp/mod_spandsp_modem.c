@@ -165,6 +165,7 @@ char *modem_state2name(int state)
 int modem_close(modem_t *modem) 
 {
 	int r = 0;
+	switch_status_t was_running = switch_test_flag(modem, MODEM_FLAG_RUNNING);
 
 	switch_clear_flag(modem, MODEM_FLAG_RUNNING);
 
@@ -199,16 +200,19 @@ int modem_close(modem_t *modem)
 
 	unlink(modem->devlink);
 
-	switch_mutex_lock(globals.mutex);
-	globals.REF_COUNT--;
-	switch_mutex_unlock(globals.mutex);
+	if (was_running) {
+		switch_mutex_lock(globals.mutex);
+		globals.REF_COUNT--;
+		switch_mutex_unlock(globals.mutex);
+	}
 
 	return r;
 }
 
 
-int modem_init(modem_t *modem, modem_control_handler_t control_handler)
+switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handler)
 {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 #ifdef WIN32
 	COMMTIMEOUTS timeouts={0};
 #endif
@@ -228,7 +232,8 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 
 	if (modem->master < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to initialize pty\n");
-		return -1;
+		status = SWITCH_STATUS_FALSE;
+		goto end;
     }
 
 	modem->stty = ttyname(modem->slave);
@@ -245,12 +250,13 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 	FILE_FLAG_OVERLAPPED,
 	0);
 	if(modem->master==INVALID_HANDLE_VALUE) {
+		status = SWITCH_STATUS_FALSE;
 		if(GetLastError()==ERROR_FILE_NOT_FOUND) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: Serial port does not exist\n");
-			return -1;
+			goto end;
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: Serial port open error\n");
-		return -1;
+		goto end;
 	}
 #elif !defined(HAVE_POSIX_OPENPT)
     modem->master = open("/dev/ptmx", O_RDWR);
@@ -303,13 +309,15 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
     if (symlink(modem->stty, modem->devlink)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to create %s symbolic link\n", modem->devlink);
 		modem_close(modem);
-		return -1;
+		status = SWITCH_STATUS_FALSE;
+		goto end;
     }
 
     if (fcntl(modem->master, F_SETFL, fcntl(modem->master, F_GETFL, 0) | O_NONBLOCK)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set up non-blocking read on %s\n", ttyname(modem->master));
-		modem_close(modem);
-        return -1;
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set up non-blocking read on %s\n", ttyname(modem->master));
+	    modem_close(modem);
+	    status = SWITCH_STATUS_FALSE;
+	    goto end;
     }
 #else
 	timeouts.ReadIntervalTimeout=50;
@@ -324,17 +332,18 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 	if(!SetCommTimeouts(modem->master, &timeouts)){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set up non-blocking read on %s\n", modem->devlink);
 		modem_close(modem);
-		return -1;
+		status = SWITCH_STATUS_FALSE;
+		goto end;
 	}
 	modem->threadAbort = CreateEvent(NULL, TRUE, FALSE, NULL);
 #endif
 	
-    if (!(modem->t31_state = t31_init(NULL, t31_at_tx_handler, modem, t31_call_control_handler, modem, NULL, NULL))) {
+	if (!(modem->t31_state = t31_init(NULL, t31_at_tx_handler, modem, t31_call_control_handler, modem, NULL, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot initialize the T.31 modem\n");
 		modem_close(modem);
-        return -1;
-
-    }
+		status = SWITCH_STATUS_FALSE;
+		goto end;
+	}
 
 	if (spandsp_globals.modem_verbose) {
 		span_log_set_message_handler(&modem->t31_state->logging, spanfax_log_message);
@@ -364,7 +373,8 @@ int modem_init(modem_t *modem, modem_control_handler_t control_handler)
 	globals.REF_COUNT++;
 	switch_mutex_unlock(globals.mutex);
 
-	return 0;
+end:
+	return status;
 }
 
 static switch_endpoint_interface_t *modem_endpoint_interface = NULL;
@@ -1241,78 +1251,80 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 	globals.THREADCOUNT++;
 	switch_mutex_unlock(globals.mutex);
 
-	switch_mutex_lock(modem->cond_mutex);
+	if (switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
+		switch_mutex_lock(modem->cond_mutex);
 
-	while (switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
-		
+		while (switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
+
 #ifndef WIN32
-		r = modem_wait_sock(modem->master, -1, MODEM_POLL_READ | MODEM_POLL_ERROR);
+			r = modem_wait_sock(modem->master, -1, MODEM_POLL_READ | MODEM_POLL_ERROR);
 #else
-		r = modem_wait_sock(modem, -1, MODEM_POLL_READ | MODEM_POLL_ERROR);
+			r = modem_wait_sock(modem, -1, MODEM_POLL_READ | MODEM_POLL_ERROR);
 #endif
 
-		if (!switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
-			break;
-		}
-
-		if (r < 0 || !(r & MODEM_POLL_READ) || (r & MODEM_POLL_ERROR)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Read on master [%s] [%d]\n", modem->devlink, r);
-			break;
-		}
-
-		modem->last_event = switch_time_now();
-
-		if (switch_test_flag(modem, MODEM_FLAG_XOFF)) {
-			switch_thread_cond_wait(modem->cond, modem->cond_mutex);
-			modem->last_event = switch_time_now();
-		}
-
-		avail = sizeof(buf) - modem->t31_state->tx.in_bytes + modem->t31_state->tx.out_bytes - 1;
-
-		if (avail == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Buffer Full, retrying....\n");
-			switch_yield(10000);
-			continue;
-		}
-		
-#ifndef WIN32		
-		r = read(modem->master, buf, avail);
-#else
-		o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-		/* Initialize the rest of the OVERLAPPED structure to zero. */
-		o.Internal = 0;
-		o.InternalHigh = 0;
-		o.Offset = 0;
-		o.OffsetHigh = 0;
-		assert(o.hEvent);
-		if (!ReadFile(modem->master, buf, avail, &readBytes, &o)) {
-			GetOverlappedResult(modem->master,&o,&readBytes,TRUE);
-		}
-		CloseHandle (o.hEvent);
-		r = readBytes;
-#endif
-
-		t31_at_rx(modem->t31_state, buf, r);
-
-		memset(tmp, 0, sizeof(tmp));
-		if (!strncasecmp(buf, "AT", 2)) {
-			int x;
-			strncpy(tmp, buf, r);
-			for(x = 0; x < r; x++) {
-				if(tmp[x] == '\r' || tmp[x] == '\n') {
-					tmp[x] = '\0';
-				}
+			if (!switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
+				break;
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1,   "Command on %s [%s]\n", modem->devlink, tmp);
+			if (r < 0 || !(r & MODEM_POLL_READ) || (r & MODEM_POLL_ERROR)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Read on master [%s] [%d]\n", modem->devlink, r);
+				break;
+			}
+
+			modem->last_event = switch_time_now();
+
+			if (switch_test_flag(modem, MODEM_FLAG_XOFF)) {
+				switch_thread_cond_wait(modem->cond, modem->cond_mutex);
+				modem->last_event = switch_time_now();
+			}
+
+			avail = sizeof(buf) - modem->t31_state->tx.in_bytes + modem->t31_state->tx.out_bytes - 1;
+
+			if (avail == 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Buffer Full, retrying....\n");
+				switch_yield(10000);
+				continue;
+			}
+
+#ifndef WIN32		
+			r = read(modem->master, buf, avail);
+#else
+			o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+			/* Initialize the rest of the OVERLAPPED structure to zero. */
+			o.Internal = 0;
+			o.InternalHigh = 0;
+			o.Offset = 0;
+			o.OffsetHigh = 0;
+			assert(o.hEvent);
+			if (!ReadFile(modem->master, buf, avail, &readBytes, &o)) {
+				GetOverlappedResult(modem->master,&o,&readBytes,TRUE);
+			}
+			CloseHandle (o.hEvent);
+			r = readBytes;
+#endif
+
+			t31_at_rx(modem->t31_state, buf, r);
+
+			memset(tmp, 0, sizeof(tmp));
+			if (!strncasecmp(buf, "AT", 2)) {
+				int x;
+				strncpy(tmp, buf, r);
+				for(x = 0; x < r; x++) {
+					if(tmp[x] == '\r' || tmp[x] == '\n') {
+						tmp[x] = '\0';
+					}
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1,   "Command on %s [%s]\n", modem->devlink, tmp);
+			}
 		}
-	}
 
-	switch_mutex_unlock(modem->cond_mutex);
+		switch_mutex_unlock(modem->cond_mutex);
 
-	if (switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
-		modem_close(modem);
+		if (switch_test_flag(modem, MODEM_FLAG_RUNNING)) {
+			modem_close(modem);
+		}
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,   "Thread ended for %s\n", modem->devlink);

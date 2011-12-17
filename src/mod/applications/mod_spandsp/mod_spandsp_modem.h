@@ -146,7 +146,7 @@ typedef struct modem modem_t;
 
 char *modem_state2name(int state);
 int modem_close(struct modem *fm);
-int modem_init(struct modem *fm, modem_control_handler_t control_handler);
+switch_status_t modem_init(struct modem *fm, modem_control_handler_t control_handler);
 
 #endif //MODEM_SUPPORT
 
