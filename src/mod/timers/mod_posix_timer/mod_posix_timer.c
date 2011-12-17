@@ -68,13 +68,13 @@ static void posix_timer_notify(sigval_t data)
 	switch_mutex_unlock(it->mutex);
 
 	if (globals.shutdown) {
-		switch_mutex_lock(it->mutex);
+		switch_mutex_lock(globals.interval_timers_mutex);
 		if (it->users) {
 			timer_delete(it->timer);
 			memset(&it->timer, 0, sizeof(it->timer));
 			it->users = 0;
 		}
-		switch_mutex_unlock(it->mutex);
+		switch_mutex_unlock(globals.interval_timers_mutex);
 	}
 }
 
@@ -133,8 +133,10 @@ static switch_status_t posix_timer_stop_interval(interval_timer_t *it)
 	if (it->users > 0) {
 		it->users--;
 		if (it->users == 0) {
+			switch_mutex_lock(it->mutex);
 			timer_delete(it->timer);
 			memset(&it->timer, 0, sizeof(it->timer));
+			switch_mutex_unlock(it->mutex);
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
