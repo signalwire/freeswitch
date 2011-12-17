@@ -271,7 +271,7 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 		if (strlen(tech_pvt->caller_profile->destination_number) == 0) {/* no digit yet */
 			send_start_tone(listener, SKINNY_TONE_DIALTONE, 0, line_instance, tech_pvt->call_id);
 		}
-		if (backspace) { /* backspace */
+		if (backspace && strlen(tech_pvt->caller_profile->destination_number)) { /* backspace */
 			tech_pvt->caller_profile->destination_number[strlen(tech_pvt->caller_profile->destination_number)-1] = '\0';
 			if (strlen(tech_pvt->caller_profile->destination_number) == 0) {
 				send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_OFF_HOOK, 0xffff);
