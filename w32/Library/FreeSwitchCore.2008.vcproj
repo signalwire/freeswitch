@@ -691,6 +691,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_curl.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_dso.c"
 				>
 			</File>

@@ -9,11 +9,6 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 	esl_status_t status;
 	time_t exp = 0;
 
-	if (fork()) {
-		close(client_sock);
-		return;
-	}
-
 	esl_attach_handle(&handle, client_sock, addr);
 
 	esl_log(ESL_LOG_INFO, "Connected! %d\n", handle.sock);
@@ -53,7 +48,7 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 int main(void)
 {
 	esl_global_set_default_logger(7);
-	esl_listen("localhost", 8084, mycallback);
+	esl_listen("localhost", 8084, mycallback, 100000);
 	
 	return 0;
 }

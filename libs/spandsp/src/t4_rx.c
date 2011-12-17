@@ -82,6 +82,7 @@
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
 #if defined(SPANDSP_SUPPORT_T85)

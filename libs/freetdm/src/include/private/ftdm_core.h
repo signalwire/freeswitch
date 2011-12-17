@@ -104,6 +104,10 @@
 #include <sys/time.h>
 #endif
 
+#ifdef __linux__
+#include <execinfo.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -219,6 +223,27 @@ extern "C" {
 	} while(0);
 
 #define ftdm_is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119)
+
+#ifdef __linux__
+#define ftdm_print_stack(level) \
+	do { \
+		void *__stacktrace[100] = { 0 }; \
+		char **__symbols = NULL; \
+		int __size = 0; \
+		int __i = 0; \
+		__size = backtrace(__stacktrace, ftdm_array_len(__stacktrace)); \
+		__symbols = backtrace_symbols(__stacktrace, __size); \
+		if (__symbols) { \
+			for (__i = 0; __i < __size; __i++) { \
+				ftdm_log(__level, "%s\n", __symbols[i]); \
+			} \
+		free(__symbols); \
+		} \
+	} while (0);
+#else
+#define ftdm_print_stack(level) ftdm_log(level, "FTDM_PRINT_STACK is not implemented in this operating system!\n");
+#endif
+
 
 #define FTDM_SPAN_IS_BRI(x)	((x)->trunk_type == FTDM_TRUNK_BRI || (x)->trunk_type == FTDM_TRUNK_BRI_PTMP)
 /*!

@@ -54,20 +54,37 @@
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/saturated.h"
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T85)
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t81_t82_arith_coding.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t85.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T42)
+#include "spandsp/t42.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+#include "spandsp/t43.h"
 #endif
 #include "spandsp/t4_t6_decode.h"
 #include "spandsp/t4_t6_encode.h"
 #include "spandsp/image_translate.h"
 
 #include "spandsp/private/logging.h"
-#if defined(SPANDSP_SUPPORT_T85)
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t85.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T42)
+#include "spandsp/private/t42.h"
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+#include "spandsp/private/t43.h"
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"

@@ -36,6 +36,7 @@
 
 #include <switch.h>
 #include <switch_stun.h>
+#include <apr_network_io.h>
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
@@ -98,6 +99,11 @@ typedef struct {
 	char body[SWITCH_RTCP_MAX_BUF_LEN];
 } rtcp_msg_t;
 
+typedef enum {
+	VAD_FIRE_TALK = (1 << 0),
+	VAD_FIRE_NOT_TALK = (1 << 1)
+} vad_talk_mask_t;
+
 struct switch_rtp_vad_data {
 	switch_core_session_t *session;
 	switch_codec_t vad_codec;
@@ -118,6 +124,7 @@ struct switch_rtp_vad_data {
 	uint8_t start_count;
 	uint8_t scan_freq;
 	time_t next_scan;
+	int fire_events;
 };
 
 struct switch_rtp_rfc2833_data {
@@ -185,7 +192,7 @@ struct switch_rtp {
 	uint32_t last_read_ts;
 	uint32_t last_cng_ts;
 	uint32_t last_write_samplecount;
-	uint32_t next_write_samplecount;
+	uint32_t delay_samples;
 	uint32_t max_next_write_samplecount;
 	uint32_t queue_delay;
 	switch_time_t last_write_timestamp;
@@ -455,6 +462,16 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 
 	return RESULT_CONTINUE;
 }
+
+struct switch_rtcp_report_block {
+	uint32_t ssrc; /* The SSRC identifier of the source to which the information in this reception report block pertains. */
+	unsigned int fraction :8; /* The fraction of RTP data packets from source SSRC_n lost since the previous SR or RR packet was sent */
+	int lost :24; /* The total number of RTP data packets from source SSRC_n that have been lost since the beginning of reception */
+	uint32_t highest_sequence_number_received;
+	uint32_t jitter; /* An estimate of the statistical variance of the RTP data packet interarrival time, measured in timestamp units and expressed as an unsigned integer. */
+	uint32_t lsr; /* The middle 32 bits out of 64 in the NTP timestamp */
+	uint32_t dlsr; /* The delay, expressed in units of 1/65536 seconds, between receiving the last SR packet from source SSRC_n and sending this reception report block */
+};
 
 static int global_init = 0;
 static int rtp_common_write(switch_rtp_t *rtp_session,
@@ -2318,7 +2335,6 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 
 			rtp_session->dtmf_data.out_digit_dur = 0;
 			set_dtmf_delay(rtp_session, 40, 500);
-			
 			return;
 		}
 	}
@@ -2327,16 +2343,23 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 		void *pop;
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-			if (rtp_session->last_write_ts < rtp_session->next_write_samplecount && rtp_session->timer.samplecount < rtp_session->max_next_write_samplecount) {
+			if (rtp_session->timer.samplecount < rtp_session->max_next_write_samplecount) {
 				return;
 			}
+
 			if (rtp_session->timer.samplecount >= rtp_session->max_next_write_samplecount) {
 				rtp_session->queue_delay = 0;
 			}
 
-		} else {
-			if (rtp_session->last_write_ts < rtp_session->next_write_samplecount) {
-				return;
+		} else if (rtp_session->queue_delay) {
+			if (rtp_session->delay_samples >= rtp_session->samples_per_interval) {
+				rtp_session->delay_samples -= rtp_session->samples_per_interval;
+			} else {
+				rtp_session->delay_samples = 0;
+			}
+
+			if (!rtp_session->delay_samples) {
+				rtp_session->queue_delay = 0;
 			}
 		}
 		
@@ -3476,6 +3499,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rt
 	/* A fresh frame has been found! */
 	if (rtp_session->rtcp_fresh_frame) {
 		struct switch_rtcp_senderinfo* sr = (struct switch_rtcp_senderinfo*)rtp_session->rtcp_recv_msg.body;
+		/* we remove the header lenght because with directly have a pointer on the body */
+		unsigned packet_length = (ntohs((uint16_t) rtp_session->rtcp_recv_msg.header.length) + 1) * 4 - sizeof(switch_rtcp_hdr_t);
+		unsigned int reportsOffset = sizeof(struct switch_rtcp_senderinfo);
+		int i = 0;
+		unsigned int offset;
+
 		/* turn the flag off! */
 		rtp_session->rtcp_fresh_frame = 0;
 
@@ -3486,6 +3515,22 @@ SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rt
 		frame->timestamp = ntohl(sr->ts);
 		frame->packet_count =  ntohl(sr->pc);
 		frame->octect_count = ntohl(sr->oc);
+
+		for (offset = reportsOffset; offset < packet_length; offset += sizeof(struct switch_rtcp_report_block)) {
+			struct switch_rtcp_report_block* report = (struct switch_rtcp_report_block*) (rtp_session->rtcp_recv_msg.body + offset);
+			frame->reports[i].ssrc = ntohl(report->ssrc);
+			frame->reports[i].fraction = (uint8_t)ntohl(report->fraction);
+			frame->reports[i].lost = ntohl(report->lost);
+			frame->reports[i].highest_sequence_number_received = ntohl(report->highest_sequence_number_received);
+			frame->reports[i].jitter = ntohl(report->jitter);
+			frame->reports[i].lsr = ntohl(report->lsr);
+			frame->reports[i].dlsr = ntohl(report->dlsr);
+			i++;
+			if (i >= MAX_REPORT_BLOCKS) {
+				break;
+			}
+		}
+		frame->report_count = (uint16_t)i;
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -3666,7 +3711,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 
 
-		if ((rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
+		if ((rtp_session->last_write_ts != RTP_TS_RESET && rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
 			|| rtp_session->ts == rtp_session->samples_per_interval) {
 			m++;
 		}
@@ -3766,10 +3811,13 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 								}
 								rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;
 								if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_TALK)) {
-									switch_event_t *event;
-									if (switch_event_create(&event, SWITCH_EVENT_TALK) == SWITCH_STATUS_SUCCESS) {
-										switch_channel_event_set_data(switch_core_session_get_channel(rtp_session->vad_data.session), event);
-										switch_event_fire(&event);
+
+									if ((rtp_session->vad_data.fire_events & VAD_FIRE_TALK)) {
+										switch_event_t *event;
+										if (switch_event_create(&event, SWITCH_EVENT_TALK) == SWITCH_STATUS_SUCCESS) {
+											switch_channel_event_set_data(switch_core_session_get_channel(rtp_session->vad_data.session), event);
+											switch_event_fire(&event);
+										}
 									}
 								}
 							}
@@ -3782,10 +3830,13 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 									switch_clear_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
 									rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;
 									if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_NOTALK)) {
-										switch_event_t *event;
-										if (switch_event_create(&event, SWITCH_EVENT_NOTALK) == SWITCH_STATUS_SUCCESS) {
-											switch_channel_event_set_data(switch_core_session_get_channel(rtp_session->vad_data.session), event);
-											switch_event_fire(&event);
+
+										if ((rtp_session->vad_data.fire_events & VAD_FIRE_NOT_TALK)) {
+											switch_event_t *event;
+											if (switch_event_create(&event, SWITCH_EVENT_NOTALK) == SWITCH_STATUS_SUCCESS) {
+												switch_channel_event_set_data(switch_core_session_get_channel(rtp_session->vad_data.session), event);
+												switch_event_fire(&event);
+											}
 										}
 									}
 								}
@@ -3926,7 +3977,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->last_write_ts = this_ts;
 
 		if (rtp_session->queue_delay) {
-			rtp_session->next_write_samplecount = rtp_session->last_write_ts + rtp_session->queue_delay;
+			rtp_session->delay_samples = rtp_session->queue_delay;
 			rtp_session->queue_delay = 0;
 		}
 
@@ -4053,6 +4104,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 	}
 	memset(&rtp_session->vad_data, 0, sizeof(rtp_session->vad_data));
 
+	if (switch_true(switch_channel_get_variable(switch_core_session_get_channel(rtp_session->vad_data.session), "fire_talk_events"))) {
+		rtp_session->vad_data.fire_events |= VAD_FIRE_TALK;
+	}
+
+	if (switch_true(switch_channel_get_variable(switch_core_session_get_channel(rtp_session->vad_data.session), "fire_not_talk_events"))) {
+		rtp_session->vad_data.fire_events |= VAD_FIRE_NOT_TALK;
+	}
+	
+
 	if (switch_core_codec_init(&rtp_session->vad_data.vad_codec,
 							   codec->implementation->iananame,
 							   NULL,
@@ -4174,6 +4234,13 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 #endif
 
 	fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && switch_test_flag(frame, SFF_RAW_RTP)) ? 1 : 0;
+
+	if (!fwd && !rtp_session->sending_dtmf && !rtp_session->queue_delay && 
+		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && (rtp_session->rtp_bugs & RTP_BUG_GEN_ONE_GEN_ALL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Generating RTP locally but timestamp passthru is configured, disabling....\n");
+		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE);
+		rtp_session->last_write_ts = RTP_TS_RESET;
+	}
 
 	switch_assert(frame != NULL);
 

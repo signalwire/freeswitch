@@ -12,7 +12,7 @@ EXTRA_DIST		= bootstrap
 AUTOMAKE_OPTIONS 	= foreign
 MAINTAINERCLEANFILES 	= Makefile.in aclocal.m4 configure $(AUX_DIST)
 
-ACLOCAL			= aclocal -I $(macrodir)
+ACLOCAL			= aclocal
 
 SUBDIRS                 = build conf data libs modules plugins platforms
 if TEST_SUITES

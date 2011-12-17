@@ -1399,6 +1399,8 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
                     case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
                     case SWITCH_CAUSE_INVALID_NUMBER_FORMAT:
+                    case SWITCH_CAUSE_INVALID_GATEWAY:
+                    case SWITCH_CAUSE_INVALID_URL:
                     case SWITCH_CAUSE_FACILITY_NOT_SUBSCRIBED:
                     case SWITCH_CAUSE_INCOMPATIBLE_DESTINATION:
 
@@ -1430,7 +1432,9 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     case SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL:
                     case SWITCH_CAUSE_CHANNEL_UNACCEPTABLE:
                     case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
+                    case SWITCH_CAUSE_INVALID_PROFILE:
                     case SWITCH_CAUSE_NETWORK_OUT_OF_ORDER:
+                    case SWITCH_CAUSE_GATEWAY_DOWN:
                     case SWITCH_CAUSE_FACILITY_REJECTED:
                     case SWITCH_CAUSE_FACILITY_NOT_IMPLEMENTED:
                     case SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED:
@@ -1448,6 +1452,8 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
                     case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
                     case SWITCH_CAUSE_INVALID_NUMBER_FORMAT:
+                    case SWITCH_CAUSE_INVALID_GATEWAY:
+                    case SWITCH_CAUSE_INVALID_URL:
                     case SWITCH_CAUSE_FACILITY_NOT_SUBSCRIBED:
                     case SWITCH_CAUSE_INCOMPATIBLE_DESTINATION:
 
@@ -1480,6 +1486,7 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     case SWITCH_CAUSE_CHANNEL_UNACCEPTABLE:
                     case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
                     case SWITCH_CAUSE_NETWORK_OUT_OF_ORDER:
+                    case SWITCH_CAUSE_GATEWAY_DOWN:
                     case SWITCH_CAUSE_FACILITY_REJECTED:
                     case SWITCH_CAUSE_FACILITY_NOT_IMPLEMENTED:
                     case SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED:
@@ -1497,6 +1504,8 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
                     case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
                     case SWITCH_CAUSE_INVALID_NUMBER_FORMAT:
+                    case SWITCH_CAUSE_INVALID_GATEWAY:
+                    case SWITCH_CAUSE_INVALID_URL:
                     case SWITCH_CAUSE_FACILITY_NOT_SUBSCRIBED:
                     case SWITCH_CAUSE_INCOMPATIBLE_DESTINATION:
 
@@ -1529,6 +1538,7 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     case SWITCH_CAUSE_CHANNEL_UNACCEPTABLE:
                     case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
                     case SWITCH_CAUSE_NETWORK_OUT_OF_ORDER:
+                    case SWITCH_CAUSE_GATEWAY_DOWN:
                     case SWITCH_CAUSE_FACILITY_REJECTED:
                     case SWITCH_CAUSE_FACILITY_NOT_IMPLEMENTED:
                     case SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED:
@@ -1553,6 +1563,8 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
                     case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
                     case SWITCH_CAUSE_INVALID_NUMBER_FORMAT:
+                    case SWITCH_CAUSE_INVALID_GATEWAY:
+                    case SWITCH_CAUSE_INVALID_URL:
                     case SWITCH_CAUSE_FACILITY_NOT_SUBSCRIBED:
                     case SWITCH_CAUSE_INCOMPATIBLE_DESTINATION:
 
@@ -1585,6 +1597,7 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     case SWITCH_CAUSE_CHANNEL_UNACCEPTABLE:
                     case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
                     case SWITCH_CAUSE_NETWORK_OUT_OF_ORDER:
+                    case SWITCH_CAUSE_GATEWAY_DOWN:
                     case SWITCH_CAUSE_FACILITY_REJECTED:
                     case SWITCH_CAUSE_FACILITY_NOT_IMPLEMENTED:
                     case SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED:
@@ -1622,6 +1635,8 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
                     case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
                     case SWITCH_CAUSE_INVALID_NUMBER_FORMAT:
+                    case SWITCH_CAUSE_INVALID_GATEWAY:
+                    case SWITCH_CAUSE_INVALID_URL:
                     case SWITCH_CAUSE_FACILITY_NOT_SUBSCRIBED:
                     case SWITCH_CAUSE_INCOMPATIBLE_DESTINATION:
 
@@ -1629,6 +1644,7 @@ int BoardE1::KhompPvtR2::callFailFromCause(int cause)
                     case SWITCH_CAUSE_CHANNEL_UNACCEPTABLE:
                     case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
                     case SWITCH_CAUSE_NETWORK_OUT_OF_ORDER:
+                    case SWITCH_CAUSE_GATEWAY_DOWN:
                     case SWITCH_CAUSE_FACILITY_REJECTED:
                     case SWITCH_CAUSE_FACILITY_NOT_IMPLEMENTED:
                     case SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED:

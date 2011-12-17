@@ -122,6 +122,53 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param, switch_memory_pool_t *pool)
+{
+	char *e, *r = NULL, *ptr = NULL, *next = NULL;
+	size_t len;
+
+	ptr = (char *) str;
+
+	while (ptr) {
+		len = strlen(param);
+		e = ptr+len;
+		next = strchr(ptr, ';');
+
+		if (!strncasecmp(ptr, param, len) && *e == '=') {
+			int mlen;
+
+			ptr = ++e;
+
+			if (next) {
+				e = next;
+			} else {
+				e = ptr + strlen(ptr);
+			}
+			
+			mlen = (e - ptr) + 1;
+
+			if (pool) {
+				r = switch_core_alloc(pool, mlen);
+			} else {
+				r = malloc(mlen);
+			}
+
+			*(r + mlen) = '\0';
+
+			switch_snprintf(r, mlen, "%s", ptr);
+
+			break;
+		}
+
+		if (next) {
+			ptr = next + 1;
+		} else break;
+	}
+
+	return r;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type,
 														   switch_memory_pool_t *pool)
 {
@@ -315,7 +362,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 	ip_t *maskv = mask;
 	ip_t *ipv = ip;
 
-	memcpy(host, string, sizeof(host));
+	switch_copy_string(host, string, sizeof(host)-1);
 	bit_str = strchr(host, '/');
 
 	if (!bit_str) {
@@ -2822,6 +2869,58 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 	}
 
 	return 1;
+}
+
+
+SWITCH_DECLARE(char *) switch_uuid_str(char *buf, switch_size_t len)
+{
+	switch_uuid_t uuid;
+
+	if (len < (SWITCH_UUID_FORMATTED_LENGTH + 1)) {
+		switch_snprintf(buf, len, "INVALID");
+	} else {
+		switch_uuid_get(&uuid);
+		switch_uuid_format(buf, &uuid);
+	}
+
+	return buf;
+}
+
+
+SWITCH_DECLARE(char *) switch_format_number(const char *num)
+{
+	char *r;
+	size_t len;
+	const char *p = num;
+
+	if (!p) {
+		return (char*)p;
+	}
+
+	if (zstr(p)) {
+		return strdup(p);
+	}
+
+	if (*p == '+') {
+		p++;
+	}
+
+	if (!switch_is_number(p)) {
+		return strdup(p);
+	}
+
+	len = strlen(p);
+	
+	/* region 1, TBD add more....*/
+	if (len == 11 && p[0] == '1') {
+		r = switch_mprintf("%c (%c%c%c) %c%c%c-%c%c%c%c", p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10]);
+	} else if (len == 10) {
+		r = switch_mprintf("1 (%c%c%c) %c%c%c-%c%c%c%c", p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9]);
+	} else {
+		r = strdup(num);
+	}
+
+	return r;
 }
 
 

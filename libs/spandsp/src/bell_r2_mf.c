@@ -43,6 +43,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/logging.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/queue.h"
 #include "spandsp/dc_restore.h"
@@ -54,6 +55,7 @@
 #include "spandsp/dtmf.h"
 #include "spandsp/bell_r2_mf.h"
 
+#include "spandsp/private/logging.h"
 #include "spandsp/private/queue.h"
 #include "spandsp/private/tone_generate.h"
 #include "spandsp/private/bell_r2_mf.h"
@@ -786,7 +788,7 @@ SPAN_DECLARE(int) r2_mf_rx(r2_mf_rx_state_t *s, const int16_t amp[], int samples
         }
         if (s->current_digit != hit_digit  &&  s->callback)
         {
-            i = (hit_digit)  ?  -99  :  -10;
+            i = (hit_digit)  ?  -10  :  -99;
             s->callback(s->callback_data, hit_digit, i, 0);
         }
         s->current_digit = hit_digit;

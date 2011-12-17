@@ -48,6 +48,8 @@ sub this {
 
 package freeswitch;
 
+*setGlobalVariable = *freeswitchc::setGlobalVariable;
+*getGlobalVariable = *freeswitchc::getGlobalVariable;
 *consoleLog = *freeswitchc::consoleLog;
 *consoleCleanLog = *freeswitchc::consoleCleanLog;
 *email = *freeswitchc::email;

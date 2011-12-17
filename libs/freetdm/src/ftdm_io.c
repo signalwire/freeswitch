@@ -3969,7 +3969,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 				if (ftdmchan->state == FTDM_CHANNEL_STATE_CALLWAITING && (digit_char == 'D' || digit_char == 'A')) {
 					ftdmchan->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK]++;
 				} else {
-					char digit_str[2] = { digit_char, 0};
+					char digit_str[2] = { 0 };
+
+					digit_str[0] = digit_char;
 					
 					if (!ftdmchan->span->sig_dtmf || (ftdmchan->span->sig_dtmf(ftdmchan, (const char*)digit_str) != FTDM_BREAK)) {
 						ftdm_channel_queue_dtmf(ftdmchan, digit_str);

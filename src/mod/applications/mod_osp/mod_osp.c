@@ -29,11 +29,6 @@
  *
  */
 
-/*
- * TODO:
- * 1. NID -> outbound messages
- */
-
 #include <switch.h>
 #include <osp/osp.h>
 #include <osp/ospb64.h>
@@ -42,45 +37,45 @@
 /* OSP Buffer Size Constants */
 #define OSP_SIZE_NORSTR		256		/* OSP normal string buffer size */
 #define OSP_SIZE_KEYSTR		1024	/* OSP certificate string buffer size */
-#define OSP_SIZE_ROUSTR		2048	/* OSP route buffer size */
+#define OSP_SIZE_ROUSTR		4096	/* OSP route buffer size */
 #define OSP_SIZE_TOKSTR		4096	/* OSP token string buffer size */
 
 /* OSP Settings Constants */
-#define OSP_MAX_SP			8			/* Max number of OSP service points */
-#define OSP_AUDIT_URL		"localhost"	/* OSP default Audit URL */
-#define OSP_LOCAL_VALID		1			/* OSP token validating method, locally */
-#define OSP_DEF_LIFETIME	300			/* OSP default SSL lifetime */
-#define OSP_DEF_MAXCONN		20			/* OSP default max connections */
-#define OSP_MIN_MAXCONN		1			/* OSP min max connections */
-#define OSP_MAX_MAXCONN		1000		/* OSP max max connections */
-#define OSP_DEF_PERSIST		60			/* OSP default HTTP persistence in seconds */
-#define OSP_DEF_RETRYDELAY	0			/* OSP default retry delay in seconds */
-#define OSP_MIN_RETRYDELAY	0			/* OSP min retry delay */
-#define OSP_MAX_RETRYDELAY	10			/* OSP max retry delay */
-#define OSP_DEF_RETRYLIMIT	2			/* OSP default retry times */
-#define OSP_MIN_RETRYLIMIT	0			/* OSP min retry times */
-#define OSP_MAX_RETRYLIMIT	100			/* OSP max retry times */
-#define OSP_DEF_TIMEOUT		10000		/* OSP default timeout in ms */
-#define OSP_MIN_TIMEOUT		200			/* OSP min timeout in ms */
-#define OSP_MAX_TIMEOUT		60000		/* OSP max timeout in ms */
-#define OSP_CUSTOMER_ID		""			/* OSP customer ID */
-#define OSP_DEVICE_ID		""			/* OSP device ID */
-#define OSP_DEF_MAXDEST		5			/* OSP default max destinations */
-#define OSP_MIN_MAXDEST		1			/* OSP min max destinations */
-#define OSP_MAX_MAXDEST		10			/* OSP max max destinations */
-#define OSP_DEF_PROFILE		"default"	/* OSP default profile name */
-#define OSP_DEF_STRING		""			/* OSP default empty string */
-#define OSP_DEF_CALLID		"UNDEFINED"	/* OSP default Call-ID */
-#define OSP_DEF_STATS		-1			/* OSP default statistics */
-#define OSP_URI_DELIM		'@'			/* URI delimit */
-#define OSP_USER_DELIM		";:"		/* URI userinfo delimit */
-#define OSP_HOST_DELIM		";>"		/* URI hostport delimit */
-#define OSP_MAX_CINFO		8			/* Max number of custom info */
+#define OSP_MAX_SP			8					/* Max number of OSP service points */
+#define OSP_AUDIT_URL		"localhost"			/* OSP default Audit URL */
+#define OSP_LOCAL_VALID		1					/* OSP token validating method, locally */
+#define OSP_DEF_LIFETIME	300					/* OSP default SSL lifetime */
+#define OSP_MIN_MAXCONN		1					/* OSP min max connections */
+#define OSP_MAX_MAXCONN		1000				/* OSP max max connections */
+#define OSP_DEF_MAXCONN		20					/* OSP default max connections */
+#define OSP_DEF_PERSIST		60					/* OSP default HTTP persistence in seconds */
+#define OSP_MIN_RETRYDELAY	0					/* OSP min retry delay */
+#define OSP_MAX_RETRYDELAY	10					/* OSP max retry delay */
+#define OSP_DEF_RETRYDELAY	OSP_MIN_RETRYDELAY	/* OSP default retry delay in seconds */
+#define OSP_MIN_RETRYLIMIT	0					/* OSP min retry times */
+#define OSP_MAX_RETRYLIMIT	100					/* OSP max retry times */
+#define OSP_DEF_RETRYLIMIT	2					/* OSP default retry times */
+#define OSP_MIN_TIMEOUT		200					/* OSP min timeout in ms */
+#define OSP_MAX_TIMEOUT		60000				/* OSP max timeout in ms */
+#define OSP_DEF_TIMEOUT		10000				/* OSP default timeout in ms */
+#define OSP_CUSTOMER_ID		""					/* OSP customer ID */
+#define OSP_DEVICE_ID		""					/* OSP device ID */
+#define OSP_MIN_MAXDEST		1					/* OSP min max destinations */
+#define OSP_MAX_MAXDEST		12					/* OSP max max destinations */
+#define OSP_DEF_MAXDEST		OSP_MAX_MAXDEST		/* OSP default max destinations */
+#define OSP_DEF_PROFILE		"default"			/* OSP default profile name */
+#define OSP_DEF_STRING		""					/* OSP default empty string */
+#define OSP_DEF_CALLID		"UNDEFINED"			/* OSP default Call-ID */
+#define OSP_DEF_STATS		-1					/* OSP default statistics */
+#define OSP_URI_DELIM		'@'					/* URI delimit */
+#define OSP_USER_DELIM		";:"				/* URI userinfo delimit */
+#define OSP_HOST_DELIM		";>"				/* URI hostport delimit */
+#define OSP_MAX_CINFO		8					/* Max number of custom info */
 
 /* OSP Handle Constant */
 #define OSP_INVALID_HANDLE	-1	/* Invalid OSP handle, provider, transaction etc. */
 
-/* OSP Supported Destination Protocols for Default Protocol */
+/* OSP Supported Signaling Protocols for Default Protocol */
 #define OSP_PROTOCOL_SIP	"sip"			/* SIP protocol name */
 #define OSP_PROTOCOL_H323	"h323"			/* H.323 protocol name */
 #define OSP_PROTOCOL_IAX	"iax"			/* IAX protocol name */
@@ -89,48 +84,59 @@
 #define OSP_PROTOCOL_UNDEF	"undefined"		/* Undefined protocol */
 #define OSP_PROTOCOL_UNSUP	"unsupported"	/* Unsupported protocol */
 
-/* OSP Supported Destination Protocols for Destination Protocol Usage */
+/* OSP Supported Signaling Protocols for Signaling Protocol Usage */
 #define OSP_MODULE_SIP		"mod_sofia"		/* FreeSWITCH SIP module name */
 #define OSP_MODULE_H323		"mod_h323"		/* FreeSWITCH H.323 module name */
 #define OSP_MODULE_IAX		"mod_iax"		/* FreeSWITCH IAX module name */
 #define OSP_MODULE_SKYPE	"mod_skypopen"	/* FreeSWITCH Skype module name */
 
 /* OSP Variables Name */
-#define OSP_VAR_PROFILE		"osp_profile"			/* Profile name, in OSP cookie */
-#define OSP_VAR_TRANSID		"osp_transaction_id"	/* Transaction ID, in OSP cookie */
-#define OSP_VAR_START		"osp_start_time"		/* Inbound Call start time, in OSP cookie */
-#define OSP_VAR_SRCDEV		"osp_source_device"		/* Source device IP, in OSP cookie or inbound (actual source device)*/
-#define OSP_VAR_SRCNID		"osp_source_nid"		/* Source network ID, inbound and in OSP cookie */
-#define OSP_VAR_DESTCOUNT	"osp_destination_count"	/* Destination count, in OSP cookie */
-#define OSP_VAR_DESTIP		"osp_destination_ip"	/* Destination IP, in OSP cookie */
-#define OSP_VAR_DESTNID		"osp_destination_nid"	/* Destination network ID, in OSP cookie */
-#define OSP_VAR_CUSTOMINFO	"osp_custom_info_"		/* Custom info */
-#define OSP_VAR_OUTPROXY	"osp_outbound_proxy"	/* Outbound proxy */
-#define OSP_VAR_ROUTECOUNT	"osp_route_count"		/* Number of destinations */
-#define OSP_VAR_ROUTEPRE	"osp_route_"			/* Destination prefix */
-#define OSP_VAR_AUTOROUTE	"osp_auto_route"		/* Bridge route string */
+#define OSP_VAR_PROFILE			"osp_profile"				/* Profile name, in cookie */
+#define OSP_VAR_TRANSID			"osp_transaction_id"		/* Transaction ID, in cookie */
+#define OSP_VAR_CALLING			"osp_calling"				/* Original calling number, in cookie */
+#define OSP_VAR_CALLED			"osp_called"				/* Original called number, in cookie */
+#define OSP_VAR_START			"osp_start_time"			/* Inbound Call start time, in cookie */
+#define OSP_VAR_SRCDEV			"osp_source_device"			/* Source device IP, in cookie or inbound (actual source device)*/
+#define OSP_VAR_SRCNID			"osp_source_nid"			/* Source network ID, inbound and in cookie */
+#define OSP_VAR_DESTTOTAL		"osp_destination_total"		/* Total number of destinations in AuthRsp, in cookie */
+#define OSP_VAR_DESTCOUNT		"osp_destination_count"		/* Destination count, in cookie */
+#define OSP_VAR_DESTIP			"osp_destination_ip"		/* Destination IP, in cookie */
+#define OSP_VAR_DESTNID			"osp_destination_nid"		/* Destination network ID, in cookie */
+#define OSP_VAR_CUSTOMINFO		"osp_custom_info_"			/* Custom info */
+#define OSP_VAR_DNIDUSERPARAM	"osp_networkid_userparam"	/* Destination network ID user parameter name */
+#define OSP_VAR_DNIDURIPARAM	"osp_networkid_uriparam"	/* Destination network ID URI parameter name */
+#define OSP_VAR_USERPHONE		"osp_user_phone"			/* If to add "user=phone" */
+#define OSP_VAR_OUTPROXY		"osp_outbound_proxy"		/* Outbound proxy */
+#define OSP_VAR_AUTHSTATUS		"osp_authreq_status"		/* AuthReq Status */
+#define OSP_VAR_ROUTECOUNT		"osp_route_count"			/* Number of destinations */
+#define OSP_VAR_ROUTEPRE		"osp_route_"				/* Destination prefix */
+#define OSP_VAR_AUTOROUTE		"osp_auto_route"			/* Bridge route string */
 
 /* OSP Use Variable Name */
-#define OSP_FS_TOHOST		"sip_to_host"						/* Inbound SIP To host */
-#define OSP_FS_TOPORT		"sip_to_port"						/* Inbound SIP To port */
-#define OSP_FS_DIVERSION	"sip_h_Diversion"					/* Inbound SIP Diversion header */
-#define OSP_FS_OUTCALLID	"sip_call_id"						/* Outbound SIP Call-ID */
-#define OSP_FS_OUTCALLING	"origination_caller_id_number"		/* Outbound calling number */
-#define OSP_FS_SIPRELEASE	"sip_hangup_disposition"			/* SIP release source */
-#define OSP_FS_DOWNCODEC	"write_codec"						/* Downstream codec */
-#define OSP_FS_UPCODEC		"read_codec"						/* Upstream codec */
-#define OSP_FS_RTPDOWNOCTS	"rtp_audio_out_media_bytes"			/* Downstream octets */
-#define OSP_FS_RTPUPOCTS	"rtp_audio_in_media_bytes"			/* Upstream octets */
-#define OSP_FS_RTPDOWNPKTS	"rtp_audio_out_media_packet_count"	/* Downstream packets */
-#define OSP_FS_RTPUPPKTS	"rtp_audio_in_media_packet_count"	/* Upstream packets */
+#define OSP_FS_FROMUSER			"sip_from_user"						/* Inbound SIP From user */
+#define OSP_FS_TOHOST			"sip_to_host"						/* Inbound SIP To host */
+#define OSP_FS_TOPORT			"sip_to_port"						/* Inbound SIP To port */
+#define OSP_FS_RPID				"sip_Remote-Party-ID"				/* Inbound SIP Remote-Party-ID header */
+#define OSP_FS_PAI				"sip_P-Asserted-Identity"			/* Inbound SIP P-Asserted-Identity header */
+#define OSP_FS_DIV				"sip_h_Diversion"					/* Inbound SIP Diversion header */
+#define OSP_FS_PCI				"sip_h_P-Charge-Info"				/* Inbound SIP P-Charge-Info header */
+#define OSP_FS_OUTCALLID		"sip_call_id"						/* Outbound SIP Call-ID */
+#define OSP_FS_OUTCALLING		"origination_caller_id_number"		/* Outbound calling number */
+#define OSP_FS_SIPRELEASE		"sip_hangup_disposition"			/* SIP release source */
+#define OSP_FS_SRCCODEC			"write_codec"						/* Source codec */
+#define OSP_FS_DESTCODEC		"read_codec"						/* Destiantion codec */
+#define OSP_FS_RTPSRCREPOCTS	"rtp_audio_out_media_bytes"			/* Source->reporter octets */
+#define OSP_FS_RTPDESTREPOCTS	"rtp_audio_in_media_bytes"			/* Destination->reporter octets */
+#define OSP_FS_RTPSRCREPPKTS	"rtp_audio_out_media_packet_count"	/* Source->reporter packets */
+#define OSP_FS_RTPDESTREPPKTS	"rtp_audio_in_media_packet_count"	/* Destination->reporter packets */
 
 typedef struct osp_settings {
 	switch_bool_t debug;						/* OSP module debug info flag */
 	switch_log_level_t loglevel;				/* Log level for debug info */
 	switch_bool_t hardware;						/* Crypto hardware flag */
-	const char *modules[OSPC_DPROT_NUMBER];		/* Endpoint names */
-	const char *profiles[OSPC_DPROT_NUMBER];	/* Endpoint profile names */
-	OSPE_DEST_PROTOCOL protocol;				/* Default destination protocol */
+	const char *modules[OSPC_PROTNAME_NUMBER];	/* Endpoint names */
+	const char *profiles[OSPC_PROTNAME_NUMBER];	/* Endpoint profile names */
+	OSPE_PROTOCOL_NAME protocol;				/* Default signaling protocol */
 	switch_bool_t shutdown;						/* OSP module status */
 	switch_memory_pool_t *pool;					/* OSP module memory pool */
 } osp_settings_t;
@@ -161,7 +167,6 @@ typedef struct osp_profile {
 	osp_workmode_t workmode;		/* OSP work mode */
 	osp_srvtype_t srvtype;			/* OSP service type */
 	int maxdest;					/* Max destinations */
-	switch_bool_t userphone;		/* Add "user=phone" URI parameter */
 	OSPTPROVHANDLE provider;		/* OSP provider handle */
 	struct osp_profile *next;		/* Next OSP profile */
 } osp_profile_t;
@@ -169,19 +174,22 @@ typedef struct osp_profile {
 typedef struct osp_inbound {
 	const char *actsrc;					/* Actual source device IP address */
 	const char *srcdev;					/* Source device IP address */
-	const char *calling;				/* Inbound calling number */
+	OSPE_PROTOCOL_NAME protocol;		/* Inbound signaling protocol */
+	char calling[OSP_SIZE_NORSTR];		/* Inbound calling number */
 	char called[OSP_SIZE_NORSTR];		/* Inbound called number */
 	char nprn[OSP_SIZE_NORSTR];			/* Inbound NP routing number */
 	char npcic[OSP_SIZE_NORSTR];		/* Inbound NP carrier identification code */
 	int npdi;							/* Inbound NP database dip indicator */
 	const char *tohost;					/* Inbound host of To URI */
 	const char *toport;					/* Inbound port of To URI */
+	char rpiduser[OSP_SIZE_NORSTR];		/* Inbound user of SIP Remote-Party-ID header */
+	char paiuser[OSP_SIZE_NORSTR];		/* Inbound user of SIP P-Asserted-Identity header */
 	char divuser[OSP_SIZE_NORSTR];		/* Inbound user of SIP Diversion header */
 	char divhost[OSP_SIZE_NORSTR];		/* Inbound hostport of SIP Diversion header */
+	char pciuser[OSP_SIZE_NORSTR];		/* Inbound user of SIP P-Charge-Info header */
 	const char *srcnid;					/* Inbound source network ID */
 	switch_time_t start;				/* Call start time */
 	const char *cinfo[OSP_MAX_CINFO];	/* Custom info */
-	const char *outproxy;				/* Outbound proxy IP address */
 } osp_inbound_t;
 
 typedef struct osp_destination {
@@ -194,53 +202,62 @@ typedef struct osp_destination {
 	char npcic[OSP_SIZE_NORSTR];						/* Outbound NP carrier identification code */
 	int npdi;											/* Outbound NP database dip indicator */
 	char opname[OSPC_OPNAME_NUMBER][OSP_SIZE_NORSTR];	/* Outbound Operator names */
-	OSPE_DEST_PROTOCOL protocol;						/* Destination protocol */
+	OSPE_PROTOCOL_NAME protocol;						/* Signaling protocol */
 	switch_bool_t supported;							/* Supported by FreeRADIUS OSP module */
-	switch_bool_t userphone;							/* Add "user=phone" parameter */
-	const char *outproxy;								/* Outbound proxy IP */
 } osp_destination_t;
 
 typedef struct osp_results {
-	const char *profile;					/* Profile name */
-	uint64_t transid;						/* Transaction ID */
-	switch_time_t start;					/* Call start time */
-	char called[OSP_SIZE_NORSTR];			/* Original called number */
-	const char *srcdev;						/* Source device IP */
-	const char *srcnid;						/* Source network ID */
-	int numdest;							/* Number of destinations */
-	osp_destination_t dests[OSP_MAX_SP];	/* Destinations */
+	const char *profile;						/* Profile name */
+	uint64_t transid;							/* Transaction ID */
+	switch_time_t start;						/* Call start time */
+	char calling[OSP_SIZE_NORSTR];				/* Original calling number */
+	char called[OSP_SIZE_NORSTR];				/* Original called number */
+	const char *srcdev;							/* Source device IP */
+	const char *srcnid;							/* Source network ID */
+	int status;									/* AuthReq status */
+	int numdest;								/* Number of destinations */
+	osp_destination_t dests[OSP_MAX_MAXDEST];	/* Destinations */
 } osp_results_t;
 
 typedef struct osp_cookie {
 	const char *profile;	/* Profile name */
 	uint64_t transid;		/* Transaction ID */
+	const char *calling;	/* Original calling number */
+	const char *called;		/* Original called number */
 	switch_time_t start;	/* Call start time */
 	const char *srcdev;		/* Source Device IP */
+	int desttotal;			/* Total number of destinations in AuthRsp */
 	int destcount;			/* Destination count */
 	const char *dest;		/* Destination IP */
 	const char *srcnid;		/* Source network ID */
 	const char *destnid;	/* Destination network ID */
 } osp_cookie_t;
 
+typedef struct osp_outbound {
+	const char *dniduserparam;	/* Destination network ID user parameter name */
+	const char *dniduriparam;	/* Destination network ID URI parameter name */
+	switch_bool_t userphone;	/* If to add "user=phone" parameter */
+	const char *outproxy;		/* Outbound proxy IP address */
+} osp_outbound_t;
+
 typedef struct osp_usage {
 	const char *srcdev;				/* Source device IP */
 	const char *callid;				/* Call-ID */
-	const char *calling;			/* Calling number */
-	char called[OSP_SIZE_NORSTR];	/* Called number */
-	OSPE_DEST_PROTOCOL protocol;	/* Destination protocol */
+	OSPE_PROTOCOL_NAME inprotocol;	/* Inbound signaling protocol */
+	OSPE_PROTOCOL_NAME outprotocol;	/* Outbound signaling protocol */
 	int release;					/* Release source */
 	switch_call_cause_t cause;		/* Termination cause */
 	switch_time_t alert;			/* Call alert time */
 	switch_time_t connect;			/* Call answer time */
 	switch_time_t end;				/* Call end time */
 	switch_time_t duration;			/* Call duration */
-	switch_time_t pdd;				/* Post dial delay */
-	const char *fcodec;				/* Forward codec */
-	const char *rcodec;				/* Reverse codec */
-	int rtpdownoctets;				/* RTP downstream bytes */
-	int rtpupoctets;				/* RTP upstream bytes */
-	int rtpdownpackets;				/* RTP downstream packets */
-	int rtpuppackets;				/* RTP upstream packets */
+	switch_time_t pdd;				/* Post dial delay, in us */
+	const char *srccodec;			/* Source codec */
+	const char *destcodec;			/* Destination codec */
+	int rtpsrcrepoctets;			/* RTP source->reporter bytes */
+	int rtpdestrepoctets;			/* RTP destination->reporter bytes */
+	int rtpsrcreppackets;			/* RTP source->reporter packets */
+	int rtpdestreppackets;			/* RTP destiantion->reporter packets */
 } osp_usage_t;
 
 typedef struct osp_threadarg {
@@ -252,7 +269,7 @@ typedef struct osp_threadarg {
 	time_t connect;				/* Call connect time */
 	time_t end;					/* Call end time */
 	int duration;				/* Call duration */
-	int pdd;					/* Post dial delay */
+	int pdd;					/* Post dial delay, in ms */
 	int release;				/* EP that released the call */
 } osp_threadarg_t;
 
@@ -332,7 +349,7 @@ static switch_status_t osp_load_settings(
 	memset(&osp_globals, 0, sizeof(osp_globals));
 	osp_globals.loglevel = SWITCH_LOG_DEBUG;
 	osp_globals.pool = pool;
-	osp_globals.protocol = OSPC_DPROT_SIP;
+	osp_globals.protocol = OSPC_PROTNAME_SIP;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -375,26 +392,26 @@ static switch_status_t osp_load_settings(
 				if (switch_strlen_zero(value)) {
 					continue;
 				} else if (!strcasecmp(value, OSP_PROTOCOL_SIP)) {
-					osp_globals.protocol = OSPC_DPROT_SIP;
+					osp_globals.protocol = OSPC_PROTNAME_SIP;
 				} else if (!strcasecmp(value, OSP_PROTOCOL_H323)) {
-					osp_globals.protocol = OSPC_DPROT_Q931;
+					osp_globals.protocol = OSPC_PROTNAME_Q931;
 				} else if (!strcasecmp(value, OSP_PROTOCOL_IAX)) {
-					osp_globals.protocol = OSPC_DPROT_IAX;
+					osp_globals.protocol = OSPC_PROTNAME_IAX;
 				} else if (!strcasecmp(value, OSP_PROTOCOL_SKYPE)) {
-					osp_globals.protocol = OSPC_DPROT_SKYPE;
+					osp_globals.protocol = OSPC_PROTNAME_SKYPE;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported default protocol '%s'\n", value);
 				}
 			} else if (!strcasecmp(name, "sip")) {
 				if (!switch_strlen_zero(module)) {
-					if (!(osp_globals.modules[OSPC_DPROT_SIP] = switch_core_strdup(osp_globals.pool, module))) {
+					if (!(osp_globals.modules[OSPC_PROTNAME_SIP] = switch_core_strdup(osp_globals.pool, module))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to duplicate SIP module name\n");
 						status = SWITCH_STATUS_MEMERR;
 						break;
 					}
 				}
 				if (!switch_strlen_zero(context)) {
-					if (!(osp_globals.profiles[OSPC_DPROT_SIP] = switch_core_strdup(osp_globals.pool, context))) {
+					if (!(osp_globals.profiles[OSPC_PROTNAME_SIP] = switch_core_strdup(osp_globals.pool, context))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to duplicate SIP profile name\n");
 						status = SWITCH_STATUS_MEMERR;
 						break;
@@ -402,14 +419,14 @@ static switch_status_t osp_load_settings(
 				}
 			} else if (!strcasecmp(name, "h323")) {
 				if (!switch_strlen_zero(module)) {
-					if (!(osp_globals.modules[OSPC_DPROT_Q931] = switch_core_strdup(osp_globals.pool, module))) {
+					if (!(osp_globals.modules[OSPC_PROTNAME_Q931] = switch_core_strdup(osp_globals.pool, module))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to duplicate H.323 module name\n");
 						status = SWITCH_STATUS_MEMERR;
 						break;
 					}
 				}
 				if (!switch_strlen_zero(context)) {
-					if (!(osp_globals.profiles[OSPC_DPROT_Q931] = switch_core_strdup(osp_globals.pool, context))) {
+					if (!(osp_globals.profiles[OSPC_PROTNAME_Q931] = switch_core_strdup(osp_globals.pool, context))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to duplicate H.323 profile name\n");
 						status = SWITCH_STATUS_MEMERR;
 						break;
@@ -417,14 +434,14 @@ static switch_status_t osp_load_settings(
 				}
 			} else if (!strcasecmp(name, "iax")) {
 				if (!switch_strlen_zero(module)) {
-					if (!(osp_globals.modules[OSPC_DPROT_IAX] = switch_core_strdup(osp_globals.pool, module))) {
+					if (!(osp_globals.modules[OSPC_PROTNAME_IAX] = switch_core_strdup(osp_globals.pool, module))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to duplicate IAX module name\n");
 						status = SWITCH_STATUS_MEMERR;
 						break;
 					}
 				}
 				if (!switch_strlen_zero(context)) {
-					if (!(osp_globals.profiles[OSPC_DPROT_IAX] = switch_core_strdup(osp_globals.pool, context))) {
+					if (!(osp_globals.profiles[OSPC_PROTNAME_IAX] = switch_core_strdup(osp_globals.pool, context))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to duplicate IAX profile name\n");
 						status = SWITCH_STATUS_MEMERR;
 						break;
@@ -432,14 +449,14 @@ static switch_status_t osp_load_settings(
 				}
 			} else if (!strcasecmp(name, "skype")) {
 				if (!switch_strlen_zero(module)) {
-					if (!(osp_globals.modules[OSPC_DPROT_SKYPE] = switch_core_strdup(osp_globals.pool, module))) {
+					if (!(osp_globals.modules[OSPC_PROTNAME_SKYPE] = switch_core_strdup(osp_globals.pool, module))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to duplicate Skype module name\n");
 						status = SWITCH_STATUS_MEMERR;
 						break;
 					}
 					}
 				if (!switch_strlen_zero(context)) {
-					if (!(osp_globals.profiles[OSPC_DPROT_SKYPE] = switch_core_strdup(osp_globals.pool, context))) {
+					if (!(osp_globals.profiles[OSPC_PROTNAME_SKYPE] = switch_core_strdup(osp_globals.pool, context))) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to duplicate Skype profile name\n");
 						status = SWITCH_STATUS_MEMERR;
 						break;
@@ -566,8 +583,6 @@ static switch_status_t osp_load_settings(
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 							"max-destinations must be between %d and %d\n", OSP_MIN_MAXDEST, OSP_MAX_MAXDEST);
 					}
-				} else if (!strcasecmp(name, "user-phone")) {
-					profile->userphone = switch_true(value);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown parameter '%s'\n", name);
 				}
@@ -673,35 +688,35 @@ static void osp_init_osptk(void)
  * return protocol name
  */
 static const char *osp_get_protocol(
-	OSPE_DEST_PROTOCOL protocol)
+	OSPE_PROTOCOL_NAME protocol)
 {
 	const char *name;
 
 	switch (protocol) {
-	case OSPC_DPROT_UNKNOWN:
+	case OSPC_PROTNAME_UNKNOWN:
 		name = OSP_PROTOCOL_UNKNO;
 		break;
-	case OSPC_DPROT_UNDEFINED:
+	case OSPC_PROTNAME_UNDEFINED:
 		name = OSP_PROTOCOL_UNDEF;
 		break;
-	case OSPC_DPROT_SIP:
+	case OSPC_PROTNAME_SIP:
 		name = OSP_PROTOCOL_SIP;
 		break;
-	case OSPC_DPROT_Q931:
+	case OSPC_PROTNAME_Q931:
 		name = OSP_PROTOCOL_H323;
 		break;
-	case OSPC_DPROT_IAX:
+	case OSPC_PROTNAME_IAX:
 		name = OSP_PROTOCOL_IAX;
 		break;
-	case OSPC_DPROT_SKYPE:
+	case OSPC_PROTNAME_SKYPE:
 		name = OSP_PROTOCOL_SKYPE;
 		break;
-	case OSPC_DPROT_LRQ:
-	case OSPC_DPROT_T37:
-	case OSPC_DPROT_T38:
-	case OSPC_DPROT_SMPP:
-	case OSPC_DPROT_XMPP:
-	case OSPC_DPROT_SMS:
+	case OSPC_PROTNAME_LRQ:
+	case OSPC_PROTNAME_T37:
+	case OSPC_PROTNAME_T38:
+	case OSPC_PROTNAME_SMPP:
+	case OSPC_PROTNAME_XMPP:
+	case OSPC_PROTNAME_SMS:
 	default:
 		name = OSP_PROTOCOL_UNSUP;
 		break;
@@ -772,29 +787,29 @@ SWITCH_STANDARD_API(osp_api_function)
 			}
 			stream->write_function(stream, "                 log-level: %s\n", loglevel);
 			stream->write_function(stream, "           crypto-hardware: %s\n", osp_globals.hardware ? "enabled" : "disabled");
-			if (switch_strlen_zero(osp_globals.modules[OSPC_DPROT_SIP]) || switch_strlen_zero(osp_globals.profiles[OSPC_DPROT_SIP])) {
+			if (switch_strlen_zero(osp_globals.modules[OSPC_PROTNAME_SIP]) || switch_strlen_zero(osp_globals.profiles[OSPC_PROTNAME_SIP])) {
 				stream->write_function(stream, "                       sip: unsupported\n");
 			} else {
 				stream->write_function(stream, "                       sip: %s/%s\n",
-					osp_globals.modules[OSPC_DPROT_SIP], osp_globals.profiles[OSPC_DPROT_SIP]);
+					osp_globals.modules[OSPC_PROTNAME_SIP], osp_globals.profiles[OSPC_PROTNAME_SIP]);
 			}
-			if (switch_strlen_zero(osp_globals.modules[OSPC_DPROT_Q931]) || switch_strlen_zero(osp_globals.profiles[OSPC_DPROT_Q931])) {
+			if (switch_strlen_zero(osp_globals.modules[OSPC_PROTNAME_Q931]) || switch_strlen_zero(osp_globals.profiles[OSPC_PROTNAME_Q931])) {
 				stream->write_function(stream, "                      h323: unsupported\n");
 			} else {
 				stream->write_function(stream, "                      h323: %s/%s\n",
-					osp_globals.modules[OSPC_DPROT_Q931], osp_globals.profiles[OSPC_DPROT_Q931]);
+					osp_globals.modules[OSPC_PROTNAME_Q931], osp_globals.profiles[OSPC_PROTNAME_Q931]);
 			}
-			if (switch_strlen_zero(osp_globals.modules[OSPC_DPROT_IAX]) || switch_strlen_zero(osp_globals.profiles[OSPC_DPROT_IAX])) {
+			if (switch_strlen_zero(osp_globals.modules[OSPC_PROTNAME_IAX]) || switch_strlen_zero(osp_globals.profiles[OSPC_PROTNAME_IAX])) {
 				stream->write_function(stream, "                       iax: unsupported\n");
 			} else {
 				stream->write_function(stream, "                       iax: %s/%s\n",
-					osp_globals.modules[OSPC_DPROT_IAX], osp_globals.profiles[OSPC_DPROT_IAX]);
+					osp_globals.modules[OSPC_PROTNAME_IAX], osp_globals.profiles[OSPC_PROTNAME_IAX]);
 			}
-			if (switch_strlen_zero(osp_globals.modules[OSPC_DPROT_SKYPE]) || switch_strlen_zero(osp_globals.profiles[OSPC_DPROT_SKYPE])) {
+			if (switch_strlen_zero(osp_globals.modules[OSPC_PROTNAME_SKYPE]) || switch_strlen_zero(osp_globals.profiles[OSPC_PROTNAME_SKYPE])) {
 				stream->write_function(stream, "                     skype: unsupported\n");
 			} else {
 				stream->write_function(stream, "                     skype: %s/%s\n",
-					osp_globals.modules[OSPC_DPROT_SKYPE], osp_globals.profiles[OSPC_DPROT_SKYPE]);
+					osp_globals.modules[OSPC_PROTNAME_SKYPE], osp_globals.profiles[OSPC_PROTNAME_SKYPE]);
 			}
 			stream->write_function(stream, "          default-protocol: %s\n", osp_get_protocol(osp_globals.protocol));
 			stream->write_function(stream, "============== OSP Profile Settings & Status ==============\n");
@@ -829,7 +844,6 @@ SWITCH_STANDARD_API(osp_api_function)
 					break;
 				}
 				stream->write_function(stream, "          max-destinations: %d\n", profile->maxdest);
-				stream->write_function(stream, "                user-phone: %s\n", profile->userphone ? "enabled" : "disabled");
 				stream->write_function(stream, "                    status: %s\n", profile->provider != OSP_INVALID_HANDLE ? "enabled" : "disabled");
 			}
 		} else {
@@ -845,86 +859,110 @@ SWITCH_STANDARD_API(osp_api_function)
 }
 
 /*
- * Parse URI userinfo
- * param user URI userinfo
- * param user URI user
+ * Parse Userinfo for user and LNP
+ * param userinfo SIP URI userinfo
+ * param user User part
  * param usersize Size of user buffer
- * param inbound Inbound info
+ * param rn Routing number
+ * param rnsize Size of rn buffer
+ * param cic Carrier Identification Cod
+ * param cicsize Size of cic buffer
+ * param npdi NP Database Dip Indicator
  * return
  */
 static void osp_parse_userinfo(
 	const char *userinfo,
 	char *user,
 	switch_size_t usersize,
-	osp_inbound_t *inbound)
+	char *rn,
+	switch_size_t rnsize,
+	char *cic,
+	switch_size_t cicsize,
+	int *npdi)
 {
 	char buffer[OSP_SIZE_NORSTR];
 	char *item;
 	char *tmp;
 
-	if (switch_strlen_zero(userinfo)) {
+	if (!switch_strlen_zero(userinfo)) {
+		switch_copy_string(buffer, userinfo, sizeof(buffer));
+		item = strtok_r(buffer, OSP_USER_DELIM, &tmp);
 		if (user && usersize) {
-			user[0] = '\0';
+			switch_copy_string(user, item, usersize);
 		}
-		/* It is not necessary to clean inbound */
-		return;
-	}
-
-	switch_copy_string(buffer, userinfo, sizeof(buffer));
-
-	item = strtok_r(buffer, OSP_USER_DELIM, &tmp);
-
-	if (user && usersize) {
-		switch_copy_string(user, item, usersize);
-	}
-
-	if (inbound) {
-		switch_copy_string(inbound->called, item, sizeof(inbound->called));
-
 		for (item = strtok_r(NULL, OSP_USER_DELIM, &tmp); item; item = strtok_r(NULL, OSP_USER_DELIM, &tmp)) {
 			if (!strncasecmp(item, "rn=", 3)) {
-				switch_copy_string(inbound->nprn, item + 3, sizeof(inbound->nprn));
+				if (rn && rnsize) {
+					switch_copy_string(rn, item + 3, rnsize);
+				}
 			} else if (!strncasecmp(item, "cic=", 4)) {
-				switch_copy_string(inbound->npcic, item + 4, sizeof(inbound->npcic));
+				if (cic && cicsize) {
+					switch_copy_string(cic, item + 4, cicsize);
+				}
 			} else if (!strcasecmp(item, "npdi")) {
-				inbound->npdi = 1;
+				*npdi = 1;
 			}
 		}
 	}
 }
 
 /*
- * Parse SIP Diversion
- * param diversion SIP Diversion header
- * param inbound Inbound info
+ * Parse SIP header user
+ * param header SIP header
+ * param user SIP header user
+ * param usersize Size of user buffer
  * return
  */
-static void osp_parse_diversion(
-	const char *diversion,
-	osp_inbound_t *inbound)
+static void osp_parse_header_user(
+	const char *header,
+	char *user,
+	switch_size_t usersize)
 {
 	char buffer[OSP_SIZE_NORSTR];
-	char userinfo[OSP_SIZE_NORSTR];
+	char *head;
+	char *tmp;
+	char *item;
+
+	if (!switch_strlen_zero(header) && user && usersize) {
+		*user = '\0';
+		switch_copy_string(buffer, header, sizeof(buffer));
+		if ((head = strstr(buffer, "sip:"))) {
+			head += 4;
+			if ((tmp = strchr(head, OSP_URI_DELIM))) {
+				*tmp = '\0';
+				item = strtok_r(head, OSP_USER_DELIM, &tmp);
+				switch_copy_string(user, item, usersize);
+			}
+		}
+	}
+}
+
+/*
+ * Parse SIP header host
+ * param header SIP header
+ * param host SIP header host
+ * param hostsize Size of host buffer
+ * return
+ */
+static void osp_parse_header_host(
+	const char *header,
+	char *host,
+	switch_size_t hostsize)
+{
+	char buffer[OSP_SIZE_NORSTR];
 	char *head;
 	char *tmp;
 
-	if (switch_strlen_zero(diversion)) {
-		/* It is not necessary to clean inbound */
-		return;
-	}
-
-	switch_copy_string(buffer, diversion, sizeof(buffer));
-
-	if ((head = strstr(buffer, "sip:"))) {
-		head += 4;
-		if ((tmp = strchr(head, OSP_URI_DELIM))) {
-			*tmp = '\0';
-			switch_copy_string(userinfo, head, sizeof(userinfo));
-			osp_parse_userinfo(userinfo, inbound->divuser, sizeof(inbound->divuser), NULL);
-
-			head = tmp + 1;
+	if (!switch_strlen_zero(header) && host && hostsize) {
+		*host = '\0';
+		switch_copy_string(buffer, header, sizeof(buffer));
+		if ((head = strstr(buffer, "sip:"))) {
+			head += 4;
+			if ((tmp = strchr(head, OSP_URI_DELIM))) {
+				head = tmp + 1;
+			}
 			tmp = strtok(head, OSP_HOST_DELIM);
-			switch_copy_string(inbound->divhost, tmp, sizeof(inbound->divhost));
+			switch_copy_string(host, tmp, hostsize);
 		}
 	}
 }
@@ -978,25 +1016,33 @@ static void osp_log_authreq(
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, osp_globals.loglevel,
 			"AuthReq: "
-			"srvtype = '%s' "
-			"source = '%s' "
-			"srcdev = '%s' "
-			"calling = '%s' "
-			"called = '%s' "
-			"lnp = '%s/%s/%d' "
-			"prefer = '%s' "
-			"div = '%s/%s' "
-			"srcnid = '%s' "
-			"cinfo = '%s/%s/%s/%s/%s/%s/%s/%s' "
-			"maxcount = '%d'\n",
+			"srvtype '%s' "
+			"source '%s' "
+			"srcdev '%s' "
+			"protocol '%s' "
+			"calling '%s' "
+			"called '%s' "
+			"lnp '%s/%s/%d' "
+			"prefer '%s' "
+			"rpid '%s' "
+			"pai '%s' "
+			"div '%s/%s' "
+			"pci '%s' "
+			"srcnid '%s' "
+			"cinfo '%s/%s/%s/%s/%s/%s/%s/%s' "
+			"maxcount '%d'\n",
 			srvtype,
 			source,
 			srcdev,
+			osp_get_protocol(inbound->protocol),
 			inbound->calling,
 			inbound->called,
 			inbound->nprn, inbound->npcic, inbound->npdi,
 			term,
+			inbound->rpiduser,
+			inbound->paiuser,
 			inbound->divuser, inbound->divhost,
+			inbound->pciuser,
 			osp_filter_null(inbound->srcnid),
 			osp_filter_null(inbound->cinfo[0]), osp_filter_null(inbound->cinfo[1]),
 			osp_filter_null(inbound->cinfo[2]), osp_filter_null(inbound->cinfo[3]),
@@ -1004,6 +1050,31 @@ static void osp_log_authreq(
 			osp_filter_null(inbound->cinfo[6]), osp_filter_null(inbound->cinfo[7]),
 			total);
 	}
+}
+
+/*
+ * Get protocol from module name
+ * param module Module name
+ * return protocol name
+ */
+static OSPE_PROTOCOL_NAME osp_get_moduleprotocol(
+	const char *module)
+{
+	OSPE_PROTOCOL_NAME protocol;
+
+	if (!strcasecmp(module, OSP_MODULE_SIP)) {
+		protocol = OSPC_PROTNAME_SIP;
+	} else if (!strcasecmp(module, OSP_MODULE_H323)) {
+		protocol = OSPC_PROTNAME_Q931;
+	} else if (!strcasecmp(module, OSP_MODULE_IAX)) {
+		protocol = OSPC_PROTNAME_IAX;
+	} else if (!strcasecmp(module, OSP_MODULE_SKYPE)) {
+		protocol = OSPC_PROTNAME_SKYPE;
+	} else {
+		protocol = OSPC_PROTNAME_UNKNOWN;
+	}
+
+	return protocol;
 }
 
 /*
@@ -1025,16 +1096,33 @@ static void osp_get_inbound(
 	memset(inbound, 0, sizeof(*inbound));
 
 	caller = switch_channel_get_caller_profile(channel);
+
 	inbound->actsrc = switch_channel_get_variable(channel, OSP_VAR_SRCDEV);
 	inbound->srcdev = caller->network_addr;
-	inbound->calling = caller->caller_id_number;
-	osp_parse_userinfo(caller->destination_number, NULL, 0, inbound);
+	inbound->protocol = osp_get_moduleprotocol(caller->source);
+	if ((tmp = switch_channel_get_variable(channel, OSP_FS_FROMUSER))) {
+		osp_parse_userinfo(tmp, inbound->calling, sizeof(inbound->calling), NULL, 0, NULL, 0, NULL);
+	} else {
+		osp_parse_userinfo(caller->caller_id_number, inbound->calling, sizeof(inbound->calling), NULL, 0, NULL, 0, NULL);
+	}
+	osp_parse_userinfo(caller->destination_number, inbound->called, sizeof(inbound->called), inbound->nprn, sizeof(inbound->nprn),
+		inbound->npcic, sizeof(inbound->npcic), &inbound->npdi);
 
 	inbound->tohost = switch_channel_get_variable(channel, OSP_FS_TOHOST);
 	inbound->toport = switch_channel_get_variable(channel, OSP_FS_TOPORT);
 
-	if ((tmp = switch_channel_get_variable(channel, OSP_FS_DIVERSION))) {
-		osp_parse_diversion(tmp, inbound);
+	if ((tmp = switch_channel_get_variable(channel, OSP_FS_RPID))) {
+		osp_parse_header_user(tmp, inbound->rpiduser, sizeof(inbound->rpiduser));
+	}
+	if ((tmp = switch_channel_get_variable(channel, OSP_FS_PAI))) {
+		osp_parse_userinfo(tmp, inbound->paiuser, sizeof(inbound->paiuser), NULL, 0, NULL, 0, NULL);
+	}
+	if ((tmp = switch_channel_get_variable(channel, OSP_FS_DIV))) {
+		osp_parse_header_user(tmp, inbound->divuser, sizeof(inbound->divuser));
+		osp_parse_header_host(tmp, inbound->divhost, sizeof(inbound->divhost));
+	}
+	if ((tmp = switch_channel_get_variable(channel, OSP_FS_PCI))) {
+		osp_parse_header_user(tmp, inbound->pciuser, sizeof(inbound->pciuser));
 	}
 
 	inbound->srcnid = switch_channel_get_variable(channel, OSP_VAR_SRCNID);
@@ -1046,8 +1134,34 @@ static void osp_get_inbound(
 		switch_snprintf(name, sizeof(name), "%s%d", OSP_VAR_CUSTOMINFO, i + 1);
 		inbound->cinfo[i] = switch_channel_get_variable(channel, name);
 	}
+}
 
-	inbound->outproxy = switch_channel_get_variable(channel, OSP_VAR_OUTPROXY);
+/*
+ * Get outbound settings
+ * param channel Inbound channel
+ * param outbound Outbound settings
+ * return
+ */
+static void osp_get_outbound(
+	switch_channel_t *channel,
+	osp_outbound_t *outbound)
+{
+	const char *value;
+
+	memset(outbound, 0, sizeof(*outbound));
+
+	/* Get destination network ID namd & location info */
+	outbound->dniduserparam = switch_channel_get_variable(channel, OSP_VAR_DNIDUSERPARAM);
+	outbound->dniduriparam = switch_channel_get_variable(channel, OSP_VAR_DNIDURIPARAM);
+
+	/* Get "user=phone" insert flag */
+	value = switch_channel_get_variable(channel, OSP_VAR_USERPHONE);
+	if (!switch_strlen_zero(value)) {
+		outbound->userphone = switch_true(value);
+	}
+
+	/* Get outbound proxy info */
+	outbound->outproxy = switch_channel_get_variable(channel, OSP_VAR_OUTPROXY);
 }
 
 /*
@@ -1147,7 +1261,7 @@ static switch_status_t osp_check_destination(
 	osp_destination_t *dest)
 {
 	OSPE_DEST_OSPENABLED enabled;
-	OSPE_DEST_PROTOCOL protocol;
+	OSPE_PROTOCOL_NAME protocol;
 	OSPE_OPERATOR_NAME type;
 	int error;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -1165,29 +1279,29 @@ static switch_status_t osp_check_destination(
 	}
 
 	if ((error = OSPPTransactionGetDestProtocol(transaction, &protocol)) != OSPC_ERR_NO_ERROR) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get destination protocol, error '%d'\n", error);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get signaling protocol, error '%d'\n", error);
 		return status;
 	}
 
 	switch(protocol) {
-	case OSPC_DPROT_UNDEFINED:
-	case OSPC_DPROT_UNKNOWN:
+	case OSPC_PROTNAME_UNDEFINED:
+	case OSPC_PROTNAME_UNKNOWN:
 		protocol = osp_globals.protocol;
-	case OSPC_DPROT_SIP:
-	case OSPC_DPROT_Q931:
-	case OSPC_DPROT_IAX:
-	case OSPC_DPROT_SKYPE:
+	case OSPC_PROTNAME_SIP:
+	case OSPC_PROTNAME_Q931:
+	case OSPC_PROTNAME_IAX:
+	case OSPC_PROTNAME_SKYPE:
 		dest->protocol = protocol;
 		if (!switch_strlen_zero(osp_globals.modules[protocol]) && !switch_strlen_zero(osp_globals.profiles[protocol])) {
 			dest->supported = SWITCH_TRUE;
 			status = SWITCH_STATUS_SUCCESS;
 		}
 		break;
-	case OSPC_DPROT_LRQ:
-	case OSPC_DPROT_T37:
-	case OSPC_DPROT_T38:
-	case OSPC_DPROT_SMPP:
-	case OSPC_DPROT_XMPP:
+	case OSPC_PROTNAME_LRQ:
+	case OSPC_PROTNAME_T37:
+	case OSPC_PROTNAME_T38:
+	case OSPC_PROTNAME_SMPP:
+	case OSPC_PROTNAME_XMPP:
 	default:
 		dest->protocol = protocol;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported protocol '%d'\n", protocol);
@@ -1234,16 +1348,16 @@ static void osp_log_authrsp(
 		for (i = 0; i < results->numdest; i++) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, osp_globals.loglevel,
 				"AuthRsp: "
-				"transid = '%"PRIu64"' "
-				"destcount = '%d' "
-				"timelimit = '%u' "
-				"destination = '%s' "
-				"calling = '%s' "
-				"called = '%s' "
-				"destnid = '%s' "
-				"lnp = '%s/%s/%d' "
-				"protocol = '%s' "
-				"supported = '%d'\n",
+				"transid '%"PRIu64"' "
+				"destcount '%d' "
+				"timelimit '%u' "
+				"destination '%s' "
+				"calling '%s' "
+				"called '%s' "
+				"destnid '%s' "
+				"lnp '%s/%s/%d' "
+				"protocol '%s' "
+				"supported '%d'\n",
 				results->transid,
 				i + 1,
 				results->dests[i].timelimit,
@@ -1262,7 +1376,7 @@ static void osp_log_authrsp(
  * Do auth/routing request
  * param profile OSP profile
  * param transaction Transaction handle
- * param source Call originator info
+ * param inbound Call originator info
  * param results Routing info
  * return SWITCH_STATUS_SUCCESS Successful, SWITCH_STATUS_FALSE Failed
  */
@@ -1287,10 +1401,15 @@ static switch_status_t osp_do_request(
 
 	osp_log_authreq(profile, inbound);
 
+	OSPPTransactionSetProtocol(transaction, OSPC_PROTTYPE_SOURCE, inbound->protocol);
+
 	OSPPTransactionSetNumberPortability(transaction, inbound->nprn, inbound->npcic, inbound->npdi);
 
+	OSPPTransactionSetRemotePartyId(transaction, OSPC_NFORMAT_E164, inbound->rpiduser);
+	OSPPTransactionSetAssertedId(transaction, OSPC_NFORMAT_E164, inbound->paiuser);
 	osp_convert_inout(inbound->divhost, tmp, sizeof(tmp));
 	OSPPTransactionSetDiversion(transaction, inbound->divuser, tmp);
+	OSPPTransactionSetChargeInfo(transaction, OSPC_NFORMAT_E164, inbound->pciuser);
 
 	OSPPTransactionSetNetworkIds(transaction, inbound->srcnid, NULL);
 
@@ -1352,11 +1471,15 @@ static switch_status_t osp_do_request(
 		NULL,				/* Log buffer size */
 		NULL);				/* Log buffer */
 	if (error != OSPC_ERR_NO_ERROR) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to request routing, error '%d'\n", error);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to request routing for '%s/%s', error '%d'\n",
+			inbound->calling, inbound->called, error);
+		results->status = error;
 		results->numdest = 0;
 		return status;
 	} else if (!total) {
+		results->status = error;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Without destination\n");
+		results->status = error;
 		results->numdest = 0;
 		return status;
 	}
@@ -1368,6 +1491,7 @@ static switch_status_t osp_do_request(
 		results->transid = 0;
 	}
 
+	switch_copy_string(results->calling, inbound->calling, sizeof(results->calling));
 	switch_copy_string(results->called, inbound->called, sizeof(results->called));
 	results->srcdev = srcdev;
 	results->srcnid = inbound->srcnid;
@@ -1395,13 +1519,13 @@ static switch_status_t osp_do_request(
 		NULL);					/* Token buffer */
 	if (error != OSPC_ERR_NO_ERROR) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get first destination, error '%d'\n", error);
+		results->status = error;
+		results->numdest = 0;
 		return status;
 	}
 
 	osp_convert_outin(term, dest->dest, sizeof(dest->dest));
 	osp_check_destination(transaction, dest);
-	dest->userphone = profile->userphone;
-	dest->outproxy = inbound->outproxy;
 
 	for (count = 1; count < total; count++) {
 		dest = &results->dests[count];
@@ -1427,17 +1551,19 @@ static switch_status_t osp_do_request(
 		if (error == OSPC_ERR_NO_ERROR) {
 			osp_convert_outin(term, dest->dest, sizeof(dest->dest));
 			osp_check_destination(transaction, dest);
-			dest->userphone = profile->userphone;
-			dest->outproxy = inbound->outproxy;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get destination, error '%d'\n", error);
 			break;
 		}
 	}
 	if (count == total) {
+		results->status = OSPC_ERR_NO_ERROR;
 		results->numdest = total;
 		osp_log_authrsp(results);
 		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		results->status = error;
+		results->numdest = 0;
 	}
 
 	return status;
@@ -1504,11 +1630,14 @@ static void osp_build_allparam(
 
 	if (results && head && size) {
 		switch_snprintf(head, size,
-			"{%s=%s,%s=%"PRIu64",%s=%"PRId64",%s=%s",
+			"{%s=%s,%s=%"PRIu64",%s=%s,%s=%s,%s=%"PRId64",%s=%s,%s=%d",
 			OSP_VAR_PROFILE, results->profile,
 			OSP_VAR_TRANSID, results->transid,
+			OSP_VAR_CALLING, results->calling,
+			OSP_VAR_CALLED, results->called,
 			OSP_VAR_START, results->start,
-			OSP_VAR_SRCDEV, results->srcdev);
+			OSP_VAR_SRCDEV, results->srcdev,
+			OSP_VAR_DESTTOTAL, results->numdest);
 		osp_adjust_len(head, size, len);
 
 		if (!switch_strlen_zero(results->srcnid)) {
@@ -1559,12 +1688,14 @@ static void osp_build_eachparam(
 /*
  * Build endpoint string
  * param dest Destination
+ * param outbound Outbound settings
  * param buffer Buffer
  * param bufsize Buffer size
  * return
  */
 static void osp_build_endpoint(
 	osp_destination_t *dest,
+	osp_outbound_t *outbound,
 	char *buffer,
 	switch_size_t bufsize)
 {
@@ -1573,8 +1704,9 @@ static void osp_build_endpoint(
 
 	if (head && size) {
 		switch (dest->protocol) {
-		case OSPC_DPROT_SIP:
-			switch_snprintf(head, size, "%s/%s/%s", osp_globals.modules[OSPC_DPROT_SIP], osp_globals.profiles[OSPC_DPROT_SIP], dest->called);
+		case OSPC_PROTNAME_SIP:
+			switch_snprintf(head, size, "%s/%s/%s", osp_globals.modules[OSPC_PROTNAME_SIP], osp_globals.profiles[OSPC_PROTNAME_SIP],
+				dest->called);
 			osp_adjust_len(head, size, len);
 
 			if (!switch_strlen_zero_buf(dest->nprn)) {
@@ -1590,29 +1722,42 @@ static void osp_build_endpoint(
 				osp_adjust_len(head, size, len);
 			}
 
+			if (!switch_strlen_zero(outbound->dniduserparam) && !switch_strlen_zero_buf(dest->destnid)) {
+				switch_snprintf(head, size, ";%s=%s", outbound->dniduserparam, dest->destnid);
+				osp_adjust_len(head, size, len);
+			}
+
 			switch_snprintf(head, size, "@%s", dest->dest);
 			osp_adjust_len(head, size, len);
 
-			if (dest->userphone) {
+			if (!switch_strlen_zero(outbound->dniduriparam) && !switch_strlen_zero_buf(dest->destnid)) {
+				switch_snprintf(head, size, ";%s=%s", outbound->dniduriparam, dest->destnid);
+				osp_adjust_len(head, size, len);
+			}
+
+			if (outbound->userphone) {
 				switch_snprintf(head, size, ";user=phone");
 				osp_adjust_len(head, size, len);
 			}
 
-			if (dest->outproxy) {
-				switch_snprintf(head, size, ";fs_path=sip:%s", dest->outproxy);
+			if (!switch_strlen_zero(outbound->outproxy)) {
+				switch_snprintf(head, size, ";fs_path=sip:%s", outbound->outproxy);
 				osp_adjust_len(head, size, len);
 			}
 			break;
-		case OSPC_DPROT_Q931:
-			switch_snprintf(head, size, "%s/%s/%s@%s", osp_globals.modules[OSPC_DPROT_Q931], osp_globals.profiles[OSPC_DPROT_Q931], dest->called, dest->dest);
+		case OSPC_PROTNAME_Q931:
+			switch_snprintf(head, size, "%s/%s/%s@%s", osp_globals.modules[OSPC_PROTNAME_Q931], osp_globals.profiles[OSPC_PROTNAME_Q931],
+				dest->called, dest->dest);
 			osp_adjust_len(head, size, len);
 			break;
-		case OSPC_DPROT_IAX:
-			switch_snprintf(head, size, "%s/%s/%s/%s", osp_globals.modules[OSPC_DPROT_Q931], osp_globals.profiles[OSPC_DPROT_Q931], dest->dest, dest->called);
+		case OSPC_PROTNAME_IAX:
+			switch_snprintf(head, size, "%s/%s/%s/%s", osp_globals.modules[OSPC_PROTNAME_Q931], osp_globals.profiles[OSPC_PROTNAME_Q931],
+				dest->dest, dest->called);
 			osp_adjust_len(head, size, len);
 			break;
-		case OSPC_DPROT_SKYPE:
-			switch_snprintf(head, size, "%s/%s/%s", osp_globals.modules[OSPC_DPROT_Q931], osp_globals.profiles[OSPC_DPROT_Q931], dest->called);
+		case OSPC_PROTNAME_SKYPE:
+			switch_snprintf(head, size, "%s/%s/%s", osp_globals.modules[OSPC_PROTNAME_Q931], osp_globals.profiles[OSPC_PROTNAME_Q931],
+				dest->called);
 			osp_adjust_len(head, size, len);
 			break;
 		default:
@@ -1625,8 +1770,7 @@ static void osp_build_endpoint(
 /*
  * Create route string
  * param channel Originator channel
- * param numdest Numer of destinations
- * param destlist Destinations
+ * param results Routing info
  * return
  */
 static void osp_create_route(
@@ -1639,12 +1783,15 @@ static void osp_create_route(
 	char allparam[OSP_SIZE_NORSTR];
 	char eachparam[OSP_SIZE_NORSTR];
 	char endpoint[OSP_SIZE_NORSTR];
+	osp_outbound_t outbound;
 	char tmp[OSP_SIZE_ROUSTR];
 	char buffer[OSP_SIZE_ROUSTR];
 	int i, len, count, size = sizeof(buffer);
 	char *head = buffer;
 	switch_event_header_t *hi;
 	char *var;
+
+	osp_get_outbound(channel, &outbound);
 
 	/* Cleanup OSP varibales in originator */
 	if ((hi = switch_channel_variable_first(channel))) {
@@ -1657,6 +1804,9 @@ static void osp_create_route(
 		switch_channel_variable_last(channel);
 	}
 
+	switch_snprintf(value, sizeof(value), "%d", results->status);
+	switch_channel_set_variable_var_check(channel, OSP_VAR_AUTHSTATUS, value, SWITCH_FALSE);
+
 	osp_build_allparam(results, head, size);
 	switch_copy_string(allparam, head, sizeof(allparam));
 	osp_adjust_len(head, size, len);
@@ -1666,7 +1816,7 @@ static void osp_create_route(
 		if (dest->supported) {
 			count++;
 			osp_build_eachparam(i + 1, dest, eachparam, sizeof(eachparam));
-			osp_build_endpoint(dest, endpoint, sizeof(endpoint));
+			osp_build_endpoint(dest, &outbound, endpoint, sizeof(endpoint));
 
 			switch_snprintf(name, sizeof(name), "%s%d", OSP_VAR_ROUTEPRE, count);
 			switch_snprintf(value, sizeof(value), "%s%s%s", allparam, eachparam, endpoint);
@@ -1687,6 +1837,38 @@ static void osp_create_route(
 		buffer[0] = '\0';
 	}
 	switch_channel_set_variable_var_check(channel, OSP_VAR_AUTOROUTE, buffer, SWITCH_FALSE);
+}
+
+/*
+ * Export AuthReq status to channel
+ * param channel Originator channel
+ * param results Routing info
+ * return
+ */
+static void osp_export_failure(
+	switch_channel_t *channel,
+	osp_results_t *results)
+{
+	char value[OSP_SIZE_NORSTR];
+	switch_event_header_t *hi;
+	char *var;
+
+	/* Cleanup OSP varibales in originator */
+	if ((hi = switch_channel_variable_first(channel))) {
+		for (; hi; hi = hi->next) {
+			var = hi->name;
+			if (var && !strncmp(var, "osp_", 4)) {
+				switch_channel_set_variable(channel, var, NULL);
+			}
+		}
+		switch_channel_variable_last(channel);
+	}
+
+	switch_snprintf(value, sizeof(value), "%d", results->status);
+	switch_channel_set_variable_var_check(channel, OSP_VAR_AUTHSTATUS, value, SWITCH_FALSE);
+
+	switch_snprintf(value, sizeof(value), "%d", results->numdest);
+	switch_channel_set_variable_var_check(channel, OSP_VAR_ROUTECOUNT, value, SWITCH_FALSE);
 }
 
 /*
@@ -1728,6 +1910,8 @@ SWITCH_STANDARD_APP(osp_app_function)
 	retval = osp_request_routing(channel, profile, &results);
 	if (retval == SWITCH_STATUS_SUCCESS) {
 		osp_create_route(channel, &results);
+	} else {
+		osp_export_failure(channel, &results);
 	}
 }
 
@@ -1749,6 +1933,7 @@ static void osp_add_application(
 	char allparam[OSP_SIZE_NORSTR];
 	char eachparam[OSP_SIZE_NORSTR];
 	char endpoint[OSP_SIZE_NORSTR];
+	osp_outbound_t outbound;
 	char name[OSP_SIZE_NORSTR];
 	char value[OSP_SIZE_ROUSTR];
 	int i, count;
@@ -1759,6 +1944,8 @@ static void osp_add_application(
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create extension\n");
 		return;
 	}
+
+	osp_get_outbound(channel, &outbound);
 
 	switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 
@@ -1773,6 +1960,9 @@ static void osp_add_application(
 		switch_channel_variable_last(channel);
 	}
 
+	switch_snprintf(value, sizeof(value), "%d", results->status);
+	switch_channel_set_variable_var_check(channel, OSP_VAR_AUTHSTATUS, value, SWITCH_FALSE);
+
 	osp_build_allparam(results, allparam, sizeof(allparam));
 
 	for (count = 0, i = 0; i < results->numdest; i++) {
@@ -1780,7 +1970,7 @@ static void osp_add_application(
 		if (dest->supported) {
 			count++;
 			osp_build_eachparam(i + 1, dest, eachparam, sizeof(eachparam));
-			osp_build_endpoint(dest, endpoint, sizeof(endpoint));
+			osp_build_endpoint(dest, &outbound, endpoint, sizeof(endpoint));
 
 			switch_snprintf(name, sizeof(name), "%s%d", OSP_VAR_ROUTEPRE, count);
 			switch_snprintf(value, sizeof(value), "%s%s%s", allparam, eachparam, endpoint);
@@ -1822,18 +2012,20 @@ SWITCH_STANDARD_DIALPLAN(osp_dialplan_function)
 	retval = osp_request_routing(channel, profile, &results);
 	if (retval == SWITCH_STATUS_SUCCESS) {
 		osp_add_application(session, channel, &extension, &results);
+	} else {
+		osp_export_failure(channel, &results);
 	}
 
 	return extension;
 }
 
 /*
- * Retrieve OSP cookie
+ * Retrieve cookie
  * param channel Destination channel
- * param cookie OSP cookie
+ * param cookie Cookie
  * return SWITCH_STATUS_SUCCESS Successful, SWITCH_STATUS_FALSE Failed
  */
-static switch_status_t osp_get_ospcookie(
+static switch_status_t osp_get_cookie(
 	switch_channel_t *channel,
 	osp_cookie_t *cookie)
 {
@@ -1847,11 +2039,18 @@ static switch_status_t osp_get_ospcookie(
 		cookie->transid = 0;
 	}
 
+	cookie->calling = switch_channel_get_variable(channel, OSP_VAR_CALLING);
+	cookie->called = switch_channel_get_variable(channel, OSP_VAR_CALLED);
+
 	if (!(strvar = switch_channel_get_variable(channel, OSP_VAR_START)) || (sscanf(strvar, "%"PRId64"", &cookie->start) != 1)) {
 		cookie->start = 0;
 	}
 
 	cookie->srcdev = switch_channel_get_variable(channel, OSP_VAR_SRCDEV);
+
+	if (!(strvar = switch_channel_get_variable(channel, OSP_VAR_DESTTOTAL)) || (sscanf(strvar, "%d", &cookie->desttotal) != 1)) {
+		cookie->desttotal = 0;
+	}
 
 	if (!(strvar = switch_channel_get_variable(channel, OSP_VAR_DESTCOUNT)) || (sscanf(strvar, "%d", &cookie->destcount) != 1)) {
 		cookie->destcount = 0;
@@ -1870,7 +2069,7 @@ static switch_status_t osp_get_ospcookie(
  * Retrieve usage info
  * param channel Destination channel
  * param originator Originator channel
- * param cookie OSP cookie
+ * param cookie Cookie
  * param usage Usage info
  * return
  */
@@ -1894,29 +2093,18 @@ static void osp_get_usage(
 	/* Originator had been checked by osp_on_reporting */
 	if (originator) {
 		usage->srcdev = originator->network_addr;
-		usage->calling = originator->caller_id_number;
-		osp_parse_userinfo(originator->destination_number, usage->called, sizeof(usage->called), NULL);
+		usage->inprotocol = osp_get_moduleprotocol(originator->source);
 	}
 
 	terminator = switch_channel_get_caller_profile(channel);
-	if (!strcasecmp(terminator->source, OSP_MODULE_SIP)) {
-		usage->protocol = OSPC_DPROT_SIP;
+	usage->outprotocol = osp_get_moduleprotocol(terminator->source);
+	if (usage->outprotocol == OSPC_PROTNAME_SIP) {
 		strvar = switch_channel_get_variable(channel, OSP_FS_SIPRELEASE);
 		if (!strvar || !strcasecmp(strvar, "recv_bye")) {
 			usage->release = 1;
 		}
-	} else if (!strcasecmp(terminator->source, OSP_MODULE_H323)) {
-		usage->protocol = OSPC_DPROT_Q931;
-	} else if (!strcasecmp(terminator->source, OSP_MODULE_IAX)) {
-		usage->protocol = OSPC_DPROT_IAX;
-	} else if (!strcasecmp(terminator->source, OSP_MODULE_SKYPE)) {
-		usage->protocol = OSPC_DPROT_SKYPE;
-	} else {
-		usage->protocol = OSPC_DPROT_UNKNOWN;
 	}
-
 	usage->cause = switch_channel_get_cause_q850(channel);
-
 	times = switch_channel_get_timetable(channel);
 	usage->alert = times->progress;
 	usage->connect = times->answered;
@@ -1926,19 +2114,27 @@ static void osp_get_usage(
 		usage->pdd = times->answered - cookie->start;
 	}
 
-	usage->fcodec = switch_channel_get_variable(channel, OSP_FS_DOWNCODEC);
-	usage->rcodec = switch_channel_get_variable(channel, OSP_FS_UPCODEC);
-	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPDOWNOCTS)) || (sscanf(strvar, "%d", &usage->rtpdownoctets) != 1)) {
-		usage->rtpdownoctets = OSP_DEF_STATS;
+	usage->srccodec = switch_channel_get_variable(channel, OSP_FS_SRCCODEC);
+	usage->destcodec = switch_channel_get_variable(channel, OSP_FS_DESTCODEC);
+	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPSRCREPOCTS)) ||
+		(sscanf(strvar, "%d", &usage->rtpsrcrepoctets) != 1))
+	{
+		usage->rtpsrcrepoctets = OSP_DEF_STATS;
 	}
-	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPUPOCTS)) || (sscanf(strvar, "%d", &usage->rtpupoctets) != 1)) {
-		usage->rtpupoctets = OSP_DEF_STATS;
+	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPDESTREPOCTS)) ||
+		(sscanf(strvar, "%d", &usage->rtpdestrepoctets) != 1))
+	{
+		usage->rtpdestrepoctets = OSP_DEF_STATS;
 	}
-	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPDOWNPKTS)) || (sscanf(strvar, "%d", &usage->rtpdownpackets) != 1)) {
-		usage->rtpdownpackets = OSP_DEF_STATS;
+	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPSRCREPPKTS)) ||
+		(sscanf(strvar, "%d", &usage->rtpsrcreppackets) != 1))
+	{
+		usage->rtpsrcreppackets = OSP_DEF_STATS;
 	}
-	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPUPPKTS)) || (sscanf(strvar, "%d", &usage->rtpuppackets) != 1)) {
-		usage->rtpuppackets = OSP_DEF_STATS;
+	if (!(strvar = switch_channel_get_variable(channel, OSP_FS_RTPDESTREPPKTS)) ||
+		(sscanf(strvar, "%d", &usage->rtpdestreppackets) != 1))
+	{
+		usage->rtpdestreppackets = OSP_DEF_STATS;
 	}
 }
 
@@ -1994,7 +2190,7 @@ static OSPTTHREADRETURN osp_report_thread(
 
 /*
  * Report usage
- * param cookie OSP cookie
+ * param cookie Cookie
  * param usage Usage
  * return SWITCH_STATUS_SUCCESS Successful, SWITCH_STATUS_FALSE Failed
  */
@@ -2003,7 +2199,9 @@ static switch_status_t osp_report_usage(
 	osp_usage_t *usage)
 {
 	osp_profile_t *profile;
-	const char *source;
+	char source[OSP_SIZE_NORSTR];
+	char destination[OSP_SIZE_NORSTR];
+	char srcdev[OSP_SIZE_NORSTR];
 	OSPTTRANHANDLE transaction;
 	osp_threadarg_t *info;
 	OSPTTHREADID threadid;
@@ -2022,22 +2220,26 @@ static switch_status_t osp_report_usage(
 	}
 
 	if (profile->workmode == OSP_MODE_INDIRECT) {
-		source = usage->srcdev;
+		osp_convert_inout(usage->srcdev, source, sizeof(source));
 	} else {
-		source = profile->device;
+		osp_convert_inout(profile->device, source, sizeof(source));
 	}
+
+	osp_convert_inout(cookie->dest, destination, sizeof(destination));
+
+	osp_convert_inout(cookie->srcdev, srcdev, sizeof(srcdev));
 
 	error = OSPPTransactionBuildUsageFromScratch(
 		transaction,			/* Transaction handle */
 		cookie->transid,		/* Transaction ID */
 		OSPC_ROLE_SOURCE,		/* CDR type, source */
 		source,					/* Source */
-		cookie->dest,			/* Destination */
-		cookie->srcdev,			/* Source device */
+		destination,			/* Destination */
+		srcdev,					/* Source device */
 		OSP_DEF_STRING,			/* Destination device */
-		usage->calling,			/* Calling */
+		cookie->calling,		/* Calling */
 		OSPC_NFORMAT_E164,		/* Calling format */
-		usage->called,			/* Called */
+		cookie->called,			/* Called */
 		OSPC_NFORMAT_E164,		/* Called format */
 		strlen(usage->callid),	/* Size of Call-ID */
 		usage->callid,			/* Call-ID */
@@ -2053,6 +2255,9 @@ static switch_status_t osp_report_usage(
 
 	OSPPTransactionSetDestinationCount(transaction, cookie->destcount);
 
+	OSPPTransactionSetProtocol(transaction, OSPC_PROTTYPE_SOURCE, usage->inprotocol);
+	OSPPTransactionSetProtocol(transaction, OSPC_PROTTYPE_DESTINATION, usage->outprotocol);
+
 	if (!switch_strlen_zero(cookie->srcnid)) {
 		OSPPTransactionSetSrcNetworkId(transaction, cookie->srcnid);
 	}
@@ -2061,25 +2266,34 @@ static switch_status_t osp_report_usage(
 		OSPPTransactionSetDestNetworkId(transaction, cookie->destnid);
 	}
 
-	if (!switch_strlen_zero(usage->fcodec)) {
-		OSPPTransactionSetForwardCodec(transaction, usage->fcodec);
+	if (!switch_strlen_zero(usage->srccodec)) {
+		OSPPTransactionSetCodec(transaction, OSPC_CODEC_SOURCE, usage->srccodec);
 	}
-	if (!switch_strlen_zero(usage->rcodec)) {
-		OSPPTransactionSetReverseCodec(transaction, usage->rcodec);
+	if (!switch_strlen_zero(usage->destcodec)) {
+		OSPPTransactionSetCodec(transaction, OSPC_CODEC_DESTINATION, usage->destcodec);
 	}
 
-	if (usage->rtpdownoctets != OSP_DEF_STATS) {
-		OSPPTransactionSetOctets(transaction, OSPC_SMETRIC_RTP, OSPC_SFLOW_DOWNSTREAM, usage->rtpdownoctets);
+	if (usage->rtpsrcrepoctets != OSP_DEF_STATS) {
+		OSPPTransactionSetOctets(transaction, OSPC_SMETRIC_RTP, OSPC_SDIR_SRCREP, usage->rtpsrcrepoctets);
 	}
-	if (usage->rtpupoctets != OSP_DEF_STATS) {
-		OSPPTransactionSetOctets(transaction, OSPC_SMETRIC_RTP, OSPC_SFLOW_UPSTREAM, usage->rtpupoctets);
+	if (usage->rtpdestrepoctets != OSP_DEF_STATS) {
+		OSPPTransactionSetOctets(transaction, OSPC_SMETRIC_RTP, OSPC_SDIR_DESTREP, usage->rtpdestrepoctets);
 	}
-	if (usage->rtpdownpackets != OSP_DEF_STATS) {
-		OSPPTransactionSetPackets(transaction, OSPC_SMETRIC_RTP, OSPC_SFLOW_DOWNSTREAM, usage->rtpdownpackets);
+	if (usage->rtpsrcreppackets != OSP_DEF_STATS) {
+		OSPPTransactionSetPackets(transaction, OSPC_SMETRIC_RTP, OSPC_SDIR_SRCREP, usage->rtpsrcreppackets);
 	}
-	if (usage->rtpuppackets != OSP_DEF_STATS) {
-		OSPPTransactionSetPackets(transaction, OSPC_SMETRIC_RTP, OSPC_SFLOW_UPSTREAM, usage->rtpuppackets);
+	if (usage->rtpdestreppackets != OSP_DEF_STATS) {
+		OSPPTransactionSetPackets(transaction, OSPC_SMETRIC_RTP, OSPC_SDIR_DESTREP, usage->rtpdestreppackets);
 	}
+
+/* TODO: The logic to identify the last call attempt needs improvement.
+	if ((cookie->destcount == cookie->desttotal) || (usage->cause == SWITCH_CAUSE_NORMAL_CLEARING)) {
+		OSPPTransactionSetRoleInfo(transaction, OSPC_RSTATE_STOP, OSPC_RFORMAT_OSP, OSPC_RVENDOR_FREESWITCH);
+	} else {
+		OSPPTransactionSetRoleInfo(transaction, OSPC_RSTATE_INTERIM, OSPC_RFORMAT_OSP, OSPC_RVENDOR_FREESWITCH);
+	}
+*/
+	OSPPTransactionSetRoleInfo(transaction, OSPC_RSTATE_STOP, OSPC_RFORMAT_OSP, OSPC_RVENDOR_FREESWITCH);
 
 	info = (osp_threadarg_t *)malloc(sizeof(osp_threadarg_t));
 	info->transaction = transaction;
@@ -2090,7 +2304,7 @@ static switch_status_t osp_report_usage(
 	info->connect = usage->connect / 1000000;
 	info->end = usage->end / 1000000;
 	info->duration = usage->duration / 1000000;
-	info->pdd = usage->pdd / 1000000;
+	info->pdd = usage->pdd / 1000;
 	info->release = usage->release;
 
 	OSPM_THRATTR_INIT(threadattr, error);
@@ -2105,7 +2319,7 @@ static switch_status_t osp_report_usage(
 
 /*
  * Log UsageInd parameters
- * param cookie OSP cookie
+ * param cookie Cookie
  * param usage Usage info
  * return
  */
@@ -2116,42 +2330,42 @@ static void osp_log_usageind(
 	if (osp_globals.debug) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, osp_globals.loglevel,
 			"UsageInd: "
-			"transid = '%"PRIu64"' "
-			"destcount = '%d' "
-			"callid = '%s' "
-			"calling = '%s' "
-			"called = '%s' "
-			"srcdev = '%s' "
-			"dest = '%s' "
-			"nid = '%s/%s' "
-			"protocol = '%s' "
-			"cause = '%d' "
-			"release = '%s' "
-			"times = '%"PRId64"/%"PRId64"/%"PRId64"/%"PRId64"' "
-			"duration = '%"PRId64"' "
-			"pdd = '%"PRId64"' "
-			"outsessionid = '%s' "
-			"codec = '%s/%s' "
-			"rtpctets = '%d/%d' "
-			"rtppackets = '%d/%d'\n",
+			"transid '%"PRIu64"' "
+			"destcount '%d' "
+			"callid '%s' "
+			"calling '%s' "
+			"called '%s' "
+			"srcdev '%s' "
+			"dest '%s' "
+			"nid '%s/%s' "
+			"protocol '%s/%s' "
+			"cause '%d' "
+			"release '%s' "
+			"times '%"PRId64"/%"PRId64"/%"PRId64"/%"PRId64"' "
+			"duration '%"PRId64"' "
+			"pdd '%"PRId64"' "
+			"outsessionid '%s' "
+			"codec '%s/%s' "
+			"rtpctets '%d/%d' "
+			"rtppackets '%d/%d'\n",
 			cookie->transid,
 			cookie->destcount,
 			usage->callid,
-			usage->calling,
-			usage->called,
+			cookie->calling,
+			cookie->called,
 			cookie->srcdev,
 			cookie->dest,
 			osp_filter_null(cookie->srcnid), osp_filter_null(cookie->destnid),
-			osp_get_protocol(usage->protocol),
+			osp_get_protocol(usage->inprotocol), osp_get_protocol(usage->outprotocol),
 			usage->cause,
 			usage->release ? "term" : "orig",
 			cookie->start / 1000000, usage->alert / 1000000, usage->connect / 1000000, usage->end / 1000000,
 			usage->duration / 1000000,
 			usage->pdd / 1000000,
 			usage->callid,
-			osp_filter_null(usage->fcodec), osp_filter_null(usage->rcodec),
-			usage->rtpdownoctets, usage->rtpupoctets,
-			usage->rtpdownpackets, usage->rtpuppackets);
+			osp_filter_null(usage->srccodec), osp_filter_null(usage->destcodec),
+			usage->rtpsrcrepoctets, usage->rtpdestrepoctets,
+			usage->rtpsrcreppackets, usage->rtpdestreppackets);
 	}
 }
 
@@ -2179,7 +2393,7 @@ static switch_status_t osp_on_reporting(
 		return status;
 	}
 
-	if (osp_get_ospcookie(channel, &cookie) != SWITCH_STATUS_SUCCESS) {
+	if (osp_get_cookie(channel, &cookie) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 

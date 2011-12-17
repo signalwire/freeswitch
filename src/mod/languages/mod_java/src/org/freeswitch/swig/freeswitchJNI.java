@@ -9,6 +9,8 @@
 package org.freeswitch.swig;
 
 class freeswitchJNI {
+  public final static native void setGlobalVariable(String jarg1, String jarg2);
+  public final static native String getGlobalVariable(String jarg1);
   public final static native void consoleLog(String jarg1, String jarg2);
   public final static native void consoleCleanLog(String jarg1);
   public final static native boolean email(String jarg1, String jarg2, String jarg3, String jarg4, String jarg5, String jarg6, String jarg7);
@@ -82,7 +84,7 @@ class freeswitchJNI {
   public final static native long new_EventConsumer(String jarg1, String jarg2);
   public final static native void delete_EventConsumer(long jarg1);
   public final static native int EventConsumer_bind(long jarg1, EventConsumer jarg1_, String jarg2, String jarg3);
-  public final static native long EventConsumer_pop(long jarg1, EventConsumer jarg1_, int jarg2);
+  public final static native long EventConsumer_pop(long jarg1, EventConsumer jarg1_, int jarg2, int jarg3);
   public final static native void delete_CoreSession(long jarg1);
   public final static native void CoreSession_session_set(long jarg1, CoreSession jarg1_, long jarg2);
   public final static native long CoreSession_session_get(long jarg1, CoreSession jarg1_);

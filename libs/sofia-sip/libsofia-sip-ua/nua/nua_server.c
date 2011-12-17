@@ -158,14 +158,15 @@ int nua_stack_process_request(nua_handle_t *nh,
     /* These must be in-dialog */
     sm = NULL;
   }
-  else if (initial && sip->sip_to->a_tag) {
+  else if (initial && sip->sip_to->a_tag && method != sip_method_subscribe) {
     /* RFC 3261 section 12.2.2:
 
        If the UAS wishes to reject the request because it does not wish to
        recreate the dialog, it MUST respond to the request with a 481
        (Call/Transaction Does Not Exist) status code and pass that to the
        server transaction.
-    */
+    */ /* we allow this on subscribes because we have disabled the built-in notify server and we need those messages in the application layer */
+	  
     if (method == sip_method_info)
       /* accept out-of-dialog info */; else
     if (method != sip_method_message || !NH_PGET(nh, win_messenger_enable))

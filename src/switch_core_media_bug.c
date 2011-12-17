@@ -207,14 +207,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	}
 
 	if (switch_test_flag(bug, SMBF_STEREO)) {
+		int16_t *left, *right;
+		size_t left_len, right_len;
+		if (switch_test_flag(bug, SMBF_STEREO_SWAP)) {
+			left = dp; /* write stream */
+			left_len = wlen;
+			right = fp; /* read stream */
+			right_len = rlen;
+		} else {
+			left = fp; /* read stream */
+			left_len = rlen;
+			right = dp; /* write stream */
+			right_len = wlen;
+		}
 		for (x = 0; x < blen; x++) {
-			if (x < rlen) {
-				*(tp++) = *(fp + x);
+			if (x < left_len) {
+				*(tp++) = *(left + x);
 			} else {
 				*(tp++) = 0;
 			}
-			if (x < wlen) {
-				*(tp++) = *(dp + x);
+			if (x < right_len) {
+				*(tp++) = *(right + x);
 			} else {
 				*(tp++) = 0;
 			}

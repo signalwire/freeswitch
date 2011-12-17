@@ -37,6 +37,7 @@ static char *SAY_METHOD_NAMES[] = {
 	"PRONOUNCED",
 	"ITERATED",
 	"COUNTED",
+	"PRONOUNCED_YEAR",
 	NULL
 };
 

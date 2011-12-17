@@ -72,6 +72,7 @@ static char prompt_str[512] = "";
 static char prompt_color[12] = {ESL_SEQ_DEFAULT_COLOR};
 static char input_text_color[12] = {ESL_SEQ_DEFAULT_COLOR};
 static char output_text_color[12] = {ESL_SEQ_DEFAULT_COLOR};
+static int feature_level = 0;
 static cli_profile_t profiles[128] = {{{0}}};
 static cli_profile_t internal_profile = {{ 0 }};
 static int pcount = 0;
@@ -237,7 +238,7 @@ static int console_bufferInput (char *addchars, int len, char *cmd, int key)
 		return 0;
 	}
 	if (key == KEY_TAB) {
-		esl_console_complete(cmd, cmd+iCmdBuffer, &cmd[iCmdBuffer-1]);
+		esl_console_complete(cmd, cmd+iCmdBuffer, cmd+iCmdBuffer);
 		return 0;
 	}
 	if (key == KEY_UP || key == KEY_DOWN || key == CLEAR_OP) {
@@ -680,9 +681,10 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 							}
 #ifndef WIN32
 							if (aok) {
-								clear_line();
+								if (feature_level) clear_line();
 								printf("%s%s", colors[level], handle->last_event->body);
-								redisplay();
+								if (!feature_level) printf("%s", ESL_SEQ_DEFAULT_COLOR);
+								if (feature_level) redisplay();
 							}
 #else
 							if (aok) {
@@ -1112,6 +1114,7 @@ int main(int argc, char *argv[])
 	char dft_cfile[512] = "nbess7_cli.conf";
 #endif
 	char *home = getenv("HOME");
+	char *term = getenv("TERM");
 	/* Vars for optargs */
 	int opt;
 	static struct option options[] = {
@@ -1145,6 +1148,17 @@ int main(int argc, char *argv[])
 	char argv_loglevel[128] = "";
 	int argv_quiet = 0;
 	int loops = 2, reconnect = 0, timeout = 0;
+
+	if (term && (!strncasecmp("screen", term, 6) ||
+		!strncasecmp("vt100", term, 5))) {
+		feature_level = 1;
+	} else {
+		feature_level = 0;
+	}
+
+#ifdef WIN32
+	feature_level = 0;
+#endif
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
@@ -1279,11 +1293,11 @@ int main(int argc, char *argv[])
 		snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s> ", profile->name);
 	}
 	bare_prompt_str_len = (int)strlen(bare_prompt_str);
-#ifdef WIN32
-	snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str); /* Not supporting this for now */
-#else
-	snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
-#endif
+	if (feature_level) {
+		snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
+	} else {
+		snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str);
+	}
  connect:
 	connected = 0;
 	while (--loops > 0) {
@@ -1310,7 +1324,7 @@ int main(int argc, char *argv[])
 	}
 	if (argv_exec) {
 		const char *err = NULL;
-		snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", argv_command);
+		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", argv_command);
 		if (timeout) {
 			esl_status_t status = esl_send_recv_timed(&handle, cmd_str, timeout);
 			if (status != ESL_SUCCESS) {

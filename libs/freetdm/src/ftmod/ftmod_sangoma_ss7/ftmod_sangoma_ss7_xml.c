@@ -62,6 +62,7 @@ sng_switch_type_t sng_switch_type_map[] =
 	{ 1, "india"  , LSI_SW_INDIA   , LSI_SW_INDIA   },
 	{ 1, "uk"     , LSI_SW_UK      , LSI_SW_UK      },
 	{ 1, "russia" , LSI_SW_RUSSIA  , LSI_SW_RUSSIA  },
+	{ 1, "china"  , LSI_SW_CHINA   , LSI_SW_CHINA   },
 	{ 0, "", 0, 0 },
 };
 

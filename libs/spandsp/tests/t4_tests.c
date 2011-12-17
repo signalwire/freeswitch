@@ -311,6 +311,7 @@ int main(int argc, char *argv[])
     const char *in_file_name;
     const char *decode_file_name;
     const char *page_header_tz;
+    tz_t tz;
     int opt;
     int i;
     int bit_error_rate;
@@ -678,7 +679,10 @@ int main(int argc, char *argv[])
             else
                 t4_tx_set_header_info(&send_state, NULL);
             if (page_header_tz  &&  page_header_tz[0])
-                t4_tx_set_header_tz(&send_state, page_header_tz);
+            {
+                if (tz_init(&tz, page_header_tz))
+                    t4_tx_set_header_tz(&send_state, &tz);
+            }
             //t4_tx_set_header_overlays_image(&send_state, overlay_page_headers);
             if (restart_pages  &&  (sends & 1))
             {

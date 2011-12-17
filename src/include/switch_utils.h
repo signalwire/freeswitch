@@ -240,6 +240,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_alloc(switch_frame_t **frame, switc
 SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_frame_t **clone);
 SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame);
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str);
+SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param, switch_memory_pool_t *pool);
 
 /*!
   \brief Evaluate the truthfullness of a string expression
@@ -829,6 +830,9 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 #else
 SWITCH_DECLARE(const char *) switch_inet_ntop(int af, void const *src, char *dst, size_t size);
 #endif
+
+SWITCH_DECLARE(char *) switch_uuid_str(char *buf, switch_size_t len);
+SWITCH_DECLARE(char *) switch_format_number(const char *num);
 
 SWITCH_END_EXTERN_C
 #endif

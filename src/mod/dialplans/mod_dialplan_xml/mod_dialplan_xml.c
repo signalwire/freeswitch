@@ -81,12 +81,20 @@ static switch_status_t exec_app(switch_core_session_t *session, const char *app,
 
 static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten, switch_caller_extension_t **extension)
 {
-	switch_xml_t xcond, xaction, xexpression;
+	switch_xml_t xcond, xaction, xexpression, xregex;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *exten_name = (char *) switch_xml_attr(xexten, "name");
-	int proceed = 0;
+	int proceed = 0, save_proceed = 0;
 	char *expression_expanded = NULL, *field_expanded = NULL;
-	switch_regex_t *re = NULL;
+	switch_regex_t *re = NULL, *save_re = NULL;
+	int offset = 0;
+	const char *tzoff = switch_channel_get_variable(channel, "tod_tz_offset");
+
+	if (!zstr(tzoff) && switch_is_number(tzoff)) {
+		offset = atoi(tzoff);
+	} else {
+		tzoff = NULL;
+	}
 
 	if (!exten_name) {
 		exten_name = "_anon_";
@@ -95,13 +103,14 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next) {
 		char *field = NULL;
 		char *do_break_a = NULL;
-		char *expression = NULL;
+		char *expression = NULL, *save_expression = NULL, *save_field_data = NULL;
+		char *regex_rule = NULL;
 		const char *field_data = NULL;
 		int ovector[30];
 		switch_bool_t anti_action = SWITCH_TRUE;
 		break_t do_break_i = BREAK_ON_FALSE;
 
-		int time_match = switch_xml_std_datetime_check(xcond);
+		int time_match = switch_xml_std_datetime_check(xcond, tzoff ? &offset : NULL);
 
 		switch_safe_free(field_expanded);
 		switch_safe_free(expression_expanded);
@@ -114,17 +123,6 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 		field = (char *) switch_xml_attr(xcond, "field");
 
-		if ((xexpression = switch_xml_child(xcond, "expression"))) {
-			expression = switch_str_nil(xexpression->txt);
-		} else {
-			expression = (char *) switch_xml_attr_soft(xcond, "expression");
-		}
-
-		if ((expression_expanded = switch_channel_expand_variables(channel, expression)) == expression) {
-			expression_expanded = NULL;
-		} else {
-			expression = expression_expanded;
-		}
 
 		if ((do_break_a = (char *) switch_xml_attr(xcond, "break"))) {
 			if (!strcasecmp(do_break_a, "on-true")) {
@@ -147,40 +145,187 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			anti_action = SWITCH_FALSE;
 		} else if (time_match == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-							  "Dialplan: %s Date/Time Match (FAIL) [%s] break=%s\n",
+							  "Dialplan: %s Date/TimeMatch (FAIL) [%s] break=%s\n",
 							  switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
 		}
+		
+		
+		if ((regex_rule = (char *) switch_xml_attr(xcond, "regex"))) {
+			int all = !strcasecmp(regex_rule, "all");
+			int xor = !strcasecmp(regex_rule, "xor");
+			int pass = 0;
+			int fail = 0;
+			int total = 0;
 
-		if (field) {
-			if (strchr(field, '$')) {
-				if ((field_expanded = switch_channel_expand_variables(channel, field)) == field) {
-					field_expanded = NULL;
-					field_data = field;
+			switch_channel_del_variable_prefix(channel, "DP_REGEX_MATCH");
+
+			for (xregex = switch_xml_child(xcond, "regex"); xregex; xregex = xregex->next) {
+				time_match = switch_xml_std_datetime_check(xregex, tzoff ? &offset : NULL);
+
+				if (time_match == 1) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+									  "Dialplan: %s Date/Time Match (PASS) [%s]\n",
+									  switch_channel_get_name(channel), exten_name);
+					anti_action = SWITCH_FALSE;
+				} else if (time_match == 0) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+									  "Dialplan: %s Date/TimeMatch (FAIL) [%s]\n",
+									  switch_channel_get_name(channel), exten_name);
+				}
+
+
+				if ((xexpression = switch_xml_child(xregex, "expression"))) {
+					expression = switch_str_nil(xexpression->txt);
 				} else {
-					field_data = field_expanded;
+					expression = (char *) switch_xml_attr_soft(xregex, "expression");
+				}
+				
+				if ((expression_expanded = switch_channel_expand_variables(channel, expression)) == expression) {
+					expression_expanded = NULL;
+				} else {
+					expression = expression_expanded;
+				}
+				
+				total++;
+				
+				field = (char *) switch_xml_attr(xregex, "field");
+
+				if (field) {
+					if (strchr(field, '$')) {
+						if ((field_expanded = switch_channel_expand_variables(channel, field)) == field) {
+							field_expanded = NULL;
+							field_data = field;
+						} else {
+							field_data = field_expanded;
+						}
+					} else {
+						field_data = switch_caller_get_field_by_name(caller_profile, field);
+					}
+					if (!field_data) {
+						field_data = "";
+					}
+					
+					if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+										  "Dialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ match=%s\n",
+										  switch_channel_get_name(channel), exten_name, field, field_data, expression, all ? "all" : "any");
+						pass++;
+						if (!all && !xor) break;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+										  "Dialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ match=%s\n",
+										  switch_channel_get_name(channel), exten_name, field, field_data, expression, all ? "all" : "any");
+						fail++;
+						if (all && !xor) break;
+					}
+				} else if (time_match == -1) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+									  "Dialplan: %s Absolute Condition [%s] match=%s\n", switch_channel_get_name(channel), exten_name, all ? "all" : "any");
+					pass++;
+					if (!all && !xor) break;
+				} else if (time_match == 1) {
+					pass++;
+					if (!all && !xor) break;
+				}
+				
+				if (field && strchr(expression, '(')) {
+					char var[256];
+					switch_snprintf(var, sizeof(var), "DP_REGEX_MATCH_%d", total);
+
+					switch_channel_set_variable(channel, var, NULL);
+					switch_capture_regex(re, proceed, field_data, ovector, var, switch_regex_set_var_callback, session);
+					
+					switch_safe_free(save_expression);
+					switch_safe_free(save_field_data);
+					switch_regex_safe_free(save_re);
+					
+					
+					save_expression = strdup(expression);
+					save_field_data = strdup(field_data);
+					save_re = re;
+					save_proceed = proceed;
+					
+					re = NULL;
+				}
+
+				switch_regex_safe_free(re);
+
+				switch_safe_free(field_expanded);
+				switch_safe_free(expression_expanded);
+				
+			}
+
+			if (xor) {
+				if (pass == 1) {
+					anti_action = SWITCH_FALSE;
 				}
 			} else {
-				field_data = switch_caller_get_field_by_name(caller_profile, field);
-			}
-			if (!field_data) {
-				field_data = "";
+				if ((all && !fail) || (!all && pass)) {
+					anti_action = SWITCH_FALSE; 
+				}
 			}
 
-			if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-								  "Dialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ break=%s\n",
-								  switch_channel_get_name(channel), exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
-				anti_action = SWITCH_FALSE;
+			switch_safe_free(field_expanded);
+			switch_safe_free(expression_expanded);
+			
+		} else {
+			if ((xexpression = switch_xml_child(xcond, "expression"))) {
+				expression = switch_str_nil(xexpression->txt);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-								  "Dialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ break=%s\n",
-								  switch_channel_get_name(channel), exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
+				expression = (char *) switch_xml_attr_soft(xcond, "expression");
 			}
-		} else if (time_match == -1) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-							  "Dialplan: %s Absolute Condition [%s]\n", switch_channel_get_name(channel), exten_name);
-			anti_action = SWITCH_FALSE;
+
+			if ((expression_expanded = switch_channel_expand_variables(channel, expression)) == expression) {
+				expression_expanded = NULL;
+			} else {
+				expression = expression_expanded;
+			}
+			
+			if (field) {
+				if (strchr(field, '$')) {
+					if ((field_expanded = switch_channel_expand_variables(channel, field)) == field) {
+						field_expanded = NULL;
+						field_data = field;
+					} else {
+						field_data = field_expanded;
+					}
+				} else {
+					field_data = switch_caller_get_field_by_name(caller_profile, field);
+				}
+				if (!field_data) {
+					field_data = "";
+				}
+
+				if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+									  "Dialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ break=%s\n",
+									  switch_channel_get_name(channel), exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
+					anti_action = SWITCH_FALSE;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+									  "Dialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ break=%s\n",
+									  switch_channel_get_name(channel), exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
+				}
+			} else if (time_match == -1) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
+								  "Dialplan: %s Absolute Condition [%s]\n", switch_channel_get_name(channel), exten_name);
+				anti_action = SWITCH_FALSE;
+			}
+
 		}
+
+		if (save_re) {
+			re = save_re;
+			save_re = NULL;
+			
+			expression = expression_expanded = save_expression;
+			save_expression = NULL;
+			field_data = field_expanded = save_field_data;
+			field = (char *) field_data;
+			save_field_data = NULL;
+			proceed = save_proceed;
+		}
+
 
 		if (anti_action) {
 			for (xaction = switch_xml_child(xcond, "anti-action"); xaction; xaction = xaction->next) {

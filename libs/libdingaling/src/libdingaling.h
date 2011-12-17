@@ -64,6 +64,8 @@ extern "C" {
 #define LDL_MAX_PAYLOADS 50
 #define LDL_RETRY 3
 #define IKS_NS_COMPONENT "jabber:component:accept"
+/* period between keep alive signals in 0.1sec units*/
+#define LDL_KEEPALIVE_TIMEOUT 6000
 
 /*! \brief A structure to store a jingle candidate */
 struct ldl_candidate {
@@ -119,10 +121,8 @@ typedef enum {
 	LDL_FLAG_AUTHORIZED = (1 << 2),
 	LDL_FLAG_READY = (1 << 3),
 	LDL_FLAG_CONNECTED = (1 << 4),
-	LDL_FLAG_QUEUE_RUNNING = (1 << 5),
-	LDL_FLAG_STOPPED = (1 << 6),
-	LDL_FLAG_QUEUE_STOP = (1 << 7),
-	LDL_FLAG_BREAK = (1 << 8)
+	LDL_FLAG_STOPPED = (1 << 5),
+	LDL_FLAG_BREAK = (1 << 6)
 } ldl_flag_t;
 
 typedef enum {
@@ -172,6 +172,11 @@ typedef enum {
 	LDL_DESCRIPTION_INITIATE,
 	LDL_DESCRIPTION_ACCEPT
 } ldl_description_t;
+
+typedef enum {
+	LDL_QUEUE_NONE,
+	LDL_QUEUE_SENT
+} ldl_queue_t;
 
 #define DL_PRE __FILE__, __LDL_FUNC__, __LINE__
 #define DL_LOG_DEBUG DL_PRE, 7

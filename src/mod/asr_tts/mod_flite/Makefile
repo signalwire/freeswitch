@@ -1,7 +1,7 @@
-FLITE=flite-1.3.99
+FLITE=flite-1.5.1
 
-FLITE_DIR=$(switch_srcdir)/libs/$(FLITE)
-FLITE_BUILDDIR=$(switch_builddir)/libs/$(FLITE)
+FLITE_DIR=$(switch_srcdir)/libs/$(FLITE)-current
+FLITE_BUILDDIR=$(switch_builddir)/libs/$(FLITE)-current
 
 FLITE_LIBDIR=$(FLITE_BUILDDIR)/build/libs
 FLITE_A=$(FLITE_LIBDIR)/libflite_cmu_us_awb.a \
@@ -18,11 +18,11 @@ include $(BASE)/build/modmake.rules
 
 $(MODNAME).lo: $(FLITE_A)
 $(FLITE_DIR):
-	$(GETLIB) $(FLITE)-latest.tar.gz
+	$(GETLIB) $(FLITE)-current.tar.bz2
 
 $(FLITE_BUILDDIR)/Makefile: $(FLITE_DIR)
 	mkdir -p $(FLITE_BUILDDIR)
-	cd $(FLITE_BUILDDIR) && $(DEFAULT_VARS) $(FLITE_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(FLITE_DIR) --without-audio --with-pic --disable-shared
+	cd $(FLITE_BUILDDIR) && $(DEFAULT_VARS) $(FLITE_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(FLITE_DIR) --with-audio=none --with-pic --disable-shared
 	$(TOUCH_TARGET)
 
 $(FLITE_A): $(FLITE_DIR) $(FLITE_BUILDDIR)/Makefile

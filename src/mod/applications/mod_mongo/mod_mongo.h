@@ -30,7 +30,7 @@ void mongo_connection_pool_destroy(mongo_connection_pool_t **conn_pool);
 
 
 DBClientBase *mongo_connection_pool_get(mongo_connection_pool_t *conn_pool);
-switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DBClientBase *conn);
+switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DBClientBase *conn, switch_bool_t destroy);
 
 
 #endif

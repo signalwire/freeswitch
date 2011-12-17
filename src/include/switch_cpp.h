@@ -65,6 +65,10 @@ Note that the first parameter to the new operator is implicitly handled by c++..
 
 */
 
+
+SWITCH_DECLARE(void) setGlobalVariable(char *var_name, char *var_val);
+SWITCH_DECLARE(char *) getGlobalVariable(char *var_name);
+
 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg);
 SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
@@ -185,7 +189,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(const char *event_name = NULL, const char *subclass_name = "");
 		 SWITCH_DECLARE_CONSTRUCTOR ~ EventConsumer();
 		 SWITCH_DECLARE(int) bind(const char *event_name, const char *subclass_name = "");
-		 SWITCH_DECLARE(Event *) pop(int block = 0);
+		 SWITCH_DECLARE(Event *) pop(int block = 0, int timeout = 0);
 	 };
 
 #ifdef SWIG

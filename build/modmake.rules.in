@@ -80,20 +80,18 @@ TOUCH_TARGET=@TOUCH_TARGET@
 MAKE_OPTS = `test -n "$(VERBOSE)" || echo -s`
 RECURSE_MODNAME=`pwd | sed -e 's|^.*/||'`
 RECURSE_SOURCEFILE=`if test -f "$$modname.cpp" -o  -f "$(MODDIR)/$$modname.cpp"; then echo "$$modname.cpp"; else echo "$$modname.c"; fi`
-RECURSE_OUR_DEPS=`test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi `
-RECURSE_OUR_CFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS) ; $(LOCAL_INSERT_CFLAGS) `
-RECURSE_OUR_LDFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL) ; $(LOCAL_INSERT_LDFLAGS) `
+RECURSE_OUR_CFLAGS=` $(LOCAL_INSERT_CFLAGS) `
+RECURSE_OUR_LDFLAGS=` $(LOCAL_INSERT_LDFLAGS) `
 RECURSE_MODDIR=`if test -z $(MODDIR); then pwd | sed -e 's|$(switch_builddir)|$(switch_srcdir)|'; else echo $(MODDIR); fi`
 RECURSE_MAKE=+modname="$(RECURSE_MODNAME)" ; \
 		sourcefile="$(RECURSE_SOURCEFILE)" ; \
 		osarch=`uname -s` ; \
-		ourdefs="$(RECURSE_OUR_DEPS)" ; \
 		ourcflags="$(RECURSE_OUR_CFLAGS)" ; \
 		ourldflags="$(RECURSE_OUR_LDFLAGS)" ; \
 		insertobjs="`$(LOCAL_INSERT_OBJS)`" ; \
 		moddir="$(RECURSE_MODDIR)" ; \
 		$(MAKE) $(MAKE_OPTS) MODNAME="$$modname" SOURCEFILE="$$sourcefile" MODDIR="$$moddir" \
-			OUR_DEPS="$$ourdefs" OUR_CFLAGS="$$ourcflags" OUR_LDFLAGS="$$ourldflags" OUR_OBJS="$$insertobjs"
+			OUR_CFLAGS="$$ourcflags" OUR_LDFLAGS="$$ourldflags" OUR_OBJS="$$insertobjs"
 
 all: Makefile
 	@$(RECURSE_MAKE) all-modules || exit 1
@@ -136,7 +134,7 @@ LINK_OUTPUT_REDIR=> .libs/$(MODNAME).log || error="yes" ; \
 			  exit 1 ;\
 			 fi 
 
-$(MODNAME).$(LIBTOOL_LIB_EXTEN): $(LIBS) $(LOCAL_LIBADD) $(OUR_DEPS) $(LOCAL_OBJS) $(OUR_OBJS) $(MODDIR)/$(SOURCEFILE) $(MODNAME).lo 
+$(MODNAME).$(LIBTOOL_LIB_EXTEN): $(LIBS) $(LOCAL_LIBADD) $(LOCAL_OBJS) $(OUR_OBJS) $(MODDIR)/$(SOURCEFILE) $(MODNAME).lo 
 	@echo Creating $@...
 	@test -d .libs || mkdir .libs
 	@error="";\

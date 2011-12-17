@@ -42,11 +42,6 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 	char path_buffer[1024] = { 0 };
 	const char *path;
 	
-	if (fork()) {
-		close(client_sock);
-		return;
-	}
-	
 	if (esl_attach_handle(&handle, client_sock, addr) != ESL_SUCCESS || !handle.info_event) {
 		esl_log(ESL_LOG_ERROR, "Socket Error\n");
 		exit(0);
@@ -95,9 +90,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	signal(SIGCHLD, SIG_IGN);
-
-	esl_listen(ip, port, mycallback);
+	esl_listen(ip, port, mycallback, 100000);
 	
 	return 0;
 }

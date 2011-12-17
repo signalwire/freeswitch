@@ -1,5 +1,5 @@
 %module freeswitch
-
+%include ../../../../swig_common.i
 /** insert the following includes into generated code so it compiles */
 %{
 #include "switch_cpp.h"

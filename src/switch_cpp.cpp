@@ -85,14 +85,18 @@ SWITCH_DECLARE(int) EventConsumer::bind(const char *event_name, const char *subc
 }
 
 
-SWITCH_DECLARE(Event *) EventConsumer::pop(int block)
+SWITCH_DECLARE(Event *) EventConsumer::pop(int block, int timeout)
 {
 	void *pop = NULL;
 	Event *ret = NULL;
 	switch_event_t *event;
 	
 	if (block) {
-		switch_queue_pop(events, &pop);
+		if (timeout > 0) {
+			switch_queue_pop_timeout(events, &pop, (switch_interval_time_t) timeout * 1000); // millisec rather than microsec
+		} else {
+			switch_queue_pop(events, &pop);
+		}
 	} else {
 		switch_queue_trypop(events, &pop);
 	}
@@ -1189,6 +1193,17 @@ SWITCH_DECLARE(int) globalSetVariable(const char *var, const char *val, const ch
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
+
+SWITCH_DECLARE(void) setGlobalVariable(char *var_name, char *var_val)
+{
+	switch_core_set_variable(var_name, var_val);
+}
+
+SWITCH_DECLARE(char *) getGlobalVariable(char *var_name)
+{
+	return switch_core_get_variable_dup(var_name);
+}
+
 
 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg)
 {

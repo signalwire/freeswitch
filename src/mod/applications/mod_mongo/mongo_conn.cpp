@@ -15,23 +15,27 @@ switch_status_t mongo_connection_create(DBClientBase **connection, const char *c
   DBClientBase *conn = NULL;
   string conn_string(conn_str), err_msg;
   ConnectionString cs = ConnectionString::parse(conn_string, err_msg);
+  switch_status_t status = SWITCH_STATUS_FALSE;
  
   if (!cs.isValid()) {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't parse url: %s\n", err_msg.c_str());
-    return SWITCH_STATUS_GENERR;
+    return status;
   }
 
   try {
     conn = cs.connect(err_msg);
   } catch (DBException &e) {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't connect to mongo [%s]: %s\n", conn_str, err_msg.c_str());
-    return SWITCH_STATUS_GENERR;
+    return status;
   }
 
-  *connection = conn;
-  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to mongo [%s]\n", conn_str);
+  if (conn) {
+    *connection = conn;
+    status = SWITCH_STATUS_SUCCESS;
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to mongo [%s]\n", conn_str);
+  }
 
-  return SWITCH_STATUS_SUCCESS;
+  return status;
 }
 
 void mongo_connection_destroy(DBClientBase **conn) 
@@ -75,7 +79,7 @@ switch_status_t mongo_connection_pool_create(mongo_connection_pool_t **conn_pool
   for (cpool->size = 0; cpool->size < min_connections; cpool->size++) {
 
     if (mongo_connection_create(&conn, conn_str) == SWITCH_STATUS_SUCCESS) {
-      mongo_connection_pool_put(cpool, conn);
+      mongo_connection_pool_put(cpool, conn, SWITCH_FALSE);
     } else {
       break;
     }
@@ -88,7 +92,6 @@ switch_status_t mongo_connection_pool_create(mongo_connection_pool_t **conn_pool
   } else {
     switch_core_destroy_memory_pool(&pool);
   }
-
 
   return status;
 }
@@ -137,7 +140,7 @@ DBClientBase *mongo_connection_pool_get(mongo_connection_pool_t *conn_pool)
   return conn;
 }
 
-switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DBClientBase *conn)
+switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DBClientBase *conn, switch_bool_t destroy)
 {
   switch_status_t status = SWITCH_STATUS_SUCCESS;
 
@@ -145,7 +148,7 @@ switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DB
   switch_assert(conn != NULL);
 
   switch_mutex_lock(conn_pool->mutex);
-  if (conn_pool->size > conn_pool->max_connections) {
+  if (destroy || conn_pool->size > conn_pool->max_connections) {
 #ifdef MONGO_POOL_DEBUG
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "POOL: Destroy connection %p\n", conn);
 #endif

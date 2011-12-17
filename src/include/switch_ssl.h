@@ -36,7 +36,7 @@
 
 static switch_mutex_t **ssl_mutexes;
 static switch_memory_pool_t *ssl_pool = NULL;
-
+static int ssl_count = 0;
 
 static inline void switch_ssl_ssl_lock_callback(int mode, int type, char *file, int line)
 {
@@ -56,7 +56,6 @@ static inline unsigned long switch_ssl_ssl_thread_id(void)
 static inline void switch_ssl_init_ssl_locks(void)
 {
 
-	int ssl_count = switch_core_ssl_count(NULL);
 	int i, num;
 
 	if (ssl_count == 0) {
@@ -77,17 +76,13 @@ static inline void switch_ssl_init_ssl_locks(void)
 	}
 
 	ssl_count++;
-	switch_core_ssl_count(&ssl_count);
 }
 
 static inline void switch_ssl_destroy_ssl_locks()
 {
 	int i;
-	int ssl_count = switch_core_ssl_count(NULL);
 
-	ssl_count--;
-	
-	if (ssl_count == 0) {
+	if (ssl_count == 1) {
 		CRYPTO_set_locking_callback(NULL);
 		for (i = 0; i < CRYPTO_num_locks(); i++) {
 			if (ssl_mutexes[i]) {
@@ -96,10 +91,8 @@ static inline void switch_ssl_destroy_ssl_locks()
 		}
 
 		OPENSSL_free(ssl_mutexes);
+		ssl_count--;
 	}
-
-	switch_core_ssl_count(&ssl_count);
-
 }
 #else
 static inline void switch_ssl_init_ssl_locks(void) { return; }

@@ -321,10 +321,6 @@
 			RelativePath=".\sofia_reg.c"
 			>
 		</File>
-		<File
-			RelativePath=".\sofia_sla.c"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -56,10 +56,13 @@ SWITCH_MODULE_DEFINITION_EX(mod_spidermonkey, mod_spidermonkey_load, mod_spiderm
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);							\
 			return JS_FALSE;											\
 		}																\
-		if (!((switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA)))) {							\
-			eval_some_js("~throw new Error(\"Session is not answered!\");", cx, obj, rval); \
-			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);							\
-			return JS_FALSE;											\
+		if (!((switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA)))) {	\
+			switch_channel_pre_answer(channel);							\
+			if (!((switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA)))) {	\
+				eval_some_js("~throw new Error(\"Session is not answered!\");", cx, obj, rval); \
+				*rval = BOOLEAN_TO_JSVAL(JS_FALSE);						\
+				return JS_FALSE;										\
+			}															\
 		}																\
 	} while (foo == 1)
 
@@ -86,7 +89,7 @@ static JSBool session_set_callerdata(JSContext * cx, JSObject * obj, uintN argc,
 static switch_api_interface_t *js_run_interface = NULL;
 static switch_api_interface_t *jsapi_interface = NULL;
 
-static struct {
+struct js_env {
 	size_t gStackChunkSize;
 	jsuword gStackBase;
 	int gExitCode;
@@ -95,7 +98,7 @@ static struct {
 	FILE *gOutFile;
 	int stackDummy;
 	JSRuntime *rt;
-} globals;
+};
 
 static JSClass global_class = {
 	"Global", JSCLASS_HAS_PRIVATE,
@@ -948,7 +951,7 @@ static switch_status_t sm_load_file(char *filename)
 		switch_core_hash_insert(module_manager.load_hash, (char *) mp->name, (void *) mp);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module->filename);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Successfully Loaded [%s]\n", module->filename);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1036,22 +1039,19 @@ static switch_status_t load_modules(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t init_js(void)
+static switch_status_t init_js(struct js_env *env)
 {
-	memset(&globals, 0, sizeof(globals));
-	globals.gQuitting = JS_FALSE;
-	globals.gErrFile = NULL;
-	globals.gOutFile = NULL;
-	globals.gStackChunkSize = 8192;
-	globals.gStackBase = (jsuword) & globals.stackDummy;
-	globals.gErrFile = stderr;
-	globals.gOutFile = stdout;
 
-	if (!(globals.rt = JS_NewRuntime(64L * 1024L * 1024L))) {
-		return SWITCH_STATUS_FALSE;
-	}
+	memset(env, 0, sizeof(*env));
+	env->gQuitting = JS_FALSE;
+	env->gErrFile = NULL;
+	env->gOutFile = NULL;
+	env->gStackChunkSize = 8192;
+	env->gStackBase = (jsuword) & env->stackDummy;
+	env->gErrFile = stderr;
+	env->gOutFile = stdout;
 
-	if (load_modules() != SWITCH_STATUS_SUCCESS) {
+	if (!(env->rt = JS_NewRuntime(64L * 1024L * 1024L))) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -2520,6 +2520,7 @@ static JSBool js_fetchurl_hash(JSContext * cx, JSObject * obj, uintN argc, jsval
 		}
 		curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 		curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, hash_callback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
@@ -3637,12 +3638,15 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 	struct js_session *jss = NULL;
 	JSContext *cx = NULL;
 	jsval rval;
+	struct js_env env = { 0 };
 
 	if (zstr(input_code)) {
 		return;
 	}
 
-	if ((cx = JS_NewContext(globals.rt, globals.gStackChunkSize))) {
+	init_js(&env);
+
+	if ((cx = JS_NewContext(env.rt, env.gStackChunkSize))) {
 		JS_BeginRequest(cx);
 		JS_SetErrorReporter(cx, js_error);
 		javascript_global_object = JS_NewObject(cx, &global_class, NULL, NULL);
@@ -3691,6 +3695,9 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 		eval_some_js(script, cx, javascript_global_object, &rval);
 		JS_DestroyContext(cx);
 	}
+
+
+	JS_DestroyRuntime(env.rt);
 
 	return;
 }
@@ -3788,10 +3795,14 @@ SWITCH_STANDARD_API(launch_async)
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 {
 	switch_application_interface_t *app_interface;
-	switch_status_t status;
+	//switch_status_t status;
 
-	if ((status = init_js()) != SWITCH_STATUS_SUCCESS) {
-		return status;
+	//if ((status = init_js()) != SWITCH_STATUS_SUCCESS) {
+	//	return status;
+	//}
+
+	if (load_modules() != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -3801,19 +3812,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]",
 				   SAF_SUPPORT_NOMEDIA);
 
-	switch_curl_init();
-
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown)
 {
-	// this causes a crash
-	//JS_DestroyRuntime(globals.rt);
-
-	switch_curl_destroy();
-
 	switch_core_hash_destroy(&module_manager.mod_hash);
 	switch_core_hash_destroy(&module_manager.load_hash);
 	return SWITCH_STATUS_SUCCESS;

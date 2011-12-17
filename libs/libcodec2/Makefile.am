@@ -1,5 +1,5 @@
 AM_CFLAGS = -Isrc -Wall -lm
-AUTOMAKE_OPTS = gnu
+AUTOMAKE_OPTIONS = gnu
 NAME = libcodec2
 AM_CPPFLAGS = $(AM_CFLAGS)
 

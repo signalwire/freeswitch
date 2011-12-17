@@ -42,10 +42,6 @@
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
 
-#if !defined(M_PI)
-# define M_PI           3.14159265358979323846  /* pi */
-#endif
-
 /* In a A-law or u-law channel, a 128 step sine table is adequate to keep the spectral
    mess due to the DDS at a similar level to the spectral mess due to the A-law or u-law
    compression. */

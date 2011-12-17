@@ -48,6 +48,8 @@ except AttributeError:
 del types
 
 
+setGlobalVariable = _freeswitch.setGlobalVariable
+getGlobalVariable = _freeswitch.getGlobalVariable
 consoleLog = _freeswitch.consoleLog
 consoleCleanLog = _freeswitch.consoleCleanLog
 email = _freeswitch.email

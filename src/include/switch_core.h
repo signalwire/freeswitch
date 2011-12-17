@@ -25,7 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
- *
+ * Joseph Sullivan <jossulli@amazon.com>
  *
  * switch_core.h -- Core Library
  *
@@ -436,9 +436,6 @@ SWITCH_DECLARE(void) switch_core_session_rwunlock(_In_ switch_core_session_t *se
 */
 SWITCH_DECLARE(int) switch_core_add_state_handler(_In_ const switch_state_handler_table_t *state_handler);
 
-SWITCH_DECLARE(int) switch_core_curl_count(int *val);
-SWITCH_DECLARE(int) switch_core_ssl_count(int *val);
-
 /*!
   \brief Remove a global state handler
   \param state_handler the state handler to remove
@@ -467,6 +464,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(_Out_ switch
 */
 #define switch_core_new_memory_pool(p) switch_core_perform_new_memory_pool(p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+SWITCH_DECLARE(int) switch_core_session_sync_clock(void);
 SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(_Inout_ switch_memory_pool_t **pool,
 																		_In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 /*! 
@@ -1307,11 +1305,11 @@ SWITCH_DECLARE(void *) switch_core_hash_find_rdlock(_In_ switch_hash_t *hash, _I
 
 /*!
  \brief Gets the first element of a hashtable
- \param depricate_me [deprecated] NULL
+ \param deprecate_me [deprecated] NULL
  \param hash the hashtable to use
  \return The element, or NULL if it wasn't found 
 */
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *depricate_me, _In_ switch_hash_t *hash);
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *deprecate_me, _In_ switch_hash_t *hash);
 
 /*!
  \brief Gets the next element of a hashtable
@@ -1956,6 +1954,18 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
   \return SWITCH_TRUE or SWITCH_FALSE
 */
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void);
+
+/*! 
+  \brief Determines if the core is ready to take inbound calls
+  \return SWITCH_TRUE or SWITCH_FALSE
+*/
+SWITCH_DECLARE(switch_bool_t) switch_core_ready_inbound(void);
+
+/*! 
+  \brief Determines if the core is ready to place outbound calls
+  \return SWITCH_TRUE or SWITCH_FALSE
+*/
+SWITCH_DECLARE(switch_bool_t) switch_core_ready_outbound(void);
 
 /*! 
   \brief return core flags

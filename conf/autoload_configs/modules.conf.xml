@@ -97,6 +97,7 @@
 
     <!-- Timers -->
     <!-- <load module="mod_timerfd"/> -->
+    <!-- <load module="mod_posix_timer"/> -->
 
     <!-- Languages -->
     <load module="mod_spidermonkey"/>

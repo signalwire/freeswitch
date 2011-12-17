@@ -7,5 +7,5 @@ LOCAL_LIBADD=$(SILK_LA)
 include $(BASE)/build/modmake.rules
 
 $(SILK_LA): $(SILK_DIR)/.update	
-	cd $(SILK_BUILDDIR) && $(MAKE)
+	cd $(SILK_BUILDDIR) && ./configure --disable-shared && make clean && $(MAKE)
 	$(TOUCH_TARGET)

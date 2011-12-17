@@ -135,8 +135,13 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 		return 1;
 	}
 
+	while(input_code && (*input_code == ' ' || *input_code == '\n' || *input_code == '\r')) input_code++;
+	
 	if (*input_code == '~') {
 		char *buff = input_code + 1;
+		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1, 0);	//lua_pcall(L, 0, 0, 0);
+	} else if (!strncasecmp(input_code, "#!/lua", 6)) {
+		char *buff = input_code + 6;
 		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 1, 0);	//lua_pcall(L, 0, 0, 0);
 	} else {
 		char *args = strchr(input_code, ' ');

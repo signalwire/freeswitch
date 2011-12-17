@@ -146,7 +146,11 @@ struct skypopen_listitem {
 
 /* The list of devices, and a lock to protect it */
 static LIST_HEAD(skypopen_c_list);
+#ifdef WANT_DEFINE_SPINLOCK
+static DEFINE_SPINLOCK(skypopen_c_lock);
+#else // WANT_DEFINE_SPINLOCK
 static spinlock_t skypopen_c_lock = SPIN_LOCK_UNLOCKED;
+#endif // WANT_DEFINE_SPINLOCK
 
 /* Look for a device or create one if missing */
 static struct skypopen_dev *skypopen_c_lookfor_device(dev_t key)
