@@ -3665,7 +3665,7 @@ void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now)
 
 		sql = switch_mprintf("delete from sip_subscriptions where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%q'",
 							 (long) now, mod_sofia_globals.hostname);
-		sofia_glue_actually_execute_sql(profile, sql, NULL);
+		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
 	}
 
 
