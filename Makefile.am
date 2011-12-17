@@ -1,6 +1,6 @@
 EXTRA_DIST =
 SUBDIRS = . src
-AUTOMAKE_OPTS = foreign
+AUTOMAKE_OPTIONS = foreign
 NAME = freeswitch
 
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS)
@@ -106,6 +106,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-
 
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
+
 if ENABLE_SRTP
 CORE_CFLAGS += -DENABLE_SRTP
 CORE_LIBS += libs/srtp/libsrtp.la
@@ -128,13 +129,17 @@ if ENABLE_TIMERFD_WRAPPER
 CORE_CFLAGS += -DTIMERFD_WRAP
 endif
 
+if CURL_BUILTIN
+CORE_LIBS += libs/curl/lib/libcurl.la
+endif
+
 ##
 ## libfreeswitch
 ##
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(AM_CFLAGS)
-libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_DEPLIBS)
-libfreeswitch_la_LIBADD  = $(CORE_LIBS)
+libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_ODBC
@@ -244,6 +249,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_pcm.c \
 	src/switch_profile.c \
 	src/switch_json.c \
+	src/switch_curl.c \
 	libs/stfu/stfu.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
@@ -294,21 +300,32 @@ fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
 fs_cli_LDADD   = libs/libedit/src/.libs/libedit.a
 endif
 
+
 ##
 ## fs_encode ()
 ##
 fs_encode_SOURCES = src/fs_encode.c
-fs_encode_CFLAGS = $(AM_CFLAGS)
-fs_encode_LDFLAGS = $(AM_LDFLAGS) $(CORE_LIBS)
-fs_encode_LDADD = libfreeswitch.la -lcrypt -lrt
+fs_encode_CFLAGS  = $(AM_CFLAGS)
+fs_encode_LDFLAGS = $(AM_LDFLAGS)
+fs_encode_LDADD   = libfreeswitch.la $(CORE_LIBS)
+
+if HAVE_ODBC
+fs_encode_LDADD += $(ODBC_LIB_FLAGS)
+endif
+
 
 ##
 ## tone2wav ()
 ##
 tone2wav_SOURCES = src/tone2wav.c
 tone2wav_CFLAGS  = $(AM_CFLAGS)
-tone2wav_LDFLAGS = $(AM_LDFLAGS) $(CORE_LIBS)
-tone2wav_LDADD   = libfreeswitch.la -lcrypt -lrt
+tone2wav_LDFLAGS = $(AM_LDFLAGS)
+tone2wav_LDADD   = libfreeswitch.la $(CORE_LIBS)
+
+if HAVE_ODBC
+tone2wav_LDADD += $(ODBC_LIB_FLAGS)
+endif
+
 
 ##
 ## fs_ivrd ()
@@ -330,6 +347,10 @@ freeswitch_LDADD   = libfreeswitch.la libs/apr/libapr-1.la
 if HAVE_LIBEDIT
 freeswitch_CFLAGS += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
 freeswitch_LDADD  += libs/libedit/src/.libs/libedit.a
+endif
+
+if HAVE_ODBC
+freeswitch_LDADD += $(ODBC_LIB_FLAGS)
 endif
 
 
@@ -414,6 +435,13 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 ##
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
+
+libs/curl/Makefile:
+	cd libs/curl && sh ./configure.gnu --prefix=$(prefix)
+
+libs/curl/lib/libcurl.la: libs/curl libs/curl/Makefile
+	@cd libs/curl && $(MAKE)
+	@$(TOUCH_TARGET)
 
 libs/apr/libapr-1.la: libs/apr libs/apr/.update
 	@cd libs/apr && $(MAKE)
@@ -560,7 +588,9 @@ libs/openzap/Makefile:
 	cd libs/openzap && autoconf
 	cd libs/openzap && ./configure
 
-update-clean: clean modwipe uninstall libs/openzap/Makefile python-reconf
+reinstall: modwipe uninstall install
+
+update-clean: clean libs/openzap/Makefile python-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
 	cd libs/portaudio && $(MAKE) clean
@@ -583,6 +613,11 @@ speex-reconf:
 	cd libs/speex && autoreconf
 	cd libs/speex && ./config.status --recheck
 	cd libs/speex && ./config.status
+
+sndfile-reconf:
+	cd libs/libsndfile && autoreconf
+	cd libs/libsndfile && ./config.status --recheck
+	cd libs/libsndfile && ./config.status
 
 tiff-reconf:
 	cd libs/tiff-3.8.2 && autoreconf -fi
@@ -633,14 +668,14 @@ cluecon:
 current: cluecon update-clean is-scm
 	$(MAKE) update
 	$(MAKE) all
-	$(MAKE) install
+	$(MAKE) reinstall
 
 installall: current
 
 speedy-current: update-clean is-scm
 	$(MAKE) update
 	$(MAKE) speedy-sure
-	$(MAKE) install
+	$(MAKE) reinstall
 
 wayclean: clean
 
@@ -661,7 +696,7 @@ modclean: $(switch_builddir)/modules.conf
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) clean
 
 modwipe:
-	rm -f $(prefix)/$(modulesdir)/*.${DYNAMIC_LIB_EXTEN}
+	rm -f $(modulesdir)/*.${DYNAMIC_LIB_EXTEN}
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf

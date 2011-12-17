@@ -23,7 +23,7 @@
  *
  * Contributor(s):
  * 
- * Michael Giagnocavo <mgg@packetrino.com>
+ * Michael Giagnocavo <mgg@giagnocavo.net>
  * David Brazier <David.Brazier@360crm.co.uk>
  * Jeff Lenk <jlenk@frontiernet.net> 
  *
@@ -55,6 +55,7 @@ SWITCH_STANDARD_API(managedrun_api_function);	/* ExecuteBackground */
 SWITCH_STANDARD_API(managed_api_function);	/* Execute */
 SWITCH_STANDARD_APP(managed_app_function);	/* Run */
 SWITCH_STANDARD_API(managedreload_api_function);	/* Reload */
+SWITCH_STANDARD_API(managedlist_api_function); /* List modules */
 
 #define MOD_MANAGED_ASM_NAME "FreeSWITCH.Managed"
 #define MOD_MANAGED_ASM_V1 1
@@ -72,18 +73,22 @@ typedef int (*runFunction)(const char *data, void *sessionPtr);
 typedef int (*executeFunction)(const char *cmd, void *stream, void *Event);
 typedef int (*executeBackgroundFunction)(const char* cmd);
 typedef int (*reloadFunction)(const char* cmd);
+typedef int (*listFunction)(const char* cmd);
 static runFunction runDelegate;
 static executeFunction executeDelegate;
 static executeBackgroundFunction executeBackgroundDelegate;
 static reloadFunction reloadDelegate;
+static listFunction listDelegate;
 
-SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, reloadFunction reload) 
+SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, reloadFunction reload, listFunction list) 
 {
 	runDelegate = run;
 	executeDelegate = execute;
 	executeBackgroundDelegate = executeBackground;
 	reloadDelegate = reload;
+	listDelegate = list;
 }
+
 
 // Sets up delegates (and anything else needed) on the ManagedSession object
 // Called from ManagedSession.Initialize Managed -> this is Unmanaged code so all pointers are marshalled and prevented from GC
@@ -190,6 +195,7 @@ switch_status_t loadRuntime()
 	// So linux can find the .so
 	char xmlConfig[300];
 	switch_snprintf(xmlConfig, 300, "<configuration><dllmap dll=\"mod_managed\" target=\"%s%smod_managed.so\"/></configuration>", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR);
+	mono_config_parse(NULL);
 	mono_config_parse_memory(xmlConfig);
 #endif
 
@@ -208,18 +214,13 @@ switch_status_t loadRuntime()
 	}
 
 	/* Already loaded? */
-	MonoAssemblyName name;
-	name.name = MOD_MANAGED_ASM_NAME;
-	name.major = MOD_MANAGED_ASM_V1;
-	name.minor = MOD_MANAGED_ASM_V2;
-	name.revision = MOD_MANAGED_ASM_V3;
-	name.build = MOD_MANAGED_ASM_V4;
-	name.culture = "";
-	name.hash_value = "";
-
+	MonoAssemblyName *name = mono_assembly_name_new (MOD_MANAGED_ASM_NAME);
+	//Note also that it can't be allocated on the stack anymore and you'll need to create and destroy it with the following API:
+	//mono_assembly_name_free (name);
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_assembly_loaded.\n");
 
-	if (!(globals.mod_mono_asm = mono_assembly_loaded(&name))) {
+	if (!(globals.mod_mono_asm = mono_assembly_loaded(name))) {
 		/* Open the assembly */ 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Calling mono_domain_assembly_open.\n");
 		globals.mod_mono_asm = mono_domain_assembly_open(globals.domain, filename);
@@ -365,6 +366,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	SWITCH_ADD_API(api_interface, "managed", "Run a module as an API function (Execute)", managed_api_function, "<module> [<args>]");
 	SWITCH_ADD_APP(app_interface, "managed", "Run CLI App", "Run an App on a channel", managed_app_function, "<modulename> [<args>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_API(api_interface, "managedreload", "Force [re]load of a file", managedreload_api_function, "<filename>");
+	SWITCH_ADD_API(api_interface, "managedlist", "Log the list of available APIs and Apps", managedlist_api_function, "");
 	return SWITCH_STATUS_NOUNLOAD;
 }
 
@@ -438,6 +440,18 @@ SWITCH_STANDARD_API(managedreload_api_function)
 	if (!(reloadDelegate(cmd))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Execute failed for %s (unknown module or exception).\n", cmd); 
 	}
+#ifndef _MANAGED
+	mono_thread_detach(mono_thread_current());
+#endif
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(managedlist_api_function)
+{
+#ifndef _MANAGED
+	mono_thread_attach(globals.domain);
+#endif
+	listDelegate(cmd);
 #ifndef _MANAGED
 	mono_thread_detach(mono_thread_current());
 #endif

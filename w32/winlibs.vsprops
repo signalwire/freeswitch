@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="Freeswitch Core Windows Libraries"
+	InheritedPropertySheets=".\curl.vsprops"
 	>
 	<Tool
 		Name="VCLinkerTool"

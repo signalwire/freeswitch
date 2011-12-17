@@ -12,6 +12,7 @@ applications/mod_fifo
 #applications/mod_curl
 applications/mod_db
 applications/mod_hash
+#applications/mod_http_cache
 #applications/mod_redis
 applications/mod_voicemail
 #applications/mod_directory
@@ -119,6 +120,7 @@ say/mod_say_en
 #say/mod_say_th
 #say/mod_say_he
 #timers/mod_timerfd
+#timers/mod_posix_timer
 
 ## Experimental Modules (don't cry if they're broken)
 #../../contrib/mod/xml_int/mod_xml_odbc

@@ -302,6 +302,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\mod_spandsp_modem.c"
+			>
+		</File>
+		<File
 			RelativePath=".\udptl.c"
 			>
 		</File>

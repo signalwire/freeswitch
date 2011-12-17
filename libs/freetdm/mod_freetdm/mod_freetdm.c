@@ -507,7 +507,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	const char *name = NULL;
 	int span_id = 0;
 	int chan_id = 0;
-	int t = 0;
+	uint32_t t = 0;
 	uint32_t tokencnt;
 	char *uuid = NULL;
 	const char *token = NULL;
@@ -2317,7 +2317,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, caller_data->hangup_cause);
-				ftdm_channel_clear_token(sigmsg->channel, switch_core_session_get_uuid(session));
 				switch_core_session_rwunlock(session);
 			}
 		}

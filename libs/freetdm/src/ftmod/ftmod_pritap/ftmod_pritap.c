@@ -547,7 +547,7 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 		break;
 
 	case PRI_EVENT_PROGRESS:
-		crv = tap_pri_get_crv(pritap->pri, e->ring.call);
+		crv = tap_pri_get_crv(pritap->pri, e->proceeding.call);
 		ftdm_log(FTDM_LOG_DEBUG, "Progress on channel %s:%d:%d with callref %d\n", 
 				pritap->span->name, PRI_SPAN(e->proceeding.channel), PRI_CHANNEL(e->proceeding.channel), crv);
 		break;

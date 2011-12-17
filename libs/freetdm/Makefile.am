@@ -184,9 +184,9 @@ endif
 if HAVE_LIBPRI
 mod_LTLIBRARIES += ftmod_libpri.la
 ftmod_libpri_la_SOURCES = $(SRC)/ftmod/ftmod_libpri/ftmod_libpri.c $(SRC)/ftmod/ftmod_libpri/lpwrap_pri.c
-ftmod_libpri_la_CFLAGS  = $(FTDM_CFLAGS) $(AM_CFLAGS)
-ftmod_libpri_la_LDFLAGS = -shared -module -avoid-version -lpri
-ftmod_libpri_la_LIBADD  = libfreetdm.la
+ftmod_libpri_la_CFLAGS  = $(FTDM_CFLAGS) $(AM_CFLAGS) $(LIBPRI_CPPFLAGS)
+ftmod_libpri_la_LDFLAGS = -shared -module -avoid-version $(LIBPRI_LDFLAGS)
+ftmod_libpri_la_LIBADD  = libfreetdm.la $(LIBPRI_LIBS)
 endif
 
 if HAVE_PRITAP
@@ -251,7 +251,7 @@ endif
 if HAVE_MISDN
 mod_LTLIBRARIES += ftmod_misdn.la
 ftmod_misdn_la_SOURCES  = $(SRC)/ftmod/ftmod_misdn/ftmod_misdn.c
-ftmod_misdn_la_CFLAGS   = $(FTDM_CFLAGS) $(AM_CFLAGS) $(MISDN_CFLAGS)
+ftmod_misdn_la_CFLAGS   = $(FTDM_CFLAGS) $(AM_CFLAGS) $(MISDN_CFLAGS) -D_GNU_SOURCE
 ftmod_misdn_la_LDFLAGS  = -shared -module -avoid-version
 ftmod_misdn_la_LIBADD   = libfreetdm.la
 endif

@@ -110,15 +110,11 @@ static int test_vec_min_maxi16(void)
     int32_t za;
     int32_t zb;
     int16_t x[99];
-    int16_t y[99];
     int16_t outa[2];
     int16_t outb[2];
 
     for (i = 0;  i < 99;  i++)
-    {
         x[i] = rand();
-        y[i] = rand();
-    }
 
     x[42] = -32768;
     za = vec_min_maxi16_dumb(x, 99, outa);

@@ -365,7 +365,7 @@
   <macro name="voicemail_say_date">
     <input pattern="^(.*)$">
       <match>
-	<action function="say" data="$1" method="pronounced" type="current_date_time"/>
+	<action function="say" data="$1" method="pronounced" type="short_date_time"/>
       </match>
     </input>
   </macro>

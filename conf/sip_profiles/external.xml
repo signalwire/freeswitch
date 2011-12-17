@@ -23,6 +23,8 @@
     <param name="sip-trace" value="no"/>
     <param name="sip-capture" value="no"/>        
     <param name="rfc2833-pt" value="101"/>
+    <!-- RFC 5626 : Send reg-id and sip.instance -->
+    <!--<param name="enable-rfc-5626" value="true"/> -->
     <param name="sip-port" value="$${external_sip_port}"/>
     <param name="dialplan" value="XML"/>
     <param name="context" value="public"/>

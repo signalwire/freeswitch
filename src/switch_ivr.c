@@ -561,8 +561,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					if (stream && switch_is_moh(stream)) {
 						if ((b_session = switch_core_session_locate(b_uuid))) {
 							switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+							switch_status_t st;
+							
 							switch_ivr_broadcast(b_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
-							switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_TRUE, 5000, NULL);
+							st = switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_TRUE, 5000, NULL);
+							if (st != SWITCH_STATUS_SUCCESS && 
+								switch_channel_ready(channel) && switch_channel_ready(b_channel) && !switch_channel_test_flag(b_channel, CF_BROADCAST)) {
+								switch_core_session_kill_channel(b_session, SWITCH_SIG_BREAK);
+								st = switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_TRUE, 5000, NULL);
+							
+								if (st != SWITCH_STATUS_SUCCESS && 
+									switch_channel_ready(channel) && switch_channel_ready(b_channel) && !switch_channel_test_flag(b_channel, CF_BROADCAST)) {
+									switch_core_session_flush_private_events(b_session);
+								}
+							}
 							switch_core_session_rwunlock(b_session);
 						}
 					} else {
@@ -1698,6 +1710,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Transfer %s to %s[%s@%s]\n", switch_channel_get_name(channel), use_dialplan,
 						  extension, use_context);
+
+
+		new_profile->transfer_source = switch_core_sprintf(new_profile->pool, "%ld:%s:bl_xfer:%s/%s/%s", 
+														   (long) switch_epoch_time_now(NULL), new_profile->uuid_str,
+														   extension, use_context, use_dialplan);
+		switch_channel_add_variable_var_check(channel, SWITCH_TRANSFER_HISTORY_VARIABLE, new_profile->transfer_source, SWITCH_FALSE, SWITCH_STACK_PUSH);
+		switch_channel_set_variable(channel, SWITCH_TRANSFER_SOURCE_VARIABLE, new_profile->transfer_source);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2051,6 +2070,13 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	}
 	switch_xml_set_txt_d(param, caller_profile->source);
 
+	if (caller_profile->transfer_source) {
+		if (!(param = switch_xml_add_child_d(xml, "transfer_source", off++))) {
+			return -1;
+		}
+		switch_xml_set_txt_d(param, caller_profile->transfer_source);
+	}
+
 	if (!(param = switch_xml_add_child_d(xml, "context", off++))) {
 		return -1;
 	}
@@ -2210,6 +2236,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 		if (!zstr(caller_profile->dialplan)) {
 			switch_xml_set_attr_d(x_callflow, "dialplan", caller_profile->dialplan);
+		}
+
+		if (!zstr(caller_profile->uuid_str)) {
+			switch_xml_set_attr_d(x_callflow, "unique-id", caller_profile->uuid_str);
+		}
+
+		if (!zstr(caller_profile->clone_of)) {
+			switch_xml_set_attr_d(x_callflow, "clone-of", caller_profile->clone_of);
 		}
 
 		if (!zstr(caller_profile->profile_index)) {
@@ -2446,7 +2480,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	interval = read_impl.microseconds_per_packet / 1000;
 	//samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
 
-	qlen = delay_ms / (interval);
+	qlen = delay_ms / (interval) / 2;
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
 	jb = stfu_n_init(qlen, qlen, read_impl.samples_per_packet, read_impl.samples_per_second, 0);
 
@@ -3113,6 +3147,84 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t *
 	switch_event_add_header_string(*reply, SWITCH_STACK_BOTTOM, "proto", new_proto);
 
 	return status;
+}
+
+SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name, const char *domain_name)
+{
+	char *cf = "presence_map.conf";
+	switch_xml_t cfg, xml, x_domains, x_domain, x_exten;
+	char *r = NULL;
+	switch_event_t *params = NULL;
+	switch_regex_t *re = NULL;
+	int proceed = 0, ovector[100];
+
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_assert(params);
+
+	if ( !zstr(domain_name) ) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
+	}
+
+	if ( !zstr(exten_name) ) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "exten", exten_name);
+	}
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
+		goto end;
+	}
+
+	if (!(x_domains = switch_xml_child(cfg, "domains"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find any domains!\n");
+		goto end;
+	}
+
+	for (x_domain = switch_xml_child(x_domains, "domain"); x_domain; x_domain = x_domain->next) {
+		const char *dname = switch_xml_attr(x_domain, "name");
+		if (!dname || strcasecmp(domain_name, dname)) continue;
+		
+		for (x_exten = switch_xml_child(x_domain, "exten"); x_exten; x_exten = x_exten->next) {
+			const char *regex = switch_xml_attr(x_exten, "regex");
+			const char *proto = switch_xml_attr(x_exten, "proto");
+			
+			if (!zstr(regex) && !zstr(proto)) {
+				proceed = switch_regex_perform(exten_name, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+				switch_regex_safe_free(re);
+				
+				if (proceed) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Mapping %s@%s to proto %s matching expression [%s]\n", 
+									  exten_name, domain_name, proto, regex);
+					r = strdup(proto);
+					goto end;
+				}
+				
+			}
+		}
+	}
+
+ end:
+	switch_event_destroy(&params);
+
+	if (xml) {
+		switch_xml_free(xml);
+	}
+
+	return r;
+	
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_kill_uuid(const char *uuid, switch_call_cause_t cause)
+{
+	switch_core_session_t *session;
+
+	if (zstr(uuid) || !(session = switch_core_session_locate(uuid))) {
+		return SWITCH_STATUS_FALSE;
+	} else {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_channel_hangup(channel, cause);
+		switch_core_session_rwunlock(session);
+		return SWITCH_STATUS_SUCCESS;
+	}
 }
 
 

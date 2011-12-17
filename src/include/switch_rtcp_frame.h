@@ -38,7 +38,20 @@
 
 #include <switch.h>
 
+#define MAX_REPORT_BLOCKS 5
+
 SWITCH_BEGIN_EXTERN_C
+
+struct switch_rtcp_report_block_frame {
+	uint32_t ssrc; /* The SSRC identifier of the source to which the information in this reception report block pertains. */
+	uint8_t fraction; /* The fraction of RTP data packets from source SSRC_n lost since the previous SR or RR packet was sent */
+	uint32_t lost;  /* The total number of RTP data packets from source SSRC_n that have been lost since the beginning of reception */
+	uint32_t highest_sequence_number_received;
+	uint32_t jitter; /* An estimate of the statistical variance of the RTP data packet interarrival time, measured in timestamp units and expressed as an unsigned integer. */
+	uint32_t lsr; /* The middle 32 bits out of 64 in the NTP timestamp */
+	uint32_t dlsr; /* The delay, expressed in units of 1/65536 seconds, between receiving the last SR packet from source SSRC_n and sending this reception report block */
+};
+
 /*! \brief An abstraction of a rtcp frame */
 	struct switch_rtcp_frame {
 
@@ -57,6 +70,10 @@ SWITCH_BEGIN_EXTERN_C
 	uint32_t packet_count;
 
 	uint32_t octect_count;
+
+	uint32_t nb_reports;
+
+	struct switch_rtcp_report_block_frame reports[MAX_REPORT_BLOCKS];
 
 };
 

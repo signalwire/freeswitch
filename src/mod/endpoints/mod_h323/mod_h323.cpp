@@ -33,7 +33,7 @@
  *
  * mod_h323.cpp -- H323 endpoint
  *
- *	Version 0.0.57
+ *	Version 0.0.58
 */
 
 //#define DEBUG_RTP_PACKETS
@@ -201,10 +201,14 @@ SWITCH_END_EXTERN_C
 
 void h_timer(unsigned sec)
 {
+#ifdef WIN32
+	switch_sleep(sec * 1000000);
+#else
 	timeval timeout;
 	timeout.tv_sec = sec;
 	timeout.tv_usec = 0; 
 	select(0, NULL, NULL, NULL, &timeout);
+#endif
 }
 
 
@@ -1098,7 +1102,7 @@ bool FSH323Connection::OnSendReleaseComplete(H323SignalPDU & pdu)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323Connection::OnSendReleaseComplete cause = %u\n",(switch_call_cause_t)pdu.GetQ931().GetCause());	
 
-	switch_channel_hangup(m_fsChannel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);			
+	switch_channel_hangup(m_fsChannel, (switch_call_cause_t) pdu.GetQ931().GetCause());
 	return H323Connection::OnSendReleaseComplete(pdu);
 }
 
@@ -1333,7 +1337,19 @@ void FSH323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 					const char *uuid = switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE); 
 					if (uuid != NULL) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"uuid:%s\n",uuid);
-						switch_channel_set_private(switch_core_session_get_channel(switch_core_session_locate(switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE))), "t38_options", t38_options);
+						
+						switch_core_session_t *session = switch_core_session_locate(switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE));
+						if (session) {
+							switch_channel_t * channel = switch_core_session_get_channel(session);
+							if (channel) {
+								switch_channel_set_private(channel, "t38_options", t38_options);
+							}else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no channel?\n");
+							}
+							switch_core_session_rwunlock(session);
+						}else{
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no session\n");
+						}						
 					
 					
 						switch_core_session_message_t msg = { 0 };
@@ -1887,6 +1903,7 @@ FSH323_ExternalRTPChannel::FSH323_ExternalRTPChannel(FSH323Connection& connectio
 	, m_capability(&capability)
 	, m_RTPlocalPort(dataPort)
 	, m_sessionID(sessionID)
+	, m_rtp_resetting(0)
 { 
 	m_RTPlocalIP = (const char *)ip.AsString();
 	SetExternalAddress(H323TransportAddress(ip, dataPort), H323TransportAddress(ip, dataPort+1));
@@ -2046,9 +2063,6 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 			, GetMainTypes[m_capability->GetMainType()],(const char*)(m_capability->GetFormatName()),this);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"%s Unsupported ptime of %u on %s %s codec %s for connection [%p]\n",switch_channel_get_name(m_fsChannel),((GetDirection() == IsReceiver)? " read" : " write")
-		, GetMainTypes[m_capability->GetMainType()],(const char*)(m_capability->GetFormatName()),this);
-	
 	if (GetDirection() == IsReceiver) {
 		//m_readFrame.rate = tech_pvt->read_codec.implementation->actual_samples_per_second;
 		
@@ -2113,7 +2127,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 	
 	bool ch_port = false;
 	if (tech_pvt->rtp_session != NULL){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->old remot port = %d new remote port = %d\n",switch_rtp_get_remote_port(tech_pvt->rtp_session),m_RTPremotePort);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------->old remote port = %d new remote port = %d\n",switch_rtp_get_remote_port(tech_pvt->rtp_session),m_RTPremotePort);
 		if ((switch_rtp_get_remote_port(tech_pvt->rtp_session) != m_RTPremotePort) && (GetDirection() != IsReceiver) && (m_conn->m_rtp_resetting == 1)){
 			ch_port = true;
 			m_conn->m_startRTP = false;
@@ -2131,7 +2145,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 	}
 	
 	if ((!m_conn->m_startRTP)) {			
-		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT|SWITCH_RTP_FLAG_AUTO_CNG|SWITCH_RTP_FLAG_RAW_WRITE);
+		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT|SWITCH_RTP_FLAG_RAW_WRITE);
 
 		if (mod_h323_globals.use_rtp_timer) {
 			flags |= SWITCH_RTP_FLAG_USE_TIMER;
@@ -2401,9 +2415,13 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 	switch_mutex_lock(tech_pvt->h323_mutex);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
 	switch_mutex_unlock(tech_pvt->h323_mutex);
+
 	while (tech_pvt->active_connection){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Wait clear h323 connection\n");
 		h_timer(1);
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "H323 connection was cleared successfully\n");
+	
 	return SWITCH_STATUS_SUCCESS;
 }

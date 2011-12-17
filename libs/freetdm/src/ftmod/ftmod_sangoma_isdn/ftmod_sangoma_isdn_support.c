@@ -567,7 +567,7 @@ ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 	
 	string = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.cg_pty2.digits");
-	if ((string == NULL) || !(*string)) {
+	if (ftdm_strlen_zero(string)) {
 		return FTDM_FAIL;
 	}
 
@@ -696,16 +696,26 @@ ftdm_status_t set_redir_num(ftdm_channel_t *ftdmchan, RedirNmb *redirNmb)
 ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt)
 {
 	uint8_t len;
+	const char *string = NULL;
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;	
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
+	ftdm_bool_t force_send_cid_name = FTDM_FALSE;
 	
-
 	len = strlen(caller_data->cid_name);
 	if (!len) {
 		return FTDM_SUCCESS;
 	}
 
-	if (signal_data->send_cid_name == SNGISDN_OPT_FALSE) {
+	string = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.send_cid_name");
+	if (!ftdm_strlen_zero(string)) {
+		if (!strcasecmp(string, "no")) {
+			return FTDM_SUCCESS;
+		} else if (!strcasecmp(string, "yes")) {
+			force_send_cid_name = FTDM_TRUE;
+		}
+	}
+
+	if (force_send_cid_name == FTDM_FALSE && signal_data->send_cid_name == SNGISDN_OPT_FALSE) {
 		return FTDM_SUCCESS;
 	}
 
@@ -758,7 +768,7 @@ ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 {
 	const char* clg_subaddr = NULL;
 	clg_subaddr = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.calling_subaddr");
-	if ((clg_subaddr != NULL) && (*clg_subaddr)) {
+	if (!ftdm_strlen_zero(clg_subaddr)) {
 		unsigned len = strlen (clg_subaddr);
 		cgPtySad->eh.pres = PRSNT_NODEF;
 		cgPtySad->typeSad.pres = 1;

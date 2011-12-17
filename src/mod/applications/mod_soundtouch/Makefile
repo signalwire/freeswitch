@@ -1,5 +1,5 @@
 BASE=../../../..
-VERSION=soundtouch-1.5.0
+VERSION=soundtouch-1.6.0
 SNDT_SRC=$(switch_srcdir)/libs/soundtouch
 SNDT_BUILD=$(switch_builddir)/libs/soundtouch
 LA=$(SNDT_BUILD)/source/SoundTouch/.libs/libSoundTouch.a

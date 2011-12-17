@@ -374,6 +374,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\src\switch_curl.c" />
     <ClCompile Include="..\..\src\switch_dso.c" />
     <ClCompile Include="..\..\src\switch_event.c" />
     <ClCompile Include="..\..\src\switch_ivr.c" />
@@ -787,6 +788,9 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\curl\curllib.2010.vcxproj">
+      <Project>{87ee9da4-de1e-4448-8324-183c98dca588}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\pcre\libpcre.2010.vcxproj">
       <Project>{8d04b550-d240-4a44-8a18-35da3f7038d9}</Project>

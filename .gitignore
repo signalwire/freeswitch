@@ -83,6 +83,7 @@ core.*
 
 /build/config/compile
 /build/config/config.guess
+/build/config/config.sub
 /build/config/depcomp
 /build/config/install-sh
 /build/config/ltmain.sh

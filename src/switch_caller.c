@@ -48,11 +48,15 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 																	const char *source, const char *context, const char *destination_number)
 {
 	switch_caller_profile_t *profile = NULL;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
 	profile = switch_core_alloc(pool, sizeof(*profile));
 	switch_assert(profile != NULL);
 	memset(profile, 0, sizeof(*profile));
 
+	switch_uuid_str(uuid_str, sizeof(uuid_str));
+	profile->uuid_str = switch_core_strdup(pool, uuid_str);
+	
 	if (!context) {
 		context = "default";
 	}
@@ -96,9 +100,14 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memory_pool_t *pool, switch_caller_profile_t *tocopy)
 {
 	switch_caller_profile_t *profile = NULL;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
 	profile = switch_core_alloc(pool, sizeof(*profile));
 	switch_assert(profile != NULL);
+
+	switch_uuid_str(uuid_str, sizeof(uuid_str));
+	profile->uuid_str = switch_core_strdup(pool, uuid_str);
+	profile->clone_of = switch_core_strdup(pool, tocopy->uuid_str);
 
 	profile_dup(tocopy->username, profile->username, pool);
 	profile_dup(tocopy->dialplan, profile->dialplan, pool);
@@ -127,6 +136,29 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 	profile->flags = tocopy->flags;
 	profile->pool = pool;
 	profile->direction = tocopy->direction;
+
+
+	if (tocopy->soft) {
+		profile_node_t *pn;
+
+		for (pn = tocopy->soft; pn; pn = pn->next) {
+			profile_node_t *pp, *n = switch_core_alloc(profile->pool, sizeof(*n));
+
+			n->var = switch_core_strdup(profile->pool, pn->var);
+			n->val = switch_core_strdup(profile->pool, pn->val);
+
+			if (!profile->soft) {
+				profile->soft = n;
+			} else {
+				for(pp = profile->soft; pp && pp->next; pp = pp->next);
+			
+				if (pp) {
+					pp->next = n;
+				}	
+			}
+		}
+
+	}
 
 	return profile;
 }
@@ -180,6 +212,9 @@ SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profi
 	}
 	if (!strcasecmp(name, "source")) {
 		return caller_profile->source;
+	}
+	if (!strcasecmp(name, "transfer_source")) {
+		return caller_profile->transfer_source;
 	}
 	if (!strcasecmp(name, "context")) {
 		return caller_profile->context;
@@ -307,6 +342,10 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	if (!zstr(caller_profile->source)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Source", prefix);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->source);
+	}
+	if (!zstr(caller_profile->transfer_source)) {
+		switch_snprintf(header_name, sizeof(header_name), "%s-Transfer-Source", prefix);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->transfer_source);
 	}
 	if (!zstr(caller_profile->context)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Context", prefix);

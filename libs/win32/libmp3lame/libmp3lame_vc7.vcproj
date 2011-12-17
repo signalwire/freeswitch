@@ -45,7 +45,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/GAy /QIfdiv /QI0f"
 				Optimization="2"
-				AdditionalIncludeDirectories=".;&quot;..\..\lame-3.97&quot;;&quot;..\..\lame-3.97\include&quot;"
+				AdditionalIncludeDirectories=".;&quot;..\..\lame-3.98.4&quot;;&quot;..\..\lame-3.98.4\include&quot;"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;WIN32;HAVE_CONFIG_H"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -117,7 +117,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/GAy /QIfdiv /QI0f"
 				Optimization="2"
-				AdditionalIncludeDirectories=".;&quot;..\..\lame-3.97&quot;;&quot;..\..\lame-3.97\include&quot;"
+				AdditionalIncludeDirectories=".;&quot;..\..\lame-3.98.4&quot;;&quot;..\..\lame-3.98.4\include&quot;"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;WIN32;HAVE_CONFIG_H"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -184,7 +184,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;&quot;..\..\lame-3.97&quot;;&quot;..\..\lame-3.97\include&quot;"
+				AdditionalIncludeDirectories=".;&quot;..\..\lame-3.98.4&quot;;&quot;..\..\lame-3.98.4\include&quot;"
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;HAVE_CONFIG_H"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile="$(IntDir)/libmp3lame_vc6.pch"
@@ -254,7 +254,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;&quot;..\..\lame-3.97&quot;;&quot;..\..\lame-3.97\include&quot;"
+				AdditionalIncludeDirectories=".;&quot;..\..\lame-3.98.4&quot;;&quot;..\..\lame-3.98.4\include&quot;"
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;HAVE_CONFIG_H"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile="$(IntDir)/libmp3lame_vc6.pch"
@@ -303,7 +303,7 @@
 			Filter="c"
 			>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\bitstream.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\bitstream.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -347,7 +347,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\encoder.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\encoder.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -391,7 +391,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\fft.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\fft.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -435,7 +435,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\gain_analysis.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\gain_analysis.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -479,7 +479,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\id3tag.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\id3tag.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -523,7 +523,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\lame.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\lame.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -567,7 +567,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\mpglib_interface.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\mpglib_interface.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -611,7 +611,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\newmdct.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\newmdct.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -655,7 +655,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\presets.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\presets.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -699,7 +699,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\psymodel.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\psymodel.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -743,7 +743,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\quantize.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\quantize.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -787,7 +787,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\quantize_pvt.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\quantize_pvt.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -831,7 +831,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\reservoir.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\reservoir.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -875,7 +875,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\set_get.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\set_get.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -919,7 +919,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\tables.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\tables.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -967,7 +967,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\takehiro.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\takehiro.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1011,7 +1011,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\util.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\util.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1055,7 +1055,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\vbrquantize.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\vbrquantize.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1099,7 +1099,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\VbrTag.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\VbrTag.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1143,7 +1143,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\version.c"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\version.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1192,87 +1192,87 @@
 			Filter="h"
 			>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\bitstream.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\bitstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\encoder.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\encoder.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\fft.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\fft.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\gain_analysis.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\gain_analysis.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\id3tag.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\id3tag.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\l3side.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\l3side.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\lame-analysis.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\lame-analysis.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\lame_global_flags.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\lame_global_flags.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\lameerror.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\lameerror.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\machine.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\machine.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\newmdct.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\newmdct.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\psymodel.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\psymodel.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\quantize.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\quantize.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\quantize_pvt.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\quantize_pvt.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\reservoir.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\reservoir.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\set_get.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\set_get.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\tables.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\tables.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\util.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\util.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\vbrquantize.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\vbrquantize.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\VbrTag.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\VbrTag.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\version.h"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\version.h"
 				>
 			</File>
 		</Filter>
@@ -1281,35 +1281,35 @@
 			Filter=".nas"
 			>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\i386\choose_table.nas"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\i386\choose_table.nas"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\i386\cpu_feat.nas"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\i386\cpu_feat.nas"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\i386\fft.nas"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\i386\fft.nas"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\i386\fft3dn.nas"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\i386\fft3dn.nas"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\i386\fftfpu.nas"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\i386\fftfpu.nas"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\i386\fftsse.nas"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\i386\fftsse.nas"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\i386\ffttbl.nas"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\i386\ffttbl.nas"
 				>
 			</File>
 			<File
-				RelativePath="..\..\lame-3.97\libmp3lame\i386\scalar.nas"
+				RelativePath="..\..\lame-3.98.4\libmp3lame\i386\scalar.nas"
 				>
 			</File>
 		</Filter>

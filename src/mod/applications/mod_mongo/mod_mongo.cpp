@@ -49,7 +49,7 @@ SWITCH_STANDARD_API(mongo_mapreduce_function)
 			conn = mongo_connection_pool_get(globals.conn_pool);
 			if (conn) {
 				conn->runCommand(conn->nsGetDB(ns), cmd.done(), out);
-				mongo_connection_pool_put(globals.conn_pool, conn);
+				mongo_connection_pool_put(globals.conn_pool, conn, SWITCH_FALSE);
 
 				stream->write_function(stream, "-OK\n%s\n", out.toString().c_str());
 			} else {
@@ -57,7 +57,7 @@ SWITCH_STANDARD_API(mongo_mapreduce_function)
 			}
 		} catch (DBException &e) {
 			if (conn) {
-				mongo_connection_destroy(&conn);
+				mongo_connection_pool_put(globals.conn_pool, conn, SWITCH_TRUE);
 			}
 			stream->write_function(stream, "-ERR\n%s\n", e.toString().c_str());
 		}
@@ -97,7 +97,7 @@ SWITCH_STANDARD_API(mongo_find_one_function)
 		  conn = mongo_connection_pool_get(globals.conn_pool);
 		  if (conn) {
 			  BSONObj res = conn->findOne(ns, Query(query), &fields);
-			  mongo_connection_pool_put(globals.conn_pool, conn);
+			  mongo_connection_pool_put(globals.conn_pool, conn, SWITCH_FALSE);
 
 			  stream->write_function(stream, "-OK\n%s\n", res.toString().c_str());
 		  } else {
@@ -105,7 +105,7 @@ SWITCH_STANDARD_API(mongo_find_one_function)
 		  }
 	  } catch (DBException &e) {
 		  if (conn) {
-			  mongo_connection_destroy(&conn);
+			  mongo_connection_pool_put(globals.conn_pool, conn, SWITCH_TRUE);
 		  }
 		  stream->write_function(stream, "-ERR\n%s\n", e.toString().c_str());
 	  }

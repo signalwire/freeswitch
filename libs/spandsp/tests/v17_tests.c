@@ -119,17 +119,17 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
 
 static void v17_rx_status(void *user_data, int status)
 {
-    v17_rx_state_t *rx;
+    v17_rx_state_t *s;
     int i;
     int len;
     complexf_t *coeffs;
-    
+
     printf("V.17 rx status is %s (%d)\n", signal_status_to_str(status), status);
-    rx = (v17_rx_state_t *) user_data;
+    s = (v17_rx_state_t *) user_data;
     switch (status)
     {
     case SIG_STATUS_TRAINING_SUCCEEDED:
-        len = v17_rx_equalizer_state(rx, &coeffs);
+        len = v17_rx_equalizer_state(s, &coeffs);
         printf("Equalizer:\n");
         for (i = 0;  i < len;  i++)
             printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
@@ -140,15 +140,12 @@ static void v17_rx_status(void *user_data, int status)
 
 static void v17putbit(void *user_data, int bit)
 {
-    v17_rx_state_t *rx;
-
     if (bit < 0)
     {
         v17_rx_status(user_data, bit);
         return;
     }
 
-    rx = (v17_rx_state_t *) user_data;
     if (decode_test_file)
         printf("Rx bit %d - %d\n", rx_bits++, bit);
     else

@@ -140,7 +140,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 								  void *user_data)
 {
 	char filename[512] = "";
-	CURL *curl_handle = NULL;
+	switch_CURL *curl_handle = NULL;
 	struct config_data config_data;
 	switch_xml_t xml = NULL;
 	char *data = NULL;
@@ -148,9 +148,9 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	xml_binding_t *binding = (xml_binding_t *) user_data;
 	char *file_url;
-	struct curl_slist *slist = NULL;
+	switch_curl_slist_t *slist = NULL;
 	long httpRes = 0;
-	struct curl_slist *headers = NULL;
+	switch_curl_slist_t *headers = NULL;
 	char hostname[256] = "";
 	char basic_data[512];
 	char *uri = NULL;
@@ -205,12 +205,12 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	switch_uuid_format(uuid_str, &uuid);
 
 	switch_snprintf(filename, sizeof(filename), "%s%s.tmp.xml", SWITCH_GLOBAL_dirs.temp_dir, uuid_str);
-	curl_handle = curl_easy_init();
-	headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
+	curl_handle = switch_curl_easy_init();
+	headers = switch_curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
 
 	if (!strncasecmp(binding->url, "https", 5)) {
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 
 	memset(&config_data, 0, sizeof(config_data));
@@ -220,74 +220,74 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 		if (!zstr(binding->cred)) {
-			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, binding->auth_scheme);
-			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, binding->auth_scheme);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
 		}
-		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		if (binding->method != NULL)
-			curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, binding->method);
-		curl_easy_setopt(curl_handle, CURLOPT_POST, !binding->use_get_style);
-		curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-		curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, binding->method);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POST, !binding->use_get_style);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		if (!binding->use_get_style)
-			curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
-		curl_easy_setopt(curl_handle, CURLOPT_URL, binding->use_get_style ? uri : dynamic_url);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
-		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
+			switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, binding->use_get_style ? uri : dynamic_url);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
 
 		if (binding->timeout) {
-			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, binding->timeout);
-			curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, binding->timeout);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		}
 
 		if (binding->disable100continue) {
-			slist = curl_slist_append(slist, "Expect:");
-			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
+			slist = switch_curl_slist_append(slist, "Expect:");
+			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
 		}
 
 		if (binding->enable_cacert_check) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, TRUE);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, TRUE);
 		}
 
 		if (binding->ssl_cert_file) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, binding->ssl_cert_file);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, binding->ssl_cert_file);
 		}
 
 		if (binding->ssl_key_file) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, binding->ssl_key_file);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, binding->ssl_key_file);
 		}
 
 		if (binding->ssl_key_password) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, binding->ssl_key_password);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, binding->ssl_key_password);
 		}
 
 		if (binding->ssl_version) {
 			if (!strcasecmp(binding->ssl_version, "SSLv3")) {
-				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
 			} else if (!strcasecmp(binding->ssl_version, "TLSv1")) {
-				curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+				switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
 			}
 		}
 
 		if (binding->ssl_cacert_file) {
-			curl_easy_setopt(curl_handle, CURLOPT_CAINFO, binding->ssl_cacert_file);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, binding->ssl_cacert_file);
 		}
 
 		if (binding->enable_ssl_verifyhost) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
 		}
 
 		if (binding->cookie_file) {
-			curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, binding->cookie_file);
-			curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, binding->cookie_file);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, binding->cookie_file);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, binding->cookie_file);
 		}
 
-		curl_easy_perform(curl_handle);
-		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-		curl_easy_cleanup(curl_handle);
-		curl_slist_free_all(headers);
-		curl_slist_free_all(slist);
+		switch_curl_easy_perform(curl_handle);
+		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+		switch_curl_easy_cleanup(curl_handle);
+		switch_curl_slist_free_all(headers);
+		switch_curl_slist_free_all(slist);
 		close(config_data.fd);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening temp file!\n");
@@ -548,9 +548,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 	globals.hash_root = NULL;
 	globals.hash_tail = NULL;
 
-	if (do_config() == SWITCH_STATUS_SUCCESS) {
-		switch_curl_init();
-	} else {
+	if (do_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -574,7 +572,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown)
 	}
 
 	switch_xml_unbind_search_function_ptr(xml_url_fetch);
-	switch_curl_destroy();
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

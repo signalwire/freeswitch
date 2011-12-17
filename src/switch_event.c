@@ -1826,8 +1826,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
 
 	if (event <= SWITCH_EVENT_ALL) {
 		switch_zmalloc(event_node, sizeof(*event_node));
-		switch_mutex_lock(BLOCK);
 		switch_thread_rwlock_wrlock(RWLOCK);
+		switch_mutex_lock(BLOCK);
 		/* <LOCKED> ----------------------------------------------- */
 		event_node->id = DUP(id);
 		event_node->event_id = event;
@@ -1842,8 +1842,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
 		}
 
 		EVENT_NODES[event] = event_node;
-		switch_thread_rwlock_unlock(RWLOCK);
 		switch_mutex_unlock(BLOCK);
+		switch_thread_rwlock_unlock(RWLOCK);
 		/* </LOCKED> ----------------------------------------------- */
 
 		if (node) {

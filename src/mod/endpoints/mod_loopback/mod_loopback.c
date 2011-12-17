@@ -84,6 +84,7 @@ struct private_object {
 	char *other_uuid;
 	switch_queue_t *frame_queue;
 	int64_t packet_count;
+	int first_cng;
 };
 
 typedef struct private_object private_t;
@@ -115,6 +116,7 @@ static void clear_queue(private_t *tech_pvt)
 		switch_frame_t *frame = (switch_frame_t *) pop;
 		switch_frame_free(&frame);
 	}
+
 }
 
 static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, switch_codec_t *codec)
@@ -174,7 +176,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	tech_pvt->cng_frame.datalen = 2;
 
 	tech_pvt->bowout_frame_count = (tech_pvt->read_codec.implementation->actual_samples_per_second /
-									tech_pvt->read_codec.implementation->samples_per_packet) * 3;
+									tech_pvt->read_codec.implementation->samples_per_packet) * 2;
 
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
@@ -594,11 +596,16 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		*frame = tech_pvt->write_frame;
 		tech_pvt->packet_count++;
 		switch_clear_flag(tech_pvt->write_frame, SFF_CNG);
+		tech_pvt->first_cng = 0;
 	} else {
 		*frame = &tech_pvt->cng_frame;
 		tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
 		tech_pvt->cng_frame.datalen = tech_pvt->read_codec.implementation->decoded_bytes_per_packet;
 		switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
+		if (!tech_pvt->first_cng) {
+			switch_yield(tech_pvt->read_codec.implementation->samples_per_packet);
+			tech_pvt->first_cng = 1;
+		}
 	}
 
 
@@ -644,33 +651,56 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		switch_channel_test_flag(tech_pvt->channel, CF_BRIDGED) &&
 		switch_channel_test_flag(tech_pvt->other_channel, CF_BRIDGED) &&
 		switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) &&
-		switch_channel_test_flag(tech_pvt->other_channel, CF_ANSWERED) && !--tech_pvt->bowout_frame_count <= 0) {
+		switch_channel_test_flag(tech_pvt->other_channel, CF_ANSWERED) && --tech_pvt->bowout_frame_count <= 0) {
 		const char *a_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 		const char *b_uuid = switch_channel_get_variable(tech_pvt->other_channel, SWITCH_SIGNAL_BOND_VARIABLE);
 		const char *vetoa, *vetob;
 
-		switch_set_flag_locked(tech_pvt, TFLAG_BOWOUT);
-		switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_BOWOUT);
 
 		vetoa = switch_channel_get_variable(tech_pvt->channel, "loopback_bowout");
 		vetob = switch_channel_get_variable(tech_pvt->other_tech_pvt->channel, "loopback_bowout");
 
 		if ((!vetoa || switch_true(vetoa)) && (!vetob || switch_true(vetob))) {
-			switch_clear_flag_locked(tech_pvt, TFLAG_WRITE);
-			switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
+			switch_core_session_t *br_a, *br_b;
+			switch_channel_t *ch_a = NULL, *ch_b = NULL;
+			int good_to_go = 0;
+			
+			if ((br_a = switch_core_session_locate(a_uuid))) {
+				ch_a = switch_core_session_get_channel(br_a);
+			}
 
-			switch_set_flag_locked(tech_pvt, TFLAG_BOWOUT_USED);
-			switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_BOWOUT_USED);
+			if ((br_b = switch_core_session_locate(b_uuid))) {
+				ch_b = switch_core_session_get_channel(br_b);
+			}
+			
+			if (ch_a && ch_b && switch_channel_test_flag(ch_a, CF_BRIDGED) && switch_channel_test_flag(ch_b, CF_BRIDGED)) {
+				switch_set_flag_locked(tech_pvt, TFLAG_BOWOUT);
+				switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_BOWOUT);
 
-			if (a_uuid && b_uuid) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-								  "%s detected bridge on both ends, attempting direct connection.\n", switch_channel_get_name(channel));
+				switch_clear_flag_locked(tech_pvt, TFLAG_WRITE);
+				switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
 
-				/* channel_masquerade eat your heart out....... */
-				switch_ivr_uuid_bridge(a_uuid, b_uuid);
-				switch_mutex_unlock(tech_pvt->mutex);
+				switch_set_flag_locked(tech_pvt, TFLAG_BOWOUT_USED);
+				switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_BOWOUT_USED);
+
+				if (a_uuid && b_uuid) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "%s detected bridge on both ends, attempting direct connection.\n", switch_channel_get_name(channel));
+					
+					/* channel_masquerade eat your heart out....... */
+					switch_ivr_uuid_bridge(a_uuid, b_uuid);
+					good_to_go = 1;
+					switch_mutex_unlock(tech_pvt->mutex);
+				}
+			}
+
+			if (br_a) switch_core_session_rwunlock(br_a);
+			if (br_b) switch_core_session_rwunlock(br_b);
+			
+			if (good_to_go) {
 				return SWITCH_STATUS_SUCCESS;
 			}
+
 		}
 	}
 

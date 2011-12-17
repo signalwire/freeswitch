@@ -58,9 +58,10 @@
 #include "spandsp/v29tx.h"
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v27ter_tx.h"
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  |  defined(SPANDSP_SUPPORT_T85)
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t81_t82_arith_coding.h"
 #endif
 #if defined(SPANDSP_SUPPORT_T85)
@@ -81,7 +82,8 @@
 #include "spandsp/t30_logging.h"
 
 #include "spandsp/private/logging.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  |  defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/private/timezone.h"
+#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
 #endif
 #if defined(SPANDSP_SUPPORT_T85)
@@ -781,11 +783,11 @@ static int send_next_ecm_frame(t30_state_t *s)
         }
         s->ecm_current_tx_frame = s->ecm_frames;
     }
-    if (s->ecm_current_tx_frame <= s->ecm_frames + 3)
+    if (s->ecm_current_tx_frame < s->ecm_frames + 3)
     {
-        /* We have sent all the FCD frames. Send some RCP frames. Three seems to be
-           a popular number, to minimise the risk of a bit error stopping the receiving
-           end from recognising the RCP. */
+        /* We have sent all the FCD frames. Send three RCP frames, as per
+           T.4/A.1 and T.4/A.2. The repeats are to minimise the risk of a bit
+           error stopping the receiving end from recognising the RCP. */
         s->ecm_current_tx_frame++;
         /* The RCP frame is an odd man out, as its a simple 1 byte control
            frame, but is specified to not have the final bit set. It doesn't
@@ -794,7 +796,8 @@ static int send_next_ecm_frame(t30_state_t *s)
         frame[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         frame[2] = T4_RCP;
         send_frame(s, frame, 3);
-        /* In case we are just after a CTC/CTR exchange, which kicked us back to long training */
+        /* In case we are just after a CTC/CTR exchange, which kicked us back
+           to long training */
         s->short_train = TRUE;
         return 0;
     }
@@ -1974,6 +1977,8 @@ static int start_sending_document(t30_state_t *s)
     t4_tx_set_tx_encoding(&s->t4.tx, s->line_encoding);
     t4_tx_set_local_ident(&s->t4.tx, s->tx_info.ident);
     t4_tx_set_header_info(&s->t4.tx, s->header_info);
+    if (s->use_own_tz)
+        t4_tx_set_header_tz(&s->t4.tx, &s->tz);
 
     s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
     s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);

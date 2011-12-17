@@ -271,7 +271,7 @@ void printSilkError(SKP_int16 ret){
 			message = "unknown";
 			break;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Silk Error message= %s\n",message);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Silk Error: %s\n",message);
 }
 
 static switch_status_t switch_silk_encode(switch_codec_t *codec,
@@ -298,6 +298,7 @@ static switch_status_t switch_silk_encode(switch_codec_t *codec,
 		if (ret) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SKP_Silk_Encode returned %d!\n", ret);
 			printSilkError(ret);
+			return SWITCH_STATUS_FALSE;
 		}
 		*encoded_data_len += nBytes;
 		samples-=pktsz;
@@ -332,6 +333,8 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 								  &len);
 		if (ret){
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SKP_Silk_Decode returned %d!\n", ret);
+			printSilkError(ret);
+			return SWITCH_STATUS_FALSE;
 		}
 
 		target += len;

@@ -605,6 +605,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	char *key = NULL;
 	int i = 0;
 	int r = 0;
+	switch_bool_t lcr_skipped = SWITCH_TRUE; /* assume we'll throw it away, paranoid about leak */
 
 	switch_memory_pool_t *pool = cbt->pool;
 	
@@ -625,6 +626,8 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 			if (!argv[i] || zstr(argv[i])) {
 				/* maybe we want to consider saying which carriers have null rate fields... maybe they can run the query and find out */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "rate field is null, skipping\n");
+				/* kill prev/next pointers */
+				/* additional->prev = NULL; */
 				goto end;
 			}
 			additional->rate = (float)atof(switch_str_nil(argv[i]));
@@ -661,6 +664,13 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, cbt->cid, additional, cbt->profile, cbt->session);
 
 	if (cbt->head == NULL) {
+		if (cbt->max_rate && (cbt->max_rate < additional->rate)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Skipping [%s] because [%f] is higher than the max_rate of [%f]\n", 
+							  additional->carrier_name, additional->rate, cbt->max_rate);
+			lcr_skipped = SWITCH_FALSE;
+			r = 0; goto end;
+		}
+
 		key = switch_core_sprintf(pool, "%s:%s", additional->gw_prefix, additional->gw_suffix);
 		additional->next = cbt->head;
 		cbt->head = additional;
@@ -669,6 +679,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 			r = -1; goto end;
 		}
+		lcr_skipped = SWITCH_FALSE;
 		r = 0; goto end;
 	}
 
@@ -698,6 +709,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 					r = -1; goto end;
 				}
+				lcr_skipped = SWITCH_FALSE;
 				break;
 			}
 		} else {
@@ -719,6 +731,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 					r = -1; goto end;
 				}
+				lcr_skipped = SWITCH_FALSE;
 				break;
 			} else if (current->next == NULL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "adding %s to end of list after %s\n",
@@ -729,6 +742,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 					r = -1; goto end;
 				}
+				lcr_skipped = SWITCH_FALSE;
 				break;
 			}
 		}
@@ -736,8 +750,21 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 
  end:
 
-	/* event is freed in lcr_destroy() switch_event_destroy(&additional->fields); */
-
+	/* lcr was not added to any lists, so destroy lcr object here */
+	if (lcr_skipped == SWITCH_TRUE) {
+		/* complain loudly if we're asked to destroy a route that is
+		   added to the route list */
+		if (additional && additional->prev != NULL) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+			                  "additional->prev != NULL\n");
+		}
+		if (current && current->next == additional) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+			                  "current->next == additional\n");
+		}
+		lcr_destroy(additional);
+	}
+	
 	return r;
 
 }

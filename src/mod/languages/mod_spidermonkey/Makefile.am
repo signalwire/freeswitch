@@ -50,7 +50,7 @@ mod_spidermonkey_teletone_la_LDFLAGS  = $(AM_LDFLAGS)
 if HAVE_ODBC
 mod_LTLIBRARIES             += mod_spidermonkey_odbc.la
 mod_spidermonkey_odbc_la_SOURCES  = mod_spidermonkey_odbc.c
-mod_spidermonkey_odbc_la_CFLAGS   = $(AM_CFLAGS)
+mod_spidermonkey_odbc_la_CFLAGS   = $(AM_CFLAGS) $(ODBC_INC_FLAGS)
 mod_spidermonkey_odbc_la_LIBADD   = $(AM_LIBADD)
 mod_spidermonkey_odbc_la_LDFLAGS  = $(AM_LDFLAGS)
 endif

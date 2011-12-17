@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
+ * Joseph Sullivan <jossulli@amazon.com>
  *
  *
  * switch_core_session.c -- Main Core Library (session routines)
@@ -43,7 +44,9 @@ SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *ses
 	int i = (int) target;
 
 	if (i == 0 || i == 1) {
-		switch_ivr_dmachine_set_target(dmachine, target);
+		if (dmachine) {
+			switch_ivr_dmachine_set_target(dmachine, target);
+		}
 		session->dmachine[i] = dmachine;
 	}
 }
@@ -229,7 +232,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 	for(np = head; np; np = np->next) {
 		if ((session = switch_core_session_locate(np->str))) {
 			const char *this_val;
-			if (switch_channel_up(session->channel) &&
+			if (switch_channel_up_nosig(session->channel) &&
 				(this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {			
 				switch_channel_hangup(session->channel, cause);
 			}
@@ -328,7 +331,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(const char *uui
 	if ((session = switch_core_hash_find(session_manager.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-			if (switch_channel_up(session->channel)) {
+			if (switch_channel_up_nosig(session->channel)) {
 				status = switch_core_session_receive_message(session, message);
 			}
 			switch_core_session_rwunlock(session);
@@ -348,7 +351,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(const char *uuid_
 	if ((session = switch_core_hash_find(session_manager.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-			if (switch_channel_up(session->channel)) {
+			if (switch_channel_up_nosig(session->channel)) {
 				status = switch_core_session_queue_event(session, event);
 			}
 			switch_core_session_rwunlock(session);
@@ -633,6 +636,8 @@ static const char *message_names[] = {
 	"JITTER_BUFFER",
 	"RECOVERY_REFRESH",
 	"SIGNAL_DATA",
+	"INFO",
+	"AUDIO_DATA",
 	"INVALID"
 };
 
@@ -682,7 +687,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		goto end;
 	}
 
-	if (switch_channel_down(session->channel) && message->message_id != SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
+	if (switch_channel_down_nosig(session->channel) && message->message_id != SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
 						  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "%s skip receive message [%s] (channel is hungup already)\n",
 						  switch_channel_get_name(session->channel), message_names[message->message_id]);
@@ -703,7 +708,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 	message->_func = NULL;
 	message->_line = 0;
 
-	if (switch_channel_up(session->channel)) {
+	if (switch_channel_up_nosig(session->channel)) {
 		switch (message->message_id) {
 		case SWITCH_MESSAGE_REDIRECT_AUDIO:
 		case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -902,7 +907,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_se
 
 	/* Acquire a read lock on the session or forget it the channel is dead */
 	if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-		if (switch_channel_up(session->channel)) {
+		if (switch_channel_up_nosig(session->channel)) {
 			if (session->endpoint_interface->io_routines->receive_event) {
 				status = session->endpoint_interface->io_routines->receive_event(session, *event);
 			}
@@ -1185,6 +1190,26 @@ SWITCH_DECLARE(unsigned int) switch_core_session_started(switch_core_session_t *
 	return switch_test_flag(session, SSF_THREAD_STARTED) ? 1 : 0;
 }
 
+SWITCH_DECLARE(int) switch_core_session_sync_clock(void)
+{
+	int doit = 0;
+
+	switch_mutex_lock(runtime.session_hash_mutex);
+	if (session_manager.session_count == 0) {
+		doit = 1;
+	} else {
+		switch_set_flag((&runtime), SCF_SYNC_CLOCK_REQUESTED);
+	}
+	switch_mutex_unlock(runtime.session_hash_mutex);
+
+	if (doit)  {
+		switch_time_sync();
+	}
+
+	return doit;
+
+}
+
 SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t **session, const char *file, const char *func, int line)
 {
 	switch_memory_pool_t *pool;
@@ -1207,6 +1232,12 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_core_hash_delete(session_manager.session_table, (*session)->uuid_str);
 	if (session_manager.session_count) {
 		session_manager.session_count--;
+		if (session_manager.session_count == 0) {
+			if (switch_test_flag((&runtime), SCF_SYNC_CLOCK_REQUESTED)) {
+				switch_time_sync();
+				switch_clear_flag((&runtime), SCF_SYNC_CLOCK_REQUESTED);
+			}
+		}
 	}
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
@@ -1583,6 +1614,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	flags[CF_BRIDGE_NOWRITE] = 0;
 	flags[CF_RECOVERED] = 0;
 	flags[CF_JITTERBUFFER] = 0;
+	flags[CF_JITTERBUFFER_PLC] = 0;
 	flags[CF_DIALPLAN] = 0;
 	flags[CF_BLOCK_BROADCAST_UNTIL_MEDIA] = 0;
 	flags[CF_CNG_PLC] = 0;
@@ -1720,6 +1752,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	}
 
 
+	if (!channel || !switch_channel_get_caller_profile(channel)) {
+		if (session) {
+			switch_core_session_destroy(&session);
+		}
+	}
+
+
 	return session;
 }
 
@@ -1740,6 +1779,16 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 
 	if (use_uuid && switch_core_hash_find(session_manager.session_table, use_uuid)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
+		return NULL;
+	}
+
+	if (direction == SWITCH_CALL_DIRECTION_INBOUND && !switch_core_ready_inbound()) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The system cannot create any inbound sessions at this time.\n");
+		return NULL;
+	}
+
+	if (direction == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_core_ready_outbound()) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The system cannot create any outbound sessions at this time.\n");
 		return NULL;
 	}
 
@@ -1841,6 +1890,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	session->id = session_manager.session_id++;
 	session_manager.session_count++;
 	switch_mutex_unlock(runtime.session_hash_mutex);
+
+	switch_channel_set_variable_printf(session->channel, "session_id", "%u", session->id);
 
 	return session;
 }
@@ -2025,7 +2076,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 	switch_application_interface_t *application_interface;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (switch_channel_down(session->channel)) {
+	if (switch_channel_down_nosig(session->channel)) {
 		char *p;
 		if (!arg && (p = strstr(app, "::"))) {
 			*p++ = '0';
@@ -2049,7 +2100,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
 						  "%s Channel is hungup and application '%s' does not have the zombie_exec flag.\n",
 						  switch_channel_get_name(session->channel), app);
-		return SWITCH_STATUS_IGNORE;
+
+		switch_goto_status(SWITCH_STATUS_IGNORE, done);
 	}
 
 	if (!arg && strstr(app, "::")) {
@@ -2059,7 +2111,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 	if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, done);
 	}
 
 	if (!application_interface->application_function) {

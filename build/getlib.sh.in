@@ -1,58 +1,46 @@
 #!/bin/sh
 
-bz="false"
-
-BUNZIP=/usr/bin/bunzip2
 TAR=@TAR@
 ZCAT=@ZCAT@
+BZIP=@BZIP@
+XZ=@XZ@
 WGET=@WGET@
 CURL=@CURL@
 
-if [ -f "$WGET" ] ; then
+if [ -f "$WGET" ]; then
     DOWNLOAD_CMD=$WGET
-else
-    if [ -f "$CURL" ] ; then
-        DOWNLOAD_CMD="$CURL -O"
-    fi
+elif [ -f "$CURL" ]; then
+    DOWNLOAD_CMD="$CURL -O"
 fi
 
-base=http://files.freeswitch.org/downloads/libs/
-tarfile=$1
-url=`echo $tarfile | grep "://"`
-
-if [ `echo $tarfile | grep bz2`  ] ; then
-    bz="true"
-    UNZIPPER=$BUNZIP
-else
-    UNZIPPER=$ZCAT
-fi
-
-if [ ! -z $url ] ; then
-    base=$tarfile/
+if [ -n "`echo $1 | grep '://'`" ]; then
+    base=$1/
     tarfile=$2
+else
+    base=http://files.freeswitch.org/downloads/libs/
+    tarfile=$1
 fi
 
-if [ ! -d $tarfile ] ; then
+uncompressed=`echo $tarfile | sed 's/\(\(\.tar\.gz\|\.tar\.bz2\|\.tar\.xz\)\|\(\.tgz\|\.tbz2\)\)$//'`
 
-    if [ $bz = "true" ] ; then
-	uncompressed=`echo $tarfile | sed "s/\.tar\.bz2//g"`
-    else 
-	uncompressed=`echo $tarfile | sed "s/\.tar\.gz//g"`
-	uncompressed=`echo $uncompressed | sed "s/\.tgz//g"`
-    fi
+case `echo $tarfile | sed 's/.*\.\([^.]\+\)$/\1/'` in
+    bz2|tbz2) UNZIPPER=$BZIP ;;
+    xz) UNZIPPER=$XZ ;;
+    gz|tgz|*) UNZIPPER=$ZCAT ;;
+esac
 
-    if [ ! -f $tarfile ] ; then
-	rm -fr $uncompressed
-	$DOWNLOAD_CMD $base$tarfile
-	if [ ! -f $tarfile ] ; then
-	    echo cannot find $tarfile
-	    exit 1
-	fi
+if [ ! -d $tarfile ]; then
+    if [ ! -f $tarfile ]; then
+        rm -fr $uncompressed
+        $DOWNLOAD_CMD $base$tarfile
+        if [ ! -f $tarfile ]; then
+            echo cannot find $tarfile
+            exit 1
+        fi
     fi
-    if [ ! -d $uncompressed ] ; then
-	$UNZIPPER -c -d $tarfile | $TAR xf -
+    if [ ! -d $uncompressed ]; then
+        $UNZIPPER -c -d $tarfile | $TAR -xf -
     fi
 fi
 
 exit 0
-

@@ -319,16 +319,16 @@ nobase_include_HEADERS = spandsp/adsi.h \
 
 nodist_include_HEADERS = spandsp.h
 
-noinst_HEADERS =         faxfont.h \
-                         filter_tools.h \
-                         gsm0610_local.h \
-                         lpc10_encdecs.h \
-                         mmx_sse_decs.h \
-                         t30_local.h \
-                         t4_t6_decode_states.h \
-                         v17_v32bis_rx_constellation_maps.h \
-                         v17_v32bis_tx_constellation_maps.h \
-                         v29tx_constellation_maps.h
+noinst_HEADERS = faxfont.h \
+                 filter_tools.h \
+                 gsm0610_local.h \
+                 lpc10_encdecs.h \
+                 mmx_sse_decs.h \
+                 t30_local.h \
+                 t4_t6_decode_states.h \
+                 v17_v32bis_rx_constellation_maps.h \
+                 v17_v32bis_tx_constellation_maps.h \
+                 v29tx_constellation_maps.h
 
 make_at_dictionary$(EXEEXT): $(top_srcdir)/src/make_at_dictionary.c
 	$(CC_FOR_BUILD) -o make_at_dictionary$(EXEEXT) $(top_srcdir)/src/make_at_dictionary.c  -DHAVE_CONFIG_H -I$(top_builddir)/src

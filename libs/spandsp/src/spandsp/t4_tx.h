@@ -141,8 +141,8 @@ SPAN_DECLARE(void) t4_tx_set_header_info(t4_state_t *s, const char *info);
     the current time zone of the program's environment is used.
     \brief Set the header timezone.
     \param s The T.4 context.
-    \param info A POSIX timezone description string. */
-SPAN_DECLARE(void) t4_tx_set_header_tz(t4_state_t *s, const char *tzstring);
+    \param tz A time zone descriptor. */
+SPAN_DECLARE(void) t4_tx_set_header_tz(t4_state_t *s, tz_t *tz);
 
 /*! Set page header extends or overlays the image mode.
     \brief Set page header overlay mode.

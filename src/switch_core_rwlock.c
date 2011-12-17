@@ -85,7 +85,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_sessio
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->rwlock) {
-		if (switch_test_flag(session, SSF_DESTROYED) || switch_channel_down(session->channel)) {
+		if (switch_test_flag(session, SSF_DESTROYED) || switch_channel_down_nosig(session->channel)) {
 			status = SWITCH_STATUS_FALSE;
 			if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
 				if (switch_channel_test_flag(session->channel, CF_THREAD_SLEEPING)) {

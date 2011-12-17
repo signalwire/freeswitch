@@ -94,6 +94,7 @@ struct listener {
 	char remote_ip[50];
 	switch_port_t remote_port;
 	switch_event_t *filters;
+	time_t linger_timeout;
 	struct listener *next;
 };
 
@@ -1095,7 +1096,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 static switch_status_t read_packet(listener_t *listener, switch_event_t **event, uint32_t timeout)
 {
 	switch_size_t mlen, bytes = 0;
-	char mbuf[2048] = "";
+	char *mbuf = NULL;
 	char buf[1024] = "";
 	switch_size_t len;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1105,15 +1106,19 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 	void *pop;
 	char *ptr;
 	uint8_t crcount = 0;
-	uint32_t max_len = sizeof(mbuf);
+	uint32_t max_len = 10485760, block_len = 2048, buf_len = 0;
 	switch_channel_t *channel = NULL;
 	int clen = 0;
 
 	*event = NULL;
 
 	if (prefs.done) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
+
+	switch_zmalloc(mbuf, block_len);
+	switch_assert(mbuf);
+	buf_len = block_len;
 
 	start = switch_epoch_time_now(NULL);
 	ptr = mbuf;
@@ -1126,10 +1131,24 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		uint8_t do_sleep = 1;
 		mlen = 1;
 
+		if (bytes == buf_len - 1) {
+			char *tmp;
+			int pos;
+
+			pos = (ptr - mbuf);
+			buf_len += block_len;
+			tmp = realloc(mbuf, buf_len);
+			switch_assert(tmp);
+			mbuf = tmp;
+			memset(mbuf + bytes, 0, buf_len - bytes);
+			ptr = (mbuf + pos);
+
+		}
+		
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
 		if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
-			return SWITCH_STATUS_FALSE;
+			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 
 		if (mlen) {
@@ -1198,7 +1217,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 
 											if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
 												free(body);												
-												return SWITCH_STATUS_FALSE;
+												switch_goto_status(SWITCH_STATUS_FALSE, end);
 											}
 
 											/*
@@ -1230,7 +1249,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			elapsed = (uint32_t) (switch_epoch_time_now(NULL) - start);
 			if (elapsed >= timeout) {
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
-				return SWITCH_STATUS_FALSE;
+				switch_goto_status(SWITCH_STATUS_FALSE, end);
 			}
 		}
 
@@ -1325,6 +1344,12 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			}
 		}
 
+		if (switch_test_flag(listener, LFLAG_HANDLE_DISCO) && switch_epoch_time_now(NULL) > listener->linger_timeout) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_DEBUG, "linger timeout, closing socket\n");
+			status = SWITCH_STATUS_FALSE;
+			break;
+		}
+
 		if (channel && switch_channel_down(channel) && !switch_test_flag(listener, LFLAG_HANDLE_DISCO)) {
 			switch_set_flag_locked(listener, LFLAG_HANDLE_DISCO);
 			if (switch_test_flag(listener, LFLAG_LINGER)) {
@@ -1354,6 +1379,9 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		}
 	}
 
+ end:
+
+	switch_safe_free(mbuf);
 	return status;
 
 }
@@ -2239,8 +2267,15 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 	} else if (!strncasecmp(cmd, "linger", 6)) {
 		if (listener->session) {
+			uint32_t linger_time = 600; /* sounds reasonable? */
+			if (*(cmd+6) == ' ' && *(cmd+7)) { /*how long do you want to linger?*/
+				linger_time = (uint32_t)atoi(cmd+7);
+			}
+
+			/*do we need a mutex to update linger_timeout ?*/
+			listener->linger_timeout = switch_epoch_time_now(NULL) + linger_time;
 			switch_set_flag_locked(listener, LFLAG_LINGER);
-			switch_snprintf(reply, reply_len, "+OK will linger");
+			switch_snprintf(reply, reply_len, "+OK will linger %d seconds", linger_time);
 		} else {
 			switch_snprintf(reply, reply_len, "-ERR not controlling a session");
 		}

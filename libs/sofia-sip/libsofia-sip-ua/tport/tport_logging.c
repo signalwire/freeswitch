@@ -385,7 +385,7 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
    else hep_header.hp_p = IPPROTO_UDP; /* DEFAULT UDP */
 
    /* Check destination */         
-   if(strncmp("recv", what, 4) == 0) dst = 1;
+   if(strncmp("sent", what, 4) == 0) dst = 1;
       
    /* copy destination and source IPs*/
    if(su->su_family == AF_INET) {

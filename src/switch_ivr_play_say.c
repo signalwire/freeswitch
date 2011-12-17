@@ -1669,7 +1669,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done playing file\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done playing file %s\n", file);
 
 		if (read_impl.samples_per_second) {
 			switch_channel_set_variable_printf(channel, "playback_seconds", "%d", fh->samples_in / read_impl.samples_per_second);

@@ -1,11 +1,11 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * fax_tests.c
+ * fax_tests.c - Tests for the audio and T.38 FAX modules.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2003 Steve Underwood
+ * Copyright (C) 2005, 2006, 2009, 2010 Steve Underwood
  *
  * All rights reserved.
  *
@@ -23,6 +23,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/*! \file */
+
 /*! \page fax_tests_page FAX tests
 \section fax_tests_page_sec_1 What does it do?
 \section fax_tests_page_sec_2 How does it work?
@@ -33,11 +35,16 @@
 #endif
 
 #include <stdlib.h>
+#include <inttypes.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 #include <sndfile.h>
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -206,6 +213,7 @@ int main(int argc, char *argv[])
     time_t end_time;
     int scan_line_time;
     char *page_header_info;
+    char *page_header_tz;
     int opt;
     t30_state_t *t30;
     logging_state_t *logging;
@@ -218,6 +226,7 @@ int main(int argc, char *argv[])
     use_tep = FALSE;
     polled_mode = FALSE;
     page_header_info = NULL;
+    page_header_tz = NULL;
     reverse_flow = FALSE;
     use_transmit_on_idle = TRUE;
     use_receiver_not_ready = FALSE;
@@ -226,7 +235,7 @@ int main(int argc, char *argv[])
     noise_level = -99;
     scan_line_time = 0;
     supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
-    while ((opt = getopt(argc, argv, "ehH:i:I:lm:n:prRs:S:tTw:")) != -1)
+    while ((opt = getopt(argc, argv, "ehH:i:I:lm:n:prRs:S:tTw:z:")) != -1)
     {
         switch (opt)
         {
@@ -277,6 +286,9 @@ int main(int argc, char *argv[])
             break;
         case 'w':
             t30_state_to_wreck = atoi(optarg);
+            break;
+        case 'z':
+            page_header_tz = optarg;
             break;
         default:
             //usage();
@@ -335,6 +347,8 @@ int main(int argc, char *argv[])
         t30_set_tx_polled_sub_address(t30, "Polled sub-address");
         t30_set_tx_selective_polling_address(t30, "Selective polling address");
         t30_set_tx_page_header_info(t30, page_header_info);
+        if (page_header_tz)
+            t30_set_tx_page_header_tz(t30, page_header_tz);
         t30_set_tx_nsf(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp\x00", 12);
         t30_set_ecm_capability(t30, use_ecm);
         t30_set_supported_t30_features(t30,

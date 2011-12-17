@@ -40,6 +40,7 @@
 #define DL_EVENT_LOGIN_FAILURE "dingaling::login_failure"
 #define DL_EVENT_CONNECTED "dingaling::connected"
 #define MDL_CHAT_PROTO "jingle"
+#define MDL_CHAT_FROM_GUESS "auto_from"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown);
@@ -495,18 +496,24 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	mdl_profile_t *profile = NULL;
 	const char *proto;
 	const char *from; 
+	const char *from_full; 
+	const char *to_full; 
 	const char *to;
 	const char *body;
 	const char *hint;
+	const char *profile_name;
 
 	proto = switch_event_get_header(message_event, "proto");
 	from = switch_event_get_header(message_event, "from");
+	from_full = switch_event_get_header(message_event, "from_full");
+	to_full = switch_event_get_header(message_event, "to_full");
 	to = switch_event_get_header(message_event, "to");
 	body = switch_event_get_body(message_event);
 	hint = switch_event_get_header(message_event, "hint");
+	profile_name = switch_event_get_header(message_event, "ldl_profile");
 
 	switch_assert(proto != NULL);
-
+	
 	if (from && (f_user = strdup(from))) {
 		if ((f_host = strchr(f_user, '@'))) {
 			*f_host++ = '\0';
@@ -516,12 +523,18 @@ static switch_status_t chat_send(switch_event_t *message_event)
 		}
 	}
 
-	if (to && (user = strdup(to))) {
+	if ((profile_name && (profile = switch_core_hash_find(globals.profile_hash, profile_name)))) {
+		from = from_full;
+		to = to_full;
+
+		ldl_handle_send_msg(profile->handle, (char *) from, (char *) to, NULL, switch_str_nil(body));
+	} else if (to && (user = strdup(to))) {
 		if ((host = strchr(user, '@'))) {
 			*host++ = '\0';
 		}
 
-		if (f_host && (profile = switch_core_hash_find(globals.profile_hash, f_host))) {
+		if (f_host && ((profile_name && (profile = switch_core_hash_find(globals.profile_hash, profile_name)))
+					   || (profile = switch_core_hash_find(globals.profile_hash, f_host)))) {
 
 			if (!strcmp(proto, MDL_CHAT_PROTO)) {
 				from = hint;
@@ -538,7 +551,12 @@ static switch_status_t chat_send(switch_event_t *message_event)
 					*p = '\0';
 				}
 			}
-			ldl_handle_send_msg(profile->handle, (char *) from, (char *) to, NULL, switch_str_nil(body));
+			if (!(profile->user_flags & LDL_FLAG_COMPONENT) && !strcmp(f_user, MDL_CHAT_FROM_GUESS)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using auto_from jid address for profile %s\n", profile->name);
+				ldl_handle_send_msg(profile->handle, NULL, (char *) to, NULL, switch_str_nil(body));
+			} else {
+				ldl_handle_send_msg(profile->handle, (char *) from, (char *) to, NULL, switch_str_nil(body));
+			}
 			switch_safe_free(ffrom);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", f_host ? f_host : "NULL");
@@ -1585,8 +1603,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		channel_answer_channel(session);
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+		rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
 		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+		rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
 		break;
 	default:
 		break;
@@ -2931,6 +2951,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", subject);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "text/plain");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", hint);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", hint);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "ldl_profile", profile->name);
 					
 					if (msg) {
 						switch_event_add_body(event, "%s", msg);
@@ -2941,11 +2963,13 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				
 				switch_safe_free(from_user);
 
-				if (strcasecmp(proto, MDL_CHAT_PROTO)) { /* yes no ! on purpose */
-					switch_core_chat_send(proto, event);
+				if (!zstr(msg)) {
+					if (strcasecmp(proto, MDL_CHAT_PROTO)) { /* yes no ! on purpose */
+						switch_core_chat_send(proto, event);
+					}
+					
+					switch_core_chat_send("GLOBAL", event);
 				}
-
-				switch_core_chat_send("GLOBAL", event);
 
 				switch_event_destroy(&event);
 

@@ -827,10 +827,10 @@ static int nua_notify_usage_shutdown(nua_handle_t *nh,
 				     nua_dialog_usage_t *du)
 {
   struct notifier_usage *nu = nua_dialog_usage_private(du);
-  nua_client_request_t *cr = du->du_cr;
+  //nua_client_request_t *cr = du->du_cr;
 
   nu->nu_substate = nua_substate_terminated;
-
+#if 0
   if (cr) {
     SU_DEBUG_5(("%s(%p, %p, %p): using existing cr=%p\n",
 		"nua_notify_usage_shutdown",
@@ -852,7 +852,7 @@ static int nua_notify_usage_shutdown(nua_handle_t *nh,
 			   TAG_END()) >= 0)
       return 0;
   }
-
+#endif
   nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
   return 200;
 }

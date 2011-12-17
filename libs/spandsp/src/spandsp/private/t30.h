@@ -73,6 +73,11 @@ struct t30_state_s
                page image. FALSE for FAX page headers to add to the overall length of
                the page. */
     int header_overlays_image;
+    /*! \brief Use private timezone if TRUE */
+    int use_own_tz;
+    /*! \brief Optional per instance time zone for the FAX page header timestamp. */
+    tz_t tz;
+
     /*! \brief TRUE if remote T.30 procedural interrupts are allowed. */
     int remote_interrupts_allowed;
 

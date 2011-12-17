@@ -256,6 +256,7 @@ static void digit_status(void *data, int signal, int level, int delay)
     static int last_step = 0;
     static int first = TRUE;
 
+    //printf("Digit status %d %d %d\n", signal, level, delay);
     callback_hit = TRUE;
     len = step - last_step;
     if (data == (void *) 0x12345678)
@@ -321,10 +322,14 @@ static void mitel_cm7291_side_1_tests(void)
     float rcfo;
     dtmf_rx_state_t *dtmf_state;
     awgn_state_t noise_source;
+    logging_state_t *logging;
 
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
     if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    logging = dtmf_rx_get_logging_state(dtmf_state);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "DTMF-rx");
 
     /* Test 1: Mitel's test 1 isn't really a test. Its a calibration step,
        which has no meaning here. */
@@ -627,10 +632,14 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
     SNDFILE *inhandle;
     int frames;
     dtmf_rx_state_t *dtmf_state;
+    logging_state_t *logging;
 
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
     if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    logging = dtmf_rx_get_logging_state(dtmf_state);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "DTMF-rx");
 
     /* The remainder of the Mitel tape is the talk-off test */
     /* Here we use the Bellcore test tapes (much tougher), in six
@@ -694,10 +703,14 @@ static void dial_tone_tolerance_tests(void)
     dtmf_rx_state_t *dtmf_state;
     tone_gen_descriptor_t dial_tone_desc;
     tone_gen_state_t dial_tone;
+    logging_state_t *logging;
 
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
     if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    logging = dtmf_rx_get_logging_state(dtmf_state);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "DTMF-rx");
 
     /* Test dial tone tolerance */
     printf("Test: Dial tone tolerance.\n");
@@ -742,6 +755,7 @@ static void callback_function_tests(void)
     int len;
     int sample;
     dtmf_rx_state_t *dtmf_state;
+    logging_state_t *logging;
 
     /* Test the callback mode for delivering detected digits */
     printf("Test: Callback digit delivery mode.\n");
@@ -751,6 +765,9 @@ static void callback_function_tests(void)
     dtmf_state = dtmf_rx_init(NULL, digit_delivery, (void *) 0x12345678);
     if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    logging = dtmf_rx_get_logging_state(dtmf_state);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "DTMF-rx");
 
     my_dtmf_gen_init(0.0f, DEFAULT_DTMF_TX_LEVEL, 0.0f, DEFAULT_DTMF_TX_LEVEL, DEFAULT_DTMF_TX_ON_TIME, DEFAULT_DTMF_TX_OFF_TIME);
     for (i = 1;  i < 10;  i++)
@@ -778,6 +795,9 @@ static void callback_function_tests(void)
     dtmf_rx_set_realtime_callback(dtmf_state, digit_status, (void *) 0x12345678);
     if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    logging = dtmf_rx_get_logging_state(dtmf_state);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "DTMF-rx");
 
     my_dtmf_gen_init(0.0f, DEFAULT_DTMF_TX_LEVEL, 0.0f, DEFAULT_DTMF_TX_LEVEL, DEFAULT_DTMF_TX_ON_TIME, DEFAULT_DTMF_TX_OFF_TIME);
     step = 0;
@@ -813,19 +833,23 @@ static void decode_test(const char *test_file)
     int actual;
     int samples;
     int total;
+    logging_state_t *logging;
 
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
     if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
         dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    logging = dtmf_rx_get_logging_state(dtmf_state);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "DTMF-rx");
 
     /* We will decode the audio from a file. */
-    
+
     if ((inhandle = sf_open_telephony_read(decode_test_file, 1)) == NULL)
     {
         fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
         exit(2);
     }
-    
+
     total = 0;
     while ((samples = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK)) > 0)
     {

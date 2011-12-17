@@ -146,6 +146,9 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		context->sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_IMA_ADPCM;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
+	} else if (!strcmp(ext, "oga")) {
+		context->sfinfo.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
+		context->sfinfo.samplerate = handle->samplerate;
 	}
 
 	if ((mode & SFM_WRITE) && sf_format_check(&context->sfinfo) == 0) {

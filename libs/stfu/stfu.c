@@ -389,9 +389,9 @@ static void stfu_n_swap(stfu_instance_t *i)
     
     i->ready = 1;
     
-    i->in_queue = last_out;
-    i->out_queue = last_old;
-    i->old_queue = last_in;
+    i->in_queue = last_old;
+    i->out_queue = last_in;
+    i->old_queue = last_out;
 
     i->in_queue->array_len = 0;
     i->out_queue->wr_len = 0;
@@ -600,7 +600,7 @@ static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_
 }
 
 
-static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t ts, stfu_frame_t **r_frame)
+static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t min_ts, uint32_t max_ts, stfu_frame_t **r_frame)
 {
     uint32_t i = 0;
     stfu_frame_t *frame = NULL;
@@ -612,7 +612,7 @@ static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t 
     for(i = 0; i < queue->array_size; i++) {
         frame = &queue->array[i];
         
-        if (frame->ts == ts) {
+        if (frame->ts == max_ts || (frame->ts > min_ts && frame->ts < max_ts)) {
             if (r_frame) {
                 *r_frame = frame;
                 queue->last_index = i;
@@ -662,18 +662,22 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         i->cur_ts = i->cur_ts + i->samples_per_packet;
     }
     
-    found = stfu_n_find_frame(i, i->out_queue, i->cur_ts, &rframe);
+    found = stfu_n_find_frame(i, i->out_queue, i->last_wr_ts, i->cur_ts, &rframe);
 
     if (found) {
         if (i->out_queue->array_len) {
             i->out_queue->array_len--;
         }
     } else {
-        found = stfu_n_find_frame(i, i->in_queue, i->cur_ts, &rframe);
+        found = stfu_n_find_frame(i, i->in_queue, i->last_wr_ts, i->cur_ts, &rframe);
 
         if (!found) {
-            found = stfu_n_find_frame(i, i->old_queue, i->cur_ts, &rframe);
+            found = stfu_n_find_frame(i, i->old_queue, i->last_wr_ts, i->cur_ts, &rframe);
         }
+    }
+
+    if (found) {
+        i->cur_ts = rframe->ts;
     }
 
     if (i->sync_out) {

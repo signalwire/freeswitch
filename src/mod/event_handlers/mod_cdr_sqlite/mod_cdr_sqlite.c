@@ -164,6 +164,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	write_cdr(sql);
 	switch_safe_free(sql);
 
+	if (expanded_vars != template_str) {
+		switch_safe_free(expanded_vars);
+	}
+
 	return status;
 }
 

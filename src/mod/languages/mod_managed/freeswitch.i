@@ -1,5 +1,7 @@
 %module freeswitch
 
+%include ../../../../swig_common.i
+
 /** String fix - copied from csharphead.swg with fix for multiple appdomains **/
 /* Must pass -DSWIG_CSHARP_NO_STRING_HELPER to swig */
 
@@ -8,7 +10,6 @@
 
 /* Callback for returning strings to C# without leaking memory */
 #ifndef _MANAGED
-#include <glib.h>
 #include <mono/jit/jit.h>
 #include <mono/metadata/environment.h>
 #include <mono/metadata/mono-config.h>

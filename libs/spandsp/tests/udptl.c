@@ -2,11 +2,12 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * udptl.c
+ * udptl.c - An implementation of the UDPTL protocol defined in T.38,
+ *           less the packet exchange part
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2009 Steve Underwood
+ * Copyright (C) 2005 Steve Underwood
  *
  * All rights reserved.
  *
@@ -62,15 +63,14 @@ static int decode_length(const uint8_t *buf, int limit, int *len, int *pvalue)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int decode_open_type(const uint8_t *buf, int limit, int *len, const uint8_t ** p_object, int *p_num_octets)
+static int decode_open_type(const uint8_t *buf, int limit, int *len, const uint8_t **p_object, int *p_num_octets)
 {
     int octet_cnt;
     int octet_idx;
     int stat;
-    int i;
     const uint8_t **pbuf;
 
-    for (octet_idx = 0, *p_num_octets = 0;; octet_idx += octet_cnt)
+    for (octet_idx = 0, *p_num_octets = 0;  ;  octet_idx += octet_cnt)
     {
         if ((stat = decode_length(buf, limit, len, &octet_cnt)) < 0)
             return -1;
@@ -79,7 +79,6 @@ static int decode_open_type(const uint8_t *buf, int limit, int *len, const uint8
             *p_num_octets += octet_cnt;
 
             pbuf = &p_object[octet_idx];
-            i = 0;
             /* Make sure the buffer contains at least the number of bits requested */
             if ((*len + octet_cnt) > limit)
                 return -1;
@@ -113,7 +112,7 @@ static int encode_length(uint8_t *buf, int *len, int value)
         return value;
     }
     /* Fragmentation */
-    multiplier = (value < 0x10000) ? (value >> 14) : 4;
+    multiplier = (value < 0x10000)  ?  (value >> 14)  :  4;
     /* Set the first 2 bits of the octet */
     buf[(*len)++] = 0xC0 | multiplier;
     return multiplier << 14;
@@ -134,7 +133,7 @@ static int encode_open_type(uint8_t *buf, int *len, const uint8_t *data, int num
         num_octets = 1;
     }
     /* Encode the open type */
-    for (octet_idx = 0;; num_octets -= enclen, octet_idx += enclen)
+    for (octet_idx = 0;  ;  num_octets -= enclen, octet_idx += enclen)
     {
         if ((enclen = encode_length(buf, len, num_octets)) < 0)
             return -1;
@@ -192,7 +191,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
     if (msg_len > LOCAL_FAX_MAX_DATAGRAM)
         return -1;
     /* Update any missed slots in the buffer */
-    for (i = s->rx_seq_no; seq_no > i; i++)
+    for (i = s->rx_seq_no;  seq_no > i;  i++)
     {
         x = i & UDPTL_BUF_MASK;
         s->rx[x].buf_len = -1;
@@ -219,7 +218,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
         {
             if ((stat2 = decode_length(buf, len, &ptr, &count)) < 0)
                 return -1;
-            for (i = 0; i < count; i++)
+            for (i = 0;  i < count;  i++)
             {
                 if ((stat = decode_open_type(buf, len, &ptr, &bufs[total_count + i], &lengths[total_count + i])) != 0)
                     return -1;
@@ -235,12 +234,12 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
             /* We received a later packet than we expected, so we need to check if we can fill in the gap from the
                secondary packets. */
             /* Step through in reverse order, so we go oldest to newest */
-            for (i = total_count; i > 0; i--)
+            for (i = total_count;  i > 0;  i--)
             {
                 if (seq_no - i >= s->rx_seq_no)
                 {
                     /* This one wasn't seen before */
-                    /* Decode the secondary packet */
+                    /* Process the secondary packet */
 #if defined(UDPTL_DEBUG)
                     fprintf(stderr, "Secondary %d, len %d\n", seq_no - i, lengths[i - 1]);
 #endif
@@ -286,7 +285,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
         s->rx[x].fec_entries = entries;
 
         /* Decode the elements */
-        for (i = 0; i < entries; i++)
+        for (i = 0;  i < entries;  i++)
         {
             if ((stat = decode_open_type(buf, len, &ptr, &data, &s->rx[x].fec_len[i])) != 0)
                 return -1;
@@ -297,7 +296,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
             memcpy(s->rx[x].fec[i], data, s->rx[x].fec_len[i]);
 #if 0
             fprintf(stderr, "FEC: ");
-            for (j = 0; j < s->rx[x].fec_len[i]; j++)
+            for (j = 0;  j < s->rx[x].fec_len[i];  j++)
                 fprintf(stderr, "%02X ", data[j]);
             fprintf(stderr, "\n");
 #endif
@@ -307,28 +306,32 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
             return -1;
         /* See if we can reconstruct anything which is missing */
         /* TODO: this does not comprehensively hunt back and repair everything that is possible */
-        for (l = x; l != ((x - (16 - span * entries)) & UDPTL_BUF_MASK); l = (l - 1) & UDPTL_BUF_MASK)
+        for (l = x;  l != ((x - (16 - span*entries)) & UDPTL_BUF_MASK);  l = (l - 1) & UDPTL_BUF_MASK)
         {
             if (s->rx[l].fec_len[0] <= 0)
                 continue;
-            for (m = 0; m < s->rx[l].fec_entries; m++)
+            for (m = 0;  m < s->rx[l].fec_entries;  m++)
             {
                 limit = (l + m) & UDPTL_BUF_MASK;
-                for (which = -1, k = (limit - s->rx[l].fec_span * s->rx[l].fec_entries) & UDPTL_BUF_MASK; k != limit;
-                        k = (k + s->rx[l].fec_entries) & UDPTL_BUF_MASK)
+                for (which = -1, k = (limit - s->rx[l].fec_span*s->rx[l].fec_entries) & UDPTL_BUF_MASK;
+                     k != limit;
+                     k = (k + s->rx[l].fec_entries) & UDPTL_BUF_MASK)
                 {
                     if (s->rx[k].buf_len <= 0)
-                        which = (which == -1) ? k : -2;
+                        which = (which == -1)  ?  k  :  -2;
                 }
                 if (which >= 0)
                 {
                     /* Repairable */
-                    for (j = 0; j < s->rx[l].fec_len[m]; j++)
+                    for (j = 0;  j < s->rx[l].fec_len[m];  j++)
                     {
                         s->rx[which].buf[j] = s->rx[l].fec[m][j];
-                        for (k = (limit - s->rx[l].fec_span * s->rx[l].fec_entries) & UDPTL_BUF_MASK; k != limit;
-                                k = (k + s->rx[l].fec_entries) & UDPTL_BUF_MASK)
-                            s->rx[which].buf[j] ^= (s->rx[k].buf_len > j) ? s->rx[k].buf[j] : 0;
+                        for (k = (limit - s->rx[l].fec_span*s->rx[l].fec_entries) & UDPTL_BUF_MASK;
+                             k != limit;
+                             k = (k + s->rx[l].fec_entries) & UDPTL_BUF_MASK)
+                        {
+                            s->rx[which].buf[j] ^= (s->rx[k].buf_len > j)  ?  s->rx[k].buf[j]  :  0;
+                        }
                     }
                     s->rx[which].buf_len = s->rx[l].fec_len[m];
                     repaired[which] = TRUE;
@@ -336,7 +339,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
             }
         }
         /* Now play any new packets forwards in time */
-        for (l = (x + 1) & UDPTL_BUF_MASK, j = seq_no - UDPTL_BUF_MASK; l != x; l = (l + 1) & UDPTL_BUF_MASK, j++)
+        for (l = (x + 1) & UDPTL_BUF_MASK, j = seq_no - UDPTL_BUF_MASK;  l != x;  l = (l + 1) & UDPTL_BUF_MASK, j++)
         {
             if (repaired[l])
             {
@@ -348,8 +351,8 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
             }
         }
     }
-    /* If packets are received out of sequence, we may have already processed this packet from the error
-       recovery information in a packet already received. */
+    /* If packets are received out of sequence, we may have already processed this packet
+       from the error recovery information in a packet already received. */
     if (seq_no >= s->rx_seq_no)
     {
         /* Decode the primary packet */
@@ -381,7 +384,7 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
 
     /* UDPTL cannot cope with zero length messages, and our buffering for redundancy limits their
        maximum length. */
-    if (msg_len < 1 || msg_len > LOCAL_FAX_MAX_DATAGRAM)
+    if (msg_len < 1  ||  msg_len > LOCAL_FAX_MAX_DATAGRAM)
         return -1;
     seq = s->tx_seq_no & 0xFFFF;
 
@@ -427,7 +430,7 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
         if (encode_length(buf, &len, entries) < 0)
             return -1;
         /* Encode the elements */
-        for (i = 0; i < entries; i++)
+        for (i = 0;  i < entries;  i++)
         {
             j = (entry - i - 1) & UDPTL_BUF_MASK;
             if (encode_open_type(buf, &len, s->tx[j].buf, s->tx[j].buf_len) < 0)
@@ -437,10 +440,10 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
     case UDPTL_ERROR_CORRECTION_FEC:
         span = s->error_correction_span;
         entries = s->error_correction_entries;
-        if (seq < s->error_correction_span * s->error_correction_entries)
+        if (seq < s->error_correction_span*s->error_correction_entries)
         {
             /* In the initial stages, wind up the FEC smoothly */
-            entries = seq / s->error_correction_span;
+            entries = seq/s->error_correction_span;
             if (seq < s->error_correction_span)
                 span = 0;
         }
@@ -453,24 +456,24 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
         /* The number of entries is defined as a length, but will only ever be a small
            value. Treat it as such. */
         buf[len++] = entries;
-        for (m = 0; m < entries; m++)
+        for (m = 0;  m < entries;  m++)
         {
             /* Make an XOR'ed entry the maximum length */
             limit = (entry + m) & UDPTL_BUF_MASK;
             high_tide = 0;
-            for (i = (limit - span * entries) & UDPTL_BUF_MASK; i != limit; i = (i + entries) & UDPTL_BUF_MASK)
+            for (i = (limit - span*entries) & UDPTL_BUF_MASK;  i != limit;  i = (i + entries) & UDPTL_BUF_MASK)
             {
                 if (high_tide < s->tx[i].buf_len)
                 {
-                    for (j = 0; j < high_tide; j++)
+                    for (j = 0;  j < high_tide;  j++)
                         fec[j] ^= s->tx[i].buf[j];
-                    for (; j < s->tx[i].buf_len; j++)
+                    for (  ;  j < s->tx[i].buf_len;  j++)
                         fec[j] = s->tx[i].buf[j];
                     high_tide = s->tx[i].buf_len;
                 }
                 else
                 {
-                    for (j = 0; j < s->tx[i].buf_len; j++)
+                    for (j = 0;  j < s->tx[i].buf_len;  j++)
                         fec[j] ^= s->tx[i].buf[j];
                 }
             }
@@ -487,7 +490,10 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
 }
 /*- End of function --------------------------------------------------------*/
 
-int udptl_set_error_correction(udptl_state_t *s, int ec_scheme, int span, int entries)
+int udptl_set_error_correction(udptl_state_t *s,
+                               int ec_scheme,
+                               int span,
+                               int entries)
 {
     switch (ec_scheme)
     {
@@ -548,7 +554,12 @@ int udptl_get_far_max_datagram(udptl_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-udptl_state_t *udptl_init(udptl_state_t *s, int ec_scheme, int span, int entries, udptl_rx_packet_handler_t rx_packet_handler, void *user_data)
+udptl_state_t *udptl_init(udptl_state_t *s,
+                          int ec_scheme,
+                          int span,
+                          int entries,
+                          udptl_rx_packet_handler_t rx_packet_handler,
+                          void *user_data)
 {
     int i;
 
@@ -571,7 +582,7 @@ udptl_state_t *udptl_init(udptl_state_t *s, int ec_scheme, int span, int entries
 
     memset(&s->rx, 0, sizeof(s->rx));
     memset(&s->tx, 0, sizeof(s->tx));
-    for (i = 0; i <= UDPTL_BUF_MASK; i++)
+    for (i = 0;  i <= UDPTL_BUF_MASK;  i++)
     {
         s->rx[i].buf_len = -1;
         s->tx[i].buf_len = -1;

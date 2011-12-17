@@ -1539,6 +1539,51 @@ typedef struct{} LANGUAGE_OBJ;
 #ifdef __cplusplus
 extern "C" {
 #endif
+static int _wrap_setGlobalVariable(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  SWIG_check_num_args("setGlobalVariable",2,2)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("setGlobalVariable",1,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("setGlobalVariable",2,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  setGlobalVariable(arg1,arg2);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_getGlobalVariable(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("getGlobalVariable",1,1)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("getGlobalVariable",1,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  result = (char *)getGlobalVariable(arg1);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  free(result);
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_consoleLog(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
@@ -3746,11 +3791,13 @@ static int _wrap_EventConsumer_pop(lua_State* L) {
   int SWIG_arg = -1;
   EventConsumer *arg1 = (EventConsumer *) 0 ;
   int arg2 = (int) 0 ;
+  int arg3 = (int) 0 ;
   Event *result = 0 ;
   
-  SWIG_check_num_args("pop",1,2)
+  SWIG_check_num_args("pop",1,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("pop",1,"EventConsumer *");
   if(lua_gettop(L)>=2 && !lua_isnumber(L,2)) SWIG_fail_arg("pop",2,"int");
+  if(lua_gettop(L)>=3 && !lua_isnumber(L,3)) SWIG_fail_arg("pop",3,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_EventConsumer,0))){
     SWIG_fail_ptr("EventConsumer_pop",1,SWIGTYPE_p_EventConsumer);
@@ -3759,7 +3806,10 @@ static int _wrap_EventConsumer_pop(lua_State* L) {
   if(lua_gettop(L)>=2){
     arg2 = (int)lua_tonumber(L, 2);
   }
-  result = (Event *)(arg1)->pop(arg2);
+  if(lua_gettop(L)>=3){
+    arg3 = (int)lua_tonumber(L, 3);
+  }
+  result = (Event *)(arg1)->pop(arg2,arg3);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_Event,1); SWIG_arg++; 
   return SWIG_arg;
@@ -7642,6 +7692,8 @@ static swig_lua_class _wrap_class_LUA_Dbh = { "Dbh", &SWIGTYPE_p_LUA__Dbh,_wrap_
 #endif
 
 static const struct luaL_reg swig_commands[] = {
+    { "setGlobalVariable", _wrap_setGlobalVariable},
+    { "getGlobalVariable", _wrap_getGlobalVariable},
     { "consoleLog", _wrap_consoleLog},
     { "consoleCleanLog", _wrap_consoleCleanLog},
     { "email", _wrap_email},

@@ -27,6 +27,7 @@
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
+ * Joseph Sullivan <jossulli@amazon.com>
  *
  *
  * switch_core.c -- Main Core Library
@@ -199,33 +200,6 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel)
 	return handle;
 }
 
-
-SWITCH_DECLARE(int) switch_core_curl_count(int *val)
-{
-	if (!val) {
-		switch_mutex_lock(runtime.global_mutex);
-		return runtime.curl_count;
-	}
-
-	runtime.curl_count = *val;
-	switch_mutex_unlock(runtime.global_mutex);
-	return 0;
-
-}
-
-
-SWITCH_DECLARE(int) switch_core_ssl_count(int *val)
-{
-	if (!val) {
-		switch_mutex_lock(runtime.global_mutex);
-		return runtime.ssl_count;
-	}
-
-	runtime.ssl_count = *val;
-	switch_mutex_unlock(runtime.global_mutex);
-	return 0;
-
-}
 
 SWITCH_DECLARE(void) switch_core_remove_state_handler(const switch_state_handler_table_t *state_handler)
 {
@@ -1453,6 +1427,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		runtime.console = stdout;
 	}
 
+	switch_ssl_init_ssl_locks();
+	switch_curl_init();
+
 	switch_core_set_variable("hostname", runtime.hostname);
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
 	switch_core_set_variable("local_ip_v4", guess_ip);
@@ -1493,7 +1470,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_state_machine_init(runtime.memory_pool);
 
 	if (switch_core_sqldb_start(runtime.memory_pool, switch_test_flag((&runtime), SCF_USE_SQL) ? SWITCH_TRUE : SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
-		abort();
+		*err = "Error activating database";
+		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_scheduler_task_thread_start();
@@ -1511,7 +1489,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(runtime.uuid_str, &uuid);
-	switch_ssl_init_ssl_locks();
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1523,7 +1501,7 @@ static void handle_SIGCHLD(int sig)
 	int status = 0;
 	int pid = 0;
 
-	if (sig);
+	if (sig) {};
 
 	pid = wait(&status);
 	
@@ -1783,6 +1761,8 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 					}
+				} else if (!strcasecmp(var, "core-odbc-required") && !zstr(val)) {
+					switch_set_flag((&runtime), SCF_CORE_ODBC_REQ);
 				} else if (!strcasecmp(var, "core-dbtype") && !zstr(val)) {
 					if (!strcasecmp(val, "MSSQL")) {
 						runtime.odbc_dbtype = DBTYPE_MSSQL;
@@ -1838,6 +1818,7 @@ SWITCH_DECLARE(const char *) switch_core_banner(void)
 SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_event_t *event;
+	char *cmd;
 
 	if (switch_core_init(flags, console, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
@@ -1880,6 +1861,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 					  switch_core_sessions_per_second(0), switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled");
 
 	switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
+
+	if ((cmd = switch_core_get_variable_dup("api_on_startup"))) {
+		switch_stream_handle_t stream = { 0 };
+		SWITCH_STANDARD_STREAM(stream);
+		switch_console_execute(cmd, 0, &stream);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Startup command [%s] executed. Output:\n%s\n", cmd, (char *)stream.data);
+		free(stream.data);
+		free(cmd);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -2018,11 +2008,28 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		switch_time_sync();
 		newintval = 0;
 		break;
-	case SCSC_PAUSE_INBOUND:
+	case SCSC_SYNC_CLOCK_WHEN_IDLE:
+		newintval = switch_core_session_sync_clock();
+		break;
+	case SCSC_PAUSE_ALL:
 		if (oldintval) {
 			switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 		} else {
 			switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
+		}
+		break;
+	case SCSC_PAUSE_INBOUND:
+		if (oldintval) {
+			switch_set_flag((&runtime), SCF_NO_NEW_INBOUND_SESSIONS);
+		} else {
+			switch_clear_flag((&runtime), SCF_NO_NEW_INBOUND_SESSIONS);
+		}
+		break;
+	case SCSC_PAUSE_OUTBOUND:
+		if (oldintval) {
+			switch_set_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS);
+		} else {
+			switch_clear_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS);
 		}
 		break;
 	case SCSC_HUPALL:
@@ -2087,7 +2094,13 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		}
 		break;
 	case SCSC_PAUSE_CHECK:
-		newintval = !!switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS);
+		newintval = !!(switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS) == SCF_NO_NEW_SESSIONS);
+		break;
+	case SCSC_PAUSE_INBOUND_CHECK:
+		newintval = !!switch_test_flag((&runtime), SCF_NO_NEW_INBOUND_SESSIONS);
+		break;
+	case SCSC_PAUSE_OUTBOUND_CHECK:
+		newintval = !!switch_test_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS);
 		break;
 	case SCSC_READY_CHECK:
 		newintval = switch_core_ready();
@@ -2187,7 +2200,17 @@ SWITCH_DECLARE(switch_core_flag_t) switch_core_flags(void)
 
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void)
 {
-	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
+	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS) == SCF_NO_NEW_SESSIONS) ? SWITCH_FALSE : SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_core_ready_inbound(void)
+{
+	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_INBOUND_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_core_ready_outbound(void)
+{
+	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
@@ -2402,6 +2425,7 @@ static int max_open(void)
 static int switch_system_fork(const char *cmd, switch_bool_t wait)
 {
 	int pid;
+	char *dcmd = strdup(cmd);
 
 	switch_core_set_signal_handlers();
 
@@ -2411,6 +2435,7 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 		if (wait) {
 			waitpid(pid, NULL, 0);
 		}
+		free(dcmd);
 	} else {
 		int open_max = max_open();
 		int i;
@@ -2420,7 +2445,8 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 		}
 		
 		set_low_priority();
-		i = system(cmd);
+		i = system(dcmd);
+		free(dcmd);
 		exit(0);
 	}
 

@@ -30,6 +30,7 @@
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  * Cesar Cepeda <cesar@auronix.com>
+ * Chris Rienzo <chris@rienzo.net>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -155,10 +156,13 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	switch_event_t *event;
 	switch_status_t status;
 	int exec = 0;
+	int api = 0;
 	char *string = act->string;
 	switch_channel_t *channel;
 	switch_core_session_t *use_session = act->session;
 	int x = 0;
+	char *flags = "";
+
 	if (switch_ivr_dmachine_get_target(match->dmachine) == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_BOTH) {
 		if (switch_core_session_get_partner(act->session, &use_session) != SWITCH_STATUS_SUCCESS) {
 			use_session = act->session;
@@ -168,8 +172,9 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
  top:
 	x++;
 
-	string = act->string;
+	string = switch_core_session_strdup(use_session, act->string);
 	exec = 0;
+	api = 0;
 
 	channel = switch_core_session_get_channel(use_session);
 
@@ -180,28 +185,69 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_DEBUG, "%s Digit match binding [%s][%s]\n", 
 						  switch_channel_get_name(channel), act->string, act->value);
 
-		if (!strncasecmp(string, "exec:", 5)) {
-			string += 5;
-			exec = 1;
+		if (!strncasecmp(string, "exec", 4)) {
+			char *e;
+			
+			string += 4;
+			if (*string == ':') {
+				string++;
+				exec = 1;
+			} else if (*string == '[') {
+				flags = string;
+				if ((e = switch_find_end_paren(flags, '[', ']'))) {
+					if (e && *++e == ':') {
+						flags++;
+						*e++ = '\0';
+						string = e;
+						exec = strchr(flags, 'i') ? 2 : 1;
+					}
+				}
+			}
+		} else if (!strncasecmp(string, "api:", 4)) {
+			string += 4;
+			api = 1;
 		}
 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, string, act->value);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
 
 		if (exec) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute", exec == 2 ? "non-blocking" : "blocking");
-		} 
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute", exec == 1 ? "non-blocking" : "blocking");
+		}
 
 		if ((status = switch_core_session_queue_event(use_session, &event)) != SWITCH_STATUS_SUCCESS) {
 			switch_event_destroy(&event);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(use_session), SWITCH_LOG_WARNING, "%s event queue faiure.\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(use_session), SWITCH_LOG_WARNING, "%s event queue failure.\n", 
 							  switch_core_session_get_name(use_session));
 		}
 	}
 
 	if (exec) {
-		char *cmd = switch_core_session_sprintf(use_session, "%s::%s", string, act->value);
-		switch_ivr_broadcast_in_thread(use_session, cmd, SMF_ECHO_ALEG | (act->target == DIGIT_TARGET_BOTH ? 0 : SMF_HOLD_BLEG));
+		if (exec == 2) {
+			switch_core_session_execute_application(use_session, string, act->value);
+		} else {
+			char *cmd = switch_core_session_sprintf(use_session, "%s::%s", string, act->value);
+			switch_media_flag_enum_t exec_flags = SMF_ECHO_ALEG;
+
+			if (act->target != DIGIT_TARGET_BOTH && !strchr(flags, 'H')) {
+				exec_flags |= SMF_HOLD_BLEG;
+			}
+
+			switch_ivr_broadcast_in_thread(use_session, cmd, exec_flags);
+		}
+	} else if (api) {
+		switch_stream_handle_t stream = { 0 };
+		SWITCH_STANDARD_STREAM(stream);
+		switch_api_execute(string, act->value, NULL, &stream);
+		if (stream.data) {
+			switch_channel_set_variable(channel, "bind_digit_action_api_result", (char *)stream.data);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_DEBUG, "%s Digit match binding [%s][%s] api executed, %s\n", 
+				switch_core_session_get_name(use_session), act->string, act->value, (char *)stream.data);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(act->session), SWITCH_LOG_DEBUG, "%s Digit match binding [%s][%s] api executed\n",
+				switch_core_session_get_name(use_session), act->string, act->value);
+		}
+		switch_safe_free(stream.data);
 	}
 	
 
@@ -247,6 +293,7 @@ SWITCH_STANDARD_APP(clear_digit_action_function)
 
 	if ((dmachine = switch_core_session_get_dmachine(session, target))) {
 		if (zstr(realm) || !strcasecmp(realm, "all")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: Clearing all realms\n", switch_ivr_dmachine_get_name(dmachine));
 			switch_core_session_set_dmachine(session, NULL, target);
 			switch_ivr_dmachine_destroy(&dmachine);
 		} else {
@@ -322,7 +369,7 @@ static void bind_to_session(switch_core_session_t *session,
 	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, 0, digit_action_callback, act);
 }
 
-#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>,<value>[,<dtmf target leg>][,<event target leg>]"
+#define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>[,<value>][,<dtmf target leg>][,<event target leg>]"
 SWITCH_STANDARD_APP(bind_digit_action_function)
 {
 
@@ -331,6 +378,7 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 	char *argv[6] = { 0 };
 	switch_digit_action_target_t target, bind_target;
 	char *target_str = "self", *bind_target_str = "self";
+	char *value = "";
 
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
@@ -340,10 +388,14 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 	mydata = switch_core_session_strdup(session, data);
 
 	argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-	
-	if (argc < 4 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2]) || zstr(argv[3])) {
+
+	if (argc < 3 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2])) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Syntax Error, USAGE %s\n", BIND_DIGIT_ACTION_USAGE);
 		return;
+	}
+
+	if (argv[3]) {
+		value = argv[3];
 	}
 
 	if (argv[4]) {
@@ -360,14 +412,14 @@ SWITCH_STANDARD_APP(bind_digit_action_function)
 
 	switch(target) {
 	case DIGIT_TARGET_PEER:
-		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_PEER, bind_target);
+		bind_to_session(session, argv[0], argv[1], argv[2], value, DIGIT_TARGET_PEER, bind_target);
 		break;
 	case DIGIT_TARGET_BOTH:
-		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_PEER, bind_target);
-		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_SELF, bind_target);
+		bind_to_session(session, argv[0], argv[1], argv[2], value, DIGIT_TARGET_PEER, bind_target);
+		bind_to_session(session, argv[0], argv[1], argv[2], value, DIGIT_TARGET_SELF, bind_target);
 		break;
 	default:
-		bind_to_session(session, argv[0], argv[1], argv[2], argv[3], DIGIT_TARGET_SELF, bind_target);
+		bind_to_session(session, argv[0], argv[1], argv[2], value, DIGIT_TARGET_SELF, bind_target);
 		break;
 	}
 }
@@ -409,6 +461,51 @@ SWITCH_STANDARD_APP(detect_speech_function)
 	}
 }
 
+#define PLAY_AND_DETECT_SPEECH_SYNTAX "<file> detect:<engine> {param1=val1,param2=val2}<grammar>"
+SWITCH_STANDARD_APP(play_and_detect_speech_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *argv[2];
+	char *lbuf = NULL;
+	const char *response = "DONE";
+	char *detect = NULL;
+
+	switch_channel_set_variable(channel, "detect_speech_result", "");
+
+	if (zstr(data) || !(lbuf = switch_core_session_strdup(session, data)) || !(detect = strstr(lbuf, "detect:"))) {
+		/* bad input */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", PLAY_AND_DETECT_SPEECH_SYNTAX);
+		response = "USAGE ERROR";
+		goto done;
+	}
+
+	/* split input at "detect:" */
+	detect[0] = '\0';
+	detect += 7;
+	if (zstr(detect)) {
+		/* bad input */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", PLAY_AND_DETECT_SPEECH_SYNTAX);
+		response = "USAGE ERROR";
+		goto done;
+	}
+
+	/* need to have at 2 parameters for detect */
+	if (switch_separate_string(detect, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) == 2) {
+		char *file = lbuf;
+		char *engine = argv[0];
+		char *grammar = argv[1];
+		char *result = NULL;
+		switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result);
+		switch_channel_set_variable(channel, "detect_speech_result", result);
+	} else {
+		/* bad input */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", PLAY_AND_DETECT_SPEECH_SYNTAX);
+		response = "USAGE ERROR";
+	}
+
+done:
+	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, response);
+}
 
 #define SCHED_HEARTBEAT_SYNTAX "[0|<seconds>]"
 SWITCH_STANDARD_APP(sched_heartbeat_function)
@@ -1080,6 +1177,19 @@ SWITCH_STANDARD_APP(redirect_function)
 	switch_core_session_receive_message(session, &msg);
 }
 
+SWITCH_STANDARD_APP(send_info_function)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	/* Tell the channel to send info */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_INFO;
+	msg.string_array_arg[2] = data;
+
+	switch_core_session_receive_message(session, &msg);
+}
+
 SWITCH_STANDARD_APP(jitterbuffer_function)
 {
 	switch_core_session_message_t msg = { 0 };
@@ -1561,7 +1671,7 @@ SWITCH_STANDARD_API(chat_api_function)
 	if (!zstr(cmd) && (lbuf = strdup(cmd))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) >= 4) {
 
-		if (switch_core_chat_send_args(argv[0], "dp", argv[1], argv[2], "", argv[3], !zstr(argv[4]) ? argv[4] : NULL, "") == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_chat_send_args(argv[0], "global", argv[1], argv[2], "", argv[3], !zstr(argv[4]) ? argv[4] : NULL, "") == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "Sent");
 		} else {
 			stream->write_function(stream, "Error! Message Not Sent");
@@ -3133,7 +3243,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
 												 switch_call_cause_t *cancel_cause)
 {
-	switch_xml_t xml = NULL, x_user = NULL, x_param, x_params;
+	switch_xml_t x_user = NULL, x_param, x_params;
 	char *user = NULL, *domain = NULL, *dup_domain = NULL;
 	const char *dest = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
@@ -3298,8 +3408,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			switch_safe_free(d_dest);
 		}
 	}
-
-	if (new_channel && xml) {
+	
+	if (new_channel && x_user) {
 		if ((x_params = switch_xml_child(x_user, "variables"))) {
 			for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
 				const char *pvar = switch_xml_attr(x_param, "name");
@@ -3311,7 +3421,9 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
   done:
 
-	switch_xml_free(xml);
+	if (x_user) {
+		switch_xml_free(x_user);
+	}
 
 	if (params) {
 		switch_event_destroy(&params);
@@ -3729,8 +3841,8 @@ static int next_file(switch_file_handle_t *handle)
 	}
 
 	handle->samples = context->fh.samples;
-	handle->samplerate = context->fh.samplerate;
-	handle->channels = context->fh.channels;
+	//handle->samplerate = context->fh.samplerate;
+	//handle->channels = context->fh.channels;
 	handle->format = context->fh.format;
 	handle->sections = context->fh.sections;
 	handle->seekable = context->fh.seekable;
@@ -3970,9 +4082,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "remove_bugs", "Remove media bugs", "Remove all media bugs from a channel.", remove_bugs_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "break", "Break", "Set the break flag.", break_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "detect_speech", "Detect speech", "Detect speech on a channel.", detect_speech_function, DETECT_SPEECH_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "play_and_detect_speech", "Play and do speech recognition", "Play and do speech recognition", play_and_detect_speech_function, PLAY_AND_DETECT_SPEECH_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>",
 				   SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "send_info", "Send info", "Send info", send_info_function, "<info>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "jitterbuffer", "Send session jitterbuffer", "Send a jitterbuffer message to a session.", 
 				   jitterbuffer_function, "<jitterbuffer_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_display", "Send session a new display", "Send session a new display.", display_function, "<text>",
@@ -3985,7 +4099,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_dtmf", "Send dtmf to be sent", "Send dtmf to be sent from a session", send_dtmf_function, "<dtmf_data>",
 				   SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "sched_cencel", "cancel scheduled tasks", "cancel scheduled tasks", sched_cancel_function, "[group]",
+	SWITCH_ADD_APP(app_interface, "sched_cancel", "cancel scheduled tasks", "cancel scheduled tasks", sched_cancel_function, "[group]",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_hangup", SCHED_HANGUP_DESCR, SCHED_HANGUP_DESCR, sched_hangup_function, "[+]<time> [<cause>]",
 				   SAF_SUPPORT_NOMEDIA);
@@ -4049,7 +4163,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "bridge", "Bridge Audio", "Bridge the audio between two sessions", audio_bridge_function, "<channel_url>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "system", "Execute a system command", "Execute a system command", system_session_function, "<command>",
-				   SAF_SUPPORT_NOMEDIA);
+				   SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "say", "say", "say", say_function, SAY_SYNTAX, SAF_NONE);
 
 	SWITCH_ADD_APP(app_interface, "wait_for_silence", "wait_for_silence", "wait_for_silence", wait_for_silence_function, WAIT_FOR_SILENCE_SYNTAX,

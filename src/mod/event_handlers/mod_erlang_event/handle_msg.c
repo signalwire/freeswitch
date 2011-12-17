@@ -26,6 +26,8 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Andrew Thompson <andrew@hijacked.us>
  * Rob Charlton <rob.charlton@savageminds.com>
+ * Darren Schreiber <d@d-man.org>
+ * Mike Jerris <mike@jerris.com>
  *
  *
  * handle_msg.c -- handle messages received from erlang nodes
@@ -590,13 +592,29 @@ static switch_status_t handle_msg_session_setevent(listener_t *listener, erlang_
 static switch_status_t handle_msg_api(listener_t *listener, erlang_msg * msg, int arity, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	char api_cmd[MAXATOMLEN];
-	char arg[1024];
-	if (arity < 3 || ei_decode_atom(buf->buff, &buf->index, api_cmd) || ei_decode_string(buf->buff, &buf->index, arg)) {
-		ei_x_encode_tuple_header(rbuf, 2);
-		ei_x_encode_atom(rbuf, "error");
-		ei_x_encode_atom(rbuf, "badarg");
-		return SWITCH_STATUS_SUCCESS;
-	} else {
+	int type;
+	int size;
+	char *arg;
+	switch_bool_t fail = SWITCH_FALSE;
+
+	if (arity < 3) {
+		fail = SWITCH_TRUE;
+	}
+
+        ei_get_type(buf->buff, &buf->index, &type, &size);
+
+	if ((size > (sizeof(api_cmd) - 1)) || ei_decode_atom(buf->buff, &buf->index, api_cmd)) {
+		fail = SWITCH_TRUE;
+	}
+
+        ei_get_type(buf->buff, &buf->index, &type, &size);
+	arg = malloc(size + 1);
+
+	if (ei_decode_string(buf->buff, &buf->index, arg)) {
+		fail = SWITCH_TRUE;
+	}
+
+	if (!fail) {
 		struct api_command_struct acs = { 0 };
 		acs.listener = listener;
 		acs.api_cmd = api_cmd;
@@ -604,8 +622,17 @@ static switch_status_t handle_msg_api(listener_t *listener, erlang_msg * msg, in
 		acs.bg = 0;
 		acs.pid = msg->from;
 		api_exec(NULL, (void *) &acs);
+
+		switch_safe_free(arg);
+
 		/* don't reply */
 		return SWITCH_STATUS_FALSE;
+	} else {
+		ei_x_encode_tuple_header(rbuf, 2);
+		ei_x_encode_atom(rbuf, "error");
+		ei_x_encode_atom(rbuf, "badarg");
+		return SWITCH_STATUS_SUCCESS;
+
 	}
 }
 
@@ -670,18 +697,38 @@ static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_
 			if ((strlen(esname) && switch_event_create_subclass(&event, etype, esname) == SWITCH_STATUS_SUCCESS) ||
 				switch_event_create(&event, etype) == SWITCH_STATUS_SUCCESS) {
 				char key[1024];
-				char value[1024];
+				char *value;
+                                int type;
+                                int size;
 				int i = 0;
 				switch_bool_t fail = SWITCH_FALSE;
 
 				while (!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
 					i++;
-					if (ei_decode_string(buf->buff, &buf->index, key) || ei_decode_string(buf->buff, &buf->index, value)) {
+
+                                        ei_get_type(buf->buff, &buf->index, &type, &size);
+
+					if ((size > (sizeof(key) - 1)) || ei_decode_string(buf->buff, &buf->index, key)) {
 						fail = SWITCH_TRUE;
 						break;
 					}
 
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, key, value);
+                                        ei_get_type(buf->buff, &buf->index, &type, &size);
+                                        value = malloc(size + 1);
+
+					if (ei_decode_string(buf->buff, &buf->index, value)) {
+       						fail = SWITCH_TRUE;
+						break;
+					}
+
+                                        if (!fail && !strcmp(key, "body")) {
+                                                switch_safe_free(event->body);
+                                                event->body = value;
+                                        } else if (!fail)  {
+                                                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, key, value);
+                                        }
+
+                                        /* Do not free malloc here! The above commands utilize the raw allocated memory and skip any copying/duplication. Faster. */
 				}
 
 				if (headerlength != i || fail) {
@@ -715,16 +762,32 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 			if (switch_event_create(&event, SWITCH_EVENT_SEND_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 
 				char key[1024];
-				char value[1024];
+				char *value;
+                                int type;
+                                int size;
 				int i = 0;
 				switch_bool_t fail = SWITCH_FALSE;
+
 				while (!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
 					i++;
-					if (ei_decode_string(buf->buff, &buf->index, key) || ei_decode_string(buf->buff, &buf->index, value)) {
+                                        ei_get_type(buf->buff, &buf->index, &type, &size);
+
+					if ((size > (sizeof(key) - 1)) || ei_decode_string(buf->buff, &buf->index, key)) {
 						fail = SWITCH_TRUE;
 						break;
 					}
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, key, value);
+
+                                        ei_get_type(buf->buff, &buf->index, &type, &size);
+                                        value = malloc(size + 1);
+
+					if (ei_decode_string(buf->buff, &buf->index, value)) {
+       						fail = SWITCH_TRUE;
+						break;
+					}
+
+					if (!fail) {
+	                                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, key, value);
+					}
 				}
 
 				if (headerlength != i || fail) {

@@ -188,19 +188,24 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!zstr(runtime.odbc_dsn)) {
-		options.odbc_options.dsn = runtime.odbc_dsn;
-		options.odbc_options.user = runtime.odbc_user;
-		options.odbc_options.pass = runtime.odbc_pass;
+	if (zstr(runtime.odbc_dsn)) {
+		if (switch_test_flag((&runtime), SCF_CORE_ODBC_REQ)) {
+			return SWITCH_STATUS_FALSE;
+		}
 
-		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_ODBC, &options, file, func, line);
-	} else {
 		if (runtime.dbname) {
 			options.core_db_options.db_path = runtime.dbname;
 		} else {
 			options.core_db_options.db_path = SWITCH_CORE_DB;
 		}
 		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_CORE_DB, &options, file, func, line);
+		
+	} else {
+		options.odbc_options.dsn = runtime.odbc_dsn;
+		options.odbc_options.user = runtime.odbc_user;
+		options.odbc_options.pass = runtime.odbc_pass;
+
+		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_ODBC, &options, file, func, line);
 	}
 
 	/* I *think* we can do without this now, if not let me know 
@@ -733,7 +738,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 
 			if ((result = switch_odbc_SQLSetAutoCommitAttr(dbh->native_handle.odbc_dbh, 0)) != SWITCH_ODBC_SUCCESS) {
 				char tmp[100];
-				switch_snprintf(tmp, sizeof(tmp), "%s-%i", "Unable to Set AutoCommit Off", result);
+				switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to Set AutoCommit Off", result);
 				errmsg = strdup(tmp);
 			}
 		}
@@ -1144,8 +1149,15 @@ static char *parse_presence_data_cols(switch_event_t *event)
 	SWITCH_STANDARD_STREAM(stream);
 
 	for (i = 0; i < col_count; i++) {
-		switch_snprintf(col_name, sizeof(col_name), "variable_%s", cols[i]);
-		stream.write_function(&stream, "%q='%q',", cols[i], switch_event_get_header_nil(event, col_name));
+		const char *val = NULL;
+
+		switch_snprintfv(col_name, sizeof(col_name), "variable_%q", cols[i]);
+		val = switch_event_get_header_nil(event, col_name);
+		if (zstr(val)) {
+			stream.write_function(&stream, "%q=NULL,", cols[i]);
+		} else {
+			stream.write_function(&stream, "%q='%q',", cols[i], val);
+		}
 	}
 
 	r = (char *) stream.data;
@@ -1323,9 +1335,17 @@ static void core_event_handler(switch_event_t *event)
 			}
 
 			if (callstate != CCS_DOWN && callstate != CCS_HANGUP) {
-				new_sql() = switch_mprintf("update channels set callstate='%q' where uuid='%q'",
-										   switch_event_get_header_nil(event, "channel-call-state"),
-										   switch_event_get_header_nil(event, "unique-id"));
+				if ((extra_cols = parse_presence_data_cols(event))) {
+					new_sql() = switch_mprintf("update channels set callstate='%q',%s where uuid='%q'",
+											   switch_event_get_header_nil(event, "channel-call-state"),
+											   extra_cols,
+											   switch_event_get_header_nil(event, "unique-id"));
+					free(extra_cols);
+				} else {
+					new_sql() = switch_mprintf("update channels set callstate='%q' where uuid='%q'",
+											   switch_event_get_header_nil(event, "channel-call-state"),
+											   switch_event_get_header_nil(event, "unique-id"));
+				}
 			}
 
 		}
@@ -1411,9 +1431,14 @@ static void core_event_handler(switch_event_t *event)
 				b_uuid = switch_event_get_header_nil(event, "other-leg-unique-id");
 			}
 
-			new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' or uuid='%s'",
-									   switch_event_get_header_nil(event, "channel-call-uuid"), a_uuid, b_uuid);
-									   
+			if ((extra_cols = parse_presence_data_cols(event))) {
+				new_sql() = switch_mprintf("update channels set call_uuid='%q',%s where uuid='%s' or uuid='%s'",
+										   switch_event_get_header_nil(event, "channel-call-uuid"), extra_cols, a_uuid, b_uuid);
+				free(extra_cols);
+			} else {
+				new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' or uuid='%s'",
+										   switch_event_get_header_nil(event, "channel-call-uuid"), a_uuid, b_uuid);
+			}
 
 			new_sql() = switch_mprintf("insert into calls (call_uuid,call_created,call_created_epoch,"
 									   "caller_uuid,callee_uuid,hostname) "
@@ -1431,8 +1456,15 @@ static void core_event_handler(switch_event_t *event)
 		{
 			char *uuid = switch_event_get_header_nil(event, "caller-unique-id");
 
-			new_sql() = switch_mprintf("update channels set call_uuid=uuid where call_uuid='%s'",
-									   switch_event_get_header_nil(event, "channel-call-uuid"));
+			if ((extra_cols = parse_presence_data_cols(event))) {
+				new_sql() = switch_mprintf("update channels set call_uuid=uuid,%s where call_uuid='%s'",
+										   extra_cols,
+										   switch_event_get_header_nil(event, "channel-call-uuid"));
+				free(extra_cols);
+			} else {
+				new_sql() = switch_mprintf("update channels set call_uuid=uuid where call_uuid='%s'",
+										   switch_event_get_header_nil(event, "channel-call-uuid"));
+			}
 
 			new_sql() = switch_mprintf("delete from calls where (caller_uuid='%q' or callee_uuid='%q')",
 									   uuid, uuid);
@@ -1880,6 +1912,11 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
 
+		if (switch_test_flag((&runtime), SCF_CORE_ODBC_REQ)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure! ODBC IS REQUIRED!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
 		if (runtime.odbc_dsn) {
 			runtime.odbc_dsn = NULL;
 			runtime.odbc_user = NULL;
@@ -1906,7 +1943,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			const char *hostname = switch_core_get_switchname();
 
 			for (i = 0; tables[i]; i++) {
-				switch_snprintf(sql, sizeof(sql), "delete from %s where hostname='%s'", tables[i], hostname);
+				switch_snprintfv(sql, sizeof(sql), "delete from %q where hostname='%q'", tables[i], hostname);
 				switch_cache_db_execute_sql(dbh, sql, NULL);
 			}
 		}

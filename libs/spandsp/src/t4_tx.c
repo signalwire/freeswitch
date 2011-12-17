@@ -1521,9 +1521,9 @@ SPAN_DECLARE(void) t4_tx_set_header_info(t4_state_t *s, const char *info)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t4_tx_set_header_tz(t4_state_t *s, const char *tzstring)
+SPAN_DECLARE(void) t4_tx_set_header_tz(t4_state_t *s, tz_t *tz)
 {
-    s->tz = tz_init(s->tz, tzstring);
+    s->tz = tz;
 }
 /*- End of function --------------------------------------------------------*/
 

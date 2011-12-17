@@ -30,34 +30,27 @@
 
 #ifndef __SWITCH_CURL_H
 #define __SWITCH_CURL_H
+#include "curl/curl.h"
 
-#include <curl/curl.h>
-#include <switch_ssl.h>
 
-static inline void switch_curl_init(void)
-{
-	int curl_count = switch_core_curl_count(NULL);
+typedef void switch_CURL;
+typedef struct curl_slist switch_curl_slist_t;
+typedef int switch_CURLINFO;
+typedef int switch_CURLcode;
+typedef int switch_CURLoption;
 
-	if (curl_count == 0) {
-		curl_global_init(CURL_GLOBAL_ALL);
-	}
+SWITCH_DECLARE(switch_CURL *) switch_curl_easy_init(void);
+SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_perform(switch_CURL *handle);
+SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_getinfo(switch_CURL *curl, switch_CURLINFO info, ... );
+SWITCH_DECLARE(void) switch_curl_easy_cleanup(switch_CURL *handle);
+SWITCH_DECLARE(switch_curl_slist_t *) switch_curl_slist_append(switch_curl_slist_t * list, const char * string );
+SWITCH_DECLARE(void) switch_curl_slist_free_all(switch_curl_slist_t * list);
+SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_setopt(CURL *handle, switch_CURLoption option, ...);
+SWITCH_DECLARE(const char *) switch_curl_easy_strerror(switch_CURLcode errornum );
+SWITCH_DECLARE(void) switch_curl_init(void);
+SWITCH_DECLARE(void) switch_curl_destroy(void);
 
-	curl_count++;
-	switch_core_curl_count(&curl_count);
-}
-
-static inline void switch_curl_destroy()
-{
-	int curl_count = switch_core_curl_count(NULL);
-	
-	curl_count--;
-
-	if (curl_count == 0) {
-		curl_global_cleanup();
-	}
-	switch_core_curl_count(&curl_count);
-}
-
+																
 #endif
 
 

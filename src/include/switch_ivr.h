@@ -156,6 +156,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 																uint32_t first_timeout, uint32_t digit_timeout, uint32_t abs_timeout);
 
 /*!
+  \brief play a file to the session while doing speech recognition.
+  \param session the session to play and detect on
+  \param file the path to the file
+  \param mod_name the module name of the ASR library
+  \param grammar the grammar text, URI, or local file name
+  \param result of speech recognition, allocated from the session pool
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_session_t *session, 
+														const char *file,
+														const char *mod_name,
+														const char *grammar,
+														char **result);
+
+/*!
   \brief Engage background Speech detection on a session
   \param session the session to attach
   \param mod_name the module name of the ASR library
@@ -896,6 +911,7 @@ SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_exists(const char *uuid);
 
 
 
+SWITCH_DECLARE(const char *) switch_ivr_dmachine_get_name(switch_ivr_dmachine_t *dmachine);
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_match_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t match_callback);
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_nonmatch_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t nonmatch_callback);
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t **dmachine_p, 
@@ -932,6 +948,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 SWITCH_DECLARE(switch_status_t) switch_ivr_insert_file(switch_core_session_t *session, const char *file, const char *insert_file, switch_size_t sample_point);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t **reply, switch_event_t *message, const char *new_proto);
+SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name, const char *domain_name);
+SWITCH_DECLARE(switch_status_t) switch_ivr_kill_uuid(const char *uuid, switch_call_cause_t cause);
 
 /** @} */
 

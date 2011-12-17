@@ -186,6 +186,11 @@ SPAN_DECLARE(int) dtmf_rx_status(dtmf_rx_state_t *s);
     \return The number of digits actually returned. */
 SPAN_DECLARE(size_t) dtmf_rx_get(dtmf_rx_state_t *s, char *digits, int max);
 
+/*! \brief Get the logging context associated with a DTMF receiver context.
+    \param s The DTMF receiver context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) dtmf_rx_get_logging_state(dtmf_rx_state_t *s);
+
 /*! \brief Initialise a DTMF receiver context.
     \param s The DTMF receiver context.
     \param callback An optional callback routine, used to report received digits. If

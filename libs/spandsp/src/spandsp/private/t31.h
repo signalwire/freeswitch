@@ -33,7 +33,7 @@
 typedef struct
 {
     fax_modems_state_t modems;
-    //v8_state_t v8;
+    v8_state_t v8;
 
     /*! The transmit signal handler to be used when the current one has finished sending. */
     span_tx_handler_t *next_tx_handler;
