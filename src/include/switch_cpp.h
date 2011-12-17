@@ -65,6 +65,10 @@ Note that the first parameter to the new operator is implicitly handled by c++..
 
 */
 
+
+SWITCH_DECLARE(void) setGlobalVariable(char *var_name, char *var_val);
+SWITCH_DECLARE(char *) getGlobalVariable(char *var_name);
+
 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg);
 SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
@@ -156,6 +160,8 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE_CONSTRUCTOR Event(const char *type, const char *subclass_name = NULL);
 		 SWITCH_DECLARE_CONSTRUCTOR Event(switch_event_t *wrap_me, int free_me = 0);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ Event();
+		 SWITCH_DECLARE(int) chat_execute(const char *app, const char *data = NULL);
+		 SWITCH_DECLARE(int) chat_send(const char *dest_proto = NULL);
 		 SWITCH_DECLARE(const char *) serialize(const char *format = NULL);
 		 SWITCH_DECLARE(bool) setPriority(switch_priority_t priority = SWITCH_PRIORITY_NORMAL);
 		 SWITCH_DECLARE(const char *) getHeader(const char *header_name);
@@ -183,7 +189,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(const char *event_name = NULL, const char *subclass_name = "");
 		 SWITCH_DECLARE_CONSTRUCTOR ~ EventConsumer();
 		 SWITCH_DECLARE(int) bind(const char *event_name, const char *subclass_name = "");
-		 SWITCH_DECLARE(Event *) pop(int block = 0);
+		 SWITCH_DECLARE(Event *) pop(int block = 0, int timeout = 0);
 	 };
 
 #ifdef SWIG
@@ -312,7 +318,8 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 												 int max_digits,
 												 int max_tries,
 												 int timeout, char *terminators, char *audio_files, char *bad_input_audio_files,
-												 char *digits_regex, const char *var_name = NULL, int digit_timeout = 0);
+												 char *digits_regex, const char *var_name = NULL, int digit_timeout = 0,
+												 const char *transfer_on_failure = NULL);
 
 	/** \brief Play a file that resides on disk into the channel
 	 *

@@ -540,6 +540,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 					DEBUGA_SKYPE("Skype FAILED on skype_call %s. Let's wait for the FAILED message.\n", SKYPOPEN_P_LOG, id);
 				}
 #if 0
+#ifndef WIN32
 				if (!strcasecmp(prop, "DURATION")) {	/* each 20 seconds, we zero the buffers and sync the timers */
 					if (!((atoi(value) % 20))) {
 						if (tech_pvt->read_buffer) {
@@ -565,6 +566,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						DEBUGA_SKYPE("Synching audio on skype_call: %s.\n", SKYPOPEN_P_LOG, id);
 					}
 				}
+#endif //WIN32
 #endif //0
 				if (!strcasecmp(prop, "DURATION") && (!strcasecmp(value, "1"))) {
 					if (strcasecmp(id, tech_pvt->skype_call_id)) {
@@ -882,19 +884,21 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPOPEN_STATE_UP)) {
 
-					unsigned int fdselect;
+					//unsigned int fdselect;
 					int rt=1;
-					fd_set fs;
+					//fd_set fs;
 					//struct timeval to;
 					int nospace;
 
 					if (!(running && tech_pvt->running))
 						break;
+#if 0
 					fdselect = fd;
 					FD_ZERO(&fs);
 					FD_SET(fdselect, &fs);
-					//to.tv_usec = MS_SKYPOPEN * 1000 * 3;
-					//to.tv_sec = 0;
+					to.tv_usec = MS_SKYPOPEN * 1000 * 3;
+					to.tv_sec = 0;
+#endif //0
 
 					if (tech_pvt->timer_read_srv.timer_interface && tech_pvt->timer_read_srv.timer_interface->timer_next) {
 						switch_core_timer_next(&tech_pvt->timer_read_srv);
@@ -935,7 +939,7 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 							}
 							switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 							if (nospace) {
-								DEBUGA_SKYPE("NO SPACE READ: there was no space for: %d\n", SKYPOPEN_P_LOG, len);
+								DEBUGA_SKYPE("NO SPACE in READ BUFFER: there was no space for: %d\n", SKYPOPEN_P_LOG, len);
 							}
 						} else if (len == 0) {
 							DEBUGA_SKYPE("CLOSED\n", SKYPOPEN_P_LOG);
@@ -1080,7 +1084,7 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 						}
 						switch_mutex_lock(tech_pvt->mutex_audio_cli);
 						if (tech_pvt->write_buffer && switch_buffer_inuse(tech_pvt->write_buffer)) {
-							bytes_to_write = switch_buffer_read(tech_pvt->write_buffer, cli_out, BYTES_PER_FRAME * 2);
+							bytes_to_write = switch_buffer_read(tech_pvt->write_buffer, cli_out, BYTES_PER_FRAME);
 						}
 						switch_mutex_unlock(tech_pvt->mutex_audio_cli);
 

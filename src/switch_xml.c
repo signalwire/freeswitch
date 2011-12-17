@@ -101,6 +101,9 @@ void globfree(glob_t *);
 #define SWITCH_XML_WS   "\t\r\n "	/* whitespace */
 #define SWITCH_XML_ERRL 128		/* maximum error string length */
 
+/* Use UTF-8 as the general encoding */
+static switch_bool_t USE_UTF_8_ENCODING = SWITCH_TRUE;
+
 static int preprocess(const char *cwd, const char *file, int write_fd, int rlevel);
 
 typedef struct switch_xml_root *switch_xml_root_t;
@@ -160,6 +163,7 @@ static struct xml_section_t SECTIONS[] = {
 	{"directory", SWITCH_XML_SECTION_DIRECTORY},
 	{"dialplan", SWITCH_XML_SECTION_DIALPLAN},
 	{"phrases", SWITCH_XML_SECTION_PHRASES},
+	{"chatplan", SWITCH_XML_SECTION_CHATPLAN},
 	{NULL, 0}
 };
 
@@ -2237,6 +2241,8 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 {
 	const char *e = NULL;
 	int immune = 0;
+	int expecting_x_utf_8_char = 0;
+	int unicode_char = 0x000000;
 
 	if (!(s && *s))
 		return *dst;
@@ -2289,7 +2295,47 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 				*dlen += sprintf(*dst + *dlen, "&#xD;");
 				break;
 			default:
-				(*dst)[(*dlen)++] = *s;
+				if (USE_UTF_8_ENCODING && expecting_x_utf_8_char == 0 && ((*s >> 8) & 0x01)) {
+					int num = 1;
+					for (;num<4;num++) {
+						if (! ((*s >> (7-num)) & 0x01)) {
+							break;
+						}
+					}
+					switch (num) {
+						case 2:
+							unicode_char = *s & 0x1f;
+							break;
+						case 3:
+							unicode_char = *s & 0x0f;
+							break;
+						case 4:
+							unicode_char = *s & 0x07;
+							break;
+						default:
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid UTF-8 Initial charactere, skip it\n");
+							/* ERROR HERE */
+							break;
+					}
+					expecting_x_utf_8_char = num - 1;
+
+				} else if (USE_UTF_8_ENCODING && expecting_x_utf_8_char > 0) {
+					if (((*s >> 6) & 0x03) == 0x2) {
+
+						unicode_char = unicode_char << 6;
+						unicode_char = unicode_char | (*s & 0x3f);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid UTF-8 character to ampersand, skip it\n");
+						expecting_x_utf_8_char = 0;
+						break;
+					}
+					expecting_x_utf_8_char--;
+					if (expecting_x_utf_8_char == 0) {
+						*dlen += sprintf(*dst + *dlen, "&#x%X;", unicode_char);
+					}
+				} else {
+					(*dst)[(*dlen)++] = *s;
+				}
 			}
 		s++;
 	}
@@ -2782,7 +2828,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 	return xml;
 }
 
-SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
+SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offset) 
+{
 
 	const char *xdt = switch_xml_attr(xcond, "date-time");
 	const char *xyear = switch_xml_attr(xcond, "year");
@@ -2796,12 +2843,24 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond) {
 	const char *xminute = switch_xml_attr(xcond, "minute");
 	const char *xminday = switch_xml_attr(xcond, "minute-of-day");
 	const char *xtod = switch_xml_attr(xcond, "time-of-day");
+	const char *tzoff = switch_xml_attr(xcond, "tz-offset");
+	int loffset = 0;
 
 	switch_time_t ts = switch_micro_time_now();
 	int time_match = -1;
 	switch_time_exp_t tm;
 
-	switch_time_exp_lt(&tm, ts);
+	if (!zstr(tzoff) && switch_is_number(tzoff)) {
+		loffset = atoi(tzoff);
+		offset = &loffset;
+	}
+
+
+	if (offset) {
+		switch_time_exp_tz(&tm, ts, *offset);
+	} else {
+		switch_time_exp_lt(&tm, ts);
+	}
 
 	if (time_match && xdt) {
 		char tmpdate[80];

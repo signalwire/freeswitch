@@ -28,8 +28,8 @@ gnu)
         )],
 
         [AC_MSG_RESULT([yes])
-         COMP_VENDOR_CFLAGS="-fvisibility=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
-         COMP_VENDOR_CXXFLAGS="-fvisibility=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
+         COMP_VENDOR_CFLAGS="-fvisibility=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
+         COMP_VENDOR_CXXFLAGS="-fvisibility=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
          ac_cv_symbol_export_capability="yes"],
 
         [AC_MSG_RESULT([no])]
@@ -47,8 +47,8 @@ sun)
         )],
 
         [AC_MSG_RESULT([yes])
-         COMP_VENDOR_CFLAGS="-xldscope=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
-         COMP_VENDOR_CXXFLAGS="-xldscope=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
+         COMP_VENDOR_CFLAGS="-xldscope=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
+         COMP_VENDOR_CXXFLAGS="-xldscope=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
          ac_cv_symbol_export_capability="yes"],
 
         [AC_MSG_RESULT([no])]

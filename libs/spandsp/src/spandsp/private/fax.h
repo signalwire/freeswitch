@@ -40,7 +40,7 @@ struct fax_state_s
     /*! \brief The analogue modem front-end */
     fax_modems_state_t modems;
     /*! \brief V.8 */
-    //v8_state_t v8;
+    v8_state_t v8;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;

@@ -1,6 +1,6 @@
 EXTRA_DIST =
 SUBDIRS = 
-AUTOMAKE_OPTS= gnu
+AUTOMAKE_OPTIONS = gnu
 NAME=teletone
 
 AM_CFLAGS	= $(new_AM_CFLAGS) -I./src

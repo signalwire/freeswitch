@@ -77,6 +77,7 @@
 #if defined(SPANDSP_SUPPORT_V34)
 #include "spandsp/v34.h"
 #endif
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
 #include "spandsp/t30.h"

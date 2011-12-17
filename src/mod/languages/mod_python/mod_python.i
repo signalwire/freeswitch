@@ -1,6 +1,6 @@
 %module freeswitch
 %include "cstring.i"
-
+%include ../../../../swig_common.i
 /** 
  * tell swig to treat these variables as mutable so they
  * can be used to return values.

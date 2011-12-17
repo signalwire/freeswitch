@@ -48,6 +48,8 @@ sub this {
 
 package freeswitch;
 
+*setGlobalVariable = *freeswitchc::setGlobalVariable;
+*getGlobalVariable = *freeswitchc::getGlobalVariable;
 *consoleLog = *freeswitchc::consoleLog;
 *consoleCleanLog = *freeswitchc::consoleCleanLog;
 *email = *freeswitchc::email;
@@ -292,6 +294,8 @@ sub DESTROY {
     }
 }
 
+*chat_execute = *freeswitchc::Event_chat_execute;
+*chat_send = *freeswitchc::Event_chat_send;
 *serialize = *freeswitchc::Event_serialize;
 *setPriority = *freeswitchc::Event_setPriority;
 *getHeader = *freeswitchc::Event_getHeader;

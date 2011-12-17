@@ -29,6 +29,12 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ * W McRoberts <fs@whmcr.com>
+ *
  */
 
 #include "private/ftdm_core.h"
@@ -94,6 +100,7 @@ struct ioctl_codes {
     ioctlcmd ECHOTRAIN;
     ioctlcmd SETTXBITS;
     ioctlcmd GETRXBITS;
+    ioctlcmd SETPOLARITY;
 };
 
 /**
@@ -169,7 +176,8 @@ static struct ioctl_codes dahdi_ioctl_codes = {
     .GETCONFMUTE = DAHDI_GETCONFMUTE,
     .ECHOTRAIN = DAHDI_ECHOTRAIN,
     .SETTXBITS = DAHDI_SETTXBITS,
-    .GETRXBITS = DAHDI_GETRXBITS
+    .GETRXBITS = DAHDI_GETRXBITS,
+    .SETPOLARITY = DAHDI_SETPOLARITY
 };
 
 #define ZT_INVALID_SOCKET -1
@@ -248,7 +256,7 @@ static void zt_build_gains(struct zt_gains *g, float rxgain, float txgain, int c
 }
 
 /**
- * \brief Initialises a range of ftdmtel channels
+ * \brief Initialises a range of Zaptel/DAHDI channels
  * \param span FreeTDM span
  * \param start Initial wanpipe channel number
  * \param end Final wanpipe channel number
@@ -341,7 +349,7 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 				}
 				
 				if (ioctl(CONTROL_FD, codes.CHANCONFIG, &cc)) {
-					ftdm_log(FTDM_LOG_WARNING, "this ioctl fails on older ftdmtel but is harmless if you used ztcfg\n[device %s chan %d fd %d (%s)]\n", chanpath, x, CONTROL_FD, strerror(errno));
+					ftdm_log(FTDM_LOG_WARNING, "this ioctl fails in older zaptel but is harmless if you used ztcfg\n[device %s chan %d fd %d (%s)]\n", chanpath, x, CONTROL_FD, strerror(errno));
 				}
 			}
 
@@ -445,7 +453,7 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 }
 
 /**
- * \brief Initialises an freetdm ftdmtel span from a configuration string
+ * \brief Initialises a freetdm Zaptel/DAHDI span from a configuration string
  * \param span FreeTDM span
  * \param str Configuration string
  * \param type FreeTDM span type
@@ -515,7 +523,7 @@ static FIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
 }
 
 /**
- * \brief Process configuration variable for a ftdmtel profile
+ * \brief Process configuration variable for a Zaptel/DAHDI profile
  * \param category Wanpipe profile name
  * \param var Variable name
  * \param val Variable value
@@ -593,7 +601,7 @@ static FIO_CONFIGURE_FUNCTION(zt_configure)
 }
 
 /**
- * \brief Opens a ftdmtel channel
+ * \brief Opens a Zaptel/DAHDI channel
  * \param ftdmchan Channel to open
  * \return Success or failure
  */
@@ -663,7 +671,7 @@ static FIO_OPEN_FUNCTION(zt_open)
 }
 
 /**
- * \brief Closes ftdmtel channel
+ * \brief Closes Zaptel/DAHDI channel
  * \param ftdmchan Channel to close
  * \return Success
  */
@@ -681,7 +689,7 @@ static FIO_CLOSE_FUNCTION(zt_close)
 }
 
 /**
- * \brief Executes an FreeTDM command on a ftdmtel channel
+ * \brief Executes a FreeTDM command on a Zaptel/DAHDI channel
  * \param ftdmchan Channel to execute command on
  * \param command FreeTDM command to execute
  * \param obj Object (unused)
@@ -826,6 +834,15 @@ static FIO_COMMAND_FUNCTION(zt_command)
 			err = ioctl(ftdmchan->sockfd, codes.FLUSH, &flushmode);
 		}
 		break;
+	case FTDM_COMMAND_SET_POLARITY:
+		{
+			ftdm_polarity_t polarity = FTDM_COMMAND_OBJ_INT;
+			err = ioctl(ftdmchan->sockfd, codes.SETPOLARITY, polarity);
+			if (!err) {
+				ftdmchan->polarity = polarity;
+			}
+		}
+		break;
 	case FTDM_COMMAND_FLUSH_RX_BUFFERS:
 		{
 			int flushmode = ZT_FLUSH_READ;
@@ -853,7 +870,7 @@ static FIO_COMMAND_FUNCTION(zt_command)
 }
 
 /**
- * \brief Gets alarms from a ftdmtel Channel
+ * \brief Gets alarms from a Zaptel/DAHDI channel
  * \param ftdmchan Channel to get alarms from
  * \return Success or failure
  */
@@ -876,7 +893,7 @@ static FIO_GET_ALARMS_FUNCTION(zt_get_alarms)
 }
 
 /**
- * \brief Waits for an event on a ftdmtel channel
+ * \brief Waits for an event on a Zaptel/DAHDI channel
  * \param ftdmchan Channel to open
  * \param flags Type of event to wait for
  * \param to Time to wait (in ms)
@@ -950,7 +967,7 @@ pollagain:
 }
 
 /**
- * \brief Checks for events on a ftdmtel span
+ * \brief Checks for events on a Zaptel/DAHDI span
  * \param span Span to check for events
  * \param ms Time to wait for event
  * \return Success if event is waiting or failure if not
@@ -1088,6 +1105,12 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 			*event_id = FTDM_OOB_NOOP;	/* What else could we do? */
 		}
 		break;
+	case ZT_EVENT_POLARITY:
+		{
+			ftdm_log_chan_msg(fchan, FTDM_LOG_ERROR, "Got polarity reverse (ZT_EVENT_POLARITY)\n");
+			*event_id = FTDM_OOB_POLARITY_REVERSE;
+		}
+		break;
 	case ZT_EVENT_NONE:
 		{
 			ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "No event\n");
@@ -1141,7 +1164,7 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
 }
 
 /**
- * \brief Retrieves an event from a ftdmtel span
+ * \brief Retrieves an event from a Zaptel/DAHDI span
  * \param span Span to retrieve event from
  * \param event FreeTDM event to return
  * \return Success or failure
@@ -1181,7 +1204,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 }
 
 /**
- * \brief Reads data from a ftdmtel channel
+ * \brief Reads data from a Zaptel/DAHDI channel
  * \param ftdmchan Channel to read from
  * \param data Data buffer
  * \param datalen Size of data buffer
@@ -1223,7 +1246,7 @@ static FIO_READ_FUNCTION(zt_read)
 }
 
 /**
- * \brief Writes data to a ftdmtel channel
+ * \brief Writes data to a Zaptel/DAHDI channel
  * \param ftdmchan Channel to write to
  * \param data Data buffer
  * \param datalen Size of data buffer
@@ -1262,7 +1285,7 @@ tryagain:
 }
 
 /**
- * \brief Destroys a ftdmtel Channel
+ * \brief Destroys a Zaptel/DAHDI Channel
  * \param ftdmchan Channel to destroy
  * \return Success
  */
@@ -1275,12 +1298,12 @@ static FIO_CHANNEL_DESTROY_FUNCTION(zt_channel_destroy)
 }
 
 /**
- * \brief Global FreeTDM IO interface for ftdmtel
+ * \brief Global FreeTDM IO interface for Zaptel/DAHDI
  */
 static ftdm_io_interface_t zt_interface;
 
 /**
- * \brief Loads ftdmtel IO module
+ * \brief Loads Zaptel/DAHDI IO module
  * \param fio FreeTDM IO interface
  * \return Success or failure
  */
@@ -1335,7 +1358,7 @@ static FIO_IO_LOAD_FUNCTION(zt_init)
 }
 
 /**
- * \brief Unloads ftdmtel IO module
+ * \brief Unloads Zaptel/DAHDI IO module
  * \return Success
  */
 static FIO_IO_UNLOAD_FUNCTION(zt_destroy)
@@ -1346,7 +1369,7 @@ static FIO_IO_UNLOAD_FUNCTION(zt_destroy)
 }
 
 /**
- * \brief FreeTDM ftdmtel IO module definition
+ * \brief FreeTDM Zaptel/DAHDI IO module definition
  */
 ftdm_module_t ftdm_module = { 
 	"zt",

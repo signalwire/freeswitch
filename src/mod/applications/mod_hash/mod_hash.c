@@ -407,7 +407,7 @@ SWITCH_LIMIT_STATUS(limit_status_hash)
 
 /* CORE HASH STUFF */
 
-#define HASH_USAGE "[insert|delete]/<realm>/<key>/<val>"
+#define HASH_USAGE "[insert|insert_ifempty|delete|delete_ifmatch]/<realm>/<key>/<val>"
 #define HASH_DESC "save data"
 
 SWITCH_STANDARD_APP(hash_function)
@@ -443,10 +443,32 @@ SWITCH_STANDARD_APP(hash_function)
 		value = strdup(argv[3]);
 		switch_assert(value);
 		switch_core_hash_insert(globals.db_hash, hash_key, value);
+	} else if (!strcasecmp(argv[0], "insert_ifempty")) {
+		if (argc < 4) {
+			goto usage;
+		}
+		if (!(value = switch_core_hash_find(globals.db_hash, hash_key))) {
+			value = strdup(argv[3]);
+			switch_assert(value);
+			switch_core_hash_insert(globals.db_hash, hash_key, value);
+		} else {
+			switch_safe_free(value);
+		}
+
 	} else if (!strcasecmp(argv[0], "delete")) {
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
 			switch_safe_free(value);
 			switch_core_hash_delete(globals.db_hash, hash_key);
+		}
+	} else if (!strcasecmp(argv[0], "delete_ifmatch")) {
+		if (argc < 4) {
+			goto usage;
+		}
+		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
+			if(!strcmp(argv[3], value)) {
+				switch_core_hash_delete(globals.db_hash, hash_key);
+			}
+			switch_safe_free(value);
 		}
 	} else {
 		goto usage;
@@ -463,7 +485,7 @@ SWITCH_STANDARD_APP(hash_function)
 	switch_safe_free(hash_key);
 }
 
-#define HASH_API_USAGE "insert|select|delete/realm/key[/value]"
+#define HASH_API_USAGE "insert|insert_ifempty|select|delete|delete_ifmatch/realm/key[/value]"
 SWITCH_STANDARD_API(hash_api_function)
 {
 	int argc = 0;
@@ -498,12 +520,44 @@ SWITCH_STANDARD_API(hash_api_function)
 		switch_core_hash_insert(globals.db_hash, hash_key, value);
 		stream->write_function(stream, "+OK\n");
 		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
+	} else if (!strcasecmp(argv[0], "insert_ifempty")) {
+		if (argc < 4) {
+			goto usage;
+		}
+		switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
+		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
+			stream->write_function(stream, "-ERR key already exists\n");
+			switch_safe_free(value);
+		} else {
+			value = strdup(argv[3]);
+			switch_assert(value);
+			switch_core_hash_insert(globals.db_hash, hash_key, value);
+			stream->write_function(stream, "+OK\n");
+		}
+		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
 	} else if (!strcasecmp(argv[0], "delete")) {
 		switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
 			switch_safe_free(value);
 			switch_core_hash_delete(globals.db_hash, hash_key);
 			stream->write_function(stream, "+OK\n");
+		} else {
+			stream->write_function(stream, "-ERR Not found\n");
+		}
+		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
+	} else if (!strcasecmp(argv[0], "delete_ifmatch")) {
+		if (argc < 4) {
+			goto usage;
+		}
+		switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
+		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
+			if(!strcmp(argv[3],value)) {
+				switch_core_hash_delete(globals.db_hash, hash_key);
+				stream->write_function(stream, "+OK\n");
+			} else {
+				stream->write_function(stream, "-ERR Doesn't match\n");
+			}
+			switch_safe_free(value);
 		} else {
 			stream->write_function(stream, "-ERR Not found\n");
 		}
@@ -945,7 +999,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load)
 	switch_scheduler_add_task(switch_epoch_time_now(NULL) + LIMIT_HASH_CLEANUP_INTERVAL, limit_hash_cleanup_callback, "limit_hash_cleanup", "mod_hash", 0, NULL,
 						  SSHF_NONE);
 	
-	SWITCH_ADD_APP(app_interface, "hash", "Insert into the hashtable", HASH_DESC, hash_function, HASH_USAGE, SAF_SUPPORT_NOMEDIA)
+	SWITCH_ADD_APP(app_interface, "hash", "Insert into the hashtable", HASH_DESC, hash_function, HASH_USAGE, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC)
 	SWITCH_ADD_API(commands_api_interface, "hash", "hash get/set", hash_api_function, "[insert|delete|select]/<realm>/<key>/<value>");
 	SWITCH_ADD_API(commands_api_interface, "hash_dump", "dump hash/limit_hash data (used for synchronization)", hash_dump_function, HASH_DUMP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "hash_remote", "hash remote", hash_remote_function, HASH_REMOTE_SYNTAX);

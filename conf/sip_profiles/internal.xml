@@ -43,6 +43,9 @@
 	<!-- <param name="shutdown-on-fail" value="true"/> -->
     <param name="sip-trace" value="no"/>
     <param name="sip-capture" value="no"/>
+
+    <!-- Use presence_map.conf.xml to convert extension regex to presence protos for routing -->
+    <!-- <param name="presence-proto-lookup" value="true"/> -->
     
 
     <!-- Don't be picky about negotiated DTMF just always offer 2833 and accept both 2833 and INFO -->
@@ -70,7 +73,7 @@
     <param name="watchdog-step-timeout" value="30000"/>
     <param name="watchdog-event-timeout" value="30000"/>
 
-    <param name="log-auth-failures" value="true"/>
+    <param name="log-auth-failures" value="false"/>
     <param name="forward-unsolicited-mwi-notify" value="false"/>
 
     <param name="context" value="public"/>
@@ -102,6 +105,11 @@
 	It is not recommended to enable 100rel at this time.
     -->
     <!--<param name="enable-100rel" value="true"/>-->
+
+    <!-- uncomment if you don't wish to try a next SRV destination on 503 response -->
+    <!-- RFC3263 Section 4.3 -->	    
+    <!--<param name="disable-srv503" value="true"/>-->    
+    
     <!-- Enable Compact SIP headers. -->
     <!--<param name="enable-compact-headers" value="true"/>-->
     <!--
@@ -149,6 +157,7 @@
     <!-- Name of the db to use for this profile -->
     <!--<param name="dbname" value="share_presence"/>-->
     <param name="presence-hosts" value="$${domain},$${local_ip_v4}"/>
+    <param name="presence-privacy" value="$${presence_privacy}"/>
     <!-- ************************************************* -->
     
     <!-- This setting is for AAL2 bitpacking on G726 -->

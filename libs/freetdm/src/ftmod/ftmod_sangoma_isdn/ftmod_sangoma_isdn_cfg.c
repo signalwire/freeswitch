@@ -289,6 +289,9 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	signal_data->att_remove_dtmf = SNGISDN_OPT_DEFAULT;
 	signal_data->force_sending_complete = SNGISDN_OPT_DEFAULT;
 
+	signal_data->cid_name_method = SNGISDN_CID_NAME_AUTO;
+	signal_data->send_cid_name = SNGISDN_OPT_DEFAULT;
+	
 	span->default_caller_data.dnis.plan = FTDM_NPI_INVALID;
 	span->default_caller_data.dnis.type = FTDM_TON_INVALID;
 	span->default_caller_data.cid_num.plan = FTDM_NPI_INVALID;
@@ -361,7 +364,7 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			parse_yesno(var, val, &signal_data->restart_opt);
 		} else if (!strcasecmp(var, "channel-restart-timeout")) {
 			signal_data->restart_timeout = atoi(val);
-		} else if (!strcasecmp(var, "local-number")) {			
+		} else if (!strcasecmp(var, "local-number")) {
 			if (add_local_number(val, span) != FTDM_SUCCESS) {
 				return FTDM_FAIL;
 			}
@@ -401,6 +404,30 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 #else
 			ftdm_log(FTDM_LOG_WARNING, "chan-id-invert-extend-bit is not supported in your version of libsng_isdn\n");
 #endif
+		} else if (!strcasecmp(var, "cid-name-transmit-method")) {
+			if (!strcasecmp(val, "display-ie")) {
+				signal_data->cid_name_method = SNGISDN_CID_NAME_DISPLAY_IE;
+			} else if (!strcasecmp(val, "user-user-ie")) {
+				signal_data->cid_name_method = SNGISDN_CID_NAME_USR_USR_IE;
+			} else if (!strcasecmp(val, "facility-ie")) {
+				signal_data->cid_name_method = SNGISDN_CID_NAME_FACILITY_IE;
+			} else if (!strcasecmp(val, "auto") || !strcasecmp(val, "automatic") || !strcasecmp(val, "default")) {
+				signal_data->cid_name_method = SNGISDN_CID_NAME_AUTO;
+			} else {
+				ftdm_log(FTDM_LOG_WARNING, "Invalid option %s for parameter %s\n", val, var);
+				signal_data->cid_name_method = SNGISDN_CID_NAME_AUTO;
+			}
+		} else if (!strcasecmp(var, "send-cid-name")) {
+			if (!strcasecmp(val, "yes")) {
+				signal_data->send_cid_name = SNGISDN_OPT_TRUE;
+			} else if (!strcasecmp(val, "no")) {
+				signal_data->send_cid_name = SNGISDN_OPT_FALSE;
+			} else if (!strcasecmp(val, "auto") || !strcasecmp(val, "automatic") || !strcasecmp(val, "default")) {
+				signal_data->send_cid_name = SNGISDN_OPT_DEFAULT;
+			} else {
+				ftdm_log(FTDM_LOG_WARNING, "Invalid option %s for parameter %s\n", val, var);
+				signal_data->send_cid_name = SNGISDN_OPT_DEFAULT;
+			}
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}

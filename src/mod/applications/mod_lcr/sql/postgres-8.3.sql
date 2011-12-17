@@ -42,9 +42,9 @@ CREATE TABLE lcr
 (
   id serial NOT NULL,
   digits NUMERIC(20, 0),
-  rate numeric(11,5) NOT NULL,
-  intrastate_rate numeric(11,5) NOT NULL,
-  intralata_rate numeric(11,5) NOT NULL,
+  rate numeric(11,5),
+  intrastate_rate numeric(11,5),
+  intralata_rate numeric(11,5),
   carrier_id integer NOT NULL REFERENCES carriers(id),
   lead_strip integer NOT NULL DEFAULT 0,
   trail_strip integer NOT NULL DEFAULT 0,
@@ -57,6 +57,7 @@ CREATE TABLE lcr
   reliability numeric(10,6) NOT NULL DEFAULT 0,
   cid VARCHAR(32) NOT NULL DEFAULT '',
   enabled boolean NOT NULL DEFAULT 'true',
+  lrn boolean NOT NULL DEFAULT 'false',
   CONSTRAINT lcr_pkey PRIMARY KEY (id)
 );
 

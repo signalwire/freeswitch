@@ -467,4 +467,10 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 #ifndef HAVE_STRTOUL
 #define strtoul (unsigned long)strtol
 #endif
+#ifdef HAVE_B64_PTON
+#define ldns_b64_pton b64_pton
+#endif
+#ifdef HAVE_B64_NTOP
+#define ldns_b64_ntop b64_ntop
+#endif
 

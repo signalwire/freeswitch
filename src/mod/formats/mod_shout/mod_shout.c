@@ -53,6 +53,9 @@ static struct {
 	char decoder[256];
 	float vol;
 	uint32_t outscale;
+	uint32_t brate;
+	uint32_t resample;
+	uint32_t quality;
 } globals;
 
 mpg123_handle *our_mpg123_new(const char *decoder, int *error)
@@ -172,7 +175,7 @@ static inline void free_context(shout_context_t *context)
 		}
 
 		if (context->fp) {
-			unsigned char mp3buffer[8192];
+			unsigned char mp3buffer[20480];
 			int len;
 			int16_t blank[2048] = { 0 }, *r = NULL;
 
@@ -201,6 +204,35 @@ static inline void free_context(shout_context_t *context)
 		}
 
 		if (context->shout) {
+			if (context->gfp) {
+				unsigned char mp3buffer[8192];
+				int len;
+				int16_t blank[2048] = { 0 }, *r = NULL;
+
+				if (context->channels == 2) {
+					r = blank;
+				}
+
+				len = lame_encode_buffer(context->gfp, blank, r, sizeof(blank) / 2, mp3buffer, sizeof(mp3buffer));
+
+				if (len) {
+					ret = shout_send(context->shout, mp3buffer, len);
+					if (ret == SHOUTERR_SUCCESS) {
+						shout_sync(context->shout);
+					}
+				}
+
+				while ((len = lame_encode_flush(context->gfp, mp3buffer, sizeof(mp3buffer))) > 0) {
+					ret = shout_send(context->shout, mp3buffer, len);
+
+					if (ret != SHOUTERR_SUCCESS) {
+						break;
+					} else {
+						shout_sync(context->shout);
+					}
+				}
+			}
+
 			shout_close(context->shout);
 			context->shout = NULL;
 		}
@@ -413,30 +445,30 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 #define MY_BLOCK_SIZE MY_BUF_LEN
 static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void *obj)
 {
-	CURL *curl_handle = NULL;
-	CURLcode cc;
+	switch_CURL *curl_handle = NULL;
+	switch_CURLcode cc;
 	shout_context_t *context = (shout_context_t *) obj;
 
 	switch_thread_rwlock_rdlock(context->rwlock);
 
-	curl_handle = curl_easy_init();
-	curl_easy_setopt(curl_handle, CURLOPT_URL, context->stream_url);
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, stream_callback);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) context);
-	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "FreeSWITCH(mod_shout)/1.0");
-	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 30);	/* eventually timeout connect */
-	curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT, 100);	/* handle trickle connections */
-	curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, 30);
-	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, context->curl_error_buff);
-	cc = curl_easy_perform(curl_handle);
+	curl_handle = switch_curl_easy_init();
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, context->stream_url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, stream_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) context);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "FreeSWITCH(mod_shout)/1.0");
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 30);	/* eventually timeout connect */
+	switch_curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT, 100);	/* handle trickle connections */
+	switch_curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, 30);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, context->curl_error_buff);
+	cc = switch_curl_easy_perform(curl_handle);
 	if (cc && cc != CURLE_WRITE_ERROR) {	/* write error is ok, we just exited from callback early */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s : %s [%s]\n", cc, curl_easy_strerror(cc),
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s : %s [%s]\n", cc, switch_curl_easy_strerror(cc),
 						  context->curl_error_buff, context->stream_url);
 	}
-	curl_easy_cleanup(curl_handle);
+	switch_curl_easy_cleanup(curl_handle);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read Thread Done\n");
 
 	context->eof++;
@@ -494,7 +526,7 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 	}
 
 	while (!context->err && context->thread_running) {
-		unsigned char mp3buf[8192] = "";
+		unsigned char mp3buf[20480] = "";
 		int16_t audio[9600] = { 0 };
 		switch_size_t audio_read = 0;
 		int rlen = 0;
@@ -667,17 +699,33 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 		}
 		context->channels = handle->channels;
-		lame_set_brate(context->gfp, 16 * (handle->samplerate / 8000) * handle->channels);
+		
+		if (globals.brate) {
+			lame_set_brate(context->gfp, globals.brate);
+		} else {
+			lame_set_brate(context->gfp, 16 * (handle->samplerate / 8000) * handle->channels);
+		}
+		
 		lame_set_num_channels(context->gfp, handle->channels);
 		lame_set_in_samplerate(context->gfp, handle->samplerate);
-		lame_set_out_samplerate(context->gfp, handle->samplerate);
+		
+		if (globals.resample) {
+			lame_set_out_samplerate(context->gfp, globals.resample);
+		} else {
+			lame_set_out_samplerate(context->gfp, handle->samplerate);
+		}
 
 		if (handle->channels == 2) {
 			lame_set_mode(context->gfp, STEREO);
 		} else {
 			lame_set_mode(context->gfp, MONO);
 		}
-		lame_set_quality(context->gfp, 2);	/* 2=high  5 = medium  7=low */
+
+		if (globals.quality) {
+			lame_set_quality(context->gfp, globals.quality);
+		} else {
+			lame_set_quality(context->gfp, 2);      /* 2=high  5 = medium  7=low */
+		}
 
 		lame_set_errorf(context->gfp, log_error);
 		lame_set_debugf(context->gfp, log_debug);
@@ -787,6 +835,11 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			if (!(context->fp = fopen(path, mask))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 				goto error;
+			}
+			if (!context->lame_ready) {
+				lame_init_params(context->gfp);
+				lame_print_config(context->gfp);
+				context->lame_ready = 1;
 			}
 		}
 	}
@@ -1464,6 +1517,21 @@ static switch_status_t load_config(void)
 				if (tmp > 0) {
 					globals.outscale = tmp;
 				}
+			} else if (!strcmp(var, "encode-brate")) {
+				int tmp = atoi(val);
+				if (tmp > 0) {
+					globals.brate = tmp;
+				}
+			} else if (!strcmp(var, "encode-resample")) {
+				int tmp = atoi(val);
+				if (tmp > 0) {
+					globals.resample = tmp;
+				}
+			} else if (!strcmp(var, "encode-quality")) {
+				int tmp = atoi(val);
+				if (tmp > 0) {
+					globals.quality = tmp;
+				}
 			}
 		}
 	}
@@ -1481,8 +1549,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 
 	supported_formats[0] = "shout";
 	supported_formats[1] = "mp3";
-
-	switch_curl_init();
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -1509,7 +1575,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown)
 {
-	switch_curl_destroy();
 	mpg123_exit();
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -96,6 +96,9 @@ struct dtmf_rx_state_s
     uint8_t in_digit;
     /*! The current sample number within a processing block. */
     int current_sample;
+    
+    /*! Tone state duration */
+    int duration;
 
     /*! The number of digits which have been lost due to buffer overflows. */
     int lost_digits;
@@ -103,6 +106,9 @@ struct dtmf_rx_state_s
     int current_digits;
     /*! The received digits buffer. This is a NULL terminated string. */
     char digits[MAX_DTMF_DIGITS + 1];
+
+    /*! \brief Error and flow logging control */
+    logging_state_t logging;
 };
 
 #endif

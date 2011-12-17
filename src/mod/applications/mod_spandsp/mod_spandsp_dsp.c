@@ -52,11 +52,12 @@ static void spandsp_dtmf_rx_realtime_callback(void *user_data, int code, int lev
 	if (digit) {
 		/* prevent duplicate DTMF */
 		if (digit != pvt->last_digit || (pvt->samples - pvt->last_digit_end) > pvt->min_dup_digit_spacing) {
-			switch_dtmf_t dtmf;
+			switch_dtmf_t dtmf = {0};
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "DTMF BEGIN DETECTED: [%c]\n", digit);
 			pvt->last_digit = digit;
 			dtmf.digit = digit;
 			dtmf.duration = switch_core_default_dtmf_duration(0);
+			dtmf.source = SWITCH_DTMF_INBAND_AUDIO;
 			switch_channel_queue_dtmf(switch_core_session_get_channel(pvt->session), &dtmf);
 			pvt->digit_begin = pvt->samples;
 		} else {
@@ -154,48 +155,7 @@ switch_status_t spandsp_inband_dtmf_session(switch_core_session_t *session)
 /* private channel data */
 #define TONE_PRIVATE "mod_tone_detect_bug"
 
-/**
- * Module global variables
- */
-struct globals {
-	/** Memory pool */
-	switch_memory_pool_t *pool;
-	/** Call progress tones mapped by descriptor name */
-	switch_hash_t *tones;
-	/** Default debug level */
-	int debug;
-};
-typedef struct globals globals_t;
-static globals_t globals;
 
-/******************************************************************************
- * TONE DETECTION WITH CADENCE
- */
-
-#define MAX_TONES 32
-#define STRLEN 128
-/**
- * Tone descriptor
- *
- * Defines a set of tones to look for
- */
-struct tone_descriptor {
-	/** The name of this descriptor set */
-	const char *name;
-
-	/** Describes the tones to watch */
-	super_tone_rx_descriptor_t *spandsp_tone_descriptor;
-
-	/** The mapping of tone id to key */
-	char tone_keys[MAX_TONES][STRLEN];
-    int idx;
-
-};
-typedef struct tone_descriptor tone_descriptor_t;
-
-static switch_status_t tone_descriptor_create(tone_descriptor_t **descriptor, const char *name, switch_memory_pool_t *memory_pool);
-static int tone_descriptor_add_tone(tone_descriptor_t *descriptor, const char *name);
-static switch_status_t tone_descriptor_add_tone_element(tone_descriptor_t *descriptor, int tone_id, int freq1, int freq2, int min, int max);
 
 /**
  * Tone detector
@@ -231,7 +191,7 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
  * @param memory_pool the pool to use
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-static switch_status_t tone_descriptor_create(tone_descriptor_t **descriptor, const char *name, switch_memory_pool_t *memory_pool)
+switch_status_t tone_descriptor_create(tone_descriptor_t **descriptor, const char *name, switch_memory_pool_t *memory_pool)
 {
 	tone_descriptor_t *ldescriptor = NULL;
 	ldescriptor = switch_core_alloc(memory_pool, sizeof(tone_descriptor_t));
@@ -252,7 +212,7 @@ static switch_status_t tone_descriptor_create(tone_descriptor_t **descriptor, co
  * @param key the tone key - this will be returned by the detector upon match
  * @return the tone ID
  */
-static int tone_descriptor_add_tone(tone_descriptor_t *descriptor, const char *key)
+int tone_descriptor_add_tone(tone_descriptor_t *descriptor, const char *key)
 {
 	int id = super_tone_rx_add_tone(descriptor->spandsp_tone_descriptor);
 	if (id >= MAX_TONES) {
@@ -278,7 +238,7 @@ static int tone_descriptor_add_tone(tone_descriptor_t *descriptor, const char *k
  * @param max the maximum tone duration in ms
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-static switch_status_t tone_descriptor_add_tone_element(tone_descriptor_t *descriptor, int tone_id, int freq1, int freq2, int min, int max)
+switch_status_t tone_descriptor_add_tone_element(tone_descriptor_t *descriptor, int tone_id, int freq1, int freq2, int min, int max)
 {
 	if (super_tone_rx_add_element(descriptor->spandsp_tone_descriptor, tone_id, freq1, freq2, min, max) == 0) {
 		return SWITCH_STATUS_SUCCESS;
@@ -336,7 +296,7 @@ static switch_status_t tone_detector_create(tone_detector_t **detector, tone_des
 	}
 	memset(ldetector, 0, sizeof(tone_detector_t));
 	ldetector->descriptor = descriptor;
-	ldetector->debug = globals.debug;
+	ldetector->debug = spandsp_globals.tonedebug;
 	*detector = ldetector;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -408,7 +368,7 @@ switch_status_t callprogress_detector_start(switch_core_session_t *session, cons
 	}
 
 	/* find the tone descriptor with the matching name and create the detector */
-	descriptor = switch_core_hash_find(globals.tones, name);
+	descriptor = switch_core_hash_find(spandsp_globals.tones, name);
 	if (!descriptor) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) no tone descriptor defined with name '%s'.  Update configuration. \n", switch_channel_get_name(channel), name);
 		return SWITCH_STATUS_FALSE;
@@ -509,115 +469,10 @@ switch_status_t callprogress_detector_stop(switch_core_session_t *session)
 }
 
 /**
- * Process configuration file
- */
-static switch_status_t do_config(void)
-{
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_xml_t cfg = NULL, xml = NULL, callprogress = NULL, xdescriptor = NULL;
-	if (!(xml = switch_xml_open_cfg("spandsp.conf", &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not open spandsp.conf\n");
-		status = SWITCH_STATUS_FALSE;
-		goto done;
-	}
-
-	/* TODO make configuration param */
-	globals.debug = 1;
-
-	/* Configure call progress detector */
-	if ((callprogress = switch_xml_child(cfg, "descriptors"))) {
-		for (xdescriptor = switch_xml_child(callprogress, "descriptor"); xdescriptor; xdescriptor = switch_xml_next(xdescriptor)) {
-			const char *name = switch_xml_attr(xdescriptor, "name");
-			const char *tone_name = NULL;
-			switch_xml_t tone = NULL, element = NULL;
-			tone_descriptor_t *descriptor = NULL;
-
-			/* create descriptor */
-			if (zstr(name)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing <descriptor> name\n");
-				return SWITCH_STATUS_FALSE;
-			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding tone_descriptor: %s\n", name);
-			if (tone_descriptor_create(&descriptor, name, globals.pool) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to allocate tone_descriptor: %s\n", name);
-				return SWITCH_STATUS_FALSE;
-			}
-			switch_core_hash_insert(globals.tones, name, descriptor);
-
-			/* add tones to descriptor */
-			for (tone = switch_xml_child(xdescriptor, "tone"); tone; tone = switch_xml_next(tone)) {
-				int id = 0;
-				tone_name = switch_xml_attr(tone, "name");
-				if (zstr(tone_name)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing <tone> name for <descriptor> %s\n", name);
-					return SWITCH_STATUS_FALSE;
-				}
-				id = tone_descriptor_add_tone(descriptor, tone_name);
-				if (id == -1) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to add tone_descriptor: %s, tone: %s.  (too many tones)\n", name, tone_name);
-					return SWITCH_STATUS_FALSE;
-				}
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding tone_descriptor: %s, tone: %s(%d)\n", name, tone_name, id);
-				/* add elements to tone */
-				for (element = switch_xml_child(tone, "element"); element; element = switch_xml_next(element)) {
-					const char *freq1_attr = switch_xml_attr(element, "freq1");
-					const char *freq2_attr = switch_xml_attr(element, "freq2");
-					const char *min_attr = switch_xml_attr(element, "min");
-					const char *max_attr = switch_xml_attr(element, "max");
-					int freq1, freq2, min, max;
-					if (zstr(freq1_attr)) {
-						freq1 = 0;
-					} else {
-						freq1 = atoi(freq1_attr);
-					}
-					if (zstr(freq2_attr)) {
-						freq2 = 0;
-					} else {
-						freq2 = atoi(freq2_attr);
-					}
-					if (zstr(min_attr)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing min in <element> of <descriptor> %s <tone> %s(%d)\n", name, tone_name, id);
-						return SWITCH_STATUS_FALSE;
-					}
-					min = atoi(min_attr);
-					if (zstr(max_attr)) {
-						max = 0;
-					} else {
-						max = atoi(max_attr);
-					}
-					/* check params */
-					if ((freq1 < 0 || freq2 < 0 || min < 0 || max < 0) || (freq1 == 0 && min == 0 && max == 0)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid element param.\n");
-						return SWITCH_STATUS_FALSE;
-					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding tone_descriptor: %s, tone: %s(%d), element (%d, %d, %d, %d)\n", name, tone_name, id, freq1, freq2, min, max);
-					tone_descriptor_add_tone_element(descriptor, id, freq1, freq2, min, max);
-				}
-			}
-		}
-	}
-
-done:
-	if (xml) {
-		switch_xml_free(xml);
-	}
-
-	return status;
-}
-
-/**
  * Called when FreeSWITCH loads the module
  */
 switch_status_t mod_spandsp_dsp_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
 {
-	memset(&globals, 0, sizeof(globals_t));
-	globals.pool = pool;
-
-	switch_core_hash_init(&globals.tones, globals.pool);
-	if (do_config() != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -627,7 +482,7 @@ switch_status_t mod_spandsp_dsp_load(switch_loadable_module_interface_t **module
  */
 void mod_spandsp_dsp_shutdown(void)
 {
-	switch_core_hash_destroy(&globals.tones);
+    return;
 }
 
 

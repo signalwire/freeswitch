@@ -15,7 +15,7 @@ done
 
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
-SUBDIRS="ilbc curl iksemel js js/nsprpub libdingaling libedit libsndfile pcre sofia-sip \
+SUBDIRS="ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip \
         speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-3.8.2 broadvoice silk libcodec2";
 
 if [ ! -f modules.conf ]; then 
@@ -300,12 +300,13 @@ libbootstrap()
       AMTEST=`grep "AM_INIT_AUTOMAKE" ${CFFILE}`
       AMTEST2=`grep "AC_PROG_INSTALL" ${CFFILE}`
       AHTEST=`grep "AC_CONFIG_HEADERS" ${CFFILE}`
+      AXTEST=`grep "ACX_LIBTOOL_C_ONLY" ${CFFILE}`
 
       echo "Creating aclocal.m4"
       ${ACLOCAL:-aclocal} ${ACLOCAL_OPTS} ${ACLOCAL_FLAGS}
 
 #only run if AC_PROG_LIBTOOL is in configure.in/configure.ac
-      if [ ! -z "${LTTEST}" -o "${LTTEST2}" ] ; then
+      if [ ! -z "${LTTEST}" -o "${LTTEST2}" -o "${AXTEST}" ] ; then
           echo "Running libtoolize..."
           if ${libtoolize} -n --install >/dev/null 2>&1 ; then
              $libtoolize --force --copy --install

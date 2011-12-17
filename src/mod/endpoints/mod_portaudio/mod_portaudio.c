@@ -1324,7 +1324,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 	globals.read_frame.buflen = sizeof(globals.databuf);
 	globals.cng_frame.data = globals.cngbuf;
 	globals.cng_frame.buflen = sizeof(globals.cngbuf);
-	globals.cng_frame.datalen = switch_samples_per_packet(globals.sample_rate, globals.codec_ms) * 2;
 	switch_set_flag((&globals.cng_frame), SFF_CNG);
 	globals.flags = GFLAG_EAR | GFLAG_MOUTH;
 	/* dual streams makes portaudio on solaris choke */
@@ -1749,6 +1748,8 @@ static switch_status_t load_config(void)
 	if (!globals.codec_ms) {
 		globals.codec_ms = 20;
 	}
+
+	globals.cng_frame.datalen = switch_samples_per_packet(globals.sample_rate, globals.codec_ms) * 2;
 
 	if (!globals.ring_interval) {
 		globals.ring_interval = 5;

@@ -69,15 +69,20 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v22bis.h"
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
-#include "v22bis_rx_1200_floating_rrc.h"
-#include "v22bis_rx_2400_floating_rrc.h"
+#if defined(SPANDSP_USE_FIXED_POINT)
+#include "v22bis_rx_1200_fixed_rrc.h"
+#include "v22bis_rx_2400_fixed_rrc.h"
 #else
 #include "v22bis_rx_1200_floating_rrc.h"
 #include "v22bis_rx_2400_floating_rrc.h"
 #endif
 
 #define ms_to_symbols(t)        (((t)*600)/1000)
+
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define FP_FACTOR                       4096
+#define FP_SHIFT_FACTOR                 12
+#endif
 
 /*! The adaption rate coefficient for the equalizer */
 #define EQUALIZER_DELTA         0.25f
@@ -167,24 +172,28 @@ void v22bis_report_status_change(v22bis_state_t *s, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexi16_t **coeffs)
+#else
 SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexf_t **coeffs)
+#endif
 {
     *coeffs = s->rx.eq_coeff;
-    return 2*V22BIS_EQUALIZER_LEN + 1;
+    return V22BIS_EQUALIZER_LEN;
 }
 /*- End of function --------------------------------------------------------*/
 
 void v22bis_equalizer_coefficient_reset(v22bis_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
-#if defined(SPANDSP_USE_FIXED_POINTx)
-    cvec_zeroi16(s->rx.eq_coeff, 2*V22BIS_EQUALIZER_LEN + 1);
-    s->rx.eq_coeff[V22BIS_EQUALIZER_LEN] = complex_seti16(3*FP_FACTOR, 0*FP_FACTOR);
-    s->rx.eq_delta = 32768.0f*EQUALIZER_DELTA/(2*V22BIS_EQUALIZER_LEN + 1);
+#if defined(SPANDSP_USE_FIXED_POINT)
+    cvec_zeroi16(s->rx.eq_coeff, V22BIS_EQUALIZER_LEN);
+    s->rx.eq_coeff[V22BIS_EQUALIZER_PRE_LEN] = complex_seti16(FP_Q_4_12(3.0), FP_Q_4_12(0.0));
+    s->rx.eq_delta = 32768.0f*EQUALIZER_DELTA/V22BIS_EQUALIZER_LEN;
 #else
-    cvec_zerof(s->rx.eq_coeff, 2*V22BIS_EQUALIZER_LEN + 1);
-    s->rx.eq_coeff[V22BIS_EQUALIZER_LEN] = complex_setf(3.0f, 0.0f);
-    s->rx.eq_delta = EQUALIZER_DELTA/(2*V22BIS_EQUALIZER_LEN + 1);
+    cvec_zerof(s->rx.eq_coeff, V22BIS_EQUALIZER_LEN);
+    s->rx.eq_coeff[V22BIS_EQUALIZER_PRE_LEN] = complex_setf(3.0f, 0.0f);
+    s->rx.eq_delta = EQUALIZER_DELTA/V22BIS_EQUALIZER_LEN;
 #endif
 }
 /*- End of function --------------------------------------------------------*/
@@ -192,63 +201,68 @@ void v22bis_equalizer_coefficient_reset(v22bis_state_t *s)
 static void equalizer_reset(v22bis_state_t *s)
 {
     v22bis_equalizer_coefficient_reset(s);
-#if defined(SPANDSP_USE_FIXED_POINTx)
-    cvec_zeroi16(s->rx.eq_buf, V22BIS_EQUALIZER_MASK + 1);
+#if defined(SPANDSP_USE_FIXED_POINT)
+    cvec_zeroi16(s->rx.eq_buf, V22BIS_EQUALIZER_LEN);
 #else
-    cvec_zerof(s->rx.eq_buf, V22BIS_EQUALIZER_MASK + 1);
+    cvec_zerof(s->rx.eq_buf, V22BIS_EQUALIZER_LEN);
 #endif
     s->rx.eq_put_step = 20 - 1;
     s->rx.eq_step = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-static complexf_t equalizer_get(v22bis_state_t *s)
+#if defined(SPANDSP_USE_FIXED_POINT)
+static __inline__ complexi16_t equalizer_get(v22bis_state_t *s)
 {
-    int i;
-    int p;
-    complexf_t z;
-    complexf_t z1;
+    complexi32_t zz;
+    complexi16_t z;
 
     /* Get the next equalized value. */
-    z = complex_setf(0.0f, 0.0f);
-    p = s->rx.eq_step - 1;
-    for (i = 0;  i < 2*V22BIS_EQUALIZER_LEN + 1;  i++)
-    {
-        p = (p - 1) & V22BIS_EQUALIZER_MASK;
-        z1 = complex_mulf(&s->rx.eq_coeff[i], &s->rx.eq_buf[p]);
-        z = complex_addf(&z, &z1);
-    }
+    zz = cvec_circular_dot_prodi16(s->rx.eq_buf, s->rx.eq_coeff, V22BIS_EQUALIZER_LEN, s->rx.eq_step);
+    z.re = zz.re >> FP_SHIFT_FACTOR;
+    z.im = zz.im >> FP_SHIFT_FACTOR;
     return z;
 }
+#else
+static __inline__ complexf_t equalizer_get(v22bis_state_t *s)
+{
+    /* Get the next equalized value. */
+    return cvec_circular_dot_prodf(s->rx.eq_buf, s->rx.eq_coeff, V22BIS_EQUALIZER_LEN, s->rx.eq_step);
+}
+#endif
 /*- End of function --------------------------------------------------------*/
 
-static void tune_equalizer(v22bis_state_t *s, const complexf_t *z, const complexf_t *target)
+#if defined(SPANDSP_USE_FIXED_POINT)
+static void tune_equalizer(v22bis_state_t *s, const complexi16_t *z, const complexi16_t *target)
 {
-    int i;
-    int p;
-    complexf_t ez;
-    complexf_t z1;
+    complexi16_t err;
 
     /* Find the x and y mismatch from the exact constellation position. */
-    ez = complex_subf(target, z);
-    ez.re *= s->rx.eq_delta;
-    ez.im *= s->rx.eq_delta;
-
-    p = s->rx.eq_step - 1;
-    for (i = 0;  i < 2*V22BIS_EQUALIZER_LEN + 1;  i++)
-    {
-        p = (p - 1) & V22BIS_EQUALIZER_MASK;
-        z1 = complex_conjf(&s->rx.eq_buf[p]);
-        z1 = complex_mulf(&ez, &z1);
-        s->rx.eq_coeff[i] = complex_addf(&s->rx.eq_coeff[i], &z1);
-        /* If we don't leak a little bit we seem to get some wandering adaption */
-        s->rx.eq_coeff[i].re *= 0.9999f;
-        s->rx.eq_coeff[i].im *= 0.9999f;
-    }
+    err.re = target->re*FP_FACTOR - z->re;
+    err.im = target->im*FP_FACTOR - z->im;
+    err.re = ((int32_t) err.re*s->rx.eq_delta) >> 15;
+    err.im = ((int32_t) err.im*s->rx.eq_delta) >> 15;
+    cvec_circular_lmsi16(s->rx.eq_buf, s->rx.eq_coeff, V22BIS_EQUALIZER_LEN, s->rx.eq_step, &err);
 }
+#else
+static void tune_equalizer(v22bis_state_t *s, const complexf_t *z, const complexf_t *target)
+{
+    complexf_t err;
+
+    /* Find the x and y mismatch from the exact constellation position. */
+    err = complex_subf(target, z);
+    err.re *= s->rx.eq_delta;
+    err.im *= s->rx.eq_delta;
+    cvec_circular_lmsf(s->rx.eq_buf, s->rx.eq_coeff, V22BIS_EQUALIZER_LEN, s->rx.eq_step, &err);
+}
+#endif
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+static __inline__ void track_carrier(v22bis_state_t *s, const complexi16_t *z, const complexi16_t *target)
+#else
 static __inline__ void track_carrier(v22bis_state_t *s, const complexf_t *z, const complexf_t *target)
+#endif
 {
     float error;
 
@@ -336,40 +350,69 @@ static int decode_baudx(v22bis_state_t *s, int nearest)
 
 static __inline__ void symbol_sync(v22bis_state_t *s)
 {
+#if defined(SPANDSP_USE_FIXED_POINT)
+    int32_t p;
+    int32_t q;
+    complexi16_t zz;
+    complexi16_t a;
+    complexi16_t b;
+    complexi16_t c;
+#else
     float p;
     float q;
     complexf_t zz;
     complexf_t a;
     complexf_t b;
     complexf_t c;
+#endif
+    int aa[3];
+    int i;
+    int j;
 
     /* This routine adapts the position of the half baud samples entering the equalizer. */
 
     /* Perform a Gardner test for baud alignment on the three most recent samples. */
+    for (i = 0, j = s->rx.eq_step;  i < 3;  i++)
+    {
+        if (--j < 0)
+            j = V22BIS_EQUALIZER_LEN - 1;
+        aa[i] = j;
+    }
     if (s->rx.sixteen_way_decisions)
     {
-        p = s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK].re
-          - s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK].re;
-        p *= s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK].re;
+        p = s->rx.eq_buf[aa[2]].re - s->rx.eq_buf[aa[0]].re;
+        p *= s->rx.eq_buf[aa[1]].re;
 
-        q = s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK].im
-        - s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK].im;
-        q *= s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK].im;
+        q = s->rx.eq_buf[aa[2]].im - s->rx.eq_buf[aa[0]].im;
+        q *= s->rx.eq_buf[aa[1]].im;
     }
     else
     {
         /* Rotate the points to the 45 degree positions, to maximise the effectiveness of
            the Gardner algorithm. This is particularly significant at the start of operation
            to pull things in quickly. */
-        zz = complex_setf(0.894427, 0.44721f);
-        a = complex_mulf(&s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK], &zz);
-        b = complex_mulf(&s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK], &zz);
-        c = complex_mulf(&s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK], &zz);
+#if defined(SPANDSP_USE_FIXED_POINT)
+        zz = complex_seti16(FP_Q_6_10(0.894427), FP_Q_6_10(0.44721f));
+        a = complex_muli16(&s->rx.eq_buf[aa[2]], &zz);
+        b = complex_muli16(&s->rx.eq_buf[aa[1]], &zz);
+        c = complex_muli16(&s->rx.eq_buf[aa[0]], &zz);
         p = (a.re - c.re)*b.re;
         q = (a.im - c.im)*b.im;
+#else
+        zz = complex_setf(0.894427, 0.44721f);
+        a = complex_mulf(&s->rx.eq_buf[aa[2]], &zz);
+        b = complex_mulf(&s->rx.eq_buf[aa[1]], &zz);
+        c = complex_mulf(&s->rx.eq_buf[aa[0]], &zz);
+        p = (a.re - c.re)*b.re;
+        q = (a.im - c.im)*b.im;
+#endif
     }
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+    s->rx.gardner_integrate += (p + q > 0)  ?  s->rx.gardner_step  :  -s->rx.gardner_step;
+#else
     s->rx.gardner_integrate += (p + q > 0.0f)  ?  s->rx.gardner_step  :  -s->rx.gardner_step;
+#endif
 
     if (abs(s->rx.gardner_integrate) >= 16)
     {
@@ -386,11 +429,21 @@ static __inline__ void symbol_sync(v22bis_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+static void process_half_baud(v22bis_state_t *s, const complexi16_t *sample)
+#else
 static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
+#endif
 {
+#if defined(SPANDSP_USE_FIXED_POINT)
+    complexi16_t z;
+    complexi16_t zz;
+    const complexi16_t *target;
+#else
     complexf_t z;
     complexf_t zz;
     const complexf_t *target;
+#endif
     int re;
     int im;
     int nearest;
@@ -403,7 +456,8 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
     /* Add a sample to the equalizer's circular buffer, but don't calculate anything
        at this time. */
     s->rx.eq_buf[s->rx.eq_step] = z;
-    s->rx.eq_step = (s->rx.eq_step + 1) & V22BIS_EQUALIZER_MASK;
+    if (++s->rx.eq_step >= V22BIS_EQUALIZER_LEN)
+        s->rx.eq_step = 0;
 
     /* On alternate insertions we have a whole baud and must process it. */
     if ((s->rx.baud_phase ^= 1))
@@ -416,6 +470,18 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
     /* Find the constellation point */
     if (s->rx.sixteen_way_decisions)
     {
+#if defined(SPANDSP_USE_FIXED_POINT)
+        re = (int) (z.re + FP_Q_6_10(3.0f));
+        if (re > 5)
+            re = 5;
+        else if (re < 0)
+            re = 0;
+        im = (int) (z.im + FP_Q_6_10(3.0f));
+        if (im > 5)
+            im = 5;
+        else if (im < 0)
+            im = 0;
+#else
         re = (int) (z.re + 3.0f);
         if (re > 5)
             re = 5;
@@ -426,13 +492,19 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
             im = 5;
         else if (im < 0)
             im = 0;
+#endif
         nearest = space_map_v22bis[re][im];
     }
     else
     {
         /* Rotate to 45 degrees, to make the slicing trivial */
+#if defined(SPANDSP_USE_FIXED_POINT)
+        zz = complex_seti16(FP_Q_4_12(0.894427), FP_Q_4_12(0.44721f));
+        zz = complex_muli16(&z, &zz);
+#else
         zz = complex_setf(0.894427, 0.44721f);
         zz = complex_mulf(&z, &zz);
+#endif
         nearest = 0x01;
         if (zz.re < 0.0f)
             nearest |= 0x04;
@@ -490,10 +562,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
                error could be higher. */
             s->rx.gardner_step = 4;
             s->rx.pattern_repeats = 0;
-            if (s->calling_party)
-                s->rx.training = V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES;
-            else
-                s->rx.training = V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200;
+            s->rx.training = (s->calling_party)  ?  V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES  :  V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200;
             /* Be pessimistic and see what the handshake brings */
             s->negotiated_bit_rate = 1200;
             break;
@@ -527,14 +596,14 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
                 /* It looks like the answering machine is sending us a clean unscrambled 11 or 00 */
                 if (s->bit_rate == 2400)
                 {
-                    /* Try to establish at 2400bps */
+                    /* Try to establish at 2400bps. */
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting U0011 (S1) (Caller)\n");
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_U0011;
                     s->tx.training_count = 0;
                 }
                 else
                 {
-                    /* Only try to establish at 1200bps */
+                    /* Only try to establish at 1200bps. */
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting S11 (1200) (Caller)\n");
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_S11;
                     s->tx.training_count = 0;
@@ -547,14 +616,14 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
         break;
     case V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES_SUSTAINING:
         /* Calling modem only */
-        /* Wait for the end of the unscrambled ones at 1200bps */
+        /* Wait for the end of the unscrambled ones at 1200bps. */
         target = &v22bis_constellation[nearest];
         track_carrier(s, &z, target);
         raw_bits = phase_steps[((nearest >> 2) - (s->rx.constellation_state >> 2)) & 3];
         s->rx.constellation_state = nearest;
         if (raw_bits != s->rx.last_raw_bits)
         {
-            /* This looks like the end of the sustained initial unscrambled 11 or 00 */
+            /* This looks like the end of the sustained initial unscrambled 11 or 00. */
             s->tx.training_count = 0;
             s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
             s->rx.training_count = 0;
@@ -600,11 +669,11 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
             }
             if (s->rx.training_count >= ms_to_symbols(270))
             {
-                /* If we haven't seen the S1 signal by now, we are committed to be in 1200bps mode */
+                /* If we haven't seen the S1 signal by now, we are committed to be in 1200bps mode. */
                 if (s->calling_party)
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ Rx normal operation (1200)\n");
-                    /* The transmit side needs to sustain the scrambled ones for a timed period */
+                    /* The transmit side needs to sustain the scrambled ones for a timed period. */
                     s->tx.training_count = 0;
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
                     /* Normal reception starts immediately */
@@ -614,7 +683,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
                 else
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting S11 (1200) (Answerer)\n");
-                    /* The transmit side needs to sustain the scrambled ones for a timed period */
+                    /* The transmit side needs to sustain the scrambled ones for a timed period. */
                     s->tx.training_count = 0;
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
                     /* The receive side needs to wait a timed period, receiving scrambled ones,
@@ -695,12 +764,21 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
 {
     int i;
     int step;
+#if defined(SPANDSP_USE_FIXED_POINT)
+    complexi16_t z;
+    complexi16_t zz;
+    complexi16_t sample;
+    int32_t ii;
+    int32_t qq;
+    float vv;
+#else
     complexf_t z;
     complexf_t zz;
-    int32_t power;
     complexf_t sample;
     float ii;
     float qq;
+#endif
+    int32_t power;
 
     for (i = 0;  i < len;  i++)
     {
@@ -717,7 +795,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
         if (s->calling_party)
         {
 #if defined(SPANDSP_USE_FIXED_POINT)
-            ii = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_2400_re[6], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
+            ii = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_2400_re[6], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step) >> 15;
 #else
             ii = vec_circular_dot_prodf(s->rx.rrc_filter, rx_pulseshaper_2400_re[6], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
 #endif
@@ -725,7 +803,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
         else
         {
 #if defined(SPANDSP_USE_FIXED_POINT)
-            ii = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_1200_re[6], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
+            ii = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_1200_re[6], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step) >> 15;
 #else
             ii = vec_circular_dot_prodf(s->rx.rrc_filter, rx_pulseshaper_1200_re[6], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
 #endif
@@ -753,11 +831,25 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
         {
             /* Only spend effort processing this data if the modem is not
                parked, after a training failure. */
+#if defined(SPANDSP_USE_FIXED_POINT)
+            z = dds_complexi16(&s->rx.carrier_phase, s->rx.carrier_phase_rate);
+#else
             z = dds_complexf(&s->rx.carrier_phase, s->rx.carrier_phase_rate);
+#endif
             if (s->rx.training == V22BIS_RX_TRAINING_STAGE_SYMBOL_ACQUISITION)
             {
                 /* Only AGC during the initial symbol acquisition, and then lock the gain. */
+#if defined(SPANDSP_USE_FIXED_POINT)
+                vv = 0.18f*3.60f/sqrtf(power);
+                if (vv > 32767.0f)
+                    s->rx.agc_scaling = 32767;
+                else if (vv > -32768.0f)
+                    s->rx.agc_scaling = -32768;
+                else
+                    s->rx.agc_scaling = vv;
+#else
                 s->rx.agc_scaling = 0.18f*3.60f/sqrtf(power);
+#endif
             }
             /* Put things into the equalization buffer at T/2 rate. The Gardner algorithm
                will fiddle the step to align this with the symbols. */
@@ -774,8 +866,8 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
                 if (s->calling_party)
                 {
 #if defined(SPANDSP_USE_FIXED_POINT)
-                    ii = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_2400_re[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
-                    qq = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_2400_im[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
+                    ii = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_2400_re[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step) >> 15;
+                    qq = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_2400_im[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step) >> 15;
 #else
                     ii = vec_circular_dot_prodf(s->rx.rrc_filter, rx_pulseshaper_2400_re[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
                     qq = vec_circular_dot_prodf(s->rx.rrc_filter, rx_pulseshaper_2400_im[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
@@ -784,15 +876,20 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
                 else
                 {
 #if defined(SPANDSP_USE_FIXED_POINT)
-                    ii = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_1200_re[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
-                    qq = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_1200_im[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
+                    ii = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_1200_re[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step) >> 15;
+                    qq = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_1200_im[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step) >> 15;
 #else
                     ii = vec_circular_dot_prodf(s->rx.rrc_filter, rx_pulseshaper_1200_re[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
                     qq = vec_circular_dot_prodf(s->rx.rrc_filter, rx_pulseshaper_1200_im[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step);
 #endif
                 }
+#if defined(SPANDSP_USE_FIXED_POINT)
+                sample.re = ((int32_t) ii*s->rx.agc_scaling) >> 10;
+                sample.im = ((int32_t) qq*s->rx.agc_scaling) >> 10;
+#else
                 sample.re = ii*s->rx.agc_scaling;
                 sample.im = qq*s->rx.agc_scaling;
+#endif
                 /* Shift to baseband - since this is done in a full complex form, the
                    result is clean, and requires no further filtering apart from the
                    equalizer. */
@@ -817,7 +914,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx_fillin(v22bis_state_t *s, int len)
         return 0;
     for (i = 0;  i < len;  i++)
     {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
         dds_advance(&s->rx.carrier_phase, s->rx.carrier_phase_rate);
 #else
         dds_advancef(&s->rx.carrier_phase, s->rx.carrier_phase_rate);
@@ -830,7 +927,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx_fillin(v22bis_state_t *s, int len)
 
 int v22bis_rx_restart(v22bis_state_t *s)
 {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     vec_zeroi16(s->rx.rrc_filter, sizeof(s->rx.rrc_filter)/sizeof(s->rx.rrc_filter[0]));
 #else
     vec_zerof(s->rx.rrc_filter, sizeof(s->rx.rrc_filter)/sizeof(s->rx.rrc_filter[0]));
@@ -861,8 +958,13 @@ int v22bis_rx_restart(v22bis_state_t *s)
     s->rx.training_error = 0.0f;
     s->rx.total_baud_timing_correction = 0;
     /* We want the carrier to pull in faster on the answerer side, as it has very little time to adapt. */
+#if defined(SPANDSP_USE_FIXED_POINT)
+    s->rx.carrier_track_i = (s->calling_party)  ?  8000  :  40000;
+    s->rx.carrier_track_p = 8000000;
+#else
     s->rx.carrier_track_i = (s->calling_party)  ?  8000.0f  :  40000.0f;
     s->rx.carrier_track_p = 8000000.0f;
+#endif
 
     s->negotiated_bit_rate = 1200;
 

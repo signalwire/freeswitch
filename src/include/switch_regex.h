@@ -74,6 +74,7 @@ SWITCH_DECLARE(void) switch_capture_regex(switch_regex_t *re, int match_count, c
 										  int *ovector, const char *var, switch_cap_callback_t callback, void *user_data);
 
 SWITCH_DECLARE_NONSTD(void) switch_regex_set_var_callback(const char *var, const char *val, void *user_data);
+SWITCH_DECLARE_NONSTD(void) switch_regex_set_event_header_callback(const char *var, const char *val, void *user_data);
 
 #define switch_regex_safe_free(re)	if (re) {\
 				switch_regex_free(re);\

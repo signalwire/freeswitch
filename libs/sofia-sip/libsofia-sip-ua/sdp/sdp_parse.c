@@ -1389,6 +1389,10 @@ void sdp_media_transport(sdp_media_t *m, char const *s)
   else if (su_casematch(s, "udptl"))
     /* Lower case - be compatible with people living by T.38 examples */
     m->m_proto = sdp_proto_udptl, m->m_proto_name = "udptl";
+  else if (su_casematch(s, "TCP/MSRP"))
+    m->m_proto = sdp_proto_msrp, m->m_proto_name = "TCP/MSRP";
+  else if (su_casematch(s, "TCP/TLS/MSRP"))
+    m->m_proto = sdp_proto_msrps, m->m_proto_name = "TCP/TLS/MSRP";
   else if (su_casematch(s, "UDP"))
     m->m_proto = sdp_proto_udp, m->m_proto_name = "UDP";
   else if (su_casematch(s, "TCP"))

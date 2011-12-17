@@ -40,10 +40,10 @@ AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modulesdir}",[where to install the module
 
 if test "$localstatedir" = "\${prefix}/var" ; then
     rundir="$prefix/run"
-    logfiledir="${prefix}/log"
+    logdir="${prefix}/log"
 else
     rundir="$localstatedir/run/freeswitch"
-    logfiledir="$localstatedir/log/freeswitch"
+    logdir="$localstatedir/log/freeswitch"
 fi
 # Where to put pidfile
 AC_ARG_WITH([rundir],
@@ -51,30 +51,38 @@ AC_ARG_WITH([rundir],
 AC_SUBST(runtimedir)
 AC_DEFINE_UNQUOTED([SWITCH_RUN_DIR],"${runtimedir}",[where to put pidfile to])
 
+AC_ARG_WITH([logfiledir],
+	[AS_HELP_STRING([--with-logfiledir=DIR], [Put logfiles into this location (default: $localstatedir/log)])], [logfiledir="$withval"], [logfiledir="$logdir"])
 AC_SUBST(logfiledir)
 AC_DEFINE_UNQUOTED([SWITCH_LOG_DIR],"${logfiledir}",[where to put log files])
 
-dbdir="${prefix}/db"
+AC_ARG_WITH([dbdir],
+	[AS_HELP_STRING([--with-dbdir=DIR], [Put database files into this location (default: $prefix/db)])], [dbdir="$withval"], [dbdir="$prefix/db"])
 AC_SUBST(dbdir)
 AC_DEFINE_UNQUOTED([SWITCH_DB_DIR],"${dbdir}",[where to put db files])
 
-htdocsdir="${prefix}/htdocs"
+AC_ARG_WITH([htdocsdir],
+	[AS_HELP_STRING([--with-htdocsdir=DIR], [Put html files into this location (default: $prefix/htdocs)])], [htdocsdir="$withval"], [htdocsdir="$prefix/htdocs"])
 AC_SUBST(htdocsdir)
 AC_DEFINE_UNQUOTED([SWITCH_HTDOCS_DIR],"${htdocsdir}",[where to put htdocs files])
 
-soundsdir="${prefix}/sounds"
+AC_ARG_WITH([soundsdir],
+	[AS_HELP_STRING([--with-soundsdir=DIR], [Put sound files into this location (default: $prefix/sounds)])], [soundsdir="$withval"], [soundsdir="$prefix/sounds"])
 AC_SUBST(soundsdir)
 AC_DEFINE_UNQUOTED([SWITCH_SOUNDS_DIR],"${soundsdir}",[where to put sounds files])
 
-grammardir="${prefix}/grammar"
+AC_ARG_WITH([grammardir],
+	[AS_HELP_STRING([--with-grammardir=DIR], [Put grammar files into this location (default: $prefix/grammar)])], [grammardir="$withval"], [grammardir="$prefix/grammar"])
 AC_SUBST(grammardir)
 AC_DEFINE_UNQUOTED([SWITCH_GRAMMAR_DIR],"${grammardir}",[where to put grammar files])
 
-scriptdir="${prefix}/scripts"
+AC_ARG_WITH([scriptdir],
+	[AS_HELP_STRING([--with-scriptdir=DIR], [Put script files into this location (default: $prefix/scripts)])], [scriptdir="$withval"], [scriptdir="$prefix/scripts"])
 AC_SUBST(scriptdir)
 AC_DEFINE_UNQUOTED([SWITCH_SCRIPT_DIR],"${scriptdir}",[where to put script files])
 
-recordingsdir="${prefix}/recordings"
+AC_ARG_WITH([recordingsdir],
+	[AS_HELP_STRING([--with-recordingsdir=DIR], [Put recordings files into this location (default: $prefix/recordings)])], [recordingsdir="$withval"], [recordingsdir="$prefix/recordings"])
 AC_SUBST(recordingsdir)
 AC_DEFINE_UNQUOTED([SWITCH_RECORDINGS_DIR],"${recordingsdir}",[where to put recording files])
 
@@ -407,7 +415,8 @@ APR_ADDTO(SWITCH_AM_LDFLAGS, -lresolv)
 fi
 
 ESL_LDFLAGS=
-PLATFORM_CORE_DEPLIBS=
+PLATFORM_CORE_LDFLAGS=
+PLATFORM_CORE_LIBS=
 # tweak platform specific flags
 case "$host" in
     *darwin10.*)
@@ -417,23 +426,30 @@ case "$host" in
         APR_ADDTO(CXXFLAGS, -pipe)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
 	if test "x$enable_core_odbc_support" != "xno"; then
-	        APR_ADDTO(PLATFORM_CORE_DEPLIBS, --framework CoreFoundation)
+	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
     ;;
     *darwin*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
 	if test "x$enable_core_odbc_support" != "xno"; then
-	        APR_ADDTO(PLATFORM_CORE_DEPLIBS, --framework CoreFoundation)
+	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
     ;;
     *-solaris2*)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048 -D__EXTENSIONS__)
         APR_ADDTO(SWITCH_AM_LDFLAGS, -lsendfile -lresolv -lsocket -lnsl -luuid)
         APR_ADDTO(ESL_LDFLAGS, -lnsl -lsocket)
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt -lsendfile -lresolv -lsocket -lnsl -luuid])
     ;;
     *bsd*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-lcrypt -lrt])
+    ;;
+    *linux*)
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
     ;;
 esac
 
@@ -444,7 +460,8 @@ AC_SUBST(SWITCH_ANSI_CFLAGS)
 AC_SUBST(SWITCH_AM_CXXFLAGS)
 AC_SUBST(SWITCH_AM_LDFLAGS)
 AC_SUBST(ESL_LDFLAGS)
-AC_SUBST(PLATFORM_CORE_DEPLIBS)
+AC_SUBST(PLATFORM_CORE_LDFLAGS)
+AC_SUBST(PLATFORM_CORE_LIBS)
 AC_SUBST(SOLINK)
 AC_SUBST(DYNAMIC_LIB_EXTEN)
 AC_SUBST(LIBTOOL_LIB_EXTEN)
@@ -474,7 +491,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs timerfd_create])
+AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs timerfd_create getdtablesize posix_openpt])
 AC_CHECK_FUNCS([sched_setscheduler setpriority setrlimit setgroups initgroups])
 AC_CHECK_FUNCS([wcsncmp setgroups asprintf setenv pselect gettimeofday localtime_r gmtime_r strcasecmp stricmp _stricmp])
 
@@ -484,6 +501,9 @@ AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you
 AC_CHECK_LIB(rt, clock_getres, [AC_DEFINE(HAVE_CLOCK_GETRES, 1, [Define if you have clock_getres()])])
 AC_CHECK_LIB(rt, clock_nanosleep, [AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1, [Define if you have clock_nanosleep()])])
 AC_CHECK_FUNC(socket, , AC_CHECK_LIB(socket, socket))
+
+AC_CHECK_FILE(/dev/ptmx, [AC_DEFINE(HAVE_DEV_PTMX, 1, [Define if you have /dev/ptmx])])
+AC_CHECK_LIB(util, openpty, [AC_DEFINE(HAVE_OPENPTY, 1, [Define if you have openpty()])])
 
 AC_CHECK_MEMBERS([struct tm.tm_gmtoff],,,[
 #include <sys/types.h>
@@ -764,6 +784,8 @@ case $host in
        ;;
 esac
 
+AC_PATH_PROGS(BZIP, bzip2)
+AC_PATH_PROGS(XZ, xz)
 AC_PATH_PROGS(TAR, gtar tar)
 AC_PATH_PROGS(WGET, wget)
 AC_PATH_PROGS(CURL, curl)
@@ -792,11 +814,28 @@ if test "$_libcurl_with" = "yes" ; then
   ac_cv_use_system_curl=yes;
 fi
 
+if test "$ac_cv_use_system_curl" = "yes" ; then
+AC_CACHE_CHECK([whether to use system libcurl library], [ac_cv_curl_usable], [
+  AC_CHECK_LIB(curl, Curl_setopt, [ac_cv_curl_usable="yes"], [ac_cv_curl_usable="no"])
+])
+fi
+
+if test "$ac_cv_curl_usable" != "yes" ; then
+  ac_cv_use_system_curl=no;
+fi
+
 if test "$ac_cv_use_system_curl" != "yes" ; then
  LIBCURL_DEPS='${switch_builddir}/libs/curl/lib/libcurl.la'
  LIBCURL='${switch_builddir}/libs/curl/lib/libcurl.la'
  LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'
+else
+ SWITCH_AM_LDFLAGS="$LIBCURL $SWITCH_AM_LDFLAGS"
 fi
+
+SWITCH_AM_CFLAGS="$LIBCURL_CPPFLAGS $SWITCH_AM_CFLAGS"
+SWITCH_AM_CXXFLAGS="$LIBCURL_CPPFLAGS $SWITCH_AM_CXXFLAGS"
+
+AM_CONDITIONAL([CURL_BUILTIN],[test "${ac_cv_use_system_curl}" != "yes"])
 
 AC_SUBST(LIBCURL_DEPS)
 
@@ -871,7 +910,7 @@ then
 		if test "$python_has_distutils" != "no" ; then
 			AC_MSG_CHECKING([location of site-packages])
 
-			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_python_lib(0);'`"
+			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(0));'`"
 
 			if test -z "$PYTHON_SITE_DIR" ; then
 				AC_MSG_ERROR([Unable to detect python site-packages path])
@@ -884,10 +923,10 @@ then
 			#
 			# python distutils found, get settings from python directly
 			#
-			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print \" \".join(flags);'`"
-			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print \" \".join(libs);'`"
-			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print \"python\" + sysconfig.get_config_var(\"VERSION\");'`"
-			PYTHON_LIBDIR="`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_config_var(\"LIBDIR\");'`"
+			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));'`"
+			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print(\" \".join(libs));'`"
+			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print(\"python\" + sysconfig.get_config_var(\"VERSION\"));'`"
+			PYTHON_LIBDIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
 
 			# handle python being installed into /usr/local
 			AC_MSG_CHECKING([python libdir])
@@ -1031,10 +1070,7 @@ AC_CONFIG_SUBDIRS([libs/pcre])
 AC_CONFIG_SUBDIRS([libs/apr])
 AC_CONFIG_SUBDIRS([libs/apr-util])
 AC_CONFIG_SUBDIRS([libs/ilbc])
-
-if test "$ac_cv_use_system_curl" != "yes" ; then 
-   AC_CONFIG_SUBDIRS([libs/curl])
-fi
+AC_CONFIG_SUBDIRS([libs/curl])
 AC_CONFIG_SUBDIRS([libs/iksemel])
 AC_CONFIG_SUBDIRS([libs/js/nsprpub])
 AC_CONFIG_SUBDIRS([libs/js])

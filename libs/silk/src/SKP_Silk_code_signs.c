@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Encodes signs of excitation */
 void SKP_Silk_encode_signs(
     SKP_Silk_range_coder_state      *sRC,               /* I/O  Range coder state                       */
-    const SKP_int                   q[],                /* I    Pulse signal                            */
+    const SKP_int8                  q[],                /* I    Pulse signal                            */
     const SKP_int                   length,             /* I    Length of input                         */
     const SKP_int                   sigtype,            /* I    Signal type                             */
     const SKP_int                   QuantOffsetType,    /* I    Quantization offset type                */
@@ -45,10 +45,12 @@ void SKP_Silk_encode_signs(
 {
     SKP_int i;
     SKP_int inData;
-    const SKP_uint16 *cdf;
+    SKP_uint16 cdf[ 3 ];
 
     i = SKP_SMULBB( N_RATE_LEVELS - 1, SKP_LSHIFT( sigtype, 1 ) + QuantOffsetType ) + RateLevelIndex;
-    cdf = SKP_Silk_sign_CDF[ i ];
+    cdf[ 0 ] = 0;
+    cdf[ 1 ] = SKP_Silk_sign_CDF[ i ];
+    cdf[ 2 ] = 65535;
     
     for( i = 0; i < length; i++ ) {
         if( q[ i ] != 0 ) {
@@ -70,10 +72,12 @@ void SKP_Silk_decode_signs(
 {
     SKP_int i;
     SKP_int data;
-    const SKP_uint16 *cdf;
+    SKP_uint16 cdf[ 3 ];
 
     i = SKP_SMULBB( N_RATE_LEVELS - 1, SKP_LSHIFT( sigtype, 1 ) + QuantOffsetType ) + RateLevelIndex;
-    cdf = SKP_Silk_sign_CDF[ i ];
+    cdf[ 0 ] = 0;
+    cdf[ 1 ] = SKP_Silk_sign_CDF[ i ];
+    cdf[ 2 ] = 65535;
     
     for( i = 0; i < length; i++ ) {
         if( q[ i ] > 0 ) {

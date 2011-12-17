@@ -25,7 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
- *
+ * Joseph Sullivan <jossulli@amazon.com>
  *
  * switch_core.h -- Core Library
  *
@@ -436,9 +436,6 @@ SWITCH_DECLARE(void) switch_core_session_rwunlock(_In_ switch_core_session_t *se
 */
 SWITCH_DECLARE(int) switch_core_add_state_handler(_In_ const switch_state_handler_table_t *state_handler);
 
-SWITCH_DECLARE(int) switch_core_curl_count(int *val);
-SWITCH_DECLARE(int) switch_core_ssl_count(int *val);
-
 /*!
   \brief Remove a global state handler
   \param state_handler the state handler to remove
@@ -467,6 +464,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(_Out_ switch
 */
 #define switch_core_new_memory_pool(p) switch_core_perform_new_memory_pool(p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+SWITCH_DECLARE(int) switch_core_session_sync_clock(void);
 SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(_Inout_ switch_memory_pool_t **pool,
 																		_In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 /*! 
@@ -687,7 +685,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(_In_ switch_co
 /*! 
   \brief Signal a session's state machine thread that a state change has occured
 */
-SWITCH_DECLARE(void) switch_core_session_wake_session_thread(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_wake_session_thread(_In_ switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(_In_ switch_core_session_t *session);
 
 /*! 
@@ -712,12 +710,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_loglevel(switch_core_ses
   \return the log level
 */
 SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_session_t *session);
-
+								   
 
 SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec);
 SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *session);
-SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine);
-SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target);
+SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_core_session_t *session, switch_digit_action_target_t target);
+SWITCH_DECLARE(switch_digit_action_target_t) switch_ivr_dmachine_get_target(switch_ivr_dmachine_t *dmachine);
+SWITCH_DECLARE(void) switch_ivr_dmachine_set_target(switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target);
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_session_t *session, switch_slin_data_t *data);
 
 /*! 
@@ -1304,11 +1305,11 @@ SWITCH_DECLARE(void *) switch_core_hash_find_rdlock(_In_ switch_hash_t *hash, _I
 
 /*!
  \brief Gets the first element of a hashtable
- \param depricate_me [deprecated] NULL
+ \param deprecate_me [deprecated] NULL
  \param hash the hashtable to use
  \return The element, or NULL if it wasn't found 
 */
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *depricate_me, _In_ switch_hash_t *hash);
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *deprecate_me, _In_ switch_hash_t *hash);
 
 /*!
  \brief Gets the next element of a hashtable
@@ -1955,6 +1956,18 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void);
 
 /*! 
+  \brief Determines if the core is ready to take inbound calls
+  \return SWITCH_TRUE or SWITCH_FALSE
+*/
+SWITCH_DECLARE(switch_bool_t) switch_core_ready_inbound(void);
+
+/*! 
+  \brief Determines if the core is ready to place outbound calls
+  \return SWITCH_TRUE or SWITCH_FALSE
+*/
+SWITCH_DECLARE(switch_bool_t) switch_core_ready_outbound(void);
+
+/*! 
   \brief return core flags
   \return core flags
 */
@@ -1975,8 +1988,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, 
   \brief Set the maximum priority the process can obtain
   \return 0 on success
 */
-SWITCH_DECLARE(int32_t) set_high_priority(void);
+
 SWITCH_DECLARE(int32_t) set_normal_priority(void);
+SWITCH_DECLARE(int32_t) set_auto_priority(void);
+SWITCH_DECLARE(int32_t) set_realtime_priority(void);
+SWITCH_DECLARE(int32_t) set_low_priority(void);
 
 /*! 
   \brief Change user and/or group of the running process
@@ -2101,8 +2117,10 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string);
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 SWITCH_DECLARE(void) switch_cond_yield(switch_interval_time_t t);
 SWITCH_DECLARE(void) switch_cond_next(void);
-SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *name, const char *proto, const char *from, const char *to,
-													  const char *subject, const char *body, const char *type, const char *hint);
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_proto, const char *proto, const char *from, const char *to,
+														   const char *subject, const char *body, const char *type, const char *hint);
+SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *dest_proto, switch_event_t *message_event);
+SWITCH_DECLARE(switch_status_t) switch_core_chat_deliver(const char *dest_proto, switch_event_t **message_event);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_session_t *session, const char *cmds);
 

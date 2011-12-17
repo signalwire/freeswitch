@@ -85,7 +85,10 @@ static switch_status_t rtmp_tcp_read(rtmp_session_t *rsession, unsigned char *bu
 	switch_size_t olen = *len;
 #endif	
 	switch_assert(*len > 0 && *len < 1024000);
-	status = switch_socket_recv(io_pvt->socket, (char*)buf, len);	
+
+	do {
+		status = switch_socket_recv(io_pvt->socket, (char*)buf, len);	
+	} while(status != SWITCH_STATUS_SUCCESS && SWITCH_STATUS_IS_BREAK(status));
 	
 #ifdef RTMP_DEBUG_IO
 	{
@@ -143,7 +146,7 @@ static switch_status_t rtmp_tcp_write(rtmp_session_t *rsession, const unsigned c
 	
 	status = switch_socket_send_nonblock(io_pvt->socket, (char*)buf, len);
 	
-	if (*len < orig_len) {
+	if (*len > 0 && *len < orig_len) {
 		
 		if (rsession->state >= RS_DESTROY) {
 			return SWITCH_STATUS_FALSE;
@@ -197,10 +200,10 @@ void *SWITCH_THREAD_FUNC rtmp_io_tcp_thread(switch_thread_t *thread, void *obj)
 		switch_mutex_unlock(io->mutex);
 		
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_TIMEOUT) {
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "pollset_poll failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "pollset_poll failed\n");
 			continue;
 		} else if (status == SWITCH_STATUS_TIMEOUT) {
-			switch_yield(1);
+			switch_cond_next();
 		}
 		
 		for (i = 0; i < numfds; i++) {
@@ -218,6 +221,10 @@ void *SWITCH_THREAD_FUNC rtmp_io_tcp_thread(switch_thread_t *thread, void *obj)
 					
 					if (switch_socket_opt_set(newsocket, SWITCH_SO_NONBLOCK, TRUE)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't set socket as non-blocking\n");
+					}
+
+					if (switch_socket_opt_set(newsocket, SWITCH_SO_TCP_NODELAY, 1)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't disable Nagle.\n");
 					}
 					
 					if (rtmp_session_request(io->base.profile, &newsession) != SWITCH_STATUS_SUCCESS) {
@@ -312,6 +319,9 @@ switch_status_t rtmp_tcp_init(rtmp_profile_t *profile, const char *bindaddr, rtm
 		goto fail;
 	}
 	if (switch_socket_opt_set(io_tcp->listen_socket, SWITCH_SO_REUSEADDR, 1)) {
+		goto fail;
+	}
+	if (switch_socket_opt_set(io_tcp->listen_socket, SWITCH_SO_TCP_NODELAY, 1)) {
 		goto fail;
 	}
 	if (switch_socket_bind(io_tcp->listen_socket, sa)) {

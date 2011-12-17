@@ -53,10 +53,18 @@
 #ifndef WIN32
 #define closesocket(x) close(x)
 #include <fcntl.h>
+#include <errno.h>
 #else
 #pragma warning (disable:6386)
 /* These warnings need to be ignored warning in sdk header */
 #include <Ws2tcpip.h>
+#include <windows.h>
+#ifndef errno
+#define errno WSAGetLastError()
+#endif
+#ifndef EINTR
+#define EINTR WSAEINTR
+#endif
 #pragma warning (default:6386)
 #endif
 
@@ -534,6 +542,39 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 }
 
 
+ESL_DECLARE(esl_status_t) esl_sendmsg(esl_handle_t *handle, esl_event_t *event, const char *uuid)
+{
+	char cmd_buf[128] = "sendmsg\n";
+	char *txt;
+	
+    if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
+        return ESL_FAIL;
+    }
+
+	if (uuid) {
+		snprintf(cmd_buf, sizeof(cmd_buf), "sendmsg %s\n", uuid);
+	}
+	
+	esl_event_serialize(event, &txt, ESL_FALSE);
+	esl_log(ESL_LOG_DEBUG, "%s%s\n", cmd_buf, txt);
+
+	if (send(handle->sock, cmd_buf, strlen(cmd_buf), 0) <= 0) goto fail;
+	if (send(handle->sock, txt, strlen(txt), 0) <= 0) goto fail;
+	
+	free(txt);
+
+	return esl_recv(handle);
+
+ fail:
+
+	handle->connected = 0;
+
+	free(txt);
+
+	return ESL_FAIL;
+}
+
+
 ESL_DECLARE(esl_status_t) esl_filter(esl_handle_t *handle, const char *header, const char *value)
 {
 	char send_buf[1024] = "";
@@ -579,12 +620,31 @@ static int esl_socket_reuseaddr(esl_socket_t socket)
 #endif
 }
 
-ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback)
+struct thread_handler {
+	esl_listen_callback_t callback;
+	esl_socket_t server_sock;
+	esl_socket_t client_sock;
+	struct sockaddr_in addr;
+};
+
+static void *client_thread(esl_thread_t *me, void *obj)
+{
+	struct thread_handler *handler = (struct thread_handler *) obj;
+
+	handler->callback(handler->server_sock, handler->client_sock, &handler->addr);
+	free(handler);
+
+	return NULL;
+
+}
+
+ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback, int max)
 {
 	esl_socket_t server_sock = ESL_SOCK_INVALID;
 	struct sockaddr_in addr;
 	esl_status_t status = ESL_SUCCESS;
-	
+	struct thread_handler *handler = NULL;
+
 	if ((server_sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 		return ESL_FAIL;
 	}
@@ -601,7 +661,7 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 		goto end;
 	}
 
-    if (listen(server_sock, 10000) < 0) {
+    if (listen(server_sock, max) < 0) {
 		status = ESL_FAIL;
 		goto end;
 	}
@@ -622,7 +682,16 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 			goto end;
 		}
 		
-		callback(server_sock, client_sock, &echoClntAddr);
+		handler = malloc(sizeof(*handler));
+		esl_assert(handler);
+
+		memset(handler, 0, sizeof(*handler));
+		handler->callback = callback;
+		handler->server_sock = server_sock;
+		handler->client_sock = client_sock;
+		handler->addr = echoClntAddr;
+
+		esl_thread_create_detached(client_thread, handler);
 	}
 
  end:
@@ -1022,7 +1091,21 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 
 static esl_ssize_t handle_recv(esl_handle_t *handle, void *data, esl_size_t datalen)
 {
-	return recv(handle->sock, data, datalen, 0);
+	int activity;
+	
+	while (handle->connected) {
+		activity = esl_wait_sock(handle->sock, 1000, ESL_POLL_READ|ESL_POLL_ERROR);
+		
+		if (activity > 0 && (activity & ESL_POLL_READ)) {
+			return recv(handle->sock, data, datalen, 0);
+		}
+
+		if (activity < 0) {
+			return errno == EINTR ? 0 : -1;
+		}
+	}
+
+	return -1;
 }
 
 ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_event_t **save_event)

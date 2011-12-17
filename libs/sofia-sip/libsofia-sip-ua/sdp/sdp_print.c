@@ -591,6 +591,8 @@ static void print_media(sdp_printer_t *p,
     case sdp_proto_rtp:   proto = "RTP/AVP"; break;
     case sdp_proto_srtp:  proto = "RTP/SAVP"; break;
     case sdp_proto_udptl: proto = "udptl"; break;
+    case sdp_proto_msrp:  proto = "TCP/MSRP"; break;
+    case sdp_proto_msrps:  proto = "TCP/TLS/MSRP"; break;
     case sdp_proto_tls:   proto = "tls"; break;
     default:              proto = m->m_proto_name; break;
     }

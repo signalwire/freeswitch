@@ -265,9 +265,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 }
 
 
-static void event_handler(switch_event_t *event)
+static void do_rotate_all()
 {
-	const char *sig = switch_event_get_header(event, "Trapped-Signal");
 	switch_hash_index_t *hi;
 	void *val;
 	cdr_fd_t *fd;
@@ -276,15 +275,35 @@ static void event_handler(switch_event_t *event)
 		return;
 	}
 
-	if (sig && !strcmp(sig, "HUP")) {
-		for (hi = switch_hash_first(NULL, globals.fd_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, NULL, NULL, &val);
-			fd = (cdr_fd_t *) val;
-			switch_mutex_lock(fd->mutex);
-			do_rotate(fd);
-			switch_mutex_unlock(fd->mutex);
-		}
+	for (hi = switch_hash_first(NULL, globals.fd_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		fd = (cdr_fd_t *) val;
+		switch_mutex_lock(fd->mutex);
+		do_rotate(fd);
+		switch_mutex_unlock(fd->mutex);
 	}
+}
+
+
+static void event_handler(switch_event_t *event)
+{
+	const char *sig = switch_event_get_header(event, "Trapped-Signal");
+
+	if (sig && !strcmp(sig, "HUP")) {
+		do_rotate_all();
+	}
+}
+
+
+SWITCH_STANDARD_API(cdr_csv_function)
+{
+	if (!strcmp(cmd, "rotate")) {
+		do_rotate_all();
+		stream->write_function(stream, "+OK");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
 }
 
 
@@ -387,6 +406,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_api_interface_t *api_interface;
 
 	load_config(pool);
 
@@ -403,6 +423,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 	switch_core_add_state_handler(&state_handlers);
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+	SWITCH_ADD_API(api_interface, "cdr_csv", "cdr_csv controls", cdr_csv_function, "parameters");
+	switch_console_set_complete("add cdr_csv rotate");
 
 	return status;
 }
@@ -410,6 +432,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_csv_shutdown)
 {
+	switch_console_set_complete("del cdr_csv");
 
 	globals.shutdown = 1;
 	switch_event_unbind_callback(event_handler);

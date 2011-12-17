@@ -155,12 +155,12 @@ for (;;)
   if (top <= bot) return -1;
   mid = (bot + top) >> 1;
   if (c == (ucp_table[mid].f0 & f0_charmask)) break;
-  if (c < (ucp_table[mid].f0 & f0_charmask)) top = mid;
+  if (c < (int)(ucp_table[mid].f0 & f0_charmask)) top = mid;
   else
     {
     if ((ucp_table[mid].f0 & f0_rangeflag) != 0 &&
-        c <= (ucp_table[mid].f0 & f0_charmask) +
-             (ucp_table[mid].f1 & f1_rangemask)) break;
+        c <= (int)((ucp_table[mid].f0 & f0_charmask) +
+             (ucp_table[mid].f1 & f1_rangemask))) break;
     bot = mid + 1;
     }
   }

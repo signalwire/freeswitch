@@ -151,14 +151,14 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
 #if defined(SPANDSP_USE_FIXED_POINT)
     static const complexi16_t constellation[8] =
     {
-        { 1414,    0000},       /*   0deg */
-        { 1000,    1000},       /*  45deg */
-        { 0000,    1414},       /*  90deg */
-        {-1000,    1000},       /* 135deg */
-        {-1414,    0000},       /* 180deg */
-        {-1000,   -1000},       /* 225deg */
-        { 0000,   -1414},       /* 270deg */
-        { 1000,   -1000}        /* 315deg */
+        {FP_Q_6_10( 1.414f), FP_Q_6_10( 0.0f)},     /*   0deg */
+        {FP_Q_6_10( 1.0f),   FP_Q_6_10( 1.0f)},     /*  45deg */
+        {FP_Q_6_10( 0.0f),   FP_Q_6_10( 1.414f)},   /*  90deg */
+        {FP_Q_6_10(-1.0f),   FP_Q_6_10( 1.0f)},     /* 135deg */
+        {FP_Q_6_10(-1.414f), FP_Q_6_10( 0.0f)},     /* 180deg */
+        {FP_Q_6_10(-1.0f),   FP_Q_6_10(-1.0f)},     /* 225deg */
+        {FP_Q_6_10( 0.0f),   FP_Q_6_10(-1.414f)},   /* 270deg */
+        {FP_Q_6_10( 1.0f),   FP_Q_6_10(-1.0f)}      /* 315deg */
     };
     static const complexi16_t zero = {0, 0};
 #else

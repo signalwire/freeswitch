@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -26,6 +26,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
 #include "SKP_Silk_main_FIX.h"
+#include "SKP_Silk_tuning_parameters.h"
 
 #if HIGH_PASS_INPUT
 
@@ -57,7 +58,7 @@ void SKP_Silk_HP_variable_cutoff_FIX(
         quality_Q15 = psEncCtrl->input_quality_bands_Q15[ 0 ];
         pitch_freq_log_Q7 = SKP_SUB32( pitch_freq_log_Q7, SKP_SMULWB( SKP_SMULWB( SKP_LSHIFT( quality_Q15, 2 ), quality_Q15 ), 
             pitch_freq_log_Q7 - SKP_LOG2_VARIABLE_HP_MIN_FREQ_Q7 ) );
-        pitch_freq_log_Q7 = SKP_ADD32( pitch_freq_log_Q7, SKP_RSHIFT( 19661 - quality_Q15, 9 ) ); // 19661_Q15 = 0.6_Q0
+        pitch_freq_log_Q7 = SKP_ADD32( pitch_freq_log_Q7, SKP_RSHIFT( SKP_FIX_CONST( 0.6, 15 ) - quality_Q15, 9 ) );
 
         //delta_freq = pitch_freq_log - psEnc->variable_HP_smth1;
         delta_freq_Q7 = pitch_freq_log_Q7 - SKP_RSHIFT( psEnc->variable_HP_smth1_Q15, 8 );
@@ -67,21 +68,22 @@ void SKP_Silk_HP_variable_cutoff_FIX(
         }
 
         /* limit delta, to reduce impact of outliers */
-        delta_freq_Q7 = SKP_LIMIT( delta_freq_Q7, -VARIABLE_HP_MAX_DELTA_FREQ_Q7, VARIABLE_HP_MAX_DELTA_FREQ_Q7 );
+        delta_freq_Q7 = SKP_LIMIT_32( delta_freq_Q7, -SKP_FIX_CONST( VARIABLE_HP_MAX_DELTA_FREQ, 7 ), SKP_FIX_CONST( VARIABLE_HP_MAX_DELTA_FREQ, 7 ) );
 
         /* update smoother */
         psEnc->variable_HP_smth1_Q15 = SKP_SMLAWB( psEnc->variable_HP_smth1_Q15, 
-            SKP_MUL( SKP_LSHIFT( psEnc->speech_activity_Q8, 1 ), delta_freq_Q7 ), VARIABLE_HP_SMTH_COEF1_Q16 );
+            SKP_MUL( SKP_LSHIFT( psEnc->speech_activity_Q8, 1 ), delta_freq_Q7 ), SKP_FIX_CONST( VARIABLE_HP_SMTH_COEF1, 16 ) );
     }
     /* second smoother */
     psEnc->variable_HP_smth2_Q15 = SKP_SMLAWB( psEnc->variable_HP_smth2_Q15, 
-        psEnc->variable_HP_smth1_Q15 - psEnc->variable_HP_smth2_Q15, VARIABLE_HP_SMTH_COEF2_Q16 );
+        psEnc->variable_HP_smth1_Q15 - psEnc->variable_HP_smth2_Q15, SKP_FIX_CONST( VARIABLE_HP_SMTH_COEF2, 16 ) );
 
     /* convert from log scale to Hertz */
-    psEncCtrl->pitch_freq_low_Hz = SKP_Silk_log2lin( SKP_RSHIFT( psEnc->variable_HP_smth2_Q15, 8 ) ); //pow( 2.0, psEnc->variable_HP_smth2 );
+    psEncCtrl->pitch_freq_low_Hz = SKP_Silk_log2lin( SKP_RSHIFT( psEnc->variable_HP_smth2_Q15, 8 ) );
 
     /* limit frequency range */
-    psEncCtrl->pitch_freq_low_Hz = SKP_LIMIT( psEncCtrl->pitch_freq_low_Hz, VARIABLE_HP_MIN_FREQ_Q0, VARIABLE_HP_MAX_FREQ_Q0 );
+    psEncCtrl->pitch_freq_low_Hz = SKP_LIMIT_32( psEncCtrl->pitch_freq_low_Hz, 
+        SKP_FIX_CONST( VARIABLE_HP_MIN_FREQ, 0 ), SKP_FIX_CONST( VARIABLE_HP_MAX_FREQ, 0 ) );
 
     /********************************/
     /* Compute Filter Coefficients  */
@@ -94,7 +96,7 @@ void SKP_Silk_HP_variable_cutoff_FIX(
     SKP_assert( Fc_Q19 >=  3704 );
     SKP_assert( Fc_Q19 <= 27787 );
 
-    r_Q28 = ( 1 << 28 ) - SKP_MUL( 471, Fc_Q19 ); // 471_Q9 = 0.92_Q0, range: 255347779 to 266690872, 27-28 bits
+    r_Q28 = SKP_FIX_CONST( 1.0, 28 ) - SKP_MUL( SKP_FIX_CONST( 0.92, 9 ), Fc_Q19 );
     SKP_assert( r_Q28 >= 255347779 );
     SKP_assert( r_Q28 <= 266690872 );
 
@@ -106,7 +108,7 @@ void SKP_Silk_HP_variable_cutoff_FIX(
     
     // -r * ( 2 - Fc * Fc );
     r_Q22  = SKP_RSHIFT( r_Q28, 6 );
-    A_Q28[ 0 ] = SKP_SMULWW( r_Q22, SKP_SMULWW( Fc_Q19, Fc_Q19 ) - ( 2 << 22 ) );
+    A_Q28[ 0 ] = SKP_SMULWW( r_Q22, SKP_SMULWW( Fc_Q19, Fc_Q19 ) - SKP_FIX_CONST( 2.0,  22 ) );
     A_Q28[ 1 ] = SKP_SMULWW( r_Q22, r_Q22 );
 
     /********************************/

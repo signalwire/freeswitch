@@ -96,7 +96,7 @@ typedef struct
     /*! \brief The value for samples at the next transmission point. */
     int32_t next_tx_samples;
     /*! \brief The current transmit timeout. */
-    //int32_t timeout_tx_samples;
+    int32_t timeout_tx_samples;
     /*! \brief The current receive timeout. */
     int32_t timeout_rx_samples;
 } t38_terminal_front_end_state_t;

@@ -1,4 +1,5 @@
 %module freeswitch
+%include ../../../../swig_common.i
 //%include "cstring.i"
 
 /** 

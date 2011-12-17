@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -28,16 +28,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef SIGPROCFIX_PITCH_EST_DEFINES_H
 #define SIGPROCFIX_PITCH_EST_DEFINES_H
 
-#include "SKP_Silk_SigProc_FIX.h"
-#include "SKP_Silk_common_pitch_est_defines.h"
-
 /************************************************************/
-/* Definitions For Fix pitch estimator						*/
+/* Definitions For Fix pitch estimator                      */
 /************************************************************/
 
-#define PITCH_EST_SHORTLAG_BIAS_Q15			6554	/* 0.2f. for logarithmic weighting	*/
-#define PITCH_EST_PREVLAG_BIAS_Q15			6554	/* Prev lag bias	*/
-#define PITCH_EST_FLATCONTOUR_BIAS_Q20		52429	/* 0.05f */
+#define PITCH_EST_SHORTLAG_BIAS_Q15         6554    /* 0.2f. for logarithmic weighting    */
+#define PITCH_EST_PREVLAG_BIAS_Q15          6554    /* Prev lag bias    */
+#define PITCH_EST_FLATCONTOUR_BIAS_Q20      52429   /* 0.05f */
 
 #endif
 

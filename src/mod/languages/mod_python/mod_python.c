@@ -26,12 +26,14 @@
  * Brian Fertig <brian.fertig@convergencetek.com>
  * Johny Kadarisman <jkr888@gmail.com>
  * Traun Leyden <tleyden@branchcut.com>
+ * Heimo Stieg <heimo.stieg@nextiraone.eu>
  *
  * mod_python.c -- Python Module
  *
  */
 
 #include <Python.h>
+#include <frameobject.h>
 
 #ifndef _REENTRANT
 #define _REENTRANT
@@ -43,6 +45,7 @@
 
 #include <switch.h>
 #include "mod_python_extra.h"
+#include <string.h>
 
 PyThreadState *mainThreadState = NULL;
 
@@ -50,6 +53,7 @@ void init_freeswitch(void);
 int py_thread(const char *text);
 static void set_max_recursion_depth(void);
 static switch_api_interface_t python_run_interface;
+static void print_python_error(const char * script);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_python_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown);
@@ -69,6 +73,100 @@ struct switch_py_thread {
 };
 struct switch_py_thread *thread_pool_head = NULL;
 static switch_mutex_t *THREAD_POOL_LOCK = NULL;
+
+
+
+/**
+* This function is similiar to PyErr_Print. It uses the freeswitch print/log mechanism instead of the python sys.stderr 
+*/
+static void print_python_error(const char * script)
+{
+	PyObject *pyType = NULL, *pyValue = NULL, *pyTraceback = NULL, *pyString = NULL;
+	PyObject *pyModule=NULL, *pyFunction = NULL, *pyResult = NULL;
+	char * buffer = (char*) malloc( 20 * 1024  * sizeof(char));
+	/* Variables for the traceback */
+	PyTracebackObject * pyTB = NULL/*, *pyTB2 = NULL*/;
+	char sTemp[256];
+
+	if (buffer == NULL ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not enough Memory to create the error buffer");
+	}
+   
+	/* just for security that we will always have a string terminater */
+	memset(buffer, 0,  20 * 1024  * sizeof(char) );
+
+	/*Get the errordata*/
+	PyErr_Fetch(&pyType, &pyValue, &pyTraceback);
+	PyErr_NormalizeException(&pyType, &pyValue, &pyTraceback);
+
+
+	/* Printing header*/
+	sprintf(buffer, "Python Error by calling script \"%s\": ", script );
+
+	if (pyType != NULL && (pyString=PyObject_Str(pyType))!=NULL && (PyString_Check(pyString))) {
+		strcat(buffer, PyString_AsString(pyString));
+	} else {
+		strcat(buffer, "<unknown exception type> ");
+	}
+	Py_XDECREF(pyString);
+
+
+	/*Print error message*/
+	if (pyValue != NULL && (pyString=PyObject_Str(pyValue))!=NULL && (PyString_Check(pyString))) {
+		strcat(buffer, "\nMessage: ");	  
+		strcat(buffer, PyString_AsString(pyString));
+	} else {
+		strcat(buffer, "\nMessage: <unknown exception date> ");
+	}
+	Py_XDECREF(pyString);
+
+
+	/* Print the traceback */
+	if (pyTraceback != NULL && PyTraceBack_Check(pyTraceback)) {
+
+		/*loading traceback module to create the exception data*/
+		pyModule = PyImport_ImportModule("traceback");
+		if (pyModule) {
+			strcat(buffer, "\nException: ");
+			pyFunction = PyObject_GetAttrString(pyModule, "format_exc");
+			if (pyFunction) {
+				pyResult = PyObject_CallObject(pyFunction, NULL);
+				if (pyResult && PyString_Check(pyResult)) {
+					strcat(buffer, PyString_AsString(pyResult));
+				} else {
+					strcat(buffer, "<exception not available>");
+				}
+				Py_XDECREF(pyFunction);
+
+			}
+			Py_XDECREF(pyModule);
+
+		}
+
+		/* Print traceback header */
+		strcat(buffer, "\nTraceback (most recent call last)");
+		pyTB = (PyTracebackObject*) pyTraceback;
+
+		/* Traceback */
+		do {
+			sprintf((char*)sTemp, "\n\tFile: \"%s\", line %i, in %s",
+					PyString_AsString(pyTB->tb_frame->f_code->co_filename),
+					pyTB->tb_lineno,
+					PyString_AsString(pyTB->tb_frame->f_code->co_name) );
+			strcat(buffer, (char*)sTemp);
+
+			pyTB=pyTB->tb_next;
+		} while(pyTB != NULL);
+	}
+
+	PyErr_Restore(pyType,pyValue,pyTraceback);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", buffer);
+
+	/* free the resources, we dont need memory leaks here */
+	free(buffer);
+}
+
 
 static void eval_some_python(const char *funcname, char *args, switch_core_session_t *session, switch_stream_handle_t *stream, switch_event_t *params,
 							 char **str, struct switch_py_thread *pt)
@@ -131,7 +229,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	module = PyImport_ImportModule((char *) script);
 	if (!module) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error importing module\n");
-		PyErr_Print();
+		print_python_error(script);
 		PyErr_Clear();
 		goto done_swap_out;
 	}
@@ -139,7 +237,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	module = PyImport_ReloadModule(module);
 	if (!module) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error reloading module\n");
-		PyErr_Print();
+		print_python_error(script);
 		PyErr_Clear();
 		goto done_swap_out;
 	}
@@ -147,7 +245,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	function = PyObject_GetAttrString(module, (char *) funcname);
 	if (!function) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Module does not define %s\n", funcname);
-		PyErr_Print();
+		print_python_error(script);
 		PyErr_Clear();
 		goto done_swap_out;
 	}
@@ -193,7 +291,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	} else if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
 		// Print error, but ignore SystemExit 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error calling python script\n");
-		PyErr_Print();
+		print_python_error(script);
 		PyErr_Clear();
 		PyRun_SimpleString("python_makes_sense");
 		PyGC_Collect();
@@ -310,7 +408,7 @@ static void set_max_recursion_depth(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set python recursion limit to %d\n", newMaxRecursionDepth);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set recursion limit to %d\n", newMaxRecursionDepth);
-		PyErr_Print();
+		print_python_error("_freeswitch");
 		PyErr_Clear();
 		PyRun_SimpleString("python_makes_sense");
 		PyGC_Collect();
@@ -403,10 +501,20 @@ SWITCH_STANDARD_API(launch_python)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_CHAT_APP(python_chat_function)
+{
+	eval_some_python("chat", (char *) data, NULL, NULL, message, NULL, NULL);
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
+	switch_chat_application_interface_t *chat_app_interface;
+
 	char *pp = getenv("PYTHONPATH");
 
 	if (pp) {
@@ -454,6 +562,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 	SWITCH_ADD_API(api_interface, "python", "run a python script", api_python, "python </path/to/script>");
 	SWITCH_ADD_APP(app_interface, "python", "Launch python ivr", "Run a python ivr on a channel", python_function, "<script> [additional_vars [...]]",
 				   SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "python", "execute a python script", "execute a python script", python_chat_function, "<script>", SCAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;

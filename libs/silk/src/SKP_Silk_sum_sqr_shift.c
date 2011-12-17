@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -56,11 +56,12 @@ void SKP_Silk_sum_sqr_shift(
     }
     shft = 0;
     len--;
-    for( ; i < len; i += 2 ) {
+    while( i < len ) {
         /* Load two values at once */
         in32 = *( (SKP_int32 *)&x[ i ] );
         nrg = SKP_SMLABB_ovflw( nrg, in32, in32 );
         nrg = SKP_SMLATT_ovflw( nrg, in32, in32 );
+        i += 2;
         if( nrg < 0 ) {
             /* Scale down */
             nrg = (SKP_int32)SKP_RSHIFT_uint( (SKP_uint32)nrg, 2 );
@@ -96,3 +97,4 @@ void SKP_Silk_sum_sqr_shift(
     *shift  = shft;
     *energy = nrg;
 }
+

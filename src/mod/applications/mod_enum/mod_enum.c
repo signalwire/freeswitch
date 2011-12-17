@@ -356,15 +356,25 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 	if (service && regex && replace) {
 		switch_regex_t *re = NULL, *re2 = NULL;
 		int proceed = 0, ovector[30];
-		char substituted[1024] = "";
-		char rbuf[1024] = "";
+		char *substituted = NULL;
+		char *substituted_2 = NULL;
 		char *uri;
+		char *uri_expanded = NULL;
 		enum_route_t *route;
 		int supported = 0;
+		uint32_t len = 0;
 
 		if ((proceed = switch_regex_perform(number, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 			if (strchr(regex, '(')) {
-				switch_perform_substitution(re, proceed, replace, number, substituted, sizeof(substituted), ovector);
+				len = (uint32_t) (strlen(number) + strlen(replace) + 10) * proceed;
+				if (!(substituted = malloc(len))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+					switch_regex_safe_free(re);
+					goto end;
+				}
+				memset(substituted, 0, len);
+
+				switch_perform_substitution(re, proceed, replace, number, substituted, len, ovector);
 				uri = substituted;
 			} else {
 				uri = replace;
@@ -377,15 +387,41 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 				}
 
 				if ((proceed = switch_regex_perform(uri, route->regex, &re2, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+					switch_event_t *event = NULL;
+
 					if (strchr(route->regex, '(')) {
-						switch_perform_substitution(re2, proceed, route->replace, uri, rbuf, sizeof(rbuf), ovector);
-						uri = rbuf;
+						len = (uint32_t) (strlen(uri) + strlen(route->replace) + 10) * proceed;
+						if (!(substituted_2 = malloc(len))) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+							switch_safe_free(substituted);
+							switch_regex_safe_free(re);
+							switch_regex_safe_free(re2);
+							switch_mutex_unlock(MUTEX);
+							goto end;
+						}
+						memset(substituted_2, 0, len);
+
+						switch_perform_substitution(re2, proceed, route->replace, uri, substituted_2, len, ovector);
+						uri = substituted_2;
 					} else {
 						uri = route->replace;
 					}
+					switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
+					uri_expanded = switch_event_expand_headers(event, uri);
+					switch_event_destroy(&event);
+
+					if (uri_expanded == uri) {
+						uri_expanded = NULL;
+					} else {
+						uri = uri_expanded;
+					}
+
 					supported++;
 					add_result(results, order, preference, service, uri, supported);
+					
 				}
+				switch_safe_free(uri_expanded);
+				switch_safe_free(substituted_2);
 				switch_regex_safe_free(re2);
 			}
 			switch_mutex_unlock(MUTEX);			
@@ -394,6 +430,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 				add_result(results, order, preference, service, uri, 0);
 			}
 
+			switch_safe_free(substituted);
 			switch_regex_safe_free(re);
 		}
 	}

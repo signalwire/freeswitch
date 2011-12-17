@@ -47,13 +47,15 @@ namespace FreeSWITCH {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ExecuteBackgroundDelegate(string cmd);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool RunDelegate(string cmd, IntPtr session);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ReloadDelegate(string cmd);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ListDelegate(string cmd);
         static readonly ExecuteDelegate _execute = Execute;
         static readonly ExecuteBackgroundDelegate _executeBackground = ExecuteBackground;
         static readonly RunDelegate _run = Run;
         static readonly ReloadDelegate _reload = Reload;
-        //SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, reloadFunction reload)
+        static readonly ListDelegate _list = List;
+        
         [DllImport("mod_managed", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground, ReloadDelegate reload);
+        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground, ReloadDelegate reload, ListDelegate list);
 
         static readonly object loaderLock = new object();
 
@@ -83,7 +85,7 @@ namespace FreeSWITCH {
                 return File.Exists(path) ? Assembly.LoadFile(path) : null;
             };
 
-            InitManagedDelegates(_run, _execute, _executeBackground, _reload);
+            InitManagedDelegates(_run, _execute, _executeBackground, _reload, _list);
 
             configureWatcher();
 
@@ -402,6 +404,23 @@ namespace FreeSWITCH {
                 return exec.Execute(args, sessionHandle);
             } catch (Exception ex) {
                 Log.WriteLine(LogLevel.Error, "Exception in Run({0}): {1}", command, ex.ToString());
+                return false;
+            }
+        }
+
+        public static bool List(string command) {
+            try {
+				Log.WriteLine(LogLevel.Info, "Available APIs:");
+                getApiExecs().Values.ForEach(x => {
+					Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray()));
+				});
+				Log.WriteLine(LogLevel.Info, "Available Apps:");
+				getAppExecs().Values.ForEach(x => {
+					Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray()));
+				});
+                return true;
+            } catch (Exception ex) {
+                Log.WriteLine(LogLevel.Error, "Exception listing managed modules: {0}", ex.ToString());
                 return false;
             }
         }

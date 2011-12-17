@@ -897,12 +897,19 @@ int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_l1_frame_t *l1_frame)
 	do {
 		flags = FTDM_WRITE;
 		status = signal_data->dchan->fio->wait(signal_data->dchan, &flags, 1000);
-		if (status != FTDM_SUCCESS) {
-			ftdm_log_chan_msg(signal_data->dchan, FTDM_LOG_WARNING, "transmit timed-out\n");
-			return -1;
+		switch(status) {
+			case FTDM_SUCCESS:
+				break;
+			case FTDM_TIMEOUT:
+				continue;
+			case FTDM_FAIL:
+			default:
+				ftdm_log_chan_msg(signal_data->dchan, FTDM_LOG_WARNING, "failed to poll for channel\n");
+				return -1;
 		}
 		
 		
+		/* status = FTDM_SUCCESS */	
 		if ((flags & FTDM_WRITE)) {
 #if 0
 			int i;
@@ -990,27 +997,29 @@ void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...)
 
     switch (level) {
 		case SNG_LOGLEVEL_DEBUG:
-			ftdm_log(FTDM_LOG_DEBUG, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_DEBUG, "sng_isdn->%s\n", data);
 			break;
 		case SNG_LOGLEVEL_WARN:
-			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
+			if ( strncmp(data, "Invalid Q.921/Q.931 frame", 25) ) {
+				ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
+			}
 			break;
 		case SNG_LOGLEVEL_INFO:
-			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s\n", data);
 			break;
 		case SNG_LOGLEVEL_STATS:
-			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s\n", data);
 			break;
 		case SNG_LOGLEVEL_ERROR:
-			ftdm_log(FTDM_LOG_ERROR, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_ERROR, "sng_isdn->%s\n", data);
 			/*ftdm_assert(0, "Got an error from stack");*/
 			break;
 		case SNG_LOGLEVEL_CRIT:
-   			ftdm_log(FTDM_LOG_CRIT, "sng_isdn->%s", data);
+   			ftdm_log(FTDM_LOG_CRIT, "sng_isdn->%s\n", data);
 			/* ftdm_assert(0, "Got an error from stack"); */
 			break;
 		default:
-			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s", data);
+			ftdm_log(FTDM_LOG_INFO, "sng_isdn->%s\n", data);
 			break;
     }
 	ftdm_safe_free(data);

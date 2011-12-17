@@ -45,7 +45,7 @@
 #define HAVE_APR
 #include <switch.h>
 #include <switch_version.h>
-#define SOFIA_NAT_SESSION_TIMEOUT 1800
+#define SOFIA_NAT_SESSION_TIMEOUT 90
 #define SOFIA_MAX_ACL 100
 #ifdef _MSC_VER
 #define HAVE_FUNCTION 1
@@ -87,6 +87,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_GATEWAY_DEL "sofia::gateway_delete"
 #define MY_EVENT_RECOVERY "sofia::recovery_recv"
 #define MY_EVENT_RECOVERY_SEND "sofia::recovery_send"
+#define MY_EVENT_RECOVERY_RECOVERED "sofia::recovery_recovered"
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
@@ -95,9 +96,12 @@ typedef struct private_object private_object_t;
 #define SOFIA_MULTIPART_PREFIX "sip_mp_"
 #define SOFIA_MULTIPART_PREFIX_T "~sip_mp_"
 #define SOFIA_SIP_HEADER_PREFIX "sip_h_"
+#define SOFIA_SIP_INFO_HEADER_PREFIX "sip_info_h_"
+#define SOFIA_SIP_INFO_HEADER_PREFIX_T "~sip_info_h_"
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX "sip_rh_"
 #define SOFIA_SIP_RESPONSE_HEADER_PREFIX_T "~sip_rh_"
 #define SOFIA_SIP_BYE_HEADER_PREFIX "sip_bye_h_"
+#define SOFIA_SIP_BYE_HEADER_PREFIX_T "~sip_bye_h_"
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX "sip_ph_"
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX_T "~sip_ph_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
@@ -108,7 +112,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SECURE_MEDIA_CONFIRMED_VARIABLE "sip_secure_media_confirmed"
 #define SOFIA_HAS_CRYPTO_VARIABLE "sip_has_crypto"
 #define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
-#define FREESWITCH_SUPPORT "update_display"
+#define FREESWITCH_SUPPORT "update_display,send_info"
 
 #include <switch_stun.h>
 #include <sofia-sip/nua.h>
@@ -127,6 +131,9 @@ typedef struct private_object private_object_t;
 #include "sofia-sip/sip_parser.h"
 #include "sofia-sip/tport_tag.h"
 #include <sofia-sip/msg.h>
+#ifndef WIN32
+#include <sofia-sip/uniqueid.h>
+#endif
 
 typedef enum {
 	DTMF_2833,
@@ -143,6 +150,7 @@ typedef struct sofia_dispatch_event_s {
 	nua_t *nua;
 	sofia_profile_t *profile;
 	int save;
+	switch_core_session_t *session;
 } sofia_dispatch_event_t;
 
 struct sofia_private {
@@ -198,6 +206,7 @@ typedef enum {
 	PFLAG_WORKER_RUNNING,
 	PFLAG_UNREG_OPTIONS_FAIL,
 	PFLAG_DISABLE_TIMER,
+	PFLAG_ENABLE_RFC5626,
 	PFLAG_DISABLE_100REL,
 	PFLAG_AGGRESSIVE_NAT_DETECTION,
 	PFLAG_RECIEVED_IN_NAT_REG_CONTACT,
@@ -212,8 +221,9 @@ typedef enum {
 	PFLAG_UUID_AS_CALLID,
 	PFLAG_SCROOGE,
 	PFLAG_MANAGE_SHARED_APPEARANCE,
-	PFLAG_MANAGE_SHARED_APPEARANCE_SYLANTRO,
+	PFLAG_STANDBY,
 	PFLAG_DISABLE_SRV,
+	PFLAG_DISABLE_SRV503,
 	PFLAG_DISABLE_NAPTR,
 	PFLAG_AUTOFLUSH,
 	PFLAG_NAT_OPTIONS_PING,
@@ -227,6 +237,7 @@ typedef enum {
 	PFLAG_AUTO_NAT,
 	PFLAG_SIPCOMPACT,
 	PFLAG_SQL_IN_TRANS,
+	PFLAG_PRESENCE_PRIVACY,
 	PFLAG_PASS_CALLEE_ID,
 	PFLAG_LOG_AUTH_FAIL,
 	PFLAG_FORWARD_MWI_NOTIFY,
@@ -249,6 +260,9 @@ typedef enum {
 	PFLAG_LIBERAL_DTMF,
  	PFLAG_AUTO_ASSIGN_PORT,
  	PFLAG_AUTO_ASSIGN_TLS_PORT,
+	PFLAG_SHUTDOWN,
+	PFLAG_PRESENCE_MAP,
+	PFLAG_OPTIONS_RESPOND_503_ON_BUSY,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -320,7 +334,7 @@ typedef enum {
 	TFLAG_MAX
 } TFLAGS;
 
-#define SOFIA_MAX_MSG_QUEUE 51
+#define SOFIA_MAX_MSG_QUEUE 101
 #define SOFIA_MSG_QUEUE_SIZE 5000
 
 struct mod_sofia_globals {
@@ -353,6 +367,7 @@ struct mod_sofia_globals {
 	int debug_presence;
 	int debug_sla;
 	int auto_restart;
+	int reg_deny_binding_fetch_and_no_lookup; /* backwards compatibility */
 	int auto_nat;
 	int tracelevel;
 	char *capture_server;	
@@ -467,6 +482,7 @@ struct sofia_gateway {
 	int32_t retry_seconds;
 	int32_t reg_timeout_seconds;
 	int32_t failure_status;
+	sub_state_t sub_state;
 	reg_state_t state;
 	switch_memory_pool_t *pool;
 	int deleted;
@@ -538,6 +554,7 @@ struct sofia_profile {
 	char *record_template;
 	char *record_path;
 	char *presence_hosts;
+	char *presence_privacy;
 	char *challenge_realm;
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;
@@ -620,6 +637,8 @@ struct sofia_profile {
 	uint32_t event_timeout;
 	int watchdog_enabled;
 	switch_mutex_t *gw_mutex;
+	uint32_t queued_events;
+	uint32_t cseq_base;
 };
 
 struct private_object {
@@ -764,6 +783,8 @@ struct private_object {
 	sofia_cid_type_t cid_type;
 	switch_payload_t payload_space;
 	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
+	uint32_t session_timeout;
+	enum nua_session_refresher session_refresher;
 };
 
 struct callback_t {
@@ -783,6 +804,7 @@ typedef enum {
 	AUTH_OK,
 	AUTH_FORBIDDEN,
 	AUTH_STALE,
+	AUTH_RENEWED,
 } auth_res_t;
 
 typedef struct {
@@ -822,6 +844,8 @@ switch_mutex_unlock(obj->flag_mutex);
 
 /* Function Prototypes */
 /*************************************************************************************************************************************************************/
+
+void sofia_glue_global_standby(switch_bool_t on);
 
 switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_flag_t myflags);
 
@@ -866,8 +890,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 void launch_sofia_profile_thread(sofia_profile_t *profile);
 
-switch_status_t sofia_presence_chat_send(const char *proto, const char *from, const char *to, const char *subject,
-										 const char *body, const char *type, const char *hint);
+switch_status_t sofia_presence_chat_send(switch_event_t *message_event);
+										 
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
 
 /*
@@ -1026,7 +1050,7 @@ int sofia_glue_transport_has_tls(const sofia_transport_t tp);
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);
 switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction);
 void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt);
-switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt);
+switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, const char *sdp_str);
 void sofia_presence_event_thread_start(void);
 void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int reboot);
 void sofia_reg_check_call_id(sofia_profile_t *profile, const char *call_id);
@@ -1047,24 +1071,6 @@ const char *sofia_state_string(int state);
 switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force);
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout);
 void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist);
-
-/*
- * SLA (shared line appearance) entrypoints
- */
-
-void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const *sip,
-								sofia_dispatch_event_t *de, long exptime, const char *full_contact);
-void sofia_sla_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
-								sofia_dispatch_event_t *de, tagi_t tags[]);
-void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
-								sofia_dispatch_event_t *de, tagi_t tags[]);
-void sofia_sla_handle_sip_r_subscribe(int status,
-									  char const *phrase,
-									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
-								sofia_dispatch_event_t *de,
-									  tagi_t tags[]);
-void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
-								sofia_dispatch_event_t *de, tagi_t tags[]);
 
 /* 
  * Logging control functions
@@ -1097,7 +1103,7 @@ void sofia_glue_free_destination(sofia_destination_t *dst);
 switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *user, const char *host, const char *event, const char *contenttype,
 									   const char *body, const char *o_contact, const char *network_ip);
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix);
-void sofia_glue_set_extra_headers(switch_channel_t *channel, sip_t const *sip, const char *prefix);
+void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *sip, const char *prefix);
 void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t *bleg);
 void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t send);
 void sofia_send_callee_id(switch_core_session_t *session, const char *name, const char *number);
@@ -1115,6 +1121,7 @@ switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *sess
 char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type);
 void sofia_glue_tech_simplify(private_object_t *tech_pvt);
 switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *profile, const char *user, const char *host);
+switch_console_callback_match_t *sofia_reg_find_reg_url_with_positive_expires_multi(sofia_profile_t *profile, const char *user, const char *host);
 switch_bool_t sofia_glue_profile_exists(const char *key);
 void sofia_glue_global_siptrace(switch_bool_t on);
 void sofia_glue_global_capture(switch_bool_t on);
@@ -1127,4 +1134,5 @@ void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
-
+char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool);
+void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now);

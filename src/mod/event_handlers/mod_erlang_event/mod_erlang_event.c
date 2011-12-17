@@ -389,6 +389,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 		if (!ptr->listener) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NULL pointer binding!\n");
+			switch_thread_rwlock_unlock(globals.bindings_rwlock);
 			goto cleanup; /* our pointer is trash */
 		}
 
@@ -549,6 +550,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 	const void *key;
 	void * value;
 	switch_hash_index_t *iter;
+	/* event used to track sessions to remove */
 	switch_event_t *event = NULL;
 	switch_event_header_t *header = NULL;
 	switch_event_create_subclass(&event, SWITCH_EVENT_CLONE, NULL);
@@ -570,6 +572,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			status = notify_new_session(listener, sp);
 			if (status != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "Notifying new session failed\n");
+				/* mark this session for removal */
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 				continue;
 			}
@@ -650,6 +653,10 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 	}
 
 	switch_thread_rwlock_unlock(listener->session_rwlock);
+
+	/* remove the temporary event */
+	switch_event_destroy(&event);
+
 	if (prefs.done) {
 		return SWITCH_STATUS_FALSE;	/* we're shutting down */
 	} else {
@@ -1812,7 +1819,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 #else
 		errno = 0;
 #endif
-		if ((clientfd = ei_accept_tmo(&ec, (int) listen_list.sockfd, &conn, 100)) == ERL_ERROR) {
+		if ((clientfd = ei_accept_tmo(&ec, (int) listen_list.sockfd, &conn, 500)) == ERL_ERROR) {
 			if (prefs.done) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 			} else if (erl_errno == ETIMEDOUT) {

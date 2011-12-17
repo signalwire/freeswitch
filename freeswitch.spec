@@ -344,6 +344,10 @@ Requires: wanpipe
 Requires: libsng_ss7 
 BuildRequires: wanpipe 
 BuildRequires: libsng_ss7 
+%if 0%{?fedora_version} >= 8 || 0%{?rhel} >= 6
+Requires: openssl098e
+BuildRequires: openssl098e
+%endif
 
 %description freetdm-sng-ss7
 Sangoma SMG-SS7 drivers for FreeTDM
@@ -428,12 +432,12 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 APPLICATION_MODULES_AE="applications/mod_avmd applications/mod_callcenter applications/mod_cidlookup applications/mod_cluechoo \
                         applications/mod_commands applications/mod_conference applications/mod_curl applications/mod_db applications/mod_directory \
                         applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum \
-                        applications/mod_esf applications/mod_expr"
+                        applications/mod_esf applications/mod_expr applications/mod_blacklist"
 APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit \
-                        applications/mod_memcache"
+                        applications/mod_memcache applications/mod_http_cache"
 APPLICATION_MODULES_NY="applications/mod_nibblebill applications/mod_redis applications/mod_rss applications/mod_snom \
                         applications/mod_soundtouch applications/mod_spandsp applications/mod_spy applications/mod_stress \
-                        applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail"
+                        applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail applications/mod_sms"
 
 APPLICATIONS_MODULES="$APPLICATION_MODULES_AE $APPLICATION_MODULES_FM $APPLICATION_MODULES_NY $APPLICATION_MODULES_VZ"
 ######################################################################################################################
@@ -747,8 +751,10 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/mime.types
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/alsa.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/blacklist.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/callcenter.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_csv.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_mongodb.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_pg_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_sqlite.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cepstral.conf.xml
@@ -768,6 +774,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/fax.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/fifo.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/hash.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/http_cache.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/java.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/lcr.conf.xml
@@ -782,6 +789,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/pocketsphinx.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/portaudio.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/post_load_modules.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/presence_map.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/redis.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/rss.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/rtmp.conf.xml
@@ -801,6 +809,12 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/xml_curl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/xml_rpc.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/zeroconf.conf.xml
+######################################################################################################################
+#
+#						Chatplans
+#
+######################################################################################################################
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/chatplan/default.xml
 ######################################################################################################################
 #
 #						Dialplans
@@ -876,6 +890,7 @@ fi
 ######################################################################################################################
 %{prefix}/mod/mod_amrwb.so*
 %{prefix}/mod/mod_avmd.so*
+%{prefix}/mod/mod_blacklist.so*
 %{prefix}/mod/mod_bv.so*
 %{prefix}/mod/mod_callcenter.so*
 %{prefix}/mod/mod_cdr_csv.so*
@@ -906,6 +921,7 @@ fi
 %{prefix}/mod/mod_flite.so*
 %{prefix}/mod/mod_fsv.so*
 %{prefix}/mod/mod_hash.so*
+%{prefix}/mod/mod_http_cache.so*
 %{prefix}/mod/mod_h26x.so*
 %{prefix}/mod/mod_ilbc.so*
 %{prefix}/mod/mod_lcr.so*
@@ -928,6 +944,7 @@ fi
 %{prefix}/mod/mod_silk.so*
 %{prefix}/mod/mod_siren.so*
 %{prefix}/mod/mod_skinny.so*
+%{prefix}/mod/mod_sms.so*
 %{prefix}/mod/mod_sndfile.so*
 %{prefix}/mod/mod_snom.so*
 %{prefix}/mod/mod_sofia.so*
@@ -1127,6 +1144,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Jun 14 2011 - michal.bielicki@seventhsignal.de
+- added mod_http_cache
 * Tue Jun 14 2011 - michal.bielicki@seventhsignal.de
 - added mod_rtmp
 * Fri Apr 01 2011 - michal.bielicki@seventhsignal.de

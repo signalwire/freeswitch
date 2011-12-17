@@ -29,8 +29,8 @@
 #include "config.h"
 #endif
 
-#include <inttypes.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
@@ -38,12 +38,12 @@
 #include <math.h>
 #endif
 #include "floating_fudge.h"
+#include <memory.h>
 #include <string.h>
-#include <stdio.h>
-#include <time.h>
-#include <fcntl.h>
+#include <limits.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/logging.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/queue.h"
 #include "spandsp/complex.h"
@@ -53,6 +53,7 @@
 #include "spandsp/super_tone_rx.h"
 #include "spandsp/dtmf.h"
 
+#include "spandsp/private/logging.h"
 #include "spandsp/private/queue.h"
 #include "spandsp/private/tone_generate.h"
 #include "spandsp/private/dtmf.h"
@@ -165,6 +166,8 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
             goertzel_samplex(&s->row_out[3], xamp);
             goertzel_samplex(&s->col_out[3], xamp);
         }
+        if (s->duration < INT_MAX - (limit - sample))
+            s->duration += (limit - sample);
         s->current_sample += (limit - sample);
         if (s->current_sample < DTMF_SAMPLES_PER_BLOCK)
             continue;
@@ -188,29 +191,45 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
         /* Basic signal level test and the twist test */
         if (row_energy[best_row] >= s->threshold
             &&
-            col_energy[best_col] >= s->threshold
-            &&
-            col_energy[best_col] < row_energy[best_row]*s->reverse_twist
-            &&
-            col_energy[best_col]*s->normal_twist > row_energy[best_row])
+            col_energy[best_col] >= s->threshold)
         {
-            /* Relative peak test ... */
-            for (i = 0;  i < 4;  i++)
+            if (col_energy[best_col] < row_energy[best_row]*s->reverse_twist
+                &&
+                col_energy[best_col]*s->normal_twist > row_energy[best_row])
             {
-                if ((i != best_col  &&  col_energy[i]*DTMF_RELATIVE_PEAK_COL > col_energy[best_col])
-                    ||
-                    (i != best_row  &&  row_energy[i]*DTMF_RELATIVE_PEAK_ROW > row_energy[best_row]))
+                /* Relative peak test ... */
+                for (i = 0;  i < 4;  i++)
                 {
-                    break;
+                    if ((i != best_col  &&  col_energy[i]*DTMF_RELATIVE_PEAK_COL > col_energy[best_col])
+                        ||
+                        (i != best_row  &&  row_energy[i]*DTMF_RELATIVE_PEAK_ROW > row_energy[best_row]))
+                    {
+                        break;
+                    }
+                }
+                /* ... and fraction of total energy test */
+                if (i >= 4
+                    &&
+                    (row_energy[best_row] + col_energy[best_col]) > DTMF_TO_TOTAL_ENERGY*s->energy)
+                {
+                    /* Got a hit */
+                    hit = dtmf_positions[(best_row << 2) + best_col];
                 }
             }
-            /* ... and fraction of total energy test */
-            if (i >= 4
-                &&
-                (row_energy[best_row] + col_energy[best_col]) > DTMF_TO_TOTAL_ENERGY*s->energy)
+            if (span_log_test(&s->logging, SPAN_LOG_FLOW))
             {
-                /* Got a hit */
-                hit = dtmf_positions[(best_row << 2) + best_col];
+                /* Log information about the quality of the signal, to aid analysis of detection problems */
+                /* Logging at this point filters the total no-hoper frames out of the log, and leaves
+                   anything which might feasibly be a DTMF digit. The log will then contain a list of the
+                   total, row and coloumn power levels for detailed analysis of detection problems. */
+                span_log(&s->logging,
+                         SPAN_LOG_FLOW,
+                         "Potentially '%c' - total %.2fdB, row %.2fdB, col %.2fdB - %s\n",
+                         dtmf_positions[(best_row << 2) + best_col],
+                         log10f(s->energy)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER,
+                         log10f(row_energy[best_row]/DTMF_TO_TOTAL_ENERGY)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER,
+                         log10f(col_energy[best_col]/DTMF_TO_TOTAL_ENERGY)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER,
+                         (hit)  ?  "hit"  :  "miss");
             }
         }
         /* The logic in the next test should ensure the following for different successive hit patterns:
@@ -251,7 +270,8 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
                     if (s->in_digit  ||  hit)
                     {
                         i = (s->in_digit  &&  !hit)  ?  -99  :  lfastrintf(log10f(s->energy)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER);
-                        s->realtime_callback(s->realtime_callback_data, hit, i, 0);
+                        s->realtime_callback(s->realtime_callback_data, hit, i, s->duration);
+                        s->duration = 0;
                     }
                 }
                 else
@@ -326,6 +346,7 @@ SPAN_DECLARE(void) dtmf_rx_set_realtime_callback(dtmf_rx_state_t *s,
 {
     s->realtime_callback = callback;
     s->realtime_callback_data = user_data;
+    s->duration = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -357,6 +378,12 @@ SPAN_DECLARE(void) dtmf_rx_parms(dtmf_rx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) dtmf_rx_get_logging_state(dtmf_rx_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
                                              digits_rx_callback_t callback,
                                              void *user_data)
@@ -369,6 +396,9 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
         if ((s = (dtmf_rx_state_t *) malloc(sizeof (*s))) == NULL)
             return  NULL;
     }
+    memset(s, 0, sizeof(*s));
+    span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
+    span_log_set_protocol(&s->logging, "DTMF");
     s->digits_callback = callback;
     s->digits_callback_data = user_data;
     s->realtime_callback = NULL;
@@ -519,6 +549,7 @@ SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s)
         if ((s = (dtmf_tx_state_t *) malloc(sizeof (*s))) == NULL)
             return  NULL;
     }
+    memset(s, 0, sizeof(*s));
     if (!dtmf_tx_inited)
         dtmf_tx_initialise();
     tone_gen_init(&(s->tones), &dtmf_digit_tones[0]);

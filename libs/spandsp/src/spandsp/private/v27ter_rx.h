@@ -69,17 +69,62 @@ struct v27ter_rx_state_s
                routine. */
     void *qam_user_data;
 
-    /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
 #if defined(SPANDSP_USE_FIXED_POINT)
+    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    int16_t agc_scaling;
+    /*! \brief The previous value of agc_scaling, needed to reuse old training. */
+    int16_t agc_scaling_save;
+
+    /*! \brief The current delta factor for updating the equalizer coefficients. */
+    float eq_delta;
+    /*! \brief The adaptive equalizer coefficients. */
+    /*complexi16_t*/ complexf_t  eq_coeff[V27TER_EQUALIZER_LEN];
+    /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
+    /*complexi16_t*/ complexf_t  eq_coeff_save[V27TER_EQUALIZER_LEN];
+    /*! \brief The equalizer signal buffer. */
+    /*complexi16_t*/ complexf_t eq_buf[V27TER_EQUALIZER_LEN];
+
+    /*! \brief A measure of how much mismatch there is between the real constellation,
+               and the decoded symbol positions. */
+    float training_error;
+
+    /*! \brief The proportional part of the carrier tracking filter. */
+    float carrier_track_p;
+    /*! \brief The integral part of the carrier tracking filter. */
+    float carrier_track_i;
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
     int16_t rrc_filter[V27TER_RX_FILTER_STEPS];
 #else
+    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    float agc_scaling;
+    /*! \brief The previous value of agc_scaling, needed to reuse old training. */
+    float agc_scaling_save;
+
+    /*! \brief The current delta factor for updating the equalizer coefficients. */
+    float eq_delta;
+    /*! \brief The adaptive equalizer coefficients. */
+    complexf_t eq_coeff[V27TER_EQUALIZER_LEN];
+    /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
+    complexf_t eq_coeff_save[V27TER_EQUALIZER_LEN];
+    /*! \brief The equalizer signal buffer. */
+    complexf_t eq_buf[V27TER_EQUALIZER_LEN];
+
+    /*! \brief A measure of how much mismatch there is between the real constellation,
+               and the decoded symbol positions. */
+    float training_error;
+
+    /*! \brief The proportional part of the carrier tracking filter. */
+    float carrier_track_p;
+    /*! \brief The integral part of the carrier tracking filter. */
+    float carrier_track_i;
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
     float rrc_filter[V27TER_RX_FILTER_STEPS];
 #endif
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
 
     /*! \brief The register for the training and data scrambler. */
-    unsigned int scramble_reg;
+    uint32_t scramble_reg;
     /*! \brief A counter for the number of consecutive bits of repeating pattern through
                the scrambler. */
     int scrambler_pattern_count;
@@ -91,9 +136,6 @@ struct v27ter_rx_state_s
     int training_stage;
     /*! \brief A count of how far through the current training step we are. */
     int training_count;
-    /*! \brief A measure of how much mismatch there is between the real constellation,
-        and the decoded symbol positions. */
-    float training_error;
     /*! \brief The value of the last signal sample, using the a simple HPF for signal power estimation. */
     int16_t last_sample;
     /*! \brief >0 if a signal above the minimum is present. It may or may not be a V.27ter signal. */
@@ -115,17 +157,6 @@ struct v27ter_rx_state_s
     int32_t carrier_phase_rate;
     /*! \brief The carrier update rate saved for reuse when using short training. */
     int32_t carrier_phase_rate_save;
-#if defined(SPANDSP_USE_FIXED_POINTx)
-    /*! \brief The proportional part of the carrier tracking filter. */
-    float carrier_track_p;
-    /*! \brief The integral part of the carrier tracking filter. */
-    float carrier_track_i;
-#else
-    /*! \brief The proportional part of the carrier tracking filter. */
-    float carrier_track_p;
-    /*! \brief The integral part of the carrier tracking filter. */
-    float carrier_track_i;
-#endif
 
     /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */    
     power_meter_t power;
@@ -143,36 +174,6 @@ struct v27ter_rx_state_s
 
     /*! \brief The current half of the baud. */
     int baud_half;
-
-#if defined(SPANDSP_USE_FIXED_POINT)
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
-    int16_t agc_scaling;
-    /*! \brief The previous value of agc_scaling, needed to reuse old training. */
-    int16_t agc_scaling_save;
-
-    /*! \brief The current delta factor for updating the equalizer coefficients. */
-    float eq_delta;
-    /*! \brief The adaptive equalizer coefficients. */
-    /*complexi16_t*/ complexf_t  eq_coeff[V27TER_EQUALIZER_LEN];
-    /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
-    /*complexi16_t*/ complexf_t  eq_coeff_save[V27TER_EQUALIZER_LEN];
-    /*! \brief The equalizer signal buffer. */
-    /*complexi16_t*/ complexf_t eq_buf[V27TER_EQUALIZER_LEN];
-#else
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
-    float agc_scaling;
-    /*! \brief The previous value of agc_scaling, needed to reuse old training. */
-    float agc_scaling_save;
-
-    /*! \brief The current delta factor for updating the equalizer coefficients. */
-    float eq_delta;
-    /*! \brief The adaptive equalizer coefficients. */
-    complexf_t eq_coeff[V27TER_EQUALIZER_LEN];
-    /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
-    complexf_t eq_coeff_save[V27TER_EQUALIZER_LEN];
-    /*! \brief The equalizer signal buffer. */
-    complexf_t eq_buf[V27TER_EQUALIZER_LEN];
-#endif
 
     /*! \brief Integration variable for damping the Gardner algorithm tests. */
     int gardner_integrate;

@@ -266,10 +266,6 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	rtmp_notify_call_state(session);
 	rtmp_send_onhangup(session);
 	
-	switch_mutex_lock(tech_pvt->rtmp_session->count_mutex);
-	tech_pvt->rtmp_session->active_sessions--;
-	switch_mutex_unlock(tech_pvt->rtmp_session->count_mutex);
-	
 	switch_core_hash_delete_wrlock(tech_pvt->rtmp_session->session_hash, switch_core_session_get_uuid(session), tech_pvt->rtmp_session->session_rwlock);
 	
 	switch_mutex_lock(tech_pvt->rtmp_session->profile->mutex);
@@ -278,6 +274,10 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 		tech_pvt->rtmp_session->profile->calls = 0;
 	}
 	switch_mutex_unlock(tech_pvt->rtmp_session->profile->mutex);
+
+        switch_mutex_lock(tech_pvt->rtmp_session->count_mutex);
+        tech_pvt->rtmp_session->active_sessions--;
+        switch_mutex_unlock(tech_pvt->rtmp_session->count_mutex);
 
 #ifndef RTMP_DONT_HOLD
 	if (switch_channel_test_flag(channel, CF_HOLD)) {
@@ -407,6 +407,7 @@ switch_status_t rtmp_read_frame(switch_core_session_t *session, switch_frame_t *
 	return SWITCH_STATUS_SUCCESS;
 	
 cng:
+
 	data = (switch_byte_t *) tech_pvt->read_frame.data;
 	data[0] = 65;
 	data[1] = 0;
@@ -414,7 +415,7 @@ cng:
 	tech_pvt->read_frame.flags = SFF_CNG;
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
-	switch_core_timer_sync(&tech_pvt->timer);
+	//switch_core_timer_sync(&tech_pvt->timer);
 
 	*frame = &tech_pvt->read_frame;
 	
@@ -515,13 +516,13 @@ switch_status_t rtmp_receive_message(switch_core_session_t *session, switch_core
 			const char *name = msg->string_array_arg[0], *number = msg->string_array_arg[1];
 			char *arg = NULL;
 			char *argv[2] = { 0 };
-			int argc;
+			//int argc;
 
 			if (zstr(name) && !zstr(msg->string_arg)) {
 				arg = strdup(msg->string_arg);
 				switch_assert(arg);
 
-				argc = switch_separate_string(arg, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+				switch_separate_string(arg, '|', argv, (sizeof(argv) / sizeof(argv[0])));
 				name = argv[0];
 				number = argv[1];
 

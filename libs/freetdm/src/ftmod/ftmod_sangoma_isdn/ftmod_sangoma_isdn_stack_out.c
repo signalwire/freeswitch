@@ -69,6 +69,8 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	set_calling_subaddr(ftdmchan, &conEvnt.cgPtySad);
 	set_redir_num(ftdmchan, &conEvnt.redirNmb);
 	set_calling_name(ftdmchan, &conEvnt);
+
+	/* set_facility_ie will overwrite Calling Name for NI-2 if user specifies custom Facility IE */
 	set_facility_ie(ftdmchan, &conEvnt.facilityStr);
 	set_prog_ind_ie(ftdmchan, &conEvnt.progInd, prog_ind);
 

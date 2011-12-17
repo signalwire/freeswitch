@@ -249,6 +249,34 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 				SS7_DEBUG_CHAN(ftdmchan, "No Location Number information in IAM%s\n", " ");
 			}
 
+			/* Retrieve the Location Number if present (see ITU Q.763, 3.30) */
+			if (siConEvnt->cgPtyNum1.eh.pres) {
+				if (siConEvnt->cgPtyNum1.addrSig.pres) {
+					/* fill in the ss7 location address number */
+					copy_tknStr_from_sngss7(siConEvnt->cgPtyNum1.addrSig, var, siConEvnt->cgPtyNum1.oddEven);
+					sngss7_add_var(sngss7_info, "ss7_loc_digits", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.scrnInd.pres) {
+					/* fill in the screening indication value */
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.scrnInd.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_screen_ind", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.presRest.pres) {
+					/* fill in the presentation value */
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.presRest.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_pres_ind", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.natAddrInd.pres) {
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.natAddrInd.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_nadi", var);
+				}
+			} else {
+				SS7_DEBUG_CHAN(ftdmchan, "No Location Number information in IAM%s\n", " ");
+			}
+
 			sprintf(var, "%d", sngss7_info->circuit->cic);
 			sngss7_add_var(sngss7_info, "ss7_cic", var);
 
@@ -256,11 +284,10 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			sngss7_add_var(sngss7_info, "ss7_opc", var);
 			
 			if (siConEvnt->callRef.callId.pres) {
-        /* %x expect an unsigned int so as callId is a U32, casting to uint32_t
-         * is safe */
-				sprintf(var, "%x", (uint32_t)siConEvnt->callRef.callId.val);
-				sngss7_add_var(sngss7_info, "ss7_callref", var);
-			} 
+				ftdmchan->caller_data.call_reference = (unsigned int)siConEvnt->callRef.callId.val;
+			} else {
+				ftdmchan->caller_data.call_reference = 0;
+			}
 			
 			if (sngss7_info->circuit->transparent_iam) {
 				sngss7_save_iam(ftdmchan, siConEvnt);

@@ -23,6 +23,7 @@
  * Contributor(s):
  * 
  * Mathieu Rene <mrene@avgs.ca>
+ * Joao Mesquita <jmesquita@freeswitch.org>
  *
  * rtmp.c -- RTMP Protocol Handler
  *
@@ -104,7 +105,9 @@ void rtmp_handle_control(rtmp_session_t *rsession, int amfnumber)
 void rtmp_handle_invoke(rtmp_session_t *rsession, int amfnumber)
 {
 	rtmp_state_t *state = &rsession->amfstate[amfnumber];
-	//amf0_data *dump;
+#ifdef RTMP_DEBUG_IO
+	amf0_data *dump;
+#endif
 	int i = 0;
 	buffer_helper_t helper = { state->buf, 0, state->origlen };
 	int64_t transaction_id;
@@ -188,9 +191,15 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
 	switch_xml_t xml = NULL, x_param, x_params;
 	switch_bool_t allow_empty_password = SWITCH_FALSE;
 	const char *passwd = NULL;
+    switch_bool_t disallow_multiple_registration = SWITCH_FALSE;
+	switch_event_t *locate_params;
+	
+	switch_event_create(&locate_params, SWITCH_EVENT_GENERAL);
+	switch_assert(locate_params);
+	switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "source", "mod_rtmp");
 	
 	/* Locate user */
-	if (switch_xml_locate_user_merged("id", user, domain, NULL, &xml, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id", user, domain, NULL, &xml, locate_params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING, "Authentication failed. No such user %s@%s\n", user, domain);
 		goto done;
 	}
@@ -205,6 +214,9 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
 			}
 			if (!strcasecmp(var, "allow-empty-password")) {
 				allow_empty_password = switch_true(val);
+			}
+            if (!strcasecmp(var, "disallow-multiple-registration")) {
+				disallow_multiple_registration = switch_true(val);
 			}
 		}
 	}
@@ -226,11 +238,36 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_WARNING, "Authentication failed for %s@%s\n", user, domain);
 	}
+    
+    if (disallow_multiple_registration) {
+        switch_hash_index_t *hi;
+        switch_thread_rwlock_rdlock(rsession->profile->session_rwlock);
+        for (hi = switch_hash_first(NULL, rsession->profile->session_hash); hi; hi = switch_hash_next(hi)) {
+            void *val;	
+            const void *key;
+            switch_ssize_t keylen;
+            rtmp_session_t *item;
+            switch_hash_this(hi, &key, &keylen, &val);
+            
+            item = (rtmp_session_t *)val;
+            if (rtmp_session_check_user(item, user, domain) == SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Logging out %s@%s on RTMP sesssion [%s]\n", user, domain, item->uuid);
+                if (rtmp_session_logout(item, user, domain) != SWITCH_STATUS_SUCCESS) {
+                    switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Unable to logout %s@%s on RTMP sesssion [%s]\n", user, domain, item->uuid);
+                }
+            }
+            
+        }
+        switch_thread_rwlock_unlock(rsession->profile->session_rwlock);
+    }
 	
 done:
 	if (xml) {
 		switch_xml_free(xml);
 	}
+
+	switch_event_destroy(&locate_params);
+
 	return status;
 }
 
@@ -604,7 +641,7 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 	}
 end:
 	switch_mutex_unlock(rsession->socket_mutex);
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 /* Returns SWITCH_STATUS_SUCCESS of the connection is still active or SWITCH_STATUS_FALSE to tear it down */
@@ -850,10 +887,18 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 								uint16_t len = state->origlen;
 								
 								switch_mutex_lock(rsession->tech_pvt->readbuf_mutex);
-								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > rsession->tech_pvt->maxlen * 3) {
+								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > rsession->tech_pvt->maxlen * 40) {
+									rsession->tech_pvt->over_size++;
+								} else {
+									rsession->tech_pvt->over_size = 0;
+								}
+								if (rsession->tech_pvt->over_size > 10) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+													  "%s buffer > %u for 10 consecutive packets... Flushing buffer\n", 
+													  switch_core_session_get_name(rsession->tech_pvt->session), rsession->tech_pvt->maxlen * 40);
 									switch_buffer_zero(rsession->tech_pvt->readbuf);
 									#ifdef RTMP_DEBUG_IO
-									fprintf(rsession->io_debug_in, "[chunk_stream=%d type=0x%x ts=%d stream_id=0x%x] FLUSH BUFFER [exceeded %u]\n", rsession->amfnumber, state->type, (int)state->ts, state->stream_id, rsession->tech_pvt->maxlen * 3);									
+									fprintf(rsession->io_debug_in, "[chunk_stream=%d type=0x%x ts=%d stream_id=0x%x] FLUSH BUFFER [exceeded %u]\n", rsession->amfnumber, state->type, (int)state->ts, state->stream_id, rsession->tech_pvt->maxlen * 5);
 									#endif
 								}
 								switch_buffer_write(rsession->tech_pvt->readbuf, &len, 2);

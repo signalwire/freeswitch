@@ -47,11 +47,7 @@
 			<!-- OSP service type, voice or npquery -->
 			<param name="service-type" value="voice"/>
 			<!-- Max number of destinations -->
-			<param name="max-destinations" value="5"/>
-
-			<!-- SIP features -->
-			<!-- Add "user=phone" URI parameter in outbound SIP messages -->
-			<param name="user-phone" value="disabled"/>
+			<param name="max-destinations" value="12"/>
 		</profile>
 	</profiles>
 </configuration>

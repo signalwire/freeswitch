@@ -42,9 +42,35 @@ static void switch_core_standard_on_init(switch_core_session_t *session)
 
 static void switch_core_standard_on_hangup(switch_core_session_t *session)
 {
+	switch_caller_extension_t *extension;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
+	
+	if (!switch_channel_test_flag(session->channel, CF_ZOMBIE_EXEC)) {
+		return;
+	}
+
+	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
+		return;
+	}
+
+	while(extension->current_application) {
+		switch_caller_application_t *current_application = extension->current_application;
+		switch_status_t status;
+
+		extension->current_application = extension->current_application->next;
+
+		status = switch_core_session_execute_application(session,
+														 current_application->application_name, current_application->application_data);
+														 
+		
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_IGNORE) {
+			return;
+		}
+	}
+
+
 }
 
 static void switch_core_standard_on_reporting(switch_core_session_t *session)
@@ -62,6 +88,7 @@ static void switch_core_standard_on_destroy(switch_core_session_t *session)
 
 static void switch_core_standard_on_reset(switch_core_session_t *session)
 {
+	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard RESET\n", switch_channel_get_name(session->channel));
 }
@@ -76,6 +103,8 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard ROUTING\n", switch_channel_get_name(session->channel));
 
+	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
+		
 	if ((switch_channel_test_flag(session->channel, CF_ANSWERED) ||
 		 switch_channel_test_flag(session->channel, CF_EARLY_MEDIA) ||
 		 switch_channel_test_flag(session->channel, CF_SIGNAL_BRIDGE_TTL)) && switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
@@ -89,6 +118,12 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 	} else {
 		char *dp[25];
 		int argc, x, count = 0;
+
+		if ((extension = switch_channel_get_queued_extension(session->channel))) {
+			switch_channel_set_caller_extension(session->channel, extension);
+			switch_channel_set_state(session->channel, CS_EXECUTE);
+			goto end;
+		}
 
 		if (!zstr(caller_profile->dialplan)) {
 			if ((dpstr = switch_core_session_strdup(session, caller_profile->dialplan))) {
@@ -155,6 +190,8 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	switch_caller_extension_t *extension;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard EXECUTE\n", switch_channel_get_name(session->channel));
+
+	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
 
 	if (switch_channel_get_variable(session->channel, "recovered") && !switch_channel_test_flag(session->channel, CF_RECOVERED)) {
 		switch_channel_set_flag(session->channel, CF_RECOVERED);
@@ -417,13 +454,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					switch_channel_hangup(session->channel, SWITCH_CAUSE_INVALID_CALL_REFERENCE);
 				}
 			} else {
-				switch_core_session_message_t *message;
-
-				while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
-					switch_core_session_receive_message(session, message);
-					message = NULL;
-				}
-
+				switch_ivr_parse_all_events(session);
 				switch_ivr_parse_all_events(session);
 
 				if (switch_channel_get_state(session->channel) == switch_channel_get_running_state(session->channel)) {
@@ -435,11 +466,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				}
 
 				switch_ivr_parse_all_events(session);
-
-				while (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
-					switch_core_session_receive_message(session, message);
-					message = NULL;
-				}
+				switch_ivr_parse_all_events(session);
 			}
 		}
 	}

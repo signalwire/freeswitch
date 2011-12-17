@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -44,7 +44,8 @@ extern "C"
 typedef struct {
     SKP_int16   xq[           2 * MAX_FRAME_LENGTH ]; /* Buffer for quantized output signal */
     SKP_int32   sLTP_shp_Q10[ 2 * MAX_FRAME_LENGTH ];
-    SKP_int32   sLPC_Q14[ MAX_FRAME_LENGTH / NB_SUBFR + MAX_LPC_ORDER ];
+    SKP_int32   sLPC_Q14[ MAX_FRAME_LENGTH / NB_SUBFR + NSQ_LPC_BUF_LENGTH ];
+    SKP_int32   sAR2_Q14[ MAX_SHAPE_LPC_ORDER ];
     SKP_int32   sLF_AR_shp_Q12;
     SKP_int     lagPrev;
     SKP_int     sLTP_buf_idx;
@@ -147,12 +148,16 @@ typedef struct {
     SKP_int                         typeOffsetPrev;                 /* Previous signal type and quantization offset                         */
     SKP_int                         prevLag;
     SKP_int                         prev_lagIndex;
-    SKP_int                         fs_kHz;                         /* Sampling frequency (kHz)                                             */
+    SKP_int32                       API_fs_Hz;                      /* API sampling frequency (Hz)                                          */
+    SKP_int32                       prev_API_fs_Hz;                 /* Previous API sampling frequency (Hz)                                 */
+    SKP_int                         maxInternal_fs_kHz;             /* Maximum internal sampling frequency (kHz)                            */
+    SKP_int                         fs_kHz;                         /* Internal sampling frequency (kHz)                                    */
     SKP_int                         fs_kHz_changed;                 /* Did we switch yet?                                                   */
     SKP_int                         frame_length;                   /* Frame length (samples)                                               */
     SKP_int                         subfr_length;                   /* Subframe length (samples)                                            */
     SKP_int                         la_pitch;                       /* Look-ahead for pitch analysis (samples)                              */
     SKP_int                         la_shape;                       /* Look-ahead for noise shape analysis (samples)                        */
+    SKP_int                         shapeWinLength;                 /* Window length for noise shape analysis (samples)                     */
     SKP_int32                       TargetRate_bps;                 /* Target bitrate (bps)                                                 */
     SKP_int                         PacketSize_ms;                  /* Number of milliseconds to put in each packet                         */
     SKP_int                         PacketLoss_perc;                /* Packet loss rate measured by farend                                  */
@@ -164,9 +169,12 @@ typedef struct {
     SKP_int                         predictLPCOrder;                /* Filter order for prediction filters                                  */
     SKP_int                         pitchEstimationComplexity;      /* Complexity level for pitch estimator                                 */
     SKP_int                         pitchEstimationLPCOrder;        /* Whitening filter order for pitch estimator                           */
+    SKP_int32                       pitchEstimationThreshold_Q16;   /* Threshold for pitch estimator                                        */
     SKP_int                         LTPQuantLowComplexity;          /* Flag for low complexity LTP quantization                             */
     SKP_int                         NLSF_MSVQ_Survivors;            /* Number of survivors in NLSF MSVQ                                     */
     SKP_int                         first_frame_after_reset;        /* Flag for deactivating NLSF interp. and fluc. reduction after resets  */
+    SKP_int                         controlled_since_last_payload;  /* Flag for ensuring codec_control only runs once per packet            */
+	SKP_int                         warping_Q16;                    /* Warping parameter for warped noise shaping                           */
 
     /* Input/output buffering */
     SKP_int16                       inputBuf[ MAX_FRAME_LENGTH ];   /* buffer containin input signal                                        */
@@ -182,28 +190,16 @@ typedef struct {
     /* Struct for Inband LBRR */ 
     SKP_SILK_LBRR_struct            LBRR_buffer[ MAX_LBRR_DELAY ];
     SKP_int                         oldest_LBRR_idx;
+    SKP_int                         useInBandFEC;                   /* Saves the API setting for query                                      */
     SKP_int                         LBRR_enabled;
     SKP_int                         LBRR_GainIncreases;             /* Number of shifts to Gains to get LBRR rate Voiced frames             */
 
     /* Bitrate control */
-    SKP_int32                       bitrateDiff;                    /* accumulated diff. between the target bitrate and the SWB/WB limits   */
+    SKP_int32                       bitrateDiff;                    /* Accumulated diff. between the target bitrate and the switch bitrates */
+    SKP_int32                       bitrate_threshold_up;           /* Threshold for switching to a higher internal sample frequency        */
+    SKP_int32                       bitrate_threshold_down;         /* Threshold for switching to a lower internal sample frequency         */
 
-#if LOW_COMPLEXITY_ONLY
-    /* state for downsampling from 24 to 16 kHz in low complexity mode */
-    SKP_int16                       resample24To16state[ SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ];
-#else
-    SKP_int32                       resample24To16state[ 11 ];      /* state for downsampling from 24 to 16 kHz                             */
-#endif
-    SKP_int32                       resample24To12state[ 6 ];       /* state for downsampling from 24 to 12 kHz                             */
-    SKP_int32                       resample24To8state[ 7 ];        /* state for downsampling from 24 to  8 kHz                             */
-    SKP_int32                       resample16To12state[ 15 ];      /* state for downsampling from 16 to 12 kHz                             */
-    SKP_int32                       resample16To8state[ 6 ];        /* state for downsampling from 16 to  8 kHz                             */
-#if LOW_COMPLEXITY_ONLY
-    /* state for downsampling from 12 to 8 kHz in low complexity mode */
-    SKP_int16                       resample12To8state[ SigProc_Resample_2_3_coarse_NUM_FIR_COEFS - 1 ];    
-#else
-    SKP_int32                       resample12To8state[ 11 ];       /* state for downsampling from 12 to  8 kHz                             */
-#endif
+    SKP_Silk_resampler_state_struct  resampler_state;
 
     /* DTX */
     SKP_int                         noSpeechCounter;                /* Counts concecutive nonactive frames, used by DTX                     */
@@ -215,15 +211,10 @@ typedef struct {
     SKP_Silk_detect_SWB_state       sSWBdetect;
 
 
-    /********************************************/
-    /* Buffers etc used by the new bitstream V4 */
-    /********************************************/
-    SKP_int                         q[ MAX_FRAME_LENGTH * MAX_FRAMES_PER_PACKET ];      /* pulse signal buffer */
-    SKP_int                         q_LBRR[ MAX_FRAME_LENGTH * MAX_FRAMES_PER_PACKET ]; /* pulse signal buffer */
-    SKP_int                         sigtype[ MAX_FRAMES_PER_PACKET ];
-    SKP_int                         QuantOffsetType[ MAX_FRAMES_PER_PACKET ];
-    SKP_int                         extension_layer;                                    /* Add extension layer      */
-    SKP_int                         bitstream_v;                                        /* Holds bitstream version  */
+    /* Buffers */
+    SKP_int8                        q[ MAX_FRAME_LENGTH ];      /* pulse signal buffer */
+    SKP_int8                        q_LBRR[ MAX_FRAME_LENGTH ]; /* pulse signal buffer */
+
 } SKP_Silk_encoder_state;
 
 
@@ -287,7 +278,6 @@ typedef struct {
     SKP_int32       exc_Q10[ MAX_FRAME_LENGTH ];
     SKP_int32       res_Q10[ MAX_FRAME_LENGTH ];
     SKP_int16       outBuf[ 2 * MAX_FRAME_LENGTH ];             /* Buffer for output signal                                             */
-    SKP_int         sLTP_buf_idx;                               /* LTP_buf_index                                                        */
     SKP_int         lagPrev;                                    /* Previous Lag                                                         */
     SKP_int         LastGainIndex;                              /* Previous gain index                                                  */
     SKP_int         LastGainIndex_EnhLayer;                     /* Previous gain index                                                  */
@@ -296,6 +286,7 @@ typedef struct {
     const SKP_int16 *HP_A;                                      /* HP filter AR coefficients                                            */
     const SKP_int16 *HP_B;                                      /* HP filter MA coefficients                                            */
     SKP_int         fs_kHz;                                     /* Sampling frequency in kHz                                            */
+    SKP_int32       prev_API_sampleRate;                        /* Previous API sample frequency (Hz)                                   */
     SKP_int         frame_length;                               /* Frame length (samples)                                               */
     SKP_int         subfr_length;                               /* Subframe length (samples)                                            */
     SKP_int         LPC_order;                                  /* LPC order                                                            */
@@ -309,24 +300,10 @@ typedef struct {
     SKP_int         moreInternalDecoderFrames;
     SKP_int         FrameTermination;
 
-    SKP_int32       resampleState[ 15 ];
+    SKP_Silk_resampler_state_struct  resampler_state;
 
     const SKP_Silk_NLSF_CB_struct *psNLSF_CB[ 2 ];      /* Pointers to voiced/unvoiced NLSF codebooks */
 
-    SKP_int         sigtype[               MAX_FRAMES_PER_PACKET ];
-    SKP_int         QuantOffsetType[       MAX_FRAMES_PER_PACKET ];
-    SKP_int         GainsIndices[          MAX_FRAMES_PER_PACKET ][ NB_SUBFR ];
-    SKP_int         GainsIndices_EnhLayer[ MAX_FRAMES_PER_PACKET ][ NB_SUBFR ];
-    SKP_int         NLSFIndices[           MAX_FRAMES_PER_PACKET ][ NLSF_MSVQ_MAX_CB_STAGES ];
-    SKP_int         NLSFInterpCoef_Q2[     MAX_FRAMES_PER_PACKET ];
-    SKP_int         lagIndex[              MAX_FRAMES_PER_PACKET ];
-    SKP_int         contourIndex[          MAX_FRAMES_PER_PACKET ];
-    SKP_int         PERIndex[              MAX_FRAMES_PER_PACKET ];
-    SKP_int         LTPIndex[              MAX_FRAMES_PER_PACKET ][ NB_SUBFR ];
-    SKP_int         LTP_scaleIndex[        MAX_FRAMES_PER_PACKET ];
-    SKP_int         Seed[                  MAX_FRAMES_PER_PACKET ];
-    SKP_int         vadFlagBuf[            MAX_FRAMES_PER_PACKET ];
-    
     /* Parameters used to investigate if inband FEC is used */
     SKP_int         vadFlag;
     SKP_int         no_FEC_counter;                             /* Counts number of frames wo inband FEC                                */
@@ -336,21 +313,13 @@ typedef struct {
     SKP_Silk_CNG_struct sCNG;
 
     /* Stuff used for PLC */
-    SKP_Silk_PLC_struct sPLC;
     SKP_int         lossCnt;
     SKP_int         prev_sigtype;                               /* Previous sigtype                                                     */
-#ifdef USE_INTERPOLATION_PLC
-    SKP_int16       prevQuant[ MAX_FRAME_LENGTH ];
-    SKP_int         prevPitchL[ NB_SUBFR ];                     /* Previous Lags used                                                   */
-    SKP_int16       prevLTPCoef_Q14[ NB_SUBFR * LTP_ORDER ];    /* Previous LTCoefs used                                                */
-    SKP_int16       prevAR_Q12[ MAX_LPC_ORDER ];
-    SKP_int         interpolDistance;                           /* Number of frames between old and new recieved packet                 */
-#endif
+
+    SKP_Silk_PLC_struct sPLC;
 
 
 
-
-    SKP_int                 bitstream_v;                        /* Holds bitstream version                                              */
 } SKP_Silk_decoder_state;
 
 /************************/
@@ -362,7 +331,7 @@ typedef struct {
     SKP_int32           Gains_Q16[ NB_SUBFR ];
     SKP_int32           Seed;
     /* holds interpolated and final coefficients, 4-byte aligned */
-    SKP_array_of_int16_4_byte_aligned( PredCoef_Q12[ 2 ], MAX_LPC_ORDER );
+    SKP_DWORD_ALIGN SKP_int16 PredCoef_Q12[ 2 ][ MAX_LPC_ORDER ];
     SKP_int16           LTPCoef_Q14[ LTP_ORDER * NB_SUBFR ];
     SKP_int             LTP_scale_Q14;
 

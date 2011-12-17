@@ -480,9 +480,18 @@ SWITCH_DECLARE(int) switch_file_printf(switch_file_t *thefile, const char *forma
 {
 	va_list ap;
 	int ret;
+	char *data;
+
 	va_start(ap, format);
-	ret = apr_file_printf(thefile, format, ap);
+
+	if ((ret = switch_vasprintf(&data, format, ap)) != -1) {
+		switch_size_t bytes = strlen(data);
+		switch_file_write(thefile, data, &bytes);
+		free(data);
+	}
+
 	va_end(ap);
+
 	return ret;
 }
 
@@ -759,7 +768,15 @@ SWITCH_DECLARE(switch_status_t) switch_socket_sendto(switch_socket_t *sock, swit
 
 SWITCH_DECLARE(switch_status_t) switch_socket_recv(switch_socket_t *sock, char *buf, switch_size_t *len)
 {
-	return apr_socket_recv(sock, buf, len);
+	switch_status_t r;
+
+	r = apr_socket_recv(sock, buf, len);
+
+	if (r == 35 || r == 730035) {
+		r = SWITCH_STATUS_BREAK;
+	}
+
+	return r;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, switch_memory_pool_t *pool)

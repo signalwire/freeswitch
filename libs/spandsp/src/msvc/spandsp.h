@@ -99,6 +99,7 @@
 #include <spandsp/v18.h>
 #include <spandsp/v42.h>
 #include <spandsp/v42bis.h>
+#include <spandsp/timezone.h>
 #include <spandsp/t4_rx.h>
 #include <spandsp/t4_tx.h>
 #include <spandsp/t4_t6_decode.h>

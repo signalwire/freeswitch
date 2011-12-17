@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -33,9 +33,8 @@ void SKP_Silk_residual_energy_FIX(
           SKP_int32 nrgs[ NB_SUBFR ],           /* O    Residual energy per subframe    */
           SKP_int   nrgsQ[ NB_SUBFR ],          /* O    Q value per subframe            */
     const SKP_int16 x[],                        /* I    Input signal                    */
-    const SKP_int16 a_Q12[ 2 ][ MAX_LPC_ORDER ],/* I    AR coefs for each frame half    */
-    const SKP_int32 gains_Qx[ NB_SUBFR ],       /* I    Quantization gains in Qx        */
-    const SKP_int   Qx,                         /* I    Quantization gains Q value      */
+          SKP_int16 a_Q12[ 2 ][ MAX_LPC_ORDER ],/* I    AR coefs for each frame half    */
+    const SKP_int32 gains[ NB_SUBFR ],          /* I    Quantization gains              */
     const SKP_int   subfr_length,               /* I    Subframe length                 */
     const SKP_int   LPC_order                   /* I    LPC order                       */
 )
@@ -74,16 +73,16 @@ void SKP_Silk_residual_energy_FIX(
     /* Apply the squared subframe gains */
     for( i = 0; i < NB_SUBFR; i++ ) {
         /* Fully upscale gains and energies */
-        lz1 = SKP_Silk_CLZ32( nrgs[ i ] ) - 1; 
-        lz2 = SKP_Silk_CLZ32( gains_Qx[ i ] ) - 1; 
+        lz1 = SKP_Silk_CLZ32( nrgs[  i ] ) - 1; 
+        lz2 = SKP_Silk_CLZ32( gains[ i ] ) - 1; 
         
-        tmp32 = SKP_LSHIFT32( gains_Qx[ i ], lz2 );
+        tmp32 = SKP_LSHIFT32( gains[ i ], lz2 );
 
         /* Find squared gains */
-        tmp32 = SKP_SMMUL( tmp32, tmp32 ); // Q( 2 * ( Qx + lz2 ) - 32 )
+        tmp32 = SKP_SMMUL( tmp32, tmp32 ); // Q( 2 * lz2 - 32 )
 
         /* Scale energies */
-        nrgs[ i ] = SKP_SMMUL( tmp32, SKP_LSHIFT32( nrgs[ i ], lz1 ) ); // Q( nrgsQ[ i ] + lz1 + 2 * ( Qx + lz2 ) - 32 - 32 )
-        nrgsQ[ i ] += lz1 + 2 * ( Qx + lz2 ) - 32 - 32;
+        nrgs[ i ] = SKP_SMMUL( tmp32, SKP_LSHIFT32( nrgs[ i ], lz1 ) ); // Q( nrgsQ[ i ] + lz1 + 2 * lz2 - 32 - 32 )
+        nrgsQ[ i ] += lz1 + 2 * lz2 - 32 - 32;
     }
 }

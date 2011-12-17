@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -35,19 +35,19 @@ extern "C"
 
 /* Piece-wise linear mapping from bitrate in kbps to coding quality in dB SNR */
 const SKP_int32 TargetRate_table_NB[ TARGET_RATE_TAB_SZ ] = {
-    0,      8000,   9000,   11000,  13000,  16000,  22000,  100000
+    0,      8000,   9000,   11000,  13000,  16000,  22000,  MAX_TARGET_RATE_BPS
 };
 const SKP_int32 TargetRate_table_MB[ TARGET_RATE_TAB_SZ ] = {
-    0,      10000,  12000,  14000,  17000,  21000,  28000,  100000
+    0,      10000,  12000,  14000,  17000,  21000,  28000,  MAX_TARGET_RATE_BPS
 };
 const SKP_int32 TargetRate_table_WB[ TARGET_RATE_TAB_SZ ] = {
-    0,      11000,  14000,  17000,  21000,  26000,  36000,  100000
+    0,      11000,  14000,  17000,  21000,  26000,  36000,  MAX_TARGET_RATE_BPS
 };
 const SKP_int32 TargetRate_table_SWB[ TARGET_RATE_TAB_SZ ] = {
-    0,      13000,  16000,  19000,  25000,  32000,  46000,  100000
+    0,      13000,  16000,  19000,  25000,  32000,  46000,  MAX_TARGET_RATE_BPS
 };
 const SKP_int32 SNR_table_Q1[ TARGET_RATE_TAB_SZ ] = {
-    19,     31,     35,     39,     43,     47,     54,     59
+    19,     31,     35,     39,     43,     47,     54,     64
 };
 
 const SKP_int32 SNR_table_one_bit_per_sample_Q7[ 4 ] = {
@@ -103,9 +103,6 @@ const SKP_int    SKP_Silk_NLSF_interpolation_factor_offset   = 4;
 /* Table for frame termination indication */
 const SKP_uint16 SKP_Silk_FrameTermination_CDF[ 5 ] = {0, 20000, 45000, 56000, 65535};
 const SKP_int    SKP_Silk_FrameTermination_offset   = 2;
-
-const SKP_uint16 SKP_Silk_FrameTermination_v4_CDF[ 6 ] = {0,   13107,   26214,   39321,   52428,   65535};
-const SKP_int    SKP_Silk_FrameTermination_v4_offset   = 4;
 
 /* Table for random seed */
 const SKP_uint16 SKP_Silk_Seed_CDF[ 5 ] = {0, 16384, 32768, 49152, 65535};

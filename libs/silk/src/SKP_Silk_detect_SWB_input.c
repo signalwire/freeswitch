@@ -1,5 +1,5 @@
 /***********************************************************************
-Copyright (c) 2006-2010, Skype Limited. All rights reserved. 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
 Redistribution and use in source and binary forms, with or without 
 modification, (subject to the limitations in the disclaimer below) 
 are permitted provided that the following conditions are met:
@@ -37,9 +37,9 @@ void SKP_Silk_detect_SWB_input(
     SKP_int                     nSamplesIn      /* (I) length of input */
 )
 {
-    SKP_int     HP_8_kHz_len, i;
+    SKP_int     HP_8_kHz_len, i, shift;
     SKP_int16   in_HP_8_kHz[ MAX_FRAME_LENGTH ];
-    SKP_int32   energy_32, shift;
+    SKP_int32   energy_32;
     
     /* High pass filter with cutoff at 8 khz */
     HP_8_kHz_len = SKP_min_int( nSamplesIn, MAX_FRAME_LENGTH );

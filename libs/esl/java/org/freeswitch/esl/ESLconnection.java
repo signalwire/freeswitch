@@ -82,6 +82,10 @@ public class ESLconnection {
     return (cPtr == 0) ? null : new ESLevent(cPtr, true);
   }
 
+  public int sendMSG(ESLevent send_me, String uuid) {
+    return eslJNI.ESLconnection_sendMSG(swigCPtr, this, ESLevent.getCPtr(send_me), send_me, uuid);
+  }
+
   public ESLevent recvEvent() {
     long cPtr = eslJNI.ESLconnection_recvEvent(swigCPtr, this);
     return (cPtr == 0) ? null : new ESLevent(cPtr, true);
