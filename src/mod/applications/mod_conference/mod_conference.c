@@ -312,6 +312,10 @@ typedef struct conference_obj {
 	uint32_t eflags;
 	uint32_t verbose_events;
 	int end_count;
+	/* allow extra time after 'endconf' member leaves */
+	switch_time_t endconf_time;
+	int endconf_grace_time;
+
 	uint32_t relationship_total;
 	uint32_t score;
 	int mux_loop_count;
@@ -900,7 +904,9 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		conference->count++;
 
 		if (switch_test_flag(member, MFLAG_ENDCONF)) {
-			if (conference->end_count++) {};
+			if (conference->end_count++) {
+				conference->endconf_time = 0;
+			}
 		}
 
 		conference_send_presence(conference);
@@ -1107,7 +1113,8 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 		if (switch_test_flag(member, MFLAG_ENDCONF)) {
 			if (!--conference->end_count) {
-				switch_set_flag_locked(conference, CFLAG_DESTRUCT);
+				//switch_set_flag_locked(conference, CFLAG_DESTRUCT);
+				conference->endconf_time = switch_epoch_time_now(NULL);
 			}
 		}
 
@@ -1691,6 +1698,13 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			pool = fnode->pool;
 			fnode = NULL;
 			switch_core_destroy_memory_pool(&pool);
+		}
+
+		if (!conference->end_count && conference->endconf_time &&
+				switch_epoch_time_now(NULL) - conference->endconf_time > conference->endconf_grace_time) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Conference %s: endconf grace time exceeded (%u)\n",
+					conference->name, conference->endconf_grace_time);
+			switch_set_flag(conference, CFLAG_DESTRUCT);
 		}
 
 		switch_mutex_unlock(conference->mutex);
@@ -4411,6 +4425,11 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		switch_xml_set_attr_d(x_conference, "recording", "true");
 	}
 
+	if (conference->endconf_grace_time > 0) {
+		switch_snprintf(i, sizeof(i), "%u", conference->endconf_grace_time);
+		switch_xml_set_attr_d(x_conference, "endconf_grace_time", ival);
+	}
+
 	switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - conference->run_time);
 	switch_xml_set_attr_d(x_conference, "run_time", ival);
 
@@ -6791,6 +6810,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *auto_record = NULL;
 	char *conference_log_dir = NULL;
 	char *terminate_on_silence = NULL;
+	char *endconf_grace_time = NULL;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
 	switch_uuid_t uuid;
 	switch_codec_implementation_t read_impl = { 0 };
@@ -6998,6 +7018,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				auto_record = val;
 			} else if (!strcasecmp(var, "terminate-on-silence") && !zstr(val)) {
 				terminate_on_silence = val;
+			} else if (!strcasecmp(var, "endconf-grace-time") && !zstr(val)) {
+				endconf_grace_time = val;
 			}
 		}
 
@@ -7222,9 +7244,12 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	if (!zstr(auto_record)) {
 		conference->auto_record = switch_core_strdup(conference->pool, auto_record);
 	}
-        if (!zstr(terminate_on_silence)) {
-                conference->terminate_on_silence = atoi(terminate_on_silence);
-        }
+	if (!zstr(terminate_on_silence)) {
+		conference->terminate_on_silence = atoi(terminate_on_silence);
+	}
+	if (!zstr(endconf_grace_time)) {
+		conference->endconf_grace_time = atoi(endconf_grace_time);
+	}
 
 	if (!zstr(verbose_events) && switch_true(verbose_events)) {
 		conference->verbose_events = 1;
