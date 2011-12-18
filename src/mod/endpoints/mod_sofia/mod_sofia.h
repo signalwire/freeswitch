@@ -639,6 +639,10 @@ struct sofia_profile {
 	switch_mutex_t *gw_mutex;
 	uint32_t queued_events;
 	uint32_t cseq_base;
+	int tls_only;
+	int tls_no_verify_date;
+	enum tport_tls_verify_policy tls_verify_policy;
+	int tls_verify_depth;
 	char *tls_passphrase;
 };
 
@@ -1039,6 +1043,7 @@ void sofia_reg_release_gateway__(const char *file, const char *func, int line, s
 sofia_transport_t sofia_glue_via2transport(const sip_via_t * via);
 sofia_transport_t sofia_glue_url2transport(const url_t *url);
 sofia_transport_t sofia_glue_str2transport(const char *str);
+enum tport_tls_verify_policy sofia_glue_str2tls_verify_policy(const char * str);
 
 const char *sofia_glue_transport2str(const sofia_transport_t tp);
 char *sofia_glue_find_parameter(const char *str, const char *param);

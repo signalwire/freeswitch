@@ -1845,7 +1845,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	supported = switch_core_sprintf(profile->pool, "%s%s%sprecondition, path, replaces", use_100rel ? "100rel, " : "", use_timer ? "timer, " : "", use_rfc_5626 ? "outbound, " : "");
 
 	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_nat_get_type()) {
-		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+		if ( (! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only) && switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created UDP nat mapping for %s port %d\n", profile->name, profile->sip_port);
 		}
 		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_TCP, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
@@ -1860,7 +1860,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
 							  sofia_event_callback,	/* Callback for processing events */
 							  profile,	/* Additional data to pass to callback */
-							  NUTAG_URL(profile->bindurl),
+							  TAG_IF( ! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only, NUTAG_URL(profile->bindurl)),
 							  NTATAG_USER_VIA(1),
 							  TAG_IF(!strchr(profile->sipip, ':'),
 									 SOATAG_AF(SOA_AF_IP4_ONLY)),
@@ -1873,7 +1873,11 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_passphrase,
 									TPTAG_TLS_PASSPHRASE(profile->tls_passphrase)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
-									 TPTAG_TLS_VERIFY_POLICY(0)),
+									 TPTAG_TLS_VERIFY_POLICY(profile->tls_verify_policy)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+									 TPTAG_TLS_VERIFY_DEPTH(profile->tls_verify_depth)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+									 TPTAG_TLS_VERIFY_DATE(! profile->tls_no_verify_date)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
 									 TPTAG_TLS_VERSION(profile->tls_version)),
 							  TAG_IF(!strchr(profile->sipip, ':'),
@@ -3467,6 +3471,9 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						}
 					}
 				}
+				profile->tls_verify_policy = TPTLS_VERIFY_NONE;
+				/* lib default */
+				profile->tls_verify_depth = 2;
 
 				switch_event_destroy(&xml_params);
 			}
@@ -4403,6 +4410,14 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "tls-bind-params")) {
 						profile->tls_bind_params = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "tls-only")) {
+						profile->tls_only = switch_true(val);
+					} else if (!strcasecmp(var, "tls-no-verify-date")) {
+						profile->tls_no_verify_date = switch_true(val);
+					} else if (!strcasecmp(var, "tls-verify-depth")) {
+						profile->tls_verify_depth = atoi(val);
+					} else if (!strcasecmp(var, "tls-verify-policy")) {
+						profile->tls_verify_policy = sofia_glue_str2tls_verify_policy(val);
 					} else if (!strcasecmp(var, "tls-sip-port")) {
 						if (!strcasecmp(val, "auto")) {
 							sofia_set_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT);

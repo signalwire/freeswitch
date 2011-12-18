@@ -2930,8 +2930,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					if (profile->extsipip) {
 						stream->write_function(stream, "Ext-SIP-IP       \t%s\n", profile->extsipip);
 					}
-					stream->write_function(stream, "URL              \t%s\n", switch_str_nil(profile->url));
-					stream->write_function(stream, "BIND-URL         \t%s\n", switch_str_nil(profile->bindurl));
+					if (! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only) {
+						stream->write_function(stream, "URL              \t%s\n", switch_str_nil(profile->url));
+						stream->write_function(stream, "BIND-URL         \t%s\n", switch_str_nil(profile->bindurl));
+					}
 					if (sofia_test_pflag(profile, PFLAG_TLS)) {
 						stream->write_function(stream, "TLS-URL          \t%s\n", switch_str_nil(profile->tls_url));
 						stream->write_function(stream, "TLS-BIND-URL     \t%s\n", switch_str_nil(profile->tls_bindurl));
@@ -3056,8 +3058,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				ac++;
 				stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", vvar, "  alias", profile->name, "ALIASED");
 			} else {
-				stream->write_function(stream, "%25s\t%s\t  %40s\t%s (%u)\n", profile->name, "profile", profile->url,
+				if (! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only) {
+					stream->write_function(stream, "%25s\t%s\t  %40s\t%s (%u)\n", profile->name, "profile", profile->url,
 									   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
+				}
 
 				if (sofia_test_pflag(profile, PFLAG_TLS)) {
 					stream->write_function(stream, "%25s\t%s\t  %40s\t%s (%u) (TLS)\n", profile->name, "profile", profile->tls_url,
@@ -3331,9 +3335,11 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				stream->write_function(stream, "<alias>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</alias>\n", vvar, "alias",
 									   profile->name, "ALIASED");
 			} else {
-				stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%u)</state>\n</profile>\n",
+				if (! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only){
+					stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%u)</state>\n</profile>\n",
 									   profile->name, "profile", profile->url, sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN",
 									   profile->inuse);
+				}
 
 				if (sofia_test_pflag(profile, PFLAG_TLS)) {
 					stream->write_function(stream,

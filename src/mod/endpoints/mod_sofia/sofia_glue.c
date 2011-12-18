@@ -1142,6 +1142,24 @@ sofia_transport_t sofia_glue_str2transport(const char *str)
 	return SOFIA_TRANSPORT_UNKNOWN;
 }
 
+enum tport_tls_verify_policy sofia_glue_str2tls_verify_policy(const char * str){
+	if (!strcasecmp(str, "in")) {
+		return TPTLS_VERIFY_IN;
+	} else if (!strcasecmp(str, "out")) {
+		return TPTLS_VERIFY_OUT;
+	} else if (!strcasecmp(str, "all")) {
+		return TPTLS_VERIFY_ALL;
+	} else if (!strcasecmp(str, "subjects_in")) {
+		return TPTLS_VERIFY_SUBJECTS_IN;
+	} else if (!strcasecmp(str, "subjects_out")) {
+		return TPTLS_VERIFY_SUBJECTS_OUT;
+	} else if (!strcasecmp(str, "subjects_all")) {
+		return TPTLS_VERIFY_SUBJECTS_ALL;
+	}
+
+	return TPTLS_VERIFY_NONE;
+}
+
 char *sofia_glue_find_parameter_value(switch_core_session_t *session, const char *str, const char *param)
 {
 	const char *param_ptr;
