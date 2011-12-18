@@ -1,6 +1,8 @@
 <configuration name="xml_curl.conf" description="cURL XML Gateway">
   <bindings>
     <binding name="example">
+      <!-- Allow to bind on a particular IP for requests sent -->
+      <!--<param name="bind-local" value="$${local_ip_v4}" />-->
       <!-- The url to a gateway cgi that can generate xml similar to
 	   what's in this file only on-the-fly (leave it commented if you dont
 	   need it) -->
