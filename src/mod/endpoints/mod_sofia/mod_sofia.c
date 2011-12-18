@@ -2225,10 +2225,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (!zstr(msg->string_arg)) {
 			if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
+				char *added_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
 				char *dest = (char *) msg->string_arg;
 				char *argv[128] = { 0 };
 				char *mydata = NULL, *newdest = NULL;
-				int argc = 0, i;
+				int argc = 0, ok = 0, i;
 				switch_size_t len = 0;
 
 				if (strchr(dest, ',')) {
@@ -2263,13 +2264,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirecting to %s\n", dest);
+				
+				ok = sofia_test_pflag(tech_pvt->profile, PFLAG_MANUAL_REDIRECT);
 
 				if (argc > 1) {
 					nua_respond(tech_pvt->nh, SIP_300_MULTIPLE_CHOICES, SIPTAG_CONTACT_STR(dest),
-								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+							TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+							TAG_IF((!zstr(added_headers) && !ok), SIPTAG_HEADER_STR(added_headers)), TAG_END());
 				} else {
 					nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(dest),
-								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+							TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+							TAG_IF((!zstr(added_headers) && !ok), SIPTAG_HEADER_STR(added_headers)), TAG_END());	
 				}
 
 
