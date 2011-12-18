@@ -198,6 +198,12 @@ enum tport_tls_verify_policy {
   TPTLS_VERIFY_SUBJECTS_ALL = 0xF,
 };
 
+TPORT_DLL extern tag_typedef_t tptag_tls_passphrase;
+#define TPTAG_TLS_PASSPHRASE(x)  tptag_tls_passphrase, tag_str_v(x)
+
+TPORT_DLL extern tag_typedef_t tptag_tls_passphrase_ref;
+#define TPTAG_TLS_PASSPHRASE_REF(x)  tptag_tls_passphrase_ref, tag_str_vr(&(x))
+
 TPORT_DLL extern tag_typedef_t tptag_tls_verify_policy;
 #define TPTAG_TLS_VERIFY_POLICY(x) tptag_tls_verify_policy, tag_uint_v((x))
 

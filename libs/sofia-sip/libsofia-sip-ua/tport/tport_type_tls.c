@@ -182,6 +182,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
   char const *path = NULL;
   unsigned tls_version = 1;
   unsigned tls_verify = 0;
+  char const *passphrase = NULL;
   unsigned tls_policy = TPTLS_VERIFY_NONE;
   unsigned tls_depth = 0;
   unsigned tls_date = 1;
@@ -198,6 +199,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
 	  TPTAG_CERTIFICATE_REF(path),
 	  TPTAG_TLS_VERSION_REF(tls_version),
 	  TPTAG_TLS_VERIFY_PEER_REF(tls_verify),
+	  TPTAG_TLS_PASSPHRASE_REF(passphrase),
 	  TPTAG_TLS_VERIFY_POLICY_REF(tls_policy),
 	  TPTAG_TLS_VERIFY_DEPTH_REF(tls_depth),
 	  TPTAG_TLS_VERIFY_DATE_REF(tls_date),
@@ -218,6 +220,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
     ti.configured = path != tbf;
     ti.randFile = su_sprintf(autohome, "%s/%s", path, "tls_seed.dat");
     ti.key = su_sprintf(autohome, "%s/%s", path, "agent.pem");
+    ti.passphrase = su_strdup(autohome, passphrase);
     ti.cert = ti.key;
     ti.CAfile = su_sprintf(autohome, "%s/%s", path, "cafile.pem");
     ti.version = tls_version;

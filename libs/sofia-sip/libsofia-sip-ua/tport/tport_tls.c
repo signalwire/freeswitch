@@ -160,6 +160,27 @@ void tls_log_errors(unsigned level, char const *s, unsigned long e)
   }
 }
 
+/*
+ * This callback hands back the password to be used during decryption.
+ *
+ * buf      : the function will write the password into this buffer
+ * size     : the size of "buf"
+ * rwflag   : indicates whether the callback is being used for reading/
+ *            decryption (0) or writing/encryption (1)
+ * userdata : pointer tls_issues_t where the passphrase is stored
+ */
+static int passwd_cb(char *buf, int size, int rwflag, void *userdata)
+{
+	if (rwflag == 0) { // reading/decryption
+		tls_issues_t *tlsi = (tls_issues_t *)userdata;
+
+		strncpy(buf, tlsi->passphrase, size);
+		buf[size - 1] = '\0';
+
+		return strlen(tlsi->passphrase);
+	}
+	return 0;
+}
 
 static
 tls_t *tls_create(int type)
@@ -288,6 +309,12 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     tls_log_errors(1, "tls_init_context", 0);
     errno = EIO;
     return -1;
+  }
+
+  /* Set callback if we have a passphrase */
+  if (ti->passphrase != NULL) {
+    SSL_CTX_set_default_passwd_cb(tls->ctx, passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(tls->ctx, (void *)ti);
   }
 
   if (!SSL_CTX_use_certificate_file(tls->ctx,
