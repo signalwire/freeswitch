@@ -1143,21 +1143,34 @@ sofia_transport_t sofia_glue_str2transport(const char *str)
 }
 
 enum tport_tls_verify_policy sofia_glue_str2tls_verify_policy(const char * str){
-	if (!strcasecmp(str, "in")) {
-		return TPTLS_VERIFY_IN;
-	} else if (!strcasecmp(str, "out")) {
-		return TPTLS_VERIFY_OUT;
-	} else if (!strcasecmp(str, "all")) {
-		return TPTLS_VERIFY_ALL;
-	} else if (!strcasecmp(str, "subjects_in")) {
-		return TPTLS_VERIFY_SUBJECTS_IN;
-	} else if (!strcasecmp(str, "subjects_out")) {
-		return TPTLS_VERIFY_SUBJECTS_OUT;
-	} else if (!strcasecmp(str, "subjects_all")) {
-		return TPTLS_VERIFY_SUBJECTS_ALL;
-	}
+	char *ptr_next;
+	int len;
+	enum tport_tls_verify_policy ret;
+	char *ptr_cur = (char *) str;
+	ret = TPTLS_VERIFY_NONE;
 
-	return TPTLS_VERIFY_NONE;
+	while (ptr_cur) {
+		if ((ptr_next = strchr(ptr_cur, '|'))) {
+			len = ptr_next++ - ptr_cur;
+		} else {
+			len = strlen(ptr_cur);
+		}
+		if (!strncasecmp(ptr_cur, "in",len)) {
+			ret |= TPTLS_VERIFY_IN;
+		} else if (!strncasecmp(ptr_cur, "out",len)) {
+			ret |= TPTLS_VERIFY_OUT;
+		} else if (!strncasecmp(ptr_cur, "all",len)) {
+			ret |= TPTLS_VERIFY_ALL;
+		} else if (!strncasecmp(ptr_cur, "subjects_in",len)) {
+			ret |= TPTLS_VERIFY_SUBJECTS_IN;
+		} else if (!strncasecmp(ptr_cur, "subjects_out",len)) {
+			ret |= TPTLS_VERIFY_SUBJECTS_OUT;
+		} else if (!strncasecmp(ptr_cur, "subjects_all",len)) {
+			ret |= TPTLS_VERIFY_SUBJECTS_ALL;
+		}
+		ptr_cur = ptr_next;
+	}
+	return ret;
 }
 
 char *sofia_glue_find_parameter_value(switch_core_session_t *session, const char *str, const char *param)

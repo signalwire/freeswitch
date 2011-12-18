@@ -122,6 +122,7 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/auth_module.h>
 #include <sofia-sip/su_md5.h>
 #include <sofia-sip/su_log.h>
+#include <sofia-sip/su_strlst.h>
 #include <sofia-sip/nea.h>
 #include <sofia-sip/msg_addr.h>
 #include <sofia-sip/tport_tag.h>
@@ -644,6 +645,8 @@ struct sofia_profile {
 	enum tport_tls_verify_policy tls_verify_policy;
 	int tls_verify_depth;
 	char *tls_passphrase;
+	char *tls_verify_in_subjects_str;
+	su_strlst_t *tls_verify_in_subjects;
 };
 
 struct private_object {
