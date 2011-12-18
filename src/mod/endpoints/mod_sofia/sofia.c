@@ -1882,7 +1882,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
 									 TPTAG_TLS_VERIFY_DEPTH(profile->tls_verify_depth)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
-									 TPTAG_TLS_VERIFY_DATE(! profile->tls_no_verify_date)),
+									 TPTAG_TLS_VERIFY_DATE(profile->tls_verify_date)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_verify_in_subjects,
 									  TPTAG_TLS_VERIFY_SUBJECTS(profile->tls_verify_in_subjects)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
@@ -3478,9 +3478,6 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						}
 					}
 				}
-				profile->tls_verify_policy = TPTLS_VERIFY_NONE;
-				/* lib default */
-				profile->tls_verify_depth = 2;
 
 				switch_event_destroy(&xml_params);
 			}
@@ -3686,6 +3683,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
 				profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
 				profile->te = 101;
+
+                                profile->tls_verify_policy = TPTLS_VERIFY_NONE;
+                                /* lib default */
+                                profile->tls_verify_depth = 2;
+				profile->tls_verify_date = SWITCH_TRUE;
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -4422,8 +4424,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->tls_bind_params = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tls-only")) {
 						profile->tls_only = switch_true(val);
-					} else if (!strcasecmp(var, "tls-no-verify-date")) {
-						profile->tls_no_verify_date = switch_true(val);
+					} else if (!strcasecmp(var, "tls-verify-date")) {
+						profile->tls_verify_date = switch_true(val);
 					} else if (!strcasecmp(var, "tls-verify-depth")) {
 						profile->tls_verify_depth = atoi(val);
 					} else if (!strcasecmp(var, "tls-verify-policy")) {

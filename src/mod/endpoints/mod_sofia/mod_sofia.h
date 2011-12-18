@@ -641,7 +641,7 @@ struct sofia_profile {
 	uint32_t queued_events;
 	uint32_t cseq_base;
 	int tls_only;
-	int tls_no_verify_date;
+	int tls_verify_date;
 	enum tport_tls_verify_policy tls_verify_policy;
 	int tls_verify_depth;
 	char *tls_passphrase;
