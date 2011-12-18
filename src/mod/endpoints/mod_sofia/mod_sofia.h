@@ -639,6 +639,7 @@ struct sofia_profile {
 	switch_mutex_t *gw_mutex;
 	uint32_t queued_events;
 	uint32_t cseq_base;
+	char *tls_passphrase;
 };
 
 struct private_object {

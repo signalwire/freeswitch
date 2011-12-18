@@ -1870,6 +1870,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 									 NUTAG_SIPS_URL(profile->tls_bindurl)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
 									 NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_passphrase,
+									TPTAG_TLS_PASSPHRASE(profile->tls_passphrase)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
 									 TPTAG_TLS_VERIFY_POLICY(0)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
@@ -4409,6 +4411,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "tls-cert-dir")) {
 						profile->tls_cert_dir = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "tls-passphrase")) {
+						profile->tls_passphrase = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tls-version")) {
 
 						if (!strcasecmp(val, "tlsv1")) {
