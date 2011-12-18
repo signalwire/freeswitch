@@ -1,5 +1,7 @@
 <configuration name="directory.conf" description="Directory">
   <settings>
+      <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
+      <!--<param name="dbname" value="directory"/>-->
   </settings>
   <profiles>
     <profile name="default">
