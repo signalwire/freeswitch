@@ -5183,6 +5183,93 @@ static switch_status_t conf_api_sub_pin(conference_obj_t *conference, switch_str
 	}
 }
 
+static switch_status_t conf_api_sub_get(conference_obj_t *conference,
+		switch_stream_handle_t *stream, int argc, char **argv) {
+	int ret_status = SWITCH_STATUS_GENERR;
+
+	if (argc != 3) {
+		ret_status = SWITCH_STATUS_FALSE;
+	} else {
+		ret_status = SWITCH_STATUS_SUCCESS;
+		if (strcasecmp(argv[2], "run_time") == 0) {
+			stream->write_function(stream, "%ld",
+					switch_epoch_time_now(NULL) - conference->run_time);
+		} else if (strcasecmp(argv[2], "count") == 0) {
+			stream->write_function(stream, "%d",
+					conference->count);
+		} else if (strcasecmp(argv[2], "max_members") == 0) {
+			stream->write_function(stream, "%d",
+					conference->max_members);
+		} else if (strcasecmp(argv[2], "rate") == 0) {
+			stream->write_function(stream, "%d",
+					conference->rate);
+		} else if (strcasecmp(argv[2], "profile_name") == 0) {
+			stream->write_function(stream, "%s",
+					conference->profile_name);
+		} else if (strcasecmp(argv[2], "sound_prefix") == 0) {
+			stream->write_function(stream, "%s",
+					conference->sound_prefix);
+		} else if (strcasecmp(argv[2], "caller_id_name") == 0) {
+			stream->write_function(stream, "%s",
+					conference->caller_id_name);
+		} else if (strcasecmp(argv[2], "caller_id_number") == 0) {
+			stream->write_function(stream, "%s",
+					conference->caller_id_number);
+		} else if (strcasecmp(argv[2], "is_locked") == 0) {
+			stream->write_function(stream, "%s",
+					switch_test_flag(conference, CFLAG_LOCKED) ? "locked" : "");
+		} else if (strcasecmp(argv[2], "endconf_grace_time") == 0) {
+			stream->write_function(stream, "%d",
+					conference->endconf_grace_time);
+		} else {
+			ret_status = SWITCH_STATUS_FALSE;
+		}
+	}
+
+	return ret_status;
+}
+
+static switch_status_t conf_api_sub_set(conference_obj_t *conference,
+		switch_stream_handle_t *stream, int argc, char **argv) {
+	int ret_status = SWITCH_STATUS_GENERR;
+
+	if (argc != 4 || zstr(argv[3])) {
+		ret_status = SWITCH_STATUS_FALSE;
+	} else {
+		ret_status = SWITCH_STATUS_SUCCESS;
+		if (strcasecmp(argv[2], "max_members") == 0) {
+			int new_max = atoi(argv[3]);
+			if (new_max >= 0) {
+				stream->write_function(stream, "%d", conference->max_members);
+				conference->max_members = new_max;
+			} else {
+				ret_status = SWITCH_STATUS_FALSE;
+			}
+		} else 	if (strcasecmp(argv[2], "sound_prefix") == 0) {
+			stream->write_function(stream, "%s",conference->sound_prefix);
+			conference->sound_prefix = switch_core_strdup(conference->pool, argv[3]);
+		} else 	if (strcasecmp(argv[2], "caller_id_name") == 0) {
+			stream->write_function(stream, "%s",conference->caller_id_name);
+			conference->caller_id_name = switch_core_strdup(conference->pool, argv[3]);
+		} else 	if (strcasecmp(argv[2], "caller_id_number") == 0) {
+			stream->write_function(stream, "%s",conference->caller_id_number);
+			conference->caller_id_number = switch_core_strdup(conference->pool, argv[3]);
+		} else if (strcasecmp(argv[2], "endconf_grace_time") == 0) {
+				int new_gt = atoi(argv[3]);
+				if (new_gt >= 0) {
+					stream->write_function(stream, "%d", conference->endconf_grace_time);
+					conference->endconf_grace_time = new_gt;
+				} else {
+					ret_status = SWITCH_STATUS_FALSE;
+				}
+		} else {
+			ret_status = SWITCH_STATUS_FALSE;
+		}
+	}
+
+	return ret_status;
+}
+
 typedef enum {
 	CONF_API_COMMAND_LIST = 0,
 	CONF_API_COMMAND_ENERGY,
@@ -5208,6 +5295,10 @@ typedef enum {
 	CONF_API_COMMAND_NORECORD,
 	CONF_API_COMMAND_EXIT_SOUND,
 	CONF_API_COMMAND_ENTER_SOUND,
+	CONF_API_COMMAND_PIN,
+	CONF_API_COMMAND_NOPIN,
+	CONF_API_COMMAND_GET,
+	CONF_API_COMMAND_SET,
 } api_command_type_t;
 
 /* API Interface Function sub-commands */
@@ -5243,6 +5334,8 @@ static api_command_t conf_api_sub_commands[] = {
 	{"enter_sound", (void_fn_t) & conf_api_sub_enter_sound, CONF_API_SUB_ARGS_SPLIT, "enter_sound", "on|off|none|file <filename>"},
 	{"pin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "pin", "<pin#>"},
 	{"nopin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "nopin", ""},
+	{"get", (void_fn_t) & conf_api_sub_get, CONF_API_SUB_ARGS_SPLIT, "get", "<parameter-name>"},
+	{"set", (void_fn_t) & conf_api_sub_set, CONF_API_SUB_ARGS_SPLIT, "set", "<parameter-name> <value>"},
 };
 
 #define CONFFUNCAPISIZE (sizeof(conf_api_sub_commands)/sizeof(conf_api_sub_commands[0]))
