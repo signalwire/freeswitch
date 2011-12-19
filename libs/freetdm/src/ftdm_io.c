@@ -52,7 +52,7 @@
 struct tm *localtime_r(const time_t *clock, struct tm *result);
 #endif
 
-#define FORCE_HANGUP_TIMER 3000
+#define FORCE_HANGUP_TIMER 30000
 #define SPAN_PENDING_CHANS_QUEUE_SIZE 1000
 #define SPAN_PENDING_SIGNALS_QUEUE_SIZE 1000
 #define FTDM_READ_TRACE_INDEX 0
@@ -5455,7 +5455,7 @@ static void execute_safety_hangup(void *data)
 	ftdm_channel_lock(fchan);
 	fchan->hangup_timer = 0;
 	if (fchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
-		ftdm_log_chan(fchan, FTDM_LOG_NOTICE, "Forcing hangup since the user did not confirmed our hangup after %dms\n", FORCE_HANGUP_TIMER);
+		ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Forcing hangup since the user did not confirmed our hangup after %dms\n", FORCE_HANGUP_TIMER);
 		_ftdm_channel_call_hangup_nl(__FILE__, __FUNCTION__, __LINE__, fchan, NULL);
 	} else {
 		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Not performing safety hangup, channel state is %s\n", ftdm_channel_state2str(fchan->state));
