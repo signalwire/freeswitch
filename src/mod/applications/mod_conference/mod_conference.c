@@ -368,6 +368,7 @@ struct conference_member {
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	char *rec_path;
+	switch_time_t rec_time;
 	uint8_t *frame;
 	uint8_t *last_frame;
 	uint32_t frame_size;
@@ -3181,6 +3182,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	member->conference = conference;
 	member->native_rate = conference->rate;
 	member->rec_path = rec->path;
+	member->rec_time = switch_epoch_time_now(NULL);
 	fh.channels = 1;
 	fh.samplerate = conference->rate;
 	member->id = next_member_id();
@@ -4455,6 +4457,22 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		char tmp[50] = "";
 
 		if (switch_test_flag(member, MFLAG_NOCHANNEL)) {
+			if (member->rec_path) {
+				x_member = switch_xml_add_child_d(x_members, "member", moff++);
+				switch_assert(x_member);
+				switch_xml_set_attr_d(x_member, "type", "recording_node");
+				/* or:
+				x_member = switch_xml_add_child_d(x_members, "recording_node", moff++);
+				*/
+
+				x_tag = switch_xml_add_child_d(x_member, "record_path", count++);
+				switch_xml_set_txt_d(x_tag, member->rec_path);
+
+				x_tag = switch_xml_add_child_d(x_member, "join_time", count++);
+				switch_xml_set_attr_d(x_tag, "type", "UNIX-epoch");
+				switch_snprintf(i, sizeof(i), "%d", member->rec_time);
+				switch_xml_set_txt_d(x_tag, i);
+			}
 			continue;
 		}
 
