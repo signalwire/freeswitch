@@ -116,6 +116,12 @@ typedef enum {
 	SNG_CALLING			= 2
 } sng_addr_type_t;
 
+typedef enum {
+	SNG_GEN_CFG_STATUS_INIT    = 0,
+	SNG_GEN_CFG_STATUS_PENDING = 1,
+	SNG_GEN_CFG_STATUS_DONE    = 2
+} nsg_gen_cfg_type_t;
+
 typedef struct sng_mtp2_error_type {
 	int	init;
 	char sng_type[MAX_NAME_LEN];

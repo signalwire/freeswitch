@@ -1653,8 +1653,10 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
 
 	/* check if the channel sig state is UP */
 	if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_UP)) {
-		SS7_ERROR_CHAN(ftdmchan, "Requested channel sig state is down, cancelling call!%s\n", " ");
-		goto outgoing_fail;
+		SS7_ERROR_CHAN(ftdmchan, "Requested channel sig state is down, skipping channell!%s\n", " ");
+		/* Sig state will be down due to a block.  
+		   Right action is to hunt for another call */
+		goto outgoing_break;
 	}
 
 	/* check if there is a remote block */
@@ -1677,6 +1679,14 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(ftdm_sangoma_ss7_outgoing_call)
 		/* the channel is blocked...can't send any calls here */
 		SS7_ERROR_CHAN(ftdmchan, "Requested channel is locally blocked, re-hunt channel!%s\n", " ");
 		goto outgoing_break;
+	}
+
+
+    /* This is a gracefull stack resource check.
+       Removing this function will cause unpredictable
+	   ungracefule errors. */
+	if (sng_cc_resource_check()) {
+		goto outgoing_fail;
 	}
 
 	/* check the state of the channel */
@@ -1873,7 +1883,6 @@ static ftdm_status_t ftdm_sangoma_ss7_stop(ftdm_span_t * span)
 static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 {
 	sngss7_span_data_t	*ss7_span_info;
-	int sngss7_retry_cnt=5;
 
 	ftdm_log (FTDM_LOG_INFO, "Configuring ftmod_sangoma_ss7 span = %s(%d)...\n",
 								span->name,
@@ -1923,20 +1932,14 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	/* parse the configuration and apply to the global config structure */
 	if (ftmod_ss7_parse_xml(ftdm_parameters, span)) {
 		ftdm_log (FTDM_LOG_CRIT, "Failed to parse configuration!\n");
-		ftdm_sleep (1000);
+		ftdm_sleep (100);
 		return FTDM_FAIL;
 	}
 
 	/* configure libsngss7 */
-try_cfg_again:
 	if (ft_to_sngss7_cfg_all()) {
-		if (sngss7_retry_cnt--) {
-			ftdm_sleep (500);
-			ftdm_log (FTDM_LOG_DEBUG, "Failed to configure LibSngSS7 - retrying!\n");
-			goto try_cfg_again;
-		}
 		ftdm_log (FTDM_LOG_CRIT, "Failed to configure LibSngSS7!\n");
-		ftdm_sleep (1000);
+		ftdm_sleep (100);
 		return FTDM_FAIL;
 	}
 
