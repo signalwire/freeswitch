@@ -2054,8 +2054,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock %s\n", profile->name);
-	switch_thread_rwlock_wrlock(profile->rwlock);
+
 	sofia_reg_unregister(profile);
 	nua_shutdown(profile->nua);
 
@@ -2117,6 +2116,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted TCP/TLS nat mapping for %s port %d\n", profile->name, profile->tls_sip_port);
 		}
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock %s\n", profile->name);
+	switch_thread_rwlock_wrlock(profile->rwlock);
 
 	//su_home_unref(profile->home);
 	su_root_destroy(profile->s_root);
