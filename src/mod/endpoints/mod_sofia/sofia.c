@@ -2477,7 +2477,6 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				}
 			}
 
-			/* Windows todo figure this out! */
 			/* RFC 5626 enable in the GW profile and the UA profile */
 			if (rfc_5626 && sofia_test_pflag(profile, PFLAG_ENABLE_RFC5626)) {
 				char str_guid[su_guid_strlen + 1];
