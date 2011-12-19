@@ -49,7 +49,11 @@
 #include "private/ftdm_core.h"
 #include "ftmod_sangoma_isdn_user.h"
 
+#ifdef WIN32
+#include <sng_isdn.h>
+#else
 #include <sng_isdn/sng_isdn.h>
+#endif
 
 /* Theoretical limit for MAX_SPANS_PER_NFAS_LINK is 31,
    but set to 8 for now to save some memory */
