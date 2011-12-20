@@ -60,7 +60,7 @@ struct esl_thread {
 #endif
 };
 
-size_t thread_default_stacksize = 0;
+size_t thread_default_stacksize = 240;
 
 void esl_thread_override_default_stacksize(size_t size)
 {
