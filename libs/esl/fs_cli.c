@@ -1357,7 +1357,12 @@ int main(int argc, char *argv[])
 	}
 	global_handle = &handle;
 	global_profile = profile;
-	esl_thread_create_detached(msg_thread_run, &handle);
+
+	if (esl_thread_create_detached(msg_thread_run, &handle) != ESL_SUCCESS) {
+		printf("Error starting thread!\n");
+		esl_disconnect(&handle);
+		return 0;
+	}
 
 #ifdef HAVE_EDITLINE
 	el = el_init(__FILE__, stdin, stdout, stderr);

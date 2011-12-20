@@ -60,7 +60,7 @@ struct esl_thread {
 #endif
 };
 
-size_t thread_default_stacksize = 240;
+size_t thread_default_stacksize = 240 * 1024;
 
 void esl_thread_override_default_stacksize(size_t size)
 {
@@ -119,7 +119,9 @@ esl_status_t esl_thread_create_detached_ex(esl_thread_function_t func, void *dat
 
 	status = ESL_SUCCESS;
 	goto done;
+
  failpthread:
+
 	pthread_attr_destroy(&thread->attribute);
 #endif
 
