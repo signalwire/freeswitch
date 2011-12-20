@@ -2421,13 +2421,26 @@ SWITCH_DECLARE(int) switch_max_file_desc(void)
 
 }
 
-SWITCH_DECLARE(void) switch_close_extra_files(void)
+SWITCH_DECLARE(void) switch_close_extra_files(int *keep, int keep_ttl)
 {
 	int open_max = switch_max_file_desc();
-	int i;
+	int i, j;
 
 	for (i = 3; i < open_max; i++) {
+		if (keep) {
+			for (j = 0; j < keep_ttl; j++) {
+				if (i == keep[j]) {
+					goto skip;
+				}
+			}
+		}
+
 		close(i);
+
+	skip:
+
+		continue;
+
 	}
 }
 
@@ -2456,7 +2469,7 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 		}
 		free(dcmd);
 	} else {
-		switch_close_extra_files();
+		switch_close_extra_files(NULL, 0);
 		
 		set_low_priority();
 		system(dcmd);
@@ -2508,7 +2521,7 @@ SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_han
 			close(fds[0]);
 			waitpid(pid, NULL, 0);
 		} else {				/*  child */
-			switch_close_extra_files();
+			switch_close_extra_files(fds, 2);
 			close(fds[0]);
 			dup2(fds[1], STDOUT_FILENO);
 			switch_system(cmd, SWITCH_TRUE);
@@ -2525,6 +2538,7 @@ SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_han
 
 }
 
+<<<<<<< HEAD
 #ifndef WIN32
 static int switch_stream_system_thread(const char *cmd, switch_stream_handle_t *stream)
 {
@@ -2584,17 +2598,15 @@ static int switch_stream_system_thread(const char *cmd, switch_stream_handle_t *
 }
 #endif
 
+=======
+>>>>>>> the threaded one seems to not work using only fork
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream)
 {
 #ifdef WIN32
 	stream->write_function(stream, "Capturing output not supported.\n");
 	return switch_system(cmd, SWITCH_TRUE);
 #else
-	int (*sys_p)(const char *cmd, switch_stream_handle_t *stream);
-
-	sys_p = switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC) ? switch_stream_system_thread : switch_stream_system_fork;
-
-	return sys_p(cmd, stream);
+	return switch_stream_system_fork(cmd, stream);
 #endif
 
 }
