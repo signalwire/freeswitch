@@ -2115,6 +2115,7 @@ SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration);
 SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string);
 SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string);
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
+SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
 SWITCH_DECLARE(void) switch_cond_yield(switch_interval_time_t t);
 SWITCH_DECLARE(void) switch_cond_next(void);
 SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_proto, const char *proto, const char *from, const char *to,
@@ -2302,7 +2303,8 @@ SWITCH_DECLARE(char *) switch_say_file_handle_detach_path(switch_say_file_handle
 SWITCH_DECLARE(void) switch_say_file_handle_destroy(switch_say_file_handle_t **sh);
 SWITCH_DECLARE(switch_status_t) switch_say_file_handle_create(switch_say_file_handle_t **sh, const char *ext, switch_event_t **var_event);
 SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *fmt, ...);
-
+SWITCH_DECLARE(int) switch_max_file_desc(void);
+SWITCH_DECLARE(void) switch_close_extra_files(void);
 
 SWITCH_END_EXTERN_C
 #endif

@@ -2321,6 +2321,7 @@ struct system_thread_handle {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	int ret;
+	int *fds;
 };
 
 static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj)
@@ -2338,6 +2339,10 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 	}
 #endif
 #endif
+
+	if (sth->fds) {
+		dup2(sth->fds[1], STDOUT_FILENO);
+	}
 
 	sth->ret = system(sth->cmd);
 
@@ -2400,6 +2405,33 @@ static int switch_system_thread(const char *cmd, switch_bool_t wait)
 	return ret;
 }
 
+SWITCH_DECLARE(int) switch_max_file_desc(void)
+{
+	int max = 0;
+
+#ifndef WIN32
+#if defined(HAVE_GETDTABLESIZE)
+	max = getdtablesize();
+#else
+	max = sysconf(_SC_OPEN_MAX);
+#endif
+#endif
+
+	return max;
+
+}
+
+SWITCH_DECLARE(void) switch_close_extra_files(void)
+{
+	int open_max = switch_max_file_desc();
+	int i;
+
+	for (i = 3; i < open_max; i++) {
+		close(i);
+	}
+}
+
+
 
 #ifdef WIN32
 static int switch_system_fork(const char *cmd, switch_bool_t wait)
@@ -2408,19 +2440,6 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 }
 
 #else
-static int max_open(void)
-{
-	int max;
-
-#if defined(HAVE_GETDTABLESIZE)
-	max = getdtablesize();
-#else
-	max = sysconf(_SC_OPEN_MAX);
-#endif
-
-	return max;
-
-}
 
 static int switch_system_fork(const char *cmd, switch_bool_t wait)
 {
@@ -2437,15 +2456,10 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 		}
 		free(dcmd);
 	} else {
-		int open_max = max_open();
-		int i;
-
-		for (i = 3; i < open_max; i++) {
-			close(i);
-		}
+		switch_close_extra_files();
 		
 		set_low_priority();
-		i = system(dcmd);
+		system(dcmd);
 		free(dcmd);
 		exit(0);
 	}
@@ -2466,6 +2480,123 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 
 }
 
+
+
+SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream)
+{
+#ifdef WIN32
+	return switch_system(cmd, SWITCH_TRUE);
+#else
+	int fds[2], pid = 0;
+
+	if (pipe(fds)) {
+		goto end;
+	} else {					/* good to go */
+		pid = fork();
+
+		if (pid < 0) {			/* ok maybe not */
+			close(fds[0]);
+			close(fds[1]);
+			goto end;
+		} else if (pid) {		/* parent */
+			char buf[1024] = "";
+			int bytes;
+			close(fds[1]);
+			while ((bytes = read(fds[0], buf, sizeof(buf))) > 0) {
+				stream->raw_write_function(stream, (unsigned char *)buf, bytes);
+			}
+			close(fds[0]);
+			waitpid(pid, NULL, 0);
+		} else {				/*  child */
+			switch_close_extra_files();
+			close(fds[0]);
+			dup2(fds[1], STDOUT_FILENO);
+			switch_system(cmd, SWITCH_TRUE);
+			close(fds[1]);
+			exit(0);
+		}
+	}
+
+ end:
+
+	return 0;
+
+#endif
+
+}
+
+static int switch_stream_system_thread(const char *cmd, switch_stream_handle_t *stream)
+{
+#ifdef WIN32
+	return switch_system(cmd, SWITCH_TRUE);
+#else
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr;
+	int ret = 0;
+	struct system_thread_handle *sth;
+	switch_memory_pool_t *pool;
+	int fds[2] = {0};
+	char buf[1024] = "";
+	int bytes;
+
+	if (pipe(fds)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pipe Failure\n");
+		return 1;
+	}
+
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+		return 1;
+	}
+
+	if (!(sth = switch_core_alloc(pool, sizeof(struct system_thread_handle)))) {
+		switch_core_destroy_memory_pool(&pool);
+		return 1;
+	}
+
+	sth->pool = pool;
+	sth->cmd = switch_core_strdup(pool, cmd);
+	sth->fds = fds;
+
+	switch_thread_cond_create(&sth->cond, sth->pool);
+	switch_mutex_init(&sth->mutex, SWITCH_MUTEX_NESTED, sth->pool);
+	switch_mutex_lock(sth->mutex);
+		
+	switch_threadattr_create(&thd_attr, sth->pool);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_SYSTEM_THREAD_STACKSIZE);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_thread_create(&thread, thd_attr, system_thread, sth, sth->pool);
+
+	close(fds[1]);
+	while ((bytes = read(fds[0], buf, sizeof(buf))) > 0) {
+		stream->raw_write_function(stream, (unsigned char *)buf, bytes);
+	}
+	close(fds[0]);
+	switch_thread_cond_wait(sth->cond, sth->mutex);
+	ret = sth->ret;
+	switch_mutex_unlock(sth->mutex);
+
+	return ret;
+	
+#endif
+
+}
+
+
+SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream)
+{
+#ifdef WIN32
+	stream->write_function(stream, "Capturing output not supported.\n");
+	return switch_system(cmd, SWITCH_TRUE);
+#else
+	int (*sys_p)(const char *cmd, switch_stream_handle_t *stream);
+
+	sys_p = switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC) ? switch_stream_system_thread : switch_stream_system_fork;
+
+	return sys_p(cmd, stream);
+#endif
+
+}
 
 /* For Emacs:
  * Local Variables:

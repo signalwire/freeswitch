@@ -1256,6 +1256,7 @@ static int preprocess_exec(const char *cwd, const char *command, int write_fd, i
 			close(fds[0]);
 			waitpid(pid, NULL, 0);
 		} else {				/*  child */
+			switch_close_extra_files();
 			close(fds[0]);
 			dup2(fds[1], STDOUT_FILENO);
 			switch_system(command, SWITCH_TRUE);
