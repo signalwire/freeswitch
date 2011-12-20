@@ -2525,6 +2525,7 @@ SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_han
 
 }
 
+#ifndef WIN32
 static int switch_stream_system_thread(const char *cmd, switch_stream_handle_t *stream)
 {
 #ifdef WIN32
@@ -2581,7 +2582,7 @@ static int switch_stream_system_thread(const char *cmd, switch_stream_handle_t *
 #endif
 
 }
-
+#endif
 
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream)
 {
