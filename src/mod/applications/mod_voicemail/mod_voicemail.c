@@ -2164,27 +2164,46 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					char macro[256] = "";
 					switch_event_t *params;
 					switch_xml_t xx_user, xx_domain, xx_domain_root;
+					int fail = 0;
+					int ok = 0;
 
-					switch_snprintf(macro, sizeof(macro), "phrase:%s:%s", VM_ENTER_PASS_MACRO, profile->terminator_key);
-					TRY_CODE(switch_ivr_read(session, 0, 255, macro, NULL, buf, sizeof(buf), 10000, profile->terminator_key, 0));
-					sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
-					vm_execute_sql(profile, sql, profile->mutex);
-					switch_safe_free(file_path);
-					switch_safe_free(sql);
+					while (!ok) {
+						switch_snprintf(macro, sizeof(macro), "phrase:%s:%s", VM_ENTER_PASS_MACRO, profile->terminator_key);
+						TRY_CODE(switch_ivr_read(session, 0, 255, macro, NULL, buf, sizeof(buf), 10000, profile->terminator_key, 0));
+					
 
-					switch_event_create_subclass(&params, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
-					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Action", "change-password");
-					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-User-Password", buf);
-					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-User", myid);
-					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
-					switch_channel_event_set_data(channel, params);
-
-					if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
-											   &xx_domain_root, &xx_domain, &xx_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
-						switch_xml_free(xx_domain_root);
+						switch_event_create_subclass(&params, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
+						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Action", "change-password");
+						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-User-Password", buf);
+						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-User", myid);
+						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
+						switch_channel_event_set_data(channel, params);
+						
+						if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
+												   &xx_domain_root, &xx_domain, &xx_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
+							switch_xml_t x_result;
+							
+							if ((x_result = switch_xml_child(xx_user, "result"))) {
+								if (!switch_true(switch_xml_attr_soft(x_result, "success"))) {
+									fail = 1;
+								}
+							}
+							
+							switch_xml_free(xx_domain_root);
+						}
+						
+						if (fail) {
+							switch_ivr_phrase_macro(session, VM_FAIL_AUTH_MACRO, NULL, NULL, NULL);
+						} else {
+							sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
+							vm_execute_sql(profile, sql, profile->mutex);
+							switch_safe_free(file_path);
+							switch_safe_free(sql);
+							ok = 1;
+						}
+					
+						switch_event_destroy(&params);
 					}
-
-					switch_event_fire(&params);
 
 				} else if (!strcmp(input, profile->record_name_key)) {
 					switch_event_t *params;
