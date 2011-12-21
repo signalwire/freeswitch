@@ -1923,7 +1923,7 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 			SS7_DEBUG("Found transparent_iam %d\n", sng_ccSpan.transparent_iam);
 #endif
 		} else if (!strcasecmp(parm->var, "transparent_iam_max_size")) {
-			sng_ccSpan.transparent_iam_max_size = ftdm_true(parm->val);
+			sng_ccSpan.transparent_iam_max_size = atoi(parm->val);
 			SS7_DEBUG("Found transparent_iam_max_size %d\n", sng_ccSpan.transparent_iam_max_size);
 		} else if (!strcasecmp(parm->var, "cpg_on_progress_media")) {
 			sng_ccSpan.cpg_on_progress_media = ftdm_true(parm->val);
