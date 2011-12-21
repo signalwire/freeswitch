@@ -2,7 +2,7 @@
  * Copyright (c) 2011, Sangoma Technologies 
  * All rights reserved.
  * 
- * Redistribution and use in source and binary forms, with or without
+  Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  * 
@@ -37,10 +37,144 @@
  *
  */
 
+#define _GNU_SOURCE
+
+#include <string.h>
+#include <stdarg.h>
+#include <unistd.h>
+
+#include <signal.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <poll.h>
+/*========================*/
+
 #include <stdio.h>
 #include <libwat.h>
 #include <freetdm.h>
 #include <private/ftdm_core.h>
+
+
+
+typedef struct ftdm_gsm_data_s {
+
+	wat_interface_t wat_interface;	
+
+} ftdm_gsm_data_t;
+
+/* wat callbacks */
+void on_wat_sigstatus_change(unsigned char span_id, wat_sigstatus_t sigstatus);
+void on_wat_span_alarm(unsigned char span_id, wat_alarm_t alarm);
+int	 on_wat_span_write(unsigned char span_id, void *buffer, unsigned len);
+
+void on_wat_con_ind(unsigned char span_id, uint8_t call_id, wat_con_event_t *con_event);
+void on_wat_con_sts(unsigned char span_id, uint8_t call_id, wat_con_status_t *status);
+void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel_event);
+void on_wat_rel_cfm(unsigned char span_id, uint8_t call_id);
+void on_wat_sms_ind(unsigned char span_id, wat_sms_event_t *sms_event);
+void on_wat_sms_sts(unsigned char span_id, uint8_t sms_id, wat_sms_status_t *status);
+
+
+void on_wat_log(uint8_t level, char *fmt, ...);
+void *on_wat_malloc(size_t size);
+void *on_wat_calloc(size_t nmemb, size_t size);	
+void on_wat_free(void *ptr);
+void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...);
+
+
+/*	gsm_data->wat_interface.wat_log = on_log; */
+	
+/*	gsm_data->wat_interface.wat_log_span = on_log_span; */
+
+/*		gsm_data->wat_interface.wat_malloc = on_wat_malloc;*/
+/*		gsm_data->wat_interface.wat_calloc = on_wat_calloc;*/
+/*	gsm_data->wat_interface.wat_free = on_wat_free;*/
+
+
+int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
+{
+	int res = 0;
+	
+	return res;
+}
+
+void on_wat_sigstatus_change(unsigned char span_id, wat_sigstatus_t sigstatus)
+{
+	fprintf(stdout, "span:%d Signalling status changed %d\n", span_id, sigstatus);
+	
+	return;
+}
+
+void on_wat_span_alarm(unsigned char span_id, wat_alarm_t alrm)
+{
+	fprintf(stdout, "span:%d Alarm received\n", span_id);
+	return;ftdm_log(FTDM_LOG_DEBUG, "Registered interface to WAT Library\n");
+}
+
+void on_wat_con_ind(unsigned char span_id, uint8_t call_id, wat_con_event_t *con_event)
+{
+	fprintf(stdout, "s%d: Incoming call (id:%d) Calling Number:%s type:%d plan:%d\n", span_id, call_id, con_event->calling_num.digits, con_event->calling_num.type, con_event->calling_num.plan);
+
+		
+	return;
+}
+
+void on_wat_con_sts(unsigned char span_id, uint8_t call_id, wat_con_status_t *status)
+{
+	return;
+}
+
+void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel_event)
+{
+	fprintf(stdout, "s%d: Call hangup (id:%d) cause:%d\n", span_id, call_id, rel_event->cause);
+
+	return;
+}
+
+void on_wat_rel_cfm(unsigned char span_id, uint8_t call_id)
+{
+	fprintf(stdout, "s%d: Call hangup complete (id:%d)\n", span_id, call_id);
+	return;
+}
+
+void on_wat_sms_ind(unsigned char span_id, wat_sms_event_t *sms_event)
+{
+	return;
+}
+
+void on_wat_sms_sts(unsigned char span_id, uint8_t sms_id, wat_sms_status_t *status)
+{
+	return;
+}
+
+
+
+void on_wat_log(uint8_t level, char *fmt, ...)
+{
+
+}
+
+
+void *on_wat_malloc(size_t size)
+{
+	return NULL;
+}
+void *on_wat_calloc(size_t nmemb, size_t size)
+{
+	return NULL;
+}	
+void on_wat_free(void *ptr)
+{
+
+}
+void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...)
+{
+
+}
+
+
+/* END wat callbacks */
 
 /* span monitor thread */
 static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj);
@@ -212,12 +346,58 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	const char *var = NULL;
 	const char *val = NULL;
 
+	ftdm_gsm_data_t *gsm_data = malloc(sizeof(*gsm_data));
+	if (!gsm_data) {
+		snprintf(span->last_error, sizeof(span->last_error), "Failed to allocate GSM data.");
+		return FTDM_FAIL;
+	}
+	memset(gsm_data,0, sizeof(*gsm_data));
+
+
+  /* */
+
+
+ftdm_log(FTDM_LOG_DEBUG, "Registering interface to WAT Library...\n");
+
+	gsm_data->wat_interface.wat_sigstatus_change = on_wat_sigstatus_change;
+	gsm_data->wat_interface.wat_span_write = on_wat_span_write;
+	
+	gsm_data->wat_interface.wat_log = on_wat_log;
+	gsm_data->wat_interface.wat_log_span = on_wat_log_span; 
+	gsm_data->wat_interface.wat_malloc = on_wat_malloc;
+	gsm_data->wat_interface.wat_calloc = on_wat_calloc;
+	gsm_data->wat_interface.wat_free = on_wat_free;
+	
+	gsm_data->wat_interface.wat_alarm   = on_wat_span_alarm;
+	gsm_data->wat_interface.wat_con_ind = on_wat_con_ind;
+	gsm_data->wat_interface.wat_con_sts = on_wat_con_sts;
+	gsm_data->wat_interface.wat_rel_ind = on_wat_rel_ind;
+	gsm_data->wat_interface.wat_rel_cfm = on_wat_rel_cfm;
+	gsm_data->wat_interface.wat_sms_ind = on_wat_sms_ind;
+	gsm_data->wat_interface.wat_sms_sts = on_wat_sms_sts;
+	
+	if (wat_register(&gsm_data->wat_interface)) {
+		snprintf(span->last_error, sizeof(span->last_error), "Failed to register WAT Library !!!\n");
+		ftdm_log(FTDM_LOG_DEBUG, "FAILED Registering interface to WAT Library...\n");
+		return FTDM_FAIL;
+
+	}
+	ftdm_log(FTDM_LOG_DEBUG, "Registered interface to WAT Library\n");
+
+
+ /* */
+
+
+
 	ftdm_assert_return(sig_cb != NULL, FTDM_FAIL, "No signaling cb provided\n");
 
 	if (span->signal_type) {
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling.");
 		return FTDM_FAIL;
 	}
+
+		
+	
 
 	for (; ftdm_parameters[paramindex].var; paramindex++) {
 		var = ftdm_parameters[paramindex].var;
@@ -355,12 +535,15 @@ static FIO_API_FUNCTION(ftdm_gsm_api)
 
 	if (data) {
 		mycmd = ftdm_strdup(data);
+
 		argc = ftdm_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argc == 1) {
 		if (!strcasecmp(argv[0], "version")) {
-			stream->write_function(stream, "libwat GSM version: implement me!!\n");
+			uint8_t current = 0, revision = 0, age = 0;
+			wat_version(&current, &revision, &age);
+			stream->write_function(stream, "libwat GSM VERSION: %d.%d.%d\n", current, revision, age);
 			stream->write_function(stream, "+OK.\n");
 			goto done;
 		}
