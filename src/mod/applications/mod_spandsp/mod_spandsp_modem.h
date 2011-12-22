@@ -49,6 +49,9 @@
 #ifdef __APPLE__
 #include <util.h>
 #include <sys/ioctl.h>
+#elif defined(__FreeBSD__)
+#include <libutil.h>
+#include <termios.h>
 #else
 #include <pty.h>
 #endif
