@@ -2457,7 +2457,7 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 
 static int switch_system_fork(const char *cmd, switch_bool_t wait)
 {
-	int pid, i;
+	int pid;
 	char *dcmd = strdup(cmd);
 
 	switch_core_set_signal_handlers();
@@ -2473,7 +2473,7 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 		switch_close_extra_files(NULL, 0);
 		
 		set_low_priority();
-		i = system(dcmd);
+		system(dcmd);
 		free(dcmd);
 		exit(0);
 	}
