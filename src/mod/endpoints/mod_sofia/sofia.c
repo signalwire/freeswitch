@@ -3439,6 +3439,20 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
                                                 } else {
                                                         sofia_clear_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
                                                 }
+					} else if (!strcasecmp(var, "sip-force-expires")) {
+						uint32_t sip_force_expires = atoi(val);
+						if (sip_force_expires >= 0) {
+							profile->sip_force_expires = sip_force_expires;
+						} else {
+							profile->sip_force_expires = 0;
+						}
+					} else if (!strcasecmp(var, "sip-expires-max-deviation")) {
+						uint32_t sip_expires_max_deviation = atoi(val);
+						if (sip_expires_max_deviation >= 0) {
+							profile->sip_expires_max_deviation = sip_expires_max_deviation;
+						} else {
+							profile->sip_expires_max_deviation = 0;
+						}
 					}
 				}
 			}
@@ -3662,6 +3676,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;
+				profile->sip_force_expires = 0;
+				profile->sip_expires_max_deviation = 0;
 				profile->tls_version = 0;
 				profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
 				profile->server_rport_level = 1;
@@ -4483,6 +4499,20 @@ switch_status_t config_sofia(int reload, char *profile_name)
                                                 } else {
                                                         sofia_clear_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
                                                 }
+					} else if (!strcasecmp(var, "sip-force-expires")) {
+						uint32_t sip_force_expires = atoi(val);
+						if (sip_force_expires >= 0) {
+							profile->sip_force_expires = sip_force_expires;
+						} else {
+							profile->sip_force_expires = 0;
+						}
+					} else if (!strcasecmp(var, "sip-expires-max-deviation")) {
+						uint32_t sip_expires_max_deviation = atoi(val);
+						if (sip_expires_max_deviation >= 0) {
+							profile->sip_expires_max_deviation = sip_expires_max_deviation;
+						} else {
+							profile->sip_expires_max_deviation = 0;
+						}
 					} else if (!strcasecmp(var, "reuse-connections")) {
 						switch_bool_t value = switch_true(val);
 						if (!value) {

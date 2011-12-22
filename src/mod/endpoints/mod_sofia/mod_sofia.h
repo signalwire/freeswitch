@@ -645,6 +645,8 @@ struct sofia_profile {
 	char *tls_passphrase;
 	char *tls_verify_in_subjects_str;
 	su_strlst_t *tls_verify_in_subjects;
+	uint32_t sip_force_expires;
+	uint32_t sip_expires_max_deviation;
 };
 
 struct private_object {
