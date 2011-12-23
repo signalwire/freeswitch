@@ -25,7 +25,7 @@
  * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
  * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OFn_spans_info
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -73,6 +73,10 @@ typedef struct ftdm_gsm_data_s {
 	
 
 } ftdm_gsm_data_t;
+
+
+static ftdm_status_t  init_wat_lib(void);
+static int wat_lib_initialized = 0;
 
 ftdm_span_t *get_span(int span_id);
 
@@ -166,9 +170,9 @@ _log_span = on_log_span; */
 
 int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
 {
-/*
-	ftdm_log(FTDM_LOG_DEBUG, "!!! on_wat_span_write(%d, %s, int)\n", span_id, buffer, len);
-*/
+
+/*	ftdm_log(FTDM_LOG_DEBUG, "====================>>> %s (%d) - %d\n", buffer, len, (int) span_id);*/
+
 	ftdm_channel_t * ftdm_chan = get_channel(span_id, 2);
 	ftdm_size_t outsize = len;
 	ftdm_channel_lock(ftdm_chan);
@@ -472,12 +476,61 @@ static ftdm_status_t ftdm_gsm_state_advance(ftdm_channel_t *ftdmchan)
 	return FTDM_SUCCESS;
 }
 
+
+
+static ftdm_status_t init_wat_lib(void)
+{
+
+	if(wat_lib_initialized)
+	{
+		return FTDM_SUCCESS;
+	}
+
+	wat_interface_t wat_interface;
+
+	ftdm_log(FTDM_LOG_DEBUG, "Registering interface to WAT Library...\n");
+	fprintf(stdout, "Registering interface to WAT Library...\n");
+
+	wat_interface.wat_sigstatus_change = on_wat_sigstatus_change;
+	wat_interface.wat_span_write = on_wat_span_write;
+	
+	wat_interface.wat_log = on_wat_log;
+	wat_interface.wat_log_span = on_wat_log_span; 
+	wat_interface.wat_malloc = on_wat_malloc;
+	wat_interface.wat_calloc = on_wat_calloc;
+	wat_interface.wat_free = on_wat_free;
+	
+	wat_interface.wat_alarm   = on_wat_span_alarm;
+	wat_interface.wat_con_ind = on_wat_con_ind;
+	wat_interface.wat_con_sts = on_wat_con_sts;
+	wat_interface.wat_rel_ind = on_wat_rel_ind;
+	wat_interface.wat_rel_cfm = on_wat_rel_cfm;
+	wat_interface.wat_sms_ind = on_wat_sms_ind;
+	wat_interface.wat_sms_sts = on_wat_sms_sts;
+	
+	if (wat_register(&wat_interface)) {
+		ftdm_log(FTDM_LOG_DEBUG, "FAILED Registering interface to WAT Library...\n");
+		return FTDM_FAIL;
+
+	}
+	ftdm_log(FTDM_LOG_DEBUG, "Registered interface to WAT Library\n");
+
+	fprintf(stdout, "Registered interface to WAT Library\n");
+	wat_lib_initialized = 1;
+	return FTDM_SUCCESS;
+}
+
+
 static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 {
 	unsigned paramindex = 0;
 	const char *var = NULL;
 	const char *val = NULL;
 
+	if(FTDM_SUCCESS != init_wat_lib())
+	{
+		return FTDM_FAIL;
+	}
 
 	if (n_spans_info >= MAX_SPANS) {
 		snprintf(span->last_error, sizeof(span->last_error), "MAX_SPANS Exceeded !!!\n");
@@ -571,7 +624,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 #endif
 
 
-
+#if 0
 ftdm_log(FTDM_LOG_DEBUG, "Registering interface to WAT Library...\n");
 
 	gsm_data->wat_interface.wat_sigstatus_change = on_wat_sigstatus_change;
@@ -599,15 +652,13 @@ ftdm_log(FTDM_LOG_DEBUG, "Registering interface to WAT Library...\n");
 	}
 	ftdm_log(FTDM_LOG_DEBUG, "Registered interface to WAT Library\n");
 
+#endif
 
  
 
 	ftdm_log(FTDM_LOG_DEBUG, "Configuring span\n");
 
-	//sng_fd_t dev;
-	//sangoma_wait_obj_t *waitable;
-	//unsigned char wat_span_id;
-
+	
 
 	wat_span_config_t _wat_span_config;
 
@@ -620,17 +671,18 @@ ftdm_log(FTDM_LOG_DEBUG, "Registering interface to WAT Library...\n");
 		return FTDM_FAIL;
 	}
 
-	fprintf(stdout, "Starting span\n");
+/*
+	fprintf(stdout, "Starting span %d\n", span->span_id);
 	if (wat_span_start(span->span_id)) {
-		fprintf(stderr, "Failed to start span!!\n");
+		fprintf(stderr, "Failed to start span %d!!\n", span->span_id);
 		return FTDM_FAIL;
 	}
 
 
+		fprintf(stdout, "SUCCESS Starting span %d\n", span->span_id);
 
-
+	*/
 	
-
 
 
 	return FTDM_SUCCESS;
@@ -639,6 +691,9 @@ ftdm_log(FTDM_LOG_DEBUG, "Registering interface to WAT Library...\n");
 
 static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 {
+
+
+
 	ftdm_channel_t *ftdmchan = NULL;
 	ftdm_span_t *span = (ftdm_span_t *) obj;
 	ftdm_iterator_t *chaniter = NULL;
@@ -646,7 +701,21 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 	int waitms = 10, i;
 	ftdm_status_t status;
 
+
+
 	
+fprintf(stdout, "Starting span %d\n", span->span_id);
+	
+	if (wat_span_start(span->span_id)) {
+	
+		fprintf(stderr, "Failed to start span %d!!\n", span->span_id);
+		return NULL;
+	}
+
+	
+		fprintf(stdout, "SUCCESS Starting span %d\n", span->span_id);
+	
+
 	short *poll_events = ftdm_malloc(sizeof(short) * span->chan_count);
 	
 	unsigned next;
@@ -665,6 +734,8 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 		return NULL;
 	}
 
+
+
 	while (ftdm_running()) {
 
 
@@ -682,7 +753,7 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 		/* deliver the actual channel events to the user now without any channel locking */
 		ftdm_span_trigger_signals(span);
 #if 0
-		 /* figure out what event to poll each channel for. POLLPRI when the channel is down,
+		 /* figure ouwat_chip_info_tt what event to poll each channel for. POLLPRI when the channel is down,
 		  * POLLPRI|POLLIN|POLLOUT otherwise */
 		memset(poll_events, 0, sizeof(short)*span->chan_count);
 		citer = ftdm_span_get_chan_iterator(span, chaniter);
@@ -714,6 +785,7 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 
 			ftdm_channel_lock(ftdmchan);
 
+
 			ftdm_channel_advance_states(ftdmchan);
 
 			ftdm_channel_unlock(ftdmchan);
@@ -730,12 +802,16 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 		{
 			ftdm_channel_lock(ftdmchan);
 			ftdm_channel_t * ftdm_chan = get_channel(span->span_id, 2);
-			char buffer[11];
-			int n = read_channel(ftdm_chan , buffer, sizeof(buffer));
+			char buffer[2001];
+			memset(buffer, 0, sizeof(buffer));
+			unsigned int n = 0;
+			n = read_channel(ftdm_chan , buffer, sizeof(buffer));
+			
 			ftdm_channel_unlock(ftdmchan);
 			if(n > 0) {
 		
 				wat_span_process_read(span->span_id, buffer, n);
+				/*ftdm_log(FTDM_LOG_DEBUG, "<<<<<<<<<<<<<<<<<<<<<<===== %s (%d) - %d\n", buffer, n, (int) span->span_id);*/
 				/*
 				ftdm_log(FTDM_LOG_DEBUG, "!!! read_channel got %d bytes\n", n);
 				*/
@@ -781,9 +857,58 @@ static FIO_API_FUNCTION(ftdm_gsm_api)
 
 		if (!strcasecmp(argv[0], "status")) {
 			
-			/*wat_chip_info_t* chip_info =  wat_span_get_chip_info(span->span_id);		*/
-			
+			int n;
+			for(n = 0; n < n_spans_info; n++)
+			{
+				ftdm_span_t *span = spans_info[n].span;
+				wat_chip_info_t* chip_info  = (wat_chip_info_t*)wat_span_get_chip_info(span->span_id);	
+				wat_sim_info_t*  sim_info	= (wat_sim_info_t*)wat_span_get_sim_info(span->span_id);
+				wat_net_info_t*  net_info	= (wat_net_info_t*)wat_span_get_net_info(span->span_id);
+				/*wat_sig_info_t*  sig_info	= (wat_sig_info_t*)wat_span_get_sig_info(span->span_id);*/
+				/*wat_pin_stat_t*  pin_stat	= (wat_pin_stat_t*)wat_span_get_pin_info(span->span_id);*/
+				
+				stream->write_function(stream, "Span %d:\n",  span->span_id);
+				
 
+				stream->write_function(stream, "CHIP - %s (%s), revision %s, serial  %s \n", 
+						chip_info->manufacturer_name,
+					 	chip_info->manufacturer_id,
+						chip_info->revision,
+						chip_info->serial
+					);
+			
+	
+				stream->write_function(stream, "SIM - Subscriber Type %s, imsi %s\n", 
+					 	sim_info->subscriber_type,
+						sim_info->imsi
+					);		
+	
+				const char *stypes[] = {WAT_NUMBER_TYPE_STRINGS };
+				const char *ptypes[] = {WAT_NUMBER_PLAN_STRINGS };
+				const char *validities[] = {WAT_NUMBER_VALIDITY_STRINGS };
+
+				stream->write_function(stream, "Subscriber - Number %s, Plan %s, validity %s\n", 
+					 	sim_info->subscriber.digits,
+						stypes[sim_info->subscriber.type],
+						ptypes[sim_info->subscriber.plan],
+						validities[sim_info->subscriber.validity]
+
+					);		
+
+				const char *net_stats[] = {WAT_NET_STAT_STRINGS};
+							
+
+				stream->write_function(stream, "Network - status %s, Area Code %d,  Cell ID %d, Operator %s\n", 
+					net_stats[net_info->stat],
+					net_info->lac,
+					net_info->ci,
+					net_info->operator_name
+					);		
+
+				
+			stream->write_function(stream, "\n");
+
+			}
 			
 			stream->write_function(stream, "+OK.\n");
 			goto done;
@@ -798,6 +923,7 @@ done:
 
 	return FTDM_SUCCESS;
 
+
 }
 
 static FIO_IO_LOAD_FUNCTION(ftdm_gsm_io_init)
@@ -810,7 +936,7 @@ static FIO_IO_LOAD_FUNCTION(ftdm_gsm_io_init)
 
 	*fio = &g_ftdm_gsm_interface;
 
-	return FTDM_SUCCESS;
+	return (FTDM_SUCCESS);
 }
 static FIO_SIG_LOAD_FUNCTION(ftdm_gsm_init)
 {
