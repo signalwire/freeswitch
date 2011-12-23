@@ -1,4 +1,5 @@
 #include <switch.h>
+#include "switch_curl.h"
 #include <curl/curl.h>
 
 CURLcode Curl_setopt(switch_CURL *curl, CURLoption option, va_list arg);
