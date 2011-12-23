@@ -2473,7 +2473,9 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 		switch_close_extra_files(NULL, 0);
 		
 		set_low_priority();
-		system(dcmd);
+		if (system(dcmd) == -1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute because of a command error : %s\n", dcmd);
+		}
 		free(dcmd);
 		exit(0);
 	}
