@@ -42,6 +42,7 @@
 #include <switch_nat.h>
 #include <switch_version.h>
 #include "private/switch_core_pvt.h"
+#include <switch_curl.h>
 #ifndef WIN32
 #include <switch_private.h>
 #ifdef HAVE_SETRLIMIT
