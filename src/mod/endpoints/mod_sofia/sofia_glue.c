@@ -5715,7 +5715,6 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 int sofia_glue_recover(switch_bool_t flush)
 {
 	sofia_profile_t *profile;
-	char *sql;
 	int r = 0;
 	switch_console_callback_match_t *matches;
 
@@ -5724,34 +5723,44 @@ int sofia_glue_recover(switch_bool_t flush)
 		switch_console_callback_match_node_t *m;
 		for (m = matches->head; m; m = m->next) {
 			if ((profile = sofia_glue_find_profile(m->val))) {
-
-				struct recover_helper h = { 0 };
-				h.profile = profile;
-				h.total = 0;
-
-				sofia_clear_pflag_locked(profile, PFLAG_STANDBY);
-
-				if (flush) {
-					sql = switch_mprintf("delete from sip_recovery where profile_name='%q'", profile->name);
-					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-				} else {
-
-					sql = switch_mprintf("select profile_name, hostname, uuid, metadata "
-										 "from sip_recovery where runtime_uuid!='%q' and profile_name='%q'", switch_core_get_uuid(), profile->name);
-
-					sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, recover_callback, &h);
-					r += h.total;
-					free(sql);
-					sql = NULL;
-
-					sql = switch_mprintf("delete "
-										 "from sip_recovery where runtime_uuid!='%q' and profile_name='%q'", switch_core_get_uuid(), profile->name);
-
-					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-				}
+				r += sofia_glue_profile_recover(profile, flush);
 			}
 		}
 		switch_console_free_matches(&matches);
+	}
+	return r;
+}
+
+int sofia_glue_profile_recover(sofia_profile_t *profile, switch_bool_t flush)
+{
+	char *sql;				
+	int r = 0;
+
+	if (profile) {
+		struct recover_helper h = { 0 };
+		h.profile = profile;
+		h.total = 0;
+
+		sofia_clear_pflag_locked(profile, PFLAG_STANDBY);
+
+		if (flush) {
+			sql = switch_mprintf("delete from sip_recovery where profile_name='%q'", profile->name);
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+		} else {
+
+			sql = switch_mprintf("select profile_name, hostname, uuid, metadata "
+								 "from sip_recovery where runtime_uuid!='%q' and profile_name='%q'", switch_core_get_uuid(), profile->name);
+
+			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, recover_callback, &h);
+			r += h.total;
+			free(sql);
+			sql = NULL;
+
+			sql = switch_mprintf("delete "
+								 "from sip_recovery where runtime_uuid!='%q' and profile_name='%q'", switch_core_get_uuid(), profile->name);
+
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+		}
 	}
 
 	return r;

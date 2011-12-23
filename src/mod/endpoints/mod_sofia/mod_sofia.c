@@ -3516,6 +3516,22 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 		goto done;
 	}
+	
+	if (!strcasecmp(argv[1], "recover")) {
+		if (argv[2] && !strcasecmp(argv[2], "flush")) {
+			sofia_glue_profile_recover(profile, SWITCH_TRUE);
+			stream->write_function(stream, "Flushing recovery database.\n");
+		} else {
+			int x = sofia_glue_profile_recover(profile, SWITCH_FALSE);
+			if (x) {
+				stream->write_function(stream, "Recovered %d call(s)\n", x);
+			} else {
+				stream->write_function(stream, "No calls to recover.\n");
+			}
+		}
+
+		goto done;
+	}
 
 	if (!strcasecmp(argv[1], "register")) {
 		char *gname = argv[2];
