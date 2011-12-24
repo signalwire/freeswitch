@@ -15,6 +15,7 @@ applications/mod_hash
 #applications/mod_http_cache
 #applications/mod_redis
 applications/mod_voicemail
+#applications/mod_voicemail_ivr
 #applications/mod_directory
 #applications/mod_lcr
 applications/mod_expr
