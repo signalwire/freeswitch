@@ -25,7 +25,7 @@
  * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
  * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OFn_spans_info
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -139,8 +139,6 @@ static int read_channel(ftdm_channel_t *ftdm_chan , const void *buf, int size)
 }
 
 /* wat callbacks */
-void on_wat_sigstatus_change(unsigned char span_id, wat_sigstatus_t sigstatus);
-void on_wat_span_alarm(unsigned char span_id, wat_alarm_t alarm);
 int	 on_wat_span_write(unsigned char span_id, void *buffer, unsigned len);
 
 void on_wat_con_ind(unsigned char span_id, uint8_t call_id, wat_con_event_t *con_event);
@@ -186,17 +184,39 @@ int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
 
 }
 
-void on_wat_sigstatus_change(unsigned char span_id, wat_sigstatus_t sigstatus)
+static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
 {
-	fprintf(stdout, "span:%d Signalling status changed %d\n", span_id, sigstatus);
-	
-	return;
-}
-
-void on_wat_span_alarm(unsigned char span_id, wat_alarm_t alrm)
-{
-	fprintf(stdout, "span:%d Alarm received\n", span_id);
-	return;
+	switch (status->type) {
+	case WAT_SPAN_STS_READY:
+		{
+			ftdm_log(FTDM_LOG_INFO, "span %d: Ready\n", span_id);
+		}
+		break;
+	case WAT_SPAN_STS_SIGSTATUS:
+		{
+			if (status->sts.sigstatus == WAT_SIGSTATUS_UP) {
+				ftdm_log(FTDM_LOG_INFO, "span %d: Signaling is now up\n", span_id);
+			} else {
+				ftdm_log(FTDM_LOG_INFO, "span %d: Signaling is now down\n", span_id);
+			}
+		}
+		break;
+	case WAT_SPAN_STS_SIM_INFO_READY:
+		{
+			ftdm_log(FTDM_LOG_INFO, "span %d: SIM information ready\n", span_id);
+		}
+		break;
+	case WAT_SPAN_STS_ALARM:
+		{
+			ftdm_log(FTDM_LOG_INFO, "span %d: Alarm received\n", span_id);
+		}
+		break;
+	default:
+		{
+			ftdm_log(FTDM_LOG_INFO, "span %d: Unhandled span status notification %d\n", span_id, status->type);
+		}
+		break;
+	}
 }
 
 void on_wat_con_ind(unsigned char span_id, uint8_t call_id, wat_con_event_t *con_event)
@@ -491,7 +511,6 @@ static ftdm_status_t init_wat_lib(void)
 	ftdm_log(FTDM_LOG_DEBUG, "Registering interface to WAT Library...\n");
 	fprintf(stdout, "Registering interface to WAT Library...\n");
 
-	wat_interface.wat_sigstatus_change = on_wat_sigstatus_change;
 	wat_interface.wat_span_write = on_wat_span_write;
 	
 	wat_interface.wat_log = on_wat_log;
@@ -500,13 +519,13 @@ static ftdm_status_t init_wat_lib(void)
 	wat_interface.wat_calloc = on_wat_calloc;
 	wat_interface.wat_free = on_wat_free;
 	
-	wat_interface.wat_alarm   = on_wat_span_alarm;
 	wat_interface.wat_con_ind = on_wat_con_ind;
 	wat_interface.wat_con_sts = on_wat_con_sts;
 	wat_interface.wat_rel_ind = on_wat_rel_ind;
 	wat_interface.wat_rel_cfm = on_wat_rel_cfm;
 	wat_interface.wat_sms_ind = on_wat_sms_ind;
 	wat_interface.wat_sms_sts = on_wat_sms_sts;
+	wat_interface.wat_span_sts = on_wat_span_status;
 	
 	if (wat_register(&wat_interface)) {
 		ftdm_log(FTDM_LOG_DEBUG, "FAILED Registering interface to WAT Library...\n");
