@@ -93,7 +93,9 @@ SWITCH_STANDARD_APP(voicemail_ivr_function)
 				}
 				if (fPtrTerminate) {
 					fPtrTerminate(session, profile);
-				}			
+				}
+				free_profile(profile);
+
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile '%s' not found\n", profile_name);
 			}

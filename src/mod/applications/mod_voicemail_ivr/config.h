@@ -87,6 +87,7 @@ struct vmivr_menu_profile {
 typedef struct vmivr_menu_profile vmivr_menu_profile_t;
 
 vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile_name);
+void free_profile(vmivr_profile_t *profile);
 
 void free_profile_menu_event(vmivr_menu_profile_t *menu);
 void populate_profile_menu_event(vmivr_profile_t *profile, vmivr_menu_profile_t *menu);
