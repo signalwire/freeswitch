@@ -71,6 +71,7 @@ struct vmivr_profile {
 	const char *api_pref_recname_set;
 	const char *api_pref_password_set;
 
+	switch_event_t *event_settings;
 };
 typedef struct vmivr_profile vmivr_profile_t;
 
@@ -80,6 +81,7 @@ struct vmivr_menu_profile {
 	switch_event_t *event_keys_action;
 	switch_event_t *event_keys_dtmf;
 	switch_event_t *event_keys_varname;
+	switch_event_t *event_settings;
 	switch_event_t *event_phrases;
 };
 typedef struct vmivr_menu_profile vmivr_menu_profile_t;
