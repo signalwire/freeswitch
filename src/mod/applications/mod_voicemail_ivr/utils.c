@@ -33,11 +33,10 @@
 
 #include "utils.h"
 
-switch_status_t vmivr_merge_media_files(const char** inputs, const char *output) {
+switch_status_t vmivr_merge_media_files(const char** inputs, const char *output, int rate) {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle_t fh_output = { 0 };
 	int channels = 1;
-	int rate = 8000; /* TODO Make this configurable */
 	int j = 0;
 
 	if (switch_core_file_open(&fh_output, output, channels, rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -99,7 +98,7 @@ switch_event_t *jsonapi2event(switch_core_session_t *session, switch_event_t *ap
 	return phrases_event;
 }
 
-char *generate_random_file_name(switch_core_session_t *session, const char *mod_name, char *file_extension) {
+char *generate_random_file_name(switch_core_session_t *session, const char *mod_name, const char *file_extension) {
 	char rand_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
 	switch_uuid_t srand_uuid;
 

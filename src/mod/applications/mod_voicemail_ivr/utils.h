@@ -34,12 +34,10 @@
 
 #include "config.h"
 
-switch_status_t vmivr_merge_files(const char** inputs, const char *output);
-
 void append_event_message(switch_core_session_t *session, vmivr_profile_t *profile, switch_event_t *phrase_params, switch_event_t *msg_list_event, size_t current_msg);
-char *generate_random_file_name(switch_core_session_t *session, const char *mod_name, char *file_extension);
+char *generate_random_file_name(switch_core_session_t *session, const char *mod_name, const char *file_extension);
 switch_event_t *jsonapi2event(switch_core_session_t *session, switch_event_t *apply_event, const char *api, const char *data);
-switch_status_t vmivr_merge_media_files(const char** inputs, const char *output);
+switch_status_t vmivr_merge_media_files(const char** inputs, const char *output, int rate);
 switch_status_t vmivr_api_execute(switch_core_session_t *session, const char *apiname, const char *arguments);
 #endif /* _UTIL_H_ */
 

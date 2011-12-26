@@ -91,6 +91,8 @@ struct vmivr_menu {
 	switch_event_t *phrase_params;
 	ivre_data_t ivre_d;
 
+	int ivr_maximum_attempts;
+	int ivr_entry_timeout;
 };
 typedef struct vmivr_menu vmivr_menu_t;
 

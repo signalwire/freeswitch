@@ -52,12 +52,14 @@ void menu_init(vmivr_profile_t *profile, vmivr_menu_t *menu) {
 		goto end;
 	}
 
-	if (profile->event_settings && menu->event_settings) {
+	if (profile->event_settings) {
 		/* TODO Replace this with a switch_event_merge_not_set(...) */
 		switch_event_t *menu_default;
 		switch_event_create(&menu_default, SWITCH_EVENT_REQUEST_PARAMS);
-		switch_event_merge(menu_default, menu->event_settings);
-		switch_event_destroy(&menu->event_settings);
+		if (menu->event_settings) {
+			switch_event_merge(menu_default, menu->event_settings);
+			switch_event_destroy(&menu->event_settings);
+		}
 		
 		switch_event_create(&menu->event_settings, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_event_merge(menu->event_settings, profile->event_settings);
@@ -65,6 +67,12 @@ void menu_init(vmivr_profile_t *profile, vmivr_menu_t *menu) {
 		switch_event_destroy(&menu_default);
 	}
 
+	{
+		const char *s_max_attempts = switch_event_get_header(menu->event_settings, "IVR-Maximum-Attempts");
+		const char *s_entry_timeout = switch_event_get_header(menu->event_settings, "IVR-Entry-Timeout");
+		menu->ivr_maximum_attempts = atoi(s_max_attempts);
+		menu->ivr_entry_timeout = atoi(s_entry_timeout);
+	}
 
 	if ((x_profile = switch_xml_find_child(x_profiles, "profile", "name", profile->name))) {
 		if ((x_menus = switch_xml_child(x_profile, "menus"))) {
@@ -127,38 +135,36 @@ void menu_free(vmivr_menu_t *menu) {
 
 static void append_event_profile(vmivr_menu_t *menu) {
 
-        if (!menu->phrase_params) {
-                switch_event_create(&menu->phrase_params, SWITCH_EVENT_REQUEST_PARAMS);
-        }
+	if (!menu->phrase_params) {
+		switch_event_create(&menu->phrase_params, SWITCH_EVENT_REQUEST_PARAMS);
+	}
 
-        /* Used for some appending function */
-        if (menu->profile && menu->profile->name && menu->profile->id && menu->profile->domain) {
-                switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, "VM-Profile", "%s", menu->profile->name);
-                switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, "VM-Account-ID", "%s", menu->profile->id);
-                switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, "VM-Account-Domain", "%s", menu->profile->domain);
-        }
+	/* Used for some appending function */
+	if (menu->profile && menu->profile->name && menu->profile->id && menu->profile->domain) {
+		switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, "VM-Profile", "%s", menu->profile->name);
+		switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, "VM-Account-ID", "%s", menu->profile->id);
+		switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, "VM-Account-Domain", "%s", menu->profile->domain);
+	}
 }
 
 static void populate_dtmfa_from_event(vmivr_menu_t *menu) {
-        int i = 0;
-        if (menu->event_keys_dtmf) {
-                switch_event_header_t *hp;
+	int i = 0;
+	if (menu->event_keys_dtmf) {
+		switch_event_header_t *hp;
 
-                for (hp = menu->event_keys_dtmf->headers; hp; hp = hp->next) {
-                        if (strlen(hp->name) < 3 && hp->value) { /* TODO This is a hack to discard default FS Events ! */
-                                const char *varphrasename = switch_event_get_header(menu->event_keys_varname, hp->value);
-                                menu->dtmfa[i++] = hp->name;
+		for (hp = menu->event_keys_dtmf->headers; hp; hp = hp->next) {
+			if (strlen(hp->name) < 3 && hp->value) { /* TODO This is a hack to discard default FS Events ! */
+				const char *varphrasename = switch_event_get_header(menu->event_keys_varname, hp->value);
+				menu->dtmfa[i++] = hp->name;
 
-                                if (varphrasename && !zstr(varphrasename)) {
-                                        switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, varphrasename, "%s", hp->name);
-                                }
-                        }
-                }
-        }
-        menu->dtmfa[i++] = '\0';
-
+				if (varphrasename && !zstr(varphrasename)) {
+					switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, varphrasename, "%s", hp->name);
+				}
+			}
+		}
+	}
+	menu->dtmfa[i++] = '\0';
 }
-
 
 vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile_name)
 {
@@ -193,7 +199,17 @@ vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile
 		profile->menu_check_main = "std_main_menu";
 		profile->menu_check_terminate = "std_purge";
 
-		/* TODO Create event_settings and add default settings here  */
+		/* Populate default general settings */
+		switch_event_create(&profile->event_settings, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_event_add_header(profile->event_settings, SWITCH_STACK_BOTTOM, "IVR-Maximum-Attempts", "%d", 3);
+		switch_event_add_header(profile->event_settings, SWITCH_STACK_BOTTOM, "IVR-Entry-Timeout", "%d", 3000);
+		switch_event_add_header(profile->event_settings, SWITCH_STACK_BOTTOM, "Exit-Purge", "%s", "true");
+		switch_event_add_header(profile->event_settings, SWITCH_STACK_BOTTOM, "Password-Mask", "%s", "XXX.");
+		switch_event_add_header(profile->event_settings, SWITCH_STACK_BOTTOM, "User-Mask", "%s", "X.");
+		switch_event_add_header(profile->event_settings, SWITCH_STACK_BOTTOM, "Record-Format", "%s", "wav");
+		switch_event_add_header(profile->event_settings, SWITCH_STACK_BOTTOM, "Record-Silence-Hits", "%d", 4);
+		switch_event_add_header(profile->event_settings, SWITCH_STACK_BOTTOM, "Record-Silence-Threshold", "%d", 200);
+		switch_event_add_header(profile->event_settings, SWITCH_STACK_BOTTOM, "Record-Maximum-Length", "%d", 30);
 
 		if ((x_settings = switch_xml_child(x_profile, "settings"))) {
 			switch_event_import_xml(switch_xml_child(x_settings, "param"), "name", "value", &profile->event_settings);

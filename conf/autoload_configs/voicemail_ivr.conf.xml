@@ -1,12 +1,19 @@
 <configuration name="voicemail_ivr.conf" description="Voicemail IVR">
 <profiles>
 	<profile name="default">
-		<!-- Not yet implemented - Open for comments
 		<settings>
-			<param name="record-format" value="wav"/>
-			<param name="record-rate" value="8000"/>
+			<param name="IVR-Maximum-Attempts" value="3" />
+			<param name="IVR-Entry-Timeout" value="3" />
+			<param name="Record-Format" value="wav" />
+			<!--<param name="Record-Sample-Rate" value="8000" />-->
+			<param name="Record-Silence-Hits" value="4" />
+			<param name="Record-Silence-Threshold" value="200" />
+			<param name="Record-Maximum-Length" value="30" />
+			<param name="Exit-Purge" value="true" />
+			<param name="Password-Mask" value="XXX." />
+			<param name="User-Mask" value="X." />
+
 		</settings>
-		-->
 		<apis>
 			<api name="auth_login" value="vm_fsdb_auth_login" />
 			<api name="msg_list" value="vm_fsdb_msg_list" />
@@ -64,12 +71,9 @@
 			</menu>
 
 			<menu name="std_navigator">
-			<!-- Not yet implemented - Open for comments
-				This will inherit the settings from the top profile settings.  So if it global, put it inside the profile <settings>
 			<settings>
-				<param name="playback-order" value="newest-first" />
+				<!--<param name="Nav-Action-On-Delete" value="next_msg" />-->
 			</settings>
-			-->
 			<phrases>
 				<phrase name="msg_count" value="message_count@voicemail_ivr" />
 				<phrase name="say_date" value="say_date_event@voicemail_ivr" />
