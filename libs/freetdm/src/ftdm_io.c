@@ -5633,7 +5633,7 @@ static void *ftdm_cpu_monitor_run(ftdm_thread_t *me, void *obj)
 
 static ftdm_status_t ftdm_cpu_monitor_start(void)
 {
-	if (ftdm_interrupt_create(&globals.cpu_monitor.interrupt, FTDM_INVALID_SOCKET) != FTDM_SUCCESS) {
+	if (ftdm_interrupt_create(&globals.cpu_monitor.interrupt, FTDM_INVALID_SOCKET, FTDM_NO_FLAGS) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to create CPU monitor interrupt\n");
 		return FTDM_FAIL;
 	}

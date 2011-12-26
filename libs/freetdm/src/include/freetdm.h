@@ -62,6 +62,9 @@
 /*! \brief Max number of groups */
 #define FTDM_MAX_GROUPS_INTERFACE FTDM_MAX_SPANS_INTERFACE
 
+/*! \brief Max number of key=value pairs to be sent as signaling stack parameters */
+#define FTDM_MAX_SIG_PARAMETERS 30
+
 #define FTDM_INVALID_INT_PARM 0xFF
 
 /*! \brief Thread/Mutex OS abstraction API. */
@@ -620,14 +623,6 @@ typedef enum {
 	FTDM_CRASH_NEVER = 0,
 	FTDM_CRASH_ON_ASSERT
 } ftdm_crash_policy_t;
-
-/*! \brief I/O waiting flags */
-typedef enum {
-	FTDM_NO_FLAGS = 0,
-	FTDM_READ =  (1 << 0),
-	FTDM_WRITE = (1 << 1),
-	FTDM_EVENTS = (1 << 2)
-} ftdm_wait_flag_t;
 
 /*! \brief Signaling configuration parameter for the stacks (variable=value pair) */
 typedef struct ftdm_conf_parameter {

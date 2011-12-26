@@ -2828,7 +2828,7 @@ static void parse_gsm_spans(switch_xml_t cfg, switch_xml_t spans)
 		ftdm_status_t zstatus = FTDM_FAIL;
 		const char *context = "default";
 		const char *dialplan = "XML";
-		ftdm_conf_parameter_t spanparameters[30];
+		ftdm_conf_parameter_t spanparameters[FTDM_MAX_SIG_PARAMETERS];
 		char *id = (char *) switch_xml_attr(myspan, "id");
 		char *name = (char *) switch_xml_attr(myspan, "name");
 		char *configname = (char *) switch_xml_attr(myspan, "cfgprofile");
@@ -2917,7 +2917,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 		ftdm_status_t zstatus = FTDM_FAIL;
 		const char *context = "default";
 		const char *dialplan = "XML";
-		ftdm_conf_parameter_t spanparameters[30];
+		ftdm_conf_parameter_t spanparameters[FTDM_MAX_SIG_PARAMETERS];
 		char *id = (char *) switch_xml_attr(myspan, "id");
 		char *name = (char *) switch_xml_attr(myspan, "name");
 		char *configname = (char *) switch_xml_attr(myspan, "cfgprofile");
@@ -3096,7 +3096,7 @@ static switch_status_t load_config(void)
 			ftdm_status_t zstatus = FTDM_FAIL;
 			const char *context = "default";
 			const char *dialplan = "XML";
-			ftdm_conf_parameter_t spanparameters[30];
+			ftdm_conf_parameter_t spanparameters[FTDM_MAX_SIG_PARAMETERS];
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
 			char *configname = (char *) switch_xml_attr(myspan, "cfgprofile");
@@ -3498,7 +3498,7 @@ static switch_status_t load_config(void)
 	if ((spans = switch_xml_child(cfg, "pri_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
 			char *name = (char *) switch_xml_attr(myspan, "name");
-			ftdm_conf_parameter_t spanparameters[10];
+			ftdm_conf_parameter_t spanparameters[FTDM_MAX_SIG_PARAMETERS];
 			ftdm_status_t zstatus = FTDM_FAIL;
 			const char *context = "default";
 			const char *dialplan = "XML";
@@ -3566,7 +3566,7 @@ static switch_status_t load_config(void)
 
 			ftdm_status_t zstatus = FTDM_FAIL;
 			unsigned paramindex = 0;
-			ftdm_conf_parameter_t spanparameters[10];
+			ftdm_conf_parameter_t spanparameters[FTDM_MAX_SIG_PARAMETERS];
 			const char *context = "default";
 			const char *dialplan = "XML";
 			ftdm_span_t *span = NULL;
@@ -3624,7 +3624,7 @@ static switch_status_t load_config(void)
 	if ((spans = switch_xml_child(cfg, "libpri_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
 			char *name = (char *) switch_xml_attr(myspan, "name");
-			ftdm_conf_parameter_t spanparameters[10];
+			ftdm_conf_parameter_t spanparameters[FTDM_MAX_SIG_PARAMETERS];
 			ftdm_status_t zstatus = FTDM_FAIL;
 			const char *context  = "default";
 			const char *dialplan = "XML";
@@ -3699,7 +3699,7 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0;
 			ftdm_span_t *span = NULL;
 
-			ftdm_conf_parameter_t spanparameters[30];
+			ftdm_conf_parameter_t spanparameters[FTDM_MAX_SIG_PARAMETERS];
 			unsigned paramindex = 0;
 
 			if (!name) {
