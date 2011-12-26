@@ -124,34 +124,6 @@ switch_status_t vmivr_api_execute(switch_core_session_t *session, const char *ap
 	return status;
 }
 
-void append_event_profile(switch_event_t *phrase_params, vmivr_profile_t *profile, vmivr_menu_profile_t menu) {
-	/* Used for some appending function */
-	if (profile->name && profile->id && profile->domain) {
-		switch_event_add_header(phrase_params, SWITCH_STACK_BOTTOM, "VM-Profile", "%s", profile->name);
-		switch_event_add_header(phrase_params, SWITCH_STACK_BOTTOM, "VM-Account-ID", "%s", profile->id);
-		switch_event_add_header(phrase_params, SWITCH_STACK_BOTTOM, "VM-Account-Domain", "%s", profile->domain);
-	}
-}
-
-void populate_dtmfa_from_event(switch_event_t *phrase_params, vmivr_profile_t *profile, vmivr_menu_profile_t menu, char **dtmfa) {
-	int i = 0;
-	if (menu.event_keys_dtmf) {
-		switch_event_header_t *hp;
-
-		for (hp = menu.event_keys_dtmf->headers; hp; hp = hp->next) {
-			if (strlen(hp->name) < 3 && hp->value) { /* TODO This is a hack to discard default FS Events ! */
-				const char *varphrasename = switch_event_get_header(menu.event_keys_varname, hp->value);
-				dtmfa[i++] = hp->name;
-
-				if (varphrasename && !zstr(varphrasename)) {
-					switch_event_add_header(phrase_params, SWITCH_STACK_BOTTOM, varphrasename, "%s", hp->name);
-				}
-			}
-		}
-	}
-
-}
-
 void append_event_message(switch_core_session_t *session, vmivr_profile_t *profile, switch_event_t *phrase_params, switch_event_t *msg_list_event, size_t current_msg) {
 
 	char *varname;

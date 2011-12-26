@@ -65,11 +65,11 @@ void vmivr_menu_purge(switch_core_session_t *session, vmivr_profile_t *profile) 
 
 void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	vmivr_menu_profile_t menu = { "std_main_menu" };
+	vmivr_menu_t menu = { "std_main_menu" };
 	int retry;
 
 	/* Initialize Menu Configs */
-	populate_profile_menu_event(profile, &menu);
+	menu_init(profile, &menu);
 
 	if (!menu.event_keys_dtmf || !menu.event_phrases) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Menu Phrases and Keys\n");
@@ -77,31 +77,25 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 	}
 
 	for (retry = MAX_ATTEMPT; switch_channel_ready(channel) && retry > 0; retry--) {
-		dtmf_ss_t loc;
-		char *dtmfa[16] = { 0 };
-		switch_event_t *phrase_params = NULL;
 		char *cmd = NULL;
 
-		switch_event_create(&phrase_params, SWITCH_EVENT_REQUEST_PARAMS);
-		append_event_profile(phrase_params, profile, menu);
+		menu_instance_init(&menu);
 
-		populate_dtmfa_from_event(phrase_params, profile, menu, dtmfa);
-
-		captureMenuInitialize(&loc, dtmfa);
+		ivre_init(&menu.ivre_d, menu.dtmfa);
 
 		cmd = switch_core_session_sprintf(session, "json %s %s %s %s", profile->api_profile, profile->domain, profile->id, profile->folder_name);
-		jsonapi2event(session, phrase_params, profile->api_msg_count, cmd);
+		jsonapi2event(session, menu.phrase_params, profile->api_msg_count, cmd);
 		//initial_count_played = SWITCH_TRUE;
-		captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "msg_count"), NULL, phrase_params, NULL, 0);
+		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "msg_count"), NULL, menu.phrase_params, NULL, 0);
 
-		captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
+		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
 
-		if (loc.result == RES_TIMEOUT) {
+		if (menu.ivre_d.result == RES_TIMEOUT) {
 			/* TODO Ask for the prompt Again IF retry != 0 */
-		} else if (loc.result == RES_INVALID) {
+		} else if (menu.ivre_d.result == RES_INVALID) {
 			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
-		} else if (loc.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
-			const char *action = switch_event_get_header(menu.event_keys_dtmf, loc.dtmf_stored);
+		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
+			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
 			/* Reset the try count */
 			retry = MAX_ATTEMPT;
@@ -131,11 +125,11 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 				}
 			}
 		}
-		switch_event_destroy(&phrase_params);
+		menu_instance_free(&menu);
 
 
 	}
-	free_profile_menu_event(&menu);
+	menu_free(&menu);
 }
 
 
@@ -157,10 +151,10 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 	switch_bool_t msg_undeleted = SWITCH_FALSE;
 	switch_bool_t msg_saved = SWITCH_FALSE;
 
-	vmivr_menu_profile_t menu = { "std_navigator" };
+	vmivr_menu_t menu = { "std_navigator" };
 
 	/* Initialize Menu Configs */
-	populate_profile_menu_event(profile, &menu);
+	menu_init(profile, &menu);
 
 	if (!menu.event_keys_dtmf || !menu.event_phrases) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Menu Phrases or Keys\n");
@@ -186,15 +180,8 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 	for (retry = MAX_ATTEMPT; switch_channel_ready(channel) && retry > 0; retry--) {
 		switch_core_session_message_t msg = { 0 };
 		char cid_buf[1024] = "";
-		dtmf_ss_t loc;
-		char *dtmfa[16] = { 0 };
-		switch_event_t *phrase_params = NULL;
 
-		switch_event_create(&phrase_params, SWITCH_EVENT_REQUEST_PARAMS);
-
-		append_event_profile(phrase_params, profile, menu);
-
-		populate_dtmfa_from_event(phrase_params, profile, menu, dtmfa);
+		menu_instance_init(&menu);
 
 		previous_msg = current_msg;
 
@@ -208,31 +195,31 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 
 		current_msg = next_msg;
 
-		captureMenuInitialize(&loc, dtmfa);
+		ivre_init(&menu.ivre_d, menu.dtmfa);
 
 		/* Prompt related to previous Message here */
-		append_event_message(session, profile, phrase_params, msg_list_params, previous_msg);
+		append_event_message(session, profile, menu.phrase_params, msg_list_params, previous_msg);
 		if (msg_deleted) {
 			msg_deleted = SWITCH_FALSE;
-			captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "ack"), "deleted", phrase_params, NULL, 0);
+			ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "ack"), "deleted", menu.phrase_params, NULL, 0);
 		}
 		if (msg_undeleted) {
 			msg_undeleted = SWITCH_FALSE;
-			captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "ack"), "undeleted", phrase_params, NULL, 0);
+			ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "ack"), "undeleted", menu.phrase_params, NULL, 0);
 		} 
 		if (msg_saved) {
 			msg_saved = SWITCH_FALSE;
-			captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "ack"), "saved", phrase_params, NULL, 0);
+			ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "ack"), "saved", menu.phrase_params, NULL, 0);
 		}
-		switch_event_del_header(phrase_params, "VM-Message-Flags");
+		switch_event_del_header(menu.phrase_params, "VM-Message-Flags");
 		/* Prompt related the current message */
-		append_event_message(session, profile, phrase_params, msg_list_params, current_msg);
+		append_event_message(session, profile, menu.phrase_params, msg_list_params, current_msg);
 
 		/* Used for extra control in phrases */
-		switch_event_add_header(phrase_params, SWITCH_STACK_BOTTOM, "VM-List-Count", "%"SWITCH_SIZE_T_FMT, msg_count);
+		switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "VM-List-Count", "%"SWITCH_SIZE_T_FMT, msg_count);
 
 		/* Save in profile the current msg info for other menu processing AND restoration of our current position */
-		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", switch_str_nil(switch_event_get_header(phrase_params, "VM-Message-Caller-Number")), switch_str_nil(switch_event_get_header(phrase_params, "VM-Message-Caller-Name")));
+		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", switch_str_nil(switch_event_get_header(menu.phrase_params, "VM-Message-Caller-Number")), switch_str_nil(switch_event_get_header(menu.phrase_params, "VM-Message-Caller-Name")));
 
 		/* Display MSG CID/Name to caller */
 		msg.from = __FILE__;
@@ -241,36 +228,36 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 		switch_core_session_receive_message(session, &msg);
 
 		profile->current_msg = current_msg;
-		profile->current_msg_uuid = switch_core_session_strdup(session, switch_event_get_header(phrase_params, "VM-Message-UUID"));
+		profile->current_msg_uuid = switch_core_session_strdup(session, switch_event_get_header(menu.phrase_params, "VM-Message-UUID"));
 
 		/* TODO check if msg is gone (purged by another session, notify user and auto jump to next message or something) */
 		if (!skip_header) {
 			if (!initial_count_played) {
 				cmd = switch_core_session_sprintf(session, "json %s %s %s", profile->api_profile, profile->domain, profile->id);
-				jsonapi2event(session, phrase_params, profile->api_msg_count, cmd);
+				jsonapi2event(session, menu.phrase_params, profile->api_msg_count, cmd);
 				initial_count_played = SWITCH_TRUE;
-				// TODO captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "msg_count"), NULL, phrase_params, NULL, 0);
+				// TODO ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "msg_count"), NULL, menu.phrase_params, NULL, 0);
 			}
 			if (msg_count > 0) {
-				captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "say_msg_number"), NULL, phrase_params, NULL, 0);
-				captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "say_date"), NULL, phrase_params, NULL, 0);
+				ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "say_msg_number"), NULL, menu.phrase_params, NULL, 0);
+				ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "say_date"), NULL, menu.phrase_params, NULL, 0);
 			}
 		}
 		if (msg_count > 0 && !skip_playback) {
 			/* TODO Update the Read date of a message (When msg start, or when it listen compleatly ??? To be determined */
-			captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "play_message"), NULL, phrase_params, NULL, 0);
+			ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "play_message"), NULL, menu.phrase_params, NULL, 0);
 		}
 		skip_header = SWITCH_FALSE;
 		skip_playback = SWITCH_FALSE;
 
-		captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
+		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
 
-		if (loc.result == RES_TIMEOUT) {
+		if (menu.ivre_d.result == RES_TIMEOUT) {
 			/* TODO Ask for the prompt Again IF retry != 0 */
-		} else if (loc.result == RES_INVALID) {
+		} else if (menu.ivre_d.result == RES_INVALID) {
 			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
-		} else if (loc.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
-			const char *action = switch_event_get_header(menu.event_keys_dtmf, loc.dtmf_stored);
+		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
+			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
 			/* Reset the try count */
 			retry = MAX_ATTEMPT;
@@ -281,16 +268,16 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 				} else if (!strcasecmp(action, "next_msg")) { /* Next Message */
 					next_msg++;
 					if (next_msg > msg_count) {
-						//playbackBufferDTMF(session, switch_event_get_header(menu.event_phrases, "no_more_messages"), NULL, NULL, NULL, 0);
+						//ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "no_more_messages"), NULL, NULL, NULL, 0);
 						retry = -1;
 					}
 
 				} else if (!strcasecmp(action, "prev_msg")) { /* Previous Message */
 					next_msg--;
 				} else if (!strcasecmp(action, "delete_msg")) { /* Delete / Undelete Message */
-					const char *msg_flags = switch_event_get_header(phrase_params, "VM-Message-Flags");
+					const char *msg_flags = switch_event_get_header(menu.phrase_params, "VM-Message-Flags");
 					if (!msg_flags || strncasecmp(msg_flags, "delete", 6)) {
-						cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, profile->id, switch_event_get_header(phrase_params, "VM-Message-UUID"));
+						cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, profile->id, switch_event_get_header(menu.phrase_params, "VM-Message-UUID"));
 						vmivr_api_execute(session, profile->api_msg_delete, cmd);
 
 						msg_deleted = SWITCH_TRUE;
@@ -298,18 +285,18 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 						//next_msg++;
 						skip_header = skip_playback = SWITCH_TRUE;
 					} else { 
-						cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, profile->id, switch_event_get_header(phrase_params, "VM-Message-UUID"));
+						cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, profile->id, switch_event_get_header(menu.phrase_params, "VM-Message-UUID"));
 						vmivr_api_execute(session, profile->api_msg_undelete, cmd);
 
 						msg_undeleted = SWITCH_TRUE;
 					}
 				} else if (!strcasecmp(action, "save_msg")) { /* Save Message */
-					cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, profile->id, switch_event_get_header(phrase_params, "VM-Message-UUID"));
+					cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, profile->id, switch_event_get_header(menu.phrase_params, "VM-Message-UUID"));
 					vmivr_api_execute(session, profile->api_msg_save, cmd);
 
 					msg_saved = SWITCH_TRUE;
 				} else if (!strcasecmp(action, "callback")) { /* CallBack caller */
-					const char *cid_num = switch_event_get_header(phrase_params, "VM-Message-Caller-Number");
+					const char *cid_num = switch_event_get_header(menu.phrase_params, "VM-Message-Caller-Number");
 					if (cid_num) {
 						/* TODO add detection for private number */
 						switch_core_session_execute_exten(session, cid_num, "XML", profile->domain);
@@ -327,33 +314,33 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 			}
 		}
 
-		/* IF the API to get the message returned us a COPY of the file locally (temp file create from a DB or from a web server), delete it */
-		if (switch_true(switch_event_get_header(phrase_params, "VM-Message-Private-Local-Copy"))) {
-			const char *file_path = switch_event_get_header(phrase_params, "VM-Message-File-Path");
+		/* IF the API to get the message returned us a COPY of the file menu.ivre_dally (temp file create from a DB or from a web server), delete it */
+		if (switch_true(switch_event_get_header(menu.phrase_params, "VM-Message-Private-Local-Copy"))) {
+			const char *file_path = switch_event_get_header(menu.phrase_params, "VM-Message-File-Path");
 			if (file_path && unlink(file_path) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete temp file [%s]\n", file_path);
 			}
 		}
-		switch_event_destroy(&phrase_params);
+		menu_instance_free(&menu);
 	}
 done:
 	switch_event_destroy(&msg_list_params);
 
-	free_profile_menu_event(&menu);
+	menu_free(&menu);
 
 	return;
 }
 
 void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile) {
 
-	vmivr_menu_profile_t menu = { "std_forward_ask_prepend" };
+	vmivr_menu_t menu = { "std_forward_ask_prepend" };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *prepend_filepath = NULL;
 	int retry;
 	switch_bool_t forward_msg = SWITCH_FALSE;
 
 	/* Initialize Menu Configs */
-	populate_profile_menu_event(profile, &menu);
+	menu_init(profile, &menu);
 
 	if (!menu.event_keys_dtmf || !menu.event_phrases) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Menu Phrases and Keys\n");
@@ -361,25 +348,19 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 	}
 
 	for (retry = MAX_ATTEMPT; switch_channel_ready(channel) && retry > 0; retry--) {
-		dtmf_ss_t loc;
-		char *dtmfa[16] = { 0 };
-		switch_event_t *phrase_params = NULL;
 
-		switch_event_create(&phrase_params, SWITCH_EVENT_REQUEST_PARAMS);
-		append_event_profile(phrase_params, profile, menu);
+		menu_instance_init(&menu);
 
-		populate_dtmfa_from_event(phrase_params, profile, menu, dtmfa);
+		ivre_init(&menu.ivre_d, menu.dtmfa);
 
-		captureMenuInitialize(&loc, dtmfa);
+		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
 
-		captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
-
-		if (loc.result == RES_TIMEOUT) {
+		if (menu.ivre_d.result == RES_TIMEOUT) {
 			/* TODO Ask for the prompt Again IF retry != 0 */
-		} else if (loc.result == RES_INVALID) {
+		} else if (menu.ivre_d.result == RES_INVALID) {
 			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
-		} else if (loc.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
-			const char *action = switch_event_get_header(menu.event_keys_dtmf, loc.dtmf_stored);
+		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
+			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
 			/* Reset the try count */
 			retry = MAX_ATTEMPT;
@@ -389,12 +370,12 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 					retry = -1;
 					forward_msg = SWITCH_FALSE;
 				} else if (!strcasecmp(action, "prepend")) { /* Prepend record msg */
-					vmivr_menu_profile_t sub_menu = { "std_record_message" };
+					vmivr_menu_t sub_menu = { "std_record_message" };
 					char *tmp_filepath = generate_random_file_name(session, "voicemail_ivr", "wav" /* TODO make it configurable */);
 					switch_status_t status;
 
 					/* Initialize Menu Configs */
-					populate_profile_menu_event(profile, &sub_menu);
+					menu_init(profile, &sub_menu);
 
 					status =  vmivr_menu_record(session, profile, sub_menu, tmp_filepath);
 
@@ -402,14 +383,14 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 						//char *cmd = switch_core_session_sprintf(session, "%s %s %s %d %s", profile->api_profile, profile->domain, profile->id, gnum, tmp_filepath);
 						//char *str_num = switch_core_session_sprintf(session, "%d", gnum);
 						//vmivr_api_execute(session, profile->api_pref_greeting_set, cmd);
-						//playbackBufferDTMF(session, switch_event_get_header(menu.event_phrases, "selected_slot"), str_num, NULL, NULL, 0);
+						//ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "selected_slot"), str_num, NULL, NULL, 0);
 						prepend_filepath = tmp_filepath;
 						retry = -1;
 						forward_msg = SWITCH_TRUE;
 					} else {
 						/* TODO Error Recording msg */
 					}
-					free_profile_menu_event(&sub_menu);
+					menu_free(&sub_menu);
 
 				} else if (!strcasecmp(action, "forward")) { /* Forward without prepend msg */
 					retry = -1;
@@ -422,7 +403,7 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 				}
 			}
 		}
-		switch_event_destroy(&phrase_params);
+		menu_instance_free(&menu);
 
 
 	}
@@ -430,42 +411,42 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 	if (forward_msg) {
 		for (retry = MAX_ATTEMPT; switch_channel_ready(channel) && retry > 0; retry--) {
 			const char *id = NULL;
-			vmivr_menu_profile_t sub_menu = { "std_forward_ask_extension" };
+			vmivr_menu_t sub_menu = { "std_forward_ask_extension" };
 
 			/* Initialize Menu Configs */
-			populate_profile_menu_event(profile, &sub_menu);
+			menu_init(profile, &sub_menu);
 
 			id = vmivr_menu_get_input_set(session, profile, sub_menu, "X.");
 			if (id) {
 				const char *cmd = switch_core_session_sprintf(session, "%s %s %s %s %s %s %s%s%s", profile->api_profile, profile->domain, profile->id, profile->current_msg_uuid, profile->domain, id, prepend_filepath?" ":"", prepend_filepath?prepend_filepath:"" );
 				if (vmivr_api_execute(session, profile->api_msg_forward, cmd) == SWITCH_STATUS_SUCCESS) {
-					playbackBufferDTMF(session, switch_event_get_header(sub_menu.event_phrases, "ack"), "saved", NULL, NULL, 0);
+					ivre_playback_dtmf_buffered(session, switch_event_get_header(sub_menu.event_phrases, "ack"), "saved", NULL, NULL, 0);
 					retry = -1;
 				} else {
-					playbackBufferDTMF(session, switch_event_get_header(sub_menu.event_phrases, "invalid_extension"), NULL, NULL, NULL, 0);
+					ivre_playback_dtmf_buffered(session, switch_event_get_header(sub_menu.event_phrases, "invalid_extension"), NULL, NULL, NULL, 0);
 				}
 			} else {
 				/* TODO Prompt about input not valid */
 			}
-			free_profile_menu_event(&sub_menu);
+			menu_free(&sub_menu);
 			/* TODO add Confirmation of the transfered number */
 		}
 		/* TODO Ask if we want to transfer the msg to more person */
 
 	}
 
-	free_profile_menu_event(&menu);
+	menu_free(&menu);
 }
 
 
 void vmivr_menu_record_name(switch_core_session_t *session, vmivr_profile_t *profile) {
 	switch_status_t status;
-	vmivr_menu_profile_t menu = { "std_record_name" };
+	vmivr_menu_t menu = { "std_record_name" };
 
 	char *tmp_filepath = generate_random_file_name(session, "voicemail_ivr", "wav" /* TODO make it configurable */);
 
 	/* Initialize Menu Configs */
-	populate_profile_menu_event(profile, &menu);
+	menu_init(profile, &menu);
 
 	status = vmivr_menu_record(session, profile, menu, tmp_filepath);
 
@@ -477,10 +458,10 @@ void vmivr_menu_record_name(switch_core_session_t *session, vmivr_profile_t *pro
 
 void vmivr_menu_set_password(switch_core_session_t *session, vmivr_profile_t *profile) {
 	char *password;
-	vmivr_menu_profile_t menu = { "std_set_password" };
+	vmivr_menu_t menu = { "std_set_password" };
 
 	/* Initialize Menu Configs */
-	populate_profile_menu_event(profile, &menu);
+	menu_init(profile, &menu);
 
 	password = vmivr_menu_get_input_set(session, profile, menu, "XXX." /* TODO Conf Min 3 Digit */);
 
@@ -491,16 +472,16 @@ void vmivr_menu_set_password(switch_core_session_t *session, vmivr_profile_t *pr
 
 	}
 
-	free_profile_menu_event(&menu);
+	menu_free(&menu);
 }
 
 void vmivr_menu_authenticate(switch_core_session_t *session, vmivr_profile_t *profile) {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	vmivr_menu_profile_t menu = { "std_authenticate" };
+	vmivr_menu_t menu = { "std_authenticate" };
 	int retry;
 	const char *auth_var = NULL;
 	/* Initialize Menu Configs */
-	populate_profile_menu_event(profile, &menu);
+	menu_init(profile, &menu);
 
 	if (profile->id && (auth_var = switch_channel_get_variable(channel, "voicemail_authorized")) && switch_true(auth_var)) {
 		profile->authorized = SWITCH_TRUE;
@@ -511,20 +492,20 @@ void vmivr_menu_authenticate(switch_core_session_t *session, vmivr_profile_t *pr
 		char *cmd = NULL;
 
 		if (!id) {
-			vmivr_menu_profile_t sub_menu = { "std_authenticate_ask_user" };
+			vmivr_menu_t sub_menu = { "std_authenticate_ask_user" };
 			/* Initialize Menu Configs */
-			populate_profile_menu_event(profile, &sub_menu);
+			menu_init(profile, &sub_menu);
 
 			id = vmivr_menu_get_input_set(session, profile, sub_menu, "X." /* TODO Conf Min 3 Digit */);
-			free_profile_menu_event(&sub_menu);
+			menu_free(&sub_menu);
 		}
 		if (!password) {
-			vmivr_menu_profile_t sub_menu = { "std_authenticate_ask_password" };
+			vmivr_menu_t sub_menu = { "std_authenticate_ask_password" };
 			/* Initialize Menu Configs */
-			populate_profile_menu_event(profile, &sub_menu);
+			menu_init(profile, &sub_menu);
 
 			password = vmivr_menu_get_input_set(session, profile, sub_menu, "X." /* TODO Conf Min 3 Digit */);
-			free_profile_menu_event(&sub_menu);
+			menu_free(&sub_menu);
 		}
 		cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, id, password);
 
@@ -532,20 +513,20 @@ void vmivr_menu_authenticate(switch_core_session_t *session, vmivr_profile_t *pr
 			profile->id = id;
 			profile->authorized = SWITCH_TRUE;
 		} else {
-			playbackBufferDTMF(session, switch_event_get_header(menu.event_phrases, "fail_auth"), NULL, NULL, NULL, 0);
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "fail_auth"), NULL, NULL, NULL, 0);
 		}
 	}
-	free_profile_menu_event(&menu);
+	menu_free(&menu);
 }
 
 void vmivr_menu_select_greeting_slot(switch_core_session_t *session, vmivr_profile_t *profile) {
-	vmivr_menu_profile_t menu = { "std_select_greeting_slot" };
+	vmivr_menu_t menu = { "std_select_greeting_slot" };
 
 	const char *result;
 	int gnum = -1;
 
 	/* Initialize Menu Configs */
-	populate_profile_menu_event(profile, &menu);
+	menu_init(profile, &menu);
 
 	result = vmivr_menu_get_input_set(session, profile, menu, "X");
 
@@ -555,23 +536,23 @@ void vmivr_menu_select_greeting_slot(switch_core_session_t *session, vmivr_profi
 		char * cmd = switch_core_session_sprintf(session, "%s %s %s %d", profile->api_profile, profile->domain, profile->id, gnum);
 		if (vmivr_api_execute(session, profile->api_pref_greeting_set, cmd) == SWITCH_STATUS_SUCCESS) {
 			char *str_num = switch_core_session_sprintf(session, "%d", gnum);
-			playbackBufferDTMF(session, switch_event_get_header(menu.event_phrases, "selected_slot"), str_num, NULL, NULL, 0);
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "selected_slot"), str_num, NULL, NULL, 0);
 		} else {
-			playbackBufferDTMF(session, switch_event_get_header(menu.event_phrases, "invalid_slot"), NULL, NULL, NULL, 0);
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid_slot"), NULL, NULL, NULL, 0);
 		}
 	}
-	free_profile_menu_event(&menu);
+	menu_free(&menu);
 }
 
 void vmivr_menu_record_greeting_with_slot(switch_core_session_t *session, vmivr_profile_t *profile) {
 
-	vmivr_menu_profile_t menu = { "std_record_greeting_with_slot" };
+	vmivr_menu_t menu = { "std_record_greeting_with_slot" };
 
 	const char *result;
 	int gnum = -1;
 
 	/* Initialize Menu Configs */
-	populate_profile_menu_event(profile, &menu);
+	menu_init(profile, &menu);
 
 	result = vmivr_menu_get_input_set(session, profile, menu, "X");
 
@@ -580,12 +561,12 @@ void vmivr_menu_record_greeting_with_slot(switch_core_session_t *session, vmivr_
 
 	/* If user entered 0, we don't accept it */
 	if (gnum > 0) {
-		vmivr_menu_profile_t sub_menu = { "std_record_greeting" };
+		vmivr_menu_t sub_menu = { "std_record_greeting" };
 		char *tmp_filepath = generate_random_file_name(session, "voicemail_ivr", "wav" /* TODO make it configurable */);
 		switch_status_t status;
 
 		/* Initialize Menu Configs */
-		populate_profile_menu_event(profile, &sub_menu);
+		menu_init(profile, &sub_menu);
 
 		status =  vmivr_menu_record(session, profile, sub_menu, tmp_filepath);
 
@@ -593,13 +574,13 @@ void vmivr_menu_record_greeting_with_slot(switch_core_session_t *session, vmivr_
 			char *cmd = switch_core_session_sprintf(session, "%s %s %s %d %s", profile->api_profile, profile->domain, profile->id, gnum, tmp_filepath);
 			char *str_num = switch_core_session_sprintf(session, "%d", gnum);
 			vmivr_api_execute(session, profile->api_pref_greeting_set, cmd);
-			playbackBufferDTMF(session, switch_event_get_header(menu.event_phrases, "selected_slot"), str_num, NULL, NULL, 0);
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "selected_slot"), str_num, NULL, NULL, 0);
 		}
-		free_profile_menu_event(&sub_menu);
+		menu_free(&sub_menu);
 
 	}
 
-	free_profile_menu_event(&menu);
+	menu_free(&menu);
 
 }
 
@@ -608,10 +589,10 @@ void vmivr_menu_preference(switch_core_session_t *session, vmivr_profile_t *prof
 
 	int retry;
 
-	vmivr_menu_profile_t menu = { "std_preference" };
+	vmivr_menu_t menu = { "std_preference" };
 
 	/* Initialize Menu Configs */
-	populate_profile_menu_event(profile, &menu);
+	menu_init(profile, &menu);
 
 	if (!menu.event_keys_dtmf || !menu.event_phrases) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Menu Phrases and Keys\n");
@@ -619,25 +600,19 @@ void vmivr_menu_preference(switch_core_session_t *session, vmivr_profile_t *prof
 	}
 
 	for (retry = MAX_ATTEMPT; switch_channel_ready(channel) && retry > 0; retry--) {
-		dtmf_ss_t loc;
-		char *dtmfa[16] = { 0 };
-		switch_event_t *phrase_params = NULL;
 
-		switch_event_create(&phrase_params, SWITCH_EVENT_REQUEST_PARAMS);
-		append_event_profile(phrase_params, profile, menu);
+		menu_instance_init(&menu);
 
-		populate_dtmfa_from_event(phrase_params, profile, menu, dtmfa);
+		ivre_init(&menu.ivre_d, menu.dtmfa);
 
-		captureMenuInitialize(&loc, dtmfa);
+		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
 
-		captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
-
-		if (loc.result == RES_TIMEOUT) {
+		if (menu.ivre_d.result == RES_TIMEOUT) {
 			/* TODO Ask for the prompt Again IF retry != 0 */
-		} else if (loc.result == RES_INVALID) {
+		} else if (menu.ivre_d.result == RES_INVALID) {
 			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
-		} else if (loc.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
-			const char *action = switch_event_get_header(menu.event_keys_dtmf, loc.dtmf_stored);
+		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
+			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
 			/* Reset the try count */
 			retry = MAX_ATTEMPT;
@@ -653,13 +628,13 @@ void vmivr_menu_preference(switch_core_session_t *session, vmivr_profile_t *prof
 				}
 			}
 		}
-		switch_event_destroy(&phrase_params);
+		menu_instance_free(&menu);
 	}
 
-	free_profile_menu_event(&menu);
+	menu_free(&menu);
 }
 
-char *vmivr_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_profile_t menu, const char *input_mask) {
+char *vmivr_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_t menu, const char *input_mask) {
 	char *result = NULL;
 	int retry;
 	const char *terminate_key = NULL;
@@ -673,49 +648,43 @@ char *vmivr_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *
 	terminate_key = switch_event_get_header(menu.event_keys_action, "ivrengine:terminate_entry");
 
 	for (retry = MAX_ATTEMPT; switch_channel_ready(channel) && retry > 0; retry--) {
-		dtmf_ss_t loc;
-		char *dtmfa[16] = { 0 };
 		int i;
-		switch_event_t *phrase_params = NULL;
 
-		switch_event_create(&phrase_params, SWITCH_EVENT_REQUEST_PARAMS);
-		append_event_profile(phrase_params, profile, menu);
-
-		populate_dtmfa_from_event(phrase_params, profile, menu, dtmfa);
+		menu_instance_init(&menu);
 
 		/* Find the last entry and append this one to it */
-		for (i=0; dtmfa[i] && i < 16; i++){
+		for (i=0; menu.dtmfa[i] && i < 16; i++){
 		}
-		dtmfa[i] = (char *) input_mask;
+		menu.dtmfa[i] = (char *) input_mask;
 
-		captureMenuInitialize(&loc, dtmfa);
+		ivre_init(&menu.ivre_d, menu.dtmfa);
 		if (terminate_key) {
-			loc.terminate_key = terminate_key[0];
+			menu.ivre_d.terminate_key = terminate_key[0];
 		}
-		captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "instructions"), NULL, phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
+		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "instructions"), NULL, menu.phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
 
-		if (loc.result == RES_TIMEOUT) {
+		if (menu.ivre_d.result == RES_TIMEOUT) {
 			/* TODO Ask for the prompt Again IF retry != 0 */
-		} else if (loc.result == RES_INVALID) {
+		} else if (menu.ivre_d.result == RES_INVALID) {
 			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
-		} else if (loc.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
+		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 
 			/* Reset the try count */
 			retry = MAX_ATTEMPT;
 
-			if (!strncasecmp(loc.completeMatch, input_mask, 1)) {
-				result = switch_core_session_strdup(session, loc.dtmf_stored);
+			if (!strncasecmp(menu.ivre_d.completeMatch, input_mask, 1)) {
+				result = switch_core_session_strdup(session, menu.ivre_d.dtmf_stored);
 				retry = -1;
 
 			}
 		}
-		switch_event_destroy(&phrase_params);
+		menu_instance_free(&menu);
 	}
 
 	return result;
 }
 
-switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_profile_t menu, const char *file_name) {
+switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_t menu, const char *file_name) {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int retry;
@@ -730,10 +699,6 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 	}
 
 	for (retry = MAX_ATTEMPT; switch_channel_ready(channel) && retry > 0; retry--) {
-		dtmf_ss_t loc;
-
-		char *dtmfa[16] = { 0 };
-		switch_event_t *phrase_params = NULL;
 		switch_file_handle_t fh = { 0 };
 
 		/* TODO Make the following configurable */
@@ -741,31 +706,27 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 		fh.silence_hits = 4;
 		//fh.samplerate = 8000;
 
+		menu_instance_init(&menu);
 
-		switch_event_create(&phrase_params, SWITCH_EVENT_REQUEST_PARAMS);
-		append_event_profile(phrase_params, profile, menu);
-
-		populate_dtmfa_from_event(phrase_params, profile, menu, dtmfa);
-
-		captureMenuInitialize(&loc, dtmfa);
+		ivre_init(&menu.ivre_d, menu.dtmfa);
 		if (record_prompt) {
 			if (play_instruction) {
-				captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "instructions"), NULL, phrase_params, NULL, 0);
+				ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "instructions"), NULL, menu.phrase_params, NULL, 0);
 			}
 			play_instruction = SWITCH_TRUE;
 
-			captureMenuRecord(session, &loc, phrase_params, file_name, &fh, 30 /* TODO Make max recording configurable */);
+			ivre_record(session, &menu.ivre_d, menu.phrase_params, file_name, &fh, 30 /* TODO Make max recording configurable */);
 		} else {
 			if (listen_recording) {
-				switch_event_add_header(phrase_params, SWITCH_STACK_BOTTOM, "VM-Record-File-Path", "%s", file_name);
-				captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "play_recording"), NULL, phrase_params, NULL, 0);
+				switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "VM-Record-File-Path", "%s", file_name);
+				ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "play_recording"), NULL, menu.phrase_params, NULL, 0);
 				listen_recording = SWITCH_FALSE;
 
 			}
-			captureMenu(session, &loc, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
+			ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, DEFAULT_IVR_TIMEOUT);
 		}
 
-		if (loc.recorded_audio) {
+		if (menu.ivre_d.recorded_audio) {
 			/* Reset the try count */
 			retry = MAX_ATTEMPT;
 
@@ -773,12 +734,12 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 
 			record_prompt = SWITCH_FALSE;
 
-		} else if (loc.result == RES_TIMEOUT) {
+		} else if (menu.ivre_d.result == RES_TIMEOUT) {
 			/* TODO Ask for the prompt Again IF retry != 0 */
-		} else if (loc.result == RES_INVALID) {
+		} else if (menu.ivre_d.result == RES_INVALID) {
 			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
-		} else if (loc.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
-			const char *action = switch_event_get_header(menu.event_keys_dtmf, loc.dtmf_stored);
+		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
+			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
 			/* Reset the try count */
 			retry = MAX_ATTEMPT;
@@ -808,7 +769,7 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 				}
 			}
 		}
-		switch_event_destroy(&phrase_params);
+		menu_instance_free(&menu);
 	}
 	return status;
 }

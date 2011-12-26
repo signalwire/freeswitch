@@ -34,7 +34,7 @@
 
 #include "ivr.h"
 
-int match_dtmf(switch_core_session_t *session, dtmf_ss_t *loc) {
+static int match_dtmf(switch_core_session_t *session, ivre_data_t *loc) {
 	switch_bool_t is_invalid[128] = { SWITCH_FALSE };
 	int i;
 	loc->potentialMatch = NULL;
@@ -99,7 +99,7 @@ static switch_status_t cb_on_dtmf_ignore(switch_core_session_t *session, void *i
 
 static switch_status_t cb_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-	dtmf_ss_t *loc = (dtmf_ss_t*) buf;
+	ivre_data_t *loc = (ivre_data_t*) buf;
 
 	switch (itype) {
 		case SWITCH_INPUT_TYPE_DTMF:
@@ -146,7 +146,7 @@ static switch_status_t cb_on_dtmf(switch_core_session_t *session, void *input, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t captureMenuInitialize(dtmf_ss_t *loc, char **dtmf_accepted) {
+switch_status_t ivre_init(ivre_data_t *loc, char **dtmf_accepted) {
 	int i;
 
 	memset(loc, 0, sizeof(*loc));
@@ -158,7 +158,7 @@ switch_status_t captureMenuInitialize(dtmf_ss_t *loc, char **dtmf_accepted) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t playbackBufferDTMF(switch_core_session_t *session, const char *macro_name,  const char *data, switch_event_t *event, const char *lang, int timeout) {
+switch_status_t ivre_playback_dtmf_buffered(switch_core_session_t *session, const char *macro_name,  const char *data, switch_event_t *event, const char *lang, int timeout) {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -178,7 +178,7 @@ switch_status_t playbackBufferDTMF(switch_core_session_t *session, const char *m
 }
 
 
-switch_status_t captureMenu(switch_core_session_t *session, dtmf_ss_t *loc, const char *macro_name,  const char *data, switch_event_t *event, const char *lang, int timeout) {
+switch_status_t ivre_playback(switch_core_session_t *session, ivre_data_t *loc, const char *macro_name,  const char *data, switch_event_t *event, const char *lang, int timeout) {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -210,7 +210,7 @@ switch_status_t captureMenu(switch_core_session_t *session, dtmf_ss_t *loc, cons
 	return status;
 }
 
-switch_status_t captureMenuRecord(switch_core_session_t *session, dtmf_ss_t *loc, switch_event_t *event, const char *file_path, switch_file_handle_t *fh, int max_record_len) {
+switch_status_t ivre_record(switch_core_session_t *session, ivre_data_t *loc, switch_event_t *event, const char *file_path, switch_file_handle_t *fh, int max_record_len) {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 

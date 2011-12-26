@@ -29,7 +29,11 @@
  * ivr.h -- VoiceMail IVR Engine
  *
  */
-struct dtmf_ss {
+
+#ifndef _IVRE_H_
+#define _IVRE_H_
+
+struct ivre_data {
 	char dtmf_stored[128];
 	int dtmf_received;
 	char dtmf_accepted[16][128];
@@ -41,7 +45,7 @@ struct dtmf_ss {
 	const char *completeMatch;
 	char terminate_key;
 };
-typedef struct dtmf_ss dtmf_ss_t;
+typedef struct ivre_data ivre_data_t;
 
 #define RES_WAITFORMORE 0
 #define RES_FOUND 1
@@ -53,9 +57,9 @@ typedef struct dtmf_ss dtmf_ss_t;
 
 #define MAX_DTMF_SIZE_OPTION 32
 
-switch_status_t captureMenu(switch_core_session_t *session, dtmf_ss_t *loc, const char *macro_name,  const char *data, switch_event_t *event, const char *lang, int timeout);
-switch_status_t captureMenuRecord(switch_core_session_t *session, dtmf_ss_t *loc, switch_event_t *event, const char *file_path, switch_file_handle_t *fh, int max_record_len);
-switch_status_t captureMenuInitialize(dtmf_ss_t *loc, char **dtmf_accepted);
+switch_status_t ivre_init(ivre_data_t *loc, char **dtmf_accepted);
+switch_status_t ivre_playback(switch_core_session_t *session, ivre_data_t *loc, const char *macro_name,  const char *data, switch_event_t *event, const char *lang, int timeout);
+switch_status_t ivre_record(switch_core_session_t *session, ivre_data_t *loc, switch_event_t *event, const char *file_path, switch_file_handle_t *fh, int max_record_len);
 
-switch_status_t playbackBufferDTMF(switch_core_session_t *session, const char *macro_name,  const char *data, switch_event_t *event, const char *lang, int timeout);
-
+switch_status_t ivre_playback_dtmf_buffered(switch_core_session_t *session, const char *macro_name,  const char *data, switch_event_t *event, const char *lang, int timeout);
+#endif

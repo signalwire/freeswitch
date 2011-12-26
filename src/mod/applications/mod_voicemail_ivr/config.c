@@ -35,14 +35,20 @@
 
 const char *global_cf = "voicemail_ivr.conf";
 
-void populate_profile_menu_event(vmivr_profile_t *profile, vmivr_menu_profile_t *menu) {
+static void append_event_profile(vmivr_menu_t *menu);
+static void populate_dtmfa_from_event(vmivr_menu_t *menu);
+
+void menu_init(vmivr_profile_t *profile, vmivr_menu_t *menu) {
 	switch_xml_t cfg, xml, x_profiles, x_profile, x_keys, x_phrases, x_menus, x_menu, x_settings;
+
+	menu->profile = profile;
 
 	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
 		goto end;
 	}
 	if (!(x_profiles = switch_xml_child(cfg, "profiles"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No profiles group\n");
 		goto end;
 	}
 
@@ -63,6 +69,7 @@ void populate_profile_menu_event(vmivr_profile_t *profile, vmivr_menu_profile_t 
 	if ((x_profile = switch_xml_find_child(x_profiles, "profile", "name", profile->name))) {
 		if ((x_menus = switch_xml_child(x_profile, "menus"))) {
 			if ((x_menu = switch_xml_find_child(x_menus, "menu", "name", menu->name))) {
+
 				if ((x_keys = switch_xml_child(x_menu, "keys"))) {
 					switch_event_import_xml(switch_xml_child(x_keys, "key"), "dtmf", "action", &menu->event_keys_dtmf);
 					switch_event_import_xml(switch_xml_child(x_keys, "key"), "action", "dtmf", &menu->event_keys_action);
@@ -85,7 +92,20 @@ end:
 
 }
 
-void free_profile_menu_event(vmivr_menu_profile_t *menu) {
+void menu_instance_init(vmivr_menu_t *menu) {
+	append_event_profile(menu);
+
+	populate_dtmfa_from_event(menu);
+}
+
+void menu_instance_free(vmivr_menu_t *menu) {
+	if (menu->phrase_params) {
+		switch_event_destroy(&menu->phrase_params);
+	}
+	memset(&menu->ivre_d, 0, sizeof(menu->ivre_d));
+}
+
+void menu_free(vmivr_menu_t *menu) {
 	if (menu->event_keys_dtmf) {
 		switch_event_destroy(&menu->event_keys_dtmf);
 	}
@@ -104,6 +124,41 @@ void free_profile_menu_event(vmivr_menu_profile_t *menu) {
 	}
 
 }
+
+static void append_event_profile(vmivr_menu_t *menu) {
+
+        if (!menu->phrase_params) {
+                switch_event_create(&menu->phrase_params, SWITCH_EVENT_REQUEST_PARAMS);
+        }
+
+        /* Used for some appending function */
+        if (menu->profile && menu->profile->name && menu->profile->id && menu->profile->domain) {
+                switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, "VM-Profile", "%s", menu->profile->name);
+                switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, "VM-Account-ID", "%s", menu->profile->id);
+                switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, "VM-Account-Domain", "%s", menu->profile->domain);
+        }
+}
+
+static void populate_dtmfa_from_event(vmivr_menu_t *menu) {
+        int i = 0;
+        if (menu->event_keys_dtmf) {
+                switch_event_header_t *hp;
+
+                for (hp = menu->event_keys_dtmf->headers; hp; hp = hp->next) {
+                        if (strlen(hp->name) < 3 && hp->value) { /* TODO This is a hack to discard default FS Events ! */
+                                const char *varphrasename = switch_event_get_header(menu->event_keys_varname, hp->value);
+                                menu->dtmfa[i++] = hp->name;
+
+                                if (varphrasename && !zstr(varphrasename)) {
+                                        switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, varphrasename, "%s", hp->name);
+                                }
+                        }
+                }
+        }
+        menu->dtmfa[i++] = '\0';
+
+}
+
 
 vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile_name)
 {

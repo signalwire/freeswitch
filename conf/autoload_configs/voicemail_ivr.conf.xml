@@ -48,12 +48,27 @@
 			</keys>
 			</menu>
 
+			<menu name="std_main_menu">
+			<phrases>
+				<phrase name="msg_count" value="message_count@mtvoicemail" />
+				<phrase name="say_date" value="say_date_event@mtvoicemail" />
+				<phrase name="say_msg_number" value="say_message_number@mtvoicemail" />
+				<phrase name="menu_options" value="menu@mtvoicemail" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="new_msg:std_navigator" variable="VM-Key-Play-New-Messages" />
+				<key dtmf="2" action="saved_msg:std_navigator" variable="VM-Key-Play-Saved-Messages" />
+				<key dtmf="5" action="menu:std_preference" variable="VM-Key-Config-Menu"/>
+				<key dtmf="#" action="return" variable="VM-Key-Terminator" />
+			</keys>
+			</menu>
+
 			<menu name="std_navigator">
-                        <!-- Not yet implemented - Open for comments
-                                This will inherit the settings from the top profile settings.  So if it global, put it inside the profile <settings>
-                        <settings>
-                                <param name="playback-order" value="newest-first" />
-                        </settings>
+			<!-- Not yet implemented - Open for comments
+				This will inherit the settings from the top profile settings.  So if it global, put it inside the profile <settings>
+			<settings>
+				<param name="playback-order" value="newest-first" />
+			</settings>
 			-->
 			<phrases>
 				<phrase name="msg_count" value="message_count@voicemail_ivr" />

@@ -29,6 +29,8 @@
  * config.c -- VoiceMail IVR Config
  *
  */
+#include "ivr.h"
+
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
@@ -75,21 +77,29 @@ struct vmivr_profile {
 };
 typedef struct vmivr_profile vmivr_profile_t;
 
-struct vmivr_menu_profile {
+struct vmivr_menu {
 	const char *name;
+	vmivr_profile_t *profile;
 
 	switch_event_t *event_keys_action;
 	switch_event_t *event_keys_dtmf;
 	switch_event_t *event_keys_varname;
 	switch_event_t *event_settings;
 	switch_event_t *event_phrases;
+
+	char *dtmfa[16];
+	switch_event_t *phrase_params;
+	ivre_data_t ivre_d;
+
 };
-typedef struct vmivr_menu_profile vmivr_menu_profile_t;
+typedef struct vmivr_menu vmivr_menu_t;
 
 vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile_name);
 void free_profile(vmivr_profile_t *profile);
 
-void free_profile_menu_event(vmivr_menu_profile_t *menu);
-void populate_profile_menu_event(vmivr_profile_t *profile, vmivr_menu_profile_t *menu);
+void menu_init(vmivr_profile_t *profile, vmivr_menu_t *menu);
+void menu_instance_init(vmivr_menu_t *menu);
+void menu_instance_free(vmivr_menu_t *menu);
+void menu_free(vmivr_menu_t *menu);
 
 #endif /* _CONFIG_H_ */
