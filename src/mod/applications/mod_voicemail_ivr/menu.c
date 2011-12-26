@@ -57,11 +57,6 @@ void vmivr_menu_purge(switch_core_session_t *session, vmivr_profile_t *profile) 
 	/* Initialize Menu Configs */
 	menu_init(profile, &menu);
 
-	if (!menu.event_keys_dtmf || !menu.event_phrases) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Menu Phrases or Keys in menu '%s'\n", menu.name);
-		goto end;
-	}
-
 	if (profile->id && profile->authorized) {
 		const char *exit_purge = switch_event_get_header(menu.event_settings, "Exit-Purge");
 		if (switch_true(exit_purge)) {
@@ -233,15 +228,15 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 		/* Used for extra control in phrases */
 		switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "VM-List-Count", "%"SWITCH_SIZE_T_FMT, msg_count);
 
-		/* Save in profile the current msg info for other menu processing AND restoration of our current position */
+		/* Display MSG CID/Name to caller */
 		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", switch_str_nil(switch_event_get_header(menu.phrase_params, "VM-Message-Caller-Number")), switch_str_nil(switch_event_get_header(menu.phrase_params, "VM-Message-Caller-Name")));
 
-		/* Display MSG CID/Name to caller */
 		msg.from = __FILE__;
 		msg.string_arg = cid_buf;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
 		switch_core_session_receive_message(session, &msg);
 
+		/* Save in profile the current msg info for other menu processing AND restoration of our current position */
 		profile->current_msg = current_msg;
 		profile->current_msg_uuid = switch_core_session_strdup(session, switch_event_get_header(menu.phrase_params, "VM-Message-UUID"));
 
