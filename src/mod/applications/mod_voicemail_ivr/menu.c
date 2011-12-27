@@ -87,6 +87,8 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 
 		menu_instance_init(&menu);
 
+		switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
+
 		ivre_init(&menu.ivre_d, menu.dtmfa);
 
 		cmd = switch_core_session_sprintf(session, "json %s %s %s %s", profile->api_profile, profile->domain, profile->id, profile->folder_name);
@@ -98,14 +100,8 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
@@ -197,6 +193,8 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 
 		menu_instance_init(&menu);
 
+		switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
+
 		previous_msg = current_msg;
 
 		ivre_init(&menu.ivre_d, menu.dtmfa);
@@ -269,14 +267,8 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
@@ -372,20 +364,16 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 
 		menu_instance_init(&menu);
 
+		switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
+
 		ivre_init(&menu.ivre_d, menu.dtmfa);
 
 		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
@@ -450,8 +438,10 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 
 			/* Initialize Menu Configs */
 			menu_init(profile, &sub_menu);
+			switch_event_add_header(sub_menu.phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
 
 			id = vmivr_menu_get_input_set(session, profile, sub_menu, "X.");
+
 			if (id) {
 				const char *cmd = switch_core_session_sprintf(session, "%s %s %s %s %s %s %s%s%s", profile->api_profile, profile->domain, profile->id, profile->current_msg_uuid, profile->domain, id, prepend_filepath?" ":"", prepend_filepath?prepend_filepath:"" );
 				if (vmivr_api_execute(session, profile->api_msg_forward, cmd) == SWITCH_STATUS_SUCCESS) {
@@ -543,6 +533,8 @@ void vmivr_menu_authenticate(switch_core_session_t *session, vmivr_profile_t *pr
 			/* Initialize Menu Configs */
 			menu_init(profile, &sub_menu);
 
+			switch_event_add_header(sub_menu.phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
+
 			id = vmivr_menu_get_input_set(session, profile, sub_menu, user_mask);
 			menu_free(&sub_menu);
 		}
@@ -550,6 +542,8 @@ void vmivr_menu_authenticate(switch_core_session_t *session, vmivr_profile_t *pr
 			vmivr_menu_t sub_menu = { "std_authenticate_ask_password" };
 			/* Initialize Menu Configs */
 			menu_init(profile, &sub_menu);
+
+			switch_event_add_header(sub_menu.phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
 
 			password = vmivr_menu_get_input_set(session, profile, sub_menu, password_mask);
 			menu_free(&sub_menu);
@@ -656,20 +650,16 @@ void vmivr_menu_preference(switch_core_session_t *session, vmivr_profile_t *prof
 
 		menu_instance_init(&menu);
 
+		switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
+
 		ivre_init(&menu.ivre_d, menu.dtmfa);
 
 		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
@@ -712,6 +702,8 @@ char *vmivr_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *
 
 		menu_instance_init(&menu);
 
+		switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
+
 		/* Find the last entry and append this one to it */
 		for (i=0; menu.dtmfa[i] && i < 16; i++){
 		}
@@ -725,14 +717,8 @@ char *vmivr_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 
 			/* Reset the try count */
@@ -782,6 +768,8 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 
 		menu_instance_init(&menu);
 
+		switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
+
 		ivre_init(&menu.ivre_d, menu.dtmfa);
 
 		if (record_prompt) {
@@ -814,14 +802,8 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 
 		} else if (menu.ivre_d.result == RES_TIMEOUT) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
-			if (retry != 0) {
-				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
-			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
