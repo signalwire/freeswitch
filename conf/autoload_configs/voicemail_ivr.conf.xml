@@ -9,6 +9,7 @@
 			<param name="Record-Silence-Hits" value="4" />
 			<param name="Record-Silence-Threshold" value="200" />
 			<param name="Record-Maximum-Length" value="30" />
+			<!--<param name="Record-Minimum-Length" value="3" />-->
 			<param name="Exit-Purge" value="true" />
 			<param name="Password-Mask" value="XXX." />
 			<param name="User-Mask" value="X." />

@@ -44,6 +44,7 @@ struct ivre_data {
 	int potentialMatchCount;
 	const char *completeMatch;
 	char terminate_key;
+	const char *record_tone;
 };
 typedef struct ivre_data ivre_data_t;
 
@@ -59,7 +60,7 @@ typedef struct ivre_data ivre_data_t;
 
 switch_status_t ivre_init(ivre_data_t *loc, char **dtmf_accepted);
 switch_status_t ivre_playback(switch_core_session_t *session, ivre_data_t *loc, const char *macro_name,  const char *data, switch_event_t *event, const char *lang, int timeout);
-switch_status_t ivre_record(switch_core_session_t *session, ivre_data_t *loc, switch_event_t *event, const char *file_path, switch_file_handle_t *fh, int max_record_len);
+switch_status_t ivre_record(switch_core_session_t *session, ivre_data_t *loc, switch_event_t *event, const char *file_path, switch_file_handle_t *fh, int max_record_len, switch_size_t *record_len);
 
 switch_status_t ivre_playback_dtmf_buffered(switch_core_session_t *session, const char *macro_name,  const char *data, switch_event_t *event, const char *lang, int timeout);
 #endif

@@ -154,6 +154,7 @@ switch_status_t ivre_init(ivre_data_t *loc, char **dtmf_accepted) {
 	for (i = 0; dtmf_accepted[i] && i < 16; i++) {
 		strncpy(loc->dtmf_accepted[i], dtmf_accepted[i], 128);
 	}
+	loc->record_tone = "%(1000, 0, 640)";
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -210,7 +211,7 @@ switch_status_t ivre_playback(switch_core_session_t *session, ivre_data_t *loc, 
 	return status;
 }
 
-switch_status_t ivre_record(switch_core_session_t *session, ivre_data_t *loc, switch_event_t *event, const char *file_path, switch_file_handle_t *fh, int max_record_len) {
+switch_status_t ivre_record(switch_core_session_t *session, ivre_data_t *loc, switch_event_t *event, const char *file_path, switch_file_handle_t *fh, int max_record_len, switch_size_t *record_len) {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -222,8 +223,12 @@ switch_status_t ivre_record(switch_core_session_t *session, ivre_data_t *loc, sw
 
 		if (loc->audio_stopped == SWITCH_FALSE && loc->result == RES_WAITFORMORE) {
 			loc->recorded_audio = SWITCH_TRUE;
-			switch_ivr_gentones(session, "%(1000, 0, 640)", 0, NULL); /* TODO Make this optional and configurable */
+			switch_ivr_gentones(session, loc->record_tone, 0, NULL);
 			status = switch_ivr_record_file(session, fh, file_path, &args, max_record_len);
+
+			if (record_len) {
+				*record_len = fh->samples_out / (fh->samplerate ? fh->samplerate : 8000);
+			}
 
 		}
 		if (loc->result == RES_WAITFORMORE) {

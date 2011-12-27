@@ -64,7 +64,7 @@ void vmivr_menu_purge(switch_core_session_t *session, vmivr_profile_t *profile) 
 			vmivr_api_execute(session, profile->api_msg_purge, cmd);
 		}
 	}
-end:
+
 	menu_free(&menu);
 
 }
@@ -97,9 +97,15 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
-			/* TODO Ask for the prompt Again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
-			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
@@ -178,7 +184,7 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 			goto done;
 		}
 	} else {
-		/* TODO error MSG */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "API message list return invalid result : %s(%s)\n", profile->api_msg_list, cmd); 
 		goto done;
 	}
 
@@ -212,12 +218,11 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 		switch_event_del_header(menu.phrase_params, "VM-Message-Flags");
 
 		/* Simple Protection to not go out of msg list scope */
-		/* TODO: Add Prompt to notify they reached the begining or the end */
 		if (next_msg == 0) {
 			next_msg = 1;
 		} else if (next_msg > msg_count) {
 			next_msg = msg_count;
-			/*ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "no_more_messages"), NULL, NULL, NULL, 0); */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "no_more_messages"), NULL, NULL, NULL, 0);
 		}
 
 		current_msg = next_msg;
@@ -263,9 +268,15 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
-			/* TODO Ask for the prompt Again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
-			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
@@ -366,9 +377,15 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
-			/* TODO Ask for the prompt Again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
-			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
@@ -405,7 +422,7 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 						retry = -1;
 						forward_msg = SWITCH_TRUE;
 					} else {
-						/* TODO Error Recording msg */
+						ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "record_failed"), NULL, NULL, NULL, 0);
 					}
 					menu_free(&sub_menu);
 
@@ -424,6 +441,7 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 
 
 	}
+
 	/* Ask Extension to Forward */
 	if (forward_msg) {
 		for (retry = menu.ivr_maximum_attempts; switch_channel_ready(channel) && retry > 0; retry--) {
@@ -443,7 +461,7 @@ void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile
 					ivre_playback_dtmf_buffered(session, switch_event_get_header(sub_menu.event_phrases, "invalid_extension"), NULL, NULL, NULL, 0);
 				}
 			} else {
-				/* TODO Prompt about input not valid */
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid_input"), NULL, NULL, NULL, 0);
 			}
 			menu_free(&sub_menu);
 			/* TODO add Confirmation of the transfered number */
@@ -491,11 +509,13 @@ void vmivr_menu_set_password(switch_core_session_t *session, vmivr_profile_t *pr
 
 	password = vmivr_menu_get_input_set(session, profile, menu, password_mask);
 
-	/* TODO Add Prompts to tell if password was set and if it was not */
 	if (password) {
 		char *cmd = switch_core_session_sprintf(session, "%s %s %s %s", profile->api_profile, profile->domain, profile->id, password);
-		vmivr_api_execute(session, profile->api_pref_password_set, cmd);
-
+		if (vmivr_api_execute(session, profile->api_pref_password_set, cmd)) {
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "password_set"), NULL, NULL, NULL, 0);
+		} else {
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "password_not_set"), NULL, NULL, NULL, 0);
+		}
 	}
 
 	menu_free(&menu);
@@ -641,9 +661,15 @@ void vmivr_menu_preference(switch_core_session_t *session, vmivr_profile_t *prof
 		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
-			/* TODO Ask for the prompt Again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
-			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
@@ -698,9 +724,15 @@ char *vmivr_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *
 		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "instructions"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
-			/* TODO Ask for the prompt Again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
-			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 
 			/* Reset the try count */
@@ -737,8 +769,11 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 		const char *rec_silence_hits = switch_event_get_header(menu.event_settings, "Record-Silence-Hits");
 		const char *rec_silence_threshold = switch_event_get_header(menu.event_settings, "Record-Silence-Threshold");
 		const char *rec_silence_samplerate = switch_event_get_header(menu.event_settings, "Record-Sample-Rate");
-		const char *rec_maximum_length =  switch_event_get_header(menu.event_settings, "Record-Maximum-Length");
+		const char *rec_maximum_length = switch_event_get_header(menu.event_settings, "Record-Maximum-Length");
+		const char *rec_minimum_length = switch_event_get_header(menu.event_settings, "Record-Minimum-Length"); 
+		switch_size_t record_length = 0;
 
+		/* Prepare Recording File Handle */
 		fh.thresh = atoi(rec_silence_threshold);
 		fh.silence_hits = atoi(rec_silence_hits);
 		if (rec_silence_samplerate) {
@@ -748,13 +783,14 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 		menu_instance_init(&menu);
 
 		ivre_init(&menu.ivre_d, menu.dtmfa);
+
 		if (record_prompt) {
 			if (play_instruction) {
 				ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "instructions"), NULL, menu.phrase_params, NULL, 0);
 			}
 			play_instruction = SWITCH_TRUE;
 
-			ivre_record(session, &menu.ivre_d, menu.phrase_params, file_name, &fh, atoi(rec_maximum_length));
+			ivre_record(session, &menu.ivre_d, menu.phrase_params, file_name, &fh, atoi(rec_maximum_length), &record_length);
 		} else {
 			if (listen_recording) {
 				switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "VM-Record-File-Path", "%s", file_name);
@@ -769,14 +805,23 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 			/* Reset the try count */
 			retry = menu.ivr_maximum_attempts;
 
-			/* TODO Check if message is too short */
-
-			record_prompt = SWITCH_FALSE;
+			if (rec_minimum_length && record_length < atoi(rec_minimum_length)) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "too_short"), NULL, NULL, NULL, 0);
+				unlink(file_name);
+			} else {
+				record_prompt = SWITCH_FALSE;
+			}
 
 		} else if (menu.ivre_d.result == RES_TIMEOUT) {
-			/* TODO Ask for the prompt Again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_INVALID) {
-			/* TODO Say invalid option, and ask for the prompt again IF retry != 0 */
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
+			if (retry != 0) {
+				ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "try_again"), NULL, NULL, NULL, 0);
+			}
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
 			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
 
@@ -789,7 +834,6 @@ switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_
 
 				} else if (!strcasecmp(action, "save")) {
 					retry = -1;
-					/* TODO ALLOW SAVE ONLY IF FILE IS RECORDED AND HIGHER THAN MIN SIZE */
 					status = SWITCH_STATUS_SUCCESS;
 
 				} else if (!strcasecmp(action, "rerecord")) {
