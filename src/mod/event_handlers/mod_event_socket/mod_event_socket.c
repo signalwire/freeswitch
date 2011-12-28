@@ -1605,7 +1605,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			const char *allowed_api;
 			const char *allowed_events;
 			switch_event_t *params;
-			char *user, *domain_name, *pass;
+			char *user = NULL, *domain_name = NULL, *pass = NULL;
 			switch_xml_t x_domain = NULL, x_domain_root, x_user = NULL, x_params, x_param, x_group = NULL;
 			int authed = 0;
 			char *edup = NULL;
@@ -1621,11 +1621,11 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			user = cmd + 9;
 
-			if ((domain_name = strchr(user, '@'))) {
+			if (user && (domain_name = strchr(user, '@'))) {
 				*domain_name++ = '\0';
 			}
 
-			if ((pass = strchr(domain_name, ':'))) {
+			if (domain_name && (pass = strchr(domain_name, ':'))) {
 				*pass++ = '\0';
 			}
 
