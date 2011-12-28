@@ -4102,13 +4102,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD)) {
 		return SWITCH_STATUS_GENERR;
 	}
+
 	memset(&rtp_session->vad_data, 0, sizeof(rtp_session->vad_data));
 
-	if (switch_true(switch_channel_get_variable(switch_core_session_get_channel(rtp_session->vad_data.session), "fire_talk_events"))) {
+	if (switch_true(switch_channel_get_variable(switch_core_session_get_channel(session), "fire_talk_events"))) {
 		rtp_session->vad_data.fire_events |= VAD_FIRE_TALK;
 	}
 
-	if (switch_true(switch_channel_get_variable(switch_core_session_get_channel(rtp_session->vad_data.session), "fire_not_talk_events"))) {
+	if (switch_true(switch_channel_get_variable(switch_core_session_get_channel(session), "fire_not_talk_events"))) {
 		rtp_session->vad_data.fire_events |= VAD_FIRE_NOT_TALK;
 	}
 	
