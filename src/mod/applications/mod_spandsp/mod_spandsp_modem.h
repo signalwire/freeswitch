@@ -60,8 +60,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #ifndef WIN32
-#ifdef __UCLIBC__
-#else
 #if defined(HAVE_BYTESWAP_H)
 #include <byteswap.h>
 #elif defined(USE_SYS_ENDIAN_H)
@@ -71,6 +69,7 @@
 #define bswap_16 OSSwapInt16
 #define bswap_32 OSSwapInt32
 #define bswap_64 OSSwapInt64
+#elif defined (__UCLIBC__)
 #else
 #define bswap_16(value)  \
 	((((value) & 0xff) << 8) | ((value) >> 8))
@@ -86,7 +85,6 @@
 #endif
 #include <sys/time.h>
 #include <sys/signal.h>
-#endif
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
