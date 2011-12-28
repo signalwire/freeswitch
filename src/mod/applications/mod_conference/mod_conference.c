@@ -1445,6 +1445,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto recording file: %s\n", rfile);
 				launch_conference_record_thread(conference, rfile);
 				if (rfile != conference->auto_record) {
+					conference->record_filename = switch_core_strdup(conference->pool, rfile);
 					switch_safe_free(rfile);
 				} else {
 					conference->record_filename = switch_core_strdup(conference->pool, conference->auto_record);
