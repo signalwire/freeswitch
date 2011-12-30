@@ -429,15 +429,18 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 #						Application Modules
 #
 ######################################################################################################################
-APPLICATION_MODULES_AE="applications/mod_avmd applications/mod_callcenter applications/mod_cidlookup applications/mod_cluechoo \
-                        applications/mod_commands applications/mod_conference applications/mod_curl applications/mod_db applications/mod_directory \
-                        applications/mod_distributor applications/mod_dptools applications/mod_easyroute applications/mod_enum \
-                        applications/mod_esf applications/mod_expr applications/mod_blacklist"
-APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr applications/mod_limit \
-                        applications/mod_memcache applications/mod_http_cache"
-APPLICATION_MODULES_NY="applications/mod_nibblebill applications/mod_redis applications/mod_rss applications/mod_snom \
-                        applications/mod_soundtouch applications/mod_spandsp applications/mod_spy applications/mod_stress \
-                        applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail applications/mod_sms"
+APPLICATION_MODULES_AE="applications/mod_abstraction applications/mod_avmd applications/mod_callcenter \
+ 					    applications/mod_cidlookup applications/mod_cluechoo applications/mod_commands \
+						applications/mod_conference applications/mod_curl applications/mod_db \
+						applications/mod_directory applications/mod_distributor applications/mod_dptools \
+						applications/mod_easyroute applications/mod_enum applications/mod_esf applications/mod_expr \
+						applications/mod_blacklist"
+APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr \
+						applications/mod_limit applications/mod_memcache applications/mod_http_cache"
+APPLICATION_MODULES_NY="applications/mod_nibblebill applications/mod_redis applications/mod_rss applications/mod_sms \ 
+				        applications/mod_snom applications/mod_soundtouch applications/mod_spandsp \
+						applications/mod_spy applications/mod_stress applications/mod_valet_parking \
+						applications/mod_vmd applications/mod_voicemail applications/mod_voicemail_ivr "
 
 APPLICATIONS_MODULES="$APPLICATION_MODULES_AE $APPLICATION_MODULES_FM $APPLICATION_MODULES_NY $APPLICATION_MODULES_VZ"
 ######################################################################################################################
@@ -451,8 +454,8 @@ ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite asr_tts/mod_unimrcp"
 #						Codecs
 #
 ######################################################################################################################
-CODECS_MODULES="codecs/mod_bv codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_codec2 codecs/mod_ilbc codecs/mod_mp4v \
-                codecs/mod_opus codecs/mod_silk codecs/mod_siren codecs/mod_theora "
+CODECS_MODULES="codecs/mod_bv codecs/mod_h26x codecs/mod_speex codecs/mod_celt codecs/mod_codec2 codecs/mod_ilbc \
+		        codecs/mod_mp4v codecs/mod_opus codecs/mod_silk codecs/mod_siren codecs/mod_theora "
 #
 %if %{build_sng_tc}
 CODECS_MODULES+="codecs/mod_sangoma_codec"
@@ -474,15 +477,17 @@ DIRECTORIES_MODULES=""
 #						Endpoints
 #
 ######################################################################################################################
-ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_loopback ../../libs/freetdm/mod_freetdm endpoints/mod_portaudio \
-                   endpoints/mod_sofia endpoints/mod_skinny endpoints/mod_skypopen endpoints/mod_rtmp"
+ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_loopback ../../libs/freetdm/mod_freetdm \
+			       endpoints/mod_portaudio endpoints/mod_sofia endpoints/mod_skinny endpoints/mod_skypopen \
+				   endpoints/mod_rtmp"
  
 ######################################################################################################################
 #
 #						Event Handlers
 #
 ######################################################################################################################
-EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_sqlite event_handlers/mod_event_socket event_handlers/mod_event_multicast"
+EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_sqlite event_handlers/mod_event_socket \
+				        event_handlers/mod_event_multicast"
 ######################################################################################################################
 #
 #					File and Audio Format Handlers
@@ -749,6 +754,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/extensions.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/mime.types
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/abstraction.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/alsa.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/blacklist.conf.xml
@@ -805,6 +811,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/unicall.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/unimrcp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/voicemail.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/voicemail_ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/xml_cdr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/xml_curl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/xml_rpc.conf.xml
@@ -888,6 +895,7 @@ fi
 #			Modules in Alphabetical Order, please keep them that way..
 #
 ######################################################################################################################
+%{prefox}/mod/mod_abtraction.so*
 %{prefix}/mod/mod_amrwb.so*
 %{prefix}/mod/mod_avmd.so*
 %{prefix}/mod/mod_blacklist.so*
@@ -960,6 +968,7 @@ fi
 %{prefix}/mod/mod_valet_parking.so*
 %{prefix}/mod/mod_vmd.so*
 %{prefix}/mod/mod_voicemail.so*
+%{prefix}/mod/mod_voicemail_ivr.so*
 %{prefix}/mod/mod_xml_cdr.so*
 %{prefix}/mod/mod_xml_curl.so* 
 %{prefix}/mod/mod_xml_rpc.so* 
