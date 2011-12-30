@@ -34,6 +34,7 @@
  *
  * Moises Silva <moy@sangoma.com>
  * W McRoberts <fs@whmcr.com>
+ * Puskás Zsolt <errotan@gmail.com>
  *
  */
 
@@ -877,9 +878,12 @@ static FIO_COMMAND_FUNCTION(zt_command)
 static FIO_GET_ALARMS_FUNCTION(zt_get_alarms)
 {
 	struct zt_spaninfo info;
+	zt_params_t params;
 
 	memset(&info, 0, sizeof(info));
 	info.span_no = ftdmchan->physical_span_id;
+
+	memset(&params, 0, sizeof(params));
 
 	if (ioctl(CONTROL_FD, codes.SPANSTAT, &info)) {
 		snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "ioctl failed (%s)", strerror(errno));
@@ -888,6 +892,27 @@ static FIO_GET_ALARMS_FUNCTION(zt_get_alarms)
 	}
 
 	ftdmchan->alarm_flags = info.alarms;
+
+	/* get channel alarms if span has no alarms */
+	if (info.alarms == FTDM_ALARM_NONE) {
+		if (ioctl(ftdmchan->sockfd, codes.GET_PARAMS, &params)) {
+			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "ioctl failed (%s)", strerror(errno));
+			snprintf(ftdmchan->span->last_error, sizeof(ftdmchan->span->last_error), "ioctl failed (%s)", strerror(errno));
+			return FTDM_FAIL;
+		}
+
+		if (params.chan_alarms > 0) {
+			if (params.chan_alarms == DAHDI_ALARM_YELLOW) {
+				ftdmchan->alarm_flags = FTDM_ALARM_YELLOW;
+			}
+			else if (params.chan_alarms == DAHDI_ALARM_BLUE) {
+				ftdmchan->alarm_flags = FTDM_ALARM_BLUE;
+			}
+			else {
+				ftdmchan->alarm_flags = FTDM_ALARM_RED;
+			}
+		}
+	}
 
 	return FTDM_SUCCESS;
 }

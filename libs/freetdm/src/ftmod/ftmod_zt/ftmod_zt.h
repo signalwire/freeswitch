@@ -339,6 +339,10 @@ ZT_ABIT = 8
 #define		DAHDI_HDLCRAWMODE	_IOW (DAHDI_CODE, 36, int)				/* Set a clear channel into HDLC w/out FCS checking/calculation mode */
 #define		DAHDI_HDLCFCSMODE	_IOW (DAHDI_CODE, 37, int)				/* Set a clear channel into HDLC w/ FCS mode */
 
+/* Dahdi channel alarms */
+#define		DAHDI_ALARM_YELLOW (1 << 2) /* Yellow Alarm */
+#define		DAHDI_ALARM_BLUE (1 << 4) /* Blue Alarm */
+
 /* Specify a channel on /dev/dahdi/chan -- must be done before any other ioctl's and is only valid on /dev/dahdi/chan */
 #define		DAHDI_SPECIFY		_IOW  (DAHDI_CODE, 38, int)
 
