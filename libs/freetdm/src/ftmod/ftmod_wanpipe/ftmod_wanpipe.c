@@ -1016,7 +1016,7 @@ static FIO_READ_FUNCTION(wanpipe_read)
 
 	memset(&hdrframe, 0, sizeof(hdrframe));
 	rx_len = sangoma_readmsg_tdm(ftdmchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (int)*datalen, 0);
-	*datalen = rx_len;
+	*datalen = 0;
 
 	if (rx_len == 0) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Read 0 bytes\n");
@@ -1033,6 +1033,7 @@ static FIO_READ_FUNCTION(wanpipe_read)
 #endif
 		return FTDM_FAIL;
 	}
+	*datalen = rx_len;
 
 	if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS)) {
 		wanpipe_read_stats(ftdmchan, &hdrframe);
