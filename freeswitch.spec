@@ -429,20 +429,21 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 #						Application Modules
 #
 ######################################################################################################################
-APPLICATION_MODULES_AE="applications/mod_abstraction applications/mod_avmd applications/mod_callcenter \
- 					    applications/mod_cidlookup applications/mod_cluechoo applications/mod_commands \
-						applications/mod_conference applications/mod_curl applications/mod_db \
-						applications/mod_directory applications/mod_distributor applications/mod_dptools \
-						applications/mod_easyroute applications/mod_enum applications/mod_esf applications/mod_expr \
-						applications/mod_blacklist"
-APPLICATION_MODULES_FM="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr \
-						applications/mod_limit applications/mod_memcache applications/mod_http_cache"
-APPLICATION_MODULES_NY="applications/mod_nibblebill applications/mod_redis applications/mod_rss applications/mod_sms \ 
-				        applications/mod_snom applications/mod_soundtouch applications/mod_spandsp \
-						applications/mod_spy applications/mod_stress applications/mod_valet_parking \
-						applications/mod_vmd applications/mod_voicemail applications/mod_voicemail_ivr "
+APPLICATION_MODULES_AC="applications/mod_abstraction applications/mod_avmd applications/mod_blacklist \
+					    applications/mod_callcenter  applications/mod_cidlookup applications/mod_cluechoo \
+						applications/mod_commands applications/mod_conference applications/mod_curl"
+APPLICATION_MODULES_DE="applications/mod_db applications/mod_directory applications/mod_distributor \
+				        applications/mod_dptools applications/mod_easyroute applications/mod_enum applications/mod_esf \
+				        applications/mod_expr"
+APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsv applications/mod_hash applications/mod_lcr \
+						applications/mod_limit applications/mod_memcache applications/mod_http_cache \
+						applications/mod_nibblebill applications/mod_redis applications/mod_rss" 
+APPLICATION_MODULES_SZ="applications/mod_sms applications/mod_snom applications/mod_soundtouch \
+ 					    applications/mod_spandsp applications/mod_spy applications/mod_stress \
+						applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail \
+						applications/mod_voicemail_ivr"
 
-APPLICATIONS_MODULES="$APPLICATION_MODULES_AE $APPLICATION_MODULES_FM $APPLICATION_MODULES_NY $APPLICATION_MODULES_VZ"
+APPLICATIONS_MODULES="$APPLICATION_MODULES_AC $APPLICATION_MODULES_DE $APPLICATION_MODULES_FR $APPLICATION_MODULES_SZ"
 ######################################################################################################################
 #
 #				Automatic Speech Recognition and Text To Speech Modules
