@@ -603,7 +603,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 		GetTempPath(dwBufSize, lpPathBuffer);
 		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", lpPathBuffer);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", "/tmp/");
+		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", "/tmp");
 #endif
 #endif
 	}
