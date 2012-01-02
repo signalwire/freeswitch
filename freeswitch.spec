@@ -443,7 +443,7 @@ APPLICATION_MODULES_SZ="applications/mod_sms applications/mod_snom applications/
 						applications/mod_valet_parking applications/mod_vmd applications/mod_voicemail \
 						applications/mod_voicemail_ivr"
 
-APPLICATIONS_MODULES="$APPLICATION_MODULES_AC $APPLICATION_MODULES_DE prefix$APPLICATION_MODULES_FR $APPLICATION_MODULES_SZ"
+APPLICATIONS_MODULES="$APPLICATION_MODULES_AC $APPLICATION_MODULES_DE $APPLICATION_MODULES_FR $APPLICATION_MODULES_SZ"
 ######################################################################################################################
 #
 #				Automatic Speech Recognition and Text To Speech Modules
