@@ -896,7 +896,7 @@ fi
 #			Modules in Alphabetical Order, please keep them that way..
 #
 ######################################################################################################################
-%{prefix}/mod/mod_abtraction.so*
+%{prefix}/mod/mod_abstraction.so*
 %{prefix}/mod/mod_amrwb.so*
 %{prefix}/mod/mod_avmd.so*
 %{prefix}/mod/mod_blacklist.so*
