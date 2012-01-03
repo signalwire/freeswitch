@@ -1563,7 +1563,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 	}
 	else if (proto && !strcasecmp(proto, "park")) {
 		local_user = "park";
-		local_user_param = switch_mprintf(";fifo=%s", to_user);
+		local_user_param = switch_mprintf(";slot=%s", to_user);
 		event_status = "hold";
 		if (skip_proto) {
 			buf_to_free = switch_mprintf("sip:%s", to_user);
