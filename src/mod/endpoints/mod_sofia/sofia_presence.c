@@ -2877,25 +2877,25 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		proto = alt_proto;
 	}
 	
-	if ((sub_state == nua_substate_active) && (switch_stristr("dialog", (const char *) event))) {
+	if ((sub_state == nua_substate_active)) {
 		
 		sstr = switch_mprintf("active;expires=%ld", exp_delta);
 		
 		sql = switch_mprintf("update sip_subscriptions "
 							 "set expires=%ld "
-							 "where call_id='%q' and event='dialog' and hostname='%q' ",
+							 "where call_id='%q'",
 							 (long) switch_epoch_time_now(NULL) + exp_delta,
-							 call_id,
-							 mod_sofia_globals.hostname);
-		
+							 call_id);
 
 		if (mod_sofia_globals.debug_presence > 0 || mod_sofia_globals.debug_sla > 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-							  "re-subscribe with dialog detected, sql: %s\n", sql);
+							  "re-subscribe event %s, sql: %s\n", event, sql);
 		}
 		
 		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 	} else {
+
+#if 0
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
 			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q' "
 								 "or (proto='%q' and sip_user='%q' and sip_host='%q' "
@@ -2908,6 +2908,10 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								 "proto='%q' and sip_user='%q' and sip_host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q' and hostname='%q'",
 								 proto, from_user, from_host, to_user, to_host, event, mod_sofia_globals.hostname);
 		}
+#endif
+
+		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id, mod_sofia_globals.hostname);
+		
 
 		switch_mutex_lock(profile->ireg_mutex);
 		switch_assert(sql != NULL);
