@@ -2921,12 +2921,6 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_PASS_CALLEE_ID);
 						}
-					} else if (!strcasecmp(var, "delete-subs-on-register")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_DEL_SUBS_ON_REG);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_DEL_SUBS_ON_REG);
-						}
 					} else if (!strcasecmp(var, "watchdog-enabled")) {
 						profile->watchdog_enabled = switch_true(val);
 					} else if (!strcasecmp(var, "watchdog-step-timeout")) {
@@ -3778,12 +3772,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_IN_DIALOG_CHAT);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IN_DIALOG_CHAT);
-						}
-					} else if (!strcasecmp(var, "delete-subs-on-register")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_DEL_SUBS_ON_REG);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_DEL_SUBS_ON_REG);
 						}
 					} else if (!strcasecmp(var, "t38-passthru")) {
 						if (switch_true(val)) {
