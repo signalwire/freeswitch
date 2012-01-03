@@ -71,8 +71,6 @@
 #define MI_NOTIFY 0x14
 #endif
 
-/* TODO: rename all *_cc_* to *_an_*  */
-
 typedef enum {
 	FLAG_RESET_RX           = (1 << 0),
 	FLAG_RESET_TX           = (1 << 1),
@@ -262,7 +260,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			setup_arb;
 	uint8_t			facility_ie_decode;
 	uint8_t			facility;
-	int8_t			facility_timeout;
+	int32_t			facility_timeout;
 	uint8_t			att_remove_dtmf;
 	int32_t			transfer_timeout;
 	uint8_t			num_local_numbers;
@@ -277,6 +275,24 @@ typedef struct sngisdn_span_data {
 	uint8_t			force_sending_complete;
 	uint8_t			cid_name_method;
 	uint8_t			send_cid_name;
+
+	int32_t			timer_t301;
+	int32_t			timer_t302;
+	int32_t			timer_t303;
+	int32_t			timer_t304;
+	int32_t			timer_t305;
+	int32_t			timer_t306;
+	int32_t			timer_t307;
+	int32_t			timer_t308;
+	int32_t			timer_t310;
+	int32_t			timer_t312;
+	int32_t			timer_t313;
+	int32_t			timer_t314;
+	int32_t			timer_t316;
+	int32_t			timer_t318;
+	int32_t			timer_t319;
+	int32_t			timer_t322;
+	
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_timer_id_t timers[SNGISDN_NUM_SPAN_TIMERS];
 	ftdm_sched_t 	*sched;

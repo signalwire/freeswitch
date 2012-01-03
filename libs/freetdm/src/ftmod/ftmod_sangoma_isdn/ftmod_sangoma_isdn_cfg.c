@@ -34,6 +34,7 @@
 
 #include "ftmod_sangoma_isdn.h"
 
+static ftdm_status_t parse_timer(const char* val, int32_t *target);
 static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span);
 static ftdm_status_t parse_signalling(const char* signalling, ftdm_span_t *span);
 static ftdm_status_t add_local_number(const char* val, ftdm_span_t *span);
@@ -41,6 +42,16 @@ static ftdm_status_t parse_yesno(const char* var, const char* val, uint8_t *targ
 static ftdm_status_t set_switchtype_defaults(ftdm_span_t *span);
 
 extern ftdm_sngisdn_data_t	g_sngisdn_data;
+
+
+static ftdm_status_t parse_timer(const char* val, int32_t *target)
+{
+	*target = atoi(val);
+	if (*target < 0) {
+		*target = 0;
+	}
+	return FTDM_SUCCESS;
+}
 
 static ftdm_status_t parse_yesno(const char* var, const char* val, uint8_t *target)
 {
@@ -369,15 +380,9 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 				return FTDM_FAIL;
 			}
 		} else if (!strcasecmp(var, "facility-timeout")) {
-			signal_data->facility_timeout = atoi(val);
-			if (signal_data->facility_timeout < 0) {
-				signal_data->facility_timeout = 0;
-			}
+			parse_timer(val, &signal_data->facility_timeout);
 		} else if (!strcasecmp(var, "transfer-timeout")) {
-			signal_data->transfer_timeout = atoi(val);
-			if (signal_data->transfer_timeout < 0) {
-				signal_data->transfer_timeout = 0;
-			}
+			parse_timer(val, &signal_data->transfer_timeout);
 		} else if (!strcasecmp(var, "att-remove-dtmf")) {
 			parse_yesno(var, val, &signal_data->att_remove_dtmf);
 		} else if (!strcasecmp(var, "facility-ie-decode")) {
@@ -428,6 +433,38 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 				ftdm_log(FTDM_LOG_WARNING, "Invalid option %s for parameter %s\n", val, var);
 				signal_data->send_cid_name = SNGISDN_OPT_DEFAULT;
 			}
+		} else if (!strcasecmp(var, "timer-t301")) {
+			parse_timer(val, &signal_data->timer_t301);
+		} else if (!strcasecmp(var, "timer-t302")) {
+			parse_timer(val, &signal_data->timer_t302);
+		} else if (!strcasecmp(var, "timer-t303")) {
+			parse_timer(val, &signal_data->timer_t303);
+		} else if (!strcasecmp(var, "timer-t304")) {
+			parse_timer(val, &signal_data->timer_t304);
+		} else if (!strcasecmp(var, "timer-t305")) {
+			parse_timer(val, &signal_data->timer_t305);
+		} else if (!strcasecmp(var, "timer-t306")) {
+			parse_timer(val, &signal_data->timer_t306);
+		} else if (!strcasecmp(var, "timer-t307")) {
+			parse_timer(val, &signal_data->timer_t307);
+		} else if (!strcasecmp(var, "timer-t308")) {
+			parse_timer(val, &signal_data->timer_t308);
+		} else if (!strcasecmp(var, "timer-t310")) {
+			parse_timer(val, &signal_data->timer_t310);
+		} else if (!strcasecmp(var, "timer-t312")) {
+			parse_timer(val, &signal_data->timer_t312);
+		} else if (!strcasecmp(var, "timer-t313")) {
+			parse_timer(val, &signal_data->timer_t313);
+		} else if (!strcasecmp(var, "timer-t314")) {
+			parse_timer(val, &signal_data->timer_t314);
+		} else if (!strcasecmp(var, "timer-t316")) {
+			parse_timer(val, &signal_data->timer_t316);
+		} else if (!strcasecmp(var, "timer-t318")) {
+			parse_timer(val, &signal_data->timer_t318);
+		} else if (!strcasecmp(var, "timer-t319")) {
+			parse_timer(val, &signal_data->timer_t319);
+		} else if (!strcasecmp(var, "timer-t322")) {
+			parse_timer(val, &signal_data->timer_t322);
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}
