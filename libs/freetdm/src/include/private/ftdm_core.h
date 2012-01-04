@@ -359,6 +359,11 @@ typedef struct {
 	ftdm_mutex_t *mutex;
 } ftdm_dtmf_debug_t;
 
+typedef struct {
+	uint32_t duration_ms;
+	ftdm_time_t start_time;
+} ftdm_dtmf_detect_t;
+
 /* 2^8 table size, one for each byte (sample) value */
 #define FTDM_GAINS_TABLE_SIZE 256
 struct ftdm_channel {
@@ -438,6 +443,7 @@ struct ftdm_channel {
 	ftdm_timer_id_t hangup_timer;
 	ftdm_channel_iostats_t iostats;
 	ftdm_dtmf_debug_t dtmfdbg;
+	ftdm_dtmf_detect_t dtmfdetect;
 	ftdm_io_dump_t rxdump;
 	ftdm_io_dump_t txdump;
 	ftdm_interrupt_t *state_completed_interrupt; /*!< Notify when a state change is completed */
