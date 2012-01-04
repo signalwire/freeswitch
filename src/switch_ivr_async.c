@@ -309,7 +309,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 			pmatches = 1;
 
 			if (r_status == SWITCH_STATUS_SUCCESS) {
-				if (is_timeout) {
+				if (is_timeout || (bp == dmachine->realm->binding_list && !bp->next)) {
 					best = DM_MATCH_EXACT;
 					exact_bp = bp;
 					break;
