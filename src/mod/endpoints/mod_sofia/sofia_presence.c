@@ -1548,8 +1548,8 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 
 	local_host = to_host;
 	if (proto && !strcasecmp(proto, "queue")) {
-		local_user = "queue";
-		local_user_param = switch_mprintf(";fifo=%s", to_user);
+		local_user = to_user;
+		local_user_param = switch_mprintf(";proto=%s", proto);
 		event_status = "hold";
 		if (skip_proto) {
 			buf_to_free = switch_mprintf("sip:%s", to_user);
@@ -1562,8 +1562,8 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 		remote_host = local_host;
 	}
 	else if (proto && !strcasecmp(proto, "park")) {
-		local_user = "park";
-		local_user_param = switch_mprintf(";slot=%s", to_user);
+		local_user = to_user;
+		local_user_param = switch_mprintf(";proto=%s", proto);
 		event_status = "hold";
 		if (skip_proto) {
 			buf_to_free = switch_mprintf("sip:%s", to_user);
@@ -1576,8 +1576,8 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 		remote_host = local_host;
 	}
 	else if (proto && !strcasecmp(proto, "conf")) {
-		local_user = "conference";
-		local_user_param = switch_mprintf(";conference=%s", to_user);
+		local_user = to_user;
+		local_user_param = switch_mprintf(";proto=%s", proto);
 		if (skip_proto) { 
 			buf_to_free = switch_mprintf("sip:%s@%s", to_user, host);
 		} else {
@@ -2268,9 +2268,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						stream.write_function(&stream, "<target uri=\"sip:**%s@%s\"/>\n", clean_to_user, host);
 						stream.write_function(&stream, "</remote>\n");
 					} else if (!strcasecmp(proto, "queue")) {
-						stream.write_function(&stream, "<local>\n<identity display=\"queue\">sip:queue@%s;fifo=%s</identity>\n",
-											  host, !zstr(clean_to_user) ? clean_to_user : "unknown");
-						stream.write_function(&stream, "<target uri=\"sip:queue@%s;fifo=%s\">\n", host, !zstr(clean_to_user) ? clean_to_user : "unknown");
+						stream.write_function(&stream, "<local>\n<identity display=\"queue\">sip:%s@%s;proto=queue</identity>\n",
+											  !zstr(clean_to_user) ? clean_to_user : "unknown", host);
+						stream.write_function(&stream, "<target uri=\"sip:%s@%s;proto=fifo\">\n", !zstr(clean_to_user) ? clean_to_user : "unknown", host);
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");
 						stream.write_function(&stream, "<remote>\n<identity display=\"queue\">sip:%s</identity>\n", uuid);
 						if (skip_proto) {
@@ -2281,9 +2281,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 						stream.write_function(&stream, "</remote>\n");
 					} else if (!strcasecmp(proto, "park")) {
-						stream.write_function(&stream, "<local>\n<identity display=\"park\">sip:park@%s;slot=%s</identity>\n",
-											  host, !zstr(clean_to_user) ? clean_to_user : "unknown");
-						stream.write_function(&stream, "<target uri=\"sip:park@%s;slot=%s\">\n", host, !zstr(clean_to_user) ? clean_to_user : "unknown");
+						stream.write_function(&stream, "<local>\n<identity display=\"park\">sip:%s@%s;proto=park</identity>\n",
+											  !zstr(clean_to_user) ? clean_to_user : "unknown", host);
+						stream.write_function(&stream, "<target uri=\"sip:%s@%s;proto=park\">\n", !zstr(clean_to_user) ? clean_to_user : "unknown", host);
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");
 						stream.write_function(&stream, "<remote>\n<identity display=\"park\">sip:%s</identity>\n", uuid);
 						if (skip_proto) {
@@ -2293,10 +2293,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						}
 						stream.write_function(&stream, "</remote>\n");
 					} else if (!strcasecmp(proto, "conf")) {
-						stream.write_function(&stream, "<local>\n<identity display=\"conference\">sip:conference@%s;conference=%s</identity>\n",
-											  host, !zstr(clean_to_user) ? clean_to_user : "unknown");
-						stream.write_function(&stream, "<target uri=\"sip:conference@%s;conference=%s\">\n", 
-											  host, !zstr(clean_to_user) ? clean_to_user : "unknown");
+						stream.write_function(&stream, "<local>\n<identity display=\"conference\">sip:%s@%s;proto=conference</identity>\n",
+											  !zstr(clean_to_user) ? clean_to_user : "unknown", host);
+						stream.write_function(&stream, "<target uri=\"sip:%s@%s;proto=conference\">\n", 
+											  !zstr(clean_to_user) ? clean_to_user : "unknown", host);
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"yes\"/>\n</target>\n</local>\n");
 						stream.write_function(&stream, "<remote>\n<identity display=\"conference\">sip:%s@%s</identity>\n", uuid, host);
 						if (skip_proto) {
