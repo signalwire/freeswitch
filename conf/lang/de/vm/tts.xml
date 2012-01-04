@@ -64,7 +64,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Um neue Nachrichten zu hören, drücken Sie $1. Um gespeicherte Nachrichten zu hören, drücken Sie $2, Für erweiterte Optionen, drücken Sie $3. Zum beenden drücken Sie $4."/>
+		data="Um neue Nachrichten zu hÃ¶ren, drÃ¼cken Sie $1. Um gespeicherte Nachrichten zu hÃ¶ren, drÃ¼cken Sie $2, FÃ¼r erweiterte Optionen, drÃ¼cken Sie $3. Zum beenden drÃ¼cken Sie $4."/>
       </match>
     </input>
   </macro>
@@ -74,7 +74,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Um eine Ansage aufzunehmen, drücken Sie $1. Um eine Ansage auszuwählen, drücken Sie $2. Um ihren Namen aufzunehmen, drücken Sie $3. Um zum Hauptmenü zurückzukehren, drücken Sie $4."/>
+		data="Um eine Ansage aufzunehmen, drÃ¼cken Sie $1. Um eine Ansage auszuwÃ¤hlen, drÃ¼cken Sie $2. Um ihren Namen aufzunehmen, drÃ¼cken Sie $3. Um zum HauptmenÃ¼ zurÃ¼ckzukehren, drÃ¼cken Sie $4."/>
       </match>
     </input>
   </macro>
@@ -83,7 +83,7 @@
   <macro name="voicemail_record_name">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="Sprechen Sie Ihren Namen nach dem Ton, drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden."/>
+	<action function="speak-text" data="Sprechen Sie Ihren Namen nach dem Ton, drÃ¼cken Sie eine beliebige Taste oder hÃ¶ren Sie auf zu sprechen um die Aufnahme zu beenden."/>
       </match>
     </input>
   </macro>
@@ -92,7 +92,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Um die Aufzeichnung anzuhören, drücken Sie $1. Um die Aufzeichnung zu speichern, drücken Sie $2. Für eine erneute Aufnahme drücken Sie $3."/>
+		data="Um die Aufzeichnung anzuhÃ¶ren, drÃ¼cken Sie $1. Um die Aufzeichnung zu speichern, drÃ¼cken Sie $2. FÃ¼r eine erneute Aufnahme drÃ¼cken Sie $3."/>
       </match>
     </input>
   </macro>
@@ -101,7 +101,7 @@
     <input pattern="^([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Drücken Sie $1 um diese Nachricht als wichtig zu markieren. Um fortzufahren drücken Sie $2."/>
+		data="DrÃ¼cken Sie $1 um diese Nachricht als wichtig zu markieren. Um fortzufahren drÃ¼cken Sie $2."/>
       </match>
     </input>
   </macro>
@@ -110,7 +110,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="Drücken Sie $1 um die Nachricht erneut zu hören. Um die Nachricht zu speichern, drücken Sie $2. Zum löschen der Nachricht drücken Sie $3. Für die Weiterleitung als Email, drücken Sie $4."/>
+		data="DrÃ¼cken Sie $1 um die Nachricht erneut zu hÃ¶ren. Um die Nachricht zu speichern, drÃ¼cken Sie $2. Zum lÃ¶schen der Nachricht drÃ¼cken Sie $3. FÃ¼r die Weiterleitung als Email, drÃ¼cken Sie $4."/>
       </match>
     </input>
   </macro>
@@ -118,7 +118,7 @@
   <macro name="voicemail_choose_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="Wählen Sie eine Ansage zwischen 1 und 3."/>
+	<action function="speak-text" data="WÃ¤hlen Sie eine Ansage zwischen 1 und 3."/>
       </match>
     </input>
   </macro>
@@ -126,7 +126,7 @@
   <macro name="voicemail_choose_greeting_fail">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="Ungültige Eingabe."/>
+	<action function="speak-text" data="UngÃ¼ltige Eingabe."/>
       </match>
     </input>
   </macro>
@@ -134,7 +134,7 @@
   <macro name="voicemail_record_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="Zeichnen Sie Ihre Ansage nach dem Ton auf. Drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden."/>
+	<action function="speak-text" data="Zeichnen Sie Ihre Ansage nach dem Ton auf. DrÃ¼cken Sie eine beliebige Taste oder hÃ¶ren Sie auf zu sprechen um die Aufnahme zu beenden."/>
       </match>
     </input>
   </macro>
@@ -142,7 +142,7 @@
   <macro name="voicemail_record_message">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="Sprechen Sie nach dem Ton. Drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden."/>
+	<action function="speak-text" data="Sprechen Sie nach dem Ton. DrÃ¼cken Sie eine beliebige Taste oder hÃ¶ren Sie auf zu sprechen um die Aufnahme zu beenden."/>
       </match>
     </input>
   </macro>
@@ -150,7 +150,7 @@
   <macro name="voicemail_greeting_selected">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="Ansage $1 ausgewählt."/>
+	<action function="speak-text" data="Ansage $1 ausgewÃ¤hlt."/>
       </match>
     </input>
   </macro>
@@ -158,7 +158,7 @@
   <macro name="voicemail_play_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="$1 ist nicht verfügbar."/>
+	<action function="speak-text" data="$1 ist nicht verfÃ¼gbar."/>
       </match>
     </input>
   </macro>

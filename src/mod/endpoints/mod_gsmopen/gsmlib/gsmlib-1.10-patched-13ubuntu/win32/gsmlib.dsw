@@ -1,0 +1,149 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNUNG: DIESE ARBEITSBEREICHSDATEI DARF NICHT BEARBEITET ODER GELÖSCHT WERDEN!
+
+###############################################################################
+
+Project: "gsmctl"=".\gsmctl.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name gsmlib
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "gsmlib"=".\gsmlib.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "gsmpb"=".\gsmpb.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name gsmlib
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "gsmsendsms"=".\gsmsendsms.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name gsmlib
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "gsmsmsd"=".\gsmsmsd.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name gsmlib
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "gsmsmsstore"=".\gsmsmsstore.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name gsmlib
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "testgsmlib"=".\testgsmlib.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name gsmlib
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "testsms"=".\testsms.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name gsmlib
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "testsms2"=".\testsms2.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name gsmlib
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+
