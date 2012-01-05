@@ -74,8 +74,14 @@ struct switch_ivr_dmachine {
 	switch_ivr_dmachine_binding_t *last_matching_binding;
 	void *user_data;
 	switch_mutex_t *mutex;
+	switch_status_t last_return;
 };
 
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_last_ping(switch_ivr_dmachine_t *dmachine)
+{
+	return dmachine->last_return;
+}
 
 SWITCH_DECLARE(switch_digit_action_target_t) switch_ivr_dmachine_get_target(switch_ivr_dmachine_t *dmachine)
 {
@@ -506,6 +512,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	if (clear) {
 		switch_ivr_dmachine_clear(dmachine);
 	}
+
+	dmachine->last_return = r;
 
 	switch_mutex_unlock(dmachine->mutex);
 
@@ -3256,7 +3264,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	args->buflen = sizeof(state);
 	status = switch_ivr_play_file(session, NULL, file, args);
 
-	if (args->dmachine && (switch_ivr_dmachine_get_match(args->dmachine) || switch_ivr_dmachine_get_failed_digits(args->dmachine))) {
+	if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
 		state.done = 1;
 		goto done;
 	}
@@ -3272,7 +3280,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 		while (!state.done && switch_channel_ready(channel)) {
 			status = switch_ivr_sleep(session, input_timeout, SWITCH_FALSE, args);
 			
-			if (args->dmachine && (switch_ivr_dmachine_get_match(args->dmachine) || switch_ivr_dmachine_get_failed_digits(args->dmachine))) {
+			if (args->dmachine && switch_ivr_dmachine_last_ping(args->dmachine) != SWITCH_STATUS_SUCCESS) {
 				state.done = 1;
 				goto done;
 			}			
