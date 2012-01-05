@@ -447,6 +447,8 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 		if (status == SWITCH_STATUS_BREAK) {
 			if (error_file) {
 				switch_ivr_play_file(client->session, NULL, error_file, &nullargs);
+				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, name, "invalid");
+				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "input_type", "invalid");
 				status = SWITCH_STATUS_SUCCESS;
 			}
 		} else if (status == SWITCH_STATUS_FOUND) {

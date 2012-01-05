@@ -33,6 +33,12 @@ if ($pin) {
 }
 $writer->endTag('params');
 
+if ($exten eq "invalid" || $pin eq "invalid") {
+    $writer->startTag('work');
+    $writer->emptyTag('hangup', cause => "destination_out_of_order");
+    $writer->endTag('work');
+}
+
 if ($exten && $pin) {
   $writer->startTag('work');
   $writer->dataElement("playback", "http://sidious.freeswitch.org/sounds/ext_num.wav");
@@ -58,6 +64,7 @@ if ($exten && $pin) {
   $writer->startTag('playback', 
 		    name => "exten", 
 		    file => "http://sidious.freeswitch.org/sounds/exten.wav",
+		    loops => "3",
 		    'error-file' => "http://sidious.freeswitch.org/sounds/invalid.wav",
 		    'input-timeout' => "5000");
 
