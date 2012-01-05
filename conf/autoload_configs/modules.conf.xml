@@ -62,6 +62,7 @@
     <load module="mod_valet_parking"/>
     <!--<load module="mod_fsk"/>-->
     <!--<load module="mod_spy"/>-->
+    <load module="mod_httapi"/>
 
     <!-- SNOM Module -->
     <!--<load module="mod_snom"/>-->

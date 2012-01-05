@@ -44,6 +44,7 @@ applications/mod_valet_parking
 #applications/mod_abstraction
 #applications/mod_esl
 applications/mod_sms
+applications/mod_httapi
 codecs/mod_g723_1
 codecs/mod_amr
 #codecs/mod_amrwb
