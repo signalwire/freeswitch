@@ -660,7 +660,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
-				} else if (args->input_callback) {
+				} 
+
+				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
 					*((char *) args->buf) = dtmf.digit;
@@ -905,7 +907,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
-				} else if (args->input_callback) {
+				} 
+
+				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
 					*((char *) args->buf) = dtmf.digit;
@@ -1405,7 +1409,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 							break;
 						}
-					} else if (args->input_callback) {
+					} 
+
+					if (args->input_callback) {
 						status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 					} else {
 						*((char *) args->buf) = dtmf.digit;
@@ -2215,7 +2221,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 						if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 							break;
 						}
-					} else if (args->input_callback) {
+					} 
+
+					if (args->input_callback) {
 						status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 					} else {
 						*((char *) args->buf) = dtmf.digit;
