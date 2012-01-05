@@ -28,8 +28,6 @@ SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_getinfo(switch_CURL *curl, swit
 	return code;
 }
 
-
-
 SWITCH_DECLARE(void) switch_curl_easy_cleanup(switch_CURL *handle)
 {
 	curl_easy_cleanup((CURL *)handle);
@@ -73,5 +71,20 @@ SWITCH_DECLARE(void) switch_curl_init(void)
 SWITCH_DECLARE(void) switch_curl_destroy(void)
 {
 	curl_global_cleanup();
+}
+
+/* kind of ugly but there is no better portable way to wrap this function =(::: */
+#include "../../../../libs/curl/lib/formdata.c"
+
+SWITCH_DECLARE(CURLFORMcode) switch_curl_formadd(struct curl_httppost **httppost,
+								 struct curl_httppost **last_post,
+								 ...)
+{
+  va_list arg;
+  CURLFORMcode result;
+  va_start(arg, last_post);
+  result = FormAdd(httppost, last_post, arg);
+  va_end(arg);
+  return result;
 }
 

@@ -49,7 +49,7 @@ SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_setopt(CURL *handle, switch_CUR
 SWITCH_DECLARE(const char *) switch_curl_easy_strerror(switch_CURLcode errornum );
 SWITCH_DECLARE(void) switch_curl_init(void);
 SWITCH_DECLARE(void) switch_curl_destroy(void);
-
+SWITCH_DECLARE(CURLFORMcode) switch_curl_formadd(struct curl_httppost **formpost, struct curl_httppost **lastptr, ...);
 																
 #endif
 
