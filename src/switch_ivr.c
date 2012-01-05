@@ -263,7 +263,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
-				} else {
+				} else if (args->buf) {
 					switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
 					status = SWITCH_STATUS_BREAK;
 				}
