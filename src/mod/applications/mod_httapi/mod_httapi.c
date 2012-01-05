@@ -1106,58 +1106,6 @@ static void cleanup_attachments(client_t *client)
 	}
 }
 
-static switch_status_t process_form_post_params(client_t *client, switch_CURL *curl_handle, struct curl_httppost **formpostp)
-{
-
-	struct curl_httppost *formpost=NULL;
-	struct curl_httppost *lastptr=NULL;
-	switch_event_header_t *hp;
-	int go = 0;
-
-	for (hp = client->params->headers; hp; hp = hp->next) {
-		if (!strncasecmp(hp->name, "attach_file:", 12)) {
-			go = 1;
-			break;
-		}
-	}
-
-	if (!go) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	for (hp = client->params->headers; hp; hp = hp->next) {
-
-		if (!strncasecmp(hp->name, "attach_file:", 12)) {
-			char *pname = switch_core_strdup(client->pool, hp->name + 12);
-			char *fname = strchr(pname, ':');
-			
-			if (fname && pname) {
-				*fname++ = '\0';
-
-				curl_formadd(&formpost,
-							 &lastptr,
-							 CURLFORM_COPYNAME, pname,
-							 CURLFORM_FILENAME, fname,
-							 CURLFORM_FILE, hp->value,
-							 CURLFORM_END);
-			}
-
-		} else {
-			curl_formadd(&formpost,
-						 &lastptr,
-						 CURLFORM_COPYNAME, hp->name,
-						 CURLFORM_COPYCONTENTS, hp->value,
-						 CURLFORM_END);
-
-		}
-	}
-
-	*formpostp = formpost;
-
-	return SWITCH_STATUS_SUCCESS;
-
-}
-
 static switch_status_t httapi_sync(client_t *client)
 								  
 {
@@ -1208,7 +1156,7 @@ static switch_status_t httapi_sync(client_t *client)
 
 	dynamic_url = switch_event_expand_headers(client->params, url);
 
-	process_form_post_params(client, curl_handle, &formpost);
+	switch_curl_process_form_post_params(client->params, curl_handle, &formpost);
 
 	if (formpost) {
 		get_style_method = 1;

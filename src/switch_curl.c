@@ -73,3 +73,56 @@ SWITCH_DECLARE(void) switch_curl_destroy(void)
 	curl_global_cleanup();
 }
 
+SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_event_t *event, switch_CURL *curl_handle, struct curl_httppost **formpostp)
+{
+
+	struct curl_httppost *formpost=NULL;
+	struct curl_httppost *lastptr=NULL;
+	switch_event_header_t *hp;
+	int go = 0;
+
+	for (hp = event->headers; hp; hp = hp->next) {
+		if (!strncasecmp(hp->name, "attach_file:", 12)) {
+			go = 1;
+			break;
+		}
+	}
+
+	if (!go) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	for (hp = event->headers; hp; hp = hp->next) {
+
+		if (!strncasecmp(hp->name, "attach_file:", 12)) {
+			char *pname = strdup(hp->name + 12);
+			char *fname = strchr(pname, ':');
+			
+			if (fname && pname) {
+				*fname++ = '\0';
+
+				curl_formadd(&formpost,
+							 &lastptr,
+							 CURLFORM_COPYNAME, pname,
+							 CURLFORM_FILENAME, fname,
+							 CURLFORM_FILE, hp->value,
+							 CURLFORM_END);
+			}
+
+			free(pname);
+
+		} else {
+			curl_formadd(&formpost,
+						 &lastptr,
+						 CURLFORM_COPYNAME, hp->name,
+						 CURLFORM_COPYCONTENTS, hp->value,
+						 CURLFORM_END);
+
+		}
+	}
+
+	*formpostp = formpost;
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
