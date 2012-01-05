@@ -3220,16 +3220,28 @@ static switch_status_t play_and_detect_input_callback(switch_core_session_t *ses
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_session_t *session, const char *file, const char *mod_name, const char *grammar, char **result)
+SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_session_t *session, 
+																  const char *file, 
+																  const char *mod_name, 
+																  const char *grammar, 
+																  char **result, 
+																  uint32_t input_timeout,
+																  switch_input_args_t *args)
 {
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int recognizing = 0;
-	switch_input_args_t args = { 0 };
+	switch_input_args_t myargs = { 0 };
 	play_and_detect_speech_state_t state = { 0, "" };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (result == NULL) {
 		goto done;
+	}
+
+	if (!input_timeout) input_timeout = 5000;
+
+	if (!args) {
+		args = &myargs;
 	}
 
 	/* start speech detection */
@@ -3239,10 +3251,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	recognizing = 1;
 
 	/* play the prompt, looking for detection result */
-	args.input_callback = play_and_detect_input_callback;
-	args.buf = &state;
-	args.buflen = sizeof(state);
-	status = switch_ivr_play_file(session, NULL, file, &args);
+	args->input_callback = play_and_detect_input_callback;
+	args->buf = &state;
+	args->buflen = sizeof(state);
+	status = switch_ivr_play_file(session, NULL, file, args);
+
+	if (args->dmachine && (switch_ivr_dmachine_get_match(args->dmachine) || switch_ivr_dmachine_get_failed_digits(args->dmachine))) {
+		state.done = 1;
+		goto done;
+	}
+
 	if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {
 		goto done;
 	}
@@ -3252,7 +3270,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 		switch_ivr_detect_speech_start_input_timers(session);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) WAITING FOR RESULT\n", switch_channel_get_name(channel));
 		while (!state.done && switch_channel_ready(channel)) {
-			status = switch_ivr_sleep(session, 5000, SWITCH_FALSE, &args);
+			status = switch_ivr_sleep(session, input_timeout, SWITCH_FALSE, args);
+			
+			if (args->dmachine && (switch_ivr_dmachine_get_match(args->dmachine) || switch_ivr_dmachine_get_failed_digits(args->dmachine))) {
+				state.done = 1;
+				goto done;
+			}			
+
 			if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {
 				goto done;
 			}
@@ -3268,9 +3292,10 @@ done:
 	*result = state.result;
 
 	if (!state.done) {
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
 	}
-	return SWITCH_STATUS_SUCCESS;
+
+	return status;;
 }
 
 struct speech_thread_handle {

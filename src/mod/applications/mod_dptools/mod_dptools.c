@@ -495,7 +495,7 @@ SWITCH_STANDARD_APP(play_and_detect_speech_function)
 		char *engine = argv[0];
 		char *grammar = argv[1];
 		char *result = NULL;
-		switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result);
+		switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, NULL);
 		switch_channel_set_variable(channel, "detect_speech_result", result);
 	} else {
 		/* bad input */
