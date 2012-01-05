@@ -74,7 +74,13 @@ SWITCH_DECLARE(void) switch_curl_destroy(void)
 }
 
 /* kind of ugly but there is no better portable way to wrap this function =(::: */
+#ifndef WIN32
 #include "../../../../libs/curl/lib/formdata.c"
+#else
+extern CURLFORMcode curl_formadd(struct curl_httppost **httppost,
+                          struct curl_httppost **last_post,
+                          ...);
+#endif
 
 SWITCH_DECLARE(CURLFORMcode) switch_curl_formadd(struct curl_httppost **httppost,
 								 struct curl_httppost **last_post,
@@ -83,7 +89,11 @@ SWITCH_DECLARE(CURLFORMcode) switch_curl_formadd(struct curl_httppost **httppost
   va_list arg;
   CURLFORMcode result;
   va_start(arg, last_post);
+#ifndef WIN32
   result = FormAdd(httppost, last_post, arg);
+#else
+  result = curl_formadd(httppost, last_post, arg);
+#endif
   va_end(arg);
   return result;
 }
