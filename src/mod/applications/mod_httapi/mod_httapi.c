@@ -1134,7 +1134,7 @@ static switch_status_t process_form_post_params(client_t *client, switch_CURL *c
 			if (fname && pname) {
 				*fname++ = '\0';
 
-				switch_curl_formadd(&formpost,
+				curl_formadd(&formpost,
 							 &lastptr,
 							 CURLFORM_COPYNAME, pname,
 							 CURLFORM_FILENAME, fname,
@@ -1143,7 +1143,7 @@ static switch_status_t process_form_post_params(client_t *client, switch_CURL *c
 			}
 
 		} else {
-			switch_curl_formadd(&formpost,
+			curl_formadd(&formpost,
 						 &lastptr,
 						 CURLFORM_COPYNAME, hp->name,
 						 CURLFORM_COPYCONTENTS, hp->value,
