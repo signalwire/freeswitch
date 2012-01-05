@@ -1381,7 +1381,7 @@ static switch_status_t do_config(void)
 			} else if (!strcasecmp(var, "file-cache-ttl")) {
 				int tmp = atoi(val);
 
-				if (tmp > 0) {
+				if (tmp > -1) {
 					globals.cache_ttl = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s]for file-cache-ttl\n", val);
@@ -1974,7 +1974,7 @@ static switch_status_t fetch_cache_data(const char *url, switch_event_t **header
 	return status;
 }
 
-static switch_status_t write_meta_file(http_file_context_t *context, const char *data)
+static switch_status_t write_meta_file(http_file_context_t *context, const char *data, switch_event_t *headers)
 {
 	int fd;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1985,10 +1985,23 @@ static switch_status_t write_meta_file(http_file_context_t *context, const char 
 	}
 
 	if (!zstr(data)) {
+		int ttl = globals.cache_ttl;
+		const char *cc;
+		const char *p;
+
+		if (headers && (cc = switch_event_get_header(headers, "Cache-Control")) && (p = switch_stristr("max-age=", cc))) {
+			p += 8;
+			
+			if (p) {
+				ttl = atoi(p);
+				if (ttl < 0) ttl = globals.cache_ttl;
+			}
+		}
+		
 
 		switch_snprintf(write_data, sizeof(write_data), 
 						"%" SWITCH_TIME_T_FMT ":%s",
-						switch_epoch_time_now(NULL) + globals.cache_ttl,
+						switch_epoch_time_now(NULL) + ttl,
 						data);
 
 
@@ -2068,7 +2081,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 									   );
 
 		if (!strcmp(metadata, context->metadata)) {
-			write_meta_file(context, metadata);
+			write_meta_file(context, metadata, headers);
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
 	}
@@ -2082,7 +2095,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 								   switch_event_get_header_nil(headers, "content-length")
 								   );
 	
-	write_meta_file(context, metadata);
+	write_meta_file(context, metadata, headers);
 	
 	if (switch_file_exists(context->cache_file, context->pool) == SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_SUCCESS;
