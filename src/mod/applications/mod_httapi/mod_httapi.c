@@ -2214,7 +2214,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	SWITCH_ADD_API(httapi_api_interface, "HT-TAPI Hypertext Telephony API", "HT-TAPI Hypertext Telephony API", httapi_api_function, HTTAPI_SYNTAX);
+	SWITCH_ADD_API(httapi_api_interface, "httapi",
+				   "HT-TAPI Hypertext Telephony API", "HT-TAPI Hypertext Telephony API", httapi_api_function, HTTAPI_SYNTAX);
 
 	SWITCH_ADD_APP(app_interface, "httapi", 
 				   "HT-TAPI Hypertext Telephony API", 
