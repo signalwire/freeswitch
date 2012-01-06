@@ -161,6 +161,8 @@ struct http_file_context {
 	time_t expires;
 	switch_file_t *lock_fd;
 	switch_memory_pool_t *pool;
+	int del_on_close;
+
 };
 
 typedef struct http_file_context http_file_context_t;
@@ -2013,21 +2015,26 @@ static switch_status_t write_meta_file(http_file_context_t *context, const char 
 		const char *cc;
 		const char *p;
 
-		if (headers && (cc = switch_event_get_header(headers, "Cache-Control")) && (p = switch_stristr("max-age=", cc))) {
-			p += 8;
-			
-			if (!zstr(p)) {
-				ttl = atoi(p);
-				if (ttl < 0) ttl = globals.cache_ttl;
+		if (headers && (cc = switch_event_get_header(headers, "Cache-Control"))) {
+			if ((p = switch_stristr("max-age=", cc))) {
+				p += 8;
+				
+				if (!zstr(p)) {
+					ttl = atoi(p);
+					if (ttl < 0) ttl = globals.cache_ttl;
+				}
+			}
+
+			if (switch_stristr("no-cache", cc) || switch_stristr("no-store", cc)) {
+				context->del_on_close = 1;
 			}
 		}
-		
 
 		switch_snprintf(write_data, sizeof(write_data), 
 						"%" SWITCH_TIME_T_FMT ":%s",
 						switch_epoch_time_now(NULL) + ttl,
 						data);
-
+		
 
 		status = write(fd, write_data, strlen(write_data) + 1) > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 	}
@@ -2204,6 +2211,14 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&context->fh);
+	}
+	
+	if (context->del_on_close) {
+		if (context->cache_file) {
+			unlink(context->cache_file);
+			unlink(context->meta_file);
+			unlink(context->lock_file);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
