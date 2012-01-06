@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>mod_httapi</ProjectName>
-    <ProjectGuid>{11C9BC3D-45E9-46E3-BE84-B8CEE4685E39}</ProjectGuid>
+    <ProjectGuid>{4748FF56-CA85-4809-97D6-A94C0FAC1D77}</ProjectGuid>
     <RootNamespace>mod_httapi</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

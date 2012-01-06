@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="mod_httapi"
-	ProjectGUID="{11C9BC3D-45E9-46E3-BE84-B8CEE4685E39}"
+	ProjectGUID="{0807C5CB-F6FF-451D-89F0-1F7B2E1D9169}"
 	RootNamespace="mod_httapi"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
