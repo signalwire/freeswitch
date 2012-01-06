@@ -1949,7 +1949,7 @@ static switch_status_t write_meta_file(http_file_context_t *context, const char 
 		if (headers && (cc = switch_event_get_header(headers, "Cache-Control")) && (p = switch_stristr("max-age=", cc))) {
 			p += 8;
 			
-			if (p) {
+			if (!zstr(p)) {
 				ttl = atoi(p);
 				if (ttl < 0) ttl = globals.cache_ttl;
 			}
