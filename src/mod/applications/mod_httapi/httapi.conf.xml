@@ -1,8 +1,8 @@
 <configuration name="httapi.conf" description="HT-TAPI Hypertext Telephony API">
   <settings>
-    <!-- print xml on the consol -->
+    <!-- print xml on the console -->
     <param name="debug" value="true"/>
-    <!-- time to keep audio files when discoverd they were deleted from the http server -->
+    <!-- time to keep audio files when discovered they were deleted from the http server -->
     <param name="file-not-found-expires" value="300"/>
     <!-- how often to re-check the server to make sure the remote file has not changed -->
     <param name="file-cache-ttl" value="300"/>

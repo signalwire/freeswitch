@@ -5,7 +5,7 @@ This module provides an HTTP based Telephony API using a standard FreeSWITCH app
 The file format plugin can be used like this:
 <action application="playback" data="http://some.com/sounds/foo.wav"/>
 
-This syntax is valid anywhere a filname parameter is requested in FreeSWITCH.
+This syntax is valid anywhere a filename parameter is requested in FreeSWITCH.
 
 
 The application is called like this:
@@ -30,7 +30,7 @@ The format is roughly as described below (We could use a DTD maybe).
 
 
 The profile name must be chosen to bind to a preset series of settings and permissions to use as a basis for the client session.
-Its chosen from the specified params or from the channel variable using the keyname 'httapi_profile' and if not specified will default to 'default'
+It's chosen from the specified params or from the channel variable using the keyname 'httapi_profile' and if not specified will default to 'default'
 Any params specified in the initial data of the application encased in brackets {} will be parsed into the initial params similar to originate.
 These params remain set until the call ends and are supplied as form elements on each hit to the HTTP server.
 If the permissions allow, a <params> tag is parsed from the resulting document and set into this data set and will be mirrored back on subsequqent http posts.
@@ -155,6 +155,8 @@ gender              : gender (fs param)
 ATTRS:
 application         : The app to run
 *DATA*              : The app data
+
+
 
 <sms to>DATA</sms>
 		    : Send a SMS message.
