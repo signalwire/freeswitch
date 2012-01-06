@@ -1480,8 +1480,8 @@ static switch_status_t do_config(void)
 		profile->perms.dial.enabled = 1;
 
 		if ((tag = switch_xml_child(profile_tag, "conference"))) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
+			char *var = (char *) switch_xml_attr_soft(tag, "name");
+			char *val = (char *) switch_xml_attr_soft(tag, "value");
 
 			if (!strcasecmp(var, "default-profile")) {
 				profile->conference_params.use_profile = switch_core_strdup(globals.pool, val);
@@ -1489,8 +1489,8 @@ static switch_status_t do_config(void)
 		}
 
 		if ((tag = switch_xml_child(profile_tag, "dial"))) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
+			char *var = (char *) switch_xml_attr_soft(tag, "name");
+			char *val = (char *) switch_xml_attr_soft(tag, "value");
 
 			if (!strcasecmp(var, "context")) {
 				profile->dial_params.context = switch_core_strdup(globals.pool, val);
