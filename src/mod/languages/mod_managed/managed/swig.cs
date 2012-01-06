@@ -2424,6 +2424,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static int switch_stream_system(string cmd, switch_stream_handle stream) {
+    int ret = freeswitchPINVOKE.switch_stream_system(cmd, switch_stream_handle.getCPtr(stream));
+    return ret;
+  }
+
   public static void switch_cond_yield(SWIGTYPE_p_switch_interval_time_t t) {
     freeswitchPINVOKE.switch_cond_yield(SWIGTYPE_p_switch_interval_time_t.getCPtr(t));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -2589,6 +2594,15 @@ public class freeswitch {
 
   public static void switch_say_file(SWIGTYPE_p_switch_say_file_handle sh, string fmt) {
     freeswitchPINVOKE.switch_say_file(SWIGTYPE_p_switch_say_file_handle.getCPtr(sh), fmt);
+  }
+
+  public static int switch_max_file_desc() {
+    int ret = freeswitchPINVOKE.switch_max_file_desc();
+    return ret;
+  }
+
+  public static void switch_close_extra_files(SWIGTYPE_p_int keep, int keep_ttl) {
+    freeswitchPINVOKE.switch_close_extra_files(SWIGTYPE_p_int.getCPtr(keep), keep_ttl);
   }
 
   public static switch_status_t switch_loadable_module_init(switch_bool_t autoload) {
@@ -4380,8 +4394,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_play_and_detect_speech(SWIGTYPE_p_switch_core_session session, string file, string mod_name, string grammar, ref string result) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_play_and_detect_speech(SWIGTYPE_p_switch_core_session.getCPtr(session), file, mod_name, grammar, ref result);
+  public static switch_status_t switch_ivr_play_and_detect_speech(SWIGTYPE_p_switch_core_session session, string file, string mod_name, string grammar, ref string result, uint input_timeout, switch_input_args_t args) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_play_and_detect_speech(SWIGTYPE_p_switch_core_session.getCPtr(session), file, mod_name, grammar, ref result, input_timeout, switch_input_args_t.getCPtr(args));
     return ret;
   }
 
@@ -4846,6 +4860,11 @@ public class freeswitch {
 
   public static switch_bool_t switch_ivr_uuid_exists(string uuid) {
     switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_ivr_uuid_exists(uuid);
+    return ret;
+  }
+
+  public static switch_status_t switch_ivr_dmachine_last_ping(SWIGTYPE_p_switch_ivr_dmachine dmachine) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_dmachine_last_ping(SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine));
     return ret;
   }
 
@@ -8662,6 +8681,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_system")]
   public static extern int switch_system(string jarg1, int jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_stream_system")]
+  public static extern int switch_stream_system(string jarg1, HandleRef jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cond_yield")]
   public static extern void switch_cond_yield(HandleRef jarg1);
 
@@ -8841,6 +8863,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_say_file")]
   public static extern void switch_say_file(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_max_file_desc")]
+  public static extern int switch_max_file_desc();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_close_extra_files")]
+  public static extern void switch_close_extra_files(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_module_name_set")]
   public static extern void switch_loadable_module_interface_module_name_set(HandleRef jarg1, string jarg2);
@@ -12938,7 +12966,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_collect_digits_count(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, string jarg5, string jarg6, uint jarg7, uint jarg8, uint jarg9);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_play_and_detect_speech")]
-  public static extern int switch_ivr_play_and_detect_speech(HandleRef jarg1, string jarg2, string jarg3, string jarg4, ref string jarg5);
+  public static extern int switch_ivr_play_and_detect_speech(HandleRef jarg1, string jarg2, string jarg3, string jarg4, ref string jarg5, uint jarg6, HandleRef jarg7);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_detect_speech")]
   public static extern int switch_ivr_detect_speech(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, HandleRef jarg6);
@@ -13218,6 +13246,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_uuid_exists")]
   public static extern int switch_ivr_uuid_exists(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_last_ping")]
+  public static extern int switch_ivr_dmachine_last_ping(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_get_name")]
   public static extern string switch_ivr_dmachine_get_name(HandleRef jarg1);
