@@ -491,9 +491,11 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 		
 		if (sub_action && client->matching_action_binding && client->matching_action_binding->match_digits) {
 			if (!strncasecmp(sub_action, "dial:", 5)) {
+				char *context = NULL;
+				char *dp = NULL;
+				
 				if (client->profile->perms.dial.set_context) {
-					char *context = switch_core_session_strdup(client->session, sub_action + 5);
-					char *dp;
+					context = switch_core_session_strdup(client->session, sub_action + 5);
 					
 					if ((dp = strchr(context, ':'))) {
 						*dp++ = '\0';
@@ -501,10 +503,11 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 							dp = NULL;
 						}
 					}
-
-					switch_ivr_session_transfer(client->session, client->matching_action_binding->match_digits, dp, context);
-					status = SWITCH_STATUS_FALSE;
 				}
+
+				switch_ivr_session_transfer(client->session, client->matching_action_binding->match_digits, dp, context);
+				status = SWITCH_STATUS_FALSE;
+				
 			} else {
 				switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "url", sub_action);
 			}
