@@ -1906,7 +1906,7 @@ static switch_status_t fetch_cache_data(const char *url, switch_event_t **header
 	switch(code) {
 	case 200:
 		if (save_path) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching: url:%s to %s (%ld bytes)\n", url, save_path, client.bytes);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching: url:%s to %s (%" SWITCH_SIZE_T_FMT " bytes)\n", url, save_path, client.bytes);
 		}
 		status = SWITCH_STATUS_SUCCESS;
 		break;
