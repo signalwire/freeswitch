@@ -494,7 +494,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 		val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
 
-		if (switch_false(val)) {
+		if (!val || switch_false(val)) {
 			if (switch_channel_test_flag(channel, CF_INTERCEPT) || cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE) {
 				switch_snprintf(reason, sizeof(reason), "SIP;cause=200;text=\"Call completed elsewhere\"");
 			} else if (cause > 0 && cause < 128) {
