@@ -42,7 +42,7 @@
       
       <params>
 	<!-- default url can be overridden by app data -->
-	<param name="gateway-url" value="http://sidious.freeswitch.org/api/index.cgi" />
+	<param name="gateway-url" value="http://www.freeswitch.org/api/index.cgi" />
 	
 	<!-- set this to provide authentication credentials to the server -->
 	<!--<param name="gateway-credentials" value="muser:mypass"/>-->
