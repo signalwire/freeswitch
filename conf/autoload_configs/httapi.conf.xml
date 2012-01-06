@@ -28,7 +28,14 @@
 	<permission name="set-params" value="true"/>
 	<permission name="set-vars" value="false"/>
 	<permission name="extended-data" value="false"/>
-	<permission name="execute-apps" value="false"/>
+	<permission name="execute-apps" value="true">
+	  <!-- default to "deny" or "allow" -->
+	  <application-list default="deny">
+	    <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
+	    <application name="info"/>
+	    <application name="hangup"/>
+	  </application-list>
+	</permission>
 	<permission name="expand-vars-in-tag-body" value="false"/>
 	<permission name="dial" value="true"/>
 	<permission name="dial-set-context" value="false"/>

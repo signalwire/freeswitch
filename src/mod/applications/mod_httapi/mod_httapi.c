@@ -40,7 +40,7 @@ typedef struct profile_perms_s {
 	switch_byte_t set_vars;
 	switch_byte_t extended_data;
 	switch_byte_t execute_apps;
-	switch_byte_t expand_vars_in_tag_body;
+	switch_byte_t expand_vars;
 	struct {
 		switch_byte_t enabled;
 		switch_byte_t set_context;
@@ -95,6 +95,8 @@ typedef struct client_profile_s {
 	struct {
 		char *context;
 		char *dp;
+		switch_event_t *app_list;
+		int default_allow;
 	} dial_params;
 
 } client_profile_t;
@@ -627,11 +629,41 @@ static switch_status_t parse_sms(const char *tag_name, client_t *client, switch_
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int check_app_perm(client_t *client, const char *app_name)
+{
+	const char *v;
+	int r = 0;
+
+	if (!client->profile->perms.execute_apps) {
+		return 0;
+	}
+
+	if (!client->profile->dial_params.app_list) {
+		return 1;
+	}
+
+	if ((v = switch_event_get_header(client->profile->dial_params.app_list, app_name))) {
+		if (*v == 'd') {
+			r = 0;
+		} else {
+			r = 1;
+		}
+	} else {
+		r = client->profile->dial_params.default_allow;
+	}
+	
+
+	return r;
+}
+
 static switch_status_t parse_execute(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
 {
 	const char *app_name = switch_xml_attr(tag, "application");
+	const char *data = switch_xml_attr(tag, "data");
 
-	if (!client->profile->perms.execute_apps) {
+	if (zstr(data)) data = body;
+
+	if (!check_app_perm(client, app_name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Permission Denied!\n");
 		switch_channel_hangup(client->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
@@ -642,7 +674,19 @@ static switch_status_t parse_execute(const char *tag_name, client_t *client, swi
 		switch_channel_hangup(client->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
 	} else {
-		switch_core_session_execute_application(client->session, app_name, body);
+		if (!client->profile->perms.expand_vars) {
+			const char *p;
+
+			for(p = data; p && *p; p++) {
+				if (*p == '$') {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Expand Variables: Permission Denied!\n");
+					switch_channel_hangup(client->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					return SWITCH_STATUS_FALSE;
+				}
+			}
+		}
+
+		switch_core_session_execute_application(client->session, app_name, data);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -928,7 +972,7 @@ static switch_status_t parse_xml(client_t *client)
 							char *expanded = tag->txt;
 							switch_event_t *templ_data;
 
-							if (tag->txt && client->profile->perms.expand_vars_in_tag_body) {
+							if (tag->txt && client->profile->perms.expand_vars) {
 								switch_channel_get_variables(client->channel, &templ_data);
 								switch_event_merge(templ_data, client->params);
 								expanded = switch_event_expand_headers(templ_data, tag->txt);
@@ -1525,8 +1569,31 @@ static switch_status_t do_config(void)
 					profile->perms.extended_data = switch_true(val);
 				} else if (!strcasecmp(var, "execute-apps")) {
 					profile->perms.execute_apps = switch_true(val);
-				} else if (!strcasecmp(var, "expand-vars-in-tag-body")) {
-					profile->perms.expand_vars_in_tag_body = switch_true(val);
+					
+					if (profile->perms.execute_apps) {
+						switch_xml_t x_list, x_app;
+						if ((x_list = switch_xml_child(param, "application-list"))) {
+							char *var = (char *) switch_xml_attr_soft(param, "default");
+							
+							profile->dial_params.default_allow = (var && !strcasecmp(var, "allow"));
+							switch_event_create(&profile->dial_params.app_list, SWITCH_EVENT_CLONE);
+							profile->dial_params.app_list->flags |= EF_UNIQ_HEADERS;
+
+							for (x_app = switch_xml_child(x_list, "application"); x_app; x_app = x_app->next) {
+								const char *name = switch_xml_attr(x_app, "name");
+								const char *type = switch_xml_attr(x_app, "type");
+
+								if (zstr(type)) type = profile->dial_params.default_allow ? "deny" : "allow";
+
+								if (name) {
+									switch_event_add_header_string(profile->dial_params.app_list, SWITCH_STACK_BOTTOM, name, type);
+								}
+							}
+						}
+					}
+					
+				} else if (!strcasecmp(var, "expand-vars")) {
+					profile->perms.expand_vars = switch_true(val);
 				} else if (!strcasecmp(var, "dial")) {
 					profile->perms.dial.enabled = switch_true(val);
 				} else if (!strcasecmp(var, "dial-set-context")) {
@@ -2240,6 +2307,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_httapi_shutdown)
 {
 	hash_node_t *ptr = NULL;
+	client_profile_t *profile;
+	switch_hash_index_t *hi;
+	void *val;
+	const void *vvar;
+
+	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &val);
+		profile = (client_profile_t *) val;
+		switch_event_destroy(&profile->dial_params.app_list);
+	}
+
 
 	switch_core_hash_destroy(&globals.profile_hash);	
 	switch_core_hash_destroy(&globals.parse_hash);	

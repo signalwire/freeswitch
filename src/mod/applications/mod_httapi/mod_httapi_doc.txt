@@ -266,7 +266,7 @@ default-profile                 : <string>              default         Profile 
 set-vars                        : <variables> tag can be parsed to set channel vars.
 extended-data                   : Extended data is sent like full channel event data.
 execute-apps                    : <execute> tag is enabled to execute apps.
-expand-vars-in-tag-body         : body content of tags are run trough variable expansion.
+expand-vars			: Allow expansion of FS ${variables}. (this opens up all FSAPI calls)
 *dial                           : <dial> tag is enabled allowing outbound dialing.
 dial-set-context                : <dial context=""> context attribute is permitted.
 dial-set-dialplan               : <dial dialplan=""> dialplan attribute is permitted.
