@@ -1833,7 +1833,8 @@ SWITCH_STANDARD_APP(httapi_function)
 	client_t *client;
 	switch_event_t *params = NULL;
 	uint32_t loops = 0, all_extended = 0;
-	
+	switch_caller_profile_t *caller_profile;
+
 	if (!zstr(data)) {
 		switch_event_create_brackets((char *)data, '{', '}', ',', &params, &parsed, SWITCH_TRUE);
 	}
@@ -1864,6 +1865,10 @@ SWITCH_STANDARD_APP(httapi_function)
 
 	if (client->profile->perms.extended_data) {
 		all_extended = switch_true(switch_event_get_header(client->params, "full_channel_data_on_every_req"));
+	}
+
+	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
+		switch_caller_profile_event_set_data(caller_profile, "Caller", client->params);
 	}
 
 	while(switch_channel_ready(channel)) {
