@@ -259,6 +259,12 @@ static void console_clean_log(const char *level_str, const char *msg)
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, level, "%s", switch_str_nil(msg));
 }
 
+static switch_status_t parse_continue(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
+{
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t parse_log(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
 {
 	const char *level = switch_xml_attr(tag, "level");
@@ -920,6 +926,16 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	return status;
 }
 
+static switch_status_t parse_common(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
+{
+	const char *action = switch_xml_attr(tag, "action");
+
+	if (action) {
+		switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "url", action);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static switch_status_t parse_xml(client_t *client)
 {
@@ -990,6 +1006,8 @@ static switch_status_t parse_xml(client_t *client)
 							}
 
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Process Tag: [%s]\n", tag->name);
+
+							parse_common(tag->name, client, tag, expanded);
 							handler(tag->name, client, tag, expanded);
 							
 							if (expanded && expanded != tag->txt) {
@@ -2423,6 +2441,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	bind_parser("conference", parse_conference);
 	bind_parser("break", parse_break);
 	bind_parser("log", parse_log);
+	bind_parser("continue", parse_continue);
 
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;

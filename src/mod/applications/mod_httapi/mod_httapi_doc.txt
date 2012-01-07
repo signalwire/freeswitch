@@ -150,25 +150,28 @@ gender              : gender (fs param)
 
 
 
-<execute application>*DATA*</execute>
+<execute application data action>*DATA*</execute>
 		    : Execute a FreeSWITCH app.
 ATTRS:
 application         : The app to run
+action		    : Change url to submit to
+data		    : Alternate source for app data
 *DATA*              : The app data
 
 
 
-<sms to>DATA</sms>
+<sms to action>DATA</sms>
 		    : Send a SMS message.
 ATTRS:
 to                  : The dest number
+action		    : Change url to submit to
 *DATA*              : The message data
 
 
 
 
 
-<dial context dialplan caller-id-name caller-id-number>*DATA*</dial>
+<dial context dialplan caller-id-name caller-id-number action>*DATA*</dial>
 		    : Place an outbound call or transfer.
 
 ATTRS:
@@ -176,6 +179,7 @@ context             : Dialplan context.
 dialplan            : Dialplan dialplan.
 caller-id-name      : Caller ID Name.
 caller-id-number    : Caller ID Number.
+action		    : Change url to submit to
 *DATA*              : Number to dial or originate string
 
 
@@ -194,22 +198,22 @@ action              : URL action to use.
 
 
 
-<conference profile>
+<conference profile action>
 		    : Start a conference call.
 
 ATTRS:
 profile             : Conference profile to use.
+action		    : Change url to submit to
 
 
 
 
-
-<hangup cause>
+<hangup cause action>
 		    : Hangup the call
 
 ATTRS:
 cause               : Hangup cause
-
+action		    : Change url to submit to
 
 
 
@@ -221,11 +225,19 @@ cause               : Hangup cause
 
 
 
-<log level clean>
+<log level clean action>
 		    : Exit the httapi application and continue in the dialplan.
 ATTRS:
 level               : The log level to use.
 clean               : If true do not pring log prefix.
+action		    : Change url to submit to
+
+<continue action>
+                    : Just continue (no-op)
+
+ATTRS:
+action		    : Change url to submit to
+
 
 
 
