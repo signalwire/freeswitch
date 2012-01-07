@@ -71,7 +71,8 @@ ATTRS:
 file                : The file
 name                : Param name to save result.
 error-file          : Error file to play on invalid input.
-action              : Change the new target url
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
 digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
 input-timeout       : Timeout waiting for more digits in a multi-digit input.
 loops               : max times to play the file when input bindings are present.
@@ -82,13 +83,14 @@ asr-grammar         : ASR grammar to use
 
 
 <record file name error-file action digit-timeout input-timeout><bind action strip>*EXPR*</bind></record>
-		    : Records a file, optionally collects input and posts the file back to the target url
+		    : Records a file, optionally collects input and posts the file back to the target url.
 
 ATTRS:
 file                : The file
 name                : Param name to save result.
 error-file          : Error file to play on invalid input.
-action              : Change the new target url
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
 digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
 input-timeout       : Timeout waiting for more digits in a multi-digit input.
 
@@ -103,7 +105,8 @@ ATTRS:
 milliseconds        : Number of milliseconds to pause
 name                : Param name to save result.
 error-file          : Error file to play on invalid input.
-action              : Change the new target url
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
 digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
 input-timeout       : Timeout waiting for more digits in a multi-digit input.
 loops               : max times to play the file when input bindings are present.
@@ -119,7 +122,8 @@ ATTRS:
 file                : The file
 name                : Param name to save result.
 error-file          : Error file to play on invalid input.
-action              : Change the new target url
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
 digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
 input-timeout       : Timeout waiting for more digits in a multi-digit input.
 loops               : max times to play the file when input bindings are present.
@@ -137,7 +141,8 @@ ATTRS:
 file                : The file
 name                : Param name to save result.
 error-file          : Error file to play on invalid input.
-action              : Change the new target url
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
 digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
 input-timeout       : Timeout waiting for more digits in a multi-digit input.
 loops               : max times to play the file when input bindings are present.
@@ -154,7 +159,8 @@ gender              : gender (fs param)
 		    : Execute a FreeSWITCH app.
 ATTRS:
 application         : The app to run
-action		    : Change url to submit to
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
 data		    : Alternate source for app data
 *DATA*              : The app data
 
@@ -164,7 +170,8 @@ data		    : Alternate source for app data
 		    : Send a SMS message.
 ATTRS:
 to                  : The dest number
-action		    : Change url to submit to
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
 *DATA*              : The message data
 
 
@@ -179,7 +186,8 @@ context             : Dialplan context.
 dialplan            : Dialplan dialplan.
 caller-id-name      : Caller ID Name.
 caller-id-number    : Caller ID Number.
-action		    : Change url to submit to
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
 *DATA*              : Number to dial or originate string
 
 
@@ -193,7 +201,7 @@ ATTRS:
 limit               : Timeout in seconds.
 name                : Name to use for input values.
 action              : URL action to use.
-
+temp-action	    : Change url to submit to. just for the next loop.
 
 
 
@@ -203,8 +211,8 @@ action              : URL action to use.
 
 ATTRS:
 profile             : Conference profile to use.
-action		    : Change url to submit to
-
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
 
 
 
@@ -213,8 +221,8 @@ action		    : Change url to submit to
 
 ATTRS:
 cause               : Hangup cause
-action		    : Change url to submit to
-
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
 
 
 
@@ -230,13 +238,15 @@ action		    : Change url to submit to
 ATTRS:
 level               : The log level to use.
 clean               : If true do not pring log prefix.
-action		    : Change url to submit to
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
 
 <continue action>
                     : Just continue (no-op)
 
 ATTRS:
-action		    : Change url to submit to
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
 
 
 

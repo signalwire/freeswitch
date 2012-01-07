@@ -929,9 +929,14 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 static switch_status_t parse_common(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
 {
 	const char *action = switch_xml_attr(tag, "action");
+	const char *tmp_action = switch_xml_attr(tag, "temp-action");
 
 	if (action) {
 		switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "url", action);
+	}
+
+	if (tmp_action) {
+		switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "url", tmp_action);
 	}
 	
 	return SWITCH_STATUS_SUCCESS;
