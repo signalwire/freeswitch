@@ -162,7 +162,16 @@ struct http_file_context {
 	switch_file_t *lock_fd;
 	switch_memory_pool_t *pool;
 	int del_on_close;
-
+	struct {
+		char *dest_url;
+		char *params;
+		char *file_name;
+		char *profile_name;
+		char *file;
+		char *method;
+		char *name;
+		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	} write;
 };
 
 typedef struct http_file_context http_file_context_t;
@@ -248,6 +257,12 @@ static void console_clean_log(const char *level_str, const char *msg)
 		}
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, level, "%s", switch_str_nil(msg));
+}
+
+static switch_status_t parse_continue(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
+{
+	
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t parse_log(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
@@ -900,7 +915,6 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	if (!zstr(tmp_record_path) && switch_file_exists(tmp_record_path, client->pool) == SWITCH_STATUS_SUCCESS) {
 		char *key = switch_core_sprintf(client->pool, "attach_file:%s:%s.%s", name, fname, ext);
 		switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, key, tmp_record_path);
-		status = SWITCH_STATUS_TERM;
 	}
 
  end:
@@ -912,6 +926,21 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	return status;
 }
 
+static switch_status_t parse_common(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
+{
+	const char *action = switch_xml_attr(tag, "action");
+	const char *tmp_action = switch_xml_attr(tag, "temp-action");
+
+	if (action) {
+		switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "url", action);
+	}
+
+	if (tmp_action) {
+		switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "url", tmp_action);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static switch_status_t parse_xml(client_t *client)
 {
@@ -982,6 +1011,8 @@ static switch_status_t parse_xml(client_t *client)
 							}
 
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Process Tag: [%s]\n", tag->name);
+
+							parse_common(tag->name, client, tag, expanded);
 							handler(tag->name, client, tag, expanded);
 							
 							if (expanded && expanded != tag->txt) {
@@ -1117,8 +1148,10 @@ static client_t *client_create(switch_core_session_t *session, const char *profi
 
 	switch_event_create(&client->headers, SWITCH_EVENT_CLONE);
 	
-	client->session = session;
-	client->channel = switch_core_session_get_channel(session);
+	if (session) {
+		client->session = session;
+		client->channel = switch_core_session_get_channel(session);
+	}
 
 	
 	client->profile = profile;
@@ -1151,10 +1184,16 @@ static void cleanup_attachments(client_t *client)
 	for (hp = client->params->headers; hp; hp = hp->next) {
 		if (!strncasecmp(hp->name, "attach_file:", 12)) {
 			if (switch_file_exists(hp->value, client->pool)) {
+				printf("DELETE %s\n", hp->value);
 				unlink(hp->value);
 			}
 		}	
 	}
+}
+
+size_t put_file_read( void *ptr, size_t size, size_t nmemb, void *userdata)
+{
+	return fread(ptr, size, nmemb, (FILE *) userdata);
 }
 
 static switch_status_t httapi_sync(client_t *client)
@@ -1171,7 +1210,9 @@ static switch_status_t httapi_sync(client_t *client)
 	char *method = NULL;
 	struct curl_httppost *formpost=NULL;
 	switch_event_t *save_params = NULL;
-
+	const char *put_file;
+	FILE *fd = NULL;
+	
 	if (client->one_time_params && client->one_time_params->headers) {
 		save_params = client->params;
 		switch_event_dup(&client->params, save_params);
@@ -1182,7 +1223,7 @@ static switch_status_t httapi_sync(client_t *client)
 	}
 	
 	if (!(session_id = switch_event_get_header(client->params, "HTTAPI_SESSION_ID"))) {
-		if (!(session_id = switch_channel_get_variable(client->channel, "HTTAPI_SESSION_ID"))) {
+		if (client->channel && !(session_id = switch_channel_get_variable(client->channel, "HTTAPI_SESSION_ID"))) {
 			session_id = switch_core_session_get_uuid(client->session);
 		}
 	}
@@ -1207,7 +1248,17 @@ static switch_status_t httapi_sync(client_t *client)
 
 	dynamic_url = switch_event_expand_headers(client->params, url);
 
-	switch_curl_process_form_post_params(client->params, curl_handle, &formpost);
+	if ((put_file = switch_event_get_header(client->params, "put_file"))) {
+		if (!(fd = fopen(put_file, "rb"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Can't open [%s]\n", put_file);
+			put_file = NULL;
+		}
+	}
+
+	if (!put_file) {
+		switch_curl_process_form_post_params(client->params, curl_handle, &formpost);	
+		get_style_method = 1;
+	}
 
 	if (formpost) {
 		get_style_method = 1;
@@ -1259,7 +1310,12 @@ static switch_status_t httapi_sync(client_t *client)
 		switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, method);
 	}
 
-	if (formpost) {
+	if (put_file) {
+		curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L);
+		curl_easy_setopt(curl_handle, CURLOPT_READDATA, fd);
+		curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, put_file_read);
+		
+	} else if (formpost) {
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, formpost);
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_POST, !get_style_method);
@@ -1351,6 +1407,9 @@ static switch_status_t httapi_sync(client_t *client)
 		save_params = NULL;
 	}
 
+	if (fd) {
+		fclose(fd);
+	}
 
 	return status;
 }
@@ -1779,7 +1838,8 @@ SWITCH_STANDARD_APP(httapi_function)
 	client_t *client;
 	switch_event_t *params = NULL;
 	uint32_t loops = 0, all_extended = 0;
-	
+	switch_caller_profile_t *caller_profile;
+
 	if (!zstr(data)) {
 		switch_event_create_brackets((char *)data, '{', '}', ',', &params, &parsed, SWITCH_TRUE);
 	}
@@ -1810,6 +1870,10 @@ SWITCH_STANDARD_APP(httapi_function)
 
 	if (client->profile->perms.extended_data) {
 		all_extended = switch_true(switch_event_get_header(client->params, "full_channel_data_on_every_req"));
+	}
+
+	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
+		switch_caller_profile_event_set_data(caller_profile, "Caller", client->params);
 	}
 
 	while(switch_channel_ready(channel)) {
@@ -2165,30 +2229,78 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 	char *file_dup;
 	switch_status_t status;
 
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This format does not support writing!\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		char *ext;
+		
+
+		context->fh.channels = handle->channels;
+		context->fh.native_rate = handle->native_rate;
+		context->fh.samples = handle->samples;
+		context->fh.samplerate = handle->samplerate;
+		context->fh.prefix = handle->prefix;
+		
+		context->write.dest_url = switch_core_sprintf(context->pool, "http://%s", path);
+
+		if ((context->write.params = strchr(context->write.dest_url, ';'))) {
+			*context->write.params++ = '\0';
+			context->write.file_name = switch_find_parameter(context->write.params, "file", context->pool);
+			context->write.profile_name = switch_find_parameter(context->write.params, "profile", context->pool);
+			context->write.method = switch_find_parameter(context->write.params, "method", context->pool);
+			context->write.name = switch_find_parameter(context->write.params, "name", context->pool);
+		}
+		
+		if (!context->write.file_name) {
+			char *p;
+			if ((p = strrchr(context->write.dest_url, '/'))) {
+				p++;
+				context->write.file_name = switch_core_strdup(context->pool, p);
+			}	
+		}
+
+		if ((ext = strrchr(context->write.file_name, '.'))) {
+			ext++;
+		} else {
+			ext = "wav";
+		}
+		
+		if (!context->write.profile_name) context->write.profile_name = "default";
+		if (!context->write.method) context->write.method = !strcasecmp(ext, "cgi") ? "post" : "put";
+		if (!context->write.name) context->write.name = "recorded_file";
+
+		switch_uuid_str(context->write.uuid_str, sizeof(context->write.uuid_str));
+		
+		context->write.file = switch_core_sprintf(context->pool, "%s%s%s_%s",
+												  SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, context->write.uuid_str, context->write.file_name);
+		
+
+		if (switch_core_file_open(&context->fh, context->write.file, handle->channels, handle->samplerate, handle->flags, NULL) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_GENERR;
+		}
+
+	} else {
+
 	
-	file_dup = switch_core_sprintf(handle->memory_pool, "http://%s", path);
+		file_dup = switch_core_sprintf(handle->memory_pool, "http://%s", path);
+		
+		if ((status = locate_url_file(context, file_dup)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+
+
 	
-	if ((status = locate_url_file(context, file_dup)) != SWITCH_STATUS_SUCCESS) {
-		return status;
+		if ((status = switch_core_file_open(&context->fh,
+											context->cache_file, 
+											handle->channels, 
+											handle->samplerate, 
+											SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
 	}
 
 	handle->private_info = context;
-	
-	if ((status = switch_core_file_open(&context->fh,
-										context->cache_file, 
-										handle->channels, 
-										handle->samplerate, 
-										SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL)) != SWITCH_STATUS_SUCCESS) {
-		return status;
-	}
-
 	handle->samples = context->fh.samples;
 	handle->format = context->fh.format;
 	handle->sections = context->fh.sections;
@@ -2212,6 +2324,38 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&context->fh);
 	}
+
+	if (context->write.file) {
+		client_t *client;
+		switch_event_t *params;
+		char *key;
+
+		switch_event_create(&params, SWITCH_EVENT_CLONE);
+		params->flags |= EF_UNIQ_HEADERS;
+
+		if (!strcasecmp(context->write.method, "put")) {
+			switch_event_add_header(params, SWITCH_STACK_BOTTOM, "put_file", context->write.file);
+		} else {
+			key = switch_core_sprintf(context->pool, "attach_file:%s:%s", context->write.name, context->write.file_name);
+			switch_event_add_header(params, SWITCH_STACK_BOTTOM, key, context->write.file);
+		}
+
+		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "url", context->write.dest_url);
+		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "file_driver", "true");
+		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "HTTAPI_SESSION_ID", context->write.uuid_str);
+
+		if ((client = client_create(NULL, context->write.profile_name, &params))) {
+			httapi_sync(client);
+			client_destroy(&client);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find suitable profile\n");
+			switch_event_destroy(&params);
+		}
+			
+		unlink(context->write.file);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	
 	if (context->del_on_close) {
 		if (context->cache_file) {
@@ -2222,6 +2366,14 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t http_file_write(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	http_file_context_t *context = handle->private_info;
+	
+	return switch_core_file_write(&context->fh, data, len);
 }
 
 static switch_status_t http_file_file_read(switch_file_handle_t *handle, void *data, size_t *len)
@@ -2276,6 +2428,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	file_interface->file_open = http_file_file_open;
 	file_interface->file_close = http_file_file_close;
 	file_interface->file_read = http_file_file_read;
+	file_interface->file_write = http_file_write;
 	file_interface->file_seek = http_file_file_seek;
 	
 	switch_snprintf(globals.cache_path, sizeof(globals.cache_path), "%s%shttp_file_cache", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR);
@@ -2298,6 +2451,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	bind_parser("conference", parse_conference);
 	bind_parser("break", parse_break);
 	bind_parser("log", parse_log);
+	bind_parser("continue", parse_continue);
 
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
