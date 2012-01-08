@@ -2334,15 +2334,15 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 		params->flags |= EF_UNIQ_HEADERS;
 
 		if (!strcasecmp(context->write.method, "put")) {
-			switch_event_add_header(params, SWITCH_STACK_BOTTOM, "put_file", context->write.file);
+			switch_event_add_header(params, SWITCH_STACK_BOTTOM, "put_file", "%s", context->write.file);
 		} else {
 			key = switch_core_sprintf(context->pool, "attach_file:%s:%s", context->write.name, context->write.file_name);
-			switch_event_add_header(params, SWITCH_STACK_BOTTOM, key, context->write.file);
+			switch_event_add_header(params, SWITCH_STACK_BOTTOM, key, "%s", context->write.file);
 		}
 
-		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "url", context->write.dest_url);
+		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "url", "%s", context->write.dest_url);
 		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "file_driver", "true");
-		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "HTTAPI_SESSION_ID", context->write.uuid_str);
+		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "HTTAPI_SESSION_ID", "%s", context->write.uuid_str);
 
 		if ((client = client_create(NULL, context->write.profile_name, &params))) {
 			httapi_sync(client);
