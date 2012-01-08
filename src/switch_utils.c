@@ -2921,6 +2921,20 @@ SWITCH_DECLARE(char *) switch_format_number(const char *num)
 }
 
 
+SWITCH_DECLARE(unsigned int) switch_atoui(const char *nptr)
+{
+	int tmp = atoi(nptr);
+	if (tmp < 0) return 0;
+	else return (unsigned int) tmp;
+}
+
+SWITCH_DECLARE(unsigned long) switch_atoul(const char *nptr)
+{
+	long tmp = atol(nptr);
+	if (tmp < 0) return 0;
+	else return (unsigned long) tmp;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

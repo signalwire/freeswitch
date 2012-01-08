@@ -332,13 +332,10 @@ static switch_status_t load_profile(switch_xml_t xml)
 			if (!strcmp(var, "logfile")) {
 				new_profile->logfile = strdup(val);
 			} else if (!strcmp(var, "rollover")) {
-				new_profile->roll_size = atoi(val);
-				if (new_profile->roll_size < 0) {
-					new_profile->roll_size = 0;
-				}
+				new_profile->roll_size = switch_atoui(val);
 			} else if (!strcmp(var, "maximum-rotate")) {
-				new_profile->max_rot = atoi(val);
-				if (new_profile->max_rot < 0) {
+				new_profile->max_rot = switch_atoui(val);
+				if (new_profile->max_rot == 0) {
 					new_profile->max_rot = MAX_ROT;
 				}
 			} else if (!strcmp(var, "uuid") && switch_true(val)) {

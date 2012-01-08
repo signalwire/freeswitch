@@ -514,7 +514,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set a negative timeout!\n");
 				}
 			} else if (!strcasecmp(var, "delay") && !zstr(val)) {
-				globals.delay = (uint32_t) atoi(val);
+				globals.delay = switch_atoui(val);
 			} else if (!strcasecmp(var, "log-b-leg")) {
 				globals.log_b = switch_true(val);
 			} else if (!strcasecmp(var, "prefix-a-leg")) {
@@ -530,7 +530,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 					globals.encode = switch_true(val) ? ENCODING_DEFAULT : ENCODING_NONE;
 				}
 			} else if (!strcasecmp(var, "retries") && !zstr(val)) {
-				globals.retries = (uint32_t) atoi(val);
+				globals.retries = switch_atoui(val);
 			} else if (!strcasecmp(var, "rotate") && !zstr(val)) {
 				globals.rotate = switch_true(val);
 			} else if (!strcasecmp(var, "log-dir")) {
@@ -596,12 +596,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 		}
 		
 	}
-	if (globals.retries < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries is negative, setting to 0\n");
-		globals.retries = 0;
-	}
 
-	if (globals.retries && globals.delay <= 0) {
+	if (globals.retries && globals.delay == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries set but delay 0 setting to 5 seconds\n");
 		globals.delay = 5;
 	}

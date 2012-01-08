@@ -340,18 +340,13 @@ static void bind_to_session(switch_core_session_t *session,
 		uint32_t digit_timeout = 1500;
 		uint32_t input_timeout = 0;
 		const char *var;
-		uint32_t tmp;
 
 		if ((var = switch_channel_get_variable(channel, "bind_digit_digit_timeout"))) {
-			tmp = (uint32_t) atol(var);
-			if (tmp < 0) tmp = 0;
-			digit_timeout = tmp;
+			digit_timeout = switch_atoul(var);
 		}
 		
 		if ((var = switch_channel_get_variable(channel, "bind_digit_input_timeout"))) {
-			tmp = (uint32_t) atol(var);
-			if (tmp < 0) tmp = 0;
-			input_timeout = tmp;
+			input_timeout = switch_atoul(var);
 		}
 		
 		switch_ivr_dmachine_create(&dmachine, "DPTOOLS", NULL, digit_timeout, input_timeout, NULL, digit_nomatch_action_callback, session);
@@ -2217,10 +2212,7 @@ SWITCH_STANDARD_APP(read_function)
 	}
 
 	if (argc > 6) {
-		digit_timeout = atoi(argv[6]);
-		if (digit_timeout < 0) {
-			digit_timeout = 0;
-		}
+		digit_timeout = switch_atoui(argv[6]);
 	}
 
 	if (min_digits <= 1) {
@@ -2303,10 +2295,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 	}
 
 	if (argc > 9) {
-		digit_timeout = atoi(argv[9]);
-		if (digit_timeout < 0) {
-			digit_timeout = 0;
-		}
+		digit_timeout = switch_atoui(argv[9]);
 	}
 
 	if (argc > 10) {
@@ -2589,25 +2578,16 @@ SWITCH_STANDARD_APP(record_function)
 			l++;
 		}
 		if (l) {
-			limit = atoi(l);
-			if (limit < 0) {
-				limit = 0;
-			}
+			limit = switch_atoui(l);
 		}
 	}
 
 	if (argv[2]) {
-		fh.thresh = atoi(argv[2]);
-		if (fh.thresh < 0) {
-			fh.thresh = 0;
-		}
+		fh.thresh = switch_atoui(argv[2]);
 	}
 
 	if (argv[3]) {
-		fh.silence_hits = atoi(argv[3]);
-		if (fh.silence_hits < 0) {
-			fh.silence_hits = 0;
-		}
+		fh.silence_hits = switch_atoui(argv[3]);
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "record_rate"))) {
@@ -3481,9 +3461,7 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 		listen_hits = atoi(argv[2]);
 
 		if (argv[3]) {
-			if ((timeout_ms = atoi(argv[3])) < 0) {
-				timeout_ms = 0;
-			}
+			timeout_ms = switch_atoui(argv[3]);
 		}
 
 		if (thresh > 0 && silence_hits > 0 && listen_hits > 0) {

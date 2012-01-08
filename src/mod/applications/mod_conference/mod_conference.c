@@ -6375,7 +6375,7 @@ SWITCH_STANDARD_APP(conference_function)
 				uint32_t max_members_val;
 				errno = 0;		/* sanity first */
 				max_members_val = strtol(max_members_str, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
-				if (errno == ERANGE || errno == EINVAL || max_members_val < 0 || max_members_val == 1) {
+				if (errno == ERANGE || errno == EINVAL || (int32_t) max_members_val < 0 || max_members_val == 1) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 									  "conference_max_members variable %s is invalid, not setting a limit\n", max_members_str);
 				} else {
@@ -7106,7 +7106,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 			} else if (!strcasecmp(var, "max-members") && !zstr(val)) {
 				errno = 0;		/* sanity first */
 				max_members = strtol(val, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
-				if (errno == ERANGE || errno == EINVAL || max_members < 0 || max_members == 1) {
+				if (errno == ERANGE || errno == EINVAL || (int32_t) max_members < 0 || max_members == 1) {
 					/* a negative wont work well, and its foolish to have a conference limited to 1 person unless the outbound 
 					 * stuff is added, see comments above
 					 */

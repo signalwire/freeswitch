@@ -710,7 +710,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_SQLSetAutoCommitAttr(switch_odb
 		return SQLSetConnectAttr(handle->con, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER *) SQL_AUTOCOMMIT_OFF, 0 );
 	}
 #else
-	return SWITCH_FALSE;
+	return (switch_odbc_status_t) SWITCH_FALSE;
 #endif
 }
 
@@ -723,7 +723,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_SQLEndTran(switch_odbc_handle_t
 		return SQLEndTran(SQL_HANDLE_DBC, handle->con, SQL_ROLLBACK);
 	}
 #else
-	return SWITCH_FALSE;
+	return (switch_odbc_status_t) SWITCH_FALSE;
 #endif
 }
 

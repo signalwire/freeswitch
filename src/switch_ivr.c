@@ -2965,10 +2965,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 					switch_core_file_seek(fhp, &pos, target, SEEK_SET);
 
 				} else {
-					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
-					if (samps < 0) {
-						samps = 0;
-					}
+					samps = switch_atoui(p) * (codec->implementation->samples_per_second / 1000);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", samps);
 					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
 				}

@@ -262,7 +262,7 @@ SWITCH_DECLARE(const char *) switch_channel_callstate2str(switch_channel_callsta
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str)
 {
 	uint8_t x;
-	switch_channel_callstate_t callstate = SWITCH_CAUSE_NONE;
+	switch_channel_callstate_t callstate = (switch_channel_callstate_t) SWITCH_CAUSE_NONE;
 
 	if (*str > 47 && *str < 58) {
 		callstate = atoi(str);
@@ -274,7 +274,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str
 			}
 		}
 	}
-	return callstate;
+	return (switch_call_cause_t) callstate;
 }
 
 
@@ -1923,7 +1923,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 
 	switch_mutex_unlock(channel->state_mutex);
 
-	return SWITCH_STATUS_SUCCESS;
+	return (switch_channel_state_t) SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
