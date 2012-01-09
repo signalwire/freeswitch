@@ -1014,7 +1014,6 @@ static switch_status_t parse_xml(client_t *client)
 							if (zstr(val)) {
 								val = NULL;
 							}
-							printf("WTF [%s][%s]\n", tag->name, val);
 
 							if (client->profile->perms.set_vars && 
 								(!client->profile->var_params.set_var_list || 
