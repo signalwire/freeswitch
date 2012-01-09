@@ -647,6 +647,7 @@ struct sofia_profile {
 	su_strlst_t *tls_verify_in_subjects;
 	uint32_t sip_force_expires;
 	uint32_t sip_expires_max_deviation;
+	int ireg_seconds;
 };
 
 struct private_object {

@@ -373,10 +373,14 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 			gateway_ptr->failures = 0;
 
-			if (gateway_ptr->freq > 60) {
+			if (gateway_ptr->freq >= 60) {
 				gateway_ptr->expires = now + (gateway_ptr->freq - 15);
 			} else {
-				gateway_ptr->expires = now + (gateway_ptr->freq - 2);
+				if (gateway_ptr->freq < 30 && gateway_ptr->freq >= 5) {
+					gateway_ptr->expires = now + (gateway_ptr->freq - 5);
+				} else {
+					gateway_ptr->expires = now + (gateway_ptr->freq);
+				}
 			}
 
 			gateway_ptr->state = REG_STATE_REGED;
