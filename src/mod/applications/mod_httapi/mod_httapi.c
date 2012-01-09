@@ -274,7 +274,8 @@ static switch_status_t parse_get_var(const char *tag_name, client_t *client, swi
 	const char *perm = switch_xml_attr(tag, "permanent");
 
 
-	if (switch_event_check_permission_list(client->profile->var_params.get_var_list, var)) {
+	if (client->profile->perms.get_vars && 
+		(!client->profile->var_params.get_var_list || switch_event_check_permission_list(client->profile->var_params.get_var_list, var))) {
 		const char *vval = switch_channel_get_variable(client->channel, var);
 		if (vval) {
 			switch_event_add_header_string(perm ? client->params : client->one_time_params, SWITCH_STACK_BOTTOM, var, vval);
@@ -1008,7 +1009,9 @@ static switch_status_t parse_xml(client_t *client)
 							if (zstr(val)) {
 								val = NULL;
 							}
-							if (switch_event_check_permission_list(client->profile->var_params.set_var_list, tag->name)) {
+							if (client->profile->perms.set_vars && 
+								(!client->profile->var_params.set_var_list || 
+								 switch_event_check_permission_list(client->profile->var_params.set_var_list, tag->name))) {
 								switch_channel_set_variable(client->channel, tag->name, val);
 							} else {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "variable %s permission denied!\n", tag->name);
