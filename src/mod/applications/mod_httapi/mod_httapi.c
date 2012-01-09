@@ -283,7 +283,7 @@ static switch_status_t parse_get_var(const char *tag_name, client_t *client, swi
 		(!client->profile->var_params.get_var_list || switch_event_check_permission_list(client->profile->var_params.get_var_list, var))) {
 		const char *vval = switch_channel_get_variable(client->channel, var);
 		if (vval) {
-			switch_event_add_header_string(perm ? client->params : client->one_time_params, SWITCH_STACK_BOTTOM, var, vval);
+			switch_event_add_header_string(switch_true(perm) ? client->params : client->one_time_params, SWITCH_STACK_BOTTOM, var, vval);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "variable %s permission denied!\n", var);
