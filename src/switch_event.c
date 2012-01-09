@@ -1981,7 +1981,7 @@ if ((dp = realloc(data, olen))) {\
     memset(c, 0, olen - cpos);\
  }}                           \
 
-SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const char *in)
+SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, const char *in, switch_event_t *var_list, switch_event_t *api_list)
 {
 	char *p, *c = NULL;
 	char *data, *indup, *endof_indup;
@@ -2121,7 +2121,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 					char *ptr;
 					int idx = -1;
 					
-					if ((expanded = switch_event_expand_headers(event, (char *) vname)) == vname) {
+					if ((expanded = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list)) == vname) {
 						expanded = NULL;
 					} else {
 						vname = expanded;
@@ -2145,6 +2145,11 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 						if ((gvar = switch_core_get_variable_dup(vname))) {
 							sub_val = gvar;
 						}
+
+						if (var_list && !switch_event_check_permission_list(var_list, vname)) {
+							sub_val = "INVALID";
+						}
+
 					}
 
 					if (offset || ooffset) {
@@ -2175,23 +2180,28 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 					if (stream.data) {
 						char *expanded_vname = NULL;
 
-						if ((expanded_vname = switch_event_expand_headers(event, (char *) vname)) == vname) {
+						if ((expanded_vname = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list)) == vname) {
 							expanded_vname = NULL;
 						} else {
 							vname = expanded_vname;
 						}
 
-						if ((expanded = switch_event_expand_headers(event, vval)) == vval) {
+						if ((expanded = switch_event_expand_headers_check(event, vval, var_list, api_list)) == vval) {
 							expanded = NULL;
 						} else {
 							vval = expanded;
 						}
 
-						if (switch_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-							func_val = stream.data;
-							sub_val = func_val;
+						if (api_list && !switch_event_check_permission_list(api_list, vname)) {
+							func_val = "INVALID";
+							sub_val = "INVALID";
 						} else {
-							free(stream.data);
+							if (switch_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+								func_val = stream.data;
+								sub_val = func_val;
+							} else {
+								free(stream.data);
+							}
 						}
 
 						switch_safe_free(expanded);
@@ -2329,6 +2339,32 @@ SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, co
 
 	return stream.data;
 }
+
+SWITCH_DECLARE(int) switch_event_check_permission_list(switch_event_t *list, const char *name)
+{
+	const char *v;
+	int r = 0;
+	int default_allow = switch_test_flag(list, EF_DEFAULT_ALLOW);
+
+	if (!list->headers) {
+		return default_allow;
+	}
+
+	if ((v = switch_event_get_header(list, name))) {
+		if (*v == 'd') {
+			r = 0;
+		} else {
+			r = 1;
+		}
+	} else {
+		r = default_allow;
+	}
+
+	return r;	
+}
+
+
+
 
 /* For Emacs:
  * Local Variables:

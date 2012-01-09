@@ -38,6 +38,7 @@ SWITCH_MODULE_DEFINITION(mod_httapi, mod_httapi_load, mod_httapi_shutdown, NULL)
 typedef struct profile_perms_s {
 	switch_byte_t set_params;
 	switch_byte_t set_vars;
+	switch_byte_t get_vars;
 	switch_byte_t extended_data;
 	switch_byte_t execute_apps;
 	switch_byte_t expand_vars;
@@ -98,6 +99,14 @@ typedef struct client_profile_s {
 		switch_event_t *app_list;
 		int default_allow;
 	} dial_params;
+
+	struct {
+		switch_event_t *expand_var_list;
+		switch_event_t *set_var_list;
+		switch_event_t *get_var_list;
+		switch_event_t *api_list;
+		int default_allow;
+	} var_params;
 
 } client_profile_t;
 
@@ -257,6 +266,26 @@ static void console_clean_log(const char *level_str, const char *msg)
 		}
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, level, "%s", switch_str_nil(msg));
+}
+
+static switch_status_t parse_get_var(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
+{
+	const char *var = switch_xml_attr(tag, "name");
+	const char *perm = switch_xml_attr(tag, "permanent");
+
+
+	if (switch_event_check_permission_list(client->profile->var_params.get_var_list, var)) {
+		const char *vval = switch_channel_get_variable(client->channel, var);
+		if (vval) {
+			switch_event_add_header_string(perm ? client->params : client->one_time_params, SWITCH_STACK_BOTTOM, var, vval);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "variable %s permission denied!\n", var);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+	
 }
 
 static switch_status_t parse_continue(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
@@ -648,29 +677,11 @@ static switch_status_t parse_sms(const char *tag_name, client_t *client, switch_
 
 static int check_app_perm(client_t *client, const char *app_name)
 {
-	const char *v;
-	int r = 0;
-
 	if (!client->profile->perms.execute_apps) {
 		return 0;
 	}
 
-	if (!client->profile->dial_params.app_list) {
-		return 1;
-	}
-
-	if ((v = switch_event_get_header(client->profile->dial_params.app_list, app_name))) {
-		if (*v == 'd') {
-			r = 0;
-		} else {
-			r = 1;
-		}
-	} else {
-		r = client->profile->dial_params.default_allow;
-	}
-	
-
-	return r;
+	return switch_event_check_permission_list(client->profile->dial_params.app_list, app_name);
 }
 
 static switch_status_t parse_execute(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
@@ -997,7 +1008,11 @@ static switch_status_t parse_xml(client_t *client)
 							if (zstr(val)) {
 								val = NULL;
 							}
-							switch_channel_set_variable(client->channel, tag->name, val);
+							if (switch_event_check_permission_list(client->profile->var_params.set_var_list, tag->name)) {
+								switch_channel_set_variable(client->channel, tag->name, val);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "variable %s permission denied!\n", tag->name);
+							}
 						}
 						tag = tag->sibling;
 					}
@@ -1019,7 +1034,8 @@ static switch_status_t parse_xml(client_t *client)
 							if (tag->txt && client->profile->perms.expand_vars) {
 								switch_channel_get_variables(client->channel, &templ_data);
 								switch_event_merge(templ_data, client->params);
-								expanded = switch_event_expand_headers(templ_data, tag->txt);
+								expanded = switch_event_expand_headers_check(templ_data, tag->txt, 
+																			 client->profile->var_params.expand_var_list, client->profile->var_params.api_list);
 								switch_event_destroy(&templ_data);
 							}
 
@@ -1639,6 +1655,60 @@ static switch_status_t do_config(void)
 					profile->perms.set_params = switch_true(val);
 				} else if (!strcasecmp(var, "set-vars")) {
 					profile->perms.set_vars = switch_true(val);
+
+					if (profile->perms.set_vars) {
+						switch_xml_t x_list, x_var;
+						if ((x_list = switch_xml_child(param, "variable-list"))) {
+							char *var = (char *) switch_xml_attr_soft(param, "default");
+							
+							profile->var_params.default_allow = (var && !strcasecmp(var, "allow"));
+							switch_event_create(&profile->var_params.set_var_list, SWITCH_EVENT_CLONE);
+							profile->var_params.set_var_list->flags |= EF_UNIQ_HEADERS;
+							if (profile->var_params.default_allow) {
+								profile->var_params.set_var_list->flags |= EF_DEFAULT_ALLOW;
+							}
+
+
+							for (x_var = switch_xml_child(x_list, "variable"); x_var; x_var = x_var->next) {
+								const char *name = switch_xml_attr(x_var, "name");
+								const char *type = switch_xml_attr(x_var, "type");
+
+								if (zstr(type)) type = profile->var_params.default_allow ? "deny" : "allow";
+
+								if (name) {
+									switch_event_add_header_string(profile->var_params.set_var_list, SWITCH_STACK_BOTTOM, name, type);
+								}
+							}
+						}
+					}
+				} else if (!strcasecmp(var, "get-vars")) {
+					profile->perms.get_vars = switch_true(val);
+
+					if (profile->perms.get_vars) {
+						switch_xml_t x_list, x_var;
+						if ((x_list = switch_xml_child(param, "variable-list"))) {
+							char *var = (char *) switch_xml_attr_soft(param, "default");
+							
+							profile->var_params.default_allow = (var && !strcasecmp(var, "allow"));
+							switch_event_create(&profile->var_params.get_var_list, SWITCH_EVENT_CLONE);
+							profile->var_params.get_var_list->flags |= EF_UNIQ_HEADERS;
+							if (profile->var_params.default_allow) {
+								profile->var_params.get_var_list->flags |= EF_DEFAULT_ALLOW;
+							}
+
+
+							for (x_var = switch_xml_child(x_list, "variable"); x_var; x_var = x_var->next) {
+								const char *name = switch_xml_attr(x_var, "name");
+								const char *type = switch_xml_attr(x_var, "type");
+
+								if (zstr(type)) type = profile->var_params.default_allow ? "deny" : "allow";
+
+								if (name) {
+									switch_event_add_header_string(profile->var_params.get_var_list, SWITCH_STACK_BOTTOM, name, type);
+								}
+							}
+						}
+					}
 				} else if (!strcasecmp(var, "extended-data")) {
 					profile->perms.extended_data = switch_true(val);
 				} else if (!strcasecmp(var, "execute-apps")) {
@@ -1652,6 +1722,10 @@ static switch_status_t do_config(void)
 							profile->dial_params.default_allow = (var && !strcasecmp(var, "allow"));
 							switch_event_create(&profile->dial_params.app_list, SWITCH_EVENT_CLONE);
 							profile->dial_params.app_list->flags |= EF_UNIQ_HEADERS;
+							if (profile->dial_params.default_allow) {
+								profile->dial_params.app_list->flags |= EF_DEFAULT_ALLOW;
+							}
+
 
 							for (x_app = switch_xml_child(x_list, "application"); x_app; x_app = x_app->next) {
 								const char *name = switch_xml_attr(x_app, "name");
@@ -1668,6 +1742,56 @@ static switch_status_t do_config(void)
 					
 				} else if (!strcasecmp(var, "expand-vars")) {
 					profile->perms.expand_vars = switch_true(val);
+
+					if (profile->perms.expand_vars) {
+						switch_xml_t x_list, x_var, x_api;
+						if ((x_list = switch_xml_child(param, "variable-list"))) {
+							char *var = (char *) switch_xml_attr_soft(param, "default");
+							
+							profile->var_params.default_allow = (var && !strcasecmp(var, "allow"));
+							switch_event_create(&profile->var_params.expand_var_list, SWITCH_EVENT_CLONE);
+							profile->var_params.expand_var_list->flags |= EF_UNIQ_HEADERS;
+							if (profile->var_params.default_allow) {
+								profile->var_params.expand_var_list->flags |= EF_DEFAULT_ALLOW;
+							}
+
+
+							for (x_var = switch_xml_child(x_list, "variable"); x_var; x_var = x_var->next) {
+								const char *name = switch_xml_attr(x_var, "name");
+								const char *type = switch_xml_attr(x_var, "type");
+
+								if (zstr(type)) type = profile->var_params.default_allow ? "deny" : "allow";
+
+								if (name) {
+									switch_event_add_header_string(profile->var_params.expand_var_list, SWITCH_STACK_BOTTOM, name, type);
+								}
+							}
+						}
+
+						if ((x_list = switch_xml_child(param, "api-list"))) {
+							char *api = (char *) switch_xml_attr_soft(param, "default");
+							
+							profile->var_params.default_allow = (api && !strcasecmp(api, "allow"));
+							switch_event_create(&profile->var_params.api_list, SWITCH_EVENT_CLONE);
+							profile->var_params.api_list->flags |= EF_UNIQ_HEADERS;
+							if (profile->var_params.default_allow) {
+								profile->var_params.api_list->flags |= EF_DEFAULT_ALLOW;
+							}
+
+
+							for (x_api = switch_xml_child(x_list, "api"); x_api; x_api = x_api->next) {
+								const char *name = switch_xml_attr(x_api, "name");
+								const char *type = switch_xml_attr(x_api, "type");
+
+								if (zstr(type)) type = profile->var_params.default_allow ? "deny" : "allow";
+
+								if (name) {
+									switch_event_add_header_string(profile->var_params.api_list, SWITCH_STACK_BOTTOM, name, type);
+								}
+							}
+						}
+					}
+
 				} else if (!strcasecmp(var, "dial")) {
 					profile->perms.dial.enabled = switch_true(val);
 				} else if (!strcasecmp(var, "dial-set-context")) {
@@ -2465,6 +2589,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	bind_parser("break", parse_break);
 	bind_parser("log", parse_log);
 	bind_parser("continue", parse_continue);
+	bind_parser("setVar", parse_get_var);
 
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -2498,6 +2623,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_httapi_shutdown)
 		switch_hash_this(hi, &vvar, NULL, &val);
 		profile = (client_profile_t *) val;
 		switch_event_destroy(&profile->dial_params.app_list);
+		switch_event_destroy(&profile->var_params.expand_var_list);
+		switch_event_destroy(&profile->var_params.set_var_list);
+		switch_event_destroy(&profile->var_params.get_var_list);
 	}
 
 

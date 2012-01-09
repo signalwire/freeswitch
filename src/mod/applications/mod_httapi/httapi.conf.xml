@@ -26,7 +26,26 @@
 	<!-- <permission name="all" value="true"/> -->
 	<!--<permission name="none" value="true"/> -->
 	<permission name="set-params" value="true"/>
-	<permission name="set-vars" value="false"/>
+	<permission name="set-vars" value="false">
+	  <!-- default to "deny" or "allow" -->
+	  <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
+	  <!-- 
+	  <variable-list default="deny">
+	    <variable name="caller_id_name"/>
+	    <variable name="hangup"/> 
+	  </variable-list>
+	  -->
+	</permission>
+	<permission name="get-vars" value="false">
+	  <!-- default to "deny" or "allow" -->
+	  <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
+	  <!-- 
+	  <variable-list default="deny">
+	    <variable name="caller_id_name"/>
+	    <variable name="hangup"/> 
+	  </variable-list>
+	  -->
+	</permission>
 	<permission name="extended-data" value="false"/>
 	<permission name="execute-apps" value="true">
 	  <!-- default to "deny" or "allow" -->
@@ -36,7 +55,21 @@
 	    <application name="hangup"/>
 	  </application-list>
 	</permission>
-	<permission name="expand-vars-in-tag-body" value="false"/>
+	<permission name="expand-vars-in-tag-body" value="false">
+	  <!-- default to "deny" or "allow" -->
+	  <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
+	  <!-- 
+	  <variable-list default="deny">
+	    <variable name="caller_id_name"/>
+	    <variable name="hangup"/> 
+	  </variable-list>
+
+	  <api-list default="deny">
+	    <api name="expr"/>
+	    <api name="lua"/> 
+	  </api-list>
+	  -->
+	</permission>
 	<permission name="dial" value="true"/>
 	<permission name="dial-set-context" value="false"/>
 	<permission name="dial-set-dialplan" value="false"/>
