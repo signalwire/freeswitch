@@ -245,7 +245,7 @@ static switch_status_t parse_voicemail(const char *tag_name, client_t *client, s
 	const char *auth = switch_xml_attr(tag, "auth-only");
 	const char *profile = switch_xml_attr(tag, "profile");
 	const char *domain = switch_xml_attr(tag, "domain");
-	const char *id = switch_xml_attr(tag, "id");
+	const char *id = switch_xml_attr_soft(tag, "id");
 	char *ddom = NULL;
 	char *str;
 	switch_status_t status;
