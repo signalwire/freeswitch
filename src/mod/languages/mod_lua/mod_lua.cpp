@@ -621,7 +621,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 
 	SWITCH_ADD_API(api_interface, "luarun", "run a script", luarun_api_function, "<script>");
 	SWITCH_ADD_API(api_interface, "lua", "run a script as an api function", lua_api_function, "<script>");
-	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", 
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_DIALPLAN(dp_interface, "LUA", lua_dialplan_hunt);
 
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "lua", "execute a lua script", "execute a lua script", lua_chat_function, "<script>", SCAF_NONE);
