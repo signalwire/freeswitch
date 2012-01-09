@@ -732,6 +732,8 @@ static switch_status_t parse_record_call(const char *tag_name, client_t *client,
 	const char *limit_ = switch_xml_attr(tag, "limit");
 	const char *name = switch_xml_attr(tag, "name");
 	const char *action = switch_xml_attr(tag, "action");
+	const char *record_file;
+
 	int limit = 0;
 
 	if (client->record.file) {
@@ -740,10 +742,15 @@ static switch_status_t parse_record_call(const char *tag_name, client_t *client,
 
 	if (zstr(name)) name = "recorded_file";
 
-	client->record.action = (char *) action;
-	client->record.name = (char *)name;
-	client->record.file = switch_core_session_sprintf(client->session, "%s%s%s.wav", 
-													  SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(client->session));
+	if (!strncasecmp(name, "http://", 7)) {
+		record_file = name;
+	} else {
+		client->record.action = (char *) action;
+		client->record.name = (char *)name;
+		client->record.file = switch_core_session_sprintf(client->session, "%s%s%s.wav", 
+														  SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(client->session));
+		record_file = client->record.file;
+	}
 	
 	if (limit_) {
 		limit = atoi(limit_);
@@ -751,7 +758,7 @@ static switch_status_t parse_record_call(const char *tag_name, client_t *client,
 	}
 	
 
-	switch_ivr_record_session(client->session, client->record.file, limit, NULL);
+	switch_ivr_record_session(client->session, (char *)record_file, limit, NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -783,6 +790,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	char *p, *ext = "wav";
 	switch_xml_t bind;
 	action_binding_t *top_action_binding = NULL;
+	int http = 0;
 
 	switch_uuid_str(uuid_str, sizeof(uuid_str));
 
@@ -810,9 +818,14 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 			*p = '_';
 		}
 	}
-		
-	tmp_record_path = switch_core_sprintf(client->pool, "%s%s%s_%s.%s", 
-										  SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str, fname, ext);
+
+	if (!strncasecmp(fname, "http://", 7)) {
+		tmp_record_path = fname;
+		http = 1;
+	} else {
+		tmp_record_path = switch_core_sprintf(client->pool, "%s%s%s_%s.%s", 
+											  SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str, fname, ext);
+	}
 
 	if ((v = switch_xml_attr(tag, "limit"))) {
 		if ((rtmp = atoi(v)) > -1) {
@@ -912,7 +925,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 		switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "url", sub_action);
 	}
 
-	if (!zstr(tmp_record_path) && switch_file_exists(tmp_record_path, client->pool) == SWITCH_STATUS_SUCCESS) {
+	if (!http && !zstr(tmp_record_path) && switch_file_exists(tmp_record_path, client->pool) == SWITCH_STATUS_SUCCESS) {
 		char *key = switch_core_sprintf(client->pool, "attach_file:%s:%s.%s", name, fname, ext);
 		switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, key, tmp_record_path);
 	}
