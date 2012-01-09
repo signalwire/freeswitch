@@ -466,7 +466,7 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
 ##
 yaml-files:
 	@echo `mkdir $(DESTDIR)$(sysconfdir)/yaml 2>/dev/null`
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/yaml/*.yaml $(DESTDIR)$(sysconfdir)/yaml
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/default/yaml/*.yaml $(DESTDIR)$(sysconfdir)/yaml
 
 vm-sync:
 	test -d $(DESTDIR)$(sysconfdir) || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)
@@ -474,19 +474,21 @@ vm-sync:
 	test -d $(DESTDIR)$(sysconfdir)/lang/en || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en
 	test -d $(DESTDIR)$(sysconfdir)/lang/en/demo || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en/demo
 	test -d $(DESTDIR)$(sysconfdir)/lang/en/vm || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/lang/en/vm
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/lang/en/vm/* $(DESTDIR)$(sysconfdir)/lang/en/vm
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/lang/en/demo/* $(DESTDIR)$(sysconfdir)/lang/en/demo
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/default/lang/en/vm/* $(DESTDIR)$(sysconfdir)/lang/en/vm
+	$(INSTALL) -m 644 $(switch_srcdir)/conf/default/lang/en/demo/* $(DESTDIR)$(sysconfdir)/lang/en/demo
 
-samples-conf:
+config-%:
 	test -d $(DESTDIR)$(sysconfdir) || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)
-	for conffile in `cd $(switch_srcdir)/conf && find . -name \*.xml && find . -name \*.conf && find . -name \*.tpl  && find . -name \*.ttml && find . -name mime.types` ; do \
+	for conffile in `cd $(switch_srcdir)/conf/$* && find . -name \*.xml && find . -name \*.conf && find . -name \*.tpl  && find . -name \*.ttml && find . -name mime.types` ; do \
 		dir=`echo $$conffile | sed -e 's|^\.||' | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$conffile | sed -e 's|^\.||' | sed -e 's|^.*/||'`; \
 		test -d $(DESTDIR)$(sysconfdir)$$dir || $(mkinstalldirs) $(DESTDIR)$(sysconfdir)$$dir ; \
 		test -f $(DESTDIR)$(sysconfdir)$$dir/$$filename || \
 		test -f $(DESTDIR)$(sysconfdir)$$dir/$$filename.noload || \
-			$(INSTALL) -m 644 $(switch_srcdir)/conf/$$dir/$$filename $(DESTDIR)$(sysconfdir)$$dir; \
+			$(INSTALL) -m 644 $(switch_srcdir)/conf/$*/$$dir/$$filename $(DESTDIR)$(sysconfdir)$$dir; \
 	done
+
+samples-conf: config-vanilla
 
 samples-htdocs: 
 	test -d $(DESTDIR)$(htdocsdir) || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)
@@ -496,6 +498,7 @@ samples-htdocs:
 		test -d $(DESTDIR)$(htdocsdir)$$dir || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)$$dir ; \
 		test -f $(DESTDIR)$(htdocsdir)$$dir/$$filename || $(INSTALL) -m 644 $(switch_srcdir)/htdocs/$$dir/$$filename $(DESTDIR)$(htdocsdir)$$dir 2>/dev/null;  \
 	done
+
 
 samples: samples-conf samples-htdocs
 
