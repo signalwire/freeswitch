@@ -999,7 +999,7 @@ static switch_status_t parse_xml(client_t *client)
 							}
 							switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, tag->name, val);
 						}
-						tag = tag->sibling;
+						tag = tag->ordered;
 					}
 				}
 			}
@@ -1014,6 +1014,8 @@ static switch_status_t parse_xml(client_t *client)
 							if (zstr(val)) {
 								val = NULL;
 							}
+							printf("WTF [%s][%s]\n", tag->name, val);
+
 							if (client->profile->perms.set_vars && 
 								(!client->profile->var_params.set_var_list || 
 								 switch_event_check_permission_list(client->profile->var_params.set_var_list, tag->name))) {
@@ -1022,7 +1024,7 @@ static switch_status_t parse_xml(client_t *client)
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "variable %s permission denied!\n", tag->name);
 							}
 						}
-						tag = tag->sibling;
+						tag = tag->ordered;
 					}
 				}
 			}

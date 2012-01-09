@@ -18,10 +18,10 @@ The format is roughly as described below (We could use a DTD maybe).
 
 <document type="xml/freeswitch-httapi">
   <params>
-    <param name="" value=""/>
+   <someparam>someval</someparam>
   </params>
   <variables>
-    <variable name="" value=""/>
+   <somevar>someval</somevar>
   </variables>
   <work>
   <...>
