@@ -273,6 +273,11 @@ static switch_status_t parse_get_var(const char *tag_name, client_t *client, swi
 	const char *var = switch_xml_attr(tag, "name");
 	const char *perm = switch_xml_attr(tag, "permanent");
 
+	if (zstr(var)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing name attribute!");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 
 	if (client->profile->perms.get_vars && 
 		(!client->profile->var_params.get_var_list || switch_event_check_permission_list(client->profile->var_params.get_var_list, var))) {
@@ -692,31 +697,31 @@ static switch_status_t parse_execute(const char *tag_name, client_t *client, swi
 
 	if (zstr(data)) data = body;
 
+	if (zstr(app_name)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid app\n");
+		switch_channel_hangup(client->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (!check_app_perm(client, app_name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Permission Denied!\n");
 		switch_channel_hangup(client->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (zstr(app_name)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid app\n");
-		switch_channel_hangup(client->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return SWITCH_STATUS_FALSE;
-	} else {
-		if (!client->profile->perms.expand_vars) {
-			const char *p;
-
-			for(p = data; p && *p; p++) {
-				if (*p == '$') {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Expand Variables: Permission Denied!\n");
-					switch_channel_hangup(client->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					return SWITCH_STATUS_FALSE;
-				}
+	if (!client->profile->perms.expand_vars) {
+		const char *p;
+		
+		for(p = data; p && *p; p++) {
+			if (*p == '$') {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Expand Variables: Permission Denied!\n");
+				switch_channel_hangup(client->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				return SWITCH_STATUS_FALSE;
 			}
 		}
-
-		switch_core_session_execute_application(client->session, app_name, data);
 	}
+
+	switch_core_session_execute_application(client->session, app_name, data);
 
 	return SWITCH_STATUS_SUCCESS;
 }
