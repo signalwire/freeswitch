@@ -266,6 +266,7 @@ static switch_status_t parse_voicemail(const char *tag_name, client_t *client, s
 
 	if (switch_true(auth)) {
 		auth = "auth_only";
+		check = "check";
 	} else {
 		auth = "";
 	}
