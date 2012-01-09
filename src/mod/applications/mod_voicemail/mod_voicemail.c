@@ -2517,17 +2517,18 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 		status = switch_ivr_phrase_macro(session, VM_GOODBYE_MACRO, NULL, NULL, NULL);
 	}
 
-	if (x_user) {
-		switch_xml_free(x_user);
-		x_user = NULL;
-	}
-
 	if (auth_only) {
 		if (authed) {
 			switch_channel_set_variable(channel, "user_pin_authenticated", "true");
+			if (!zstr(myid)) switch_ivr_set_user(session, myid);
 		} else {
 			switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
 		}
+	}
+
+	if (x_user) {
+		switch_xml_free(x_user);
+		x_user = NULL;
 	}
 
 }
