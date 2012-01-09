@@ -2642,7 +2642,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	bind_parser("break", parse_break);
 	bind_parser("log", parse_log);
 	bind_parser("continue", parse_continue);
-	bind_parser("setVar", parse_get_var);
+	bind_parser("getVariable", parse_get_var);
 	bind_parser("voicemail", parse_voicemail);
 
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
