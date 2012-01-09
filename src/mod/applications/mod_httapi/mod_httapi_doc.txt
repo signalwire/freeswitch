@@ -258,6 +258,19 @@ temp-action	    : Change url to submit to. just for the next loop.
 permanent	    : Add as a permanent param or just once.
 
 
+<voicemail action temp-action check auth-only profile domain id/>
+                    : Get a Channel variable (depends on permissions)
+
+ATTRS:
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
+check		    : true to check (omit to leave)
+auth-only	    : authenticate only and move on
+profile		    : profile name to use (omit for "default")
+domain		    : domain to use (omit for global domain variable)
+id		    : id to use (omit to prompt for id)
+
+
 
 
 

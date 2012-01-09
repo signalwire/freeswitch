@@ -238,6 +238,49 @@ static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t
 	return SWITCH_STATUS_BREAK;
 }
 
+
+static switch_status_t parse_voicemail(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
+{
+	const char *check = switch_xml_attr(tag, "check");
+	const char *auth = switch_xml_attr(tag, "auth-only");
+	const char *profile = switch_xml_attr(tag, "profile");
+	const char *domain = switch_xml_attr(tag, "domain");
+	const char *id = switch_xml_attr(tag, "id");
+	char *ddom = NULL;
+	char *str;
+	switch_status_t status;
+
+	if (zstr(profile)) profile = "default";
+
+	if (zstr(domain)) {
+		if ((ddom = switch_core_get_variable_dup("domain"))) {
+			domain = ddom;
+		}
+	}
+
+	if (switch_true(check)) {
+		check = "check";
+	} else {
+		check = "";
+	}
+
+	if (switch_true(auth)) {
+		auth = "auth_only";
+	} else {
+		auth = "";
+	}
+
+	str = switch_core_session_sprintf(client->session, "%s %s %s %s %s", check, auth, profile, domain, id);
+
+	while(*str == ' ') str++;
+
+	status = switch_core_session_execute_application(client->session, "voicemail", str);
+
+	switch_safe_free(ddom);
+
+	return status;
+}
+
 static switch_status_t parse_break(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
 {
 	return SWITCH_STATUS_FALSE;
@@ -2599,6 +2642,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	bind_parser("log", parse_log);
 	bind_parser("continue", parse_continue);
 	bind_parser("setVar", parse_get_var);
+	bind_parser("voicemail", parse_voicemail);
 
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
