@@ -5894,7 +5894,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   mwi_user         VARCHAR(255),\n"
 		"   mwi_host         VARCHAR(255),\n"
 		"   orig_server_host VARCHAR(255),\n"
-		"   orig_hostname    VARCHAR(255)\n"
+		"   orig_hostname    VARCHAR(255),\n"
+		"   sub_host         VARCHAR(255)\n"
 		");\n";
 
 	char recovery_sql[] =
@@ -6011,6 +6012,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"create index sr_call_id on sip_registrations (call_id)",
 		"create index sr_sip_user on sip_registrations (sip_user)",
 		"create index sr_sip_host on sip_registrations (sip_host)",
+		"create index sr_sub_host on sip_registrations (sub_host)",
 		"create index sr_mwi_user on sip_registrations (mwi_user)",
 		"create index sr_mwi_host on sip_registrations (mwi_host)",
 		"create index sr_profile_name on sip_registrations (profile_name)",
@@ -6094,7 +6096,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 							  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
 							  "and network_ip like '%%' and network_port like '%%' and sip_username "
 							  "like '%%' and mwi_user  like '%%' and mwi_host like '%%' "
-							  "and orig_server_host like '%%' and orig_hostname like '%%'", mod_sofia_globals.hostname);
+							  "and orig_server_host like '%%' and orig_hostname like '%%' and sub_host like '%%'", mod_sofia_globals.hostname);
 
 
 	switch_cache_db_test_reactive(dbh, test_sql, "drop table sip_registrations", reg_sql);
