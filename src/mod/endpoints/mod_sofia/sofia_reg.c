@@ -278,6 +278,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
 	sofia_gateway_t *check, *gateway_ptr, *last = NULL;
 	switch_event_t *event;
+	int delta = 0;
 
 	switch_mutex_lock(profile->gw_mutex);
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
@@ -373,15 +374,17 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 			gateway_ptr->failures = 0;
 
-			if (gateway_ptr->freq >= 60) {
-				gateway_ptr->expires = now + (gateway_ptr->freq - 15);
+			if (gateway_ptr->freq > 30) {
+				delta = (gateway_ptr->freq - 15);
 			} else {
-				if (gateway_ptr->freq < 30 && gateway_ptr->freq >= 5) {
-					gateway_ptr->expires = now + (gateway_ptr->freq - 5);
-				} else {
-					gateway_ptr->expires = now + (gateway_ptr->freq);
-				}
+				delta = (gateway_ptr->freq / 2);
 			}
+
+			if (delta < 1) {
+				delta = 1;
+			}
+			
+			gateway_ptr->expires = now + delta;
 
 			gateway_ptr->state = REG_STATE_REGED;
 			gateway_ptr->status = SOFIA_GATEWAY_UP;
@@ -390,9 +393,9 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		case REG_STATE_UNREGISTER:
 			sofia_reg_kill_reg(gateway_ptr);
 			gateway_ptr->state = REG_STATE_NOREG;
+			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 			break;
 		case REG_STATE_UNREGED:
-			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 			gateway_ptr->retry = 0;
 
 			if (!gateway_ptr->nh) {
@@ -423,6 +426,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 							 NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
 				gateway_ptr->retry = now + gateway_ptr->retry_seconds;
 			} else {
+				gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 				nua_unregister(gateway_ptr->nh,
 							   NUTAG_URL(gateway_ptr->register_url),
 							   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
