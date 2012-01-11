@@ -1383,7 +1383,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 	switch_assert(channel);
 	
 	for (;;) {
-		if ((channel->state == channel->running_state && channel->running_state == want_state) ||
+		if ((channel->state < CS_HANGUP && channel->state == channel->running_state && channel->running_state == want_state) ||
 			(other_channel && switch_channel_down_nosig(other_channel)) || switch_channel_down_nosig(channel)) {
 			break;
 		}
