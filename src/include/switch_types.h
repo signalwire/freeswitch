@@ -785,6 +785,12 @@ typedef struct {
 #pragma pack(pop, r1)
 #endif
 
+typedef struct audio_buffer_header_s {
+	uint32_t ts;
+	uint32_t len;
+} audio_buffer_header_t;
+
+
 /*!
   \enum switch_priority_t
   \brief Priority Indication

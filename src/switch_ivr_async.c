@@ -1091,7 +1091,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		}
 
 		break;
-	case SWITCH_ABC_TYPE_READ:
+	case SWITCH_ABC_TYPE_READ_PING:
 
 		if (rh->fh) {
 			switch_size_t len;

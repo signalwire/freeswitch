@@ -484,8 +484,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				}
 
 				if (bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
+					audio_buffer_header_t h = { 0 };
+
 					switch_mutex_lock(bp->read_mutex);
-					switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
+					h.ts = bp->timer.samplecount;
+					h.len = read_frame->datalen;
+					switch_buffer_write(bp->raw_read_buffer, &h, sizeof(h));
+					switch_buffer_write(bp->raw_read_buffer, read_frame->data, h.len);
+
 					if (bp->callback) {
 						ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ);
 					}
@@ -644,6 +650,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (switch_test_flag(bp, SMBF_PRUNE)) {
 					prune++;
 					continue;
+				}
+
+				if (bp->ready && bp->timer.timer_interface) {
+					switch_core_timer_sync(&bp->timer);
 				}
 
 				if (bp->ready && switch_test_flag(bp, SMBF_READ_PING)) {
@@ -970,10 +980,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			}
 
 			if (switch_test_flag(bp, SMBF_WRITE_STREAM)) {
-
+				audio_buffer_header_t h = { 0 };
+				
 				switch_mutex_lock(bp->write_mutex);
-				switch_buffer_write(bp->raw_write_buffer, write_frame->data, write_frame->datalen);
+				h.ts = bp->timer.samplecount;
+				h.len = write_frame->datalen;
+				
+				switch_buffer_write(bp->raw_write_buffer, &h, sizeof(h));
+				switch_buffer_write(bp->raw_write_buffer, write_frame->data, h.len);
 				switch_mutex_unlock(bp->write_mutex);
+				
 				if (bp->callback) {
 					ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE);
 				}
