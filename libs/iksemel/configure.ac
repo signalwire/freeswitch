@@ -52,6 +52,9 @@ AC_CHECK_FUNCS(getaddrinfo)
 
 #AX_PATH_LIBGNUTLS(,AC_DEFINE(HAVE_GNUTLS,,"Use libgnutls"))
 
+m4_include([openssl.m4])
+SAC_OPENSSL
+
 dnl Check -Wall flag of GCC
 if test "x$GCC" = "xyes"; then
   if test -z "`echo "$CFLAGS" | grep "\-Wall" 2> /dev/null`" ; then
