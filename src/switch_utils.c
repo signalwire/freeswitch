@@ -627,7 +627,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		switch_safe_free(dupfile);
 	}
 
-	switch_snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int) switch_epoch_time_now(NULL), rand() & 0xffff);
+	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int) switch_epoch_time_now(NULL), rand() & 0xffff);
 
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
 		if (file) {
