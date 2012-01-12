@@ -858,6 +858,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		proto = SOFIA_CHAT_PROTO;
 	}
 
+	//DUMP_EVENT(event);
 
 	if (rpid && !strcasecmp(rpid, "n/a")) {
 		rpid = NULL;
@@ -878,8 +879,9 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	if (event->event_id == SWITCH_EVENT_ROSTER) {
 		struct presence_helper helper = { 0 };
 		
-		if (!mod_sofia_globals.profile_hash)
+		if (!mod_sofia_globals.profile_hash) {
 			return;
+		}
 
 		if (from) {
 			sql = switch_mprintf("select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
@@ -1358,6 +1360,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 	char to_buf[128] = "";
 	switch_event_header_t *hp;
 	char *free_me = NULL;
+	int do_event = 1;
 
 	if (argc > 5) {
 		uuid = argv[5];
@@ -1383,6 +1386,13 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 		}
 	}
 
+	if (!zstr(uuid) && !switch_ivr_uuid_exists(uuid)) {
+		if (mod_sofia_globals.debug_presence > 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s SKIPPING NOT FOUND UUID %s\n", profile->name, uuid);
+		}
+		do_event = 0;
+	}
+
 	if (zstr(proto)) {
 		proto = NULL;
 	}
@@ -1391,7 +1401,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s PRESENCE_PROBE %s@%s\n", profile->name, user, host);
 	}
 
-	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+	if (do_event && switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", proto ? proto : SOFIA_CHAT_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
 
@@ -1437,9 +1447,14 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 		switch_event_fire(&event);
 	}
 
+
+
 	switch_safe_free(free_me);
 
+
 	h->rowcount++;
+
+
 	return 0;
 }
 
@@ -1662,6 +1677,8 @@ static void send_presence_notify(sofia_profile_t *profile,
 	sip_cseq_t *cseq = NULL;
 	uint32_t callsequence;
 	uint32_t now = (uint32_t) switch_epoch_time_now(NULL);
+	const char *tp;
+	char *our_contact = profile->url, *our_contact_dup = NULL;
 
 	if (expires) {
 		long ltmp = atol(expires);
@@ -1692,12 +1709,24 @@ static void send_presence_notify(sofia_profile_t *profile,
 		switch_snprintf(sstr, sizeof(sstr), "terminated;reason=noresource");
 	}
 
-
     tmp = (char *)contact;
 	contact = sofia_glue_get_url_from_contact(tmp, 0);
 
+	if ((tp = switch_stristr("transport=", contact))) {
+		tp += 10;
+	}
+
+	if (zstr(tp)) {
+		tp = "udp";
+	}
+
 	if (remote_ip && remote_port) {
-		route = switch_mprintf("sip:%s:%s", remote_ip, remote_port);
+		route = switch_mprintf("sip:%s:%s;transport=%s", remote_ip, remote_port, tp);
+	}
+
+	if (!switch_stristr("transport=", our_contact)) {
+		our_contact_dup = switch_mprintf("<%s;transport=%s>", our_contact, tp);
+		our_contact = our_contact_dup;
 	}
 
 	if (mod_sofia_globals.debug_presence > 1) {
@@ -1708,7 +1737,7 @@ static void send_presence_notify(sofia_profile_t *profile,
 						  contact,
 						  full_to,
 						  full_from,
-						  profile->url,
+						  our_contact,
 						  call_id,
 						  expires_str,
 						  event,
@@ -1727,7 +1756,7 @@ static void send_presence_notify(sofia_profile_t *profile,
 			   NUTAG_URL(contact),
 			   SIPTAG_FROM_STR(full_to),
 			   SIPTAG_TO_STR(full_from),
-			   SIPTAG_CONTACT_STR(profile->url),
+			   SIPTAG_CONTACT_STR(our_contact),
 			   SIPTAG_CALL_ID_STR(call_id),
 			   TAG_IF(*expires_str, SIPTAG_EXPIRES_STR(expires_str)),
 			   SIPTAG_SUBSCRIPTION_STATE_STR(sstr), 
@@ -1740,6 +1769,7 @@ static void send_presence_notify(sofia_profile_t *profile,
 			   TAG_END());
 	
 	switch_safe_free(route);
+	switch_safe_free(our_contact_dup);
 	
 
 }
@@ -2138,6 +2168,12 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		char *clean_to_user = NULL;
 		char *clean_from_user = NULL;
 		int force_status = 0;
+		const char *call_state = switch_event_get_header(helper->event, "channel-state");
+
+
+		if (call_state && !strcasecmp(call_state, "cs_hangup")) {
+			astate = "hangup";
+		}
 
 		if (event_status && !strncasecmp(event_status, "hold", 4)) {
 			holding = 1;
@@ -2202,7 +2238,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 								  
 		}
 
-		//if (strcasecmp(event_status, "Registered")) {
 		if (!zstr(uuid)) {
 			if (!zstr(answer_state)) {
 				astate = answer_state;
@@ -2328,14 +2363,16 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			switch_copy_string(helper->last_uuid, uuid, sizeof(helper->last_uuid));
 		}
 
+		if (zstr(astate)) astate = "";
 
-		if (!is_dialog && (zstr(astate) || strcasecmp(astate, "hangup"))) {
+		if (!is_dialog) {
 			switch_set_string(status_line, status);
 
 			if (in) {
 				open = "open";
 
 				if (switch_false(resub)) {
+					int term;
 
 					const char *direction = switch_event_get_header(helper->event, "Caller-Direction");
 					const char *op, *what = "Ring";
@@ -2377,11 +2414,14 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 						rpid = "on-the-phone";
 						force_status = 1;
+					} else if (!strcmp(astate, "terminated")) {
+						rpid = "online";
+						dialog_rpid = "";
+						force_event_status = "Available";
+						term = 1;
 					}
-
-				
-
-					if (!strcmp(status, "hold")) {
+						
+					if (!term && !strcmp(status, "hold")) {
 						rpid = "on-the-phone";
 						if (!zstr(op)) {
 							switch_snprintf(status_line, sizeof(status_line), "Hold %s", op);
@@ -2441,7 +2481,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 		
 		pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status, &ct);
-
 	}
 
 
@@ -2454,6 +2493,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 	}
+
+	
 
 	send_presence_notify(profile, full_to, full_from, contact, expires, call_id, event, ip, port, ct, pl, NULL);
 
