@@ -658,12 +658,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 				if (bp->ready && switch_test_flag(bp, SMBF_READ_PING)) {
 					switch_mutex_lock(bp->read_mutex);
+					bp->ping_frame = *frame;
 					if (bp->callback) {
 						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_PING) == SWITCH_FALSE
 							|| (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL))) {
 							ok = SWITCH_FALSE;
 						}
 					}
+					bp->ping_frame = NULL;;
 					switch_mutex_unlock(bp->read_mutex);
 				}
 

@@ -1101,7 +1101,13 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
-			while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && !switch_test_flag((&frame), SFF_CNG)) {
+			for (;;) { 
+				switch_status_t status = switch_core_media_bug_read(bug, &frame, SWITCH_FALSE);
+
+				if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+					break;
+				}
+				
 				len = (switch_size_t) frame.datalen / 2;
 				if (len && switch_core_file_write(rh->fh, data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
@@ -1109,6 +1115,8 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 					return SWITCH_FALSE;
 				}
+
+				if (status == SWITCH_STATUS_BREAK) break;
 			}
 
 		}
@@ -1163,7 +1171,7 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 		break;
 	case SWITCH_ABC_TYPE_READ_PING:
 		if (ep->buffer) {
-			if (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_media_bug_read(bug, &frame, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 				switch_buffer_lock(ep->buffer);
 				switch_buffer_zwrite(ep->buffer, frame.data, frame.datalen);
 				switch_buffer_unlock(ep->buffer);
@@ -3465,7 +3473,7 @@ static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_READ:
 		if (sth->ah) {
-			if (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_media_bug_read(bug, &frame, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 				if (switch_core_asr_feed(sth->ah, frame.data, frame.datalen, &flags) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG, "Error Feeding Data\n");
 					return SWITCH_FALSE;
