@@ -160,7 +160,7 @@ static switch_size_t do_peek(switch_buffer_t *buffer, audio_buffer_header_t *h)
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame, switch_bool_t fill)
 {
-	switch_size_t bytes = 0, datalen = 0, ttl = 0;
+	switch_size_t bytes = 0, datalen = 0;
 	int16_t *dp, *fp;
 	uint32_t x;
 	size_t rlen = 0;
@@ -170,7 +170,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	int16_t *tp;
 	audio_buffer_header_t rh = { 0 }, wh = { 0 };
 	int do_read = 0, do_write = 0;
-	switch_size_t ur = 0, uw = 0;
 
 	switch_core_session_get_read_impl(bug->session, &read_impl);
 
@@ -195,37 +194,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 	if (switch_test_flag(bug, SMBF_READ_STREAM)) {
 		switch_mutex_lock(bug->read_mutex);
-		do_peek(bug->raw_read_buffer, &rh);
-		ur = switch_buffer_inuse(bug->raw_read_buffer);
+		do_read = !!do_peek(bug->raw_read_buffer, &rh);
 		switch_mutex_unlock(bug->read_mutex);
 	}
 
 	if (switch_test_flag(bug, SMBF_WRITE_STREAM)) {
-		switch_assert(bug->raw_write_buffer);
-		do_peek(bug->raw_write_buffer, &wh);
-		uw = switch_buffer_inuse(bug->raw_write_buffer);
+		switch_mutex_lock(bug->write_mutex);
+		do_write = !!do_peek(bug->raw_write_buffer, &wh);
 		switch_mutex_unlock(bug->write_mutex);
 	}
 	
-
-	if (ur && uw && ur > uw) {
-		do_write = 1;
-	} else if (ur && uw && uw > ur) {
-		do_read = 1;
-	} else {
-		do_read = !!ur;
-		do_write = !!uw;
-	}
-
-	if (do_read && do_write) {
-		if (rh.ts > wh.ts) {
-			do_read = 0;
-		} else if (wh.ts > rh.ts) {
-			do_write = 0;
-		}
-	} 
-	
-	if (!(do_read || do_write)) {
+	if (!(do_read && do_write)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -233,12 +212,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		switch_mutex_lock(bug->read_mutex);
 		switch_buffer_read(bug->raw_read_buffer, &rh, sizeof(rh));
 		frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer, frame->data, rh.len);
-		ttl += frame->datalen;
 		switch_mutex_unlock(bug->read_mutex);
-	} else {
-		memset(frame->data, 255, bytes);
-		frame->datalen = bytes;
-		ttl += bytes;
 	}
 
 	if (do_write) {
@@ -247,12 +221,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		switch_buffer_read(bug->raw_write_buffer, &wh, sizeof(wh));
 
 		datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, bug->data, wh.len);
-		ttl += datalen;
 		switch_mutex_unlock(bug->write_mutex);
-	} else {
-		memset(bug->data, 255, bytes);
-		datalen = bytes;
-		ttl += bytes;
 	}
 
 	tp = bug->tmp;
@@ -291,21 +260,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		memcpy(frame->data, bug->tmp, bytes * 2);
 	} else {
 		for (x = 0; x < blen; x++) {
-			int32_t z = 0;
-
+			int32_t w = 0, r = 0, z = 0;
+			
 			if (x < rlen) {
-				z += (int32_t) * (fp + x);
+				r = (int32_t) * (fp + x);
 			}
+
 			if (x < wlen) {
-				z += (int32_t) * (dp + x);
+				w = (int32_t) * (dp + x);
 			}
+			
+			z = w + r;
+
+			if (z > SWITCH_SMAX || z < SWITCH_SMIN) {
+				if (r) z += (r/2);
+				if (w) z += (w/2);
+			}
+
 			switch_normalize_to_16bit(z);
+
 			*(fp + x) = (int16_t) z / 2;
 		}
-	}
-
-	if (!ttl) {
-		switch_set_flag(frame, SFF_CNG);
 	}
 
 	frame->datalen = bytes;
