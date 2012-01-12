@@ -1285,7 +1285,7 @@ static switch_status_t httapi_sync(client_t *client)
 	char *data = NULL;
 	switch_curl_slist_t *headers = NULL;
 	char *url = NULL;
-	char *dynamic_url = NULL;
+	char *dynamic_url = NULL, *use_url = NULL;
 	const char *session_id = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int get_style_method = 0;
@@ -1294,7 +1294,8 @@ static switch_status_t httapi_sync(client_t *client)
 	switch_event_t *save_params = NULL;
 	const char *put_file;
 	FILE *fd = NULL;
-	
+	char *creds, *dup_creds = NULL;
+
 	if (client->one_time_params && client->one_time_params->headers) {
 		save_params = client->params;
 		switch_event_dup(&client->params, save_params);
@@ -1359,6 +1360,48 @@ static switch_status_t httapi_sync(client_t *client)
 		}
 	}
 
+
+	if ((use_url = strchr(dynamic_url, '@'))) {
+		char *r, *q, *p = strstr(dynamic_url, "://");
+		use_url++;
+
+		dup_creds = strdup(p+3);
+
+		if ((q = strchr(dup_creds, '@'))) *q = '\0';
+
+		q = strdup(url);
+		r = strchr(q, '@');
+		r++;
+
+		if ((p = strstr(q, "://"))) {
+			*(p+3) = '\0';
+		}
+		
+		p = switch_mprintf("%s%s", q, r);
+		free(dynamic_url);
+		dynamic_url = p;
+		free(q);
+	}
+
+
+	if ((use_url = strchr(dynamic_url, '@'))) {
+		char *q, *p = strstr(dynamic_url, "://");
+		use_url++;
+
+		dup_creds = strdup(p+3);
+		*p = '\0';
+
+		if ((q = strchr(dup_creds, '@'))) *q = '\0';
+		
+		creds = dup_creds;
+		
+		p = switch_mprintf("%s%s", p, use_url);
+		free(dynamic_url);
+		dynamic_url = p;
+	} else {
+		creds = client->profile->cred;
+	}
+
 	curl_handle = switch_curl_easy_init();
 
 	if (session_id) {
@@ -1373,9 +1416,9 @@ static switch_status_t httapi_sync(client_t *client)
 	}
 
 
-	if (!zstr(client->profile->cred)) {
+	if (!zstr(creds)) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, client->profile->auth_scheme);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_USERPWD, client->profile->cred);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_USERPWD, creds);
 	}
 
 	if (client->profile->disable100continue) {
@@ -1459,6 +1502,7 @@ static switch_status_t httapi_sync(client_t *client)
 		curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, client->profile->bind_local);
 	}
 
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "mod_httapi/1.0");
 	switch_curl_easy_perform(curl_handle);
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &client->code);
 	switch_curl_easy_cleanup(curl_handle);
@@ -1476,6 +1520,7 @@ static switch_status_t httapi_sync(client_t *client)
 	}
 
 	switch_safe_free(data);
+	switch_safe_free(dup_creds);
 
 	if (dynamic_url != url) {
 		switch_safe_free(dynamic_url);
@@ -2176,7 +2221,7 @@ static switch_status_t fetch_cache_data(const char *url, switch_event_t **header
 	client_t client = { 0 };
 	long code;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-
+	char *dup_creds = NULL, *dynamic_url = NULL, *use_url;
 	client.fd = -1;
 
 	if (save_path) {
@@ -2185,6 +2230,29 @@ static switch_status_t fetch_cache_data(const char *url, switch_event_t **header
 		}
 	}
 	
+
+	if ((use_url = strchr(url, '@'))) {
+		char *r, *q, *p = strstr(url, "://");
+		use_url++;
+
+		dup_creds = strdup(p+3);
+
+		if ((q = strchr(dup_creds, '@'))) *q = '\0';
+
+		q = strdup(url);
+		r = strchr(q, '@');
+		r++;
+
+		if ((p = strstr(q, "://"))) {
+			*(p+3) = '\0';
+		}
+		
+		p = switch_mprintf("%s%s", q, r);
+		dynamic_url = p;
+		free(q);
+		url = dynamic_url;
+	}
+
 	curl_handle = switch_curl_easy_init();
 
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
@@ -2218,6 +2286,11 @@ static switch_status_t fetch_cache_data(const char *url, switch_event_t **header
 			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &client);
 		}
 	}
+
+	if (!zstr(dup_creds)) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_USERPWD, dup_creds);
+	}
 	
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "mod_httapi/1.0");
 	switch_curl_easy_perform(curl_handle);
@@ -2249,6 +2322,9 @@ static switch_status_t fetch_cache_data(const char *url, switch_event_t **header
 		status = SWITCH_STATUS_FALSE;
 		break;
 	}
+
+	switch_safe_free(dynamic_url);
+	switch_safe_free(dup_creds);
 
 
 	return status;
