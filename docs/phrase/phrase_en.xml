@@ -494,8 +494,15 @@
       <prompt phrase="You do not have permission to perform this action." filename="ivr-not_have_permission.wav"/>
       <prompt phrase="You're doing it wrong, but I'll try to connect you anyway. (Douchebag!)" filename="ivr-youre_doing_it_wrong.wav"/>
       <prompt phrase="3... 2... 1... WE'RE ASTERISK FREE!!!" filename="ivr-were_asterisk_free.wav"/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
+      <prompt phrase="Thank you for calling Douche Telecom, where we make sure that your communications never have that 'not so fresh' feeling!" filename="ivr-douche_telecom.wav"/>
+      <prompt phrase="To learn more about FreeSWITCH..." filename="ivr-to_learn_more_about_freeswitch.wav"/>
+      <prompt phrase="You do not have permission to perform this action." filename="ivr-not_have_permission.wav"/>
+      <prompt phrase="To hear about ClueCon..." filename="misc-to_hear_about_cluecon.wav"/>
+      <prompt phrase="ClueCon is the premier open source telephony developer conference." filename="misc-cluecon_is_premier_conference.wav"/>
+      <prompt phrase="It is held in downtown Chicago each summer." filename="misc-chicago_each_summer.wav"/>
+      <prompt phrase="ClueCon brings together a wide range of VoIP engineers, software developers, and business persons." filename="misc-wide_range_of_persons.wav"/>
+      <prompt phrase="By attending ClueCon, you are showing support not only for FreeSWITCH but also the entire spectrum of open source telephony software." filename="misc-support_open_source_by_attending.wav"/>
+      <prompt phrase="CudaTel! You know you want one!" filename="misc-cudatel_you_know_you_want_one.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
