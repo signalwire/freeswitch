@@ -2433,6 +2433,11 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 		}
 	}
 
+	if (switch_file_exists(context->cache_file, context->pool) != SWITCH_STATUS_SUCCESS && unreachable) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File at url [%s] is unreachable!\n", url);
+		goto end;
+	}
+
 	if (!unreachable && !zstr(context->metadata)) {
 		metadata = switch_core_sprintf(context->pool, "%s:%s:%s:%s",
 									   url,
@@ -2562,6 +2567,11 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 											handle->channels, 
 											handle->samplerate, 
 											SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid cache file %s opening url %s Discarding file.\n", context->cache_file, path);
+			unlink(context->cache_file);
+			unlink(context->meta_file);
+			unlink(context->lock_file);
+			
 			return status;
 		}
 	}
