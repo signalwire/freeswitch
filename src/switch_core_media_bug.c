@@ -213,10 +213,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!((bug->last_read_ts && bug->last_write_ts) || (do_read && do_write))) {
-		return SWITCH_STATUS_FALSE;
-	}
-	
 	if (fill) {
 		fill_read = !do_read;
 		fill_write = !do_write;
@@ -232,13 +228,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	
 	if (do_read) {
 		switch_mutex_lock(bug->read_mutex);
-		switch_buffer_read(bug->raw_read_buffer, &rh, sizeof(rh));
-		bug->last_read_ts = rh.ts;
-		frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer, frame->data, rh.len);
-		if (frame->datalen != rh.len) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "Framing Error Reading!\n");
-			switch_core_media_bug_flush(bug);
-			return SWITCH_STATUS_FALSE;
+		if (switch_buffer_read(bug->raw_read_buffer, &rh, sizeof(rh))) {
+			bug->last_read_ts = rh.ts;
+			frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer, frame->data, rh.len);
+			if (frame->datalen != rh.len) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "Framing Error Reading!\n");
+				switch_core_media_bug_flush(bug);
+				switch_mutex_unlock(bug->read_mutex);
+				return SWITCH_STATUS_FALSE;
+			}
+		} else {
+			do_read = 0;
 		}
 		
 		switch_mutex_unlock(bug->read_mutex);
@@ -250,13 +250,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	if (do_write) {
 		switch_assert(bug->raw_write_buffer);
 		switch_mutex_lock(bug->write_mutex);
-		switch_buffer_read(bug->raw_write_buffer, &wh, sizeof(wh));
-		bug->last_write_ts = wh.ts;
-		datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, bug->data, wh.len);
-		if (datalen != wh.len) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "Framing Error Writing!\n");
-			switch_core_media_bug_flush(bug);
-			return SWITCH_STATUS_FALSE;
+		if ((switch_buffer_read(bug->raw_write_buffer, &wh, sizeof(wh)))) {
+			bug->last_write_ts = wh.ts;
+			datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, bug->data, wh.len);
+			if (datalen != wh.len) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "Framing Error Writing!\n");
+				switch_core_media_bug_flush(bug);
+				switch_mutex_unlock(bug->write_mutex);
+				return SWITCH_STATUS_FALSE;
+			}
+		} else {
+			do_write = 0;
 		}
 		switch_mutex_unlock(bug->write_mutex);
 	} else if (fill_write) {
