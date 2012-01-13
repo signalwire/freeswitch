@@ -1168,19 +1168,29 @@ static void *SWITCH_THREAD_FUNC conference_video_bridge_thread_run(switch_thread
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	conference_obj_t *conference = vh->member_a->conference;
+	switch_core_session_message_t msg = { 0 };
 	
 	switch_thread_rwlock_rdlock(conference->rwlock);
 	switch_thread_rwlock_rdlock(vh->member_a->rwlock);
 	switch_thread_rwlock_rdlock(vh->member_b->rwlock);
 	
-	
+
 	/* Acquire locks for both sessions so the helper object and member structures don't get destroyed before we exit */
 	switch_core_session_read_lock(session_a);
 	switch_core_session_read_lock(session_b);
 	
+	/* Tell the channel to request a fresh vid frame */
+	msg.from = __FILE__;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+
 	vh->up = 1;
 	while (vh->up == 1 && switch_test_flag(vh->member_a, MFLAG_RUNNING) && switch_test_flag(vh->member_b, MFLAG_RUNNING) &&
 		   switch_channel_ready(channel_a) && switch_channel_ready(channel_b))  {
+
+		if (switch_channel_test_flag(channel_a, CF_VIDEO_REFRESH_REQ)) {
+			switch_core_session_receive_message(session_b, &msg);
+			switch_channel_clear_flag(channel_a, CF_VIDEO_REFRESH_REQ);
+		}
 
 		status = switch_core_session_read_video_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -1216,13 +1226,19 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 	conference_member_t *imember;
 	switch_frame_t *vid_frame;
 	switch_status_t status;
-	int has_vid = 1;// req_iframe = 0;
+	int has_vid = 1, want_refresh = 0;
 	int yield = 0;
 	uint32_t last_member = 0;
 	switch_core_session_t *session;
+	switch_channel_t *channel;
+	switch_core_session_message_t msg = { 0 };
 
 	conference->video_running = 1;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video thread started for conference %s\n", conference->name);
+
+	/* Tell the channel to request a fresh vid frame */
+	msg.from = __FILE__;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
 
 	while (has_vid && conference->video_running == 1 && globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		if (yield) {
@@ -1242,6 +1258,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			goto do_continue;
 		}
 
+		channel = NULL;
 		session = conference->floor_holder->session;
 		switch_core_session_read_lock(session);
 		switch_mutex_unlock(conference->member_mutex);
@@ -1251,24 +1268,14 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 
 		if (!SWITCH_READ_ACCEPTABLE(status) || !conference->floor_holder || switch_test_flag(vid_frame, SFF_CNG)) {
 			conference->floor_holder = NULL;
-			//req_iframe = 0;
 			goto do_continue;
 		}
 
+		channel = switch_core_session_get_channel(session);
+		
 		if (conference->floor_holder->id != last_member) {
 			int iframe = 0;
-#if 0
-			switch_core_session_message_t msg = { 0 };
 
-
-			if (!req_iframe) {
-				/* Tell the channel to request a fresh vid frame */
-				msg.from = __FILE__;
-				msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-				switch_core_session_receive_message(conference->floor_holder->session, &msg);
-				req_iframe = 1;
-			}
-#endif
 
 			if (vid_frame->codec->implementation->ianacode == 34) {	/* h.263 */
 				//iframe = (*((int16_t *) vid_frame->data) >> 12 == 6);
@@ -1289,8 +1296,6 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			if (!iframe) {
 				goto do_continue;
 			}
-
-			//req_iframe = 0;
 		}
 
 		last_member = conference->floor_holder->id;
@@ -1298,15 +1303,36 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		switch_mutex_unlock(conference->member_mutex);
 		switch_mutex_lock(conference->member_mutex);
 		has_vid = 0;
+		want_refresh = 0;
+
 		for (imember = conference->members; imember; imember = imember->next) {
-			if (imember->session && switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
+			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
+
+			if (switch_channel_test_flag(ichannel, CF_VIDEO_REFRESH_REQ)) {
+				want_refresh++;
+				switch_channel_clear_flag(ichannel, CF_VIDEO_REFRESH_REQ);
+			}
+
+			if (imember->session && switch_channel_test_flag(ichannel, CF_VIDEO)) {
 				has_vid++;
+				if (switch_channel_test_flag(channel, CF_VIDEO_REFRESH_REQ)) {
+					switch_core_session_receive_message(imember->session, &msg);
+				}
 				switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 		}
+		
+		if (switch_channel_test_flag(channel, CF_VIDEO_REFRESH_REQ)) {
+			switch_channel_clear_flag(channel, CF_VIDEO_REFRESH_REQ);
+		}
 
-	  do_continue:
+		if (want_refresh) {
+			switch_core_session_receive_message(session, &msg);
+			want_refresh = 0;
+		}
 
+	do_continue:
+		
 		switch_mutex_unlock(conference->member_mutex);
 	}
 
@@ -1379,8 +1405,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			total++;
 			imember->read = 0;
 
-			if (imember->session) {
-				if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
+			if (switch_test_flag(imember, MFLAG_RUNNING) && imember->session) {
+				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
+
+				if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_VIDEO)) {
 					members_with_video++;
 					
 					if (switch_test_flag(imember, MFLAG_VIDEO_BRIDGE)) {
@@ -1468,7 +1496,16 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 			}
 
-			if (conference->vh[0].up != 1 && conference->vh[1].up != 1 && video_bridge_members[0] && video_bridge_members[1]){
+			if (conference->vh[0].up == 0 && 
+				conference->vh[1].up == 0 && 
+				video_bridge_members[0] && 
+				video_bridge_members[1] &&
+				switch_test_flag(video_bridge_members[0], MFLAG_RUNNING) && 
+				switch_test_flag(video_bridge_members[1], MFLAG_RUNNING) && 
+				switch_channel_ready(switch_core_session_get_channel(video_bridge_members[0]->session)) &&
+				switch_channel_ready(switch_core_session_get_channel(video_bridge_members[1]->session)) 
+				) {
+				
 				launch_conference_video_bridge_thread(video_bridge_members[0], video_bridge_members[1]);
 			}
 		}
