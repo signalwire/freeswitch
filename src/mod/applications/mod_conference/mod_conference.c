@@ -2704,6 +2704,14 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 				if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE) &&
 					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+					switch_core_session_message_t msg = { 0 };
+					
+					msg.from = __FILE__;
+					msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;					
+
+					switch_core_session_receive_message(member->session, &msg);
+
+
 					conference_add_event_member_data(member, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d",
