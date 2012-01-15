@@ -1303,7 +1303,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 				prefix = spandsp_globals.prepend_string;
 			}
 
-			if (!(pvt->filename = switch_core_session_sprintf(session, "%s/%s-%ld-%ld.tif", spandsp_globals.spool, prefix, spandsp_globals.total_sessions, time))) {
+			if (!(pvt->filename = switch_core_session_sprintf(session, "%s/%s-%ld-%" SWITCH_TIME_T_FMT ".tif", spandsp_globals.spool, prefix, spandsp_globals.total_sessions, time))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot automatically set fax RX destination file\n");
 				goto done;
 			}
