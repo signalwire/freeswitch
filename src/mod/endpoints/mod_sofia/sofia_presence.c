@@ -1703,11 +1703,11 @@ static void send_presence_notify(sofia_profile_t *profile,
 	cseq = sip_cseq_create(nh->nh_home, callsequence, SIP_METHOD_NOTIFY);
 	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 	
-	if (exptime > 0) {
-		switch_snprintf(sstr, sizeof(sstr), "active;expires=%u", (unsigned) exptime);
-	} else {
-		switch_snprintf(sstr, sizeof(sstr), "terminated;reason=noresource");
+	if (exptime <= 0) {
+		exptime = 5;
 	}
+
+	switch_snprintf(sstr, sizeof(sstr), "active;expires=%u", (unsigned) exptime);
 
     tmp = (char *)contact;
 	contact = sofia_glue_get_url_from_contact(tmp, 0);
@@ -3701,6 +3701,8 @@ void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now)
 	char *sql;
 
 	if (now) {
+
+#if 0 // I think actually doing it right and sending terminated notify breaks dumb phones.
 		sql = switch_mprintf("select full_to, full_from, contact, expires, call_id, event, network_ip, network_port, "
 							 "NULL as ct, NULL as pt "
 							 " from sip_subscriptions where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%q'",
@@ -3708,6 +3710,7 @@ void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now)
 
 		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_send_sql, profile);
 		switch_safe_free(sql);
+#endif
 
 		sql = switch_mprintf("delete from sip_subscriptions where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%q'",
 							 (long) now, mod_sofia_globals.hostname);

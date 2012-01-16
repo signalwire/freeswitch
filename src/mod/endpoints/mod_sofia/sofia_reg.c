@@ -572,19 +572,6 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 }
 
 
-int sofia_sub_del_callback(void *pArg, int argc, char **argv, char **columnNames)
-{
-	sofia_profile_t *profile = (sofia_profile_t *) pArg;
-	nua_handle_t *nh;
-
-	if (argv[0]) {
-		if ((nh = nua_handle_by_call_id(profile->nua, argv[0]))) {
-			nua_handle_destroy(nh);
-		}
-	}
-	return 0;
-}
-
 void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent,
 						   const char *network_ip)
 {
@@ -760,18 +747,6 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
 	
-	if (now) {
-		switch_snprintf(sql, sizeof(sql),
-						"select call_id from sip_subscriptions where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%s'", (long) now,
-						mod_sofia_globals.hostname);
-	} else {
-		switch_snprintfv(sql, sizeof(sql), "select sub_to_user,sub_to_host,call_id from sip_subscriptions where expires >= -1 and hostname='%q'", 
-						mod_sofia_globals.hostname);
-	}
-
-	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_sub_del_callback, profile);
-
-
 	sofia_presence_check_subscriptions(profile, now);
 
 	if (now) {
@@ -879,10 +854,6 @@ void sofia_reg_check_sync(sofia_profile_t *profile)
 	switch_snprintfv(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and hostname='%q'", mod_sofia_globals.hostname);
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
 	
-	switch_snprintfv(sql, sizeof(sql), "select sub_to_user,sub_to_host,call_id from sip_subscriptions where expires >= -1 and hostname='%q'", 
-					mod_sofia_globals.hostname);
-	sofia_glue_execute_sql_callback(profile, NULL, sql, sofia_sub_del_callback, profile);
-
 	switch_snprintfv(sql, sizeof(sql), "delete from sip_subscriptions where expires >= -1 and hostname='%q'", mod_sofia_globals.hostname);
 	sofia_glue_actually_execute_sql(profile, sql, NULL);
 
