@@ -771,7 +771,7 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 		default:
 			{
 				*str_len += sprintf(&str[*str_len], "Undecoded");
-				print_hex_dump((char*)str, str_len, data, index_start, index_end);
+				print_hex_dump((char*)str, str_len, data, index_start, index_end + 1);
 			}
 			break;
 	}

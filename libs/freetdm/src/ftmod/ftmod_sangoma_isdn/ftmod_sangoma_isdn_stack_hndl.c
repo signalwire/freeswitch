@@ -133,8 +133,9 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			get_redir_num(ftdmchan, &conEvnt->redirNmb);
 			get_calling_subaddr(ftdmchan, &conEvnt->cgPtySad);
 			get_prog_ind_ie(ftdmchan, &conEvnt->progInd);
-			get_facility_ie(ftdmchan, &conEvnt->facilityStr);			
+			get_facility_ie(ftdmchan, &conEvnt->facilityStr);
 			get_calling_name(ftdmchan, conEvnt);
+			get_network_specific_fac(ftdmchan, &conEvnt->netFac[0]);
 			
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 

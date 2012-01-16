@@ -499,6 +499,7 @@ ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
 ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd);
 ftdm_status_t get_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
 ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t data_len);
+ftdm_status_t get_network_specific_fac(ftdm_channel_t *ftdmchan, NetFac *netFac);
 
 ftdm_status_t set_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
 ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
@@ -508,6 +509,7 @@ ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt);
 ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
 ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_sngisdn_progind_t prog_ind);
 ftdm_status_t set_bear_cap_ie(ftdm_channel_t *ftdmchan, BearCap *bearCap);
+ftdm_status_t set_network_specific_fac(ftdm_channel_t *ftdmchan, NetFac *netFac);
 ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId);
 ftdm_status_t set_restart_ind_ie(ftdm_channel_t *ftdmchan, RstInd *rstInd);
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
