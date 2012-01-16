@@ -443,7 +443,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	}
 
 	if (!((use_my_cause = switch_channel_get_variable(channel, "sip_ignore_remote_cause")) && switch_true(use_my_cause))) {
-		ps_cause = switch_channel_get_variable(channel, SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE);
+		ps_cause = switch_channel_get_variable(channel, "last_bridge_" SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE);
 	}
 
 	if (!zstr(ps_cause) && (!strncasecmp(ps_cause, "sip:", 4) || !strncasecmp(ps_cause, "sips:", 5))) {
