@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!--тестовые файлы Вы звуковые файлы можно взять тут svn co http://svn.freeswitch.ru/bbv/mod_say_ru/ru/  -->
 <include>
   <language name="ru" sound-prefix="$${sounds_dir}/ru/RU/elena" tts-engine="cepstral" tts-voice="elena">
