@@ -1478,7 +1478,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			username = switch_event_get_header(auth_params, "sip_auth_username");
 			realm = switch_event_get_header(auth_params, "sip_auth_realm");
 		}
-		if (auth_res != AUTH_RENEWED) {
+		if (auth_res != AUTH_RENEWED || !multi_reg) {
 			if (multi_reg) {
 				if (multi_reg_contact) {
 					sql =
