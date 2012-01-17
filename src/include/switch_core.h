@@ -995,7 +995,9 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(_In_ switch_core_session_t *
   \brief Launch a service thread on a session to drop inbound data
   \param session the session the launch thread on
 */
-SWITCH_DECLARE(void) switch_core_service_session(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_service_session_av(_In_ switch_core_session_t *session, switch_bool_t audio, switch_bool_t video);
+#define switch_core_service_session(_s) switch_core_service_session_av(_s, SWITCH_TRUE, SWITCH_FALSE)
+
 
 /*! 
   \brief Request an outgoing session spawned from an existing session using a desired endpoing module

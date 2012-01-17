@@ -370,6 +370,8 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	}
 	switch_core_session_set_read_codec(session, &codec);
 
+	switch_core_service_session_av(session, SWITCH_FALSE, SWITCH_TRUE);
+	
 	while (switch_channel_ready(channel)) {
 
 		if (read(fd, &bytes, sizeof(bytes)) != sizeof(bytes)) {
@@ -439,6 +441,8 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		}
 		
 	}
+
+	switch_core_thread_session_end(session);
 
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
 
