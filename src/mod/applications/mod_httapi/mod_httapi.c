@@ -2077,6 +2077,9 @@ SWITCH_STANDARD_APP(httapi_function)
 
 	if (!zstr(data)) {
 		switch_event_create_brackets((char *)data, '{', '}', ',', &params, &parsed, SWITCH_TRUE);
+		if (!switch_event_get_header(params, "url") && !zstr(parsed) && switch_stristr("://", parsed)) {
+			switch_event_add_header(params, SWITCH_STACK_BOTTOM, "url", parsed);
+		}
 	}
 
 	if ((client = (client_t *) switch_channel_get_private(channel, "_HTTAPI_CLIENT_"))) {
