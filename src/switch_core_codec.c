@@ -111,6 +111,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Original read codec set to %s:%d\n",
 							  switch_channel_get_name(session->channel), codec->implementation->iananame, codec->implementation->ianacode);
 			session->read_codec = session->real_read_codec = codec;
+			changed_read_codec = 1;
 			if (codec->implementation) {
 				session->read_impl = *codec->implementation;
 			} else {
@@ -125,7 +126,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 							  switch_channel_get_name(session->channel), codec->implementation->iananame, codec->implementation->ianacode);
 			/* Set real_read_codec to front of the list of read_codecs */
 			cur_codec = session->read_codec;
-			changed_read_codec = 1;
 			while (cur_codec != NULL) {
 				if (cur_codec->next == session->real_read_codec) {
 					cur_codec->next = codec;
