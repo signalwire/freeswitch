@@ -2925,7 +2925,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 	tech_pvt->read_codec.agreed_pt = tech_pvt->agreed_pt;
 
 	if (force != 2) {
-		switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
+		switch_core_session_set_real_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 		switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 	}
 

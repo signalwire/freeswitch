@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
+ * Chris Rienzo <chris@rienzo.net>
  *
  *
  * switch_core_codec.c -- Main Core Library (codec functions)
@@ -90,6 +91,96 @@ SWITCH_DECLARE(void) switch_core_session_unset_write_codec(switch_core_session_t
 	switch_mutex_unlock(session->codec_write_mutex);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_core_session_t *session, switch_codec_t *codec)
+{
+	switch_event_t *event;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char tmp[30];
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int changed_read_codec = 0;
+
+	switch_mutex_lock(session->codec_read_mutex);
+
+	if (codec && (!codec->implementation || !switch_core_codec_ready(codec))) {
+		codec = NULL;
+	}
+
+	if (codec) {
+		/* set real_read_codec and read_codec */
+		if (!session->real_read_codec) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Original read codec set to %s:%d\n",
+							  switch_channel_get_name(session->channel), codec->implementation->iananame, codec->implementation->ianacode);
+			session->read_codec = session->real_read_codec = codec;
+			if (codec->implementation) {
+				session->read_impl = *codec->implementation;
+			} else {
+				memset(&session->read_impl, 0, sizeof(session->read_impl));
+			}
+		} else { /* replace real_read_codec */
+			switch_codec_t *cur_codec;
+			if (session->real_read_codec == session->read_codec) {
+				goto end;
+			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Original read codec replaced with %s:%d\n",
+							  switch_channel_get_name(session->channel), codec->implementation->iananame, codec->implementation->ianacode);
+			/* Set real_read_codec to front of the list of read_codecs */
+			cur_codec = session->read_codec;
+			changed_read_codec = 1;
+			while (cur_codec != NULL) {
+				if (cur_codec->next == session->real_read_codec) {
+					cur_codec->next = codec;
+					break;
+				}
+				cur_codec = cur_codec->next;
+			}
+			session->real_read_codec = codec;
+			/* set read_codec with real_read_codec if it no longer is ready */
+			if (!switch_core_codec_ready(session->read_codec)) {
+				session->read_codec = codec;
+				changed_read_codec = 1;
+				if (codec->implementation) {
+				session->read_impl = *codec->implementation;
+				} else {
+					memset(&session->read_impl, 0, sizeof(session->read_impl));
+				}
+			}
+		}
+	} else {
+		status = SWITCH_STATUS_FALSE;
+		goto end;
+	}
+
+	if (changed_read_codec && session->read_codec && session->read_impl.decoded_bytes_per_packet) {
+		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(session->channel, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", session->read_impl.iananame);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-rate", "%d", session->read_impl.actual_samples_per_second);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-bit-rate", "%d", session->read_impl.bits_per_second);
+			if (session->read_impl.actual_samples_per_second != session->read_impl.samples_per_second) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-read-codec-rate", "%d", session->read_impl.samples_per_second);
+			}
+			switch_event_fire(&event);
+		}
+
+		switch_channel_set_variable(channel, "read_codec", session->read_impl.iananame);
+		switch_snprintf(tmp, sizeof(tmp), "%d", session->read_impl.actual_samples_per_second);
+		switch_channel_set_variable(channel, "read_rate", tmp);
+
+		session->raw_read_frame.codec = session->read_codec;
+		session->raw_write_frame.codec = session->read_codec;
+		session->enc_read_frame.codec = session->read_codec;
+		session->enc_write_frame.codec = session->read_codec;
+	}
+
+  end:
+
+	if (session->read_codec) {
+		switch_channel_set_flag(channel, CF_MEDIA_SET);
+	}
+
+	switch_mutex_unlock(session->codec_read_mutex);
+	return status;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_session_t *session, switch_codec_t *codec)
 {

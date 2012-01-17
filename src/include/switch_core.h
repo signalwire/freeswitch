@@ -1467,6 +1467,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(_In_ switch_core_session_t *session, switch_codec_t *codec);
 
+/*! 
+  \brief Assign the original read codec to a given session.  This is the read codec used by an endpoint.
+  \param session session to add the codec to
+  \param codec the codec to add
+  \return SWITCH_STATUS_SUCCESS if successful
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(_In_ switch_core_session_t *session, switch_codec_t *codec);
+
 SWITCH_DECLARE(void) switch_core_session_unset_read_codec(_In_ switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_unset_write_codec(_In_ switch_core_session_t *session);
 
