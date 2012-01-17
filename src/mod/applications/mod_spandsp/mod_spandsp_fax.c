@@ -1683,7 +1683,7 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 	switch_codec_implementation_t read_impl = { 0 };
 	int16_t *buf = NULL;
     switch_status_t status;
-    switch_size_t tx;
+    int tx;
     const char *t38_trace = switch_channel_get_variable(channel, "t38_trace");
     char *trace_read, *trace_write;
     zap_socket_t read_fd = FAX_INVALID_SOCKET, write_fd = FAX_INVALID_SOCKET;
