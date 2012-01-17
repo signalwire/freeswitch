@@ -1765,7 +1765,6 @@ static void send_presence_notify(sofia_profile_t *profile,
 			   TAG_IF(!zstr(pl), SIPTAG_PAYLOAD_STR(pl)),
 			   TAG_IF(!zstr(call_info), SIPTAG_CALL_INFO_STR(call_info)),
 			   TAG_IF(!exptime, SIPTAG_EXPIRES_STR("0")),
-			   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
 			   SIPTAG_CSEQ(cseq),
 			   TAG_END());
 	
