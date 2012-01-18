@@ -204,6 +204,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 				memset(&session->read_impl, 0, sizeof(session->read_impl));
 			}
 		} else {
+			if (codec == session->read_codec) {
+				goto end;
+			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Push codec %s:%d\n",
 							  switch_channel_get_name(session->channel), codec->implementation->iananame, codec->implementation->ianacode);
 			codec->next = session->read_codec;
