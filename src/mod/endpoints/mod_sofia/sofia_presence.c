@@ -2935,16 +2935,19 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		proto = alt_proto;
 	}
 	
-	sql = switch_mprintf("select count(*) from sip_subscriptions where call_id='%q'", call_id);
-	sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
+	if ((sub_state != nua_substate_terminated)) {
+		sql = switch_mprintf("select count(*) from sip_subscriptions where call_id='%q'", call_id);
+		sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
+		switch_safe_free(sql);
 
-	if (mod_sofia_globals.debug_presence > 0 || mod_sofia_globals.debug_sla > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-						  "check subs sql: %s [%s]\n", sql, buf);
-	}
+		if (mod_sofia_globals.debug_presence > 0 || mod_sofia_globals.debug_sla > 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "check subs sql: %s [%s]\n", sql, buf);
+		}
 
-	if ((subbed = atoi(buf)) > 0) {
-		sub_state = nua_substate_active;
+		if ((subbed = atoi(buf)) > 0) {
+			sub_state = nua_substate_active;
+		}
 	}
 
 	if ((sub_state == nua_substate_active)) {
