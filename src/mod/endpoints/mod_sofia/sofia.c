@@ -2352,7 +2352,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*retry_seconds = "30",
 				*timeout_seconds = "60",
 				*from_user = "", *from_domain = NULL, *outbound_proxy = NULL, *register_proxy = NULL, *contact_host = NULL,
-				*contact_params = NULL, *params = NULL, *register_transport = NULL,
+				*contact_params = "", *params = NULL, *register_transport = NULL,
 				*reg_id = NULL, *str_rfc_5626 = "";
 
 			if (!context) {
