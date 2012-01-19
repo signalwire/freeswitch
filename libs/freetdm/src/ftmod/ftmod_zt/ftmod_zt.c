@@ -1375,6 +1375,7 @@ static FIO_IO_LOAD_FUNCTION(zt_init)
 	zt_interface.write = zt_write;
 	zt_interface.poll_event = zt_poll_event;
 	zt_interface.next_event = zt_next_event;
+	zt_interface.channel_next_event = zt_channel_next_event;
 	zt_interface.channel_destroy = zt_channel_destroy;
 	zt_interface.get_alarms = zt_get_alarms;
 	*fio = &zt_interface;
