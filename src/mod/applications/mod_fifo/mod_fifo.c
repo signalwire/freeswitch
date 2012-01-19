@@ -523,16 +523,13 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 			char buf[25] = "";
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			const char *caller_exit_key = switch_channel_get_variable(channel, "fifo_caller_exit_key");
-			switch_status_t status = SWITCH_STATUS_SUCCESS;
-			
 			args.input_callback = moh_on_dtmf;
 			args.buf = buf;
 			args.buflen = sizeof(buf);
 			args.read_frame_callback = chime_read_frame_callback;
 			args.user_data = user_data;
 
-			status = switch_ivr_play_file(session, NULL, cd->list[cd->index], &args);
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
+			if (switch_ivr_play_file(session, NULL, cd->list[cd->index], &args) != SWITCH_STATUS_SUCCESS) {
 				return SWITCH_STATUS_BREAK;
 			}
 
