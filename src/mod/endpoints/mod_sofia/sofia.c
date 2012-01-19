@@ -564,7 +564,6 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 #endif
 
 	if (!session) {
-		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 		return;
 	}
 
