@@ -2168,6 +2168,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					int ok = 0;
 
 					while (!ok) {
+						fail = 0;
 						switch_snprintf(macro, sizeof(macro), "phrase:%s:%s", VM_ENTER_PASS_MACRO, profile->terminator_key);
 						TRY_CODE(switch_ivr_read(session, 0, 255, macro, NULL, buf, sizeof(buf), 10000, profile->terminator_key, 0));
 					
