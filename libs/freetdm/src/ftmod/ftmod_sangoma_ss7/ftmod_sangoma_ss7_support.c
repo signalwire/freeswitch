@@ -585,6 +585,7 @@ ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *r
 	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_indicator");
 	if (!ftdm_strlen_zero(val)) {
 		redirInfo->redirInd.val = atoi(val);
+		redirInfo->redirInd.pres = 1;
 		bProceed = 1;
 	} else {		
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Redirection Indicator\n");
@@ -593,6 +594,7 @@ ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *r
 	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_orig");
 	if (!ftdm_strlen_zero(val)) {
 		redirInfo->origRedirReas.val = atoi(val);
+		redirInfo->origRedirReas.pres = 1;
 		bProceed = 1;
 	} else {		
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Original Reasons\n");
@@ -601,6 +603,7 @@ ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *r
 	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_count");
 	if (!ftdm_strlen_zero(val)) {
 		redirInfo->redirCnt.val = atoi(val);
+		redirInfo->redirCnt.pres= 1;
 		bProceed = 1;
 	} else {		
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Redirection Count\n");
@@ -609,6 +612,7 @@ ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *r
 	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_reason");
 	if (!ftdm_strlen_zero(val)) {
 		redirInfo->redirReas.val = atoi(val);
+		redirInfo->redirReas.pres = 1;
 		bProceed = 1;
 	} else {		
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Redirection Reasons\n");

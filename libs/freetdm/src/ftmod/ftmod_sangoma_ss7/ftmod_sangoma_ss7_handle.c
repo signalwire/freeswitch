@@ -252,8 +252,19 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			sprintf(var, "%d", sngss7_info->circuit->cic);
 			sngss7_add_var(sngss7_info, "ss7_cic", var);
 
+
+            if (siConEvnt->orgPteCde.eh.pres) {
+                sprintf(var, "%d",(uint32_t)siConEvnt->orgPteCde.sigPointCode.val);
+                sngss7_add_var(sngss7_info, "ss7_opc", var);
+				SS7_DEBUG_CHAN(ftdmchan, " OPC = d%\n", (uint32_t)siConEvnt->orgPteCde.sigPointCode.val);
+			} else {
+				SS7_DEBUG_CHAN(ftdmchan, "No OPC information in IAM%s\n", " ");
+            }
+
+			/*  original code, should be removed after review.
 			sprintf(var, "%d", g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].spc );
 			sngss7_add_var(sngss7_info, "ss7_opc", var);
+			*/
 			
 			if (siConEvnt->callRef.callId.pres) {
         /* %x expect an unsigned int so as callId is a U32, casting to uint32_t
