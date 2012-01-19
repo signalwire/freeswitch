@@ -329,7 +329,6 @@ typedef enum {
 	TFLAG_LIBERAL_DTMF,
 	TFLAG_GOT_ACK,
 	TFLAG_CAPTURE,
-	TFLAG_XFER_HUP,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
