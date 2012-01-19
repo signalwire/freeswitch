@@ -488,6 +488,7 @@ struct fifo_chime_data {
 	char *orbit_exten;
 	char *orbit_dialplan;
 	char *orbit_context;
+	char *exit_key;
 };
 
 typedef struct fifo_chime_data fifo_chime_data_t;
@@ -521,22 +522,25 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 		if (cd->list[cd->index]) {
 			switch_input_args_t args = { 0 };
 			char buf[25] = "";
-			switch_channel_t *channel = switch_core_session_get_channel(session);
-			const char *caller_exit_key = switch_channel_get_variable(channel, "fifo_caller_exit_key");
+			switch_status_t status;
+
 			args.input_callback = moh_on_dtmf;
 			args.buf = buf;
 			args.buflen = sizeof(buf);
 			args.read_frame_callback = chime_read_frame_callback;
 			args.user_data = user_data;
-
-			if (switch_ivr_play_file(session, NULL, cd->list[cd->index], &args) != SWITCH_STATUS_SUCCESS) {
-				return SWITCH_STATUS_BREAK;
-			}
-
-			if (match_key(caller_exit_key, *buf)) {
+			
+			status = switch_ivr_play_file(session, NULL, cd->list[cd->index], &args);
+			
+			if (match_key(cd->exit_key, *buf)) {
 				cd->abort = 1;
 				return SWITCH_STATUS_BREAK;
 			}
+			
+			if (status != SWITCH_STATUS_SUCCESS) {
+				return SWITCH_STATUS_BREAK;
+			}
+
 			cd->next = switch_epoch_time_now(NULL) + cd->freq;
 			cd->index++;
 		}
@@ -2482,6 +2486,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			cd.total = switch_separate_string(list_dup, ',', cd.list, (sizeof(cd.list) / sizeof(cd.list[0])));
 			cd.freq = freq;
 			cd.next = switch_epoch_time_now(NULL) + cd.freq;
+			cd.exit_key = (char *) switch_channel_get_variable(channel, "fifo_caller_exit_key");
 		}
 
 		send_presence(node);
@@ -2489,6 +2494,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		while (switch_channel_ready(channel)) {
 			switch_input_args_t args = { 0 };
 			char buf[25] = "";
+			switch_status_t rstatus;
 
 			args.input_callback = moh_on_dtmf;
 			args.buf = buf;
@@ -2511,13 +2517,14 @@ SWITCH_STANDARD_APP(fifo_function)
 			switch_core_session_flush_private_events(session);
 
 			if (moh) {
-				switch_status_t status = switch_ivr_play_file(session, NULL, moh, &args);
-				if (!SWITCH_READ_ACCEPTABLE(status)) {
-					aborted = 1;
-					goto abort;
-				}
+				rstatus = switch_ivr_play_file(session, NULL, moh, &args);
 			} else {
-				switch_ivr_collect_digits_callback(session, &args, 0, 0);
+				rstatus = switch_ivr_collect_digits_callback(session, &args, 0, 0);
+			}
+
+			if (!SWITCH_READ_ACCEPTABLE(rstatus)) {
+				aborted = 1;
+				goto abort;
 			}
 
 			if (match_key(caller_exit_key, *buf)) {
