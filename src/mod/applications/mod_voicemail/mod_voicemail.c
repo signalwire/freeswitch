@@ -4495,9 +4495,9 @@ SWITCH_STANDARD_API(voicemail_read_api_function)
 		
 		if (mread) {
 			if (uuid) {
-				sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld,flags='save' where uuid='%q'", (long) switch_epoch_time_now(NULL), uuid);
+				sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld where uuid='%q'", (long) switch_epoch_time_now(NULL), uuid);
 			} else {
-				sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld,flags='save' where domain='%q'", (long) switch_epoch_time_now(NULL), domain);
+				sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld where domain='%q'", (long) switch_epoch_time_now(NULL), domain);
 			}
 		} else{
 			if (uuid) {
