@@ -8501,10 +8501,34 @@ void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t 
 			switch_caller_profile_t *acp = a_tech_pvt->caller_profile;
 
 			if (ua && switch_stristr("snom", ua)) {
-				if (zstr(acp->caller_id_name)) {
-					snprintf(message, sizeof(message), "From:\r\nTo: %s\r\n", acp->caller_id_number);
+				const char *ver_str = NULL; 
+				int version = 0;
+
+				ver_str = switch_stristr( "/", ua);
+
+				if ( ver_str ) {
+					char *argv[4] = { 0 };
+					char *dotted = strdup( ver_str + 1 );
+					if ( dotted ) {
+						switch_separate_string(dotted, '.', argv, (sizeof(argv) / sizeof(argv[0])));
+						if ( argv[0] && argv[1] && argv[2] ) {
+							version = ( atoi(argv[0]) * 10000 )  + ( atoi(argv[1]) * 100 ) + atoi(argv[2]);
+						}
+					}
+					switch_safe_free( dotted );
+				}
+				if ( version >= 80424 ) {
+					if (zstr(acp->caller_id_name)) {
+						snprintf(message, sizeof(message), "From: %s\r\nTo:\r\n", acp->caller_id_number);
+					} else {
+						snprintf(message, sizeof(message), "From: \"%s\" %s\r\nTo:\r\n", acp->caller_id_name, acp->caller_id_number);
+					}
 				} else {
-					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", acp->caller_id_name, acp->caller_id_number);
+					if (zstr(acp->caller_id_name)) {
+						snprintf(message, sizeof(message), "From:\r\nTo: %s\r\n", acp->caller_id_number);
+					} else {
+						snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", acp->caller_id_name, acp->caller_id_number);
+					}
 				}
 				nua_info(b_tech_pvt->nh,
 						 SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
