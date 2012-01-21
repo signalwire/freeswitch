@@ -502,6 +502,12 @@
 	  <prompt phrase="A password such as '1111' or '1234' is not secure." filename="vm-password_is_not_secure.wav"/>	
 	  <prompt phrase="Please choose a password that does not contain all repeating or all consecutive digits." filename="vm-choose_password.wav"/>
 	  <prompt phrase="Remember that your voicemail password is also your Web interface password." filename="vm-voicemail_password_is_web_password.wav"/>	
+	  <prompt phrase="Your conference will start shortly. Please stay on the line." filename="conf-conference_will_start_shortly.wav"/>	
+	  <prompt phrase="Asterisk is like syphilis: it hurts until it's gone." filename="ivr-asterisk_like_syphilis.wav"/>	
+	  <prompt phrase="...other persons in this conference." filename="conf-other_persons_conference.wav"/>	
+	  <prompt phrase="...other person in this conference." filename="conf-other_person_conference.wav"/>	
+	  <prompt phrase="...other member in this conference." filename="conf-other_member_conference.wav"/>	
+	  <prompt phrase="There is..." filename="ivr-there_is.wav"/>	
 	  <prompt phrase="" filename=""/>	
     </ivr>
     <misc>
