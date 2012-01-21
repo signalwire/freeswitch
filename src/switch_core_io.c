@@ -337,6 +337,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					}
 
 					if (!switch_core_codec_ready(&session->bug_codec)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting BUG Codec %s:%d\n",
+							read_frame->codec->implementation->iananame, read_frame->codec->implementation->ianacode);
 						switch_core_codec_copy(read_frame->codec, &session->bug_codec, NULL);
 					}
 					use_codec = &session->bug_codec;

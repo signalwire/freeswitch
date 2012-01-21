@@ -119,9 +119,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 			}
 		} else { /* replace real_read_codec */
 			switch_codec_t *cur_codec;
-			if (session->real_read_codec == session->read_codec) {
-				goto end;
-			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Original read codec replaced with %s:%d\n",
 							  switch_channel_get_name(session->channel), codec->implementation->iananame, codec->implementation->ianacode);
 			/* Set real_read_codec to front of the list of read_codecs */
@@ -145,6 +142,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 				}
 			}
 		}
+
+		/* force media bugs to copy the read codec from the next frame */
+		switch_thread_rwlock_wrlock(session->bug_rwlock);
+		if (switch_core_codec_ready(&session->bug_codec)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Destroying BUG Codec %s:%d\n",
+				session->bug_codec.implementation->iananame, session->bug_codec.implementation->ianacode);
+			switch_core_codec_destroy(&session->bug_codec);
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
 	} else {
 		status = SWITCH_STATUS_FALSE;
 		goto end;

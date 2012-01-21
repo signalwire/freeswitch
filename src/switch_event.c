@@ -2344,7 +2344,13 @@ SWITCH_DECLARE(int) switch_event_check_permission_list(switch_event_t *list, con
 {
 	const char *v;
 	int r = 0;
-	int default_allow = switch_test_flag(list, EF_DEFAULT_ALLOW);
+	int default_allow = 0;
+
+	if (!list) {
+		return 1;
+	}
+
+	default_allow = switch_test_flag(list, EF_DEFAULT_ALLOW);
 
 	if (!list->headers) {
 		return default_allow;

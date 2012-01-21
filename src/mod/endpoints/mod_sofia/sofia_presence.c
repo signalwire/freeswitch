@@ -812,7 +812,7 @@ static void do_dialog_probe(sofia_profile_t *profile, switch_event_t *event)
 
 		sql = switch_mprintf("update sip_subscriptions set version=version+1 "
 							 "where expires > -1 and hostname='%q' "
-							 "and sub_to_user='%q' and sub_to_host='%q' " "and (event='dialog') and "
+							 "and sub_to_user='%q' and sub_to_host='%q' " "and (event!='fuck-dialog') and "
 							 "call_id='%q'",
 							 mod_sofia_globals.hostname, probe_euser, probe_host, sub_call_id);
 
@@ -1115,7 +1115,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 					sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper);
 					switch_safe_free(sql);
 					
-					sql = switch_mprintf("update sip_subscriptions set version=version+1 where event='dialog' and sub_to_user='%q' "
+					sql = switch_mprintf("update sip_subscriptions set version=version+1 where event!='fuck-dialog' and sub_to_user='%q' "
 										 "and (sub_to_host='%q' or presence_hosts like '%%%q%%') "
 										 "and (profile_name = '%q' or presence_hosts != sub_to_host)",
 										 euser, host, host, profile->name);
@@ -2067,6 +2067,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		port = argv[27];
 	}
 
+
 	if (!zstr(presence_id) && strchr(presence_id, '@')) {
 		char *p;
 		 
@@ -2493,8 +2494,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 	}
-
-	
 
 	send_presence_notify(profile, full_to, full_from, contact, expires, call_id, event, ip, port, ct, pl, NULL);
 
@@ -2957,7 +2956,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		sstr = switch_mprintf("active;expires=%ld", exp_delta);
 		
 		sql = switch_mprintf("update sip_subscriptions "
-							 "set expires=%ld "
+							 "set expires=%ld,version=0 "
 							 "where call_id='%q'",
 							 (long) switch_epoch_time_now(NULL) + exp_delta,
 							 call_id);

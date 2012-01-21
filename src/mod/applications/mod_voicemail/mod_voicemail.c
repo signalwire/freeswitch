@@ -2521,6 +2521,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	if (auth_only) {
 		if (authed) {
 			switch_channel_set_variable(channel, "user_pin_authenticated", "true");
+			switch_channel_set_variable(channel, "user_pin_authenticated_user", myid);
 			if (!zstr(myid)) switch_ivr_set_user(session, myid);
 		} else {
 			switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
