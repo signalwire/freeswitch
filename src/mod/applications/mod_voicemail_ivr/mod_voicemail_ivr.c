@@ -54,13 +54,12 @@ SWITCH_STANDARD_APP(voicemail_ivr_function)
 	const char *domain = NULL;
 	const char *profile_name = NULL;
 	vmivr_profile_t *profile = NULL;
-	int argc = 0;
 	char *argv[6] = { 0 }; 
 	char *mydata = NULL;
 
 	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(session, data);
-		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argv[1])
