@@ -1440,7 +1440,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout", "false");
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout_on_execute", "false");
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
-		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "origination_uuid", agent_uuid_str);
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "origination_uuid", "%s", agent_uuid_str);
 
 		t_agent_called = local_epoch_time_now(NULL);
 		dialstr = switch_mprintf("%s", h->originate_string);
