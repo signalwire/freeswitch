@@ -1021,6 +1021,7 @@ static switch_status_t parse_xml(client_t *client)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const void *bdata;
 	switch_size_t len;
+	int runs = 0;
 
 	if ((len = switch_buffer_peek_zerocopy(client->buffer, &bdata)) && switch_buffer_len(client->buffer) > len) {
 		switch_xml_t xml, tag, category;
@@ -1073,6 +1074,7 @@ static switch_status_t parse_xml(client_t *client)
 			}
 
 			if ((category = switch_xml_child(xml, "work"))) {
+				
 				tag = category->child;
 				status = SWITCH_STATUS_SUCCESS;
 
@@ -1092,10 +1094,11 @@ static switch_status_t parse_xml(client_t *client)
 								switch_event_destroy(&templ_data);
 							}
 
+							runs++;
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Process Tag: [%s]\n", tag->name);
-
+							
 							parse_common(tag->name, client, tag, expanded);
-							handler(tag->name, client, tag, expanded);
+							status = handler(tag->name, client, tag, expanded);
 							
 							if (expanded && expanded != tag->txt) {
 								free(expanded);
@@ -1109,14 +1112,18 @@ static switch_status_t parse_xml(client_t *client)
 					}
 					tag = tag->ordered;
 				}
-			} else {
+			}
+
+			if (!runs) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No instructions found in result!\n");
 				status = SWITCH_STATUS_FALSE;
 			}
+			
 
 			switch_xml_free(xml);
 		}
-	}	
-
+	}
+	
 	return status;
 }
 	
@@ -2069,7 +2076,7 @@ SWITCH_STANDARD_APP(httapi_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *parsed = NULL;
-	const char *profile_name = NULL;
+	const char *profile_name = NULL, *url = NULL;
 	client_t *client;
 	switch_event_t *params = NULL;
 	uint32_t loops = 0, all_extended = 0;
@@ -2077,8 +2084,18 @@ SWITCH_STANDARD_APP(httapi_function)
 
 	if (!zstr(data)) {
 		switch_event_create_brackets((char *)data, '{', '}', ',', &params, &parsed, SWITCH_TRUE);
-		if (!switch_event_get_header(params, "url") && !zstr(parsed) && switch_stristr("://", parsed)) {
-			switch_event_add_header(params, SWITCH_STACK_BOTTOM, "url", "%s", parsed);
+
+		if (params) {
+			url = parsed;
+		} else {
+			url = data;
+		}
+		
+		if (!zstr(url) && switch_stristr("://", url)) {
+			if (!params) {
+				switch_event_create(&params, SWITCH_EVENT_CLONE);
+			}
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "url", url);
 		}
 	}
 
