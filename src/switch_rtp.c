@@ -3259,8 +3259,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (rtp_session->recv_msg.header.version == 0) {
 				if (rtp_session->ice_user) {
 					handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+					goto recvfrom;
 				} else if (rtp_session->remote_stun_addr) {
 					handle_stun_ping_reply(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+					goto recvfrom;
 				}
 			}
 
