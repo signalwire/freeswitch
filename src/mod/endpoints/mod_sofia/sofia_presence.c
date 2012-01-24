@@ -812,7 +812,7 @@ static void do_dialog_probe(sofia_profile_t *profile, switch_event_t *event)
 
 		sql = switch_mprintf("update sip_subscriptions set version=version+1 "
 							 "where expires > -1 and hostname='%q' "
-							 "and sub_to_user='%q' and sub_to_host='%q' " "and (event!='fuck-dialog') and "
+							 "and sub_to_user='%q' and sub_to_host='%q' " "and (event!='dialog') and "
 							 "call_id='%q'",
 							 mod_sofia_globals.hostname, probe_euser, probe_host, sub_call_id);
 
@@ -1115,7 +1115,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 					sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper);
 					switch_safe_free(sql);
 					
-					sql = switch_mprintf("update sip_subscriptions set version=version+1 where event!='fuck-dialog' and sub_to_user='%q' "
+					sql = switch_mprintf("update sip_subscriptions set version=version+1 where event!='dialog' and sub_to_user='%q' "
 										 "and (sub_to_host='%q' or presence_hosts like '%%%q%%') "
 										 "and (profile_name = '%q' or presence_hosts != sub_to_host)",
 										 euser, host, host, profile->name);
