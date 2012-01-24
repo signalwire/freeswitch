@@ -651,7 +651,7 @@ static void do_normal_probe(sofia_profile_t *profile, switch_event_t *event)
 							 "left join sip_dialogs on "
 							 "sip_dialogs.presence_id = sip_registrations.sip_user %q '@' %q sip_registrations.sub_host "
 							 "or (sip_dialogs.sip_from_user = sip_registrations.sip_user "
-							 "and sip_dialogs.sip_from_host = sip_registrations.sub_host) "
+							 "and sip_dialogs.sip_from_host = sip_registrations.sip_host) "
  
 							 "left join sip_presence on "
 							 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.orig_server_host=sip_presence.sip_host and "
@@ -766,7 +766,7 @@ static void do_dialog_probe(sofia_profile_t *profile, switch_event_t *event)
 							 "left join sip_registrations on "
 							 "(sip_dialogs.sip_from_user = sip_registrations.sip_user "
 							 "and (sip_dialogs.sip_from_host = sip_registrations.orig_server_host or "
-							 "sip_dialogs.sip_from_host = sip_registrations.sub_host) ) "
+							 "sip_dialogs.sip_from_host = sip_registrations.sip_host) ) "
 							 "where sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
 							 "(sip_registrations.orig_server_host='%q' or sip_registrations.sub_host='%q' "
 							 "or sip_registrations.presence_hosts like '%%%q%%'))",
