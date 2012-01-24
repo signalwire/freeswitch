@@ -898,7 +898,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!switch_channel_media_ready(channel) || !switch_core_session_get_read_codec(session)) {
+	if (!switch_channel_media_up(channel) || !switch_core_session_get_read_codec(session)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can not displace session.  Media not enabled on channel\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1255,11 +1255,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_caller_profile_t *cp = NULL;
 		uint32_t sanity = 600;
 
-		if (!switch_channel_media_ready(channel)) {
+		if (!switch_channel_media_up(channel)) {
 			goto end;
 		}
 
-		while(switch_channel_state_change_pending(tchannel) || !switch_channel_media_ready(tchannel)) {
+		while(switch_channel_state_change_pending(tchannel) || !switch_channel_media_up(tchannel)) {
 			switch_yield(10000);
 			if (!--sanity) break;
 		}
@@ -1547,7 +1547,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!switch_channel_media_ready(channel) || !switch_core_session_get_read_codec(session)) {
+	if (!switch_channel_media_up(channel) || !switch_core_session_get_read_codec(session)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can not record session.  Media not enabled on channel\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -2508,7 +2508,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_c
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!switch_channel_media_ready(channel) || !switch_core_session_get_read_codec(session)) {
+	if (!switch_channel_media_up(channel) || !switch_core_session_get_read_codec(session)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can not install inband dtmf generate.  Media not enabled on channel\n");
 		return status;
 	}
