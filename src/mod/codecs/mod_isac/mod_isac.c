@@ -25,25 +25,25 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
- * mod_iSAC.c -- iSAC Codec Module
+ * mod_isac.c -- isac Codec Module
  *
  */
 
 #include <switch.h>
 #include "isac.h"
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_iSAC_codec_load);
-SWITCH_MODULE_DEFINITION(mod_iSAC, mod_iSAC_codec_load, NULL, NULL);
+SWITCH_MODULE_LOAD_FUNCTION(mod_isac_codec_load);
+SWITCH_MODULE_DEFINITION(mod_isac, mod_isac_codec_load, NULL, NULL);
 
-struct iSAC_context {
+struct isac_context {
 	ISACStruct *ISAC_main_inst;
 };
 
-static switch_status_t switch_iSAC_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_isac_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	uint32_t encoding, decoding;
 	WebRtc_Word16 err;
-	struct iSAC_context *context = NULL;
+	struct isac_context *context = NULL;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -100,7 +100,7 @@ static switch_status_t switch_iSAC_init(switch_codec_t *codec, switch_codec_flag
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t switch_iSAC_encode(switch_codec_t *codec, switch_codec_t *other_codec,
+static switch_status_t switch_isac_encode(switch_codec_t *codec, switch_codec_t *other_codec,
 										  void *decoded_data,
 										  uint32_t decoded_data_len,
 										  uint32_t decoded_rate,
@@ -109,7 +109,7 @@ static switch_status_t switch_iSAC_encode(switch_codec_t *codec, switch_codec_t 
 										  uint32_t *encoded_rate,
 										  unsigned int *flag)
 {
-	struct iSAC_context *context = codec->private_info;
+	struct isac_context *context = codec->private_info;
 	WebRtc_Word16 len = 0, *in, *out;
 	int rise = (codec->implementation->actual_samples_per_second / 100);
 
@@ -130,7 +130,7 @@ static switch_status_t switch_iSAC_encode(switch_codec_t *codec, switch_codec_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t switch_iSAC_decode(switch_codec_t *codec,
+static switch_status_t switch_isac_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *encoded_data,
 										  uint32_t encoded_data_len,
@@ -140,7 +140,7 @@ static switch_status_t switch_iSAC_decode(switch_codec_t *codec,
 										  uint32_t *decoded_rate,
 										  unsigned int *flag)
 {
-	struct iSAC_context *context = codec->private_info;
+	struct isac_context *context = codec->private_info;
 	WebRtc_Word16 len, speechType[1];
 
 	if ((*flag & SFF_PLC)) {
@@ -159,9 +159,9 @@ static switch_status_t switch_iSAC_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t switch_iSAC_destroy(switch_codec_t *codec)
+static switch_status_t switch_isac_destroy(switch_codec_t *codec)
 {
-	struct iSAC_context *context = codec->private_info;
+	struct isac_context *context = codec->private_info;
 
 	WebRtcIsac_Free(context->ISAC_main_inst);
 	
@@ -169,18 +169,18 @@ static switch_status_t switch_iSAC_destroy(switch_codec_t *codec)
 }
 
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_iSAC_codec_load)
+SWITCH_MODULE_LOAD_FUNCTION(mod_isac_codec_load)
 {
 	switch_codec_interface_t *codec_interface;
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_CODEC(codec_interface, "iSAC");	/* 8.0kbit */
+	SWITCH_ADD_CODEC(codec_interface, "isac");	/* 8.0kbit */
 
 	switch_core_codec_add_implementation(pool, codec_interface,	
 										 SWITCH_CODEC_TYPE_AUDIO,
 										 99,	
-										 "iSAC",
+										 "isac",
 										 NULL,	
 										 16000,	
 										 16000,	
@@ -191,17 +191,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_iSAC_codec_load)
 										 0,	
 										 1,	
 										 3,	
-										 switch_iSAC_init,	
-										 switch_iSAC_encode,
-										 switch_iSAC_decode,
-										 switch_iSAC_destroy);
+										 switch_isac_init,	
+										 switch_isac_encode,
+										 switch_isac_decode,
+										 switch_isac_destroy);
 
 
 
 	switch_core_codec_add_implementation(pool, codec_interface,	
 										 SWITCH_CODEC_TYPE_AUDIO,
 										 99,	
-										 "iSAC",
+										 "isac",
 										 NULL,	
 										 16000,	
 										 16000,	
@@ -212,10 +212,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_iSAC_codec_load)
 										 0,	
 										 1,	
 										 6,	
-										 switch_iSAC_init,	
-										 switch_iSAC_encode,
-										 switch_iSAC_decode,
-										 switch_iSAC_destroy);
+										 switch_isac_init,	
+										 switch_isac_encode,
+										 switch_isac_decode,
+										 switch_isac_destroy);
 
 	
 
@@ -223,7 +223,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_iSAC_codec_load)
 	switch_core_codec_add_implementation(pool, codec_interface,	
 										 SWITCH_CODEC_TYPE_AUDIO,
 										 99,	
-										 "iSAC",
+										 "isac",
 										 NULL,	
 										 32000,	
 										 32000,	
@@ -234,10 +234,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_iSAC_codec_load)
 										 0,	
 										 1,	
 										 6,	
-										 switch_iSAC_init,	
-										 switch_iSAC_encode,
-										 switch_iSAC_decode,
-										 switch_iSAC_destroy);
+										 switch_isac_init,	
+										 switch_isac_encode,
+										 switch_isac_decode,
+										 switch_isac_destroy);
 	
 
 	
