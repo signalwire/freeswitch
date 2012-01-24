@@ -384,25 +384,6 @@ void sofia_presence_cancel(void)
 	}
 }
 
-void sofia_presence_establish_presence(sofia_profile_t *profile)
-{
-	struct resub_helper h = { 0 };
-	h.profile = profile;
-
-	if (sofia_glue_execute_sql_callback(profile, profile->ireg_mutex,
-										"select sip_user,sip_host,'Registered','unknown','' from sip_registrations",
-										sofia_presence_resub_callback, &h) != SWITCH_TRUE) {
-		return;
-	}
-
-	if (sofia_glue_execute_sql_callback(profile, profile->ireg_mutex,
-										"select sub_to_user,sub_to_host,'Online','unknown',proto from sip_subscriptions "
-										"where expires > -1 and version > -1 and proto='ext' or proto='user' or proto='conf'",
-										sofia_presence_resub_callback, &h) != SWITCH_TRUE) {
-		return;
-	}
-}
-
 char *sofia_presence_translate_rpid(char *in, char *ext)
 {
 	char *r = in;

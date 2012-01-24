@@ -2022,10 +2022,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_glue_add_profile(profile->name, profile);
 
-	if (profile->pres_type) {
-		sofia_presence_establish_presence(profile);
-	}
-	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
 
 	profile->started = switch_epoch_time_now(NULL);
