@@ -1259,11 +1259,16 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		session = conference->floor_holder->session;
 		switch_core_session_read_lock(session);
 		switch_mutex_unlock(conference->mutex);
-		status = switch_core_session_read_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+		if (!switch_channel_ready(switch_core_session_get_channel(session))) {
+			status = SWITCH_STATUS_FALSE;
+		} else {
+			status = switch_core_session_read_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+		}
 		switch_mutex_lock(conference->mutex);
 		switch_core_session_rwunlock(session);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			yield = 100000;
 			goto do_continue;
 		}
 
@@ -1370,7 +1375,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			if (switch_test_flag(imember, MFLAG_RUNNING) && imember->session) {
 				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
 
-				if ((imember->score_iir > SCORE_IIR_SPEAKING_MAX && (!floor_holder || floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN)) &&
+				if ((!floor_holder || (imember->score_iir > SCORE_IIR_SPEAKING_MAX && (floor_holder->score_iir < SCORE_IIR_SPEAKING_MIN))) &&
 					(!switch_test_flag(conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
 					floor_holder = imember;
 				}
@@ -1403,7 +1408,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			}
 			switch_mutex_unlock(imember->audio_in_mutex);
 		}
-
+		
 
 
 		if (floor_holder != conference->floor_holder) {
