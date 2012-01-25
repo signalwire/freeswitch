@@ -300,7 +300,7 @@ cookie-file                     : <string>              ""              Path to 
 enable-post-var                 : <param_name>          ""              Specify specifc param names ok to send.
 bind-local                      : <string>              ""              Interface to bind to.
 default-profile                 : <string>              default         Profile to use when not specified.
-
+user-agent			: <string>		mod_httapi/1.0	User Agent header value.
 
 
 <permissions>: * = default
