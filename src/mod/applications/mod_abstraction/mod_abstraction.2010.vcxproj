@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>mod_abstraction</ProjectName>
-    <ProjectGuid>{11C9BC3D-45E9-46E3-BE84-B8CEE4685E39}</ProjectGuid>
+    <ProjectGuid>{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}</ProjectGuid>
     <RootNamespace>mod_abstraction</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

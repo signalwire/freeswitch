@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="mod_abstraction"
-	ProjectGUID="{11C9BC3D-45E9-46E3-BE84-B8CEE4685E39}"
+	ProjectGUID="{BDA173DB-F8EF-4270-9553-B453AF92E43A}"
 	RootNamespace="mod_abstraction"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
