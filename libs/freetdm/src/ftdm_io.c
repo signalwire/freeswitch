@@ -1188,7 +1188,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm
 	ftdm_channel_lock(ftdmchan);
 
 	if (!span->fio->channel_next_event) {
-		ftdm_log(FTDM_LOG_ERROR, "channel_next_event method not implemented in module %s!", span->fio->name);
+		ftdm_log(FTDM_LOG_ERROR, "channel_next_event method not implemented in module %s!\n", span->fio->name);
 		status = FTDM_NOTIMPL;
 		goto done;
 	}

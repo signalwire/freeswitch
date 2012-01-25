@@ -483,7 +483,8 @@ void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) dchan->span->signal_data;
 
 	if (len > sizeof(l1_frame.data)) {
-		ftdm_assert(FTDM_FALSE, "Received frame exceeding max size\n");
+		ftdm_log_chan(dchan, FTDM_LOG_ERROR, "Received frame of %"FTDM_SIZE_FMT" bytes, exceeding max size of %"FTDM_SIZE_FMT" bytes\n", 
+				len, sizeof(l1_frame.data));
 		return;
 	}
 

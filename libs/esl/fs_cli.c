@@ -614,8 +614,7 @@ static void clear_line(void)
 
 static void redisplay(void)
 {
-#ifdef WIN32
-#else
+#ifndef WIN32
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
 	if (!(write_str(prompt_str))) goto done;

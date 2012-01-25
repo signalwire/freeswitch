@@ -234,10 +234,10 @@ temp-action	    : Change url to submit to. just for the next loop.
 
 
 <log level clean action>
-		    : Exit the httapi application and continue in the dialplan.
+		    : Write a log line to fs_cli, console, logs, etc.
 ATTRS:
 level               : The log level to use.
-clean               : If true do not pring log prefix.
+clean               : If true do not print log prefix.
 action		    : Change url to submit to.
 temp-action	    : Change url to submit to. just for the next loop.
 
@@ -259,7 +259,7 @@ permanent	    : Add as a permanent param or just once.
 
 
 <voicemail action temp-action check auth-only profile domain id/>
-                    : Get a Channel variable (depends on permissions)
+                    : Call the voicemail app without requiring "execute" permissions
 
 ATTRS:
 action		    : Change url to submit to.
@@ -300,7 +300,7 @@ cookie-file                     : <string>              ""              Path to 
 enable-post-var                 : <param_name>          ""              Specify specifc param names ok to send.
 bind-local                      : <string>              ""              Interface to bind to.
 default-profile                 : <string>              default         Profile to use when not specified.
-
+user-agent			: <string>		mod_httapi/1.0	User Agent header value.
 
 
 <permissions>: * = default

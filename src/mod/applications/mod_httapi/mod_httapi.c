@@ -88,6 +88,7 @@ typedef struct client_profile_s {
 	int auth_scheme;
 	int timeout;
 	profile_perms_t perms;
+	char *ua;
 
 	struct {
 		char *use_profile;
@@ -171,9 +172,15 @@ struct http_file_context {
 	switch_file_t *lock_fd;
 	switch_memory_pool_t *pool;
 	int del_on_close;
+	char *dest_url;
+	char *ua;
+	switch_event_t *url_params;
+
 	struct {
-		char *dest_url;
-		char *params;
+		char *ext;
+	} read;
+
+	struct {
 		char *file_name;
 		char *profile_name;
 		char *file;
@@ -1021,6 +1028,7 @@ static switch_status_t parse_xml(client_t *client)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const void *bdata;
 	switch_size_t len;
+	int runs = 0;
 
 	if ((len = switch_buffer_peek_zerocopy(client->buffer, &bdata)) && switch_buffer_len(client->buffer) > len) {
 		switch_xml_t xml, tag, category;
@@ -1073,6 +1081,7 @@ static switch_status_t parse_xml(client_t *client)
 			}
 
 			if ((category = switch_xml_child(xml, "work"))) {
+				
 				tag = category->child;
 				status = SWITCH_STATUS_SUCCESS;
 
@@ -1092,10 +1101,11 @@ static switch_status_t parse_xml(client_t *client)
 								switch_event_destroy(&templ_data);
 							}
 
+							runs++;
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Process Tag: [%s]\n", tag->name);
-
+							
 							parse_common(tag->name, client, tag, expanded);
-							handler(tag->name, client, tag, expanded);
+							status = handler(tag->name, client, tag, expanded);
 							
 							if (expanded && expanded != tag->txt) {
 								free(expanded);
@@ -1109,14 +1119,18 @@ static switch_status_t parse_xml(client_t *client)
 					}
 					tag = tag->ordered;
 				}
-			} else {
+			}
+
+			if (!runs) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No instructions found in result!\n");
 				status = SWITCH_STATUS_FALSE;
 			}
+			
 
 			switch_xml_free(xml);
 		}
-	}	
-
+	}
+	
 	return status;
 }
 	
@@ -1294,8 +1308,9 @@ static switch_status_t httapi_sync(client_t *client)
 	switch_event_t *save_params = NULL;
 	const char *put_file;
 	FILE *fd = NULL;
-	char *creds, *dup_creds = NULL;
+	char *creds, *dup_creds = NULL, *ua = NULL;
 
+	
 	if (client->one_time_params && client->one_time_params->headers) {
 		save_params = client->params;
 		switch_event_dup(&client->params, save_params);
@@ -1303,6 +1318,13 @@ static switch_status_t httapi_sync(client_t *client)
 		switch_event_destroy(&client->one_time_params);
 		switch_event_create(&client->one_time_params, SWITCH_EVENT_CLONE);
 		client->one_time_params->flags |= EF_UNIQ_HEADERS;
+	}
+
+
+	ua = switch_event_get_header(client->params, "user_agent");
+
+	if (zstr(ua)) {
+		ua = client->profile->ua;
 	}
 	
 	if (!(session_id = switch_event_get_header(client->params, "HTTAPI_SESSION_ID"))) {
@@ -1458,7 +1480,7 @@ static switch_status_t httapi_sync(client_t *client)
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) client);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) client);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "mod_httapi/1.0");
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, ua);
 
 	if (client->profile->timeout) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, client->profile->timeout);
@@ -1502,7 +1524,7 @@ static switch_status_t httapi_sync(client_t *client)
 		curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, client->profile->bind_local);
 	}
 
-	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "mod_httapi/1.0");
+
 	switch_curl_easy_perform(curl_handle);
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &client->code);
 	switch_curl_easy_cleanup(curl_handle);
@@ -1603,6 +1625,7 @@ static switch_status_t do_config(void)
 		char *ssl_cacert_file = NULL;
 		uint32_t enable_ssl_verifyhost = 0;
 		char *cookie_file = NULL;
+		char *ua = "mod_httapi/1.0";
 		hash_node_t *hash_node;
 		int auth_scheme = CURLAUTH_BASIC;
 		need_vars_map = 0;
@@ -1627,6 +1650,8 @@ static switch_status_t do_config(void)
 					if (val) {
 						url = val;
 					}
+				} else if (!strcasecmp(var, "user-agent")) {
+					ua = val;
 				} else if (!strcasecmp(var, "gateway-credentials")) {
 					bind_cred = val;
 				} else if (!strcasecmp(var, "auth-scheme")) {
@@ -1708,11 +1733,14 @@ static switch_status_t do_config(void)
 		}
 		memset(profile, 0, sizeof(*profile));
 
+
 		/* Defaults */
+		profile->ua = ua;
 		profile->conference_params.use_profile = "default";
 		profile->perms.set_params = 1;
 		profile->perms.conference.enabled = 1;
 		profile->perms.dial.enabled = 1;
+		
 
 		if ((tag = switch_xml_child(profile_tag, "conference"))) {
 			for (param = switch_xml_child(tag, "param"); param; param = param->next) {
@@ -2069,7 +2097,7 @@ SWITCH_STANDARD_APP(httapi_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *parsed = NULL;
-	const char *profile_name = NULL;
+	const char *profile_name = NULL, *url = NULL;
 	client_t *client;
 	switch_event_t *params = NULL;
 	uint32_t loops = 0, all_extended = 0;
@@ -2077,8 +2105,18 @@ SWITCH_STANDARD_APP(httapi_function)
 
 	if (!zstr(data)) {
 		switch_event_create_brackets((char *)data, '{', '}', ',', &params, &parsed, SWITCH_TRUE);
-		if (!switch_event_get_header(params, "url") && !zstr(parsed) && switch_stristr("://", parsed)) {
-			switch_event_add_header(params, SWITCH_STACK_BOTTOM, "url", "%s", parsed);
+
+		if (params) {
+			url = parsed;
+		} else {
+			url = data;
+		}
+		
+		if (!zstr(url) && switch_stristr("://", url)) {
+			if (!params) {
+				switch_event_create(&params, SWITCH_EVENT_CLONE);
+			}
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "url", url);
 		}
 	}
 
@@ -2158,18 +2196,24 @@ SWITCH_STANDARD_APP(httapi_function)
 
 static char *load_cache_data(http_file_context_t *context, const char *url)
 {
-	char *ext;
+	char *ext = NULL;
 	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 	char meta_buffer[1024] = "";
 	int fd;
 	switch_ssize_t bytes;
 
 	switch_md5_string(digest, (void *) url, strlen(url));
+
+	if (context->url_params) {
+		ext = switch_event_get_header(context->url_params, "ext");
+	}
 	
-	if ((ext = strrchr(url, '.'))) {
-		ext++;
-	} else {
-		ext = "wav";
+	if (zstr(ext)) {
+		if ((ext = strrchr(url, '.'))) {
+			ext++;
+		} else {
+			ext = "wav";
+		}
 	}
 
 	context->cache_file = switch_core_sprintf(context->pool, "%s%s%s.%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest, ext);
@@ -2218,13 +2262,15 @@ static size_t save_file_callback(void *ptr, size_t size, size_t nmemb, void *dat
 
 
 
-static switch_status_t fetch_cache_data(const char *url, switch_event_t **headers, const char *save_path)
+static switch_status_t fetch_cache_data(http_file_context_t *context, const char *url, switch_event_t **headers, const char *save_path)
 {
 	switch_CURL *curl_handle = NULL;
 	client_t client = { 0 };
 	long code;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *dup_creds = NULL, *dynamic_url = NULL, *use_url;
+	char *ua = NULL;
+
 	client.fd = -1;
 
 	if (save_path) {
@@ -2232,7 +2278,14 @@ static switch_status_t fetch_cache_data(const char *url, switch_event_t **header
 			return SWITCH_STATUS_FALSE;
 		}
 	}
+
+	if (context->url_params) {
+		ua = switch_event_get_header(context->url_params, "user_agent");
+	}
 	
+	if (zstr(ua)) {
+		ua = "mod_httapi/1.0";
+	}
 
 	if ((use_url = strchr(url, '@'))) {
 		char *r, *q, *p = strstr(url, "://");
@@ -2295,7 +2348,7 @@ static switch_status_t fetch_cache_data(const char *url, switch_event_t **header
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERPWD, dup_creds);
 	}
 	
-	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "mod_httapi/1.0");
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, ua);
 	switch_curl_easy_perform(curl_handle);
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &code);
 	switch_curl_easy_cleanup(curl_handle);
@@ -2425,7 +2478,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 
 	lock_file(context, SWITCH_TRUE);
 
-	if ((status = fetch_cache_data(url, &headers, NULL)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = fetch_cache_data(context, url, &headers, NULL)) != SWITCH_STATUS_SUCCESS) {
 		if (status == SWITCH_STATUS_NOTFOUND) {
 			unreachable = 2;
 			if (now - context->expires < globals.not_found_expires) {
@@ -2456,7 +2509,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	}
 
 	switch_event_destroy(&headers);
-	fetch_cache_data(url, &headers, context->cache_file);
+	fetch_cache_data(context, url, &headers, context->cache_file);
 	metadata = switch_core_sprintf(context->pool, "%s:%s:%s:%s",
 								   url,
 								   switch_event_get_header_nil(headers, "last-modified"),
@@ -2500,15 +2553,26 @@ static switch_status_t http_file_file_seek(switch_file_handle_t *handle, unsigne
 static switch_status_t http_file_file_open(switch_file_handle_t *handle, const char *path)
 {
 	http_file_context_t *context;
-	char *file_dup;
+	char *parsed = NULL, *pdup = NULL;
 	switch_status_t status;
 
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
 
+	pdup = switch_core_strdup(context->pool, path);
+
+	switch_event_create_brackets(pdup, '(', ')', ',', &context->url_params, &parsed, SWITCH_FALSE);
+
+	if (context->url_params) {
+		context->ua = switch_event_get_header(context->url_params, "ua");
+	}
+
+	if (parsed) path = parsed;
+
+	context->dest_url = switch_core_sprintf(context->pool, "http://%s", path);
+
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		char *ext;
-		
 
 		context->fh.channels = handle->channels;
 		context->fh.native_rate = handle->native_rate;
@@ -2516,19 +2580,17 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 		context->fh.samplerate = handle->samplerate;
 		context->fh.prefix = handle->prefix;
 		
-		context->write.dest_url = switch_core_sprintf(context->pool, "http://%s", path);
-
-		if ((context->write.params = strchr(context->write.dest_url, ';'))) {
-			*context->write.params++ = '\0';
-			context->write.file_name = switch_find_parameter(context->write.params, "file", context->pool);
-			context->write.profile_name = switch_find_parameter(context->write.params, "profile", context->pool);
-			context->write.method = switch_find_parameter(context->write.params, "method", context->pool);
-			context->write.name = switch_find_parameter(context->write.params, "name", context->pool);
+		
+		if (context->url_params) {
+			context->write.file_name = switch_event_get_header(context->url_params, "file");
+			context->write.profile_name = switch_event_get_header(context->url_params, "profile");
+			context->write.method = switch_event_get_header(context->url_params, "method");
+			context->write.name = switch_event_get_header(context->url_params, "name");
 		}
 		
 		if (!context->write.file_name) {
 			char *p;
-			if ((p = strrchr(context->write.dest_url, '/'))) {
+			if ((p = strrchr(context->dest_url, '/'))) {
 				p++;
 				context->write.file_name = switch_core_strdup(context->pool, p);
 			}	
@@ -2556,14 +2618,13 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 
 	} else {
 
-	
-		file_dup = switch_core_sprintf(handle->memory_pool, "http://%s", path);
-		
-		if ((status = locate_url_file(context, file_dup)) != SWITCH_STATUS_SUCCESS) {
-			return status;
+		if (context->url_params) {
+			context->read.ext = switch_event_get_header(context->url_params, "ext");
 		}
 
-
+		if ((status = locate_url_file(context, context->dest_url)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
 	
 		if ((status = switch_core_file_open(&context->fh,
 											context->cache_file, 
@@ -2619,7 +2680,7 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 			switch_event_add_header(params, SWITCH_STACK_BOTTOM, key, "%s", context->write.file);
 		}
 
-		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "url", "%s", context->write.dest_url);
+		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "url", "%s", context->dest_url);
 		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "file_driver", "true");
 		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "HTTAPI_SESSION_ID", "%s", context->write.uuid_str);
 
@@ -2642,6 +2703,10 @@ static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 			unlink(context->meta_file);
 			unlink(context->lock_file);
 		}
+	}
+
+	if (context->url_params) {
+		switch_event_destroy(&context->url_params);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

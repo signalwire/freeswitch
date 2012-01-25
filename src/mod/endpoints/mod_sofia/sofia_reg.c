@@ -1090,10 +1090,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_goto_int(r, 1, end);
 	}
 
-	if (!reg_host) {
+	if (zstr(reg_host)) {
 		reg_host = to_host;
 	}
-	if (!sub_host) {
+	if (zstr(sub_host)) {
 		sub_host = to_host;
 	}
 
@@ -1526,7 +1526,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm, 
 								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host);
 		} else {
-			sql = switch_mprintf("update sip_registrations set expires = %ld where sip_user='%q' and sip_host='%q' and contact='%q'", (long) switch_epoch_time_now(NULL) + (long) exptime + 60, to_user, reg_host, contact_str);
+			sql = switch_mprintf("update sip_registrations set "
+								 "sub_host='%q', network_ip='%q',network_port='%q',"
+								 "expires = %ld where sip_user='%q' and sip_host='%q' and contact='%q'", 
+								 sub_host, network_ip, network_port_c,
+								 (long) switch_epoch_time_now(NULL) + (long) exptime + 60, 
+								 to_user, reg_host, contact_str);
 		}				 
 
 		if (sql) {

@@ -428,6 +428,9 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		char *dest;
 		int in = -1;
 
+		const char *timeout, *orbit_exten, *orbit_dialplan, *orbit_context;
+		char *timeout_str = "", *orbit_exten_str = "", *orbit_dialplan_str = "", *orbit_context_str = "";
+
 		lot = valet_find_lot(lot_name, SWITCH_TRUE);
 		switch_assert(lot);
 
@@ -586,7 +589,28 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			music = "silence_stream://-1";
 		}
 		
-		dest = switch_core_session_sprintf(session, "set:valet_ticket=%s,set:valet_hold_music=%s,sleep:1000,valet_park:%s %s", 
+		if ((orbit_exten = switch_channel_get_variable(channel, "valet_parking_orbit_exten"))) {
+			orbit_exten_str = switch_core_session_sprintf(session, "set:valet_parking_orbit_exten=%s,", orbit_exten);
+		}
+
+		if ((orbit_dialplan = switch_channel_get_variable(channel, "valet_parking_orbit_dialplan"))) {
+			orbit_dialplan_str = switch_core_session_sprintf(session, "set:valet_parking_orbit_dialplan=%s,", orbit_dialplan);
+		}
+
+		if ((orbit_context = switch_channel_get_variable(channel, "valet_parking_orbit_context"))) {
+			orbit_context_str = switch_core_session_sprintf(session, "set:valet_parking_orbit_context=%s,", orbit_context);
+		}
+
+		if ((timeout = switch_channel_get_variable(channel, "valet_parking_timeout"))) {
+			timeout_str = switch_core_session_sprintf(session, "set:valet_parking_timeout=%s,", timeout);			
+		}
+
+		dest = switch_core_session_sprintf(session, "%s%s%s%s"
+										   "set:valet_ticket=%s,set:valet_hold_music=%s,sleep:1000,valet_park:%s %s", 
+										   timeout_str,
+										   orbit_exten_str,
+										   orbit_dialplan_str,
+										   orbit_context_str,
 										   token->uuid, music, lot_name, ext);
 		switch_channel_set_variable(channel, "inline_destination", dest);
 

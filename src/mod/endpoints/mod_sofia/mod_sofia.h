@@ -329,7 +329,6 @@ typedef enum {
 	TFLAG_LIBERAL_DTMF,
 	TFLAG_GOT_ACK,
 	TFLAG_CAPTURE,
-	TFLAG_XFER_HUP,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -874,8 +873,6 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session);
 
 uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_sdp);
-
-void sofia_presence_establish_presence(sofia_profile_t *profile);
 
 void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[]);
