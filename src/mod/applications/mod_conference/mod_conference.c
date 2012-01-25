@@ -1228,7 +1228,6 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 	switch_status_t status;
 	int has_vid = 1, want_refresh = 0;
 	int yield = 0;
-	uint32_t last_member = 0;
 	switch_core_session_t *session;
 	switch_core_session_message_t msg = { 0 };
 
@@ -1268,32 +1267,6 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			goto do_continue;
 		}
 
-		if (conference->floor_holder->id != last_member) {
-			int iframe = 0;
-
-
-			if (vid_frame->codec->implementation->ianacode == 34) {	/* h.263 */
-				//iframe = (*((int16_t *) vid_frame->data) >> 12 == 6);
-				iframe = 1;
-			} else if (vid_frame->codec->implementation->ianacode == 115) {	/* h.263-1998 */
-				int y = *((int8_t *) vid_frame->data + 2) & 0xfe;
-				iframe = (y == 0x80 || y == 0x82);
-			} else if (vid_frame->codec->implementation->ianacode == 99) {	/* h.264 */
-				uint8_t * hdr = vid_frame->data;
-                uint8_t fragment_type = hdr[0] & 0x1f;
-                uint8_t nal_type = hdr[1] & 0x1f;
-                uint8_t start_bit = hdr[1] & 0x80;
-                iframe = (((fragment_type == 28 || fragment_type == 29) && nal_type == 5 && start_bit == 128) || fragment_type == 5);
-			} else {			/* we need more defs */
-				iframe = 1;
-			}
-
-			if (!iframe) {
-				goto do_continue;
-			}
-		}
-
-		last_member = conference->floor_holder->id;
 
 		switch_mutex_unlock(conference->mutex);
 		switch_mutex_lock(conference->mutex);
