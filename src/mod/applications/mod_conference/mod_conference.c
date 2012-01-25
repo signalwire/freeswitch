@@ -1101,6 +1101,14 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	if (member == member->conference->floor_holder) {
 		member->conference->floor_holder = NULL;
+
+		if (test_eflag(conference, EFLAG_FLOOR_CHANGE)) {
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d", member->id);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "none");
+			switch_event_fire(&event);
+		}
 	}
 
 	member->conference = NULL;
@@ -1257,7 +1265,6 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		switch_core_session_rwunlock(session);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			conference->floor_holder = NULL;
 			goto do_continue;
 		}
 
