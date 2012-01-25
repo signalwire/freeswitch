@@ -259,7 +259,11 @@ void ft_to_sngss7_rel (ftdm_channel_t * ftdmchan)
 	
 	rel.causeDgn.eh.pres = PRSNT_NODEF;
 	rel.causeDgn.location.pres = PRSNT_NODEF;
+#ifdef SANGOMA_SPIROU
+	rel.causeDgn.location.val = 0x04;
+#else
 	rel.causeDgn.location.val = 0x01;
+#endif
 	rel.causeDgn.cdeStand.pres = PRSNT_NODEF;
 	rel.causeDgn.cdeStand.val = 0x00;
 	rel.causeDgn.recommend.pres = NOTPRSNT;
