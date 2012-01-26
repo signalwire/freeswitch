@@ -511,6 +511,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 {
 	sngss7_chan_data_t *sngss7_info = NULL;
 	ftdm_channel_t *ftdmchan = NULL;
+	sngss7_event_data_t *event_clone = NULL;
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(sngss7_event->circuit, &sngss7_info, &ftdmchan)) {
@@ -520,6 +521,22 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 
 	/* now that we have the right channel ... put a lock on it so no-one else can use it */
 	ftdm_channel_lock(ftdmchan);
+
+	if (sngss7_info->event_queue) {
+		if (sngss7_event->event_id == SNGSS7_CON_IND_EVENT) {
+			/* this is the first event in a call, flush the event queue */
+			while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
+				SS7_WARN("Discarding clone event from past call for circuit = %d!\n", sngss7_event->circuit);
+				ftdm_safe_free(event_clone);
+			}
+		}
+		/* clone the event and save it for later usage */
+		event_clone = ftdm_calloc(1, sizeof(*sngss7_event));
+		if (event_clone) {
+			memcpy(clone, sngss7_event, sizeof(*sngss7_event));
+			ftdm_queue_enqueue(sngss7_info->event_queue, clone);
+		}
+	}
 
 	/* while there's a state change present on this channel process it */
 	ftdm_channel_advance_states(ftdmchan);
@@ -576,6 +593,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 		break;
 	/**************************************************************************/
 	case (SNGSS7_SSP_STA_CFM_EVENT):
+		SS7_ERROR("dazed and confused ... hu?!\n");
 		break;
 	/**************************************************************************/
 	default:

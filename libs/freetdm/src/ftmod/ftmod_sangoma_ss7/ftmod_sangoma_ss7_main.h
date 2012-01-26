@@ -485,6 +485,7 @@ typedef struct sngss7_chan_data {
 	sngss7_group_data_t		rx_gra;
 	sngss7_group_data_t		tx_grs;
 	sngss7_group_data_t		ucic;
+	ftdm_queue_t 			*event_queue;
 } sngss7_chan_data_t;
 
 #define SNGSS7_RX_GRS_PENDING (1 << 0)
