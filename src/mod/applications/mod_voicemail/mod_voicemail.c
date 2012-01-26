@@ -3425,7 +3425,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 	status = create_file(session, profile, record_macro, file_path, &message_len, SWITCH_TRUE, key_buf, buf);
 
-	if ((status == SWITCH_STATUS_NOTFOUND)) {
+	if (status == SWITCH_STATUS_NOTFOUND) {
 		goto end;
 	}
 

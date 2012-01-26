@@ -2037,7 +2037,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		if (!var_gateway && realm) {
 			char rb[512] = "";
 			char *p = (char *) realm;
-			while ((*p == '"')) {
+			while (*p == '"') {
 				p++;
 			}
 			switch_set_string(rb, p);

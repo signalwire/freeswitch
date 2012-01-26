@@ -3029,7 +3029,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 #ifdef ENABLE_ZRTP
 								/* ZRTP Send */
 								if (zrtp_on && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
-									unsigned int sbytes = (int) bytes;
+									unsigned int sbytes = (unsigned int) bytes;
 									zrtp_status_t stat = zrtp_status_fail;
 									
 									stat = zrtp_process_rtcp(other_rtp_session->zrtp_stream, (void *) &other_rtp_session->rtcp_send_msg, &sbytes);
@@ -3065,11 +3065,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					
 				}
 			}
-		}
-
-		if (bytes < 0) {
-			ret = (int) bytes;
-			goto end;
 		}
 
 

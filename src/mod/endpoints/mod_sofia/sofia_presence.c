@@ -3132,7 +3132,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		}
 	}
 
-	if ((sub_state == nua_substate_active)) {
+	if (sub_state == nua_substate_active) {
 		
 		sstr = switch_mprintf("active;expires=%ld", exp_delta);
 		
