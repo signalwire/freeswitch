@@ -70,6 +70,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 
 		/* Location Number information */
 		copy_locPtyNum_to_sngss7(ftdmchan, &iam.cgPtyNum1);
+
+		/* Forward Call Indicators */
+		copy_fwdCallInd_to_sngss7(ftdmchan, &iam.fwdCallInd);
 	} else {
 		/* Nature of Connection Indicators */
 		copy_natConInd_to_sngss7(ftdmchan, &iam.natConInd);

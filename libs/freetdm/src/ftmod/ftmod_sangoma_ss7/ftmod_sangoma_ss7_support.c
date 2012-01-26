@@ -763,6 +763,8 @@ ftdm_status_t copy_natConInd_to_sngss7(ftdm_channel_t *ftdmchan, SiNatConInd *na
 
 ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *fwdCallInd)
 {
+	const char *val = NULL;
+	int acc_val = ISDNACC_ISDN;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	
 	fwdCallInd->eh.pres 				= PRSNT_NODEF;
@@ -779,7 +781,13 @@ ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *
 	fwdCallInd->isdnUsrPrtPrfInd.pres 	= PRSNT_NODEF;
 	fwdCallInd->isdnUsrPrtPrfInd.val 	= PREF_PREFAW;
 	fwdCallInd->isdnAccInd.pres 		= PRSNT_NODEF;
-	fwdCallInd->isdnAccInd.val 			= ISDNACC_ISDN;
+
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "iam_fwd_ind_isdn_access_ind");
+	if (!ftdm_strlen_zero(val)) {
+		acc_val = (int)atoi(val);
+	}
+
+	fwdCallInd->isdnAccInd.val 			= acc_val;
 	fwdCallInd->sccpMethInd.pres 		= PRSNT_NODEF;
 	fwdCallInd->sccpMethInd.val 		= SCCPMTH_NOIND;
 
