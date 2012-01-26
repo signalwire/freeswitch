@@ -58,6 +58,15 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	if (sngss7_info->circuit->transparent_iam &&
 		sngss7_retrieve_iam(ftdmchan, &iam) == FTDM_SUCCESS) {
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Transparent)\n", sngss7_info->circuit->cic);
+
+		/* Called Number information */
+		copy_cdPtyNum_to_sngss7(ftdmchan, &iam.cdPtyNum);
+
+		/* Redirecting Number */
+		copy_redirgNum_to_sngss7(ftdmchan, &iam.redirgNum);
+
+		/* Redirecting Information */
+		copy_redirgInfo_to_sngss7(ftdmchan, &iam.redirInfo);
 	} else {
 		/* Nature of Connection Indicators */
 		copy_natConInd_to_sngss7(ftdmchan, &iam.natConInd);
