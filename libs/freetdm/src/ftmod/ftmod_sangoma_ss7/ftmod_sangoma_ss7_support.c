@@ -248,14 +248,9 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
         sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
         ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 
-
-        val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "iam_loc_pres");
-        if (!ftdm_strlen_zero(val)) {
-			if (!strcasecmp(val, "false")) {
-				pres_val = NOTPRSNT;
-			}
+		if (!strcasecmp(caller_data->loc.digits, "NULL")) {
+			pres_val = NOTPRSNT;
 		}
-
 
         locPtyNum->eh.pres = pres_val;
         locPtyNum->natAddrInd.pres = pres_val;

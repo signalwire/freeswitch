@@ -1527,9 +1527,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		ftdm_usrmsg_add_var(&usrmsg, "iam_fwd_ind_isdn_access_ind", var);
 	}
 
-	if ((var = channel_get_variable(session, var_event, "freetdm_iam_loc_pres"))) {
-		ftdm_usrmsg_add_var(&usrmsg, "iam_loc_pres", var);
-	}
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_capability"))) {
 		caller_data.bearer_capability = (uint8_t)atoi(var);
 	}
