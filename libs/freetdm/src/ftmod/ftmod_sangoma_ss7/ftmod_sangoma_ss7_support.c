@@ -243,15 +243,25 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
 {
         const char *val = NULL;
         const char *loc_nadi = NULL;
+		int pres_val = PRSNT_NODEF;
 
         sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
         ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 
-        locPtyNum->eh.pres = PRSNT_NODEF;
-        locPtyNum->natAddrInd.pres = PRSNT_NODEF;
+
+        val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "iam_loc_pres");
+        if (!ftdm_strlen_zero(val)) {
+			if (!strcasecmp(val, "false")) {
+				pres_val = NOTPRSNT;
+			}
+		}
+
+
+        locPtyNum->eh.pres = pres_val;
+        locPtyNum->natAddrInd.pres = pres_val;
         locPtyNum->natAddrInd.val = g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].loc_nadi;
 
-        locPtyNum->scrnInd.pres = PRSNT_NODEF;
+        locPtyNum->scrnInd.pres = pres_val;
         val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_loc_screen_ind");
         if (!ftdm_strlen_zero(val)) {
                 locPtyNum->scrnInd.val = atoi(val);
@@ -260,7 +270,7 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
         }
         ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Location Reference Code Screening Ind %d\n", locPtyNum->scrnInd.val);
 
-        locPtyNum->presRest.pres = PRSNT_NODEF;
+        locPtyNum->presRest.pres = pres_val;
         val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_pres_ind");
         if (!ftdm_strlen_zero(val)) {
                 locPtyNum->presRest.val = atoi(val);
@@ -269,10 +279,10 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
         }
         ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Presentation Ind %d\n", locPtyNum->presRest.val);
 
-        locPtyNum->numPlan.pres	= PRSNT_NODEF;
+        locPtyNum->numPlan.pres	= pres_val;
         locPtyNum->numPlan.val = 0x01;
 
-        locPtyNum->niInd.pres = PRSNT_NODEF;
+        locPtyNum->niInd.pres = pres_val;
         locPtyNum->niInd.val = 0x00;
 
 		/* check if the user would like a custom NADI value for the Location Reference */

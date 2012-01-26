@@ -1523,9 +1523,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		caller_data.pres = FTDM_PRES_RESTRICTED;
 	}
 
+	if ((var = channel_get_variable(session, var_event, "freetdm_iam_loc_pres"))) {
+		ftdm_usrmsg_add_var(&usrmsg, "iam_loc_pres", var);
+	}
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_capability"))) {
 		caller_data.bearer_capability = (uint8_t)atoi(var);
 	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "freetdm_bearer_capability is set to %s \n", var );
 	
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_layer1"))) {
 		caller_data.bearer_layer1 = (uint8_t)atoi(var);
