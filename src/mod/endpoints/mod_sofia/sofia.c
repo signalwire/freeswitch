@@ -3436,14 +3436,14 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
                                                         sofia_clear_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
                                                 }
 					} else if (!strcasecmp(var, "sip-force-expires")) {
-						uint32_t sip_force_expires = atoi(val);
+						int32_t sip_force_expires = atoi(val);
 						if (sip_force_expires >= 0) {
 							profile->sip_force_expires = sip_force_expires;
 						} else {
 							profile->sip_force_expires = 0;
 						}
 					} else if (!strcasecmp(var, "sip-expires-max-deviation")) {
-						uint32_t sip_expires_max_deviation = atoi(val);
+						int32_t sip_expires_max_deviation = atoi(val);
 						if (sip_expires_max_deviation >= 0) {
 							profile->sip_expires_max_deviation = sip_expires_max_deviation;
 						} else {
@@ -4497,14 +4497,14 @@ switch_status_t config_sofia(int reload, char *profile_name)
                                                         sofia_clear_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
                                                 }
 					} else if (!strcasecmp(var, "sip-force-expires")) {
-						uint32_t sip_force_expires = atoi(val);
+						int32_t sip_force_expires = atoi(val);
 						if (sip_force_expires >= 0) {
 							profile->sip_force_expires = sip_force_expires;
 						} else {
 							profile->sip_force_expires = 0;
 						}
 					} else if (!strcasecmp(var, "sip-expires-max-deviation")) {
-						uint32_t sip_expires_max_deviation = atoi(val);
+						int32_t sip_expires_max_deviation = atoi(val);
 						if (sip_expires_max_deviation >= 0) {
 							profile->sip_expires_max_deviation = sip_expires_max_deviation;
 						} else {
@@ -5802,7 +5802,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						sofia_set_flag_locked(tech_pvt, TFLAG_3PCC);
 						//sofia_glue_tech_choose_port(tech_pvt, 0);
 						//sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-						switch_channel_set_flag(channel, TFLAG_LATE_NEGOTIATION);
+						sofia_set_flag(tech_pvt, TFLAG_LATE_NEGOTIATION);
 						//Moves into CS_INIT so call moves forward into the dialplan
 						switch_channel_set_state(channel, CS_INIT);
 					} else {
