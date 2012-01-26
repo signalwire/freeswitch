@@ -5139,6 +5139,14 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup)
 {
 	char *url = NULL, *e;
 
+	while((e = strchr(buf, '"'))) {
+		buf = e+1;
+	}
+
+	while(*buf == ' ') {
+		buf++;
+	}
+
 	if ((url = strchr(buf, '<')) && (e = strchr(url, '>'))) {
 		url++;
 		if (to_dup) {
@@ -6504,9 +6512,14 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	nua_handle_t *nh;
 	sofia_destination_t *dst = NULL;
 	char *contact_str, *contact, *user_via = NULL;
-	char *route_uri = NULL;
+	char *route_uri = NULL, *p;
 
 	contact = sofia_glue_get_url_from_contact((char *) o_contact, 1);
+
+	if ((p = strstr(contact, ";fs_"))) {
+		*p = '\0';
+	}
+
 	if (!zstr(network_ip) && sofia_glue_check_nat(profile, network_ip)) {
 		char *ptr = NULL;
 		//const char *transport_str = NULL;
@@ -6744,7 +6757,7 @@ void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str
 	}
 }
 
-char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_dispatch_event_t *de, sofia_nat_parse_t *np)
+char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np)
 {
 	char *contact_str = NULL;
 	const char *contact_host;//, *contact_user;
@@ -6841,7 +6854,8 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sof
 		np->is_nat = "No contact host";
 	}
 
-	if (np->is_nat) {
+
+	if (np->is_nat && !np->fs_path) {
 		contact_host = np->network_ip;
 		switch_snprintf(new_port, sizeof(new_port), ":%d", np->network_port);
 		port = NULL;
@@ -6853,17 +6867,50 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sof
 	}
 
 	ipv6 = strchr(contact_host, ':');
-	if (contact->m_url->url_params) {
-		contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s;%s>%s",
-									 display, contact->m_url->url_user,
-									 ipv6 ? "[" : "",
-									 contact_host, ipv6 ? "]" : "", new_port, contact->m_url->url_params, np->is_nat ? ";fs_nat=yes" : "");
-	} else {
-		contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s>%s",
-									 display,
-									 contact->m_url->url_user, ipv6 ? "[" : "", contact_host, ipv6 ? "]" : "", new_port, np->is_nat ? ";fs_nat=yes" : "");
-	}
 
+	if (np->is_nat && np->fs_path) {
+		char *full_contact = sip_header_as_string(nh->nh_home, (void *) contact);
+		char *full_contact_dup;
+		char *path_encoded;
+		int path_encoded_len;
+		char *path_val;
+		const char *tp;
+
+		full_contact_dup = sofia_glue_get_url_from_contact(full_contact, 1);
+
+		if ((tp = switch_stristr("transport=", full_contact_dup))) {
+			tp += 10;
+		}
+		
+		if (zstr(tp)) {
+			tp = "udp";
+		}
+
+		path_val = switch_mprintf("sip:%s:%d;transport=%s", np->network_ip, np->network_port, tp);
+		path_encoded_len = (int)(strlen(path_val) * 3) + 1;
+
+		switch_zmalloc(path_encoded, path_encoded_len);
+		switch_copy_string(path_encoded, ";fs_path=", 10);
+		switch_url_encode(path_val, path_encoded + 9, path_encoded_len - 9);
+		
+		contact_str = switch_mprintf("%s <%s;fs_nat=yes%s>", display, full_contact_dup, path_encoded);
+
+		free(full_contact_dup);
+		free(path_encoded);
+		free(path_val);
+
+	} else {
+		if (contact->m_url->url_params) {
+			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s;%s>%s",
+										 display, contact->m_url->url_user,
+										 ipv6 ? "[" : "",
+										 contact_host, ipv6 ? "]" : "", new_port, contact->m_url->url_params, np->is_nat ? ";fs_nat=yes" : "");
+		} else {
+			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s>%s",
+										 display,
+										 contact->m_url->url_user, ipv6 ? "[" : "", contact_host, ipv6 ? "]" : "", new_port, np->is_nat ? ";fs_nat=yes" : "");
+		}
+	}
 		
 	return contact_str;
 }

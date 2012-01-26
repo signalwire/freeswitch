@@ -4175,7 +4175,7 @@ SWITCH_STANDARD_API(sofia_function)
 					}
 					
 					if (strstr(argv[2], "sla")) {
-						mod_sofia_globals.debug_sla = 1;
+						mod_sofia_globals.debug_sla = 10;
 						stream->write_function(stream, "+OK Debugging sla\n");
 					}
 					

@@ -828,6 +828,7 @@ typedef struct {
 	int network_port;
 	const char *is_nat;
 	int is_auto_nat;
+	int fs_path;
 } sofia_nat_parse_t;
 
 
@@ -1140,7 +1141,7 @@ switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, swi
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
 void sofia_glue_check_dtmf_type(private_object_t *tech_pvt);
 void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str);
-char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
+char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
 char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool);

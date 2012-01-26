@@ -91,7 +91,7 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 	if (status >= 300 && sip && sip->sip_call_id && (!sofia_private || !sofia_private->is_call)) {
 		char *sql;
 
-		sql = switch_mprintf("update sip_subscriptions set expires=%ld where call_id='%q'", (long) switch_epoch_time_now(NULL), sip->sip_call_id->i_id);
+		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		nua_handle_destroy(nh);
@@ -3686,7 +3686,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 				sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
-				sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
+				//sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);		
 				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
 
 				profile->shutdown_type = "false";
