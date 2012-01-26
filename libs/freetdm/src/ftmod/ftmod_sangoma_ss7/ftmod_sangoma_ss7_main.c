@@ -533,8 +533,8 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 		/* clone the event and save it for later usage */
 		event_clone = ftdm_calloc(1, sizeof(*sngss7_event));
 		if (event_clone) {
-			memcpy(clone, sngss7_event, sizeof(*sngss7_event));
-			ftdm_queue_enqueue(sngss7_info->event_queue, clone);
+			memcpy(event_clone, sngss7_event, sizeof(*sngss7_event));
+			ftdm_queue_enqueue(sngss7_info->event_queue, event_clone);
 		}
 	}
 
