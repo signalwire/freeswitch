@@ -798,8 +798,6 @@ static int isUrl(const char *filename)
 SWITCH_STANDARD_API(http_cache_prefetch)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_memory_pool_t *lpool = NULL;
-	switch_memory_pool_t *pool = NULL;
 	char *url;
 
 	if (!isUrl(cmd)) {
@@ -807,13 +805,6 @@ SWITCH_STANDARD_API(http_cache_prefetch)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (session) {
-		pool = switch_core_session_get_pool(session);
-	} else {
-		switch_core_new_memory_pool(&lpool);
-		pool = lpool;
-	}
-	
 	/* send to thread pool */
 	url = strdup(cmd);
 	if (switch_queue_trypush(gcache.prefetch_queue, url) != SWITCH_STATUS_SUCCESS) {
@@ -822,10 +813,6 @@ SWITCH_STANDARD_API(http_cache_prefetch)
 		stream->write_function(stream, "-ERR\n");
 	} else {
 		stream->write_function(stream, "+OK\n");
-	}
-
-	if (lpool) {
-		switch_core_destroy_memory_pool(&lpool);
 	}
 
 	return status;
