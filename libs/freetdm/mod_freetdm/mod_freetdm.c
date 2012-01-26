@@ -506,6 +506,9 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	int chan_id = 0;
 	const char *name = NULL;
 
+	ftdm_usrmsg_t usrmsg;
+	memset(&usrmsg, 0, sizeof(ftdm_usrmsg_t));
+
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -574,11 +577,19 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	case FTDM_CHAN_TYPE_CAS:
 	case FTDM_CHAN_TYPE_B:
 		{
+			const char *sipvar;
 			ftdm_call_cause_t hcause = switch_channel_get_cause_q850(channel);
 			if (hcause  < 1 || hcause > 127) {
 				hcause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
+			sipvar = switch_channel_get_variable(channel, "ss7_rel_loc");
+			if (sipvar) {
+				ftdm_usrmsg_add_var(&usrmsg, "ss7_rel_loc", sipvar);
+			}
+			/*
 			ftdm_channel_call_hangup_with_cause(tech_pvt->ftdmchan, hcause);
+			*/
+			ftdm_channel_call_hangup_with_cause_ex(tech_pvt->ftdmchan, hcause, &usrmsg);
 		}
 		break;
 	default: 
