@@ -1603,6 +1603,23 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		hunt_data.tech_pvt = tech_pvt;
 		caller_data.priv = &hunt_data;
 
+		if (session
+		 && (var = channel_get_variable(session, var_event, FREETDM_VAR_PREFIX "native_sigbridge")) 
+		 && switch_true(var)
+		 && switch_core_session_compare(*new_session, session)) {
+			char sigbridge_peer[255];
+			private_t *peer_pvt = switch_core_session_get_private(session);
+			switch_channel_t *peer_chan = switch_core_session_get_channel(session);
+			switch_channel_t *our_chan = switch_core_session_get_channel(*new_session);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+					"Bridging native signaling of channel %s to channel %s\n", 
+					switch_channel_get_name(peer_chan), switch_channel_get_name(our_chan));
+			snprintf(sigbridge_peer, sizeof(sigbridge_peer), "%u:%u", 
+					ftdm_channel_get_span_id(peer_pvt->ftdmchan), ftdm_channel_get_id(peer_pvt->ftdmchan));
+			ftdm_usrmsg_add_var(&usrmsg, "sigbridge_peer", sigbridge_peer);
+		}
+
+
 		if ((status = ftdm_call_place_ex(&caller_data, &hunting, &usrmsg)) != FTDM_SUCCESS) {
 			if (tech_pvt->read_codec.implementation) {
 				switch_core_codec_destroy(&tech_pvt->read_codec);

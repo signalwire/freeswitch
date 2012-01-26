@@ -44,6 +44,7 @@
 /* FUNCTIONS ******************************************************************/
 void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 {	
+	const char *var = NULL;
 	SiConEvnt 			iam;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
 	
@@ -55,7 +56,59 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	
 	memset (&iam, 0x0, sizeof (iam));
 
-	if (sngss7_info->circuit->transparent_iam &&
+	var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "sigbridge_peer");
+	if (!ftdm_strlen_zero(var)) {
+		ftdm_status_t status = FTDM_SUCCESS;
+		int rc = 0;
+		ftdm_span_t *peer_span = NULL;
+		ftdm_channel_t *peer_chan = NULL;
+		sngss7_chan_data_t *peer_info = NULL;
+		unsigned peer_span_id = 0;
+		unsigned peer_chan_id = 0;
+		rc = sscanf(var, "%u:%u", &peer_span_id, &peer_chan_id);
+		if (rc != 2) {
+			SS7_ERROR_CHAN(ftdmchan, "Failed to parse sigbridge_peer string '%s'\n", var);
+		} else {
+			status = ftdm_span_find(peer_span_id, &peer_span);
+			if (status != FTDM_SUCCESS || !peer_span) {
+				SS7_ERROR_CHAN(ftdmchan, "Failed to find peer span for channel id '%u:%u'\n", peer_span_id, peer_chan_id);
+			} else if (peer_span->signal_type != FTDM_SIGTYPE_SS7) {
+				SS7_ERROR_CHAN(ftdmchan, "Peer channel %d:%d has different signaling type %d'\n", 
+						peer_span_id, peer_chan_id, peer_span->signal_type);
+			} else {
+				if (peer_chan_id > (FTDM_MAX_CHANNELS_SPAN+1) || !(peer_chan = peer_span->channels[peer_chan_id])) {
+					SS7_ERROR_CHAN(ftdmchan, "Invalid peer channel id '%u:%u'\n", peer_span_id, peer_chan_id);
+				} else {
+					sngss7_event_data_t *event_clone = NULL;
+					peer_info = peer_chan->call_data;
+					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Starting native bridge with peer CIC %d\n", 
+							sngss7_info->circuit->cic, peer_info->circuit->cic);
+					/* make each one of us aware of the native bridge */
+					peer_info->peer_data = sngss7_info;
+					sngss7_info->peer_data = peer_info;
+					/* flush our own queue */
+					while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
+						SS7_WARN("[CIC:%d]Discarding clone event from past call!\n", sngss7_info->circuit->cic);
+						ftdm_safe_free(event_clone);
+					}
+				}
+			}
+		}
+	}
+
+	if (sngss7_info->peer_data) {
+		sngss7_event_data_t *event_clone = ftdm_queue_dequeue(sngss7_info->peer_data->event_queue);
+		/* Retrieve IAM from our peer */
+		if (!event_clone) {
+			SS7_ERROR_CHAN(ftdmchan, "No event clone in peer queue!%s\n", "");
+		} else if (event_clone->event_id != SNGSS7_CON_IND_EVENT) {
+			/* first message in the queue should ALWAYS be an IAM */
+			SS7_ERROR_CHAN(ftdmchan, "Invalid initial peer message type '%d'\n", event_clone->event_id);
+		} else {
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged)\n", sngss7_info->circuit->cic);
+			memcpy(&iam, &event_clone->event.siConEvnt, sizeof(iam));
+		}
+	} else if (sngss7_info->circuit->transparent_iam &&
 		sngss7_retrieve_iam(ftdmchan, &iam) == FTDM_SUCCESS) {
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Transparent)\n", sngss7_info->circuit->cic);
 	} else {

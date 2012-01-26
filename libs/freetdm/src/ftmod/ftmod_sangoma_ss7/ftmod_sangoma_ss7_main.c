@@ -526,7 +526,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 		if (sngss7_event->event_id == SNGSS7_CON_IND_EVENT) {
 			/* this is the first event in a call, flush the event queue */
 			while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
-				SS7_WARN("Discarding clone event from past call for circuit = %d!\n", sngss7_event->circuit);
+				SS7_WARN("[CIC:%d]Discarding clone event from past call!\n", sngss7_info->circuit->cic);
 				ftdm_safe_free(event_clone);
 			}
 		}
@@ -1076,6 +1076,19 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_OPEN)) {
 			ftdm_channel_t *close_chan = ftdmchan;
+
+			/* detach native bridging if needed (only the outbound leg is responsible for that)
+			   Inbound leg was responsible of flushing its queue of events, but peer attach/detach
+			   is left as an outbound leg responsibility
+			 */
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+				sngss7_chan_data_t *peer_info = sngss7_info->peer_data;
+				sngss7_info->peer_data = NULL;
+				if (peer_info) {
+					peer_info->peer_data = NULL;
+				}
+			}
+
 			/* close the channel */
 			SS7_DEBUG_CHAN(ftdmchan,"FTDM Channel Close %s\n", "");
 			ftdm_channel_close (&close_chan);
