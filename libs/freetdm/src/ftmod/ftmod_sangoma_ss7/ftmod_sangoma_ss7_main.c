@@ -40,6 +40,13 @@
 
 /* INCLUDE ********************************************************************/
 #include "ftmod_sangoma_ss7_main.h"
+#include <sng_ss7/ci_db.h>
+#include <sng_ss7/cm_hash.h>
+#include <sng_ss7/cm_hash.x>
+#include <sng_ss7/si.h>
+#include <sng_ss7/si_mf.h>
+#include <sng_ss7/si_mf.x>
+#include <sng_ss7/si.x>
 /******************************************************************************/
 
 /* DEFINES ********************************************************************/
@@ -567,6 +574,33 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 		sngss7_info->peer_data = NULL;
 	}
 
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
+
+		if (sngss7_event->event_id == SNGSS7_SUSP_IND_EVENT) {
+			sngss7_set_ckt_flag(sngss7_info, FLAG_SUS_RECVD);
+			sngss7_clear_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
+		}
+
+		if (sngss7_test_ckt_flag(sngss7_info, FLAG_SUS_RECVD) && 
+		   !sngss7_test_ckt_flag(sngss7_info, FLAG_T6_CANCELED)) {
+			/* SPIROU cert, disable ISUP T6 when bridged natively */
+			int trc = 0;
+			SiCon *siCon = NULL;
+			if (siFindSuInstId(sngss7_info->suInstId, &siCon) != RFAILED) {
+				if (siCon) {
+					trc = siStopConTmr(siCon, TMR_T6I);
+					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Stopped T6 timer (%d)\n", sngss7_info->circuit->cic, trc);
+					sngss7_set_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
+				} else {
+					SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]siCon is null!\n", sngss7_info->circuit->cic);
+				}
+			} else {
+				SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]could not find siCon\n", sngss7_info->circuit->cic);
+			}
+		}
+
+	}
+
 	/* clone the event and save it for later usage, we do not clone RLC messages */
 	if (sngss7_event->event_id != SNGSS7_REL_CFM_EVENT) {
 		event_clone = ftdm_calloc(1, sizeof(*sngss7_event));
@@ -955,6 +989,29 @@ static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan,
 	/**************************************************************************/
 	}
 
+	if ((sngss7_event->event_id == SNGSS7_SUSP_IND_EVENT)) {
+		sngss7_set_ckt_flag(sngss7_info, FLAG_SUS_RECVD);
+	}
+
+	if (sngss7_test_ckt_flag(sngss7_info, FLAG_SUS_RECVD) && 
+	   !sngss7_test_ckt_flag(sngss7_info, FLAG_T6_CANCELED)) {
+		/* SPIROU cert, disable ISUP T6 when bridged natively */
+		int trc = 0;
+		SiCon *siCon = NULL;
+		if (siFindSuInstId(sngss7_info->suInstId, &siCon) != RFAILED) {
+			if (siCon) {
+				trc = siStopConTmr(siCon, TMR_T6I);
+				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Stopped T6 timer (%d)\n", sngss7_info->circuit->cic, trc);
+				sngss7_set_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
+			} else {
+				SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]siCon is null!\n", sngss7_info->circuit->cic);
+			}
+		} else {
+			SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]could not find siCon\n", sngss7_info->circuit->cic);
+		}
+	}
+
+
 }
 
 static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t *ftdmchan);
@@ -969,6 +1026,8 @@ static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t 
 	case FTDM_CHANNEL_STATE_DOWN:
 		{
 			ftdm_channel_t *close_chan = ftdmchan;
+			sngss7_clear_ckt_flag(sngss7_info, FLAG_SUS_RECVD);
+			sngss7_clear_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
 			ftdm_channel_close (&close_chan);
 		}
 		break;

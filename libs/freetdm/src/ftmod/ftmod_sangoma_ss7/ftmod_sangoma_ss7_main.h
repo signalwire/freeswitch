@@ -550,6 +550,8 @@ typedef enum {
 	FLAG_INFID_PAUSED		= (1 << 15),
 	FLAG_SENT_ACM			= (1 << 16),
 	FLAG_SENT_CPG			= (1 << 17),
+	FLAG_SUS_RECVD		        = (1 << 18),
+	FLAG_T6_CANCELED 		= (1 << 19),
 	FLAG_RELAY_DOWN			= (1 << 30),
 	FLAG_CKT_RECONFIG		= (1 << 31)
 } sng_ckt_flag_t;
