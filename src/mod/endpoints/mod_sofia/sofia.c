@@ -2518,6 +2518,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: password param is REQUIRED!\n");
 					goto skip;
 				}
+			} else {
+				if (zstr(username)) {
+					username = "FreeSWITCH";
+				}
+
+				if (zstr(password)) {
+					password = "";
+				}
 			}
 
 			if (zstr(from_user)) {
