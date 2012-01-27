@@ -2520,7 +2520,6 @@ static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *f
 	if (var) {
 		ftdm_span_t *peer_span = NULL;
 		ftdm_channel_t *peer_chan = NULL;
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "enabling native signaling bridge!\n");
 		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE);
 		ftdm_get_channel_from_string(var, &peer_span, &peer_chan);
 		if (peer_chan) {

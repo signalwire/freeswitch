@@ -693,7 +693,7 @@ static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan,
 		ftdm_channel_advance_states(ftdmchan);
 	}
 
-	SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]Relaying message %s from bridged peer\n", 
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Relaying message %s from bridged peer\n", 
 			sngss7_info->circuit->cic, ftdm_sngss7_event2str(sngss7_event->event_id));
 
 	switch (sngss7_event->event_id) {

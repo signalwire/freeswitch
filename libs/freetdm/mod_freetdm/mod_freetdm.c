@@ -1260,6 +1260,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	const char *var;
 	const char *dest_num = NULL, *callerid_num = NULL;
 	const char *network_peer_uuid = NULL;
+	char sigbridge_peer[255];
+	switch_channel_t *peer_chan = NULL;
+	switch_channel_t *our_chan = NULL;
 	ftdm_hunting_scheme_t hunting;
 	ftdm_usrmsg_t usrmsg;
 
@@ -1613,17 +1616,22 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			goto fail;
 		}
 
+		our_chan = switch_core_session_get_channel(*new_session);
+
 		if (network_peer_uuid) {
 			switch_core_session_t *network_peer = switch_core_session_locate(network_peer_uuid);
 			if (network_peer) {
-					const char *my_uuid = switch_core_session_get_uuid(*new_session);
-					private_t *peer_private = switch_core_session_get_private(network_peer);
-					switch_set_string(tech_pvt->network_peer_uuid, network_peer_uuid);
-					switch_set_string(peer_private->network_peer_uuid, my_uuid);
+				const char *my_uuid = switch_core_session_get_uuid(*new_session);
+				private_t *peer_private = switch_core_session_get_private(network_peer);
+				switch_set_string(tech_pvt->network_peer_uuid, network_peer_uuid);
+				switch_set_string(peer_private->network_peer_uuid, my_uuid);
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Session %s is network-bridged with %s\n", my_uuid, network_peer_uuid);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %s is network-bridged with %s\n", 
+						my_uuid, network_peer_uuid);
 
-					switch_core_session_rwunlock(network_peer);
+				snprintf(sigbridge_peer, sizeof(sigbridge_peer), "%u:%u", 
+				ftdm_channel_get_span_id(peer_private->ftdmchan), ftdm_channel_get_id(peer_private->ftdmchan));
+				switch_core_session_rwunlock(network_peer);
 			}
 		}
 
@@ -1642,15 +1650,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		 && (var = channel_get_variable(session, var_event, FREETDM_VAR_PREFIX "native_sigbridge")) 
 		 && switch_true(var)
 		 && switch_core_session_compare(*new_session, session)) {
-			char sigbridge_peer[255];
 			private_t *peer_pvt = switch_core_session_get_private(session);
-			switch_channel_t *peer_chan = switch_core_session_get_channel(session);
-			switch_channel_t *our_chan = switch_core_session_get_channel(*new_session);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-					"Bridging native signaling of channel %s to channel %s\n", 
-					switch_channel_get_name(peer_chan), switch_channel_get_name(our_chan));
 			snprintf(sigbridge_peer, sizeof(sigbridge_peer), "%u:%u", 
 					ftdm_channel_get_span_id(peer_pvt->ftdmchan), ftdm_channel_get_id(peer_pvt->ftdmchan));
+		}
+
+		if (!zstr(sigbridge_peer)) {
+			peer_chan = switch_core_session_get_channel(session);
 			ftdm_usrmsg_add_var(&usrmsg, "sigbridge_peer", sigbridge_peer);
 		}
 
@@ -1669,7 +1675,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			} else {
 				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
-            goto fail;
+            		goto fail;
+		}
+
+		if (our_chan && peer_chan) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
+					"Bridging native signaling of channel %s to channel %s\n", 
+					switch_channel_get_name(peer_chan), switch_channel_get_name(our_chan));
 		}
 
 		return SWITCH_CAUSE_SUCCESS;

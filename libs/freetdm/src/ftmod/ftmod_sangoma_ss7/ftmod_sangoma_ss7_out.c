@@ -79,7 +79,6 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 				sngss7_info->peer_data = peer_info;
 				/* flush our own queue */
 				while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
-					SS7_WARN("[CIC:%d]Discarding clone event from past call!\n", sngss7_info->circuit->cic);
 					ftdm_safe_free(event_clone);
 				}
 				/* go up until release comes, note that state processing is done different and much simpler when there is a peer  */
