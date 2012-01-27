@@ -990,6 +990,7 @@ typedef enum {
 #define VM_ENTER_PASS_MACRO "voicemail_enter_pass"
 #define VM_FAIL_AUTH_MACRO "voicemail_fail_auth"
 #define VM_CHANGE_PASS_SUCCESS_MACRO "voicemail_change_pass_success"
+#define VM_CHANGE_PASS_FAIL_MACRO "voicemail_change_pass_fail"
 #define VM_ABORT_MACRO "voicemail_abort"
 #define VM_HELLO_MACRO "voicemail_hello"
 #define VM_GOODBYE_MACRO "voicemail_goodbye"
@@ -2195,6 +2196,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						}
 						
 						if (fail) {
+							/* add feedback for user - let him/her know that the password they tried to change to is not allowed */
+							/* change the following macro to VM_CHANGE_PASS_FAIL_MACRO when new prompts have been recorded */
 							switch_ivr_phrase_macro(session, VM_FAIL_AUTH_MACRO, NULL, NULL, NULL);
 						} else {
 							sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
