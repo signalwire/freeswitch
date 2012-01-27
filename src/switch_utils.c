@@ -604,17 +604,8 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	char *newfile = NULL;
 	switch_bool_t rval = SWITCH_FALSE;
 	const char *err = NULL;
-	const char *stipped_file;
-	const char *new_type;
-	char *xext;
 
-	if (zstr(file)) {
-		err = "Missing file";
-		rval = SWITCH_FALSE;
-		goto end;
-	}
-
-	if (!zstr(convert_cmd) && !zstr(convert_ext)) {
+	if (!zstr(file) && !zstr(convert_cmd) && !zstr(convert_ext)) {
 		if ((ext = strrchr(file, '.'))) {
 			dupfile = strdup(file);
 			if ((ext = strrchr(dupfile, '.'))) {
@@ -639,118 +630,120 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 
 	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int) switch_epoch_time_now(NULL), rand() & 0xffff);
 
-	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
-		err = "Failed to open temp file";
-		rval = SWITCH_FALSE;
-		goto end;
-	}
+	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644)) > -1) {
+		if (file) {
+			if ((ifd = open(file, O_RDONLY | O_BINARY)) < 0) {
+				rval = SWITCH_FALSE;
+				err = "Cannot open tmp file\n";
+				goto end;
+			}
+		}
+		switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
+		if (!write_buf(fd, buf)) {
+			rval = SWITCH_FALSE;
+			err = "write error.";
+			goto end;
+		}
 
-	if ((ifd = open(file, O_RDONLY | O_BINARY)) < 0) {
-		rval = SWITCH_FALSE;
-		err = "Failed to open source file\n";
-		goto end;
-	}
+		if (headers && !write_buf(fd, headers)) {
+			rval = SWITCH_FALSE;
+			err = "write error.";
+			goto end;
+		}
 
-	switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
-	if (!write_buf(fd, buf)) {
-		rval = SWITCH_FALSE;
-		err = "write error.";
-		goto end;
-	}
+		if (!write_buf(fd, "\n\n")) {
+			rval = SWITCH_FALSE;
+			err = "write error.";
+			goto end;
+		}
 
-	if (headers && !write_buf(fd, headers)) {
-		rval = SWITCH_FALSE;
-		err = "write error.";
-		goto end;
-	}
+		if (body && switch_stristr("content-type", body)) {
+			switch_snprintf(buf, B64BUFFLEN, "--%s\n", bound);
+		} else {
+			switch_snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
+		}
+		if (!write_buf(fd, buf)) {
+			rval = SWITCH_FALSE;
+			err = "write error.";
+			goto end;
+		}
 
-	if (!write_buf(fd, "\n\n")) {
-		rval = SWITCH_FALSE;
-		err = "write error.";
-		goto end;
-	}
+		if (body) {
+			if (!write_buf(fd, body)) {
+				rval = SWITCH_FALSE;
+				err = "write error.";
+				goto end;
+			}
+		}
 
-	if (body && switch_stristr("content-type", body)) {
-		switch_snprintf(buf, B64BUFFLEN, "--%s\n", bound);
-	} else {
-		switch_snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
-	}
-	if (!write_buf(fd, buf)) {
-		rval = SWITCH_FALSE;
-		err = "write error.";
-		goto end;
-	}
+		if (file) {
+			const char *stipped_file = switch_cut_path(file);
+			const char *new_type;
+			char *ext;
 
-	if (body) {
-		if (!write_buf(fd, body)) {
+			if ((ext = strrchr(stipped_file, '.'))) {
+				ext++;
+				if ((new_type = switch_core_mime_ext2type(ext))) {
+					mime_type = new_type;
+				}
+			}
+
+			switch_snprintf(buf, B64BUFFLEN,
+							"\n\n--%s\nContent-Type: %s; name=\"%s\"\n"
+							"Content-ID: <ATTACHED@freeswitch.org>\n"
+							"Content-Transfer-Encoding: base64\n"
+							"Content-Description: Sound attachment.\n"
+							"Content-Disposition: attachment; filename=\"%s\"\n\n", bound, mime_type, stipped_file, stipped_file);
+			if (!write_buf(fd, buf)) {
+				rval = SWITCH_FALSE;
+				err = "write error.";
+				goto end;
+			}
+
+			while ((ilen = read(ifd, in, B64BUFFLEN))) {
+				for (x = 0; x < ilen; x++) {
+					b = (b << 8) + in[x];
+					l += 8;
+					while (l >= 6) {
+						out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
+						if (++y != 72)
+							continue;
+						out[bytes++] = '\n';
+						y = 0;
+					}
+				}
+				if (write(fd, &out, bytes) != bytes) {
+					rval = -1;
+					break;
+				} else {
+					bytes = 0;
+				}
+
+			}
+
+			if (l > 0) {
+				out[bytes++] = switch_b64_table[((b % 16) << (6 - l)) % 64];
+			}
+			if (l != 0)
+				while (l < 6) {
+					out[bytes++] = '=', l += 2;
+				}
+			if (write(fd, &out, bytes) != bytes) {
+				rval = -1;
+			}
+
+		}
+
+		switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
+
+		if (!write_buf(fd, buf)) {
 			rval = SWITCH_FALSE;
 			err = "write error.";
 			goto end;
 		}
 	}
 
-	stipped_file = switch_cut_path(file);
 
-	if ((xext = strrchr(stipped_file, '.'))) {
-		xext++;
-		if ((new_type = switch_core_mime_ext2type(xext))) {
-			mime_type = new_type;
-		}
-	}
-
-	switch_snprintf(buf, B64BUFFLEN,
-					"\n\n--%s\nContent-Type: %s; name=\"%s\"\n"
-					"Content-ID: <ATTACHED@freeswitch.org>\n"
-					"Content-Transfer-Encoding: base64\n"
-					"Content-Description: Sound attachment.\n"
-					"Content-Disposition: attachment; filename=\"%s\"\n\n", bound, mime_type, stipped_file, stipped_file);
-	if (!write_buf(fd, buf)) {
-		rval = SWITCH_FALSE;
-		err = "write error.";
-		goto end;
-	}
-
-	while ((ilen = read(ifd, in, B64BUFFLEN))) {
-		for (x = 0; x < ilen; x++) {
-			b = (b << 8) + in[x];
-			l += 8;
-			while (l >= 6) {
-				out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
-				if (++y != 72)
-					continue;
-				out[bytes++] = '\n';
-				y = 0;
-			}
-		}
-		if (write(fd, &out, bytes) != bytes) {
-			rval = -1;
-			break;
-		} else {
-			bytes = 0;
-		}
-
-	}
-
-	if (l > 0) {
-		out[bytes++] = switch_b64_table[((b % 16) << (6 - l)) % 64];
-	}
-
-	if (l != 0)
-		while (l < 6) {
-			out[bytes++] = '=', l += 2;
-		}
-	if (write(fd, &out, bytes) != bytes) {
-		rval = -1;
-	}
-
-	switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
-
-	if (!write_buf(fd, buf)) {
-		rval = SWITCH_FALSE;
-		err = "write error.";
-		goto end;
-	}
-	
 	if (zstr(from)) {
 		from = "freeswitch";
 	}
@@ -781,12 +774,13 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 
   end:
 
-	if (fd > -1) {
+	if (fd < 0) {
 		close(fd);
 	}
-	if (ifd > -1) {
+	if (ifd < 0) {
 		close(ifd);
 	}
+
 
 	if (newfile) {
 		unlink(newfile);
