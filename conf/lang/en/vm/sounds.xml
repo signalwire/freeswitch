@@ -25,6 +25,14 @@
     </input>
   </macro>
 
+  <macro name="voicemail_change_pass_success">
+    <input pattern="(.*)">
+      <match>
+	<action function="play-file" data="ivr/ivr-Thank_you.wav"/>
+      </match>
+    </input>
+  </macro>
+
   <macro name="voicemail_hello">
     <input pattern="(.*)">
       <match>

@@ -313,7 +313,6 @@
       <prompt phrase="Send this caller to voicemail" filename="ivr-send_to_voicemail.wav"/>
       <prompt phrase="To speak to a customer service representative" filename="ivr-speak_to_a_customer_service_representative.wav"/>
       <prompt phrase="Take a message" filename="ivr-take_a_message.wav"/>
-      <prompt phrase="Thank you" filename="ivr-thank_you.wav"/>
       <prompt phrase="That was an invalid entry" filename="ivr-that_was_an_invalid_entry.wav"/>
       <prompt phrase="This is a call from" filename="ivr-this_is_a_call_from.wav"/>
       <prompt phrase="This IVR will let you test some of the features..." filename="ivr-this_ivr_will_let_you_test_features.wav"/>
@@ -508,6 +507,8 @@
 	  <prompt phrase="...other person in this conference." filename="conf-other_person_conference.wav"/>	
 	  <prompt phrase="...other member in this conference." filename="conf-other_member_conference.wav"/>	
 	  <prompt phrase="There is..." filename="ivr-there_is.wav"/>	
+	  <prompt phrase="That number is on the Do Not Call list." filename="ivr-do_not_call_list.wav"/>	
+	  <prompt phrase="The call attempt has been aborted." filename="ivr-call_attempt_aborted.wav"/>	
 	  <prompt phrase="" filename=""/>	
     </ivr>
     <misc>
