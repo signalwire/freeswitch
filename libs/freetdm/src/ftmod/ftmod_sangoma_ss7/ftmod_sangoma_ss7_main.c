@@ -561,7 +561,6 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 	if (sngss7_event->event_id == SNGSS7_CON_IND_EVENT) {
 		/* this is the first event in a call, flush the event queue */
 		while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
-			SS7_WARN("[CIC:%d]Discarding clone event from past call!\n", sngss7_info->circuit->cic);
 			ftdm_safe_free(event_clone);
 		}
 		/* clear the peer if any */
@@ -693,13 +692,13 @@ static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan,
 		ftdm_channel_advance_states(ftdmchan);
 	}
 
-	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Relaying message %s from bridged peer\n", 
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Receiving message %s from bridged peer\n", 
 			sngss7_info->circuit->cic, ftdm_sngss7_event2str(sngss7_event->event_id));
 
 	switch (sngss7_event->event_id) {
 
 	case (SNGSS7_CON_IND_EVENT):
-		SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]Rx IAM (bridged)??\n", sngss7_info->circuit->cic);
+		SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]Rx IAM while bridged??\n", sngss7_info->circuit->cic);
 		break;
 
 	case (SNGSS7_CON_CFM_EVENT):
@@ -876,18 +875,48 @@ static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan,
 	/**************************************************************************/
 	case (SNGSS7_DAT_IND_EVENT):
 		//handle_dat_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siInfoEvnt);
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer %s\n", sngss7_info->circuit->cic, ftdm_sngss7_event2str(sngss7_event->event_id));
+		sng_cc_dat_request(1,
+					sngss7_info->suInstId,
+					sngss7_info->spInstId,
+					sngss7_info->circuit->id,
+					&sngss7_event->event.siInfoEvnt);
 		break;
 	/**************************************************************************/
 	case (SNGSS7_FAC_IND_EVENT):
-		//handle_fac_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, sngss7_event->evntType,  &sngss7_event->event.siFacEvnt);
+		//handle_fac_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, sngss7_event->evntType,  
+		//&sngss7_event->event.siFacEvnt);
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer %s -> %d\n", sngss7_info->circuit->cic, 
+				ftdm_sngss7_event2str(sngss7_event->event_id), sngss7_event->evntType);
+		sng_cc_fac_request(1,
+					sngss7_info->suInstId,
+					sngss7_info->spInstId,
+					sngss7_info->circuit->id,
+					sngss7_event->evntType,
+					&sngss7_event->event.siFacEvnt);
+
 		break;
 	/**************************************************************************/
 	case (SNGSS7_FAC_CFM_EVENT):
-		//handle_fac_cfm(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, sngss7_event->evntType,  &sngss7_event->event.siFacEvnt);
+		//handle_fac_cfm(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, 
+		//sngss7_event->evntType,  &sngss7_event->event.siFacEvnt);
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer %s -> %d\n", sngss7_info->circuit->cic, 
+				ftdm_sngss7_event2str(sngss7_event->event_id), sngss7_event->evntType);
+		sng_cc_fac_response(1,
+					sngss7_info->suInstId,
+					sngss7_info->spInstId,
+					sngss7_info->circuit->id,
+					sngss7_event->evntType,
+					&sngss7_event->event.siFacEvnt);
 		break;
 	/**************************************************************************/
 	case (SNGSS7_UMSG_IND_EVENT):
 		//handle_umsg_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit);
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer %s\n", sngss7_info->circuit->cic, ftdm_sngss7_event2str(sngss7_event->event_id));
+		sng_cc_umsg_request (1,
+					sngss7_info->suInstId,
+					sngss7_info->spInstId,
+					sngss7_info->circuit->id);
 		break;
 	/**************************************************************************/
 	case (SNGSS7_STA_IND_EVENT):
@@ -896,18 +925,30 @@ static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan,
 	/**************************************************************************/
 	case (SNGSS7_SUSP_IND_EVENT):
 		//handle_susp_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siSuspEvnt);
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer %s\n", sngss7_info->circuit->cic, ftdm_sngss7_event2str(sngss7_event->event_id));
+		sng_cc_susp_request (1,
+					sngss7_info->suInstId,
+					sngss7_info->spInstId,
+					sngss7_info->circuit->id,
+					&sngss7_event->event.siSuspEvnt);
 		break;
 	/**************************************************************************/
 	case (SNGSS7_RESM_IND_EVENT):
 		//handle_resm_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siResmEvnt);
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer %s\n", sngss7_info->circuit->cic, ftdm_sngss7_event2str(sngss7_event->event_id));
+		sng_cc_resm_request(1,
+					sngss7_info->suInstId,
+					sngss7_info->spInstId,
+					sngss7_info->circuit->id,
+					&sngss7_event->event.siResmEvnt);
 		break;
 	/**************************************************************************/
 	case (SNGSS7_SSP_STA_CFM_EVENT):
-		SS7_ERROR("dazed and confused ... hu?!\n");
+		SS7_CRITICAL("dazed and confused ... hu?!\n");
 		break;
 	/**************************************************************************/
 	default:
-		SS7_ERROR("Unknown Event Id!\n");
+		SS7_ERROR("Failed to relay unknown event id %d!\n", sngss7_event->event_id);
 		break;
 	/**************************************************************************/
 	}
