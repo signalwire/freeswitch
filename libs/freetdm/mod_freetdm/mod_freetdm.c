@@ -115,6 +115,8 @@ struct private_object {
 	ftdm_channel_t *ftdmchan;
 	uint32_t write_error;
 	uint32_t read_error;
+	char network_peer_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	
 };
 
 /* private data attached to FTDM channels (only FXS for now) */
@@ -504,6 +506,9 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	int chan_id = 0;
 	const char *name = NULL;
 
+	ftdm_usrmsg_t usrmsg;
+	memset(&usrmsg, 0, sizeof(ftdm_usrmsg_t));
+
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -572,11 +577,19 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	case FTDM_CHAN_TYPE_CAS:
 	case FTDM_CHAN_TYPE_B:
 		{
+			const char *sipvar;
 			ftdm_call_cause_t hcause = switch_channel_get_cause_q850(channel);
 			if (hcause  < 1 || hcause > 127) {
 				hcause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
+			sipvar = switch_channel_get_variable(channel, "ss7_rel_loc");
+			if (sipvar) {
+				ftdm_usrmsg_add_var(&usrmsg, "ss7_rel_loc", sipvar);
+			}
+			/*
 			ftdm_channel_call_hangup_with_cause(tech_pvt->ftdmchan, hcause);
+			*/
+			ftdm_channel_call_hangup_with_cause_ex(tech_pvt->ftdmchan, hcause, &usrmsg);
 		}
 		break;
 	default: 
@@ -1246,6 +1259,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	int argc = 0;
 	const char *var;
 	const char *dest_num = NULL, *callerid_num = NULL;
+	const char *network_peer_uuid = NULL;
 	ftdm_hunting_scheme_t hunting;
 	ftdm_usrmsg_t usrmsg;
 
@@ -1336,6 +1350,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if (session && globals.sip_headers) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *sipvar;
+
+		network_peer_uuid = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-TransUUID");
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-CallerName");
 		if (sipvar) {
 			ftdm_set_string(caller_data.cid_name, sipvar);
@@ -1506,6 +1523,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		caller_data.pres = FTDM_PRES_RESTRICTED;
 	}
 
+	if ((var = channel_get_variable(session, var_event, "freetdm_iam_fwd_ind_isdn_access_ind"))) {
+		ftdm_usrmsg_add_var(&usrmsg, "iam_fwd_ind_isdn_access_ind", var);
+	}
+
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_capability"))) {
 		caller_data.bearer_capability = (uint8_t)atoi(var);
 	}
@@ -1592,6 +1613,20 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			goto fail;
 		}
 
+		if (network_peer_uuid) {
+			switch_core_session_t *network_peer = switch_core_session_locate(network_peer_uuid);
+			if (network_peer) {
+					const char *my_uuid = switch_core_session_get_uuid(*new_session);
+					private_t *peer_private = switch_core_session_get_private(network_peer);
+					switch_set_string(tech_pvt->network_peer_uuid, network_peer_uuid);
+					switch_set_string(peer_private->network_peer_uuid, my_uuid);
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Session %s is network-bridged with %s\n", my_uuid, network_peer_uuid);
+
+					switch_core_session_rwunlock(network_peer);
+			}
+		}
+
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		caller_profile->destination_number = switch_core_strdup(caller_profile->pool, switch_str_nil(dest_num));
 		caller_profile->caller_id_number = switch_core_strdup(caller_profile->pool, switch_str_nil(callerid_num));
@@ -1634,7 +1669,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			} else {
 				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
-            		goto fail;
+            goto fail;
 		}
 
 		return SWITCH_CAUSE_SUCCESS;
@@ -1763,6 +1798,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	
 	if (globals.sip_headers) {
 		switch_channel_set_variable(channel, "sip_h_X-FreeTDM-SpanName", ftdm_channel_get_span_name(sigmsg->channel));
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-TransUUID", "%s",switch_core_session_get_uuid(session));	
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-SpanNumber", "%d", spanid);	
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ChanNumber", "%d", chanid);
 

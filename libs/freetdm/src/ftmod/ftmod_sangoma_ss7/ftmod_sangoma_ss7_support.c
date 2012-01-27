@@ -243,15 +243,20 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
 {
         const char *val = NULL;
         const char *loc_nadi = NULL;
+		int pres_val = PRSNT_NODEF;
 
         sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
         ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 
-        locPtyNum->eh.pres = PRSNT_NODEF;
-        locPtyNum->natAddrInd.pres = PRSNT_NODEF;
+		if (!strcasecmp(caller_data->loc.digits, "NULL")) {
+			pres_val = NOTPRSNT;
+		}
+
+        locPtyNum->eh.pres = pres_val;
+        locPtyNum->natAddrInd.pres = pres_val;
         locPtyNum->natAddrInd.val = g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].loc_nadi;
 
-        locPtyNum->scrnInd.pres = PRSNT_NODEF;
+        locPtyNum->scrnInd.pres = pres_val;
         val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_loc_screen_ind");
         if (!ftdm_strlen_zero(val)) {
                 locPtyNum->scrnInd.val = atoi(val);
@@ -260,7 +265,7 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
         }
         ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Location Reference Code Screening Ind %d\n", locPtyNum->scrnInd.val);
 
-        locPtyNum->presRest.pres = PRSNT_NODEF;
+        locPtyNum->presRest.pres = pres_val;
         val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_pres_ind");
         if (!ftdm_strlen_zero(val)) {
                 locPtyNum->presRest.val = atoi(val);
@@ -269,10 +274,10 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
         }
         ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Presentation Ind %d\n", locPtyNum->presRest.val);
 
-        locPtyNum->numPlan.pres	= PRSNT_NODEF;
+        locPtyNum->numPlan.pres	= pres_val;
         locPtyNum->numPlan.val = 0x01;
 
-        locPtyNum->niInd.pres = PRSNT_NODEF;
+        locPtyNum->niInd.pres = pres_val;
         locPtyNum->niInd.val = 0x00;
 
 		/* check if the user would like a custom NADI value for the Location Reference */
@@ -439,6 +444,13 @@ ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *red
 			return FTDM_FAIL;
 		}
 	} else {
+
+		val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdnis_pres_ind");
+		if (!ftdm_strlen_zero(val)) {
+			redirgNum->presRest.val = atoi(val);
+		} 
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Address Presentation Restricted Ind:%d\n", redirgNum->presRest.val);
+
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Number\n");
 		return FTDM_SUCCESS;
 	}
@@ -753,6 +765,8 @@ ftdm_status_t copy_natConInd_to_sngss7(ftdm_channel_t *ftdmchan, SiNatConInd *na
 
 ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *fwdCallInd)
 {
+	const char *val = NULL;
+	int acc_val = ISDNACC_ISDN;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	
 	fwdCallInd->eh.pres 				= PRSNT_NODEF;
@@ -769,7 +783,13 @@ ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *
 	fwdCallInd->isdnUsrPrtPrfInd.pres 	= PRSNT_NODEF;
 	fwdCallInd->isdnUsrPrtPrfInd.val 	= PREF_PREFAW;
 	fwdCallInd->isdnAccInd.pres 		= PRSNT_NODEF;
-	fwdCallInd->isdnAccInd.val 			= ISDNACC_ISDN;
+
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "iam_fwd_ind_isdn_access_ind");
+	if (!ftdm_strlen_zero(val)) {
+		acc_val = (int)atoi(val);
+	}
+
+	fwdCallInd->isdnAccInd.val 			= acc_val;
 	fwdCallInd->sccpMethInd.pres 		= PRSNT_NODEF;
 	fwdCallInd->sccpMethInd.val 		= SCCPMTH_NOIND;
 

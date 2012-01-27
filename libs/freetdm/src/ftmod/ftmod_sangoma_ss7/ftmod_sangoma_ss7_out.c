@@ -108,6 +108,21 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	} else if (sngss7_info->circuit->transparent_iam &&
 		sngss7_retrieve_iam(ftdmchan, &iam) == FTDM_SUCCESS) {
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Transparent)\n", sngss7_info->circuit->cic);
+
+		/* Called Number information */
+		copy_cdPtyNum_to_sngss7(ftdmchan, &iam.cdPtyNum);
+
+		/* Redirecting Number */
+		copy_redirgNum_to_sngss7(ftdmchan, &iam.redirgNum);
+
+		/* Redirecting Information */
+		copy_redirgInfo_to_sngss7(ftdmchan, &iam.redirInfo);
+
+		/* Location Number information */
+		copy_locPtyNum_to_sngss7(ftdmchan, &iam.cgPtyNum1);
+
+		/* Forward Call Indicators */
+		copy_fwdCallInd_to_sngss7(ftdmchan, &iam.fwdCallInd);
 	} else {
 		/* Nature of Connection Indicators */
 		copy_natConInd_to_sngss7(ftdmchan, &iam.natConInd);
@@ -300,6 +315,7 @@ void ft_to_sngss7_anm (ftdm_channel_t * ftdmchan)
 /******************************************************************************/
 void ft_to_sngss7_rel (ftdm_channel_t * ftdmchan)
 {
+	const char *loc_ind = NULL;
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
 	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
@@ -309,7 +325,15 @@ void ft_to_sngss7_rel (ftdm_channel_t * ftdmchan)
 	
 	rel.causeDgn.eh.pres = PRSNT_NODEF;
 	rel.causeDgn.location.pres = PRSNT_NODEF;
-	rel.causeDgn.location.val = 0x01;
+
+	loc_ind = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rel_loc");
+	if (!ftdm_strlen_zero(loc_ind)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied location indicator in REL, value \"%s\"\n", loc_ind);
+		rel.causeDgn.location.val = atoi(loc_ind);
+	} else {
+		rel.causeDgn.location.val = 0x01;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied location indicator in REL, using 0x01\"%s\"\n", "");
+	}
 	rel.causeDgn.cdeStand.pres = PRSNT_NODEF;
 	rel.causeDgn.cdeStand.val = 0x00;
 	rel.causeDgn.recommend.pres = NOTPRSNT;
