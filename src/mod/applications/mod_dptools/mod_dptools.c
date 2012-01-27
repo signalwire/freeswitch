@@ -1565,6 +1565,22 @@ SWITCH_STANDARD_API(strepoch_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_API(strmicroepoch_api_function)
+{
+	switch_time_t out;
+
+	if (zstr(cmd)) {
+		out = switch_micro_time_now();
+	} else {
+		out = switch_str_time(cmd);
+	}
+
+	stream->write_function(stream, "%"SWITCH_TIME_T_FMT, out);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(strftime_api_function)
 {
 	switch_size_t retsize;
@@ -3984,6 +4000,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_CHAT(chat_interface, "api", api_chat_send);
 
 	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
+	SWITCH_ADD_API(api_interface, "strmicroepoch", "Convert a date string into micoepoch time", strmicroepoch_api_function, "<string>");
 	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>|[<content-type>]");
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, PRESENCE_USAGE);
