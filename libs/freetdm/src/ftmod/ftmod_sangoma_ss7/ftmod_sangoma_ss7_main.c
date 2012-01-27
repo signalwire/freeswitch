@@ -55,6 +55,7 @@ ftdm_sngss7_data_t g_ftdm_sngss7_data;
 /* PROTOTYPES *****************************************************************/
 static void *ftdm_sangoma_ss7_run (ftdm_thread_t * me, void *obj);
 static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_event);
+static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan, sngss7_event_data_t *sngss7_event);
 
 static ftdm_status_t ftdm_sangoma_ss7_stop (ftdm_span_t * span);
 static ftdm_status_t ftdm_sangoma_ss7_start (ftdm_span_t * span);
@@ -338,9 +339,10 @@ static void handle_hw_alarm(ftdm_event_t *e)
 /* MONITIOR THREADS ***********************************************************/
 static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 {
-	ftdm_interrupt_t	*ftdm_sangoma_ss7_int[2];
+	ftdm_interrupt_t	*ftdm_sangoma_ss7_int[3];
 	ftdm_span_t 		*ftdmspan = (ftdm_span_t *) obj;
 	ftdm_channel_t 		*ftdmchan = NULL;
+	ftdm_channel_t 		*peerchan = NULL;
 	ftdm_event_t 		*event = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
@@ -362,6 +364,12 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 	/* get an interrupt queue for this span for Trillium events */
 	if (ftdm_queue_get_interrupt (sngss7_span->event_queue, &ftdm_sangoma_ss7_int[1]) != FTDM_SUCCESS) {
 		SS7_CRITICAL ("Failed to get a ftdm_interrupt for span = %d for Trillium event queue!\n", ftdmspan->span_id);
+		goto ftdm_sangoma_ss7_run_exit;
+	}
+
+	/* get an interrupt queue for this span for peer channel events */
+	if (ftdm_queue_get_interrupt (sngss7_span->peer_chans, &ftdm_sangoma_ss7_int[2]) != FTDM_SUCCESS) {
+		SS7_CRITICAL ("Failed to get a ftdm_interrupt for span = %d for peer channel events queue!\n", ftdmspan->span_id);
 		goto ftdm_sangoma_ss7_run_exit;
 	}
 
@@ -395,7 +403,7 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 		}
 
 		/* check the channel state queue for an event*/	
-		switch ((ftdm_interrupt_multiple_wait(ftdm_sangoma_ss7_int, 2, 100))) {
+		switch ((ftdm_interrupt_multiple_wait(ftdm_sangoma_ss7_int, ftdm_array_len(ftdm_sangoma_ss7_int), 100))) {
 		/**********************************************************************/
 		case FTDM_SUCCESS:	/* process all pending state changes */
 
@@ -410,6 +418,31 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
  
 				/* unlock the channel */
 				ftdm_mutex_unlock (ftdmchan->mutex);				
+			}
+
+			/* clean out all peer pending channel events */
+			while ((peerchan = ftdm_queue_dequeue (sngss7_span->peer_chans))) {
+				/* note that the channels being dequeued here may not belong to this span
+				   they may belong to just about any other span that one of our channels
+				   happens to be bridged to */
+				sngss7_chan_data_t *peer_info = peerchan->call_data;
+				sngss7_chan_data_t *chan_info = peer_info->peer_data;
+				ftdmchan = chan_info->ftdmchan;
+
+				/* 
+				   if there is any state changes at all, those will be done in the opposite channel
+				   to peerchan (where the original event was received), therefore we must lock ftdmchan, 
+				   but do not need to lock peerchan as we only read its event queue, which is already 
+				   locked when dequeueing */
+				ftdm_channel_lock(ftdmchan);
+
+				/* clean out all pending stack events in the peer channel */
+				while ((sngss7_event = ftdm_queue_dequeue(peer_info->event_queue))) {
+					ftdm_sangoma_ss7_process_peer_stack_event(ftdmchan, sngss7_event);
+					ftdm_safe_free(sngss7_event);
+				}
+ 
+				ftdm_channel_lock(ftdmchan);				
 			}
 
 			/* clean out all pending stack events */
@@ -522,24 +555,60 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 	/* now that we have the right channel ... put a lock on it so no-one else can use it */
 	ftdm_channel_lock(ftdmchan);
 
-	if (sngss7_info->event_queue) {
-		if (sngss7_event->event_id == SNGSS7_CON_IND_EVENT) {
-			/* this is the first event in a call, flush the event queue */
-			while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
-				SS7_WARN("[CIC:%d]Discarding clone event from past call!\n", sngss7_info->circuit->cic);
-				ftdm_safe_free(event_clone);
-			}
-		}
-		/* clone the event and save it for later usage */
-		event_clone = ftdm_calloc(1, sizeof(*sngss7_event));
-		if (event_clone) {
-			memcpy(event_clone, sngss7_event, sizeof(*sngss7_event));
-			ftdm_queue_enqueue(sngss7_info->event_queue, event_clone);
+	/* while there's a state change present on this channel process it */
+	ftdm_channel_advance_states(ftdmchan);
+
+	if (sngss7_event->event_id == SNGSS7_CON_IND_EVENT) {
+		/* this is the first event in a call, flush the event queue */
+		while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
+			SS7_WARN("[CIC:%d]Discarding clone event from past call!\n", sngss7_info->circuit->cic);
+			ftdm_safe_free(event_clone);
 		}
 	}
 
-	/* while there's a state change present on this channel process it */
-	ftdm_channel_advance_states(ftdmchan);
+	/* clone the event and save it for later usage */
+	event_clone = ftdm_calloc(1, sizeof(*sngss7_event));
+	if (event_clone) {
+		memcpy(event_clone, sngss7_event, sizeof(*sngss7_event));
+		ftdm_queue_enqueue(sngss7_info->event_queue, event_clone);
+		if (sngss7_info->peer_data) {
+			sngss7_span_data_t *sngss7_peer_span = (sngss7_span_data_t *)sngss7_info->peer_data->ftdmchan->span->signal_data;
+			/* we already have a peer attached, wake him up */
+			ftdm_queue_enqueue(sngss7_peer_span->peer_chans, sngss7_info->ftdmchan);
+		}
+	}
+	
+	/* we could test for sngss7_info->peer_data too, bit this flag is set earlier, the earlier we know the better */
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
+		/* most messages are simply relayed in sig bridge mode, except for hangup which requires state changing */
+		switch (sngss7_event->event_id) {
+		case SNGSS7_REL_IND_EVENT:
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+			break;
+		case SNGSS7_REL_CFM_EVENT:
+			{
+				ftdm_channel_t *peer_chan = sngss7_info->peer_data->ftdmchan;
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+				if (peer_chan) {
+					/* we need to unlock our chan or we risk deadlock */
+					ftdm_channel_advance_states(ftdmchan);
+					ftdm_channel_unlock(ftdmchan);
+
+					ftdm_channel_lock(peer_chan);
+					if (peer_chan->state != FTDM_CHANNEL_STATE_DOWN) {
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+					}
+					ftdm_channel_unlock(peer_chan);
+
+					ftdm_channel_lock(ftdmchan);
+				}
+			}
+			break;
+		default:
+			break;
+		}
+		goto done;
+	}
 
 	/* figure out the type of event and send it to the right handler */
 	switch (sngss7_event->event_id) {
@@ -602,6 +671,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 	/**************************************************************************/
 	}
 
+done:
 	/* while there's a state change present on this channel process it */
 	ftdm_channel_advance_states(ftdmchan);
 
@@ -610,8 +680,290 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 
 }
 
+FTDM_ENUM_NAMES(SNG_EVENT_TYPE_NAMES, SNG_EVENT_TYPE_STRINGS)
+FTDM_STR2ENUM(ftdm_str2sngss7_event, ftdm_sngss7_event2str, sng_event_type_t, SNG_EVENT_TYPE_NAMES, SNGSS7_INVALID_EVENT)
+static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan, sngss7_event_data_t *sngss7_event)
+{
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	if (ftdmchan->state < FTDM_CHANNEL_STATE_UP) {
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
+		ftdm_channel_advance_states(ftdmchan);
+	}
+
+	SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]Relaying message %s from bridged peer\n", 
+			sngss7_info->circuit->cic, ftdm_sngss7_event2str(sngss7_event->event_id));
+
+	switch (sngss7_event->event_id) {
+
+	case (SNGSS7_CON_IND_EVENT):
+		SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]Rx IAM (bridged)??\n", sngss7_info->circuit->cic);
+		break;
+
+	case (SNGSS7_CON_CFM_EVENT):
+		/* send the ANM request to LibSngSS7 */
+		sng_cc_con_response(1,
+							sngss7_info->suInstId,
+							sngss7_info->spInstId,
+							sngss7_info->circuit->id, 
+							&sngss7_event->event.siConEvnt, 
+							5); 
+
+		SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Tx peer ANM\n", sngss7_info->circuit->cic);
+		break;
+
+	case (SNGSS7_CON_STA_EVENT):
+		switch (sngss7_event->evntType) {
+		/**************************************************************************/
+		case (ADDRCMPLT):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer ACM\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (MODIFY):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer MODIFY\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (MODCMPLT):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer MODIFY-COMPLETE\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (MODREJ):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer MODIFY-REJECT\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (PROGRESS):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer CPG\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (FRWDTRSFR):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer FOT\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (INFORMATION):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer INF\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (INFORMATREQ):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer INR\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (SUBSADDR):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer SAM\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (EXIT):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer EXIT\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (NETRESMGT):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer NRM\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (IDENTREQ):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer IDR\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (IDENTRSP):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer IRS\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (MALCLLPRNT):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer MALICIOUS CALL\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (CHARGE):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer CRG\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (TRFFCHGE):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer CRG-TARIFF\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (CHARGEACK):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer CRG-ACK\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (CALLOFFMSG):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer CALL-OFFER\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (LOOPPRVNT):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer LOP\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (TECT_TIMEOUT):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer ECT-Timeout\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (RINGSEND):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer RINGING-SEND\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (CALLCLEAR):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer CALL-LINE Clear\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (PRERELEASE):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer PRI\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (APPTRANSPORT):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer APM\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (OPERATOR):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer OPERATOR\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (METPULSE):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer METERING-PULSE\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (CLGPTCLR):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer CALLING_PARTY_CLEAR\n", sngss7_info->circuit->cic);
+			break;
+		/**************************************************************************/
+		case (SUBDIRNUM):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer SUB-DIR\n", sngss7_info->circuit->cic);
+			break;
+#ifdef SANGOMA_SPIROU
+		case (CHARGE_ACK):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer TXA\n", sngss7_info->circuit->cic);		
+			break;
+		case (CHARGE_UNIT):
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer ITX\n", sngss7_info->circuit->cic);
+			break;
+#endif
+		/**************************************************************************/
+		default:
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer Unknown Msg %d\n", sngss7_info->circuit->cic, sngss7_event->evntType);
+			break;
+		/**************************************************************************/
+		}
+		sng_cc_con_status  (1,
+					sngss7_info->suInstId,
+					sngss7_info->spInstId,
+					sngss7_info->circuit->id,
+					&sngss7_event->event.siCnStEvnt, 
+					sngss7_event->evntType);
+
+		break;
+	/**************************************************************************/
+	case (SNGSS7_REL_IND_EVENT):
+	        SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer REL cause=%d\n", sngss7_info->circuit->cic, sngss7_event->event.siRelEvnt.causeDgn.causeVal.val);
+
+		//handle_rel_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siRelEvnt);
+		sng_cc_rel_request (1,
+					sngss7_info->suInstId,
+					sngss7_info->spInstId,
+					sngss7_info->circuit->id,
+					&sngss7_event->event.siRelEvnt);
+		break;
+
+	/**************************************************************************/
+	case (SNGSS7_REL_CFM_EVENT):
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx peer RLC\n", sngss7_info->circuit->cic);
+		sng_cc_rel_response (1,
+					sngss7_info->suInstId,
+					sngss7_info->spInstId,
+					sngss7_info->circuit->id,
+					&sngss7_event->event.siRelEvnt);
+		//handle_rel_cfm(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siRelEvnt);
+		break;
+
+	/**************************************************************************/
+	case (SNGSS7_DAT_IND_EVENT):
+		//handle_dat_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siInfoEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_FAC_IND_EVENT):
+		//handle_fac_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, sngss7_event->evntType,  &sngss7_event->event.siFacEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_FAC_CFM_EVENT):
+		//handle_fac_cfm(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, sngss7_event->evntType,  &sngss7_event->event.siFacEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_UMSG_IND_EVENT):
+		//handle_umsg_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_STA_IND_EVENT):
+		//handle_sta_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit, sngss7_event->globalFlg, sngss7_event->evntType,  &sngss7_event->event.siStaEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_SUSP_IND_EVENT):
+		//handle_susp_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siSuspEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_RESM_IND_EVENT):
+		//handle_resm_ind(sngss7_event->suInstId, sngss7_event->spInstId, sngss7_event->circuit,  &sngss7_event->event.siResmEvnt);
+		break;
+	/**************************************************************************/
+	case (SNGSS7_SSP_STA_CFM_EVENT):
+		SS7_ERROR("dazed and confused ... hu?!\n");
+		break;
+	/**************************************************************************/
+	default:
+		SS7_ERROR("Unknown Event Id!\n");
+		break;
+	/**************************************************************************/
+	}
+
+}
+
+static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t *ftdmchan);
+static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t *ftdmchan)
+{
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	ftdm_channel_complete_state(ftdmchan);
+
+	switch (ftdmchan->state) {
+
+	case FTDM_CHANNEL_STATE_DOWN:
+		{
+			/* both peers come here after the channel processing the RLC moves the pair to DOWN */
+			ftdm_channel_t *close_chan = ftdmchan;
+
+			/* detach native bridging if needed (only the outbound leg is responsible for that to avoid races or messy locks) */
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+				sngss7_chan_data_t *peer_info = sngss7_info->peer_data;
+				sngss7_info->peer_data = NULL;
+				if (peer_info) {
+					peer_info->peer_data = NULL;
+				}
+			}
+
+			/* close the channel */
+			ftdm_channel_close (&close_chan);
+		}
+		break;
+
+	case FTDM_CHANNEL_STATE_UP:
+		{
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+				sngss7_send_signal(sngss7_info, FTDM_SIGEVENT_UP);
+			}
+		}
+		break;
+
+	case FTDM_CHANNEL_STATE_TERMINATING:
+		{
+			/* when receiving REL we move to TERMINATING and notify the user that the bridge is ending */
+			sngss7_send_signal(sngss7_info, FTDM_SIGEVENT_STOP);
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	return FTDM_SUCCESS;
+}
+
 /******************************************************************************/
-ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
+ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 {
 	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
 	sng_isup_inf_t *isup_intf = NULL;
@@ -623,6 +975,9 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t * ftdmchan)
 									sngss7_info->ckt_flags,
 									sngss7_info->blk_flags);
 
+	if (sngss7_info->peer_data) {
+		return ftdm_sangoma_ss7_native_bridge_state_change(ftdmchan);
+	}
 
 	/*check what state we are supposed to be in */
 	switch (ftdmchan->state) {
@@ -1937,6 +2292,12 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	/* create an event queue for this span */
 	if ((ftdm_queue_create(&(ss7_span_info)->event_queue, SNGSS7_EVENT_QUEUE_SIZE)) != FTDM_SUCCESS) {
 		SS7_CRITICAL("Unable to create event queue!\n");
+		return FTDM_FAIL;
+	}
+
+	/* create an peer channel queue for this span */
+	if ((ftdm_queue_create(&(ss7_span_info)->peer_chans, SPAN_PENDING_CHANS_QUEUE_SIZE)) != FTDM_SUCCESS) {
+		SS7_CRITICAL("Unable to create peer chans queue!\n");
 		return FTDM_FAIL;
 	}
 

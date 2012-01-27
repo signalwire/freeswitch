@@ -81,8 +81,12 @@ typedef enum {
 	SNGSS7_STA_IND_EVENT,
 	SNGSS7_SUSP_IND_EVENT,
 	SNGSS7_RESM_IND_EVENT,
-	SNGSS7_SSP_STA_CFM_EVENT
+	SNGSS7_SSP_STA_CFM_EVENT,
+	SNGSS7_INVALID_EVENT,
 } sng_event_type_t;
+#define SNG_EVENT_TYPE_STRINGS "CON_IND", "CON_CFM", "CON_STA", "REL_IND", "REL_CFM", "DAT_IND", "FAC_IND", \
+	                       "FAC_CFM", "UMSG_IND", "STA_IND", "SUSP_IND", "RESM_IND", "SSP_STA_CFM", "INVALID"
+FTDM_STR2ENUM_P(ftdm_str2sngss7_event, ftdm_sngss7_event2str, sng_event_type_t)
 
 typedef enum {
 	SNG_BIT_A	= (1 << 0),
@@ -500,6 +504,7 @@ typedef struct sngss7_span_data {
 	sngss7_group_data_t		rx_cgu;
 	sngss7_group_data_t		tx_cgu;
 	ftdm_queue_t 			*event_queue;
+	ftdm_queue_t                    *peer_chans;
 } sngss7_span_data_t;
 
 typedef struct sngss7_event_data

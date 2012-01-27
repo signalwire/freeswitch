@@ -58,45 +58,39 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 
 	var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "sigbridge_peer");
 	if (!ftdm_strlen_zero(var)) {
-		ftdm_status_t status = FTDM_SUCCESS;
-		int rc = 0;
 		ftdm_span_t *peer_span = NULL;
 		ftdm_channel_t *peer_chan = NULL;
 		sngss7_chan_data_t *peer_info = NULL;
-		unsigned peer_span_id = 0;
-		unsigned peer_chan_id = 0;
-		rc = sscanf(var, "%u:%u", &peer_span_id, &peer_chan_id);
-		if (rc != 2) {
-			SS7_ERROR_CHAN(ftdmchan, "Failed to parse sigbridge_peer string '%s'\n", var);
+
+		ftdm_get_channel_from_string(var, &peer_span, &peer_chan);
+		if (!peer_chan) {
+			SS7_ERROR_CHAN(ftdmchan, "Failed to find sigbridge peer from string '%s'\n", var);
 		} else {
-			status = ftdm_span_find(peer_span_id, &peer_span);
-			if (status != FTDM_SUCCESS || !peer_span) {
-				SS7_ERROR_CHAN(ftdmchan, "Failed to find peer span for channel id '%u:%u'\n", peer_span_id, peer_chan_id);
-			} else if (peer_span->signal_type != FTDM_SIGTYPE_SS7) {
-				SS7_ERROR_CHAN(ftdmchan, "Peer channel %d:%d has different signaling type %d'\n", 
-						peer_span_id, peer_chan_id, peer_span->signal_type);
+			if (peer_span->signal_type != FTDM_SIGTYPE_SS7) {
+				SS7_ERROR_CHAN(ftdmchan, "Peer channel '%s' has different signaling type %d'\n", 
+						var, peer_span->signal_type);
 			} else {
-				if (peer_chan_id > (FTDM_MAX_CHANNELS_SPAN+1) || !(peer_chan = peer_span->channels[peer_chan_id])) {
-					SS7_ERROR_CHAN(ftdmchan, "Invalid peer channel id '%u:%u'\n", peer_span_id, peer_chan_id);
-				} else {
-					sngss7_event_data_t *event_clone = NULL;
-					peer_info = peer_chan->call_data;
-					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Starting native bridge with peer CIC %d\n", 
-							sngss7_info->circuit->cic, peer_info->circuit->cic);
-					/* make each one of us aware of the native bridge */
-					peer_info->peer_data = sngss7_info;
-					sngss7_info->peer_data = peer_info;
-					/* flush our own queue */
-					while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
-						SS7_WARN("[CIC:%d]Discarding clone event from past call!\n", sngss7_info->circuit->cic);
-						ftdm_safe_free(event_clone);
-					}
+				sngss7_event_data_t *event_clone = NULL;
+				peer_info = peer_chan->call_data;
+				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Starting native bridge with peer CIC %d\n", 
+						sngss7_info->circuit->cic, peer_info->circuit->cic);
+				/* make each one of us aware of the native bridge */
+				peer_info->peer_data = sngss7_info;
+				sngss7_info->peer_data = peer_info;
+				/* flush our own queue */
+				while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
+					SS7_WARN("[CIC:%d]Discarding clone event from past call!\n", sngss7_info->circuit->cic);
+					ftdm_safe_free(event_clone);
 				}
+				/* go up until release comes, note that state processing is done different and much simpler when there is a peer  */
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
+				ftdm_channel_advance_states(ftdmchan);
 			}
 		}
 	}
 
 	if (sngss7_info->peer_data) {
+		sngss7_span_data_t *span_data = ftdmchan->span->signal_data;
 		sngss7_event_data_t *event_clone = ftdm_queue_dequeue(sngss7_info->peer_data->event_queue);
 		/* Retrieve IAM from our peer */
 		if (!event_clone) {
@@ -108,6 +102,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged)\n", sngss7_info->circuit->cic);
 			memcpy(&iam, &event_clone->event.siConEvnt, sizeof(iam));
 		}
+		/* since this is the first time we dequeue an event from the peer, make sure our main thread process any other events,
+		   this will trigger the interrupt in our span peer_chans queue which will wake up our main thread if it is sleeping */
+		ftdm_queue_enqueue(span_data->peer_chans, sngss7_info->peer_data->ftdmchan);
 	} else if (sngss7_info->circuit->transparent_iam &&
 		sngss7_retrieve_iam(ftdmchan, &iam) == FTDM_SUCCESS) {
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Transparent)\n", sngss7_info->circuit->cic);
@@ -322,10 +319,10 @@ void ft_to_sngss7_rel (ftdm_channel_t * ftdmchan)
 	
 	/* send the REL request to LibSngSS7 */
 	sng_cc_rel_request (1,
-						sngss7_info->suInstId,
-						sngss7_info->spInstId, 
-						sngss7_info->circuit->id, 
-						&rel);
+			sngss7_info->suInstId,
+			sngss7_info->spInstId, 
+			sngss7_info->circuit->id, 
+			&rel);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx REL cause=%d \n",
 							sngss7_info->circuit->cic,
