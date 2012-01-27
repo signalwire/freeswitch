@@ -2203,6 +2203,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 							switch_safe_free(sql);
 							ok = 1;
 							/* add feedback for user - let him/her know that password change was successful */
+							switch_ivr_phrase_macro(session, VM_CHANGE_PASS_SUCCESS_MACRO, NULL, NULL, NULL);
 						}
 					
 						switch_event_destroy(&params);
