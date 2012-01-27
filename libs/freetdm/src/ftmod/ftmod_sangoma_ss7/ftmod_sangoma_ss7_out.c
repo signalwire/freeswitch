@@ -109,7 +109,31 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 			copy_tknStr_to_sngss7(caller_data->dnis.digits, &iam.cdPtyNum.addrSig, &iam.cdPtyNum.oddEven);
 
 			/* SPIROU certification hack 
-			   If the IAM contains */
+			   If the IAM already contain RDINF, just increment the count and set the RDNIS digits
+			   otherwise, honor RDNIS and RDINF stuff coming from the user */
+			if (iam.redirInfo.eh.pres == PRSNT_NODEF) {
+				const char *val = NULL;
+				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged), redirect info present\n", sngss7_info->circuit->cic);
+				if (iam.redirInfo.redirCnt.pres) {
+					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged), redirect count present = %d\n", sngss7_info->circuit->cic, iam.redirInfo.redirCnt.val);
+					iam.redirInfo.redirCnt.val++;
+					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged), redirect count incremented = %d\n", sngss7_info->circuit->cic, iam.redirInfo.redirCnt.val);
+				}
+				val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdnis_digits");
+				if (!ftdm_strlen_zero(val)) {
+					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged), found user supplied RDNIS digits = %s\n", sngss7_info->circuit->cic, val);
+					copy_tknStr_to_sngss7((char*)val, &iam.redirgNum.addrSig, &iam.redirgNum.oddEven);
+				} else {
+					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged), not found user supplied RDNIS digits\n", sngss7_info->circuit->cic);
+				}
+			} else {
+				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged), redirect info not present, attempting to copy user supplied values\n", sngss7_info->circuit->cic);
+				/* Redirecting Number */
+				copy_redirgNum_to_sngss7(ftdmchan, &iam.redirgNum);
+
+				/* Redirecting Information */
+				copy_redirgInfo_to_sngss7(ftdmchan, &iam.redirInfo);
+			}
 		}
 		/* since this is the first time we dequeue an event from the peer, make sure our main thread process any other events,
 		   this will trigger the interrupt in our span peer_chans queue which will wake up our main thread if it is sleeping */
