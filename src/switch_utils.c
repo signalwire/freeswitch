@@ -603,6 +603,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	char *dupfile = NULL, *ext = NULL;
 	char *newfile = NULL;
 	switch_bool_t rval = SWITCH_FALSE;
+	const char *err = NULL;
 
 	if (!zstr(file) && !zstr(convert_cmd) && !zstr(convert_ext)) {
 		if ((ext = strrchr(file, '.'))) {
@@ -633,22 +634,26 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		if (file) {
 			if ((ifd = open(file, O_RDONLY | O_BINARY)) < 1) {
 				rval = SWITCH_FALSE;
+				err = "Cannot open tmp file\n";
 				goto end;
 			}
 		}
 		switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
 		if (!write_buf(fd, buf)) {
 			rval = SWITCH_FALSE;
+			err = "write error.";
 			goto end;
 		}
 
 		if (headers && !write_buf(fd, headers)) {
 			rval = SWITCH_FALSE;
+			err = "write error.";
 			goto end;
 		}
 
 		if (!write_buf(fd, "\n\n")) {
 			rval = SWITCH_FALSE;
+			err = "write error.";
 			goto end;
 		}
 
@@ -659,12 +664,14 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		}
 		if (!write_buf(fd, buf)) {
 			rval = SWITCH_FALSE;
+			err = "write error.";
 			goto end;
 		}
 
 		if (body) {
 			if (!write_buf(fd, body)) {
 				rval = SWITCH_FALSE;
+				err = "write error.";
 				goto end;
 			}
 		}
@@ -689,6 +696,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 							"Content-Disposition: attachment; filename=\"%s\"\n\n", bound, mime_type, stipped_file, stipped_file);
 			if (!write_buf(fd, buf)) {
 				rval = SWITCH_FALSE;
+				err = "write error.";
 				goto end;
 			}
 
@@ -730,6 +738,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 
 		if (!write_buf(fd, buf)) {
 			rval = SWITCH_FALSE;
+			err = "write error.";
 			goto end;
 		}
 	}
@@ -751,25 +760,35 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 #endif
 	if (switch_system(buf, SWITCH_TRUE) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
+		err = "execute error";
+		rval = SWITCH_FALSE;
 	}
 
 	if (unlink(filename) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", filename);
 	}
 
-	if (file) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed file [%s] to [%s]\n", filename, to);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed data to [%s]\n", to);
-	}
+	if (zstr(err)) {
+		if (file) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed file [%s] to [%s]\n", filename, to);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed data to [%s]\n", to);
+		}
 
-	rval = SWITCH_TRUE;
+		rval = SWITCH_TRUE;
+	}
 
   end:
 
 	if (newfile) {
 		unlink(newfile);
 		free(newfile);
+	}
+
+	if (rval != SWITCH_TRUE) {
+		if (zstr(err)) err = "Unknown Error";
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "EMAIL NOT SENT, error [%s]\n", err);
 	}
 
 	return rval;
