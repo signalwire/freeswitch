@@ -441,8 +441,8 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 					ftdm_sangoma_ss7_process_peer_stack_event(ftdmchan, sngss7_event);
 					ftdm_safe_free(sngss7_event);
 				}
- 
-				ftdm_channel_lock(ftdmchan);				
+
+				ftdm_channel_unlock(ftdmchan);				
 			}
 
 			/* clean out all pending stack events */
@@ -564,6 +564,8 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 			SS7_WARN("[CIC:%d]Discarding clone event from past call!\n", sngss7_info->circuit->cic);
 			ftdm_safe_free(event_clone);
 		}
+		/* clear the peer if any */
+		sngss7_info->peer_data = NULL;
 	}
 
 	/* clone the event and save it for later usage */
@@ -596,7 +598,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 
 					ftdm_channel_lock(peer_chan);
 					if (peer_chan->state != FTDM_CHANNEL_STATE_DOWN) {
-						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+						ftdm_set_state(peer_chan, FTDM_CHANNEL_STATE_DOWN);
 					}
 					ftdm_channel_unlock(peer_chan);
 
@@ -923,19 +925,7 @@ static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t 
 
 	case FTDM_CHANNEL_STATE_DOWN:
 		{
-			/* both peers come here after the channel processing the RLC moves the pair to DOWN */
 			ftdm_channel_t *close_chan = ftdmchan;
-
-			/* detach native bridging if needed (only the outbound leg is responsible for that to avoid races or messy locks) */
-			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-				sngss7_chan_data_t *peer_info = sngss7_info->peer_data;
-				sngss7_info->peer_data = NULL;
-				if (peer_info) {
-					peer_info->peer_data = NULL;
-				}
-			}
-
-			/* close the channel */
 			ftdm_channel_close (&close_chan);
 		}
 		break;
@@ -974,6 +964,10 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 						ftdm_channel_state2str (ftdmchan->state),
 									sngss7_info->ckt_flags,
 									sngss7_info->blk_flags);
+
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
+		sngss7_info->peer_data = NULL;
+	}
 
 	if (sngss7_info->peer_data) {
 		return ftdm_sangoma_ss7_native_bridge_state_change(ftdmchan);
