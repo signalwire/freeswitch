@@ -98,8 +98,18 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 			/* first message in the queue should ALWAYS be an IAM */
 			SS7_ERROR_CHAN(ftdmchan, "Invalid initial peer message type '%d'\n", event_clone->event_id);
 		} else {
-			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged)\n", sngss7_info->circuit->cic);
+			ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged, dialing %s)\n", sngss7_info->circuit->cic, caller_data->dnis.digits);
+
+			/* copy original incoming IAM */
 			memcpy(&iam, &event_clone->event.siConEvnt, sizeof(iam));
+
+			/* Change DNIS to whatever was specified, do not change NADI or anything else! */
+			copy_tknStr_to_sngss7(caller_data->dnis.digits, &iam.cdPtyNum.addrSig, &iam.cdPtyNum.oddEven);
+
+			/* SPIROU certification hack 
+			   If the IAM contains */
 		}
 		/* since this is the first time we dequeue an event from the peer, make sure our main thread process any other events,
 		   this will trigger the interrupt in our span peer_chans queue which will wake up our main thread if it is sleeping */
