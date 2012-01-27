@@ -444,6 +444,13 @@ ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *red
 			return FTDM_FAIL;
 		}
 	} else {
+
+		val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdnis_pres_ind");
+		if (!ftdm_strlen_zero(val)) {
+			redirgNum->presRest.val = atoi(val);
+		} 
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Address Presentation Restricted Ind:%d\n", redirgNum->presRest.val);
+
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Number\n");
 		return FTDM_SUCCESS;
 	}
