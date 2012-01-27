@@ -1267,6 +1267,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	ftdm_usrmsg_t usrmsg;
 
 	memset(&usrmsg, 0, sizeof(ftdm_usrmsg_t));
+	memset(sigbridge_peer, 0, sizeof(sigbridge_peer));
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -1655,7 +1656,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 					ftdm_channel_get_span_id(peer_pvt->ftdmchan), ftdm_channel_get_id(peer_pvt->ftdmchan));
 		}
 
-		if (!zstr(sigbridge_peer)) {
+		if (session && !zstr(sigbridge_peer)) {
 			peer_chan = switch_core_session_get_channel(session);
 			ftdm_usrmsg_add_var(&usrmsg, "sigbridge_peer", sigbridge_peer);
 		}
