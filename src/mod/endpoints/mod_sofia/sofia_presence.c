@@ -790,9 +790,7 @@ static void do_dialog_probe(switch_event_t *event)
 
 
 		sql = switch_mprintf("update sip_subscriptions set version=version+1 "
-							 "where hostname='%q' "
-							 "and sub_to_user='%q' and sub_to_host='%q' and (event!='dialog') and "
-							 "call_id='%q'",
+							 "where hostname='%q' and sub_to_user='%q' and sub_to_host='%q' and call_id='%q'",
 							 mod_sofia_globals.hostname, probe_euser, probe_host, sub_call_id);
 
 		if (mod_sofia_globals.debug_presence > 1) {
@@ -807,17 +805,15 @@ static void do_dialog_probe(switch_event_t *event)
 		sql = switch_mprintf("select call_id,expires,sub_to_user,sub_to_host,event,version, "
 							 "'full',full_to,full_from,contact,network_ip,network_port "
 							 "from sip_subscriptions "
-							 "where hostname='%q' "
-							 "and sub_to_user='%q' and sub_to_host='%q' " "and (event='dialog') and "
-							 "call_id='%q'",
+							 "where hostname='%q' and sub_to_user='%q' and sub_to_host='%q' and call_id='%q'",
 							 mod_sofia_globals.hostname, probe_euser, probe_host, sub_call_id);
+
 		if (mod_sofia_globals.debug_presence > 1) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s DUMP DIALOG_PROBE subscription sql:\n%s\n", profile->name, sql);
 		}
+
 		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_dialog_probe_notify_callback, h4235);
 		switch_safe_free(sql);
-
-		
 
 		sofia_glue_release_profile(profile);
 		switch_core_hash_destroy(&h4235->hash);
