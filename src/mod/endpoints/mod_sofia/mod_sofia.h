@@ -454,6 +454,7 @@ struct sofia_gateway {
 	char *auth_username;
 	char *register_password;
 	char *register_from;
+	char *options_uri;
 	char *register_contact;
 	char *extension;
 	char *real_extension;

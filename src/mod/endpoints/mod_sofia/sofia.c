@@ -2485,16 +2485,6 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				str_rfc_5626 = switch_core_sprintf(gateway->pool, ";reg-id=%s;+sip.instance=\"<urn:uuid:%s>\"",reg_id,str_guid);
 			}
 
-			if (ping_freq) {
-				if (ping_freq >= 5) {
-					gateway->ping_freq = ping_freq;
-					gateway->ping_max = ping_max;
-					gateway->ping_min = ping_min;
-					gateway->ping = switch_epoch_time_now(NULL) + ping_freq;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: invalid ping!\n");
-				}
-			}
 
 			if ((gw_subs_tag = switch_xml_child(gateway_tag, "subscriptions"))) {
 				parse_gateway_subscriptions(profile, gateway, gw_subs_tag);
@@ -2615,6 +2605,19 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>",
 														 from_user, !zstr(from_domain) ? from_domain : proxy, register_transport);
 
+
+			if (ping_freq) {
+				if (ping_freq >= 5) {
+					gateway->ping_freq = ping_freq;
+					gateway->ping_max = ping_max;
+					gateway->ping_min = ping_min;
+					gateway->ping = switch_epoch_time_now(NULL) + ping_freq;
+					gateway->options_uri = switch_core_sprintf(gateway->pool, "<sip:%s;transport=%s>",
+															   !zstr(from_domain) ? from_domain : proxy, register_transport);			
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: invalid ping!\n");
+				}
+			}
 
 			if (contact_host) {
 				if (!strcmp(contact_host, "sip-ip")) {
