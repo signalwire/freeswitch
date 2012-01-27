@@ -567,18 +567,20 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 		sngss7_info->peer_data = NULL;
 	}
 
-	/* clone the event and save it for later usage */
-	event_clone = ftdm_calloc(1, sizeof(*sngss7_event));
-	if (event_clone) {
-		memcpy(event_clone, sngss7_event, sizeof(*sngss7_event));
-		ftdm_queue_enqueue(sngss7_info->event_queue, event_clone);
-		if (sngss7_info->peer_data) {
-			sngss7_span_data_t *sngss7_peer_span = (sngss7_span_data_t *)sngss7_info->peer_data->ftdmchan->span->signal_data;
-			/* we already have a peer attached, wake him up */
-			ftdm_queue_enqueue(sngss7_peer_span->peer_chans, sngss7_info->ftdmchan);
+	/* clone the event and save it for later usage, we do not clone RLC messages */
+	if (sngss7_event->event_id != SNGSS7_REL_CFM_EVENT) {
+		event_clone = ftdm_calloc(1, sizeof(*sngss7_event));
+		if (event_clone) {
+			memcpy(event_clone, sngss7_event, sizeof(*sngss7_event));
+			ftdm_queue_enqueue(sngss7_info->event_queue, event_clone);
+			if (sngss7_info->peer_data) {
+				sngss7_span_data_t *sngss7_peer_span = (sngss7_span_data_t *)sngss7_info->peer_data->ftdmchan->span->signal_data;
+				/* we already have a peer attached, wake him up */
+				ftdm_queue_enqueue(sngss7_peer_span->peer_chans, sngss7_info->ftdmchan);
+			}
 		}
 	}
-	
+
 	/* we could test for sngss7_info->peer_data too, bit this flag is set earlier, the earlier we know the better */
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
 		/* most messages are simply relayed in sig bridge mode, except for hangup which requires state changing */
@@ -981,6 +983,7 @@ static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t 
 
 	case FTDM_CHANNEL_STATE_TERMINATING:
 		{
+			ft_to_sngss7_rlc(ftdmchan);
 			/* when receiving REL we move to TERMINATING and notify the user that the bridge is ending */
 			sngss7_send_signal(sngss7_info, FTDM_SIGEVENT_STOP);
 		}
