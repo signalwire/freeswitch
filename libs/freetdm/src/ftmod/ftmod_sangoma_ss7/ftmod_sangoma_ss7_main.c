@@ -687,13 +687,13 @@ static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan,
 {
 	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
 
-	if (ftdmchan->state < FTDM_CHANNEL_STATE_UP) {
+	if (ftdmchan->state < FTDM_CHANNEL_STATE_UP && ftdmchan->state != FTDM_CHANNEL_STATE_DOWN) {
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
 		ftdm_channel_advance_states(ftdmchan);
 	}
 
-	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Receiving message %s from bridged peer\n", 
-			sngss7_info->circuit->cic, ftdm_sngss7_event2str(sngss7_event->event_id));
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Receiving message %s from bridged peer (our state = %s)\n", 
+			sngss7_info->circuit->cic, ftdm_sngss7_event2str(sngss7_event->event_id), ftdm_channel_state2str(ftdmchan->state));
 
 	switch (sngss7_event->event_id) {
 
