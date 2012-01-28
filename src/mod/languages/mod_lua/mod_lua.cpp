@@ -101,7 +101,9 @@ int docall(lua_State * L, int narg, int clear, int perror)
 		if (!zstr(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
-		lua_pop(L, 1); /* pop error message from the stack */
+		//lua_pop(L, 1); /* pop error message from the stack */
+		// pass error up to top
+		lua_error(L);
 	}
 
 	return status;
