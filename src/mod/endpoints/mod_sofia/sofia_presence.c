@@ -1811,7 +1811,11 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	dst = sofia_glue_get_destination((char *) o_contact);
 	switch_assert(dst);
 
-	contact = sofia_glue_get_url_from_contact(dst->contact, 1);
+	if (!zstr(dst->contact)) {
+		contact = sofia_glue_get_url_from_contact(dst->contact, 1);
+	} else {
+		contact = strdup(o_contact);
+	}
 		
 	if (dst->route_uri) {
 		route_uri = sofia_glue_strip_uri(dst->route_uri);
@@ -1864,7 +1868,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 						  );
 	}
 
-
+	
 	switch_mutex_lock(profile->ireg_mutex);
 	if (!profile->cseq_base) {
 		profile->cseq_base = (now - 1312693200) * 10;

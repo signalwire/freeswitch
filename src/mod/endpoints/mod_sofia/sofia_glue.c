@@ -5139,15 +5139,22 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup)
 {
 	char *url = NULL, *e;
 
-	while((e = strchr(buf, '"'))) {
-		buf = e+1;
+	while(*buf == ' ') {
+		buf++;
+	}
+
+	if (*buf == '"') {
+		buf++;
+		while((e = strchr(buf, '"'))) {
+			buf = e+1;
+		}
 	}
 
 	while(*buf == ' ') {
 		buf++;
 	}
 
-	if ((url = strchr(buf, '<')) && (e = strchr(url, '>'))) {
+	if ((url = strchr(buf, '<')) && (e = switch_find_end_paren(url, '<', '>'))) {
 		url++;
 		if (to_dup) {
 			url = strdup(url);
