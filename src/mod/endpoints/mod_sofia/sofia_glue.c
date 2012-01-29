@@ -5145,7 +5145,7 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup)
 
 	if (*buf == '"') {
 		buf++;
-		while((e = strchr(buf, '"'))) {
+		if((e = strchr(buf, '"'))) {
 			buf = e+1;
 		}
 	}
