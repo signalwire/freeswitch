@@ -1479,7 +1479,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Invalid agent type '%s' for agent '%s', aborting member offering", h->agent_type, h->agent_name);
-		status = SWITCH_CAUSE_USER_NOT_REGISTERED;
+		cause = SWITCH_CAUSE_USER_NOT_REGISTERED;
 	}
 
 	/* Originate/Bridge is not finished, processing the return value */
