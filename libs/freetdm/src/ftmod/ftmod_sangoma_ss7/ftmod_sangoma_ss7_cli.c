@@ -1389,67 +1389,64 @@ static ftdm_status_t handle_tx_rels(ftdm_stream_handle_t *stream, int span, int 
 static ftdm_status_t handle_tx_susp(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
 {
 	int				 x;
+	ftdm_channel_t	*ftdmchan;
+	int				lspan;
+	int				lchan;
+	SiSuspEvnt		suspEvnt;
 	sngss7_chan_data_t  *ss7_info;
-	ftdm_channel_t	  *ftdmchan;
-	int				 lspan;
-	int				 lchan;
 
+	/*
 	SS7_ERROR("JZ error alert. handle_tx_susp \n");
 	return FTDM_FAIL;
+	*/
 
+	/* JZ implementation */
+
+	if (span <= 0 || chan <= 0 || chan >= 32 ) {
+		SS7_ERROR ("Wrong span number or chan number.\n");
+		return FTDM_FAIL;
+	}
+
+	
 	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
-	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+	for ( ; g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0; x++) {
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
+			
 			ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
 			ftdmchan = ss7_info->ftdmchan;
 
-			/* if span == 0 then all spans should be printed */
-			if (span == 0) {
-				lspan = ftdmchan->physical_span_id;
-			} else {
-				lspan = span;
+			lspan = span;
+			lchan = chan;
+			
+			if ((ftdmchan->physical_span_id != lspan) && (ftdmchan->physical_chan_id != lchan)) {
+				continue;
 			}
 
-			/* if chan == 0 then all chans should be printed */
-			if (chan == 0) {
-				lchan = ftdmchan->physical_chan_id;
-			} else {
-				lchan = chan;
-			}
+			ftdm_mutex_lock(ftdmchan->mutex);
 
-			if ((ftdmchan->physical_span_id == lspan) && (ftdmchan->physical_chan_id == lchan)) {
-				/* now that we have the right channel...put a lock on it so no-one else can use it */
-				ftdm_mutex_lock(ftdmchan->mutex);
-
-				/* check if there is a pending state change|give it a bit to clear */
-				if (check_for_state_change(ftdmchan)) {
-					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", ss7_info->circuit->cic);
-					/* check if we need to die */
-					ftdm_assert(0, "State change not completed\n");
-					/* unlock the channel again before we exit */
-					ftdm_mutex_unlock(ftdmchan->mutex);
-					/* move to the next channel */
-					continue;
-				} else {
-					/* throw the ckt block flag */
-					sngss7_set_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
-
-					/* set the channel to suspended state */
-					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
-				}
-
-				/* unlock the channel again before we exit */
+			if (check_for_state_change(ftdmchan)) {
+				SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", ss7_info->circuit->cic);
+				ftdm_assert(0, "State change not completed\n");
 				ftdm_mutex_unlock(ftdmchan->mutex);
+				continue;
+			}
 
-			} /* if ( span and chan) */
-
-		} /* if ( cic != 0) */
-
-		/* go the next circuit */
-		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+			/*
+			sngss7_set_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+			*/
+			suspEvnt.susResInd.eh.pres = PRSNT_NODEF;
+			suspEvnt.susResInd.susResInd.pres = PRSNT_NODEF;
+			suspEvnt.susResInd.susResInd.val = EVTSITSUSPREQ;
+			
+			sng_cc_susp_request(lspan, ss7_info->suInstId, ss7_info->spInstId, ss7_info->circuit->id, &suspEvnt);
+			
+			ftdm_mutex_unlock(ftdmchan->mutex);
+		}
+	}
 
 	handle_show_blocks(stream, span, chan, verbose);
+	/* end of JZ implementation */
 
 	return FTDM_SUCCESS;
 }

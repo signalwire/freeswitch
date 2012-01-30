@@ -607,7 +607,7 @@ typedef enum {
 	FLAG_GRP_HW_UNBLK_TX	= (1 << 24),
 	FLAG_GRP_HW_UNBLK_TX_DN	= (1 << 25),
 	FLAG_GRP_MN_UNBLK_TX	= (1 << 26),
-	FLAG_GRP_MN_UNBLK_TX_DN	= (1 << 27)
+	FLAG_GRP_MN_UNBLK_TX_DN	= (1 << 27),
 } sng_ckt_block_flag_t;
 
 #define BLK_FLAGS_STRING \
