@@ -40,13 +40,6 @@
 
 /* INCLUDE ********************************************************************/
 #include "ftmod_sangoma_ss7_main.h"
-#include <sng_ss7/ci_db.h>
-#include <sng_ss7/cm_hash.h>
-#include <sng_ss7/cm_hash.x>
-#include <sng_ss7/si.h>
-#include <sng_ss7/si_mf.h>
-#include <sng_ss7/si_mf.x>
-#include <sng_ss7/si.x>
 /******************************************************************************/
 
 /* DEFINES ********************************************************************/
@@ -583,6 +576,14 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 
 		if (sngss7_test_ckt_flag(sngss7_info, FLAG_SUS_RECVD) && 
 		   !sngss7_test_ckt_flag(sngss7_info, FLAG_T6_CANCELED)) {
+			if (sng_cancel_isup_tmr(sngss7_info->suInstId, ISUP_T6i) == RFAILED ) {
+				SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]could not stop timer T6 \n", sngss7_info->circuit->cic);
+			} else {
+				sngss7_set_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
+				SS7_ERROR_CHAN(ftdmchan,"[CIC:%d] isup timer T6 has been cancelled. \n", sngss7_info->circuit->cic);
+			}
+
+#if 0
 			/* SPIROU cert, disable ISUP T6 when bridged natively */
 			int trc = 0;
 			SiCon *siCon = NULL;
@@ -597,6 +598,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 			} else {
 				SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]could not find siCon\n", sngss7_info->circuit->cic);
 			}
+#endif
 		}
 
 	}
@@ -995,6 +997,14 @@ static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan,
 
 	if (sngss7_test_ckt_flag(sngss7_info, FLAG_SUS_RECVD) && 
 	   !sngss7_test_ckt_flag(sngss7_info, FLAG_T6_CANCELED)) {
+		if (sng_cancel_isup_tmr(sngss7_info->suInstId, ISUP_T6i) == RFAILED ) {
+			SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]could not stop timer T6 \n", sngss7_info->circuit->cic);
+		} else {
+			sngss7_set_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
+			SS7_ERROR_CHAN(ftdmchan,"[CIC:%d] isup timer T6 has been cancelled. \n", sngss7_info->circuit->cic);
+		}
+
+#if 0
 		/* SPIROU cert, disable ISUP T6 when bridged natively */
 		int trc = 0;
 		SiCon *siCon = NULL;
@@ -1009,9 +1019,8 @@ static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan,
 		} else {
 			SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]could not find siCon\n", sngss7_info->circuit->cic);
 		}
+#endif
 	}
-
-
 }
 
 static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t *ftdmchan);

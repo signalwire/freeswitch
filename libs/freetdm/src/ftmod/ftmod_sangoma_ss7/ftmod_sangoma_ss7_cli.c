@@ -71,6 +71,10 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 static ftdm_status_t handle_tx_rsc(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
 static ftdm_status_t handle_tx_grs(ftdm_stream_handle_t *stream, int span, int chan, int range, int verbose);
 
+static ftdm_status_t handle_tx_susp(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
+static ftdm_status_t handle_tx_resm(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
+static ftdm_status_t handle_tx_rels(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
+
 static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
 static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int chan, int verbose);
 
@@ -458,9 +462,49 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 			goto handle_cli_error;
 		/**********************************************************************/
 		} 
+
+	/**************************************************************************/
+	/* sending resume for a ckt's call */
+	} else if (!strcasecmp(argv[c], "resm") == FTDM_FAIL) {
+		if (check_arg_count(argc, 5) == FTDM_FAIL)  {
+			goto handle_cli_error_argc;
+		}
+		
+		if (extract_span_chan(argv, 2, &span, &chan) == FTDM_SUCCESS) {
+			handle_tx_resm(stream, span, chan, verbose);
+		} else {
+			stream->write_function(stream, "Bad command format. \n");
+			goto handle_cli_error_argc;
+		}
+	/**************************************************************************/
+	/* sending resume for a ckt's call */
+	} else if (!strcasecmp(argv[c], "rels")) {
+		if (check_arg_count(argc, 5) == FTDM_FAIL)  {
+			goto handle_cli_error_argc;
+		}
+		
+		if (extract_span_chan(argv, 2, &span, &chan) == FTDM_SUCCESS) {
+			handle_tx_rels(stream, span, chan, verbose);
+		} else {
+			stream->write_function(stream, "Bad command format.\n");
+			goto handle_cli_error_argc;
+		}
+
+	/**************************************************************************/
+	/* sending suspend for a ckt's call */
+	} else if (!strcasecmp(argv[c], "susp")) {
+		if (check_arg_count(argc, 5) == FTDM_FAIL)  {
+			goto handle_cli_error_argc;
+		}
+		
+		if (extract_span_chan(argv, 2, &span, &chan) == FTDM_SUCCESS) {
+			handle_tx_susp(stream, span, chan, verbose);
+		} else {
+			stream->write_function(stream, "Bad command format. \n");
+			goto handle_cli_error_argc;
+		}
 	/**************************************************************************/
 	} else if (!strcasecmp(argv[c], "blo")) {
-	/**************************************************************************/
 		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
 		c++;
 
@@ -1330,6 +1374,85 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 	return FTDM_SUCCESS;
 }
 
+static ftdm_status_t handle_tx_resm(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
+{
+	SS7_ERROR("JZ error alert.  handle_tx_resm \n");
+	return FTDM_FAIL;
+}
+static ftdm_status_t handle_tx_rels(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
+{	
+	SS7_ERROR("JZ error alert. handle_tx_rels \n");
+	return FTDM_FAIL;
+}
+
+/******************************************************************************/
+static ftdm_status_t handle_tx_susp(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
+{
+	int				 x;
+	sngss7_chan_data_t  *ss7_info;
+	ftdm_channel_t	  *ftdmchan;
+	int				 lspan;
+	int				 lchan;
+
+	SS7_ERROR("JZ error alert. handle_tx_susp \n");
+	return FTDM_FAIL;
+
+	x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
+	while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) {
+		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
+			ss7_info = (sngss7_chan_data_t *)g_ftdm_sngss7_data.cfg.isupCkt[x].obj;
+			ftdmchan = ss7_info->ftdmchan;
+
+			/* if span == 0 then all spans should be printed */
+			if (span == 0) {
+				lspan = ftdmchan->physical_span_id;
+			} else {
+				lspan = span;
+			}
+
+			/* if chan == 0 then all chans should be printed */
+			if (chan == 0) {
+				lchan = ftdmchan->physical_chan_id;
+			} else {
+				lchan = chan;
+			}
+
+			if ((ftdmchan->physical_span_id == lspan) && (ftdmchan->physical_chan_id == lchan)) {
+				/* now that we have the right channel...put a lock on it so no-one else can use it */
+				ftdm_mutex_lock(ftdmchan->mutex);
+
+				/* check if there is a pending state change|give it a bit to clear */
+				if (check_for_state_change(ftdmchan)) {
+					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", ss7_info->circuit->cic);
+					/* check if we need to die */
+					ftdm_assert(0, "State change not completed\n");
+					/* unlock the channel again before we exit */
+					ftdm_mutex_unlock(ftdmchan->mutex);
+					/* move to the next channel */
+					continue;
+				} else {
+					/* throw the ckt block flag */
+					sngss7_set_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
+
+					/* set the channel to suspended state */
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+				}
+
+				/* unlock the channel again before we exit */
+				ftdm_mutex_unlock(ftdmchan->mutex);
+
+			} /* if ( span and chan) */
+
+		} /* if ( cic != 0) */
+
+		/* go the next circuit */
+		x++;
+	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+
+	handle_show_blocks(stream, span, chan, verbose);
+
+	return FTDM_SUCCESS;
+}
 /******************************************************************************/
 static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int chan, int verbose)
 {
