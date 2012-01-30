@@ -2548,7 +2548,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, i
 		goto done;
 	}
 
+	/* let the user know which channel was picked and which call id was generated */
 	caller_data->fchan = fchan;
+	caller_data->call_id = fchan->caller_data.call_id;
 done:
 	ftdm_channel_unlock(fchan);
 
