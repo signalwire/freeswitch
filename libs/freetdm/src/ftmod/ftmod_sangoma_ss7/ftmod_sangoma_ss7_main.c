@@ -582,25 +582,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 				sngss7_set_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
 				SS7_ERROR_CHAN(ftdmchan,"[CIC:%d] isup timer T6 has been cancelled. \n", sngss7_info->circuit->cic);
 			}
-
-#if 0
-			/* SPIROU cert, disable ISUP T6 when bridged natively */
-			int trc = 0;
-			SiCon *siCon = NULL;
-			if (siFindSuInstId(sngss7_info->suInstId, &siCon) != RFAILED) {
-				if (siCon) {
-					trc = siStopConTmr(siCon, TMR_T6I);
-					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Stopped T6 timer (%d)\n", sngss7_info->circuit->cic, trc);
-					sngss7_set_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
-				} else {
-					SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]siCon is null!\n", sngss7_info->circuit->cic);
-				}
-			} else {
-				SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]could not find siCon\n", sngss7_info->circuit->cic);
-			}
-#endif
 		}
-
 	}
 
 	/* clone the event and save it for later usage, we do not clone RLC messages */
@@ -1003,23 +985,6 @@ static void ftdm_sangoma_ss7_process_peer_stack_event (ftdm_channel_t *ftdmchan,
 			sngss7_set_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
 			SS7_ERROR_CHAN(ftdmchan,"[CIC:%d] isup timer T6 has been cancelled. \n", sngss7_info->circuit->cic);
 		}
-
-#if 0
-		/* SPIROU cert, disable ISUP T6 when bridged natively */
-		int trc = 0;
-		SiCon *siCon = NULL;
-		if (siFindSuInstId(sngss7_info->suInstId, &siCon) != RFAILED) {
-			if (siCon) {
-				trc = siStopConTmr(siCon, TMR_T6I);
-				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Stopped T6 timer (%d)\n", sngss7_info->circuit->cic, trc);
-				sngss7_set_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
-			} else {
-				SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]siCon is null!\n", sngss7_info->circuit->cic);
-			}
-		} else {
-			SS7_ERROR_CHAN(ftdmchan,"[CIC:%d]could not find siCon\n", sngss7_info->circuit->cic);
-		}
-#endif
 	}
 }
 
