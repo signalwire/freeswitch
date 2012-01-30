@@ -105,22 +105,22 @@ ftdm2trillium_t nsf_plan_codes[] = {
 static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val)
 {
 	ftdm2trillium_t *val = vals;
-	while(val++) {
+	do {
 		if (val->ftdm_val == ftdm_val) {
 			return val->trillium_val;
 		}
-	}
+	} while (val++);
 	return default_val;
 }
 
 static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val)
 {
 	ftdm2trillium_t *val = vals;
-	while(val++) {
+	do {
 		if (val->trillium_val == trillium_val) {
 			return val->ftdm_val;
 		}
-	}
+	} while (val++);
 	return default_val;
 }
 
