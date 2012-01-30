@@ -2367,7 +2367,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	}
 
 	/* create an peer channel queue for this span */
-	if ((ftdm_queue_create(&(ss7_span_info)->peer_chans, SPAN_PENDING_CHANS_QUEUE_SIZE)) != FTDM_SUCCESS) {
+	if ((ftdm_queue_create(&(ss7_span_info)->peer_chans, SNGSS7_PEER_CHANS_QUEUE_SIZE)) != FTDM_SUCCESS) {
 		SS7_CRITICAL("Unable to create peer chans queue!\n");
 		return FTDM_FAIL;
 	}

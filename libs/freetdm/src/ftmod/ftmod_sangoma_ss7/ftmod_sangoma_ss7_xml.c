@@ -2925,7 +2925,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		/* prepare the global info sturcture */
 		ss7_info = ftdm_calloc(1, sizeof(sngss7_chan_data_t));
 		ss7_info->ftdmchan = NULL;
-		if (ftdm_queue_create(&ss7_info->event_queue, SNGSS7_EVENT_QUEUE_SIZE) != FTDM_SUCCESS) {
+		if (ftdm_queue_create(&ss7_info->event_queue, SNGSS7_CHAN_EVENT_QUEUE_SIZE) != FTDM_SUCCESS) {
 			SS7_CRITICAL("Failed to create ss7 cic event queue\n");
 		}
 		ss7_info->circuit = &g_ftdm_sngss7_data.cfg.isupCkt[x];
