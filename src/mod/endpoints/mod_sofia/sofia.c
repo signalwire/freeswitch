@@ -2675,11 +2675,11 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 							profile->tls_sip_port : profile->sip_port, params, str_rfc_5626);
 
 				} else {
-					format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s%s>";
+					format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->sip_port, params,contact_params);
+							profile->tls_sip_port : profile->sip_port, params);
 				}
 			} else {
 				if (rfc_5626) {
