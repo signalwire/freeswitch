@@ -57,13 +57,21 @@
 
 #define SNGSS7_EVENT_QUEUE_SIZE	100
 #define SNGSS7_PEER_CHANS_QUEUE_SIZE 100
-#define SNGSS7_CHAN_EVENT_QUEUE_SIZE 5
+#define SNGSS7_CHAN_EVENT_QUEUE_SIZE 100
 
 #define MAX_SIZEOF_SUBADDR_IE	24	/* as per Q931 4.5.9 */
 
 #define SNGSS7_SWITCHTYPE_ANSI(switchtype)	(switchtype == LSI_SW_ANS88) || \
 											(switchtype == LSI_SW_ANS92) || \
 											(switchtype == LSI_SW_ANS95)
+
+#define sngss7_flush_queue(queue) \
+			do { \
+					void *__queue_data = NULL; \
+					while ((__queue_data = ftdm_queue_dequeue(queue))) { \
+						ftdm_safe_free(__queue_data); \
+					} \
+			} while (0)
 
 typedef struct ftdm2trillium {
 	uint8_t ftdm_val;
@@ -552,7 +560,7 @@ typedef enum {
 	FLAG_INFID_PAUSED		= (1 << 15),
 	FLAG_SENT_ACM			= (1 << 16),
 	FLAG_SENT_CPG			= (1 << 17),
-	FLAG_SUS_RECVD		        = (1 << 18),
+	FLAG_SUS_RECVD		    = (1 << 18),
 	FLAG_T6_CANCELED 		= (1 << 19),
 	FLAG_RELAY_DOWN			= (1 << 30),
 	FLAG_CKT_RECONFIG		= (1 << 31)

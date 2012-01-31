@@ -70,17 +70,17 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 				SS7_ERROR_CHAN(ftdmchan, "Peer channel '%s' has different signaling type %d'\n", 
 						var, peer_span->signal_type);
 			} else {
-				sngss7_event_data_t *event_clone = NULL;
 				peer_info = peer_chan->call_data;
 				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Starting native bridge with peer CIC %d\n", 
 						sngss7_info->circuit->cic, peer_info->circuit->cic);
+
 				/* make each one of us aware of the native bridge */
 				peer_info->peer_data = sngss7_info;
 				sngss7_info->peer_data = peer_info;
+
 				/* flush our own queue */
-				while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
-					ftdm_safe_free(event_clone);
-				}
+				sngss7_flush_queue(sngss7_info->event_queue);
+
 				/* go up until release comes, note that state processing is done different and much simpler when there is a peer  */
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
 				ftdm_channel_advance_states(ftdmchan);

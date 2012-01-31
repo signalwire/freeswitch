@@ -545,6 +545,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 	sngss7_chan_data_t *sngss7_info = NULL;
 	ftdm_channel_t *ftdmchan = NULL;
 	sngss7_event_data_t *event_clone = NULL;
+	int clone_event = 0;
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(sngss7_event->circuit, &sngss7_info, &ftdmchan)) {
@@ -560,11 +561,16 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 
 	if (sngss7_event->event_id == SNGSS7_CON_IND_EVENT) {
 		/* this is the first event in a call, flush the event queue */
-		while ((event_clone = ftdm_queue_dequeue(sngss7_info->event_queue))) {
-			ftdm_safe_free(event_clone);
-		}
+		sngss7_flush_queue(sngss7_info->event_queue);
 		/* clear the peer if any */
 		sngss7_info->peer_data = NULL;
+		clone_event++;
+	}
+
+	/* if the call has already started and the event is not a release confirmation, clone the event */
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED) && 
+        sngss7_event->event_id != SNGSS7_REL_CFM_EVENT) {
+		clone_event++;
 	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
@@ -586,7 +592,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 	}
 
 	/* clone the event and save it for later usage, we do not clone RLC messages */
-	if (sngss7_event->event_id != SNGSS7_REL_CFM_EVENT) {
+	if (clone_event) {
 		event_clone = ftdm_calloc(1, sizeof(*sngss7_event));
 		if (event_clone) {
 			memcpy(event_clone, sngss7_event, sizeof(*sngss7_event));
@@ -1002,6 +1008,7 @@ static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t 
 			ftdm_channel_t *close_chan = ftdmchan;
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_SUS_RECVD);
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
+			sngss7_flush_queue(sngss7_info->event_queue);
 			ftdm_channel_close (&close_chan);
 		}
 		break;
@@ -1517,6 +1524,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 
 			/* close the channel */
 			SS7_DEBUG_CHAN(ftdmchan,"FTDM Channel Close %s\n", "");
+			sngss7_flush_queue(sngss7_info->event_queue);
 			ftdm_channel_close (&close_chan);
 		}
 
