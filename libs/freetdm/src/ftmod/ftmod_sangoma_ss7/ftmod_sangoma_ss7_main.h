@@ -51,18 +51,27 @@
 
 /* DEFINES ********************************************************************/
 #define MAX_NAME_LEN			25
-#define MAX_PATH				4096
 
 #define MAX_CIC_LENGTH			5
 #define MAX_CIC_MAP_LENGTH		1000 
 
 #define SNGSS7_EVENT_QUEUE_SIZE	100
+#define SNGSS7_PEER_CHANS_QUEUE_SIZE 100
+#define SNGSS7_CHAN_EVENT_QUEUE_SIZE 100
 
 #define MAX_SIZEOF_SUBADDR_IE	24	/* as per Q931 4.5.9 */
 
 #define SNGSS7_SWITCHTYPE_ANSI(switchtype)	(switchtype == LSI_SW_ANS88) || \
 											(switchtype == LSI_SW_ANS92) || \
 											(switchtype == LSI_SW_ANS95)
+
+#define sngss7_flush_queue(queue) \
+			do { \
+					void *__queue_data = NULL; \
+					while ((__queue_data = ftdm_queue_dequeue(queue))) { \
+						ftdm_safe_free(__queue_data); \
+					} \
+			} while (0)
 
 typedef struct ftdm2trillium {
 	uint8_t ftdm_val;
@@ -82,8 +91,12 @@ typedef enum {
 	SNGSS7_STA_IND_EVENT,
 	SNGSS7_SUSP_IND_EVENT,
 	SNGSS7_RESM_IND_EVENT,
-	SNGSS7_SSP_STA_CFM_EVENT
+	SNGSS7_SSP_STA_CFM_EVENT,
+	SNGSS7_INVALID_EVENT,
 } sng_event_type_t;
+#define SNG_EVENT_TYPE_STRINGS "CON_IND", "CON_CFM", "CON_STA", "REL_IND", "REL_CFM", "DAT_IND", "FAC_IND", \
+	                       "FAC_CFM", "UMSG_IND", "STA_IND", "SUSP_IND", "RESM_IND", "SSP_STA_CFM", "INVALID"
+FTDM_STR2ENUM_P(ftdm_str2sngss7_event, ftdm_sngss7_event2str, sng_event_type_t)
 
 typedef enum {
 	SNG_BIT_A	= (1 << 0),
@@ -116,6 +129,12 @@ typedef enum {
 	SNG_CALLED			= 1,
 	SNG_CALLING			= 2
 } sng_addr_type_t;
+
+typedef enum {
+	SNG_GEN_CFG_STATUS_INIT    = 0,
+	SNG_GEN_CFG_STATUS_PENDING = 1,
+	SNG_GEN_CFG_STATUS_DONE    = 2
+} nsg_gen_cfg_type_t;
 
 typedef struct sng_mtp2_error_type {
 	int	init;
@@ -328,6 +347,7 @@ typedef struct sng_isup_ckt {
 	uint32_t		clg_nadi;
 	uint32_t		cld_nadi;
 	uint8_t			rdnis_nadi;
+	uint32_t		loc_nadi;
 
 	/* Generic Number defaults */
 	uint8_t			gn_nmbqual;			/* Number Qualifier */
@@ -339,8 +359,11 @@ typedef struct sng_isup_ckt {
 	/* END - Generic Number defaults */
 			
 	uint32_t		min_digits;
-	uint8_t			itx_auto_reply;
+	uint32_t		transparent_iam_max_size;
 	uint8_t			transparent_iam;
+	uint8_t			cpg_on_progress_media;
+	uint8_t			cpg_on_progress;
+	uint8_t			itx_auto_reply;
 	void			*obj;
 	uint16_t		t3;
 	uint32_t		t10;
@@ -407,8 +430,8 @@ typedef struct sng_relay {
 typedef struct sng_ss7_cfg {
 	uint32_t			spc;
 	uint32_t			procId;
-	char				license[MAX_PATH];
-	char				signature[MAX_PATH];
+	char				license[MAX_SNGSS7_PATH];
+	char				signature[MAX_SNGSS7_PATH];
 	uint32_t			transparent_iam_max_size;
 	uint32_t			flags;
 	sng_relay_t			relay[MAX_RELAY_CHANNELS+1];
@@ -476,6 +499,8 @@ typedef struct sngss7_chan_data {
 	sngss7_group_data_t		rx_gra;
 	sngss7_group_data_t		tx_grs;
 	sngss7_group_data_t		ucic;
+	ftdm_queue_t 			*event_queue;
+	struct sngss7_chan_data *peer_data;
 } sngss7_chan_data_t;
 
 #define SNGSS7_RX_GRS_PENDING (1 << 0)
@@ -489,6 +514,7 @@ typedef struct sngss7_span_data {
 	sngss7_group_data_t		rx_cgu;
 	sngss7_group_data_t		tx_cgu;
 	ftdm_queue_t 			*event_queue;
+	ftdm_queue_t                    *peer_chans;
 } sngss7_span_data_t;
 
 typedef struct sngss7_event_data
@@ -533,6 +559,9 @@ typedef enum {
 	FLAG_INFID_RESUME		= (1 << 14),
 	FLAG_INFID_PAUSED		= (1 << 15),
 	FLAG_SENT_ACM			= (1 << 16),
+	FLAG_SENT_CPG			= (1 << 17),
+	FLAG_SUS_RECVD		    = (1 << 18),
+	FLAG_T6_CANCELED 		= (1 << 19),
 	FLAG_RELAY_DOWN			= (1 << 30),
 	FLAG_CKT_RECONFIG		= (1 << 31)
 } sng_ckt_flag_t;
@@ -541,14 +570,14 @@ typedef enum {
 	"RX_RSC", \
 	"TX_RSC", \
 	"TX_RSC_REQ_SENT", \
-	"TX_RSC_RSP_RECIEVED", \
+	"TX_RSC_RSP_RECEIVED", \
 	"RX_GRS", \
 	"RX_GRS_DONE", \
 	"RX_GRS_CMPLT", \
 	"GRS_BASE", \
 	"TX_GRS", \
 	"TX_GRS_REQ_SENT", \
-	"TX_GRS_RSP_RECIEVED", \
+	"TX_GRS_RSP_RECEIVED", \
 	"REMOTE_REL", \
 	"LOCAL_REL", \
 	"GLARE", \
@@ -588,7 +617,7 @@ typedef enum {
 	FLAG_GRP_HW_UNBLK_TX	= (1 << 24),
 	FLAG_GRP_HW_UNBLK_TX_DN	= (1 << 25),
 	FLAG_GRP_MN_UNBLK_TX	= (1 << 26),
-	FLAG_GRP_MN_UNBLK_TX_DN	= (1 << 27)
+	FLAG_GRP_MN_UNBLK_TX_DN	= (1 << 27),
 } sng_ckt_block_flag_t;
 
 #define BLK_FLAGS_STRING \
@@ -731,7 +760,9 @@ int ftmod_ss7_enable_grp_mtp3Link(uint32_t procId);
 
 int ftmod_ss7_disable_grp_mtp2Link(uint32_t procId);
 
-int ftmod_ss7_block_isup_ckt(uint32_t cktId);
+#define ftmod_ss7_block_isup_ckt(x) 		__ftmod_ss7_block_isup_ckt(x,FTDM_TRUE)
+#define ftmod_ss7_block_isup_ckt_nowait(x) 	__ftmod_ss7_block_isup_ckt(x,FTDM_FALSE)
+int __ftmod_ss7_block_isup_ckt(uint32_t cktId, ftdm_bool_t wait);
 int ftmod_ss7_unblock_isup_ckt(uint32_t cktId);
 
 
@@ -835,6 +866,11 @@ ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cd
 ftdm_status_t copy_cdPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum);
 ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum);
 ftdm_status_t copy_redirgNum_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *redirgNum);
+ftdm_status_t copy_redirgInfo_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *redirInfo);
+ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *redirInfo);
+
+ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *locPtyNum);
+ftdm_status_t copy_locPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *locPtyNum);
 ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb);
 ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb);
 ftdm_status_t copy_cgPtyCat_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyCat *cgPtyCat);
@@ -912,7 +948,7 @@ if (ftdmchan->state == new_state) { \
 #define SS7_ERROR_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_ERROR, msg , ##args)
 #define SS7_CTRIT_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_CRIT, msg , ##args)
 
-#ifdef KONRAD_DEVEL
+#ifdef SS7_CODE_DEVEL
 #define SS7_DEVEL_DEBUG(a,...)   ftdm_log(FTDM_LOG_DEBUG,a,##__VA_ARGS__ );
 #else
 #define SS7_DEVEL_DEBUG(a,...)
@@ -1038,6 +1074,40 @@ if (ftdmchan->state == new_state) { \
 #define sngss7_test_options(obj, option) ((obj)->options & option)
 #define sngss7_clear_options(obj, option) ((obj)->options &= ~(option))
 #define sngss7_set_options(obj, option)   ((obj)->options |= (option))
+
+#define sngss7_tx_block_status_clear(obj) (!sngss7_test_ckt_blk_flag(obj, (FLAG_CKT_MN_BLOCK_TX | \
+								           FLAG_CKT_MN_BLOCK_TX_DN | \
+									   FLAG_GRP_MN_BLOCK_TX | \
+									   FLAG_GRP_MN_BLOCK_TX_DN | \
+									   FLAG_GRP_HW_BLOCK_TX | \
+									   FLAG_GRP_HW_BLOCK_TX_DN | \
+			       						   FLAG_GRP_HW_UNBLK_TX | \
+									   FLAG_CKT_MN_UNBLK_TX	))) 
+
+#define sngss7_block_status_clear(obj) (obj->blk_flags == 0)
+
+#define sngss7_reset_status_clear(obj) (!sngss7_test_ckt_flag(obj, (FLAG_RESET_TX | \
+														    FLAG_RESET_RX | \
+														  	FLAG_GRP_RESET_TX | \
+														  	FLAG_GRP_RESET_RX )))
+
+#define sngss7_tx_reset_sent(obj) ((sngss7_test_ckt_flag(obj, (FLAG_RESET_TX)) && \
+											  sngss7_test_ckt_flag(obj, (FLAG_RESET_SENT))) || \
+											 (sngss7_test_ckt_flag(obj, (FLAG_GRP_RESET_TX)) && \
+											  sngss7_test_ckt_flag(obj, (FLAG_GRP_RESET_SENT))))
+
+#define sngss7_tx_reset_status_pending(obj) (sngss7_test_ckt_flag(obj, (FLAG_RESET_TX)) || sngss7_test_ckt_flag(obj, (FLAG_GRP_RESET_TX))) 
+	
+#define sngss7_channel_status_clear(obj) ((sngss7_block_status_clear(obj)) && \
+					  					  (sngss7_reset_status_clear(obj)) && \
+										  (!sngss7_test_ckt_flag((obj),FLAG_INFID_PAUSED)))
+
+#define sngss7_tx_reset_restart(obj) do { clear_tx_grs_flags((obj)); \
+										  clear_tx_grs_data((obj)); \
+            							  clear_tx_rsc_flags((obj)); \
+										  sngss7_set_ckt_flag((obj), (FLAG_RESET_TX)); \
+								     } while (0);
+ 
 
 
 #ifdef SMG_RELAY_DBG

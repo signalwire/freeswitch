@@ -124,9 +124,13 @@ typedef struct sng_ccSpan
 	uint32_t		clg_nadi;
 	uint32_t		cld_nadi;
 	uint32_t		rdnis_nadi;
+	uint32_t		loc_nadi;
 	uint32_t		min_digits;
-	uint8_t			itx_auto_reply;
+	uint32_t		transparent_iam_max_size;
 	uint8_t			transparent_iam;
+	uint8_t         cpg_on_progress_media;
+	uint8_t         cpg_on_progress;
+	uint8_t			itx_auto_reply;
 	uint32_t		t3;
 	uint32_t		t10;
 	uint32_t		t12;
@@ -191,6 +195,7 @@ static int ftmod_ss7_next_timeslot(char *ch_map, sng_timeslot_t *timeslot);
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
+
 int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span)
 {
 	int					i = 0;
@@ -199,6 +204,7 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 	ftdm_conf_node_t	*ptr = NULL;
 	sng_route_t			self_route;
 	sng_span_t			sngSpan;
+
 
 	/* clean out the isup ckt */
 	memset(&sngSpan, 0x0, sizeof(sngSpan));
@@ -452,6 +458,9 @@ static int ftmod_ss7_parse_sng_gen(ftdm_conf_node_t *sng_gen)
 	int						num_parms = sng_gen->n_parameters;
 	int						i = 0;
 
+	/* Set the transparent_iam_max_size to default value */
+	g_ftdm_sngss7_data.cfg.transparent_iam_max_size=800;
+
 	/* extract all the information from the parameters */
 	for (i = 0; i < num_parms; i++) {
 	/**************************************************************************/
@@ -463,9 +472,8 @@ static int ftmod_ss7_parse_sng_gen(ftdm_conf_node_t *sng_gen)
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "license")) {
 		/**********************************************************************/
-			strcpy(g_ftdm_sngss7_data.cfg.license, parm->val);
-			strcpy(g_ftdm_sngss7_data.cfg.signature, parm->val);
-			strcat(g_ftdm_sngss7_data.cfg.signature, ".sig");
+			ftdm_set_string(g_ftdm_sngss7_data.cfg.license, parm->val);
+			snprintf(g_ftdm_sngss7_data.cfg.signature, sizeof(g_ftdm_sngss7_data.cfg.signature), "%s.sig", parm->val);
 			SS7_DEBUG("Found license file = %s\n", g_ftdm_sngss7_data.cfg.license);
 			SS7_DEBUG("Found signature file = %s\n", g_ftdm_sngss7_data.cfg.signature);	
 		/**********************************************************************/
@@ -1845,11 +1853,13 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 	int						flag_clg_nadi = 0;
 	int						flag_cld_nadi = 0;
 	int						flag_rdnis_nadi = 0;
+	int						flag_loc_nadi = 0;
 	int						i;
 	int						ret;
 
 	/* initalize the ccSpan structure */
 	memset(&sng_ccSpan, 0x0, sizeof(sng_ccSpan));
+
 
 	/* confirm that we are looking at an mtp_link */
 	if (strcasecmp(cc_span->name, "cc_span")) {
@@ -1858,6 +1868,14 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 	} else {
 		SS7_DEBUG("Parsing \"cc_span\"...\n");
 	}
+
+	/* Backward compatible. 
+     * If cpg_on_progress_media is not in the config file
+     * default the cpg on progress_media to TRUE */
+	sng_ccSpan.cpg_on_progress_media=FTDM_TRUE;
+	/* If transparent_iam_max_size is not set in cc spans
+     * use the global value */
+ 	sng_ccSpan.transparent_iam_max_size=g_ftdm_sngss7_data.cfg.transparent_iam_max_size;
 
 
 	for (i = 0; i < num_parms; i++) {
@@ -1904,6 +1922,15 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 			sng_ccSpan.transparent_iam = ftdm_true(parm->val);
 			SS7_DEBUG("Found transparent_iam %d\n", sng_ccSpan.transparent_iam);
 #endif
+		} else if (!strcasecmp(parm->var, "transparent_iam_max_size")) {
+			sng_ccSpan.transparent_iam_max_size = atoi(parm->val);
+			SS7_DEBUG("Found transparent_iam_max_size %d\n", sng_ccSpan.transparent_iam_max_size);
+		} else if (!strcasecmp(parm->var, "cpg_on_progress_media")) {
+			sng_ccSpan.cpg_on_progress_media = ftdm_true(parm->val);
+			SS7_DEBUG("Found cpg_on_progress_media %d\n", sng_ccSpan.cpg_on_progress_media);
+		} else if (!strcasecmp(parm->var, "cpg_on_progress")) {
+			sng_ccSpan.cpg_on_progress = ftdm_true(parm->val);
+			SS7_DEBUG("Found cpg_on_progress %d\n", sng_ccSpan.cpg_on_progress);
 		} else if (!strcasecmp(parm->var, "cicbase")) {
 		/**********************************************************************/
 			sng_ccSpan.cicbase = atoi(parm->val);
@@ -1945,6 +1972,14 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 			} else {
 				SS7_DEBUG("Invalid parm->value for obci_bita option\n");
 			}
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "loc_nadi")) {
+			/* add location reference number */
+			flag_loc_nadi = 1;
+			sng_ccSpan.loc_nadi = atoi(parm->val);
+			SS7_DEBUG("Found default LOC_NADI parm->value = %d\n", sng_ccSpan.loc_nadi);
+			printf( " --- jz: we got loc nadi from XML, val = %d \n" , sng_ccSpan.loc_nadi);
+		
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "lpa_on_cot")) {
 		/**********************************************************************/
@@ -2033,6 +2068,11 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 	if (!flag_rdnis_nadi) {
 		/* default the nadi value to national */
 		sng_ccSpan.rdnis_nadi = 0x03;
+	}
+
+	if (!flag_loc_nadi) {
+		/* default the nadi value to national */
+		sng_ccSpan.loc_nadi = 0x03;
 	}
 
 	/* pull up the SSF and Switchtype from the isup interface */
@@ -2863,7 +2903,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 					(g_ftdm_sngss7_data.cfg.isupCkt[x].chan == count)) {
 
 					/* we are processing a circuit that already exists */
-					SS7_DEBUG("Found an existing circuit %d, ccSpanId=%d, chan%d\n",
+					SS7_DEVEL_DEBUG("Found an existing circuit %d, ccSpanId=%d, chan%d\n",
 								x, 
 								ccSpan->id, 
 								count);
@@ -2872,7 +2912,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 					flag = 1;
 
 					/* not supporting reconfig at this time */
-					SS7_DEBUG("Not supporting ckt reconfig at this time!\n");
+					SS7_DEVEL_DEBUG("Not supporting ckt reconfig at this time!\n");
 					goto move_along;
 				} else {
 					/* this is not the droid you are looking for */
@@ -2885,6 +2925,9 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		/* prepare the global info sturcture */
 		ss7_info = ftdm_calloc(1, sizeof(sngss7_chan_data_t));
 		ss7_info->ftdmchan = NULL;
+		if (ftdm_queue_create(&ss7_info->event_queue, SNGSS7_CHAN_EVENT_QUEUE_SIZE) != FTDM_SUCCESS) {
+			SS7_CRITICAL("Failed to create ss7 cic event queue\n");
+		}
 		ss7_info->circuit = &g_ftdm_sngss7_data.cfg.isupCkt[x];
 
 		g_ftdm_sngss7_data.cfg.isupCkt[x].obj			= ss7_info;
@@ -2919,12 +2962,16 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		g_ftdm_sngss7_data.cfg.isupCkt[x].ssf						= ccSpan->ssf;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].cld_nadi					= ccSpan->cld_nadi;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].clg_nadi					= ccSpan->clg_nadi;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].rdnis_nadi				= ccSpan->rdnis_nadi;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].rdnis_nadi					= ccSpan->rdnis_nadi;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].loc_nadi					= ccSpan->loc_nadi;
 		g_ftdm_sngss7_data.cfg.isupCkt[x].options					= ccSpan->options;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].switchType				= ccSpan->switchType;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].min_digits				= ccSpan->min_digits;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].itx_auto_reply			= ccSpan->itx_auto_reply;
-		g_ftdm_sngss7_data.cfg.isupCkt[x].transparent_iam			= ccSpan->transparent_iam;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].switchType					= ccSpan->switchType;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].min_digits					= ccSpan->min_digits;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].itx_auto_reply				= ccSpan->itx_auto_reply;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].transparent_iam				= ccSpan->transparent_iam;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].transparent_iam_max_size		= ccSpan->transparent_iam_max_size;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].cpg_on_progress_media			= ccSpan->cpg_on_progress_media;
+		g_ftdm_sngss7_data.cfg.isupCkt[x].cpg_on_progress	 		    = ccSpan->cpg_on_progress;
 
 		if (ccSpan->t3 == 0) {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t3			= 1200;

@@ -193,7 +193,16 @@ ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPt
 
 ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum)
 {
-	/* TODO: Implement me */
+	char var[FTDM_DIGITS_LIMIT];
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	if (cdPtyNum->eh.pres == PRSNT_NODEF &&
+	    cdPtyNum->natAddrInd.pres 	== PRSNT_NODEF) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Called Party Number NADI %d\n", cdPtyNum->natAddrInd.val);
+		sprintf(var, "%d", cdPtyNum->natAddrInd.val);
+		sngss7_add_var(sngss7_info, "ss7_cld_nadi", var);
+	}
+		
 	return FTDM_SUCCESS;
 }
 
@@ -223,6 +232,67 @@ ftdm_status_t copy_cdPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPt
 	cdPtyNum->innInd.val		= 0x01;
 	
 	return copy_tknStr_to_sngss7(caller_data->dnis.digits, &cdPtyNum->addrSig, &cdPtyNum->oddEven);
+}
+
+ftdm_status_t copy_locPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *locPtyNum)
+{
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *locPtyNum)
+{
+        const char *val = NULL;
+        const char *loc_nadi = NULL;
+		int pres_val = PRSNT_NODEF;
+
+        sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+        ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+
+		if (!strcasecmp(caller_data->loc.digits, "NULL")) {
+			pres_val = NOTPRSNT;
+		}
+
+        locPtyNum->eh.pres = pres_val;
+        locPtyNum->natAddrInd.pres = pres_val;
+        locPtyNum->natAddrInd.val = g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].loc_nadi;
+
+        locPtyNum->scrnInd.pres = pres_val;
+        val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_loc_screen_ind");
+        if (!ftdm_strlen_zero(val)) {
+                locPtyNum->scrnInd.val = atoi(val);
+        } else {
+                locPtyNum->scrnInd.val = caller_data->screen;
+        }
+        ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Location Reference Code Screening Ind %d\n", locPtyNum->scrnInd.val);
+
+        locPtyNum->presRest.pres = pres_val;
+        val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_pres_ind");
+        if (!ftdm_strlen_zero(val)) {
+                locPtyNum->presRest.val = atoi(val);
+        } else {
+                locPtyNum->presRest.val = caller_data->pres;
+        }
+        ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Presentation Ind %d\n", locPtyNum->presRest.val);
+
+        locPtyNum->numPlan.pres	= pres_val;
+        locPtyNum->numPlan.val = 0x01;
+
+        locPtyNum->niInd.pres = pres_val;
+        locPtyNum->niInd.val = 0x00;
+
+		/* check if the user would like a custom NADI value for the Location Reference */
+        loc_nadi = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_loc_nadi");
+        if (!ftdm_strlen_zero(loc_nadi)) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Location Reference NADI value \"%s\"\n", loc_nadi);
+			locPtyNum->natAddrInd.val = atoi(loc_nadi);
+        } else {
+			locPtyNum->natAddrInd.val = g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].loc_nadi;
+			locPtyNum->natAddrInd.val = 0x03;
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied NADI value found for LOC, using \"%d\"\n", locPtyNum->natAddrInd.val);
+		}
+        ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Location Reference Presentation Ind %d\n", locPtyNum->presRest.val);
+
+        return copy_tknStr_to_sngss7(caller_data->loc.digits, &locPtyNum->addrSig, &locPtyNum->oddEven);
 }
 
 ftdm_status_t copy_genNmb_to_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb)
@@ -319,7 +389,7 @@ ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb
 
 	if (genNmb->nmbQual.pres == PRSNT_NODEF) {
 		snprintf(val, sizeof(val), "%d", genNmb->nmbQual.val);
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"number qualifier\" \n", val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"number qualifier\" \"%s\" \n", val);
 		sngss7_add_var(sngss7_info, "ss7_gn_numqual", val);
 	}
 
@@ -374,6 +444,13 @@ ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *red
 			return FTDM_FAIL;
 		}
 	} else {
+
+		val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdnis_pres_ind");
+		if (!ftdm_strlen_zero(val)) {
+			redirgNum->presRest.val = atoi(val);
+		} 
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Address Presentation Restricted Ind:%d\n", redirgNum->presRest.val);
+
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Number\n");
 		return FTDM_SUCCESS;
 	}
@@ -469,6 +546,94 @@ ftdm_status_t copy_redirgNum_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *r
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirecting Number Numbering plan:%s\n", val);
 		sngss7_add_var(sngss7_info, "ss7_rdnis_plan", val);
 		caller_data->rdnis.plan = redirgNum->numPlan.val;
+	}
+
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_redirgInfo_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *redirInfo)
+{
+	char val[20];
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	if (redirInfo->eh.pres != PRSNT_NODEF ) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Redirecting Information available\n");
+		return FTDM_SUCCESS;
+	}
+
+	
+	if (redirInfo->redirInd.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirInfo->redirInd.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirection Information - redirection indicator:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdinfo_indicator", val);
+	}
+
+	if (redirInfo->origRedirReas.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirInfo->origRedirReas.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirection Information - original redirection reason:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdinfo_orig", val);
+	}
+
+	if (redirInfo->redirCnt.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirInfo->redirCnt.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirection Information - redirection count:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdinfo_count", val);
+	}
+
+	if (redirInfo->redirReas.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", redirInfo->redirReas.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Redirection Information - redirection reason:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_rdinfo_reason", val);
+	}
+		
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *redirInfo)
+{
+	const char* val = NULL;
+	int bProceed = 0;
+
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_indicator");
+	if (!ftdm_strlen_zero(val)) {
+		redirInfo->redirInd.val = atoi(val);
+		redirInfo->redirInd.pres = 1;
+		bProceed = 1;
+	} else {		
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Redirection Indicator\n");
+	}
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_orig");
+	if (!ftdm_strlen_zero(val)) {
+		redirInfo->origRedirReas.val = atoi(val);
+		redirInfo->origRedirReas.pres = 1;
+		bProceed = 1;
+	} else {		
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Original Reasons\n");
+	}
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_count");
+	if (!ftdm_strlen_zero(val)) {
+		redirInfo->redirCnt.val = atoi(val);
+		redirInfo->redirCnt.pres= 1;
+		bProceed = 1;
+	} else {		
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Redirection Count\n");
+	}
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdinfo_reason");
+	if (!ftdm_strlen_zero(val)) {
+		redirInfo->redirReas.val = atoi(val);
+		redirInfo->redirReas.pres = 1;
+		bProceed = 1;
+	} else {		
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No user supplied Redirection Information on Redirection Reasons\n");
+	}
+
+	if( bProceed == 1 ) {
+		redirInfo->eh.pres = PRSNT_NODEF;
+	} else {
+		redirInfo->eh.pres = NOTPRSNT;
 	}
 
 	return FTDM_SUCCESS;
@@ -600,6 +765,8 @@ ftdm_status_t copy_natConInd_to_sngss7(ftdm_channel_t *ftdmchan, SiNatConInd *na
 
 ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *fwdCallInd)
 {
+	const char *val = NULL;
+	int acc_val = ISDNACC_ISDN;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	
 	fwdCallInd->eh.pres 				= PRSNT_NODEF;
@@ -616,7 +783,13 @@ ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *
 	fwdCallInd->isdnUsrPrtPrfInd.pres 	= PRSNT_NODEF;
 	fwdCallInd->isdnUsrPrtPrfInd.val 	= PREF_PREFAW;
 	fwdCallInd->isdnAccInd.pres 		= PRSNT_NODEF;
-	fwdCallInd->isdnAccInd.val 			= ISDNACC_ISDN;
+
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "iam_fwd_ind_isdn_access_ind");
+	if (!ftdm_strlen_zero(val)) {
+		acc_val = (int)atoi(val);
+	}
+
+	fwdCallInd->isdnAccInd.val 			= acc_val;
 	fwdCallInd->sccpMethInd.pres 		= PRSNT_NODEF;
 	fwdCallInd->sccpMethInd.val 		= SCCPMTH_NOIND;
 
@@ -866,11 +1039,6 @@ int check_for_state_change(ftdm_channel_t *ftdmchan)
 /******************************************************************************/
 ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_info, ftdm_channel_t **ftdmchan)
 {
-	if (g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj == NULL) {
-		SS7_ERROR("sngss7_info is Null for circuit #%d\n", circuit);
-		return FTDM_FAIL;
-	}
-
 	if (!g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj) {
 		SS7_ERROR("No ss7 info for circuit #%d\n", circuit);
 		return FTDM_FAIL;
@@ -879,8 +1047,19 @@ ftdm_status_t extract_chan_data(uint32_t circuit, sngss7_chan_data_t **sngss7_in
 	*sngss7_info = g_ftdm_sngss7_data.cfg.isupCkt[circuit].obj;
 
 	if (!(*sngss7_info)->ftdmchan) {
-		SS7_ERROR("No channel for circuit #%d\n", circuit);
+		SS7_ERROR("No ftdmchan for circuit #%d\n", circuit);
 		return FTDM_FAIL;
+	}
+
+	if (!(*sngss7_info)->ftdmchan->span) {
+		SS7_CRITICAL("ftdmchan->span = NULL for circuit #%d\n",circuit);
+		return FTDM_FAIL;
+		
+	}
+	if (!(*sngss7_info)->ftdmchan->span->signal_data) {
+		SS7_CRITICAL("ftdmchan->span->signal_data = NULL for circuit #%d\n",circuit);
+		return FTDM_FAIL;
+		
 	}
 
 	*ftdmchan = (*sngss7_info)->ftdmchan;
@@ -1366,7 +1545,7 @@ ftdm_status_t process_span_ucic(ftdm_span_t *ftdmspan)
 			/* lock the channel */
 			ftdm_channel_lock(ftdmchan);
 
-			SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx UCIC\n", sngss7_info->circuit->cic);
+			SS7_INFO_CHAN(ftdmchan, "[CIC:%d]Rx Span UCIC\n", sngss7_info->circuit->cic);
 
 			/* clear up any pending state changes */
 			while (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_STATE_CHANGE)) {
@@ -1881,6 +2060,7 @@ ftdm_status_t check_status_of_all_isup_intf(void)
 
 		if (ftmod_ss7_isup_intf_sta(sngss7_intf->id, &status)) {
 			SS7_ERROR("Failed to get status of ISUP intf %d\n", sngss7_intf->id);
+			sngss7_set_flag(sngss7_intf, SNGSS7_PAUSED);
 			continue;
 		}
 
@@ -2035,6 +2215,55 @@ void sngss7_set_sig_status(sngss7_chan_data_t *sngss7_info, ftdm_signaling_statu
 	return;
 }
 
+#if 0
+ftdm_status_t check_for_invalid_states(ftdm_channel_t *ftmchan)
+{
+	sngss7_chan_data_t  *sngss7_info = ftdmchan->call_data;
+
+	if (!sngss7_info) {
+			SS7_WARN_CHAN(ftdmchan, "Found ftdmchan with no sig module data!%s\n", " ");
+			return FTDM_FAIL;
+	}	
+		
+	if (sngss7_test_flag(sngss7_intf, SNGSS7_PAUSED)) {
+		return FTDM_SUCCESS;
+	}
+
+	switch (ftdmchan->state) {
+	case UP:
+	case DOWN:	
+		return FTDM_SUCCESS;
+
+	default:
+		if ((ftdm_current_time_in_ms() - ftdmchan->last_state_change_time) > 30000) {
+			SS7_WARN_CHAN(ftdmchan, "Circuite in state=%s too long - resetting!%s\n", 
+								ftdm_channel_state2str(ftdmchan->state));
+
+			ftdm_channel_lock(ftdmchan);
+				
+			if (sngss7_channel_status_clear(sngss7_info)) {
+				sngss7_tx_reset_restart(sngss7_info);
+
+				if (ftdmchan->state == FTDM_CHANNEL_STATE_RESTART) { 
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+				} else {
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
+				}
+			} else {
+
+			}	
+
+
+			
+			ftdm_channel_unlock(ftdmchan);
+		}	
+	}	
+
+	return FTDM_SUCCESS;
+}
+#endif
+	
+
 /******************************************************************************/
 ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 {
@@ -2047,6 +2276,7 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 	uint8_t				bits_ef = 0;
 	int 				x;
 	int					ret;
+	ret=0;
 
 	for (x = 1; x < (ftdmspan->chan_count + 1); x++) {
 	/**************************************************************************/
@@ -2071,12 +2301,12 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 
 			/* check if the interface is paused or resumed */
 			if (sngss7_test_flag(sngss7_intf, SNGSS7_PAUSED)) {
-				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "ISUP intf %d is PAUSED\n", sngss7_intf->id);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Circuit set to PAUSED %s\n"," ");
 				/* throw the pause flag */
 				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
 				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 			} else {
-				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "ISUP intf %d is RESUMED\n", sngss7_intf->id);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Circuit set to RESUMED %s\n"," ");
 				/* throw the resume flag */
 				sngss7_clear_ckt_flag(sngss7_info, FLAG_INFID_PAUSED);
 				sngss7_set_ckt_flag(sngss7_info, FLAG_INFID_RESUME);
@@ -2084,7 +2314,11 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 
 			/* query for the status of the ckt */
 			if (ftmod_ss7_isup_ckt_sta(sngss7_info->circuit->id, &state)) {
-				SS7_ERROR("Failed to read isup ckt = %d status\n", sngss7_info->circuit->id);
+				/* NC: Circuit statistic failed: does not exist. Must re-configure circuit
+				       Reset the circuit CONFIGURED flag so that RESUME will reconfigure
+				       this circuit. */
+				sngss7_info->circuit->flags &= ~SNGSS7_CONFIGURED;
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR,"Failed to read isup ckt = %d status\n", sngss7_info->circuit->id);
 				continue;
 			}
 
@@ -2092,10 +2326,20 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 			bits_ab = (state & (SNG_BIT_A + SNG_BIT_B)) >> 0;
 			bits_cd = (state & (SNG_BIT_C + SNG_BIT_D)) >> 2;
 			bits_ef = (state & (SNG_BIT_E + SNG_BIT_F)) >> 4;
+					
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Circuit state=0x%X ab=0x%X cd=0x%X ef=0x%X\n",state,bits_ab,bits_cd,bits_ef);
 
 			if (bits_cd == 0x0) {
 				/* check if circuit is UCIC or transient */
 				if (bits_ab == 0x3) {
+					SS7_INFO("ISUP CKT %d re-configuration pending!\n", x);
+					sngss7_info->circuit->flags &= ~SNGSS7_CONFIGURED;
+					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+
+					/* NC: The code below should be deleted. Its here for hitorical
+					       reason. The RESUME code will reconfigure the channel since
+					       the CONFIGURED flag has been reset */
+#if 0
 					/* bit a and bit b are set, unequipped */
 					ret = ftmod_ss7_isup_ckt_config(sngss7_info->circuit->id);
 					if (ret) {
@@ -2118,8 +2362,22 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 			
 					/* unlock the channel */
 					ftdm_mutex_unlock(ftdmchan->mutex);
+#endif
 
-				} /* if (bits_ab == 0x3) */
+				} else { /* if (bits_ab == 0x3) */
+					/* The stack status is not blocked.  However this is possible if
+					   the circuit state was UP. So even though Master sent out the BLO
+					   the status command is not showing it.  
+					   
+					   As a kudge. We will try to send out an UBL even though the status
+					   indicates that there is no BLO.  */
+					if (!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) {
+						sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
+
+						/* set the channel to suspended state */
+						SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					}
+				}
 			} else {
 				/* check the maintenance block status in bits A and B */
 				switch (bits_ab) {
@@ -2129,16 +2387,27 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 					break;
 				/**************************************************************************/
 				case (1):
-					/* locally blocked */
-					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
+					/* The stack status is Blocked.  Check if the block was sent
+					   by user via console.  If the block was not sent by user then, it 
+					   was sent out by Master due to relay down.  
+					   Therefore send out the unblock to clear it */
+					if (!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) {
+						sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
 
-					/* set the channel to suspended state */
-					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+						/* set the channel to suspended state */
+						SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+					}
+
+					/* Only locally blocked, thus remove a remote block */
+					sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+					sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
+
 					break;
 				/**************************************************************************/
 				case (2):
 					/* remotely blocked */
 					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
 
 					/* set the channel to suspended state */
 					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -2146,8 +2415,11 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 				/**************************************************************************/
 				case (3):
 					/* both locally and remotely blocked */
-					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_LC_BLOCK_RX);
+					if (!sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_TX)) {
+						sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_UNBLK_TX);
+					}
 					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
 
 					/* set the channel to suspended state */
 					SS7_STATE_CHANGE(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -2199,7 +2471,7 @@ ftdm_status_t check_for_reconfig_flag(ftdm_span_t *ftdmspan)
 			/* clear the re-config flag ... no matter what */
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_CKT_RECONFIG);
 
-		} /* if ((sngss7_test_ckt_flag(sngss7_info, FLAG_CKT_RECONFIG)) */
+		} 
 	} /* for (x = 1; x < (span->chan_count + 1); x++) */
 
 	return FTDM_SUCCESS;
@@ -2470,8 +2742,9 @@ ftdm_status_t sngss7_save_iam(ftdm_channel_t *ftdmchan, SiConEvnt *siConEvnt)
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "IAM variable length:%d\n", strlen(url_encoded_iam));
 
-	if (strlen(url_encoded_iam) > g_ftdm_sngss7_data.cfg.transparent_iam_max_size) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "IAM variable length exceeds max size (len:%d max:%d) \n", strlen(url_encoded_iam), g_ftdm_sngss7_data.cfg.transparent_iam_max_size);
+	if (strlen(url_encoded_iam) > sngss7_info->circuit->transparent_iam_max_size) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "IAM variable length exceeds max size (len:%d max:%d) \n", 
+			strlen(url_encoded_iam), sngss7_info->circuit->transparent_iam_max_size);
 		ret_val = FTDM_FAIL;
 		goto done;
 	}

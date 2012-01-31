@@ -87,6 +87,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 	ftdm_assert(!fchan->history[hindex].end_time, "End time should be zero!\n");
 
 	fchan->history[hindex].end_time = ftdm_current_time_in_ms();
+	fchan->last_state_change_time = ftdm_current_time_in_ms();
 
 	fchan->state_status = FTDM_STATE_STATUS_COMPLETED;
 
@@ -262,6 +263,9 @@ static ftdm_status_t ftdm_core_set_state(const char *file, const char *func, int
 		}
 	}
 
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
+		goto perform_state_change;
+	}
 
 	if (ftdmchan->span->state_map) {
 		ok = ftdm_parse_state_map(ftdmchan, state, ftdmchan->span->state_map);
@@ -352,6 +356,8 @@ end:
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "VETO state change from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		goto done;
 	}
+
+perform_state_change:
 
 	ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Changed state from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 	ftdmchan->last_state = ftdmchan->state; 

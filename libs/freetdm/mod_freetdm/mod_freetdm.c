@@ -124,6 +124,8 @@ struct private_object {
 	ftdm_channel_t *ftdmchan;
 	uint32_t write_error;
 	uint32_t read_error;
+	char network_peer_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	
 };
 
 /* private data attached to FTDM channels (only FXS for now) */
@@ -574,6 +576,34 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 #endif
 
+	name = switch_channel_get_name(channel);
+
+	span_id = tech_pvt->ftdmchan ? ftdm_channel_get_span_id(tech_pvt->ftdmchan) : 0;
+	chan_id = tech_pvt->ftdmchan ? ftdm_channel_get_id(tech_pvt->ftdmchan) : 0;
+
+
+    /* Now verify the device is still attached to this call :-)
+     * Sometimes the FS core takes too long (more than 3 seconds) in calling
+     * channel_on_hangup() and the FreeTDM core decides to take the brute
+     * force approach and hangup and detach themselves from the call. Later
+     * when FS finally comes around, we might end up hanging up the device
+     * attached to another call, this verification avoids that. */
+    uuid = switch_core_session_get_uuid(session);
+    tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
+    for (t = 0; t < tokencnt; t++) {
+        token = ftdm_channel_get_token(tech_pvt->ftdmchan, t);
+        if (!zstr(token) && !strcasecmp(uuid, token)) {
+            uuid_found = 1;
+            break;
+        }
+    }
+
+    if (!uuid_found) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Device [%d:%d] is no longer attached to %s. Nothing to do.\n", span_id, chan_id, name);
+        goto end;
+    }
+	
+
 	ftdm_channel_clear_token(tech_pvt->ftdmchan, switch_core_session_get_uuid(session));
 
 	chantype = ftdm_channel_get_type(tech_pvt->ftdmchan);
@@ -598,11 +628,20 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	case FTDM_CHAN_TYPE_CAS:
 	case FTDM_CHAN_TYPE_B:
 		{
+			const char *var = NULL;
 			ftdm_call_cause_t hcause = switch_channel_get_cause_q850(channel);
 			if (hcause  < 1 || hcause > 127) {
 				hcause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
-			ftdm_channel_call_hangup_with_cause(tech_pvt->ftdmchan, hcause);
+			var = switch_channel_get_variable(channel, "ss7_rel_loc");
+			if (var) {
+				ftdm_usrmsg_t usrmsg;
+				memset(&usrmsg, 0, sizeof(ftdm_usrmsg_t));
+				ftdm_usrmsg_add_var(&usrmsg, "ss7_rel_loc", var);
+				ftdm_channel_call_hangup_with_cause_ex(tech_pvt->ftdmchan, hcause, &usrmsg);
+			} else {
+				ftdm_channel_call_hangup_with_cause(tech_pvt->ftdmchan, hcause);
+			}
 		}
 		break;
 	default: 
@@ -1276,10 +1315,15 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	int argc = 0;
 	const char *var;
 	const char *dest_num = NULL, *callerid_num = NULL;
+	const char *network_peer_uuid = NULL;
+	char sigbridge_peer[255];
+	switch_channel_t *peer_chan = NULL;
+	switch_channel_t *our_chan = NULL;
 	ftdm_hunting_scheme_t hunting;
 	ftdm_usrmsg_t usrmsg;
 
 	memset(&usrmsg, 0, sizeof(ftdm_usrmsg_t));
+	memset(sigbridge_peer, 0, sizeof(sigbridge_peer));
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -1366,6 +1410,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if (session && globals.sip_headers) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *sipvar;
+
+		network_peer_uuid = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-TransUUID");
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-CallerName");
 		if (sipvar) {
 			ftdm_set_string(caller_data.cid_name, sipvar);
@@ -1407,6 +1454,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			ftdm_set_string(caller_data.dnis.digits, sipvar);
 		}
 
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-LOC");
+		if (sipvar) {
+			ftdm_set_string(caller_data.loc.digits, sipvar);
+		}
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS-TON");
 		if (sipvar) {
 			caller_data.dnis.type = (uint8_t)atoi(sipvar);
@@ -1420,7 +1472,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		/* Used by ftmod_sangoma_ss7 only */
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS-NADI");
 		if (sipvar) {
-			ftdm_usrmsg_add_var(&usrmsg, "ss7_clg_nadi", sipvar);
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_cld_nadi", sipvar);
 		}
 		
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS");
@@ -1503,6 +1555,24 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_iam", sipvar);
 		}
+
+		/* redirection information */
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDINF-Indicator");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdinfo_indicator", sipvar);
+		}
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDINF-OrigReason");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdinfo_orig", sipvar);
+		}
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDINF-Count");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdinfo_count", sipvar);
+		}
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDINF-Reason");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdinfo_reason", sipvar);
+		}
 	}
 
 	if (switch_test_flag(outbound_profile, SWITCH_CPF_SCREEN)) {
@@ -1511,6 +1581,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	if (switch_test_flag(outbound_profile, SWITCH_CPF_HIDE_NUMBER)) {
 		caller_data.pres = FTDM_PRES_RESTRICTED;
+	}
+
+	if ((var = channel_get_variable(session, var_event, "freetdm_iam_fwd_ind_isdn_access_ind"))) {
+		ftdm_usrmsg_add_var(&usrmsg, "iam_fwd_ind_isdn_access_ind", var);
 	}
 
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_capability"))) {
@@ -1599,6 +1673,25 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			goto fail;
 		}
 
+		our_chan = switch_core_session_get_channel(*new_session);
+
+		if (network_peer_uuid) {
+			switch_core_session_t *network_peer = switch_core_session_locate(network_peer_uuid);
+			if (network_peer) {
+				const char *my_uuid = switch_core_session_get_uuid(*new_session);
+				private_t *peer_private = switch_core_session_get_private(network_peer);
+				switch_set_string(tech_pvt->network_peer_uuid, network_peer_uuid);
+				switch_set_string(peer_private->network_peer_uuid, my_uuid);
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %s is network-bridged with %s\n", 
+						my_uuid, network_peer_uuid);
+
+				snprintf(sigbridge_peer, sizeof(sigbridge_peer), "%u:%u", 
+				ftdm_channel_get_span_id(peer_private->ftdmchan), ftdm_channel_get_id(peer_private->ftdmchan));
+				switch_core_session_rwunlock(network_peer);
+			}
+		}
+
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		caller_profile->destination_number = switch_core_strdup(caller_profile->pool, switch_str_nil(dest_num));
 		caller_profile->caller_id_number = switch_core_strdup(caller_profile->pool, switch_str_nil(callerid_num));
@@ -1609,6 +1702,21 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		hunt_data.caller_profile = caller_profile;
 		hunt_data.tech_pvt = tech_pvt;
 		caller_data.priv = &hunt_data;
+
+		if (session
+		 && (var = channel_get_variable(session, var_event, FREETDM_VAR_PREFIX "native_sigbridge")) 
+		 && switch_true(var)
+		 && switch_core_session_compare(*new_session, session)) {
+			private_t *peer_pvt = switch_core_session_get_private(session);
+			snprintf(sigbridge_peer, sizeof(sigbridge_peer), "%u:%u", 
+					ftdm_channel_get_span_id(peer_pvt->ftdmchan), ftdm_channel_get_id(peer_pvt->ftdmchan));
+		}
+
+		if (session && !zstr(sigbridge_peer)) {
+			peer_chan = switch_core_session_get_channel(session);
+			ftdm_usrmsg_add_var(&usrmsg, "sigbridge_peer", sigbridge_peer);
+		}
+
 
 		if ((status = ftdm_call_place_ex(&caller_data, &hunting, &usrmsg)) != FTDM_SUCCESS) {
 			if (tech_pvt->read_codec.implementation) {
@@ -1625,6 +1733,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
             		goto fail;
+		}
+
+		if (our_chan && peer_chan) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
+					"Bridging native signaling of channel %s to channel %s\n", 
+					switch_channel_get_name(peer_chan), switch_channel_get_name(our_chan));
 		}
 
 		return SWITCH_CAUSE_SUCCESS;
@@ -1753,6 +1867,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	
 	if (globals.sip_headers) {
 		switch_channel_set_variable(channel, "sip_h_X-FreeTDM-SpanName", ftdm_channel_get_span_name(sigmsg->channel));
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-TransUUID", "%s",switch_core_session_get_uuid(session));	
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-SpanNumber", "%d", spanid);	
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ChanNumber", "%d", chanid);
 
@@ -1772,54 +1887,80 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-NADI", "%d", channel_caller_data->rdnis.type);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Plan", "%d", channel_caller_data->rdnis.plan);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CPC", "%s", ftdm_calling_party_category2str(channel_caller_data->cpc));
-		
+	
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdinfo_indicator");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDINF-Indicator", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdinfo_orig");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDINF-OrigReason", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdinfo_count");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDINF-Count", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdinfo_reason");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDINF-Reason", "%s", var_value);
+		}
+			
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_clg_nadi");
 		if (!ftdm_strlen_zero(var_value)) {
-			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-NADI", "%d", var_value);
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-NADI", "%s", var_value);
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ANI-NADI", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_cld_nadi");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-NADI", "%s", var_value);
 		}
 
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdnis_screen_ind");
 		if (!ftdm_strlen_zero(var_value)) {
-			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Screen", "%d", var_value);
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Screen", "%s", var_value);
 		}
 
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_rdnis_pres_ind");
 		if (!ftdm_strlen_zero(var_value)) {
-			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Presentation", "%d", channel_caller_data->rdnis.plan);
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Presentation", "%s", var_value);
 		}
 
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_digits");
 		if (!ftdm_strlen_zero(var_value)) {
-			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN", "%d", var_value);
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN", "%s", var_value);
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_numqual");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumQual", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumQual", "%s", var_value);
 			}
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_nadi");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NADI", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NADI", "%s", var_value);
 			}
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_screen_ind");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Screen", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Screen", "%s", var_value);
 			}
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_pres_ind");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Presentation", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Presentation", "%s", var_value);
 			}
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_npi");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Plan", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-Plan", "%s", var_value);
 			}
 
 			var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_num_inc_ind");
 			if (!ftdm_strlen_zero(var_value)) {
-				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumInComp", "%d", var_value);
+				switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-GN-NumInComp", "%s", var_value);
 			}
 		} /* End - var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_gn_digits"); */
 
@@ -1840,6 +1981,27 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_opc");
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OPC", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_loc_digits");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-LOC", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_loc_screen_ind");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-LOC-Screen", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_loc_pres_ind");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-LOC-Presentation", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_loc_nadi");
+		printf ( "ss7_loc_nadi = %s \n " , var_value );
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-LOC-NADI", "%s", var_value);
 		}
 	}
 

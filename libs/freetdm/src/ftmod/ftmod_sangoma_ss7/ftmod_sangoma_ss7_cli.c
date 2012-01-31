@@ -460,7 +460,6 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 		} 
 	/**************************************************************************/
 	} else if (!strcasecmp(argv[c], "blo")) {
-	/**************************************************************************/
 		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
 		c++;
 
@@ -1632,7 +1631,9 @@ static ftdm_status_t handle_tx_rsc(ftdm_stream_handle_t *stream, int span, int c
 				ftdm_mutex_lock(ftdmchan->mutex);
 
 				/* throw the reset flag */
-				sngss7_set_ckt_flag(sngss7_info, FLAG_RESET_TX);
+				sngss7_set_ckt_flag (sngss7_info, FLAG_LOCAL_REL);
+				sngss7_clear_ckt_flag (sngss7_info, FLAG_REMOTE_REL);
+				sngss7_tx_reset_restart(sngss7_info);
 
 				switch (ftdmchan->state) {
 				/**************************************************************************/
