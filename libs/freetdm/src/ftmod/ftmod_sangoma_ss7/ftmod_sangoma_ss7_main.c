@@ -1049,12 +1049,12 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 									sngss7_info->ckt_flags,
 									sngss7_info->blk_flags);
 
-	if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALING) {
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
+		/* DIALING is the only state we process normally when doing an outgoing call that is natively bridged */
+		if (ftdmchan->state != FTDM_CHANNEL_STATE_DIALING) {
+			return ftdm_sangoma_ss7_native_bridge_state_change(ftdmchan);
+		}
 		sngss7_info->peer_data = NULL;
-	}
-
-	if (sngss7_info->peer_data) {
-		return ftdm_sangoma_ss7_native_bridge_state_change(ftdmchan);
 	}
 
 	/*check what state we are supposed to be in */
