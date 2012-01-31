@@ -116,8 +116,6 @@ static switch_status_t mod_logfile_openlogfile(logfile_profile_t *profile, switc
 static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 {
 	unsigned int i = 0;
-	unsigned int fcount = 0;
-	const char *fname = NULL;
 	char *filename = NULL;
 	switch_status_t stat = 0;
 	int64_t offset = 0;
@@ -125,15 +123,6 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_size_t retsize;
-	char *dend = NULL;
-	char *hay = NULL;
-	switch_dir_t *dirhandle = NULL;
-	switch_time_t wtime = 0;
-	char dirname[128];
-	char filebuf[128];
-	char fullfile[512];
-	char filetodelete[128];
-	switch_finfo_t statinfo;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_mutex_lock(globals.mutex);
@@ -344,8 +333,8 @@ static switch_status_t load_profile(switch_xml_t xml)
 				new_profile->logfile = strdup(val);
 			} else if (!strcmp(var, "rollover")) {
 				new_profile->roll_size = switch_atoui(val);
-			} else if (!strcmp(var, "maximum-rotate")) ||
-			          (!strcmp(var, "maxfilecount")) { 
+			} else if (!strcmp(var, "maximum-rotate") ||
+			           !strcmp(var, "maxfilecount")) { 
 				/* maxfilecount is backwards compatible parameter, we had our own log rotation code
 				 * and eventually mainstream FreeSWITCH included the parameter maximum-rotate which
 				 * did pretty much the same as ours, I deleted the old code and stayed with the official
