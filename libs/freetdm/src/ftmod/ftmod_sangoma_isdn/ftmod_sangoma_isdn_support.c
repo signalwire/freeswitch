@@ -52,8 +52,12 @@ SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_netspecfac_plan, ftdm_sngisdn_netspecfac_
 SNGISDN_ENUM_NAMES(SNGISDN_NETSPECFAC_SPEC_NAMES, SNGISDN_NETSPECFAC_SPEC_STRINGS)
 SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_netspecfac_spec, ftdm_sngisdn_netspecfac_spec2str, ftdm_sngisdn_netspecfac_spec_t, SNGISDN_NETSPECFAC_SPEC_NAMES, SNGISDN_NETSPECFAC_SPEC_INVALID)
 
-static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val);
-static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val);
+static uint8_t _get_trillium_val(ftdm2trillium_t *vals, unsigned int num_vals, uint8_t ftdm_val, uint8_t default_val);
+static uint8_t _get_ftdm_val(ftdm2trillium_t *vals, unsigned int num_vals, uint8_t trillium_val, uint8_t default_val);
+
+#define get_trillium_val(vals, ftdm_val, default_val) _get_trillium_val(vals, ftdm_array_len(vals), ftdm_val, default_val)
+#define get_ftdm_val(vals, trillium_val, default_val) _get_ftdm_val(vals, ftdm_array_len(vals), trillium_val, default_val)
+
 ftdm_status_t get_calling_name_from_usr_usr(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr);
 ftdm_status_t get_calling_name_from_display(ftdm_channel_t *ftdmchan, Display *display);
 ftdm_status_t get_calling_name_from_ntDisplay(ftdm_channel_t *ftdmchan, NtDisplay *display);
@@ -102,28 +106,28 @@ ftdm2trillium_t nsf_plan_codes[] = {
 	{SNGISDN_NETSPECFAC_PLAN_INVALID,						0x00},
 };
 
-static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val)
+static uint8_t _get_trillium_val(ftdm2trillium_t *vals, unsigned int num_vals, uint8_t ftdm_val, uint8_t default_val)
 {
-	ftdm2trillium_t *val = vals;
-	do {
-		if (val->ftdm_val == ftdm_val) {
-			return val->trillium_val;
+	int i;
+	for (i = 0; i < num_vals; i++) {
+		if (vals[i].ftdm_val == ftdm_val) {
+			return vals[i].trillium_val;
 		}
-	} while (val++);
+	}
+	
 	return default_val;
 }
 
-static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val)
+static uint8_t _get_ftdm_val(ftdm2trillium_t *vals, unsigned int num_vals, uint8_t trillium_val, uint8_t default_val)
 {
-	ftdm2trillium_t *val = vals;
-	do {
-		if (val->trillium_val == trillium_val) {
-			return val->ftdm_val;
+	int i;
+	for (i = 0; i < num_vals; i++) {
+		if (vals[i].trillium_val == trillium_val) {
+			return vals[i].ftdm_val;
 		}
-	} while (val++);
+	}
 	return default_val;
 }
-
 
 void clear_call_data(sngisdn_chan_data_t *sngisdn_info)
 {
