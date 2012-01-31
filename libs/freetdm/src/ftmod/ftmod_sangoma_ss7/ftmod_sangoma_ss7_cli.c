@@ -460,7 +460,6 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 		} 
 	/**************************************************************************/
 	} else if (!strcasecmp(argv[c], "blo")) {
-	/**************************************************************************/
 		if (check_arg_count(argc, 2)) goto handle_cli_error_argc;
 		c++;
 

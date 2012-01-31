@@ -1923,7 +1923,7 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 			SS7_DEBUG("Found transparent_iam %d\n", sng_ccSpan.transparent_iam);
 #endif
 		} else if (!strcasecmp(parm->var, "transparent_iam_max_size")) {
-			sng_ccSpan.transparent_iam_max_size = ftdm_true(parm->val);
+			sng_ccSpan.transparent_iam_max_size = atoi(parm->val);
 			SS7_DEBUG("Found transparent_iam_max_size %d\n", sng_ccSpan.transparent_iam_max_size);
 		} else if (!strcasecmp(parm->var, "cpg_on_progress_media")) {
 			sng_ccSpan.cpg_on_progress_media = ftdm_true(parm->val);
@@ -2925,6 +2925,9 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		/* prepare the global info sturcture */
 		ss7_info = ftdm_calloc(1, sizeof(sngss7_chan_data_t));
 		ss7_info->ftdmchan = NULL;
+		if (ftdm_queue_create(&ss7_info->event_queue, SNGSS7_CHAN_EVENT_QUEUE_SIZE) != FTDM_SUCCESS) {
+			SS7_CRITICAL("Failed to create ss7 cic event queue\n");
+		}
 		ss7_info->circuit = &g_ftdm_sngss7_data.cfg.isupCkt[x];
 
 		g_ftdm_sngss7_data.cfg.isupCkt[x].obj			= ss7_info;

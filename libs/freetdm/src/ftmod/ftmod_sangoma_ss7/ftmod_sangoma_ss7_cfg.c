@@ -77,9 +77,9 @@ int  ft_to_sngss7_cfg_all(void)
 	int ret = 0;
 
 	/* check if we have done gen_config already */
-	if (!(g_ftdm_sngss7_data.gen_config)) {
+	if (g_ftdm_sngss7_data.gen_config == SNG_GEN_CFG_STATUS_INIT) {
 		/* update the global gen_config so we don't do it again */
-		g_ftdm_sngss7_data.gen_config = 1;
+		g_ftdm_sngss7_data.gen_config = SNG_GEN_CFG_STATUS_PENDING;
 
 		/* start of by checking if the license and sig file are valid */
 		if (sng_validate_license(g_ftdm_sngss7_data.cfg.license,
@@ -209,13 +209,12 @@ int  ft_to_sngss7_cfg_all(void)
 			}
 		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2)) */
 
-		g_ftdm_sngss7_data.gen_config = 2;
+		g_ftdm_sngss7_data.gen_config = SNG_GEN_CFG_STATUS_DONE;
 
 	} /* if (!(g_ftdm_sngss7_data.gen_config)) */
 
 
-	/* FIXME: Please change number 2 to an ENUM that is more explanatory */
-	if (g_ftdm_sngss7_data.gen_config != 2) {
+	if (g_ftdm_sngss7_data.gen_config != SNG_GEN_CFG_STATUS_DONE) {
 			SS7_CRITICAL("General configuration FAILED!\n");
 			return 1;
 	}

@@ -56,12 +56,22 @@
 #define MAX_CIC_MAP_LENGTH		1000 
 
 #define SNGSS7_EVENT_QUEUE_SIZE	100
+#define SNGSS7_PEER_CHANS_QUEUE_SIZE 100
+#define SNGSS7_CHAN_EVENT_QUEUE_SIZE 100
 
 #define MAX_SIZEOF_SUBADDR_IE	24	/* as per Q931 4.5.9 */
 
 #define SNGSS7_SWITCHTYPE_ANSI(switchtype)	(switchtype == LSI_SW_ANS88) || \
 											(switchtype == LSI_SW_ANS92) || \
 											(switchtype == LSI_SW_ANS95)
+
+#define sngss7_flush_queue(queue) \
+			do { \
+					void *__queue_data = NULL; \
+					while ((__queue_data = ftdm_queue_dequeue(queue))) { \
+						ftdm_safe_free(__queue_data); \
+					} \
+			} while (0)
 
 typedef struct ftdm2trillium {
 	uint8_t ftdm_val;
@@ -81,8 +91,12 @@ typedef enum {
 	SNGSS7_STA_IND_EVENT,
 	SNGSS7_SUSP_IND_EVENT,
 	SNGSS7_RESM_IND_EVENT,
-	SNGSS7_SSP_STA_CFM_EVENT
+	SNGSS7_SSP_STA_CFM_EVENT,
+	SNGSS7_INVALID_EVENT,
 } sng_event_type_t;
+#define SNG_EVENT_TYPE_STRINGS "CON_IND", "CON_CFM", "CON_STA", "REL_IND", "REL_CFM", "DAT_IND", "FAC_IND", \
+	                       "FAC_CFM", "UMSG_IND", "STA_IND", "SUSP_IND", "RESM_IND", "SSP_STA_CFM", "INVALID"
+FTDM_STR2ENUM_P(ftdm_str2sngss7_event, ftdm_sngss7_event2str, sng_event_type_t)
 
 typedef enum {
 	SNG_BIT_A	= (1 << 0),
@@ -115,6 +129,12 @@ typedef enum {
 	SNG_CALLED			= 1,
 	SNG_CALLING			= 2
 } sng_addr_type_t;
+
+typedef enum {
+	SNG_GEN_CFG_STATUS_INIT    = 0,
+	SNG_GEN_CFG_STATUS_PENDING = 1,
+	SNG_GEN_CFG_STATUS_DONE    = 2
+} nsg_gen_cfg_type_t;
 
 typedef struct sng_mtp2_error_type {
 	int	init;
@@ -479,6 +499,8 @@ typedef struct sngss7_chan_data {
 	sngss7_group_data_t		rx_gra;
 	sngss7_group_data_t		tx_grs;
 	sngss7_group_data_t		ucic;
+	ftdm_queue_t 			*event_queue;
+	struct sngss7_chan_data *peer_data;
 } sngss7_chan_data_t;
 
 #define SNGSS7_RX_GRS_PENDING (1 << 0)
@@ -492,6 +514,7 @@ typedef struct sngss7_span_data {
 	sngss7_group_data_t		rx_cgu;
 	sngss7_group_data_t		tx_cgu;
 	ftdm_queue_t 			*event_queue;
+	ftdm_queue_t                    *peer_chans;
 } sngss7_span_data_t;
 
 typedef struct sngss7_event_data
@@ -537,6 +560,8 @@ typedef enum {
 	FLAG_INFID_PAUSED		= (1 << 15),
 	FLAG_SENT_ACM			= (1 << 16),
 	FLAG_SENT_CPG			= (1 << 17),
+	FLAG_SUS_RECVD		    = (1 << 18),
+	FLAG_T6_CANCELED 		= (1 << 19),
 	FLAG_RELAY_DOWN			= (1 << 30),
 	FLAG_CKT_RECONFIG		= (1 << 31)
 } sng_ckt_flag_t;
@@ -592,7 +617,7 @@ typedef enum {
 	FLAG_GRP_HW_UNBLK_TX	= (1 << 24),
 	FLAG_GRP_HW_UNBLK_TX_DN	= (1 << 25),
 	FLAG_GRP_MN_UNBLK_TX	= (1 << 26),
-	FLAG_GRP_MN_UNBLK_TX_DN	= (1 << 27)
+	FLAG_GRP_MN_UNBLK_TX_DN	= (1 << 27),
 } sng_ckt_block_flag_t;
 
 #define BLK_FLAGS_STRING \

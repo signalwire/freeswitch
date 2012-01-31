@@ -265,6 +265,8 @@ typedef enum {
 #define FTDM_CHANNEL_BLOCKING        (1ULL << 35)
 /*!< Media is digital */
 #define FTDM_CHANNEL_DIGITAL_MEDIA   (1ULL << 36)
+/*!< Native signaling bridge is enabled */
+#define FTDM_CHANNEL_NATIVE_SIGBRIDGE (1ULL << 37)
 
 #include "ftdm_state.h"
 

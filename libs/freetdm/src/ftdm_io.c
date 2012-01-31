@@ -52,9 +52,7 @@
 struct tm *localtime_r(const time_t *clock, struct tm *result);
 #endif
 
-#define FORCE_HANGUP_TIMER 3000
-#define SPAN_PENDING_CHANS_QUEUE_SIZE 1000
-#define SPAN_PENDING_SIGNALS_QUEUE_SIZE 1000
+#define FORCE_HANGUP_TIMER 30000
 #define FTDM_READ_TRACE_INDEX 0
 #define FTDM_WRITE_TRACE_INDEX 1
 #define MAX_CALLIDS 6000
@@ -2205,6 +2203,12 @@ static ftdm_status_t _ftdm_channel_call_hangup_nl(const char *file, const char *
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 
+	if (ftdm_test_flag(chan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
+		ftdm_log_chan_ex(chan, file, func, line, FTDM_LOG_LEVEL_DEBUG, 
+				"Ignoring hangup in channel in state %s (native bridge enabled)\n", ftdm_channel_state2str(chan->state));
+		goto done;
+	}
+
 	if (chan->state != FTDM_CHANNEL_STATE_DOWN) {
 		if (chan->state == FTDM_CHANNEL_STATE_HANGUP) {
 			/* make user's life easier, and just ignore double hangup requests */
@@ -2231,6 +2235,8 @@ static ftdm_status_t _ftdm_channel_call_hangup_nl(const char *file, const char *
 			ftdm_channel_close(&chan);
 		}
 	}
+
+done:
 	return status;
 }
 
@@ -2325,6 +2331,15 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_call_indicate(const char *file, const ch
 			ftdm_channel_indication2str(indication), ftdm_channel_state2str(ftdmchan->state));
 
 	ftdm_channel_lock(ftdmchan);
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
+		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, 
+				"Ignoring indication %s in channel in state %s (native bridge enabled)\n",
+				ftdm_channel_indication2str(indication), 
+				ftdm_channel_state2str(ftdmchan->state));
+		status = FTDM_SUCCESS;
+		goto done;
+	}
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IND_ACK_PENDING)) {
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "Cannot indicate %s in channel with indication %s still pending in state %s\n",
@@ -2426,10 +2441,50 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_reset(const char *file, const char *func
 	return FTDM_SUCCESS;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_get_channel_from_string(const char *string_id, ftdm_span_t **out_span, ftdm_channel_t **out_channel)
+{
+	ftdm_status_t status = FTDM_SUCCESS;
+	int rc = 0;
+	ftdm_span_t *span = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	unsigned span_id = 0;
+	unsigned chan_id = 0;
+
+	*out_span = NULL;
+	*out_channel = NULL;
+
+	rc = sscanf(string_id, "%u:%u", &span_id, &chan_id);
+	if (rc != 2) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to parse channel id string '%s'\n", string_id);
+		status = FTDM_EINVAL;
+		goto done;
+	} 
+
+	status = ftdm_span_find(span_id, &span);
+	if (status != FTDM_SUCCESS || !span) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to find span for channel id string '%s'\n", string_id);
+		status = FTDM_EINVAL;
+		goto done;
+	} 
+
+	if (chan_id > (FTDM_MAX_CHANNELS_SPAN+1) || !(ftdmchan = span->channels[chan_id])) {
+		ftdm_log(FTDM_LOG_ERROR, "Invalid channel id string '%s'\n", string_id);
+		status = FTDM_EINVAL;
+		goto done;
+	}
+
+	status = FTDM_SUCCESS;
+	*out_span = span;
+	*out_channel = ftdmchan;
+done:
+	return status;
+}
+
 /* this function MUST be called with the channel lock held with lock recursivity of 1 exactly, 
  * and the caller must be aware we might unlock the channel for a brief period of time and then lock it again */
 static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *func, int line, ftdm_channel_t *ftdmchan, ftdm_usrmsg_t *usrmsg)
 {
+	const char *var = NULL;
 	ftdm_status_t status = FTDM_FAIL;
 	
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "null channel");
@@ -2465,6 +2520,16 @@ static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *f
 
 	ftdm_set_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED);
 	ftdm_call_set_call_id(ftdmchan, &ftdmchan->caller_data);
+	var = ftdm_usrmsg_get_var(usrmsg, "sigbridge_peer");
+	if (var) {
+		ftdm_span_t *peer_span = NULL;
+		ftdm_channel_t *peer_chan = NULL;
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE);
+		ftdm_get_channel_from_string(var, &peer_span, &peer_chan);
+		if (peer_chan) {
+			ftdm_set_flag(peer_chan, FTDM_CHANNEL_NATIVE_SIGBRIDGE);
+		}
+	}
 
 	/* if the signaling stack left the channel in state down on success, is expecting us to move to DIALING */
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) {
@@ -2666,6 +2731,7 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_ANSWERED);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_USER_HANGUP);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA);
+	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE);
 	ftdm_mutex_lock(ftdmchan->pre_buffer_mutex);
 	ftdm_buffer_destroy(&ftdmchan->pre_buffer);
 	ftdmchan->pre_buffer_size = 0;
@@ -5465,7 +5531,7 @@ static void execute_safety_hangup(void *data)
 	ftdm_channel_lock(fchan);
 	fchan->hangup_timer = 0;
 	if (fchan->state == FTDM_CHANNEL_STATE_TERMINATING) {
-		ftdm_log_chan(fchan, FTDM_LOG_NOTICE, "Forcing hangup since the user did not confirmed our hangup after %dms\n", FORCE_HANGUP_TIMER);
+		ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Forcing hangup since the user did not confirmed our hangup after %dms\n", FORCE_HANGUP_TIMER);
 		_ftdm_channel_call_hangup_nl(__FILE__, __FUNCTION__, __LINE__, fchan, NULL);
 	} else {
 		ftdm_log_chan(fchan, FTDM_LOG_CRIT, "Not performing safety hangup, channel state is %s\n", ftdm_channel_state2str(fchan->state));
