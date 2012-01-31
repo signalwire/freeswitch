@@ -183,60 +183,61 @@ static JSBool socket_read_bytes(JSContext * cx, JSObject * obj, uintN argc, jsva
 static JSBool socket_read(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	js_socket_obj_t *socket = JS_GetPrivate(cx, obj);
+	char *delimiter = "\n";
+	switch_status_t ret = SWITCH_STATUS_FALSE;
+	switch_size_t len = 1;
+	switch_size_t total_length = 0;
+	int can_run = TRUE;
+	char tempbuf[2];
+
 	if (socket == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to find js object.\n");
 		return JS_FALSE;
 	}
 
-	if (argc >= 0) {
-		char *delimiter = "\n";
-		switch_status_t ret = SWITCH_STATUS_FALSE;
-		switch_size_t len = 1;
-		switch_size_t total_length = 0;
-		int can_run = TRUE;
-		char tempbuf[2];
+	if (argc == 1) {
+		delimiter = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+	}
 
-		if (argc == 1)
-			delimiter = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+	if (socket->read_buffer == 0) {
+		socket->read_buffer = switch_core_alloc(socket->pool, socket->buffer_size);
+	}
 
+	socket->saveDepth = JS_SuspendRequest(cx);
 
-		if (socket->read_buffer == 0)
-			socket->read_buffer = switch_core_alloc(socket->pool, socket->buffer_size);
+	while (can_run == TRUE) {
+		ret = switch_socket_recv(socket->socket, tempbuf, &len);
+		if (ret != SWITCH_STATUS_SUCCESS)
+			break;
 
-		socket->saveDepth = JS_SuspendRequest(cx);
-		while (can_run == TRUE) {
-			ret = switch_socket_recv(socket->socket, tempbuf, &len);
-			if (ret != SWITCH_STATUS_SUCCESS)
-				break;
-
-			tempbuf[1] = 0;
-			if (tempbuf[0] == delimiter[0])
-				break;
-			else if (tempbuf[0] == '\r' && delimiter[0] == '\n')
-				continue;
-			else {
-				// Buffer is full, let's increase it.
-				if (total_length == socket->buffer_size - 1) {
-					switch_size_t new_size = socket->buffer_size + 4196;
-					char *new_buffer = switch_core_alloc(socket->pool, socket->buffer_size);
-					memcpy(new_buffer, socket->read_buffer, total_length);
-					socket->buffer_size = new_size;
-					socket->read_buffer = new_buffer;
-				}
-				socket->read_buffer[total_length] = tempbuf[0];
-				++total_length;
+		tempbuf[1] = 0;
+		if (tempbuf[0] == delimiter[0])
+			break;
+		else if (tempbuf[0] == '\r' && delimiter[0] == '\n')
+			continue;
+		else {
+			// Buffer is full, let's increase it.
+			if (total_length == socket->buffer_size - 1) {
+				switch_size_t new_size = socket->buffer_size + 4196;
+				char *new_buffer = switch_core_alloc(socket->pool, socket->buffer_size);
+				memcpy(new_buffer, socket->read_buffer, total_length);
+				socket->buffer_size = new_size;
+				socket->read_buffer = new_buffer;
 			}
-		}
-		JS_ResumeRequest(cx, socket->saveDepth);
-
-		if (ret != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "socket receive failed: %d.\n", ret);
-			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		} else {
-			socket->read_buffer[total_length] = 0;
-			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, socket->read_buffer));
+			socket->read_buffer[total_length] = tempbuf[0];
+			++total_length;
 		}
 	}
+	JS_ResumeRequest(cx, socket->saveDepth);
+
+	if (ret != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "socket receive failed: %d.\n", ret);
+		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+	} else {
+		socket->read_buffer[total_length] = 0;
+		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, socket->read_buffer));
+	}
+	
 
 	return JS_TRUE;
 }

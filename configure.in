@@ -537,6 +537,8 @@ if test "x${ac_cv_func_mlockall}" = "xyes"; then
 		USE_MLOCKALL=yes
 		;;
 	*-freebsd*)
+		APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
+		APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)
 		AC_MSG_RESULT([no, broken for non-root users])
 		;;
 	*)

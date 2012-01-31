@@ -15,6 +15,7 @@ applications/mod_hash
 #applications/mod_http_cache
 #applications/mod_redis
 applications/mod_voicemail
+#applications/mod_voicemail_ivr
 #applications/mod_directory
 #applications/mod_lcr
 applications/mod_expr
@@ -40,7 +41,10 @@ applications/mod_valet_parking
 #applications/mod_fsk
 #applications/mod_ladspa
 #applications/mod_mongo
+#applications/mod_abstraction
+#applications/mod_esl
 applications/mod_sms
+applications/mod_httapi
 codecs/mod_g723_1
 codecs/mod_amr
 #codecs/mod_amrwb
@@ -57,6 +61,7 @@ codecs/mod_siren
 #codecs/mod_opus
 #codecs/mod_sangoma_codec
 #codecs/mod_dahdi_codec
+#codecs/mod_isac
 #dialplans/mod_dialplan_directory
 dialplans/mod_dialplan_xml
 dialplans/mod_dialplan_asterisk

@@ -259,9 +259,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
-				} else if (args->input_callback) {
+				} 
+
+				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
-				} else {
+				} else if (args->buf) {
 					switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
 					status = SWITCH_STATUS_BREAK;
 				}
@@ -1038,7 +1040,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
-				} else if (args->input_callback) {
+				} 
+
+				if (args->input_callback) {
 					if ((status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
@@ -1147,7 +1151,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 				if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
-			} else if (args->input_callback) {
+			} 
+
+			if (args->input_callback) {
 				status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 			}
 
@@ -2959,10 +2965,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 					switch_core_file_seek(fhp, &pos, target, SEEK_SET);
 
 				} else {
-					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
-					if (samps < 0) {
-						samps = 0;
-					}
+					samps = switch_atoui(p) * (codec->implementation->samples_per_second / 1000);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", samps);
 					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
 				}

@@ -105,8 +105,6 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
 
 	max = (int) strlen(set);
 
-	srand((unsigned int) switch_micro_time_now());
-
 	for (x = 0; x < len; x++) {
 		int j = (int) (max * 1.0 * rand() / (RAND_MAX + 1.0));
 		buf[x] = set[j];

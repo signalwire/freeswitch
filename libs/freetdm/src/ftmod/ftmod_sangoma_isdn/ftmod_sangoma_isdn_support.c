@@ -43,8 +43,21 @@ SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_progind_descr, ftdm_sngisdn_progind_descr
 SNGISDN_ENUM_NAMES(SNGISDN_PROGIND_LOC_NAMES, SNGISDN_PROGIND_LOC_STRINGS)
 SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str, ftdm_sngisdn_progind_loc_t, SNGISDN_PROGIND_LOC_NAMES, SNGISDN_PROGIND_LOC_INVALID)
 
-static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val);
-static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val);
+SNGISDN_ENUM_NAMES(SNGISDN_NETSPECFAC_TYPE_NAMES, SNGISDN_NETSPECFAC_TYPE_STRINGS)
+SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_netspecfac_type, ftdm_sngisdn_netspecfac_type2str, ftdm_sngisdn_netspecfac_type_t, SNGISDN_NETSPECFAC_TYPE_NAMES, SNGISDN_NETSPECFAC_TYPE_INVALID)
+
+SNGISDN_ENUM_NAMES(SNGISDN_NETSPECFAC_PLAN_NAMES, SNGISDN_NETSPECFAC_PLAN_STRINGS)
+SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_netspecfac_plan, ftdm_sngisdn_netspecfac_plan2str, ftdm_sngisdn_netspecfac_plan_t, SNGISDN_NETSPECFAC_PLAN_NAMES, SNGISDN_NETSPECFAC_PLAN_INVALID)
+
+SNGISDN_ENUM_NAMES(SNGISDN_NETSPECFAC_SPEC_NAMES, SNGISDN_NETSPECFAC_SPEC_STRINGS)
+SNGISDN_STR2ENUM(ftdm_str2ftdm_sngisdn_netspecfac_spec, ftdm_sngisdn_netspecfac_spec2str, ftdm_sngisdn_netspecfac_spec_t, SNGISDN_NETSPECFAC_SPEC_NAMES, SNGISDN_NETSPECFAC_SPEC_INVALID)
+
+static uint8_t _get_trillium_val(ftdm2trillium_t *vals, unsigned int num_vals, uint8_t ftdm_val, uint8_t default_val);
+static uint8_t _get_ftdm_val(ftdm2trillium_t *vals, unsigned int num_vals, uint8_t trillium_val, uint8_t default_val);
+
+#define get_trillium_val(vals, ftdm_val, default_val) _get_trillium_val(vals, ftdm_array_len(vals), ftdm_val, default_val)
+#define get_ftdm_val(vals, trillium_val, default_val) _get_ftdm_val(vals, ftdm_array_len(vals), trillium_val, default_val)
+
 ftdm_status_t get_calling_name_from_usr_usr(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr);
 ftdm_status_t get_calling_name_from_display(ftdm_channel_t *ftdmchan, Display *display);
 ftdm_status_t get_calling_name_from_ntDisplay(ftdm_channel_t *ftdmchan, NtDisplay *display);
@@ -71,28 +84,50 @@ ftdm2trillium_t ton_codes[] = {
 	{FTDM_TON_RESERVED,				IN_TON_EXT},
 };
 
-static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val)
+ftdm2trillium_t nsf_spec_codes[] = {
+	{SNGISDN_NETSPECFAC_SPEC_ACCUNET,		0xe6},
+	{SNGISDN_NETSPECFAC_SPEC_MEGACOM,		0xe3},
+	{SNGISDN_NETSPECFAC_SPEC_MEGACOM_800,	0xe2},
+	{SNGISDN_NETSPECFAC_SPEC_SDDN,			0xe1},
+	{SNGISDN_NETSPECFAC_SPEC_INVALID,		0x00},
+};
+
+ftdm2trillium_t nsf_type_codes[] = {
+	{SNGISDN_NETSPECFAC_TYPE_USER_SPEC,						0x00},
+	{SNGISDN_NETSPECFAC_TYPE_NATIONAL_NETWORK_IDENT,		0x02},
+	{SNGISDN_NETSPECFAC_TYPE_INTERNATIONAL_NETWORK_IDENT,	0x03},
+	{SNGISDN_NETSPECFAC_TYPE_INVALID,						0x00},
+};
+
+ftdm2trillium_t nsf_plan_codes[] = {
+	{SNGISDN_NETSPECFAC_PLAN_UNKNOWN,						0x00},
+	{SNGISDN_NETSPECFAC_PLAN_CARRIER_IDENT,		0x01},
+	{SNGISDN_NETSPECFAC_PLAN_DATA_NETWORK_IDENT,	0x03},
+	{SNGISDN_NETSPECFAC_PLAN_INVALID,						0x00},
+};
+
+static uint8_t _get_trillium_val(ftdm2trillium_t *vals, unsigned int num_vals, uint8_t ftdm_val, uint8_t default_val)
 {
-	ftdm2trillium_t *val = vals;
-	while(val++) {
-		if (val->ftdm_val == ftdm_val) {
-			return val->trillium_val;
+	int i;
+	for (i = 0; i < num_vals; i++) {
+		if (vals[i].ftdm_val == ftdm_val) {
+			return vals[i].trillium_val;
+		}
+	}
+	
+	return default_val;
+}
+
+static uint8_t _get_ftdm_val(ftdm2trillium_t *vals, unsigned int num_vals, uint8_t trillium_val, uint8_t default_val)
+{
+	int i;
+	for (i = 0; i < num_vals; i++) {
+		if (vals[i].trillium_val == trillium_val) {
+			return vals[i].ftdm_val;
 		}
 	}
 	return default_val;
 }
-
-static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val)
-{
-	ftdm2trillium_t *val = vals;
-	while(val++) {
-		if (val->trillium_val == trillium_val) {
-			return val->ftdm_val;
-		}
-	}
-	return default_val;
-}
-
 
 void clear_call_data(sngisdn_chan_data_t *sngisdn_info)
 {
@@ -530,6 +565,29 @@ ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd)
 }
 
 
+ftdm_status_t get_network_specific_fac(ftdm_channel_t *ftdmchan, NetFac *netFac)
+{
+	if (!netFac->eh.pres) {
+		return FTDM_FAIL;
+	}
+
+	if (netFac->netFacSpec.pres == PRSNT_NODEF) {
+		char digits_string [32];
+		memcpy(digits_string, (const char*)netFac->netFacSpec.val, netFac->netFacSpec.len);
+		digits_string[netFac->netFacSpec.len] = '\0';
+		sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.netFac.spec", digits_string);
+	}
+
+	if (netFac->typeNetId.pres == PRSNT_NODEF) {
+		sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.netFac.type", ftdm_sngisdn_netspecfac_type2str(get_ftdm_val(nsf_type_codes, netFac->typeNetId.val, 0x00)));
+	}
+
+	if (netFac->netIdPlan.pres == PRSNT_NODEF) {
+		sngisdn_add_var((sngisdn_chan_data_t*)ftdmchan->call_data, "isdn.netFac.plan", ftdm_sngisdn_netspecfac_type2str(get_ftdm_val(nsf_plan_codes, netFac->netIdPlan.val, 0x00)));
+	}
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t set_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 {
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
@@ -898,6 +956,67 @@ ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_s
 			progInd->location.val = IN_LOC_USER;
 	}
 	return FTDM_SUCCESS;
+}
+
+ftdm_status_t set_network_specific_fac(ftdm_channel_t *ftdmchan, NetFac *netFac)
+{
+	const char *str = NULL;
+	
+	str = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.netFac.spec");
+	if (ftdm_strlen_zero(str)) {
+		/* Network-specific facility specification is mandatory, cannot send IE
+			without it */
+		return FTDM_SUCCESS;
+	} else {
+		ftdm_sngisdn_netspecfac_spec_t spec = ftdm_str2ftdm_sngisdn_netspecfac_spec(str);
+
+		netFac->eh.pres = PRSNT_NODEF;
+		netFac->netFacSpec.pres = PRSNT_NODEF;
+
+		if (spec == SNGISDN_NETSPECFAC_SPEC_INVALID) {
+			int byte = 0;
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Non-standard NSF specified:%s\n", str);
+
+			if (sscanf(str, "%x", &byte) == 1) {
+				netFac->netFacSpec.val[0] = byte & 0xFF;
+			}
+
+			netFac->netFacSpec.len = 1;
+		} else {
+			/* User is using one of the pre-specified NSF's */
+			netFac->netFacSpec.val[0] = get_trillium_val(nsf_spec_codes, spec, 0x00);
+			netFac->netFacSpec.len = 1;
+		}
+	}
+
+	netFac->lenNetId.pres = PRSNT_NODEF;
+	netFac->lenNetId.val = 0;
+
+	str = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.netFac.type");
+	if (!ftdm_strlen_zero(str)) {
+		netFac->typeNetId.pres = PRSNT_NODEF;
+		netFac->typeNetId.val = ftdm_str2ftdm_sngisdn_netspecfac_type(str);
+	}
+
+	str = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.netFac.plan"); 
+	if (!ftdm_strlen_zero(str)) {
+		netFac->netIdPlan.pres = PRSNT_NODEF;
+		netFac->netIdPlan.val = ftdm_str2ftdm_sngisdn_netspecfac_plan(str);
+	}
+
+	if (netFac->netIdPlan.pres == PRSNT_NODEF || netFac->typeNetId.pres == PRSNT_NODEF) {
+		netFac->lenNetId.val++;
+	}
+
+	str = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.netFac.ident");
+	if (!ftdm_strlen_zero(str)) {
+		netFac->lenNetId.val++;
+
+		netFac->netId.pres = PRSNT_NODEF;
+		memcpy(netFac->netId.val, str, strlen(str));
+	}
+
+	return FTDM_SUCCESS;	
 }
 
 ftdm_status_t set_user_to_user_ie(ftdm_channel_t *ftdmchan, UsrUsr *usrUsr)

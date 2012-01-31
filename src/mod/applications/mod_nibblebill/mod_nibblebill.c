@@ -397,6 +397,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	switch_size_t retsize;
 	switch_time_exp_t tm;
 	const char *billrate;
+	const char *billincrement;
 	const char *billaccount;
 	float nobal_amt = globals.nobal_amt;
 	//float lowbal_amt = globals.lowbal_amt;
@@ -416,6 +417,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 	/* Variables kept in FS but relevant only to this module */
 	billrate = switch_channel_get_variable(channel, "nibble_rate");
+	billincrement = switch_channel_get_variable(channel, "nibble_increment");
 	billaccount = switch_channel_get_variable(channel, "nibble_account");
 	
 	if (!zstr(switch_channel_get_variable(channel, "nobal_amt"))) {
@@ -493,8 +495,14 @@ static switch_status_t do_billing(switch_core_session_t *session)
 					  (int) ((ts - nibble_data->lastts) / 1000000), date);
 
 	if ((ts - nibble_data->lastts) >= 0) {
-		/* Convert billrate into microseconds and multiply by # of microseconds that have passed since last *successful* bill */
-		billamount = ((float) atof(billrate) / 1000000 / 60) * ((ts - nibble_data->lastts)) - nibble_data->bill_adjustments;
+		/* If billincrement is set we bill by it and not by time elapsed */
+		if (!(switch_strlen_zero(billincrement))) {
+			float chargedunits = ((int)((ts - nibble_data->lastts) / 1000000) <= (int)atof(billincrement)) ? ((float)atof(billincrement) * 1000000) :  ceil((ts - nibble_data->lastts) / ((float)atof(billincrement) * 1000000)) * ((float)atof(billincrement) * 1000000);
+			billamount = ((float) atof(billrate) / 1000000 / 60) * chargedunits - nibble_data->bill_adjustments;
+		} else {		
+			/* Convert billrate into microseconds and multiply by # of microseconds that have passed since last *successful* bill */
+			billamount = ((float) atof(billrate) / 1000000 / 60) * ((ts - nibble_data->lastts)) - nibble_data->bill_adjustments;
+		}
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Billing $%f to %s (Call: %s / %f so far)\n", billamount, billaccount,
 						  uuid, nibble_data->total);

@@ -1,7 +1,8 @@
 #!/bin/sh
 
 CONFDIR=@prefix@/conf/ssl
-DAYS=365
+DAYS=2190
+KEY_SIZE=2048
 
 TMPFILE="/tmp/fs-ca-$$-$(date +%Y%m%d%H%M%S)"
 
@@ -38,7 +39,7 @@ setup_ca() {
 	if [ ! -e "${CONFDIR}/CA/config.tpl" ]; then
 		cat > "${CONFDIR}/CA/config.tpl" <<-EOF
 			[ req ]
-			default_bits            = 1024
+			default_bits            = $ENV::KEY_SIZE
 			prompt                  = no
 			distinguished_name      = req_dn
 
@@ -46,11 +47,23 @@ setup_ca() {
 			commonName              = %CN%
 			organizationName	= %ORG%
 
-			[ ext ]
+			[ server ]
+			nsComment="FS Server Cert"
 			basicConstraints=CA:FALSE
 			subjectKeyIdentifier=hash
 			authorityKeyIdentifier=keyid,issuer:always
 			subjectAltName=%ALTNAME%
+			nsCertType=server
+			extendedKeyUsage=serverAuth
+
+			[ client ]
+			nsComment="FS Client Cert"
+			basicConstraints=CA:FALSE
+			subjectKeyIdentifier=hash
+			authorityKeyIdentifier=keyid,issuer:always
+			subjectAltName=%ALTNAME%
+			nsCertType=client
+			extendedKeyUsage=clientAuth
 		EOF
 	fi
 
@@ -62,14 +75,10 @@ setup_ca() {
 		"${CONFDIR}/CA/config.tpl" \
 			> "${TMPFILE}.cfg" || exit 1
 
-	openssl req -new -out "${CONFDIR}/CA/careq.pem" \
-		-newkey rsa:1024 -keyout "${CONFDIR}/CA/cakey.pem" \
+	openssl req -out "${CONFDIR}/CA/cacert.pem" \
+		-new -x509 -keyout "${CONFDIR}/CA/cakey.pem" \
 		-config "${TMPFILE}.cfg" -nodes -sha1 >/dev/null || exit 1
-
-	openssl x509 -req -signkey "${CONFDIR}/CA/cakey.pem" -in "${CONFDIR}/CA/careq.pem" \
-		-out "${CONFDIR}/CA/cacert.pem" -extfile "${TMPFILE}.cfg" \
-		-extensions ext -days ${DAYS} -sha1 >/dev/null || exit 1
-
+	cat "${CONFDIR}/CA/cacert.pem" > "${CONFDIR}/cafile.pem"
 	rm "${TMPFILE}.cfg"
 
 	echo "DONE"
@@ -108,14 +117,13 @@ generate_cert() {
 			> "${TMPFILE}.cfg" || exit 1
 
 	openssl req -new -out "${TMPFILE}.req" \
-		-newkey rsa:1024 -keyout "${TMPFILE}.key" \
+		-newkey rsa: -keyout "${TMPFILE}.key" \
 		-config "${TMPFILE}.cfg" -nodes -sha1 >/dev/null || exit 1
 
 	openssl x509 -req -CAkey "${CONFDIR}/CA/cakey.pem" -CA "${CONFDIR}/CA/cacert.pem" -CAcreateserial \
 		-in "${TMPFILE}.req" -out "${TMPFILE}.crt" -extfile "${TMPFILE}.cfg" \
-		-extensions ext -days ${DAYS} -sha1 >/dev/null || exit 1
+		-extensions "${EXTENSIONS}" -days ${DAYS} -sha1 >/dev/null || exit 1
 
-	cat "${CONFDIR}/CA/cacert.pem" > "${CONFDIR}/cafile.pem"
 	cat "${TMPFILE}.crt" "${TMPFILE}.key" > "${CONFDIR}/${OUTFILE}"
 
 	rm "${TMPFILE}.cfg" "${TMPFILE}.crt" "${TMPFILE}.key" "${TMPFILE}.req"
@@ -133,7 +141,7 @@ remove_ca() {
 
 	echo "DONE"
 }
-
+OUTFILESET="0"
 command="$1"
 shift
 
@@ -154,6 +162,7 @@ while [ $# -gt 0 ]; do
 		-out)
 			shift
 			OUTFILE="$1"
+			OUTFILESET="1"
 			;;
 		-days)
 			shift
@@ -170,6 +179,18 @@ case ${command} in
 		;;
 
 	create)
+		EXTENSIONS="server"
+		generate_cert
+		;;
+	create_server)
+		EXTENSIONS="server"
+		generate_cert
+		;;
+	create_client)
+		EXTENSIONS="client"
+		if [ "${OUTFILESET}" = "0" ]; then
+			OUTFILE="client.pem"
+ 		fi
 		generate_cert
 		;;
 
@@ -185,15 +206,15 @@ case ${command} in
 
 	*)
 		cat <<-EOF
-		$0 <setup|create|clean> [options]
+		$0 <setup|create_server|create_client|clean> [options]
 
 		  * commands:
 
 		    setup  - Setup new CA
 		    remove - Remove CA
 
-		    create - Create new certificate (overwriting old!)
-
+		    create_server - Create new certificate (overwriting existing!)
+		    create_client - Create a new client certificate (overwrites existing!)
 
 		  * options:
 

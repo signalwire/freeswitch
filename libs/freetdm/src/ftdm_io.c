@@ -1188,7 +1188,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm
 	ftdm_channel_lock(ftdmchan);
 
 	if (!span->fio->channel_next_event) {
-		ftdm_log(FTDM_LOG_ERROR, "channel_next_event method not implemented in module %s!", span->fio->name);
+		ftdm_log(FTDM_LOG_ERROR, "channel_next_event method not implemented in module %s!\n", span->fio->name);
 		status = FTDM_NOTIMPL;
 		goto done;
 	}
@@ -2548,7 +2548,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, i
 		goto done;
 	}
 
+	/* let the user know which channel was picked and which call id was generated */
 	caller_data->fchan = fchan;
+	caller_data->call_id = fchan->caller_data.call_id;
 done:
 	ftdm_channel_unlock(fchan);
 
@@ -4574,7 +4576,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 	ftdm_assert_return(span->fio != NULL, FTDM_EINVAL, "span with no I/O configured\n");
 	ftdm_assert_return(span->fio->configure_span != NULL, FTDM_NOTIMPL, "span I/O with no channel configuration implemented\n");
 
-       	currindex = span->chan_count;
+	currindex = span->chan_count;
 	*configured = 0;
 	*configured = span->fio->configure_span(span, str, chan_config->type, chan_config->name, chan_config->number);
 	if (!*configured) {
@@ -4604,8 +4606,10 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 		}
 
 		if (chan_config->debugdtmf) {
-				span->channels[chan_index]->dtmfdbg.requested = 1;
+			span->channels[chan_index]->dtmfdbg.requested = 1;
 		}
+
+		span->channels[chan_index]->dtmfdetect.duration_ms = chan_config->dtmfdetect_ms;
 	}
 
 	return FTDM_SUCCESS;
@@ -4628,6 +4632,7 @@ static ftdm_status_t load_config(void)
 
 	memset(&chan_config, 0, sizeof(chan_config));
 	sprintf(chan_config.group_name, "__default");
+	chan_config.dtmfdetect_ms = 45;
 
 	if (!ftdm_config_open_file(&cfg, cfg_name)) {
 		return FTDM_FAIL;
@@ -4802,6 +4807,10 @@ static ftdm_status_t load_config(void)
 			} else if (!strcasecmp(var, "debugdtmf")) {
 				chan_config.debugdtmf = ftdm_true(val);
 				ftdm_log(FTDM_LOG_DEBUG, "Setting debugdtmf to '%s'\n", chan_config.debugdtmf ? "yes" : "no");
+			} else if (!strncasecmp(var, "dtmfdetect_ms", sizeof("dtmfdetect_ms")-1)) {
+				if (sscanf(val, "%d", &(chan_config.dtmfdetect_ms)) != 1) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid dtmfdetect_ms: '%s'\n", val);
+				}
 			} else if (!strncasecmp(var, "iostats", sizeof("iostats")-1)) {
 				if (ftdm_true(val)) {
 					chan_config.iostats = FTDM_TRUE;

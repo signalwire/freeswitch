@@ -104,7 +104,8 @@ struct switch_event {
 
 typedef enum {
 	EF_UNIQ_HEADERS = (1 << 0),
-	EF_NO_CHAT_EXEC = (1 << 1)
+	EF_NO_CHAT_EXEC = (1 << 1),
+	EF_DEFAULT_ALLOW = (1 << 2)
 } switch_event_flag_t;
 
 
@@ -329,7 +330,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, con
 
 SWITCH_DECLARE(switch_status_t) switch_event_set_body(switch_event_t *event, const char *body);
 
-SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const char *in);
+SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, const char *in, switch_event_t *var_list, switch_event_t *api_list);
+#define switch_event_expand_headers(_event, _in) switch_event_expand_headers_check(_event, _in, NULL, NULL)
 
 SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char *file, _In_z_ char *func, _In_ int line,
 																	 _In_z_ const char *proto, _In_z_ const char *login,
@@ -399,7 +401,7 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event);
 #define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (const char * )__SWITCH_FUNC__, __LINE__, event, data)
 
 SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix, switch_hash_t *vars_map);
-
+SWITCH_DECLARE(int) switch_event_check_permission_list(switch_event_t *list, const char *name);
 ///\}
 
 SWITCH_END_EXTERN_C

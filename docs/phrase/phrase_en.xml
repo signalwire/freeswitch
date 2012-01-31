@@ -186,7 +186,7 @@
     </time>
     <voicemail>
       <prompt phrase="The person at extension" filename="vm-person.wav"/>
-      <prompt phrase="marked urgent" filename="vm-marked-urgent.wav"/>
+      <prompt phrase="marked urgent" filename="vm-marked_urgent.wav"/>
       <prompt phrase="emailed" filename="vm-emailed.wav"/>
       <prompt phrase="you have" filename="vm-you_have.wav"/>
       <prompt phrase="please enter your i d, followed by" filename="vm-enter_id.wav"/>
@@ -220,7 +220,7 @@
       <prompt phrase="to listen to the recording" filename="vm-listen_to_recording.wav"/>
       <prompt phrase="to save the recording" filename="vm-save_recording.wav"/>
       <prompt phrase="to rerecord" filename="vm-rerecord.wav"/>
-      <prompt phrase="to mark this message urgent" filename="vm-mark-urgent.wav"/>
+      <prompt phrase="to mark this message urgent" filename="vm-mark_urgent.wav"/>
       <prompt phrase="to continue" filename="vm-continue.wav"/>
       <prompt phrase="to listen to the recording again" filename="vm-listen_to_recording_again.wav"/>
       <prompt phrase="to delete the recording" filename="vm-delete_recording.wav"/>
@@ -239,8 +239,8 @@
       <prompt phrase="I need to record your first and last name. This recording is used throughout the system, including in the company directory." filename="vm-tutorial_record_name.wav"/>
       <prompt phrase="Your personal identification number, or 'pin', is used to prevent others from accessing your voicemail messages. Would you like to change it now?" filename="vm-tutorial_change_pin.wav"/>
       <prompt phrase="The person you are trying to reach is not available and does not have voicemail." filename="vm-not_available_no_voicemail.wav"/>
-      <prompt phrase="The PIN you entered is below the minimum length." filename="voicemail/vm-pin_below_minimum_length.wav"/>
-      <prompt phrase="The minimum PIN length is..." filename="voicemail/vm-minimum_pin_length_is.wav"/>
+      <prompt phrase="The PIN you entered is below the minimum length." filename="vm-pin_below_minimum_length.wav"/>
+      <prompt phrase="The minimum PIN length is..." filename="vm-minimum_pin_length_is.wav"/>
     </voicemail>
     <directory>
       <prompt phrase="Please enter the first few letters of the persons" filename="dir-enter_person.wav"/>
@@ -291,10 +291,11 @@
       <prompt phrase="...listeners in this conference." filename="conf-listeners_in_conference.wav"/>
       <prompt phrase="...listener in this conference." filename="conf-listener_in_conference.wav"/>
       <prompt phrase="...members in this conference." filename="conf-members_in_conference.wav"/>
-      <prompt phrase="This conference is in Q and A mode." filename="conference/conf-conference_is_in_qna_mode.wav"/>
-      <prompt phrase="Q and A mode..." filename="conference/conf-qna_mode.wav"/>
-      <prompt phrase="Entry sound..." filename="conference/conf-entry_sound.wav"/>
-      <prompt phrase="Exit sound..." filename="conference/conf-exit_sound.wav"/>
+      <prompt phrase="This conference is in Q and A mode." filename="conf-conference_is_in_qna_mode.wav"/>
+      <prompt phrase="Q and A mode..." filename="conf-qna_mode.wav"/>
+      <prompt phrase="Entry sound..." filename="conf-entry_sound.wav"/>
+      <prompt phrase="Exit sound..." filename="conf-exit_sound.wav"/>
+      <prompt phrase="This conference is full. Please contact the conference moderator." filename="conf-conference_is_full.wav"/>
     </conference>
     <ivr>
       <prompt phrase="Account number" filename="ivr-account_number.wav"/>
@@ -312,7 +313,6 @@
       <prompt phrase="Send this caller to voicemail" filename="ivr-send_to_voicemail.wav"/>
       <prompt phrase="To speak to a customer service representative" filename="ivr-speak_to_a_customer_service_representative.wav"/>
       <prompt phrase="Take a message" filename="ivr-take_a_message.wav"/>
-      <prompt phrase="Thank you" filename="ivr-thank_you.wav"/>
       <prompt phrase="That was an invalid entry" filename="ivr-that_was_an_invalid_entry.wav"/>
       <prompt phrase="This is a call from" filename="ivr-this_is_a_call_from.wav"/>
       <prompt phrase="This IVR will let you test some of the features..." filename="ivr-this_ivr_will_let_you_test_features.wav"/>
@@ -397,7 +397,7 @@
       <prompt phrase="The account balance is..." filename="ivr-account_balance_is.wav"/>
       <prompt phrase="Thank you for calling. If you know your party's extension, please enter it now. For a directory, press..." filename="ivr-generic_greeting.wav"/>
       <prompt phrase="...file..." filename="ivr-file.wav"/>
-      <prompt phrase="...files..." filename="ivr-files-.wav"/>
+      <prompt phrase="...files..." filename="ivr-files.wav"/>
       <prompt phrase="For a wakeup call..." filename="ivr-for_a_wakeup_call.wav"/>
       <prompt phrase="This is your wakeup call." filename="ivr-this_is_your_wakeup_call.wav"/>
       <prompt phrase="To request a wakeup call..." filename="ivr-request_wakeup_call.wav"/>
@@ -468,8 +468,8 @@
       <prompt phrase="...has been answered." filename="ivr-has_been_answered.wav"/>
       <prompt phrase="...has been removed." filename="ivr-has_been_removed.wav"/>
       <prompt phrase="No questions in queue." filename="ivr-no_questions_in_queue.wav"/>
-      <prompt phrase="...is now on." filename="ivr/ivr_is_now_on.wav"/>
-      <prompt phrase="...is now off." filename="ivr/ivr_is_now_off.wav"/>
+      <prompt phrase="...is now on." filename="ivr-is_now_on.wav"/>
+      <prompt phrase="...is now off." filename="ivr-is_now_off.wav"/>
       <prompt phrase="This phone is not allowed to make external calls." filename="ivr-phone_not_make_external_calls.wav"/>
       <prompt phrase="I.D. number..." filename="ivr-id_number.wav"/>
       <prompt phrase="To skip these instructions..." filename="ivr-skip_instructions.wav"/>
@@ -489,13 +489,27 @@
       <prompt phrase="Normal unspecified" filename="ivr-normal_unspecified.wav"/>
       <prompt phrase="Incompatible destination" filename="ivr-incompatible_destination.wav"/>
       <prompt phrase="Normal clearing" filename="ivr-normal_clearing.wav"/>
-      <!-- The following phrases still need to be recorded -->
-      <prompt phrase="This conference is full. Please contact the conference moderator." filename="conf-conference_is_full.wav"/>
       <prompt phrase="You do not have permission to perform this action." filename="ivr-not_have_permission.wav"/>
       <prompt phrase="You're doing it wrong, but I'll try to connect you anyway. (Douchebag!)" filename="ivr-youre_doing_it_wrong.wav"/>
-      <prompt phrase="3... 2... 1... WE'RE ASTERISK FREE!!!" filename="ivr-were_asterisk_free"/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
+      <prompt phrase="3... 2... 1... WE'RE ASTERISK FREE!!!" filename="ivr-were_asterisk_free.wav"/>
+      <prompt phrase="Thank you for calling Douche Telecom, where we make sure that your communications never have that 'not so fresh' feeling!" filename="ivr-douche_telecom.wav"/>
+      <prompt phrase="To learn more about FreeSWITCH..." filename="ivr-to_learn_more_about_freeswitch.wav"/>
+      <!-- The following phrases still need to be recorded -->
+	  <prompt phrase="Your password has been changed." filename="vm-password_has_been_changed.wav"/>
+	  <prompt phrase="Please enter your new password, then press the pound key." filename="vm-enter_new_pin.wav"/>
+	  <prompt phrase="The password you entered is not valid on this system." filename="vm-password_not_valid.wav"/>	
+	  <prompt phrase="A password such as '1111' or '1234' is not secure." filename="vm-password_is_not_secure.wav"/>	
+	  <prompt phrase="Please choose a password that does not contain all repeating or all consecutive digits." filename="vm-choose_password.wav"/>
+	  <prompt phrase="Remember that your voicemail password is also your Web interface password." filename="vm-voicemail_password_is_web_password.wav"/>	
+	  <prompt phrase="Your conference will start shortly. Please stay on the line." filename="conf-conference_will_start_shortly.wav"/>	
+	  <prompt phrase="Asterisk is like syphilis: it hurts until it's gone." filename="ivr-asterisk_like_syphilis.wav"/>	
+	  <prompt phrase="...other persons in this conference." filename="conf-other_persons_conference.wav"/>	
+	  <prompt phrase="...other person in this conference." filename="conf-other_person_conference.wav"/>	
+	  <prompt phrase="...other member in this conference." filename="conf-other_member_conference.wav"/>	
+	  <prompt phrase="There is..." filename="ivr-there_is.wav"/>	
+	  <prompt phrase="That number is on the Do Not Call list." filename="ivr-do_not_call_list.wav"/>	
+	  <prompt phrase="The call attempt has been aborted." filename="ivr-call_attempt_aborted.wav"/>	
+	  <prompt phrase="" filename=""/>	
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
@@ -509,6 +523,12 @@
       <prompt phrase="An error has occurred please contact the administrator" filename="error.wav"/>
       <prompt phrase="Your call will be terminated in..." filename="misc-your_call_will_be_terminated_in.wav"/>
       <prompt phrase="Your call has been terminated." filename="misc-your_call_has_been_terminated.wav"/>
+      <prompt phrase="To hear about ClueCon..." filename="misc-to_hear_about_cluecon.wav"/>
+      <prompt phrase="ClueCon is the premier open source telephony developer conference." filename="misc-cluecon_is_premier_conference.wav"/>
+      <prompt phrase="It is held in downtown Chicago each summer." filename="misc-chicago_each_summer.wav"/>
+      <prompt phrase="ClueCon brings together a wide range of VoIP engineers, software developers, and business persons." filename="misc-wide_range_of_persons.wav"/>
+      <prompt phrase="By attending ClueCon, you are showing support not only for FreeSWITCH but also the entire spectrum of open source telephony software." filename="misc-support_open_source_by_attending.wav"/>
+      <prompt phrase="CudaTel! You know you want one!" filename="misc-cudatel_you_know_you_want_one.wav"/>
     </misc>
     <zrtp>
       <!-- base256 prompts for SAS -->

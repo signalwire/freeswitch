@@ -118,6 +118,8 @@
       <!-- <param name="ivr-dtmf-timeout" value="500"/> -->
       <!-- How much to wait for the first DTMF, 0 forever -->
       <!-- <param name="ivr-input-timeout" value="0" /> -->
+      <!-- Delay before a conference is asked to be terminated -->
+      <!-- <param name="endconf-grace-time" value="120" /> -->
     </profile>
 
     <profile name="wideband">

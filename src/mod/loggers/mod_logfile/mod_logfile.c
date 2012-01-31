@@ -53,10 +53,12 @@ struct logfile_profile {
 	char *name;
 	switch_size_t log_size;		/* keep the log size in check for rotation */
 	switch_size_t roll_size;	/* the size that we want to rotate the file at */
+	switch_size_t max_rot;		/* number of log files to keep within the rotation */
 	char *logfile;
 	switch_file_t *log_afd;
 	switch_hash_t *log_hash;
 	uint32_t all_level;
+	uint32_t suffix;			/* suffix of the highest logfile name */
 	switch_bool_t log_uuid;
 };
 
@@ -140,6 +142,58 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 	switch_core_new_memory_pool(&pool);
 	filename = switch_core_alloc(pool, strlen(profile->logfile) + WARM_FUZZY_OFFSET);
 
+	if (profile->max_rot) {
+		char *from_filename = NULL;
+		char *to_filename = NULL;
+
+		from_filename = switch_core_alloc(pool, strlen(profile->logfile) + WARM_FUZZY_OFFSET);
+		to_filename = switch_core_alloc(pool, strlen(profile->logfile) + WARM_FUZZY_OFFSET);
+
+		for (i=profile->suffix; i>1; i--) {
+			sprintf((char *) to_filename, "%s.%i", profile->logfile, i);
+			sprintf((char *) from_filename, "%s.%i", profile->logfile, i-1);
+
+			if (switch_file_exists(to_filename, pool) == SWITCH_STATUS_SUCCESS) {
+				if ((status = switch_file_remove(to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error removing log %s\n",to_filename);
+					goto end;
+				}
+			}
+
+			if ((status = switch_file_rename(from_filename, to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error renaming log from %s to %s\n",from_filename, to_filename);
+				goto end;
+			}
+		}
+
+		sprintf((char *) to_filename, "%s.%i", profile->logfile, i);
+			
+		if (switch_file_exists(to_filename, pool) == SWITCH_STATUS_SUCCESS) {
+			if ((status = switch_file_remove(to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error removing log %s\n",to_filename);
+				goto end;
+			}
+		}
+
+		switch_file_close(profile->log_afd);
+		if ((status = switch_file_rename(profile->logfile, to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error renaming log from %s to %s\n", profile->logfile, to_filename);
+			goto end;
+		}
+
+		if ((status = mod_logfile_openlogfile(profile, SWITCH_FALSE)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error reopening log %s\n",profile->logfile);
+		}
+		if (profile->suffix < profile->max_rot) {
+			profile->suffix++;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New log started.\n");
+
+		goto end;
+	}
+
+	/* XXX This have no real value EXCEPT making sure if we rotate within the same second, the end index will increase */
 	for (i = 1; i < MAX_ROT; i++) {
 		sprintf((char *) filename, "%s.%s.%i", profile->logfile, date, i);
 		if (switch_file_exists(filename, pool) == SWITCH_STATUS_SUCCESS) {
@@ -269,6 +323,7 @@ static switch_status_t load_profile(switch_xml_t xml)
 	switch_core_hash_init(&(new_profile->log_hash), module_pool);
 	new_profile->name = switch_core_strdup(module_pool, switch_str_nil(name));
 
+	new_profile->suffix = 1;
 
 	if ((settings = switch_xml_child(xml, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -277,9 +332,11 @@ static switch_status_t load_profile(switch_xml_t xml)
 			if (!strcmp(var, "logfile")) {
 				new_profile->logfile = strdup(val);
 			} else if (!strcmp(var, "rollover")) {
-				new_profile->roll_size = atoi(val);
-				if (new_profile->roll_size < 0) {
-					new_profile->roll_size = 0;
+				new_profile->roll_size = switch_atoui(val);
+			} else if (!strcmp(var, "maximum-rotate")) {
+				new_profile->max_rot = switch_atoui(val);
+				if (new_profile->max_rot == 0) {
+					new_profile->max_rot = MAX_ROT;
 				}
 			} else if (!strcmp(var, "uuid") && switch_true(val)) {
 				new_profile->log_uuid = SWITCH_TRUE;

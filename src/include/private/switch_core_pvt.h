@@ -193,6 +193,12 @@ struct switch_media_bug {
 	switch_thread_id_t thread_id;
 	char *function;
 	char *target;
+	switch_codec_implementation_t read_impl;
+	switch_codec_implementation_t write_impl;
+	switch_timer_t timer;
+	uint32_t last_read_ts;
+	uint32_t last_write_ts;
+	switch_frame_t *ping_frame;
 	struct switch_media_bug *next;
 };
 

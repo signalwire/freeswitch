@@ -105,7 +105,7 @@ static switch_status_t tts_commandline_speech_open(switch_speech_handle_t *sh, c
 	/* Construct temporary file name with a new UUID */
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
-	switch_snprintf(outfile, sizeof(outfile), "%s%s.tmp.wav", SWITCH_GLOBAL_dirs.temp_dir, uuid_str);
+	switch_snprintf(outfile, sizeof(outfile), "%s%s%s.tmp.wav", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str);
 	info->file = switch_core_strdup(sh->memory_pool, outfile);
 
 	info->fh = (switch_file_handle_t *) switch_core_alloc(sh->memory_pool, sizeof(switch_file_handle_t));

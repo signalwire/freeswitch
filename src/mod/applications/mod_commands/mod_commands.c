@@ -4791,11 +4791,10 @@ SWITCH_STANDARD_API(system_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Executing command: %s\n", cmd);
-	if (switch_system(cmd, SWITCH_TRUE) < 0) {
+	if (switch_stream_system(cmd, stream) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", cmd);
 	}
-	stream->write_function(stream, "+OK\n");
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

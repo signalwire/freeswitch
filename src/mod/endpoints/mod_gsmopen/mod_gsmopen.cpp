@@ -88,7 +88,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_gsmopen_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_gsmopen_shutdown);
 SWITCH_MODULE_DEFINITION(mod_gsmopen, mod_gsmopen_load, mod_gsmopen_shutdown, NULL);
 SWITCH_END_EXTERN_C
-#define MDL_CHAT_PROTO "SMS"
+#define GSMOPEN_CHAT_PROTO "sms"
 #if 1
 SWITCH_STANDARD_API(gsm_function);
 /* BEGIN: Changes here */
@@ -2038,16 +2038,32 @@ static switch_status_t load_config(int reload_type)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject, const char *body, const char *type,
-								 const char *hint)
+//static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint)
+static switch_status_t chat_send(switch_event_t *message_event)
 {
 	char *user, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
 	private_t *tech_pvt = NULL;
 	int i = 0, found = 0;
 
+        const char *proto;
+        const char *from;
+        const char *to;
+        const char *subject;
+        const char *body;
+        //const char *type;
+	const char *hint;
+
+	proto = switch_event_get_header(message_event, "proto");
+	from = switch_event_get_header(message_event, "from");
+	to = switch_event_get_header(message_event, "to");
+	subject = switch_event_get_header(message_event, "subject");
+	body = switch_event_get_body(message_event);
+	//type = switch_event_get_header(message_event, "type");
+	hint = switch_event_get_header(message_event, "hint");
+
 	switch_assert(proto != NULL);
 
-	DEBUGA_GSMOPEN("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", GSMOPEN_P_LOG, proto, from, to, subject, body, type,
+	DEBUGA_GSMOPEN("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, hint=%s)\n", GSMOPEN_P_LOG, proto, from, to, subject, body, 
 				   hint ? hint : "NULL");
 
 	if (!to || !strlen(to)) {
@@ -2077,7 +2093,7 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 			*host++ = '\0';
 		}
 
-		DEBUGA_GSMOPEN("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", GSMOPEN_P_LOG, proto, from, to, subject, body, type,
+		DEBUGA_GSMOPEN("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, hint=%s)\n", GSMOPEN_P_LOG, proto, from, to, subject, body,
 					   hint ? hint : "NULL");
 		if (hint && strlen(hint)) {
 			//in hint we receive the interface name to use
@@ -2118,6 +2134,33 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t compat_chat_send(const char *proto, const char *from, const char *to,
+                                                                                const char *subject, const char *body, const char *type, const char *hint)
+{
+        switch_event_t *message_event;
+        switch_status_t status;
+
+        if (switch_event_create(&message_event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+                switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
+                switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "from", from);
+                switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "to", to);
+                switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "subject", subject);
+                switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "type", type);
+                switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
+
+                if (body) {
+                        switch_event_add_body(message_event, "%s", body);
+                }
+        } else {
+                abort();
+        }
+
+        status = chat_send(message_event);
+        switch_event_destroy(&message_event);
+
+        return status;
+
+}
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_gsmopen_load)
 {
@@ -2155,7 +2198,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_gsmopen_load)
 		SWITCH_ADD_API(commands_api_interface, "gsmopen_dump", "gsmopen_dump interface", gsmopen_dump_function, GSMOPEN_DUMP_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "gsmopen_sendsms", "gsmopen_sendsms interface destination_number SMS_text", sendsms_function,
 					   SENDSMS_SYNTAX);
-		SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
+		SWITCH_ADD_CHAT(chat_interface, GSMOPEN_CHAT_PROTO, chat_send);
 
 		/* indicate that the module should continue to be loaded */
 		return SWITCH_STATUS_SUCCESS;
@@ -3115,10 +3158,10 @@ SWITCH_STANDARD_API(sendsms_function)
 			return SWITCH_STATUS_SUCCESS;
 		} else {
 			//gsmopen_sendsms(tech_pvt, (char *) argv[1], (char *) argv[2]);
-			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", GSMOPEN_P_LOG, MDL_CHAT_PROTO, tech_pvt->name,
+			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", GSMOPEN_P_LOG, GSMOPEN_CHAT_PROTO, tech_pvt->name,
 				   argv[1], "SIMPLE MESSAGE", switch_str_nil(argv[2]), tech_pvt->name);
 
-			chat_send(MDL_CHAT_PROTO, tech_pvt->name, argv[1], "SIMPLE MESSAGE", switch_str_nil(argv[2]), NULL, tech_pvt->name);
+			compat_chat_send(GSMOPEN_CHAT_PROTO, tech_pvt->name, argv[1], "SIMPLE MESSAGE", switch_str_nil(argv[2]), NULL, tech_pvt->name);
 		}
 	} else {
 		stream->write_function(stream, "ERROR, usage: %s", SENDSMS_SYNTAX);
@@ -3260,7 +3303,7 @@ int sms_incoming(private_t * tech_pvt)
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	}
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
@@ -3291,7 +3334,7 @@ int sms_incoming(private_t * tech_pvt)
 	if (!event_sent_to_esl) {
 
 		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
 			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
 			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
@@ -3368,12 +3411,12 @@ SWITCH_STANDARD_API(gsmopen_chat_function)
 
 			//chat_send(const char *proto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint);
 			//chat_send(p*roto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint);
-			//chat_send(MDL_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, hint);
+			//chat_send(GSMOPEN_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, hint);
 
-			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", GSMOPEN_P_LOG, MDL_CHAT_PROTO, tech_pvt->skype_user,
+			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", GSMOPEN_P_LOG, GSMOPEN_CHAT_PROTO, tech_pvt->skype_user,
 				   argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), tech_pvt->name);
 
-			chat_send(MDL_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE",
+			chat_send(GSMOPEN_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE",
 					  switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, tech_pvt->name);
 
 			//NOTICA("TEXT is: %s\n", GSMOPEN_P_LOG, (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1] );

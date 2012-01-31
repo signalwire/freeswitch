@@ -52,19 +52,19 @@
       <!-- If the function "break" is encountered all parsing will cease -->
       <input pattern="(\d+):(\d+)">
 	<match>
-	  <action function="speak-text" data="Sie haben $1 Minuten, $2 Sekunden übrig $strftime(%Y-%m-%d)"/>
+	  <action function="speak-text" data="Sie haben $1 Minuten, $2 Sekunden Ã¼brig $strftime(%Y-%m-%d)"/>
 	  <action function="break"/>
 	</match>
 	<nomatch>
-	  <action function="speak-text" data="Die Eingabe war ungültig."/>
+	  <action function="speak-text" data="Die Eingabe war ungÃ¼ltig."/>
 	</nomatch>
       </input>
       <input pattern="(\d+) min (\d+) sek">
 	<match>
-	  <action function="speak-text" data="Sie haben $1 Minuten, $2 Sekunden übrig $strftime(%Y-%m-%d)"/>
+	  <action function="speak-text" data="Sie haben $1 Minuten, $2 Sekunden Ã¼brig $strftime(%Y-%m-%d)"/>
 	</match>
 	<nomatch>
-	  <action function="speak-text" data="Die Eingabe war ungültig."/>
+	  <action function="speak-text" data="Die Eingabe war ungÃ¼ltig."/>
 	</nomatch>
       </input>
     </macro>

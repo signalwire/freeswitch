@@ -42,6 +42,7 @@
 #include <switch_nat.h>
 #include <switch_version.h>
 #include "private/switch_core_pvt.h"
+#include <switch_curl.h>
 #ifndef WIN32
 #include <switch_private.h>
 #ifdef HAVE_SETRLIMIT
@@ -396,18 +397,36 @@ static void *SWITCH_THREAD_FUNC switch_core_service_thread(switch_thread_t *thre
 
 	switch_channel_set_flag(channel, CF_SERVICE);
 	while (switch_channel_test_flag(channel, CF_SERVICE)) {
-		switch (switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0)) {
-		case SWITCH_STATUS_SUCCESS:
-		case SWITCH_STATUS_TIMEOUT:
-		case SWITCH_STATUS_BREAK:
-			break;
-		default:
-			switch_channel_clear_flag(channel, CF_SERVICE);
-			continue;
+
+		if (switch_channel_test_flag(channel, CF_SERVICE_AUDIO)) {
+			switch (switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0)) {
+			case SWITCH_STATUS_SUCCESS:
+			case SWITCH_STATUS_TIMEOUT:
+			case SWITCH_STATUS_BREAK:
+				break;
+			default:
+				switch_channel_clear_flag(channel, CF_SERVICE);
+				break;
+			}
+		}
+
+		if (switch_channel_test_flag(channel, CF_SERVICE_VIDEO) && switch_channel_test_flag(channel, CF_VIDEO)) {
+			switch (switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0)) {
+			case SWITCH_STATUS_SUCCESS:
+			case SWITCH_STATUS_TIMEOUT:
+			case SWITCH_STATUS_BREAK:
+				break;
+			default:
+				switch_channel_clear_flag(channel, CF_SERVICE);
+				break;
+			}
 		}
 	}
 
 	switch_mutex_unlock(session->frame_read_mutex);
+
+	switch_channel_clear_flag(channel, CF_SERVICE_AUDIO);
+	switch_channel_clear_flag(channel, CF_SERVICE_VIDEO);
 
 	switch_core_session_rwunlock(session);
 
@@ -424,15 +443,23 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_session_t *sessi
 	switch_assert(channel);
 
 	switch_channel_clear_flag(channel, CF_SERVICE);
+	switch_channel_clear_flag(channel, CF_SERVICE_AUDIO);
+	switch_channel_clear_flag(channel, CF_SERVICE_VIDEO);
+
+	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
+	
 }
 
-SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_core_service_session_av(switch_core_session_t *session, switch_bool_t audio, switch_bool_t video)
 {
 	switch_channel_t *channel;
 	switch_assert(session);
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
+
+	if (audio) switch_channel_set_flag(channel, CF_SERVICE_AUDIO);
+	if (video) switch_channel_set_flag(channel, CF_SERVICE_VIDEO);
 
 	switch_core_session_launch_thread(session, (void *(*)(switch_thread_t *,void *))switch_core_service_thread, session);
 }
@@ -602,7 +629,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 		GetTempPath(dwBufSize, lpPathBuffer);
 		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", lpPathBuffer);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", "/tmp/");
+		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", "/tmp");
 #endif
 #endif
 	}
@@ -1565,14 +1592,14 @@ static void switch_load_core_config(const char *file)
 				
 				if (!zstr(var) && !zstr(val)) {
 					uint32_t *p;
-					uint32_t v = (unsigned long) atol(val);
+					uint32_t v = switch_atoul(val);
 
 					if (!strcasecmp(var, "G723") || !strcasecmp(var, "iLBC")) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error adding %s, defaults cannot be changed\n", var);
 						continue;
 					}
 					
-					if (v < 0) {
+					if (v == 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error adding %s, invalid ptime\n", var);
 						continue;
 					}
@@ -2321,6 +2348,7 @@ struct system_thread_handle {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	int ret;
+	int *fds;
 };
 
 static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj)
@@ -2338,6 +2366,10 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 	}
 #endif
 #endif
+
+	if (sth->fds) {
+		dup2(sth->fds[1], STDOUT_FILENO);
+	}
 
 	sth->ret = system(sth->cmd);
 
@@ -2400,6 +2432,46 @@ static int switch_system_thread(const char *cmd, switch_bool_t wait)
 	return ret;
 }
 
+SWITCH_DECLARE(int) switch_max_file_desc(void)
+{
+	int max = 0;
+
+#ifndef WIN32
+#if defined(HAVE_GETDTABLESIZE)
+	max = getdtablesize();
+#else
+	max = sysconf(_SC_OPEN_MAX);
+#endif
+#endif
+
+	return max;
+
+}
+
+SWITCH_DECLARE(void) switch_close_extra_files(int *keep, int keep_ttl)
+{
+	int open_max = switch_max_file_desc();
+	int i, j;
+
+	for (i = 3; i < open_max; i++) {
+		if (keep) {
+			for (j = 0; j < keep_ttl; j++) {
+				if (i == keep[j]) {
+					goto skip;
+				}
+			}
+		}
+
+		close(i);
+
+	skip:
+
+		continue;
+
+	}
+}
+
+
 
 #ifdef WIN32
 static int switch_system_fork(const char *cmd, switch_bool_t wait)
@@ -2408,19 +2480,6 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 }
 
 #else
-static int max_open(void)
-{
-	int max;
-
-#if defined(HAVE_GETDTABLESIZE)
-	max = getdtablesize();
-#else
-	max = sysconf(_SC_OPEN_MAX);
-#endif
-
-	return max;
-
-}
 
 static int switch_system_fork(const char *cmd, switch_bool_t wait)
 {
@@ -2437,15 +2496,12 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 		}
 		free(dcmd);
 	} else {
-		int open_max = max_open();
-		int i;
-
-		for (i = 3; i < open_max; i++) {
-			close(i);
-		}
+		switch_close_extra_files(NULL, 0);
 		
 		set_low_priority();
-		i = system(dcmd);
+		if (system(dcmd) == -1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute because of a command error : %s\n", dcmd);
+		}
 		free(dcmd);
 		exit(0);
 	}
@@ -2466,6 +2522,61 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 
 }
 
+
+
+SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream)
+{
+#ifdef WIN32
+	return switch_system(cmd, SWITCH_TRUE);
+#else
+	int fds[2], pid = 0;
+
+	if (pipe(fds)) {
+		goto end;
+	} else {					/* good to go */
+		pid = fork();
+
+		if (pid < 0) {			/* ok maybe not */
+			close(fds[0]);
+			close(fds[1]);
+			goto end;
+		} else if (pid) {		/* parent */
+			char buf[1024] = "";
+			int bytes;
+			close(fds[1]);
+			while ((bytes = read(fds[0], buf, sizeof(buf))) > 0) {
+				stream->raw_write_function(stream, (unsigned char *)buf, bytes);
+			}
+			close(fds[0]);
+			waitpid(pid, NULL, 0);
+		} else {				/*  child */
+			switch_close_extra_files(fds, 2);
+			close(fds[0]);
+			dup2(fds[1], STDOUT_FILENO);
+			switch_system(cmd, SWITCH_TRUE);
+			close(fds[1]);
+			exit(0);
+		}
+	}
+
+ end:
+
+	return 0;
+
+#endif
+
+}
+
+SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream)
+{
+#ifdef WIN32
+	stream->write_function(stream, "Capturing output not supported.\n");
+	return switch_system(cmd, SWITCH_TRUE);
+#else
+	return switch_stream_system_fork(cmd, stream);
+#endif
+
+}
 
 /* For Emacs:
  * Local Variables:
