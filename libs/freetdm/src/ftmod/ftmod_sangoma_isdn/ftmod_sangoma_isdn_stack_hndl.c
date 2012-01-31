@@ -133,8 +133,9 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			get_redir_num(ftdmchan, &conEvnt->redirNmb);
 			get_calling_subaddr(ftdmchan, &conEvnt->cgPtySad);
 			get_prog_ind_ie(ftdmchan, &conEvnt->progInd);
-			get_facility_ie(ftdmchan, &conEvnt->facilityStr);			
+			get_facility_ie(ftdmchan, &conEvnt->facilityStr);
 			get_calling_name(ftdmchan, conEvnt);
+			get_network_specific_fac(ftdmchan, &conEvnt->netFac[0]);
 			
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
@@ -945,14 +946,8 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 						break;
 				}
 				break;
-				case 2: /* overlap sending/receiving */
+				case 2: /* overlap sending */
 					switch (ftdmchan->state) {
-						case FTDM_CHANNEL_STATE_COLLECT:
-							/* T302 Timeout reached */
-							/* Send the call to user, and see if they accept it */
-							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "T302 Timer expired, proceeding with call\n");
-							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
-							break;
 						case FTDM_CHANNEL_STATE_PROCEED:
 						case FTDM_CHANNEL_STATE_PROGRESS:
 						case FTDM_CHANNEL_STATE_RINGING:
@@ -1069,7 +1064,10 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 			case 25: /* Overlap receiving */
 				switch (ftdmchan->state) {
 					case FTDM_CHANNEL_STATE_COLLECT:
-						/* do nothing */
+						/* T302 Timeout reached */
+						/* Send the call to user, and see if they accept it */
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "T302 Timer expired, proceeding with call\n");
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 						break;
 					default:
 						ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Don't know how to handle incompatible state. remote call state:%d our state:%s\n", call_state, ftdm_channel_state2str(ftdmchan->state));

@@ -615,8 +615,7 @@ static void clear_line(void)
 
 static void redisplay(void)
 {
-#ifdef WIN32
-#else
+#ifndef WIN32
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
 	if (!(write_str(prompt_str))) goto done;
@@ -1114,7 +1113,6 @@ int main(int argc, char *argv[])
 	char dft_cfile[512] = "nbess7_cli.conf";
 #endif
 	char *home = getenv("HOME");
-	char *term = getenv("TERM");
 	/* Vars for optargs */
 	int opt;
 	static struct option options[] = {
@@ -1149,15 +1147,11 @@ int main(int argc, char *argv[])
 	int argv_quiet = 0;
 	int loops = 2, reconnect = 0, timeout = 0;
 
-	if (term && (!strncasecmp("screen", term, 6) ||
-		!strncasecmp("vt100", term, 5))) {
-		feature_level = 1;
-	} else {
-		feature_level = 0;
-	}
 
 #ifdef WIN32
 	feature_level = 0;
+#else
+	feature_level = 1;
 #endif
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
@@ -1347,7 +1341,12 @@ int main(int argc, char *argv[])
 	}
 	global_handle = &handle;
 	global_profile = profile;
-	esl_thread_create_detached(msg_thread_run, &handle);
+
+	if (esl_thread_create_detached(msg_thread_run, &handle) != ESL_SUCCESS) {
+		printf("Error starting thread!\n");
+		esl_disconnect(&handle);
+		return 0;
+	}
 
 #ifdef HAVE_EDITLINE
 	el = el_init(__FILE__, stdin, stdout, stderr);

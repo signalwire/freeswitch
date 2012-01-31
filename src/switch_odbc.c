@@ -480,10 +480,15 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 
   error:
 
+
 	if (stmt) {
 		err_str = switch_odbc_handle_get_error(handle, stmt);
 	}
 
+	if (zstr(err_str)) {
+		err_str = strdup((char *)"SQL ERROR!");
+	}
+	
 	if (err_str) {
 		if (!switch_stristr("already exists", err_str) && !switch_stristr("duplicate key name", err_str)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
@@ -513,7 +518,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	SQLHSTMT stmt = NULL;
 	SQLSMALLINT c = 0, x = 0;
 	SQLLEN m = 0;
-	char *err_str = NULL;
+	char *x_err = NULL, *err_str = NULL;
 	int result;
 	int err_cnt = 0;
 	int done = 0;
@@ -523,22 +528,24 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	switch_assert(callback != NULL);
 
 	if (!db_is_up(handle)) {
+		x_err = "DB is not up!";
 		goto error;
 	}
 
 	if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
-		err_str = strdup("Unable to SQL allocate handle.");
+		x_err = "Unable to SQL allocate handle!";
 		goto error;
 	}
 
 	if (SQLPrepare(stmt, (unsigned char *) sql, SQL_NTS) != SQL_SUCCESS) {
-		err_str = strdup("Unable to prepare SQL statement.");
+		x_err = "Unable to prepare SQL statement!";
 		goto error;
 	}
 
 	result = SQLExecute(stmt);
 
 	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO && result != SQL_NO_DATA) {
+		x_err = "execute error!";
 		goto error;
 	}
 
@@ -598,10 +605,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 		free(vals);
 	}
 
-	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-	stmt = NULL; /* Make sure we don't try to free this handle again */
-
 	if (!err_cnt) {
+		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 		return SWITCH_ODBC_SUCCESS;
 	}
 
@@ -609,7 +614,10 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 
 	if (stmt) {
 		err_str = switch_odbc_handle_get_error(handle, stmt);
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	}
+
+	if (zstr(err_str) && !zstr(x_err)) {
+		err_str = strdup(x_err);
 	}
 
 	if (err_str) {
@@ -620,6 +628,11 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 			free(err_str);
 		}
 	}
+
+	if (stmt) {
+		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	}
+
 
 #endif
 	return SWITCH_ODBC_FAIL;
@@ -710,7 +723,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_SQLSetAutoCommitAttr(switch_odb
 		return SQLSetConnectAttr(handle->con, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER *) SQL_AUTOCOMMIT_OFF, 0 );
 	}
 #else
-	return SWITCH_FALSE;
+	return (switch_odbc_status_t) SWITCH_FALSE;
 #endif
 }
 
@@ -723,7 +736,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_SQLEndTran(switch_odbc_handle_t
 		return SQLEndTran(SQL_HANDLE_DBC, handle->con, SQL_ROLLBACK);
 	}
 #else
-	return SWITCH_FALSE;
+	return (switch_odbc_status_t) SWITCH_FALSE;
 #endif
 }
 

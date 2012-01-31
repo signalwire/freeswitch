@@ -166,7 +166,7 @@ namespace ManagedEslTest
            ESLconnection eslConnection = new ESLconnection(sckClient.Handle.ToInt32());
 
            ESLevent eslEvent = eslConnection.GetInfo();
-           string strUuid = eslEvent.GetHeader("UNIQUE-ID");
+           string strUuid = eslEvent.GetHeader("UNIQUE-ID", 0);
 
            eslConnection.SendRecv("myevents");
            eslConnection.SendRecv("divert_events on");

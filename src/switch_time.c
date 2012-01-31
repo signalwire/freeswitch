@@ -951,7 +951,7 @@ static void tm2switchtime(struct tm *tm, switch_time_exp_t *xt)
 	if (!xt || !tm) {
 		return;
 	}
-	memset(xt, 0, sizeof(xt));
+	memset(xt, 0, sizeof(*xt));
 
 	xt->tm_sec = tm->tm_sec;
 	xt->tm_min = tm->tm_min;

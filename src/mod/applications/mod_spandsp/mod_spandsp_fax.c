@@ -1303,7 +1303,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 				prefix = spandsp_globals.prepend_string;
 			}
 
-			if (!(pvt->filename = switch_core_session_sprintf(session, "%s/%s-%ld-%ld.tif", spandsp_globals.spool, prefix, spandsp_globals.total_sessions, time))) {
+			if (!(pvt->filename = switch_core_session_sprintf(session, "%s/%s-%ld-%" SWITCH_TIME_T_FMT ".tif", spandsp_globals.spool, prefix, spandsp_globals.total_sessions, time))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot automatically set fax RX destination file\n");
 				goto done;
 			}
@@ -1683,7 +1683,7 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 	switch_codec_implementation_t read_impl = { 0 };
 	int16_t *buf = NULL;
     switch_status_t status;
-    switch_size_t tx;
+    int tx;
     const char *t38_trace = switch_channel_get_variable(channel, "t38_trace");
     char *trace_read, *trace_write;
     zap_socket_t read_fd = FAX_INVALID_SOCKET, write_fd = FAX_INVALID_SOCKET;

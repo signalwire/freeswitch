@@ -27,7 +27,7 @@ Session::Session(switch_core_session_t *new_session):CoreSession(new_session)
 static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup);
 
 
-void Session::destroy(void)
+void Session::destroy(const char *err)
 {
 	
 	if (!allocated) {
@@ -48,6 +48,13 @@ void Session::destroy(void)
 	switch_safe_free(cb_arg);
 
 	CoreSession::destroy();
+
+
+	if (!zstr(err)) {
+		lua_pushstring(L, err);
+		lua_error(L);
+	}
+
 }
 
 
@@ -140,7 +147,23 @@ void Session::do_hangup_hook()
 			arg_count++;
 		}
 
-		docall(L, arg_count, 1, 1);
+		docall(L, arg_count, 0, 1);
+
+		const char *err = lua_tostring(L, -1);
+		
+		switch_channel_set_variable(channel, "lua_hangup_hook_return_val", err);
+
+		if (!zstr(err)) {
+
+			if (!strcasecmp(err, "exit") || !strcasecmp(err, "die")) {
+				lua_error(L);
+			} else {
+				lua_pop(L, 1);
+			}
+		} else {
+			lua_pop(L, 1);
+		}
+
 
 		if (channel) {
 			switch_channel_set_private(channel, "CoreSession", NULL);

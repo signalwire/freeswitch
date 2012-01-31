@@ -72,6 +72,16 @@
 #include <poll.h>
 #endif
 
+#ifndef ESL_MIN
+#define ESL_MIN(x,y)	((x) < (y) ? (x) : (y))
+#endif
+#ifndef ESL_MAX
+#define ESL_MAX(x,y)	((x) > (y) ? (x) : (y))
+#endif
+#ifndef ESL_CLAMP
+#define ESL_CLAMP(min,max,val)	(ESL_MIN(max,ESL_MAX(val,min)))
+#endif
+
 
 /* Written by Marc Espie, public domain */
 #define ESL_CTYPE_NUM_CHARS       256
@@ -1187,7 +1197,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		}
 
 		rrval = handle_recv(handle, handle->socket_buf, sizeof(handle->socket_buf) - 1);
-		*((char *)handle->socket_buf + rrval) = '\0';
+		*((char *)handle->socket_buf + ESL_CLAMP(0, sizeof(handle->socket_buf) - 1, rrval)) = '\0';
 		
 		if (rrval == 0) {
 			if (++zc >= 100) {
@@ -1224,7 +1234,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 				sofar = esl_buffer_read(handle->packet_buf, body, len);
 			} else {
 				r = handle_recv(handle, handle->socket_buf, sizeof(handle->socket_buf) - 1);
-				*((char *)handle->socket_buf + r) = '\0';
+				*((char *)handle->socket_buf + ESL_CLAMP(0, sizeof(handle->socket_buf) - 1, r)) = '\0';
 
 				if (r < 0) {
 					strerror_r(handle->errnum, handle->err, sizeof(handle->err));

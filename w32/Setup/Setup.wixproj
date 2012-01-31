@@ -156,6 +156,15 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLLOCATION</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_abstraction\mod_abstraction.2010.vcxproj">
+      <Name>mod_abstraction</Name>
+      <Project>{60c542ee-6882-4ea2-8c21-5ab6db1ba73f}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_avmd\mod_avmd.2010.vcxproj">
       <Name>mod_avmd</Name>
       <Project>{990baa76-89d3-4e38-8479-c7b28784efc8}</Project>
@@ -258,6 +267,15 @@
     <ProjectReference Include="..\..\src\mod\applications\mod_hash\mod_hash.2010.vcxproj">
       <Name>mod_hash</Name>
       <Project>{2e250296-0c08-4342-9c8a-bcbdd0e7df65}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_httapi\mod_httapi.2010.vcxproj">
+      <Name>mod_httapi</Name>
+      <Project>{4748ff56-ca85-4809-97d6-a94c0fac1d77}</Project>
       <Private>True</Private>
       <DoNotHarvest>
       </DoNotHarvest>

@@ -32,6 +32,10 @@
 #define __SWITCH_SSL_H
 
 #if defined(HAVE_OPENSSL)
+#if defined (MACOSX) || defined(DARWIN)
+/* Disable depricated-declarations on OS X */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include <openssl/crypto.h>
 
 static switch_mutex_t **ssl_mutexes;

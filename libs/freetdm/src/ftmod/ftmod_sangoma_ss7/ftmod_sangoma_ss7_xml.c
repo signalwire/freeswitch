@@ -233,11 +233,11 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 
 		if (!strcasecmp(var, "dialplan")) {
 		/**********************************************************************/
-			/* do i give a shit about this??? */
+			/* don't care for now */
 		/**********************************************************************/
 		} else if (!strcasecmp(var, "context")) {
 		/**********************************************************************/
-			/* do i give a shit about this??? */
+			/* don't care for now */
 		/**********************************************************************/
 		} else if (!strcasecmp(var, "ccSpanId")) {
 		/**********************************************************************/

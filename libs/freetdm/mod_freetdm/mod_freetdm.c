@@ -4251,6 +4251,42 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+FTDM_CLI_DECLARE(ftdm_cmd_alarms)
+{
+        ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
+        uint32_t chan_id = 0;
+        ftdm_span_t *span;
+
+        if (argc < 3) {
+                print_usage(stream, cli);
+                goto end;
+        }
+
+        ftdm_span_find_by_name(argv[1], &span);
+        chan_id = atoi(argv[2]);
+        if (!span) {
+                stream->write_function(stream, "-ERR invalid span\n");
+        } else if (chan_id) {
+                if(chan_id > ftdm_span_get_chan_count(span)) {
+                        stream->write_function(stream, "-ERR invalid channel\n");
+                } else {
+                        ftdm_channel_t *chan = ftdm_span_get_channel(span, chan_id);
+                        if (!chan) {
+                                stream->write_function(stream, "-ERR channel not configured\n");
+                        } else {
+                                ftdm_channel_get_alarms(chan, &alarmbits);
+                                if (!strlen(ftdm_channel_get_last_error(chan))) {
+                                        stream->write_function(stream, "+OK No alarms\n");
+                                } else {
+                                        stream->write_function(stream, "-ERR %s on %s:%d\n", ftdm_channel_get_last_error(chan), argv[1], chan);
+                                }
+                        }
+                }
+        }
+end:
+        return SWITCH_STATUS_SUCCESS;
+}
+
 FTDM_CLI_DECLARE(ftdm_cmd_sigstatus)
 {
 	ftdm_span_t *span = NULL;
@@ -4657,6 +4693,7 @@ static ftdm_cli_entry_t ftdm_cli_options[] =
 	{ "start", "<span_id|span_name>", "", ftdm_cmd_start_stop },
 	{ "stop", "<span_id|span_name>", "", ftdm_cmd_start_stop },
 	{ "reset", "<span_id|span_name> [<chan_id>]", "", ftdm_cmd_reset },
+	{ "alarms", "<span_id> <chan_id>", "", ftdm_cmd_alarms },
 	{ "dump", "<span_id|span_name> [<chan_id>]", "", ftdm_cmd_dump },
 	{ "sigstatus", "get|set <span_id|span_name> [<chan_id>] [<sigstatus>]", "::[set:get", ftdm_cmd_sigstatus },
 	{ "trace", "<path> <span_id|span_name> [<chan_id>]", "", ftdm_cmd_trace },

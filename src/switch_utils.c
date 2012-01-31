@@ -595,7 +595,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	char *bound = "XXXX_boundary_XXXX";
 	const char *mime_type = "audio/inline";
 	char filename[80], buf[B64BUFFLEN];
-	int fd = 0, ifd = 0;
+	int fd = -1, ifd = -1;
 	int x = 0, y = 0, bytes = 0, ilen = 0;
 	unsigned int b = 0, l = 0;
 	unsigned char in[B64BUFFLEN];
@@ -603,6 +603,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	char *dupfile = NULL, *ext = NULL;
 	char *newfile = NULL;
 	switch_bool_t rval = SWITCH_FALSE;
+	const char *err = NULL;
 
 	if (!zstr(file) && !zstr(convert_cmd) && !zstr(convert_ext)) {
 		if ((ext = strrchr(file, '.'))) {
@@ -627,28 +628,32 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		switch_safe_free(dupfile);
 	}
 
-	switch_snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int) switch_epoch_time_now(NULL), rand() & 0xffff);
+	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int) switch_epoch_time_now(NULL), rand() & 0xffff);
 
-	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
+	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644)) > -1) {
 		if (file) {
-			if ((ifd = open(file, O_RDONLY | O_BINARY)) < 1) {
+			if ((ifd = open(file, O_RDONLY | O_BINARY)) < 0) {
 				rval = SWITCH_FALSE;
+				err = "Cannot open tmp file\n";
 				goto end;
 			}
 		}
 		switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
 		if (!write_buf(fd, buf)) {
 			rval = SWITCH_FALSE;
+			err = "write error.";
 			goto end;
 		}
 
 		if (headers && !write_buf(fd, headers)) {
 			rval = SWITCH_FALSE;
+			err = "write error.";
 			goto end;
 		}
 
 		if (!write_buf(fd, "\n\n")) {
 			rval = SWITCH_FALSE;
+			err = "write error.";
 			goto end;
 		}
 
@@ -659,12 +664,14 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		}
 		if (!write_buf(fd, buf)) {
 			rval = SWITCH_FALSE;
+			err = "write error.";
 			goto end;
 		}
 
 		if (body) {
 			if (!write_buf(fd, body)) {
 				rval = SWITCH_FALSE;
+				err = "write error.";
 				goto end;
 			}
 		}
@@ -689,6 +696,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 							"Content-Disposition: attachment; filename=\"%s\"\n\n", bound, mime_type, stipped_file, stipped_file);
 			if (!write_buf(fd, buf)) {
 				rval = SWITCH_FALSE;
+				err = "write error.";
 				goto end;
 			}
 
@@ -730,16 +738,11 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 
 		if (!write_buf(fd, buf)) {
 			rval = SWITCH_FALSE;
+			err = "write error.";
 			goto end;
 		}
 	}
 
-	if (fd) {
-		close(fd);
-	}
-	if (ifd) {
-		close(ifd);
-	}
 
 	if (zstr(from)) {
 		from = "freeswitch";
@@ -751,25 +754,43 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 #endif
 	if (switch_system(buf, SWITCH_TRUE) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
+		err = "execute error";
+		rval = SWITCH_FALSE;
 	}
 
 	if (unlink(filename) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", filename);
 	}
 
-	if (file) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed file [%s] to [%s]\n", filename, to);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed data to [%s]\n", to);
+	if (zstr(err)) {
+		if (file) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed file [%s] to [%s]\n", filename, to);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed data to [%s]\n", to);
+		}
+
+		rval = SWITCH_TRUE;
 	}
 
-	rval = SWITCH_TRUE;
-
   end:
+
+	if (fd < 0) {
+		close(fd);
+	}
+	if (ifd < 0) {
+		close(ifd);
+	}
+
 
 	if (newfile) {
 		unlink(newfile);
 		free(newfile);
+	}
+
+	if (rval != SWITCH_TRUE) {
+		if (zstr(err)) err = "Unknown Error";
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "EMAIL NOT SENT, error [%s]\n", err);
 	}
 
 	return rval;
@@ -2342,6 +2363,9 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 	char *sTime;
 	switch_time_t tsStart;
 	switch_time_t tsEnd;
+	struct tm tmTmp;
+	int year, month, day;
+	int hour, min, sec;
 
 	switch_assert(dup);
 
@@ -2350,16 +2374,13 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 		*sEnd++ = '\0';
 		sDate = sStart;
 		if ((sTime=strchr(sStart, ' '))) {
-			struct tm tmTmp;
-			int year, month, day;
-			int hour, min, sec;
-
 			*sTime++ = '\0';
 
+			memset(&tmTmp, 0, sizeof(tmTmp));
 			switch_split_date(sDate, &year, &month, &day);
 			switch_split_time(sTime, &hour, &min, &sec);
-			tmTmp.tm_year = year;
-			tmTmp.tm_mon = month;
+			tmTmp.tm_year = year-1900;
+			tmTmp.tm_mon = month-1;
 			tmTmp.tm_mday = day;
 
 			tmTmp.tm_hour = hour;
@@ -2370,16 +2391,13 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 
 			sDate = sEnd;
 			if ((sTime=strchr(sEnd, ' '))) {
-				struct tm tmTmp;
-				int year, month, day;
-				int hour, min, sec;
-
 				*sTime++ = '\0';
 
+				memset(&tmTmp, 0, sizeof(tmTmp));
 				switch_split_date(sDate, &year, &month, &day);
 				switch_split_time(sTime, &hour, &min, &sec);
-				tmTmp.tm_year = year;
-				tmTmp.tm_mon = month;
+				tmTmp.tm_year = year-1900;
+				tmTmp.tm_mon = month-1;
 				tmTmp.tm_mday = day;
 
 				tmTmp.tm_hour = hour;
@@ -2388,7 +2406,7 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 				tmTmp.tm_isdst = 0;
 				tsEnd = mktime(&tmTmp);
 
-				if (tsStart <= *ts && tsEnd > *ts) {
+				if (tsStart <= *ts/1000000 && tsEnd > *ts/1000000) {
 					switch_safe_free(dup);
 					return 1;
 				}
@@ -2923,6 +2941,20 @@ SWITCH_DECLARE(char *) switch_format_number(const char *num)
 	return r;
 }
 
+
+SWITCH_DECLARE(unsigned int) switch_atoui(const char *nptr)
+{
+	int tmp = atoi(nptr);
+	if (tmp < 0) return 0;
+	else return (unsigned int) tmp;
+}
+
+SWITCH_DECLARE(unsigned long) switch_atoul(const char *nptr)
+{
+	long tmp = atol(nptr);
+	if (tmp < 0) return 0;
+	else return (unsigned long) tmp;
+}
 
 /* For Emacs:
  * Local Variables:

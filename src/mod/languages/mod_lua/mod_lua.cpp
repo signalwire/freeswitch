@@ -101,7 +101,9 @@ int docall(lua_State * L, int narg, int clear, int perror)
 		if (!zstr(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
-		lua_pop(L, 1); /* pop error message from the stack */
+		//lua_pop(L, 1); /* pop error message from the stack */
+		// pass error up to top
+		lua_error(L);
 	}
 
 	return status;
@@ -621,7 +623,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 
 	SWITCH_ADD_API(api_interface, "luarun", "run a script", luarun_api_function, "<script>");
 	SWITCH_ADD_API(api_interface, "lua", "run a script as an api function", lua_api_function, "<script>");
-	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", 
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_DIALPLAN(dp_interface, "LUA", lua_dialplan_hunt);
 
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "lua", "execute a lua script", "execute a lua script", lua_chat_function, "<script>", SCAF_NONE);

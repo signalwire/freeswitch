@@ -31,7 +31,7 @@ namespace LUA {
 		    Session(char *uuid, CoreSession * a_leg = NULL);
 		     Session(switch_core_session_t *session);
 		                     ~Session();
-		                      SWITCH_MOD_DECLARE(virtual void) destroy(void);
+		                      SWITCH_MOD_DECLARE(virtual void) destroy(const char *err = NULL);
 
 		virtual bool begin_allow_threads();
 		virtual bool end_allow_threads();

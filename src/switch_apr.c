@@ -685,7 +685,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
 
 SWITCH_DECLARE(switch_status_t) switch_socket_addr_get(switch_sockaddr_t ** sa, switch_bool_t remote, switch_socket_t *sock)
 {
-	return apr_socket_addr_get(sa, remote, sock);
+	return apr_socket_addr_get(sa, (apr_interface_e) remote, sock);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_socket_create(switch_socket_t ** new_sock, int family, int type, int protocol, switch_memory_pool_t *pool)
@@ -787,7 +787,7 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, s
 	new_sa = apr_pcalloc(pool, sizeof(apr_sockaddr_t));
 	switch_assert(new_sa);
 	new_sa->pool = pool;
-	memset(new_sa, 0, sizeof(new_sa));
+	memset(new_sa, 0, sizeof(*new_sa));
 
     new_sa->family = family;
     new_sa->sa.sin.sin_family = family;
@@ -927,7 +927,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **po
 	
 	memset(*pollfd, 0, sizeof(switch_pollfd_t));
 
-	(*pollfd)->desc_type = APR_POLL_SOCKET;
+	(*pollfd)->desc_type = (switch_pollset_type_t) APR_POLL_SOCKET;
 	(*pollfd)->reqevents = flags;
 	(*pollfd)->desc.s = sock;
 	(*pollfd)->client_data = client_data;
