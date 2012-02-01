@@ -143,6 +143,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 							  "Dialplan: %s Date/Time Match (PASS) [%s] break=%s\n",
 							  switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
 			anti_action = SWITCH_FALSE;
+			proceed = 1
 		} else if (time_match == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 							  "Dialplan: %s Date/TimeMatch (FAIL) [%s] break=%s\n",
@@ -312,6 +313,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 								  "Dialplan: %s Absolute Condition [%s]\n", switch_channel_get_name(channel), exten_name);
 				anti_action = SWITCH_FALSE;
+				proceed = 1;
 			}
 
 		}
