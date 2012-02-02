@@ -571,13 +571,15 @@ static int sofia_presence_dialog_callback(void *pArg, int argc, char **argv, cha
 	struct dialog_helper *helper = (struct dialog_helper *) pArg;
 
 	if (argc == 3) {
-		switch_set_string(helper->status, argv[0]);
-		switch_set_string(helper->rpid, argv[1]);
-		switch_set_string(helper->presence_id, argv[2]);
+		if (!helper->hits) {
+			switch_set_string(helper->status, argv[0]);
+			switch_set_string(helper->rpid, argv[1]);
+			switch_set_string(helper->presence_id, argv[2]);
+		}
 		helper->hits++;
 	}
 
-	return -1;
+	return 0;
 }
 
 
@@ -856,6 +858,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	char *call_info_state = switch_event_get_header(event, "presence-call-info-state");
 	switch_console_callback_match_t *matches;
 	struct presence_helper helper = { 0 };			
+	int hup = 0;
 
 	if (!mod_sofia_globals.running) {
 		return;
@@ -877,6 +880,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 
 	if (status && switch_stristr("CS_HANGUP", status)) {
 		status = "Available";
+		hup = 1;
 	}
 
 	if (rpid) {
@@ -1090,6 +1094,11 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 									 mod_sofia_globals.hostname, profile->name, euser, host, euser, host);
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
 				switch_safe_free(sql);
+
+				
+				if (hup && dh.hits > 0) {
+					goto done;
+				}
 
 
 				if (zstr(call_id) && (dh.hits && presence_source && (!strcasecmp(presence_source, "register") || switch_stristr("register", status)))) {

@@ -620,10 +620,6 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 	call_info = switch_channel_get_variable(channel, "presence_call_info");
 
 	if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
-		if (!strcasecmp(status, "CS_HANGUP")) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "refresh", "true");
-		}
-
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "any");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", __FILE__);
