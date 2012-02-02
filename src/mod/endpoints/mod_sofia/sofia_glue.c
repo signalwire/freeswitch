@@ -6868,24 +6868,6 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 		np->is_nat = NULL;
 	}
 
-	if (zstr(contact_host)) {
-		np->is_nat = "No contact host";
-	}
-
-
-	if (np->is_nat && !np->fs_path) {
-		contact_host = np->network_ip;
-		switch_snprintf(new_port, sizeof(new_port), ":%d", np->network_port);
-		port = NULL;
-	}
-
-
-	if (port) {
-		switch_snprintf(new_port, sizeof(new_port), ":%s", port);
-	}
-
-	ipv6 = strchr(contact_host, ':');
-
 	if (np->is_nat && np->fs_path) {
 		char *full_contact = sip_header_as_string(nh->nh_home, (void *) contact);
 		char *full_contact_dup;
@@ -6918,6 +6900,25 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 		free(path_val);
 
 	} else {
+
+		if (zstr(contact_host)) {
+			np->is_nat = "No contact host";
+		}
+		
+		if (np->is_nat) {
+			contact_host = np->network_ip;
+			switch_snprintf(new_port, sizeof(new_port), ":%d", np->network_port);
+			port = NULL;
+		}
+		
+		
+		if (port) {
+			switch_snprintf(new_port, sizeof(new_port), ":%s", port);
+		}
+		
+		ipv6 = strchr(contact_host, ':');
+		
+
 		if (contact->m_url->url_params) {
 			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s;%s>%s",
 										 display, contact->m_url->url_user,
