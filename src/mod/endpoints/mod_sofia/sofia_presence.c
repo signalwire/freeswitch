@@ -646,7 +646,7 @@ static void do_normal_probe(switch_event_t *event)
 							 "from sip_registrations "
 
 							 "left join sip_dialogs on "
-							 "sip_dialogs.hostname = sip_registration.hostname and sip_dialogs.profile_name = sip_registration.profile_name and ("
+							 "sip_dialogs.hostname = sip_registrations.hostname and sip_dialogs.profile_name = sip_registrations.profile_name and ("
 							 "sip_dialogs.presence_id = sip_registrations.sip_user %q '@' %q sip_registrations.sub_host "
 							 "or (sip_dialogs.sip_from_user = sip_registrations.sip_user "
 							 "and sip_dialogs.sip_from_host = sip_registrations.sip_host)) "
