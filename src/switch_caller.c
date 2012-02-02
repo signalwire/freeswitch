@@ -136,7 +136,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 	profile->flags = tocopy->flags;
 	profile->pool = pool;
 	profile->direction = tocopy->direction;
-
+	profile->times = tocopy->times;
 
 	if (tocopy->soft) {
 		profile_node_t *pn;
