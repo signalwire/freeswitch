@@ -213,19 +213,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (fill) {
-		fill_read = !do_read;
-		fill_write = !do_write;
-	}
-	
-	if (fill && fill_read && fill_write) {
+
+	fill_read = !do_read;
+	fill_write = !do_write;
+
+	if (fill_read && fill_write) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!((do_read || fill_read) && (do_write || fill_write))) {
-		return SWITCH_STATUS_FALSE;
-	}
-	
 	if (do_read) {
 		switch_mutex_lock(bug->read_mutex);
 		if (switch_buffer_read(bug->raw_read_buffer, &rh, sizeof(rh))) {
@@ -334,6 +329,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 	if (fill_read && fill_write) {
 		return SWITCH_STATUS_BREAK;
+	}
+
+	if (fill_read || fill_write) {
+		return SWITCH_STATUS_FALSE;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
