@@ -1287,11 +1287,13 @@ int main(int argc, char *argv[])
 		snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s> ", profile->name);
 	}
 	bare_prompt_str_len = (int)strlen(bare_prompt_str);
+	#if 0
 	if (feature_level) {
-		snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
+		snprintf(prompt_str, sizeof(prompt_str), "%s%s%s #", prompt_color, bare_prompt_str, input_text_color);
 	} else {
-		snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str);
+		snprintf(prompt_str, sizeof(prompt_str), "%s >> ", bare_prompt_str);
 	}
+	#endif
  connect:
 	connected = 0;
 	while (--loops > 0) {
