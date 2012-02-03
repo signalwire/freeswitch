@@ -545,7 +545,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 
 		if (input_timeout && status == SWITCH_STATUS_SUCCESS) {
 			if ((status = switch_ivr_sleep(client->session, input_timeout, SWITCH_TRUE, args)) == SWITCH_STATUS_SUCCESS) {
-				status = SWITCH_STATUS_BREAK;
+				status = (input || !pause) ? SWITCH_STATUS_BREAK : SWITCH_STATUS_SUCCESS;
 			}
 		}
 
@@ -622,7 +622,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 	if (dmachine) {
 		switch_ivr_dmachine_destroy(&dmachine);
 	}
-
+	printf("WTF %d\n", status);
 	return status;
 }
 
