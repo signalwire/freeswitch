@@ -332,7 +332,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	}
 
 	if (fill_read || fill_write) {
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_BREAK;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
