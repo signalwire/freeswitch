@@ -3972,7 +3972,7 @@ void sofia_presence_handle_sip_i_message(int status,
 
  end:
 
-	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+	nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 
 }
 
