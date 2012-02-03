@@ -2098,12 +2098,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					number = tech_pvt->caller_profile->destination_number;
 				}
 				
-				if (sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY) || !switch_channel_test_flag(channel, CF_ANSWERED)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_WARNING, 
-									  "Cannot send display update to %s "
-									  "Did not receive reply to last update or channel has not been answered yet.\n", 
-									  switch_channel_get_name(tech_pvt->channel));
-				} else {
+				if (!sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY) && switch_channel_test_flag(channel, CF_ANSWERED)) {
 					if (zstr(tech_pvt->last_sent_callee_id_name) || strcmp(tech_pvt->last_sent_callee_id_name, name) ||
 						zstr(tech_pvt->last_sent_callee_id_number) || strcmp(tech_pvt->last_sent_callee_id_number, number)) {
 
