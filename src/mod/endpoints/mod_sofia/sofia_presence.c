@@ -571,7 +571,13 @@ static int sofia_presence_dialog_callback(void *pArg, int argc, char **argv, cha
 {
 	struct dialog_helper *helper = (struct dialog_helper *) pArg;
 
-	if (argc == 4) {
+	if (argc >= 4) {
+
+		if (mod_sofia_globals.debug_presence > 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHECK DIALOG state[%s] status[%s] rpid[%s] pres[%s]\n", 
+							  argv[0], argv[1], argv[2], argv[3]);
+		}
+
 		if (!helper->hits) {
 			switch_set_string(helper->state, argv[0]);
 			switch_set_string(helper->status, argv[1]);
@@ -615,7 +621,7 @@ static void do_normal_probe(switch_event_t *event)
 	}
 
 	if (probe_euser && probe_host && (profile = sofia_glue_find_profile(probe_host))) {
-		sql = switch_mprintf("select status,rpid,presence_id from sip_dialogs "
+		sql = switch_mprintf("select state,status,rpid,presence_id from sip_dialogs "
 							 "where hostname='%q' and profile_name='%q' and "
 							 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
 							 mod_sofia_globals.hostname, profile->name, probe_euser, probe_host, probe_euser, probe_host);
@@ -1091,10 +1097,16 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				}
 				
 				sql = switch_mprintf("select state,status,rpid,presence_id from sip_dialogs "
-									 "where hostname='%q' and profile_name='%q' and "
+									 "where call_info_state != 'seized' and hostname='%q' and profile_name='%q' and "
 									 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
 									 mod_sofia_globals.hostname, profile->name, euser, host, euser, host);
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
+				
+				if (mod_sofia_globals.debug_presence > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHECK SQL: %s@%s [%s]\nhits: %d\n", euser, host, sql, dh.hits);
+				}
+
+
 				switch_safe_free(sql);
 
 				if (hup && dh.hits > 0) {
