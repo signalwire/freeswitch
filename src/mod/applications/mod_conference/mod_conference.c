@@ -1104,6 +1104,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 		if (test_eflag(conference, EFLAG_FLOOR_CHANGE)) {
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+			conference_add_event_data(conference, event); 
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d", member->id);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "none");
