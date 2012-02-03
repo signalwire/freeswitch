@@ -864,9 +864,11 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	char *call_id = switch_event_get_header(event, "call-id");
 	char *presence_source = switch_event_get_header(event, "presence-source");
 	char *call_info_state = switch_event_get_header(event, "presence-call-info-state");
+	const char *uuid = switch_event_get_header(event, "unique-id");
 	switch_console_callback_match_t *matches;
 	struct presence_helper helper = { 0 };			
 	int hup = 0;
+
 
 	if (!mod_sofia_globals.running) {
 		return;
@@ -1052,9 +1054,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 					continue;
 				}
 
-				if (call_info) {
-					const char *uuid = switch_event_get_header(event, "unique-id");
-
+				if (call_info) {					
 					
 #if 0
 					if (mod_sofia_globals.debug_sla > 1) {
@@ -1095,16 +1095,25 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 										 rpid, status, mod_sofia_globals.hostname, profile->name, euser, host);
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 				}
+
+				if (zstr(uuid)) {
 				
-				sql = switch_mprintf("select state,status,rpid,presence_id from sip_dialogs "
-									 "where call_info_state != 'seized' and hostname='%q' and profile_name='%q' and "
-									 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
-									 mod_sofia_globals.hostname, profile->name, euser, host, euser, host);
-				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
+					sql = switch_mprintf("select state,status,rpid,presence_id from sip_dialogs "
+										 "where call_info_state != 'seized' and hostname='%q' and profile_name='%q' and "
+										 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
+										 mod_sofia_globals.hostname, profile->name, euser, host, euser, host);
+				} else {
+					sql = switch_mprintf("select state,status,rpid,presence_id from sip_dialogs "
+										 "where uuid != '%q' and call_info_state != 'seized' and hostname='%q' and profile_name='%q' and "
+										 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
+										 uuid, mod_sofia_globals.hostname, profile->name, euser, host, euser, host);
+				}
 				
 				if (mod_sofia_globals.debug_presence > 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHECK SQL: %s@%s [%s]\nhits: %d\n", euser, host, sql, dh.hits);
 				}
+
+				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
 
 
 				switch_safe_free(sql);
