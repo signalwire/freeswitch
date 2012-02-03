@@ -1257,15 +1257,17 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		}
 
 		session = conference->floor_holder->session;
-		switch_core_session_read_lock(session);
-		switch_mutex_unlock(conference->mutex);
-		if (!switch_channel_ready(switch_core_session_get_channel(session))) {
-			status = SWITCH_STATUS_FALSE;
-		} else {
-			status = switch_core_session_read_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if ((status = switch_core_session_read_lock(session)) == SWITCH_STATUS_SUCCESS) {
+			switch_mutex_unlock(conference->mutex);
+			if (!switch_channel_ready(switch_core_session_get_channel(session))) {
+				status = SWITCH_STATUS_FALSE;
+			} else {
+				status = switch_core_session_read_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+			}
+			switch_mutex_lock(conference->mutex);
+			switch_core_session_rwunlock(session);
 		}
-		switch_mutex_lock(conference->mutex);
-		switch_core_session_rwunlock(session);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			yield = 100000;
