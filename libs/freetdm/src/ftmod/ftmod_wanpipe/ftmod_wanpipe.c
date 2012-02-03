@@ -1476,18 +1476,25 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 
 			if (tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
 				ftdm_set_flag(fchan, FTDM_CHANNEL_MUTE);
-				fchan->dtmfdetect.start_time = ftdm_current_time_in_ms();
+				if (fchan->dtmfdetect.duration_ms) {
+					fchan->dtmfdetect.start_time = ftdm_current_time_in_ms();
+				}
 			}
 
 			if (tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
 				ftdm_clear_flag(fchan, FTDM_CHANNEL_MUTE);
 				if (ftdm_test_flag(fchan, FTDM_CHANNEL_INUSE)) {
-					ftdm_time_t diff = ftdm_current_time_in_ms() - fchan->dtmfdetect.start_time;
-					if (diff > fchan->dtmfdetect.duration_ms) {
-						ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c (duration:%d min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
+					if (!fchan->dtmfdetect.duration_ms) {
+						/* Do not check if DTMF duration if min DTMF duration is 0 */
 						ftdm_channel_queue_dtmf(fchan, tmp_dtmf);
 					} else {
-						ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c (duration:%d min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
+						ftdm_time_t diff = ftdm_current_time_in_ms() - fchan->dtmfdetect.start_time;
+						if (diff > fchan->dtmfdetect.duration_ms) {
+							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c (duration:%d min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
+							ftdm_channel_queue_dtmf(fchan, tmp_dtmf);
+						} else {
+							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c (duration:%d min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
+						}
 					}
 				}
 			} 
