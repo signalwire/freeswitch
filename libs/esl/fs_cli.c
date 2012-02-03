@@ -1153,6 +1153,7 @@ int main(int argc, char *argv[])
 #else
 	feature_level = 1;
 #endif
+	feature_level = 0;
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
@@ -1287,13 +1288,15 @@ int main(int argc, char *argv[])
 		snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s> ", profile->name);
 	}
 	bare_prompt_str_len = (int)strlen(bare_prompt_str);
-	#if 0
 	if (feature_level) {
-		snprintf(prompt_str, sizeof(prompt_str), "%s%s%s #", prompt_color, bare_prompt_str, input_text_color);
-	} else {
-		snprintf(prompt_str, sizeof(prompt_str), "%s >> ", bare_prompt_str);
-	}
-	#endif
+		snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
+	} 
+	/*  
+	else {
+	
+		snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str);
+	}	
+	*/
  connect:
 	connected = 0;
 	while (--loops > 0) {
