@@ -1835,7 +1835,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 
 	sofia_destination_t *dst = NULL;
 	char *contact_str, *contact, *user_via = NULL;
-	char *route_uri = NULL, *o_contact_dup = NULL, *tmp;
+	char *route_uri = NULL, *o_contact_dup = NULL, *tmp, *to_uri, *dcs = NULL;
 	const char *tp;
 	
     tmp = (char *)o_contact;
@@ -1881,6 +1881,27 @@ static void _send_presence_notify(sofia_profile_t *profile,
 
 	} else {
 		contact_str = our_contact;
+	}
+	
+	
+	if ((to_uri = sofia_glue_get_url_from_contact((char *)full_to, 1))) {
+		char *p;
+		
+		if ((p = strstr(to_uri, "sip:"))) {
+			char *q;
+			
+			p += 4;
+			if ((q = strchr(p, '@'))) {
+				*q++ = '\0';
+				
+				if ((dcs = switch_string_replace(contact_str, "mod_sofia", p))) {
+					contact_str = dcs;
+				}
+				
+			}
+		}
+
+		free(to_uri);
 	}
 
 	dst = sofia_glue_get_destination((char *) o_contact);
@@ -1980,6 +2001,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 
 	
 	switch_safe_free(route_uri);
+	switch_safe_free(dcs);
 	switch_safe_free(contact);
 
 	sofia_glue_free_destination(dst);
