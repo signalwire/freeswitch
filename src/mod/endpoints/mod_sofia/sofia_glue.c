@@ -4398,9 +4398,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 			continue;
 		}
 
-		if (!strcasecmp(attr->a_name, "sendonly") || !strcasecmp(attr->a_name, "inactive")) {
+		if (!strcasecmp(attr->a_name, "sendonly")) {
 			sendonly = 1;
 			switch_channel_set_variable(tech_pvt->channel, "media_audio_mode", "recvonly");
+		} else if (!strcasecmp(attr->a_name, "inactive")) {
+			sendonly = 1;
+			switch_channel_set_variable(tech_pvt->channel, "media_audio_mode", "inactive");
 		} else if (!strcasecmp(attr->a_name, "recvonly")) {
 			switch_channel_set_variable(tech_pvt->channel, "media_audio_mode", "sendonly");
 			recvonly = 1;
