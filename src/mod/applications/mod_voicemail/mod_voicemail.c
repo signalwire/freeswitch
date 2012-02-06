@@ -4378,7 +4378,7 @@ SWITCH_STANDARD_API(voicemail_inject_api_function)
 static int api_del_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 
-	unlink(argv[2]);
+	unlink(argv[3]);
 	
     return 0;
 }
