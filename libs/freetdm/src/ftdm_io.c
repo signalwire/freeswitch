@@ -4610,6 +4610,9 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 		}
 
 		span->channels[chan_index]->dtmfdetect.duration_ms = chan_config->dtmfdetect_ms;
+		if (chan_config->dtmf_on_start) {
+			span->channels[chan_index]->dtmfdetect.trigger_on_start = 1;
+		}
 	}
 
 	return FTDM_SUCCESS;
@@ -4808,8 +4811,22 @@ static ftdm_status_t load_config(void)
 				chan_config.debugdtmf = ftdm_true(val);
 				ftdm_log(FTDM_LOG_DEBUG, "Setting debugdtmf to '%s'\n", chan_config.debugdtmf ? "yes" : "no");
 			} else if (!strncasecmp(var, "dtmfdetect_ms", sizeof("dtmfdetect_ms")-1)) {
+				if (chan_config.dtmf_on_start == FTDM_TRUE) {
+					chan_config.dtmf_on_start = FTDM_FALSE;
+					ftdm_log(FTDM_LOG_WARNING, "dtmf_on_start parameter disabled because dtmfdetect_ms specified\n");
+				}
 				if (sscanf(val, "%d", &(chan_config.dtmfdetect_ms)) != 1) {
 					ftdm_log(FTDM_LOG_ERROR, "invalid dtmfdetect_ms: '%s'\n", val);
+				}
+			} else if (!strncasecmp(var, "dtmf_on_start", sizeof("dtmf_on_start")-1)) {
+				if (chan_config.dtmfdetect_ms) {
+					ftdm_log(FTDM_LOG_WARNING, "dtmf_on_start parameter ignored because dtmf_detect_ms specified\n");
+				} else {
+					if (ftdm_true(val)) {
+						chan_config.dtmf_on_start = FTDM_TRUE;
+					} else {
+						chan_config.dtmf_on_start = FTDM_FALSE;
+					}
 				}
 			} else if (!strncasecmp(var, "iostats", sizeof("iostats")-1)) {
 				if (ftdm_true(val)) {

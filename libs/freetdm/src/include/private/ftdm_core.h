@@ -362,6 +362,8 @@ typedef struct {
 typedef struct {
 	uint32_t duration_ms;
 	ftdm_time_t start_time;
+	/* If set to 1, we will send DTMF event the the tone starts, instead of waiting for end */
+	uint8_t trigger_on_start; 
 } ftdm_dtmf_detect_t;
 
 /* 2^8 table size, one for each byte (sample) value */
