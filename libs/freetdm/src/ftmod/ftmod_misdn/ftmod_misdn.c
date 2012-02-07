@@ -91,6 +91,7 @@ typedef enum {
 #define MISDN_IS_RAW(x)  (x & MISDN_CAPS_RAW)
 #define MISDN_IS_HDLC(x) (x & MISDN_CAPS_HDLC)
 
+#define MISDN_MSG_DATA(x) ((void *)((unsigned char *)(x) + MISDN_HEADER_LEN))
 
 const static struct {
 	const int	id;
@@ -199,6 +200,7 @@ struct misdn_chan_private {
 #define ftdm_span_io_private(x) ((x)->io_data)
 
 static ftdm_status_t misdn_handle_incoming(ftdm_channel_t *ftdmchan, const char *rbuf, const int size);
+static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len);
 
 /***********************************************************************************
  * mISDN interface functions
@@ -460,6 +462,11 @@ static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 			case PH_DEACTIVATE_REQ:
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN got '%s' echo while waiting for %s confirmation (id: %#x)\n",
 					misdn_event2str(hh->prim), (activate) ? "activation" : "deactivation", hh->id);
+				break;
+			case MPH_INFORMATION_IND:
+				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s (%#x)' while waiting for %s confirmation\n",
+					misdn_event2str(hh->prim), hh->prim, (activate) ? "activation" : "deactivation");
+				misdn_handle_mph_information_ind(chan, hh, MISDN_MSG_DATA(buf), retval - MISDN_HEADER_LEN);
 				break;
 			default:		/* other messages, ignore */
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s' while waiting for %s confirmation\n",
