@@ -137,6 +137,7 @@ const static struct {
 } misdn_control_types[] = {
 #define MISDN_CONTROL_TYPE(x)	{ x, #x }
 	MISDN_CONTROL_TYPE(DTMF_HFC_COEF),
+#undef MISDN_CONTROL_TYPE
 };
 
 #if 0 /* unused for now */
