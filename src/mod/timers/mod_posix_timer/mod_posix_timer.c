@@ -28,8 +28,8 @@
  *
  */
 #include <switch.h>
-#include <sys/signal.h>
-#include <sys/time.h>
+#include <time.h>
+#include <signal.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_posix_timer_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_posix_timer_shutdown);
