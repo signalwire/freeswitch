@@ -59,7 +59,7 @@ static struct {
 /**
  * Notified by POSIX timer of a tick
  */
-static void posix_timer_notify(sigval_t data)
+static void posix_timer_notify(union sigval data)
 {
 	interval_timer_t *it = (interval_timer_t *)data.sival_ptr;
 	switch_mutex_lock(it->mutex);
