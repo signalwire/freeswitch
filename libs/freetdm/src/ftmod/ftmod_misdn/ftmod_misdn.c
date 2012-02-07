@@ -25,6 +25,15 @@
  * NOTE: This is intended as a Layer 1 interface only, signaling
  *       is handled by other modules (e.g. ftmod_libpri or ftmod_isdn).
  */
+/*
+ * TODO:
+ *	- Use a fifo and PH_DATA_CNF for b-channel write polling (drop timerfd)
+ *
+ *	- Disable L1 idle deactivation on BRI PTMP with IMGL1HOLD ioctl(? optional)
+ *
+ *	- Add hfcsusb specific state + flag defines and try to do something useful with
+ *	  it in misdn_handle_mph_information_ind().
+ */
 
 #include <errno.h>
 #include <stdlib.h>
