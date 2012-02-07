@@ -3035,6 +3035,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_T38_PASSTHRU);
 						}
+					} else if (!strcasecmp(var, "presence-disable-early")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY);
+						}
 					} else if (!strcasecmp(var, "ignore-183nosdp")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_IGNORE_183NOSDP);
@@ -3808,6 +3814,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_T38_PASSTHRU);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_T38_PASSTHRU);
+						}
+					} else if (!strcasecmp(var, "presence-disable-early")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY);
 						}
 					} else if (!strcasecmp(var, "ignore-183nosdp")) {
 						if (switch_true(val)) {
