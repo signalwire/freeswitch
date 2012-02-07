@@ -4635,7 +4635,6 @@ static ftdm_status_t load_config(void)
 
 	memset(&chan_config, 0, sizeof(chan_config));
 	sprintf(chan_config.group_name, "__default");
-	chan_config.dtmfdetect_ms = 45;
 
 	if (!ftdm_config_open_file(&cfg, cfg_name)) {
 		return FTDM_FAIL;
