@@ -622,50 +622,88 @@ static int misdn_handle_ph_control_ind(ftdm_channel_t *chan, const struct mISDNh
 static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len)
 {
 	struct misdn_chan_private *priv = ftdm_chan_io_private(chan);
-	int alarm_flags, value;
 
-	if (data_len < sizeof(value)) {
-		ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "mISDN MPH_INFORMATION_IND message is too short\n");
+	/*
+	 * mISDN has some inconsistency issues here.
+	 *
+	 * There are only two drivers that emit MPH_INFORMATION_IND messages,
+	 * hfcsusb and hfcmulti. The former sends a set of ph_info and ph_info_ch structures,
+	 * while the latter just sends an int containing the current L1_SIGNAL_* event id.
+	 *
+	 * The flags and state information in the ph_info and ph_info_ch structures
+	 * are defined in kernel internal hw-specific headers (mISDNhw.h).
+	 *
+	 * Use the payload size to guess the type of message.
+	 */
+	if (data_len >= sizeof(struct ph_info)) {
+		/* complete port status, hfcsusb sends this */
+		struct ph_info *info = (struct ph_info *)data;
+		struct ph_info_ch *bch_info = NULL;
+
+		if (data_len < (sizeof(*info) + info->dch.num_bch * sizeof(*bch_info))) {
+			ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "mISDN MPH_INFORMATION_IND message is too short\n");
+			return FTDM_FAIL;
+		}
+		bch_info = &info->bch[0];
+
+		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN port state:\n\tD-Chan state:\t%hu\n\tD-Chan flags:\t%#x\n\tD-Chan proto:\t%hu\n\tD-Chan active:\t%s\n",
+			info->dch.state, info->dch.ch.Flags, info->dch.ch.protocol, info->dch.ch.Flags & (1 << 6) ? "yes" : "no");
+
+		/* TODO: try to translate this to a usable set of alarm flags */
+
+	} else if (data_len == sizeof(int)) {
+		/* alarm info, sent by hfcmulti */
+		int value = *(int *)data;
+		int alarm_flags = chan->alarm_flags;
+
+		if (data_len < sizeof(value)) {
+			ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "mISDN MPH_INFORMATION_IND message is too short\n");
+			return FTDM_FAIL;
+		}
+
+		switch (value) {
+		case L1_SIGNAL_LOS_ON:
+			alarm_flags |= FTDM_ALARM_RED;
+			break;
+		case L1_SIGNAL_LOS_OFF:
+			alarm_flags &= ~FTDM_ALARM_RED;
+			break;
+		case L1_SIGNAL_AIS_ON:
+			alarm_flags |= FTDM_ALARM_AIS;
+			break;
+		case L1_SIGNAL_AIS_OFF:
+			alarm_flags &= ~FTDM_ALARM_AIS;
+			break;
+		case L1_SIGNAL_RDI_ON:
+			alarm_flags |= FTDM_ALARM_YELLOW;
+			break;
+		case L1_SIGNAL_RDI_OFF:
+			alarm_flags &= ~FTDM_ALARM_YELLOW;
+			break;
+		case L1_SIGNAL_SLIP_RX:
+			priv->slip_rx_cnt++;
+			break;
+		case L1_SIGNAL_SLIP_TX:
+			priv->slip_tx_cnt++;
+			break;
+		default:
+			ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN unknown MPH_INFORMATION_IND signal: %#04x\n",
+				value);
+			return FTDM_FAIL;
+		}
+
+		/* check whether alarm status has changed, update channel flags if it has */
+		if ((value = (alarm_flags ^ chan->alarm_flags))) {
+			ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN alarm flags have changed %#x -> %#x\n",
+				chan->alarm_flags, alarm_flags);
+			chan->alarm_flags ^= value;
+		}
+	} else {
+		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN sent MPH_INFORMATION_IND message with unknown size %d\n",
+			data_len);
 		return FTDM_FAIL;
 	}
-	value = *(int *)data;
-	alarm_flags = chan->alarm_flags;
 
-	switch (value) {
-	case L1_SIGNAL_LOS_ON:
-		alarm_flags |= FTDM_ALARM_RED;
-		break;
-	case L1_SIGNAL_LOS_OFF:
-		alarm_flags &= ~FTDM_ALARM_RED;
-		break;
-	case L1_SIGNAL_AIS_ON:
-		alarm_flags |= FTDM_ALARM_AIS;
-		break;
-	case L1_SIGNAL_AIS_OFF:
-		alarm_flags &= ~FTDM_ALARM_AIS;
-		break;
-	case L1_SIGNAL_RDI_ON:
-		alarm_flags |= FTDM_ALARM_YELLOW;
-		break;
-	case L1_SIGNAL_RDI_OFF:
-		alarm_flags &= ~FTDM_ALARM_YELLOW;
-		break;
-	case L1_SIGNAL_SLIP_RX:
-		priv->slip_rx_cnt++;
-		break;
-	case L1_SIGNAL_SLIP_TX:
-		priv->slip_tx_cnt++;
-		break;
-	default:
-		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN unknown MPH_INFORMATION_IND message: %d\n",
-			value);
-		return FTDM_FAIL;
-	}
-	if ((value = (alarm_flags ^ chan->alarm_flags))) {
-		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN alarm flags have changed %#x -> %#x\n",
-			chan->alarm_flags, alarm_flags);
-		chan->alarm_flags ^= value;
-	}
 	return FTDM_SUCCESS;
 }
 
