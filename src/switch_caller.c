@@ -137,6 +137,13 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 	profile->pool = pool;
 	profile->direction = tocopy->direction;
 	profile->times = tocopy->times;
+	profile->times->answered = 0;
+	profile->times->progress = 0;
+	profile->times->progress_media = 0;
+	profile->times->created = switch_time_now();
+	profile->times->profile_created = profile->times->created;
+	profile->times->hungup = 0;
+	profile->times->transferred = 0;
 
 	if (tocopy->soft) {
 		profile_node_t *pn;
