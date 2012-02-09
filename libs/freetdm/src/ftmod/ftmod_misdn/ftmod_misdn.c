@@ -211,6 +211,11 @@ struct misdn_chan_private {
 static ftdm_status_t misdn_handle_incoming(ftdm_channel_t *ftdmchan, const char *rbuf, const int size);
 static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len);
 
+static const char *ftdm_channel_get_type_str(const ftdm_channel_t *chan)
+{
+	return ftdm_chan_type2str(ftdm_channel_get_type(chan));
+}
+
 /***********************************************************************************
  * mISDN interface functions
  ***********************************************************************************/
@@ -655,7 +660,7 @@ static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct m
 		}
 		bch_info = &info->bch[0];
 
-		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN port state:\n\tD-Chan state:\t%hu\n\tD-Chan flags:\t%#x\n\tD-Chan proto:\t%hu\n\tD-Chan active:\t%s\n",
+		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN port state:\n\tD-Chan state:\t%hu\n\tD-Chan flags:\t%#lx\n\tD-Chan proto:\t%hu\n\tD-Chan active:\t%s\n",
 			info->dch.state, info->dch.ch.Flags, info->dch.ch.protocol, info->dch.ch.Flags & (1 << 6) ? "yes" : "no");
 
 		/* TODO: try to translate this to a usable set of alarm flags */
@@ -792,7 +797,7 @@ static FIO_OPEN_FUNCTION(misdn_open)
 		break;
 	default:
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN invalid channel type '%s'\n",
-			ftdm_channel_get_type(ftdmchan));
+			ftdm_channel_get_type_str(ftdmchan));
 		break;
 	}
 	return FTDM_SUCCESS;
