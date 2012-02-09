@@ -2503,8 +2503,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			if (!strcasecmp(astate, "hangup")) {
 				astate = "terminated";
 			}
-
-			if (!sofia_test_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY)) {
+			
+			if (sofia_test_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY)) {
 				if (!strcasecmp(astate, "ringing") || !strcasecmp(astate, "early")) {
 					astate = "confirmed";
 				}
