@@ -2415,41 +2415,40 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		else {
 			if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
 				SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
-				break;
-			}
-		
-			ftdm_mutex_lock(ftdmchan->mutex);
-			if (status[byte] & (1 << bit)) {
-				switch (blockType) {
-				/**********************************************************************/
-				case 0:	/* maintenance oriented */
-					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
-					break;
-				/**********************************************************************/
-				case 1: /* hardware failure oriented */
-					sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
-					break;
-				/**********************************************************************/
-				case 2: /* reserved for national use */
-					break;
-				/**********************************************************************/
-				default:
-					break;
-				/**********************************************************************/
+			} else {
+				ftdm_mutex_lock(ftdmchan->mutex);
+				if (status[byte] & (1 << bit)) {
+					switch (blockType) {
+					/**********************************************************************/
+					case 0:	/* maintenance oriented */
+						sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+						break;
+					/**********************************************************************/
+					case 1: /* hardware failure oriented */
+						sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+						break;
+					/**********************************************************************/
+					case 2: /* reserved for national use */
+						break;
+					/**********************************************************************/
+					default:
+						break;
+					/**********************************************************************/
+					}
 				}
-			}
 
-			/* bring the sig status down */
-			sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
+				/* bring the sig status down */
+				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
 
-			/* unlock the channel again before we exit */
-			ftdm_mutex_unlock(ftdmchan->mutex);
+				/* unlock the channel again before we exit */
+				ftdm_mutex_unlock(ftdmchan->mutex);
 
-			/* update the bit and byte counter*/
-			bit ++;
-			if (bit == 8) {
-				byte++;
-				bit = 0;
+				/* update the bit and byte counter*/
+				bit ++;
+				if (bit == 8) {
+					byte++;
+					bit = 0;
+				}
 			}
 		}
 		x++;
@@ -2616,48 +2615,51 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			loop_range++;
 		}
 		else {
-			/* lock the channel */
-			ftdm_mutex_lock(ftdmchan->mutex);
-
-			if (status[byte] & (1 << bit)) {
-				switch (blockType) {
-				/**********************************************************************/
-				case 0:	/* maintenance oriented */
-					sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
-					sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
-					sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
-					break;
-				/**********************************************************************/
-				case 1: /* hardware failure oriented */
-					sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
-					break;
-				/**********************************************************************/
-				case 2: /* reserved for national use */
-					break;
-				/**********************************************************************/
-				default:
-					break;
-				/**********************************************************************/
-				} /* switch (blockType) */
-			} /* if (status[byte] & (1 << bit)) */
-
-			sigev.chan_id = ftdmchan->chan_id;
-			sigev.span_id = ftdmchan->span_id;
-			sigev.channel = ftdmchan;
-
-			/* bring the sig status down */
-			if (sngss7_channel_status_clear(sngss7_info)) {
-				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
+			if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
+				SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
 			}
-		
-			/* unlock the channel again before we exit */
-			ftdm_mutex_unlock(ftdmchan->mutex);
+			else {
+				ftdm_mutex_lock(ftdmchan->mutex);
 
-			/* update the bit and byte counter*/
-			bit ++;
-			if (bit == 8) {
-				byte++;
-				bit = 0;
+				if (status[byte] & (1 << bit)) {
+					switch (blockType) {
+					/**********************************************************************/
+					case 0:	/* maintenance oriented */
+						sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+						sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+						sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
+						break;
+					/**********************************************************************/
+					case 1: /* hardware failure oriented */
+						sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
+						break;
+					/**********************************************************************/
+					case 2: /* reserved for national use */
+						break;
+					/**********************************************************************/
+					default:
+						break;
+					/**********************************************************************/
+					} /* switch (blockType) */
+				} /* if (status[byte] & (1 << bit)) */
+
+				sigev.chan_id = ftdmchan->chan_id;
+				sigev.span_id = ftdmchan->span_id;
+				sigev.channel = ftdmchan;
+
+				/* bring the sig status down */
+				if (sngss7_channel_status_clear(sngss7_info)) {
+					sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
+				}
+			
+				ftdm_mutex_unlock(ftdmchan->mutex);
+
+				/* update the bit and byte counter*/
+				bit ++;
+				if (bit == 8) {
+					byte++;
+					bit = 0;
+				}
 			}
 		}
 		x++;
