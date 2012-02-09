@@ -1090,7 +1090,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				}
 				
 				if (!strcmp(proto, "dp")) {
-					sql = switch_mprintf("update sip_presence set rpid='%q',status='%q' where hostname='%q' nad profile_name='%q' and "
+					sql = switch_mprintf("update sip_presence set rpid='%q',status='%q' where hostname='%q' and profile_name='%q' and "
 										 "sip_user='%q' and sip_host='%q'",
 										 rpid, status, mod_sofia_globals.hostname, profile->name, euser, host);
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
@@ -3299,7 +3299,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								 np.network_port, np.network_ip, orig_proto, full_to, to_tag);
 
 			switch_assert(sql != NULL);
-
+			
 
 			if (mod_sofia_globals.debug_presence > 0 || mod_sofia_globals.debug_sla > 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s SUBSCRIBE %s@%s %s@%s\n%s\n",

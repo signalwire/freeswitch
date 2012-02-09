@@ -3184,7 +3184,7 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 
 	for (x_domain = switch_xml_child(x_domains, "domain"); x_domain; x_domain = x_domain->next) {
 		const char *dname = switch_xml_attr(x_domain, "name");
-		if (!dname || strcasecmp(domain_name, dname)) continue;
+		if (!dname || (strcasecmp(dname, "*") && strcasecmp(domain_name, dname))) continue;
 		
 		for (x_exten = switch_xml_child(x_domain, "exten"); x_exten; x_exten = x_exten->next) {
 			const char *regex = switch_xml_attr(x_exten, "regex");
