@@ -35,6 +35,7 @@
  *
  * Moises Silva <moy@sangoma.com>
  * David Yat Sin <dyatsin@sangoma.com>
+ * James Zhang <jzhang@sangoma.com>
  *
  */
 
@@ -1086,14 +1087,12 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 			/*now go to the RING state */
 			state_flag = 0;
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
-			
 		} else if (i >= sngss7_info->circuit->min_digits) {
 			SS7_DEBUG_CHAN(ftdmchan, "Received %d digits (min digits = %d)\n", i, sngss7_info->circuit->min_digits);
 
 			/*now go to the RING state */
 			state_flag = 0;
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
-			
 		} else {
 			/* if we are coming from idle state then we have already been here once before */
 			if (ftdmchan->last_state != FTDM_CHANNEL_STATE_IDLE) {
@@ -1101,7 +1100,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 										i,
 										sngss7_info->circuit->min_digits,
 										ftdmchan->caller_data.dnis.digits);
-		
+
 				/* start ISUP t35 */
 				if (ftdm_sched_timer (sngss7_info->t35.sched,
 										"t35",
@@ -1530,20 +1529,47 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 
 		/* check if there is a glared call that needs to be processed */
 		if (sngss7_test_ckt_flag(sngss7_info, FLAG_GLARE)) {
-			
-			/* clear the glare flag */
 			sngss7_clear_ckt_flag (sngss7_info, FLAG_GLARE);
 
-			/* check if we have an IAM stored...if we don't have one just exit */
 			if (sngss7_info->glare.circuit != 0) {
-				/* send the saved call back in to us */
-				handle_con_ind (0, 
-								sngss7_info->glare.spInstId, 
-								sngss7_info->glare.circuit, 
-								&sngss7_info->glare.iam);
+				int bHandle=0;
+				switch (g_ftdm_sngss7_data.cfg.glareResolution) {
+					case SNGSS7_GLARE_DOWN:
+						SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Giving control to the other side, handling copied IAM from glare. \n", sngss7_info->circuit->cic);
+						bHandle = 1;
+		 				break;
 
+					case SNGSS7_GLARE_PC:
+						SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Trying to handle IAM copied from glare. \n", sngss7_info->circuit->cic);
+						SS7_INFO_CHAN(ftdmchan,"[CIC:%d]My PC = %d, incoming PC = %d. \n", sngss7_info->circuit->cic,
+										g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].spc, 
+										g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].dpc );
+						
+						if( g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].spc > g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].dpc ) 
+						{
+							if ((sngss7_info->circuit->cic % 2) == 1 ) {
+								bHandle = 1;
+							}
+						} else {
+							if( (sngss7_info->circuit->cic % 2) == 0 ) {
+								bHandle = 1;
+							}
+						}
+					
+						break;
+	 				default:		/* if configured as SNGSS7_GLARE_CONTROL, always abandon incoming glared IAM. */
+	 					bHandle = 0;
+	 					break;
+				}
+				
+				if (!bHandle) {
+					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Handling glare IAM. \n", sngss7_info->circuit->cic);
+					handle_con_ind (0, sngss7_info->glare.spInstId, sngss7_info->glare.circuit, &sngss7_info->glare.iam);				
+				}
+				
 				/* clear the glare info */
 				memset(&sngss7_info->glare, 0x0, sizeof(sngss7_glare_data_t));
+				state_flag = 0;
 			}
 		}
 

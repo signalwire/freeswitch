@@ -33,6 +33,7 @@
  * Contributors: 
  *
  * Ricardo Barroetaveña <rbarroetavena@anura.com.ar>
+ * James Zhang <jzhang@sangoma.com>
  *
  */
 
@@ -96,7 +97,7 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	sngss7_chan_data_t *sngss7_info = NULL;
 	ftdm_channel_t *ftdmchan = NULL;
 	char var[FTDM_DIGITS_LIMIT];
-
+	
 	memset(var, '\0', sizeof(var));
 
 	ftdm_running_return(FTDM_FAIL);
@@ -199,7 +200,6 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			} else {
 				SS7_INFO_CHAN(ftdmchan,"No Called party (DNIS) information in IAM!%s\n", " ");
 			}
-
 			copy_redirgNum_from_sngss7(ftdmchan, &siConEvnt->redirgNum);
 			copy_redirgInfo_from_sngss7(ftdmchan, &siConEvnt->redirInfo);
 			copy_genNmb_from_sngss7(ftdmchan, &siConEvnt->genNmb);
