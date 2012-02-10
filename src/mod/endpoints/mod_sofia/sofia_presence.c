@@ -455,7 +455,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	if ((pname = switch_event_get_header(event, "sofia-profile"))) {
 		profile = sofia_glue_find_profile(pname);
 	}
-
+	
 	if (!profile) {
 		if (!host || !(profile = sofia_glue_find_profile(host))) {
 			char *sql;
@@ -464,7 +464,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 			sql = switch_mprintf("select profile_name from sip_registrations where hostname='%q' and (sip_host='%s' or mwi_host='%s')", 
 								 mod_sofia_globals.hostname, host, host);
-
+			
 			if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 				switch_console_callback_match_node_t *m;
 
@@ -491,6 +491,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 			}
 		}
 	}
+
 
 	if (profile->domain_name && strcasecmp(profile->domain_name, host)) {
 		host = profile->domain_name;
@@ -548,8 +549,8 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 							 stream.data, mod_sofia_globals.hostname, profile->name, user, host);
 	} else if (call_id) {
 		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q' "
-							 "from sip_registrations where hostname='%q' and profile_name='%q' and mwi_user='%q' and mwi_host='%q' and call_id='%q'", 
-							 mod_sofia_globals.hostname, profile->name, stream.data, user, host, call_id);
+							 "from sip_registrations where hostname='%q' and profile_name='%q' and call_id='%q'", 
+							 stream.data, mod_sofia_globals.hostname, profile->name, call_id);
 	}
 
 	if (sql) {
