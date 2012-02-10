@@ -2507,7 +2507,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			
 			if (sofia_test_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY)) {
 				if (!strcasecmp(astate, "ringing") || !strcasecmp(astate, "early")) {
-					astate = "confirmed";
+					goto end;
 				}
 			}
 			
@@ -2750,6 +2750,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	}
 
 	send_presence_notify(profile, full_to, full_from, contact, expires, call_id, event, ip, port, ct, pl, NULL);
+
+
+ end:
 
 	switch_safe_free(free_me);
 
