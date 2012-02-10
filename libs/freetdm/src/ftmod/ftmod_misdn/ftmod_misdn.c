@@ -661,7 +661,7 @@ static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct m
 		bch_info = &info->bch[0];
 
 		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN port state:\n\tD-Chan state:\t%hu\n\tD-Chan flags:\t%#lx\n\tD-Chan proto:\t%hu\n\tD-Chan active:\t%s\n",
-			info->dch.state, info->dch.ch.Flags, info->dch.ch.protocol, info->dch.ch.Flags & (1 << 6) ? "yes" : "no");
+			info->dch.state, info->dch.ch.Flags, info->dch.ch.protocol, (info->dch.ch.Flags & (1 << 6)) ? "yes" : "no");
 
 		/* TODO: try to translate this to a usable set of alarm flags */
 
