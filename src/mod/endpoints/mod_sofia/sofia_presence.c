@@ -3724,6 +3724,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 	int count = 1, sub_count = 0;
 	char *contact_str;
 	int open = 1;
+	sofia_nat_parse_t np = { { 0 } };
 
 	if (!sip) {
 		return;
@@ -3732,7 +3733,8 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 	from = sip->sip_from;
 	payload = sip->sip_payload;
 
-	contact_str = sofia_glue_gen_contact_str(profile, sip, nh, de, NULL);
+	np.fs_path = 1;
+	contact_str = sofia_glue_gen_contact_str(profile, sip, nh, de, &np);
 
 	if (from) {
 		from_user = (char *) from->a_url->url_user;
