@@ -1861,6 +1861,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
 	int auth_only = 0, authed = 0;
+	switch_event_t *event;
 
 	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
 		caller_id_name = caller_profile->caller_id_name;
@@ -2453,6 +2454,14 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						}
 					}
 				}
+
+				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Action", "authentication");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Auth-Result", auth ? "success" : "fail");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-User", myid);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
+				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
 
 				FREE_DOMAIN_ROOT();
 
