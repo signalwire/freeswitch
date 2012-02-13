@@ -2262,7 +2262,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *open_closed = NULL;
 	char *dialog_status = NULL;
 	char *dialog_rpid = NULL;
-
+	char *default_dialog = "partial";
 	const char *ct = "no/idea";
 
 	char *to = NULL;
@@ -2417,6 +2417,16 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *call_state = switch_event_get_header(helper->event, "channel-state");
 
 
+		if (user_agent && switch_stristr("snom", user_agent) && uuid) {
+			default_dialog = "full" ;
+		}
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "WTF [%s][%s]\n", user_agent, default_dialog);
+
+
+
+
+
 		if (call_state && !strcasecmp(call_state, "cs_hangup")) {
 			astate = "hangup";
 		}
@@ -2479,7 +2489,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			stream.write_function(&stream,
 								  "<?xml version=\"1.0\"?>\n"
 								  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
-								  "version=\"%s\" state=\"partial\" entity=\"%s\">\n", version, clean_id);
+								  "version=\"%s\" state=\"%s\" entity=\"%s\">\n", version, default_dialog, clean_id);
 								  
 								  
 		}
@@ -2505,12 +2515,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				astate = "terminated";
 			}
 			
-			if (sofia_test_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY)) {
-				if (!strcasecmp(astate, "ringing") || !strcasecmp(astate, "early")) {
-					goto end;
-				}
-			}
-			
 			if (is_dialog) {
 
 				if (!strcasecmp(astate, "ringing")) {
@@ -2532,8 +2536,12 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 					astate = "early";
 				}
 			}
-			
 
+
+			if (sofia_test_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY) && !strcasecmp(astate, "early")) {
+				goto end;
+			}
+			
 			if (!strcasecmp(astate, "early") || !strcasecmp(astate, "confirmed")) {
 
 				clean_to_user = switch_mprintf("%s", sub_to_user ? sub_to_user : to_user);
