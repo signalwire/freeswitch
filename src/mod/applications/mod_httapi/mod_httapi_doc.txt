@@ -80,6 +80,21 @@ asr-engine          : ASR engine to use
 asr-grammar         : ASR grammar to use
 
 
+<vmname file name action digit-timeout input-timeout loops><bind action strip>*EXPR*</bind></playback>
+		    : Plays a vm name and optionally collects input.
+
+ATTRS:
+file                : The file
+name                : Param name to save result.
+error-file          : Error file to play on invalid input.
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
+digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
+input-timeout       : Timeout waiting for more digits in a multi-digit input.
+loops               : max times to play the file when input bindings are present.
+
+
+
 
 
 <record file name error-file action digit-timeout input-timeout><bind action strip>*EXPR*</bind></record>

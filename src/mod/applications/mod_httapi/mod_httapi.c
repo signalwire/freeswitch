@@ -395,6 +395,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 	const char *say_gender = NULL;
 	const char *sp_engine = NULL;
 	const char *sp_grammar = NULL;
+	char *free_string = NULL;
 
 	if (!strcasecmp(tag_name, "say")) {
 		say_lang = switch_xml_attr(tag, "language");
@@ -431,6 +432,48 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 		} else {
 			play = 1;
 		}
+	} else if (!strcasecmp(tag_name, "vmname")) {
+		const char *id = switch_xml_attr(tag, "id");
+		char *cmd, *resp;
+		switch_stream_handle_t stream = { 0 };
+		char *p;
+
+		SWITCH_STANDARD_STREAM(stream);
+		
+		cmd = switch_mprintf("%s|name_path", id);
+
+		switch_api_execute("vm_prefs", cmd, NULL, &stream);
+
+		resp = (char *) stream.data;
+
+		if (!zstr(resp)) {
+			if (switch_stristr("://", resp) || switch_file_exists(resp, NULL) == SWITCH_STATUS_SUCCESS) {
+				play = 1;
+				file = free_string = resp;
+				resp = NULL;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid file! [%s]\n", resp);
+				switch_safe_free(resp);
+				return SWITCH_STATUS_FALSE;
+			}
+		} else {
+			switch_safe_free(resp);
+			say_lang = switch_xml_attr(tag, "language");
+			say_gender = switch_xml_attr(tag, "gender");
+			say_type = "name_spelled";
+			say_method = "pronounced";
+			free_string = strdup(id);
+			if ((p = strchr(free_string, '@'))) {
+				*p = '\0';
+			}
+			say = 1;
+
+			body = free_string;
+			switch_ivr_play_file(client->session, NULL, "voicemail/vm-person.wav", &nullargs);
+			
+		}
+
+		switch_safe_free(resp);
 	}
 
 
@@ -618,11 +661,13 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 			}
 		}
 	}
-
+	
 	if (dmachine) {
 		switch_ivr_dmachine_destroy(&dmachine);
 	}
-	printf("WTF %d\n", status);
+
+	switch_safe_free(free_string);
+	
 	return status;
 }
 
@@ -2790,6 +2835,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	bind_parser("record", parse_record);
 	bind_parser("recordCall", parse_record_call);
 	bind_parser("playback", parse_playback);
+	bind_parser("vmName", parse_playback);
 	bind_parser("speak", parse_playback);
 	bind_parser("say", parse_playback);
 	bind_parser("conference", parse_conference);
