@@ -2421,12 +2421,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			default_dialog = "full" ;
 		}
 		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "WTF [%s][%s]\n", user_agent, default_dialog);
-
-
-
-
-
 		if (call_state && !strcasecmp(call_state, "cs_hangup")) {
 			astate = "hangup";
 		}
