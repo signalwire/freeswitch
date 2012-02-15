@@ -5900,53 +5900,56 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_core_session_message_t *msg;
 
 						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
-							tech_pvt->hold_laps = 1;
-							switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
-							switch_channel_clear_flag(channel, CF_PROXY_MODE);
-							sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
+							if (!switch_stristr("sendonly", r_sdp) || !switch_stristr("0.0.0.0", r_sdp)) {
+								tech_pvt->hold_laps = 1;
+								switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
+								switch_channel_clear_flag(channel, CF_PROXY_MODE);
+								sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
-							if (!switch_channel_media_ready(channel)) {
-								if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
-									//const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+								if (!switch_channel_media_ready(channel)) {
+									if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+										//const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
-									tech_pvt->num_codecs = 0;
+										tech_pvt->num_codecs = 0;
+										sofia_glue_tech_prepare_codecs(tech_pvt);
+										if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+											switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
+											status = SWITCH_STATUS_FALSE;
+											switch_core_session_rwunlock(other_session);
+											goto done;
+										}
+									}
+								}
+								
+
+								if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 									sofia_glue_tech_prepare_codecs(tech_pvt);
-									if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
-										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
-										status = SWITCH_STATUS_FALSE;
+									if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
+										switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 										switch_core_session_rwunlock(other_session);
 										goto done;
 									}
 								}
-							}
+								sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 
-							if (!switch_rtp_ready(tech_pvt->rtp_session)) {
-								sofia_glue_tech_prepare_codecs(tech_pvt);
-								if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
-									switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-									switch_core_session_rwunlock(other_session);
-									goto done;
+								if (sofia_use_soa(tech_pvt)) {
+									nua_respond(tech_pvt->nh, SIP_200_OK,
+												SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+												SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+												SOATAG_REUSE_REJECTED(1),
+												SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
+												TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+								} else {
+									nua_respond(tech_pvt->nh, SIP_200_OK,
+												NUTAG_MEDIA_ENABLE(0),
+												SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+												SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str), TAG_END());
 								}
-							}
-							sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
+								launch_media_on_hold(session);
 
-							if (sofia_use_soa(tech_pvt)) {
-								nua_respond(tech_pvt->nh, SIP_200_OK,
-											SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-											SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-											SOATAG_REUSE_REJECTED(1),
-											SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
-											TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
-							} else {
-								nua_respond(tech_pvt->nh, SIP_200_OK,
-											NUTAG_MEDIA_ENABLE(0),
-											SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-											SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str), TAG_END());
+								switch_core_session_rwunlock(other_session);
+								goto done;
 							}
-							launch_media_on_hold(session);
-
-							switch_core_session_rwunlock(other_session);
-							goto done;
 						}
 
 						if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
