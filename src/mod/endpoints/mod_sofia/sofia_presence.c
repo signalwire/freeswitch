@@ -635,42 +635,42 @@ static void do_normal_probe(switch_event_t *event)
 		switch_safe_free(sql);
 
 		sql = switch_mprintf("select sip_registrations.sip_user, "
-							 "sip_registrations.sub_host, "
-							 "sip_registrations.status, "
-							 "sip_registrations.rpid, "
-							 "'', "
-							 "sip_dialogs.uuid, "
-							 "sip_dialogs.state, "
-							 "sip_dialogs.direction, "
-							 "sip_dialogs.sip_to_user, "
-							 "sip_dialogs.sip_to_host, "
+								 "sip_registrations.sub_host, "
+								 "sip_registrations.status, "
+								 "sip_registrations.rpid, "
+								 "'', "
+								 "sip_dialogs.uuid, "
+								 "sip_dialogs.state, "
+								 "sip_dialogs.direction, "
+								 "sip_dialogs.sip_to_user, "
+								 "sip_dialogs.sip_to_host, "
 
-							 "sip_presence.status,"
-							 "sip_presence.rpid,"
-							 "sip_dialogs.presence_id, "
-							 "sip_presence.open_closed,"
-							 "'%q','%q','%q' "
-							 "from sip_registrations "
+								 "sip_presence.status,"
+								 "sip_presence.rpid,"
+								 "sip_dialogs.presence_id, "
+								 "sip_presence.open_closed,"
+								 "'%q','%q','%q' "
+								 "from sip_registrations "
 
-							 "left join sip_dialogs on "
-							 "sip_dialogs.hostname = sip_registrations.hostname and sip_dialogs.profile_name = sip_registrations.profile_name and ("
-							 "sip_dialogs.presence_id = sip_registrations.sip_user %q '@' %q sip_registrations.sub_host "
-							 "or (sip_dialogs.sip_from_user = sip_registrations.sip_user "
-							 "and sip_dialogs.sip_from_host = sip_registrations.sip_host)) "
+								 "left join sip_dialogs on "
+								 "sip_dialogs.hostname = sip_registrations.hostname and sip_dialogs.profile_name = sip_registrations.profile_name and ("
+								 "sip_dialogs.presence_id = sip_registrations.sip_user %q '@' %q sip_registrations.sub_host "
+								 "or (sip_dialogs.sip_from_user = sip_registrations.sip_user "
+								 "and sip_dialogs.sip_from_host = sip_registrations.sip_host)) "
  
-							 "left join sip_presence on "
-							 "sip_presence.hostname=sip_registrations.hostname and "
-							 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.orig_server_host=sip_presence.sip_host and "
-							 "sip_registrations.profile_name=sip_presence.profile_name) "
-							 "where sip_registrations.hostname='%q' and sip_registrations.profile_name='%q' and sip_dialogs.call_info_state != 'seized' "
-							 "and sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
-							 "(sip_registrations.orig_server_host='%q' or sip_registrations.sub_host='%q' "
-							 "))",
-							 dh.status, dh.rpid, switch_str_nil(sub_call_id),
-							 switch_sql_concat(), switch_sql_concat(),
-							 mod_sofia_globals.hostname, profile->name, probe_euser, probe_host,  probe_euser, probe_host, probe_host);
+								 "left join sip_presence on "
+								 "sip_presence.hostname=sip_registrations.hostname and "
+								 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.orig_server_host=sip_presence.sip_host and "
+								 "sip_registrations.profile_name=sip_presence.profile_name) "
+								 "where sip_registrations.hostname='%q' and sip_registrations.profile_name='%q' and sip_dialogs.call_info_state != 'seized' "
+								 "and sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
+								 "(sip_registrations.orig_server_host='%q' or sip_registrations.sub_host='%q' "
+								 "))",
+								 dh.status, dh.rpid, switch_str_nil(sub_call_id),
+								 switch_sql_concat(), switch_sql_concat(),
+								 mod_sofia_globals.hostname, profile->name, probe_euser, probe_host,  probe_euser, probe_host, probe_host);
 		
-		
+			
 
 		switch_assert(sql);
 				
@@ -1115,7 +1115,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				}
 
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_dialog_callback, &dh);
-
+				
 
 				switch_safe_free(sql);
 
@@ -1563,7 +1563,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 		}
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "resub", "true");
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "resub", "true");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", status);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -1595,11 +1595,8 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 			}
 		}
 
-
 		switch_event_fire(&event);
 	}
-
-
 
 	switch_safe_free(free_me);
 
@@ -2415,7 +2412,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		char *clean_from_user = NULL;
 		int force_status = 0;
 		const char *call_state = switch_event_get_header(helper->event, "channel-state");
-
+		char *call_info_state = switch_event_get_header(helper->event, "presence-call-info-state");
 
 		if (user_agent && switch_stristr("snom", user_agent) && uuid) {
 			default_dialog = "full" ;
@@ -2532,7 +2529,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			}
 
 
-			if (sofia_test_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY) && !strcasecmp(astate, "early")) {
+			if (sofia_test_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY) && 
+				(!zstr(call_info_state) && (!strcasecmp(call_info_state, "alterting") || !strcasecmp(call_info_state, "progressing")))) {
 				goto end;
 			}
 			
@@ -3552,14 +3550,16 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					switch_event_fire(&sevent);
 				}
 			} else if (!strcasecmp(event, "presence")) {
-				if (switch_event_create(&sevent, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+				if (switch_event_create(&sevent, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 					switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "login", profile->name);
 					switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "presence-source", "subscribe");
-					switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+					switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
+					switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "to", "%s@%s", to_user, to_host);
+					switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 					switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 					switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "status", "Registered");
-					switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "call-id", call_id);
+					switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "sub-call-id", call_id);
 					switch_event_fire(&sevent);
 				}					
 			}

@@ -604,6 +604,7 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 	switch_event_t *event;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
 	const char *call_info = NULL;
+	char *call_info_state = "active";
 
 	if (!status) {
 		type = SWITCH_EVENT_PRESENCE_OUT;
@@ -634,31 +635,30 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 
-		if (call_info) {
-			char *call_info_state = "active";
 
-			if (!switch_channel_up_nosig(channel)) {
-				call_info_state = "idle";
-			} else if (!strcasecmp(status, "hold-private")) {
-				call_info_state = "held-private";
-			} else if (!strcasecmp(status, "hold")) {
-				call_info_state = "held";
-			} else if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
-				if (channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
-					call_info_state = "progressing";
-				} else {
-					call_info_state = "alerting";
-				}
+		if (!switch_channel_up_nosig(channel)) {
+			call_info_state = "idle";
+		} else if (!strcasecmp(status, "hold-private")) {
+			call_info_state = "held-private";
+		} else if (!strcasecmp(status, "hold")) {
+			call_info_state = "held";
+		} else if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+			if (channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
+				call_info_state = "progressing";
+			} else {
+				call_info_state = "alerting";
 			}
-
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-info-state", call_info_state);
+		}
+		
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-info-state", call_info_state);
+		
+		if (call_info) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-info", call_info);
 		}
 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction",
 									   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 
-		
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", channel->event_count++);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-File", file);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Function", func);
