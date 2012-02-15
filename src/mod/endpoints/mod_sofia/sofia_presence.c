@@ -3030,12 +3030,12 @@ static int sync_sla(sofia_profile_t *profile, const char *to_user, const char *t
 		if (unseize) {
 			sql = switch_mprintf("select call_id,expires,sub_to_user,sub_to_host,event,full_to,full_from,contact,expires,network_ip,network_port "
 								 "from sip_subscriptions where call_id='%q' and hostname='%q' and profile_name='%q')", 
-								 mod_sofia_globals.hostname, call_id, profile->name);
+								 call_id, mod_sofia_globals.hostname, profile->name);
 
 		} else {
 			sql = switch_mprintf("select call_id,expires,sub_to_user,sub_to_host,event,full_to,full_from,contact,expires,network_ip,network_port "
 								 "from sip_subscriptions where call_id='%q' and hostname='%q' and profile_name='%q'",
-								 mod_sofia_globals.hostname, call_id, profile->name);
+								 call_id, mod_sofia_globals.hostname, profile->name);
 		}
 
 	} else {
