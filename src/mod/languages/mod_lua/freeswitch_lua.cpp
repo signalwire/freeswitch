@@ -319,7 +319,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 				arg_count++;
 			}
 
-			docall(L, arg_count, 1, 1);
+			docall(L, arg_count, 0, 1);
 			ret = lua_tostring(L, -1);
 			lua_pop(L, 1);
 
