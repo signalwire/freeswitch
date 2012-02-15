@@ -446,7 +446,12 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 					/* Do nothing */
 					break;
 				case FTDM_CHANNEL_STATE_RESET:
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Processing SETUP but channel in RESET state, ignoring\n");
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring ALERT/PROCEED/PROGRESS because channel is in RESET state\n");
+					break;
+				case FTDM_CHANNEL_STATE_HANGUP:
+				case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+					/* Ignore this message as we already started the hangup process */
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring ALERT/PROCEED/PROGRESS because we are already hanging up\n");
 					break;
 				default:
 					ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Processing ALERT/PROCEED/PROGRESS in an invalid state (%s)\n", ftdm_channel_state2str(ftdmchan->state));
