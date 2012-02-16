@@ -46,6 +46,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 {	
 	const char *var = NULL;
 	SiConEvnt 			iam;
+	ftdm_bool_t         native_going_up = FTDM_FALSE;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
 	
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
@@ -81,9 +82,11 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 				/* flush our own queue */
 				sngss7_flush_queue(sngss7_info->event_queue);
 
-				/* go up until release comes, note that state processing is done different and much simpler when there is a peer  */
-				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
-				ftdm_channel_advance_states(ftdmchan);
+				/* Go to up until release comes, note that state processing is done different and much simpler when there is a peer,
+				   We can't go to UP state right away yet though, so do not set the state to UP here, wait until the end of this function
+                   because moving from one state to another causes the ftdmchan->usrmsg structure to be wiped 
+				   and we still need those variables for further IAM processing */
+				native_going_up = FTDM_TRUE;
 			}
 		}
 	}
@@ -210,6 +213,18 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 						sngss7_info->circuit->id,
 						&iam,
 						0);
+
+	if (native_going_up) {
+		/* 
+	      Note that this function (ft_to_sngss7_iam) is run within the main SS7 processing loop in
+		  response to the DIALING state handler, we can set the state to UP here and that will
+		  implicitly complete the DIALING state, but we *MUST* also advance the state handler
+		  right away for a native bridge, otherwise, the processing state function (ftdm_sangoma_ss7_process_state_change)
+		  will complete the state without having executed the handler for FTDM_CHANNEL_STATE_UP, and we won't notify
+		  the user sending FTDM_SIGEVENT_UP which can cause the application to misbehave (ie, no audio) */
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
+		ftdm_channel_advance_states(ftdmchan);
+    }
 
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;

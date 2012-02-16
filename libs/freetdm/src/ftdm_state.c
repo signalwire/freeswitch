@@ -48,9 +48,15 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 	ftdm_time_t diff = 0;
 	ftdm_channel_state_t state = fchan->state;
 
+	if (fchan->state_status == FTDM_STATE_STATUS_NEW) {
+		ftdm_log_chan_ex(fchan, file, func, line, FTDM_LOG_LEVEL_CRIT, 
+						"Asking to complete state change from %s to %s in %llums, but the state is still unprocessed (this might be a bug!)\n", 
+						ftdm_channel_state2str(fchan->last_state), ftdm_channel_state2str(state), diff);
+		/* We should probably return here with FTDM_FAIL if we don't see this message in production environments for a while (2012-02-16) */
+	}
+
 	if (fchan->state_status == FTDM_STATE_STATUS_COMPLETED) {
-		ftdm_assert_return(!ftdm_test_flag(fchan, FTDM_CHANNEL_STATE_CHANGE), FTDM_FAIL, 
-				"State change flag set but state is not completed\n");
+		ftdm_assert_return(!ftdm_test_flag(fchan, FTDM_CHANNEL_STATE_CHANGE), FTDM_FAIL, "State change flag set but state is already completed\n");
 		return FTDM_SUCCESS;
 	}
 
