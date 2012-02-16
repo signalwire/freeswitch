@@ -1650,11 +1650,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		our_chan = switch_core_session_get_channel(*new_session);
 
+		/* Figure out if there is a native bridge requested through SIP x headers */
 		if (network_peer_uuid) {
 			switch_core_session_t *network_peer = switch_core_session_locate(network_peer_uuid);
 			if (network_peer) {
 				const char *my_uuid = switch_core_session_get_uuid(*new_session);
 				private_t *peer_private = switch_core_session_get_private(network_peer);
+				peer_chan = switch_core_session_get_channel(network_peer);
 				switch_set_string(tech_pvt->network_peer_uuid, network_peer_uuid);
 				switch_set_string(peer_private->network_peer_uuid, my_uuid);
 
@@ -1665,6 +1667,15 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				ftdm_channel_get_span_id(peer_private->ftdmchan), ftdm_channel_get_id(peer_private->ftdmchan));
 				switch_core_session_rwunlock(network_peer);
 			}
+		/* Figure out if there is a native bridge requested through dial plan variable and the originating channel is also freetdm (not going through SIP) */
+		} else if (session
+		 && (var = channel_get_variable(session, var_event, FREETDM_VAR_PREFIX "native_sigbridge")) 
+		 && switch_true(var)
+		 && switch_core_session_compare(*new_session, session)) {
+			private_t *peer_pvt = switch_core_session_get_private(session);
+			peer_chan = switch_core_session_get_channel(session);
+			snprintf(sigbridge_peer, sizeof(sigbridge_peer), "%u:%u", 
+					ftdm_channel_get_span_id(peer_pvt->ftdmchan), ftdm_channel_get_id(peer_pvt->ftdmchan));
 		}
 
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
@@ -1678,20 +1689,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		hunt_data.tech_pvt = tech_pvt;
 		caller_data.priv = &hunt_data;
 
-		if (session
-		 && (var = channel_get_variable(session, var_event, FREETDM_VAR_PREFIX "native_sigbridge")) 
-		 && switch_true(var)
-		 && switch_core_session_compare(*new_session, session)) {
-			private_t *peer_pvt = switch_core_session_get_private(session);
-			snprintf(sigbridge_peer, sizeof(sigbridge_peer), "%u:%u", 
-					ftdm_channel_get_span_id(peer_pvt->ftdmchan), ftdm_channel_get_id(peer_pvt->ftdmchan));
-		}
-
 		if (session && !zstr(sigbridge_peer)) {
 			peer_chan = switch_core_session_get_channel(session);
 			ftdm_usrmsg_add_var(&usrmsg, "sigbridge_peer", sigbridge_peer);
 		}
-
 
 		if ((status = ftdm_call_place_ex(&caller_data, &hunting, &usrmsg)) != FTDM_SUCCESS) {
 			if (tech_pvt->read_codec.implementation) {
