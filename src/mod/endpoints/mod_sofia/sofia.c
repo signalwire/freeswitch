@@ -5900,7 +5900,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_core_session_message_t *msg;
 
 						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
-							if (!switch_stristr("sendonly", r_sdp) || !switch_stristr("0.0.0.0", r_sdp)) {
+							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) {
 								tech_pvt->hold_laps = 1;
 								switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 								switch_channel_clear_flag(channel, CF_PROXY_MODE);
