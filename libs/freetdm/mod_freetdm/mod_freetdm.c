@@ -1400,6 +1400,22 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			ftdm_set_string(caller_data.loc.digits, sipvar);
 		}
 
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-LOC-Screen");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_loc_screen_ind", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-LOC-Presentation");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_loc_pres_ind", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-LOC-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_loc_nadi", sipvar);
+		}
+
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS-TON");
 		if (sipvar) {
 			caller_data.dnis.type = (uint8_t)atoi(sipvar);
@@ -1513,6 +1529,24 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDINF-Reason");
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdinfo_reason", sipvar);
+		}
+
+		
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-OCN");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_ocn", sipvar);
+		}
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-OCN-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_ocn_nadi", sipvar);
+		}
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-OCN-Plan");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_ocn_plan", sipvar);
+		}
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-OCN-Presentation");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_ocn_pres", sipvar);
 		}
 	}
 
@@ -1944,9 +1978,28 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		}
 
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_loc_nadi");
-		printf ( "ss7_loc_nadi = %s \n " , var_value );
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-LOC-NADI", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_ocn");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OCN", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_ocn_nadi");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OCN-NADI", "%s", var_value);
+		}
+		
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_ocn_plan");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OCN-Plan", "%s", var_value);
+		}
+		
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_ocn_pres");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OCN-Presentation", "%s", var_value);
 		}
 	}
 

@@ -135,6 +135,11 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 				/* Redirecting Information */
 				copy_redirgInfo_to_sngss7(ftdmchan, &iam.redirInfo);
 			}
+
+			if (iam.origCdNum.eh.pres != PRSNT_NODEF) {
+				/* Original Called Number */
+				copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
+			}
 		}
 		/* since this is the first time we dequeue an event from the peer, make sure our main thread process any other events,
 		   this will trigger the interrupt in our span peer_chans queue which will wake up our main thread if it is sleeping */
@@ -157,6 +162,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 
 		/* Forward Call Indicators */
 		copy_fwdCallInd_to_sngss7(ftdmchan, &iam.fwdCallInd);
+
+		/* Original Called Number */
+		copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
 	} else {
 		/* Nature of Connection Indicators */
 		copy_natConInd_to_sngss7(ftdmchan, &iam.natConInd);
@@ -193,6 +201,8 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		/* Redirecting Information */
 		copy_redirgInfo_to_sngss7(ftdmchan, &iam.redirInfo);
 
+		/* Original Called Number */
+		copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
 
 		/* Access Transport */
 		copy_accTrnspt_to_sngss7(ftdmchan, &iam.accTrnspt);
@@ -236,6 +246,7 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	SiCnStEvnt acm;
+	const char *backwardInd = NULL;
 	
 	memset (&acm, 0x0, sizeof (acm));
 	
@@ -253,8 +264,16 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	acm.bckCallInd.intInd.val 			= INTIND_NOINTW;
 	acm.bckCallInd.end2EndInfoInd.pres	= PRSNT_NODEF;
 	acm.bckCallInd.end2EndInfoInd.val	= E2EINF_NOINFO;
+
 	acm.bckCallInd.isdnUsrPrtInd.pres	= PRSNT_NODEF;
-	acm.bckCallInd.isdnUsrPrtInd.val	= ISUP_USED;
+	acm.bckCallInd.isdnUsrPrtInd.val	= ISUP_NOTUSED;
+	backwardInd = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "acm_bi_iup");
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied backward indicator ISDN user part indicator ACM, value \"%s\"\n", backwardInd);
+	if (!ftdm_strlen_zero(backwardInd)) {
+		if (atoi(backwardInd) != 0 ) {
+			acm.bckCallInd.isdnUsrPrtInd.val	= ISUP_USED;
+		}
+	}
 	acm.bckCallInd.holdInd.pres			= PRSNT_NODEF;
 	acm.bckCallInd.holdInd.val			= HOLD_NOTREQD;
 	acm.bckCallInd.isdnAccInd.pres		= PRSNT_NODEF;
