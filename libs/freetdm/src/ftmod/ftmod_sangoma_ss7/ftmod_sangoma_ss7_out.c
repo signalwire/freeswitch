@@ -268,8 +268,8 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	acm.bckCallInd.isdnUsrPrtInd.pres	= PRSNT_NODEF;
 	acm.bckCallInd.isdnUsrPrtInd.val	= ISUP_NOTUSED;
 	backwardInd = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "acm_bi_iup");
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied backward indicator ISDN user part indicator ACM, value \"%s\"\n", backwardInd);
 	if (!ftdm_strlen_zero(backwardInd)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied backward indicator ISDN user part indicator ACM, value \"%s\"\n", backwardInd);
 		if (atoi(backwardInd) != 0 ) {
 			acm.bckCallInd.isdnUsrPrtInd.val	= ISUP_USED;
 		}
