@@ -2321,7 +2321,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 
 	new_profile = switch_caller_profile_clone(session, profile);
 	new_profile->destination_number = switch_core_strdup(new_profile->pool, exten);
-	new_profile->times = profile->times;
+	new_profile->times = (switch_channel_timetable_t *) switch_core_session_alloc(session, sizeof(*new_profile->times));
+	*new_profile->times = *profile->times;
 
 
 	if (!zstr(dialplan)) {
