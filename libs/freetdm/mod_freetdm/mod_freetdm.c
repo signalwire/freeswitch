@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Moises Silva <moy@sangoma.com>
  * David Yat Sin <dyatsin@sangoma.com>
+ * James Zhang <jzhang@sangoma.com>
  *
  *
  * mod_freetdm.c -- FreeTDM Endpoint Module

@@ -640,7 +640,41 @@ ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *r
 
 ftdm_status_t copy_ocn_from_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNum)
 {
-	return FTDM_FAIL;
+
+	char val[20];
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	if (origCdNum->eh.pres != PRSNT_NODEF ) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Original Called Number available\n");
+		return FTDM_SUCCESS;
+	}
+
+	
+	if (origCdNum->addrSig.pres == PRSNT_NODEF) {
+		copy_tknStr_from_sngss7(origCdNum->addrSig, val, origCdNum->oddEven);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Original Called Number digits:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_ocn", val);
+	}
+
+	if (origCdNum->natAddr.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", origCdNum->natAddr.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Original Called Number - NADI:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_ocn_nadi", val);
+	}
+
+	if (origCdNum->numPlan.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", origCdNum->numPlan.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Original Called Number -plan:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_ocn_plan", val);
+	}
+
+	if (origCdNum->presRest.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", origCdNum->presRest.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Original Called Number - presentation:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_ocn_pres", val);
+	}
+		
+	return FTDM_SUCCESS;
 }
 
 ftdm_status_t copy_ocn_to_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNum) 
