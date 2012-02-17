@@ -270,6 +270,8 @@ SWITCH_DECLARE(void) switch_core_media_bug_flush(_In_ switch_media_bug_t *bug);
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_flush_all(_In_ switch_core_session_t *session);
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_set_pre_buffer_framecount(switch_media_bug_t *bug, uint32_t framecount);
+
 ///\}
 
 ///\defgroup pa1 Port Allocation

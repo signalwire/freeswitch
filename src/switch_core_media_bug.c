@@ -112,6 +112,9 @@ SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *b
 
 SWITCH_DECLARE(void) switch_core_media_bug_flush(switch_media_bug_t *bug)
 {
+
+	bug->record_pre_buffer_count = 0;
+
 	if (bug->raw_read_buffer) {
 		switch_mutex_lock(bug->read_mutex);
 		switch_buffer_zero(bug->raw_read_buffer);
@@ -142,6 +145,13 @@ SWITCH_DECLARE(void) switch_core_media_bug_inuse(switch_media_bug_t *bug, switch
 	} else {
 		*writep = 0;
 	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_set_pre_buffer_framecount(switch_media_bug_t *bug, uint32_t framecount)
+{
+	bug->record_pre_buffer_max = framecount;
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame, switch_bool_t fill)
@@ -188,6 +198,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		do_write = switch_buffer_inuse(bug->raw_write_buffer);
 		switch_mutex_unlock(bug->write_mutex);
 	}
+
+	if (bug->record_frame_size && bug->record_pre_buffer_max && (do_read || do_write) && bug->record_pre_buffer_count < bug->record_pre_buffer_max) {
+		bug->record_pre_buffer_count++;
+		return SWITCH_STATUS_FALSE;
+	}
 	
 	if (bug->record_frame_size) {
 		if ((do_read && do_read < bug->record_frame_size) || (do_write && do_write < bug->record_frame_size)) {
@@ -212,7 +227,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 			bug->record_frame_size = do_read;
 		}
 	}
-	
+
 	fill_read = !do_read;
 	fill_write = !do_write;
 
@@ -220,6 +235,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (do_read && do_read > SWITCH_RECOMMENDED_BUFFER_SIZE) {
+		do_read = 1280;
+	}
+
+	if (do_write && do_write > SWITCH_RECOMMENDED_BUFFER_SIZE) {
+		do_write = 1280;
+	}
+	
 	if (do_read) {
 		switch_mutex_lock(bug->read_mutex);
 		frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer, frame->data, do_read);

@@ -1765,6 +1765,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		return status;
 	}
 
+	if ((p = switch_channel_get_variable(channel, "RECORD_PRE_BUFFER_FRAMES"))) {
+		int tmp = atoi(p);
+		
+		if (tmp > 0) {
+			switch_core_media_bug_set_pre_buffer_framecount(bug, tmp);
+		}
+	} else {
+		switch_core_media_bug_set_pre_buffer_framecount(bug, 25);
+	}
+
 	switch_channel_set_private(channel, file, bug);
 
 	return SWITCH_STATUS_SUCCESS;

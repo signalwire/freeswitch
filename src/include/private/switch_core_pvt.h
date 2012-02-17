@@ -196,6 +196,8 @@ struct switch_media_bug {
 	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t write_impl;
 	uint32_t record_frame_size;
+	uint32_t record_pre_buffer_count;
+	uint32_t record_pre_buffer_max;
 	switch_frame_t *ping_frame;
 	struct switch_media_bug *next;
 };
