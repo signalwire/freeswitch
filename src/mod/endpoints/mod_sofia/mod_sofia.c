@@ -1912,13 +1912,18 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
 
-			sofia_glue_set_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
+			if (t38_options) {
+				sofia_glue_set_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
 
-			if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-				switch_channel_set_flag(channel, CF_REQ_MEDIA);
+				if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+					switch_channel_set_flag(channel, CF_REQ_MEDIA);
+				}
+				sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
+				sofia_glue_do_invite(session);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Request to send IMAGE on channel with not t38 options.\n", 
+								  switch_channel_get_name(channel));
 			}
-			sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
-			sofia_glue_do_invite(session);
 		}
 		break;
 
