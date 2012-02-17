@@ -899,89 +899,95 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	}
 
 	if (event->event_id == SWITCH_EVENT_ROSTER) {
-		struct presence_helper helper = { 0 };
-		
-		if (!mod_sofia_globals.profile_hash) {
-			return;
-		}
-
-		if (from) {
-
-			sql = switch_mprintf("update sip_subscriptions set version=version+1 where hostname='%q' and profile_name='%q' and "
-								 "sip_subscriptions.event='presence' and sip_subscriptions.full_from like '%%%q%%'",
-								 mod_sofia_globals.hostname, profile->name, from);
-			
-			if (mod_sofia_globals.debug_presence > 1) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PRES SQL %s\n", sql);
-			}
-			
-			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-			
-
-			sql = switch_mprintf("select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
-								 "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
-								 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
-								 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
-								 "sip_subscriptions.accept,sip_subscriptions.profile_name,sip_subscriptions.network_ip"
-								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.open_closed,'','','','','sip',"
-								 " sip_subscriptions.full_to,sip_subscriptions.network_ip,sip_subscriptions.network_port "
-								 "from sip_subscriptions left join sip_presence on "
-								 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
-								 "sip_subscriptions.profile_name=sip_presence.profile_name and sip_presence.profile_name=sip_subscriptions.profile_name) "
-								 "where sip_subscriptions.hostname='%q' and sip_subscriptions.profile_name='%q' and "
-								 "sip_subscriptions.event='presence' and sip_subscriptions.full_from like '%%%q%%'",
-								 switch_str_nil(status), switch_str_nil(rpid), mod_sofia_globals.hostname, profile->name, from);
-		} else {
-
-			sql = switch_mprintf("update sip_subscriptions set version=version+1 where hostname='%q' and profile_name='%q' and "
-								 "sip_subscriptions.event='presence'", mod_sofia_globals.hostname, profile->name);
-			
-			if (mod_sofia_globals.debug_presence > 1) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PRES SQL %s\n", sql);
-			}
-			
-			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-
-			sql = switch_mprintf("select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
-								 "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
-								 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
-								 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
-								 "sip_subscriptions.accept,sip_subscriptions.profile_name,sip_subscriptions.network_ip"
-								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.open_closed,'','','','','sip',"
-								 "sip_subscriptions.full_to,sip_subscriptions.network_ip,sip_subscriptions.network_port "
-								 "from sip_subscriptions left join sip_presence on "
-								 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
-								 "sip_subscriptions.profile_name=sip_presence.profile_name and sip_subscriptions.hostname = sip_presence.hostname) "
-								 "where sip_subscriptions.hostname='%q' and sip_subscriptions.profile_name='%q' and "
-								 "sip_subscriptions.event='presence'", switch_str_nil(status),
-								 switch_str_nil(rpid), mod_sofia_globals.hostname, profile->name);
-		}
-
-		switch_assert(sql != NULL);
-		
 		if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			switch_console_callback_match_node_t *m;
 
 			for (m = matches->head; m; m = m->next) {
 				if ((profile = sofia_glue_find_profile(m->val))) {
 					if (profile->pres_type != PRES_TYPE_FULL) {
+
+		
+						if (!mod_sofia_globals.profile_hash) {
+							return;
+						}
+						
+						if (from) {
+							
+							sql = switch_mprintf("update sip_subscriptions set version=version+1 where hostname='%q' and profile_name='%q' and "
+												 "sip_subscriptions.event='presence' and sip_subscriptions.full_from like '%%%q%%'",
+												 mod_sofia_globals.hostname, profile->name, from);
+							
+							if (mod_sofia_globals.debug_presence > 1) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PRES SQL %s\n", sql);
+							}
+							
+							sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+							
+							
+							sql = switch_mprintf("select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
+												 "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
+												 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
+												 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
+												 "sip_subscriptions.accept,sip_subscriptions.profile_name,sip_subscriptions.network_ip"
+												 ",1,'%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.open_closed,'','','','','sip',"
+												 " sip_subscriptions.full_to,sip_subscriptions.network_ip,sip_subscriptions.network_port "
+												 "from sip_subscriptions left join sip_presence on "
+												 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and "
+												 "sip_subscriptions.sub_to_host=sip_presence.sip_host and "
+												 "sip_subscriptions.profile_name=sip_presence.profile_name and "
+												 "sip_presence.profile_name=sip_subscriptions.profile_name) "
+												 "where sip_subscriptions.hostname='%q' and sip_subscriptions.profile_name='%q' and "
+												 "sip_subscriptions.event='presence' and sip_subscriptions.full_from like '%%%q%%'",
+												 switch_str_nil(status), switch_str_nil(rpid), mod_sofia_globals.hostname, profile->name, from);
+						} else {
+
+							sql = switch_mprintf("update sip_subscriptions set version=version+1 where hostname='%q' and profile_name='%q' and "
+												 "sip_subscriptions.event='presence'", mod_sofia_globals.hostname, profile->name);
+							
+							if (mod_sofia_globals.debug_presence > 1) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PRES SQL %s\n", sql);
+							}
+							
+							sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+							
+							sql = switch_mprintf("select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
+												 "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
+												 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
+												 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
+												 "sip_subscriptions.accept,sip_subscriptions.profile_name,sip_subscriptions.network_ip"
+												 ",1,'%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.open_closed,'','','','','sip',"
+												 "sip_subscriptions.full_to,sip_subscriptions.network_ip,sip_subscriptions.network_port "
+												 "from sip_subscriptions left join sip_presence on "
+												 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and "
+												 "sip_subscriptions.sub_to_host=sip_presence.sip_host and "
+												 "sip_subscriptions.profile_name=sip_presence.profile_name and "
+												 "sip_subscriptions.hostname = sip_presence.hostname) "
+												 "where sip_subscriptions.hostname='%q' and sip_subscriptions.profile_name='%q' and "
+												 "sip_subscriptions.event='presence'", switch_str_nil(status),
+												 switch_str_nil(rpid), mod_sofia_globals.hostname, profile->name);
+						}
+						
+						switch_assert(sql != NULL);
+		
+
 						if (mod_sofia_globals.debug_presence > 0) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s is passive, skipping\n", (char *) profile->name);
 						}
 						sofia_glue_release_profile(profile);
 						continue;
 					}
+					memset(&helper, 0, sizeof(helper));
 					helper.profile = profile;
 					helper.event = NULL;
 					sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper);
-
+					switch_safe_free(sql);
 					sofia_glue_release_profile(profile);
 				}
 			}
 			switch_console_free_matches(&matches);
 		}
 		
-		free(sql);
+		switch_safe_free(sql);
 		return;
 	}
 
