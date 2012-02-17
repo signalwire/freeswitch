@@ -195,7 +195,6 @@ struct switch_media_bug {
 	char *target;
 	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t write_impl;
-	switch_timer_t timer;
 	uint32_t record_frame_size;
 	switch_frame_t *ping_frame;
 	struct switch_media_bug *next;

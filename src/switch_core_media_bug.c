@@ -47,10 +47,6 @@ static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
 		switch_buffer_destroy(&bug->raw_write_buffer);
 	}
 
-	if (bug->timer.timer_interface) {
-		switch_core_timer_destroy(&bug->timer);
-	}
-
 	if (switch_event_create(&event, SWITCH_EVENT_MEDIA_BUG_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Function", "%s", bug->function);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Bug-Target", "%s", bug->target);
@@ -424,11 +420,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	if (switch_test_flag(bug, SMBF_WRITE_STREAM)) {
 		switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
 		switch_mutex_init(&bug->write_mutex, SWITCH_MUTEX_NESTED, session->pool);
-	}
-
-	if (switch_test_flag(bug, SMBF_READ_STREAM) || switch_test_flag(bug, SMBF_WRITE_STREAM)) {
-		switch_core_timer_init(&bug->timer, "soft", bug->read_impl.microseconds_per_packet / 1000, bug->read_impl.samples_per_packet,
-							   switch_core_session_get_pool(session)); 
 	}
 
 	if ((bug->flags & SMBF_THREAD_LOCK)) {
