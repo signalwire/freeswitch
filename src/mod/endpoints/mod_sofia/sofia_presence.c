@@ -1272,8 +1272,9 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								  event->event_id == SWITCH_EVENT_PRESENCE_IN ? "IN" : "OUT", profile->name);
 			}
 
-#if 0
-			if (hup) {
+
+			if (hup) { 
+				/* so many phones get confused when whe hangup we have to reprobe to get them all to reset to absolute states so the lights stay correct */
 				switch_event_t *s_event;
 				
 				if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
@@ -1287,8 +1288,6 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				}
 			}
 			
-#endif
-
 			if (!zstr((char *) helper.stream.data)) {
 				char *this_sql = (char *) helper.stream.data;
 				char *next = NULL;

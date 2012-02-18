@@ -22,9 +22,3 @@ $(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
 $(TIFF_LA): $(TIFF_DIR) $(TIFF_DIR)/.update
 	cd $(TIFF_BUILDDIR) && $(MAKE) -j1
 	$(TOUCH_TARGET)
-
-install-exec-local: $(DESTDIR)$(libdir)/libspandsp.la
-
-$(DESTDIR)$(libdir)/libspandsp.la: $(SPANDSP_LA)
-	cd $(TIFF_DIR) && $(MAKE) -j1 install
-	cd $(SPANDSP_DIR) && $(MAKE) -j1 install
