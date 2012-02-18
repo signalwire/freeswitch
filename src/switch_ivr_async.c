@@ -1097,28 +1097,26 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_size_t len;
 			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 			switch_frame_t frame = { 0 };
+			switch_status_t status;
 
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
-			for (;;) { 
-				switch_status_t status = switch_core_media_bug_read(bug, &frame, SWITCH_FALSE);
 
-				if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-					break;
-				}
-				
+			status = switch_core_media_bug_read(bug, &frame, SWITCH_FALSE);
+
+			if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {
 				len = (switch_size_t) frame.datalen / 2;
+
 				if (len && switch_core_file_write(rh->fh, data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 					return SWITCH_FALSE;
 				}
-
-				if (status == SWITCH_STATUS_BREAK) break;
 			}
 
+				
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
