@@ -5265,8 +5265,9 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					
 					sql = switch_mprintf("insert into sip_dialogs "
 										 "(call_id,uuid,sip_to_user,sip_to_host,sip_to_tag,sip_from_user,sip_from_host,sip_from_tag,contact_user,"
-										 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,call_info,rcd) "
-										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
+										 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,"
+										 "call_info,rcd,call_info_state) "
+										 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'')",
 										 call_id,
 										 switch_core_session_get_uuid(session),
 										 to_user, to_host, to_tag, from_user, from_host, from_tag, contact_user,
@@ -8446,8 +8447,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 			sql = switch_mprintf("insert into sip_dialogs "
 								 "(call_id,uuid,sip_to_user,sip_to_host,sip_to_tag,sip_from_user,sip_from_host,sip_from_tag,contact_user,"
-								 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,call_info,rcd) "
-								 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
+								 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,"
+								 "call_info,rcd,call_info_state) "
+								 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'')",
 								 call_id,
 								 tech_pvt->sofia_private->uuid,
 								 to_user, to_host, to_tag, dialog_from_user, dialog_from_host, from_tag,

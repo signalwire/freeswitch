@@ -5985,7 +5985,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   presence_id     VARCHAR(255),\n"
 		"   presence_data   VARCHAR(255),\n"
 		"   call_info       VARCHAR(255),\n"
-		"   call_info_state VARCHAR(255),\n"
+		"   call_info_state VARCHAR(255) default '',\n"
 		"   expires         INTEGER default 0,\n"
 		"   status          VARCHAR(255),\n"
 		"   rpid            VARCHAR(255),\n"
