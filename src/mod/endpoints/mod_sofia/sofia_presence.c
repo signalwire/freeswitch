@@ -1124,7 +1124,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				
 
 				switch_safe_free(sql);
-
+#if 0
 				if (hup && dh.hits > 0) {
 					/* sigh, mangle this packet to simulate a call that is up instead of hungup */
 					event->flags |= EF_UNIQ_HEADERS;
@@ -1155,7 +1155,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed"); 
 					}
 				}
-
+#endif
 
 				if (zstr(call_id) && (dh.hits && presence_source && (!strcasecmp(presence_source, "register") || switch_stristr("register", status)))) {
 					goto done;
