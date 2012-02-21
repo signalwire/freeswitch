@@ -3038,7 +3038,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	} else {
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
-			switch_channel_t *channel = switch_core_session_get_channel(session);
 			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
 				switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
