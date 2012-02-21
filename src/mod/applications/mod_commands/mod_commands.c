@@ -5312,6 +5312,27 @@ SWITCH_STANDARD_API(log_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(file_exists_function)
+{
+	if (!zstr(cmd)) {
+		switch_memory_pool_t *pool;
+
+		switch_core_new_memory_pool(&pool);
+
+		if (switch_file_exists(cmd, pool) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "true");
+		} else {
+			stream->write_function(stream, "false");
+		}
+
+		switch_core_destroy_memory_pool(&pool);
+	} else {
+		stream->write_function(stream, "false");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
@@ -5436,6 +5457,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "xml_flush_cache", "clear xml cache", xml_flush_function, "<id> <key> <val>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
+	SWITCH_ADD_API(commands_api_interface, "file_exists", "check if a file exists on server", file_exists_function, "<file>");
 
 
 	switch_console_set_complete("add alias add");
@@ -5577,6 +5599,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
 	switch_console_set_complete("add ...");
+	switch_console_set_complete("add file_exists");
 
 
 	/* indicate that the module should continue to be loaded */
