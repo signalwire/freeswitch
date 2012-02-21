@@ -2487,9 +2487,12 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 								  "<dialog-info xmlns=\"urn:ietf:params:xml:ns:dialog-info\" "
 								  "version=\"%s\" state=\"%s\" entity=\"%s\">\n", version, default_dialog, clean_id);
 								  
-								  
 		}
 
+		if (!strcasecmp(astate, "hangup")) {
+			astate = "terminated";
+		}
+		
 		if (!zstr(uuid)) {
 			if (!zstr(answer_state)) {
 				astate = answer_state;
@@ -2507,9 +2510,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				astate = "confirmed";
 			}
 			
-			if (!strcasecmp(astate, "hangup")) {
-				astate = "terminated";
-			}
 			
 			if (is_dialog) {
 
@@ -2629,7 +2629,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			if (in) {
 				open = "open";
 
-				if (switch_false(resub)) {
+				if (!strcasecmp(astate, "terminated") && switch_false(resub)) {
 					int term;
 
 					const char *direction = switch_event_get_header(helper->event, "Caller-Direction");
