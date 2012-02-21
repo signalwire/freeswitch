@@ -4628,7 +4628,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					crypto_tag = atoi(crypto);
 
 					if (tech_pvt->remote_crypto_key && switch_rtp_ready(tech_pvt->rtp_session)) {
-						if (crypto_tag && crypto_tag == tech_pvt->crypto_tag) {
+						/* Compare all the key. The tag may remain the same even if key changed */
+						if (crypto && !strcmp(crypto, tech_pvt->remote_crypto_key)) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Existing key is still valid.\n");
 						} else {
 							const char *a = switch_stristr("AES", tech_pvt->remote_crypto_key);

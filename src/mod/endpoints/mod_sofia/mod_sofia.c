@@ -1723,7 +1723,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 
 
-			if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
+			if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && 
+				(switch_true(var) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_32) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_80))) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_SECURE);
 			}
 
