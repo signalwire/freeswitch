@@ -1975,6 +1975,30 @@ void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *s
 	switch_channel_api_on(channel, "api_on_sip_extra_headers");
 }
 
+char *sofia_glue_get_extra_headers_from_event(switch_event_t *event, const char *prefix)
+{
+	char *extra_headers = NULL;
+	switch_stream_handle_t stream = { 0 };
+	switch_event_header_t *hp;
+
+	SWITCH_STANDARD_STREAM(stream);
+	for (hp = event->headers; hp; hp = hp->next) {
+		if (!zstr(hp->name) && !zstr(hp->value) && !strncasecmp(hp->name, prefix, strlen(prefix))) {
+			char *name = strdup(hp->name);
+			const char *hname = name + strlen(prefix);
+			stream.write_function(&stream, "%s: %s\r\n", hname, (char *)hp->value);
+			free(name);
+		}
+	}
+
+	if (!zstr((char *) stream.data)) {
+		extra_headers = stream.data;
+	} else {
+		switch_safe_free(stream.data);
+	}
+
+	return extra_headers;
+}
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 {
