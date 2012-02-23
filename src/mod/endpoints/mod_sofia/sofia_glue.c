@@ -590,14 +590,23 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 				
 				if (cur_ptime != this_ptime) {
 					char *bp = buf;
-					cur_ptime = this_ptime;			
+					int both = 1;
 
+					cur_ptime = this_ptime;			
+					
 					if ((!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE))) {
 						generate_m(tech_pvt, buf, sizeof(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 1);
 						bp = (buf + strlen(buf));
+
+						/* asterisk can't handle AVP and SAVP in sep streams, way to blow off the spec....*/
+						if (switch_true(switch_channel_get_variable(tech_pvt->channel, "sdp_secure_savp_only"))) {
+							both = 0;
+						}
 					}
-					
-					generate_m(tech_pvt, bp, sizeof(buf) - strlen(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 0);
+
+					if (both) {
+						generate_m(tech_pvt, bp, sizeof(buf) - strlen(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 0);
+					}
 				}
 				
 			}
