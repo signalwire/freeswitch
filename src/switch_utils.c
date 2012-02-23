@@ -774,10 +774,10 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 
   end:
 
-	if (fd < 0) {
+	if (fd > -1) {
 		close(fd);
 	}
-	if (ifd < 0) {
+	if (ifd > -1) {
 		close(ifd);
 	}
 
