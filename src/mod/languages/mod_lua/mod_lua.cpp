@@ -371,6 +371,8 @@ static switch_status_t do_config(void)
 			if (!strcmp(var, "startup-script")) {
 				if (val) {
 					lua_thread(val);
+					/* wait 10ms to avoid lua init issues */
+					switch_yield(10000);
 				}
 			}
 		}
