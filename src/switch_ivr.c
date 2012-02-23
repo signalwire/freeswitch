@@ -1733,6 +1733,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 {
 	switch_channel_t *chana = switch_core_session_get_channel(sessa);
 	switch_channel_t *chanb = switch_core_session_get_channel(sessb);
+	switch_event_t *var_event;
+
 	const char *val = NULL;
 	uint8_t prefix = 0;
 
@@ -1747,16 +1749,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 		}
 	} else {
 		switch_event_header_t *hi;
-		if ((hi = switch_channel_variable_first(chana))) {
-			for (; hi; hi = hi->next) {
-				char *vvar = hi->name;
-				char *vval = hi->value;
-				if (vvar && vval && (!prefix || (var && !strncmp((char *) vvar, var, strlen(var))))) {
-					switch_channel_set_variable(chanb, (char *) vvar, (char *) vval);
-				}
+
+		switch_channel_get_variables(chana, &var_event);
+
+		for (hi = var_event->headers; hi; hi = hi->next) {
+			char *vvar = hi->name;
+			char *vval = hi->value;
+			if (vvar && vval && (!prefix || (var && !strncmp((char *) vvar, var, strlen(var))))) {
+				switch_channel_set_variable(chanb, (char *) vvar, (char *) vval);
 			}
-			switch_channel_variable_last(chana);
 		}
+
+		switch_event_destroy(&var_event);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
