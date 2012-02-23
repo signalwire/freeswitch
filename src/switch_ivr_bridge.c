@@ -1244,6 +1244,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 			if (!switch_channel_ready(caller_channel)) {
 				abort_call(caller_channel, peer_channel);
+				switch_core_session_rwunlock(peer_session);
 				goto done;
 			}
 

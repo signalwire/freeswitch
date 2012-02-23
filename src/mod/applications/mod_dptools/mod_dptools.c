@@ -2902,6 +2902,12 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 										v_campon_fallback_exten,
 										switch_channel_get_variable(caller_channel, "campon_fallback_dialplan"),
 										switch_channel_get_variable(caller_channel, "campon_fallback_context"));
+
+			if (peer_session) {
+				switch_channel_hangup(switch_core_session_get_channel(peer_session), SWITCH_CAUSE_ORIGINATOR_CANCEL);
+				switch_core_session_rwunlock(peer_session);
+			}
+
 			return;
 		}
 
