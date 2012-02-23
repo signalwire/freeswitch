@@ -2633,7 +2633,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			if (in) {
 				open = "open";
 
-				if (!strcasecmp(astate, "terminated") && switch_false(resub)) {
+				if (switch_false(resub)) {
 					int term;
 
 					const char *direction = switch_event_get_header(helper->event, "Caller-Direction");
