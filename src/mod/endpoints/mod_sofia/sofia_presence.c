@@ -1924,7 +1924,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 		route_uri = sofia_glue_strip_uri(dst->route_uri);
 	} else {
 		if (remote_ip && remote_port) {
-			route_uri = switch_mprintf("sip:%s:%s;transport=%s", remote_ip, remote_port, tp);
+			route_uri = switch_mprintf("sip:user@%s:%s;transport=%s", remote_ip, remote_port, tp);
 		}
 	}
 
@@ -1987,7 +1987,8 @@ static void _send_presence_notify(sofia_profile_t *profile,
 
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
-			   TAG_IF(dst->route_uri, NUTAG_PROXY(route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
+			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)), 
+			   TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 			   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 
 			   
