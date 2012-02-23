@@ -2493,10 +2493,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 								  
 		}
 
-		if (!strcasecmp(astate, "hangup")) {
-			astate = "terminated";
-		}
-		
 		if (!zstr(uuid)) {
 			if (!zstr(answer_state)) {
 				astate = answer_state;
@@ -2527,6 +2523,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 				if (holding) {
 					astate = "early";
+				}
+
+
+				if (!strcasecmp(astate, "hangup")) {
+					astate = "terminated";
 				}
 				
 				stream.write_function(&stream, "<dialog id=\"%s\" direction=\"%s\">\n", uuid, direction);
