@@ -2676,7 +2676,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 						rpid = "on-the-phone";
 						force_status = 1;
-					} else if (!strcmp(astate, "terminated")) {
+					} else if (!strcmp(astate, "terminated") || !strcmp(astate, "hangup")) {
 						rpid = "online";
 						dialog_rpid = "";
 						force_event_status = "Available";
