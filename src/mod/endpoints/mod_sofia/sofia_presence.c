@@ -3737,7 +3737,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 	char expstr[30] = "";
 	long exp = 0, exp_delta = 3600;
 	char *pd_dup = NULL;
-	int count = 1, sub_count = 0;
+	int count = 1, sub_count = 1;
 	char *contact_str;
 	int open = 1;
 	sofia_nat_parse_t np = { { 0 } };
@@ -3802,9 +3802,8 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 
 			if (sofia_test_pflag(profile, PFLAG_MULTIREG) && !open) {
 				count = sofia_reg_reg_count(profile, from_user, from_host);
+				sub_count = sofia_presence_contact_count(profile, contact_str);
 			}
-				
-			sub_count = sofia_presence_contact_count(profile, contact_str);
 
 			/* if (count > 1) let's not and say we did or all the clients who subscribe to their own presence will think they selves is offline */
 
