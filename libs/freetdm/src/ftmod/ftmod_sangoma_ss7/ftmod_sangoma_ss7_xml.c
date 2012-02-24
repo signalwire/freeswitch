@@ -2004,8 +2004,7 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 			flag_loc_nadi = 1;
 			sng_ccSpan.loc_nadi = atoi(parm->val);
 			SS7_DEBUG("Found default LOC_NADI parm->value = %d\n", sng_ccSpan.loc_nadi);
-			printf( " --- jz: we got loc nadi from XML, val = %d \n" , sng_ccSpan.loc_nadi);
-		
+	
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "lpa_on_cot")) {
 		/**********************************************************************/
