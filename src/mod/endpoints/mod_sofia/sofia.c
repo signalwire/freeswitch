@@ -5806,11 +5806,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 			} else {
 				if (sofia_test_pflag(profile, PFLAG_3PCC)) {
-				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+					if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No SDP in INVITE and 3pcc=yes cannot work with bypass or proxy media, hanging up.\n");
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "3PCC DISABLED");
 						switch_channel_hangup(channel, SWITCH_CAUSE_MANDATORY_IE_MISSING);
-				} else {
+					} else {
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
 						sofia_glue_tech_choose_port(tech_pvt, 0);
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
@@ -5830,23 +5830,23 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str), TAG_END());
 						}
 					}
-					} else if (sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
-						//3PCC proxy mode delays the 200 OK until the call is answered
+				} else if (sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
+					//3PCC proxy mode delays the 200 OK until the call is answered
 					// so can be made to work with bypass media as we have time to find out what the other end thinks codec offer should be...
-						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
-						sofia_set_flag_locked(tech_pvt, TFLAG_3PCC);
-						//sofia_glue_tech_choose_port(tech_pvt, 0);
-						//sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-						sofia_set_flag(tech_pvt, TFLAG_LATE_NEGOTIATION);
-						//Moves into CS_INIT so call moves forward into the dialplan
-						switch_channel_set_state(channel, CS_INIT);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No SDP in INVITE and 3pcc not enabled, hanging up.\n");
-						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "3PCC DISABLED");
-						switch_channel_hangup(channel, SWITCH_CAUSE_MANDATORY_IE_MISSING);
-					}
-					goto done;
+					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
+					sofia_set_flag_locked(tech_pvt, TFLAG_3PCC);
+					//sofia_glue_tech_choose_port(tech_pvt, 0);
+					//sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+					sofia_set_flag(tech_pvt, TFLAG_LATE_NEGOTIATION);
+					//Moves into CS_INIT so call moves forward into the dialplan
+					switch_channel_set_state(channel, CS_INIT);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No SDP in INVITE and 3pcc not enabled, hanging up.\n");
+					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "3PCC DISABLED");
+					switch_channel_hangup(channel, SWITCH_CAUSE_MANDATORY_IE_MISSING);
 				}
+				goto done;
+			}
 
 		} else if (tech_pvt && sofia_test_flag(tech_pvt, TFLAG_SDP) && !r_sdp) {
 			sofia_set_flag_locked(tech_pvt, TFLAG_NOSDP_REINVITE);
