@@ -661,7 +661,7 @@ ftdm_status_t copy_ocn_from_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCd
 	
 	if (origCdNum->numPlan.pres == PRSNT_NODEF) {
 		snprintf(val, sizeof(val), "%d", origCdNum->numPlan.val);
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Original Called Number -Plan: %s\n", val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Original Called Number - Plan: %s\n", val);
 		sngss7_add_var(sngss7_info, "ss7_ocn_plan", val);
 	}
 
@@ -681,7 +681,7 @@ ftdm_status_t copy_ocn_to_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNu
 
 	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_ocn");
 	if (!ftdm_strlen_zero(val)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number \"%s\"\n", val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number - Digits: %s\n", val);
 		if (copy_tknStr_to_sngss7((char*)val, &origCdNum->addrSig, &origCdNum->oddEven) != FTDM_SUCCESS) {
 			return FTDM_FAIL;
 		}
@@ -694,7 +694,7 @@ ftdm_status_t copy_ocn_to_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNu
 	if (!ftdm_strlen_zero(val)) {
 		origCdNum->natAddr.val = atoi(val);
 		origCdNum->natAddr.pres = 1;
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number NADI value \"%s\"\n", val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number - NADI: %s\n", val);
 		bProceed = 1;
 	} else {        
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No  user supplied Original Called Number NADI value\n");
@@ -704,7 +704,7 @@ ftdm_status_t copy_ocn_to_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNu
 	if (!ftdm_strlen_zero(val)) {
 		origCdNum->numPlan.val = atoi(val);
 		origCdNum->numPlan.pres = 1;
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number Plan value \"%s\"\n", val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number - Plan: %s\n", val);
 		bProceed = 1;
 	} else {        
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No  user supplied Original Called Number Plan value\n");
@@ -714,7 +714,7 @@ ftdm_status_t copy_ocn_to_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNu
 	if (!ftdm_strlen_zero(val)) {
 		origCdNum->presRest.val = atoi(val);
 		origCdNum->presRest.pres = 1;
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number Presentation value \"%s\"\n", val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number - Presentation: %s\n", val);
 		bProceed = 1;
 	} else {        
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No  user supplied Original Called Number Presentation value\n");
