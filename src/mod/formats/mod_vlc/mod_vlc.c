@@ -46,6 +46,9 @@
 
 static char *vlc_file_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
+/* Change valud to -vvv for vlc related debug. Be careful since vlc is at least as verbose as FS about logging */
+const char *vlc_args = "";
+
 libvlc_instance_t *inst;
 
 struct vlc_file_context {
@@ -172,7 +175,6 @@ static switch_status_t vlc_file_close(switch_file_handle_t *handle)
 SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 {
 	switch_file_interface_t *file_interface;
-	const char *args = "-vvv";
 	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -188,7 +190,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 	file_interface->file_read = vlc_file_read;
 
 	/* load the vlc engine. */
-	inst = libvlc_new(1, &args);
+	inst = libvlc_new(1, &vlc_args);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Initialized VLC instance\n");
 
