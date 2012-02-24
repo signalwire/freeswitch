@@ -3251,7 +3251,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_call_cause_t *cancel_cause)
 {
 	switch_xml_t x_user = NULL, x_param, x_params;
-	char *user = NULL, *domain = NULL, *dup_domain = NULL;
+	char *user = NULL, *domain = NULL, *dup_domain = NULL, *dialed_user = NULL;
 	const char *dest = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	unsigned int timelimit = 60;
@@ -3321,11 +3321,13 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 	}
 
+	dialed_user = (char *)switch_xml_attr(x_user, "id");
+
 	if (var_event) {
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", user);
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
 		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 		if (!strstr(dest, "presence_id=")) {
-			switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "presence_id", "%s@%s", user, domain);
+			switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "presence_id", "%s@%s", dialed_user, domain);
 		}
 	}
 
@@ -3352,7 +3354,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				timelimit = atoi(varval);
 			}
 
-			switch_channel_set_variable(channel, "dialed_user", user);
+			switch_channel_set_variable(channel, "dialed_user", dialed_user);
 			switch_channel_set_variable(channel, "dialed_domain", domain);
 
 			d_dest = switch_channel_expand_variables(channel, dest);
@@ -3373,7 +3375,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				switch_assert(event);
 			}
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", user);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 			d_dest = switch_event_expand_headers(event, dest);
 			switch_event_destroy(&event);
@@ -3388,7 +3390,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 
 
-		switch_snprintf(stupid, sizeof(stupid), "user/%s", user);
+		switch_snprintf(stupid, sizeof(stupid), "user/%s", dialed_user);
 		if (switch_stristr(stupid, d_dest)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Waddya Daft? You almost called '%s' in an infinate loop!\n",
 							  stupid);
