@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Moises Silva <moy@sangoma.com>
  * David Yat Sin <dyatsin@sangoma.com>
+ * James Zhang <jzhang@sangoma.com>
  *
  *
  * mod_freetdm.c -- FreeTDM Endpoint Module
@@ -1459,6 +1460,21 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			ftdm_set_string(caller_data.loc.digits, sipvar);
 		}
 
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-LOC-Screen");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_loc_screen_ind", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-LOC-Presentation");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_loc_pres_ind", sipvar);
+		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-LOC-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_loc_nadi", sipvar);
+		}   
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS-TON");
 		if (sipvar) {
 			caller_data.dnis.type = (uint8_t)atoi(sipvar);
@@ -1573,6 +1589,23 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_rdinfo_reason", sipvar);
 		}
+
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-OCN");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_ocn", sipvar);
+		}
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-OCN-NADI");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_ocn_nadi", sipvar);
+		}
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-OCN-Plan");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_ocn_plan", sipvar);
+		}
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-OCN-Presentation");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_ocn_pres", sipvar);
+		}
 	}
 
 	if (switch_test_flag(outbound_profile, SWITCH_CPF_SCREEN)) {
@@ -1675,11 +1708,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		our_chan = switch_core_session_get_channel(*new_session);
 
+		/* Figure out if there is a native bridge requested through SIP x headers */
 		if (network_peer_uuid) {
 			switch_core_session_t *network_peer = switch_core_session_locate(network_peer_uuid);
 			if (network_peer) {
 				const char *my_uuid = switch_core_session_get_uuid(*new_session);
 				private_t *peer_private = switch_core_session_get_private(network_peer);
+				peer_chan = switch_core_session_get_channel(network_peer);
 				switch_set_string(tech_pvt->network_peer_uuid, network_peer_uuid);
 				switch_set_string(peer_private->network_peer_uuid, my_uuid);
 
@@ -1690,6 +1725,16 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				ftdm_channel_get_span_id(peer_private->ftdmchan), ftdm_channel_get_id(peer_private->ftdmchan));
 				switch_core_session_rwunlock(network_peer);
 			}
+
+		/* Figure out if there is a native bridge requested through dial plan variable and the originating channel is also freetdm (not going through SIP) */
+		} else if (session
+		 && (var = channel_get_variable(session, var_event, FREETDM_VAR_PREFIX "native_sigbridge")) 
+		 && switch_true(var)
+		 && switch_core_session_compare(*new_session, session)) {
+			private_t *peer_pvt = switch_core_session_get_private(session);
+			peer_chan = switch_core_session_get_channel(session);
+			snprintf(sigbridge_peer, sizeof(sigbridge_peer), "%u:%u", 
+					ftdm_channel_get_span_id(peer_pvt->ftdmchan), ftdm_channel_get_id(peer_pvt->ftdmchan));
 		}
 
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
@@ -1703,20 +1748,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		hunt_data.tech_pvt = tech_pvt;
 		caller_data.priv = &hunt_data;
 
-		if (session
-		 && (var = channel_get_variable(session, var_event, FREETDM_VAR_PREFIX "native_sigbridge")) 
-		 && switch_true(var)
-		 && switch_core_session_compare(*new_session, session)) {
-			private_t *peer_pvt = switch_core_session_get_private(session);
-			snprintf(sigbridge_peer, sizeof(sigbridge_peer), "%u:%u", 
-					ftdm_channel_get_span_id(peer_pvt->ftdmchan), ftdm_channel_get_id(peer_pvt->ftdmchan));
-		}
-
 		if (session && !zstr(sigbridge_peer)) {
 			peer_chan = switch_core_session_get_channel(session);
 			ftdm_usrmsg_add_var(&usrmsg, "sigbridge_peer", sigbridge_peer);
 		}
-
 
 		if ((status = ftdm_call_place_ex(&caller_data, &hunting, &usrmsg)) != FTDM_SUCCESS) {
 			if (tech_pvt->read_codec.implementation) {
@@ -1999,9 +2034,27 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		}
 
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_loc_nadi");
-		printf ( "ss7_loc_nadi = %s \n " , var_value );
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-LOC-NADI", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_ocn");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OCN", "%s", var_value);
+		}
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_ocn_nadi");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OCN-NADI", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_ocn_plan");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OCN-Plan", "%s", var_value);
+		}
+
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_ocn_pres");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OCN-Presentation", "%s", var_value);
 		}
 	}
 

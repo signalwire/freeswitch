@@ -259,20 +259,20 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
         locPtyNum->scrnInd.pres = pres_val;
         val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_loc_screen_ind");
         if (!ftdm_strlen_zero(val)) {
-                locPtyNum->scrnInd.val = atoi(val);
+			locPtyNum->scrnInd.val = atoi(val);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Location Screening Ind %d\n", locPtyNum->scrnInd.val);
         } else {
-                locPtyNum->scrnInd.val = caller_data->screen;
+			locPtyNum->scrnInd.val = caller_data->screen;
         }
-        ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Location Reference Code Screening Ind %d\n", locPtyNum->scrnInd.val);
 
         locPtyNum->presRest.pres = pres_val;
-        val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_pres_ind");
+		val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_loc_pres_ind");
         if (!ftdm_strlen_zero(val)) {
-                locPtyNum->presRest.val = atoi(val);
+			locPtyNum->presRest.val = atoi(val);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Location Presentation Ind %d\n", locPtyNum->presRest.val);
         } else {
-                locPtyNum->presRest.val = caller_data->pres;
+			locPtyNum->presRest.val = caller_data->pres;
         }
-        ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Presentation Ind %d\n", locPtyNum->presRest.val);
 
         locPtyNum->numPlan.pres	= pres_val;
         locPtyNum->numPlan.val = 0x01;
@@ -286,11 +286,10 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Location Reference NADI value \"%s\"\n", loc_nadi);
 			locPtyNum->natAddrInd.val = atoi(loc_nadi);
         } else {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied NADI value found for LOC, using \"%d\"\n", locPtyNum->natAddrInd.val);
 			locPtyNum->natAddrInd.val = g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].loc_nadi;
 			locPtyNum->natAddrInd.val = 0x03;
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied NADI value found for LOC, using \"%d\"\n", locPtyNum->natAddrInd.val);
 		}
-        ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Location Reference Presentation Ind %d\n", locPtyNum->presRest.val);
 
         return copy_tknStr_to_sngss7(caller_data->loc.digits, &locPtyNum->addrSig, &locPtyNum->oddEven);
 }
@@ -439,7 +438,7 @@ ftdm_status_t copy_redirgNum_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirNum *red
 			return FTDM_FAIL;
 		}
 	} else if (!ftdm_strlen_zero(caller_data->rdnis.digits)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Redirection Number\"%s\"\n", val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Redirection Number\"%s\"\n", caller_data->rdnis.digits);
 		if (copy_tknStr_to_sngss7(caller_data->rdnis.digits, &redirgNum->addrSig, &redirgNum->oddEven) != FTDM_SUCCESS) {
 			return FTDM_FAIL;
 		}
@@ -636,6 +635,98 @@ ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *r
 		redirInfo->eh.pres = NOTPRSNT;
 	}
 
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_ocn_from_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNum)
+{
+	char val[20];
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	if (origCdNum->eh.pres != PRSNT_NODEF ) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Original Called Number available\n");
+		return FTDM_SUCCESS;
+	}
+
+	if (origCdNum->addrSig.pres == PRSNT_NODEF) {
+		copy_tknStr_from_sngss7(origCdNum->addrSig, val, origCdNum->oddEven);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Original Called Number digits:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_ocn", val);
+	}
+	
+	if (origCdNum->natAddr.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", origCdNum->natAddr.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Original Called Number - NADI:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_ocn_nadi", val);
+	}
+	
+	if (origCdNum->numPlan.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", origCdNum->numPlan.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Original Called Number -plan:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_ocn_plan", val);
+	}
+
+	if (origCdNum->presRest.pres == PRSNT_NODEF) {
+		snprintf(val, sizeof(val), "%d", origCdNum->presRest.val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Original Called Number - presentation:%s\n", val);
+		sngss7_add_var(sngss7_info, "ss7_ocn_pres", val);
+	}
+
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_ocn_to_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNum) 
+{
+	const char *val = NULL;
+	int bProceed = 0;
+
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_ocn");
+	if (!ftdm_strlen_zero(val)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number \"%s\"\n", val);
+		if (copy_tknStr_to_sngss7((char*)val, &origCdNum->addrSig, &origCdNum->oddEven) != FTDM_SUCCESS) {
+			return FTDM_FAIL;
+		}
+		origCdNum->addrSig.pres = 1;
+	} else {
+		return FTDM_SUCCESS;
+	}
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_ocn_nadi");
+	if (!ftdm_strlen_zero(val)) {
+		origCdNum->natAddr.val = atoi(val);
+		origCdNum->natAddr.pres = 1;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number NADI value \"%s\"\n", val);
+		bProceed = 1;
+	} else {        
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No  user supplied Original Called Number NADI value\n");
+	}
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_ocn_plan");
+	if (!ftdm_strlen_zero(val)) {
+		origCdNum->numPlan.val = atoi(val);
+		origCdNum->numPlan.pres = 1;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number Plan value \"%s\"\n", val);
+		bProceed = 1;
+	} else {        
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No  user supplied Original Called Number Plan value\n");
+	}
+
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_ocn_pres");
+	if (!ftdm_strlen_zero(val)) {
+		origCdNum->presRest.val = atoi(val);
+		origCdNum->presRest.pres = 1;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Original Called Number Presentation value \"%s\"\n", val);
+		bProceed = 1;
+	} else {        
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No  user supplied Original Called Number Presentation value\n");
+	}
+
+	if( bProceed == 1 ) {
+		origCdNum->eh.pres = PRSNT_NODEF;
+	} else {
+		origCdNum->eh.pres = NOTPRSNT;
+	}
+	
 	return FTDM_SUCCESS;
 }
 
