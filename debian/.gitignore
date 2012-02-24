@@ -1,0 +1,21 @@
+# gitignore
+/.stamp-bootstrap
+/control
+/control-modules.*
+/files
+/modules.conf
+/modules_.conf
+/freeswitch-autotools.install
+/freeswitch-mod-*.install
+/freeswitch-conf-*.install
+/freeswitch-sounds-*.install
+/*.log
+/*.substvars
+/*.debhelper
+/tmp
+/freeswitch/
+/freeswitch-dbg/
+/freeswitch-dev/
+/freeswitch-doc/
+/freeswitch-mod-*/
+/freeswitch-sounds-*/

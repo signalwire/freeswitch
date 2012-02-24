@@ -1,0 +1,8 @@
+Format: http://dep.debian.net/deps/dep5
+Upstream-Name: freeswitch
+Source: http://freeswitch.org/
+
+Files: debian/*
+Copyright: 2012 Travis Cross <tc@traviscross.com>
+License: MPL or GPL2+ (at your option)
+

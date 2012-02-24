@@ -1,0 +1,116 @@
+#!/usr/bin/make -f
+# -*- mode:makefile -*-
+#export DH_VERBOSE=1
+
+FS_CFLAGS?=-ggdb3 -O2
+FS_CPPFLAGS?=
+FS_CXXFLAGS?=$(FS_CFLAGS)
+FS_INSTALL_SOUNDS?=true
+export PATH?=/usr/lib/ccache:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export CFLAGS=$(FS_CFLAGS)
+export CPPFLAGS=$(FS_CPPFLAGS)
+export CXXFLAGS=$(FS_CXXFLAGS)
+
+show_vars= \
+	echo; \
+	echo "Making target $@"; \
+	echo "PATH='$(PATH)'"; \
+	echo "CFLAGS='$(CFLAGS)'"; \
+	echo "CXXFLAGS='$(CXXFLAGS)'"; \
+	echo "CCACHE_DIR='$(CCACHE_DIR)'"; \
+	echo "FS_INSTALL_SOUNDS='$(FS_INSTALL_SOUNDS)'"; \
+	echo;
+
+binary:
+	@$(call show_vars)
+	dh $@
+binary-arch:
+	@$(call show_vars)
+	dh $@
+binary-indep:
+	@$(call show_vars)
+	dh $@
+build: debian/.stamp-bootstrap
+	@$(call show_vars)
+	dh $@
+clean:
+	dh $@
+
+override_dh_auto_clean:
+	dh_clean
+
+.stamp-bootstrap:
+	@$(call show_vars)
+	./bootstrap.sh -j
+	touch $@
+
+.stamp-configure: .stamp-bootstrap
+	@$(call show_vars)
+	touch noreg
+	cp debian/modules_.conf modules.conf
+	./configure -C --enable-portable-binary --disable-dependency-tracking \
+		--host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+		--with-gnu-ld --with-python --with-erlang --with-openssl \
+		--enable-core-odbc-support --enable-zrtp \
+		--prefix=/usr --localstatedir=/var \
+		--sysconfdir=/etc/freeswitch \
+		--with-modinstdir=/usr/lib/freeswitch/mod \
+		--with-rundir=/var/run/freeswitch \
+		--with-logfiledir=/var/log/freeswitch \
+		--with-dbdir=/var/lib/freeswitch/db \
+		--with-htdocsdir=/usr/share/freeswitch/htdocs \
+		--with-soundsdir=/usr/share/freeswitch/sounds \
+		--with-grammardir=/usr/share/freeswitch/grammar \
+		--with-scriptdir=/usr/share/freeswitch/scripts \
+		--with-recordingsdir=/var/lib/freeswitch/recordings
+	touch $@
+
+override_dh_auto_configure: .stamp-configure
+
+.stamp-build: .stamp-configure
+	@$(call show_vars)
+	make
+	touch $@
+
+override_dh_auto_build: .stamp-build
+
+override_dh_auto_test:
+
+override_dh_strip:
+	dh_strip -a -k
+	./debian/create-dbg-pkgs.sh
+
+override_dh_auto_install:
+	dh_auto_install
+	-$(FS_INSTALL_SOUNDS) && DESTDIR=debian/tmp make cd-sounds-install cd-moh-install
+	mkdir -p debian/tmp/lib/systemd/system
+	install -m0644 debian/freeswitch-systemd.freeswitch.service debian/tmp/lib/systemd/system/freeswitch.service
+
+override_dh_installinit:
+	dh_installinit -pfreeswitch-sysvinit --name=freeswitch
+
+debian-bootstrap: debian/.stamp-bootstrap
+debian/.stamp-bootstrap:
+	(cd debian && ./bootstrap.sh)
+	touch $@
+
+binary-basetest:
+	@$(call show_vars)
+	echo "applications/mod_commands" > debian/modules.conf
+	(cd debian && ./bootstrap.sh)
+	dh binary
+
+binary-quicktest:
+	@$(call show_vars)
+	echo "applications/mod_commands" > debian/modules.conf
+	(cd debian && ./bootstrap.sh)
+	env FS_INSTALL_SOUNDS=false dh binary \
+		-Nfreeswitch-sounds-music-8k \
+		-Nfreeswitch-sounds-music-16k \
+		-Nfreeswitch-sounds-music-32k \
+		-Nfreeswitch-sounds-music-48k \
+		-Nfreeswitch-sounds-en-us-callie-8k \
+		-Nfreeswitch-sounds-en-us-callie-16k \
+		-Nfreeswitch-sounds-en-us-callie-32k \
+		-Nfreeswitch-sounds-en-us-callie-48k
+

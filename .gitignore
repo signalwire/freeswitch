@@ -57,6 +57,7 @@ core.*
 !/w32/Setup/inno_setup/vcredist_x86.exe
 
 /.version
+/.stamp-*
 /a.out.dSYM
 /AUTHORS
 /ChangeLog

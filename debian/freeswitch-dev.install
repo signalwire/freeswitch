@@ -1,0 +1,4 @@
+/usr/include
+/usr/lib/freeswitch/mod/*.la
+/usr/lib/*.{a,la}
+/usr/lib/pkgconfig
