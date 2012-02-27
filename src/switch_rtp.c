@@ -3102,6 +3102,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				do_2833(rtp_session, session);
 				bytes = 0;
 				return_cng_frame();
+			} else {
+				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 			}
 		}
 
