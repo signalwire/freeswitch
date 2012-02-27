@@ -741,9 +741,10 @@ ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
 	FD_ZERO(&wfds);
 	FD_ZERO(&efds);
 
+#ifdef WIN32  
 	/* Wouldn't you rather know?? */
 	assert(sock <= FD_SETSIZE);
-
+#endif
 	
 	if ((flags & ESL_POLL_READ)) {
 
