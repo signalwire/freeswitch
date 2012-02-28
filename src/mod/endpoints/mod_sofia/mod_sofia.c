@@ -2801,8 +2801,29 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	return 0;
 }
 
-static const char *status_names[] = { "DOWN", "UP", NULL };
+static int sql2str_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct cb_helper_sql2str *cbt = (struct cb_helper_sql2str *) pArg;
 
+	switch_copy_string(cbt->buf, argv[0], cbt->len);
+	cbt->matches++;
+	return 0;
+}
+
+static uint32_t sofia_profile_reg_count(sofia_profile_t *profile)
+{
+	struct cb_helper_sql2str cb;
+	char reg_count[80] = "";
+	char *sql;
+	cb.buf = reg_count;
+	cb.len = sizeof(reg_count);
+	sql = switch_mprintf("select count(*) from sip_registrations where profile_name = '%q'", profile->name);
+	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
+	free(sql);
+	return strtoul(reg_count, NULL, 10);
+}
+
+static const char *status_names[] = { "DOWN", "UP", NULL };
 
 static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t *stream)
 {
@@ -2976,6 +2997,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "FAILED-CALLS-IN  \t%u\n", profile->ib_failed_calls);
 					stream->write_function(stream, "CALLS-OUT        \t%u\n", profile->ob_calls);
 					stream->write_function(stream, "FAILED-CALLS-OUT \t%u\n", profile->ob_failed_calls);
+					stream->write_function(stream, "REGISTRATIONS    \t%lu\n", sofia_profile_reg_count(profile));
 				}
 
 				cb.profile = profile;
@@ -3252,9 +3274,9 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <calls-out>%u</calls-out>\n", profile->ob_calls);
 					stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", profile->ib_failed_calls);
 					stream->write_function(stream, "    <failed-calls-out>%u</failed-calls-out>\n", profile->ob_failed_calls);
+					stream->write_function(stream, "    <registrations>%lu</registrations>\n", sofia_profile_reg_count(profile));
 					stream->write_function(stream, "  </profile-info>\n");
 				}
-				stream->write_function(stream, "  <registrations>\n");
 
 				cb.profile = profile;
 				cb.stream = stream;
@@ -3272,6 +3294,13 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
 										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
 										 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", profile->name, argv[3]);
+				}
+				if (!sql && argv[2] && !strcasecmp(argv[2], "reg")) {
+
+					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
+										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
+										 " from sip_registrations where profile_name='%q'", profile->name);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
 					char *dup = strdup(argv[3]);
@@ -3303,17 +3332,15 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					switch_safe_free(sqlextra);
 				}
 
-				if (!sql) {
-					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
-										 " from sip_registrations where profile_name='%q'", profile->name);
+				if (sql) {
+					stream->write_function(stream, "  <registrations>\n");
+
+					sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, show_reg_callback_xml, &cb);
+					switch_safe_free(sql);
+
+					stream->write_function(stream, "  </registrations>\n");
 				}
 
-				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, show_reg_callback_xml, &cb);
-				switch_safe_free(sql);
-
-				stream->write_function(stream, "  </registrations>\n");
 				stream->write_function(stream, "</profile>\n");
 
 				sofia_glue_release_profile(profile);
@@ -3679,15 +3706,6 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 		free(contact);
 	}
 
-	return 0;
-}
-
-static int sql2str_callback(void *pArg, int argc, char **argv, char **columnNames)
-{
-	struct cb_helper_sql2str *cbt = (struct cb_helper_sql2str *) pArg;
-
-	switch_copy_string(cbt->buf, argv[0], cbt->len);
-	cbt->matches++;
 	return 0;
 }
 
