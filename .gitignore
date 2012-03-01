@@ -171,3 +171,5 @@ Freeswitch.2010.sdf
 src/mod/codecs/mod_celt/*/*/mod_celt.log
 src/mod/endpoints/mod_skinny/*/*/mod_skinny_2010.log
 src/mod/formats/mod_shout/*/*/mod_shout.log
+
+/w32/Setup/obj
