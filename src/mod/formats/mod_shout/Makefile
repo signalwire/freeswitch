@@ -49,7 +49,7 @@ $(LAMELA): $(LAME_BUILDDIR)/Makefile
 
 $(SHOUT_DIR):
 	$(GETLIB) $(SHOUT).tar.gz
-	patch -p0 -i hack_out_ogg.diff
+	patch -p 6 -d ../../../../libs/libshout-2.2.2 < hack_out_ogg.diff
 
 $(SHOUT_BUILDDIR)/Makefile: $(SHOUT_DIR)
 	mkdir -p $(SHOUT_BUILDDIR)
