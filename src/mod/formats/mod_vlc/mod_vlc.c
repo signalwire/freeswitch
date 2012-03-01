@@ -101,6 +101,9 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	if(! strncmp(context->path, "http", 4)){
 		context->m = libvlc_media_new_location(inst, context->path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is http %s\n", context->path);
+	} else if (! strncmp(context->path, "mms", 3)){
+		context->m = libvlc_media_new_path(inst, context->path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is mms %s\n", context->path);
 	} else if (! strncmp(context->path, "/", 1)){
 		context->m = libvlc_media_new_path(inst, context->path);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is file %s\n", context->path);
@@ -180,7 +183,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	vlc_file_supported_formats[0] = "vlc";
-	vlc_file_supported_formats[1] = "http";
 
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;

@@ -11,8 +11,11 @@ sudo apt-get install libavcodec-dev libavutil-dev libavformat-dev liba52-0.7.4-d
 My configure line for libvlc was: 
 ./configure --prefix=/usr/ --disable-vlc --disable-lua --disable-mad --disable-swscale --disable-postproc --disable-xcb --disable-alsa
 
+Debian unstable now has VLC 2.0 packaged. I am now testing with the packaged version of the library.
+
 The dialplan syntax I use are one of the following:
-<action application="playback" data="http://example.com/vlc.mp3"/>
+<action application="playback" data="vlc://http://example.com/vlc.mp3"/>
+<action application="playback" data="vlc://mms://example.com/mms_stream"/>
 <action application="playback" data="vlc:///usr/local/freeswitch/sounds/vlc.mp3"/>
 
 Development:
