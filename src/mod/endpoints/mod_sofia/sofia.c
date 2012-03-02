@@ -8027,7 +8027,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if ((call_info = sip_call_info(sip))) {
 		call_info_str = sip_header_as_string(nh->nh_home, (void *) call_info);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF %s\n", call_info_str);
 		
 		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE) && switch_stristr("appearance", call_info_str)) {
 			char *p;
@@ -8080,10 +8079,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				switch_channel_set_variable(channel, "presence_call_info", buf);
 				call_info_str = switch_core_session_sprintf(session, "<sip:%s>;%s", sip->sip_from->a_url->url_host, buf);
 			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF FAIL IF\n");
-
-
 		}		
 	}
 
