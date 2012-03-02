@@ -2362,7 +2362,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			
 			switch_channel_set_variable(channel, "presence_id", from);
 		}
-		
+
 		if (!(tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 										NUTAG_URL(url_str),
 										TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
@@ -2575,7 +2575,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	} else {
 		tech_pvt->session_refresher = nua_no_refresher;
 	}
-	
+
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
