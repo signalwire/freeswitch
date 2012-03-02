@@ -2015,6 +2015,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	sofia_glue_free_destination(dst);
 	switch_safe_free(user_via);
 	switch_safe_free(o_contact_dup);
+	switch_safe_free(our_contact_dup);
 
 
 }
