@@ -2581,7 +2581,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 			}
 
 		} else {
-			switch_ivr_collect_digits_callback(session, &args, 0, 0);
+			switch_ivr_collect_digits_callback(member_session, &args, 0, 0);
 		}
 
 		switch_yield(1000);
