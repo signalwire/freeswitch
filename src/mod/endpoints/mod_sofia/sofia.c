@@ -5696,11 +5696,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				const char *invite_route_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_route_uri");			
 
 				nua_ack(nh, 
-					TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
-					TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
-					TAG_IF(!zstr(invite_full_via), SIPTAG_VIA_STR(invite_full_via)),
-					TAG_IF(!zstr(invite_route_uri), SIPTAG_ROUTE_STR(invite_route_uri)),
-					TAG_END());
+						TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
+						TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
+						TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+						TAG_IF((zstr(tech_pvt->user_via) && !zstr(invite_full_via)), SIPTAG_VIA_STR(invite_full_via)),
+
+						TAG_IF(!zstr(invite_route_uri), SIPTAG_ROUTE_STR(invite_route_uri)),
+						TAG_END());
 						
 			} else {
 				nua_ack(nh, 
