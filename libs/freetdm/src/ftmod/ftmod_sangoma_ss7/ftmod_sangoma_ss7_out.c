@@ -57,12 +57,12 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	
 	memset (&iam, 0x0, sizeof (iam));
 
-	var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "sigbridge_peer");
-	if (!ftdm_strlen_zero(var)) {
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
 		ftdm_span_t *peer_span = NULL;
 		ftdm_channel_t *peer_chan = NULL;
 		sngss7_chan_data_t *peer_info = NULL;
 
+		var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "sigbridge_peer");
 		ftdm_get_channel_from_string(var, &peer_span, &peer_chan);
 		if (!peer_chan) {
 			SS7_ERROR_CHAN(ftdmchan, "Failed to find sigbridge peer from string '%s'\n", var);
@@ -91,7 +91,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		}
 	}
 
-	if (sngss7_info->peer_data) {
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE) && sngss7_info->peer_data) {
 		sngss7_span_data_t *span_data = ftdmchan->span->signal_data;
 		sngss7_event_data_t *event_clone = ftdm_queue_dequeue(sngss7_info->peer_data->event_queue);
 		/* Retrieve IAM from our peer */

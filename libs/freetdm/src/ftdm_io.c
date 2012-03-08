@@ -2449,6 +2449,12 @@ FT_DECLARE(ftdm_status_t) ftdm_get_channel_from_string(const char *string_id, ft
 	*out_span = NULL;
 	*out_channel = NULL;
 
+	if (!string_id) {
+		ftdm_log(FTDM_LOG_ERROR, "Cannot parse NULL channel id string\n");
+		status = FTDM_EINVAL;
+		goto done;
+	}
+
 	rc = sscanf(string_id, "%u:%u", &span_id, &chan_id);
 	if (rc != 2) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to parse channel id string '%s'\n", string_id);
