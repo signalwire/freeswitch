@@ -2499,11 +2499,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 								  
 		}
 
-		if (zstr(uuid)) {
-			if (stream.write_function) {
-				stream.write_function(&stream, "<state>terminated</state>\n");
-			}
-		} else {
+		if (!zstr(uuid)) {
 			if (!zstr(answer_state)) {
 				astate = answer_state;
 			}
