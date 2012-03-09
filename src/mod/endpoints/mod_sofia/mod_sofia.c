@@ -2034,7 +2034,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			const char *uuid;
 			const char *call_id = NULL, *to_user = NULL, *to_host = NULL, *to_tag = NULL, *from_tag = NULL, *from_user = NULL, *from_host = NULL;
 
-			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) {
 				switch_core_session_t *rsession;
 				if ((rsession = switch_core_session_locate(uuid))) {
 					switch_channel_t *rchannel = switch_core_session_get_channel(rsession);
