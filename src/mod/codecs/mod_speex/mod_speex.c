@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Chris Rienzo <chris@rienzo.net>
  *
  *
  * mod_speex.c -- Speex Codec Module
@@ -279,10 +280,11 @@ static switch_status_t switch_speex_encode(switch_codec_t *codec,
 	if (is_speech) {
 		switch_clear_flag(context, SWITCH_CODEC_FLAG_SILENCE);
 		*flag |= SWITCH_CODEC_FLAG_SILENCE_STOP;
+		*flag &= ~SFF_CNG;
 	} else {
 		if (switch_test_flag(context, SWITCH_CODEC_FLAG_SILENCE)) {
 			*encoded_data_len = 0;
-			*flag |= SWITCH_CODEC_FLAG_SILENCE;
+			*flag |= SWITCH_CODEC_FLAG_SILENCE | SFF_CNG;
 			return SWITCH_STATUS_SUCCESS;
 		}
 
@@ -353,6 +355,126 @@ static switch_status_t switch_speex_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/**
+ * read default settings from speex.conf
+ */
+static void load_configuration()
+{
+	switch_xml_t xml = NULL, cfg = NULL;
+
+	if ((xml = switch_xml_open_cfg("speex.conf", &cfg, NULL))) {
+		switch_xml_t x_lists;
+		if ((x_lists = switch_xml_child(cfg, "settings"))) {
+			const char *settings_name = switch_xml_attr(x_lists, "name");
+			switch_xml_t x_list;
+			if (zstr(settings_name)) {
+				settings_name = "";
+			}
+			for (x_list = switch_xml_child(x_lists, "param"); x_list; x_list = x_list->next) {
+				const char *name = switch_xml_attr(x_list, "name");
+				const char *value = switch_xml_attr(x_list, "value");
+				if (zstr(name)) {
+					continue;
+				}
+
+				if (zstr(value)) {
+					continue;
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s %s = %s\n", settings_name, name, value);
+
+				if (!strcasecmp("quality", name)) {
+					/* compression quality, integer 0-10 */
+					int tmp = atoi(value);
+					if (switch_is_number(value) && tmp >= 0 && tmp <= 10) {
+						default_codec_settings.quality = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignoring invalid quality value: %s\n", value);
+					}
+				} else if (!strcasecmp("complexity", name)) {
+					/* compression complexity, integer 1-10 */
+					int tmp = atoi(value);
+					if (switch_is_number(value) && tmp >= 1 && tmp <= 10) {
+						default_codec_settings.complexity = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignoring invalid complexity value: %s\n", value);
+					}
+				} else if (!strcasecmp("enhancement", name)) {
+					/* enable perceptual enhancement, boolean */
+					default_codec_settings.enhancement = switch_true(value);
+				} else if (!strcasecmp("vad", name)) {
+					/* enable voice activity detection, boolean */
+					default_codec_settings.vad = switch_true(value);
+				} else if (!strcasecmp("vbr", name)) {
+					/* enable variable bit rate, boolean */
+					default_codec_settings.vbr = switch_true(value);
+				} else if (!strcasecmp("vbr-quality", name)) {
+					/* variable bit rate quality, float 0-10 */
+					float tmp = atof(value);
+					if (switch_is_number(value) && tmp >= 0 && tmp <= 10) {
+						default_codec_settings.vbr_quality = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignoring invalid vbr-quality value: %s\n", value);
+					}
+				} else if (!strcasecmp("abr", name)) {
+					/* average bit rate, integer bits per sec */
+					int tmp = atoi(value);
+					if (switch_is_number(value) && tmp >= 0) {
+						default_codec_settings.abr = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignoring invalid abr value: %s\n", value);
+					}
+				} else if (!strcasecmp("dtx", name)) {
+					/* discontinuous transmit, boolean */
+					default_codec_settings.dtx = switch_true(value);
+				} else if (!strcasecmp("preproc", name)) {
+					/* enable preprocessor, boolean */
+					default_codec_settings.preproc = switch_true(value);
+				} else if (!strcasecmp("pp-vad", name)) {
+					/* enable preprocessor VAD, boolean */
+					default_codec_settings.pp_vad = switch_true(value);
+				} else if (!strcasecmp("pp-agc", name)) {
+					/* enable preprocessor automatic gain control, boolean */
+					default_codec_settings.pp_agc = switch_true(value);
+				} else if (!strcasecmp("pp-agc-level", name)) {
+					/* agc level, float */
+					float tmp = atof(value);
+					if (switch_is_number(value) && tmp >= 0.0f) {
+						default_codec_settings.pp_agc_level = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignoring invalid pp-agc-level value: %s\n", value);
+					}
+				} else if (!strcasecmp("pp-denoise", name)) {
+					/* enable preprocessor denoiser, boolean */
+					default_codec_settings.pp_denoise = switch_true(value);
+				} else if (!strcasecmp("pp-dereverb", name)) {
+					/* enable preprocessor reverberation removal, boolean */
+					default_codec_settings.pp_dereverb = switch_true(value);
+				} else if (!strcasecmp("pp-dereverb-decay", name)) {
+					/* reverberation removal decay, float */
+					float tmp = atof(value);
+					if (switch_is_number(value) && tmp >= 0.0f) {
+						default_codec_settings.pp_dereverb_decay = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignoring invalid pp-dereverb-decay value: %s\n", value);
+					}
+				} else if (!strcasecmp("pp-dereverb-level", name)) {
+					/* reverberation removal level, float */
+					float tmp = atof(value);
+					if (switch_is_number(value) && tmp >= 0.0f) {
+						default_codec_settings.pp_dereverb_level = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignoring invalid pp-dereverb-level value: %s\n", value);
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignoring invalid unknown param: %s = %s\n", name, value);
+				}
+			}
+		}
+		switch_xml_free(xml);
+	}
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 {
 	switch_codec_interface_t *codec_interface;
@@ -361,6 +483,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 	int bps[4] = { 0, 24600, 42200, 44000 };
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	load_configuration();
+
 	SWITCH_ADD_CODEC(codec_interface, "Speex");
 	codec_interface->parse_fmtp = switch_speex_fmtp_parse;
 	for (counta = 1; counta <= 3; counta++) {

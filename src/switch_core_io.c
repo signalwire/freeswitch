@@ -1059,6 +1059,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				session->enc_write_frame.m = frame->m;
 				session->enc_write_frame.ssrc = frame->ssrc;
 				session->enc_write_frame.seq = frame->seq;
+				session->enc_write_frame.flags = 0;
 				write_frame = &session->enc_write_frame;
 				break;
 			case SWITCH_STATUS_NOOP:
@@ -1173,6 +1174,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					session->enc_write_frame.m = frame->m;
 					session->enc_write_frame.ssrc = frame->ssrc;
 					session->enc_write_frame.payload = session->write_impl.ianacode;
+					session->enc_write_frame.flags = 0;
 					write_frame = &session->enc_write_frame;
 					break;
 				case SWITCH_STATUS_NOOP:
