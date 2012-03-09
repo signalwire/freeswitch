@@ -466,7 +466,12 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 		break;
 	case SCDB_TYPE_CORE_DB:
 		{
-			status = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, NULL, NULL, &errmsg);
+			int ret = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, NULL, NULL, &errmsg);
+
+			if (ret == SWITCH_CORE_DB_OK) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
+
 			if (errmsg) {
 				switch_strdup(tmp, errmsg);
 				switch_core_db_free(errmsg);
@@ -832,7 +837,11 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 		break;
 	case SCDB_TYPE_CORE_DB:
 		{
-			status = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, callback, pdata, &errmsg);
+			int ret = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, callback, pdata, &errmsg);
+
+			if (ret == SWITCH_CORE_DB_OK || ret == SWITCH_CORE_DB_ABORT) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
 
 			if (errmsg) {
 				dbh->last_used = switch_epoch_time_now(NULL) - (SQL_CACHE_TIMEOUT * 2);
