@@ -93,6 +93,11 @@ void menu_init(vmivr_profile_t *profile, vmivr_menu_t *menu) {
 			}
 		}
 	}
+
+	if (!menu->phrase_params) {
+		switch_event_create(&menu->phrase_params, SWITCH_EVENT_REQUEST_PARAMS);
+	}
+
 end:
 	if (xml)
 		switch_xml_free(xml);
