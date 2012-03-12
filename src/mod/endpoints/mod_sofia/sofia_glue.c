@@ -787,6 +787,11 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 	switch_assert(tech_pvt->session != NULL);
 
 	if ((abs = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {
+		/* inherit_codec == true will implicitly clear the absolute_codec_string 
+		   variable if used since it was the reason it was set in the first place and is no longer needed */
+		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "inherit_codec"))) {
+			switch_channel_set_variable(tech_pvt->channel, "absolute_codec_string", NULL);
+		}
 		codec_string = abs;
 		goto ready;
 	}
