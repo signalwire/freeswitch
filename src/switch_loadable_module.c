@@ -1270,6 +1270,11 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 			break;
 		}
 
+		if (!module_interface) {
+			err = "Module failed to initialize its module_interface. Is this a valid module?";
+			break;
+		}
+
 		if ((module = switch_core_alloc(pool, sizeof(switch_loadable_module_t))) == 0) {
 			err = "Could not allocate memory\n";
 			abort();
