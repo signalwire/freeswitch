@@ -260,6 +260,7 @@ struct switch_runtime {
 	uint32_t max_db_handles;
 	uint32_t db_handle_timeout;
 	int cpu_count;
+	uint32_t time_sync;
 };
 
 extern struct switch_runtime runtime;

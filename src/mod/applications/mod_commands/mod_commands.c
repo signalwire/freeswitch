@@ -546,24 +546,19 @@ SWITCH_STANDARD_API(timer_test_function)
 		goto end;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: samplecount after init: %d\n", timer.samplecount);
+	switch_core_timer_next(&timer); /* Step timer once before testing results below, to get first timestamp as accurate as possible */
 
-	/* Step timer once before testing results below, to get first timestamp as accurate as possible */
-	switch_core_timer_next(&timer);
+	start = then = switch_time_ref();
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: samplecount after first step: %d\n", timer.samplecount);
-
-	start = switch_time_ref();
 	for (x = 1; x <= max; x++) {
-		then = switch_time_ref();
 		switch_core_timer_next(&timer);
 		now = switch_time_ref();
 		diff = (int) (now - then);
-		//stream->write_function(stream, "test %d sleep %ld %d\n", x, mss, diff);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: %d sleep %d %d\n", x, mss, diff);
 		total += diff;
+		then = now;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Timer Test: %d sleep %d %d\n", x, mss, diff);
 	}
-	end = switch_time_ref();
+	end = then;
 
 	switch_yield(250000);
 
