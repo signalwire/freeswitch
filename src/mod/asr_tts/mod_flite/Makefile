@@ -1,4 +1,4 @@
-FLITE=flite-1.5.1
+FLITE=flite-1.5.4
 
 FLITE_DIR=$(switch_srcdir)/libs/$(FLITE)-current
 FLITE_BUILDDIR=$(switch_builddir)/libs/$(FLITE)-current
