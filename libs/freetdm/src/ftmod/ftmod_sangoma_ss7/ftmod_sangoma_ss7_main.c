@@ -614,20 +614,22 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 			break;
 		case SNGSS7_REL_CFM_EVENT:
 			{
-				ftdm_channel_t *peer_chan = sngss7_info->peer_data->ftdmchan;
-				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-				if (peer_chan) {
-					/* we need to unlock our chan or we risk deadlock */
-					ftdm_channel_advance_states(ftdmchan);
-					ftdm_channel_unlock(ftdmchan);
+				if (sngss7_info->peer_data) {
+					ftdm_channel_t *peer_chan = sngss7_info->peer_data->ftdmchan;
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+					if (peer_chan) {
+						/* we need to unlock our chan or we risk deadlock */
+						ftdm_channel_advance_states(ftdmchan);
+						ftdm_channel_unlock(ftdmchan);
 
-					ftdm_channel_lock(peer_chan);
-					if (peer_chan->state != FTDM_CHANNEL_STATE_DOWN) {
-						ftdm_set_state(peer_chan, FTDM_CHANNEL_STATE_DOWN);
+						ftdm_channel_lock(peer_chan);
+						if (peer_chan->state != FTDM_CHANNEL_STATE_DOWN) {
+							ftdm_set_state(peer_chan, FTDM_CHANNEL_STATE_DOWN);
+						}
+						ftdm_channel_unlock(peer_chan);
+
+						ftdm_channel_lock(ftdmchan);
 					}
-					ftdm_channel_unlock(peer_chan);
-
-					ftdm_channel_lock(ftdmchan);
 				}
 			}
 			break;
