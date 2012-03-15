@@ -490,7 +490,7 @@ samples-conf:
 
 samples-htdocs: 
 	test -d $(DESTDIR)$(htdocsdir) || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)
-	for htdocsfile in `cd $(switch_srcdir)/htdocs && find . -type f -name \* | sed -e 's|^\.||` ; do \
+	for htdocsfile in `cd $(switch_srcdir)/htdocs && find . -type f -name \* | sed -e 's|^\.||'` ; do \
 		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$htdocsfile | sed -e 's|^.*/||'`; \
 		test -d $(DESTDIR)$(htdocsdir)$$dir || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)$$dir ; \
