@@ -57,12 +57,12 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	
 	memset (&iam, 0x0, sizeof (iam));
 
-	var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "sigbridge_peer");
-	if (!ftdm_strlen_zero(var)) {
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
 		ftdm_span_t *peer_span = NULL;
 		ftdm_channel_t *peer_chan = NULL;
 		sngss7_chan_data_t *peer_info = NULL;
 
+		var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "sigbridge_peer");
 		ftdm_get_channel_from_string(var, &peer_span, &peer_chan);
 		if (!peer_chan) {
 			SS7_ERROR_CHAN(ftdmchan, "Failed to find sigbridge peer from string '%s'\n", var);
@@ -82,16 +82,16 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 				/* flush our own queue */
 				sngss7_flush_queue(sngss7_info->event_queue);
 
-				/*  Go to up until release comes, note that state processing is done different and much simpler when there is a peer,
-					We can't go to UP state right away yet though, so do not set the state to UP here, wait until the end of this function
-					because moving from one state to another causes the ftdmchan->usrmsg structure to be wiped 
-					and we still need those variables for further IAM processing */
+				/* Go to up until release comes, note that state processing is done different and much simpler when there is a peer,
+				   We can't go to UP state right away yet though, so do not set the state to UP here, wait until the end of this function
+                   because moving from one state to another causes the ftdmchan->usrmsg structure to be wiped 
+				   and we still need those variables for further IAM processing */
 				native_going_up = FTDM_TRUE;
 			}
 		}
 	}
 
-	if (sngss7_info->peer_data) {
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE) && sngss7_info->peer_data) {
 		sngss7_span_data_t *span_data = ftdmchan->span->signal_data;
 		sngss7_event_data_t *event_clone = ftdm_queue_dequeue(sngss7_info->peer_data->event_queue);
 		/* Retrieve IAM from our peer */
@@ -224,18 +224,17 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 						&iam,
 						0);
 
-
 	if (native_going_up) {
 		/* 
-		  Note that this function (ft_to_sngss7_iam) is run within the main SS7 processing loop in
-	  	  response to the DIALING state handler, we can set the state to UP here and that will
+	      Note that this function (ft_to_sngss7_iam) is run within the main SS7 processing loop in
+		  response to the DIALING state handler, we can set the state to UP here and that will
 		  implicitly complete the DIALING state, but we *MUST* also advance the state handler
 		  right away for a native bridge, otherwise, the processing state function (ftdm_sangoma_ss7_process_state_change)
 		  will complete the state without having executed the handler for FTDM_CHANNEL_STATE_UP, and we won't notify
 		  the user sending FTDM_SIGEVENT_UP which can cause the application to misbehave (ie, no audio) */
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
 		ftdm_channel_advance_states(ftdmchan);
-	}
+    }
 
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
@@ -267,15 +266,14 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	acm.bckCallInd.end2EndInfoInd.val	= E2EINF_NOINFO;
 
 	acm.bckCallInd.isdnUsrPrtInd.pres	= PRSNT_NODEF;
-	acm.bckCallInd.isdnUsrPrtInd.val    = ISUP_NOTUSED;
+	acm.bckCallInd.isdnUsrPrtInd.val	= ISUP_NOTUSED;
 	backwardInd = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "acm_bi_iup");
 	if (!ftdm_strlen_zero(backwardInd)) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied backward indicator ISDN user part indicator ACM, value \"%s\"\n", backwardInd);
 		if (atoi(backwardInd) != 0 ) {
-			acm.bckCallInd.isdnUsrPrtInd.val    = ISUP_USED;
+			acm.bckCallInd.isdnUsrPrtInd.val	= ISUP_USED;
 		}
 	}
-
 	acm.bckCallInd.holdInd.pres			= PRSNT_NODEF;
 	acm.bckCallInd.holdInd.val			= HOLD_NOTREQD;
 	acm.bckCallInd.isdnAccInd.pres		= PRSNT_NODEF;

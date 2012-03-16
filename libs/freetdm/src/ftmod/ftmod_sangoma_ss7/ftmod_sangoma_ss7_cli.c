@@ -1325,6 +1325,10 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 						}else {
 							stream->write_function(stream, "relay=N");
 						}
+
+#ifdef SMG_RELAY_DBG
+						stream->write_function(stream, "| flag=0x%llx", ftdmchan->flags);
+#endif
 					}
 		
 #ifdef SMG_RELAY_DBG
