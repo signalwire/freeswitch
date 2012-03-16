@@ -315,13 +315,13 @@ handle_glare:
 		
 			/* setup the hangup cause */
 			ftdmchan->caller_data.hangup_cause = 34;	/* Circuit Congrestion */
-		
-			/* this is a remote hangup request */
-			sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
-		
-			/* move the state of the channel to Terminating to end the call */
+			
+			/* move the state of the channel to Terminating to end the call 
+			     in TERMINATING state, the release cause is set to REMOTE_REL 
+			     in any means. So we don't have to set the release reason here.
+			*/
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
-		} /* if (!(sngss7_test_ckt_flag(sngss7_info, FLAG_GLARE))) */
+		}
 		break;
 	/**************************************************************************/
 	default:	/* should not have gotten an IAM while in this state */
@@ -1282,6 +1282,7 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 		/* the glare flag is already up so it was caught ... do nothing */
 		SS7_DEBUG_CHAN(ftdmchan, "Glare flag is already up...nothing to do!%s\n", " ");
 	} else {
+		int bHangup = 0;
 		SS7_DEBUG_CHAN(ftdmchan, "Glare flag is not up yet...indicating glare from reattempt!%s\n", " ");
 		/* glare, throw the flag */
 		sngss7_set_ckt_flag(sngss7_info, FLAG_GLARE);
@@ -1289,14 +1290,45 @@ ftdm_status_t handle_reattempt(uint32_t suInstId, uint32_t spInstId, uint32_t ci
 		/* clear any existing glare data from the channel */
 		memset(&sngss7_info->glare, 0x0, sizeof(sngss7_glare_data_t));
 
+		if (g_ftdm_sngss7_data.cfg.glareResolution == SNGSS7_GLARE_DOWN) {
+			/* If I'm in DOWN mode, I will always hangup my call. */
+			bHangup = 1;
+		}
+		else if (g_ftdm_sngss7_data.cfg.glareResolution == SNGSS7_GLARE_PC) {
+			/* I'm in PointCode mode. 
+				Case 1: My point code is higher than the other side. 
+						If the CIC number is even, I'm trying to control. 
+						If the CIC number is odd, I'll hangup my call and back off.
+				Case 2: My point code is lower than the other side. 
+						If the CIC number is odd, I'm trying to control. 
+						If the CIC number is even, I'll hangup my call and back off.
+			*/
+			if( g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].spc > g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].dpc ) 
+			{
+				if ((sngss7_info->circuit->cic % 2) == 1 ) {
+					bHangup = 1;
+				}
+			} else {
+				if( (sngss7_info->circuit->cic % 2) == 0 ) {
+					bHangup = 1;
+				}
+			}
+		} 
+		else {	
+			/* If I'm in CONTROL mode, I will not hangup my call. */
+			bHangup = 0;
+		}
+
+		if (bHangup) {
 		/* setup the hangup cause */
 		ftdmchan->caller_data.hangup_cause = 34;	/* Circuit Congrestion */
 
-		/* this is a remote hangup request */
-		sngss7_set_ckt_flag(sngss7_info, FLAG_REMOTE_REL);
-
-		/* move the state of the channel to Terminating to end the call */
-		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+			/* move the state of the channel to Terminating to end the call 
+			     in TERMINATING state, the release cause is set to REMOTE_REL 
+			     in any means. So we don't have to set the release reason here.
+			*/
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
+		}
 	}
 
 	/* unlock the channel again before we exit */
@@ -2455,63 +2487,6 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		x++;
 	}
 
-#if 0
-	for (x = circuit; x < (circuit + range + 1); x++) {
-		/* confirm this is a voice channel */
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != SNG_CKT_VOICE) continue;
-
-		/* grab the circuit in question */
-		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
-			break;
-		}
-	
-		/* lock the channel */
-		ftdm_mutex_lock(ftdmchan->mutex);
-
-#if 0
-		SS7_ERROR("KONRAD -> circuit=%d, byte=%d, bit=%d, status[byte]=%d, math=%d\n",
-					x,
-					byte,
-					bit,
-					status[byte],
-					(status[byte] & (1 << bit)));
-#endif
-		if (status[byte] & (1 << bit)) {
-			switch (blockType) {
-			/**********************************************************************/
-			case 0:	/* maintenance oriented */
-				sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
-				break;
-			/**********************************************************************/
-			case 1: /* hardware failure oriented */
-				sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
-				break;
-			/**********************************************************************/
-			case 2: /* reserved for national use */
-				break;
-			/**********************************************************************/
-			default:
-				break;
-			/**********************************************************************/
-			} /* switch (blockType) */
-		}
-
-		/* bring the sig status down */
-		sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
-
-		/* unlock the channel again before we exit */
-		ftdm_mutex_unlock(ftdmchan->mutex);
-
-		/* update the bit and byte counter*/
-		bit ++;
-		if (bit == 8) {
-			byte++;
-			bit = 0;
-		}
-
-	} /* for (x = circuit; x < (circuit + range + 1); x++) */
-#endif
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -2665,61 +2640,6 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		}
 		x++;
 	}
-#if 0
-	for (x = circuit; x < (circuit + range + 1); x++) {
-		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != SNG_CKT_VOICE) continue;
-		/* grab the circuit in question */
-		if (extract_chan_data(x, &sngss7_info, &ftdmchan)) {
-			SS7_ERROR("Failed to extract channel data for circuit = %d!\n", x);
-			break;
-		}
-	
-		/* lock the channel */
-		ftdm_mutex_lock(ftdmchan->mutex);
-
-		if (status[byte] & (1 << bit)) {
-			switch (blockType) {
-			/**********************************************************************/
-			case 0:	/* maintenance oriented */
-				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
-				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
-				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
-				break;
-			/**********************************************************************/
-			case 1: /* hardware failure oriented */
-				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_HW_BLOCK_RX);
-				break;
-			/**********************************************************************/
-			case 2: /* reserved for national use */
-				break;
-			/**********************************************************************/
-			default:
-				break;
-			/**********************************************************************/
-			} /* switch (blockType) */
-		} /* if (status[byte] & (1 << bit)) */
-
-		sigev.chan_id = ftdmchan->chan_id;
-		sigev.span_id = ftdmchan->span_id;
-		sigev.channel = ftdmchan;
-
-		/* bring the sig status down */
-		if (sngss7_channel_status_clear(sngss7_info)) {
-			sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
-		}
-	
-		/* unlock the channel again before we exit */
-		ftdm_mutex_unlock(ftdmchan->mutex);
-
-		/* update the bit and byte counter*/
-		bit ++;
-		if (bit == 8) {
-			byte++;
-			bit = 0;
-		}
-
-	} /* for (x = circuit; x < (circuit + range + 1); x++) */
-#endif
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {

@@ -1471,14 +1471,14 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 						SS7_DEBUG_CHAN(ftdmchan,"All reset flags cleared %s\n", "");
 						/* all flags are down so we can bring up the sig status */
 						sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
-					} /* if (!ftdm_test_flag (ftdmchan, FTDM_CHANNEL_SIG_UP)) */
+					}
 				} else {
 					state_flag = 0;
 					SS7_DEBUG_CHAN(ftdmchan,"Down detected blocked flags go to SUSPEND %s\n", " ");
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 					break;
 			
-				}	/* if !blocked */
+				}
 			} else {
 				SS7_DEBUG_CHAN(ftdmchan,"Reset flags present (0x%X)\n", sngss7_info->ckt_flags);
 			
@@ -1486,7 +1486,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 				state_flag = 0;
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 			}
-		} /* if ((ftdmchan->last_state == FTDM_CHANNEL_STATE_RESTART) */
+		}
 
 		/* check if t35 is active */
 		if (sngss7_info->t35.hb_timer_id) {
