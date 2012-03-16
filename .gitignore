@@ -35,6 +35,7 @@
 *.xz
 *.bz2
 *.tbz2
+*.swp
 aclocal.m4
 autom4te.cache
 config.cache
