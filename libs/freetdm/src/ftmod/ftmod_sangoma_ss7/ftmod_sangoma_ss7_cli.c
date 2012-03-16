@@ -784,16 +784,24 @@ static ftdm_status_t handle_print_usage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, "ftdm ss7 set ftrace X Y\n");
 	stream->write_function(stream, "ftdm ss7 set mtrace X Y\n");
 	stream->write_function(stream, "\n");
-	stream->write_function(stream, "ftmod_sangoma_ss7 information:\n");
-	stream->write_function(stream, "ftdm ss7 show status mtp3 X\n");
+    
+	stream->write_function(stream, "ftmod_sangoma_ss7 signaling information:\n");
+	stream->write_function(stream, "ftdm ss7 show \n");
 	stream->write_function(stream, "ftdm ss7 show status mtp2 X\n");
+	stream->write_function(stream, "ftdm ss7 show status mtp3 X\n");
+	stream->write_function(stream, "ftdm ss7 show status linkset X\n");
+	stream->write_function(stream, "\n");
+    
+	stream->write_function(stream, "ftmod_sangoma_ss7 circuit information:\n");
+	stream->write_function(stream, "ftdm ss7 show span all\n");
+	stream->write_function(stream, "ftdm ss7 show span X\n");
 	stream->write_function(stream, "ftdm ss7 show status span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 show free span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 show blocks span X chan Y\n");
-
 	stream->write_function(stream, "ftdm ss7 show inuse span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 show inreset span X chan Y\n");
 	stream->write_function(stream, "\n");
+    
 	stream->write_function(stream, "ftmod_sangoma_ss7 circuit control:\n");
 	stream->write_function(stream, "ftdm ss7 blo span X chan Y\n");
 	stream->write_function(stream, "ftdm ss7 ubl span X chan Y\n");
@@ -802,9 +810,12 @@ static ftdm_status_t handle_print_usage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, "ftdm ss7 cgb span X chan Y range Z\n");
 	stream->write_function(stream, "ftdm ss7 cgu span X chan Y range Z\n");
 	stream->write_function(stream, "\n");
+    
 	stream->write_function(stream, "ftmod_sangoma_ss7 link control:\n");
+	/*
 	stream->write_function(stream, "ftdm ss7 inhibit link X\n");
 	stream->write_function(stream, "ftdm ss7 uninhibit link X\n");
+	*/
 	stream->write_function(stream, "ftdm ss7 activate link X\n");
 	stream->write_function(stream, "ftdm ss7 deactivate link X\n");
 	stream->write_function(stream, "ftdm ss7 activate linkset X\n");

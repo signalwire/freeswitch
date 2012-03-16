@@ -29,6 +29,12 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *
+ * Contributors: 
+ *
+ * James Zhang <jzhang@sangoma.com>
+ *
  */
 /******************************************************************************/
 #ifndef __FTMOD_SNG_SS7_H__
@@ -194,6 +200,21 @@ typedef struct sng_mtp2_link {
 	uint32_t	t6;
 	uint32_t	t7;
 } sng_mtp2_link_t;
+
+/* defining glare handling methods: 
+	SNGSS7_GLARE_PC: 
+		higher PointCode controls even number CIC
+		lower PointCode controls odd number CIC
+	SNGSS7_GLARE_DOWN:
+		always give control to the other side
+	SNGSS7_GLARE_CONTROL:
+		always trying to control
+*/
+typedef enum {
+	SNGSS7_GLARE_PC = 0,
+	SNGSS7_GLARE_DOWN,
+	SNGSS7_GLARE_CONTROL
+} sng_glare_resolution;
 
 typedef struct sng_mtp3_link {
 	char		name[MAX_NAME_LEN];
@@ -444,6 +465,7 @@ typedef struct sng_ss7_cfg {
 	sng_isup_ckt_t		isupCkt[10000]; 	/* KONRAD - only need 2000 ( and 0-1000 aren't used) since other servers are registerd else where */
 	sng_nsap_t			nsap[MAX_NSAPS+1];
 	sng_isap_t			isap[MAX_ISAPS+1];	
+	sng_glare_resolution	glareResolution;
 } sng_ss7_cfg_t;
 
 typedef struct ftdm_sngss7_data {
@@ -870,7 +892,6 @@ ftdm_status_t copy_redirgInfo_from_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo 
 ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *redirInfo);
 ftdm_status_t copy_ocn_to_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNum);
 ftdm_status_t copy_ocn_from_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNum);
-
 
 ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *locPtyNum);
 ftdm_status_t copy_locPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *locPtyNum);

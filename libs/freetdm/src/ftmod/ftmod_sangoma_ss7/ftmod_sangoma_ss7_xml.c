@@ -29,6 +29,12 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *
+ * Contributors: 
+ *
+ * James Zhang <jzhang@sangoma.com>
+ *
  */
 
 /* INCLUDE ********************************************************************/
@@ -191,6 +197,7 @@ static int ftmod_ss7_fill_in_self_route(int spc, int linkType, int switchType, i
 static int ftmod_ss7_fill_in_circuits(sng_span_t *sngSpan);
 
 static int ftmod_ss7_next_timeslot(char *ch_map, sng_timeslot_t *timeslot);
+static void ftmod_ss7_set_glare_resolution (const char *method);
 
 /******************************************************************************/
 
@@ -239,11 +246,11 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 
 		if (!strcasecmp(var, "dialplan")) {
 		/**********************************************************************/
-			/* do i give a shit about this??? */
+			/* don't care for now */
 		/**********************************************************************/
 		} else if (!strcasecmp(var, "context")) {
 		/**********************************************************************/
-			/* do i give a shit about this??? */
+			/* don't care for now */
 		/**********************************************************************/
 		} else if (!strcasecmp(var, "ccSpanId")) {
 		/**********************************************************************/
@@ -451,6 +458,26 @@ static int ftmod_ss7_parse_sng_isup(ftdm_conf_node_t *sng_isup)
 	return FTDM_SUCCESS;
 }
 
+static void ftmod_ss7_set_glare_resolution (const char *method)
+{
+	sng_glare_resolution iMethod=SNGSS7_GLARE_PC;
+	if (!method || (strlen (method) <=0) ) {
+		SS7_ERROR( "Wrong glare resolution parameter, using default. \n" );
+	} else {
+		if (!strcasecmp( method, "PointCode")) {
+			iMethod = SNGSS7_GLARE_PC;
+		} else if (!strcasecmp( method, "Down")) {
+			iMethod = SNGSS7_GLARE_DOWN;
+		} else if (!strcasecmp( method, "Control")) {
+			iMethod = SNGSS7_GLARE_CONTROL;
+		} else {
+			SS7_ERROR( "Wrong glare resolution parameter, using default. \n" );
+			iMethod = SNGSS7_GLARE_DOWN;			
+		}
+	}
+	g_ftdm_sngss7_data.cfg.glareResolution = iMethod;
+}
+
 /******************************************************************************/
 static int ftmod_ss7_parse_sng_gen(ftdm_conf_node_t *sng_gen)
 {
@@ -463,28 +490,27 @@ static int ftmod_ss7_parse_sng_gen(ftdm_conf_node_t *sng_gen)
 
 	/* extract all the information from the parameters */
 	for (i = 0; i < num_parms; i++) {
-	/**************************************************************************/
-
 		if (!strcasecmp(parm->var, "procId")) {
-		/**********************************************************************/
 			g_ftdm_sngss7_data.cfg.procId = atoi(parm->val);
 			SS7_DEBUG("Found a procId = %d\n", g_ftdm_sngss7_data.cfg.procId);
-		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "license")) {
-		/**********************************************************************/
+		} 
+		else if (!strcasecmp(parm->var, "license")) {
 			ftdm_set_string(g_ftdm_sngss7_data.cfg.license, parm->val);
 			snprintf(g_ftdm_sngss7_data.cfg.signature, sizeof(g_ftdm_sngss7_data.cfg.signature), "%s.sig", parm->val);
 			SS7_DEBUG("Found license file = %s\n", g_ftdm_sngss7_data.cfg.license);
 			SS7_DEBUG("Found signature file = %s\n", g_ftdm_sngss7_data.cfg.signature);	
-		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "transparent_iam_max_size")) {
+		} 
+		else if (!strcasecmp(parm->var, "transparent_iam_max_size")) {
 			g_ftdm_sngss7_data.cfg.transparent_iam_max_size = atoi(parm->val);
 			SS7_DEBUG("Found a transparent_iam max size = %d\n", g_ftdm_sngss7_data.cfg.transparent_iam_max_size);
-		} else {
-		/**********************************************************************/
+		} 
+		else if (!strcasecmp(parm->var, "glare-reso")) {
+			ftmod_ss7_set_glare_resolution (parm->val);
+			SS7_DEBUG("Found glare resolution configuration = %d  %s\n", g_ftdm_sngss7_data.cfg.glareResolution, parm->val );
+		}
+		else {
 			SS7_ERROR("Found an invalid parameter \"%s\"!\n", parm->val);
 			return FTDM_FAIL;
-		/**********************************************************************/
 		}
 
 		/* move to the next parmeter */
