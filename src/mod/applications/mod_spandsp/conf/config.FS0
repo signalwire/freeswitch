@@ -1,0 +1,78 @@
+CountryCode:		1
+AreaCode:		800
+FAXNumber:		+1.800.555.1212
+LongDistancePrefix:	1
+InternationalPrefix:	011
+DialStringRules:	etc/dialrules
+ServerTracing:		0xFFF
+SessionTracing:		0xFFF
+RecvFileMode:		0600
+LogFileMode:		0600
+DeviceMode:		0600
+RingsBeforeAnswer:	1
+SpeakerVolume:		off
+GettyArgs:		"-h %l dx_%s"
+LocalIdentifier:	"FS"
+TagLineFont:		etc/lutRS18.pcf
+TagLineFormat:		"From %%l|%c|Page %%P of %%T"
+MaxRecvPages:		200
+#
+#
+# Modem-related stuff: should reflect modem command interface
+# and hardware connection/cabling (e.g. flow control).
+#
+ModemType:		Class1		# use this to supply a hint
+
+#
+# Enabling this will use the hfaxd-protocol to set Caller*ID
+#
+#ModemSetOriginCmd:	AT+VSID="%s","%d"
+
+#
+# If "glare" during initialization becomes a problem then take
+# the modem off-hook during initialization, and then place it
+# back on-hook when done.
+#
+#ModemResetCmds:	"ATH1\nAT+VCID=1"	# enables CallID display
+#ModemReadyCmds:	ATH0
+
+Class1AdaptRecvCmd:	AT+FAR=1
+Class1TMConnectDelay:	400		# counteract quick CONNECT response
+
+#
+# If you have trouble with V.17 receiving or sending,
+# you may want to enable one of these, respectively.
+#
+#Class1RMQueryCmd:      "!24,48,72,96"  # enable this to disable V.17 receiving
+#Class1TMQueryCmd:      "!24,48,72,96"  # enable this to disable V.17 sending
+
+#
+# You'll likely want Caller*ID display (also displays DID) enabled.
+#
+ModemResetCmds:		AT+VCID=1	# enables CallID display
+
+#
+# The pty does not support changing parity.
+#
+PagerTTYParity:		none
+
+#
+# If you are "missing" Caller*ID data on some calls (but not all)
+# and if you do not have adequate glare protection you may want to
+# not answer based on RINGs, but rather enable the CallIDAnswerLength
+# for NDID, disable AT+VCID=1 and do this:
+#
+#RingsBeforeAnswer: 0
+#ModemRingResponse: AT+VRID=1
+
+# Uncomment DATE and TIME if you really want them, but you probably don't.
+#CallIDPattern:          "DATE="
+#CallIDPattern:          "TIME="
+CallIDPattern:          "NMBR="
+CallIDPattern:          "NAME="
+CallIDPattern:		"ANID="
+#CallIDPattern:          "USER="	# username provided by call
+#CallIDPattern:          "PASS="	# password provided by call
+#CallIDPattern:          "CDID="	# DID context in call
+CallIDPattern:          "NDID="
+#CallIDAnswerLength:	4

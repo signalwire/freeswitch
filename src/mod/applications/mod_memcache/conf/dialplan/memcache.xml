@@ -1,0 +1,9 @@
+<include>
+	<extension name="memcache_examples">
+		<condition field="destination_number" expression="^memcache$">
+			<action application="set" data="foo=${memcache(get key)}"/>
+			<action application="set" data="ignore=${memcache(set key value)}"/>
+			<action application="set" data="ignore=${memcache(set key ${channel_var})}"/>
+		</condition>
+	</extension>
+</include>

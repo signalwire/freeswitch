@@ -1,0 +1,27 @@
+<include>
+
+	<extension name="tollfree800">
+		<condition field="destination_number" expression="^1{0,1}(800\d{7})$">
+			<action application="set" data="nibble_account=${accountcode}"/>
+			<action application="set" data="nibble_rate=0"/>
+			<action application="bridge" data="sofia/gateway/bandwidth.com/$1"/>
+		</condition>
+	</extension>
+
+	<extension name="special919rate">
+		<condition field="destination_number" expression="^1{0,1}(919\d{7})$">
+			<action application="set" data="nibble_account=${accountcode}"/>
+			<action application="set" data="nibble_rate=0.07"/>
+			<action application="bridge" data="sofia/gateway/bandwidth.com/$1"/>
+		</condition>
+	</extension>
+
+	<extension name="domestic">
+		<condition field="destination_number" expression="^(1{0,1}\d{10})$">
+			<action application="set" data="nibble_account=${accountcode}"/>
+			<action application="set" data="nibble_rate=0.05"/>
+			<action application="bridge" data="sofia/gateway/bandwidth.com/$1"/>
+		</condition>
+	</extension>
+
+</include>

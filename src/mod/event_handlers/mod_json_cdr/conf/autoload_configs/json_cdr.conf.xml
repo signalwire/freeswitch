@@ -1,0 +1,53 @@
+<include>
+	<configuration name="json_cdr.conf" description="JSON CDR">
+		<settings>
+
+			<!-- Global parameters -->
+			<param name="log-b-leg" value="true"/>
+			<param name="prefix-a-leg" value="false"/>
+
+			<!-- Whether to URL encode the individual JSON values. Defaults to true, set to false for standard JSON. -->
+			<param name="encode-values" value="true"/>
+
+			<!-- Normally if url and log-dir are present, url is attempted first and log-dir second. 
+			     This options allows to do both systematically. -->
+			<param name="log-http-and-disk" value="false"/>
+
+			<!-- File logging -->
+			<!-- Directory where to create the "json_cdr" directory used to store JSON CDRs. Leave empty for no file logging. -->
+			<!-- Might be overriden by a channel variable "json_cdr_base". -->
+			<param name="log-dir" value=""/>
+			<!-- Whether to rotate file CDRs. -->
+			<param name="rotate" value="false"/>
+
+			<!-- HTTP(S) logging -->
+			<!-- URL where to POST JSON CDRs. Leave empty for no URL logging. Up to 20 URLs may be specified. -->
+			<param name="url" value=""/>
+			<!-- Authentication scheme for the above URL. May be one of basic|digest|NTLM|GSS-NEGOTIATE|any-->
+			<param name="auth-scheme" value="basic"/>
+			<!-- Credentials in the form  username:password  if auth-scheme is used. Leave empty for no authentication. -->
+			<param name="cred" value="string"/>
+			<!-- Whether to base64 encode the entire JSON document before POSTing it. -->
+			<param name="encode" value="base64|true|false"/>
+			<!-- Number of retries in case of failure. Each specified URL is tried in turn. -->
+			<param name="retries" value="0"/>
+			<!-- Delay between retries (ms). -->
+			<param name="delay" value="5000"/>
+			<!-- Disable streaming if the server doesn't support it. -->
+			<param name="disable-100-continue" value="false"/>
+			<!-- If web posting failed, the CDR is written to a file. -->
+			<!-- Error log dir ("json_cdr" is appended). Up to 20 may be specified. Default to log-dir if none is specified. -->
+			<param name="err-log-dir" value=""/>
+
+			<!-- SSL options -->
+			<param name="ssl-key-path" value=""/>
+			<param name="ssl-key-password" value=""/>
+			<!-- SSL version. If specified, must be either "SSLv3" or "TLSv1". -->
+			<param name="ssl-version" value=""/>
+			<param name="enable-ssl-verifyhost" value="false"/>
+			<param name="ssl-cert-path" value=""/>
+			<param name="enable-cacert-check" value="false"/>
+			<param name="ssl-cacert-file" value=""/>
+		</settings>
+	</configuration>
+</include>
