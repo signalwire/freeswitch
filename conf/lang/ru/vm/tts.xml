@@ -70,7 +70,6 @@
     </input>
   </macro>
 
-
   <macro name="voicemail_config_menu">
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
@@ -79,7 +78,6 @@
       </match>
     </input>
   </macro>
-
 
   <macro name="voicemail_record_name">
     <input pattern="^(.*)$">
