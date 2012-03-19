@@ -1052,12 +1052,14 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 	switch(zt_event_id) {
 	case ZT_EVENT_RINGEROFF:
 		{
-			return FTDM_FAIL;
+			ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "ZT RINGER OFF\n");
+			*event_id = FTDM_OOB_NOOP;
 		}
 		break;
 	case ZT_EVENT_RINGERON:
 		{
-			return FTDM_FAIL;
+			ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "ZT RINGER ON\n");
+			*event_id = FTDM_OOB_NOOP;
 		}
 		break;
 	case ZT_EVENT_RINGBEGIN:
