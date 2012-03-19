@@ -586,6 +586,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		break;
 	case FTDM_CHAN_TYPE_FXS:
 		{
+			tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
 			if (!ftdm_channel_call_check_busy(tech_pvt->ftdmchan) && !ftdm_channel_call_check_done(tech_pvt->ftdmchan)) {
 				if (tokencnt) {
 					cycle_foreground(tech_pvt->ftdmchan, 0, NULL);
