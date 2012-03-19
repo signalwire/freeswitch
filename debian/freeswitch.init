@@ -28,7 +28,7 @@ WORKDIR=/opt/$NAME
 
 CALLEDSCRIPT=`basename $0`
 
-if [ -r /etc/default/$NAME ]; then . /etc/default/$NAME; fi                                           
+if [ -r /etc/default/$NAME ]; then . /etc/default/$NAME; fi
 
 if [ "$FREESWITCH_ENABLED" != "true" ]; then 
     echo "$DESC not enabled yet. Edit /etc/default/$NAME first."
@@ -180,5 +180,3 @@ case "$1" in
 	exit 3
 	;;
 esac
-
-:
