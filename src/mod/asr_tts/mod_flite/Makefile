@@ -5,6 +5,7 @@ FLITE_BUILDDIR=$(switch_builddir)/libs/$(FLITE)-current
 
 FLITE_LIBDIR=$(FLITE_BUILDDIR)/build/libs
 FLITE_A=$(FLITE_LIBDIR)/libflite_cmu_us_awb.a \
+	$(FLITE_LIBDIR)/libflite_cmu_us_kal.a \
 	$(FLITE_LIBDIR)/libflite_cmu_us_kal16.a \
 	$(FLITE_LIBDIR)/libflite_cmu_us_rms.a \
 	$(FLITE_LIBDIR)/libflite_cmu_us_slt.a \
