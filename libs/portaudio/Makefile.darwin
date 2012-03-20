@@ -11,7 +11,7 @@ top_srcdir = .
 srcdir = .
 
 top_builddir = .
-OPT_LEVEL := -O2
+OPT_LEVEL := -O0
 PREFIX = /usr/local
 prefix = $(PREFIX)
 exec_prefix = ${prefix}

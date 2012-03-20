@@ -59,7 +59,7 @@ the `configure' script does not know about.  You can give `configure'
 initial values for variables by setting them in the environment.  Using
 a Bourne-compatible shell, you can do that on the command line like
 this:
-     CC=c89 CFLAGS=-O2 LIBS=-lposix ./configure
+     CC=c89 CFLAGS=-O0 LIBS=-lposix ./configure
 
 Or on systems that have the `env' program, you can do it like this:
      env CPPFLAGS=-I/usr/local/include LDFLAGS=-s ./configure

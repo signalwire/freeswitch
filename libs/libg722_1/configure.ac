@@ -64,9 +64,9 @@ then
   CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
   CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
   CC=${CC-${host_alias}-gcc}
-  CFLAGS=${CFLAGS-"-g -O2"}
+  CFLAGS=${CFLAGS-"-g -O0"}
   CXX=${CXX-${host_alias}-c++}
-  CXXFLAGS=${CXXFLAGS-"-g -O2"}
+  CXXFLAGS=${CXXFLAGS-"-g -O0"}
 else
   # Set reasonable default values for some tools even if not Canadian.
   # Of course, these are different reasonable default values, originally
@@ -101,8 +101,8 @@ else
   fi
 
   CXX=${CXX-"c++"}
-  CFLAGS=${CFLAGS-"-g -O2"}
-  CXXFLAGS=${CXXFLAGS-"-g -O2"}
+  CFLAGS=${CFLAGS-"-g -O0"}
+  CXXFLAGS=${CXXFLAGS-"-g -O0"}
 fi
 
 AC_DEFUN([REMOVE_FROM_VAR],[

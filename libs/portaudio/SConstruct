@@ -39,7 +39,7 @@ if Platform in Posix:
     baseLinkFlags = threadCFlags = "-pthread"
     baseCxxFlags = baseCFlags = "-Wall -pedantic -pipe " + threadCFlags
     debugCxxFlags = debugCFlags = "-g"
-    optCxxFlags = optCFlags  = "-O2"
+    optCxxFlags = optCFlags  = "-O0"
 env["CCFLAGS"] = baseCFlags.split()
 env["CXXFLAGS"] = baseCxxFlags.split()
 env["LINKFLAGS"] = baseLinkFlags.split()

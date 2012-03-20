@@ -24,7 +24,7 @@ PORTAUDIO="$PACPP_ROOT/../portaudio"
 
 PACPP_INC="$PACPP_ROOT/include"
 INCLUDES="-I$PACPP_INC -I$PORTAUDIO -I$PORTAUDIO/pa_common"
-CFLAGS="-g -O2 -Wall -ansi -pedantic $INCLUDES"
+CFLAGS="-g -O0 -Wall -ansi -pedantic $INCLUDES"
 CXXFLAGS="$CFLAGS"
 PALIBDIR="$PORTAUDIO/lib"
 

@@ -326,7 +326,7 @@ dnl	       # Not a problem in 10.20.  Otherwise, who knows?
 	;;
     *convex-v11*)
 	APR_ADDTO(CPPFLAGS, [-DCONVEXOS11])
-	APR_SETIFNULL(CFLAGS, [-O1])
+	APR_SETIFNULL(CFLAGS, [-O0])
 	APR_ADDTO(CFLAGS, [-ext])
 	;;
     i860-intel-osf1)

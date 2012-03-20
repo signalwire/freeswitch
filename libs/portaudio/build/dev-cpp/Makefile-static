@@ -7,12 +7,12 @@ WINDRES = windres.exe
 RES  = 
 OBJ  = ./pa_skeleton.o ./pa_stream.o ./pa_trace.o ./pa_allocation.o ./pa_converters.o ./pa_cpuload.o ./pa_dither.o ./pa_front.o ./pa_process.o ./pa_asio.o ./pa_win_util.o ./pa_win_hostapis.o ./pa_win_ds.o ./dsound_wrapper.o ./pa_win_wmme.o ./iasiothiscallresolver.o $(RES)
 LINKOBJ  = ./pa_skeleton.o ./pa_stream.o ./pa_trace.o ./pa_allocation.o ./pa_converters.o ./pa_cpuload.o ./pa_dither.o ./pa_front.o ./pa_process.o ./pa_asio.o ./pa_win_util.o ./pa_win_hostapis.o ./pa_win_ds.o ./dsound_wrapper.o ./pa_win_wmme.o ./iasiothiscallresolver.o $(RES)
-LIBS =  -L"C:/Dev-CPP/lib" -fmessage-length=0 -O3 -s 
+LIBS =  -L"C:/Dev-CPP/lib" -fmessage-length=0 -O0 -s 
 INCS =  -I"C:/Dev-CPP/include"  -I"../../../asiosdk2"  -I"../../../asiosdk2/common"  -I"../../../asiosdk2/host"  -I"../../../asiosdk2/host/pc"  -I"../../pa_common" 
 CXXINCS =  -I"C:/Dev-CPP/include/c++"  -I"C:/Dev-CPP/include/c++/mingw32"  -I"C:/Dev-CPP/include/c++/backward"  -I"C:/Dev-CPP/include"  -I"../../../asiosdk2"  -I"../../../asiosdk2/common"  -I"../../../asiosdk2/host"  -I"../../../asiosdk2/host/pc"  -I"../../pa_common" 
 BIN  = portaudio-static.a
-CXXFLAGS = $(CXXINCS)-O3   -fmessage-length=0 -Wall
-CFLAGS = $(INCS)-O3   -fmessage-length=0 -Wall
+CXXFLAGS = $(CXXINCS)-O0   -fmessage-length=0 -Wall
+CFLAGS = $(INCS)-O0   -fmessage-length=0 -Wall
 
 .PHONY: all all-before all-after clean clean-custom
 

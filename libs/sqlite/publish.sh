@@ -66,7 +66,7 @@ make target_source
 cd tsrc
 rm tclsqlite.c
 OPTS='-DSTATIC_BUILD=1 -DNDEBUG=1'
-i386-mingw32msvc-gcc -O2 $OPTS -I. -I$TCLDIR *.c -o sqlite3.exe
+i386-mingw32msvc-gcc -O0 $OPTS -I. -I$TCLDIR *.c -o sqlite3.exe
 zip ../doc/sqlite-$VERSW.zip sqlite3.exe
 cd ..
 

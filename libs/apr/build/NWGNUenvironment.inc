@@ -161,7 +161,7 @@ endif
 
 # -O4,p                 level 4 optimizations, optimize for speed
 ifeq "$(RELEASE)" "optimized"
-CFLAGS += -O4,p
+CFLAGS += -O0,p
 endif
 
 # -prefix apr_arch_pre_nw.h      #include pre_nw.h for all files
