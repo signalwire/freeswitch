@@ -2788,7 +2788,7 @@ static int ftmod_ss7_fill_in_isap(sng_isap_t *sng_isap)
 	if (sng_isap->t1 != 0) {
 		g_ftdm_sngss7_data.cfg.isap[i].t1		= sng_isap->t1;
 	} else {
-		g_ftdm_sngss7_data.cfg.isap[i].t1		= 200;
+		g_ftdm_sngss7_data.cfg.isap[i].t1		= 150;
 	}
 	if (sng_isap->t2 != 0) {
 		g_ftdm_sngss7_data.cfg.isap[i].t2		= sng_isap->t2;
@@ -2803,17 +2803,17 @@ static int ftmod_ss7_fill_in_isap(sng_isap_t *sng_isap)
 	if (sng_isap->t6 != 0) {
 		g_ftdm_sngss7_data.cfg.isap[i].t6		= sng_isap->t6;
 	} else {
-		g_ftdm_sngss7_data.cfg.isap[i].t6		= 200;
+		g_ftdm_sngss7_data.cfg.isap[i].t6		= 600;
 	}
 	if (sng_isap->t7 != 0) {
 		g_ftdm_sngss7_data.cfg.isap[i].t7		= sng_isap->t7;
 	} else {
-		g_ftdm_sngss7_data.cfg.isap[i].t7		= 250;
+		g_ftdm_sngss7_data.cfg.isap[i].t7		= 200;
 	}
 	if (sng_isap->t8 != 0) {
 		g_ftdm_sngss7_data.cfg.isap[i].t8		= sng_isap->t8;
 	} else {
-		g_ftdm_sngss7_data.cfg.isap[i].t8		= 120;
+		g_ftdm_sngss7_data.cfg.isap[i].t8		= 100;
 	}
 	if (sng_isap->t9 != 0) {
 		g_ftdm_sngss7_data.cfg.isap[i].t9		= sng_isap->t9;
