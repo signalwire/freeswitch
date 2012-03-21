@@ -35,7 +35,7 @@ RM       = del
 LIB      = tlib
 IMPLIB   = implib
 
-CXXFLAGS = -q -5 -O0 -w-aus -w-ccc -w-csu -w-par -w-pia -w-rch -w-inl -w-ngu -w-pro -tWM
+CXXFLAGS = -q -5 -O2 -w-aus -w-ccc -w-csu -w-par -w-pia -w-rch -w-inl -w-ngu -w-pro -tWM
 LIBFLAGS = /C /P32
 LDFLAGS  = -q -lq -laa -tWD
 

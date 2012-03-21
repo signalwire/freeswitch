@@ -10,7 +10,7 @@ AC_ARG_ENABLE(portable-binary, [AC_HELP_STRING([--enable-portable-binary], [disa
 if test "$ac_test_CFLAGS" != "set"; then
   CFLAGS=""
   case $ax_cv_c_compiler_vendor in
-    dec) CFLAGS="-newc -w0 -O0 -ansi_alias -ansi_args -fp_reorder -tune host"
+    dec) CFLAGS="-newc -w0 -O5 -ansi_alias -ansi_args -fp_reorder -tune host"
          if test "x$acx_maxopt_portable" = xno; then
            CFLAGS="$CFLAGS -arch host"
          fi;;
@@ -31,13 +31,13 @@ if test "$ac_test_CFLAGS" != "set"; then
            xlc_opt="-qtune=auto"
          fi
          AX_CHECK_COMPILER_FLAGS($xlc_opt,
-                CFLAGS="-O0 -qansialias -w $xlc_opt",
-               [CFLAGS="-O0 -qansialias -w"
+                CFLAGS="-O3 -qansialias -w $xlc_opt",
+               [CFLAGS="-O3 -qansialias -w"
                 echo "******************************************************"
                 echo "*  You seem to have the IBM  C compiler.  It is      *"
                 echo "*  recommended for best performance that you use:    *"
                 echo "*                                                    *"
-                echo "*    CFLAGS=-O0 -qarch=xxx -qtune=xxx -qansialias -w *"
+                echo "*    CFLAGS=-O3 -qarch=xxx -qtune=xxx -qansialias -w *"
                 echo "*                      ^^^        ^^^                *"
                 echo "*  where xxx is pwr2, pwr3, 604, or whatever kind of *"
                 echo "*  CPU you have.  (Set the CFLAGS environment var.   *"
@@ -45,7 +45,7 @@ if test "$ac_test_CFLAGS" != "set"; then
                 echo "******************************************************"])
          ;;
 
-    intel) CFLAGS="-O0 -ansi_alias"
+    intel) CFLAGS="-O3 -ansi_alias"
         if test "x$acx_maxopt_portable" = xno; then
           icc_archflag=unknown
           icc_flags=""
@@ -78,7 +78,7 @@ if test "$ac_test_CFLAGS" != "set"; then
 
     gnu)
      # default optimization flags for gcc on all systems
-     CFLAGS="-O0 -fomit-frame-pointer"
+     CFLAGS="-O3 -fomit-frame-pointer"
 
      # -malign-double for x86 systems
      AX_CHECK_COMPILER_FLAGS(-malign-double, CFLAGS="$CFLAGS -malign-double")
@@ -99,10 +99,10 @@ if test "$ac_test_CFLAGS" != "set"; then
         echo "********************************************************"
         echo "* WARNING: Don't know the best CFLAGS for this system  *"
         echo "* Use ./configure CFLAGS=... to specify your own flags *"
-        echo "* (otherwise, a default of CFLAGS=-O0 will be used)    *"
+        echo "* (otherwise, a default of CFLAGS=-O3 will be used)    *"
         echo "********************************************************"
         echo ""
-        CFLAGS="-O0"
+        CFLAGS="-O3"
   fi
 
   AX_CHECK_COMPILER_FLAGS($CFLAGS, [], [

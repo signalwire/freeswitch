@@ -26,7 +26,7 @@ CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
 CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
 LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
 
-# The default CFLAGS and CXXFLAGS in Autoconf are "-g -O0" for gcc and just
+# The default CFLAGS and CXXFLAGS in Autoconf are "-g -O2" for gcc and just
 # "-g" for any other compiler. There doesn't seem to be a standard way of
 # getting rid of the -g (which I don't think is needed for a production
 # library). This fudge seems to achieve the necessary. First, we remember the
@@ -44,9 +44,9 @@ AC_PROG_CXX
 
 if test "x$remember_set_CFLAGS" = "x"
 then
-  if test "$CFLAGS" = "-g -O0"
+  if test "$CFLAGS" = "-g -O2"
   then
-    CFLAGS="-O0"
+    CFLAGS="-O2"
   elif test "$CFLAGS" = "-g"
   then
     CFLAGS=""
@@ -55,9 +55,9 @@ fi
 
 if test "x$remember_set_CXXFLAGS" = "x"
 then
-  if test "$CXXFLAGS" = "-g -O0"
+  if test "$CXXFLAGS" = "-g -O2"
   then
-    CXXFLAGS="-O0"
+    CXXFLAGS="-O2"
   elif test "$CXXFLAGS" = "-g"
   then
     CXXFLAGS=""

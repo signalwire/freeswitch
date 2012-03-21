@@ -25,7 +25,7 @@ PORTAUDIO_ROOT="../.."
 
 # Various other variables and flags
 DEFAULT_INCLUDES="-I$PACPP_ROOT/include -I$PACPP_ROOT/$PORTAUDIO_ROOT/include"
-CFLAGS=${CFLAGS-"-g -O0 -Wall -ansi -pedantic"}
+CFLAGS=${CFLAGS-"-g -O2 -Wall -ansi -pedantic"}
 CXXFLAGS=${CXXFLAGS-"${CFLAGS}"}
 
 LT_VERSION_INFO="lt_current:lt_revision:lt_age"

@@ -19,7 +19,7 @@ TOP = ../sqlite
 #### C Compiler and options for use in building executables that
 #    will run on the platform that is doing the build.
 #
-BCC = gcc -g -O0
+BCC = gcc -g -O2
 #BCC = /opt/ancic/bin/c89 -0
 
 #### If the target operating system supports the "usleep()" system
@@ -70,10 +70,10 @@ EXE =
 #    will run on the target platform.  This is usually the same
 #    as BCC, unless you are cross-compiling.
 #
-TCC = gcc -O0
+TCC = gcc -O6
 #TCC = gcc -g -O0 -Wall
 #TCC = gcc -g -O0 -Wall -fprofile-arcs -ftest-coverage
-#TCC = /opt/mingw/bin/i386-mingw32-gcc -O0
+#TCC = /opt/mingw/bin/i386-mingw32-gcc -O6
 #TCC = /opt/ansic/bin/c89 -O +z -Wl,-a,archive
 
 #### Tools used to build a static library.

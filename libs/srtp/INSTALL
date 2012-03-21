@@ -78,7 +78,7 @@ details on some of the pertinent environment variables.
 by setting variables in the command line or in the environment.  Here
 is an example:
 
-     ./configure CC=c89 CFLAGS=-O0 LIBS=-lposix
+     ./configure CC=c89 CFLAGS=-O2 LIBS=-lposix
 
    *Note Defining Variables::, for more details.
 

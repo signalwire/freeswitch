@@ -1263,7 +1263,7 @@ PORTAUDIO="$PACPP_ROOT/../portaudio"
 
 PACPP_INC="$PACPP_ROOT/include"
 INCLUDES="-I$PACPP_INC -I$PORTAUDIO -I$PORTAUDIO/pa_common"
-CFLAGS="-g -O0 -Wall -ansi -pedantic $INCLUDES"
+CFLAGS="-g -O2 -Wall -ansi -pedantic $INCLUDES"
 CXXFLAGS="$CFLAGS"
 PALIBDIR="$PORTAUDIO/lib"
 
@@ -1908,13 +1908,13 @@ if test "$ac_test_CFLAGS" = set; then
   CFLAGS=$ac_save_CFLAGS
 elif test $ac_cv_prog_cc_g = yes; then
   if test "$GCC" = yes; then
-    CFLAGS="-g -O0"
+    CFLAGS="-g -O2"
   else
-    CFLAGS="-g -O0"
+    CFLAGS="-g"
   fi
 else
   if test "$GCC" = yes; then
-    CFLAGS="-O0"
+    CFLAGS="-O2"
   else
     CFLAGS=
   fi
@@ -2350,13 +2350,13 @@ if test "$ac_test_CXXFLAGS" = set; then
   CXXFLAGS=$ac_save_CXXFLAGS
 elif test $ac_cv_prog_cxx_g = yes; then
   if test "$GXX" = yes; then
-    CXXFLAGS="-g -O0"
+    CXXFLAGS="-g -O2"
   else
-    CXXFLAGS="-g -O0"
+    CXXFLAGS="-g"
   fi
 else
   if test "$GXX" = yes; then
-    CXXFLAGS="-O0"
+    CXXFLAGS="-O2"
   else
     CXXFLAGS=
   fi

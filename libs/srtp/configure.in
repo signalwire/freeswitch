@@ -49,7 +49,7 @@ case "$host" in
                                 IN_LINE=""
                         elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
                                 SOLINK="-Bdynamic -dy -G"
-                                new_AM_CFLAGS="-fPIC -Wall -O0 -fexpensive-optimizations -funroll-loops"
+                                new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
                                 new_AM_LDFLAGS=""
                                 IN_LINE=inline
                         fi
@@ -71,7 +71,7 @@ case "$host" in
                                 FUNC_DEF=__func__
                         elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
                                SOLINK="-shared -Xlinker -x"
-                                new_AM_CFLAGS="-fPIC -Wall -O0 -fexpensive-optimizations -funroll-loops"
+                                new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
                                 new_AM_LDFLAGS=""
                         fi
                         DYNAMIC_LIB_EXTEN="so"
@@ -84,20 +84,20 @@ case "$host" in
                                 FUNC_DEF=__func__
                         elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
                                 SOLINK="-shared -Xlinker -x"
-                                new_AM_CFLAGS="-fpic -Wall -O0 -fexpensive-optimizations -funroll-loops"
+                                new_AM_CFLAGS="-fpic -Wall -O4 -fexpensive-optimizations -funroll-loops"
                                 new_AM_LDFLAGS=""
                         fi
                         DYNAMIC_LIB_EXTEN="so"
                 ;;
 		i*6*-*-freebsd*)
                         SOLINK="-shared -Xlinker -x"
-                        new_AM_CFLAGS="-fPIC -Wall -O0 -fexpensive-optimizations -funroll-loops"
+                        new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
                         new_AM_LDFLAGS=""
                         DYNAMIC_LIB_EXTEN="so"
 		;;
 		x86_64-*-freebsd*|amd64-*-freebsd*)
                         SOLINK="-shared -Xlinker -x"
-                        new_AM_CFLAGS="-fPIC -Wall -O0 -fexpensive-optimizations -funroll-loops"
+                        new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
                         new_AM_LDFLAGS=""
                         DYNAMIC_LIB_EXTEN="so"
 		;;

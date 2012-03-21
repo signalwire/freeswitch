@@ -33,7 +33,7 @@ CFLAGS+=-g3
 
 CFLAGS+=-I$(AST_INCLUDE_DIR) -I.
 CFLAGS+=-D_REENTRANT -D_GNU_SOURCE
-#CFLAGS+=-O0
+#CFLAGS+=-O6
 #CFLAGS+=-march=i586
 CFLAGS+=-fomit-frame-pointer
 ifeq ($(shell uname -m),x86_64)
