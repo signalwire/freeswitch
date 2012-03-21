@@ -609,10 +609,15 @@ mc_again:
 	}
 	del = where - el->el_cursor.h;
 
+#if 0
+	/* workaround miscounting of control characters in prompt by
+	   avoiding absolute horizontal positioning */
 	if ((del < -4 || del > 4) && GoodStr(T_ch))
 		/* go there directly */
 		(void) tputs(tgoto(Str(T_ch), where, where), where, term__putc);
-	else {
+	else
+#endif
+	  {
 		if (del > 0) {	/* moving forward */
 			if ((del > 4) && GoodStr(T_RI))
 				(void) tputs(tgoto(Str(T_RI), del, del),

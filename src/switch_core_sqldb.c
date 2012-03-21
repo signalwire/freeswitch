@@ -466,7 +466,12 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 		break;
 	case SCDB_TYPE_CORE_DB:
 		{
-			status = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, NULL, NULL, &errmsg);
+			int ret = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, NULL, NULL, &errmsg);
+
+			if (ret == SWITCH_CORE_DB_OK) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
+
 			if (errmsg) {
 				switch_strdup(tmp, errmsg);
 				switch_core_db_free(errmsg);
@@ -832,7 +837,11 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 		break;
 	case SCDB_TYPE_CORE_DB:
 		{
-			status = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, callback, pdata, &errmsg);
+			int ret = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, callback, pdata, &errmsg);
+
+			if (ret == SWITCH_CORE_DB_OK || ret == SWITCH_CORE_DB_ABORT) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
 
 			if (errmsg) {
 				dbh->last_used = switch_epoch_time_now(NULL) - (SQL_CACHE_TIMEOUT * 2);
@@ -1421,24 +1430,25 @@ static void core_event_handler(switch_event_t *event)
 		}
 	case SWITCH_EVENT_CHANNEL_BRIDGE:
 		{
-			const char *a_uuid, *b_uuid;
+			const char *a_uuid, *b_uuid, *uuid;
 
 			a_uuid = switch_event_get_header(event, "Bridge-A-Unique-ID");
 			b_uuid = switch_event_get_header(event, "Bridge-B-Unique-ID");
+			uuid = switch_event_get_header(event, "unique-id");
 
 			if (zstr(a_uuid) || zstr(b_uuid)) {
 				a_uuid = switch_event_get_header_nil(event, "caller-unique-id");
 				b_uuid = switch_event_get_header_nil(event, "other-leg-unique-id");
 			}
 
-			if ((extra_cols = parse_presence_data_cols(event))) {
-				new_sql() = switch_mprintf("update channels set call_uuid='%q',%s where uuid='%s' or uuid='%s'",
-										   switch_event_get_header_nil(event, "channel-call-uuid"), extra_cols, a_uuid, b_uuid);
+			if (uuid && (extra_cols = parse_presence_data_cols(event))) {
+				new_sql() = switch_mprintf("update channels set %s where uuid='%s'", extra_cols, uuid);
 				free(extra_cols);
-			} else {
-				new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' or uuid='%s'",
+			} 
+
+			new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' or uuid='%s'",
 										   switch_event_get_header_nil(event, "channel-call-uuid"), a_uuid, b_uuid);
-			}
+			
 
 			new_sql() = switch_mprintf("insert into calls (call_uuid,call_created,call_created_epoch,"
 									   "caller_uuid,callee_uuid,hostname) "
@@ -1454,20 +1464,19 @@ static void core_event_handler(switch_event_t *event)
 		break;
 	case SWITCH_EVENT_CHANNEL_UNBRIDGE:
 		{
-			char *uuid = switch_event_get_header_nil(event, "caller-unique-id");
+			char *cuuid = switch_event_get_header_nil(event, "caller-unique-id");
+			char *uuid = switch_event_get_header(event, "unique-id");
 
-			if ((extra_cols = parse_presence_data_cols(event))) {
-				new_sql() = switch_mprintf("update channels set call_uuid=uuid,%s where call_uuid='%s'",
-										   extra_cols,
-										   switch_event_get_header_nil(event, "channel-call-uuid"));
+			if (uuid && (extra_cols = parse_presence_data_cols(event))) {
+				new_sql() = switch_mprintf("update channels set %s where uuid='%s'", extra_cols, uuid);
 				free(extra_cols);
-			} else {
-				new_sql() = switch_mprintf("update channels set call_uuid=uuid where call_uuid='%s'",
-										   switch_event_get_header_nil(event, "channel-call-uuid"));
-			}
+			} 
 
+			new_sql() = switch_mprintf("update channels set call_uuid=uuid where call_uuid='%s'",
+									   switch_event_get_header_nil(event, "channel-call-uuid"));
+			
 			new_sql() = switch_mprintf("delete from calls where (caller_uuid='%q' or callee_uuid='%q')",
-									   uuid, uuid);
+									   cuuid, cuuid);
 			break;
 		}
 	case SWITCH_EVENT_SHUTDOWN:

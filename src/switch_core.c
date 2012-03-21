@@ -397,18 +397,36 @@ static void *SWITCH_THREAD_FUNC switch_core_service_thread(switch_thread_t *thre
 
 	switch_channel_set_flag(channel, CF_SERVICE);
 	while (switch_channel_test_flag(channel, CF_SERVICE)) {
-		switch (switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0)) {
-		case SWITCH_STATUS_SUCCESS:
-		case SWITCH_STATUS_TIMEOUT:
-		case SWITCH_STATUS_BREAK:
-			break;
-		default:
-			switch_channel_clear_flag(channel, CF_SERVICE);
-			continue;
+
+		if (switch_channel_test_flag(channel, CF_SERVICE_AUDIO)) {
+			switch (switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0)) {
+			case SWITCH_STATUS_SUCCESS:
+			case SWITCH_STATUS_TIMEOUT:
+			case SWITCH_STATUS_BREAK:
+				break;
+			default:
+				switch_channel_clear_flag(channel, CF_SERVICE);
+				break;
+			}
+		}
+
+		if (switch_channel_test_flag(channel, CF_SERVICE_VIDEO) && switch_channel_test_flag(channel, CF_VIDEO)) {
+			switch (switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0)) {
+			case SWITCH_STATUS_SUCCESS:
+			case SWITCH_STATUS_TIMEOUT:
+			case SWITCH_STATUS_BREAK:
+				break;
+			default:
+				switch_channel_clear_flag(channel, CF_SERVICE);
+				break;
+			}
 		}
 	}
 
 	switch_mutex_unlock(session->frame_read_mutex);
+
+	switch_channel_clear_flag(channel, CF_SERVICE_AUDIO);
+	switch_channel_clear_flag(channel, CF_SERVICE_VIDEO);
 
 	switch_core_session_rwunlock(session);
 
@@ -425,15 +443,23 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_session_t *sessi
 	switch_assert(channel);
 
 	switch_channel_clear_flag(channel, CF_SERVICE);
+	switch_channel_clear_flag(channel, CF_SERVICE_AUDIO);
+	switch_channel_clear_flag(channel, CF_SERVICE_VIDEO);
+
+	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
+	
 }
 
-SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_core_service_session_av(switch_core_session_t *session, switch_bool_t audio, switch_bool_t video)
 {
 	switch_channel_t *channel;
 	switch_assert(session);
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
+
+	if (audio) switch_channel_set_flag(channel, CF_SERVICE_AUDIO);
+	if (video) switch_channel_set_flag(channel, CF_SERVICE_VIDEO);
 
 	switch_core_session_launch_thread(session, (void *(*)(switch_thread_t *,void *))switch_core_service_thread, session);
 }
@@ -603,7 +629,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 		GetTempPath(dwBufSize, lpPathBuffer);
 		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", lpPathBuffer);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", "/tmp/");
+		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", "/tmp");
 #endif
 #endif
 	}
@@ -1566,14 +1592,14 @@ static void switch_load_core_config(const char *file)
 				
 				if (!zstr(var) && !zstr(val)) {
 					uint32_t *p;
-					uint32_t v = (unsigned long) atol(val);
+					uint32_t v = switch_atoul(val);
 
 					if (!strcasecmp(var, "G723") || !strcasecmp(var, "iLBC")) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error adding %s, defaults cannot be changed\n", var);
 						continue;
 					}
 					
-					if (v < 0) {
+					if (v == 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error adding %s, invalid ptime\n", var);
 						continue;
 					}

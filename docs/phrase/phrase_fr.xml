@@ -178,7 +178,7 @@
         <prompt phrase="Bienvenue dans votre boîte aux lettres" filename="vm-hello.wav"/>
         <prompt phrase="Au revoir" filename="vm-goodbye.wav"/>
         <prompt phrase="Au bip, enregistrez votre nom, puis appuyez sur une touche ou arrêtez de parler pour finir l'enregistrement." filename="vm-record_name1.wav"/>
-        <prompt phrase="Choisissez un message d'accueil entre 1 et 9" filename="vm-choose_greeting.wav"/>
+        <prompt phrase="Choisissez un message d'accueil entre 1 et 9" filename="vm-choose_greeting_choose.wav"/>
         <prompt phrase="Valeur incorrecte" filename="vm-choose_greeting_fail.wav"/>
         <prompt phrase="Trop de tentatives incorrectes" filename="vm-abort.wav"/>
         <prompt phrase="Pour modifier votre code d'accès" filename="vm-change_password.wav"/>
@@ -210,7 +210,7 @@
         <prompt phrase="Pour transférer l'enregistrement vers votre messagerie électronique" filename="vm-forward_to_email.wav"/>
         <prompt phrase="message d'accueil" filename="vm-greeting.wav"/>
         <prompt phrase="choisi" filename="vm-selected.wav"/>
-        <prompt phrase="n'est pas disponible" filename="vm-not_avaliable.wav"/>
+        <prompt phrase="n'est pas disponible" filename="vm-not_available.wav"/>
         <prompt phrase="message numéro" filename="vm-message_number.wav"/>
         <prompt phrase="effacé" filename="vm-deleted.wav"/>
         <prompt phrase="Votre enregistrement est trop court, veuillez réessayer" filename="vm-too-small.wav"/>
@@ -223,7 +223,7 @@
 		<prompt phrase="nom de famille." filename="dir-last_name.wav"/>
 		<prompt phrase="Pour chercher par" filename="dir-to_search_by.wav"/>
 		<prompt phrase="prénom." filename="dir-first_name.wav"/>
-		<prompt phrase="Votre recherche a retourner aucune résultat, essayer de nouveaux." filename="dir-no_match_entry.wav"/>
+		<prompt phrase="Votre recherche a retourner aucune résultat, essayer de nouveaux." filename="dir-no_matching_results.wav"/>
 		<prompt phrase="résultats correspond a votre recherche." filename="dir-result_match.wav"/>
 		<prompt phrase="Votre recherche retourne trop de résultat, essayer de nouveaux." filename="dir-too_many_result.wav"/>
 		<prompt phrase="Fin des résultats." filename="dir-no_more_results.wav"/>
@@ -240,7 +240,7 @@
 	<conference>
       <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
       <prompt phrase="NULL" filename="conf-nack.wav" type="tone"/>
-      <prompt phrase="Personne ne peut vous entendre." filename="conf-mute.wav"/>
+      <prompt phrase="Personne ne peut vous entendre." filename="conf-muted.wav"/>
       <prompt phrase="Tout le monde peut vous entendre." filename="conf-unmuted.wav"/>
       <prompt phrase="Vous êtes actuellement le seul participant dans cette conférence." filename="conf-alone.wav"/>
       <prompt phrase="NULL" filename="conf-perpetual.wav" type="music"/>

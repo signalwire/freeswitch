@@ -989,6 +989,8 @@ typedef enum {
 #define VM_ENTER_ID_MACRO "voicemail_enter_id"
 #define VM_ENTER_PASS_MACRO "voicemail_enter_pass"
 #define VM_FAIL_AUTH_MACRO "voicemail_fail_auth"
+#define VM_CHANGE_PASS_SUCCESS_MACRO "voicemail_change_pass_success"
+#define VM_CHANGE_PASS_FAIL_MACRO "voicemail_change_pass_fail"
 #define VM_ABORT_MACRO "voicemail_abort"
 #define VM_HELLO_MACRO "voicemail_hello"
 #define VM_GOODBYE_MACRO "voicemail_goodbye"
@@ -1542,8 +1544,6 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	char cid_buf[1024] = "";
 
 	if (switch_channel_ready(channel)) {
-		const char *vm_announce_cid = NULL;
-
 		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_number, cbt->cid_name);
 
 		msg.from = __FILE__;
@@ -1554,10 +1554,8 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 						  cid_buf, switch_channel_get_name(channel));
 		switch_core_session_receive_message(session, &msg);
 		
-		if (!zstr(cbt->cid_number) && (vm_announce_cid = switch_channel_get_variable(channel, "vm_announce_cid"))) {
-			switch_ivr_play_file(session, NULL, vm_announce_cid, NULL);
-			switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
-			switch_ivr_say(session, cbt->cid_number, NULL, "name_spelled", "pronounced", NULL, NULL);
+		if (!zstr(cbt->cid_number) && (switch_true(switch_channel_get_variable(channel, "vm_announce_cid")))) {
+			TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_PHONE_NUMBER_MACRO, cbt->cid_number, NULL, NULL));
 		}
 		
 		args.input_callback = cancel_on_dtmf;
@@ -1863,6 +1861,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
 	int auth_only = 0, authed = 0;
+	switch_event_t *event;
 
 	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
 		caller_id_name = caller_profile->caller_id_name;
@@ -2168,6 +2167,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					int ok = 0;
 
 					while (!ok) {
+						fail = 0;
 						switch_snprintf(macro, sizeof(macro), "phrase:%s:%s", VM_ENTER_PASS_MACRO, profile->terminator_key);
 						TRY_CODE(switch_ivr_read(session, 0, 255, macro, NULL, buf, sizeof(buf), 10000, profile->terminator_key, 0));
 					
@@ -2193,6 +2193,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						}
 						
 						if (fail) {
+							/* add feedback for user - let him/her know that the password they tried to change to is not allowed */
+							/* change the following macro to VM_CHANGE_PASS_FAIL_MACRO when new prompts have been recorded */
 							switch_ivr_phrase_macro(session, VM_FAIL_AUTH_MACRO, NULL, NULL, NULL);
 						} else {
 							sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
@@ -2200,6 +2202,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 							switch_safe_free(file_path);
 							switch_safe_free(sql);
 							ok = 1;
+							/* add feedback for user - let him/her know that password change was successful */
+							switch_ivr_phrase_macro(session, VM_CHANGE_PASS_SUCCESS_MACRO, NULL, NULL, NULL);
 						}
 					
 						switch_event_destroy(&params);
@@ -2451,6 +2455,14 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					}
 				}
 
+				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Action", "authentication");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Auth-Result", auth ? "success" : "fail");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-User", myid);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
+				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
+
 				FREE_DOMAIN_ROOT();
 
 				if (auth) {
@@ -2517,17 +2529,19 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 		status = switch_ivr_phrase_macro(session, VM_GOODBYE_MACRO, NULL, NULL, NULL);
 	}
 
-	if (x_user) {
-		switch_xml_free(x_user);
-		x_user = NULL;
-	}
-
 	if (auth_only) {
 		if (authed) {
 			switch_channel_set_variable(channel, "user_pin_authenticated", "true");
+			switch_channel_set_variable(channel, "user_pin_authenticated_user", myid);
+			if (!zstr(myid)) switch_ivr_set_user(session, myid);
 		} else {
 			switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
 		}
+	}
+
+	if (x_user) {
+		switch_xml_free(x_user);
+		x_user = NULL;
 	}
 
 }
@@ -3422,7 +3436,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 	status = create_file(session, profile, record_macro, file_path, &message_len, SWITCH_TRUE, key_buf, buf);
 
-	if ((status == SWITCH_STATUS_NOTFOUND)) {
+	if (status == SWITCH_STATUS_NOTFOUND) {
 		goto end;
 	}
 
@@ -3450,7 +3464,20 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 							switch_core_session_get_pool(session), caller_id_name, caller_id_number, NULL, SWITCH_FALSE,
 							session ? switch_core_session_get_uuid(session) : NULL, session);
 		switch_event_destroy(&vars);
-		if (status != SWITCH_STATUS_SUCCESS) {
+		if (status == SWITCH_STATUS_SUCCESS) {
+			switch_core_time_duration_t duration;
+			char duration_str[80];
+			switch_time_t l_duration = switch_time_make(message_len, 0);
+
+			switch_core_measure_time(l_duration, &duration);
+			duration.day += duration.yr * 365;
+			duration.hr += duration.day * 24;
+
+			switch_snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", duration.hr, duration.min, duration.sec);
+
+			switch_channel_set_variable(channel, "voicemail_message_len", duration_str);
+
+		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to deliver message\n");
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
 		}
@@ -4356,7 +4383,7 @@ SWITCH_STANDARD_API(voicemail_inject_api_function)
 static int api_del_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 
-	unlink(argv[2]);
+	unlink(argv[3]);
 	
     return 0;
 }
@@ -4480,9 +4507,9 @@ SWITCH_STANDARD_API(voicemail_read_api_function)
 		
 		if (mread) {
 			if (uuid) {
-				sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld,flags='save' where uuid='%q'", (long) switch_epoch_time_now(NULL), uuid);
+				sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld where uuid='%q'", (long) switch_epoch_time_now(NULL), uuid);
 			} else {
-				sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld,flags='save' where domain='%q'", (long) switch_epoch_time_now(NULL), domain);
+				sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld where domain='%q'", (long) switch_epoch_time_now(NULL), domain);
 			}
 		} else{
 			if (uuid) {
@@ -5605,6 +5632,158 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define VM_FSDB_MSG_EMAIL_USAGE "<profile> <domain> <user> <uuid> <email>"
+SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
+{
+	const char *id = NULL, *domain = NULL, *profile_name = NULL, *uuid = NULL, *email = NULL;
+	vm_profile_t *profile = NULL;
+	char *argv[7] = { 0 };
+	char *mycmd = NULL;
+	msg_get_callback_t cbt = { 0 };
+	char *sql;
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[0])
+		profile_name = argv[0];
+	if (argv[1])
+		domain = argv[1];
+	if (argv[2])
+		id = argv[2];
+	if (argv[3])
+		uuid = argv[3];
+	if (argv[4])
+		email = argv[4];
+
+	if (!profile_name || !domain || !id || !uuid || !email) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	} else {
+		char *from;
+		char *headers, *header_string;
+		char *body;
+		int priority = 3;
+		switch_size_t retsize;
+		switch_time_exp_t tm;
+		char date[80] = "";
+		int total_new_messages = 0;
+		int total_saved_messages = 0;
+		int total_new_urgent_messages = 0;
+		int total_saved_urgent_messages = 0;
+		int32_t message_len = 0;
+		char *p;
+		switch_time_t l_duration = 0;
+		switch_core_time_duration_t duration;
+		char duration_str[80];
+		char *formatted_cid_num = NULL;
+
+		sql = switch_mprintf("SELECT * FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND uuid = '%q' ORDER BY read_flags, created_epoch", id, domain, uuid);
+		memset(&cbt, 0, sizeof(cbt));
+		switch_event_create(&cbt.my_params, SWITCH_EVENT_GENERAL);
+		vm_execute_sql_callback(profile, profile->mutex, sql, message_get_callback, &cbt);
+		switch_safe_free(sql);
+
+		if (!strcasecmp(switch_event_get_header(cbt.my_params, "VM-Message-Read-Flags"), URGENT_FLAG_STRING)) {
+			priority = 1;
+		}
+
+		message_count(profile, id, domain, switch_event_get_header(cbt.my_params, "VM-Message-Folder"), &total_new_messages, &total_saved_messages,
+				&total_new_urgent_messages, &total_saved_urgent_messages);
+
+		switch_time_exp_lt(&tm, switch_time_make(atol(switch_event_get_header(cbt.my_params, "VM-Message-Received-Epoch")), 0));
+		switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
+
+		formatted_cid_num = switch_format_number(switch_event_get_header(cbt.my_params, "VM-Message-Caller-Number"));
+
+		/* Legacy Mod_VoiceMail variable */
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "Message-Type", "forwarded-voicemail");
+		switch_event_add_header(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_total_new_messages", "%d", total_new_messages);
+		switch_event_add_header(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_total_saved_messages", "%d", total_saved_messages);
+		switch_event_add_header(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_urgent_new_messages", "%d", total_new_urgent_messages);
+		switch_event_add_header(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_urgent_saved_messages", "%d", total_saved_urgent_messages);
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_current_folder", switch_event_get_header(cbt.my_params, "VM-Message-Folder"));
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_account", id);
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_domain", domain);
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_caller_id_number", switch_event_get_header(cbt.my_params, "VM-Message-Caller-Number"));
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_formatted_caller_id_number", formatted_cid_num);
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_caller_id_name", switch_event_get_header(cbt.my_params, "VM-Message-Caller-Name"));
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_file_path", switch_event_get_header(cbt.my_params, "VM-Message-File-Path"));
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_read_flags", switch_event_get_header(cbt.my_params, "VM-Message-Read-Flags"));
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
+		switch_event_add_header(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_priority", "%d", priority);
+
+
+		message_len = atoi(switch_event_get_header(cbt.my_params, "VM-Message-Duration"));
+		switch_safe_free(formatted_cid_num);
+
+		l_duration = switch_time_make(atol(switch_event_get_header(cbt.my_params, "VM-Message-Duration")), 0);
+		switch_core_measure_time(l_duration, &duration);
+		duration.day += duration.yr * 365;
+		duration.hr += duration.day * 24;
+
+		switch_snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", duration.hr, duration.min, duration.sec);
+
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_message_len", duration_str);
+		switch_event_add_header_string(cbt.my_params, SWITCH_STACK_BOTTOM, "voicemail_email", email);
+
+		if (zstr(profile->email_from)) {
+			from = switch_core_sprintf(pool, "%s@%s", id, domain);
+		} else {
+			from = switch_event_expand_headers(cbt.my_params, profile->email_from);;
+		}
+
+		if (zstr(profile->email_headers)) {
+			headers = switch_core_sprintf(pool,
+					"From: FreeSWITCH mod_voicemail <%s@%s>\nSubject: Voicemail from %s %s\nX-Priority: %d",
+					id, domain, switch_event_get_header(cbt.my_params, "VM-Message-Caller-Name"), 
+					switch_event_get_header(cbt.my_params, "VM-Message-Caller-Number"), priority);
+		} else {
+			headers = switch_event_expand_headers(cbt.my_params, profile->email_headers);
+		}
+
+		p = headers + (strlen(headers) - 1);
+		if (*p == '\n') {
+			if (*(p - 1) == '\r') {
+				p--;
+			}
+			*p = '\0';
+		}
+
+		header_string = switch_core_sprintf(pool, "%s\nX-Voicemail-Length: %u", headers, message_len);
+
+		if (profile->email_body) {
+			body = switch_event_expand_headers(cbt.my_params, profile->email_body);
+		} else {
+			body = switch_mprintf("%u second Voicemail from %s %s", message_len, switch_event_get_header(cbt.my_params, "VM-Message-Caller-Name"), switch_event_get_header(cbt.my_params, "VM-Message-Caller-Number"));
+		}
+
+		switch_simple_email(email, from, header_string, body, switch_event_get_header(cbt.my_params, "VM-Message-File-Path"), profile->convert_cmd, profile->convert_ext);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending message to %s\n", email);
+		switch_safe_free(body);
+
+		switch_event_fire(&cbt.my_params);
+
+
+		profile_rwunlock(profile);
+	}
+	stream->write_function(stream, "-OK\n");
+done:
+	switch_core_destroy_memory_pool(&pool);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define VM_FSDB_MSG_COUNT_USAGE "<format> <profile> <domain> <user> <folder>"
 SWITCH_STANDARD_API(vm_fsdb_msg_count_function)
 {
@@ -5731,6 +5910,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_get", "vm_fsdb_msg_get", vm_fsdb_msg_get_function, VM_FSDB_MSG_GET_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_delete", "vm_fsdb_msg_delete", vm_fsdb_msg_delete_function, VM_FSDB_MSG_DELETE_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_undelete", "vm_fsdb_msg_undelete", vm_fsdb_msg_undelete_function, VM_FSDB_MSG_UNDELETE_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_email", "vm_fsdb_msg_email", vm_fsdb_msg_email_function, VM_FSDB_MSG_EMAIL_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_purge", "vm_fsdb_msg_purge", vm_fsdb_msg_purge_function, VM_FSDB_MSG_PURGE_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_save", "vm_fsdb_msg_save", vm_fsdb_msg_save_function, VM_FSDB_MSG_SAVE_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_msg_forward", "vm_fsdb_msg_forward", vm_fsdb_msg_forward_function, VM_FSDB_MSG_FORWARD_USAGE);

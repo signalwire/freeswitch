@@ -974,7 +974,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load)
 	switch_limit_interface_t *limit_interface;
 	switch_status_t status;
 
-	memset(&globals, 0, sizeof(&globals));
+	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 
 	status = switch_event_reserve_subclass(LIMIT_EVENT_USAGE);

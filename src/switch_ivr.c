@@ -259,9 +259,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
-				} else if (args->input_callback) {
+				} 
+
+				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
-				} else {
+				} else if (args->buf) {
 					switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
 					status = SWITCH_STATUS_BREAK;
 				}
@@ -1038,7 +1040,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
-				} else if (args->input_callback) {
+				} 
+
+				if (args->input_callback) {
 					if ((status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
@@ -1147,7 +1151,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 				if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
-			} else if (args->input_callback) {
+			} 
+
+			if (args->input_callback) {
 				status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 			}
 
@@ -1727,6 +1733,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 {
 	switch_channel_t *chana = switch_core_session_get_channel(sessa);
 	switch_channel_t *chanb = switch_core_session_get_channel(sessb);
+	switch_event_t *var_event;
+
 	const char *val = NULL;
 	uint8_t prefix = 0;
 
@@ -1741,16 +1749,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 		}
 	} else {
 		switch_event_header_t *hi;
-		if ((hi = switch_channel_variable_first(chana))) {
-			for (; hi; hi = hi->next) {
-				char *vvar = hi->name;
-				char *vval = hi->value;
-				if (vvar && vval && (!prefix || (var && !strncmp((char *) vvar, var, strlen(var))))) {
-					switch_channel_set_variable(chanb, (char *) vvar, (char *) vval);
-				}
+
+		switch_channel_get_variables(chana, &var_event);
+
+		for (hi = var_event->headers; hi; hi = hi->next) {
+			char *vvar = hi->name;
+			char *vval = hi->value;
+			if (vvar && vval && (!prefix || (var && !strncmp((char *) vvar, var, strlen(var))))) {
+				switch_channel_set_variable(chanb, (char *) vvar, (char *) vval);
 			}
-			switch_channel_variable_last(chana);
 		}
+
+		switch_event_destroy(&var_event);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -2959,10 +2969,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 					switch_core_file_seek(fhp, &pos, target, SEEK_SET);
 
 				} else {
-					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
-					if (samps < 0) {
-						samps = 0;
-					}
+					samps = switch_atoui(p) * (codec->implementation->samples_per_second / 1000);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", samps);
 					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
 				}
@@ -3181,7 +3188,7 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 
 	for (x_domain = switch_xml_child(x_domains, "domain"); x_domain; x_domain = x_domain->next) {
 		const char *dname = switch_xml_attr(x_domain, "name");
-		if (!dname || strcasecmp(domain_name, dname)) continue;
+		if (!dname || (strcasecmp(dname, "*") && strcasecmp(domain_name, dname))) continue;
 		
 		for (x_exten = switch_xml_child(x_domain, "exten"); x_exten; x_exten = x_exten->next) {
 			const char *regex = switch_xml_attr(x_exten, "regex");

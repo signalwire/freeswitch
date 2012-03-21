@@ -3,7 +3,7 @@
 	<profile name="default">
 		<settings>
 			<param name="IVR-Maximum-Attempts" value="3" />
-			<param name="IVR-Entry-Timeout" value="3" />
+			<param name="IVR-Entry-Timeout" value="3000" />
 			<param name="Record-Format" value="wav" />
 			<!--<param name="Record-Sample-Rate" value="8000" />-->
 			<param name="Record-Silence-Hits" value="4" />

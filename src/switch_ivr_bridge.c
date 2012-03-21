@@ -776,15 +776,15 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			state = switch_channel_get_state(other_channel);
 			running_state = switch_channel_get_running_state(other_channel);
 
-			if (state == running_state) {
+			if (switch_channel_down_nosig(other_channel) || switch_channel_down_nosig(channel)) {
+				break;
+			}
+
+			if (state < CS_HANGUP && state == running_state) {
 				
 				if (--loops < 1) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					switch_channel_hangup(other_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				}
-
-				if (switch_channel_down_nosig(other_channel) || switch_channel_down_nosig(channel)) {
-					break;
 				}
 
 				if (running_state == CS_RESET) {
@@ -803,7 +803,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			} else {
 				loops = max;
 			}
-
+			
 			switch_yield(20000);
 		}
 
@@ -1244,6 +1244,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 			if (!switch_channel_ready(caller_channel)) {
 				abort_call(caller_channel, peer_channel);
+				switch_core_session_rwunlock(peer_session);
 				goto done;
 			}
 

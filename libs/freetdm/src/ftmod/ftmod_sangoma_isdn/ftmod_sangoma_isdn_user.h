@@ -101,6 +101,42 @@ typedef enum {
 #define SNGISDN_PROGIND_LOC_STRINGS "user", "private-net-local-user", "public-net-local-user", "transit-network", "public-net-remote-user", "private-net-remote-user", "beyond-interworking", "invalid"
 SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_progind_loc, ftdm_sngisdn_progind_loc2str, ftdm_sngisdn_progind_loc_t);
 
+typedef enum {
+	/* User Specified */
+	SNGISDN_NETSPECFAC_TYPE_USER_SPEC,
+	/* National network identification */
+	SNGISDN_NETSPECFAC_TYPE_NATIONAL_NETWORK_IDENT,
+	/* International network identification */
+	SNGISDN_NETSPECFAC_TYPE_INTERNATIONAL_NETWORK_IDENT,
+	/* Invalid */
+	SNGISDN_NETSPECFAC_TYPE_INVALID,
+} ftdm_sngisdn_netspecfac_type_t;
+#define SNGISDN_NETSPECFAC_TYPE_STRINGS "user-specified", "national-network-identification", "national-network-identification", "invalid"
+SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_netspecfac_type, ftdm_sngisdn_netspecfac_type2str, ftdm_sngisdn_netspecfac_type_t);
+
+typedef enum {
+	/* Unknown */
+	SNGISDN_NETSPECFAC_PLAN_UNKNOWN,
+	/* Carrier Identification Code */
+	SNGISDN_NETSPECFAC_PLAN_CARRIER_IDENT,
+	/* Data network identification code */
+	SNGISDN_NETSPECFAC_PLAN_DATA_NETWORK_IDENT,
+	/* Invalid */
+	SNGISDN_NETSPECFAC_PLAN_INVALID,
+} ftdm_sngisdn_netspecfac_plan_t;
+#define SNGISDN_NETSPECFAC_PLAN_STRINGS "unknown", "carrier-identification", "data-network-identification", "invalid"
+SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_netspecfac_plan, ftdm_sngisdn_netspecfac_plan2str, ftdm_sngisdn_netspecfac_plan_t);
+
+typedef enum {
+	/* Unknown */
+	SNGISDN_NETSPECFAC_SPEC_ACCUNET,
+	SNGISDN_NETSPECFAC_SPEC_MEGACOM,
+	SNGISDN_NETSPECFAC_SPEC_MEGACOM_800,
+	SNGISDN_NETSPECFAC_SPEC_SDDN,
+	SNGISDN_NETSPECFAC_SPEC_INVALID,
+} ftdm_sngisdn_netspecfac_spec_t;
+#define SNGISDN_NETSPECFAC_SPEC_STRINGS "accunet", "megacom", "megacom-800", "sddn", "invalid"
+SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_netspecfac_spec, ftdm_sngisdn_netspecfac_spec2str, ftdm_sngisdn_netspecfac_spec_t);
 
 #endif /* __FTMOD_SANGOMA_ISDN_USER_H__*/
 

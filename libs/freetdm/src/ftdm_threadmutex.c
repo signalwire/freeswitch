@@ -472,7 +472,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_signal(ftdm_interrupt_t *interrupt)
 		 * otherwise users that never call interrupt wait eventually will 
 		 * eventually have the pipe buffer filled */
 		if ((err = write(interrupt->writefd, "w", 1)) != 1) {
-			ftdm_log(FTDM_LOG_ERROR, "Failed to signal interrupt: %s\n", errno, strerror(errno));
+			ftdm_log(FTDM_LOG_ERROR, "Failed to signal interrupt: %s\n", strerror(errno));
 			return FTDM_FAIL;
 		}
 	}

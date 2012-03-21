@@ -84,7 +84,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	switch_xml_t xcond, xaction, xexpression, xregex;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *exten_name = (char *) switch_xml_attr(xexten, "name");
-	int proceed = 0, save_proceed = 0;
+	int proceed = 0, save_proceed = 0, soft_proceed = 0;
 	char *expression_expanded = NULL, *field_expanded = NULL;
 	switch_regex_t *re = NULL, *save_re = NULL;
 	int offset = 0;
@@ -117,7 +117,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 		if (switch_xml_child(xcond, "condition")) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Nested conditions are not allowed!\n");
-			proceed = 1;
+			soft_proceed = 1;
 			goto done;
 		}
 
@@ -143,6 +143,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 							  "Dialplan: %s Date/Time Match (PASS) [%s] break=%s\n",
 							  switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
 			anti_action = SWITCH_FALSE;
+			soft_proceed = 1;
 		} else if (time_match == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 							  "Dialplan: %s Date/TimeMatch (FAIL) [%s] break=%s\n",
@@ -189,7 +190,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				total++;
 				
 				field = (char *) switch_xml_attr(xregex, "field");
-
+				
 				if (field) {
 					if (strchr(field, '$')) {
 						if ((field_expanded = switch_channel_expand_variables(channel, field)) == field) {
@@ -222,9 +223,11 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 									  "Dialplan: %s Absolute Condition [%s] match=%s\n", switch_channel_get_name(channel), exten_name, all ? "all" : "any");
 					pass++;
+					soft_proceed = 1;
 					if (!all && !xor) break;
 				} else if (time_match == 1) {
 					pass++;
+					soft_proceed = 1;
 					if (!all && !xor) break;
 				}
 				
@@ -310,6 +313,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
 								  "Dialplan: %s Absolute Condition [%s]\n", switch_channel_get_name(channel), exten_name);
 				anti_action = SWITCH_FALSE;
+				soft_proceed = 1;
 			}
 
 		}
@@ -364,7 +368,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 						switch_caller_extension_add_application(session, *extension, application, data);
 					}
 				}
-				proceed = 1;
+				soft_proceed = 1;
 			}
 		} else {
 			if (field && strchr(expression, '(')) {
@@ -439,7 +443,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	switch_regex_safe_free(re);
 	switch_safe_free(field_expanded);
 	switch_safe_free(expression_expanded);
-	return proceed;
+	return proceed ? proceed : soft_proceed;
 }
 
 static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t *root,

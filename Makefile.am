@@ -415,13 +415,6 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 	    else \
 	      version="git-$$version" ; \
 	    fi ;\
-	  else \
-	    version=`svnversion . -n || echo hacked` ; \
-	    if [ "x$$version" = "xhacked" ] ; then \
-	      version="hacked-`date -u +%Y%m%dT%H%M%SZ`" ; \
-	    else \
-	      version="svn-$$version" ; \
-	    fi ;\
 	  fi ; \
 	  oldversion=`cat .version 2>/dev/null || echo "0"` ; \
 	  if test "$$oldversion" != "$$version" || test $$force = 1 ; then \
@@ -497,7 +490,7 @@ samples-conf:
 
 samples-htdocs: 
 	test -d $(DESTDIR)$(htdocsdir) || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)
-	for htdocsfile in `cd $(switch_srcdir)/htdocs && find . -type f -name \* | grep -v .svn | sed -e 's|^\.||' ` ; do \
+	for htdocsfile in `cd $(switch_srcdir)/htdocs && find . -type f -name \* | sed -e 's|^\.||'` ; do \
 		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$htdocsfile | sed -e 's|^.*/||'`; \
 		test -d $(DESTDIR)$(htdocsdir)$$dir || $(mkinstalldirs) $(DESTDIR)$(htdocsdir)$$dir ; \
@@ -518,29 +511,23 @@ install-data-local:
 	test -d $(DESTDIR)$(htdocsdir) || $(MAKE) samples-htdocs
 
 is-scm:
-	@if [ ! -d .svn -a ! -d .git ] ; then \
+	@if [ ! -d .git ] ; then \
 		echo ; echo ; \
 		echo "*****************************************************************************************************" ; \
-		echo "You can not update a release tarball or without a git or svn working copy please clone our git tree: " ; \
-		echo "git clone git://git.freeswitch.org/freeswitch.git                                                    " ; \
-		echo "or check out our read only svn mirror:                                                               " ; \
-		echo "svn checkout http://svn.freeswitch.org/svn/freeswitch/trunk                                          " ; \
+		echo "You cannot update a release tarball without a git tree.  Please clone FreeSWITCH as so:              " ; \
+		echo "  git clone git://git.freeswitch.org/freeswitch.git                                                  " ; \
 		echo "*****************************************************************************************************" ; \
 		echo ; echo ; \
 		exit 1; \
 	fi 
 
 update: is-scm
-	@if test -d .svn ; then \
-	  test ! -f .version || rm -f .version ; \
-	  echo Updating... ; \
-	  svn update ; \
-	elif test -d .git ; then \
+	@if test -d .git ; then \
 	  test ! -f .version || rm -f .version ; \
 	  echo "Pulling updates..." ; \
 	  git pull ; \
 	else \
-	  echo "This source directory is not a git tree or svn working copy" ; \
+	  echo "This source directory is not a git tree." ; \
 	fi
 
 .nodepends:

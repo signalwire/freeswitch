@@ -479,7 +479,7 @@ typedef enum {
 FTDM_STR2ENUM_P(ftdm_str2ftdm_trunk_type, ftdm_trunk_type2str, ftdm_trunk_type_t)
 
 /*! \brief Basic channel configuration provided to ftdm_configure_span_channels */
-typedef struct ftdm_channel_config {    
+typedef struct ftdm_channel_config {
 	char name[FTDM_MAX_NAME_STR_SZ];
 	char number[FTDM_MAX_NUMBER_STR_SZ];
 	char group_name[FTDM_MAX_NAME_STR_SZ];
@@ -487,6 +487,8 @@ typedef struct ftdm_channel_config {
 	float rxgain;
 	float txgain;
 	uint8_t debugdtmf;
+	uint8_t dtmf_on_start;
+	uint32_t dtmfdetect_ms;
 	uint8_t iostats;
 } ftdm_channel_config_t;
 

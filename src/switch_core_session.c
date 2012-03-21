@@ -543,6 +543,8 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
+			// Needed by 3PCC proxy so that aleg can find bleg to pass SDP to, when final ACK arrives.
+			switch_channel_set_variable(channel, "originate_signal_bond", switch_core_session_get_uuid(*new_session));
 
 			if ((val = switch_channel_get_variable(channel, SWITCH_PROCESS_CDR_VARIABLE))) {
 				switch_channel_set_variable(peer_channel, SWITCH_PROCESS_CDR_VARIABLE, val);
@@ -630,7 +632,7 @@ static const char *message_names[] = {
 	"APPLICATION_EXEC",
 	"APPLICATION_EXEC_COMPLETE",
 	"PHONE_EVENT",
-	"T38_DESCRIPTION"
+	"T38_DESCRIPTION",
 	"UDPTL_MODE",
 	"CLEAR_PROGRESS",
 	"JITTER_BUFFER",
@@ -2321,6 +2323,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 
 	new_profile = switch_caller_profile_clone(session, profile);
 	new_profile->destination_number = switch_core_strdup(new_profile->pool, exten);
+	new_profile->times = (switch_channel_timetable_t *) switch_core_session_alloc(session, sizeof(*new_profile->times));
+	*new_profile->times = *profile->times;
+
 
 	if (!zstr(dialplan)) {
 		new_profile->dialplan = switch_core_strdup(new_profile->pool, dialplan);

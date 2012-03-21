@@ -25,6 +25,15 @@
  * NOTE: This is intended as a Layer 1 interface only, signaling
  *       is handled by other modules (e.g. ftmod_libpri or ftmod_isdn).
  */
+/*
+ * TODO:
+ *	- Use a fifo and PH_DATA_CNF for b-channel write polling (drop timerfd)
+ *
+ *	- Disable L1 idle deactivation on BRI PTMP with IMGL1HOLD ioctl(? optional)
+ *
+ *	- Add hfcsusb specific state + flag defines and try to do something useful with
+ *	  it in misdn_handle_mph_information_ind().
+ */
 
 #include <errno.h>
 #include <stdlib.h>
@@ -91,23 +100,33 @@ typedef enum {
 #define MISDN_IS_RAW(x)  (x & MISDN_CAPS_RAW)
 #define MISDN_IS_HDLC(x) (x & MISDN_CAPS_HDLC)
 
+#define MISDN_MSG_DATA(x) ((void *)((unsigned char *)(x) + MISDN_HEADER_LEN))
 
 const static struct {
 	const int	id;
 	const char	*name;
 } misdn_event_types[] = {
-	{ PH_DATA_REQ,       "PH_DATA_REQ"       },
-	{ PH_DATA_IND,       "PH_DATA_IND"       },
-	{ PH_DATA_CNF,       "PH_DATA_CNF"       },
-	{ PH_CONTROL_REQ,    "PH_CONTROL_REQ"    },
-	{ PH_CONTROL_IND,    "PH_CONTROL_IND"    },
-	{ PH_CONTROL_CNF,    "PH_CONTROL_CNF"    },
-	{ PH_ACTIVATE_REQ,   "PH_ACTIVATE_REQ"   },
-	{ PH_ACTIVATE_IND,   "PH_ACTIVATE_IND"   },
-	{ PH_ACTIVATE_CNF,   "PH_ACTIVATE_CNF"   },
-	{ PH_DEACTIVATE_REQ, "PH_DEACTIVATE_REQ" },
-	{ PH_DEACTIVATE_IND, "PH_DEACTIVATE_IND" },
-	{ PH_DEACTIVATE_CNF, "PH_DEACTIVATE_CNF" },
+#define MISDN_EVENT_TYPE(x)	{ x, #x }
+	MISDN_EVENT_TYPE(PH_DATA_REQ),
+	MISDN_EVENT_TYPE(PH_DATA_IND),
+	MISDN_EVENT_TYPE(PH_DATA_CNF),
+	MISDN_EVENT_TYPE(PH_DATA_E_IND),
+	MISDN_EVENT_TYPE(PH_CONTROL_REQ),
+	MISDN_EVENT_TYPE(PH_CONTROL_IND),
+	MISDN_EVENT_TYPE(PH_CONTROL_CNF),
+	MISDN_EVENT_TYPE(PH_ACTIVATE_REQ),
+	MISDN_EVENT_TYPE(PH_ACTIVATE_IND),
+	MISDN_EVENT_TYPE(PH_ACTIVATE_CNF),
+	MISDN_EVENT_TYPE(PH_DEACTIVATE_REQ),
+	MISDN_EVENT_TYPE(PH_DEACTIVATE_IND),
+	MISDN_EVENT_TYPE(PH_DEACTIVATE_CNF),
+	MISDN_EVENT_TYPE(MPH_ACTIVATE_REQ),
+	MISDN_EVENT_TYPE(MPH_ACTIVATE_IND),
+	MISDN_EVENT_TYPE(MPH_DEACTIVATE_REQ),
+	MISDN_EVENT_TYPE(MPH_DEACTIVATE_IND),
+	MISDN_EVENT_TYPE(MPH_INFORMATION_REQ),
+	MISDN_EVENT_TYPE(MPH_INFORMATION_IND),
+#undef MISDN_EVENT_TYPE
 };
 
 static const char *misdn_event2str(const int event)
@@ -128,6 +147,7 @@ const static struct {
 } misdn_control_types[] = {
 #define MISDN_CONTROL_TYPE(x)	{ x, #x }
 	MISDN_CONTROL_TYPE(DTMF_HFC_COEF),
+#undef MISDN_CONTROL_TYPE
 };
 
 #if 0 /* unused for now */
@@ -189,6 +209,12 @@ struct misdn_chan_private {
 #define ftdm_span_io_private(x) ((x)->io_data)
 
 static ftdm_status_t misdn_handle_incoming(ftdm_channel_t *ftdmchan, const char *rbuf, const int size);
+static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len);
+
+static const char *ftdm_channel_get_type_str(const ftdm_channel_t *chan)
+{
+	return ftdm_chan_type2str(ftdm_channel_get_type(chan));
+}
 
 /***********************************************************************************
  * mISDN interface functions
@@ -432,8 +458,8 @@ static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 				return FTDM_FAIL;
 			}
 //#ifdef MISDN_DEBUG_EVENTS
-			ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN got event '%s' while waiting for %s confirmation\n",
-				misdn_event2str(hh->prim), (activate) ? "activation" : "deactivation");
+			ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN got event '%s (%#x)' while waiting for %s confirmation\n",
+				misdn_event2str(hh->prim), hh->prim, (activate) ? "activation" : "deactivation");
 //#endif
 			switch (hh->prim) {
 			case PH_ACTIVATE_IND:	/* success (or not): save last response, */
@@ -451,9 +477,14 @@ static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN got '%s' echo while waiting for %s confirmation (id: %#x)\n",
 					misdn_event2str(hh->prim), (activate) ? "activation" : "deactivation", hh->id);
 				break;
+			case MPH_INFORMATION_IND:
+				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s (%#x)' while waiting for %s confirmation\n",
+					misdn_event2str(hh->prim), hh->prim, (activate) ? "activation" : "deactivation");
+				misdn_handle_mph_information_ind(chan, hh, MISDN_MSG_DATA(buf), retval - MISDN_HEADER_LEN);
+				break;
 			default:		/* other messages, ignore */
-				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s' while waiting for %s confirmation\n",
-					misdn_event2str(hh->prim), (activate) ? "activation" : "deactivation");
+				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s (%#x)' while waiting for %s confirmation\n",
+					misdn_event2str(hh->prim), hh->prim, (activate) ? "activation" : "deactivation");
 				break;
 			}
 		}
@@ -605,50 +636,88 @@ static int misdn_handle_ph_control_ind(ftdm_channel_t *chan, const struct mISDNh
 static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len)
 {
 	struct misdn_chan_private *priv = ftdm_chan_io_private(chan);
-	int alarm_flags, value;
 
-	if (data_len < sizeof(value)) {
-		ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "mISDN MPH_INFORMATION_IND message is too short\n");
+	/*
+	 * mISDN has some inconsistency issues here.
+	 *
+	 * There are only two drivers that emit MPH_INFORMATION_IND messages,
+	 * hfcsusb and hfcmulti. The former sends a set of ph_info and ph_info_ch structures,
+	 * while the latter just sends an int containing the current L1_SIGNAL_* event id.
+	 *
+	 * The flags and state information in the ph_info and ph_info_ch structures
+	 * are defined in kernel internal hw-specific headers (mISDNhw.h).
+	 *
+	 * Use the payload size to guess the type of message.
+	 */
+	if (data_len >= sizeof(struct ph_info)) {
+		/* complete port status, hfcsusb sends this */
+		struct ph_info *info = (struct ph_info *)data;
+		struct ph_info_ch *bch_info = NULL;
+
+		if (data_len < (sizeof(*info) + info->dch.num_bch * sizeof(*bch_info))) {
+			ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "mISDN MPH_INFORMATION_IND message is too short\n");
+			return FTDM_FAIL;
+		}
+		bch_info = &info->bch[0];
+
+		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN port state:\n\tD-Chan state:\t%hu\n\tD-Chan flags:\t%#lx\n\tD-Chan proto:\t%hu\n\tD-Chan active:\t%s\n",
+			info->dch.state, info->dch.ch.Flags, info->dch.ch.protocol, (info->dch.ch.Flags & (1 << 6)) ? "yes" : "no");
+
+		/* TODO: try to translate this to a usable set of alarm flags */
+
+	} else if (data_len == sizeof(int)) {
+		/* alarm info, sent by hfcmulti */
+		int value = *(int *)data;
+		int alarm_flags = chan->alarm_flags;
+
+		if (data_len < sizeof(value)) {
+			ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "mISDN MPH_INFORMATION_IND message is too short\n");
+			return FTDM_FAIL;
+		}
+
+		switch (value) {
+		case L1_SIGNAL_LOS_ON:
+			alarm_flags |= FTDM_ALARM_RED;
+			break;
+		case L1_SIGNAL_LOS_OFF:
+			alarm_flags &= ~FTDM_ALARM_RED;
+			break;
+		case L1_SIGNAL_AIS_ON:
+			alarm_flags |= FTDM_ALARM_AIS;
+			break;
+		case L1_SIGNAL_AIS_OFF:
+			alarm_flags &= ~FTDM_ALARM_AIS;
+			break;
+		case L1_SIGNAL_RDI_ON:
+			alarm_flags |= FTDM_ALARM_YELLOW;
+			break;
+		case L1_SIGNAL_RDI_OFF:
+			alarm_flags &= ~FTDM_ALARM_YELLOW;
+			break;
+		case L1_SIGNAL_SLIP_RX:
+			priv->slip_rx_cnt++;
+			break;
+		case L1_SIGNAL_SLIP_TX:
+			priv->slip_tx_cnt++;
+			break;
+		default:
+			ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN unknown MPH_INFORMATION_IND signal: %#04x\n",
+				value);
+			return FTDM_FAIL;
+		}
+
+		/* check whether alarm status has changed, update channel flags if it has */
+		if ((value = (alarm_flags ^ chan->alarm_flags))) {
+			ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN alarm flags have changed %#x -> %#x\n",
+				chan->alarm_flags, alarm_flags);
+			chan->alarm_flags ^= value;
+		}
+	} else {
+		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN sent MPH_INFORMATION_IND message with unknown size %d\n",
+			data_len);
 		return FTDM_FAIL;
 	}
-	value = *(int *)data;
-	alarm_flags = chan->alarm_flags;
 
-	switch (value) {
-	case L1_SIGNAL_LOS_ON:
-		alarm_flags |= FTDM_ALARM_RED;
-		break;
-	case L1_SIGNAL_LOS_OFF:
-		alarm_flags &= ~FTDM_ALARM_RED;
-		break;
-	case L1_SIGNAL_AIS_ON:
-		alarm_flags |= FTDM_ALARM_AIS;
-		break;
-	case L1_SIGNAL_AIS_OFF:
-		alarm_flags &= ~FTDM_ALARM_AIS;
-		break;
-	case L1_SIGNAL_RDI_ON:
-		alarm_flags |= FTDM_ALARM_YELLOW;
-		break;
-	case L1_SIGNAL_RDI_OFF:
-		alarm_flags &= ~FTDM_ALARM_YELLOW;
-		break;
-	case L1_SIGNAL_SLIP_RX:
-		priv->slip_rx_cnt++;
-		break;
-	case L1_SIGNAL_SLIP_TX:
-		priv->slip_tx_cnt++;
-		break;
-	default:
-		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN unknown MPH_INFORMATION_IND message: %d\n",
-			value);
-		return FTDM_FAIL;
-	}
-	if ((value = (alarm_flags ^ chan->alarm_flags))) {
-		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN alarm flags have changed %#x -> %#x\n",
-			chan->alarm_flags, alarm_flags);
-		chan->alarm_flags ^= value;
-	}
 	return FTDM_SUCCESS;
 }
 
@@ -728,7 +797,7 @@ static FIO_OPEN_FUNCTION(misdn_open)
 		break;
 	default:
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN invalid channel type '%s'\n",
-			ftdm_channel_get_type(ftdmchan));
+			ftdm_channel_get_type_str(ftdmchan));
 		break;
 	}
 	return FTDM_SUCCESS;

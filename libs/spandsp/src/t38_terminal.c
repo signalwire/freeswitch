@@ -234,6 +234,10 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
     s = (t38_terminal_state_t *) user_data;
     fe = &s->t38_fe;
 
+    /* Protect against T.38 stuff arriving after we've actually finished. */
+    if (fe->current_rx_type == T30_MODEM_DONE)
+        return 0;
+
     if (t->current_rx_indicator == indicator)
     {
         /* This is probably due to the far end repeating itself, or slipping
@@ -332,6 +336,11 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
 
     s = (t38_terminal_state_t *) user_data;
     fe = &s->t38_fe;
+
+    /* Protect against T.38 stuff arriving after we've actually finished. */
+    if (fe->current_rx_type == T30_MODEM_DONE)
+        return 0;
+
     /* In termination mode we don't care very much what the data type is apart from a couple of
        special cases. */
     switch (data_type)

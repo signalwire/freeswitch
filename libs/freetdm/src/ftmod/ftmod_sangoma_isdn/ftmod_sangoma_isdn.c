@@ -391,7 +391,7 @@ static void *ftdm_sangoma_isdn_io_run(ftdm_thread_t *me, void *obj)
 			case FTDM_SUCCESS:
 				/* Check if there are any channels that have data available */
 				for (citer = ftdm_span_get_chan_iterator(span, chaniter); citer; citer = ftdm_iterator_next(citer)) {
-					len = 1000;
+					len = sizeof(data);
 					ftdmchan = ftdm_iterator_current(citer);
 					if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
 						if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_RX_DISABLED)) {

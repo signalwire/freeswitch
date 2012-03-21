@@ -340,18 +340,13 @@ static void bind_to_session(switch_core_session_t *session,
 		uint32_t digit_timeout = 1500;
 		uint32_t input_timeout = 0;
 		const char *var;
-		uint32_t tmp;
 
 		if ((var = switch_channel_get_variable(channel, "bind_digit_digit_timeout"))) {
-			tmp = (uint32_t) atol(var);
-			if (tmp < 0) tmp = 0;
-			digit_timeout = tmp;
+			digit_timeout = switch_atoul(var);
 		}
 		
 		if ((var = switch_channel_get_variable(channel, "bind_digit_input_timeout"))) {
-			tmp = (uint32_t) atol(var);
-			if (tmp < 0) tmp = 0;
-			input_timeout = tmp;
+			input_timeout = switch_atoul(var);
 		}
 		
 		switch_ivr_dmachine_create(&dmachine, "DPTOOLS", NULL, digit_timeout, input_timeout, NULL, digit_nomatch_action_callback, session);
@@ -495,7 +490,7 @@ SWITCH_STANDARD_APP(play_and_detect_speech_function)
 		char *engine = argv[0];
 		char *grammar = argv[1];
 		char *result = NULL;
-		switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result);
+		switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, NULL);
 		switch_channel_set_variable(channel, "detect_speech_result", result);
 	} else {
 		/* bad input */
@@ -1570,6 +1565,22 @@ SWITCH_STANDARD_API(strepoch_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_API(strmicroepoch_api_function)
+{
+	switch_time_t out;
+
+	if (zstr(cmd)) {
+		out = switch_micro_time_now();
+	} else {
+		out = switch_str_time(cmd);
+	}
+
+	stream->write_function(stream, "%"SWITCH_TIME_T_FMT, out);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(strftime_api_function)
 {
 	switch_size_t retsize;
@@ -2217,10 +2228,7 @@ SWITCH_STANDARD_APP(read_function)
 	}
 
 	if (argc > 6) {
-		digit_timeout = atoi(argv[6]);
-		if (digit_timeout < 0) {
-			digit_timeout = 0;
-		}
+		digit_timeout = switch_atoui(argv[6]);
 	}
 
 	if (min_digits <= 1) {
@@ -2303,10 +2311,7 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 	}
 
 	if (argc > 9) {
-		digit_timeout = atoi(argv[9]);
-		if (digit_timeout < 0) {
-			digit_timeout = 0;
-		}
+		digit_timeout = switch_atoui(argv[9]);
 	}
 
 	if (argc > 10) {
@@ -2589,25 +2594,16 @@ SWITCH_STANDARD_APP(record_function)
 			l++;
 		}
 		if (l) {
-			limit = atoi(l);
-			if (limit < 0) {
-				limit = 0;
-			}
+			limit = switch_atoui(l);
 		}
 	}
 
 	if (argv[2]) {
-		fh.thresh = atoi(argv[2]);
-		if (fh.thresh < 0) {
-			fh.thresh = 0;
-		}
+		fh.thresh = switch_atoui(argv[2]);
 	}
 
 	if (argv[3]) {
-		fh.silence_hits = atoi(argv[3]);
-		if (fh.silence_hits < 0) {
-			fh.silence_hits = 0;
-		}
+		fh.silence_hits = switch_atoui(argv[3]);
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "record_rate"))) {
@@ -2906,6 +2902,12 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 										v_campon_fallback_exten,
 										switch_channel_get_variable(caller_channel, "campon_fallback_dialplan"),
 										switch_channel_get_variable(caller_channel, "campon_fallback_context"));
+
+			if (peer_session) {
+				switch_channel_hangup(switch_core_session_get_channel(peer_session), SWITCH_CAUSE_ORIGINATOR_CANCEL);
+				switch_core_session_rwunlock(peer_session);
+			}
+
 			return;
 		}
 
@@ -3042,6 +3044,11 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	} else {
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
+			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
+				switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
+				switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+			}
 			switch_ivr_signal_bridge(session, peer_session);
 		} else {
 			switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -3244,7 +3251,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_call_cause_t *cancel_cause)
 {
 	switch_xml_t x_user = NULL, x_param, x_params;
-	char *user = NULL, *domain = NULL, *dup_domain = NULL;
+	char *user = NULL, *domain = NULL, *dup_domain = NULL, *dialed_user = NULL;
 	const char *dest = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	unsigned int timelimit = 60;
@@ -3314,9 +3321,14 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 	}
 
+	dialed_user = (char *)switch_xml_attr(x_user, "id");
+
 	if (var_event) {
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", user);
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
 		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+		if (!zstr(dest) && !strstr(dest, "presence_id=")) {
+			switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "presence_id", "%s@%s", dialed_user, domain);
+		}
 	}
 
 	if (!dest) {
@@ -3342,7 +3354,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				timelimit = atoi(varval);
 			}
 
-			switch_channel_set_variable(channel, "dialed_user", user);
+			switch_channel_set_variable(channel, "dialed_user", dialed_user);
 			switch_channel_set_variable(channel, "dialed_domain", domain);
 
 			d_dest = switch_channel_expand_variables(channel, dest);
@@ -3363,7 +3375,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				switch_assert(event);
 			}
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", user);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 			d_dest = switch_event_expand_headers(event, dest);
 			switch_event_destroy(&event);
@@ -3378,7 +3390,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 
 
-		switch_snprintf(stupid, sizeof(stupid), "user/%s", user);
+		switch_snprintf(stupid, sizeof(stupid), "user/%s", dialed_user);
 		if (switch_stristr(stupid, d_dest)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Waddya Daft? You almost called '%s' in an infinate loop!\n",
 							  stupid);
@@ -3481,9 +3493,7 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 		listen_hits = atoi(argv[2]);
 
 		if (argv[3]) {
-			if ((timeout_ms = atoi(argv[3])) < 0) {
-				timeout_ms = 0;
-			}
+			timeout_ms = switch_atoui(argv[3]);
 		}
 
 		if (thresh > 0 && silence_hits > 0 && listen_hits > 0) {
@@ -4006,6 +4016,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_CHAT(chat_interface, "api", api_chat_send);
 
 	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
+	SWITCH_ADD_API(api_interface, "strmicroepoch", "Convert a date string into micoepoch time", strmicroepoch_api_function, "<string>");
 	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>|[<content-type>]");
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, PRESENCE_USAGE);

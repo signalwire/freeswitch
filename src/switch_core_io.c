@@ -337,6 +337,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					}
 
 					if (!switch_core_codec_ready(&session->bug_codec)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting BUG Codec %s:%d\n",
+							read_frame->codec->implementation->iananame, read_frame->codec->implementation->ianacode);
 						switch_core_codec_copy(read_frame->codec, &session->bug_codec, NULL);
 					}
 					use_codec = &session->bug_codec;
@@ -486,6 +488,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
 					switch_mutex_lock(bp->read_mutex);
 					switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
+
 					if (bp->callback) {
 						ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ);
 					}
@@ -648,12 +651,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 				if (bp->ready && switch_test_flag(bp, SMBF_READ_PING)) {
 					switch_mutex_lock(bp->read_mutex);
+					bp->ping_frame = *frame;
 					if (bp->callback) {
 						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_PING) == SWITCH_FALSE
 							|| (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL))) {
 							ok = SWITCH_FALSE;
 						}
 					}
+					bp->ping_frame = NULL;;
 					switch_mutex_unlock(bp->read_mutex);
 				}
 
@@ -849,13 +854,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 										  session->write_impl.actual_samples_per_second,
 										  session->raw_write_frame.data, &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &frame->flags);
 
-
-
-
 		if (do_resample && status == SWITCH_STATUS_SUCCESS) {
 			status = SWITCH_STATUS_RESAMPLE;
 		}
-
+		
 		switch (status) {
 		case SWITCH_STATUS_RESAMPLE:
 			resample++;
@@ -904,11 +906,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		default:
+
 			if (status == SWITCH_STATUS_NOT_INITALIZED) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec init error!\n");
 				goto error;
 			}
-			if (ptime_mismatch) {
+			if (ptime_mismatch && status != SWITCH_STATUS_GENERR) {
 				status = perform_write(session, frame, flags, stream_id);
 				status = SWITCH_STATUS_SUCCESS;
 				goto error;
@@ -919,7 +922,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			goto error;
 		}
 	}
-
+	
 
 
 	if (session->write_resampler) {
@@ -970,10 +973,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			}
 
 			if (switch_test_flag(bp, SMBF_WRITE_STREAM)) {
-
 				switch_mutex_lock(bp->write_mutex);
 				switch_buffer_write(bp->raw_write_buffer, write_frame->data, write_frame->datalen);
 				switch_mutex_unlock(bp->write_mutex);
+				
 				if (bp->callback) {
 					ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE);
 				}
@@ -1056,6 +1059,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				session->enc_write_frame.m = frame->m;
 				session->enc_write_frame.ssrc = frame->ssrc;
 				session->enc_write_frame.seq = frame->seq;
+				session->enc_write_frame.flags = 0;
 				write_frame = &session->enc_write_frame;
 				break;
 			case SWITCH_STATUS_NOOP:
@@ -1170,6 +1174,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					session->enc_write_frame.m = frame->m;
 					session->enc_write_frame.ssrc = frame->ssrc;
 					session->enc_write_frame.payload = session->write_impl.ianacode;
+					session->enc_write_frame.flags = 0;
 					write_frame = &session->enc_write_frame;
 					break;
 				case SWITCH_STATUS_NOOP:

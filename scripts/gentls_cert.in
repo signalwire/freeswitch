@@ -3,6 +3,7 @@
 CONFDIR=@prefix@/conf/ssl
 DAYS=2190
 KEY_SIZE=2048
+export KEY_SIZE=${KEY_SIZE}
 
 TMPFILE="/tmp/fs-ca-$$-$(date +%Y%m%d%H%M%S)"
 
@@ -36,10 +37,14 @@ setup_ca() {
 		mkdir -p -m 750 "${CONFDIR}/CA" || exit  1
 	fi
 
-	if [ ! -e "${CONFDIR}/CA/config.tpl" ]; then
+	if [ -e "${CONFDIR}/CA/config.tpl" ]; then
+		if [ $0 -nt "${CONFDIR}/CA/config.tpl" ]; then
+			echo "WARNING! genttls_cert has a modified time more recent than ${CONFDIR}/CA/config.tpl remove config.tpl to re-generate it"
+		fi
+	else
 		cat > "${CONFDIR}/CA/config.tpl" <<-EOF
 			[ req ]
-			default_bits            = $ENV::KEY_SIZE
+			default_bits            = \$ENV::KEY_SIZE
 			prompt                  = no
 			distinguished_name      = req_dn
 
@@ -117,7 +122,7 @@ generate_cert() {
 			> "${TMPFILE}.cfg" || exit 1
 
 	openssl req -new -out "${TMPFILE}.req" \
-		-newkey rsa: -keyout "${TMPFILE}.key" \
+		-newkey rsa:${KEY_SIZE} -keyout "${TMPFILE}.key" \
 		-config "${TMPFILE}.cfg" -nodes -sha1 >/dev/null || exit 1
 
 	openssl x509 -req -CAkey "${CONFDIR}/CA/cakey.pem" -CA "${CONFDIR}/CA/cacert.pem" -CAcreateserial \

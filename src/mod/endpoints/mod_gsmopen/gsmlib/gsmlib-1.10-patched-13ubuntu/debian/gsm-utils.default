@@ -1,0 +1,18 @@
+PHONEDEV=/dev/mobilephone  # or /dev/ttyS0 or /dev/ircomm0
+BAUDRATE=9600
+PIN=""  # or 1234
+
+# RUNGSMSMS: If set to anything other that 'yes', the asterisk init.d script
+#              will not run. The default is 'yes'.
+# You should probaly also install the crontab from /usr/share/doc/gsm-utils/examples
+RUNGSMSMS=no
+
+SPOOLDIR=/var/spool/sms
+PRIORITIES=3
+
+SMSADMIN=root
+SUBJECT="SMS delivery report:"
+
+SMSPROCESSOR=""  # or /usr/bin/gsmsmsprocessor
+
+do_accounting () { true; }  # it's your turn

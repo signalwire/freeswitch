@@ -60,7 +60,7 @@
 #define TONE_TWIST                  4               /* 6dB */
 #define TONE_TO_TOTAL_ENERGY        64              /* -3dB */
 #else
-#define DETECTION_THRESHOLD         269338317.0f    /* -42dBm0 [((128.0*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2 => 269338317.0] */
+#define DETECTION_THRESHOLD         2104205.6f      /* -42dBm0 [(((128.0*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2)/128 => 2104205.6] */
 #define TONE_TWIST                  3.981f          /* 6dB */
 #define TONE_TO_TOTAL_ENERGY        1.995f          /* 3dB */
 #define DTMF_TO_TOTAL_ENERGY        64.152f         /* -3dB [BINS*10^(-3/10.0)] */

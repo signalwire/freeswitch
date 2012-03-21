@@ -428,12 +428,16 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
  * @sa @RFC3265, #nua_i_subscribe, #nua_i_refer, NUTAG_ALLOW_EVENTS()
  */
 
+#if 0
 static int nua_notify_client_init(nua_client_request_t *cr,
 				  msg_t *, sip_t *,
 				  tagi_t const *tags);
+
+
 static int nua_notify_client_init_etag(nua_client_request_t *cr,
 				       msg_t *msg, sip_t *sip,
 				       tagi_t const *tags);
+
 static int nua_notify_client_request(nua_client_request_t *cr,
 				     msg_t *, sip_t *,
 				     tagi_t const *tags);
@@ -442,7 +446,8 @@ static int nua_notify_client_report(nua_client_request_t *cr,
 				    sip_t const *sip,
 				    nta_outgoing_t *orq,
 				    tagi_t const *tags);
-
+#endif
+#if 0
 static nua_client_methods_t const nua_notify_client_methods = {
   SIP_METHOD_NOTIFY,		/* crm_method, crm_method_name */
   0,				/* crm_extra */
@@ -460,6 +465,25 @@ static nua_client_methods_t const nua_notify_client_methods = {
   nua_notify_client_report,	/* crm_report */
   NULL,				/* crm_complete */
 };
+#endif
+
+nua_client_methods_t const nua_notify_client_methods = {
+  SIP_METHOD_NOTIFY,		/* crm_method, crm_method_name */
+  0,				/* crm_extra */
+  {				/* crm_flags */
+    /* create_dialog */ 1,
+    /* in_dialog */ 1,
+    /* target refresh */ 1
+  },
+  NULL,				/* crm_template */
+  NULL,		/* crm_init */
+  NULL,	/* crm_send */
+  NULL,				/* crm_check_restart */
+  NULL,				/* crm_recv */
+  NULL,				/* crm_preliminary */
+  NULL,				/* crm_report */
+  NULL,				/* crm_complete */
+};
 
 /**@internal Send NOTIFY. */
 int nua_stack_notify(nua_t *nua,
@@ -469,7 +493,7 @@ int nua_stack_notify(nua_t *nua,
 {
   return nua_client_create(nh, e, &nua_notify_client_methods, tags);
 }
-
+#if 0
 static int nua_notify_client_init(nua_client_request_t *cr,
 				  msg_t *msg, sip_t *sip,
 				  tagi_t const *tags)
@@ -715,7 +739,7 @@ int nua_notify_client_request(nua_client_request_t *cr,
 
   return nua_base_client_request(cr, msg, sip, tags);
 }
-
+#endif
 /** @NUA_EVENT nua_r_notify
  *
  * Response to an outgoing @b NOTIFY request.
@@ -747,7 +771,7 @@ int nua_notify_client_request(nua_client_request_t *cr,
  *
  * @END_NUA_EVENT
  */
-
+#if 0
 static int nua_notify_client_report(nua_client_request_t *cr,
 				    int status, char const *phrase,
 				    sip_t const *sip,
@@ -782,7 +806,7 @@ static int nua_notify_client_report(nua_client_request_t *cr,
 
   return 0;
 }
-
+#endif
 
 static void nua_notify_usage_refresh(nua_handle_t *nh,
 				     nua_dialog_state_t *ds,

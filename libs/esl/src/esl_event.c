@@ -285,7 +285,7 @@ ESL_DECLARE(char *)esl_event_get_body(esl_event_t *event)
 ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const char *header_name, const char *val)
 {
 	esl_event_header_t *hp, *lp = NULL, *tp;
-	esl_status_t status = ESL_FALSE;
+	esl_status_t status = (esl_status_t) ESL_FALSE;
 	int x = 0;
 	esl_ssize_t hlen = -1;
 	unsigned long hash = 0;
@@ -875,12 +875,12 @@ ESL_DECLARE(esl_status_t) esl_event_create_json(esl_event_t **event, const char 
 
 
 	if (!(cj = cJSON_Parse(json))) {
-		return ESL_FALSE;
+		return (esl_status_t) ESL_FALSE;
 	}
 
 	if (esl_event_create(&new_event, ESL_EVENT_CLONE) != ESL_SUCCESS) {
 		cJSON_Delete(cj);
-		return ESL_FALSE;
+		return (esl_status_t) ESL_FALSE;
 	}
 
 	for (cjp = cj->child; cjp; cjp = cjp->next) {

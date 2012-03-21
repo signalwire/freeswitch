@@ -85,7 +85,7 @@ static void handle_SIGILL(int sig)
 #ifndef WIN32
 static void handle_SIGUSR2(int sig)
 {
-	if (sig);
+	if (sig) {};
 
 	system_ready = 1;
 
@@ -97,7 +97,7 @@ static void handle_SIGCHLD(int sig)
 	int status = 0;
 	int pid = 0;
 
-	if (sig);
+	if (sig) {};
 
 	pid = wait(&status);
 	
