@@ -458,8 +458,9 @@ static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 				return FTDM_FAIL;
 			}
 //#ifdef MISDN_DEBUG_EVENTS
-			ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN got event '%s (%#x)' while waiting for %s confirmation\n",
-				misdn_event2str(hh->prim), hh->prim, (activate) ? "activation" : "deactivation");
+			ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN got event '%s (%#x)', id %#x, while waiting for %s confirmation on %c-channel\n",
+				misdn_event2str(hh->prim), hh->prim, hh->id, (activate) ? "activation" : "deactivation",
+				ftdm_channel_get_type(chan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
 //#endif
 			switch (hh->prim) {
 			case PH_ACTIVATE_IND:	/* success (or not): save last response, */
@@ -478,13 +479,11 @@ static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 					misdn_event2str(hh->prim), (activate) ? "activation" : "deactivation", hh->id);
 				break;
 			case MPH_INFORMATION_IND:
-				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s (%#x)' while waiting for %s confirmation\n",
-					misdn_event2str(hh->prim), hh->prim, (activate) ? "activation" : "deactivation");
 				misdn_handle_mph_information_ind(chan, hh, MISDN_MSG_DATA(buf), retval - MISDN_HEADER_LEN);
 				break;
 			default:		/* other messages, ignore */
-				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s (%#x)' while waiting for %s confirmation\n",
-					misdn_event2str(hh->prim), hh->prim, (activate) ? "activation" : "deactivation");
+				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s (%#x)', id %#x, while waiting for %s confirmation\n",
+					misdn_event2str(hh->prim), hh->prim, hh->id, (activate) ? "activation" : "deactivation");
 				break;
 			}
 		}
@@ -911,6 +910,9 @@ static FIO_CLOSE_FUNCTION(misdn_close)
 
 	assert(chan_priv);
 
+	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "mISDN trying to close %c-channel\n",
+		ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
+
 	/* deactivate b-channels on close */
 	if (ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B) {
 		/*
@@ -926,11 +928,13 @@ static FIO_CLOSE_FUNCTION(misdn_close)
 		 */
 		ret = misdn_activate_channel(ftdmchan, 0);
 		if (ret != FTDM_SUCCESS) {
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to deactivate channel\n");
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to deactivate %c-channel\n",
+				ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
 			return FTDM_FAIL;
 		}
 
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "mISDN channel deactivated\n");
+		ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "mISDN %c-channel deactivated\n",
+			ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
 		chan_priv->state = MISDN_CHAN_STATE_CLOSED;
 	}
 
@@ -989,8 +993,8 @@ static FIO_COMMAND_FUNCTION(misdn_command)
 
 	case FTDM_COMMAND_GET_INTERVAL:
 		FTDM_COMMAND_OBJ_INT = ftdm_channel_get_io_interval(ftdmchan);
-		ftdm_log(FTDM_LOG_NOTICE, "Interval %d ms [%d:%d]\n",
-			ftdm_channel_get_io_interval(ftdmchan), ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan));
+		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Interval %d ms\n",
+			ftdm_channel_get_io_interval(ftdmchan));
 		break;
 
 	default:
@@ -1169,6 +1173,7 @@ static FIO_READ_FUNCTION(misdn_read)
 	int retval;
 
 	if (priv->state == MISDN_CHAN_STATE_CLOSED) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "mISDN ignoring read on closed channel\n");
 		/* ignore */
 		*datalen = 0;
 		return FTDM_SUCCESS;
@@ -1200,7 +1205,7 @@ static FIO_READ_FUNCTION(misdn_read)
 			if (*datalen > 0) {
 				char hbuf[MAX_DATA_MEM] = { 0 };
 				print_hex_bytes(data, *datalen, hbuf, sizeof(hbuf));
-				ftdm_log(FTDM_LOG_DEBUG, "mISDN read data: %s\n", hbuf);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN read data: %s\n", hbuf);
 			}
 #endif
 			return FTDM_SUCCESS;
@@ -1210,6 +1215,10 @@ static FIO_READ_FUNCTION(misdn_read)
 			misdn_handle_incoming(ftdmchan, rbuf, retval);
 		}
 	}
+#ifdef MISDN_DEBUG_IO
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN nothing received on %c-channel\n",
+		ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
+#endif
 	return FTDM_SUCCESS;
 }
 
@@ -1250,20 +1259,15 @@ static FIO_WRITE_FUNCTION(misdn_write)
 	size += MISDN_HEADER_LEN;
 
 #ifdef MISDN_DEBUG_IO
-	ftdm_log(FTDM_LOG_DEBUG, "mISDN writing %d bytes to channel %d:%d socket %d\n",
-		size, ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan), ftdmchan->sockfd);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN writing %d bytes to channel socket %d [dev.ch: %d.%d]\n",
+		size, ftdmchan->sockfd, priv->addr.dev, priv->addr.channel);
 #endif
 	if ((retval = sendto(ftdmchan->sockfd, wbuf, size, 0, NULL, 0)) != size) {
-		ftdm_log(FTDM_LOG_ERROR, "mISDN channel %d:%d socket write error: %s\n",
-			ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan),
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN channel socket write error: %s\n",
 			strerror(errno));
 		return FTDM_FAIL;
 	}
 	*datalen = retval;
-
-//	if (priv->debugfd >= 0) {
-//		write(priv->debugfd, wbuf + MISDN_HEADER_LEN, size  - MISDN_HEADER_LEN);
-//	}
 
 	priv->tx_cnt++;
 	return FTDM_SUCCESS;
