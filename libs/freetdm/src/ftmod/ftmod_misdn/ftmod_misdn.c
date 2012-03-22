@@ -1079,6 +1079,81 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 	return FTDM_SUCCESS;
 }
 
+
+/**
+ * Handle incoming mISDN message on d-channel
+ * @param[in]	ftdmchan
+ * @param[in]	msg_buf
+ * @param[in]	msg_len
+ * @internal
+ */
+static ftdm_status_t misdn_handle_incoming(ftdm_channel_t *ftdmchan, const char *msg_buf, const int msg_len)
+{
+	struct misdn_chan_private *priv = ftdm_chan_io_private(ftdmchan);
+	struct mISDNhead *hh = (struct mISDNhead *)msg_buf;
+	const char *data = msg_buf + sizeof(*hh);
+	int data_len = msg_len - sizeof(*hh);
+
+	assert(msg_buf);
+	assert(priv);
+
+	if (msg_len < sizeof(*hh)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN message to small (%d < %d bytes)\n",
+			msg_len, sizeof(*hh));
+		return FTDM_FAIL;
+	}
+
+#ifdef MISDN_DEBUG_EVENTS
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN %c-channel received '%s' message (id: 0x%x, additional data: %d bytes)\n",
+		ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D', misdn_event2str(hh->prim), hh->id, data_len);
+#endif
+
+	switch (hh->prim) {
+	/* data events */
+	case PH_DATA_CNF:	/* TX: ack */
+		priv->tx_ack_cnt++;
+		break;
+	case PH_DATA_REQ:	/* TX: request echo (ignore) */
+		break;
+	case PH_DATA_E_IND:	/* RX: e-channel data received (monitoring?) */
+		break;
+
+	/* control requests */
+	case PH_CONTROL_IND:
+		return misdn_handle_ph_control_ind(ftdmchan, hh, data, data_len);
+	case PH_CONTROL_REQ:
+	case PH_CONTROL_CNF:
+		break;
+
+	/* information */
+	case MPH_INFORMATION_IND:
+		return misdn_handle_mph_information_ind(ftdmchan, hh, data, data_len);
+
+	/* channel de-/activation */
+	case PH_ACTIVATE_REQ:	/* Echoed requests, ignore */
+	case PH_DEACTIVATE_REQ:
+		break;
+	case PH_ACTIVATE_IND:
+	case PH_DEACTIVATE_IND: {
+		/* other events, enqueue and let misdn_event_next handle it */
+		struct misdn_span_private *span_priv = ftdm_span_io_private(ftdmchan->span);
+		struct misdn_event evt = { 0 };
+		evt.id = hh->prim;
+
+		misdn_event_queue_push(priv->events, &evt);
+
+		/* wake possible readers */
+		pthread_cond_signal(&span_priv->event_cond);
+		break;
+	}
+	default:	/* error? */
+		ftdm_log(FTDM_LOG_DEBUG, "mISDN channel %d:%d received unknown event %d\n",
+			ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan), hh->prim);
+		break;
+	}
+	return FTDM_SUCCESS;
+}
+
 /**
  * \brief	Read data
  * \param	ftdmchan	FreeTDM channel
@@ -1751,71 +1826,6 @@ static FIO_SPAN_DESTROY_FUNCTION(misdn_span_destroy)
 
 	ftdm_log(FTDM_LOG_DEBUG, "mISDN span %d (%s) destroyed\n",
 		ftdm_span_get_id(span), ftdm_span_get_name(span));
-	return FTDM_SUCCESS;
-}
-
-
-static ftdm_status_t misdn_handle_incoming(ftdm_channel_t *ftdmchan, const char *rbuf, const int size)
-{
-	struct mISDNhead *hh = (struct mISDNhead *)rbuf;
-	struct misdn_chan_private *priv = ftdm_chan_io_private(ftdmchan);
-	const char *data = rbuf + sizeof(*hh);
-	int data_len = size - sizeof(*hh);
-
-	assert(priv);
-
-#ifdef MISDN_DEBUG_EVENTS
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN channel received '%s' message (additional data: %d bytes)\n",
-		misdn_event2str(hh->prim), data_len);
-#endif
-
-	switch (hh->prim) {
-	/* data events */
-	case PH_DATA_CNF:	/* TX ack */
-		priv->tx_ack_cnt++;
-		break;
-	case PH_DATA_REQ:	/* request echo? */
-		break;
-	case PH_DATA_E_IND:	/* TX/RX ERR(?) */
-		break;
-
-	/* control events */
-	case PH_ACTIVATE_REQ:
-	case PH_DEACTIVATE_REQ:
-		/*
-		 * Echoed(?) L2->L1 requests, ignore...
-		 * (something broken in mISDN or the way we setup the channel?)
-		 */
-		break;
-	case PH_CONTROL_IND:
-		return misdn_handle_ph_control_ind(ftdmchan, hh, data, data_len);
-	case PH_CONTROL_REQ:
-	case PH_CONTROL_CNF:
-		break;
-
-	case MPH_INFORMATION_IND:
-		return misdn_handle_mph_information_ind(ftdmchan, hh, data, data_len);
-
-	case PH_ACTIVATE_IND:
-	case PH_DEACTIVATE_IND:
-		{
-			/* other events, enqueue and let misdn_event_next handle it */
-			struct misdn_span_private *span_priv = ftdm_span_io_private(ftdmchan->span);
-			struct misdn_event evt = { 0 };
-			evt.id = hh->prim;
-
-			misdn_event_queue_push(priv->events, &evt);
-
-			/* wake possible readers */
-			pthread_cond_signal(&span_priv->event_cond);
-		}
-		break;
-
-	default:	/* error? */
-		ftdm_log(FTDM_LOG_DEBUG, "mISDN channel %d:%d received unknown event %d\n",
-			ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan), hh->prim);
-		break;
-	}
 	return FTDM_SUCCESS;
 }
 
