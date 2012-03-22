@@ -861,6 +861,7 @@ static FIO_OPEN_FUNCTION(misdn_open)
 
 	switch (ftdmchan->type) {
 	case FTDM_CHAN_TYPE_B: {
+#if 0
 			struct itimerspec its = {
 				.it_interval = { 0, 0 },
 				.it_value    = { 0, 0 },
@@ -887,6 +888,7 @@ static FIO_OPEN_FUNCTION(misdn_open)
 
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN created tx interval (%d ms) timer\n",
 				ftdmchan->effective_interval);
+#endif
 		}
 	case FTDM_CHAN_TYPE_DQ921:
 		chan_priv->state = MISDN_CHAN_STATE_OPEN;
@@ -915,6 +917,7 @@ static FIO_CLOSE_FUNCTION(misdn_close)
 
 	/* deactivate b-channels on close */
 	if (ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B) {
+#if 0
 		/*
 		 * Stop tx timerfd
 		 */
@@ -922,7 +925,7 @@ static FIO_CLOSE_FUNCTION(misdn_close)
 			close(chan_priv->timerfd);
 			chan_priv->timerfd = -1;
 		}
-
+#endif
 		/*
 		 * Send deactivation request (don't wait for answer)
 		 */
@@ -1012,7 +1015,7 @@ static FIO_COMMAND_FUNCTION(misdn_command)
  */
 static FIO_WAIT_FUNCTION(misdn_wait)
 {
-	struct misdn_chan_private *chan_priv = ftdm_chan_io_private(ftdmchan);
+//	struct misdn_chan_private *chan_priv = ftdm_chan_io_private(ftdmchan);
 	struct pollfd pfds[2];
 	int nr_fds = 0;
 	int retval;
@@ -1021,6 +1024,15 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 
 	switch (ftdm_channel_get_type(ftdmchan)) {
 	case FTDM_CHAN_TYPE_B:
+		if (*flags & FTDM_READ)
+			pfds[0].events |= POLLIN;
+		if (*flags & FTDM_WRITE)
+			pfds[0].events |= /*POLLOUT |*/ POLLIN;	/* NOTE: no write-poll support on mISDN b-channels */
+		if (*flags & FTDM_EVENTS)
+			pfds[0].events |= POLLPRI;
+		pfds[0].fd = ftdmchan->sockfd;
+		nr_fds++;
+#if 0
 		if (*flags & FTDM_WRITE) {
 			pfds[nr_fds].fd = chan_priv->timerfd;
 			pfds[nr_fds].events = POLLIN;
@@ -1032,6 +1044,7 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 			pfds[nr_fds].events |= (*flags & FTDM_EVENTS) ? POLLPRI : 0;
 			nr_fds++;
 		}
+#endif
 		break;
 	default:
 		if (*flags & FTDM_READ)
@@ -1047,8 +1060,12 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 
 	*flags = FTDM_NO_FLAGS;
 
-	if (!(pfds[0].events || pfds[1].events))
+//	if (!(pfds[0].events || pfds[1].events))
+	if (!pfds[0].events) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "mISDN poll(): no flags set!\n");
 		return FTDM_SUCCESS;
+	}
+
 	if ((retval = poll(pfds, nr_fds, to)) < 0) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN poll() failed: %s\n",
 			strerror(errno));
@@ -1059,6 +1076,14 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 
 	switch (ftdm_channel_get_type(ftdmchan)) {
 	case FTDM_CHAN_TYPE_B:
+		if (pfds[0].revents & POLLIN)
+			*flags |= FTDM_READ | FTDM_WRITE;	/* NOTE: */
+		if (pfds[0].revents & POLLOUT)
+			*flags |= FTDM_WRITE;
+		if (pfds[0].revents & POLLPRI)
+			*flags |= FTDM_EVENTS;
+		break;
+#if 0
 		if (pfds[0].fd == chan_priv->timerfd) {
 			if (pfds[0].revents & POLLIN) {
 				uint64_t tmp = 0;	/* clear pending events on timerfd */
@@ -1071,6 +1096,7 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 				*flags |= FTDM_EVENTS;
 			break;
 		}
+#endif
 	default:
 		if (pfds[0].revents & POLLIN)
 			*flags |= FTDM_READ;
