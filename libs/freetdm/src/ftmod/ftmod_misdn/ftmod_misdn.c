@@ -633,6 +633,99 @@ static int misdn_handle_ph_control_ind(ftdm_channel_t *chan, const struct mISDNh
 	return FTDM_SUCCESS;
 }
 
+/*
+ * TE/NT state names
+ * taken from linux-3.2.1/drivers/isdn/hardware/mISDN/hfcsusb.h
+ */
+static const char *misdn_layer1_te_states[] = {
+        "TE F0 - Reset",
+        "TE F1 - Reset",
+        "TE F2 - Sensing",
+        "TE F3 - Deactivated",
+        "TE F4 - Awaiting signal",
+        "TE F5 - Identifying input",
+        "TE F6 - Synchronized",
+        "TE F7 - Activated",
+        "TE F8 - Lost framing",
+};
+
+static const char *misdn_layer1_nt_states[] = {
+        "NT G0 - Reset",
+        "NT G1 - Deactive",
+        "NT G2 - Pending activation",
+        "NT G3 - Active",
+        "NT G4 - Pending deactivation",
+};
+
+static const char *misdn_hw_state_name(const int proto, const int id)
+{
+	if (IS_ISDN_P_TE(proto)) {
+		if (id < 0 || id >= ftdm_array_len(misdn_layer1_te_states))
+			return NULL;
+		return misdn_layer1_te_states[id];
+	}
+	else if (IS_ISDN_P_NT(proto)) {
+		if (id < 0 || id >= ftdm_array_len(misdn_layer1_nt_states))
+			return NULL;
+		return misdn_layer1_nt_states[id];
+	}
+	return NULL;
+}
+
+
+static const struct misdn_hw_flag {
+	const unsigned int flag;
+	const char *name;
+} misdn_hw_flags[] = {
+#define MISDN_HW_FLAG(v,n)	{ v, #n }
+	MISDN_HW_FLAG(0, FLG_TX_BUSY),
+	MISDN_HW_FLAG(1, FLG_TX_NEXT),
+	MISDN_HW_FLAG(2, FLG_L1_BUSY),
+	MISDN_HW_FLAG(3, FLG_L2_ACTIVATED),
+	MISDN_HW_FLAG(5, FLG_OPEN),
+	MISDN_HW_FLAG(6, FLG_ACTIVE),
+	MISDN_HW_FLAG(7, FLG_BUSY_TIMER),
+	MISDN_HW_FLAG(8, FLG_DCHANNEL),
+	MISDN_HW_FLAG(9, FLG_BCHANNEL),
+	MISDN_HW_FLAG(10, FLG_ECHANNEL),
+	MISDN_HW_FLAG(12, FLG_TRANSPARENT),
+	MISDN_HW_FLAG(13, FLG_HDLC),
+	MISDN_HW_FLAG(14, FLG_L2DATA),
+	MISDN_HW_FLAG(15, FLG_ORIGIN),
+	MISDN_HW_FLAG(16, FLG_FILLEMPTY),
+	MISDN_HW_FLAG(17, FLG_ARCOFI_TIMER),
+	MISDN_HW_FLAG(18, FLG_ARCOFI_ERROR),
+	MISDN_HW_FLAG(17, FLG_INITIALIZED),
+	MISDN_HW_FLAG(18, FLG_DLEETX),
+	MISDN_HW_FLAG(19, FLG_LASTDLE),
+	MISDN_HW_FLAG(20, FLG_FIRST),
+	MISDN_HW_FLAG(21, FLG_LASTDATA),
+	MISDN_HW_FLAG(22, FLG_NMD_DATA),
+	MISDN_HW_FLAG(23, FLG_FTI_RUN),
+	MISDN_HW_FLAG(24, FLG_LL_OK),
+	MISDN_HW_FLAG(25, FLG_LL_CONN),
+	MISDN_HW_FLAG(26, FLG_DTMFSEND),
+	MISDN_HW_FLAG(30, FLG_RECVQUEUE),
+	MISDN_HW_FLAG(31, FLG_PHCHANGE),
+#undef MISDN_HW_FLAG
+};
+
+static const char *misdn_hw_print_flags(unsigned int flags, char *buf, int buflen)
+{
+	int i;
+
+	buf[0] = '\0';
+	for (i = 0; i < ftdm_array_len(misdn_hw_flags); i++) {
+		if ((1 << misdn_hw_flags[i].flag) & flags) {
+			strncat(buf, misdn_hw_flags[i].name, buflen);
+			flags &= ~(1 << misdn_hw_flags[i].flag);
+			if (!flags) break;
+			strncat(buf, ",", buflen);
+		}
+	}
+	return buf;
+}
+
 static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len)
 {
 	struct misdn_chan_private *priv = ftdm_chan_io_private(chan);
@@ -653,6 +746,7 @@ static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct m
 		/* complete port status, hfcsusb sends this */
 		struct ph_info *info = (struct ph_info *)data;
 		struct ph_info_ch *bch_info = NULL;
+		char tmp[1024] = { 0 };
 
 		if (data_len < (sizeof(*info) + info->dch.num_bch * sizeof(*bch_info))) {
 			ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "mISDN MPH_INFORMATION_IND message is too short\n");
@@ -660,8 +754,11 @@ static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct m
 		}
 		bch_info = &info->bch[0];
 
-		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN port state:\n\tD-Chan state:\t%hu\n\tD-Chan flags:\t%#lx\n\tD-Chan proto:\t%hu\n\tD-Chan active:\t%s\n",
-			info->dch.state, info->dch.ch.Flags, info->dch.ch.protocol, (info->dch.ch.Flags & (1 << 6)) ? "yes" : "no");
+		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN port state:\n\tD-Chan proto:\t%hu\n\tD-Chan state:\t%s (%hu)\n\tD-Chan flags:\t%#lx\n\t\t\t%-70s\n",
+			info->dch.ch.protocol,
+			misdn_hw_state_name(info->dch.ch.protocol, info->dch.state), info->dch.state,
+			info->dch.ch.Flags,
+			misdn_hw_print_flags(info->dch.ch.Flags, tmp, sizeof(tmp) - 1));
 
 		/* TODO: try to translate this to a usable set of alarm flags */
 
