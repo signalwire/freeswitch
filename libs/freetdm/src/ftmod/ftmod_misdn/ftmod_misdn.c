@@ -191,6 +191,7 @@ struct misdn_chan_private {
 	int state;
 	int debugfd;
 	int timerfd;
+	int active;
 
 	/* hw addr of channel */
 	struct sockaddr_mISDN addr;
@@ -404,11 +405,16 @@ static inline int ts_before(struct timespec *a, struct timespec *b)
 
 static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 {
+	struct misdn_chan_private *priv = ftdm_chan_io_private(chan);
 	char buf[MAX_DATA_MEM] = { 0 };
 	struct mISDNhead *hh = (struct mISDNhead *) buf;
 	struct timespec abstimeout;
 	int req = 0, resp = 0, ms_left = MISDN_PH_ACTIVATE_TIMEOUT_MS;
 	int retval;
+
+	/* NOTE: sending PH_DEACTIVATE_REQ to closed b-channels kills the d-channel (hfcsusb)... */
+	if ((activate && priv->active) || (!activate && !priv->active))
+		return FTDM_SUCCESS;
 
 	ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN sending %s request\n",
 		(activate) ? "activation" : "deactivation");
@@ -433,7 +439,7 @@ static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 		struct pollfd pfd;
 
 		pfd.fd = chan->sockfd;
-		pfd.events  = POLLIN /* | POLLPRI */;
+		pfd.events  = POLLIN | POLLPRI;
 		pfd.revents = 0;
 
 		switch ((retval = poll(&pfd, 1, ms_left))) {
@@ -463,15 +469,17 @@ static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 				ftdm_channel_get_type(chan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
 //#endif
 			switch (hh->prim) {
-			case PH_ACTIVATE_IND:	/* success (or not): save last response, */
-			case PH_DEACTIVATE_IND:	/* stop looping if it's the one we've been waiting for */
-				resp = hh->prim;
-				if (hh->prim == (activate) ? PH_ACTIVATE_IND : PH_DEACTIVATE_IND) goto out;
-				break;
+			case PH_ACTIVATE_IND:
 			case PH_ACTIVATE_CNF:
-			case PH_DEACTIVATE_CNF:
 				resp = hh->prim;
-				if (hh->prim == (activate) ? PH_ACTIVATE_CNF : PH_DEACTIVATE_CNF) goto out;
+				priv->active = 1;
+				if (activate) goto out;
+				break;
+			case PH_DEACTIVATE_CNF:
+			case PH_DEACTIVATE_IND:
+				resp = hh->prim;
+				priv->active = 0;
+				if (!activate) goto out;
 				break;
 			case PH_ACTIVATE_REQ:	/* REQ echo, ignore */
 			case PH_DEACTIVATE_REQ:
@@ -480,6 +488,9 @@ static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 				break;
 			case MPH_INFORMATION_IND:
 				misdn_handle_mph_information_ind(chan, hh, MISDN_MSG_DATA(buf), retval - MISDN_HEADER_LEN);
+				break;
+			case PH_DATA_IND:	/* ignore */
+			case PH_DATA_CNF:	/* ignore */
 				break;
 			default:		/* other messages, ignore */
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s (%#x)', id %#x, while waiting for %s confirmation\n",
@@ -500,8 +511,8 @@ out:
 			(activate) ? "activation" : "deactivation");
 		return FTDM_TIMEOUT;
 	}
-	if ((req == PH_ACTIVATE_IND   && !(resp == PH_ACTIVATE_CNF   || resp == PH_ACTIVATE_IND)) ||
-	    (req == PH_DEACTIVATE_IND && !(resp == PH_DEACTIVATE_CNF || resp == PH_DEACTIVATE_CNF))) {
+	if ((req == PH_ACTIVATE_REQ   && !(resp == PH_ACTIVATE_CNF   || resp == PH_ACTIVATE_IND)) ||
+	    (req == PH_DEACTIVATE_REQ && !(resp == PH_DEACTIVATE_CNF || resp == PH_DEACTIVATE_IND))) {
 		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN received '%s' while waiting for %s\n",
 			misdn_event2str(resp), (activate) ? "activation" : "deactivation");
 		return FTDM_FAIL;
@@ -1436,6 +1447,8 @@ static ftdm_status_t misdn_open_range(ftdm_span_t *span, ftdm_chan_type_t type, 
 
 			ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_INTERVAL);
 		} else {
+			/* early activate D-Channel */
+			misdn_activate_channel(ftdmchan, 1);
 			ftdmchan->native_codec = ftdmchan->effective_codec = FTDM_CODEC_NONE;
 		}
 		num_configured++;
