@@ -2374,7 +2374,7 @@ SWITCH_STANDARD_API(dual_transfer_function)
 		}
 	}
 
-	if ((dp2 = strstr(dest1, "/inline")) && *(dp2 + 7) == '\0') {
+	if ((dp2 = strstr(dest2, "/inline")) && *(dp2 + 7) == '\0') {
 		*dp2++ = '\0';
 	} else {
 		if ((dp2 = strchr(dest2, '/'))) {
