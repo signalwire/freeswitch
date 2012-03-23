@@ -76,6 +76,15 @@
 #define MIN(x,y)	(((x) < (y)) ? (x) : (y))
 #endif
 
+#ifndef MAX
+#define MAX(x,y)	(((x) > (y)) ? (x) : (y))
+#endif
+
+#ifndef CLAMP
+#define CLAMP(val,min,max)	(MIN(max,MAX(min,val)))
+#endif
+
+
 typedef enum {
 	MISDN_CAPS_NONE = 0,
 
@@ -1208,6 +1217,7 @@ static FIO_READ_FUNCTION(misdn_read)
 	struct mISDNhead *hh = (struct mISDNhead *)rbuf;
 	int bytes = *datalen;
 	int retval;
+	int maxretry = 10;
 
 	if (priv->state == MISDN_CHAN_STATE_CLOSED) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "mISDN ignoring read on closed channel\n");
@@ -1216,15 +1226,20 @@ static FIO_READ_FUNCTION(misdn_read)
 		return FTDM_SUCCESS;
 	}
 
+	/* nothing read yet */
+	*datalen = 0;
+
 	/*
 	 * try to read all messages, as long as we haven't received a PH_DATA_IND one
 	 * we'll get a lot of "mISDN_send: error -12" message in dmesg otherwise
 	 * (= b-channel receive queue overflowing)
 	 */
-	while (1) {
-		if ((retval = recvfrom(ftdmchan->sockfd, rbuf, sizeof(rbuf), 0, NULL, NULL)) < 0) {
-			if (errno == EWOULDBLOCK) break;
-			if (errno == EAGAIN) continue;
+	while (maxretry--) {
+		struct sockaddr_mISDN addr;
+		socklen_t addrlen = sizeof(addr);
+
+		if ((retval = recvfrom(ftdmchan->sockfd, rbuf, sizeof(rbuf), 0, (struct sockaddr *)&addr, &addrlen)) < 0) {
+			if (errno == EWOULDBLOCK || errno == EAGAIN) break;
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN failed to receive incoming message: %s\n",
 				strerror(errno));
 			return FTDM_FAIL;
@@ -1236,9 +1251,12 @@ static FIO_READ_FUNCTION(misdn_read)
 		}
 
 		if (hh->prim == PH_DATA_IND) {
-			*datalen = MIN(bytes, retval - MISDN_HEADER_LEN);
+			*datalen = CLAMP(retval - MISDN_HEADER_LEN, 0, bytes);
 			memcpy(data, rbuf + MISDN_HEADER_LEN, *datalen);
 #ifdef MISDN_DEBUG_IO
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "misdn_read() received '%s', id: %#x, with %d bytes from channel socket %d [dev.ch: %d.%d]\n",
+				misdn_event2str(hh->prim), hh->id, retval - MISDN_HEADER_LEN, ftdmchan->sockfd, addr.dev, addr.channel);
+
 			if (*datalen > 0) {
 				char hbuf[MAX_DATA_MEM] = { 0 };
 				print_hex_bytes(data, *datalen, hbuf, sizeof(hbuf));
@@ -1248,6 +1266,10 @@ static FIO_READ_FUNCTION(misdn_read)
 			return FTDM_SUCCESS;
 		} else {
 			*datalen = 0;
+#ifdef MISDN_DEBUG_IO
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "misdn_read() received '%s', id: %#x, with %d bytes from channel socket %d [dev.ch: %d.%d]\n",
+				misdn_event2str(hh->prim), hh->id, retval - MISDN_HEADER_LEN, ftdmchan->sockfd, addr.dev, addr.channel);
+#endif
 			/* event */
 			misdn_handle_incoming(ftdmchan, rbuf, retval);
 		}
