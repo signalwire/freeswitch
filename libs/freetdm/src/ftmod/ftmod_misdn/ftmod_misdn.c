@@ -1261,6 +1261,7 @@ static FIO_WRITE_FUNCTION(misdn_write)
 	struct mISDNhead *hh = (struct mISDNhead *)wbuf;
 	int size = *datalen;
 	int retval = 0;
+	ftdm_wait_flag_t wflags;
 
 	assert(priv);
 
@@ -1283,6 +1284,15 @@ static FIO_WRITE_FUNCTION(misdn_write)
 
 	memcpy(wbuf + MISDN_HEADER_LEN, data, size);
 	size += MISDN_HEADER_LEN;
+
+	/* wait for channel to get ready */
+	wflags = FTDM_WRITE;
+	retval = misdn_wait(ftdmchan, &wflags, 20);
+	if (retval) {
+		/* timeout, io error */
+		*datalen = 0;
+		return FTDM_FAIL;
+	}
 
 #ifdef MISDN_DEBUG_IO
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN writing %d bytes to channel socket %d [dev.ch: %d.%d]\n",
