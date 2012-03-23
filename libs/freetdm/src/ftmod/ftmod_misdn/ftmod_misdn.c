@@ -1280,7 +1280,7 @@ static FIO_WRITE_FUNCTION(misdn_write)
 	hh->id   = MISDN_ID_ANY;
 
 	/* avoid buffer overflow */
-	size = MIN(size, MAX_DATA_MEM);
+	size = MIN(size, MAX_DATA_MEM - MISDN_HEADER_LEN);
 
 	memcpy(wbuf + MISDN_HEADER_LEN, data, size);
 	size += MISDN_HEADER_LEN;
