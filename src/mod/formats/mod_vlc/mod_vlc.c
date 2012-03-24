@@ -29,9 +29,13 @@
  *
  * Examples:
  *
+ * To playback from an audio source into a file:
  * File: vlc:///path/to/file
  * Stream: http://path.to.file.com:port/file.pls
  * Stream: vlc://ftp://path.to.file.com:port/file.mp3
+ *
+ * To stream from a call(channel) out to a remote destination:
+ * vlc://#transcode{acodec=vorb,channels=1,samplerate=16000}:standard{access=http,mux=ogg,dst=:8080/thing.ogg}
  *
  * Notes: 
  *
@@ -42,15 +46,19 @@
 #include <vlc/vlc.h>
 #include <vlc/libvlc_media_player.h>
 
-#define VLC_BUFFER_SIZE 4096
+#define VLC_BUFFER_SIZE 65536
 
 static char *vlc_file_supported_formats[SWITCH_MAX_CODECS] = { 0 };
+
+typedef int  (*imem_get_t)(void *data, const char *cookie,
+                           int64_t *dts, int64_t *pts, unsigned *flags,
+                           size_t *, void **);
+typedef void (*imem_release_t)(void *data, const char *cookie, size_t, void *);
 
 /* Change valud to -vvv for vlc related debug. Be careful since vlc is at least as verbose as FS about logging */
 const char *vlc_args = "";
 
 libvlc_instance_t *read_inst;
-libvlc_instance_t *inst_out;
 
 struct vlc_file_context {
 	libvlc_media_player_t *mp;
@@ -63,8 +71,10 @@ struct vlc_file_context {
 	char *path;
 	int samples;
 	int playing;
+	int samplerate;
 	int err;
 	int pts;
+	libvlc_instance_t *inst_out;
 };
 
 typedef struct vlc_file_context vlc_file_context_t;
@@ -74,6 +84,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load);
 SWITCH_MODULE_DEFINITION(mod_vlc, mod_vlc_load, mod_vlc_shutdown, NULL);
 
 void vlc_auto_play_callback(void *data, const void *samples, unsigned count, int64_t pts) {
+
 	vlc_file_context_t *context = (vlc_file_context_t *) data;
 	
 	switch_mutex_lock(context->audio_mutex);
@@ -88,8 +99,47 @@ void vlc_auto_play_callback(void *data, const void *samples, unsigned count, int
 		switch_thread_cond_signal(context->started);
 	}	
 	switch_mutex_unlock(context->audio_mutex);
+}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC callback for %s %d \n", context->path, count);
+int  vlc_imem_get_callback(void *data, const char *cookie, int64_t *dts, int64_t *pts, unsigned *flags, size_t *size, void **output)
+{
+	vlc_file_context_t *context = (vlc_file_context_t *) data;
+	int samples = 0;
+	int bytes = 0;
+	
+	switch_mutex_lock(context->audio_mutex);
+	
+	/* If the stream should no longer be sending audio    */
+	/* then pretend we have less than one sample of audio */
+	/* so that libvlc will close the client connections   */
+	if ( context->playing == 0 && switch_buffer_inuse(context->audio_buffer) == 0 ) {
+		switch_mutex_unlock(context->audio_mutex);		
+		return 1; 
+	}
+	
+	samples = context->samples;
+	context->samples = 0;
+	
+	if ( samples ) {
+		bytes = samples * 2;
+		*output = malloc(bytes);
+		bytes = switch_buffer_read(context->audio_buffer, *output, bytes);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC imem samples: %d\n", samples);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC imem bytes: %d\n", bytes);
+	} else {
+		bytes = 128;
+		*output = malloc(bytes);
+		memset(*output, 0, bytes);
+	}
+	switch_mutex_unlock(context->audio_mutex);
+	
+	*size = (size_t) bytes;
+	return 0;
+}
+
+void vlc_imem_release_callback(void *data, const char *cookie, size_t size, void *unknown)
+{
+	free(unknown);
 }
 
 static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *path)
@@ -100,7 +150,8 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 	context->pool = handle->memory_pool;
 
 	context->path = switch_core_strdup(context->pool, path);
-	switch_buffer_create_dynamic(&(context->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 2, 0);
+
+	switch_buffer_create_dynamic(&(context->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
 	switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, context->pool);
 	switch_thread_cond_create(&(context->started), context->pool);
 
@@ -136,16 +187,49 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 		
 		if ( !handle->samplerate)
 			handle->samplerate = 16000;
-		libvlc_audio_set_format(context->mp, "S16N", handle->samplerate, 1);
+
+		context->samplerate = handle->samplerate;
+		
+		libvlc_audio_set_format(context->mp, "S16N", context->samplerate, 1);
 		
 		libvlc_audio_set_callbacks(context->mp, vlc_auto_play_callback, NULL,NULL,NULL,NULL, (void *) context);
 
 		libvlc_media_player_play(context->mp);
 		
 	} else if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC does not yet support writing to a output stream");
-		return SWITCH_STATUS_GENERR;
+		const char * opts[10] = {
+			vlc_args,
+			switch_mprintf("--sout=%s", path)
+		};
+		int opts_count = 10;
+		
+		if ( !handle->samplerate)
+			handle->samplerate = 16000;
+		
+		context->samplerate = handle->samplerate;
 
+		opts[2] = switch_mprintf("--imem-get=%ld", vlc_imem_get_callback);
+		opts[3] = switch_mprintf("--imem-release=%ld", vlc_imem_release_callback);
+		opts[4] = switch_mprintf("--imem-cat=%d", 4);
+		opts[5] = "--demux=rawaud";
+		opts[6] = "--rawaud-fourcc=s16l";
+		opts[7] = switch_mprintf("--rawaud-samplerate=%d", context->samplerate);
+		opts[8] = switch_mprintf("--imem-data=%ld", context);
+		opts[9] = "--rawaud-channels=1";
+
+		/* Prepare to write to an output stream. */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC open %s for writing\n", path);
+
+		/* load the vlc engine. */
+		context->inst_out = libvlc_new(opts_count, opts);
+		
+		/* Tell VLC the audio will come from memory, and to use the callbacks to fetch it. */
+		context->m = libvlc_media_new_location(context->inst_out, "imem/rawaud://");
+		context->mp = libvlc_media_player_new_from_media(context->m);
+		context->samples = 0;
+		context->pts = 0;
+		context->playing = 1;		
+		libvlc_media_player_play(context->mp);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC tried to open %s for unknown reason\n", path);
 		return SWITCH_STATUS_GENERR;
@@ -201,21 +285,46 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t vlc_file_write(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	vlc_file_context_t *context = handle->private_info;
+	size_t bytes = *len * sizeof(int16_t);
+	
+	switch_mutex_lock(context->audio_mutex);
+	context->samples += *len;
+	switch_buffer_write(context->audio_buffer, data, bytes);
+	switch_mutex_unlock(context->audio_mutex);	
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t vlc_file_close(switch_file_handle_t *handle)
 {
 	vlc_file_context_t *context = handle->private_info;
-
-	libvlc_media_player_stop(context->mp);
-	libvlc_media_release(context->m);
-
+	
 	context->playing = 0;
 	
+	/* The clients need to empty the last of the audio buffer */
+	while ( switch_buffer_inuse(context->audio_buffer) > 0 ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC waiting to close the files: %d \n", (int) switch_buffer_inuse(context->audio_buffer));
+		sleep(1);
+	}
+
+	/* Let the clients get the last of the audio stream */
+	while ( 3 == libvlc_media_get_state(context->m) ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC waiting for clients: %d \n", libvlc_media_get_state(context->m));
+		sleep(1);
+	}
+
 	if( context->mp ) 
 		libvlc_media_player_stop(context->mp);
 	
 	if( context->m ) 
 		libvlc_media_release(context->m);
 	
+	if ( context->inst_out != NULL )
+		libvlc_release(context->inst_out);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -235,6 +344,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 	file_interface->file_open = vlc_file_open;
 	file_interface->file_close = vlc_file_close;
 	file_interface->file_read = vlc_file_read;
+	file_interface->file_write = vlc_file_write;
 
 	/* load the vlc engine. */
 	read_inst = libvlc_new(1, &vlc_args);
@@ -252,8 +362,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vlc_shutdown)
 {
 	if ( read_inst != NULL )
 		libvlc_release(read_inst);
-	if ( inst_out != NULL )
-		libvlc_release(inst_out);
 	return SWITCH_STATUS_SUCCESS;
 }
 
