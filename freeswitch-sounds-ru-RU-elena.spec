@@ -20,14 +20,48 @@
 # Set variables
 ##############################################################################
 
-%define version	1.0.13
-%define release	1
+%define version	%{VERSION_NUMBER}
+%define release	%{BUILD_NUMBER}
 
 %define fsname  freeswitch
 # you could add a version number to be more strict
 
-%define prefix	/opt/freeswitch
-%define _prefix	%{prefix}
+%define PREFIX          %{_prefix}
+%define EXECPREFIX      %{_exec_prefix}
+%define BINDIR          %{_bindir}
+%define SBINDIR         %{_sbindir}
+%define LIBEXECDIR      %{_libexecdir}/%{fsname}
+%define SYSCONFDIR      %{_sysconfdir}/%{fsname}
+%define SHARESTATEDIR   %{_sharedstatedir}/%{fsname}
+%define LOCALSTATEDIR   %{_localstatedir}/lib/%{fsname}
+%define LIBDIR          %{_libdir}
+%define INCLUDEDIR      %{_includedir}
+%define _datarootdir    %{_prefix}/share
+%define DATAROOTDIR     %{_datarootdir}
+%define DATADIR         %{_datadir}
+%define INFODIR         %{_infodir}
+%define LOCALEDIR       %{_datarootdir}/locale
+%define MANDIR          %{_mandir}
+%define DOCDIR          %{_defaultdocdir}/%{fsname}
+%define HTMLDIR         %{_defaultdocdir}/%{fsname}/html
+%define DVIDIR          %{_defaultdocdir}/%{fsname}/dvi
+%define PDFDIR          %{_defaultdocdir}/%{fsname}/pdf
+%define PSDIR           %{_defaultdocdir}/%{fsname}/ps
+%define LOGFILEDIR      /var/log/%{fsname}
+%define MODINSTDIR      %{_libdir}/%{fsname}/mod
+%define RUNDIR          %{_localstatedir}/run/%{fsname}
+%define DBDIR           %{LOCALSTATEDIR}/db
+%define HTDOCSDIR       %{_datarootdir}/%{fsname}/htdocs
+%define SOUNDSDIR       %{_datarootdir}/%{fsname}/sounds
+%define GRAMMARDIR      %{_datarootdir}/%{fsname}/grammar
+%define SCRIPTDIR       %{_datarootdir}/%{fsname}/scripts
+%define RECORDINGSDIR   %{LOCALSTATEDIR}/recordings
+%define PKGCONFIGDIR    %{_datarootdir}/%{fsname}/pkgconfig
+%define HOMEDIR         %{LOCALSTATEDIR}
+
+
+
+
 
 ##############################################################################
 # General
@@ -141,13 +175,13 @@ done' > ./RU/elena/buildsounds-elena.sh
 [ "%{buildroot}" != '/' ] && rm -rf %{buildroot}
 
 # create the sounds directories
-%{__install} -d -m 0750 %{buildroot}%{_prefix}/sounds/ru/RU/elena
+%{__install} -d -m 0750 %{buildroot}%{SOUNDSDIR}/ru/RU/elena
 
 pushd RU/elena
 # first install the 48KHz sounds
-%{__cp} -prv ./* %{buildroot}%{_prefix}/sounds/ru/RU/elena
+%{__cp} -prv ./* %{buildroot}%{SOUNDSDIR}/ru/RU/elena
 # now resample the 48KHz ones to 8KHz, 16KHz and 32KHz
-./buildsounds-elena.sh %{buildroot}%{_prefix}/sounds/ru/RU/elena
+./buildsounds-elena.sh %{buildroot}%{SOUNDSDIR}/ru/RU/elena
 popd
 
 ##############################################################################
@@ -163,8 +197,8 @@ popd
 
 %post
 # generate the 8KHz, 16KHz and 32KHz prompts from the 48KHz ones
-cd %{_prefix}/sounds/ru/RU/elena
-./buildsounds-elena.sh %{_prefix}/sounds/ru/RU/elena
+cd %{SOUNDSDIR}/ru/RU/elena
+./buildsounds-elena.sh %{SOUNDSDIR}/ru/RU/elena
 
 ##############################################################################
 # Postun
@@ -181,123 +215,123 @@ cd %{_prefix}/sounds/ru/RU/elena
 
 %files
 %defattr(-,root,root)
-%attr(0750,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/buildsounds-elena.sh
+%attr(0750,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/buildsounds-elena.sh
 
 %files -n freeswitch-sounds-ru-RU-elena-8000
 %defattr(-,root,root,-)
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/ascii/8000
-#%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/base256/8000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/conference/8000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/currency/8000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/digits/8000
-%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/ru/RU/elena/directory/8000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/ivr/8000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/misc/8000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/phonetic-ascii/8000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/time/8000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/voicemail/8000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/zrtp/8000
-%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/ru/RU/elena/users/8000
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/ascii/8000/*.wav
-#%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/base256/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/conference/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/currency/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/digits/8000/*.wav
-%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/ru/RU/elena/directory/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/ivr/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/misc/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/phonetic-ascii/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/time/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/voicemail/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/zrtp/8000/*.wav
-%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/ru/RU/elena/users/8000/*.wav
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/ascii/8000
+#%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/base256/8000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/conference/8000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/currency/8000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/digits/8000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/ru/RU/elena/directory/8000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/ivr/8000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/misc/8000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/phonetic-ascii/8000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/time/8000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/voicemail/8000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/zrtp/8000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/ru/RU/elena/users/8000
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/ascii/8000/*.wav
+#%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/base256/8000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/conference/8000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/currency/8000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/digits/8000/*.wav
+%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/ru/RU/elena/directory/8000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/ivr/8000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/misc/8000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/phonetic-ascii/8000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/time/8000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/voicemail/8000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/zrtp/8000/*.wav
+%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/ru/RU/elena/users/8000/*.wav
 
 %files -n freeswitch-sounds-ru-RU-elena-16000
 %defattr(-,root,root,-)
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/ascii/16000
-#%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/base256/16000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/conference/16000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/currency/16000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/digits/16000
-%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/ru/RU/elena/directory/16000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/ivr/16000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/misc/16000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/phonetic-ascii/16000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/time/16000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/voicemail/16000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/zrtp/16000
-%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/ru/RU/elena/users/16000
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/ascii/16000/*.wav
-#%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/base256/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/conference/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/currency/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/digits/16000/*.wav
-%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/ru/RU/elena/directory/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/ivr/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/misc/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/phonetic-ascii/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/time/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/voicemail/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/zrtp/16000/*.wav
-%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/ru/RU/elena/users/16000/*.wav
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/ascii/16000
+#%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/base256/16000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/conference/16000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/currency/16000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/digits/16000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/ru/RU/elena/directory/16000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/ivr/16000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/misc/16000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/phonetic-ascii/16000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/time/16000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/voicemail/16000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/zrtp/16000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/ru/RU/elena/users/16000
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/ascii/16000/*.wav
+#%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/base256/16000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/conference/16000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/currency/16000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/digits/16000/*.wav
+%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/ru/RU/elena/directory/16000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/ivr/16000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/misc/16000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/phonetic-ascii/16000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/time/16000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/voicemail/16000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/zrtp/16000/*.wav
+%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/ru/RU/elena/users/16000/*.wav
 
 %files -n freeswitch-sounds-ru-RU-elena-32000
 %defattr(-,root,root,-)
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/ascii/32000
-#%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/base256/32000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/conference/32000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/currency/32000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/digits/32000
-%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/ru/RU/elena/directory/32000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/ivr/32000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/misc/32000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/phonetic-ascii/32000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/time/32000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/voicemail/32000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/zrtp/32000
-%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/ru/RU/elena/users/32000
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/ascii/32000/*.wav
-#%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/base256/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/conference/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/currency/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/digits/32000/*.wav
-%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/ru/RU/elena/directory/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/ivr/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/misc/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/phonetic-ascii/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/time/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/voicemail/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/zrtp/32000/*.wav
-%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/ru/RU/elena/users/32000/*.wav
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/ascii/32000
+#%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/base256/32000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/conference/32000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/currency/32000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/digits/32000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/ru/RU/elena/directory/32000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/ivr/32000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/misc/32000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/phonetic-ascii/32000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/time/32000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/voicemail/32000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/zrtp/32000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/ru/RU/elena/users/32000
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/ascii/32000/*.wav
+#%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/base256/32000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/conference/32000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/currency/32000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/digits/32000/*.wav
+%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/ru/RU/elena/directory/32000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/ivr/32000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/misc/32000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/phonetic-ascii/32000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/time/32000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/voicemail/32000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/zrtp/32000/*.wav
+%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/ru/RU/elena/users/32000/*.wav
 
 %files -n freeswitch-sounds-ru-RU-elena-48000
 %defattr(-,root,root,-)
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/ascii/48000
-#%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/base256/48000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/conference/48000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/currency/48000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/digits/48000
-%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/ru/RU/elena/directory/48000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/ivr/48000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/misc/48000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/phonetic-ascii/48000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/time/48000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/voicemail/48000
-%attr(0750,freeswitch,daemon)	%dir	%{_prefix}/sounds/ru/RU/elena/zrtp/48000
-%attr(0750,freeswitch,daemon)   %dir    %{_prefix}/sounds/ru/RU/elena/users/48000
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/ascii/48000/*.wav
-#%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/base256/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/conference/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/currency/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/digits/48000/*.wav
-%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/ru/RU/elena/directory/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/ivr/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/misc/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/phonetic-ascii/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/time/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/voicemail/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{_prefix}/sounds/ru/RU/elena/zrtp/48000/*.wav
-%attr(0640,freeswitch,daemon)           %{_prefix}/sounds/ru/RU/elena/users/48000/*.wav
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/ascii/48000
+#%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/base256/48000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/conference/48000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/currency/48000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/digits/48000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/ru/RU/elena/directory/48000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/ivr/48000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/misc/48000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/phonetic-ascii/48000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/time/48000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/voicemail/48000
+%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/ru/RU/elena/zrtp/48000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/ru/RU/elena/users/48000
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/ascii/48000/*.wav
+#%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/base256/48000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/conference/48000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/currency/48000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/digits/48000/*.wav
+%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/ru/RU/elena/directory/48000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/ivr/48000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/misc/48000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/phonetic-ascii/48000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/time/48000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/voicemail/48000/*.wav
+%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/zrtp/48000/*.wav
+%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/ru/RU/elena/users/48000/*.wav
 
 %files -n freeswitch-sounds-ru-RU-elena-all
 
@@ -306,5 +340,7 @@ cd %{_prefix}/sounds/ru/RU/elena
 ##############################################################################
 
 %changelog
+* Mon Mar 06 2012 Ken Rice <krice@freeswitch.org> - 1.0.13-2
+- created out of the spec file for elena
 * Mon Jul 11 2011 Michal Bielicki <michal.bielicki@seventhsignal.de> - 1.0.13-1
 - created out of the spec file for elena

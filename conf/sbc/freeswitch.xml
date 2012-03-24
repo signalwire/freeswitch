@@ -1,0 +1,43 @@
+<include>
+  <!--#comment 
+      All comments starting with #command will be preprocessed and never sent to the xml parser
+      Valid instructions:
+      #include ==> Include another file to this exact point
+                   (partial xml should be encased in <include></include> tags)
+      #set     ==> Set a global variable (can be expanded during preprocessing with $$ variables)
+                   (note the double $$ which denotes preprocessor variables)
+      #comment ==> A general comment such as this
+      
+      The preprocessor will compile the full xml document to ${prefix}/log/freeswitch.xml.fsxml
+      Don't modify it while freeswitch is running cos it is mem mapped in most cases =D
+      
+      The same can be achieved with the <X-PRE-PROCESS> tag where the attrs 'cmd' and 'data' are
+      parsed in the same way.
+  -->
+
+  <X-PRE-PROCESS cmd="include" data="vars.xml"/>
+
+  <section name="configuration" description="Various Configuration">
+    <X-PRE-PROCESS cmd="include" data="autoload_configs/*.xml"/>
+  </section>
+  
+  <section name="dialplan" description="Regex/XML Dialplan">
+    <X-PRE-PROCESS cmd="include" data="dialplan/*.xml"/>
+  </section>
+
+  <!-- mod_dingaling is reliant on the vcard data in the "directory" section. -->
+  <!-- mod_sofia is reliant on the user data for authorization --> 
+  <section name="directory" description="User Directory">
+    <X-PRE-PROCESS cmd="include" data="directory/*.xml"/>
+  </section>
+
+  <!-- phrases section (under development still) -->
+  <section name="phrases" description="Speech Phrase Management">
+    <macros>
+      <X-PRE-PROCESS cmd="include" data="lang/en/*.xml"/>
+    </macros>
+  </section>
+</include>
+
+
+
