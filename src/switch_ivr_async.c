@@ -2621,8 +2621,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		{
-			int skip = 0;
-
+			
 			if (type == SWITCH_ABC_TYPE_READ_REPLACE) {
 				frame = switch_core_media_bug_get_read_replace_frame(bug);
 			} else {
@@ -2630,6 +2629,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 			}
 
 			for (i = 0; i < cont->index; i++) {
+				int skip = 0;
 
 				if (cont->list[i].sleep) {
 					cont->list[i].sleep--;
@@ -2651,7 +2651,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					skip = 1;
 
 				if (skip)
-					return SWITCH_TRUE;
+					continue;
 
 				if (teletone_multi_tone_detect(&cont->list[i].mt, frame->data, frame->samples)) {
 					switch_event_t *event;
