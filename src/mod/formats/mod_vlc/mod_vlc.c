@@ -230,7 +230,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load)
 	file_interface->file_open = vlc_file_open;
 	file_interface->file_close = vlc_file_close;
 	file_interface->file_read = vlc_file_read;
-	file_interface->file_write = vlc_file_write;
 
 	/* load the vlc engine. */
 	read_inst = libvlc_new(1, &vlc_args);
