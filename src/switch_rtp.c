@@ -2030,6 +2030,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(void) switch_rtp_flush(switch_rtp_t *rtp_session)
+{
+	if (!switch_rtp_ready(rtp_session)) {
+		return;
+	}
+
+	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+}
+
+
 SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 {
 	if (!switch_rtp_ready(rtp_session)) {
@@ -2038,7 +2048,6 @@ SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 
 	switch_mutex_lock(rtp_session->flag_mutex);
 	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_BREAK);
-	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
 		switch_mutex_unlock(rtp_session->flag_mutex);
@@ -3095,25 +3104,26 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		check = !bytes;
 
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH)) {
+			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
+				do_flush(rtp_session);
+				bytes = 0;
+			}
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+		}
+		
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK) || (bytes && bytes == 4 && *((int *) &rtp_session->recv_msg) == UINT_MAX)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 
-			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) || !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) || (bytes && bytes < 5) || (!bytes && poll_loop)) {
+			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) || !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || 
+				switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) || 
+				(bytes && bytes < 5) || (!bytes && poll_loop)) {
 				do_2833(rtp_session, session);
 				bytes = 0;
 				return_cng_frame();
-			} else {
-				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 			}
 		}
 
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH)) {
-			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
-			do_flush(rtp_session);
-			bytes = 0;
-		}
-			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
-		}
 
 		if (bytes && bytes < 5) {
 			continue;
