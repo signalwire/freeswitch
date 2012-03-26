@@ -126,7 +126,7 @@
       </ShowProgress>
     </Link>
     <PostBuildEvent>
-      <Command>if not exist "$(OutDir)conf" xcopy "$(SolutionDir)conf\*.*" "$(OutDir)conf\" /C /D /Y /S
+      <Command>if not exist "$(OutDir)conf" xcopy "$(SolutionDir)conf\vanilla\*.*" "$(OutDir)conf\" /C /D /Y /S
 if not exist "$(OutDir)db" md  "$(OutDir)db"
 if not exist "$(OutDir)log" md  "$(OutDir)log"
 if not exist "$(OutDir)htdocs" md  "$(OutDir)htdocs"
@@ -181,7 +181,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>if not exist "$(OutDir)conf" xcopy "$(SolutionDir)conf\*.*" "$(OutDir)conf\" /C /D /Y /S
+      <Command>if not exist "$(OutDir)conf" xcopy "$(SolutionDir)conf\vanilla\*.*" "$(OutDir)conf\" /C /D /Y /S
 if not exist "$(OutDir)db" md  "$(OutDir)db"
 if not exist "$(OutDir)log" md  "$(OutDir)log"
 if not exist "$(OutDir)htdocs" md  "$(OutDir)htdocs"
@@ -227,7 +227,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>if not exist "$(OutDir)conf" xcopy "$(SolutionDir)conf\*.*" "$(OutDir)conf\" /C /D /Y /S
+      <Command>if not exist "$(OutDir)conf" xcopy "$(SolutionDir)conf\vanilla\*.*" "$(OutDir)conf\" /C /D /Y /S
 if not exist "$(OutDir)db" md  "$(OutDir)db"
 if not exist "$(OutDir)log" md  "$(OutDir)log"
 if not exist "$(OutDir)htdocs" md  "$(OutDir)htdocs"
@@ -276,7 +276,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>if not exist "$(OutDir)conf" xcopy "$(SolutionDir)conf\*.*" "$(OutDir)conf\" /C /D /Y /S
+      <Command>if not exist "$(OutDir)conf" xcopy "$(SolutionDir)conf\vanilla\*.*" "$(OutDir)conf\" /C /D /Y /S
 if not exist "$(OutDir)db" md  "$(OutDir)db"
 if not exist "$(OutDir)log" md  "$(OutDir)log"
 if not exist "$(OutDir)htdocs" md  "$(OutDir)htdocs"
