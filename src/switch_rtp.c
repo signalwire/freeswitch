@@ -3008,7 +3008,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (rtcp_poll_status == SWITCH_STATUS_SUCCESS) {
 				rtcp_status = read_rtcp_packet(rtp_session, &rtcp_bytes, flags);
 				
-				if (rtcp_status == SWITCH_STATUS_SUCCESS && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU)) {
+				if (rtcp_status == SWITCH_STATUS_SUCCESS) {
+					switch_rtp_reset_media_timer(rtp_session);
+
+					if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU)) {
 					switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 					switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -3074,6 +3077,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					
 				}
 			}
+		}
 		}
 
 
