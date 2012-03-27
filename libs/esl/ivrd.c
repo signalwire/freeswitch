@@ -60,7 +60,9 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 		return;
 	}
 
-	system(path);
+	if(system(path)) {
+		 esl_log(ESL_LOG_ERROR, "System Call Failed! [%s]\n", strerror(errno));
+	}
 	esl_disconnect(&handle);
 	
 }
