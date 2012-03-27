@@ -217,6 +217,8 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_clear_flag(_In_ switch_media_bug_
 */
 SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame);
 
+SWITCH_DECLARE(uint32_t) switch_core_cpu_count(void);
+
 /*!
   \brief Remove a media bug from the session
   \param session the session to remove the bug from

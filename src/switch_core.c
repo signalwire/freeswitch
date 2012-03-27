@@ -724,6 +724,11 @@ SWITCH_DECLARE(int32_t) set_realtime_priority(void)
 	return 0;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_cpu_count(void)
+{
+	return runtime.cpu_count;
+}
+
 SWITCH_DECLARE(int32_t) set_normal_priority(void)
 {
 	return 0;

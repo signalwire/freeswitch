@@ -5353,6 +5353,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_chat_interface_t *chat_interface;
 	switch_api_interface_t *api_interface;
 	switch_management_interface_t *management_interface;
+	uint32_t cpus = switch_core_cpu_count();
 	struct in_addr in;
 
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
@@ -5389,6 +5390,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for profiles to start\n");
 	switch_yield(1500000);
+
+	/* start one message thread per cpu */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Starting %u message threads.\n", cpus);
+	sofia_msg_thread_start(cpus);
 
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL,
 									&mod_sofia_globals.custom_node) != SWITCH_STATUS_SUCCESS) {

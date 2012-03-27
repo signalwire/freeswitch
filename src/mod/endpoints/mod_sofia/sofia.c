@@ -1232,7 +1232,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 
 static int IDX = 0;
 
-static void sofia_msg_thread_start(int idx)
+void sofia_msg_thread_start(int idx)
 {
 
 	if (idx >= SOFIA_MAX_MSG_QUEUE || (idx < mod_sofia_globals.msg_queue_len && mod_sofia_globals.msg_queue_thread[idx])) {
@@ -3616,6 +3616,18 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				mod_sofia_globals.debug_sla = atoi(val);
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
+			} else if (!strcasecmp(var, "message-threads")) {
+				int num = atoi(val);
+				
+				if (num < 1 || num > SOFIA_MAX_MSG_QUEUE - 1) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "message-threads must be between 1 and %d", SOFIA_MAX_MSG_QUEUE -1);
+				} 
+				
+				if (num < 1) num = 1;
+				if (num > SOFIA_MAX_MSG_QUEUE - 1) num = SOFIA_MAX_MSG_QUEUE -1;
+				
+				sofia_msg_thread_start(num);
+				
 			} else if (!strcasecmp(var, "reg-deny-binding-fetch-and-no-lookup")) {          /* backwards compatibility */
 				mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = switch_true(val);  /* remove when noone complains about the extra lookup */
 				if (switch_true(val)) {
@@ -3862,19 +3874,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_CID_IN_1XX);
 						}
-					} else if (!strcasecmp(var, "message-threads")) {
-						int num = atoi(val);
-
-						if (num < 1 || num > SOFIA_MAX_MSG_QUEUE - 1) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "message-threads must be between 1 and %d", SOFIA_MAX_MSG_QUEUE -1);
-						} 
-
-						if (num < 1) num = 1;
-						if (num > SOFIA_MAX_MSG_QUEUE - 1) num = SOFIA_MAX_MSG_QUEUE -1;
-
-						sofia_msg_thread_start(num);
 						
-
 					} else if (!strcasecmp(var, "disable-hold")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_DISABLE_HOLD);
