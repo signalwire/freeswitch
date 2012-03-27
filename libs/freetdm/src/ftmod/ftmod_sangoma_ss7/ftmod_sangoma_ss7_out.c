@@ -72,21 +72,23 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 						var, peer_span->signal_type);
 			} else {
 				peer_info = peer_chan->call_data;
-				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Starting native bridge with peer CIC %d\n", 
-						sngss7_info->circuit->cic, peer_info->circuit->cic);
+				if (peer_info) {
+					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Starting native bridge with peer CIC %d\n", 
+							sngss7_info->circuit->cic, peer_info->circuit->cic);
 
-				/* make each one of us aware of the native bridge */
-				peer_info->peer_data = sngss7_info;
-				sngss7_info->peer_data = peer_info;
+					/* make each one of us aware of the native bridge */
+					peer_info->peer_data = sngss7_info;
+					sngss7_info->peer_data = peer_info;
 
-				/* flush our own queue */
-				sngss7_flush_queue(sngss7_info->event_queue);
+					/* flush our own queue */
+					sngss7_flush_queue(sngss7_info->event_queue);
 
-				/* Go to up until release comes, note that state processing is done different and much simpler when there is a peer,
-				   We can't go to UP state right away yet though, so do not set the state to UP here, wait until the end of this function
-                   because moving from one state to another causes the ftdmchan->usrmsg structure to be wiped 
-				   and we still need those variables for further IAM processing */
-				native_going_up = FTDM_TRUE;
+					/* Go to up until release comes, note that state processing is done different and much simpler when there is a peer,
+					   We can't go to UP state right away yet though, so do not set the state to UP here, wait until the end of this function
+					   because moving from one state to another causes the ftdmchan->usrmsg structure to be wiped 
+					   and we still need those variables for further IAM processing */
+					native_going_up = FTDM_TRUE;
+				}
 			}
 		}
 	}

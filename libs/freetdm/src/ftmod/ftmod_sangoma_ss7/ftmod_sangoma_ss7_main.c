@@ -426,24 +426,33 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 				/* note that the channels being dequeued here may not belong to this span
 				   they may belong to just about any other span that one of our channels
 				   happens to be bridged to */
-				sngss7_chan_data_t *peer_info = peerchan->call_data;
-				sngss7_chan_data_t *chan_info = peer_info->peer_data;
-				ftdmchan = chan_info->ftdmchan;
+				sngss7_chan_data_t *peer_info;
+				sngss7_chan_data_t *chan_info;
 
-				/* 
-				   if there is any state changes at all, those will be done in the opposite channel
-				   to peerchan (where the original event was received), therefore we must lock ftdmchan, 
-				   but do not need to lock peerchan as we only read its event queue, which is already 
-				   locked when dequeueing */
-				ftdm_channel_lock(ftdmchan);
+				peer_info = peerchan->call_data;
+				if (peer_info) {
+					chan_info = peer_info->peer_data;
+					if (chan_info) {
+						ftdmchan = chan_info->ftdmchan;
+						if (ftdmchan) {
 
-				/* clean out all pending stack events in the peer channel */
-				while ((sngss7_event = ftdm_queue_dequeue(peer_info->event_queue))) {
-					ftdm_sangoma_ss7_process_peer_stack_event(ftdmchan, sngss7_event);
-					ftdm_safe_free(sngss7_event);
+							/* 
+							   if there is any state changes at all, those will be done in the opposite channel
+							   to peerchan (where the original event was received), therefore we must lock ftdmchan, 
+							   but do not need to lock peerchan as we only read its event queue, which is already 
+							   locked when dequeueing */
+							ftdm_channel_lock(ftdmchan);
+
+							/* clean out all pending stack events in the peer channel */
+							while ((sngss7_event = ftdm_queue_dequeue(peer_info->event_queue))) {
+								ftdm_sangoma_ss7_process_peer_stack_event(ftdmchan, sngss7_event);
+								ftdm_safe_free(sngss7_event);
+							}
+
+							ftdm_channel_unlock(ftdmchan);
+						}
+					}
 				}
-
-				ftdm_channel_unlock(ftdmchan);				
 			}
 
 			/* clean out all pending stack events */
@@ -1519,9 +1528,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 			 */
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sngss7_chan_data_t *peer_info = sngss7_info->peer_data;
-				sngss7_info->peer_data = NULL;
 				if (peer_info) {
-					peer_info->peer_data = NULL;
+					sngss7_info->peer_data = NULL;
+					if (peer_info) {
+						peer_info->peer_data = NULL;
+					}
 				}
 			}
 
