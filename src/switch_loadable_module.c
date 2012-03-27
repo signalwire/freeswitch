@@ -1289,6 +1289,11 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 
 
 	if (err) {
+
+		if (dso) {
+			switch_dso_destroy(&dso);
+		}
+
 		if (pool) {
 			switch_core_destroy_memory_pool(&pool);
 		}
