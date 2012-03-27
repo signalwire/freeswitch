@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <esl.h>
-
+#include <errno.h>
 
 static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr)
 {
