@@ -54,8 +54,11 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 	}
 
 	/* hotwire the socket to STDIN/STDOUT */
-	dup2(client_sock, STDIN_FILENO);
-	dup2(client_sock, STDOUT_FILENO);
+	if (!(dup2(client_sock, STDIN_FILENO)) && !(dup2(client_sock, STDOUT_FILENO))){
+		esl_disconnect(&handle);
+		esl_log(ESL_LOG_ERROR, "Socket Error hotwiring socket to STDIN/STDOUT!\n");
+		return;
+	}
 
 	system(path);
 	esl_disconnect(&handle);
