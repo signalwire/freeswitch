@@ -4774,6 +4774,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			return;
 		}
 
+                if (status >= 500 && sip->sip_reason && sip->sip_reason->re_protocol && (!strcasecmp(sip->sip_reason->re_protocol, "Q.850")
+				|| !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")
+				|| !strcasecmp(sip->sip_reason->re_protocol, profile->username)) && sip->sip_reason->re_cause) {
+      			tech_pvt->q850_cause = atoi(sip->sip_reason->re_cause);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote Reason: %d\n", tech_pvt->q850_cause);
+		} 
+
 		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
 		switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
