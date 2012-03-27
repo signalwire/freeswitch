@@ -1280,7 +1280,9 @@ static void *SWITCH_THREAD_FUNC enterprise_originate_thread(switch_thread_t *thr
 	enterprise_originate_handle_t *handle = (enterprise_originate_handle_t *) obj;
 
 	handle->done = 0;
-	handle->status = switch_ivr_originate(NULL, &handle->bleg, &handle->cause,
+	handle->flags |= SOF_ENTERPRISE;
+
+	handle->status = switch_ivr_originate(handle->session, &handle->bleg, &handle->cause,
 										  handle->bridgeto, handle->timelimit_sec,
 										  handle->table,
 										  handle->cid_name_override,
@@ -2708,6 +2710,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			if (caller_channel) {
 				soft_holding = switch_channel_get_variable(caller_channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);
 			}
+
+			if ((flags & SOF_ENTERPRISE)) {
+				session = oglobals.session = NULL;
+				caller_channel = NULL;
+			}
+
 
 			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) &&
 				   check_channel_status(&oglobals, originate_status, and_argc)) {
