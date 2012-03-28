@@ -172,6 +172,63 @@ static const char *misdn_control2str(const int ctrl)
 }
 #endif
 
+
+/***********************************************************************************
+ * mISDN <-> FreeTDM audio conversion
+ ***********************************************************************************/
+
+/*
+ * Code used to generate table values taken from
+ * Linux Call Router (LCR) http://www.linux-call-router.de/
+ *
+ * chan_lcr.c:3488 ff., load_module()
+ */
+static const unsigned char conv_audio_tbl[256] = {
+	0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
+	0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0,
+	0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8,
+	0x18, 0x98, 0x58, 0xd8, 0x38, 0xb8, 0x78, 0xf8,
+	0x04, 0x84, 0x44, 0xc4, 0x24, 0xa4, 0x64, 0xe4,
+	0x14, 0x94, 0x54, 0xd4, 0x34, 0xb4, 0x74, 0xf4,
+	0x0c, 0x8c, 0x4c, 0xcc, 0x2c, 0xac, 0x6c, 0xec,
+	0x1c, 0x9c, 0x5c, 0xdc, 0x3c, 0xbc, 0x7c, 0xfc,
+	0x02, 0x82, 0x42, 0xc2, 0x22, 0xa2, 0x62, 0xe2,
+	0x12, 0x92, 0x52, 0xd2, 0x32, 0xb2, 0x72, 0xf2,
+	0x0a, 0x8a, 0x4a, 0xca, 0x2a, 0xaa, 0x6a, 0xea,
+	0x1a, 0x9a, 0x5a, 0xda, 0x3a, 0xba, 0x7a, 0xfa,
+	0x06, 0x86, 0x46, 0xc6, 0x26, 0xa6, 0x66, 0xe6,
+	0x16, 0x96, 0x56, 0xd6, 0x36, 0xb6, 0x76, 0xf6,
+	0x0e, 0x8e, 0x4e, 0xce, 0x2e, 0xae, 0x6e, 0xee,
+	0x1e, 0x9e, 0x5e, 0xde, 0x3e, 0xbe, 0x7e, 0xfe,
+	0x01, 0x81, 0x41, 0xc1, 0x21, 0xa1, 0x61, 0xe1,
+	0x11, 0x91, 0x51, 0xd1, 0x31, 0xb1, 0x71, 0xf1,
+	0x09, 0x89, 0x49, 0xc9, 0x29, 0xa9, 0x69, 0xe9,
+	0x19, 0x99, 0x59, 0xd9, 0x39, 0xb9, 0x79, 0xf9,
+	0x05, 0x85, 0x45, 0xc5, 0x25, 0xa5, 0x65, 0xe5,
+	0x15, 0x95, 0x55, 0xd5, 0x35, 0xb5, 0x75, 0xf5,
+	0x0d, 0x8d, 0x4d, 0xcd, 0x2d, 0xad, 0x6d, 0xed,
+	0x1d, 0x9d, 0x5d, 0xdd, 0x3d, 0xbd, 0x7d, 0xfd,
+	0x03, 0x83, 0x43, 0xc3, 0x23, 0xa3, 0x63, 0xe3,
+	0x13, 0x93, 0x53, 0xd3, 0x33, 0xb3, 0x73, 0xf3,
+	0x0b, 0x8b, 0x4b, 0xcb, 0x2b, 0xab, 0x6b, 0xeb,
+	0x1b, 0x9b, 0x5b, 0xdb, 0x3b, 0xbb, 0x7b, 0xfb,
+	0x07, 0x87, 0x47, 0xc7, 0x27, 0xa7, 0x67, 0xe7,
+	0x17, 0x97, 0x57, 0xd7, 0x37, 0xb7, 0x77, 0xf7,
+	0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef,
+	0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff,
+};
+
+/* Convert ISDN_P_B_RAW audio data to/from a-/u-law */
+static inline void misdn_convert_audio_bits(char *buf, int buflen)
+{
+	int i;
+
+	for (i = 0; i < buflen; i++) {
+		 buf[i] = conv_audio_tbl[(unsigned char)buf[i]];
+	}
+}
+
+
 /***********************************************************************************
  * mISDN <-> FreeTDM data structures
  ***********************************************************************************/
@@ -204,6 +261,10 @@ struct misdn_chan_private {
 
 	/* hw addr of channel */
 	struct sockaddr_mISDN addr;
+
+	/* audio tx pipe */
+	int audio_pipe_in;
+	int audio_pipe_out;
 
 	/* counters */
 	unsigned long tx_cnt;
@@ -1035,7 +1096,7 @@ static FIO_COMMAND_FUNCTION(misdn_command)
  */
 static FIO_WAIT_FUNCTION(misdn_wait)
 {
-//	struct misdn_chan_private *chan_priv = ftdm_chan_io_private(ftdmchan);
+	struct misdn_chan_private *chan_priv = ftdm_chan_io_private(ftdmchan);
 	struct pollfd pfds[2];
 	int nr_fds = 0;
 	int retval;
@@ -1044,18 +1105,9 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 
 	switch (ftdm_channel_get_type(ftdmchan)) {
 	case FTDM_CHAN_TYPE_B:
-		if (*flags & FTDM_READ)
-			pfds[0].events |= POLLIN;
-		if (*flags & FTDM_WRITE)
-			pfds[0].events |= /*POLLOUT |*/ POLLIN;	/* NOTE: no write-poll support on mISDN b-channels */
-		if (*flags & FTDM_EVENTS)
-			pfds[0].events |= POLLPRI;
-		pfds[0].fd = ftdmchan->sockfd;
-		nr_fds++;
-#if 0
 		if (*flags & FTDM_WRITE) {
-			pfds[nr_fds].fd = chan_priv->timerfd;
-			pfds[nr_fds].events = POLLIN;
+			pfds[nr_fds].fd = chan_priv->audio_pipe_in;
+			pfds[nr_fds].events = POLLOUT;
 			nr_fds++;
 		}
 		if (*flags & (FTDM_READ | FTDM_EVENTS)) {
@@ -1064,7 +1116,6 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 			pfds[nr_fds].events |= (*flags & FTDM_EVENTS) ? POLLPRI : 0;
 			nr_fds++;
 		}
-#endif
 		break;
 	default:
 		if (*flags & FTDM_READ)
@@ -1080,8 +1131,7 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 
 	*flags = FTDM_NO_FLAGS;
 
-//	if (!(pfds[0].events || pfds[1].events))
-	if (!pfds[0].events) {
+	if (!(pfds[0].events || pfds[1].events)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "mISDN poll(): no flags set!\n");
 		return FTDM_SUCCESS;
 	}
@@ -1096,27 +1146,13 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 
 	switch (ftdm_channel_get_type(ftdmchan)) {
 	case FTDM_CHAN_TYPE_B:
-		if (pfds[0].revents & POLLIN)
-			*flags |= FTDM_READ | FTDM_WRITE;	/* NOTE: */
 		if (pfds[0].revents & POLLOUT)
 			*flags |= FTDM_WRITE;
-		if (pfds[0].revents & POLLPRI)
+		if ((pfds[0].revents & POLLIN)  || (pfds[1].revents & POLLIN))
+			*flags |= FTDM_READ;
+		if ((pfds[0].revents & POLLPRI) || (pfds[1].revents & POLLPRI))
 			*flags |= FTDM_EVENTS;
 		break;
-#if 0
-		if (pfds[0].fd == chan_priv->timerfd) {
-			if (pfds[0].revents & POLLIN) {
-				uint64_t tmp = 0;	/* clear pending events on timerfd */
-				retval = read(pfds[0].fd, &tmp, sizeof(tmp));
-				*flags |= FTDM_WRITE;
-			}
-			if (pfds[1].revents & POLLIN)
-				*flags |= FTDM_READ;
-			if (pfds[1].revents & POLLPRI)
-				*flags |= FTDM_EVENTS;
-			break;
-		}
-#endif
 	default:
 		if (pfds[0].revents & POLLIN)
 			*flags |= FTDM_READ;
@@ -1252,7 +1288,6 @@ static FIO_READ_FUNCTION(misdn_read)
 
 		if (hh->prim == PH_DATA_IND) {
 			*datalen = CLAMP(retval - MISDN_HEADER_LEN, 0, bytes);
-			memcpy(data, rbuf + MISDN_HEADER_LEN, *datalen);
 #ifdef MISDN_DEBUG_IO
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "misdn_read() received '%s', id: %#x, with %d bytes from channel socket %d [dev.ch: %d.%d]\n",
 				misdn_event2str(hh->prim), hh->id, retval - MISDN_HEADER_LEN, ftdmchan->sockfd, addr.dev, addr.channel);
@@ -1263,6 +1298,68 @@ static FIO_READ_FUNCTION(misdn_read)
 				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN read data: %s\n", hbuf);
 			}
 #endif
+			if (*datalen <= 0)
+				continue;
+
+			/*
+			 * Copy data into ouput buffer (excluding the mISDN message header)
+			 * NOTE: audio data needs to be converted to a-law / u-law!
+			 */
+			memcpy(data, rbuf + MISDN_HEADER_LEN, *datalen);
+
+			switch (ftdm_channel_get_type(ftdmchan)) {
+			case FTDM_CHAN_TYPE_B:
+				hh->prim = PH_DATA_REQ;
+				hh->id   = MISDN_ID_ANY;
+				bytes    = *datalen;
+
+				/* Convert incoming audio data to *-law */
+				misdn_convert_audio_bits(data, *datalen);
+
+				/*
+				 * Fetch required amount of audio from tx pipe, using the amount
+				 * of received bytes as an indicator for how much free space the
+				 * b-channel tx buffer has available.
+				 *
+				 * (see misdn_write() for the part that fills the tx pipe)
+				 *
+				 * NOTE: can't use blocking I/O here since both parts are serviced
+				 *       from the same thread
+				 */
+				if ((retval = read(priv->audio_pipe_out, rbuf + MISDN_HEADER_LEN, bytes)) < 0) {
+					if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
+						ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN failed to read %d bytes of audio data: %s\n",
+							bytes, strerror(errno));
+						break;
+					}
+					/* Tx pipe is empty, completely fill buffer up to "bytes" with silence value */
+					retval = 0;
+				}
+
+				/*
+				 * Use a-law / u-law silence to fill missing bytes,
+				 * in case there was not enough audio data available in the
+				 * tx pipe to satisfy the request.
+				 */
+				if (retval < bytes) {
+					memset(&rbuf[MISDN_HEADER_LEN + retval],
+						(ftdm_channel_get_codec(ftdmchan) == FTDM_CODEC_ALAW) ? 0x2a : 0xff,
+						bytes - retval);
+				}
+
+				/* Convert outgoing audio data to wire format */
+				misdn_convert_audio_bits(rbuf + MISDN_HEADER_LEN, bytes);
+				bytes += MISDN_HEADER_LEN;
+
+				/* Send converted audio to b-channel */
+				if ((retval = sendto(ftdmchan->sockfd, rbuf, bytes, 0, (struct sockaddr *)&priv->addr, sizeof(priv->addr))) < bytes) {
+					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN failed to send %d bytes of audio data: (%d) %s\n",
+						bytes, retval, strerror(errno));
+				}
+				break;
+			default:
+				break;
+			}
 			return FTDM_SUCCESS;
 		} else {
 			*datalen = 0;
@@ -1309,34 +1406,56 @@ static FIO_WRITE_FUNCTION(misdn_write)
 		ftdm_log(FTDM_LOG_DEBUG, "mISDN write data: %s\n", hbuf);
 	}
 #endif
-	hh->prim = PH_DATA_REQ;
-	hh->id   = MISDN_ID_ANY;
+	*datalen = 0;
 
-	/* avoid buffer overflow */
-	size = MIN(size, MAX_DATA_MEM - MISDN_HEADER_LEN);
+	switch (ftdm_channel_get_type(ftdmchan)) {
+	case FTDM_CHAN_TYPE_B:
+		/*
+		 * Write to audio pipe, misdn_read() will pull
+		 * from there as needed and send it to the b-channel
+		 *
+		 * NOTE: can't use blocking I/O here since both parts are serviced
+		 *       from the same thread
+		 */
+		if ((retval = write(priv->audio_pipe_in, data, size)) < size) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN channel audio pipe write error: %s\n",
+				strerror(errno));
+			return FTDM_FAIL;
+		}
+		*datalen = retval;
+		break;
+	default:
+		hh->prim = PH_DATA_REQ;
+		hh->id   = MISDN_ID_ANY;
 
-	memcpy(wbuf + MISDN_HEADER_LEN, data, size);
-	size += MISDN_HEADER_LEN;
+		/* Avoid buffer overflow */
+		size = MIN(size, MAX_DATA_MEM - MISDN_HEADER_LEN);
 
-	/* wait for channel to get ready */
-	wflags = FTDM_WRITE;
-	retval = misdn_wait(ftdmchan, &wflags, 20);
-	if (retval) {
-		/* timeout, io error */
-		*datalen = 0;
-		return FTDM_FAIL;
-	}
+		memcpy(wbuf + MISDN_HEADER_LEN, data, size);
+		size += MISDN_HEADER_LEN;
+
+		/* wait for channel to get ready */
+		wflags = FTDM_WRITE;
+		retval = misdn_wait(ftdmchan, &wflags, 20);
+		if (retval) {
+			/* timeout, io error */
+			*datalen = 0;
+			return FTDM_FAIL;
+		}
 
 #ifdef MISDN_DEBUG_IO
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN writing %d bytes to channel socket %d [dev.ch: %d.%d]\n",
-		size, ftdmchan->sockfd, priv->addr.dev, priv->addr.channel);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN writing %d bytes to channel socket %d [dev.ch: %d.%d]\n",
+			size, ftdmchan->sockfd, priv->addr.dev, priv->addr.channel);
 #endif
-	if ((retval = sendto(ftdmchan->sockfd, wbuf, size, 0, NULL, 0)) != size) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN channel socket write error: %s\n",
-			strerror(errno));
-		return FTDM_FAIL;
+
+		if ((retval = sendto(ftdmchan->sockfd, wbuf, size, 0, NULL, 0)) < size) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN channel socket write error: %s\n",
+				strerror(errno));
+			return FTDM_FAIL;
+		}
+		*datalen = retval;
+		break;
 	}
-	*datalen = retval;
 
 	priv->tx_cnt++;
 	return FTDM_SUCCESS;
@@ -1463,11 +1582,27 @@ static ftdm_status_t misdn_open_range(ftdm_span_t *span, ftdm_chan_type_t type, 
 		ftdmchan->physical_chan_id = x;
 
 		if (ftdmchan->type == FTDM_CHAN_TYPE_B) {
+			int pipefd[2] = { -1, -1 };
+
 			ftdmchan->packet_len         = 10 /* ms */ * (ftdmchan->rate / 1000);
 			ftdmchan->effective_interval = ftdmchan->native_interval = ftdmchan->packet_len / 8;
 			ftdmchan->native_codec       = ftdmchan->effective_codec = FTDM_CODEC_ALAW;
 
 			ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_INTERVAL);
+
+			/*
+			 * Create audio tx pipe, use non-blocking I/O to avoid deadlock since both ends
+			 * are used from the same thread
+			 */
+			if (pipe2(pipefd, O_NONBLOCK) < 0) {
+				ftdm_log(FTDM_LOG_ERROR, "Failed to create mISDN audio write pipe [%d:%d]: %s\n",
+					addr.dev, x, strerror(errno));
+				close(sockfd);
+				return FTDM_FAIL;
+			}
+			priv->audio_pipe_in  = pipefd[1];
+			priv->audio_pipe_out = pipefd[0];
+
 		} else {
 			/* early activate D-Channel */
 			misdn_activate_channel(ftdmchan, 1);
