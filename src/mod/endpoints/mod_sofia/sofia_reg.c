@@ -460,19 +460,19 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			{
 				int sec;
 
-				if (gateway_ptr->failure_status == 503 || gateway_ptr->failure_status == 908) {
+				if (gateway_ptr->failure_status == 503 || gateway_ptr->failure_status == 908 || gateway_ptr->failures < 1) {
 					sec = gateway_ptr->retry_seconds;
 				} else {
-					sec = gateway_ptr->retry_seconds * (gateway_ptr->failures + 1);
+					sec = gateway_ptr->retry_seconds * gateway_ptr->failures;
 				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration [%d], setting retry to %d seconds.\n",
+								  gateway_ptr->name, gateway_ptr->failure_status, sec);
 
 				gateway_ptr->retry = switch_epoch_time_now(NULL) + sec;
 				gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 				gateway_ptr->state = REG_STATE_FAIL_WAIT;
 				gateway_ptr->failure_status = 0;
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration [%d], setting retry to %d seconds.\n",
-								  gateway_ptr->name, gateway_ptr->failure_status, sec);
 
 			}
 			break;
