@@ -2453,15 +2453,15 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Destination-Number"));
 			
 		} else {
-			from_id = switch_str_nil(switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number"));
-			from_name = switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Name");
+			from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Caller-ID-Number"));
+			from_name = switch_event_get_header(helper->event, "Caller-Caller-ID-Name");
 
 			if (zstr(from_id)) {
-				from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Caller-ID-Number"));
+				from_id = switch_str_nil(switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number"));
 			}
 
 			if (zstr(from_name)) {
-				from_name = switch_event_get_header(helper->event, "Caller-Caller-ID-Name");
+				from_name = switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Name");
 			}
 			
 		}
@@ -2583,6 +2583,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						}
 						stream.write_function(&stream, "<target uri=\"sip:**%s@%s\"/>\n", clean_to_user, host);
 						stream.write_function(&stream, "</remote>\n");
+
 					} else if (!strcasecmp(proto, "queue")) {
 						stream.write_function(&stream, "<local>\n<identity display=\"queue\">sip:%s@%s;proto=queue</identity>\n",
 											  !zstr(clean_to_user) ? clean_to_user : "unknown", host);
