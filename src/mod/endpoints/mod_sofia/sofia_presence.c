@@ -2454,6 +2454,20 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		} else {
 			from_id = switch_str_nil(switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number"));
 		}
+
+		if (zstr(from_id)) {
+			from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Callee-ID-Number"));
+		}
+
+		if (zstr(from_id)) {
+			from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Destination-Number"));
+		}
+
+		if (zstr(from_id)) {
+			from_id = "n/a";
+		}
+
+
 #if 0
 		char *buf;
 		switch_event_serialize(helper->event, &buf, SWITCH_FALSE);
