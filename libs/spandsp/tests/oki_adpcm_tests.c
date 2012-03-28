@@ -69,7 +69,6 @@ int main(int argc, char *argv[])
     SNDFILE *outhandle;
     int frames;
     int dec_frames;
-    int outframes;
     int oki_bytes;
     int bit_rate;
     double pre_energy;
@@ -192,7 +191,7 @@ int main(int argc, char *argv[])
                     hist_out = 0;
                 diff_energy += (double) xx * (double) xx;
             }
-            outframes = sf_writef_short(outhandle, post_amp, dec_frames);
+            sf_writef_short(outhandle, post_amp, dec_frames);
         }
         close(encoded_fd);
     }
@@ -251,7 +250,7 @@ int main(int argc, char *argv[])
                 diff_energy += (double) xx * (double) xx;
                 //post_amp[i] = xx;
             }
-            outframes = sf_writef_short(outhandle, post_amp, dec_frames);
+            sf_writef_short(outhandle, post_amp, dec_frames);
         }
         printf("Pre samples: %d\n", total_pre_samples);
         printf("Compressed bytes: %d\n", total_compressed_bytes);

@@ -244,12 +244,7 @@ static int test_a_tone_set(int fwd)
     int16_t amp[100000];
     r2_mf_rx_state_t mf_state;
     awgn_state_t noise_source;
-    const mf_digit_tones_t *tone;
 
-    if (fwd)
-        tone = &r2_mf_fwd_tones[0];
-    else
-        tone = &r2_mf_back_tones[0];
     r2_mf_rx_init(&mf_state, fwd, NULL, NULL);
 
     /* Test 1: Mitel's test 1 isn't really a test. Its a calibration step,

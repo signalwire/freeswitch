@@ -84,23 +84,19 @@ static void callback2(span_sched_state_t *s, void *user_data)
 int main(int argc, char *argv[])
 {
     int i;
-    int id1;
-    int id2;
     span_sched_state_t sched;
     uint64_t when;
     
     span_schedule_init(&sched);
 
-    id1 = span_schedule_event(&sched, 500000, callback1, NULL);
-    id2 = span_schedule_event(&sched, 550000, callback2, NULL);
+    span_schedule_event(&sched, 500000, callback1, NULL);
+    span_schedule_event(&sched, 550000, callback2, NULL);
     when1 = span_schedule_time(&sched) + 500000;
     when2 = span_schedule_time(&sched) + 550000;
     //span_schedule_del(&sched, id);
     
     for (i = 0;  i < 100000000;  i += 20000)
-    {
         span_schedule_update(&sched, 20000);
-    }
     when = span_schedule_time(&sched);
     if ((when1 - when) < 0  ||  (when1 - when) > 500000  ||  (when2 - when) < 0  ||  (when2 - when) > 550000)
     {

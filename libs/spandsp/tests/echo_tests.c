@@ -1117,7 +1117,6 @@ static int perform_test_6(void)
     int16_t rx;
     int16_t tx;
     int16_t clean;
-    int local_max;
     tone_gen_descriptor_t tone_desc;
     tone_gen_state_t tone_state;
     int16_t local_sound[40000];
@@ -1151,7 +1150,7 @@ static int perform_test_6(void)
         j = 0;
         for (i = 0;  i < 5;  i++)
         {
-            local_max = tone_gen(&tone_state, local_sound, SAMPLE_RATE);
+            tone_gen(&tone_state, local_sound, SAMPLE_RATE);
             for (j = 0;  j < SAMPLE_RATE;  j++)
             {
                 tx = local_sound[j];
@@ -1186,7 +1185,6 @@ static int perform_test_7(void)
     int16_t rx;
     int16_t tx;
     int16_t clean;
-    int local_max;
     tone_gen_descriptor_t tone_desc;
     tone_gen_state_t tone_state;
     int16_t local_sound[40000];
@@ -1213,7 +1211,7 @@ static int perform_test_7(void)
     j = 0;
     for (i = 0;  i < 120;  i++)
     {
-        local_max = tone_gen(&tone_state, local_sound, SAMPLE_RATE);
+        tone_gen(&tone_state, local_sound, SAMPLE_RATE);
         for (j = 0;  j < SAMPLE_RATE;  j++)
         {
             tx = local_sound[j];
@@ -1489,7 +1487,6 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
     int16_t rout;
     int16_t sin;
     int16_t sout;
-    int32_t samples;
 
     mode |= ECHO_CAN_USE_ADAPTION;
     txfile = NULL;
@@ -1510,7 +1507,6 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
 
     ctx = echo_can_init(TEST_EC_TAPS, 0);
     echo_can_adaption_mode(ctx, mode);
-    samples = 0;
     do
     {
         if (two_channel_file)

@@ -84,25 +84,36 @@ void fax_log_rx_parameters(t30_state_t *s, const char *tag)
 }
 /*- End of function --------------------------------------------------------*/
 
-void fax_log_transfer_statistics(t30_state_t *s, const char *tag)
+void fax_log_final_transfer_statistics(t30_state_t *s, const char *tag)
 {
     t30_stats_t t;
 
     t30_get_transfer_statistics(s, &t);
-    printf("%s: tx pages %d, rx pages %d\n", tag, t.pages_tx, t.pages_rx);
-    printf("%s: pages in the file %d\n", tag, t.pages_in_file);
-    printf("%s: compression type %s (%d)\n", tag, t4_encoding_to_str(t.encoding), t.encoding);
-    printf("%s: compressed image size %d bytes\n", tag, t.image_size);
-    printf("%s: image size %d pels x %d pels\n", tag, t.width, t.length);
-    printf("%s: image resolution %d pels/m x %d pels/m\n", tag, t.x_resolution, t.y_resolution);
-    printf("%s: bit rate %d\n", tag, t.bit_rate);
+    printf("%s: Bit rate %d\n", tag, t.bit_rate);
     printf("%s: ECM %s\n", tag, (t.error_correcting_mode)  ?  "on"  :  "off");
-    printf("%s: bad rows %d, longest bad row run %d\n", tag, t.bad_rows, t.longest_bad_row_run);
-    printf("%s: bad ECM frames %d\n", tag, t.error_correcting_mode_retries);
     //printf("%s: RTP events %d. RTN events %d\n", tag, t.rtp_events, t.rtn_events);
+    printf("%s: Tx pages %d, rx pages %d\n", tag, t.pages_tx, t.pages_rx);
+}
+/*- End of function --------------------------------------------------------*/
+
+void fax_log_page_transfer_statistics(t30_state_t *s, const char *tag)
+{
+    t30_stats_t t;
+
+    t30_get_transfer_statistics(s, &t);
+    printf("%s: Page statistics\n", tag);
+    printf("%s:   Pages in the file %d\n", tag, t.pages_in_file);
+    printf("%s:   Bad rows %d, longest bad row run %d\n", tag, t.bad_rows, t.longest_bad_row_run);
+    printf("%s:   Bad ECM frames %d\n", tag, t.error_correcting_mode_retries);
+    printf("%s:   Compression type %s (%d)\n", tag, t4_encoding_to_str(t.encoding), t.encoding);
+    printf("%s:   Compressed image size %d bytes\n", tag, t.image_size);
+    printf("%s:   Image size %d pels x %d pels\n", tag, t.width, t.length);
+    printf("%s:   Image resolution %d pels/m x %d pels/m\n", tag, t.x_resolution, t.y_resolution);
 #if defined(WITH_SPANDSP_INTERNALS)
-    printf("%s: bits per row - min %d, max %d\n", tag, s->t4.min_row_bits, s->t4.max_row_bits);
+    printf("%s:   Bits per row - min %d, max %d\n", tag, s->t4.min_row_bits, s->t4.max_row_bits);
 #endif
+
+    fax_log_final_transfer_statistics(s, tag);
 }
 /*- End of function --------------------------------------------------------*/
 

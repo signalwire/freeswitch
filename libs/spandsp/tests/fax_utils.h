@@ -37,7 +37,9 @@ void fax_log_tx_parameters(t30_state_t *s, const char *tag);
 
 void fax_log_rx_parameters(t30_state_t *s, const char *tag);
 
-void fax_log_transfer_statistics(t30_state_t *s, const char *tag);
+void fax_log_page_transfer_statistics(t30_state_t *s, const char *tag);
+
+void fax_log_final_transfer_statistics(t30_state_t *s, const char *tag);
 
 int get_tiff_total_pages(const char *file);
 

@@ -18,8 +18,8 @@
 run_fax_test()
 {
     rm -f fax_tests_1.tif
-    echo ./fax_tests ${OPTS} -i ${FILE}
-    ./fax_tests ${OPTS} -i ${FILE} >xyzzy 2>xyzzy2
+    echo -i ${FILE} ${OPTS}
+    ./fax_tests -i ${FILE} ${OPTS} >xyzzy 2>xyzzy2
     RETVAL=$?
     if [ $RETVAL != 0 ]
     then

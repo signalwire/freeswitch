@@ -49,7 +49,6 @@ int main (int argc, char *argv[])
     int i;
     int idum = 1234567;
     int16_t dirty;
-    int16_t clean;
     int estimate;
     int min;
     int max;
@@ -61,7 +60,7 @@ int main (int argc, char *argv[])
     for (i = 0;  i < 100000;  i++)
     {
         dirty = awgn(&noise_source) + dc_offset;
-        clean = dc_restore(&dc_state, dirty);
+        dc_restore(&dc_state, dirty);
         if ((i % 1000) == 0)
         {
             printf("Sample %6d: %d (expect %d)\n",
@@ -76,7 +75,7 @@ int main (int argc, char *argv[])
     for (i = 0;  i < 100000;  i++)
     {
         dirty = awgn(&noise_source) + dc_offset;
-        clean = dc_restore(&dc_state, dirty);
+        dc_restore(&dc_state, dirty);
         estimate = dc_restore_estimate(&dc_state);
         if (estimate < min)
             min = estimate;
