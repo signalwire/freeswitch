@@ -5033,14 +5033,16 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 
 					if (sofia_test_pflag(profile, PFLAG_MANUAL_REDIRECT)) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirect: Transfering to %s %s %s\n",
-										  p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
+						if (!(v = switch_channel_get_variable(channel, "outbound_redirect_info"))) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirect: Transfering to %s %s %s\n",
+											  p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
 
-						if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
-							switch_core_media_bug_transfer_recordings(session, a_session);
+							if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
+								switch_core_media_bug_transfer_recordings(session, a_session);
+							}
+
+							switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
 						}
-
-						switch_ivr_session_transfer(a_session, p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
 						switch_channel_hangup(channel, SWITCH_CAUSE_REDIRECTION_TO_NEW_DESTINATION);
 					} else if ((!strcmp(profile->sipip, p_contact->m_url->url_host))
 							   || (profile->extsipip && !strcmp(profile->extsipip, p_contact->m_url->url_host))
