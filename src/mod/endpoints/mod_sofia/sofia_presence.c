@@ -2420,7 +2420,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
 		const char *answer_state = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 		const char *dft_state;
-		const char *from_id;
+		const char *from_id = NULL, *from_name = NULL;
 		const char *to_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_to_user"));
 		const char *from_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_from_user"));
 		char *clean_to_user = NULL;
@@ -2451,23 +2451,23 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 		if (!strcasecmp(direction, "inbound")) {
 			from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Destination-Number"));
+			
 		} else {
 			from_id = switch_str_nil(switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number"));
-		}
+			from_name = switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Name");
 
-		if (zstr(from_id)) {
-			from_id = from_user;
+			if (zstr(from_id)) {
+				from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Caller-ID-Number"));
+				from_name = switch_event_get_header(helper->event, "Caller-Caller-ID-Name");
+			}
 		}
-
-		if (zstr(from_id)) {
-			from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Callee-ID-Number"));
-		}
-
 		
-		if (zstr(from_id)) {
-			from_id = "n/a";
+		if (zstr(from_name)) {
+			from_name = switch_event_get_header(helper->event, "Caller-Caller-ID-Name");
+			if (zstr(from_name)) {
+				from_name = from_id;
+			}
 		}
-
 
 #if 0
 		char *buf;
@@ -2580,7 +2580,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						if (switch_true(switch_event_get_header(helper->event, "Presence-Privacy"))) {
 							stream.write_function(&stream, "<remote>\n<identity display=\"Anonymous\">sip:anonymous@anonymous.invalid</identity>\n");
 						} else {
-							stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_from_user, clean_from_user,
+							stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n", 
+												  from_name ? from_name : clean_from_user, clean_from_user,
 												  host);
 						}
 						stream.write_function(&stream, "<target uri=\"sip:**%s@%s\"/>\n", clean_to_user, host);
