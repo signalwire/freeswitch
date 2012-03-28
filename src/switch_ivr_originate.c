@@ -2460,8 +2460,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "sip_h_X-FS-Channel-Name", new_name);
 				}
 				
-				
-				reason = switch_core_session_outgoing_channel(oglobals.osession, originate_var_event, chan_type,
+				reason = switch_core_session_outgoing_channel(oglobals.session, originate_var_event, chan_type,
 															  new_profile, &new_session, NULL, myflags, cancel_cause);
 
 				switch_event_destroy(&originate_var_event);
@@ -2502,6 +2501,32 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				originate_status[i].peer_session = new_session;
 
 				switch_channel_set_flag(originate_status[i].peer_channel, CF_ORIGINATING);
+
+
+
+				if (oglobals.osession) {
+					switch_channel_t *ochannel;
+					switch_caller_profile_t *profile, *cloned_profile;
+
+					ochannel = switch_core_session_get_channel(oglobals.osession);
+					profile = switch_channel_get_caller_profile(ochannel);
+					
+					switch_assert(profile);
+
+					if ((cloned_profile = switch_caller_profile_clone(originate_status[i].peer_session, profile)) != 0) {
+						switch_channel_set_originator_caller_profile(originate_status[i].peer_channel, cloned_profile);
+					}
+					
+
+					if ((profile = switch_channel_get_caller_profile(originate_status[i].peer_channel))) {
+						if ((cloned_profile = switch_caller_profile_clone(oglobals.osession, profile)) != 0) {
+							switch_channel_set_origination_caller_profile(ochannel, cloned_profile);
+						}
+					}		
+
+				}
+
+
 				
 				if (caller_channel) {
 					switch_channel_set_variable(originate_status[i].peer_channel, "call_uuid", switch_channel_get_variable(caller_channel, "call_uuid"));
