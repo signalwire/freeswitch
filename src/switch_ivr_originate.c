@@ -96,6 +96,7 @@ typedef struct {
 
 typedef struct {
 	switch_core_session_t *session;
+	switch_core_session_t *osession;
 	int32_t idx;
 	uint32_t hups;
 	char *file;
@@ -1770,6 +1771,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	oglobals.error_file = NULL;
 	switch_core_new_memory_pool(&oglobals.pool);
 
+	if ((flags & SOF_ENTERPRISE)) {
+		if (session) {
+			oglobals.osession = session;
+			session = NULL;
+		}
+	}
+
 	if (caller_profile_override) {
 		oglobals.caller_profile_override = switch_caller_profile_dup(oglobals.pool, caller_profile_override);
 	} else if (session) {
@@ -1779,6 +1787,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			oglobals.caller_profile_override = switch_caller_profile_dup(oglobals.pool, cp);
 		}
 	}
+
 
 	if (session) {
 		const char *to_var, *bypass_media = NULL, *proxy_media = NULL;
@@ -2452,7 +2461,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 				
 				
-				reason = switch_core_session_outgoing_channel(oglobals.session, originate_var_event, chan_type,
+				reason = switch_core_session_outgoing_channel(oglobals.osession, originate_var_event, chan_type,
 															  new_profile, &new_session, NULL, myflags, cancel_cause);
 
 				switch_event_destroy(&originate_var_event);
@@ -2709,11 +2718,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			if (caller_channel) {
 				soft_holding = switch_channel_get_variable(caller_channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);
-			}
-
-			if ((flags & SOF_ENTERPRISE)) {
-				session = oglobals.session = NULL;
-				caller_channel = NULL;
 			}
 
 
