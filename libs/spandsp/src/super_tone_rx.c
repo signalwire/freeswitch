@@ -56,14 +56,13 @@
 #include "spandsp/private/super_tone_rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define DETECTION_THRESHOLD         16439           /* -42dBm0 */
+#define DETECTION_THRESHOLD         16439           /* -42dBm0 [((BINS*BINS*32768.0/(1.4142*128.0))*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
 #define TONE_TWIST                  4               /* 6dB */
 #define TONE_TO_TOTAL_ENERGY        64              /* -3dB */
 #else
-#define DETECTION_THRESHOLD         2104205.6f      /* -42dBm0 [(((128.0*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2)/128 => 2104205.6] */
+#define DETECTION_THRESHOLD         2104205.6f      /* -42dBm0 [((BINS*BINS*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
 #define TONE_TWIST                  3.981f          /* 6dB */
 #define TONE_TO_TOTAL_ENERGY        1.995f          /* 3dB */
-#define DTMF_TO_TOTAL_ENERGY        64.152f         /* -3dB [BINS*10^(-3/10.0)] */
 #endif
 
 static int add_super_tone_freq(super_tone_rx_descriptor_t *desc, int freq)
@@ -237,8 +236,17 @@ SPAN_DECLARE(int) super_tone_rx_free_descriptor(super_tone_rx_descriptor_t *desc
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) super_tone_rx_tone_callback(super_tone_rx_state_t *s,
+                                               tone_report_func_t callback,
+                                               void *user_data)
+{
+    s->tone_callback = callback;
+    s->callback_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) super_tone_rx_segment_callback(super_tone_rx_state_t *s,
-                                                  void (*callback)(void *data, int f1, int f2, int duration))
+                                                  tone_segment_func_t callback)
 {
     s->segment_callback = callback;
 }
@@ -273,7 +281,11 @@ SPAN_DECLARE(super_tone_rx_state_t *) super_tone_rx_init(super_tone_rx_state_t *
     if (desc)
         s->desc = desc;
     s->detected_tone = -1;
+#if defined(SPANDSP_USE_FIXED_POINT)
+    s->energy = 0;
+#else
     s->energy = 0.0f;
+#endif
     for (i = 0;  i < desc->monitored_frequencies;  i++)
         goertzel_init(&s->state[i], &s->desc->desc[i]);
     return  s;
@@ -459,10 +471,21 @@ SPAN_DECLARE(int) super_tone_rx(super_tone_rx_state_t *s, const int16_t amp[], i
         {
             /* We have finished a Goertzel block. */
             super_tone_chunk(s);
+#if defined(SPANDSP_USE_FIXED_POINT)
             s->energy = 0;
+#else
+            s->energy = 0.0f;
+#endif
         }
     }
     return samples;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) super_tone_rx_fillin(super_tone_rx_state_t *s, int samples)
+{
+    /* TODO: Roll the detector forward without a state change */
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

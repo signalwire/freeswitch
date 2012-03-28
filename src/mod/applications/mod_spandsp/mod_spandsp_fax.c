@@ -259,7 +259,7 @@ static void counter_increment(void)
 	switch_mutex_unlock(spandsp_globals.mutex);
 }
 
-void spanfax_log_message(int level, const char *msg)
+void spanfax_log_message(void *user_data, int level, const char *msg)
 {
 	int fs_log_level;
 
@@ -713,8 +713,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 		fax_set_transmit_on_idle(fax, TRUE);
 
-		span_log_set_message_handler(&fax->logging, spanfax_log_message);
-		span_log_set_message_handler(&t30->logging, spanfax_log_message);
+		span_log_set_message_handler(&fax->logging, spanfax_log_message, NULL);
+		span_log_set_message_handler(&t30->logging, spanfax_log_message, NULL);
 
 		if (pvt->verbose) {
 			span_log_set_level(&fax->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -769,8 +769,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
                 }
             }
         
-            span_log_set_message_handler(&t38->logging, spanfax_log_message);
-            span_log_set_message_handler(&t30->logging, spanfax_log_message);
+            span_log_set_message_handler(&t38->logging, spanfax_log_message, NULL);
+            span_log_set_message_handler(&t30->logging, spanfax_log_message, NULL);
 
             if (pvt->verbose) {
                 span_log_set_level(&t38->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -824,8 +824,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	 }
 	 
 
-     span_log_set_message_handler(&pvt->t38_gateway_state->logging, spanfax_log_message);
-     span_log_set_message_handler(&pvt->t38_core->logging, spanfax_log_message);
+     span_log_set_message_handler(&pvt->t38_gateway_state->logging, spanfax_log_message, NULL);
+     span_log_set_message_handler(&pvt->t38_core->logging, spanfax_log_message, NULL);
 
 	 if (pvt->verbose) {
 		 span_log_set_level(&pvt->t38_gateway_state->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);

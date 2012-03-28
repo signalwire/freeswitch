@@ -92,271 +92,21 @@ typedef struct
     const model_data_t *known_models;
 } nsf_data_t;
 
-const char *t35_country_codes[256] =
+/*! T.35 country codes */
+typedef struct
 {
-    "Japan",                                    /* 0x00 */
-    "Albania",
-    "Algeria",
-    "American Samoa",
-    "Germany",
-    "Anguilla",
-    "Antigua and Barbuda",
-    "Argentina",
-    "Ascension (see S. Helena)",
-    "Australia",
-    "Austria",
-    "Bahamas",
-    "Bahrain",
-    "Bangladesh",
-    "Barbados",
-    "Belgium",
-    "Belize",
-    "Benin (Republic of)",
-    "Bermudas",
-    "Bhutan (Kingdom of)",
-    "Bolivia",
-    "Botswana",
-    "Brazil",
-    "British Antarctic Territory",
-    "British Indian Ocean Territory",
-    "British Virgin Islands",
-    "Brunei Darussalam",
-    "Bulgaria",
-    "Myanmar (Union of)",
-    "Burundi",
-    "Byelorussia",
-    "Cameroon",
-    "Canada",                                   /* 0x20 */
-    "Cape Verde",
-    "Cayman Islands",
-    "Central African Republic",
-    "Chad",
-    "Chile",
-    "China",
-    "Colombia",
-    "Comoros",
-    "Congo",
-    "Cook Islands",
-    "Costa Rica",
-    "Cuba",
-    "Cyprus",
-    "Czech and Slovak Federal Republic",
-    "Cambodia",
-    "Democratic People's Republic of Korea",
-    "Denmark",
-    "Djibouti",
-    "Dominican Republic",
-    "Dominica",
-    "Ecuador",
-    "Egypt",
-    "El Salvador",
-    "Equatorial Guinea",
-    "Ethiopia",
-    "Falkland Islands",
-    "Fiji",
-    "Finland",
-    "France",
-    "French Polynesia",
-    "French Southern and Antarctic Lands",
-    "Gabon",                                        /* 0x40 */
-    "Gambia",
-    "Germany (Federal Republic of)",
-    "Angola",
-    "Ghana",
-    "Gibraltar",
-    "Greece",
-    "Grenada",
-    "Guam",
-    "Guatemala",
-    "Guernsey",
-    "Guinea",
-    "Guinea-Bissau",
-    "Guayana",
-    "Haiti",
-    "Honduras",
-    "Hong Kong",
-    "Hungary (Republic of)",
-    "Iceland",
-    "India",
-    "Indonesia",
-    "Iran (Islamic Republic of)",
-    "Iraq",
-    "Ireland",
-    "Israel",
-    "Italy",
-    "Cote d'Ivoire",
-    "Jamaica",
-    "Afghanistan",
-    "Jersey",
-    "Jordan",
-    "Kenya",
-    "Kiribati",                                     /* 0x60 */
-    "Korea (Republic of)",
-    "Kuwait",
-    "Lao (People's Democratic Republic)",
-    "Lebanon",
-    "Lesotho",
-    "Liberia",
-    "Libya",
-    "Liechtenstein",
-    "Luxembourg",
-    "Macau",
-    "Madagascar",
-    "Malaysia",
-    "Malawi",
-    "Maldives",
-    "Mali",
-    "Malta",
-    "Mauritania",
-    "Mauritius",
-    "Mexico",
-    "Monaco",
-    "Mongolia",
-    "Montserrat",
-    "Morocco",
-    "Mozambique",
-    "Nauru",
-    "Nepal",
-    "Netherlands",
-    "Netherlands Antilles",
-    "New Caledonia",
-    "New Zealand",
-    "Nicaragua",
-    "Niger",                                        /* 0x80 */
-    "Nigeria",
-    "Norway",
-    "Oman",
-    "Pakistan",
-    "Panama",
-    "Papua New Guinea",
-    "Paraguay",
-    "Peru",
-    "Philippines",
-    "Poland (Republic of)",
-    "Portugal",
-    "Puerto Rico",
-    "Qatar",
-    "Romania",
-    "Rwanda",
-    "Saint Kitts and Nevis",
-    "Saint Croix",
-    "Saint Helena and Ascension",
-    "Saint Lucia",
-    "San Marino",
-    "Saint Thomas",
-    "Sao Tome and Principe",
-    "Saint Vincent and the Grenadines",
-    "Saudi Arabia",
-    "Senegal",
-    "Seychelles",
-    "Sierra Leone",
-    "Singapore",
-    "Solomon Islands",
-    "Somalia",
-    "South Africa",
-    "Spain",                                        /* 0xA0 */
-    "Sri Lanka",
-    "Sudan",
-    "Suriname",
-    "Swaziland",
-    "Sweden",
-    "Switzerland",
-    "Syria",
-    "Tanzania",
-    "Thailand",
-    "Togo",
-    "Tonga",
-    "Trinidad and Tobago",
-    "Tunisia",
-    "Turkey",
-    "Turks and Caicos Islands",
-    "Tuvalu",
-    "Uganda",
-    "Ukraine",
-    "United Arab Emirates",
-    "United Kingdom",
-    "United States",
-    "Burkina Faso",
-    "Uruguay",
-    "U.S.S.R.",
-    "Vanuatu",
-    "Vatican City State",
-    "Venezuela",
-    "Viet Nam",
-    "Wallis and Futuna",
-    "Western Samoa",
-    "Yemen (Republic of)",
-    "Yemen (Republic of)",                          /* 0xC0 */
-    "Yugoslavia",
-    "Zaire",
-    "Zambia",
-    "Zimbabwe"
-    "Slovakia",
-    "Slovenia",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",                                  /* 0xD0 */
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",                                  /* 0xE0 */
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",                                  /* 0xF0 */
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "(available)",
-    "Lithuania",
-    "Latvia",
-    "Estonia",
-    "US Virgin Islands",
-    "(available)",
-    "(available)",
-    "(Universal)",
-    "Taiwan",
-    "(extension)"
-};
+    /*! The country's name */
+    const char *name;
+    /*! A pointer to a list of known vendors from this country */
+    const nsf_data_t *vendors;
+} country_code_t;
 
 static const model_data_t Canon[] =
 {
     {5, "\x80\x00\x80\x48\x00", "Faxphone B640"},
     {5, "\x80\x00\x80\x49\x10", "Fax B100"},
     {5, "\x80\x00\x8A\x49\x10", "Laser Class 9000 Series"},
+    {5, "\x80\x00\x8A\x48\x00", "Laser Class 2060"},
     {0, NULL, NULL}
 };  
 
@@ -371,7 +121,7 @@ static const model_data_t Brother[] =
 static const model_data_t Panasonic0E[] =
 {
     {10, "\x00\x00\x00\x96\x0F\x01\x02\x00\x10\x05\x02\x95\xC8\x08\x01\x49\x02\x41\x53\x54\x47", "KX-F90"},
-    {10, "\x00\x00\x00\x96\x0F\x01\x03\x00\x10\x05\x02\x95\xC8\x08\x01\x49\x02                \x03", "KX-F230 or KX-FT21 or ..."},
+    {10, "\x00\x00\x00\x96\x0F\x01\x03\x00\x10\x05\x02\x95\xC8\x08\x01\x49\x02\x03", "KX-F230 or KX-FT21 or ..."},
     {10, "\x00\x00\x00\x16\x0F\x01\x03\x00\x10\x05\x02\x95\xC8\x08", "KX-F780"},
     {10, "\x00\x00\x00\x16\x0F\x01\x03\x00\x10\x00\x02\x95\x80\x08\x75\xB5", "KX-M260"},
     {10, "\x00\x00\x00\x16\x0F\x01\x02\x00\x10\x05\x02\x85\xC8\x08\xAD", "KX-F2050BS"},
@@ -520,389 +270,672 @@ static const model_data_t Muratec48[] =
  * table must be verified and corrected against actual real-world
  * results.
  */
-static const nsf_data_t known_nsf[] =
+static const nsf_data_t vendor_00[] =
 {
     /* Japan */
-    {"\x00\x00\x00", 3, "Unknown - indeterminate", TRUE, NULL},
-    {"\x00\x00\x01", 3, "Anjitsu", FALSE, NULL},
-    {"\x00\x00\x02", 3, "Nippon Telephone", FALSE, NULL},
-    {"\x00\x00\x05", 3, "Mitsuba Electric", FALSE, NULL},
-    {"\x00\x00\x06", 3, "Master Net", FALSE, NULL},
-    {"\x00\x00\x09", 3, "Xerox/Toshiba", TRUE, Xerox},
-    {"\x00\x00\x0A", 3, "Kokusai", FALSE, NULL},
-    {"\x00\x00\x0D", 3, "Logic System International", FALSE, NULL},
-    {"\x00\x00\x0E", 3, "Panasonic", FALSE, Panasonic0E},
-    {"\x00\x00\x11", 3, "Canon", FALSE, Canon},
-    {"\x00\x00\x15", 3, "Toyotsushen Machinery", FALSE, NULL},
-    {"\x00\x00\x16", 3, "System House Mind", FALSE, NULL},
-    {"\x00\x00\x19", 3, "Xerox", TRUE, NULL},
-    {"\x00\x00\x1D", 3, "Hitachi Software", FALSE, NULL},
-    {"\x00\x00\x21", 3, "OKI Electric/Lanier", TRUE, NULL},
-    {"\x00\x00\x25", 3, "Ricoh", TRUE, Ricoh},
-    {"\x00\x00\x26", 3, "Konica", FALSE, NULL},
-    {"\x00\x00\x29", 3, "Japan Wireless", FALSE, NULL},
-    {"\x00\x00\x2D", 3, "Sony", FALSE, NULL},
-    {"\x00\x00\x31", 3, "Sharp/Olivetti", FALSE, Sharp},
-    {"\x00\x00\x35", 3, "Kogyu", FALSE, NULL},
-    {"\x00\x00\x36", 3, "Japan Telecom", FALSE, NULL},
-    {"\x00\x00\x3D", 3, "IBM Japan", FALSE, NULL},
-    {"\x00\x00\x39", 3, "Panasonic", FALSE, NULL},
-    {"\x00\x00\x41", 3, "Swasaki Communication", FALSE, NULL},
-    {"\x00\x00\x45", 3, "Muratec", FALSE, Muratec45},
-    {"\x00\x00\x46", 3, "Pheonix", FALSE, NULL},
-    {"\x00\x00\x48", 3, "Muratec", FALSE, Muratec48},	// not registered
-    {"\x00\x00\x49", 3, "Japan Electric", FALSE, NULL},
-    {"\x00\x00\x4D", 3, "Okura Electric", FALSE, NULL},
-    {"\x00\x00\x51", 3, "Sanyo", FALSE, Sanyo},
-    {"\x00\x00\x55", 3, "unknown - Japan 55", FALSE, NULL},
-    {"\x00\x00\x56", 3, "Brother", FALSE, Brother},
-    {"\x00\x00\x59", 3, "Fujitsu", FALSE, NULL},
-    {"\x00\x00\x5D", 3, "Kuoni", FALSE, NULL},
-    {"\x00\x00\x61", 3, "Casio", FALSE, NULL},
-    {"\x00\x00\x65", 3, "Tateishi Electric", FALSE, NULL},
-    {"\x00\x00\x66", 3, "Utax/Mita", TRUE, NULL},
-    {"\x00\x00\x69", 3, "Hitachi Production", FALSE, NULL},
-    {"\x00\x00\x6D", 3, "Hitachi Telecom", FALSE, NULL},
-    {"\x00\x00\x71", 3, "Tamura Electric Works", FALSE, NULL},
-    {"\x00\x00\x75", 3, "Tokyo Electric Corp.", FALSE, NULL},
-    {"\x00\x00\x76", 3, "Advance", FALSE, NULL},
-    {"\x00\x00\x79", 3, "Panasonic", FALSE, Panasonic79},
-    {"\x00\x00\x7D", 3, "Seiko", FALSE, NULL},
-    {"\x00\x08\x00", 3, "Daiko", FALSE, NULL},
-    {"\x00\x10\x00", 3, "Funai Electric", FALSE, NULL},
-    {"\x00\x20\x00", 3, "Eagle System", FALSE, NULL},
-    {"\x00\x30\x00", 3, "Nippon Business Systems", FALSE, NULL},
-    {"\x00\x40\x00", 3, "Comtron", FALSE, NULL},
-    {"\x00\x48\x00", 3, "Cosmo Consulting", FALSE, NULL},
-    {"\x00\x50\x00", 3, "Orion Electric", FALSE, NULL},
-    {"\x00\x60\x00", 3, "Nagano Nippon", FALSE, NULL},
-    {"\x00\x70\x00", 3, "Kyocera", FALSE, NULL},
-    {"\x00\x80\x00", 3, "Kanda Networks", FALSE, NULL},
-    {"\x00\x88\x00", 3, "Soft Front", FALSE, NULL},
-    {"\x00\x90\x00", 3, "Arctic", FALSE, NULL},
-    {"\x00\xA0\x00", 3, "Nakushima", FALSE, NULL},
-    {"\x00\xB0\x00", 3, "Minolta", FALSE, NULL},
-    {"\x00\xC0\x00", 3, "Tohoku Pioneer", FALSE, NULL},
-    {"\x00\xD0\x00", 3, "USC", FALSE, NULL},
-    {"\x00\xE0\x00", 3, "Hiboshi", FALSE, NULL},
-    {"\x00\xF0\x00", 3, "Sumitomo Electric", FALSE, NULL},
-
-    /* Germany */
-    {"\x20\x09",     2, "ITK Institut für Telekommunikation GmbH & Co KG", FALSE, NULL},
-    {"\x20\x11",     2, "Dr. Neuhaus Mikroelektronik", FALSE, NULL},
-    {"\x20\x21",     2, "ITO Communication", FALSE, NULL},
-    {"\x20\x31",     2, "mbp Kommunikationssysteme GmbH", FALSE, NULL},
-    {"\x20\x41",     2, "Siemens", FALSE, NULL},
-    {"\x20\x42",     2, "Deutsche Telekom AG", FALSE, NULL},
-    {"\x20\x51",     2, "mps Software", FALSE, NULL},
-    {"\x20\x61",     2, "Hauni Elektronik", FALSE, NULL},
-    {"\x20\x71",     2, "Digitronic computersysteme gmbh", FALSE, NULL},
-    {"\x20\x81\x00", 3, "Innovaphone GmbH", FALSE, NULL},
-    {"\x20\x81\x40", 3, "TEDAS Gesellschaft für Telekommunikations-, Daten- und Audiosysteme mbH", FALSE, NULL},
-    {"\x20\x81\x80", 3, "AVM Audiovisuelles Marketing und Computersysteme GmbH", FALSE, NULL},
-    {"\x20\x81\xC0", 3, "EICON Technology Research GmbH", FALSE, NULL},
-    {"\x20\xB1",     2, "Schneider Rundfunkwerke AG", FALSE, NULL},
-    {"\x20\xC2",     2, "Deutsche Telekom AG", FALSE, NULL},
-    {"\x20\xD1",     2, "Ferrari electronik GmbH", FALSE, NULL},
-    {"\x20\xF1",     2, "DeTeWe - Deutsche Telephonwerke AG & Co", FALSE, NULL},
-    {"\x20\xFF",     2, "Germany Regional Code", FALSE, NULL},
-
-    /* China */
-    {"\x64\x00\x00", 3, "unknown - China 00 00", FALSE, NULL},
-    {"\x64\x01\x00", 3, "unknown - China 01 00", FALSE, NULL},
-    {"\x64\x01\x01", 3, "unknown - China 01 01", FALSE, NULL},
-    {"\x64\x01\x02", 3, "unknown - China 01 02", FALSE, NULL},
-
-    /* France */
-    {"\xBC\x53\x01", 3, "Minolta", FALSE, NULL},
-
-    /* Korea */
-    {"\x86\x00\x02", 3, "unknown - Korea 02", FALSE, NULL},
-    {"\x86\x00\x06", 3, "unknown - Korea 06", FALSE, NULL},
-    {"\x86\x00\x08", 3, "unknown - Korea 08", FALSE, NULL},
-    {"\x86\x00\x0A", 3, "unknown - Korea 0A", FALSE, NULL},
-    {"\x86\x00\x0E", 3, "unknown - Korea 0E", FALSE, NULL},
-    {"\x86\x00\x10", 3, "Samsung", FALSE, NULL},
-    {"\x86\x00\x11", 3, "unknown - Korea 11", FALSE, NULL},
-    {"\x86\x00\x16", 3, "Samsung", FALSE, Samsung16},
-    {"\x86\x00\x1A", 3, "unknown - Korea 1A", FALSE, NULL},
-    {"\x86\x00\x40", 3, "unknown - Korea 40", FALSE, NULL},
-    {"\x86\x00\x48", 3, "unknown - Korea 48", FALSE, NULL},
-    {"\x86\x00\x52", 3, "unknown - Korea 52", FALSE, NULL},
-    {"\x86\x00\x5A", 3, "Samsung", FALSE, Samsung5A},
-    {"\x86\x00\x5E", 3, "unknown - Korea 5E", FALSE, NULL},
-    {"\x86\x00\x66", 3, "unknown - Korea 66", FALSE, NULL},
-    {"\x86\x00\x6E", 3, "unknown - Korea 6E", FALSE, NULL},
-    {"\x86\x00\x82", 3, "unknown - Korea 82", FALSE, NULL},
-    {"\x86\x00\x88", 3, "unknown - Korea 88", FALSE, NULL},
-    {"\x86\x00\x8A", 3, "unknown - Korea 8A", FALSE, NULL},
-    {"\x86\x00\x8C", 3, "Samsung", FALSE, Samsung8C},
-    {"\x86\x00\x92", 3, "unknown - Korea 92", FALSE, NULL},
-    {"\x86\x00\x98", 3, "Samsung", FALSE, NULL},
-    {"\x86\x00\xA2", 3, "Samsung", FALSE, SamsungA2},
-    {"\x86\x00\xA4", 3, "unknown - Korea A4", FALSE, NULL},
-    {"\x86\x00\xC2", 3, "Samsung", FALSE, NULL},
-    {"\x86\x00\xC9", 3, "unknown - Korea C9", FALSE, NULL},
-    {"\x86\x00\xCC", 3, "unknown - Korea CC", FALSE, NULL},
-    {"\x86\x00\xD2", 3, "unknown - Korea D2", FALSE, NULL},
-    {"\x86\x00\xDA", 3, "Xerox", FALSE, XeroxDA},
-    {"\x86\x00\xE2", 3, "unknown - Korea E2", FALSE, NULL},
-    {"\x86\x00\xEC", 3, "unknown - Korea EC", FALSE, NULL},
-    {"\x86\x00\xEE", 3, "unknown - Korea EE", FALSE, NULL},
-
-    /* United Kingdom */
-    {"\xB4\x00\xB0", 3, "DCE", FALSE, NULL},
-    {"\xB4\x00\xB1", 3, "Hasler", FALSE, NULL},
-    {"\xB4\x00\xB2", 3, "Interquad", FALSE, NULL},
-    {"\xB4\x00\xB3", 3, "Comwave", FALSE, NULL},
-    {"\xB4\x00\xB4", 3, "Iconographic", FALSE, NULL},
-    {"\xB4\x00\xB5", 3, "Wordcraft", FALSE, NULL},
-    {"\xB4\x00\xB6", 3, "Acorn", FALSE, NULL},
-
-    /* United States */
-    {"\xAD\x00\x00", 3, "Pitney Bowes", FALSE, PitneyBowes},
-    {"\xAD\x00\x0C", 3, "Dialogic", FALSE, NULL},
-    {"\xAD\x00\x15", 3, "Lexmark", FALSE, Lexmark},
-    {"\xAD\x00\x16", 3, "JetFax", FALSE, JetFax},
-    {"\xAD\x00\x24", 3, "Octel", FALSE, NULL},
-    {"\xAD\x00\x36", 3, "HP", FALSE, HP},
-    {"\xAD\x00\x42", 3, "FaxTalk", FALSE, NULL},
-    {"\xAD\x00\x44", 3, NULL, TRUE, NULL},
-    {"\xAD\x00\x46", 3, "BrookTrout", FALSE, NULL},
-    {"\xAD\x00\x51", 3, "Telogy Networks", FALSE, NULL},
-    {"\xAD\x00\x55", 3, "HylaFAX", FALSE, NULL},
-    {"\xAD\x00\x5C", 3, "IBM", FALSE, NULL},
-    {"\xAD\x00\x98", 3, "unknown - USA 98", TRUE, NULL},
-    {"\xB5\x00\x01", 3, "Picturetel", FALSE, NULL},
-    {"\xB5\x00\x20", 3, "Conexant", FALSE, NULL},
-    {"\xB5\x00\x22", 3, "Comsat", FALSE, NULL},
-    {"\xB5\x00\x24", 3, "Octel", FALSE, NULL},
-    {"\xB5\x00\x26", 3, "ROLM", FALSE, NULL},
-    {"\xB5\x00\x28", 3, "SOFNET", FALSE, NULL},
-    {"\xB5\x00\x29", 3, "TIA TR-29 Committee", FALSE, NULL},
-    {"\xB5\x00\x2A", 3, "STF Tech", FALSE, NULL},
-    {"\xB5\x00\x2C", 3, "HKB", FALSE, NULL},
-    {"\xB5\x00\x2E", 3, "Delrina", FALSE, NULL},
-    {"\xB5\x00\x30", 3, "Dialogic", FALSE, NULL},
-    {"\xB5\x00\x32", 3, "Applied Synergy", FALSE, NULL},
-    {"\xB5\x00\x34", 3, "Syncro Development", FALSE, NULL},
-    {"\xB5\x00\x36", 3, "Genoa", FALSE, NULL},
-    {"\xB5\x00\x38", 3, "Texas Instruments", FALSE, NULL},
-    {"\xB5\x00\x3A", 3, "IBM", FALSE, NULL},
-    {"\xB5\x00\x3C", 3, "ViaSat", FALSE, NULL},
-    {"\xB5\x00\x3E", 3, "Ericsson", FALSE, NULL},
-    {"\xB5\x00\x42", 3, "Bogosian", FALSE, NULL},
-    {"\xB5\x00\x44", 3, "Adobe", FALSE, NULL},
-    {"\xB5\x00\x46", 3, "Fremont Communications", FALSE, NULL},
-    {"\xB5\x00\x48", 3, "Hayes", FALSE, NULL},
-    {"\xB5\x00\x4A", 3, "Lucent", FALSE, NULL},
-    {"\xB5\x00\x4C", 3, "Data Race", FALSE, NULL},
-    {"\xB5\x00\x4E", 3, "TRW", FALSE, NULL},
-    {"\xB5\x00\x52", 3, "Audiofax", FALSE, NULL},
-    {"\xB5\x00\x54", 3, "Computer Automation", FALSE, NULL},
-    {"\xB5\x00\x56", 3, "Serca", FALSE, NULL},
-    {"\xB5\x00\x58", 3, "Octocom", FALSE, NULL},
-    {"\xB5\x00\x5C", 3, "Power Solutions", FALSE, NULL},
-    {"\xB5\x00\x5A", 3, "Digital Sound", FALSE, NULL},
-    {"\xB5\x00\x5E", 3, "Pacific Data", FALSE, NULL},
-    {"\xB5\x00\x60", 3, "Commetrex", FALSE, NULL},
-    {"\xB5\x00\x62", 3, "BrookTrout", FALSE, NULL},
-    {"\xB5\x00\x64", 3, "Gammalink", FALSE, NULL},
-    {"\xB5\x00\x66", 3, "Castelle", FALSE, NULL},
-    {"\xB5\x00\x68", 3, "Hybrid Fax", FALSE, NULL},
-    {"\xB5\x00\x6A", 3, "Omnifax", FALSE, NULL},
-    {"\xB5\x00\x6C", 3, "HP", FALSE, NULL},
-    {"\xB5\x00\x6E", 3, "Microsoft", FALSE, NULL},
-    {"\xB5\x00\x72", 3, "Speaking Devices", FALSE, NULL},
-    {"\xB5\x00\x74", 3, "Compaq", FALSE, NULL},
-/*
-    {"\xB5\x00\x76", 3, "Trust - Cryptek", FALSE, NULL},	// collision with Microsoft
-*/
-    {"\xB5\x00\x76", 3, "Microsoft", FALSE, NULL},		// uses LSB for country but MSB for manufacturer
-    {"\xB5\x00\x78", 3, "Cylink", FALSE, NULL},
-    {"\xB5\x00\x7A", 3, "Pitney Bowes", FALSE, NULL},
-    {"\xB5\x00\x7C", 3, "Digiboard", FALSE, NULL},
-    {"\xB5\x00\x7E", 3, "Codex", FALSE, NULL},
-    {"\xB5\x00\x82", 3, "Wang Labs", FALSE, NULL},
-    {"\xB5\x00\x84", 3, "Netexpress Communications", FALSE, NULL},
-    {"\xB5\x00\x86", 3, "Cable-Sat", FALSE, NULL},
-    {"\xB5\x00\x88", 3, "MFPA", FALSE, NULL},
-    {"\xB5\x00\x8A", 3, "Telogy Networks", FALSE, NULL},
-    {"\xB5\x00\x8E", 3, "Telecom Multimedia Systems", FALSE, NULL},
-    {"\xB5\x00\x8C", 3, "AT&T", FALSE, NULL},
-    {"\xB5\x00\x92", 3, "Nuera", FALSE, NULL},
-    {"\xB5\x00\x94", 3, "K56flex", FALSE, NULL},
-    {"\xB5\x00\x96", 3, "MiBridge", FALSE, NULL},
-    {"\xB5\x00\x98", 3, "Xerox", FALSE, NULL},
-    {"\xB5\x00\x9A", 3, "Fujitsu", FALSE, NULL},
-    {"\xB5\x00\x9B", 3, "Fujitsu", FALSE, NULL},
-    {"\xB5\x00\x9C", 3, "Natural Microsystems", FALSE, NULL},
-    {"\xB5\x00\x9E", 3, "CopyTele", FALSE, NULL},
-    {"\xB5\x00\xA2", 3, "Murata", FALSE, NULL},
-    {"\xB5\x00\xA4", 3, "Lanier", FALSE, NULL},
-    {"\xB5\x00\xA6", 3, "Qualcomm", FALSE, NULL},
-    {"\xB5\x00\xAA", 3, "HylaFAX", FALSE, NULL},		// we did it backwards for a while
+    {"\x00\x00", 2, "Unknown - indeterminate", TRUE, NULL},
+    {"\x00\x01", 2, "Anritsu", FALSE, NULL},
+    {"\x00\x02", 2, "Nippon Telephone", FALSE, NULL},
+    {"\x00\x05", 2, "Mitsuba Electric", FALSE, NULL},
+    {"\x00\x06", 2, "Master Net", FALSE, NULL},
+    {"\x00\x09", 2, "Xerox/Toshiba", TRUE, Xerox},
+    {"\x00\x0A", 2, "Kokusai", FALSE, NULL},
+    {"\x00\x0D", 2, "Logic System International", FALSE, NULL},
+    {"\x00\x0E", 2, "Panasonic", FALSE, Panasonic0E},
+    {"\x00\x11", 2, "Canon", FALSE, Canon},
+    {"\x00\x15", 2, "Toyotsushen Machinery", FALSE, NULL},
+    {"\x00\x16", 2, "System House Mind", FALSE, NULL},
+    {"\x00\x19", 2, "Xerox", TRUE, NULL},
+    {"\x00\x1D", 2, "Hitachi Software", FALSE, NULL},
+    {"\x00\x21", 2, "OKI Electric/Lanier", TRUE, NULL},
+    {"\x00\x25", 2, "Ricoh", TRUE, Ricoh},
+    {"\x00\x26", 2, "Konica", FALSE, NULL},
+    {"\x00\x29", 2, "Japan Wireless", FALSE, NULL},
+    {"\x00\x2D", 2, "Sony", FALSE, NULL},
+    {"\x00\x31", 2, "Sharp/Olivetti", FALSE, Sharp},
+    {"\x00\x35", 2, "Kogyu", FALSE, NULL},
+    {"\x00\x36", 2, "Japan Telecom", FALSE, NULL},
+    {"\x00\x3D", 2, "IBM Japan", FALSE, NULL},
+    {"\x00\x39", 2, "Panasonic", FALSE, NULL},
+    {"\x00\x41", 2, "Swasaki Communication", FALSE, NULL},
+    {"\x00\x45", 2, "Muratec", FALSE, Muratec45},
+    {"\x00\x46", 2, "Pheonix", FALSE, NULL},
+    {"\x00\x48", 2, "Muratec", FALSE, Muratec48},	        /* Not registered */
+    {"\x00\x49", 2, "Japan Electric", FALSE, NULL},
+    {"\x00\x4D", 2, "Okura Electric", FALSE, NULL},
+    {"\x00\x51", 2, "Sanyo", FALSE, Sanyo},
+    {"\x00\x55", 2, "Unknown - Japan 55", FALSE, NULL},
+    {"\x00\x56", 2, "Brother", FALSE, Brother},
+    {"\x00\x59", 2, "Fujitsu", FALSE, NULL},
+    {"\x00\x5D", 2, "Kuoni", FALSE, NULL},
+    {"\x00\x61", 2, "Casio", FALSE, NULL},
+    {"\x00\x65", 2, "Tateishi Electric", FALSE, NULL},
+    {"\x00\x66", 2, "Utax/Mita", TRUE, NULL},
+    {"\x00\x69", 2, "Hitachi Production", FALSE, NULL},
+    {"\x00\x6D", 2, "Hitachi Telecom", FALSE, NULL},
+    {"\x00\x71", 2, "Tamura Electric Works", FALSE, NULL},
+    {"\x00\x75", 2, "Tokyo Electric Corp.", FALSE, NULL},
+    {"\x00\x76", 2, "Advance", FALSE, NULL},
+    {"\x00\x79", 2, "Panasonic", FALSE, Panasonic79},
+    {"\x00\x7D", 2, "Seiko", FALSE, NULL},
+    {"\x08\x00", 2, "Daiko", FALSE, NULL},
+    {"\x10\x00", 2, "Funai Electric", FALSE, NULL},
+    {"\x20\x00", 2, "Eagle System", FALSE, NULL},
+    {"\x30\x00", 2, "Nippon Business Systems", FALSE, NULL},
+    {"\x40\x00", 2, "Comtron", FALSE, NULL},
+    {"\x48\x00", 2, "Cosmo Consulting", FALSE, NULL},
+    {"\x50\x00", 2, "Orion Electric", FALSE, NULL},
+    {"\x60\x00", 2, "Nagano Nippon", FALSE, NULL},
+    {"\x70\x00", 2, "Kyocera", FALSE, NULL},
+    {"\x80\x00", 2, "Kanda Networks", FALSE, NULL},
+    {"\x88\x00", 2, "Soft Front", FALSE, NULL},
+    {"\x90\x00", 2, "Arctic", FALSE, NULL},
+    {"\xA0\x00", 2, "Nakushima", FALSE, NULL},
+    {"\xB0\x00", 2, "Minolta", FALSE, NULL},
+    {"\xC0\x00", 2, "Tohoku Pioneer", FALSE, NULL},
+    {"\xD0\x00", 2, "USC", FALSE, NULL},
+    {"\xE0\x00", 2, "Hiboshi", FALSE, NULL},
+    {"\xF0\x00", 2, "Sumitomo Electric", FALSE, NULL},
     {NULL, 0, NULL, FALSE, NULL}
 };
 
-#if 0
-SPAN_DECLARE(void) nsf_find_station_id(int reverse_order)
+static const nsf_data_t vendor_20[] =
 {
-    const char *id = NULL;
-    int idSize = 0;
-    const char *maxId = NULL;
-    int maxIdSize = 0;
-    const char *p;
+    /* Germany */
+    {"\x09",     1, "ITK Institut für Telekommunikation GmbH & Co KG", FALSE, NULL},
+    {"\x11",     1, "Dr. Neuhaus Mikroelektronik", FALSE, NULL},
+    {"\x21",     1, "ITO Communication", FALSE, NULL},
+    {"\x31",     1, "mbp Kommunikationssysteme GmbH", FALSE, NULL},
+    {"\x41",     1, "Siemens", FALSE, NULL},
+    {"\x42",     1, "Deutsche Telekom AG", FALSE, NULL},
+    {"\x51",     1, "mps Software", FALSE, NULL},
+    {"\x61",     1, "Hauni Elektronik", FALSE, NULL},
+    {"\x71",     1, "Digitronic computersysteme gmbh", FALSE, NULL},
+    {"\x81\x00", 2, "Innovaphone GmbH", FALSE, NULL},
+    {"\x81\x40", 2, "TEDAS Gesellschaft für Telekommunikations-, Daten- und Audiosysteme mbH", FALSE, NULL},
+    {"\x81\x80", 2, "AVM Audiovisuelles Marketing und Computersysteme GmbH", FALSE, NULL},
+    {"\x81\xC0", 2, "EICON Technology Research GmbH", FALSE, NULL},
+    {"\xB1",     1, "Schneider Rundfunkwerke AG", FALSE, NULL},
+    {"\xC2",     1, "Deutsche Telekom AG", FALSE, NULL},
+    {"\xD1",     1, "Ferrari electronik GmbH", FALSE, NULL},
+    {"\xF1",     1, "DeTeWe - Deutsche Telephonwerke AG & Co", FALSE, NULL},
+    {"\xFF",     1, "Germany Regional Code", FALSE, NULL},
+    {NULL, 0, NULL, FALSE, NULL}
+};
 
-    /* Trying to find the longest printable ASCII sequence */
-    for (p = (const char *) nsf + T35_VENDOR_ID_LEN, *end = p + nsf.length();
-         p < end;
-         p++)
+static const nsf_data_t vendor_64[] =
+{
+    /* China (not Lebanon) */
+    {"\x00\x00", 2, "Unknown - China 00 00", FALSE, NULL},
+    {"\x01\x00", 2, "Unknown - China 01 00", FALSE, NULL},
+    {"\x01\x01", 2, "Unknown - China 01 01", FALSE, NULL},
+    {"\x01\x02", 2, "Unknown - China 01 02", FALSE, NULL},
+    {NULL, 0, NULL, FALSE, NULL}
+};
+
+static const nsf_data_t vendor_61[] =
+{
+    /* Korea */
+    {"\x00\x7A", 2, "Xerox", FALSE, NULL},
+    {NULL, 0, NULL, FALSE, NULL}
+};
+
+static const nsf_data_t vendor_86[] =
+{
+    /* Korea (not Papua New Guinea) */
+    {"\x00\x02", 2, "Unknown - Korea 02", FALSE, NULL},
+    {"\x00\x06", 2, "Unknown - Korea 06", FALSE, NULL},
+    {"\x00\x08", 2, "Unknown - Korea 08", FALSE, NULL},
+    {"\x00\x0A", 2, "Unknown - Korea 0A", FALSE, NULL},
+    {"\x00\x0E", 2, "Unknown - Korea 0E", FALSE, NULL},
+    {"\x00\x10", 2, "Samsung", FALSE, NULL},
+    {"\x00\x11", 2, "Unknown - Korea 11", FALSE, NULL},
+    {"\x00\x16", 2, "Samsung", FALSE, Samsung16},
+    {"\x00\x1A", 2, "Unknown - Korea 1A", FALSE, NULL},
+    {"\x00\x40", 2, "Unknown - Korea 40", FALSE, NULL},
+    {"\x00\x48", 2, "Unknown - Korea 48", FALSE, NULL},
+    {"\x00\x52", 2, "Unknown - Korea 52", FALSE, NULL},
+    {"\x00\x5A", 2, "Samsung", FALSE, Samsung5A},
+    {"\x00\x5E", 2, "Unknown - Korea 5E", FALSE, NULL},
+    {"\x00\x66", 2, "Unknown - Korea 66", FALSE, NULL},
+    {"\x00\x6E", 2, "Unknown - Korea 6E", FALSE, NULL},
+    {"\x00\x82", 2, "Unknown - Korea 82", FALSE, NULL},
+    {"\x00\x88", 2, "Unknown - Korea 88", FALSE, NULL},
+    {"\x00\x8A", 2, "Unknown - Korea 8A", FALSE, NULL},
+    {"\x00\x8C", 2, "Samsung", FALSE, Samsung8C},
+    {"\x00\x92", 2, "Unknown - Korea 92", FALSE, NULL},
+    {"\x00\x98", 2, "Samsung", FALSE, NULL},
+    {"\x00\xA2", 2, "Samsung", FALSE, SamsungA2},
+    {"\x00\xA4", 2, "Unknown - Korea A4", FALSE, NULL},
+    {"\x00\xC2", 2, "Samsung", FALSE, NULL},
+    {"\x00\xC9", 2, "Unknown - Korea C9", FALSE, NULL},
+    {"\x00\xCC", 2, "Unknown - Korea CC", FALSE, NULL},
+    {"\x00\xD2", 2, "Unknown - Korea D2", FALSE, NULL},
+    {"\x00\xDA", 2, "Xerox", FALSE, XeroxDA},
+    {"\x00\xE2", 2, "Unknown - Korea E2", FALSE, NULL},
+    {"\x00\xEC", 2, "Unknown - Korea EC", FALSE, NULL},
+    {"\x00\xEE", 2, "Unknown - Korea EE", FALSE, NULL},
+    {NULL, 0, NULL, FALSE, NULL}
+};
+
+static const nsf_data_t vendor_bc[] =
+{
+    /* France */
+    {"\x53\x01", 2, "Minolta", FALSE, NULL},
+    {NULL, 0, NULL, FALSE, NULL}
+};
+
+static const nsf_data_t vendor_ad[] =
+{
+    /* United States (not Tunisia) */
+    {"\x00\x00", 2, "Pitney Bowes", FALSE, PitneyBowes},
+    {"\x00\x0C", 2, "Dialogic", FALSE, NULL},
+    {"\x00\x15", 2, "Lexmark", FALSE, Lexmark},
+    {"\x00\x16", 2, "JetFax", FALSE, JetFax},
+    {"\x00\x24", 2, "Octel", FALSE, NULL},
+    {"\x00\x36", 2, "HP", FALSE, HP},
+    {"\x00\x42", 2, "FaxTalk", FALSE, NULL},
+    {"\x00\x44", 2, NULL, TRUE, NULL},
+    {"\x00\x46", 2, "BrookTrout", FALSE, NULL},
+    {"\x00\x51", 2, "Telogy Networks", FALSE, NULL},
+    {"\x00\x55", 2, "HylaFAX", FALSE, NULL},
+    {"\x00\x5C", 2, "IBM", FALSE, NULL},
+    {"\x00\x98", 2, "Unknown - USA 98", TRUE, NULL},
+    {NULL, 0, NULL, FALSE, NULL}
+};
+
+static const nsf_data_t vendor_b4[] =
+{
+    /* United Kingdom */
+    {"\x00\xB0", 2, "DCE", FALSE, NULL},
+    {"\x00\xB1", 2, "Hasler", FALSE, NULL},
+    {"\x00\xB2", 2, "Interquad", FALSE, NULL},
+    {"\x00\xB3", 2, "Comwave", FALSE, NULL},
+    {"\x00\xB4", 2, "Iconographic", FALSE, NULL},
+    {"\x00\xB5", 2, "Wordcraft", FALSE, NULL},
+    {"\x00\xB6", 2, "Acorn", FALSE, NULL},
+    {NULL, 0, NULL, FALSE, NULL}
+};
+
+static const nsf_data_t vendor_b5[] =
+{
+    /* United States */
+    {"\x00\x01", 2, "Picturetel", FALSE, NULL},
+    {"\x00\x20", 2, "Conexant", FALSE, NULL},
+    {"\x00\x22", 2, "Comsat", FALSE, NULL},
+    {"\x00\x24", 2, "Octel", FALSE, NULL},
+    {"\x00\x26", 2, "ROLM", FALSE, NULL},
+    {"\x00\x28", 2, "SOFNET", FALSE, NULL},
+    {"\x00\x29", 2, "TIA TR-29 Committee", FALSE, NULL},
+    {"\x00\x2A", 2, "STF Tech", FALSE, NULL},
+    {"\x00\x2C", 2, "HKB", FALSE, NULL},
+    {"\x00\x2E", 2, "Delrina", FALSE, NULL},
+    {"\x00\x30", 2, "Dialogic", FALSE, NULL},
+    {"\x00\x32", 2, "Applied Synergy", FALSE, NULL},
+    {"\x00\x34", 2, "Syncro Development", FALSE, NULL},
+    {"\x00\x36", 2, "Genoa", FALSE, NULL},
+    {"\x00\x38", 2, "Texas Instruments", FALSE, NULL},
+    {"\x00\x3A", 2, "IBM", FALSE, NULL},
+    {"\x00\x3C", 2, "ViaSat", FALSE, NULL},
+    {"\x00\x3E", 2, "Ericsson", FALSE, NULL},
+    {"\x00\x42", 2, "Bogosian", FALSE, NULL},
+    {"\x00\x44", 2, "Adobe", FALSE, NULL},
+    {"\x00\x46", 2, "Fremont Communications", FALSE, NULL},
+    {"\x00\x48", 2, "Hayes", FALSE, NULL},
+    {"\x00\x4A", 2, "Lucent", FALSE, NULL},
+    {"\x00\x4C", 2, "Data Race", FALSE, NULL},
+    {"\x00\x4E", 2, "TRW", FALSE, NULL},
+    {"\x00\x52", 2, "Audiofax", FALSE, NULL},
+    {"\x00\x54", 2, "Computer Automation", FALSE, NULL},
+    {"\x00\x56", 2, "Serca", FALSE, NULL},
+    {"\x00\x58", 2, "Octocom", FALSE, NULL},
+    {"\x00\x5C", 2, "Power Solutions", FALSE, NULL},
+    {"\x00\x5A", 2, "Digital Sound", FALSE, NULL},
+    {"\x00\x5E", 2, "Pacific Data", FALSE, NULL},
+    {"\x00\x60", 2, "Commetrex", FALSE, NULL},
+    {"\x00\x62", 2, "BrookTrout", FALSE, NULL},
+    {"\x00\x64", 2, "Gammalink", FALSE, NULL},
+    {"\x00\x66", 2, "Castelle", FALSE, NULL},
+    {"\x00\x68", 2, "Hybrid Fax", FALSE, NULL},
+    {"\x00\x6A", 2, "Omnifax", FALSE, NULL},
+    {"\x00\x6C", 2, "HP", FALSE, NULL},
+    {"\x00\x6E", 2, "Microsoft", FALSE, NULL},
+    {"\x00\x72", 2, "Speaking Devices", FALSE, NULL},
+    {"\x00\x74", 2, "Compaq", FALSE, NULL},
+    {"\x00\x76", 2, "Microsoft", FALSE, NULL},		/* uses LSB for country but MSB for manufacturer */
+    {"\x00\x78", 2, "Cylink", FALSE, NULL},
+    {"\x00\x7A", 2, "Pitney Bowes", FALSE, NULL},
+    {"\x00\x7C", 2, "Digiboard", FALSE, NULL},
+    {"\x00\x7E", 2, "Codex", FALSE, NULL},
+    {"\x00\x82", 2, "Wang Labs", FALSE, NULL},
+    {"\x00\x84", 2, "Netexpress Communications", FALSE, NULL},
+    {"\x00\x86", 2, "Cable-Sat", FALSE, NULL},
+    {"\x00\x88", 2, "MFPA", FALSE, NULL},
+    {"\x00\x8A", 2, "Telogy Networks", FALSE, NULL},
+    {"\x00\x8E", 2, "Telecom Multimedia Systems", FALSE, NULL},
+    {"\x00\x8C", 2, "AT&T", FALSE, NULL},
+    {"\x00\x92", 2, "Nuera", FALSE, NULL},
+    {"\x00\x94", 2, "K56flex", FALSE, NULL},
+    {"\x00\x96", 2, "MiBridge", FALSE, NULL},
+    {"\x00\x98", 2, "Xerox", FALSE, NULL},
+    {"\x00\x9A", 2, "Fujitsu", FALSE, NULL},
+    {"\x00\x9B", 2, "Fujitsu", FALSE, NULL},
+    {"\x00\x9C", 2, "Natural Microsystems", FALSE, NULL},
+    {"\x00\x9E", 2, "CopyTele", FALSE, NULL},
+    {"\x00\xA2", 2, "Murata", FALSE, NULL},
+    {"\x00\xA4", 2, "Lanier", FALSE, NULL},
+    {"\x00\xA6", 2, "Qualcomm", FALSE, NULL},
+    {"\x00\xAA", 2, "HylaFAX", FALSE, NULL},
+    {NULL, 0, NULL, FALSE, NULL}
+};
+
+static const country_code_t t35_country_codes[255] =
+{
+    {"Japan", vendor_00},                                   /* 0x00 */
+    {"Albania", NULL},
+    {"Algeria", NULL},
+    {"American Samoa", NULL},
+    {"Germany", NULL},
+    {"Anguilla", NULL},
+    {"Antigua and Barbuda", NULL},
+    {"Argentina", NULL},
+    {"Ascension (see S. Helena)", NULL},
+    {"Australia", NULL},
+    {"Austria", NULL},
+    {"Bahamas", NULL},
+    {"Bahrain", NULL},
+    {"Bangladesh", NULL},
+    {"Barbados", NULL},
+    {"Belgium", NULL},
+    {"Belize", NULL},                                       /* 0x10 */
+    {"Benin (Republic of)", NULL},
+    {"Bermudas", NULL},
+    {"Bhutan (Kingdom of)", NULL},
+    {"Bolivia", NULL},
+    {"Botswana", NULL},
+    {"Brazil", NULL},
+    {"British Antarctic Territory", NULL},
+    {"British Indian Ocean Territory", NULL},
+    {"British Virgin Islands", NULL},
+    {"Brunei Darussalam", NULL},
+    {"Bulgaria", NULL},
+    {"Myanmar (Union of)", NULL},
+    {"Burundi", NULL},
+    {"Byelorussia", NULL},
+    {"Cameroon", NULL},
+    {"Canada", vendor_20},                                  /* 0x20 */
+    {"Cape Verde", NULL},
+    {"Cayman Islands", NULL},
+    {"Central African Republic", NULL},
+    {"Chad", NULL},
+    {"Chile", NULL},
+    {"China", NULL},
+    {"Colombia", NULL},
+    {"Comoros", NULL},
+    {"Congo", NULL},
+    {"Cook Islands", NULL},
+    {"Costa Rica", NULL},
+    {"Cuba", NULL},
+    {"Cyprus", NULL},
+    {"Czech and Slovak Federal Republic", NULL},            /* 0x30 */
+    {"Cambodia", NULL},
+    {"Democratic People's Republic of Korea", NULL},
+    {"Denmark", NULL},
+    {"Djibouti", NULL},
+    {"Dominican Republic", NULL},
+    {"Dominica", NULL},
+    {"Ecuador", NULL},
+    {"Egypt", NULL},
+    {"El Salvador", NULL},
+    {"Equatorial Guinea", NULL},
+    {"Ethiopia", NULL},
+    {"Falkland Islands", NULL},
+    {"Fiji", NULL},
+    {"Finland", NULL},
+    {"France", NULL},
+    {"French Polynesia", NULL},
+    {"French Southern and Antarctic Lands", NULL},
+    {"Gabon", NULL},                                        /* 0x40 */
+    {"Gambia", NULL},
+    {"Germany (Federal Republic of)", NULL},
+    {"Angola", NULL},
+    {"Ghana", NULL},
+    {"Gibraltar", NULL},
+    {"Greece", NULL},
+    {"Grenada", NULL},
+    {"Guam", NULL},
+    {"Guatemala", NULL},
+    {"Guernsey", NULL},
+    {"Guinea", NULL},
+    {"Guinea-Bissau", NULL},
+    {"Guayana", NULL},
+    {"Haiti", NULL},
+    {"Honduras", NULL},
+    {"Hong Kong", NULL},                                    /* 0x50 */
+    {"Hungary (Republic of)", NULL},
+    {"Iceland", NULL},
+    {"India", NULL},
+    {"Indonesia", NULL},
+    {"Iran (Islamic Republic of)", NULL},
+    {"Iraq", NULL},
+    {"Ireland", NULL},
+    {"Israel", NULL},
+    {"Italy", NULL},
+    {"Cote d'Ivoire", NULL},
+    {"Jamaica", NULL},
+    {"Afghanistan", NULL},
+    {"Jersey", NULL},
+    {"Jordan", NULL},
+    {"Kenya", NULL},
+    {"Kiribati", NULL},                                     /* 0x60 */
+    {"Korea (Republic of)", vendor_61},
+    {"Kuwait", NULL},
+    {"Lao (People's Democratic Republic)", NULL},
+    {"Lebanon", vendor_64},
+    {"Lesotho", NULL},
+    {"Liberia", NULL},
+    {"Libya", NULL},
+    {"Liechtenstein", NULL},
+    {"Luxembourg", NULL},
+    {"Macau", NULL},
+    {"Madagascar", NULL},
+    {"Malaysia", NULL},
+    {"Malawi", NULL},
+    {"Maldives", NULL},
+    {"Mali", NULL},
+    {"Malta", NULL},                                        /* 0x70 */
+    {"Mauritania", NULL},
+    {"Mauritius", NULL},
+    {"Mexico", NULL},
+    {"Monaco", NULL},
+    {"Mongolia", NULL},
+    {"Montserrat", NULL},
+    {"Morocco", NULL},
+    {"Mozambique", NULL},
+    {"Nauru", NULL},
+    {"Nepal", NULL},
+    {"Netherlands", NULL},
+    {"Netherlands Antilles", NULL},
+    {"New Caledonia", NULL},
+    {"New Zealand", NULL},
+    {"Nicaragua", NULL},
+    {"Niger", NULL},                                        /* 0x80 */
+    {"Nigeria", NULL},
+    {"Norway", NULL},
+    {"Oman", NULL},
+    {"Pakistan", NULL},
+    {"Panama", NULL},
+    {"Papua New Guinea", vendor_86},
+    {"Paraguay", NULL},
+    {"Peru", NULL},
+    {"Philippines", NULL},
+    {"Poland (Republic of)", NULL},
+    {"Portugal", NULL},
+    {"Puerto Rico", NULL},
+    {"Qatar", NULL},
+    {"Romania", NULL},
+    {"Rwanda", NULL},
+    {"Saint Kitts and Nevis", NULL},                        /* 0x90 */
+    {"Saint Croix", NULL},
+    {"Saint Helena and Ascension", NULL},
+    {"Saint Lucia", NULL},
+    {"San Marino", NULL},
+    {"Saint Thomas", NULL},
+    {"Sao Tome and Principe", NULL},
+    {"Saint Vincent and the Grenadines", NULL},
+    {"Saudi Arabia", NULL},
+    {"Senegal", NULL},
+    {"Seychelles", NULL},
+    {"Sierra Leone", NULL},
+    {"Singapore", NULL},
+    {"Solomon Islands", NULL},
+    {"Somalia", NULL},
+    {"South Africa", NULL},
+    {"Spain", NULL},                                        /* 0xA0 */
+    {"Sri Lanka", NULL},
+    {"Sudan", NULL},
+    {"Suriname", NULL},
+    {"Swaziland", NULL},
+    {"Sweden", NULL},
+    {"Switzerland", NULL},
+    {"Syria", NULL},
+    {"Tanzania", NULL},
+    {"Thailand", NULL},
+    {"Togo", NULL},
+    {"Tonga", NULL},
+    {"Trinidad and Tobago", NULL},
+    {"Tunisia", vendor_ad},
+    {"Turkey", NULL},
+    {"Turks and Caicos Islands", NULL},
+    {"Tuvalu", NULL},                                       /* 0xB0 */
+    {"Uganda", NULL},
+    {"Ukraine", NULL},
+    {"United Arab Emirates", NULL},
+    {"United Kingdom", vendor_b4},
+    {"United States", vendor_b5},
+    {"Burkina Faso", NULL},
+    {"Uruguay", NULL},
+    {"U.S.S.R.", NULL},
+    {"Vanuatu", NULL},
+    {"Vatican City State", NULL},
+    {"Venezuela", NULL},
+    {"Viet Nam", NULL},
+    {"Wallis and Futuna", NULL},
+    {"Western Samoa", NULL},
+    {"Yemen (Republic of)", NULL},
+    {"Yemen (Republic of)", NULL},                          /* 0xC0 */
+    {"Yugoslavia", NULL},
+    {"Zaire", NULL},
+    {"Zambia", NULL},
+    {"Zimbabwe", NULL},
+    {"Slovakia", NULL},
+    {"Slovenia", NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},                                           /* 0xD0 */
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},                                           /* 0xE0 */
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},                                           /* 0xF0 */
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {"Lithuania", NULL},
+    {"Latvia", NULL},
+    {"Estonia", NULL},
+    {"US Virgin Islands", NULL},
+    {NULL, NULL},
+    {NULL, NULL},
+    {"(Universal)", NULL},
+    {"Taiwan", NULL}
+};
+
+SPAN_DECLARE(int) t35_real_country_code(int country_code, int country_code_extension)
+{
+    if (country_code < 0  ||  country_code > 0xFF)
+        return -1;
+    if (country_code == 0xFF)
     {
-        if (isprint(*p))
-        {
-            if (!idSize++)
-                id = p;
-            if (idSize > maxIdSize)
-            {
-                max_id = id;
-                max_id_size = idSize;
-            }
-        }
-        else
-        {
-            id = NULL;
-            id_size = 0;
-        }
+        /* The extension code gives us the country. */
+        /* Right now there are no extension codes defined by the ITU */
+        return -1;
     }
+    /* We need to apply realism over accuracy, though it blocks out some countries.
+       It is very rare to find a machine from any country but the following:
     
-    /* Minimum acceptable id length */
-    const int MinIdSize = 4;
+            Japan 0x00 (no confusion)
+            Germany 0x04 (0x20) (Canada/Germany confusion)
+            China 0x26 (0x64) (China/Lebanon confusion)
+            Korea 0x61 (0x86) (Korea/Papua New Guinea confusion)
+            UK 0xB4 (0x2D) (UK/Cyprus confusion)
+            USA 0xB5 (0xAD) (USA/Tunisia confusion)
+            France 0x3D (0xBC) (France/Vietnam confusion)
 
-    if (maxIdSize >= min_id_size)
+       If we force the most likely of the two possible countries (forward or bit reversed),
+       the only mixup with any realistic probability is the Canada/Germany confusion. We
+       will just live with this, and force the more likely countries. */
+    switch (country_code)
     {
-        stationId.resize(0);
-        const char *p;
-        int dir;
-
-        if (reverseOrder)
-        {
-            p = maxId + maxIdSize - 1;
-            dir = -1;
-        }
-        else
-        {
-            p = maxId;
-            dir = 1;
-        }
-        for (int i = 0;  i < maxIdSize;  i++)
-        {
-            stationId.append(*p);
-            p += dir;
-        }
-        station_id_decoded = TRUE;
+    case 0x20:
+        /* Force Germany */
+    case 0x2D:
+        /* Force UK */
+    case 0x64:
+        /* Force China */
+    case 0x86:
+        /* Force Korea */
+    case 0xAD:
+        /* Force USA */
+    case 0xBC:
+        /* Force France */
+        country_code = bit_reverse8(country_code);
+        break;
     }
+    /* Try the country code at face value, then bit reversed */
+    if (t35_country_codes[country_code].name)
+        return country_code;
+    /* If the country code is missing, its most likely the country code is reversed. */
+    country_code = bit_reverse8(country_code);
+    if (t35_country_codes[country_code].name)
+        return country_code;
+    return -1;
 }
 /*- End of function --------------------------------------------------------*/
-#endif
+
+SPAN_DECLARE(const char *) t35_real_country_code_to_str(int country_code, int country_code_extension)
+{
+    int real_code;
+
+    if ((real_code = t35_real_country_code(country_code, country_code_extension)) >= 0)
+        return t35_country_codes[real_code].name;
+    return NULL;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(const char *) t35_country_code_to_str(int country_code, int country_code_extension)
+{
+    if (country_code < 0  ||  country_code > 0xFF)
+        return NULL;
+    if (country_code == 0xFF)
+    {
+        /* The extension code gives us the country. */
+        /* Right now there are no extension codes defined by the ITU */
+        return NULL;
+    }
+    
+    return t35_country_codes[country_code].name;
+}
+/*- End of function --------------------------------------------------------*/
+
+static const nsf_data_t *find_vendor(const uint8_t *msg, int len)
+{
+    const nsf_data_t *vendors;
+    const nsf_data_t *p;
+    int real_country_code;
+
+    if (msg[0] < 0  ||  msg[0] > 0xFF)
+        return NULL;
+    if (msg[0] == 0xFF)
+    {
+        /* The extension code gives us the country. */
+        /* Right now there are no extension codes defined by the ITU */
+        return NULL;
+    }
+    if ((real_country_code = t35_real_country_code(msg[0], msg[1])) < 0)
+        return NULL;
+    if ((vendors = t35_country_codes[msg[0]].vendors) == NULL)
+        return NULL;
+    for (p = vendors;  p->vendor_id;  p++)
+    {
+        if (len >= p->vendor_id_len
+            &&
+            memcmp(p->vendor_id, &msg[1], p->vendor_id_len) == 0)
+        {
+            return p;
+        }
+    }
+    return NULL;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(const char *) t35_vendor_to_str(const uint8_t *msg, int len)
+{
+    const nsf_data_t *p;
+
+    if ((p = find_vendor(msg, len)) == NULL)
+        return NULL;
+    return p->vendor_name;
+}
+/*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) t35_decode(const uint8_t *msg, int len, const char **country, const char **vendor, const char **model)
 {
-    int vendor_decoded;
     const nsf_data_t *p;
     const model_data_t *pp;
 
-    vendor_decoded = FALSE;
     if (country)
-        *country = NULL;
+        *country = t35_real_country_code_to_str(msg[0], msg[1]);
     if (vendor)
         *vendor = NULL;
     if (model)
         *model = NULL;
-    if (country)
-    {
-        /* We need to apply realism over accuracy, though it blocks out some countries.
-           It is very rare to find a machine from any country but the following:
-        
-           Japan 0x00 (no confusion)
-           Germany 0x04 (0x20) (Canada/Germany confusion)
-           China 0x26 (0x64) (China/Lebanon confusion)
-           Korea 0x61 (0x86) (Korea/Papua New Guinea confusion)
-           UK 0xB4 (0x2D) (UK/Cyprus confusion)
-           USA 0xB5 (0xAD) (USA/Tunisia confusion)
-           France 0x3D (0xBC) (France/Vietnam confusion)
 
-           If we force the most likely of the two possible countries (forward or bit reversed),
-           the only mixup with any realistic probability is the Canada/Germany confusion. We
-           will just live with this, and force the more likely countries. */
-        switch (msg[0])
-        {
-        case 0x20:
-            /* Force Germany */
-            *country = t35_country_codes[0x04];
-            break;
-        case 0x64:
-            /* Force China */
-            *country = t35_country_codes[0x26];
-            break;
-        case 0x86:
-            /* Force Korea */
-            *country = t35_country_codes[0x61];
-            break;
-        case 0x2D:
-            /* Force UK */
-            *country = t35_country_codes[0xB4];
-            break;
-        case 0xAD:
-            /* Force USA */
-            *country = t35_country_codes[0xB5];
-            break;
-        case 0xBC:
-            /* Force France */
-            *country = t35_country_codes[0x3D];
-            break;
-        default:
-            /* Try the country code at face value, then bit reversed */
-            if (t35_country_codes[msg[0]])
-                *country = t35_country_codes[msg[0]];
-            else if (t35_country_codes[bit_reverse8(msg[0])])
-                *country = t35_country_codes[bit_reverse8(msg[0])];
-            break;
-        }
-    }
-    for (p = known_nsf;  p->vendor_id;  p++)
+    if ((p = find_vendor(msg, len)) == NULL)
+        return FALSE;
+    if (vendor)
+        *vendor = p->vendor_name;
+    if (model  &&  p->known_models)
     {
-        if (len >= p->vendor_id_len
-            &&
-            memcmp(p->vendor_id, msg, p->vendor_id_len) == 0)
+        for (pp = p->known_models;  pp->model_id;  pp++)
         {
-            if (p->vendor_name  &&  vendor)
-                *vendor = p->vendor_name;
-            if (p->known_models  &&  model)
+            if (len == 1 + p->vendor_id_len + pp->model_id_size
+                &&
+                memcmp(&msg[1 + p->vendor_id_len], pp->model_id, pp->model_id_size) == 0)
             {
-                for (pp = p->known_models;  pp->model_id;  pp++)
-                {
-                    if (len == p->vendor_id_len + pp->model_id_size
-                        &&
-                        memcmp(pp->model_id, &msg[p->vendor_id_len], pp->model_id_size) == 0)
-                    {
-                        *model = pp->model_name;
-                        break;
-                    }
-                }
+                *model = pp->model_name;
+                break;
             }
-#if 0
-            findStationId(p->inverse_station_id_order);
-#endif
-            vendor_decoded = TRUE;
-            break;
         }
     }
-#if 0
-    if (!vendor_found())
-        find_station_id(0);
-#endif
-    return vendor_decoded;
+    return TRUE;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

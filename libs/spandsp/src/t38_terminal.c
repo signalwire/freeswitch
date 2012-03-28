@@ -1305,19 +1305,31 @@ SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int config)
     if ((config & T38_TERMINAL_OPTION_NO_PACING))
     {
         /* Continuous streaming mode, as used for TPKT over TCP transport */
-        /* Inhibit indicator packets */
-        t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_INDICATOR, 0);
+        t38_set_pace_transmission(&s->t38_fe.t38, FALSE);
+        s->t38_fe.hdlc_tx.extra_bits = 0;
+        if ((config & T38_TERMINAL_OPTION_NO_INDICATORS))
+            t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_INDICATOR, 0);
+        else
+            t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_INDICATOR, 1);
+        /*endif*/
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_CONTROL_DATA, 1);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_CONTROL_DATA_END, 1);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA, 1);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA_END, 1);
         s->t38_fe.ms_per_tx_chunk = 0;
         s->t38_fe.chunking_modes &= ~T38_CHUNKING_SEND_REGULAR_INDICATORS;
+        s->t38_fe.chunking_modes |= T38_CHUNKING_MERGE_FCS_WITH_DATA;
     }
     else
     {
         /* Paced streaming mode, as used for UDP transports */
-        t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_INDICATOR, INDICATOR_TX_COUNT);
+        t38_set_pace_transmission(&s->t38_fe.t38, TRUE);
+        s->t38_fe.hdlc_tx.extra_bits = 0;
+        if ((config & T38_TERMINAL_OPTION_NO_INDICATORS))
+            t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_INDICATOR, 0);
+        else
+            t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_INDICATOR, INDICATOR_TX_COUNT);
+        /*endif*/
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_CONTROL_DATA, DATA_TX_COUNT);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_CONTROL_DATA_END, DATA_END_TX_COUNT);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA, DATA_TX_COUNT);

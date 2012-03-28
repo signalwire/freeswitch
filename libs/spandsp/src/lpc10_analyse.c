@@ -203,7 +203,6 @@ static void dynamic_pitch_tracking(lpc10_encode_state_t *s,
 {
     int32_t pbar;
     float sbar;
-    int32_t path[2];
     int32_t i;
     int32_t j;
     float alpha;
@@ -292,10 +291,7 @@ static void dynamic_pitch_tracking(lpc10_encode_state_t *s,
     /* TRACE: look back two frames to find minimum cost pitch estimate */
     *pitch = *midx;
     for (i = 0, j = s->ipoint;  i < 2;  i++, j++)
-    {
         *pitch = s->p[j & 1][*pitch - 1];
-        path[i] = *pitch;
-    }
 
     /* The following statement subtracts one from IPOINT, mod DEPTH.  I */
     /* think the author chose to add DEPTH-1, instead of subtracting 1, */

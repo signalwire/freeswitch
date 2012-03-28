@@ -47,7 +47,10 @@ enum
     T38_TERMINAL_OPTION_REGULAR_INDICATORS = 0x02,
     /*! This option enables the regular repeat transmission of indicator signals for the 
         first 2s, during periods when no FAX signal transmission occurs. */
-    T38_TERMINAL_OPTION_2S_REPEATING_INDICATORS = 0x04
+    T38_TERMINAL_OPTION_2S_REPEATING_INDICATORS = 0x04,
+    /*! This option suppresses the transmission of indicators. This is usually used with
+        TCP/TPKT transmission of T.38 FAXes */
+    T38_TERMINAL_OPTION_NO_INDICATORS = 0x08
 };
 
 typedef struct t38_terminal_state_s t38_terminal_state_t;

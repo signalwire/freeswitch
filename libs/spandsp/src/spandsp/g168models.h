@@ -213,7 +213,7 @@ const int32_t line_model_d8_coeffs[] =
 const int32_t line_model_d9_coeffs[] =
 {
         80,     31,      4,     42,     42,    -61,    -81,    -64,
-       121,   -102,    -26,   1002,  -9250, -22562,  39321,  35681,
+      -121,   -102,    -26,   1002,  -9250, -22562,  39321,  35681,
     -35289,  25312,  -1457,   -229,  15659,  -6786,  16791,   3860,
       2239, -28730, -11885,  33871,   -176, -16421,  18173,  -9669,
     -10163,   9941, -19365,   3592,  -5907, -10257,   5336, -12933,
@@ -258,7 +258,7 @@ const float level_measurement_bp_coeffs[] =
 };
 
 /*!
-    The composite source signal "voiced" section from section C.1 of G.168.
+    The composite source signal "voiced" section from table C.1 of G.168.
 */
 const int css_c1[] =
 {
@@ -282,7 +282,7 @@ const int css_c1[] =
 };
 
 /*!
-    The composite source signal "voiced" section from section C.3 of G.168.
+    The composite source signal "voiced" section from table C.3 of G.168.
 */
 const int css_c3[] =
 {

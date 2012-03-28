@@ -33,11 +33,8 @@
 #if !defined(_SPANDSP_LOGGING_H_)
 #define _SPANDSP_LOGGING_H_
 
-/*! General logging function for spandsp logging. */
-typedef void (*message_handler_func_t)(int level, const char *text);
-
-/*! Error logging function for spandsp logging. */
-typedef void (*error_handler_func_t)(const char *text);
+/*! Logging function for spandsp logging. */
+typedef void (*message_handler_func_t)(void *user_data, int level, const char *text);
 
 /* Logging elements */
 enum
@@ -117,13 +114,9 @@ SPAN_DECLARE(int) span_log_set_sample_rate(logging_state_t *s, int samples_per_s
 
 SPAN_DECLARE(int) span_log_bump_samples(logging_state_t *s, int samples);
 
-SPAN_DECLARE(void) span_log_set_message_handler(logging_state_t *s, message_handler_func_t func);
+SPAN_DECLARE(void) span_log_set_message_handler(logging_state_t *s, message_handler_func_t func, void *user_data);
 
-SPAN_DECLARE(void) span_log_set_error_handler(logging_state_t *s, error_handler_func_t func);
-
-SPAN_DECLARE(void) span_set_message_handler(message_handler_func_t func);
-
-SPAN_DECLARE(void) span_set_error_handler(error_handler_func_t func);
+SPAN_DECLARE(void) span_set_message_handler(message_handler_func_t func, void *user_data);
 
 SPAN_DECLARE(logging_state_t *) span_log_init(logging_state_t *s, int level, const char *tag);
 

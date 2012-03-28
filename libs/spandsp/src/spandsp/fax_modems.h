@@ -70,6 +70,13 @@ SPAN_DECLARE(void) fax_modems_set_tep_mode(fax_modems_state_t *s, int use_tep);
 
 SPAN_DECLARE(int) fax_modems_restart(fax_modems_state_t *s);
 
+/*! Get a pointer to the logging context associated with a FAX modems context.
+    \brief Get a pointer to the logging context associated with a FAX modems context.
+    \param s The FAX modems context.
+    \return A pointer to the logging context, or NULL.
+*/
+SPAN_DECLARE(logging_state_t *) fax_modems_get_logging_state(fax_modems_state_t *s);
+
 SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
                                                    int use_tep,
                                                    hdlc_frame_handler_t hdlc_accept,

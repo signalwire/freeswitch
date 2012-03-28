@@ -52,24 +52,27 @@ struct fax_modems_state_s
     /*! \brief A V.21 FSK modem context used when receiving HDLC over V.21
                messages. */
     fsk_rx_state_t v21_rx;
-    /*! \brief A V.17 modem context used when sending FAXes at 7200bps, 9600bps
-               12000bps or 14400bps */
-    v17_tx_state_t v17_tx;
-    /*! \brief A V.29 modem context used when receiving FAXes at 7200bps, 9600bps
-               12000bps or 14400bps */
-    v17_rx_state_t v17_rx;
-    /*! \brief A V.29 modem context used when sending FAXes at 7200bps or
-               9600bps */
-    v29_tx_state_t v29_tx;
-    /*! \brief A V.29 modem context used when receiving FAXes at 7200bps or
-               9600bps */
-    v29_rx_state_t v29_rx;
-    /*! \brief A V.27ter modem context used when sending FAXes at 2400bps or
-               4800bps */
-    v27ter_tx_state_t v27ter_tx;
-    /*! \brief A V.27ter modem context used when receiving FAXes at 2400bps or
-               4800bps */
-    v27ter_rx_state_t v27ter_rx;
+    struct
+    {
+        /*! \brief A V.17 modem context used when sending FAXes at 7200bps, 9600bps
+                   12000bps or 14400bps */
+        v17_tx_state_t v17_tx;
+        /*! \brief A V.29 modem context used when receiving FAXes at 7200bps, 9600bps
+                   12000bps or 14400bps */
+        v17_rx_state_t v17_rx;
+        /*! \brief A V.29 modem context used when sending FAXes at 7200bps or
+                   9600bps */
+        v29_tx_state_t v29_tx;
+        /*! \brief A V.29 modem context used when receiving FAXes at 7200bps or
+                   9600bps */
+        v29_rx_state_t v29_rx;
+        /*! \brief A V.27ter modem context used when sending FAXes at 2400bps or
+                   4800bps */
+        v27ter_tx_state_t v27ter_tx;
+        /*! \brief A V.27ter modem context used when receiving FAXes at 2400bps or
+                   4800bps */
+        v27ter_rx_state_t v27ter_rx;
+    } fast_modems;
     /*! \brief Used to insert timed silences. */
     silence_gen_state_t silence_gen;
     /*! \brief CED or CNG generator */
@@ -79,9 +82,9 @@ struct fax_modems_state_s
     /*! \brief */
     dc_restore_state_t dc_restore;
 
-    /*! \brief The currently select receiver type */
+    /*! \brief The currently selected receiver type */
     int current_rx_type;
-    /*! \brief The currently select transmitter type */
+    /*! \brief The currently selected transmitter type */
     int current_tx_type;
 
     /*! \brief TRUE if a carrier is present. Otherwise FALSE. */
@@ -91,13 +94,13 @@ struct fax_modems_state_s
     /*! \brief TRUE if an HDLC frame has been received correctly. */
     int rx_frame_received;
 
-    /*! The current receive signal handler */
+    /*! \brief The current receive signal handler */
     span_rx_handler_t *rx_handler;
-    /*! The current receive missing signal fill-in handler */
+    /*! \brief The current receive missing signal fill-in handler */
     span_rx_fillin_handler_t *rx_fillin_handler;
     void *rx_user_data;
 
-    /*! The current transmit signal handler */
+    /*! \brief The current transmit signal handler */
     span_tx_handler_t *tx_handler;
     void *tx_user_data;
 

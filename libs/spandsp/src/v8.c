@@ -1011,9 +1011,9 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, int calling_party, v8_parms_t *parms
     s->modulation_bytes = 3;
 
     s->ci_timer = 0;
-    if (calling_party)
+    s->calling_party = calling_party;
+    if (s->calling_party)
     {
-        s->calling_party = TRUE;
         s->state = V8_WAIT_1S;
         s->negotiation_timer = ms_to_samples(1000);
         s->ci_count = 0;
@@ -1023,11 +1023,9 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, int calling_party, v8_parms_t *parms
     else
     {
         /* Send the ANSam or ANSam/ tone */
-        s->calling_party = FALSE;
-        modem_connect_tones_tx_init(&s->ansam_tx, s->parms.modem_connect_tone);
-                
-        v8_decode_init(s);
         s->state = V8_CM_WAIT;
+        v8_decode_init(s);
+        modem_connect_tones_tx_init(&s->ansam_tx, s->parms.modem_connect_tone);
         s->negotiation_timer = ms_to_samples(200 + 5000);
         s->modem_connect_tone_tx_on = ms_to_samples(75) + 1;
     }

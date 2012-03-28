@@ -224,11 +224,12 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
                    total, row and coloumn power levels for detailed analysis of detection problems. */
                 span_log(&s->logging,
                          SPAN_LOG_FLOW,
-                         "Potentially '%c' - total %.2fdB, row %.2fdB, col %.2fdB - %s\n",
+                         "Potentially '%c' - total %.2fdB, row %.2fdB, col %.2fdB, duration %d - %s\n",
                          dtmf_positions[(best_row << 2) + best_col],
                          log10f(s->energy)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER,
                          log10f(row_energy[best_row]/DTMF_TO_TOTAL_ENERGY)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER,
                          log10f(col_energy[best_col]/DTMF_TO_TOTAL_ENERGY)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER,
+                         s->duration,
                          (hit)  ?  "hit"  :  "miss");
             }
         }
@@ -311,6 +312,28 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
         s->digits[0] = '\0';
         s->current_digits = 0;
     }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) dtmf_rx_fillin(dtmf_rx_state_t *s, int samples)
+{
+    int i;
+
+    /* Restart any Goertzel and energy gathering operation we might be in the middle of. */
+    for (i = 0;  i < 4;  i++)
+    {
+        goertzel_reset(&s->row_out[i]);
+        goertzel_reset(&s->col_out[i]);
+    }
+#if defined(SPANDSP_USE_FIXED_POINT)
+    s->energy = 0;
+#else
+    s->energy = 0.0f;
+#endif
+    s->current_sample = 0;
+    /* Don't update the hit detection. Pretend it never happened. */
+    /* TODO: Surely we can be a cleverer than this. */
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

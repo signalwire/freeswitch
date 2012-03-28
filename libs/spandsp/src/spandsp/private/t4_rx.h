@@ -59,7 +59,7 @@ typedef struct
     const char *far_ident;
     /*! \brief The FAX sub-address. */ 
     const char *sub_address;
-    /*! \brief The FAX DCS information, as an ASCII string. */ 
+    /*! \brief The FAX DCS information, as an ASCII hex string. */ 
     const char *dcs;
 
     /*! \brief The first page to transfer. -1 to start at the beginning of the file. */

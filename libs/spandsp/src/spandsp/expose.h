@@ -70,6 +70,8 @@
 #include <spandsp/private/v29tx.h>
 /*#include <spandsp/private/v32bis.h>*/
 /*#include <spandsp/private/v34.h>*/
+#include <spandsp/private/v42.h>
+#include <spandsp/private/v42bis.h>
 #include <spandsp/private/at_interpreter.h>
 #include <spandsp/private/fax_modems.h>
 #include <spandsp/private/timezone.h>
@@ -90,8 +92,6 @@
 #include <spandsp/private/t38_terminal.h>
 #include <spandsp/private/t31.h>
 #include <spandsp/private/v18.h>
-#include <spandsp/private/v42.h>
-#include <spandsp/private/v42bis.h>
 #include <spandsp/private/adsi.h>
 
 #endif
