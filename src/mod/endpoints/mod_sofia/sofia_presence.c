@@ -2420,7 +2420,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
 		const char *answer_state = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 		const char *dft_state;
-		const char *from_id = NULL, *from_name = NULL, *to_name = NULL;
+		const char *from_id = NULL, *from_name = NULL;
 		const char *to_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_to_user"));
 		const char *from_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_from_user"));
 		char *clean_to_user = NULL;
@@ -2444,12 +2444,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		if (force_event_status && !event_status) {
 			event_status = force_event_status;
 		}
-		
+
 		if (event_status && !strncasecmp(event_status, "hold", 4)) {
 			holding = 1;
 		}
-		
-		to_name = switch_event_get_header(helper->event, "Caller-Caller-ID-Name");
 
 		if (!strcasecmp(direction, "inbound")) {
 			from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Destination-Number"));
@@ -2460,10 +2458,14 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 			if (zstr(from_id)) {
 				from_id = switch_str_nil(switch_event_get_header(helper->event, "Caller-Caller-ID-Number"));
+			}
+
+			if (zstr(from_name)) {
 				from_name = switch_event_get_header(helper->event, "Caller-Caller-ID-Name");
 			}
+			
 		}
-		
+
 #if 0
 		char *buf;
 		switch_event_serialize(helper->event, &buf, SWITCH_FALSE);
@@ -2567,8 +2569,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 				if (is_dialog) {
 					if (!zstr(clean_to_user) && !zstr(clean_from_user)) {
-						stream.write_function(&stream, "<local>\n<identity display=\"%s\">sip:%s@%s</identity>\n", 
-											  to_name ? to_name : clean_to_user, clean_to_user, host);
+						stream.write_function(&stream, "<local>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_to_user, clean_to_user, host);
 						stream.write_function(&stream, "<target uri=\"sip:%s@%s\">\n", clean_to_user, host);
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"%s\"/>\n", holding ? "no" : "yes");
 											  
