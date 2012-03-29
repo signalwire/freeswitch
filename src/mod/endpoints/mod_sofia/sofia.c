@@ -581,6 +581,14 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 	call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
+	if (sip->sip_reason) {
+		char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
+
+		if (!zstr(reason_header)) {
+			switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
+		}
+	}
+
 	if (sip->sip_reason && sip->sip_reason->re_protocol && (!strcasecmp(sip->sip_reason->re_protocol, "Q.850")
 															|| !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")
 															|| !strcasecmp(sip->sip_reason->re_protocol, profile->username)) && sip->sip_reason->re_cause) {
@@ -981,7 +989,6 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_r_unregister:
 	case nua_r_unsubscribe:
 	case nua_r_publish:
-	case nua_i_cancel:
 	case nua_i_error:
 	case nua_i_active:
 	case nua_i_terminated:
@@ -989,6 +996,19 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_i_prack:
 	case nua_r_prack:
 		break;
+
+	case nua_i_cancel:
+
+		if (sip && channel && sip->sip_reason) {
+			char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
+			
+			if (!zstr(reason_header)) {
+				switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
+			}
+		}
+
+		break;
+
 	case nua_r_cancel:
 		{
 			if (status > 299 && nh) {
