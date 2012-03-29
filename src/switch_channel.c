@@ -1433,7 +1433,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (switch_channel_down_nosig(channel)) {
+		if (switch_channel_down(channel)) {
 			return SWITCH_STATUS_FALSE;
 		}
 
