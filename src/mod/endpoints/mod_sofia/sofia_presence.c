@@ -1851,6 +1851,11 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	char *contact_str, *contact, *user_via = NULL;
 	char *route_uri = NULL, *o_contact_dup = NULL, *tmp, *to_uri, *dcs = NULL;
 	const char *tp;
+
+	if (zstr(full_to) || zstr(full_from) || zstr(o_contact) || zstr(expires) || zstr(ct) || zstr(pl)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "MISSING DATA TO SEND NOTIFY.\n");
+		return;
+	}
 	
     tmp = (char *)o_contact;
 	o_contact_dup = sofia_glue_get_url_from_contact(tmp, 1);

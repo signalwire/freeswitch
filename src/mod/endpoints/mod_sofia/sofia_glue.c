@@ -5217,6 +5217,8 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup)
 {
 	char *url = NULL, *e;
 
+	switch_assert(buf);
+	
 	while(*buf == ' ') {
 		buf++;
 	}
