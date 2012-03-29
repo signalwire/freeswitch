@@ -184,7 +184,8 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	int rate;
 	int already_did[128] = { 0 };
 	int ptime = 0, noptime = 0;
-	
+	const char *zrtp;
+
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP", 
 					port, secure ? "S" : "");
 				
@@ -343,6 +344,10 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=ptime:%d\n", cur_ptime);
 	}
 
+	if ((zrtp = switch_channel_get_variable(tech_pvt->channel, "sdp_zrtp_hash_string"))) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=zrtp-hash:%s\n", zrtp); 
+	}
+
 	if (sr) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=%s\n", sr);
 	}
@@ -386,6 +391,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 	switch_event_t *map = NULL, *ptmap = NULL;
 	const char *b_sdp = NULL;
 	int verbose_sdp = 0;
+	const char *zrtp;
 
 	sofia_glue_check_dtmf_type(tech_pvt);
 
@@ -537,6 +543,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 		if (ptime) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
+		}
+
+		if ((zrtp = switch_channel_get_variable(tech_pvt->channel, "sdp_zrtp_hash_string"))) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=zrtp-hash:%s\n", zrtp); 
 		}
 
 		if (sr) {
@@ -3552,6 +3562,14 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 		switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
 
+
+		if (switch_channel_test_flag(tech_pvt->channel, CF_ZRTP_PASS)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "Activating ZRTP PROXY MODE\n");
+			sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
+			switch_rtp_udptl_mode(tech_pvt->rtp_session);
+		}
+
+
 	video:
 
 		sofia_glue_check_video_codecs(tech_pvt);
@@ -4657,12 +4675,13 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 					switch_channel_set_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port", attr->a_value);
-				}
-
-				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
+				} else if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
 					maxptime = atoi(attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "zrtp-hash") && attr->a_value) {
+					switch_channel_set_variable(tech_pvt->channel, "sdp_zrtp_hash_string", attr->a_value);
+					switch_channel_set_flag(tech_pvt->channel, CF_ZRTP_HASH);
 				} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 					int crypto_tag;
 

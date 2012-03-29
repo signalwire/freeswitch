@@ -2568,6 +2568,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						}
 					}
 
+					switch_channel_check_zrtp(tech_pvt->channel);
+
 					if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						goto end_lock;
