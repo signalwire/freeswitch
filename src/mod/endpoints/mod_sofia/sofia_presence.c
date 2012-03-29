@@ -1852,7 +1852,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	char *route_uri = NULL, *o_contact_dup = NULL, *tmp, *to_uri, *dcs = NULL;
 	const char *tp;
 
-	if (zstr(full_to) || zstr(full_from) || zstr(o_contact) || zstr(expires) || zstr(ct) || zstr(pl)) {
+	if (zstr(full_to) || zstr(full_from) || zstr(o_contact)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "MISSING DATA TO SEND NOTIFY.\n");
 		return;
 	}
