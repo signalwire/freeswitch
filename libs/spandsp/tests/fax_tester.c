@@ -287,7 +287,7 @@ static void hdlc_rx_status(void *user_data, int status)
     faxtester_state_t *s;
 
     s = (faxtester_state_t *) user_data;
-    fprintf(stderr, "HDLC carrier status is %s (%d)\n", signal_status_to_str(status), status);
+    span_log(&s->logging, SPAN_LOG_FLOW, "HDLC carrier status is %s (%d)\n", signal_status_to_str(status), status);
     switch (status)
     {
     case SIG_STATUS_TRAINING_FAILED:
@@ -409,9 +409,7 @@ int faxtester_rx(faxtester_state_t *s, int16_t *amp, int len)
 int faxtester_tx(faxtester_state_t *s, int16_t *amp, int max_len)
 {
     int len;
-    int required_len;
     
-    required_len = max_len;
     len = 0;
     if (s->transmit)
     {

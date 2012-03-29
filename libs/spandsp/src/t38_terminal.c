@@ -109,7 +109,7 @@
 #include "spandsp/private/t38_terminal.h"
 
 /* Settings suitable for paced transmission over a UDP transport */
-#define DEFAULT_MS_PER_TX_CHUNK                 30
+#define DEFAULT_US_PER_TX_CHUNK                 30000
 
 #define INDICATOR_TX_COUNT                      3
 #define DATA_TX_COUNT                           1
@@ -613,7 +613,8 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
     }
     else
     {
-        s->t38_fe.hdlc_tx.extra_bits = extra_bits_in_stuffed_frame(msg, len);
+        if (s->t38_fe.us_per_tx_chunk)
+            s->t38_fe.hdlc_tx.extra_bits = extra_bits_in_stuffed_frame(msg, len);
         bit_reverse(s->t38_fe.hdlc_tx.buf, msg, len);
         s->t38_fe.hdlc_tx.len = len;
         s->t38_fe.hdlc_tx.ptr = 0;
@@ -624,7 +625,7 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
 
 static __inline__ int bits_to_us(t38_terminal_state_t *s, int bits)
 {
-    if (s->t38_fe.ms_per_tx_chunk == 0  ||  s->t38_fe.tx_bit_rate == 0)
+    if (s->t38_fe.us_per_tx_chunk == 0  ||  s->t38_fe.tx_bit_rate == 0)
         return 0;
     /*endif*/
     return bits*1000000/s->t38_fe.tx_bit_rate;
@@ -634,9 +635,9 @@ static __inline__ int bits_to_us(t38_terminal_state_t *s, int bits)
 static void set_octets_per_data_packet(t38_terminal_state_t *s, int bit_rate)
 {
     s->t38_fe.tx_bit_rate = bit_rate;
-    if (s->t38_fe.ms_per_tx_chunk)
+    if (s->t38_fe.us_per_tx_chunk)
     {
-        s->t38_fe.octets_per_data_packet = s->t38_fe.ms_per_tx_chunk*bit_rate/(8*1000);
+        s->t38_fe.octets_per_data_packet = (s->t38_fe.us_per_tx_chunk/1000)*bit_rate/(8*1000);
         /* Make sure we have a positive number (i.e. we didn't truncate to zero). */
         if (s->t38_fe.octets_per_data_packet < 1)
             s->t38_fe.octets_per_data_packet = 1;
@@ -660,14 +661,12 @@ static int set_no_signal(t38_terminal_state_t *s)
             return delay;
         /*endif*/
         s->t38_fe.timed_step = T38_TIMED_STEP_NO_SIGNAL;
-#if 0
         if ((s->t38_fe.chunking_modes & T38_CHUNKING_SEND_2S_REGULAR_INDICATORS))
             s->t38_fe.timeout_tx_samples = s->t38_fe.next_tx_samples + us_to_samples(2000000);
         else
             s->t38_fe.timeout_tx_samples = 0;
         /*endif*/
-#endif
-        return s->t38_fe.ms_per_tx_chunk*1000;
+        return s->t38_fe.us_per_tx_chunk;
     }
     /*endif*/
     if ((delay = t38_core_send_indicator(&s->t38_fe.t38, T38_IND_NO_SIGNAL)) < 0)
@@ -685,12 +684,10 @@ static int stream_no_signal(t38_terminal_state_t *s)
     if ((delay = t38_core_send_indicator(&s->t38_fe.t38, 0x100 | T38_IND_NO_SIGNAL)) < 0)
         return delay;
     /*endif*/
-#if 0
     if (s->t38_fe.timeout_tx_samples  &&  s->t38_fe.next_tx_samples >= s->t38_fe.timeout_tx_samples)
         s->t38_fe.timed_step = T38_TIMED_STEP_NONE;
     /*endif*/
-#endif
-    return s->t38_fe.ms_per_tx_chunk*1000;
+    return s->t38_fe.us_per_tx_chunk;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -717,20 +714,19 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             }
             else
             {
-                delay = 75000;
+                if (fe->us_per_tx_chunk)
+                    delay = 75000;
+                /*endif*/
             }
             /*endif*/
             fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_2;
-#if 0
             fe->timeout_tx_samples = fe->next_tx_samples
                                    + us_to_samples(t38_core_send_training_delay(&fe->t38, fe->next_tx_indicator));
-#endif
             fe->next_tx_samples = fe->samples;
             break;
         case T38_TIMED_STEP_NON_ECM_MODEM_2:
             /* Switch on a fast modem, and give the training time to complete */
-#if 0
-            if ((s->t38_fe.chunking_modes & T38_CHUNKING_SEND_REGULAR_INDICATORS))
+            if ((fe->chunking_modes & T38_CHUNKING_SEND_REGULAR_INDICATORS))
             {
                 if ((delay = t38_core_send_indicator(&fe->t38, 0x100 | fe->next_tx_indicator)) < 0)
                     return delay;
@@ -738,10 +734,9 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 if (fe->next_tx_samples >= fe->timeout_tx_samples)
                     fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_3;
                 /*endif*/
-                return fe->ms_per_tx_chunk*1000;
+                return fe->us_per_tx_chunk;
             }
             /*endif*/
-#endif
             if ((delay = t38_core_send_indicator(&fe->t38, fe->next_tx_indicator)) < 0)
                 return delay;
             /*endif*/
@@ -760,7 +755,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             if (len < fe->octets_per_data_packet)
             {
                 /* That's the end of the image data. */
-                if (s->t38_fe.ms_per_tx_chunk)
+                if (fe->us_per_tx_chunk)
                 {
                     /* Pad the end of the data with some zeros. If we just stop abruptly
                        at the end of the EOLs, some ATAs fail to clean up properly before
@@ -781,7 +776,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                         return res;
                     /*endif*/
                     fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_5;
-                    delay = 0;
+                    front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
                     break;
                 }
                 /*endif*/
@@ -790,7 +785,9 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             if ((res = t38_core_send_data(&fe->t38, fe->current_tx_data_type, T38_FIELD_T4_NON_ECM_DATA, buf, len, T38_PACKET_CATEGORY_IMAGE_DATA)) < 0)
                 return res;
             /*endif*/
-            delay = bits_to_us(s, 8*len);
+            if (fe->us_per_tx_chunk)
+                delay = bits_to_us(s, 8*len);
+            /*endif*/
             break;
         case T38_TIMED_STEP_NON_ECM_MODEM_4:
             /* Send padding */
@@ -806,9 +803,8 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_5;
                 /* Allow a bit more time than the data will take to play out, to ensure the far ATA does not
                    cut things short. */
-                delay = bits_to_us(s, 8*len);
-                if (s->t38_fe.ms_per_tx_chunk)
-                    delay += 60000;
+                if (fe->us_per_tx_chunk)
+                    delay = bits_to_us(s, 8*len) + 60000;
                 /*endif*/
                 front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
                 break;
@@ -818,12 +814,21 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             if ((res = t38_core_send_data(&fe->t38, fe->current_tx_data_type, T38_FIELD_T4_NON_ECM_DATA, buf, len, T38_PACKET_CATEGORY_IMAGE_DATA)) < 0)
                 return res;
             /*endif*/
-            delay = bits_to_us(s, 8*len);
+            if (fe->us_per_tx_chunk)
+                delay = bits_to_us(s, 8*len);
+            /*endif*/
             break;
         case T38_TIMED_STEP_NON_ECM_MODEM_5:
             /* This should not be needed, since the message above indicates the end of the signal, but it
                seems like it can improve compatibility with quirky implementations. */
-            return set_no_signal(s);
+            delay = set_no_signal(s);
+            if (fe->queued_timed_step != T38_TIMED_STEP_NONE)
+            {
+                fe->timed_step = fe->queued_timed_step;
+                fe->queued_timed_step = T38_TIMED_STEP_NONE;
+            }
+            /*endif*/
+            return delay;
         }
         /*endswitch*/
     }
@@ -858,22 +863,19 @@ static int stream_hdlc(t38_terminal_state_t *s)
             }
             else
             {
-                delay = 75000;
+                delay = (fe->us_per_tx_chunk)  ?  75000  :  0;
             }
             /*endif*/
             fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_2;
-#if 0
             fe->timeout_tx_samples = fe->next_tx_samples
                                    + us_to_samples(t38_core_send_training_delay(&fe->t38, fe->next_tx_indicator))
                                    + us_to_samples(t38_core_send_flags_delay(&fe->t38, fe->next_tx_indicator))
                                    + us_to_samples(delay);
-#endif
             fe->next_tx_samples = fe->samples;
             break;
         case T38_TIMED_STEP_HDLC_MODEM_2:
             /* Send HDLC preambling */
-#if 0
-            if ((s->t38_fe.chunking_modes & T38_CHUNKING_SEND_REGULAR_INDICATORS))
+            if ((fe->chunking_modes & T38_CHUNKING_SEND_REGULAR_INDICATORS))
             {
                 if ((delay = t38_core_send_indicator(&fe->t38, 0x100 | fe->next_tx_indicator)) < 0)
                     return delay;
@@ -881,10 +883,9 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 if (fe->next_tx_samples >= fe->timeout_tx_samples)
                     fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
                 /*endif*/
-                return fe->ms_per_tx_chunk*1000;
+                return fe->us_per_tx_chunk;
             }
             /*endif*/
-#endif
             if ((delay = t38_core_send_indicator(&fe->t38, fe->next_tx_indicator)) < 0)
                 return delay;
             /*endif*/
@@ -897,7 +898,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
             if (fe->octets_per_data_packet >= i)
             {
                 /* The last part of an HDLC frame */
-                if (fe->chunking_modes & T38_CHUNKING_MERGE_FCS_WITH_DATA)
+                if ((fe->chunking_modes & T38_CHUNKING_MERGE_FCS_WITH_DATA))
                 {
                     /* Copy the data, as we might be about to refill the buffer it is in */
                     memcpy(buf, &fe->hdlc_tx.buf[fe->hdlc_tx.ptr], i);
@@ -911,12 +912,24 @@ static int stream_hdlc(t38_terminal_state_t *s)
                     fe->hdlc_tx.len = 0;
                     front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
                     /* The above step should have got the next HDLC step ready - either another frame, or an instruction to stop transmission. */
-                    if (fe->hdlc_tx.len < 0)
+                    if (fe->hdlc_tx.len >= 0)
+                    {
+                        data_fields[1].field_type = T38_FIELD_HDLC_FCS_OK;
+                        data_fields[1].field = NULL;
+                        data_fields[1].field_len = 0;
+                        category = (fe->current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
+                        if ((res = t38_core_send_data_multi_field(&fe->t38, fe->current_tx_data_type, data_fields, 2, category)) < 0)
+                            return res;
+                        /*endif*/
+                        fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
+                        delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits);
+                    }
+                    else
                     {
                         data_fields[1].field_type = T38_FIELD_HDLC_FCS_OK_SIG_END;
                         data_fields[1].field = NULL;
                         data_fields[1].field_len = 0;
-                        category = (s->t38_fe.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA_END  :  T38_PACKET_CATEGORY_IMAGE_DATA_END;
+                        category = (fe->current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA_END  :  T38_PACKET_CATEGORY_IMAGE_DATA_END;
                         if ((res = t38_core_send_data_multi_field(&fe->t38, fe->current_tx_data_type, data_fields, 2, category)) < 0)
                             return res;
                         /*endif*/
@@ -924,28 +937,16 @@ static int stream_hdlc(t38_terminal_state_t *s)
                         /* We add a bit of extra time here, as with some implementations
                            the carrier falling too abruptly causes data loss. */
                         delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits);
-                        if (s->t38_fe.ms_per_tx_chunk)
+                        if (fe->us_per_tx_chunk)
                             delay += 100000;
                         /*endif*/
                         front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
-                    }
-                    else
-                    {
-                        data_fields[1].field_type = T38_FIELD_HDLC_FCS_OK;
-                        data_fields[1].field = NULL;
-                        data_fields[1].field_len = 0;
-                        category = (s->t38_fe.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
-                        if ((res = t38_core_send_data_multi_field(&fe->t38, fe->current_tx_data_type, data_fields, 2, category)) < 0)
-                            return res;
-                        /*endif*/
-                        fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
-                        delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits);
                     }
                     /*endif*/
                     break;
                 }
                 /*endif*/
-                category = (s->t38_fe.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
+                category = (fe->current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
                 if ((res = t38_core_send_data(&fe->t38, fe->current_tx_data_type, T38_FIELD_HDLC_DATA, &fe->hdlc_tx.buf[fe->hdlc_tx.ptr], i, category)) < 0)
                     return res;
                 /*endif*/
@@ -954,7 +955,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
             else
             {
                 i = fe->octets_per_data_packet;
-                category = (s->t38_fe.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
+                category = (fe->current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
                 if ((res = t38_core_send_data(&fe->t38, fe->current_tx_data_type, T38_FIELD_HDLC_DATA, &fe->hdlc_tx.buf[fe->hdlc_tx.ptr], i, category)) < 0)
                     return res;
                 /*endif*/
@@ -970,10 +971,28 @@ static int stream_hdlc(t38_terminal_state_t *s)
             fe->hdlc_tx.len = 0;
             front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
             /* The above step should have got the next HDLC step ready - either another frame, or an instruction to stop transmission. */
-            if (fe->hdlc_tx.len < 0)
+            if (fe->hdlc_tx.len >= 0)
+            {
+                if (fe->hdlc_tx.len == 0)
+                {
+                    /* Now, how did we get here? We have finished a frame, but have no new frame to
+                       send, and no end of transmission condition. */
+                    span_log(&s->logging, SPAN_LOG_FLOW, "No new frame or end transmission condition.\n");
+                }
+                /*endif*/
+                /* Finish the current frame off, and prepare for the next one. */
+                category = (fe->current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
+                if ((res = t38_core_send_data(&fe->t38, previous, T38_FIELD_HDLC_FCS_OK, NULL, 0, category)) < 0)
+                    return res;
+                /*endif*/
+                fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
+                /* We should now wait enough time for everything to clear through an analogue modem at the far end. */
+                delay = bits_to_us(s, fe->hdlc_tx.extra_bits);
+            }
+            else
             {
                 /* End of transmission */
-                category = (s->t38_fe.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA_END  :  T38_PACKET_CATEGORY_IMAGE_DATA_END;
+                category = (fe->current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA_END  :  T38_PACKET_CATEGORY_IMAGE_DATA_END;
                 if ((res = t38_core_send_data(&fe->t38, previous, T38_FIELD_HDLC_FCS_OK_SIG_END, NULL, 0, category)) < 0)
                     return res;
                 /*endif*/
@@ -981,33 +1000,24 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 /* We add a bit of extra time here, as with some implementations
                    the carrier falling too abruptly causes data loss. */
                 delay = bits_to_us(s, fe->hdlc_tx.extra_bits);
-                if (s->t38_fe.ms_per_tx_chunk)
+                if (fe->us_per_tx_chunk)
                     delay += 100000;
                 /*endif*/
                 front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
-                break;
             }
             /*endif*/
-            if (fe->hdlc_tx.len == 0)
-            {
-                /* Now, how did we get here? We have finished a frame, but have no new frame to
-                   send, and no end of transmission condition. */
-                span_log(&s->logging, SPAN_LOG_FLOW, "No new frame or end transmission condition.\n");
-            }
-            /*endif*/
-            /* Finish the current frame off, and prepare for the next one. */
-            category = (s->t38_fe.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
-            if ((res = t38_core_send_data(&fe->t38, previous, T38_FIELD_HDLC_FCS_OK, NULL, 0, category)) < 0)
-                return res;
-            /*endif*/
-            fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
-            /* We should now wait enough time for everything to clear through an analogue modem at the far end. */
-            delay = bits_to_us(s, fe->hdlc_tx.extra_bits);
             break;
         case T38_TIMED_STEP_HDLC_MODEM_5:
             /* Note that some boxes do not like us sending a T38_FIELD_HDLC_SIG_END at this point.
                A T38_IND_NO_SIGNAL should always be OK. */
-            return set_no_signal(s);
+            delay = set_no_signal(s);
+            if (fe->queued_timed_step != T38_TIMED_STEP_NONE)
+            {
+                fe->timed_step = fe->queued_timed_step;
+                fe->queued_timed_step = T38_TIMED_STEP_NONE;
+            }
+            /*endif*/
+            return delay;
         }
         /*endswitch*/
     }
@@ -1035,7 +1045,7 @@ static int stream_ced(t38_terminal_state_t *s)
             if ((delay = t38_core_send_indicator(&fe->t38, T38_IND_NO_SIGNAL)) < 0)
                 return delay;
             /*endif*/
-            delay = 200000;
+            delay = (fe->us_per_tx_chunk)  ?  200000  :  0;
             fe->next_tx_samples = fe->samples;
             break;
         case T38_TIMED_STEP_CED_2:
@@ -1048,7 +1058,7 @@ static int stream_ced(t38_terminal_state_t *s)
             break;
         case T38_TIMED_STEP_CED_3:
             /* End of CED */
-            fe->timed_step = T38_TIMED_STEP_NONE;
+            fe->timed_step = fe->queued_timed_step;
             front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
             return 0;
         }
@@ -1078,17 +1088,15 @@ static int stream_cng(t38_terminal_state_t *s)
             if ((delay = t38_core_send_indicator(&fe->t38, T38_IND_NO_SIGNAL)) < 0)
                 return delay;
             /*endif*/
-            delay = 200000;
+            delay = (fe->us_per_tx_chunk)  ?  200000  :  0;
             fe->next_tx_samples = fe->samples;
             break;
         case T38_TIMED_STEP_CNG_2:
             /* Initial short delay over. Send the CNG indicator. CNG persists until something
                coming the other way interrupts it, or a long timeout controlled by the T.30 engine
                expires. */
-            fe->timed_step = T38_TIMED_STEP_NONE;
-            if ((delay = t38_core_send_indicator(&fe->t38, T38_IND_CNG)) < 0)
-                return delay;
-            /*endif*/
+            delay = t38_core_send_indicator(&fe->t38, T38_IND_CNG);
+            fe->timed_step = fe->queued_timed_step;
             fe->current_tx_data_type = T38_DATA_NONE;
             return delay;
         }
@@ -1123,7 +1131,7 @@ SPAN_DECLARE(int) t38_terminal_send_timeout(t38_terminal_state_t *s, int samples
     /*endif*/
     /* Wait until the right time comes along, unless we are working in "no delays" mode, while talking to an
        IAF terminal. */
-    if (fe->ms_per_tx_chunk  &&  fe->samples < fe->next_tx_samples)
+    if (fe->us_per_tx_chunk  &&  fe->samples < fe->next_tx_samples)
         return FALSE;
     /*endif*/
     /* Its time to send something */
@@ -1175,21 +1183,25 @@ static void set_rx_type(void *user_data, int type, int bit_rate, int short_train
 
 static void start_tx(t38_terminal_front_end_state_t *fe, int use_hdlc)
 {
+    int step;
+
     /* The actual transmission process depends on whether we are sending at a paced manner,
        for interaction with a traditional FAX machine, or streaming as fast as we can, normally
        over a TCP connection to a machine directly connected to the internet. */
-    if (fe->ms_per_tx_chunk)
+
+    step = (use_hdlc)  ?  T38_TIMED_STEP_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
+    if (fe->timed_step == T38_TIMED_STEP_NONE)
     {
-        /* Start the paced packet transmission process. */
-        fe->timed_step = (use_hdlc)  ?  T38_TIMED_STEP_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
-        if (fe->next_tx_samples < fe->samples)
-            fe->next_tx_samples = fe->samples;
-        /*endif*/
+        fe->queued_timed_step = T38_TIMED_STEP_NONE;
+        fe->timed_step = step;
     }
     else
     {
-        /* Start the fast streaming transmission process. */
+        fe->queued_timed_step = step;
     }
+    /*endif*/
+    if (fe->next_tx_samples < fe->samples)
+        fe->next_tx_samples = fe->samples;
     /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
@@ -1217,8 +1229,21 @@ static void set_tx_type(void *user_data, int type, int bit_rate, int short_train
         fe->current_tx_data_type = T38_DATA_NONE;
         break;
     case T30_MODEM_PAUSE:
-        fe->next_tx_samples = fe->samples + ms_to_samples(short_train);
-        fe->timed_step = T38_TIMED_STEP_PAUSE;
+        if (s->t38_fe.us_per_tx_chunk)
+            fe->next_tx_samples = fe->samples + ms_to_samples(short_train);
+        else
+            fe->next_tx_samples = fe->samples;
+        /*endif*/
+        if (fe->timed_step == T38_TIMED_STEP_NONE)
+        {
+            fe->queued_timed_step = T38_TIMED_STEP_NONE;
+            fe->timed_step = T38_TIMED_STEP_PAUSE;
+        }
+        else
+        {
+            fe->queued_timed_step = T38_TIMED_STEP_PAUSE;
+        }
+        /*endif*/
         fe->current_tx_data_type = T38_DATA_NONE;
         break;
     case T30_MODEM_CED:
@@ -1316,7 +1341,7 @@ SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int config)
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_CONTROL_DATA_END, 1);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA, 1);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA_END, 1);
-        s->t38_fe.ms_per_tx_chunk = 0;
+        s->t38_fe.us_per_tx_chunk = 0;
         s->t38_fe.chunking_modes &= ~T38_CHUNKING_SEND_REGULAR_INDICATORS;
         s->t38_fe.chunking_modes |= T38_CHUNKING_MERGE_FCS_WITH_DATA;
     }
@@ -1334,7 +1359,7 @@ SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int config)
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_CONTROL_DATA_END, DATA_END_TX_COUNT);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA, DATA_TX_COUNT);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA_END, DATA_END_TX_COUNT);
-        s->t38_fe.ms_per_tx_chunk = DEFAULT_MS_PER_TX_CHUNK;
+        s->t38_fe.us_per_tx_chunk = DEFAULT_US_PER_TX_CHUNK;
         if ((config & (T38_TERMINAL_OPTION_REGULAR_INDICATORS | T38_TERMINAL_OPTION_2S_REPEATING_INDICATORS)))
             s->t38_fe.chunking_modes |= T38_CHUNKING_SEND_REGULAR_INDICATORS;
         else
@@ -1401,6 +1426,7 @@ static int t38_terminal_t38_fe_restart(t38_terminal_state_t *t)
     s->next_tx_samples = 0;
 
     s->hdlc_tx.ptr = 0;
+    s->hdlc_tx.extra_bits = 0;
 
     return 0;
 }
@@ -1424,6 +1450,7 @@ static int t38_terminal_t38_fe_init(t38_terminal_state_t *t,
 
     s->rx_signal_present = FALSE;
     s->timed_step = T38_TIMED_STEP_NONE;
+    s->queued_timed_step = T38_TIMED_STEP_NONE;
     //s->iaf = T30_IAF_MODE_T37 | T30_IAF_MODE_T38;
     s->iaf = T30_IAF_MODE_T38;
 
@@ -1432,6 +1459,7 @@ static int t38_terminal_t38_fe_init(t38_terminal_state_t *t,
     s->chunking_modes = T38_CHUNKING_ALLOW_TEP_TIME;
 
     s->hdlc_tx.ptr = 0;
+    s->hdlc_tx.extra_bits = 0;
 
     return 0;
 }
