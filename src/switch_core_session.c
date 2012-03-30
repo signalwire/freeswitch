@@ -184,7 +184,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_partner(switch_core_sess
 {
 	const char *uuid;
 
-	if ((uuid = switch_channel_get_variable(session->channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+	if ((uuid = switch_channel_get_variable(session->channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(session->channel, "originate_signal_bond"))) {
 		if ((*partner = switch_core_session_locate(uuid))) {
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -751,7 +751,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_pass_indication(switch_core_
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+	if (((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) && (other_session = switch_core_session_locate(uuid))) {
 		msg.message_id = indication;
 		msg.from = __FILE__;
 		status = switch_core_session_receive_message(other_session, &msg);
