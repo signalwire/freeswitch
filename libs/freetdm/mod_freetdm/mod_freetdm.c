@@ -1349,7 +1349,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		chan_id = 0;
 	}
 
-	if (session && globals.sip_headers) {
+	if (session && globals.sip_headers && !switch_core_session_check_interface (session,freetdm_endpoint_interface) ) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *sipvar;
 
