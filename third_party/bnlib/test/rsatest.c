@@ -1,8 +1,8 @@
 /*
- * rsatest.c - Test driver for RSA key generation.
- *
  * Copyright (c) 1994, 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * rsatest.c - Test driver for RSA key generation.
  */
 
 #include "first.h"

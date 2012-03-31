@@ -1,9 +1,9 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * DEC Alpha 64-bit math primitives.  These use 64-bit words
  * unless otherwise noted.
- *
- * Copyright (c) 1995, Colin Plumb.
- * For licensing and other legal details, see the file legal.c.
  *
  * The DEC assembler apparently does some instruction scheduling,
  * but I tried to do some of my own, and tries to spread things

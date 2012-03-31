@@ -1,7 +1,7 @@
-### Assembly primitives for bignum library, 80386 family, 32-bit code.
-###
 ### Copyright (c) 1995, Colin Plumb.
 ### For licensing and other legal details, see the file legal.c.
+###
+### Assembly primitives for bignum library, 80386 family, 32-bit code.
 ###
 ### Several primitives are included here.  Only lbnMulAdd1 is *really*
 ### critical, but once that's written, lnmMulN1 and lbnMulSub1 are quite

@@ -1,8 +1,8 @@
 /*
- * Cryptographic random number generation.
- *
  * Copyright (c) 1993, 1994  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * Cryptographic random number generation.
  */
 
 #include "first.h"

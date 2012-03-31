@@ -1,3 +1,6 @@
+# Copyright (c) 1995  Colin Plumb.  All rights reserved.
+# For licensing and other legal details, see the file legal.c.
+#
 # Assembly-language bignum primitives for the i960 Jx series.
 #
 # The Jx series is fairly straightforward single-instruction-issue 

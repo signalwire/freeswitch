@@ -1,8 +1,8 @@
 /*
- * bn.c - the high-level bignum interface
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * bn.c - the high-level bignum interface
  */
 
 #include "bn.h"

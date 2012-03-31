@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * randtest.c - FIPS 140 random number tests.
  * This performs all the tests required by the FIPS 140
  * standard on the raw random number pool.  If any fail,
@@ -14,9 +17,6 @@
  * with a standard deviation of 1/12 * sqrt(20000) = 11.785
  * the deviation at which an error is signalled of 346 from
  * this average is 29.359 standard deviations out.  *Very* unlikely.
- *
- * Copyright (c) 1995  Colin Plumb.  All rights reserved.
- * For licensing and other legal details, see the file legal.c.
  */
 #include <assert.h>
 #include <stdio.h>

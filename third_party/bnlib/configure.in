@@ -1,3 +1,6 @@
+dnl Copyright (c) 1995  Colin Plumb.  All rights reserved.
+dnl For licensing and other legal details, see the file legal.c.
+dnl
 dnl This file in input to autoconf.  It consists of a series of m4
 dnl macros which expand to produce the shell script "configure".
 dnl Anything which is not an m4 macro is copied directly to the output.

@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * lbn68000.h - 16-bit bignum primitives for the 68000 (or 68010) processors.
  *
  * These primitives use little-endian word order.

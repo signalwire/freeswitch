@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * This file includes <unistd.h>, if it's available, and
  * declares a bunch of functions with "traditional" values if not.
  * The GNU Libc Manual (node "Version Supported") says this is impossible;

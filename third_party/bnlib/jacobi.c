@@ -1,8 +1,8 @@
 /*
- * Compute the Jacobi symbol (small prime case only).
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * Compute the Jacobi symbol (small prime case only).
  */
 #include "bn.h"
 #include "jacobi.h"

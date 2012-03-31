@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * lbn68020.h - 32-bit bignum primitives for the 68020 (or 683xx) processors.
  *
  * These primitives use little-endian word order.

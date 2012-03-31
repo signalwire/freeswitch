@@ -1,10 +1,10 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * rsaglue.c - The interface between bignum math and RSA operations.
  * This layer's primary reason for existence is to allow adaptation
  * to other RSA math libraries for legal reasons.
- *
- * Copyright (c) 1995  Colin Plumb.  All rights reserved.
- * For licensing and other legal details, see the file legal.c.
  */
 
 #include "first.h"

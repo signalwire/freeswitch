@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * lbn8086.h - This file defines the interfaces to the 8086
  * assembly primitives for 16-bit MS-DOS environments.
  * It is intended to be included in "lbn.h"

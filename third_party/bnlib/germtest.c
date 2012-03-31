@@ -1,8 +1,8 @@
 /*
- * germtest.c - Random Sophie Germain prime generator.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * germtest.c - Random Sophie Germain prime generator.
  *
  * This generates random Sophie Germain primes using the command line
  * as a seed value.  It uses George Marsaglia's "mother of all random

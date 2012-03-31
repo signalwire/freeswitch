@@ -1,8 +1,8 @@
 /*
- * dhtest.c - Diffie-Hellman prime generator.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * dhtest.c - Diffie-Hellman prime generator.
  *
  * This generates Diffie-Hellman primes using a (hopefully) clearly
  * defined algorithm, based on David Kravitz's "kosherizer".

@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * bntest00.c - auto-size-detecting bntest??.c file.
  *
  * Written in 1995 by Colin Plumb.

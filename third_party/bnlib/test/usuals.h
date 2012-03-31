@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * usuals.h - Typedefs and #defines used widely.
  */
 #ifndef USUALS_H

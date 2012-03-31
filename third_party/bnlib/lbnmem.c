@@ -1,8 +1,8 @@
 /*
- * lbnmem.c - low-level bignum memory handling.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * lbnmem.c - low-level bignum memory handling.
  *
  * Note that in all cases, the pointers passed around
  * are pointers to the *least* significant end of the word.

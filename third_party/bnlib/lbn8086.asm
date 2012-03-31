@@ -1,7 +1,7 @@
-;;; Assembly primitives for bignum library, 80x86 family.
-;;;
 ;;; Copyright (c) 1995, Colin Plumb.
 ;;; For licensing and other legal details, see the file legal.c.
+;;;
+;;; Assembly primitives for bignum library, 80x86 family.
 ;;;
 ;;; Several primitives are included here.  Only lbnMulAdd1 is *really*
 ;;; critical, but once that's written, lnmMul1 and lbnSub1 are quite

@@ -1,8 +1,8 @@
 /*
- * lbn32.c - Low-level bignum routines, 32-bit version.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * lbn32.c - Low-level bignum routines, 32-bit version.
  *
  * NOTE: the magic constants "32" and "64" appear in many places in this
  * file, including inside identifiers.  Because it is not possible to

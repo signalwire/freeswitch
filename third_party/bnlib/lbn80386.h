@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * lbn80386.h - This file defines the interfaces to the 80386
  * assembly primitives.  It is intended to be included in "lbn.h"
  * via the "#include BNINCLUDE" mechanism.

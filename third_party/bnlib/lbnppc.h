@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ */
 #ifndef LBNPPC_H
 #define LBNPPC_H
 

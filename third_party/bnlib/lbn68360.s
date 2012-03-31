@@ -1,3 +1,6 @@
+* Copyright (c) 1995  Colin Plumb.  All rights reserved.
+* For licensing and other legal details, see the file legal.c.
+*
 * lbn68360.c - 32-bit bignum primitives for 683xx processors.
 *
 * This code is using InterTools calling convention, which is a bit odd.

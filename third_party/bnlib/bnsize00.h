@@ -1,8 +1,8 @@
 /*
- * bnsize00.h - pick the correct machine word size to use.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * bnsize00.h - pick the correct machine word size to use.
  */
 #include "lbn.h"	/* Get basic information */
 

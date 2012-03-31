@@ -1,8 +1,8 @@
 /*
- * bnprint.c - Print a bignum, for debugging purposes.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * bnprint.c - Print a bignum, for debugging purposes.
  */
 #ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H 0

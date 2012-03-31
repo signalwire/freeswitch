@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * lbn960jx.h - This file defines the interfaces to assembly primitives
  * for the the Intel i960Jx series of processors.  In fact, these thould
  * work on any i960 series processor, but haven't been tested.

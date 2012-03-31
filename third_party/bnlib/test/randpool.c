@@ -1,8 +1,9 @@
 /*
- * True random number computation and storage
- *
  * Copyright (c) 1993, 1994  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * True random number computation and storage
+ *
  */
 
 #include "first.h"

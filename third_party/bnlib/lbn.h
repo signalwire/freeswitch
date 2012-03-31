@@ -1,10 +1,10 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * lbn.h - Low-level bignum header.
  * Defines various word sizes and useful macros.
  * TODO: Rewrite this to use <stdint.h> and/or <inttypes.h>
- *
- * Copyright (c) 1995  Colin Plumb.  All rights reserved.
- * For licensing and other legal details, see the file legal.c.
  */
 #ifndef LBN_H
 #define LBN_H

@@ -1,8 +1,8 @@
 /*
- * lbn68000.c - 16-bit bignum primitives for the 68000 (or 68010) processors.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * lbn68000.c - 16-bit bignum primitives for the 68000 (or 68010) processors.
  *
  * This was written for Metrowerks C, and while it should be reasonably
  * portable, NOTE that Metrowerks lets a callee trash a0, a1, d0, d1, and d2.

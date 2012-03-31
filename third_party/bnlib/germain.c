@@ -1,8 +1,8 @@
 /*
- * Sophie Germain prime generation using the bignum library and sieving.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * Sophie Germain prime generation using the bignum library and sieving.
  */
 #ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H 0

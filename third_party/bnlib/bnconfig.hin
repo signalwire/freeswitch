@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * bnconfig.h -- Configuration file for BigNum library.
  *
  * This file is automatically filled in by configure.

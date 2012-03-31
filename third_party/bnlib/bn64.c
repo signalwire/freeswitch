@@ -1,12 +1,12 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * bn64.c - the high-level bignum interface
  *
  * Like lbn64.c, this reserves the string "64" for textual replacement.
  * The string must not appear anywhere unless it is intended to be replaced
  * to generate other bignum interface functions.
- *
- * Copyright (c) 1995  Colin Plumb.  All rights reserved.
- * For licensing and other legal details, see the file legal.c.
  */
 
 #ifndef HAVE_CONFIG_H

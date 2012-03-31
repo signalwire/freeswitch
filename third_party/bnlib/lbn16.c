@@ -1,8 +1,8 @@
 /*
- * lbn16.c - Low-level bignum routines, 16-bit version.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * lbn16.c - Low-level bignum routines, 16-bit version.
  *
  * NOTE: the magic constants "16" and "32" appear in many places in this
  * file, including inside identifiers.  Because it is not possible to

@@ -1,4 +1,9 @@
-/* rsaglue.h - RSA encryption and decryption */
+/*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
+ * rsaglue.h - RSA encryption and decryption
+ */
 #ifndef RSAGLUE_H
 #define RSAGLUE_H
 

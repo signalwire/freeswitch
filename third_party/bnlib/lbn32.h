@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ */
 #ifndef LBN32_H
 #define LBN32_H
 

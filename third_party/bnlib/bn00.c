@@ -1,8 +1,10 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * bn00.c - auto-size-detecting bn??.c file.
  *
  * Written in 1995 by Colin Plumb.
- * For licensing and other legal details, see the file legal.c.
  */
 
 #include "bnsize00.h"

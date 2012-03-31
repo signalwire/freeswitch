@@ -1,8 +1,8 @@
 /*
- * lbn68020.c - 32-bit bignum primitives for the 68020+ (0r 683xx) processors.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * lbn68020.c - 32-bit bignum primitives for the 68020+ (0r 683xx) processors.
  *
  * This was written for Metrowerks C, and while it should be reasonably
  * portable, NOTE that Metrowerks lets a callee trash a0, a1, d0, d1, and d2.

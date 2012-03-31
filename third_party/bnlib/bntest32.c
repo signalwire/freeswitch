@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * Test driver for low-level bignum library (32-bit version).
  * This access the low-level library directly.  It is NOT an example of
  * how to program with the library normally!  By accessing the library

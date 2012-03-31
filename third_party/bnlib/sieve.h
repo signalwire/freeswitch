@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * sieve.h - Trial division for prime finding.
  *
  * This is generally not intended for direct use by a user of the library;

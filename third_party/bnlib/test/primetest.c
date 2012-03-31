@@ -1,8 +1,8 @@
 /*
- * primetest.c - Test driver for prime generation.
- *
  * Copyright (c) 1994, 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * primetest.c - Test driver for prime generation.
  */
 
 #include "first.h"

@@ -1,8 +1,8 @@
 /*
- * Get environmental noise.
- *
  * Copyright (c) 1993-1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * Get environmental noise.
  */
 
 #include "first.h"

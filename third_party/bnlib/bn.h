@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * bn.h - the interface to the bignum routines.
  * All functions which return ints can potentially allocate memory
  * and return -1 if they are unable to. All "const" arguments

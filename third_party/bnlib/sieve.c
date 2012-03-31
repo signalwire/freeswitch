@@ -1,8 +1,8 @@
 /*
- * sieve.c - Trial division for prime finding.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * sieve.c - Trial division for prime finding.
  *
  * Finding primes:
  * - Sieve 1 to find the small primes for

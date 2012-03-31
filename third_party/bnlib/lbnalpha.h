@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * lbnalpha.h - header file that declares the Alpha assembly-language
  * subroutines.  It is intended to be included via the BNINCLUDE
  * mechanism.

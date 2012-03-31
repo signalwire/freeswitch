@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * lbn00.c - auto-size-detecting lbn??.c file.
  *
  * Written in 1995 by Colin Plumb.

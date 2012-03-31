@@ -1,8 +1,8 @@
 /*
- * MS-DOS non-echoing keyboard routines.
- *
  * Copyright (c) 1993  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * MS-DOS non-echoing keyboard routines.
  */
 
 #include <conio.h>	/* For getch() and kbhit() */

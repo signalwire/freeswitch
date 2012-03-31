@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 1995  Colin Plumb.  All rights reserved.
+ * For licensing and other legal details, see the file legal.c.
+ *
  * bn68000.c - bnInit() for Motorola 680x0 family, 16 or 32-bit.
  *
  * Written in 1995 by Colin Plumb.

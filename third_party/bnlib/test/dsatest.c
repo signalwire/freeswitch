@@ -1,8 +1,8 @@
 /*
- * dsatest.c - DSA key generator and test driver.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * dsatest.c - DSA key generator and test driver.
  *
  * This generates DSA primes using a (hopefully) clearly
  * defined algorithm, based on David Kravitz's "kosherizer".

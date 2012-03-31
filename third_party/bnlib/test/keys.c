@@ -1,8 +1,8 @@
 /*
- * keys.c - allocate and free PubKey and SecKey structures.
- *
  * Copyright (c) 1995  Colin Plumb.  All rights reserved.
  * For licensing and other legal details, see the file legal.c.
+ *
+ * keys.c - allocate and free PubKey and SecKey structures.
  */
 
 #include "first.h"
