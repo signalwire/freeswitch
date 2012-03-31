@@ -1,0 +1,489 @@
+# 
+# Copyright (c) 2006-2009 Philip R. Zimmermann. All rights reserved.
+# Contact: http://philzimmermann.com
+# For licensing and other legal details, see the file zrtp_legal.c.
+# 
+# Viktor Krykun <v.krikun at zfoneproject.com> 
+
+
+/**
+ * \file  howto.dox
+ * \brief How to Get Up and Running Quickly with libZRTP 
+ */
+
+/**
+\page howto How to Get Up and Running Quickly with libZRTP
+
+****************************************************************************************************
+\section howto_about 1. About
+****************************************************************************************************
+<HR>
+The libzrtp library is a cross-platform implementation of ZRTP, a VoIP encryption protocol developed by Phil Zimmermann. libzrtp is suitable for inclusion in software VoIP clients, firmware for hardware VoIP phones, VoIP PBX servers, mobile VoIP clients, and SIP border control servers, enabling a VoIP application to interoperate and make secure calls with the rest of the ZRTP
+community.
+
+The libzrtp library consists of three main components: the protocol module responsible for the safe connection of a call, the encryption module, and a set of interfaces.  ZRTP works by assuming control of the VoIP traffic and initiating an encrypted connection between two ZRTP endpoints after a safe mode is achieved.  To integrate the library, please review our documentation on the
+ZRTP interfaces, connections management, and integration plan.
+
+
+****************************************************************************************************
+\section howto_quick 2. Quick Info
+****************************************************************************************************
+<HR>
+	***<H3>Building with GNU tools (Linux, *BSD, MacOS X, mingw, etc.)</H3>
+	
+	Generally these should be all that are needed to build the libraries, applications, and samples:
+		-# go to ./projects/gnu and run
+\code
+$ ./configure
+$ make clean && make
+\endcode
+
+	**<H3>Building Win32 Target with Microsoft Visual Studio</H3>
+	Generally we can just do these steps:
+		-# Visual Studio 8: open projects/win/libzrtp_vc8.sln solution,
+		-# build the libzrtp_test application.
+
+	**<H3>Building for Windows Mobile</H3>
+	Generally these are all that are needed:
+		-# Visual Studio 8: open projects/win/libzrtp_wince_vc8.sln solution,
+		-# build the libzrtp_test application.
+
+	**<H3>Locating Output Binaries/Libraries</H3>
+	For GNU targets, library files will be placed to <c>./projects/gnu/build</c> and <c>./third_party/bnlib</c>.
+
+	**<H3>Running the Applications</H3>
+	After successful build, you can try running libzrtp_test application on projects/gnu/build/test directory.
+
+****************************************************************************************************
+\section howto_getting_source 3. Getting the Source Distribution
+****************************************************************************************************
+<HR>
+***\subsection howto_getting_source_tar 3.1 Getting the Release tarball
+   
+   Getting the released tarball is the best way to obtain stable version of libzrtp. The tarball may not contain the latest features or bug-fixes, but normally it is considered more stable, tested and well documented.
+
+   The   latest   released   tarball   can   be   downloaded   from   the http://zfoneproject.com/prod_sdk.html
+
+***\subsection howto_getting_source_svn 3.2 Getting from Subversion trunk
+	At the moment, SVN repository is available for libzrtp developers only. It will be opened for public soon.
+
+***\subsection howto_getting_source_layout 3.3 Source Directories Layout
+	
+   The top-level directories (denoted as $TOP here) in the source distribution contains the following sub-directories:
+   
+	\c $TOP/doc - documentation folder;
+	
+	\c $TOP/include - header files:
+		- \c zrtp_config_user.h - user defined ZRTP configuration options;
+		- \c zrtp_config_win.h - Windows related configuration options;
+		- \c zrtp_config.h - libzrtp automatic configuration routine.
+		- \c zrtp_crypto.h - contains definitions of the data types and functions necessary to
+		strengthen the crypto-segment of the library. These functions are used only by libzrtp
+		developers only. Typical projects based on libzrtp do not  use these functions;
+		- \c zrtp_engine.h - contains types and functions needed by the ZRTP state-machine For 
+		internal use only;
+		- \c zrtp_error.h - contains error codes returned by the libzrtp functions;
+		- \c zrtp_iface_system.h - contains a set of OS-related interface functions which must be 
+		implemented in order to use the library;
+		- \c zrtp_iface.h - contains a set of ZRTP utility interface functions which must be 
+		implemented in order to use the library;
+		- \c zrtp_legal.h - libzrtp license agreement;
+		- \c zrtp_list.h - contains functions and macros for safe operations with linked lists. All 
+		lists in libzrtp are based on these functions. They can be used to avoid mistakes in list operations;
+		- \c zrtp_log.h - contains functions to track bugs and store the error log.;
+		- \c zrtp_pbx.h - conatins declarations of the main PBX related functions. Use this header if you are the implementor of some VoIP-server solutions;
+		- \c zrtp_srtp.h - SRTP crypto types and interfaces. Used to integrate libzrtp with third 
+		party SRTP implementations;
+		- \c zrtp_srtp_builtin.h - data structures for built-in realization of SRTP.
+		- \c zrtp_string.h - contains functions for the use of the special, safe strings, 
+		zrtp_stringn_t, used by libzrtp.
+		- \c zrtp_types.h - contains the definitions of the internal data types which are used by 
+		libzrtp developers and experienced users.
+		- \c zrtp.h - conatins declarations of the main dataypes and function
+		functions necessary to operate libzrtp. This file header is only must to
+		be included in each module using the libzrt functions;
+		
+	\c 	$TOP/projects
+		- \c gnu - make files for Unix-like systems using autotools;
+		- \c symbian - configuration and make files for Symbian platform;
+		- \c win - Set of Microsoft Visual Studio project files for Windows and Windows CE.
+		- \c win_kernel - makefiles for Windows Kernel mode.
+		- \c xcode - project files for Apple Xcode.
+	
+	\c $TOP/src -  libzrtp source files;\n
+	
+	\c $TOP/test - test suite for libZRTP kernel logic. Includes versions for Unix, Windows, 
+	Windows CE and Symbian.	
+	
+	\c $TOP/third_party
+		- \c bnlib - libbn files which are not intended for external use;
+		- \c bgaes - AES encryption library and hash functions by Brian Gladman;
+
+
+****************************************************************************************************
+\section howto_praparations 4. Build Preparation
+****************************************************************************************************
+<HR>
+***\subsection howto_praparations_config 4.1 zrtp_cinfig_user.h
+	
+	Before building libzrtp, some adjustments may be performed according to developers needs. In order to do this, \c include/zrtp_cinfig_user.h should be used. Most of configuration parameters are optional and libzrtp can be build without any modifications.
+	
+	Check \ref zrtp_config for more information.
+
+***\subsection howto_praparations_iface 4.2 libzrtp platform-dependent interfaces
+	
+	The library requires external implementation of some system-dependent functions to enable cross-platform operation. The libzrtp distribution contains almost all interface implementations for the following platforms: Windows, Linux, Mac OSX, Symbian, Windows CE. The Quick Start allows a fast integration of the library. Built-in implementations are used by default and developer don't need to anything more.
+	
+	In order to start using libzrtp, developer should implement just few feedback interfaces. Libzrtp uses callbacks to notify application about some events in ZRTP protocol, such as:	
+		- zrtp_callback_event_t#on_zrtp_secure - notify user about switching to secure;
+		- zrtp_callback_event_t#on_zrtp_not_secure - notify about ZRTP security issues.
+		
+	Another callback which must be implemented - transport routine:
+		- zrtp_callback_misc_t#on_send_packet - libzrtp uses this function to deliver ZRTP protocol message to the remote party.
+	
+	These only two callbacks which must be implemented to start using libzrtp. Example can be found at the end of this article.
+	
+	For more detail information about libzrtp platform-dependent interfaces check \ref XXX.
+	
+****************************************************************************************************
+\section howto_unix 5. Building Linux, *nix, *BSD, and MacOS X Targets with GNU Build Systems
+****************************************************************************************************
+<HR>
+***\subsection howto_unix_targets Supported Targets
+
+   The  new,  autoconf  based  GNU  build system can be used to build the libraries/applications for the following targets:
+     - Linux (i386, Opteron, Itanium, MIPS, PowerPC, etc.),
+     - MacOS X (Intel, PowerPC),
+     - mingw (i386),
+     - FreeBSD (i386, Opteron, etc.),
+     - etc.
+
+***\subsection howto_unix_requir 5.1 Requirements
+
+   In order to use libzrtp's GNU build system, these typical GNU tools are needed:
+     - GNU make,
+     - GNU binutils for the target, and
+     - GNU gcc for the target.
+
+   In addition, the appropriate libraries must be installed for platform-dependent interfaces implementation. This could just be a libc and the appropriate system abstraction library such as Posix.
+
+   The build system is known to work on the following hosts:
+     - Linux, many types of distributions.
+     - MacOS X 10.4 and higher
+     
+***\subsection howto_unix_build 5.2 Running configure and make
+
+   Run  "./configure"  without  any  options to let the script detect the appropriate settings for the host:
+\code
+   $ cd libzrtp
+   $ ./configure
+   ...
+\endcode
+
+	Once the configure script completes successfully, libzrtp is ready to be built. Use following commands:
+\code
+   $ cd libzrtp
+   $ make clean
+   $ make
+\endcode
+
+	Description of all make targets supported by the Makefile's:
+   		- \c all. The default (or first) target to build the library binary;
+   		- \c clean. Clean the object files and libzrtp binary;
+   		- \c check. Build test cases and start libzrtp_test application;
+   		- \c distclean. Remove  all  generated  files (object, libraries, binaries, and
+          dependency files).
+        - \c install. Make install of libzrtp headers and binaries;
+        - \c uninstall. Remove installed headers and binaries.
+
+****************************************************************************************************
+\section howto_osx 6. Building MacOS X Targets with Xcode
+****************************************************************************************************
+<HR>
+***\subsection howto_osx_requir 6.1 Requirements 
+	
+	To build libzrtp on OS X using Xcode you need following:
+		- Mac OSX 10.4 or later.
+		- Apple developers Tools installed.
+		- Xcode 3.1 or higher.
+		
+***\subsection howto_osx_build 6.2 Building the Projects
+
+   Follow the steps below to build libzrtp using Apple Xcode:
+   		-# For Apple Xcode: open \c projects/xcode/libzrtp.xcodeproj project file.
+    	-# Set "libzrtp" or "libzrtp_ec" as Active Target.
+    	-# Select Debug or Release build as appropriate.
+    	-# Build "configure" target.
+    	-# Build the project. This will build libzrtp with all dependencies.
+    	-# After successful build, libzrtp will be placed in \c projects/xcode/build/Debug or Release.
+    	
+   Use \c projects/xcode/libzrtp_test.xcodeproj by analogy to build the test application.
+   
+****************************************************************************************************
+\section howto_win 7. Building for Windows Targets with Microsoft Visual Studio
+****************************************************************************************************
+<HR>
+***\subsection howto_win_requir 7.1 Requirements 
+	
+	The Microsoft Visual Studio based project files can be used with one of the following:
+		- Microsoft Visual C++ 2005 (including Express edition),
+
+   For the host platform, the following are required:
+     	- Windows NT, 2000, XP, 2003, or later ,
+     	- Sufficient amount of RAM for the build process (at least 256MB).
+
+***\subsection howto_win_build 7.2 Building the Projects
+
+   Follow the steps below to build libzrtp using Visual Studio:   		
+    	-# For Visual Studio 8 (VS 2005): open libzrtp_vs8.sln solution file.
+    	-# Set "libzrtp" or "libzrtp_ec" as StartUp Project.
+    	-# Select Debug or Release build as appropriate.
+    	-# Build the project. This will build libzrtp and all dependencies.
+    	-# After successful build, libzrtp will be placed in \c projects/win/Debug or Release.
+    	
+    To build libzrtp test-cases use "libzrtp_test" as StartUp Project and perform steps listed above.
+
+****************************************************************************************************
+\section howto_wince 8. Building for Windows Mobile Targets (Windows CE/WinCE/PDA/SmartPhone)
+****************************************************************************************************
+<HR>
+***\subsection howto_wince_requir 8.1 Requirements 
+	
+	The Microsoft Visual Studio based project files can be used with one of the following:
+		- Microsoft Visual C++ 2005
+
+   For the host platform, the following are required:
+     	- Windows NT, 2000, XP, 2003, or later ,
+     	- Sufficient amount of RAM for the build process (at least 256MB).
+
+***\subsection howto_wince_build 8.2 Building the Projects
+
+   Follow the steps below to build libzrtp using Visual Studio:   		
+    	-# For Visual Studio 8 (VS 2005): open libzrtp_wince_vs8.sln solution file.
+    	-# Set "libzrtp" or "libzrtp_ec" as StartUp Project.
+    	-# Select Debug or Release build as appropriate.
+    	-# Build the project. This will build libzrtp and all dependencies.
+    	-# After successful build, libzrtp will be placed in \c projects/win/Debug or Release.
+    	
+\note
+	The Test Application is not available for Windows Mobile platform at the moment. We will fix this in next version of libzrtp.    
+
+****************************************************************************************************
+\section howto_symbian 9. Building for Symbian
+****************************************************************************************************
+<HR>
+
+****************************************************************************************************
+\section howto_using 10. Using libzrtp with Applications
+****************************************************************************************************
+<HR>
+	Regardless of the build system being used, the following tasks are normally needed to be done in order to build application to use libzrtp:
+    -# Add following include directories in the include search path:
+    	- \c libzrtp/include
+    	- \c libzrtp/include/enterprise (if you are using Enterprise version of libzrtp)
+    	- \c libzrtp/third_party/bgaes
+    	- \c libzrtp/third_party/bnlib
+    	- \c libzrtp/projects/gnu/config (for GNU Autoconf targets)
+    -# Put these library directories in the library search path:
+    	- \c libzrtp/third_party/bnlib
+    	- \c libzrtp/projects/gnu/build (for GNU Autoconf targets)
+    	- \c libzrtp/projects/xcode/build/Release (when building with Xcode)
+    	- \c libzrtp/projects/win/Release (when building with Visual Studio)
+    -# Include \c libzrtp.h header file to the application.
+    -# Link with \c libzrtp and \c bnlib.
+    -# Link with system spesific libraries:
+    	- Windows: Add (among other things): ws2_32.lib.
+        - Linux, *nix, *BSD: Add (among other things): '-lpthread'.
+        - MacOS X: Add (among other things): '-lpthread'.
+
+****************************************************************************************************
+\section howto_example 11. Quick Start Example
+****************************************************************************************************
+<HR>
+
+An overview for creating an encrypted channel using libzrtp:
+
+*** \subsection howto_example_init 11.1 Initialization
+	
+	The library supports profiling and dictating different channel parameters,	 though the initialization can be performed by one function call with default parameters. 
+
+\code
+typedef struct testcon_t
+{
+	zrtp_session_t	*zrtp_session;	// ZRTP Session structure
+	zrtp_stream_t	*zrtp_audio;	// ZRTP stream for voice encryption
+	zrtp_stream__t	*zrtp_video;	// ZRTP stream for video encryption
+} testcon_t;
+
+testcon_t safe_connection;			// Secure channel instance
+zrtp_global_t zrtp_global;			// Persistent storage for libzrtp data
+\endcode
+
+\code
+zrtp_status_t s = zrtp_status_ok;
+zrtp_config_t zrtp_config;
+
+// Initialize zrtp config with default values 
+zrtp_config_defaults(&zrtp_config);
+
+// Make some adjustments:
+// - Set Client ID to identify ourself
+// - Set appropriate license mode
+// - We going to use  default zrtp cache implementation, so let's specify cache file path
+strcpy(zrtp_config.client_id, TEST_CLIENT_ID);
+zrtp_config.lic_mode = ZRTP_LICENSE_MODE_ACTIVE;
+zrtp_zstrcpyc( ZSTR_GV(zrtp_config.def_cache_path), TEST_CACHE_PATH);
+
+// Define interface callback functions
+zrtp_config.cb.misc_cb.on_send_packet 			= on_send_packet;
+zrtp_config.cb.event_cb.on_zrtp_secure 			= on_zrtp_secure;
+zrtp_config.cb.event_cb.on_zrtp_security_event 	= on_zrtp_event;
+
+// Everything is ready - initialize libzrtp.		
+s = zrtp_init(&zrtp_config, &zrtp_global);
+if (zrtp_status_ok != s) {
+	// Check error code and debug logs	
+}
+
+// The library has been initialized and is ready to use
+. . .
+\endcode
+
+*** \subsection howto_example_sessions 11.2 Sessions/Streams
+
+	The library operates with the ZRTP streams concept, where each packet is encrypted within this stream.  The streams are created before the start of the encryption process.
+
+\code
+//
+// Allocate zrtp session with default parameters
+//
+z = zrtp_session_init( zrtp_global,
+						NULL,
+						zid,						
+						is_initator,
+						&safe_connection->zrtp_session);
+if (zrtp_status_ok != s) {
+	// Check error code and debug logs	
+}
+
+// Set call-back pointer to our parent structure
+zrtp_session_set_userdata(safe_connection->zrtp_session, &safe_connection);
+
+// 
+// Attach Audio and Video Streams
+//
+s = zrtp_stream_attach(safe_connection->zrtp_session, &safe_connection->zrtp_audio);
+if (zrtp_status_ok != s) {
+	// Check error code and debug logs
+}
+zrtp_stream_set_userdata(safe_connection->zrtp_audio, &safe_connection);
+
+s = zrtp_stream_attach(safe_connection->zrtp_session, &safe_connection->zrtp_video);
+if (zrtp_status_ok != s) {
+	// Check error code and debug logs
+}
+zrtp_stream_set_userdata(safe_connection->zrtp_video, &safe_connection);
+\endcode
+
+
+*** \subsection howto_example_protocol 11.3 Protocol Handling
+
+ 	To create an encrypted channel, run the ZRTP engine for each stream added to the session. In our case we have two streams. The library will notify when achieving safe mode through the feedback path interface.
+
+\code
+//
+// Streams are ready - initiate ZRTP protocol 
+//
+zrtp_stream_start(safe_connection->zrtp_audio, assrc);
+zrtp_stream_start(safe_connection->zrtp_video, vssrc);
+\endcode
+
+The three steps above create the encrypted channel. After entering the "Secure" state, you provide a plain packet to the library and receive an encrypted packet ready to be sent. Decryption works in the analogous way.
+
+\code
+zrtp_status_t s = zrtp_status_fail;
+char packet[MAX_RTP_SIZE];
+int  size = 0;
+
+// Some abstract function for packets receiving
+size = get_packet(packet);
+
+ //
+ // Processing incoming packets. 
+ // You must determine media type and choose corresponding ZRTP stream
+ //
+s = zrtp_process_srtp(safe_connection->zrtp_audio, packet, &size);
+switch (s) {
+	case zrtp_status_ok:
+		//
+		// Packet was successfully decrypted. Dont forget that packet
+		// size was changed during decryption. New size now in size 
+		//
+ 	
+	case zrtp_status_drop:
+		 //
+ 		 // This is a protocol ZRTP packet or masked RTP media.
+		 // In either case the packet must be dropped to protect your 
+		 // private data and media codec
+	
+	case zrtp_status_fail:
+		//
+		// This is some kind of error - see logs for more information.
+		// Don't put such packet to the network. It is not secure.
+		//
+}
+\endcode
+
+*** \subsection howto_example_callbacks 11.4 Callbacks
+
+	libzrtp informs the user application about all changes in protocol state through a system of callback functions.  The developer's guide considers this question in detail in \ref XXX. In most cases we need to display the SAS string and some other stream options after switching to the Secure state. An example of doing this is follow:
+
+\code
+static void on_zrtp_secure(zrtp_stream_t *stream, unsigned event)
+{
+    test_options_t* info; // some user-defined stream options    
+
+    switch (event) {
+		case ZRTP_EVENT_IS_SECURE:
+		{
+			safe_connection_t* safe_connection = zrtp_stream_get_userdata(stream);
+			zrtp_session_info_t zrtp_session_info;
+			
+			zrtp_session_get(safe_connection->zrtp_session, &zrtp_session_info);
+			//
+			// Print out SAS  there.
+			//
+		} break;
+		
+		// ...
+		// handle other events there
+
+		default: 
+	   		break;
+   }
+}
+\endcode
+	
+An overview for closing an secure channel using libzrtp: 
+
+*** \subsection howto_example_utilization 11.5 Utilization
+
+	The uninstall session permits libzrtp to dispose of all engaged resources and release memory for session context storage.  ZRTP streams will be also released,  so  you don't need to call separate functions.
+
+\code
+zrtp_session_down(safe_connection->zrtp_session);
+\endcode
+
+	When you no longer need the library, dispose of all resources allocated before the beginning of the operation.
+
+\code
+zrtp_down(&zrtp_global);
+\endcode
+
+****************************************************************************************************
+\section howto_summary 12. Summary
+****************************************************************************************************
+<HR>
+Integration of libzrtp requires familiarity with the protocol and the  library operation features.  While the encryption of VoIP is not a trivial task, we have attempted to simplify as much as possible the work required to integrate libzrtp.
+
+*/

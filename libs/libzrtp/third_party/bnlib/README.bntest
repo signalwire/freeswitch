@@ -1,0 +1,28 @@
+Test driver for low-level BigNum library correctness.
+
+In addition to the generic "bntest" program, which picks a size
+at compile time, there are specific test drivers, bntest16,
+bntest32 and bntest64 that you can compile specifically, e.g.
+to test multiple word sizes.
+
+bntest is different from other programs in that it invokes the
+low-level BigNum functions directly.  It need only be linked with
+lbnmem.o, lbn32.o and legal.o.  This is not normally desirable, but
+it lets this test driver isolate errors better in the bottom-level
+primitives.
+
+It's served very well in tracking down errors.  If you write some new
+assembly primitives and it doesn't find a problem with them, you
+can have a good deal of confidence that they're correct.
+
+This program also does timing tests on basic modular exponentiation.
+It is invoked as bntest [modsize [expsize [expsize2]]].
+If modsize is not specified, it only runs consistency checks.
+If expsize is not specified, it defaults to modsize.
+If expsize2 is not specified, it defaults to expsize.
+Invalid arguments produce a usage message.
+
+Example invocation lines:
+bntest
+bntest 512
+bntest 1024 160

@@ -1,0 +1,215 @@
+	The choice of Diffie-Hellman parameters
+
+* Background
+
+Diffie-Hellman key exchange uses two parameters, a prime p and a
+generator g, which are used to derive the public parameters
+y1 = g^x1 (mod p) and y2 = g^x2 (mod p), and then the shared secret
+z = y1^x2 = (g^x1)^x2 = g^(x1*x2) = (g^x2)^x1 = y2^x1 (mod p).
+
+For the computation to be secure, several conditions must be true.
+The exponent must be big enough, for there is a square-root search
+algorithm to find the exponent.  (E.g. a 16-bit exponent can be found
+in about 2^8 = 256 steps.)  And then the modulus must be chosen so
+as to make the general discrete log problem difficult.
+
+The general discrete log problem can be solved for each prime-power
+factor of p-1 independently, so if all of the factors of p-1 are small,
+this is easy to do.  Since p-1 is even, it must have a factor of 2, but
+the remaining portion q = (p-1)/2 can be chosen to be prime, making the
+problem as difficult as possible.  Finding such numbers is computationally
+expensive, but as they are parameters which are only computed once, this
+is a reasonable up-front cost.
+
+* Number theory
+
+A second advantage of prime moduli of this form is that all generators
+g are good.  This is because the generator must have a large order in
+the group Z*_p.  But that group is of size p-1 = 2*q, and the order of
+any element of a group must divide the size of the group.  The only
+divisors this has are 1, 2, q and 2*q.  The only element of order 1 is
+1, and the only element of order 2 is -1.  All other elements, from 2
+through -2, have orders of either p-1 or (p-1)/2, which are both large.
+
+If the generator g has order p-1, it is a generator of the group Z*_p,
+and this is generally how one is advised to generate Diffie-Hellman
+parameters.  This explains the similarity in names.  However, if g is
+of order p-1, then it must be a quadratic non-residue modulo p.  That
+is, it must not be a square of another number.  If it were a square,
+then since the size of the group is even, no power of it would ever
+equal its square root, so it could not be a generator.
+
+If g is indeed of order p-1, then even powers of g are quadratic
+residues (squares, modulo p), and odd powers are quadratic non-residues
+(non-squares).  Given a number y and a prime p, the Legendre symbol
+(y/p) is straightforward to compute, and this tells you if y is a
+quadratic residue.  If it is, and y = g^x, then x must be even.  If not,
+then x would have to be odd.  In this way, for a generator which is a
+quadratic non-residue, the low-order bit of the exponent x is easily
+computed.
+
+If g is a quadratic residue, then the useful values of exponents x is
+more limited, since only the value of the exponent x modulo q = (p-1)/2
+has any effect on the output y = g^x (mod p), but generally exponents x
+are much less than p in any case, so this limitation on range is not an
+issue.
+
+Essentially, in either case, only the value of x modulo q is secret,
+but if g is a quadratic non-residue, the low-order bit of x is
+available to an attacker, while if it is a quadratic residue, the
+high-order bit is known to be 0.
+
+Thus, it does not really matter whether g is a quadratic residue or
+not, but if it is not, the exponent x should be chosen one bit larger.
+This adds a trivial amount of work to the computation of y, and for
+that reason it may be preferable to choose g to be a quadratic
+residue.  This is not currently done, however.
+
+* Choice of generator g
+
+Because any g will do, and the choice of g does not affect the difficulty
+of performing the discrete log computation, choosing it for convenience
+of computation is best, and g = 2 is simplest to compute with.
+
+If in fact it is desirable to choose a generator which is a quadratic
+residue, then g = 2 can still be used if the prime p is suitably
+chosen.  If p = +/-1 (mod 8), then 2 is a quadratic residue.  If
+p = +/-3 (mod 8), then 2 is a non-residue.
+
+* Choice of prime-generation technique
+
+There may be additional primes of special form for which the discrete
+logarithm problem is particularly easy.  The authors are not aware of
+any, but theoretical advances are possible and it would be nice to
+assure users of the system that the prime was not chosen to have any
+hidden special properties: only the published criteria were used.
+David Kravitz of the NSA has suggested a technique for generating
+"kosherized" primes for DSS which has been adapted to generate
+Diffie-Hellman primes.
+
+The technique uses a string of bytes as a seed to a cryptographically
+strong one-way hash function.  This generator produces the initial
+value for a search for a suitable prime.
+
+David Kravitz' technique generates random numbers from successive seeds
+until one is found to be a suitable prime.  This is unbearably slow for
+primes of the special form being sought, but it can be sped up, at a
+negligible cost in uniformity of the chosen primes by generating only a
+starting position for a linear search for a suitable prime.  Such a
+search can be carried out particularly efficiently.
+
+* Details of the technique
+
+The generator is based on SHA.1, the FIPS 180.1 secure hash algorithm.
+This takes the given seed as input and produces a 160-bit output
+sequence in 20 bytes.  These bytes are taken as a big-endian number to
+produce a number n0 from 0 to 2^160-1.
+(I.e. n0 = 2^152 * byte0 + 2^144 * byte1 + ... + 2^8 * byte19 + byte20.)
+
+Then, the seed is incremented, as a big-endian array of bytes, modulo its
+size (i.e. the last byte is incremented, propagating carry if necessary),
+and hashed again to produce n1, then n2, etc.
+
+A number of arbitrary size may be constructed by concatenating
+N = n0 + 2^160 * n1 + 2^320 * n2 + ....  To get a number no larger
+than 2^k, take the low-order k bits of N, N mod 2^k.  Obviously,
+if k is 1024, it is only necessary to compute n0 through n6.
+
+To generate a k-bit prime p (2^k > p >= 2^(k-1)), take t = N mod 2^(k-2),
+i.e. a number with at most k-2 significant bits.  Then add 2^(k-1),
+to force the number into the desired range, and 2^(k-2), to force it
+into the high half of the range.  This extra refinement makes an attack
+more expensive, without affecting the time required to do computations
+mod p.  Additional high-order 1 bits could be forced, but the incremental
+benefit rapidly diminishes.
+
+The resultant number t is used as the starting point in a search for a
+suitable prime p.  p is chosen to be the first number >= t such that p
+is prime and (p-1)/2 is prime.
+
+* Choice of seed
+
+Because SHA.1 is a cryptographic hash, it is computationally infeasible
+to find an input which has a given output.  Indeed, there is no known
+technique better than brute-force search to find an input which
+produces an output with any special properties.  Assuming that there is
+an unknown class of primes which are easy to solve the discrete
+logarithm problem for, this ensures that the chance of choosing a prime
+p which is a member of that class is no better than random chance,
+regardless of malice on the part of the designer.
+
+The seed chosen is arbitrary, so was chosen for aesthetic reasons.
+It is the 79 bytes of the ASCII representation of a quote by Mahatma
+Gandhi:
+
+Whatever you do will be insignificant, but it is very important that you do it.
+
+* Implementation details
+
+Obviously, a program was written to find a prime according to these
+rules.  To aid anyone who wishes to repeat the search to confirm that
+the published primes were indeed generated in this way, here is a
+description of how it was done.  The primes if the desired form have a
+density of about (ln p)^-2.  E.g. for 1024-bit p, about one out of
+every 503791 numbers meets these criteria, so a considerable amount of
+searching is required.  The following techniques can make the
+computation tolerable.
+
+First, note that q must be odd and not congruent to 0, modulo 3.  Thus,
+q must be congruent to +/-1, modulo 6.  Thus p = 2*q+1 must be
+congruent to 2*1+1 = 3 or 2*-1+1 = -1 modulo 12.  But p congruent to 3
+mod 12 would be divisible by 3, and not prime, so p must be congruent
+to 11 mod 12.
+
+Thus, the initial search point t can first be increased until it is
+congruent to 11 modulo 12.  Searching from this point forward, only
+every 12th number, t+12*i, needs to be considered.
+
+If it is desired to choose p so that 2 is a quadratic residue (meaning
+that p is congruent to +/-1 modulo 8), then this additional constraint
+can be met with no additional difficulty by beginning at the next
+number which is congruent to 23 mod 24 and searching in steps of 24.
+But in the following discussion, a step size of 12 is assumed.
+
+Then, a sieve is built for trial division by a number of small primes
+for a range of following i values.  For large primes, a large search
+space is required, so a large sieve is desirable.  The value used was
+65536 bits (8K bytes).  It may be necessary to rebuild the sieve
+beginning at t+12*65536 if no suitable prime is found before then, but
+this sieve is large enough that the refilling is infrequent and the
+overhead is negligible.
+
+Initially, every position in the sieve is marked as a potential prime.
+Then, for the small primes s from 5 through 65521, position i in the
+sieve is marked as unsuitable if t+12*i is divisble by s, i.e.
+definitely not prime.  To do this cheaply, consider that t+12*i = 0
+(mod s) if i = -12^-1 * t (mod s).  So finding t mod s, then 12^-1 (mod
+s) and multiplying (mod s) will produce the first i value which is
+known to be divisible by s, and then every s positions thereafter in
+the sieve will be divisible.  This does the equivalent of a great deal
+of trial division with minimal effort.
+
+Positions in the sieve are also marked as as unsuitable if (t-1)/2+6*i
+= 0 (mod s), because these positions will have (p-1)/2 divisible by s
+and thus non-prime.  This works similarly, and (t-1)/2 mod s can be
+derived from t mod s without actually doing another full division.
+
+This sieve filters out all but 1/591 of the possible values of i as
+obviously composite, leaving an expected 852 numbers to be checked by
+stronger means before a suitable prime p is found.
+
+After these two sieving operations have removed all numbers from
+consideration where p or q = (p-1)/2 have small divisors, the remaining
+candidates are subjected to a fast optimized Fermat test, to the base 2,
+once for p and once for q.  This eliminates, for practical purposes,
+all composite numbers.
+
+Special composite numbers can be chosen which pass this test and yet
+are not primes - they are called pseudoprimes - but they are so rare in
+the ranges considered that the chances of finding one without
+deliberate search are utterly negligible.  And the stating value for
+the search was carefully chosen to have no hidden special properties.
+
+If p and q are found to be prime by this test, some extra confirmation
+pseudoprimality tests are performed just to make sure of the conclusion
+and p is returned as the result.

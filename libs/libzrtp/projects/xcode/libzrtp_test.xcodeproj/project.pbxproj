@@ -1,0 +1,295 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		8D6EECFF0F01458D00529121 /* zrtp_test_core.c in Sources */ = {isa = PBXBuildFile; fileRef = 8D6EECF70F01458D00529121 /* zrtp_test_core.c */; };
+		8D6EED000F01458D00529121 /* zrtp_test_crypto.c in Sources */ = {isa = PBXBuildFile; fileRef = 8D6EECF80F01458D00529121 /* zrtp_test_crypto.c */; };
+		8D6EED010F01458D00529121 /* zrtp_test_queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 8D6EECF90F01458D00529121 /* zrtp_test_queue.c */; };
+		8D6EED020F01458D00529121 /* zrtp_test_ui.c in Sources */ = {isa = PBXBuildFile; fileRef = 8D6EECFA0F01458D00529121 /* zrtp_test_ui.c */; };
+		8D6EED110F0145BF00529121 /* libzrtp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D6EED0F0F0145AA00529121 /* libzrtp.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		8D6EED0E0F0145AA00529121 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8D6EED030F0145AA00529121 /* libzrtp.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8996E0300EC9CA8C007D7FD5;
+			remoteInfo = libzrtp_ec;
+		};
+		8D6EED490F01487C00529121 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8D6EED030F0145AA00529121 /* libzrtp.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 8996DFD70EC9CA8C007D7FD5;
+			remoteInfo = libzrtp_ec;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		8D6EEC500F013D2A00529121 /* libzrtp_test_ec */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = libzrtp_test_ec; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D6EECF50F01450800529121 /* zrtp_test_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_test_core.h; path = ../../test/pc/zrtp_test_core.h; sourceTree = SOURCE_ROOT; };
+		8D6EECF60F01450800529121 /* zrtp_test_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zrtp_test_queue.h; path = ../../test/pc/zrtp_test_queue.h; sourceTree = SOURCE_ROOT; };
+		8D6EECF70F01458D00529121 /* zrtp_test_core.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = zrtp_test_core.c; path = ../../test/pc/zrtp_test_core.c; sourceTree = SOURCE_ROOT; };
+		8D6EECF80F01458D00529121 /* zrtp_test_crypto.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = zrtp_test_crypto.c; path = ../../test/pc/zrtp_test_crypto.c; sourceTree = SOURCE_ROOT; };
+		8D6EECF90F01458D00529121 /* zrtp_test_queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = zrtp_test_queue.c; path = ../../test/pc/zrtp_test_queue.c; sourceTree = SOURCE_ROOT; };
+		8D6EECFA0F01458D00529121 /* zrtp_test_ui.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = zrtp_test_ui.c; path = ../../test/pc/zrtp_test_ui.c; sourceTree = SOURCE_ROOT; };
+		8D6EED030F0145AA00529121 /* libzrtp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = libzrtp.xcodeproj; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8D6EEC4E0F013D2A00529121 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D6EED110F0145BF00529121 /* libzrtp.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* libzrtp_test */ = {
+			isa = PBXGroup;
+			children = (
+				8D6EED030F0145AA00529121 /* libzrtp.xcodeproj */,
+				08FB7795FE84155DC02AAC07 /* Source */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+			);
+			name = libzrtp_test;
+			sourceTree = "<group>";
+		};
+		08FB7795FE84155DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				8DFEC0890F0125D3004540A4 /* include */,
+				8DFEC08A0F0125DE004540A4 /* src */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8D6EEC500F013D2A00529121 /* libzrtp_test_ec */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8D6EED040F0145AA00529121 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8D6EED0F0F0145AA00529121 /* libzrtp.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8DFEC0890F0125D3004540A4 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				8D6EECF50F01450800529121 /* zrtp_test_core.h */,
+				8D6EECF60F01450800529121 /* zrtp_test_queue.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		8DFEC08A0F0125DE004540A4 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				8D6EECF70F01458D00529121 /* zrtp_test_core.c */,
+				8D6EECF80F01458D00529121 /* zrtp_test_crypto.c */,
+				8D6EECF90F01458D00529121 /* zrtp_test_queue.c */,
+				8D6EECFA0F01458D00529121 /* zrtp_test_ui.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8D6EEC4F0F013D2A00529121 /* libzrtp_test_ec */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8D6EEC5D0F013D3E00529121 /* Build configuration list for PBXNativeTarget "libzrtp_test_ec" */;
+			buildPhases = (
+				8D6EEC4D0F013D2A00529121 /* Sources */,
+				8D6EEC4E0F013D2A00529121 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8D6EED4A0F01487C00529121 /* PBXTargetDependency */,
+			);
+			name = libzrtp_test_ec;
+			productName = libzrtp_test_ec;
+			productReference = 8D6EEC500F013D2A00529121 /* libzrtp_test_ec */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0410;
+			};
+			buildConfigurationList = 1DEB928908733DD80010E9CD /* Build configuration list for PBXProject "libzrtp_test" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 1;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 08FB7794FE84155DC02AAC07 /* libzrtp_test */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 8D6EED040F0145AA00529121 /* Products */;
+					ProjectRef = 8D6EED030F0145AA00529121 /* libzrtp.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				8D6EEC4F0F013D2A00529121 /* libzrtp_test_ec */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		8D6EED0F0F0145AA00529121 /* libzrtp.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libzrtp.a;
+			remoteRef = 8D6EED0E0F0145AA00529121 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8D6EEC4D0F013D2A00529121 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D6EECFF0F01458D00529121 /* zrtp_test_core.c in Sources */,
+				8D6EED000F01458D00529121 /* zrtp_test_crypto.c in Sources */,
+				8D6EED010F01458D00529121 /* zrtp_test_queue.c in Sources */,
+				8D6EED020F01458D00529121 /* zrtp_test_ui.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8D6EED4A0F01487C00529121 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = libzrtp_ec;
+			targetProxy = 8D6EED490F01487C00529121 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB928A08733DD80010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		1DEB928B08733DD80010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		8D6EEC520F013D2B00529121 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					../../third_party/bnlib,
+					../../third_party/bgaes,
+					../../projects/gnu/config,
+					../../include/enterprise,
+					../../include,
+				);
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = (
+					../../third_party/bnlib,
+					"\"$(SRCROOT)/../../../third_party/bnlib\"",
+				);
+				OTHER_CFLAGS = "";
+				PRODUCT_NAME = libzrtp_test_ec;
+				SYMROOT = build_test;
+			};
+			name = Debug;
+		};
+		8D6EEC530F013D2B00529121 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				HEADER_SEARCH_PATHS = (
+					../../third_party/bnlib,
+					../../third_party/bgaes,
+					../../projects/gnu/config,
+					../../include/enterprise,
+					../../include,
+				);
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = (
+					../../include/third_party/bnlib,
+					"\"$(SRCROOT)/../../../third_party/bnlib\"",
+				);
+				OTHER_CFLAGS = "-DZRTP_USE_ENTERPRISE=1";
+				PRODUCT_NAME = libzrtp_test_ec;
+				SYMROOT = build_test;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB928908733DD80010E9CD /* Build configuration list for PBXProject "libzrtp_test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB928A08733DD80010E9CD /* Debug */,
+				1DEB928B08733DD80010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8D6EEC5D0F013D3E00529121 /* Build configuration list for PBXNativeTarget "libzrtp_test_ec" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8D6EEC520F013D2B00529121 /* Debug */,
+				8D6EEC530F013D2B00529121 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}

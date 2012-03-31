@@ -1,0 +1,131 @@
+# 
+# Copyright (c) 2006 Philip R. Zimmermann. All rights reserved.
+# Contact: http://philzimmermann.com
+# For licensing and other legal details, see the file zrtp_legal.c.
+# 
+# Andrew Rozinko <a.rozinko@soft-industry.com>
+
+#
+# THIS MAKEFILE WORKS WITH MICROSOFT NMAKE ONLY
+#
+
+# change this to point to your DDK
+
+DDK = ..\..\..\..\winddk2003
+OS = wnet
+BASENAME = libzrtp
+BINPATH = $(DDK)\bin\win64\x86\amd64
+
+#RELEASE = 1
+
+CC = $(BINPATH)\cl
+ASM = $(BINPATH)\ml
+LIB = $(BINPATH)\lib
+
+all: $(BASENAME).lib
+
+# bnlib (the BigNumber engine)
+
+bnlib    = \
+		../../third_party/bnlib/bn.obj \
+		../../third_party/bnlib/bn32.obj \
+		../../third_party/bnlib/bninit32.obj \
+		../../third_party/bnlib/lbn32.obj \
+		../../third_party/bnlib/lbnmem.obj \
+		../../third_party/bnlib/legal.obj
+
+protocol = \
+		../../src/zrtp.obj \
+		../../src/zrtp_crc.obj \
+		../../src/zrtp_crypto_aes.obj \
+		../../src/zrtp_crypto_atl.obj \
+		../../src/zrtp_crypto_hash.obj \
+		../../src/zrtp_crypto_pk.obj \
+		../../src/zrtp_crypto_sas.obj \
+		../../src/zrtp_datatypes.obj \
+		../../src/zrtp_engine.obj \
+		../../src/zrtp_iface_sys.obj \
+		../../src/zrtp_initiator.obj \
+		../../src/zrtp_legal.obj \
+		../../src/zrtp_list.obj \
+		../../src/zrtp_log.obj \
+		../../src/zrtp_pbx.obj \
+		../../src/zrtp_protocol.obj \
+		../../src/zrtp_responder.obj \
+		../../src/zrtp_rng.obj \
+		../../src/zrtp_srtp_builtin.obj \
+		../../src/zrtp_string.obj \
+		../../src/zrtp_utils.obj \
+		../../src/zrtp_utils_proto.obj
+
+bgaes      = \
+		../../third_party/bgaes/aes_modes.obj \
+		../../third_party/bgaes/aescrypt.obj \
+		../../third_party/bgaes/aeskey.obj \
+		../../third_party/bgaes/aestab.obj \
+		../../third_party/bgaes/sha1.obj \
+		../../third_party/bgaes/sha2.obj
+
+OBJECTS  = $(bnlib) $(protocol) $(bgaes) 
+
+!IFNDEF RELEASE
+
+# Debug
+
+OUT_DIR = debug64.km
+
+DEFINES_D = -DWIN64=1 -D_WIN64=1 -D_AMD64_=1 -D_M_AMD64 -D_WINDOWS \
+-DSTD_CALL -DCONDITION_HANDLING=1 \
+-DNT_UP=1 -DNT_INST=0 -D_NT1X_=100 \
+-DWINNT=1 -D_WIN32_WINNT=0x0500 -DWIN32_LEAN_AND_MEAN=1 -DDBG=1 -D_DEBUG -DDEBUG -DDEVL=1 \
+-DFPO=0 -D_DLL=1 -D_IDWBUILD -DRDRDBG -DSRVDBG -DDBG_MESSAGES=1 \
+-D_UNICODE -DLITTLE_ENDIAN -DZRTP_USE_ENTERPRISE=0
+
+CFLAGS_D = $(DEFINES_D) -Zp8 -Gy -cbstring -Gz -Gm- -EHs-c- \
+-GR- -GF -FI$(DDK)\inc\$(OS)\warning.h -Z7 -Od -Oi -Oy- -W3
+
+!ELSE
+
+# Release
+
+OUT_DIR = release64.km
+
+DEFINES_D = -DWIN64=1 -D_WIN64=1 -D_AMD64_=1 -D_M_AMD64 -D_WINDOWS \
+-DSTD_CALL -DCONDITION_HANDLING=1 \
+-DNT_UP=1 -DNO_DISK_ACCESS -DNT_INST=0 -DWIN32=100 -D_NT1X_=100 \
+-DWINNT=1 -D_WIN32_WINNT=0x0500 -DWIN32_LEAN_AND_MEAN=1 -DDEVL=1 \
+-DFPO=1 -DNDEBUG -D_DLL=1 -D_IDWBUILD -D_UNICODE \
+-DLITTLE_ENDIAN  -DZRTP_USE_ENTERPRISE=0
+
+CFLAGS_D = $(DEFINES_D) -Zel -Zp8 -Gy -cbstring -Gz -QIfdiv- -QIf -Gi- -Gm- -GX- \
+-GR- -GF -Oxs -Oy -FI$(DDK)\inc\$(OS)\warning.h -W3 -FAcs -Z7
+
+!ENDIF
+
+ASM      = ml
+AFLAGS   = /c /Cx /coff /Zi
+AINCLUDE = -I. -I$(DDK)\inc
+
+CFLAGS = $(CFLAGS_D) -nologo -DHAVE_CONFIG_H=1 -DNT_DRIVER -D__BUILDMACHINE__=WinDDK \
+	-I$(DDK)\inc\$(OS) -I$(DDK)\inc\ddk\$(OS)  -I$(DDK)\inc\ddk\wdm\$(OS) \
+	-I$(DDK)\inc\crt -I..\..\third_party\bnlib\config -I..\..\third_party\bnlib \
+	-I..\..\third_party\bgaes -I..\..\test\include -I..\..\include  -I..\..\include\enterprise
+
+.c.obj :
+	@$(CC) -c $(CFLAGS) $< /Fo$(OUT_DIR)/$(<B).obj
+
+.asm.obj:
+        $(ASM) $(AINCLUDE) $(AFLAGS) /Fo$(OUT_DIR)/$(<B).obj $<
+
+$(BASENAME).lib : $(OUT_DIR) $(OBJECTS)
+	$(LIB) /OUT:"$(OUT_DIR)\$(BASENAME).lib" /NOLOGO $(OUT_DIR)\*.obj
+
+$(OUT_DIR) :
+	@mkdir $(OUT_DIR)
+
+clean:
+	del "$(OUT_DIR)\*.obj"
+	del "$(OUT_DIR)\*.res"
+	del "$(OUT_DIR)\*.map"
+	del "$(OUT_DIR)\*.pdb"
+	del "$(OUT_DIR)\$(BASENAME).lib"

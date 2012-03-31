@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2006-2007 Philip R. Zimmermann. All rights reserved.
+ * Contact: http://philzimmermann.com
+ * 
+ * Nikolay Popok mailto: <chaser@soft-industry.com>
+ *
+ */
+
+PRJ_MMPFILES
+libzrtp.mmp
+
+PRJ_PLATFORMS
+WINSCW GCCE WINC

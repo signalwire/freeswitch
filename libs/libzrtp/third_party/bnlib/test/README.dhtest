@@ -1,0 +1,21 @@
+Test driver for Diffie-Hellman key agreement operations.
+
+This program generates Diffie-Hellman moduli and does a sample
+key agreement with them.
+
+The command line is a seed string which is used to generate the
+public modulus.  The use of a seed lets you verify that the
+modulus was not generated in a weak manner.
+
+Currently, the list of key sizes to generate is compiled in.
+
+After key generation, the program performs a sample key agreement.
+
+The primes used in SKIP were generated with the seed in the file
+Gandhi, which contains 79 bytes plus a newline:
+Whatever you do will be insignificant, but it is very important that you do it.
+
+Example invocation lines:
+
+dhtest arbitrary seed string
+dhtest `cat Gandhi`
