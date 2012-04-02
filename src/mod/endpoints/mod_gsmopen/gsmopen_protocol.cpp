@@ -546,7 +546,7 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 {
 	int select_err = 1;
 	int res;
-	fd_set read_fds;
+	//fd_set read_fds;
 	struct timeval timeout;
 	char tmp_answer[AT_BUFSIZ];
 	char tmp_answer2[AT_BUFSIZ];
@@ -557,13 +557,19 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 	int la_counter = 0;
 	int at_ack = -1;
 	int la_read = 0;
+int timeout1;
+
+timeout1 = (timeout_sec * 1000) + (timeout_usec ? (timeout_usec / 1000) : 0 );
+
+if(timeout1 != 100)
+	ERRORA("TIMEOUT=%d\n", GSMOPEN_P_LOG, timeout1);
 
 	if(!running || !tech_pvt->running){
 		return -1;
 	}
 
-	FD_ZERO(&read_fds);
-	FD_SET(tech_pvt->controldevfd, &read_fds);
+	////FD_ZERO(&read_fds);
+	//FD_SET(tech_pvt->controldevfd, &read_fds);
 
 	//NOTICA (" INSIDE this gsmopen_serial_device %s \n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
 	tmp_answer_ptr = tmp_answer;
@@ -574,18 +580,20 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 	PUSHA_UNLOCKA(tech_pvt->controldev_lock);
 	LOKKA(tech_pvt->controldev_lock);
 
-	while ((!tech_pvt->controldev_dead) && ((select_err = select(tech_pvt->controldevfd + 1, &read_fds, NULL, NULL, &timeout)) > 0)) {
+	//while ((!tech_pvt->controldev_dead) && ((select_err = select(tech_pvt->controldevfd + 1, &read_fds, NULL, NULL, &timeout)) > 0)) {
+	while ( (!tech_pvt->controldev_dead) && (read_count = tech_pvt->serialPort_serial_control->Readv(tmp_answer_ptr, AT_BUFSIZ - (tmp_answer_ptr - tmp_answer), (timeout_sec * 1000) + (timeout_usec ? (timeout_usec / 1000) : 0 ) ) > 0) ) {
 		char *token_ptr;
 		timeout.tv_sec = timeout_sec;	//reset the timeout, linux modify it
 		timeout.tv_usec = timeout_usec;	//reset the timeout, linux modify it
-		read_count = read(tech_pvt->controldevfd, tmp_answer_ptr, AT_BUFSIZ - (tmp_answer_ptr - tmp_answer));
+		//cicopet read_count = read(tech_pvt->controldevfd, tmp_answer_ptr, AT_BUFSIZ - (tmp_answer_ptr - tmp_answer));
+		//cicopet read_count = tech_pvt->serialPort_serial_control->Readv(tmp_answer_ptr, AT_BUFSIZ - (tmp_answer_ptr - tmp_answer), (timeout_sec * 1000) + (timeout_usec ? (timeout_usec / 1000) : 0 ) );
 
 		if (read_count == 0) {
 			ERRORA
 				("read 0 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
 				 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
 			tech_pvt->controldev_dead = 1;
-			close(tech_pvt->controldevfd);
+			//cicopet close(tech_pvt->controldevfd);
 			ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
 			tech_pvt->running=0;
 			alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
@@ -1725,7 +1733,7 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 	if (select_err == -1) {
 		ERRORA("select returned -1 on %s, setting controldev_dead, error was: %s\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name, strerror(errno));
 		tech_pvt->controldev_dead = 1;
-		close(tech_pvt->controldevfd);
+		//cicopet close(tech_pvt->controldevfd);
 
 				tech_pvt->running=0;
 				alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "select returned -1 on interface, setting controldev_dead");
@@ -1796,48 +1804,54 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 		return 0;
 }
 
+//cicopet int gsmopen_serial_write_AT(private_t * tech_pvt, const char *data)
 int gsmopen_serial_write_AT(private_t * tech_pvt, const char *data)
 {
 	int howmany;
 	int i;
 	int res;
 	int count;
+char *Data=(char *)data;
 
-	howmany = strlen(data);
+	howmany = strlen(Data);
 
 	for (i = 0; i < howmany; i++) {
-		res = write(tech_pvt->controldevfd, &data[i], 1);
+		//cicopetres = write(tech_pvt->controldevfd, &data[i], 1);
+		res = tech_pvt->serialPort_serial_control->Write(&Data[i], 1);
 
 		if (res != 1) {
-			DEBUGA_GSMOPEN("Error sending (%.1s): %d (%s)\n", GSMOPEN_P_LOG, &data[i], res, strerror(errno));
+			DEBUGA_GSMOPEN("Error sending (%.1s): %d (%s)\n", GSMOPEN_P_LOG, &Data[i], res, strerror(errno));
 			gsmopen_sleep(100000);
 			for (count = 0; count < 10; count++) {
-				res = write(tech_pvt->controldevfd, &data[i], 1);
+				//cicopet res = write(tech_pvt->controldevfd, &data[i], 1);
+				res = tech_pvt->serialPort_serial_control->Write(&Data[i], 1);
 				if (res == 1) {
-					DEBUGA_GSMOPEN("Successfully RE-sent (%.1s): %d %d (%s)\n", GSMOPEN_P_LOG, &data[i], count, res, strerror(errno));
+					DEBUGA_GSMOPEN("Successfully RE-sent (%.1s): %d %d (%s)\n", GSMOPEN_P_LOG, &Data[i], count, res, strerror(errno));
 					break;
 				} else
-					DEBUGA_GSMOPEN("Error RE-sending (%.1s): %d %d (%s)\n", GSMOPEN_P_LOG, &data[i], count, res, strerror(errno));
+					DEBUGA_GSMOPEN("Error RE-sending (%.1s): %d %d (%s)\n", GSMOPEN_P_LOG, &Data[i], count, res, strerror(errno));
 				gsmopen_sleep(100000);
 
 			}
 			if (res != 1) {
-				ERRORA("Error RE-sending (%.1s): %d %d (%s)\n", GSMOPEN_P_LOG, &data[i], count, res, strerror(errno));
+				ERRORA("Error RE-sending (%.1s): %d %d (%s)\n", GSMOPEN_P_LOG, &Data[i], count, res, strerror(errno));
 				return -1;
 			}
 		}
 		if (option_debug > 1)
-			DEBUGA_GSMOPEN("sent data... (%.1s)\n", GSMOPEN_P_LOG, &data[i]);
+			DEBUGA_GSMOPEN("sent data... (%.1s)\n", GSMOPEN_P_LOG, &Data[i]);
 		gsmopen_sleep(1000);			/* release the cpu */
 	}
 
-	res = write(tech_pvt->controldevfd, "\r", 1);
+	//cicopet res = write(tech_pvt->controldevfd, "\r", 1);
+	res = tech_pvt->serialPort_serial_control->Write((char *)"\r", 1);
 
 	if (res != 1) {
 		DEBUGA_GSMOPEN("Error sending (carriage return): %d (%s)\n", GSMOPEN_P_LOG, res, strerror(errno));
 		gsmopen_sleep(100000);
 		for (count = 0; count < 10; count++) {
-			res = write(tech_pvt->controldevfd, "\r", 1);
+			//cicopet res = write(tech_pvt->controldevfd, "\r", 1);
+			res = tech_pvt->serialPort_serial_control->Write((char *)"\r", 1);
 
 			if (res == 1) {
 				DEBUGA_GSMOPEN("Successfully RE-sent carriage return: %d %d (%s)\n", GSMOPEN_P_LOG, count, res, strerror(errno));
@@ -1865,31 +1879,34 @@ int gsmopen_serial_write_AT_nocr(private_t * tech_pvt, const char *data)
 	int i;
 	int res;
 	int count;
+char *Data=(char *)data;
 
-	howmany = strlen(data);
+	howmany = strlen(Data);
 
 	for (i = 0; i < howmany; i++) {
-		res = write(tech_pvt->controldevfd, &data[i], 1);
+		//cicopet res = write(tech_pvt->controldevfd, &data[i], 1);
+		res = tech_pvt->serialPort_serial_control->Write(&Data[i], 1);
 
 		if (res != 1) {
-			DEBUGA_GSMOPEN("Error sending (%.1s): %d (%s)\n", GSMOPEN_P_LOG, &data[i], res, strerror(errno));
+			DEBUGA_GSMOPEN("Error sending (%.1s): %d (%s)\n", GSMOPEN_P_LOG, &Data[i], res, strerror(errno));
 			gsmopen_sleep(100000);
 			for (count = 0; count < 10; count++) {
-				res = write(tech_pvt->controldevfd, &data[i], 1);
+				//cicopet res = write(tech_pvt->controldevfd, &data[i], 1);
+				res = tech_pvt->serialPort_serial_control->Write(&Data[i], 1);
 				if (res == 1)
 					break;
 				else
-					DEBUGA_GSMOPEN("Error RE-sending (%.1s): %d %d (%s)\n", GSMOPEN_P_LOG, &data[i], count, res, strerror(errno));
+					DEBUGA_GSMOPEN("Error RE-sending (%.1s): %d %d (%s)\n", GSMOPEN_P_LOG, &Data[i], count, res, strerror(errno));
 				gsmopen_sleep(100000);
 
 			}
 			if (res != 1) {
-				ERRORA("Error RE-sending (%.1s): %d %d (%s)\n", GSMOPEN_P_LOG, &data[i], count, res, strerror(errno));
+				ERRORA("Error RE-sending (%.1s): %d %d (%s)\n", GSMOPEN_P_LOG, &Data[i], count, res, strerror(errno));
 				return -1;
 			}
 		}
 		if (option_debug > 1)
-			DEBUGA_GSMOPEN("sent data... (%.1s)\n", GSMOPEN_P_LOG, &data[i]);
+			DEBUGA_GSMOPEN("sent data... (%.1s)\n", GSMOPEN_P_LOG, &Data[i]);
 		gsmopen_sleep(1000);			/* release the cpu */
 	}
 
@@ -1932,7 +1949,8 @@ int gsmopen_serial_write_AT_ack(private_t * tech_pvt, const char *data)
 		return -1;
 	}
 
-	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, 2, NULL, 1);	// 2.5 sec timeout
+	//cicopet at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, 2, NULL, 1);	// 2.5 sec timeout
+	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 100000, 0, NULL, 1);	// 1/10th sec timeout
 	UNLOCKA(tech_pvt->controldev_lock);
 	POPPA_UNLOCKA(tech_pvt->controldev_lock);
 
