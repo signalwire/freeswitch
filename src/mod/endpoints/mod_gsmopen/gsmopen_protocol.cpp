@@ -783,9 +783,9 @@ int gsmopen_serial_config_AT(private_t * tech_pvt)
 	}
 
 	/* signal incoming SMS with a +CMTI unsolicited msg */
-	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CNMI=3,1,0,0,0");
+	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CNMI=1,1,0,0,0");
 	if (res) {
-		DEBUGA_GSMOPEN("AT+CNMI=3,1,0,0,0 failed, continue\n", GSMOPEN_P_LOG);
+		DEBUGA_GSMOPEN("AT+CNMI=1,1,0,0,0 failed, continue\n", GSMOPEN_P_LOG);
 		tech_pvt->sms_cnmi_not_supported = 1;
 		tech_pvt->gsmopen_serial_sync_period = 30;	//FIXME in config
 	}
@@ -828,7 +828,7 @@ int gsmopen_serial_config_AT(private_t * tech_pvt)
 		WARNINGA("AT+CSCS=\"UCS2\" (set TE messages to ucs2)  do not got OK from the phone, let's try with 'GSM'\n", GSMOPEN_P_LOG);
 		tech_pvt->no_ucs2 = 1;
 	}
-
+#ifdef NOTDEF
 	if (tech_pvt->no_ucs2) {
 		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"GSM\"");
 		if (res) {
@@ -878,6 +878,7 @@ int gsmopen_serial_config_AT(private_t * tech_pvt)
 	} else {
 		tech_pvt->at_has_ecam = 1;
 	}
+#endif// NOTDEF
 
 	/* disable unsolicited signaling of call list */
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CLCC=0");
@@ -1373,6 +1374,42 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 					ERRORA("|%s| is not formatted as: |+CMGW: xxxx|\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
 				}
 
+			}
+
+			if ((strncmp(tech_pvt->line_array.result[i], "^CEND:1", 7) == 0)) {
+				tech_pvt->phone_callflow = CALLFLOW_CALL_IDLE;
+				if (option_debug > 1)
+					DEBUGA_GSMOPEN("|%s| CALLFLOW_CALL_IDLE\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+				if (tech_pvt->interface_state != GSMOPEN_STATE_DOWN && tech_pvt->owner) {
+					DEBUGA_GSMOPEN("just received a remote HANGUP\n", GSMOPEN_P_LOG);
+					tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_NORMAL;
+					gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
+					DEBUGA_GSMOPEN("just sent GSMOPEN_CONTROL_HANGUP\n", GSMOPEN_P_LOG);
+				}
+
+				tech_pvt->phone_callflow = CALLFLOW_CALL_NOCARRIER;
+				if (option_debug > 1)
+					DEBUGA_GSMOPEN("|%s| CALLFLOW_CALL_NOCARRIER\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+				if (tech_pvt->interface_state != GSMOPEN_STATE_DOWN) {
+					//cicopet
+					switch_core_session_t *session = NULL;
+					switch_channel_t *channel = NULL;
+
+					tech_pvt->interface_state = GSMOPEN_STATE_DOWN;
+
+					session = switch_core_session_locate(tech_pvt->session_uuid_str);
+					if (session) {
+						channel = switch_core_session_get_channel(session);
+						//gsmopen_hangup(tech_pvt);
+						switch_core_session_rwunlock(session);
+						switch_channel_hangup(channel, SWITCH_CAUSE_NONE);
+					}
+					//
+					//tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
+					//gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
+				} else {
+					ERRORA("Why NO CARRIER now?\n", GSMOPEN_P_LOG);
+				}
 			}
 
 			/* at_call_* are unsolicited messages sent by the modem to signal us about call processing activity and events */
@@ -2465,6 +2502,7 @@ int gsmopen_serial_answer_AT(private_t * tech_pvt)
 			return -1;
 		}
 	}
+	res = gsmopen_serial_write_AT_expect(tech_pvt, "AT^DDSETEX=2", tech_pvt->at_dial_expect);
 	//tech_pvt->interface_state = GSMOPEN_STATE_UP;
 	//tech_pvt->phone_callflow = CALLFLOW_CALL_ACTIVE;
 	DEBUGA_GSMOPEN("AT: call answered\n", GSMOPEN_P_LOG);
@@ -2500,7 +2538,15 @@ int gsmopen_serial_hangup_AT(private_t * tech_pvt)
 				ERRORA("at_hangup command failed, command used: 'AT+CKPD=\"EEE\"'\n", GSMOPEN_P_LOG);
 				return -1;
 			}
+
 		}
+
+		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CHUP");
+		if (res) {
+			ERRORA("at_hangup command failed, command used: 'AT+CHUP'\n", GSMOPEN_P_LOG);
+			//return -1;
+		}
+
 	}
 	tech_pvt->interface_state = GSMOPEN_STATE_DOWN;
 	tech_pvt->phone_callflow = CALLFLOW_CALL_IDLE;
@@ -2552,6 +2598,7 @@ int gsmopen_serial_call_AT(private_t * tech_pvt, char *dstr)
 		ERRORA("dial command failed, dial string was: %s\n", GSMOPEN_P_LOG, at_command);
 		return -1;
 	}
+	res = gsmopen_serial_write_AT_expect(tech_pvt, "AT^DDSETEX=2", tech_pvt->at_dial_expect);
 	// jet - early audio
 	//if (tech_pvt->at_early_audio) {
 	//ast_queue_control(tech_pvt->owner, AST_CONTROL_ANSWER);
@@ -4002,3 +4049,122 @@ int gsmopen_serial_getstatus_AT(private_t * tech_pvt)
 	POPPA_UNLOCKA(p->controldev_lock);
 	return 0;
 }
+
+
+int gsmopen_serial_init_audio_port(private_t * tech_pvt, speed_t controldevice_audio_speed)
+{
+	int fd;
+	int rt;
+	struct termios tp;
+	unsigned int status = 0;
+	unsigned int flags = TIOCM_DTR;
+
+/* if there is a file descriptor, close it. But it is probably just an old value, so don't check for close success*/
+	fd = tech_pvt->controldev_audio_fd;
+	if (fd) {
+		close(fd);
+	}
+/*  open the serial port */
+//#ifdef __CYGWIN__
+	fd = open(tech_pvt->controldevice_audio_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	sleep(1);
+	close(fd);
+//#endif /* __CYGWIN__ */
+	fd = open(tech_pvt->controldevice_audio_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	if (fd == -1) {
+		perror("AUDIO open error ");
+		DEBUGA_GSMOPEN("AUDIO serial error: %s\n", GSMOPEN_P_LOG, strerror(errno));
+		tech_pvt->controldev_audio_fd = fd;
+		return -1;
+	}
+/*  flush it */
+	rt = tcflush(fd, TCIFLUSH);
+	if (rt == -1) {
+		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
+	}
+/*  attributes */
+	tp.c_cflag = B0 | CS8 | CLOCAL | CREAD | HUPCL;
+	tp.c_iflag = IGNPAR;
+	tp.c_cflag &= ~CRTSCTS;
+	tp.c_oflag = 0;
+	tp.c_lflag = 0;
+	tp.c_cc[VMIN] = 1;
+	tp.c_cc[VTIME] = 0;
+/*  set controldevice_audio_speed */
+	rt = cfsetispeed(&tp, tech_pvt->controldevice_audio_speed);
+	if (rt == -1) {
+		ERRORA("AUDIO serial error: %s, speed was: %d", GSMOPEN_P_LOG, strerror(errno), tech_pvt->controldevice_audio_speed);
+	}
+	rt = cfsetospeed(&tp, tech_pvt->controldevice_audio_speed);
+	if (rt == -1) {
+		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
+	}
+/*  set port attributes */
+	if (tcsetattr(fd, TCSADRAIN, &tp) == -1) {
+		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
+	}
+	rt = tcsetattr(fd, TCSANOW, &tp);
+	if (rt == -1) {
+		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
+	}
+#ifndef __CYGWIN__
+	ioctl(fd, TIOCMGET, &status);
+	status |= TIOCM_DTR;		/*  Set DTR high */
+	status &= ~TIOCM_RTS;		/*  Set RTS low */
+	ioctl(fd, TIOCMSET, &status);
+	ioctl(fd, TIOCMGET, &status);
+	ioctl(fd, TIOCMBIS, &flags);
+	flags = TIOCM_RTS;
+	ioctl(fd, TIOCMBIC, &flags);
+	ioctl(fd, TIOCMGET, &status);
+#else /* __CYGWIN__ */
+	ioctl(fd, TIOCMGET, &status);
+	status |= TIOCM_DTR;		/*  Set DTR high */
+	status &= ~TIOCM_RTS;		/*  Set RTS low */
+	ioctl(fd, TIOCMSET, &status);
+#endif /* __CYGWIN__ */
+	tech_pvt->controldev_audio_fd = fd;
+
+	return (fd);
+}
+int serial_audio_init(private_t * tech_pvt)
+{
+	int res;
+	int err;
+
+	res=gsmopen_serial_init_audio_port(tech_pvt, tech_pvt->controldevice_audio_speed);
+	ERRORA("serial_audio_init res=%d\n", GSMOPEN_P_LOG, res);
+
+	if(res > 0)
+		err=0;
+	else
+		err=1;
+
+
+		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT^DDSETEX=2");
+		if (res) {
+			ERRORA("at_hangup command failed, command used: 'AT^DDSETEX=2'\n", GSMOPEN_P_LOG);
+			//return -1;
+		}
+
+	return err;
+}
+int serial_audio_shutdown(private_t * tech_pvt)
+{
+
+	int res;
+	int err;
+
+	res = close(tech_pvt->controldev_audio_fd);
+	ERRORA("serial_audio_shutdown res=%d (controldev_audio_fd is %d)\n", GSMOPEN_P_LOG, res, tech_pvt->controldev_audio_fd);
+	tech_pvt->controldev_audio_fd = -1;
+
+	err = res;
+
+	return err;
+}
+
+
+
+
+

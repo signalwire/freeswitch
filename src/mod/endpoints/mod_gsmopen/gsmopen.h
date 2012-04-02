@@ -514,6 +514,18 @@ struct private_object {
 		 int network_creg_not_supported;
 		 char creg[128];
 
+	char controldevice_audio_name[50];	/*!< \brief name of the serial device controlling the interface, possibly none */
+	int controldev_audio_fd;			/*!< \brief serial controlling file descriptor for this interface */
+	//pthread_t controldev_thread;  /*!< \brief serial control thread for this interface, running during the call */
+#ifdef WIN32
+	int controldevice_audio_speed;
+#else
+	speed_t controldevice_audio_speed;
+#endif// WIN32
+	int controldev_audio_dead;
+	switch_mutex_t *controldev_audio_lock;
+
+
 };
 
 typedef struct private_object private_t;
@@ -663,3 +675,9 @@ int gsmopen_portaudio_shutdown(private_t *tech_pvt);
 int dump_event(private_t *tech_pvt);
 int alarm_event(private_t * tech_pvt, int alarm_code, const char *alarm_message);
 int dump_event_full(private_t * tech_pvt, int is_alarm, int alarm_code, const char *alarm_message);
+
+
+int gsmopen_serial_init_audio_port(private_t * tech_pvt, speed_t controldevice_audio_speed);
+int serial_audio_init(private_t * tech_pvt);
+int serial_audio_shutdown(private_t * tech_pvt);
+
