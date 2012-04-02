@@ -642,7 +642,7 @@ int alarm_event(private_t * tech_pvt, int alarm_code, const char *alarm_message)
 int dump_event_full(private_t * tech_pvt, int is_alarm, int alarm_code, const char *alarm_message);
 
 
-int gsmopen_serial_init_audio_port(private_t * tech_pvt, speed_t controldevice_audio_speed);
+int gsmopen_serial_init_audio_port(private_t * tech_pvt, int controldevice_audio_speed);
 int serial_audio_init(private_t * tech_pvt);
 int serial_audio_shutdown(private_t * tech_pvt);
 

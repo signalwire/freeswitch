@@ -55,12 +55,12 @@ int gettimeofday(struct timeval *tv, struct sk_timezone *tz)
 /***************/
 #endif /* WIN32 */
 
-int gsmopen_serial_init(private_t * tech_pvt, speed_t controldevice_speed)
+int gsmopen_serial_init(private_t * tech_pvt, int controldevice_speed)
 {
 
 	tech_pvt->serialPort_serial_control = new ctb::SerialPort();
 
-	if( tech_pvt->serialPort_serial_control->Open( "/dev/ttyUSB3", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
+	if( tech_pvt->serialPort_serial_control->Open( "COM9", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
 		ERRORA("port SUCCESS open\n", GSMOPEN_P_LOG);
 	} else {
 		ERRORA("port NOT open\n", GSMOPEN_P_LOG);
@@ -3574,11 +3574,11 @@ int gsmopen_serial_getstatus_AT(private_t * tech_pvt)
 }
 
 
-int gsmopen_serial_init_audio_port(private_t * tech_pvt, speed_t controldevice_audio_speed)
+int gsmopen_serial_init_audio_port(private_t * tech_pvt, int controldevice_audio_speed)
 {
 	tech_pvt->serialPort_serial_audio = new ctb::SerialPort();
 
-	if( tech_pvt->serialPort_serial_audio->Open( "/dev/ttyUSB2", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
+	if( tech_pvt->serialPort_serial_audio->Open( "COM8", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
 		ERRORA("port SUCCESS open\n", GSMOPEN_P_LOG);
 	} else {
 		ERRORA("port NOT open\n", GSMOPEN_P_LOG);

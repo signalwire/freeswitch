@@ -44,7 +44,7 @@ INSTALLDIR = $(WXWIN)
 
 ### Variables: ###
 
-CTB_LIB_CXXFLAGS = /MT$(____DEBUG_4) /DWIN32 $(____DEBUG) $(____DEBUG_2) \
+CTB_LIB_CXXFLAGS = /MD$(____DEBUG_4) /DWIN32 $(____DEBUG) $(____DEBUG_2) \
 	$(______DEBUG) /Fd..\lib\ctb$(LIBFLAG)$(GPIBFLAG)-0.16.pdb \
 	$(__OPTIMIZE_FLAG) /I..\include /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
 CTB_LIB_OBJECTS =  \
@@ -56,7 +56,7 @@ CTB_LIB_OBJECTS =  \
 	$(OUTPUT)\ctb_lib_serport.obj \
 	$(OUTPUT)\ctb_lib_timer.obj \
 	$(____GPIBSRC_FILENAMES_OBJECTS)
-CTB_DLL_CXXFLAGS = /MT$(____DEBUG_4) /DWIN32 $(____DEBUG) $(____DEBUG_2) \
+CTB_DLL_CXXFLAGS = /MD$(____DEBUG_4) /DWIN32 $(____DEBUG) $(____DEBUG_2) \
 	$(______DEBUG) /Fd..\lib\ctb$(LIBFLAG)$(GPIBFLAG)-0.16.pdb \
 	$(__OPTIMIZE_FLAG) /I..\include /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
 CTB_DLL_OBJECTS =  \
@@ -68,7 +68,7 @@ CTB_DLL_OBJECTS =  \
 	$(OUTPUT)\ctb_dll_serport.obj \
 	$(OUTPUT)\ctb_dll_timer.obj \
 	$(____GPIBSRC_FILENAMES_1_OBJECTS)
-CTBTEST_CXXFLAGS = /MT$(____DEBUG_4) /DWIN32 $(____DEBUG) $(____DEBUG_2) \
+CTBTEST_CXXFLAGS = /MD$(____DEBUG_4) /DWIN32 $(____DEBUG) $(____DEBUG_2) \
 	$(______DEBUG) /Fd$(OUTPUT)\ctbtest.pdb /DGPIB=$(GPIB) $(__OPTIMIZE_FLAG) \
 	/I..\include /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
 CTBTEST_OBJECTS =  \
