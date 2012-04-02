@@ -2014,6 +2014,17 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	}
 
 	switch (cmd) {
+	case SCSC_DEBUG_SQL:
+		{
+			if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
+				switch_clear_flag((&runtime), SCF_DEBUG_SQL);
+				newintval = 0;
+			} else {
+				switch_set_flag((&runtime), SCF_DEBUG_SQL);
+				newintval = 1;
+			}
+		}
+		break;
 	case SCSC_VERBOSE_EVENTS:
 		if (intval) {
 			if (oldintval > -1) {
