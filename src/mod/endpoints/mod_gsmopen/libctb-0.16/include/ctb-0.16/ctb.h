@@ -7,7 +7,7 @@
 #endif
 #include "ctb-0.16/getopt.h"
 #include "ctb-0.16/iobase.h"
-#include "ctb-0.16/kbhit.h"
+//#include "ctb-0.16/kbhit.h"
 #include "ctb-0.16/portscan.h"
 #include "ctb-0.16/serport.h"
 #include "ctb-0.16/serportx.h"
