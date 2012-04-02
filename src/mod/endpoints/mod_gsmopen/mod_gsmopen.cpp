@@ -1,12 +1,3 @@
-#ifdef GSMOPEN_ALSA
-int alsa_init(private_t * tech_pvt);
-int alsa_shutdown(private_t * tech_pvt);
-snd_pcm_t *alsa_open_dev(private_t * tech_pvt, snd_pcm_stream_t stream);
-int alsa_write(private_t * tech_pvt, short *data, int datalen);
-int alsa_read(private_t * tech_pvt, short *data, int datalen);
-
-#endif /* GSMOPEN_ALSA */
-
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005/2011, Anthony Minessale II <anthm@freeswitch.org>
@@ -869,11 +860,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_core_timer_next(&tech_pvt->timer_read);
 #endif// GSMOPEN_PORTAUDIO
 
-		//goto cng;
 		if(tech_pvt->no_sound==1){
 		goto cng;
 		}
-//#if defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
 #ifdef GSMOPEN_ALSA
 	//if ((samples = snd_pcm_readi(tech_pvt->alsac, tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_packet)) > 0) 
 	if ((samples = alsa_read(tech_pvt, (short *) tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_packet)) > 0) 
@@ -882,8 +871,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	if ((samples = gsmopen_portaudio_read(tech_pvt, (short *) tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_packet)) > 0) 
 #endif// GSMOPEN_PORTAUDIO
 
-	//sent = write(tech_pvt->controldev_audio_fd, (short *) frame->data, (int) (frame->datalen));
-	//if ((samples = read(tech_pvt->controldev_audio_fd, (short *) tech_pvt->read_frame.data, 320)) >0)
 	if ((samples = tech_pvt->serialPort_serial_audio->Read((char *) tech_pvt->read_frame.data, 320)) >0)
 	{
 
@@ -914,7 +901,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 
 
-		//tech_pvt->read_frame.datalen = samples * 2;
 		tech_pvt->read_frame.datalen = samples;
 		tech_pvt->read_frame.samples = samples/2;
 
@@ -924,18 +910,17 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 		*frame = &tech_pvt->read_frame;
 
-	//if ((samples2 = read(tech_pvt->controldev_audio_fd, (short *) buffer2, 320)) >0){
-	if ((samples2 = tech_pvt->serialPort_serial_audio->Read((char *) tech_pvt->read_frame.data, 320)) >0){
-		WARNINGA("samples2=%d\n", GSMOPEN_P_LOG, samples2);
+		if ((samples2 = tech_pvt->serialPort_serial_audio->Read((char *) tech_pvt->read_frame.data, 320)) >0){
+			WARNINGA("samples2=%d\n", GSMOPEN_P_LOG, samples2);
 
-}
+		}
 		//status = SWITCH_STATUS_SUCCESS;
 		switch_set_flag(tech_pvt, TFLAG_VOICE);
 	}
 
 		//WARNINGA("samples=%d\n", GSMOPEN_P_LOG, samples);
 	if (samples != 320) {
-		//DEBUGA_GSMOPEN("samples=%d\n", GSMOPEN_P_LOG, samples);
+		DEBUGA_GSMOPEN("samples=%d\n", GSMOPEN_P_LOG, samples);
 		goto cng;
 	}
 //DEBUGA_GSMOPEN("samples=%d tech_pvt->read_frame.timestamp=%d\n", GSMOPEN_P_LOG, samples, tech_pvt->read_frame.timestamp);
@@ -944,8 +929,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 //usleep(17000);
 
 
-
-//#ifdef NOTDEF
 
 	memset(digit_str, 0, sizeof(digit_str));
 	//teletone_dtmf_detect(&tech_pvt->dtmf_detect, (int16_t *) tech_pvt->read_frame.data, tech_pvt->read_frame.samples);
@@ -973,7 +956,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			tech_pvt->old_dtmf_timestamp = new_dtmf_timestamp;
 		}
 	}
-//#endif //NOTDEF
 	while (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		if (switch_test_flag(tech_pvt, TFLAG_BREAK)) {
 			switch_clear_flag(tech_pvt, TFLAG_BREAK);
@@ -1010,7 +992,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	DEBUGA_GSMOPEN("CHANNEL READ FALSE\n", GSMOPEN_P_LOG);
 	return SWITCH_STATUS_FALSE;
-//#endif // defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
   cng:
 	data = (switch_byte_t *) tech_pvt->read_frame.data;
 	data[0] = 65;
@@ -1096,8 +1077,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 #endif // GSMOPEN_PORTAUDIO
 
 	sent = tech_pvt->serialPort_serial_audio->Write((char *) frame->data, (int) (frame->datalen));
-	//sent = write(tech_pvt->controldev_audio_fd, (short *) frame->data, (int) (frame->datalen));
-//DEBUGA_GSMOPEN("sent=%d \n", GSMOPEN_P_LOG, sent);
 
 	if (sent && sent != frame->datalen && sent != -1) {
 		DEBUGA_GSMOPEN("sent %d\n", GSMOPEN_P_LOG, sent);
@@ -2057,49 +2036,6 @@ static switch_status_t load_config(int reload_type)
 
 					}
 
-#ifdef NOTDEF
-					/* init the serial port */
-					if (globals.GSMOPEN_INTERFACES[interface_id].controldevprotocol != PROTOCOL_NO_SERIAL) {
-						globals.GSMOPEN_INTERFACES[interface_id].controldevfd =
-							gsmopen_serial_init(&globals.GSMOPEN_INTERFACES[interface_id], globals.GSMOPEN_INTERFACES[interface_id].controldevice_speed);
-						if (globals.GSMOPEN_INTERFACES[interface_id].controldevfd == -1) {
-							ERRORA("gsmopen_serial_init failed\n", GSMOPEN_P_LOG);
-							ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
-							//return SWITCH_STATUS_FALSE;
-							globals.GSMOPEN_INTERFACES[interface_id].running=0;
-							alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "gsmopen_serial_init failed");
-							globals.GSMOPEN_INTERFACES[interface_id].active=0;
-							globals.GSMOPEN_INTERFACES[interface_id].name[0]='\0';
-							continue;
-						}
-					}
-
-					/* config the phone/modem on the serial port */
-					if (globals.GSMOPEN_INTERFACES[interface_id].controldevprotocol != PROTOCOL_NO_SERIAL) {
-						res = gsmopen_serial_config(&globals.GSMOPEN_INTERFACES[interface_id]);
-						if (res) {
-							int count = 0;
-							ERRORA("gsmopen_serial_config failed, let's try again\n", GSMOPEN_P_LOG);
-							while(res && count < 5){
-								switch_sleep(100000); //0.1 seconds
-								res = gsmopen_serial_config(&globals.GSMOPEN_INTERFACES[interface_id]);
-								count++;
-								if (res) {
-									ERRORA("%d: gsmopen_serial_config failed, let's try again\n", GSMOPEN_P_LOG, count);
-								}
-							}
-							if (res) {
-								ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
-								//return SWITCH_STATUS_FALSE;
-								globals.GSMOPEN_INTERFACES[interface_id].running=0;
-								alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "gsmopen_serial_config failed");
-								globals.GSMOPEN_INTERFACES[interface_id].active=0;
-								globals.GSMOPEN_INTERFACES[interface_id].name[0]='\0';
-								continue;
-							}
-						}
-					}
-#endif// NOTDEF
 
 
 
@@ -2155,33 +2091,6 @@ static switch_status_t load_config(int reload_type)
 #endif// GSMOPEN_PORTAUDIO
 				DEBUGA_GSMOPEN("gsmopen_serial_sync_period=%d\n", GSMOPEN_P_LOG, (int)globals.GSMOPEN_INTERFACES[i].gsmopen_serial_sync_period);
 				DEBUGA_GSMOPEN("controldevice_audio_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].controldevice_audio_name);
-/***********************************/
-#ifdef NOTDEF
-
-				ctb::IOBase* device = NULL;
-
-
-				ctb::SerialPort* serialPort = new ctb::SerialPort();
-
-				//if( serialPort->Open( devname.c_str(), baudrate,
-				if( serialPort->Open( "/dev/ttyUSB3", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
-
-					device = serialPort;
-
-					if( device->Write( "AT+CLAC\r\n", 9 ) != 7 ) {
-
-						ERRORA("BIZARRE\n", GSMOPEN_P_LOG);
-
-					}
-
-				} else {
-
-					ERRORA("port NOT open\n", GSMOPEN_P_LOG);
-				}
-
-#endif// NOTDEF
-
-/***********************************/
 			}
 		}
 	}

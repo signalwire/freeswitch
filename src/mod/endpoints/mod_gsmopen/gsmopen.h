@@ -137,15 +137,6 @@
 
 #include "ctb-0.16/ctb.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <iostream>
-#include <string>
-
-using namespace std;
-
 typedef enum {
 	TFLAG_IO = (1 << 0),
 	TFLAG_INBOUND = (1 << 1),
@@ -525,19 +516,12 @@ struct private_object {
 		 int network_creg_not_supported;
 		 char creg[128];
 
-	char controldevice_audio_name[50];	/*!< \brief name of the serial device controlling the interface, possibly none */
-	int controldev_audio_fd;			/*!< \brief serial controlling file descriptor for this interface */
-	//pthread_t controldev_thread;  /*!< \brief serial control thread for this interface, running during the call */
-#ifdef WIN32
+	char controldevice_audio_name[50];
+	int controldev_audio_fd;	
 	int controldevice_audio_speed;
-#else
-	speed_t controldevice_audio_speed;
-#endif// WIN32
 	int controldev_audio_dead;
 	switch_mutex_t *controldev_audio_lock;
-
- ctb::IOBase* device_serial_audio;
-ctb::SerialPort* serialPort_serial_audio;
+	ctb::SerialPort* serialPort_serial_audio;
 
 };
 

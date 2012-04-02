@@ -4051,205 +4051,17 @@ int gsmopen_serial_getstatus_AT(private_t * tech_pvt)
 }
 
 
-int oldgsmopen_serial_init_audio_port(private_t * tech_pvt, speed_t controldevice_audio_speed)
-{
-	int fd;
-	int rt;
-	struct termios tp;
-	unsigned int status = 0;
-	unsigned int flags = TIOCM_DTR;
-
-/* if there is a file descriptor, close it. But it is probably just an old value, so don't check for close success*/
-	fd = tech_pvt->controldev_audio_fd;
-	if (fd) {
-		close(fd);
-	}
-/*  open the serial port */
-//#ifdef __CYGWIN__
-	fd = open(tech_pvt->controldevice_audio_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
-	sleep(1);
-	close(fd);
-//#endif /* __CYGWIN__ */
-	fd = open(tech_pvt->controldevice_audio_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
-	if (fd == -1) {
-		perror("AUDIO open error ");
-		DEBUGA_GSMOPEN("AUDIO serial error: %s\n", GSMOPEN_P_LOG, strerror(errno));
-		tech_pvt->controldev_audio_fd = fd;
-		return -1;
-	}
-/*  flush it */
-	rt = tcflush(fd, TCIFLUSH);
-	if (rt == -1) {
-		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-/*  attributes */
-	tp.c_cflag = B0 | CS8 | CLOCAL | CREAD | HUPCL;
-	tp.c_iflag = IGNPAR;
-	tp.c_cflag &= ~CRTSCTS;
-	tp.c_oflag = 0;
-	tp.c_lflag = 0;
-	tp.c_cc[VMIN] = 1;
-	tp.c_cc[VTIME] = 0;
-/*  set controldevice_audio_speed */
-	rt = cfsetispeed(&tp, tech_pvt->controldevice_audio_speed);
-	if (rt == -1) {
-		ERRORA("AUDIO serial error: %s, speed was: %d", GSMOPEN_P_LOG, strerror(errno), tech_pvt->controldevice_audio_speed);
-	}
-	rt = cfsetospeed(&tp, tech_pvt->controldevice_audio_speed);
-	if (rt == -1) {
-		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-/*  set port attributes */
-	if (tcsetattr(fd, TCSADRAIN, &tp) == -1) {
-		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-	rt = tcsetattr(fd, TCSANOW, &tp);
-	if (rt == -1) {
-		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-#ifndef __CYGWIN__
-	ioctl(fd, TIOCMGET, &status);
-	status |= TIOCM_DTR;		/*  Set DTR high */
-	status &= ~TIOCM_RTS;		/*  Set RTS low */
-	ioctl(fd, TIOCMSET, &status);
-	ioctl(fd, TIOCMGET, &status);
-	ioctl(fd, TIOCMBIS, &flags);
-	flags = TIOCM_RTS;
-	ioctl(fd, TIOCMBIC, &flags);
-	ioctl(fd, TIOCMGET, &status);
-#else /* __CYGWIN__ */
-	ioctl(fd, TIOCMGET, &status);
-	status |= TIOCM_DTR;		/*  Set DTR high */
-	status &= ~TIOCM_RTS;		/*  Set RTS low */
-	ioctl(fd, TIOCMSET, &status);
-#endif /* __CYGWIN__ */
-	tech_pvt->controldev_audio_fd = fd;
-
-	return (fd);
-}
-int old_serial_audio_init(private_t * tech_pvt)
-{
-	int res;
-	int err;
-
-	res=gsmopen_serial_init_audio_port(tech_pvt, tech_pvt->controldevice_audio_speed);
-	ERRORA("serial_audio_init res=%d\n", GSMOPEN_P_LOG, res);
-
-	if(res > 0)
-		err=0;
-	else
-		err=1;
-
-
-		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT^DDSETEX=2");
-		if (res) {
-			ERRORA("at_hangup command failed, command used: 'AT^DDSETEX=2'\n", GSMOPEN_P_LOG);
-			//return -1;
-		}
-
-	return err;
-}
 int gsmopen_serial_init_audio_port(private_t * tech_pvt, speed_t controldevice_audio_speed)
 {
-
-//#ifdef NOTDEF
-/***********************************/
-
-	tech_pvt->device_serial_audio = NULL;
 	tech_pvt->serialPort_serial_audio = new ctb::SerialPort();
 
 	if( tech_pvt->serialPort_serial_audio->Open( "/dev/ttyUSB2", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
-
-		//tech_pvt->device_serial_audio = tech_pvt->serialPort_serial_audio;
 		ERRORA("port SUCCESS open\n", GSMOPEN_P_LOG);
-
 	} else {
-
 		ERRORA("port NOT open\n", GSMOPEN_P_LOG);
 	}
 
-return 0;
-
-/***********************************/
-//#endif// NOTDEF
-
-#ifdef NOTDEF
-
-
-	int fd;
-	int rt;
-	struct termios tp;
-	unsigned int status = 0;
-	unsigned int flags = TIOCM_DTR;
-
-/* if there is a file descriptor, close it. But it is probably just an old value, so don't check for close success*/
-	fd = tech_pvt->controldev_audio_fd;
-	if (fd) {
-		close(fd);
-	}
-/*  open the serial port */
-//#ifdef __CYGWIN__
-	fd = open(tech_pvt->controldevice_audio_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
-	sleep(1);
-	close(fd);
-//#endif /* __CYGWIN__ */
-	fd = open(tech_pvt->controldevice_audio_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
-	if (fd == -1) {
-		perror("AUDIO open error ");
-		DEBUGA_GSMOPEN("AUDIO serial error: %s\n", GSMOPEN_P_LOG, strerror(errno));
-		tech_pvt->controldev_audio_fd = fd;
-		return -1;
-	}
-/*  flush it */
-	rt = tcflush(fd, TCIFLUSH);
-	if (rt == -1) {
-		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-/*  attributes */
-	tp.c_cflag = B0 | CS8 | CLOCAL | CREAD | HUPCL;
-	tp.c_iflag = IGNPAR;
-	tp.c_cflag &= ~CRTSCTS;
-	tp.c_oflag = 0;
-	tp.c_lflag = 0;
-	tp.c_cc[VMIN] = 1;
-	tp.c_cc[VTIME] = 0;
-/*  set controldevice_audio_speed */
-	rt = cfsetispeed(&tp, tech_pvt->controldevice_audio_speed);
-	if (rt == -1) {
-		ERRORA("AUDIO serial error: %s, speed was: %d", GSMOPEN_P_LOG, strerror(errno), tech_pvt->controldevice_audio_speed);
-	}
-	rt = cfsetospeed(&tp, tech_pvt->controldevice_audio_speed);
-	if (rt == -1) {
-		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-/*  set port attributes */
-	if (tcsetattr(fd, TCSADRAIN, &tp) == -1) {
-		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-	rt = tcsetattr(fd, TCSANOW, &tp);
-	if (rt == -1) {
-		ERRORA("AUDIO serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-#ifndef __CYGWIN__
-	ioctl(fd, TIOCMGET, &status);
-	status |= TIOCM_DTR;		/*  Set DTR high */
-	status &= ~TIOCM_RTS;		/*  Set RTS low */
-	ioctl(fd, TIOCMSET, &status);
-	ioctl(fd, TIOCMGET, &status);
-	ioctl(fd, TIOCMBIS, &flags);
-	flags = TIOCM_RTS;
-	ioctl(fd, TIOCMBIC, &flags);
-	ioctl(fd, TIOCMGET, &status);
-#else /* __CYGWIN__ */
-	ioctl(fd, TIOCMGET, &status);
-	status |= TIOCM_DTR;		/*  Set DTR high */
-	status &= ~TIOCM_RTS;		/*  Set RTS low */
-	ioctl(fd, TIOCMSET, &status);
-#endif /* __CYGWIN__ */
-	tech_pvt->controldev_audio_fd = fd;
-
-	return (fd);
-#endif //NOTDEF
+	return 0;
 }
 
 int serial_audio_init(private_t * tech_pvt)
@@ -4273,17 +4085,10 @@ int serial_audio_shutdown(private_t * tech_pvt)
 	int res;
 	int err;
 
-	//res = close(tech_pvt->controldev_audio_fd);
 	res = tech_pvt->serialPort_serial_audio->Close();
 	ERRORA("serial_audio_shutdown res=%d (controldev_audio_fd is %d)\n", GSMOPEN_P_LOG, res, tech_pvt->controldev_audio_fd);
-	tech_pvt->controldev_audio_fd = -1;
-
 	err = res;
 
 	return err;
 }
-
-
-
-
 
