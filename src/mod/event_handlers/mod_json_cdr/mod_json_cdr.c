@@ -181,60 +181,61 @@ static switch_status_t set_json_cdr_log_dirs()
 	return status;
 }
 
+#define json_object_safe_new_string(str) json_object_new_string(str ? str : "")
 #define JSON_ENSURE_SUCCESS(obj) if (is_error(obj)) { return; }
 static void set_json_profile_data(struct json_object *json, switch_caller_profile_t *caller_profile)
 {
 	struct json_object *param = NULL;
 
-	param = json_object_new_string((char *)caller_profile->username);
+	param = json_object_safe_new_string((char *)caller_profile->username);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "username", param);
 
-	param = json_object_new_string((char *)caller_profile->dialplan);
+	param = json_object_safe_new_string((char *)caller_profile->dialplan);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "dialplan", param);
 
-	param = json_object_new_string((char *)caller_profile->caller_id_name);
+	param = json_object_safe_new_string((char *)caller_profile->caller_id_name);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "caller_id_name", param);
 
-	param = json_object_new_string((char *)caller_profile->ani);
+	param = json_object_safe_new_string((char *)caller_profile->ani);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "ani", param);
 
-	param = json_object_new_string((char *)caller_profile->aniii);
+	param = json_object_safe_new_string((char *)caller_profile->aniii);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "aniii", param);
 
-	param = json_object_new_string((char *)caller_profile->caller_id_number);
+	param = json_object_safe_new_string((char *)caller_profile->caller_id_number);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "caller_id_number", param);
 
-	param = json_object_new_string((char *)caller_profile->network_addr);
+	param = json_object_safe_new_string((char *)caller_profile->network_addr);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "network_addr", param);
 
-	param = json_object_new_string((char *)caller_profile->rdnis);
+	param = json_object_safe_new_string((char *)caller_profile->rdnis);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "rdnis", param);
 
-	param = json_object_new_string(caller_profile->destination_number);
+	param = json_object_safe_new_string(caller_profile->destination_number);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "destination_number", param);
 
-	param = json_object_new_string(caller_profile->uuid);
+	param = json_object_safe_new_string(caller_profile->uuid);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "uuid", param);
 
-	param = json_object_new_string((char *)caller_profile->source);
+	param = json_object_safe_new_string((char *)caller_profile->source);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "source", param);
 
-	param = json_object_new_string((char *)caller_profile->context);
+	param = json_object_safe_new_string((char *)caller_profile->context);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "context", param);
 
-	param = json_object_new_string(caller_profile->chan_name);
+	param = json_object_safe_new_string(caller_profile->chan_name);
 	JSON_ENSURE_SUCCESS(param);
 	json_object_object_add(json, "chan_name", param);
 
@@ -260,7 +261,7 @@ static void set_json_chan_vars(struct json_object *json, switch_channel_t *chann
 				}
 			}
 
-			variable = json_object_new_string(data);			
+			variable = json_object_safe_new_string(data);			
 			if (!is_error(variable)) {
 				json_object_object_add(json, hi->name, variable);
 			}
@@ -297,10 +298,10 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 	json_object_object_add(cdr, "channel_data", j_channel_data);
 
 	
-	j_field = json_object_new_string((char *) switch_channel_state_name(switch_channel_get_state(channel)));
+	j_field = json_object_safe_new_string((char *) switch_channel_state_name(switch_channel_get_state(channel)));
 	json_object_object_add(j_channel_data, "state", j_field);
 
-	j_field = json_object_new_string(switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
+	j_field = json_object_safe_new_string(switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 
 	json_object_object_add(j_channel_data, "direction", j_field);
 
@@ -311,13 +312,13 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 	
 
 	if ((f = switch_channel_get_flag_string(channel))) {
-		j_field = json_object_new_string((char *) f);
+		j_field = json_object_safe_new_string((char *) f);
 		json_object_object_add(j_channel_data, "flags", j_field);
 		free(f);
 	}
 
 	if ((f = switch_channel_get_cap_string(channel))) {
-		j_field = json_object_new_string((char *) f);
+		j_field = json_object_safe_new_string((char *) f);
 		json_object_object_add(j_channel_data, "caps", j_field);
 		free(f);
 	}
@@ -351,8 +352,8 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 				goto error;
 			}
 
-			json_object_object_add(j_application, "app_name", json_object_new_string(ap->app));
-			json_object_object_add(j_application, "app_data", json_object_new_string(ap->arg ? ap->arg : ""));
+			json_object_object_add(j_application, "app_name", json_object_safe_new_string(ap->app));
+			json_object_object_add(j_application, "app_data", json_object_safe_new_string(ap->arg));
 
 			json_object_object_add(j_apps, "application", j_application);
 		}
@@ -372,11 +373,11 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 		json_object_object_add(cdr, "callflow", j_callflow);
 
 		if (!zstr(caller_profile->dialplan)) {
-			json_object_object_add(j_callflow, "dialplan", json_object_new_string((char *)caller_profile->dialplan));
+			json_object_object_add(j_callflow, "dialplan", json_object_safe_new_string((char *)caller_profile->dialplan));
 		}
 
 		if (!zstr(caller_profile->profile_index)) {
-			json_object_object_add(j_callflow, "profile_index", json_object_new_string((char *)caller_profile->profile_index));
+			json_object_object_add(j_callflow, "profile_index", json_object_safe_new_string((char *)caller_profile->profile_index));
 		}
 
 		if (caller_profile->caller_extension) {
@@ -390,11 +391,11 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 
 			json_object_object_add(j_callflow, "extension", j_caller_extension);
 
-			json_object_object_add(j_caller_extension, "name", json_object_new_string(caller_profile->caller_extension->extension_name));
-			json_object_object_add(j_caller_extension, "number", json_object_new_string(caller_profile->caller_extension->extension_number));
+			json_object_object_add(j_caller_extension, "name", json_object_safe_new_string(caller_profile->caller_extension->extension_name));
+			json_object_object_add(j_caller_extension, "number", json_object_safe_new_string(caller_profile->caller_extension->extension_number));
 
 			if (caller_profile->caller_extension->current_application) {
-				json_object_object_add(j_caller_extension, "current_app", json_object_new_string(caller_profile->caller_extension->current_application->application_name));
+				json_object_object_add(j_caller_extension, "current_app", json_object_safe_new_string(caller_profile->caller_extension->current_application->application_name));
 			}
 
 			for (ap = caller_profile->caller_extension->applications; ap; ap = ap->next) {
@@ -410,8 +411,8 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 				if (ap == caller_profile->caller_extension->current_application) {
 					json_object_object_add(j_application, "last_executed", json_object_new_string("true"));
 				}
-				json_object_object_add(j_application, "app_name", json_object_new_string(ap->application_name));
-				json_object_object_add(j_application, "app_data", json_object_new_string(switch_str_nil(ap->application_data)));
+				json_object_object_add(j_application, "app_name", json_object_safe_new_string(ap->application_name));
+				json_object_object_add(j_application, "app_data", json_object_safe_new_string(switch_str_nil(ap->application_data)));
 			}
 
 			if (caller_profile->caller_extension->children) {
@@ -437,13 +438,13 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 
 					json_object_object_add(j_inner_extension, "extension", j_caller_extension);
 
-					json_object_object_add(j_caller_extension, "name", json_object_new_string(cp->caller_extension->extension_name));
-					json_object_object_add(j_caller_extension, "number", json_object_new_string(cp->caller_extension->extension_number));
+					json_object_object_add(j_caller_extension, "name", json_object_safe_new_string(cp->caller_extension->extension_name));
+					json_object_object_add(j_caller_extension, "number", json_object_safe_new_string(cp->caller_extension->extension_number));
 
-					json_object_object_add(j_caller_extension, "dialplan", json_object_new_string((char *)cp->dialplan));
+					json_object_object_add(j_caller_extension, "dialplan", json_object_safe_new_string((char *)cp->dialplan));
 
 					if (cp->caller_extension->current_application) {
-						json_object_object_add(j_caller_extension, "current_app", json_object_new_string(cp->caller_extension->current_application->application_name));
+						json_object_object_add(j_caller_extension, "current_app", json_object_safe_new_string(cp->caller_extension->current_application->application_name));
 					}
 
 					for (ap = cp->caller_extension->applications; ap; ap = ap->next) {
@@ -457,8 +458,8 @@ static switch_status_t generate_json_cdr(switch_core_session_t *session, struct 
 						if (ap == cp->caller_extension->current_application) {
 							json_object_object_add(j_application, "last_executed", json_object_new_string("true"));
 						}
-						json_object_object_add(j_application, "app_name", json_object_new_string(ap->application_name));
-						json_object_object_add(j_application, "app_data", json_object_new_string(switch_str_nil(ap->application_data)));
+						json_object_object_add(j_application, "app_name", json_object_safe_new_string(ap->application_name));
+						json_object_object_add(j_application, "app_data", json_object_safe_new_string(switch_str_nil(ap->application_data)));
 					}
 				}
 			}
