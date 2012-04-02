@@ -883,7 +883,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 #endif// GSMOPEN_PORTAUDIO
 
 	//sent = write(tech_pvt->controldev_audio_fd, (short *) frame->data, (int) (frame->datalen));
-	if ((samples = read(tech_pvt->controldev_audio_fd, (short *) tech_pvt->read_frame.data, 320)) >0)
+	//if ((samples = read(tech_pvt->controldev_audio_fd, (short *) tech_pvt->read_frame.data, 320)) >0)
+	if ((samples = tech_pvt->serialPort_serial_audio->Read((char *) tech_pvt->read_frame.data, 320)) >0)
 	{
 
 #ifdef GSMOPEN_PORTAUDIO
@@ -923,7 +924,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 		*frame = &tech_pvt->read_frame;
 
-	if ((samples2 = read(tech_pvt->controldev_audio_fd, (short *) buffer2, 320)) >0){
+	//if ((samples2 = read(tech_pvt->controldev_audio_fd, (short *) buffer2, 320)) >0){
+	if ((samples2 = tech_pvt->serialPort_serial_audio->Read((char *) tech_pvt->read_frame.data, 320)) >0){
 		WARNINGA("samples2=%d\n", GSMOPEN_P_LOG, samples2);
 
 }
@@ -1093,7 +1095,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 #endif //WANT_SPEEX
 #endif // GSMOPEN_PORTAUDIO
 
-	sent = write(tech_pvt->controldev_audio_fd, (short *) frame->data, (int) (frame->datalen));
+	sent = tech_pvt->serialPort_serial_audio->Write((char *) frame->data, (int) (frame->datalen));
+	//sent = write(tech_pvt->controldev_audio_fd, (short *) frame->data, (int) (frame->datalen));
 //DEBUGA_GSMOPEN("sent=%d \n", GSMOPEN_P_LOG, sent);
 
 	if (sent && sent != frame->datalen && sent != -1) {
@@ -2153,6 +2156,7 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_GSMOPEN("gsmopen_serial_sync_period=%d\n", GSMOPEN_P_LOG, (int)globals.GSMOPEN_INTERFACES[i].gsmopen_serial_sync_period);
 				DEBUGA_GSMOPEN("controldevice_audio_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].controldevice_audio_name);
 /***********************************/
+#ifdef NOTDEF
 
 				ctb::IOBase* device = NULL;
 
@@ -2175,6 +2179,7 @@ static switch_status_t load_config(int reload_type)
 					ERRORA("port NOT open\n", GSMOPEN_P_LOG);
 				}
 
+#endif// NOTDEF
 
 /***********************************/
 			}

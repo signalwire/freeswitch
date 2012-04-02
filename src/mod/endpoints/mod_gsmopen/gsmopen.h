@@ -536,6 +536,8 @@ struct private_object {
 	int controldev_audio_dead;
 	switch_mutex_t *controldev_audio_lock;
 
+ ctb::IOBase* device_serial_audio;
+ctb::SerialPort* serialPort_serial_audio;
 
 };
 
