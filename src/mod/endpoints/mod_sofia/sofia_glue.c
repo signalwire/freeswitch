@@ -2439,11 +2439,22 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch (cid_type) {
 		case CID_TYPE_PID:
 			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-				tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>", use_name, use_number, rpid_domain);
+				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s>",
+																		use_number, rpid_domain);
+				} else {
+					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>",
+																		use_name, use_number, rpid_domain);
+				}
 			} else {
-				tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>",
-																	 tech_pvt->caller_profile->caller_id_name,
-																	 tech_pvt->caller_profile->caller_id_number, rpid_domain);
+				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s>",
+																		 tech_pvt->caller_profile->caller_id_number, rpid_domain);
+				} else {
+					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>",
+																		 tech_pvt->caller_profile->caller_id_name,
+																		 tech_pvt->caller_profile->caller_id_number, rpid_domain);
+				}
 			}
 
 			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
