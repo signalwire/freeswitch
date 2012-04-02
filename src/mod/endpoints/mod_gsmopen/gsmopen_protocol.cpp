@@ -172,30 +172,6 @@ int gsmopen_serial_sync(private_t * tech_pvt)
 
 int gsmopen_serial_config(private_t * tech_pvt)
 {
-#ifndef NO_GSMLIB
-		SMSMessageRef sms;
-		char content2[1000];
-		//sms = SMSMessage::decode("079194710167120004038571F1390099406180904480A0D41631067296EF7390383D07CD622E58CD95CB81D6EF39BDEC66BFE7207A794E2FBB4320AFB82C07E56020A8FC7D9687DBED32285C9F83A06F769A9E5EB340D7B49C3E1FA3C3663A0B24E4CBE76516680A7FCBE920725A5E5ED341F0B21C346D4E41E1BA790E4286DDE4BC0BD42CA3E5207258EE1797E5A0BA9B5E9683C86539685997EBEF61341B249BC966"); // dataCodingScheme = 0
-		//sms = SMSMessage::decode("0791934329002000040C9193432766658100009001211133318004D4F29C0E"); // dataCodingScheme = 0
-		//sms = SMSMessage::decode("0791934329002000040C919343276665810008900121612521801600CC00E800E900F900F200E00020006300690061006F"); // dataCodingScheme = 8
-		sms = SMSMessage::decode("0791934329002000040C919343276665810008900172002293404C006300690061006F0020003100320033002000620065006C00E80020043D043E0432043E044104420438002005DC05E7002005E805D005EA0020FE8EFEE0FEA0FEE4FECBFE9300204EBA5927");	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
-		//sms = SMSMessage::decode("07911497941902F00414D0E474989D769F5DE4320839001040122151820000"); // dataCodingScheme = 0
-		//NOTICA("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
-
-		memset(content2, '\0', sizeof(content2));
-		if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
-			iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
-		} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
-			ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
-					sizeof(content2));
-		} else {
-			ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-
-		}
-		//NOTICA("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-		//NOTICA("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
-#endif// NO_GSMLIB
-
 	if (tech_pvt->controldevprotocol == PROTOCOL_AT)
 		return gsmopen_serial_config_AT(tech_pvt);
 #ifdef GSMOPEN_FBUS2
@@ -1694,53 +1670,6 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 							DEBUGA_GSMOPEN("2 content3=%s\n", GSMOPEN_P_LOG, content3);
 						}
 					} else {
-#ifndef NO_GSMLIB
-						char content2[1000];
-						SMSMessageRef sms;
-//MessageType messagetype;
-//Address servicecentreaddress;
-//Timestamp servicecentretimestamp;
-//Address sender_recipient_address;
-
-						sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
-
-						DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
-
-						memset(content2, '\0', sizeof(content2));
-						if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
-							iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
-						} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
-							ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
-										 sizeof(content2));
-						} else {
-							ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-
-						}
-						DEBUGA_GSMOPEN("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-						DEBUGA_GSMOPEN("dataCodingScheme=%s\n", GSMOPEN_P_LOG, sms->dataCodingScheme().toString().c_str());
-						DEBUGA_GSMOPEN("address=%s\n", GSMOPEN_P_LOG, sms->address().toString().c_str());
-						DEBUGA_GSMOPEN("serviceCentreAddress=%s\n", GSMOPEN_P_LOG, sms->serviceCentreAddress().toString().c_str());
-						DEBUGA_GSMOPEN("serviceCentreTimestamp=%s\n", GSMOPEN_P_LOG, sms->serviceCentreTimestamp().toString().c_str());
-						DEBUGA_GSMOPEN("messageType=%d\n", GSMOPEN_P_LOG, sms->messageType());
-						DEBUGA_GSMOPEN("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
-
-
-						memset(sms_body, '\0', sizeof(sms_body));
-						strncpy(sms_body, content2, sizeof(sms_body));
-						DEBUGA_GSMOPEN("body=%s\n", GSMOPEN_P_LOG, sms_body);
-						strncpy(tech_pvt->sms_body, sms_body, sizeof(tech_pvt->sms_body));
-						strncpy(tech_pvt->sms_sender, sms->address().toString().c_str(), sizeof(tech_pvt->sms_sender));
-						strncpy(tech_pvt->sms_date, sms->serviceCentreTimestamp().toString().c_str(), sizeof(tech_pvt->sms_date));
-						strncpy(tech_pvt->sms_datacodingscheme, sms->dataCodingScheme().toString().c_str(), sizeof(tech_pvt->sms_datacodingscheme));
-						strncpy(tech_pvt->sms_servicecentreaddress, sms->serviceCentreAddress().toString().c_str(),
-								sizeof(tech_pvt->sms_servicecentreaddress));
-						tech_pvt->sms_messagetype = sms->messageType();
-//messagetype = sms->messageType();
-//servicecentreaddress = sms->serviceCentreAddress();
-//servicecentretimestamp = sms->serviceCentreTimestamp();
-//sender_recipient_address = sms->address();
-
-#endif// NO_GSMLIB
 					}
 
 #if 0
@@ -2842,30 +2771,6 @@ snd_pcm_t *alsa_open_dev(private_t * tech_pvt, snd_pcm_stream_t stream)
 			ERRORA("snd_output_stdio_attach failed: %s\n", GSMOPEN_P_LOG, snd_strerror(err));
 		}
 		snd_pcm_dump(handle, output);
-
-#ifndef NO_GSMLIB
-		SMSMessageRef sms;
-		char content2[1000];
-		//sms = SMSMessage::decode("079194710167120004038571F1390099406180904480A0D41631067296EF7390383D07CD622E58CD95CB81D6EF39BDEC66BFE7207A794E2FBB4320AFB82C07E56020A8FC7D9687DBED32285C9F83A06F769A9E5EB340D7B49C3E1FA3C3663A0B24E4CBE76516680A7FCBE920725A5E5ED341F0B21C346D4E41E1BA790E4286DDE4BC0BD42CA3E5207258EE1797E5A0BA9B5E9683C86539685997EBEF61341B249BC966"); // dataCodingScheme = 0
-		//sms = SMSMessage::decode("0791934329002000040C9193432766658100009001211133318004D4F29C0E"); // dataCodingScheme = 0
-		//sms = SMSMessage::decode("0791934329002000040C919343276665810008900121612521801600CC00E800E900F900F200E00020006300690061006F"); // dataCodingScheme = 8
-		sms = SMSMessage::decode("0791934329002000040C919343276665810008900172002293404C006300690061006F0020003100320033002000620065006C00E80020043D043E0432043E044104420438002005DC05E7002005E805D005EA0020FE8EFEE0FEA0FEE4FECBFE9300204EBA5927");	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
-		//sms = SMSMessage::decode("07911497941902F00414D0E474989D769F5DE4320839001040122151820000"); // dataCodingScheme = 0
-		//NOTICA("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
-
-		memset(content2, '\0', sizeof(content2));
-		if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
-			iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
-		} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
-			ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
-						 sizeof(content2));
-		} else {
-			ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-
-		}
-		//NOTICA("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-		//NOTICA("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
-#endif// NO_GSMLIB
 
 	}
 	if (option_debug > 1)
