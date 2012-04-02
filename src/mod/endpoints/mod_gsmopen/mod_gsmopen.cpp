@@ -2210,7 +2210,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 		}
 	}
 
-	if (!strlen(hint)) {		//FIXME FIXME FIXME
+	if (hint==NULL || !strlen(hint)) {		//FIXME FIXME FIXME
 		hint = from;
 	}
 	if (to && (user = strdup(to))) {
