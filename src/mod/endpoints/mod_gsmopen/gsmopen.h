@@ -90,14 +90,6 @@
 #include <alsa/asoundlib.h>
 #endif /* GSMOPEN_ALSA */
 
-#ifdef GSMOPEN_PORTAUDIO
-#include "pablio.h"
-#undef WANT_SPEEX
-#ifdef WANT_SPEEX
-#include "speex/speex_preprocess.h"
-#include "speex/speex_echo.h"
-#endif                          /* WANT_SPEEX */
-#endif// GSMOPEN_PORTAUDIO
 
 //#include "celliax_spandsp.h"
 #ifndef WIN32
@@ -491,18 +483,6 @@ struct private_object {
 
 	int no_sound;
 
-#ifdef GSMOPEN_PORTAUDIO
-	 int speexecho;
-	   int speexpreprocess;
-	     int portaudiocindex;          /*!< \brief Index of the Portaudio capture audio device */
-	       int portaudiopindex;          /*!< \brief Index of the Portaudio playback audio device */
-	         PABLIO_Stream *stream;
-
-#ifdef WANT_SPEEX
-    SpeexPreprocessState *preprocess;
-    SpeexEchoState *echo_state;
-#endif// WANT_SPEEX
-#endif// GSMOPEN_PORTAUDIO
 		 dtmf_rx_state_t dtmf_state;
 		 int active;
 		 int home_network_registered;
@@ -657,20 +637,6 @@ int iso_8859_1_to_utf8(private_t * tech_pvt, char *iso_8859_1_in, char *utf8_out
 int gsmopen_serial_getstatus_AT(private_t * tech_pvt);
 
 
-#ifdef GSMOPEN_PORTAUDIO
-
-int gsmopen_portaudio_devlist(private_t *tech_pvt);
-
-int gsmopen_portaudio_init(private_t *tech_pvt);
-
-int gsmopen_portaudio_write(private_t * tech_pvt, short *data, int datalen);
-
-int gsmopen_portaudio_read(private_t * tech_pvt, short *data, int datalen);
-
-
-int gsmopen_portaudio_shutdown(private_t *tech_pvt);
-
-#endif // GSMOPEN_PORTAUDIO
 int dump_event(private_t *tech_pvt);
 int alarm_event(private_t * tech_pvt, int alarm_code, const char *alarm_message);
 int dump_event_full(private_t * tech_pvt, int is_alarm, int alarm_code, const char *alarm_message);
