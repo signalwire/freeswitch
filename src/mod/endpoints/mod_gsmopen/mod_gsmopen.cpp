@@ -287,15 +287,6 @@ switch_status_t gsmopen_tech_init(private_t * tech_pvt, switch_core_session_t *s
 		}
 	}
 #endif// GSMOPEN_ALSA
-#ifdef GSMOPEN_PORTAUDIO
-	if(tech_pvt->no_sound==0){
-		if (gsmopen_portaudio_init(tech_pvt)) {
-			ERRORA("gsmopen_portaudio_init failed\n", GSMOPEN_P_LOG);
-			return SWITCH_STATUS_FALSE;
-
-		}
-	}
-#endif// GSMOPEN_PORTAUDIO
 	if(tech_pvt->no_sound==0){
 		if (serial_audio_init(tech_pvt)) {
 			ERRORA("serial_audio_init failed\n", GSMOPEN_P_LOG);
@@ -633,14 +624,6 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		alsa_shutdown(tech_pvt);
 	}
 #endif// GSMOPEN_ALSA
-#ifdef GSMOPEN_PORTAUDIO
-	if(tech_pvt->no_sound==0){
-		if (gsmopen_portaudio_shutdown(tech_pvt)) {
-			ERRORA("gsmopen_portaudio_shutdown failed\n", GSMOPEN_P_LOG);
-
-		}
-	}
-#endif// GSMOPEN_PORTAUDIO
 	if(tech_pvt->no_sound==0){
 		serial_audio_shutdown(tech_pvt);
 	}
@@ -819,17 +802,11 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	switch_byte_t *data;
-#if defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
+#if defined(GSMOPEN_ALSA) 
 	int samples;
 	char digit_str[256];
-#endif // defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
-#ifdef GSMOPEN_PORTAUDIO
-#ifdef WANT_SPEEX
-  spx_int16_t *speexptr;
-  spx_int16_t pcm2[160];
-  int i;
-#endif// GSMOPEN_ALSA
-#endif// WANT_SPEEX
+#endif // defined(GSMOPEN_ALSA)
+
 	int samples;
 	int samples2;
 	char digit_str[256];
@@ -856,9 +833,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		return SWITCH_STATUS_FALSE;
 	}
 
-#ifndef GSMOPEN_PORTAUDIO
 	switch_core_timer_next(&tech_pvt->timer_read);
-#endif// GSMOPEN_PORTAUDIO
 
 		if(tech_pvt->no_sound==1){
 		goto cng;
@@ -867,46 +842,13 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	//if ((samples = snd_pcm_readi(tech_pvt->alsac, tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_packet)) > 0) 
 	if ((samples = alsa_read(tech_pvt, (short *) tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_packet)) > 0) 
 #endif// GSMOPEN_ALSA
-#ifdef GSMOPEN_PORTAUDIO
-	if ((samples = gsmopen_portaudio_read(tech_pvt, (short *) tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_packet)) > 0) 
-#endif// GSMOPEN_PORTAUDIO
-
 	if ((samples = tech_pvt->serialPort_serial_audio->Read((char *) tech_pvt->read_frame.data, 320)) >0)
 	{
-
-#ifdef GSMOPEN_PORTAUDIO
-#ifdef WANT_SPEEX
-
-  if (tech_pvt->speexecho) {
-  speexptr = ((spx_int16_t *) tech_pvt->read_frame.data);
-    /* Perform echo cancellation */
-    speex_echo_capture(tech_pvt->echo_state, speexptr, pcm2);
-#ifndef GIOVA48
-    for (i = 0; i < 160; i++)
-#else //GIOVA48
-    for (i = 0; i < 960; i++)
-#endif //GIOVA48
-      speexptr[i] = pcm2[i];
-  }
-  /* Apply noise/echo residual suppression */
-  if (tech_pvt->speexpreprocess) {
-    speex_preprocess_run(tech_pvt->preprocess, speexptr);
-  }
-
-		DEBUGA_GSMOPEN("read\n", GSMOPEN_P_LOG);
-#endif //WANT_SPEEX
-#endif // GSMOPEN_PORTAUDIO
-
-
-
-
 
 		tech_pvt->read_frame.datalen = samples;
 		tech_pvt->read_frame.samples = samples/2;
 
-#ifndef GSMOPEN_PORTAUDIO
 		tech_pvt->read_frame.timestamp = tech_pvt->timer_read.samplecount;
-#endif// GSMOPEN_PORTAUDIO
 
 		*frame = &tech_pvt->read_frame;
 
@@ -999,9 +941,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	tech_pvt->read_frame.datalen = 2;
 	tech_pvt->read_frame.flags = SFF_CNG;
 	*frame = &tech_pvt->read_frame;
-#ifdef GSMOPEN_PORTAUDIO
-		//speex_echo_state_reset(tech_pvt->stream->echo_state);
-#endif // GSMOPEN_PORTAUDIO
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -1010,14 +949,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-#if defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
+#if defined(GSMOPEN_ALSA)
 	unsigned int sent;
-#endif // defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
-#ifdef GSMOPEN_PORTAUDIO
-#ifdef WANT_SPEEX
-  spx_int16_t *speexptr;
-#endif// GSMOPEN_ALSA
-#endif// WANT_SPEEX
+#endif // defined(GSMOPEN_ALSA)
+
 	unsigned int sent;
 
 	channel = switch_core_session_get_channel(session);
@@ -1058,24 +993,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		DEBUGA_GSMOPEN("sent %d\n", GSMOPEN_P_LOG, sent);
 	}
 #endif// GSMOPEN_ALSA
-#ifdef GSMOPEN_PORTAUDIO
-	sent = gsmopen_portaudio_write(tech_pvt, (short *) frame->data, (int) (frame->datalen));
-//DEBUGA_GSMOPEN("sent=%d \n", GSMOPEN_P_LOG, sent);
-
-	if (sent && sent != frame->datalen / 2 && sent != -1) {
-		DEBUGA_GSMOPEN("sent %d\n", GSMOPEN_P_LOG, sent);
-	}
-
-#ifdef WANT_SPEEX
-  if (tech_pvt->speexecho) {
-  speexptr = (spx_int16_t *) frame->data;
-    /* Put frame into playback buffer */
-    speex_echo_playback(tech_pvt->echo_state, speexptr);
-		DEBUGA_GSMOPEN("write\n", GSMOPEN_P_LOG);
-  }
-#endif //WANT_SPEEX
-#endif // GSMOPEN_PORTAUDIO
-
 	sent = tech_pvt->serialPort_serial_audio->Write((char *) frame->data, (int) (frame->datalen));
 
 	if (sent && sent != frame->datalen && sent != -1) {
@@ -1140,7 +1057,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 #if defined(GSMOPEN_ALSA) 
 	int samples;
 	short tmp_buffer[1280];
-#endif // defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
+#endif // defined(GSMOPEN_ALSA)
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -1166,14 +1083,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			//WARNINGA("read %d samples\n", GSMOPEN_P_LOG, samples);
 		}
 #endif// GSMOPEN_ALSA
-#ifdef GSMOPEN_PORTAUDIO
-		//while ((samples = gsmopen_portaudio_read(tech_pvt, tmp_buffer, tech_pvt->read_codec.implementation->samples_per_packet * 2)) > 160) {
-			//WARNINGA("read %d samples\n", GSMOPEN_P_LOG, samples);
-		//}
-#ifdef WANT_SPEEX
-		speex_echo_state_reset(tech_pvt->echo_state);
-#endif// WANT_SPEEX
-#endif// GSMOPEN_PORTAUDIO
 		break;
 
 
@@ -1490,11 +1399,11 @@ static switch_status_t load_config(int reload_type)
 			const char *alsa_capture_is_mono = "1";
 			const char *capture_boost = "0";
 			const char *playback_boost = "0";
-#if defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
+#if defined(GSMOPEN_ALSA)
 			const char *no_sound = "0";
 #else 
 			const char *no_sound = "0";
-#endif // defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
+#endif // defined(GSMOPEN_ALSA)
 			const char *portaudiocindex = "1";
 			const char *portaudiopindex = "1";
 			const char *speexecho = "1";
@@ -1853,12 +1762,6 @@ static switch_status_t load_config(int reload_type)
 				switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].alsapname, alsapname);
 #endif// GSMOPEN_ALSA
 
-#ifdef GSMOPEN_PORTAUDIO
-				globals.GSMOPEN_INTERFACES[interface_id].portaudiocindex = atoi(portaudiocindex);
-				globals.GSMOPEN_INTERFACES[interface_id].portaudiopindex = atoi(portaudiopindex);
-				globals.GSMOPEN_INTERFACES[interface_id].speexecho = atoi(speexecho);
-				globals.GSMOPEN_INTERFACES[interface_id].speexpreprocess = atoi(speexpreprocess);
-#endif// GSMOPEN_PORTAUDIO
 				globals.GSMOPEN_INTERFACES[interface_id].at_early_audio = atoi(at_early_audio);
 				globals.GSMOPEN_INTERFACES[interface_id].at_after_preinit_pause = atoi(at_after_preinit_pause);
 				globals.GSMOPEN_INTERFACES[interface_id].at_initial_pause = atoi(at_initial_pause);
@@ -1873,11 +1776,11 @@ static switch_status_t load_config(int reload_type)
 #endif// GSMOPEN_ALSA
 				globals.GSMOPEN_INTERFACES[interface_id].capture_boost = atoi(capture_boost);
 				globals.GSMOPEN_INTERFACES[interface_id].playback_boost = atoi(playback_boost);
-#if defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
+#if defined(GSMOPEN_ALSA)
 				globals.GSMOPEN_INTERFACES[interface_id].no_sound = atoi(no_sound);
 #else 
 				globals.GSMOPEN_INTERFACES[interface_id].no_sound = 0;
-#endif //  defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
+#endif //  defined(GSMOPEN_ALSA)
 				globals.GSMOPEN_INTERFACES[interface_id].gsmopen_serial_sync_period = atoi(gsmopen_serial_sync_period);	
 
 
@@ -1903,17 +1806,6 @@ static switch_status_t load_config(int reload_type)
 #endif// GSMOPEN_ALSA
 
 
-#ifdef GSMOPEN_PORTAUDIO
-				//FIXME
-				//globals.GSMOPEN_INTERFACES[interface_id].portaudiocindex = 1;
-				//globals.GSMOPEN_INTERFACES[interface_id].portaudiopindex = 1;
-				//globals.GSMOPEN_INTERFACES[interface_id].speexecho = 1;
-				//globals.GSMOPEN_INTERFACES[interface_id].speexpreprocess = 1;
-				DEBUGA_GSMOPEN("portaudiocindex=%d\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].portaudiocindex);
-				DEBUGA_GSMOPEN("portaudiocindex=%d\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].portaudiocindex);
-				DEBUGA_GSMOPEN("speexecho=%d\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].speexecho);
-				DEBUGA_GSMOPEN("speexpreprocess=%d\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].speexpreprocess);
-#endif// GSMOPEN_PORTAUDIO
 				DEBUGA_GSMOPEN("gsmopen_serial_sync_period=%d\n", GSMOPEN_P_LOG, (int)globals.GSMOPEN_INTERFACES[interface_id].gsmopen_serial_sync_period);
 
 
@@ -1987,31 +1879,6 @@ static switch_status_t load_config(int reload_type)
 
 					}
 #endif// GSMOPEN_ALSA
-#ifdef GSMOPEN_PORTAUDIO
-					if (gsmopen_portaudio_init(&globals.GSMOPEN_INTERFACES[interface_id])) {
-						ERRORA("gsmopen_portaudio_init failed\n", GSMOPEN_P_LOG);
-						ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
-						//return SWITCH_STATUS_FALSE;
-						globals.GSMOPEN_INTERFACES[interface_id].running=0;
-						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "gsmopen_portaudio_init failed");
-						globals.GSMOPEN_INTERFACES[interface_id].active=0;
-						globals.GSMOPEN_INTERFACES[interface_id].name[0]='\0';
-						continue;
-
-					}
-
-					if (gsmopen_portaudio_shutdown(&globals.GSMOPEN_INTERFACES[interface_id])) {
-						ERRORA("gsmopen_portaudio_shutdown failed\n", GSMOPEN_P_LOG);
-						ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
-						//return SWITCH_STATUS_FALSE;
-						globals.GSMOPEN_INTERFACES[interface_id].running=0;
-						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "gsmopen_portaudio_shutdown failed");
-						globals.GSMOPEN_INTERFACES[interface_id].active=0;
-						globals.GSMOPEN_INTERFACES[interface_id].name[0]='\0';
-						continue;
-
-					}
-#endif// GSMOPEN_PORTAUDIO
 					if (serial_audio_init(&globals.GSMOPEN_INTERFACES[interface_id])) {
 						ERRORA("serial_audio_init failed\n", GSMOPEN_P_LOG);
 						ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
@@ -2083,12 +1950,6 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_GSMOPEN("alsacname=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].alsacname);
 				DEBUGA_GSMOPEN("alsapname=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].alsapname);
 #endif// GSMOPEN_ALSA
-#ifdef GSMOPEN_PORTAUDIO
-				DEBUGA_GSMOPEN("portaudiocindex=%d\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].portaudiocindex);
-				DEBUGA_GSMOPEN("portaudiopindex=%d\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].portaudiopindex);
-				DEBUGA_GSMOPEN("speexecho=%d\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].speexecho);
-				DEBUGA_GSMOPEN("speexpreprocess=%d\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].speexpreprocess);
-#endif// GSMOPEN_PORTAUDIO
 				DEBUGA_GSMOPEN("gsmopen_serial_sync_period=%d\n", GSMOPEN_P_LOG, (int)globals.GSMOPEN_INTERFACES[i].gsmopen_serial_sync_period);
 				DEBUGA_GSMOPEN("controldevice_audio_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].controldevice_audio_name);
 			}
@@ -2811,16 +2672,6 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 					stream->write_function(stream, "alsacname = %s\n", tech_pvt->alsacname);
 					stream->write_function(stream, "alsapname = %s\n", tech_pvt->alsapname);
 #endif// GSMOPEN_ALSA
-#ifdef GSMOPEN_PORTAUDIO
-					snprintf(value, sizeof(value)-1, "%d", tech_pvt->portaudiocindex);
-					stream->write_function(stream, "portaudiocindex = %s\n", value);
-					snprintf(value, sizeof(value)-1, "%d", tech_pvt->portaudiopindex);
-					stream->write_function(stream, "portaudiopindex = %s\n", value);
-					snprintf(value, sizeof(value)-1, "%d", tech_pvt->speexecho);
-					stream->write_function(stream, "speexecho = %s\n", value);
-					snprintf(value, sizeof(value)-1, "%d", tech_pvt->speexpreprocess);
-					stream->write_function(stream, "speexpreprocess = %s\n", value);
-#endif// GSMOPEN_PORTAUDIO
 					snprintf(value, sizeof(value)-1, "%f", tech_pvt->playback_boost);
 					stream->write_function(stream, "playback_boost = %s\n", value);
 					snprintf(value, sizeof(value)-1, "%f", tech_pvt->capture_boost);
@@ -2884,16 +2735,6 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 			stream->write_function(stream, "alsacname = %s\n", tech_pvt->alsacname);
 			stream->write_function(stream, "alsapname = %s\n", tech_pvt->alsapname);
 #endif// GSMOPEN_ALSA
-#ifdef GSMOPEN_PORTAUDIO
-			snprintf(value, sizeof(value)-1, "%d", tech_pvt->portaudiocindex);
-			stream->write_function(stream, "portaudiocindex = %s\n", value);
-			snprintf(value, sizeof(value)-1, "%d", tech_pvt->portaudiopindex);
-			stream->write_function(stream, "portaudiopindex = %s\n", value);
-			snprintf(value, sizeof(value)-1, "%d", tech_pvt->speexecho);
-			stream->write_function(stream, "speexecho = %s\n", value);
-			snprintf(value, sizeof(value)-1, "%d", tech_pvt->speexpreprocess);
-			stream->write_function(stream, "speexpreprocess = %s\n", value);
-#endif// GSMOPEN_PORTAUDIO
 			snprintf(value, sizeof(value)-1, "%f", tech_pvt->playback_boost);
 			stream->write_function(stream, "playback_boost = %s\n", value);
 			snprintf(value, sizeof(value)-1, "%f", tech_pvt->capture_boost);
@@ -3292,16 +3133,6 @@ int dump_event_full(private_t * tech_pvt, int is_alarm, int alarm_code, const ch
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alsacname", tech_pvt->alsacname);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alsapname", tech_pvt->alsapname);
 #endif// GSMOPEN_ALSA
-#ifdef GSMOPEN_PORTAUDIO
-		snprintf(value, sizeof(value)-1, "%d", tech_pvt->portaudiocindex);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "portaudiocindex", value);
-		snprintf(value, sizeof(value)-1, "%d", tech_pvt->portaudiopindex);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "portaudiopindex", value);
-		snprintf(value, sizeof(value)-1, "%d", tech_pvt->speexecho);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "speexecho", value);
-		snprintf(value, sizeof(value)-1, "%d", tech_pvt->speexpreprocess);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "speexpreprocess", value);
-#endif// GSMOPEN_PORTAUDIO
 		snprintf(value, sizeof(value)-1, "%f", tech_pvt->playback_boost);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "playback_boost", value);
 		snprintf(value, sizeof(value)-1, "%f", tech_pvt->capture_boost);

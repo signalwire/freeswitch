@@ -2346,9 +2346,6 @@ int gsmopen_answer(private_t * tech_pvt)
 		if (option_debug)
 			DEBUGA_PBX("call answered\n", GSMOPEN_P_LOG);
 		res = 0;
-#ifdef GSMOPEN_PORTAUDIO
-		//speex_echo_state_reset(tech_pvt->stream->echo_state);
-#endif // GSMOPEN_PORTAUDIO
 
 		new_inbound_channel(tech_pvt);
 		if (tech_pvt->owner) {
