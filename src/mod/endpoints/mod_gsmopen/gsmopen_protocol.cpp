@@ -57,6 +57,18 @@ int gettimeofday(struct timeval *tv, struct sk_timezone *tz)
 
 int gsmopen_serial_init(private_t * tech_pvt, speed_t controldevice_speed)
 {
+
+	tech_pvt->serialPort_serial_control = new ctb::SerialPort();
+
+	if( tech_pvt->serialPort_serial_control->Open( "/dev/ttyUSB3", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
+		ERRORA("port SUCCESS open\n", GSMOPEN_P_LOG);
+	} else {
+		ERRORA("port NOT open\n", GSMOPEN_P_LOG);
+	}
+
+	return 0;
+#ifdef NOTDEF
+
 	int fd;
 	int rt;
 	struct termios tp;
@@ -135,6 +147,7 @@ int gsmopen_serial_init(private_t * tech_pvt, speed_t controldevice_speed)
 		return -1;
 	}
 	return (fd);
+#endif// NOTDEF
 }
 
 
@@ -393,7 +406,7 @@ int gsmopen_serial_config_AT(private_t * tech_pvt)
 		WARNINGA("AT+CSCS=\"UCS2\" (set TE messages to ucs2)  do not got OK from the phone, let's try with 'GSM'\n", GSMOPEN_P_LOG);
 		tech_pvt->no_ucs2 = 1;
 	}
-#ifdef NOTDEF
+#ifdef NOTDEF //GSMLIB?
 	if (tech_pvt->no_ucs2) {
 		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"GSM\"");
 		if (res) {

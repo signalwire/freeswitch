@@ -523,6 +523,8 @@ struct private_object {
 	switch_mutex_t *controldev_audio_lock;
 	ctb::SerialPort* serialPort_serial_audio;
 
+	ctb::SerialPort* serialPort_serial_control;
+
 };
 
 typedef struct private_object private_t;
