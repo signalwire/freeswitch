@@ -1994,7 +1994,7 @@ int gsmopen_serial_write_AT_expect1(private_t * tech_pvt, const char *data, cons
 		return -1;
 	}
 
-	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, seconds, expected_string, expect_crlf);	// 20.5 sec timeout, used for querying the SIM and sending SMSs
+	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 100000, seconds, expected_string, expect_crlf);	// minimum 1/10th sec timeout
 	UNLOCKA(tech_pvt->controldev_lock);
 	POPPA_UNLOCKA(tech_pvt->controldev_lock);
 
@@ -2011,7 +2011,8 @@ int gsmopen_serial_AT_expect(private_t * tech_pvt, const char *expected_string, 
 	if (option_debug > 1)
 		DEBUGA_GSMOPEN("expecting: %s\n", GSMOPEN_P_LOG, expected_string);
 
-	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, seconds, expected_string, expect_crlf);	// 20.5 sec timeout, used for querying the SIM and sending SMSs
+	//cicopet at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, seconds, expected_string, expect_crlf);	// 20.5 sec timeout, used for querying the SIM and sending SMSs
+	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 100000, seconds, expected_string, expect_crlf);	//  minimum 1/10th sec timeout
 	UNLOCKA(tech_pvt->controldev_lock);
 	POPPA_UNLOCKA(tech_pvt->controldev_lock);
 
