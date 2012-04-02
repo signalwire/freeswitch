@@ -4834,11 +4834,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	ftdm_global_set_config_directory(SWITCH_GLOBAL_dirs.conf_dir);
 
 	if (ftdm_global_init() != FTDM_SUCCESS) {
+		ftdm_global_destroy();
 		ftdm_log(FTDM_LOG_ERROR, "Error loading FreeTDM\n");
 		return SWITCH_STATUS_TERM;
 	}
 
 	if (ftdm_global_configuration() != FTDM_SUCCESS) {
+		ftdm_global_destroy();
 		ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM\n");
 		return SWITCH_STATUS_TERM;
 	}

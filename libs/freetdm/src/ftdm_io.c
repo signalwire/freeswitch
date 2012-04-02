@@ -5829,6 +5829,8 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 	/* destroy signaling and io modules */
 	ftdm_unload_modules();
 
+	ftdm_global_set_logger( NULL );
+
 	/* finally destroy the globals */
 	ftdm_mutex_lock(globals.mutex);
 	ftdm_sched_destroy(&globals.timingsched);
