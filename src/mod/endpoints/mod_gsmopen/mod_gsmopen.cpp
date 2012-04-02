@@ -868,7 +868,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 #ifndef GSMOPEN_PORTAUDIO
 	switch_core_timer_next(&tech_pvt->timer_read);
 #endif// GSMOPEN_PORTAUDIO
-	//usleep(20000);
 
 		//goto cng;
 		if(tech_pvt->no_sound==1){
@@ -1507,8 +1506,8 @@ static switch_status_t load_config(int reload_type)
 			const char *gsmopen_sound_rate = "8000";
 			const char *alsa_play_is_mono = "1";
 			const char *alsa_capture_is_mono = "1";
-			const char *capture_boost = "5";
-			const char *playback_boost = "10";
+			const char *capture_boost = "0";
+			const char *playback_boost = "0";
 #if defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
 			const char *no_sound = "0";
 #else 
