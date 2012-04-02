@@ -135,6 +135,17 @@
 #define GSMOPEN_SVN_VERSION SWITCH_VERSION_REVISION
 #endif /* GSMOPEN_SVN_VERSION */
 
+#include "ctb-0.16/ctb.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <iostream>
+#include <string>
+
+using namespace std;
+
 typedef enum {
 	TFLAG_IO = (1 << 0),
 	TFLAG_INBOUND = (1 << 1),

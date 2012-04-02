@@ -2152,7 +2152,31 @@ static switch_status_t load_config(int reload_type)
 #endif// GSMOPEN_PORTAUDIO
 				DEBUGA_GSMOPEN("gsmopen_serial_sync_period=%d\n", GSMOPEN_P_LOG, (int)globals.GSMOPEN_INTERFACES[i].gsmopen_serial_sync_period);
 				DEBUGA_GSMOPEN("controldevice_audio_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].controldevice_audio_name);
+/***********************************/
 
+				ctb::IOBase* device = NULL;
+
+
+				ctb::SerialPort* serialPort = new ctb::SerialPort();
+
+				//if( serialPort->Open( devname.c_str(), baudrate,
+				if( serialPort->Open( "/dev/ttyUSB3", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
+
+					device = serialPort;
+
+					if( device->Write( "AT+CLAC\r\n", 9 ) != 7 ) {
+
+						ERRORA("BIZARRE\n", GSMOPEN_P_LOG);
+
+					}
+
+				} else {
+
+					ERRORA("port NOT open\n", GSMOPEN_P_LOG);
+				}
+
+
+/***********************************/
 			}
 		}
 	}
