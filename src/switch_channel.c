@@ -1380,7 +1380,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 	
 	for (;;) {
 		if ((channel->state < CS_HANGUP && channel->state == channel->running_state && channel->running_state == want_state) ||
-			(other_channel && switch_channel_down_nosig(other_channel)) || switch_channel_down_nosig(channel)) {
+			(other_channel && switch_channel_down_nosig(other_channel)) || switch_channel_down(channel)) {
 			break;
 		}
 		switch_yield(20000);
@@ -1398,6 +1398,8 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *cha
 		if ((channel->state == channel->running_state && channel->running_state == want_state) || channel->state >= CS_HANGUP) {
 			break;
 		}
+
+		switch_channel_check_signal(channel, SWITCH_TRUE);
 
 		switch_cond_next();
 

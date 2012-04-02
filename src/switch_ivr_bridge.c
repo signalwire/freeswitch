@@ -776,7 +776,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			state = switch_channel_get_state(other_channel);
 			running_state = switch_channel_get_running_state(other_channel);
 
-			if (switch_channel_down_nosig(other_channel) || switch_channel_down_nosig(channel)) {
+			if (switch_channel_down_nosig(other_channel) || switch_channel_down(channel)) {
 				break;
 			}
 
