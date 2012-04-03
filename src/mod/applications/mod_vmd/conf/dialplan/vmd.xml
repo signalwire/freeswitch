@@ -1,0 +1,12 @@
+<include>
+	<extension name="vmdtest">
+		<condition field="destination_number" expression="^vmd(\d{10})$">
+			<action application="answer"/>
+			<action application="info"/>
+			<action application="vmd"/>
+			<action application="sleep" data="25000"/>
+			<action application="info"/> <!-- Look for chan var "vmd_detect" here -->
+			<action application="hangup"/>
+		</condition>
+	</extension>
+</include>

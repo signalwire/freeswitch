@@ -750,7 +750,11 @@ SPAN_DECLARE(int) t30_set_supported_t30_features(t30_state_t *s, int supported_t
 
 SPAN_DECLARE(void) t30_set_status(t30_state_t *s, int status)
 {
-    s->current_status = status;
+    if (s->current_status != status)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Status changing to '%s'\n", t30_completion_code_to_str(status));
+        s->current_status = status;
+    }
 }
 /*- End of function --------------------------------------------------------*/
 

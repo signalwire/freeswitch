@@ -49,7 +49,6 @@
 #endif
 #include <string.h>
 
-#include <pcap.h>
 #include <netinet/in.h>
 #include <netinet/udp.h>
 #include <time.h>
@@ -93,8 +92,17 @@ typedef struct _ether_hdr
 {
     char ether_dst[6];
     char ether_src[6];
-    u_int16_t ether_type;
+    uint16_t ether_type;
 } ether_hdr;
+
+typedef struct _linux_sll_hdr
+{
+    uint16_t packet_type;
+    uint16_t arphrd;
+    uint16_t slink_length;
+    uint8_t bytes[8];
+    uint16_t ether_type;
+} linux_sll_hdr;
 
 typedef struct _null_hdr
 {
@@ -129,6 +137,7 @@ int pcap_scan_pkts(const char *file,
     int total_pkts;
     uint32_t pktlen;
     ether_hdr *ethhdr;
+    linux_sll_hdr *sllhdr;
     null_hdr *nullhdr;
     struct iphdr *iphdr;
 #if !defined(__CYGWIN__)
@@ -146,13 +155,22 @@ int pcap_scan_pkts(const char *file,
     }
     datalink = pcap_datalink(pcap);
     /* DLT_EN10MB seems to apply to all forms of ethernet, not just the 10MB kind. */
-    if (datalink != DLT_EN10MB  &&  datalink != DLT_NULL)
+    switch (datalink)
     {
+    case DLT_EN10MB:
+        printf("Datalink type ethernet\n");
+        break;
+    case DLT_LINUX_SLL:
+        printf("Datalink type cooked Linux socket\n");
+        break;
+    case DLT_NULL:
+        printf("Datalink type NULL\n");
+        break;
+    default:
         fprintf(stderr, "Unsupported data link type %d\n", datalink);
         return -1;
     }
 
-    printf("Datalink type %d\n", datalink);
     pkthdr = NULL;
     pktdata = NULL;
 #if defined(HAVE_PCAP_NEXT_EX)
@@ -167,8 +185,9 @@ int pcap_scan_pkts(const char *file,
     while ((pktdata = (uint8_t *) pcap_next(pcap, pkthdr)) != NULL)
     {
 #endif
-        if (datalink == DLT_EN10MB)
+        switch (datalink)
         {
+        case DLT_EN10MB:
             ethhdr = (ether_hdr *) pktdata;
             packet_type = ntohs(ethhdr->ether_type);
 #if !defined(__CYGWIN__)
@@ -182,16 +201,29 @@ int pcap_scan_pkts(const char *file,
                 continue;
             }
             iphdr = (struct iphdr *) ((uint8_t *) ethhdr + sizeof(*ethhdr));
-        }
-        else if (datalink == DLT_NULL)
-        {
+            break;
+        case DLT_LINUX_SLL:
+            sllhdr = (linux_sll_hdr *) pktdata;
+            packet_type = ntohs(sllhdr->ether_type);
+#if !defined(__CYGWIN__)
+            if (packet_type != 0x0800     /* IPv4 */
+                &&
+                packet_type != 0x86DD)    /* IPv6 */
+#else
+            if (packet_type != 0x0800)    /* IPv4 */
+#endif
+            {
+                continue;
+            }
+            iphdr = (struct iphdr *) ((uint8_t *) sllhdr + sizeof(*sllhdr));
+            break;
+        case DLT_NULL:
             nullhdr = (null_hdr *) pktdata;
             if (nullhdr->pf_type != PF_INET  &&  nullhdr->pf_type != PF_INET6)
                 continue;
             iphdr = (struct iphdr *) ((uint8_t *) nullhdr + sizeof(*nullhdr));
-        }
-        else
-        {
+            break;
+        default:
             continue;
         }
 #if 0

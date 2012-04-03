@@ -55,7 +55,6 @@ int main(int argc, char *argv[])
     int16_t amp[16384];
     int len;
     SNDFILE *outhandle;
-    int outframes;
 
     if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
     {

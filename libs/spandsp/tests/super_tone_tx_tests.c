@@ -67,6 +67,7 @@ SNDFILE *outhandle;
 
 super_tone_tx_step_t *tone_tree = NULL;
 
+#if defined(HAVE_LIBXML2)
 static void play_tones(super_tone_tx_state_t *tone, int max_samples)
 {
     int16_t amp[8000];
@@ -93,7 +94,6 @@ static void play_tones(super_tone_tx_state_t *tone, int max_samples)
 }
 /*- End of function --------------------------------------------------------*/
 
-#if defined(HAVE_LIBXML2)
 static int parse_tone(super_tone_tx_step_t **tree, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur)
 {
     xmlChar *x;
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 #if defined(HAVE_LIBXML2)
     get_tone_set("../spandsp/global-tones.xml", (argc > 1)  ?  argv[1]  :  "hk");
 #endif
-    if (sf_close (outhandle) != 0)
+    if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);

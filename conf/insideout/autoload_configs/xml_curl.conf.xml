@@ -1,0 +1,21 @@
+<configuration name="xml_curl.conf" description="cURL XML Gateway">
+  <bindings>
+    <binding name="example">
+      <!-- The url to a gateway cgi that can generate xml similar to
+	   what's in this file only on-the-fly (leave it commented if you dont
+	   need it) -->
+      <!-- one or more |-delim of configuration|directory|dialplan -->
+      <!-- <param name="gateway-url" value="http://www.freeswitch.org/gateway.xml" bindings="dialplan"/> -->
+      <!-- set this to provide authentication credentials to the server -->
+      <!--<param name="gateway-credentials" value="muser:mypass"/>-->
+      <!-- set to true to disable Expect: 100-continue lighttpd requires this setting -->
+      <!--<param name="disable-100-continue" value="true"/>-->
+
+      <!-- optional: if enabled this will disable CA root certificate checks by libcurl -->
+      <!-- note: default value is disabled. only enable if you want this! -->
+      <!-- <param name="ignore-cacert-check" value="true" /> -->
+      <!-- one or more of these imply you want to pick the exact variables that are transmitted -->
+      <!--<param name="enable-post-var" value="Unique-ID"/>-->
+    </binding>
+  </bindings>
+</configuration>

@@ -1,0 +1,10 @@
+<!-- http://wiki.freeswitch.org/wiki/Mod_openmrcp#Configuration -->
+<configuration name="openmrcp.conf" description="mod_openmrcp configuration">
+  <settings>
+    <param name="asr_default_profile" value="openmrcp-v2"/>
+    <param name="tts_default_profile" value="openmrcp-v2"/>
+  </settings>
+  <profiles>
+    <X-PRE-PROCESS cmd="include" data="../mrcp_profiles/*.xml"/>
+  </profiles>
+</configuration>

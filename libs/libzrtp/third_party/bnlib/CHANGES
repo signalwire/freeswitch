@@ -1,0 +1,59 @@
+1.1.4
+- Added bnBasePrecompCopy, bnDoubleBasePrecompExpMod, and corresponding
+  lbn* functions.
+- Fixed some stupid bugs in bnExtractBigBytes and bnExtractLittleBytes
+  when asking for more bytes than the numbers have.
+
+1.1.3
+1999-05-09
+- Added bnBasePrecompBegin, bnBasePrecompEnd and bnBasePrecompExpMod,
+  and corresponding lbn* functions.
+- Added some rudimentary tests of the above to bntest.
+- Updated dsatest to use the new functions.  Speedup on 1024 bits seems
+  to be about 3x.
+
+1.1.2:
+1998-06-22
+- Added bnReadBit function
+- Fixed corruption in bnMakeOdd_16
+- Clarified comments in germain.c
+- Fixed nasty bug in lbnModQ_16 in lbn80386.asm
+- renamed rand parameter to randFunc in prime.c to avoid warnings
+
+1.1.1:
+- Cleaned up some test directory code
+	
+1.1: Second public release
+
+- Generalized Sophie Germain primes to variable "orders",
+  which is the number of 2*p+1 levels that are all prime.
+  An order-0 primeis an ordinary prime.  An order-1 prime is
+  a Sophie Germain prime.  An order-3 prime also has 4*p+3 prime.
+  (Changed hours before release; I wonder if there are bugs?)
+- Figured out that if p and 2*p+1 are prime, it's p that's called
+  a Sophie Germain prime, not 2*p+1.  germain.c and germtest.c
+  updated accordingly.  2*p+1 is called a "strong prime".
+- Updated to not use 16-bit MSDOS-isms like "cdecl" with GCC under GO32.
+- Fixed a bug in primeGen() that caused it to do strange things
+  if the first number in the sieve passed.
+- Fixed a memory leak in lbnExpMod
+- Fixed bug in lbn80386.asm lbnModQ_32 (was a complete mess)
+- Fixed bug in bnDoubleExpMod (one-character change; masked a bug in SKIP!)
+- Fixed a bug in error recovery in lbnInv
+- Added out-of-memory checking to bntest
+- Installation documentation improved, especially for non-Unix platforms.
+- Preprocessor trickery made compatible with some ancient sort-of-ANSI
+  compilers.  To be precise:
+  - Not liking "#if FOO" when FOO is not defined (ANSI says FOO is "0")
+  - Not liking long constants without "l" (ANSI says all pp math is long)
+- bnInit() made redundant; now called automatically by bnBegin().
+- bnCmpQ(struct BigNum const *, unsigned) added.
+- Removed copyright disclaimers from some files so as not to confuse lawyers.
+- Spell-checked, corrected and improved comments in lbn16.c.  Especially
+  added a big description of Montgomery representation.
+- Added parens a few places to shut up compiler warnings.
+- Added 386 support for Unix and some GCC-specific inline assembler tricks.
+- Got rid of some warnings in lbn8086.h.
+- Improved PowerPC inline assembler for CodeWarrior 8.
+
+1.0: Initial release (unnumbered, retroactively named 1.0)

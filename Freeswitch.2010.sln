@@ -35,20 +35,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Config", "_Config", "{57D1
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Default", "Default", "{3B08FEFD-4D3D-4C16-BA94-EE83509E32A0}"
 	ProjectSection(SolutionItems) = preProject
-		conf\freeswitch.xml = conf\freeswitch.xml
-		conf\vars.xml = conf\vars.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Release", "Release", "{7BFD517E-7F8F-4A40-A78E-8D3632738227}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\freeswitch.xml = release\conf\freeswitch.xml
-		release\conf\vars.xml = release\conf\vars.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Debug", "Debug", "{6374D55C-FABE-4A02-9CF1-4145308A56C5}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\freeswitch.xml = debug\conf\freeswitch.xml
-		debug\conf\vars.xml = debug\conf\vars.xml
+		conf\vanilla\freeswitch.xml = conf\vanilla\freeswitch.xml
+		conf\vanilla\vars.xml = conf\vanilla\vars.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build System", "_Build System", "{DB1024A8-41BF-4AD7-9AE6-13202230D1F3}"
@@ -79,296 +67,103 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "m4", "m4", "{CDE9B06A-3C27-
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoload_configs", "{3C90CCF0-2CDD-4A7A-ACFF-208C1E271692}"
 	ProjectSection(SolutionItems) = preProject
-		conf\autoload_configs\alsa.conf.xml = conf\autoload_configs\alsa.conf.xml
-		conf\autoload_configs\conference.conf.xml = conf\autoload_configs\conference.conf.xml
-		conf\autoload_configs\console.conf.xml = conf\autoload_configs\console.conf.xml
-		conf\autoload_configs\dialplan_directory.conf.xml = conf\autoload_configs\dialplan_directory.conf.xml
-		conf\autoload_configs\dingaling.conf.xml = conf\autoload_configs\dingaling.conf.xml
-		conf\autoload_configs\enum.conf.xml = conf\autoload_configs\enum.conf.xml
-		conf\autoload_configs\event_multicast.conf.xml = conf\autoload_configs\event_multicast.conf.xml
-		conf\autoload_configs\event_socket.conf.xml = conf\autoload_configs\event_socket.conf.xml
-		conf\autoload_configs\ivr.conf.xml = conf\autoload_configs\ivr.conf.xml
-		conf\autoload_configs\java.conf.xml = conf\autoload_configs\java.conf.xml
-		conf\autoload_configs\limit.conf.xml = conf\autoload_configs\limit.conf.xml
-		conf\autoload_configs\local_stream.conf.xml = conf\autoload_configs\local_stream.conf.xml
-		conf\autoload_configs\logfile.conf.xml = conf\autoload_configs\logfile.conf.xml
-		conf\autoload_configs\modules.conf.xml = conf\autoload_configs\modules.conf.xml
-		conf\autoload_configs\openmrcp.conf.xml = conf\autoload_configs\openmrcp.conf.xml
-		conf\autoload_configs\portaudio.conf.xml = conf\autoload_configs\portaudio.conf.xml
-		conf\autoload_configs\rss.conf.xml = conf\autoload_configs\rss.conf.xml
-		conf\autoload_configs\sofia.conf.xml = conf\autoload_configs\sofia.conf.xml
-		conf\autoload_configs\spidermonkey.conf.xml = conf\autoload_configs\spidermonkey.conf.xml
-		conf\autoload_configs\switch.conf.xml = conf\autoload_configs\switch.conf.xml
-		conf\autoload_configs\syslog.conf.xml = conf\autoload_configs\syslog.conf.xml
-		conf\autoload_configs\voicemail.conf.xml = conf\autoload_configs\voicemail.conf.xml
-		conf\autoload_configs\wanpipe.conf.xml = conf\autoload_configs\wanpipe.conf.xml
-		conf\autoload_configs\woomera.conf.xml = conf\autoload_configs\woomera.conf.xml
-		conf\autoload_configs\xml_cdr.conf.xml = conf\autoload_configs\xml_cdr.conf.xml
-		conf\autoload_configs\xml_curl.conf.xml = conf\autoload_configs\xml_curl.conf.xml
-		conf\autoload_configs\xml_rpc.conf.xml = conf\autoload_configs\xml_rpc.conf.xml
-		conf\autoload_configs\zeroconf.conf.xml = conf\autoload_configs\zeroconf.conf.xml
+		conf\vanilla\autoload_configs\alsa.conf.xml = conf\vanilla\autoload_configs\alsa.conf.xml
+		conf\vanilla\autoload_configs\conference.conf.xml = conf\vanilla\autoload_configs\conference.conf.xml
+		conf\vanilla\autoload_configs\console.conf.xml = conf\vanilla\autoload_configs\console.conf.xml
+		conf\vanilla\autoload_configs\dialplan_directory.conf.xml = conf\vanilla\autoload_configs\dialplan_directory.conf.xml
+		conf\vanilla\autoload_configs\dingaling.conf.xml = conf\vanilla\autoload_configs\dingaling.conf.xml
+		conf\vanilla\autoload_configs\enum.conf.xml = conf\vanilla\autoload_configs\enum.conf.xml
+		conf\vanilla\autoload_configs\event_multicast.conf.xml = conf\vanilla\autoload_configs\event_multicast.conf.xml
+		conf\vanilla\autoload_configs\event_socket.conf.xml = conf\vanilla\autoload_configs\event_socket.conf.xml
+		conf\vanilla\autoload_configs\ivr.conf.xml = conf\vanilla\autoload_configs\ivr.conf.xml
+		conf\vanilla\autoload_configs\java.conf.xml = conf\vanilla\autoload_configs\java.conf.xml
+		conf\vanilla\autoload_configs\limit.conf.xml = conf\vanilla\autoload_configs\limit.conf.xml
+		conf\vanilla\autoload_configs\local_stream.conf.xml = conf\vanilla\autoload_configs\local_stream.conf.xml
+		conf\vanilla\autoload_configs\logfile.conf.xml = conf\vanilla\autoload_configs\logfile.conf.xml
+		conf\vanilla\autoload_configs\modules.conf.xml = conf\vanilla\autoload_configs\modules.conf.xml
+		conf\vanilla\autoload_configs\openmrcp.conf.xml = conf\vanilla\autoload_configs\openmrcp.conf.xml
+		conf\vanilla\autoload_configs\portaudio.conf.xml = conf\vanilla\autoload_configs\portaudio.conf.xml
+		conf\vanilla\autoload_configs\rss.conf.xml = conf\vanilla\autoload_configs\rss.conf.xml
+		conf\vanilla\autoload_configs\sofia.conf.xml = conf\vanilla\autoload_configs\sofia.conf.xml
+		conf\vanilla\autoload_configs\spidermonkey.conf.xml = conf\vanilla\autoload_configs\spidermonkey.conf.xml
+		conf\vanilla\autoload_configs\switch.conf.xml = conf\vanilla\autoload_configs\switch.conf.xml
+		conf\vanilla\autoload_configs\syslog.conf.xml = conf\vanilla\autoload_configs\syslog.conf.xml
+		conf\vanilla\autoload_configs\voicemail.conf.xml = conf\vanilla\autoload_configs\voicemail.conf.xml
+		conf\vanilla\autoload_configs\wanpipe.conf.xml = conf\vanilla\autoload_configs\wanpipe.conf.xml
+		conf\vanilla\autoload_configs\woomera.conf.xml = conf\vanilla\autoload_configs\woomera.conf.xml
+		conf\vanilla\autoload_configs\xml_cdr.conf.xml = conf\vanilla\autoload_configs\xml_cdr.conf.xml
+		conf\vanilla\autoload_configs\xml_curl.conf.xml = conf\vanilla\autoload_configs\xml_curl.conf.xml
+		conf\vanilla\autoload_configs\xml_rpc.conf.xml = conf\vanilla\autoload_configs\xml_rpc.conf.xml
+		conf\vanilla\autoload_configs\zeroconf.conf.xml = conf\vanilla\autoload_configs\zeroconf.conf.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dialplan", "dialplan", "{C7E2382E-2C22-4D18-BF93-80C6A1FFA7AC}"
 	ProjectSection(SolutionItems) = preProject
-		conf\dialplan\default.xml = conf\dialplan\default.xml
-		conf\dialplan\public.xml = conf\dialplan\public.xml
+		conf\vanilla\dialplan\default.xml = conf\vanilla\dialplan\default.xml
+		conf\vanilla\dialplan\public.xml = conf\vanilla\dialplan\public.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "directory", "directory", "{FC71C66E-E268-4EAD-B1F5-F008DC382E83}"
 	ProjectSection(SolutionItems) = preProject
-		conf\directory\default.xml = conf\directory\default.xml
+		conf\vanilla\directory\default.xml = conf\vanilla\directory\default.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sip_profiles", "sip_profiles", "{8E2E8798-8B6F-4A55-8E4F-4E6FDE40ED26}"
 	ProjectSection(SolutionItems) = preProject
-		conf\sip_profiles\external.xml = conf\sip_profiles\external.xml
-		conf\sip_profiles\internal.xml = conf\sip_profiles\internal.xml
-		conf\sip_profiles\nat.xml = conf\sip_profiles\nat.xml
+		conf\vanilla\sip_profiles\external.xml = conf\vanilla\sip_profiles\external.xml
+		conf\vanilla\sip_profiles\internal.xml = conf\vanilla\sip_profiles\internal.xml
+		conf\vanilla\sip_profiles\nat.xml = conf\vanilla\sip_profiles\nat.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lang", "lang", "{09455AA9-C243-4F16-A1A1-A016881A2765}"
 	ProjectSection(SolutionItems) = preProject
-		conf\directory\default.xml = conf\directory\default.xml
+		conf\vanilla\directory\default.xml = conf\vanilla\directory\default.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "en", "en", "{57199684-EC63-4A60-9DC6-11815AF6B413}"
 	ProjectSection(SolutionItems) = preProject
-		conf\lang\en\en.xml = conf\lang\en\en.xml
+		conf\vanilla\lang\en\en.xml = conf\vanilla\lang\en\en.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "de", "de", "{2DED4BA2-D6B0-4064-BB2A-76DE3AA49E7C}"
 	ProjectSection(SolutionItems) = preProject
-		conf\lang\de\de.xml = conf\lang\de\de.xml
+		conf\vanilla\lang\de\de.xml = conf\vanilla\lang\de\de.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fr", "fr", "{D4A12E4C-DBDA-4614-BA26-3425AE9F60F5}"
 	ProjectSection(SolutionItems) = preProject
-		conf\lang\fr\fr.xml = conf\lang\fr\fr.xml
+		conf\vanilla\lang\fr\fr.xml = conf\vanilla\lang\fr\fr.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{D3E5C8ED-3A6A-4FEA-92A2-48A0BA865358}"
 	ProjectSection(SolutionItems) = preProject
-		conf\lang\de\demo\demo.xml = conf\lang\de\demo\demo.xml
+		conf\vanilla\lang\de\demo\demo.xml = conf\vanilla\lang\de\demo\demo.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{CC3E7F48-2590-49CB-AD8B-BE3650F55462}"
 	ProjectSection(SolutionItems) = preProject
-		conf\lang\de\vm\tts.xml = conf\lang\de\vm\tts.xml
+		conf\vanilla\lang\de\vm\tts.xml = conf\vanilla\lang\de\vm\tts.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{765EF1B9-5027-4820-BC37-A44466A51631}"
 	ProjectSection(SolutionItems) = preProject
-		conf\lang\en\demo\demo.xml = conf\lang\en\demo\demo.xml
+		conf\vanilla\lang\en\demo\demo.xml = conf\vanilla\lang\en\demo\demo.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{713E4747-1126-40B1-BD84-58F9A7745423}"
 	ProjectSection(SolutionItems) = preProject
-		conf\lang\en\vm\sounds.xml = conf\lang\en\vm\sounds.xml
-		conf\lang\en\vm\tts.xml = conf\lang\en\vm\tts.xml
+		conf\vanilla\lang\en\vm\sounds.xml = conf\vanilla\lang\en\vm\sounds.xml
+		conf\vanilla\lang\en\vm\tts.xml = conf\vanilla\lang\en\vm\tts.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{F1B71990-EB04-4EB5-B28A-BC3EB6F7E843}"
 	ProjectSection(SolutionItems) = preProject
-		conf\lang\fr\demo\demo.xml = conf\lang\fr\demo\demo.xml
+		conf\vanilla\lang\fr\demo\demo.xml = conf\vanilla\lang\fr\demo\demo.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{3DAF028C-AB5B-4183-A01B-DCC43F5A87F0}"
 	ProjectSection(SolutionItems) = preProject
-		conf\lang\fr\vm\sounds.xml = conf\lang\fr\vm\sounds.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoload_configs", "{4833F8E3-ABBF-4260-9DB1-B34015676CFC}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\autoload_configs\alsa.conf.xml = debug\conf\autoload_configs\alsa.conf.xml
-		debug\conf\autoload_configs\conference.conf.xml = debug\conf\autoload_configs\conference.conf.xml
-		debug\conf\autoload_configs\console.conf.xml = debug\conf\autoload_configs\console.conf.xml
-		debug\conf\autoload_configs\dialplan_directory.conf.xml = debug\conf\autoload_configs\dialplan_directory.conf.xml
-		debug\conf\autoload_configs\dingaling.conf.xml = debug\conf\autoload_configs\dingaling.conf.xml
-		debug\conf\autoload_configs\enum.conf.xml = debug\conf\autoload_configs\enum.conf.xml
-		debug\conf\autoload_configs\event_multicast.conf.xml = debug\conf\autoload_configs\event_multicast.conf.xml
-		debug\conf\autoload_configs\event_socket.conf.xml = debug\conf\autoload_configs\event_socket.conf.xml
-		debug\conf\autoload_configs\ivr.conf.xml = debug\conf\autoload_configs\ivr.conf.xml
-		debug\conf\autoload_configs\java.conf.xml = debug\conf\autoload_configs\java.conf.xml
-		debug\conf\autoload_configs\limit.conf.xml = debug\conf\autoload_configs\limit.conf.xml
-		debug\conf\autoload_configs\local_stream.conf.xml = debug\conf\autoload_configs\local_stream.conf.xml
-		debug\conf\autoload_configs\logfile.conf.xml = debug\conf\autoload_configs\logfile.conf.xml
-		debug\conf\autoload_configs\modules.conf.xml = debug\conf\autoload_configs\modules.conf.xml
-		debug\conf\autoload_configs\openmrcp.conf.xml = debug\conf\autoload_configs\openmrcp.conf.xml
-		debug\conf\autoload_configs\portaudio.conf.xml = debug\conf\autoload_configs\portaudio.conf.xml
-		debug\conf\autoload_configs\rss.conf.xml = debug\conf\autoload_configs\rss.conf.xml
-		debug\conf\autoload_configs\sofia.conf.xml = debug\conf\autoload_configs\sofia.conf.xml
-		debug\conf\autoload_configs\spidermonkey.conf.xml = debug\conf\autoload_configs\spidermonkey.conf.xml
-		debug\conf\autoload_configs\switch.conf.xml = debug\conf\autoload_configs\switch.conf.xml
-		debug\conf\autoload_configs\syslog.conf.xml = debug\conf\autoload_configs\syslog.conf.xml
-		debug\conf\autoload_configs\voicemail.conf.xml = debug\conf\autoload_configs\voicemail.conf.xml
-		debug\conf\autoload_configs\wanpipe.conf.xml = debug\conf\autoload_configs\wanpipe.conf.xml
-		debug\conf\autoload_configs\woomera.conf.xml = debug\conf\autoload_configs\woomera.conf.xml
-		debug\conf\autoload_configs\xml_cdr.conf.xml = debug\conf\autoload_configs\xml_cdr.conf.xml
-		debug\conf\autoload_configs\xml_curl.conf.xml = debug\conf\autoload_configs\xml_curl.conf.xml
-		debug\conf\autoload_configs\xml_rpc.conf.xml = debug\conf\autoload_configs\xml_rpc.conf.xml
-		debug\conf\autoload_configs\zeroconf.conf.xml = debug\conf\autoload_configs\zeroconf.conf.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dialplan", "dialplan", "{D44DD429-FE98-42AA-B5B7-4B4EBE33AEFD}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\dialplan\default.xml = debug\conf\dialplan\default.xml
-		debug\conf\dialplan\US.conf.xml = debug\conf\dialplan\US.conf.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "directory", "directory", "{471110C9-A7ED-4966-98E1-8EA667BF0EEA}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\directory\default.xml = debug\conf\directory\default.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sip_profiles", "sip_profiles", "{4DF5199E-F7F5-4347-97DD-22078FCDB371}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\sip_profiles\default.xml = debug\conf\sip_profiles\default.xml
-		debug\conf\sip_profiles\nat.xml = debug\conf\sip_profiles\nat.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lang", "lang", "{B487BEBE-4A5C-434F-8D30-39465412F84F}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "de", "de", "{2003189F-0E69-4FF7-A11D-3BFB3F03D558}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\de\de.xml = debug\conf\lang\de\de.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "en", "en", "{C8EA69FA-365E-4897-9BB0-08022509E18B}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\en\en.xml = debug\conf\lang\en\en.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fr", "fr", "{1240C217-6674-43C1-B099-B0290D84F28B}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\fr\fr.xml = debug\conf\lang\fr\fr.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{03517B06-98A1-46DD-9347-BFFFED7DD8A4}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\de\demo\demo.xml = debug\conf\lang\de\demo\demo.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{1D339A14-FFC2-4F6E-BEF2-D5D6DF14AC88}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\de\vm\tts.xml = debug\conf\lang\de\vm\tts.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{B4C6D0B5-5F39-4546-820D-4BCAA6C3E301}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\en\demo\demo.xml = debug\conf\lang\en\demo\demo.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{3041F86C-51D4-4D9E-8A00-91BA4B7C51D4}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\en\vm\sounds.xml = debug\conf\lang\en\vm\sounds.xml
-		debug\conf\lang\en\vm\tts.xml = debug\conf\lang\en\vm\tts.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{DFE96A6E-5C9A-4C74-959A-9C485A7AD95C}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\fr\demo\demo.xml = debug\conf\lang\fr\demo\demo.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{80A4CA5C-7208-4134-8EFD-C147B03C8AA1}"
-	ProjectSection(SolutionItems) = preProject
-		debug\conf\lang\fr\vm\sounds.xml = debug\conf\lang\fr\vm\sounds.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoload_configs", "{8D29085B-952D-4594-9BB9-5781CE552D0A}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\autoload_configs\alsa.conf.xml = release\conf\autoload_configs\alsa.conf.xml
-		release\conf\autoload_configs\conference.conf.xml = release\conf\autoload_configs\conference.conf.xml
-		release\conf\autoload_configs\console.conf.xml = release\conf\autoload_configs\console.conf.xml
-		release\conf\autoload_configs\dialplan_directory.conf.xml = release\conf\autoload_configs\dialplan_directory.conf.xml
-		release\conf\autoload_configs\dingaling.conf.xml = release\conf\autoload_configs\dingaling.conf.xml
-		release\conf\autoload_configs\enum.conf.xml = release\conf\autoload_configs\enum.conf.xml
-		release\conf\autoload_configs\event_multicast.conf.xml = release\conf\autoload_configs\event_multicast.conf.xml
-		release\conf\autoload_configs\event_socket.conf.xml = release\conf\autoload_configs\event_socket.conf.xml
-		release\conf\autoload_configs\ivr.conf.xml = release\conf\autoload_configs\ivr.conf.xml
-		release\conf\autoload_configs\java.conf.xml = release\conf\autoload_configs\java.conf.xml
-		release\conf\autoload_configs\limit.conf.xml = release\conf\autoload_configs\limit.conf.xml
-		release\conf\autoload_configs\local_stream.conf.xml = release\conf\autoload_configs\local_stream.conf.xml
-		release\conf\autoload_configs\logfile.conf.xml = release\conf\autoload_configs\logfile.conf.xml
-		release\conf\autoload_configs\modules.conf.xml = release\conf\autoload_configs\modules.conf.xml
-		release\conf\autoload_configs\openmrcp.conf.xml = release\conf\autoload_configs\openmrcp.conf.xml
-		release\conf\autoload_configs\portaudio.conf.xml = release\conf\autoload_configs\portaudio.conf.xml
-		release\conf\autoload_configs\rss.conf.xml = release\conf\autoload_configs\rss.conf.xml
-		release\conf\autoload_configs\sofia.conf.xml = release\conf\autoload_configs\sofia.conf.xml
-		release\conf\autoload_configs\spidermonkey.conf.xml = release\conf\autoload_configs\spidermonkey.conf.xml
-		release\conf\autoload_configs\switch.conf.xml = release\conf\autoload_configs\switch.conf.xml
-		release\conf\autoload_configs\syslog.conf.xml = release\conf\autoload_configs\syslog.conf.xml
-		release\conf\autoload_configs\voicemail.conf.xml = release\conf\autoload_configs\voicemail.conf.xml
-		release\conf\autoload_configs\wanpipe.conf.xml = release\conf\autoload_configs\wanpipe.conf.xml
-		release\conf\autoload_configs\woomera.conf.xml = release\conf\autoload_configs\woomera.conf.xml
-		release\conf\autoload_configs\xml_cdr.conf.xml = release\conf\autoload_configs\xml_cdr.conf.xml
-		release\conf\autoload_configs\xml_curl.conf.xml = release\conf\autoload_configs\xml_curl.conf.xml
-		release\conf\autoload_configs\xml_rpc.conf.xml = release\conf\autoload_configs\xml_rpc.conf.xml
-		release\conf\autoload_configs\zeroconf.conf.xml = release\conf\autoload_configs\zeroconf.conf.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dialplan", "dialplan", "{23874F4B-C0AF-4587-9F7E-DB0F06DE8CB4}"
-	ProjectSection(SolutionItems) = preProject
-		conf\dialplan\default.xml = conf\dialplan\default.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "directory", "directory", "{19ED97F6-30D8-4FCE-AE1D-8B7FCB170D40}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\directory\default.xml = release\conf\directory\default.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sip_profiles", "sip_profiles", "{99E79D76-FCFC-466B-965B-273CCACF99B0}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\sip_profiles\default.xml = release\conf\sip_profiles\default.xml
-		release\conf\sip_profiles\nat.xml = release\conf\sip_profiles\nat.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lang", "lang", "{8FADAC7F-CA9E-49D9-B957-A5F5605D238C}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "de", "de", "{58A56014-DEA7-4172-8C26-BAD8D499A1E8}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\de\de.xml = release\conf\lang\de\de.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "en", "en", "{EB577858-8284-4DEA-ADDA-DD046BCA0126}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\en\en.xml = release\conf\lang\en\en.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fr", "fr", "{89A94241-1DA6-44E8-A685-AED1E665C2AD}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\fr\fr.xml = release\conf\lang\fr\fr.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{2D74F635-AB18-43B3-A87E-A71F3EA24DDB}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\de\demo\demo.xml = release\conf\lang\de\demo\demo.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{A721E646-07E9-4E16-A92D-B97F654B2BAC}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\de\vm\tts.xml = release\conf\lang\de\vm\tts.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{50331CA0-7038-4341-B92D-C34E1601EFF0}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\en\demo\demo.xml = release\conf\lang\en\demo\demo.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{FC0DB2A2-B1A3-426E-9E37-BE28FE8FE01B}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\en\vm\sounds.xml = release\conf\lang\en\vm\sounds.xml
-		release\conf\lang\en\vm\tts.xml = release\conf\lang\en\vm\tts.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{91C6DEDE-CE4A-47D1-A84B-3E828F82E2B0}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\fr\demo\demo.xml = release\conf\lang\fr\demo\demo.xml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vm", "vm", "{8F5A511B-F716-4D07-9657-55B9E4F1D3E9}"
-	ProjectSection(SolutionItems) = preProject
-		release\conf\lang\fr\vm\sounds.xml = release\conf\lang\fr\vm\sounds.xml
+		conf\vanilla\lang\fr\vm\sounds.xml = conf\vanilla\lang\fr\vm\sounds.xml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sound Files", "Sound Files", "{4F227C26-768F-46A3-8684-1D08A46FB374}"
@@ -723,6 +518,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_httapi", "src\mod\applications\mod_httapi\mod_httapi.2010.vcxproj", "{4748FF56-CA85-4809-97D6-A94C0FAC1D77}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_abstraction", "src\mod\applications\mod_abstraction\mod_abstraction.2010.vcxproj", "{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_sms", "src\mod\applications\mod_sms\mod_sms.2010.vcxproj", "{2469B306-B027-4FF2-8815-C9C1EA2CAE79}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -2915,11 +2712,11 @@ Global
 		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.All|x86 Setup.ActiveCfg = Release|Win32
 		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.All|x86 Setup.Build.0 = Release|Win32
 		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Debug|x64.ActiveCfg = Debug|Win32
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Debug|x64.ActiveCfg = Debug|x64
 		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Debug|x64 Setup.ActiveCfg = Debug|Win32
 		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Debug|x86 Setup.ActiveCfg = Debug|Win32
 		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Release|Win32.ActiveCfg = Release|Win32
-		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Release|x64.ActiveCfg = Release|Win32
+		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Release|x64.ActiveCfg = Release|x64
 		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Release|x64 Setup.ActiveCfg = Release|Win32
 		{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}.Release|x86 Setup.ActiveCfg = Release|Win32
 		{1F0A8A77-E661-418F-BB92-82172AE43803}.All|Win32.ActiveCfg = Release|Win32
@@ -3734,6 +3531,19 @@ Global
 		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.Release|x64.Build.0 = Release|x64
 		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.Release|x64 Setup.ActiveCfg = Release|x64
 		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.Release|x86 Setup.ActiveCfg = Release|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.All|Win32.ActiveCfg = Release|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.All|x64.ActiveCfg = Release|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.All|x64.Build.0 = Release|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.All|x64 Setup.ActiveCfg = Release|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.All|x86 Setup.ActiveCfg = Release|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Debug|x64.ActiveCfg = Debug|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Debug|x64 Setup.ActiveCfg = Debug|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Debug|x86 Setup.ActiveCfg = Debug|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Release|Win32.ActiveCfg = Release|Win32
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Release|x64.ActiveCfg = Release|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Release|x64 Setup.ActiveCfg = Release|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Release|x86 Setup.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -3787,6 +3597,7 @@ Global
 		{50AAC2CE-BFC9-4912-87CC-C6381850D735} = {E72B5BCB-6462-4D23-B419-3AF1A4AC3D78}
 		{4748FF56-CA85-4809-97D6-A94C0FAC1D77} = {E72B5BCB-6462-4D23-B419-3AF1A4AC3D78}
 		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F} = {E72B5BCB-6462-4D23-B419-3AF1A4AC3D78}
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79} = {E72B5BCB-6462-4D23-B419-3AF1A4AC3D78}
 		{07113B25-D3AF-4E04-BA77-4CD1171F022C} = {C5F182F9-754A-4EC5-B50F-76ED02BE13F4}
 		{A27CCA23-1541-4337-81A4-F0A6413078A0} = {C5F182F9-754A-4EC5-B50F-76ED02BE13F4}
 		{E7BC026C-7CC5-45A3-BC7C-3B88EEF01F24} = {C5F182F9-754A-4EC5-B50F-76ED02BE13F4}
@@ -3892,23 +3703,11 @@ Global
 		{0382E8FD-CFDC-41C0-8B03-792C7C84FC31} = {6CD61A1D-797C-470A-BE08-8C31B68BB336}
 		{7C22BDFF-CC09-400C-8A09-660733980028} = {6CD61A1D-797C-470A-BE08-8C31B68BB336}
 		{3B08FEFD-4D3D-4C16-BA94-EE83509E32A0} = {57D119DC-484F-420F-B9E9-8589FD9A8DF8}
-		{7BFD517E-7F8F-4A40-A78E-8D3632738227} = {57D119DC-484F-420F-B9E9-8589FD9A8DF8}
-		{6374D55C-FABE-4A02-9CF1-4145308A56C5} = {57D119DC-484F-420F-B9E9-8589FD9A8DF8}
 		{3C90CCF0-2CDD-4A7A-ACFF-208C1E271692} = {3B08FEFD-4D3D-4C16-BA94-EE83509E32A0}
 		{C7E2382E-2C22-4D18-BF93-80C6A1FFA7AC} = {3B08FEFD-4D3D-4C16-BA94-EE83509E32A0}
 		{FC71C66E-E268-4EAD-B1F5-F008DC382E83} = {3B08FEFD-4D3D-4C16-BA94-EE83509E32A0}
 		{8E2E8798-8B6F-4A55-8E4F-4E6FDE40ED26} = {3B08FEFD-4D3D-4C16-BA94-EE83509E32A0}
 		{09455AA9-C243-4F16-A1A1-A016881A2765} = {3B08FEFD-4D3D-4C16-BA94-EE83509E32A0}
-		{8D29085B-952D-4594-9BB9-5781CE552D0A} = {7BFD517E-7F8F-4A40-A78E-8D3632738227}
-		{23874F4B-C0AF-4587-9F7E-DB0F06DE8CB4} = {7BFD517E-7F8F-4A40-A78E-8D3632738227}
-		{19ED97F6-30D8-4FCE-AE1D-8B7FCB170D40} = {7BFD517E-7F8F-4A40-A78E-8D3632738227}
-		{99E79D76-FCFC-466B-965B-273CCACF99B0} = {7BFD517E-7F8F-4A40-A78E-8D3632738227}
-		{8FADAC7F-CA9E-49D9-B957-A5F5605D238C} = {7BFD517E-7F8F-4A40-A78E-8D3632738227}
-		{4833F8E3-ABBF-4260-9DB1-B34015676CFC} = {6374D55C-FABE-4A02-9CF1-4145308A56C5}
-		{D44DD429-FE98-42AA-B5B7-4B4EBE33AEFD} = {6374D55C-FABE-4A02-9CF1-4145308A56C5}
-		{471110C9-A7ED-4966-98E1-8EA667BF0EEA} = {6374D55C-FABE-4A02-9CF1-4145308A56C5}
-		{4DF5199E-F7F5-4347-97DD-22078FCDB371} = {6374D55C-FABE-4A02-9CF1-4145308A56C5}
-		{B487BEBE-4A5C-434F-8D30-39465412F84F} = {6374D55C-FABE-4A02-9CF1-4145308A56C5}
 		{CDE9B06A-3C27-4987-8FAE-DF1006BC705D} = {DB1024A8-41BF-4AD7-9AE6-13202230D1F3}
 		{57199684-EC63-4A60-9DC6-11815AF6B413} = {09455AA9-C243-4F16-A1A1-A016881A2765}
 		{2DED4BA2-D6B0-4064-BB2A-76DE3AA49E7C} = {09455AA9-C243-4F16-A1A1-A016881A2765}
@@ -3919,24 +3718,6 @@ Global
 		{CC3E7F48-2590-49CB-AD8B-BE3650F55462} = {2DED4BA2-D6B0-4064-BB2A-76DE3AA49E7C}
 		{F1B71990-EB04-4EB5-B28A-BC3EB6F7E843} = {D4A12E4C-DBDA-4614-BA26-3425AE9F60F5}
 		{3DAF028C-AB5B-4183-A01B-DCC43F5A87F0} = {D4A12E4C-DBDA-4614-BA26-3425AE9F60F5}
-		{2003189F-0E69-4FF7-A11D-3BFB3F03D558} = {B487BEBE-4A5C-434F-8D30-39465412F84F}
-		{C8EA69FA-365E-4897-9BB0-08022509E18B} = {B487BEBE-4A5C-434F-8D30-39465412F84F}
-		{1240C217-6674-43C1-B099-B0290D84F28B} = {B487BEBE-4A5C-434F-8D30-39465412F84F}
-		{03517B06-98A1-46DD-9347-BFFFED7DD8A4} = {2003189F-0E69-4FF7-A11D-3BFB3F03D558}
-		{1D339A14-FFC2-4F6E-BEF2-D5D6DF14AC88} = {2003189F-0E69-4FF7-A11D-3BFB3F03D558}
-		{B4C6D0B5-5F39-4546-820D-4BCAA6C3E301} = {C8EA69FA-365E-4897-9BB0-08022509E18B}
-		{3041F86C-51D4-4D9E-8A00-91BA4B7C51D4} = {C8EA69FA-365E-4897-9BB0-08022509E18B}
-		{DFE96A6E-5C9A-4C74-959A-9C485A7AD95C} = {1240C217-6674-43C1-B099-B0290D84F28B}
-		{80A4CA5C-7208-4134-8EFD-C147B03C8AA1} = {1240C217-6674-43C1-B099-B0290D84F28B}
-		{58A56014-DEA7-4172-8C26-BAD8D499A1E8} = {8FADAC7F-CA9E-49D9-B957-A5F5605D238C}
-		{EB577858-8284-4DEA-ADDA-DD046BCA0126} = {8FADAC7F-CA9E-49D9-B957-A5F5605D238C}
-		{89A94241-1DA6-44E8-A685-AED1E665C2AD} = {8FADAC7F-CA9E-49D9-B957-A5F5605D238C}
-		{2D74F635-AB18-43B3-A87E-A71F3EA24DDB} = {58A56014-DEA7-4172-8C26-BAD8D499A1E8}
-		{A721E646-07E9-4E16-A92D-B97F654B2BAC} = {58A56014-DEA7-4172-8C26-BAD8D499A1E8}
-		{50331CA0-7038-4341-B92D-C34E1601EFF0} = {EB577858-8284-4DEA-ADDA-DD046BCA0126}
-		{FC0DB2A2-B1A3-426E-9E37-BE28FE8FE01B} = {EB577858-8284-4DEA-ADDA-DD046BCA0126}
-		{91C6DEDE-CE4A-47D1-A84B-3E828F82E2B0} = {89A94241-1DA6-44E8-A685-AED1E665C2AD}
-		{8F5A511B-F716-4D07-9657-55B9E4F1D3E9} = {89A94241-1DA6-44E8-A685-AED1E665C2AD}
 		{7A8D8174-B355-4114-AFC1-04777CB9DE0A} = {4F227C26-768F-46A3-8684-1D08A46FB374}
 		{7EB71250-F002-4ED8-92CA-CA218114537A} = {4F227C26-768F-46A3-8684-1D08A46FB374}
 		{464AAB78-5489-4916-BE51-BF8D61822311} = {4F227C26-768F-46A3-8684-1D08A46FB374}

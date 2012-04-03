@@ -460,19 +460,19 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			{
 				int sec;
 
-				if (gateway_ptr->failure_status == 503 || gateway_ptr->failure_status == 908) {
+				if (gateway_ptr->failure_status == 503 || gateway_ptr->failure_status == 908 || gateway_ptr->failures < 1) {
 					sec = gateway_ptr->retry_seconds;
 				} else {
-					sec = gateway_ptr->retry_seconds * (gateway_ptr->failures + 1);
+					sec = gateway_ptr->retry_seconds * gateway_ptr->failures;
 				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration [%d], setting retry to %d seconds.\n",
+								  gateway_ptr->name, gateway_ptr->failure_status, sec);
 
 				gateway_ptr->retry = switch_epoch_time_now(NULL) + sec;
 				gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 				gateway_ptr->state = REG_STATE_FAIL_WAIT;
 				gateway_ptr->failure_status = 0;
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration [%d], setting retry to %d seconds.\n",
-								  gateway_ptr->name, gateway_ptr->failure_status, sec);
 
 			}
 			break;
@@ -1651,7 +1651,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					(reg_count == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) {
 					if (switch_event_create(&s_mwi_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(s_mwi_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", mwi_user, mwi_host);
-						switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Pofile", profile->name);
+						switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
 						switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Call-ID", call_id);
 					}
 				}
@@ -2101,7 +2101,8 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	} else if (gateway) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, 
+						  "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
 		goto cancel;
 	}
 
@@ -2114,7 +2115,9 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	tl_gets(tags, NUTAG_CALLSTATE_REF(ss_state), SIPTAG_WWW_AUTHENTICATE_REF(authenticate), TAG_END());
 
-	nua_authenticate(nh, SIPTAG_EXPIRES_STR(gateway ? gateway->expires_str : "3600"), NUTAG_AUTH(authentication), TAG_END());
+	nua_authenticate(nh, 
+					 TAG_IF(sofia_private && sofia_private->gateway, SIPTAG_EXPIRES_STR(gateway ? gateway->expires_str : "3600")), 
+					 NUTAG_AUTH(authentication), TAG_END());
 
 	goto end;
 

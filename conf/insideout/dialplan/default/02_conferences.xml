@@ -1,0 +1,11 @@
+<include>
+
+  <extension name="international.example.com">
+    <condition field="destination_number" expression="^(42|888|899)$">
+      <action application="set" data="effective_caller_id_number=42"/>
+      <action application="set" data="effective_caller_id_name=Ray"/>
+      <action application="bridge" data="sofia/external/$1@conference.freeswitch.org"/>
+    </condition>
+  </extension>
+
+</include>

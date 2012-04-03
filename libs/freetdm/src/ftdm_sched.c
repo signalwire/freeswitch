@@ -119,10 +119,15 @@ static void *run_main_schedule(ftdm_thread_t *thread, void *data)
 			/* there are no free runs, wait a bit and check again (FIXME: use ftdm_interrupt_t for this) */
 			ftdm_mutex_unlock(sched_globals.mutex);
 
-			ftdm_sleep(sleepms);
+			if (ftdm_running()) {
+				ftdm_sleep(sleepms);
+			}
 		}
 
 		for (current = sched_globals.freeruns; current; current = current->next) {
+			if (!ftdm_running()) {
+				break;
+			}
 
 			/* first run the schedule */
 			ftdm_sched_run(current);
@@ -142,7 +147,9 @@ static void *run_main_schedule(ftdm_thread_t *thread, void *data)
 
 		ftdm_mutex_unlock(sched_globals.mutex);
 
-		ftdm_sleep(sleepms);
+		if (ftdm_running()) {
+			ftdm_sleep(sleepms);
+		}
 	}
 	ftdm_log(FTDM_LOG_NOTICE, "Main scheduling thread going out ...\n");
 	sched_globals.running = 0;

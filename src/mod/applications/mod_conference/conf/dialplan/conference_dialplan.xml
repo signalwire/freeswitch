@@ -1,0 +1,31 @@
+	<!--
+		start a dynamic conference with the settings of the "default" conference profile in conference.conf.xml
+	-->
+	<extension name="nb_conferences">
+		<condition field="destination_number" expression="^(30\d{2})$">
+			<action application="answer"/>
+			<action application="conference" data="$1-${domain_name}@default"/>
+		</condition>
+	</extension>
+
+	<extension name="wb_conferences">
+		<condition field="destination_number" expression="^(31\d{2})$">
+			<action application="answer"/>
+			<action application="conference" data="$1-${domain_name}@wideband"/>
+		</condition>
+	</extension>
+
+	<extension name="uwb_conferences">
+		<condition field="destination_number" expression="^(32\d{2})$">
+			<action application="answer"/>
+			<action application="conference" data="$1-${domain_name}@ultrawideband"/>
+		</condition>
+	</extension>
+
+	<!-- MONO 48kHz conferences -->
+	<extension name="cdquality_conferences">
+		<condition field="destination_number" expression="^(33\d{2})$">
+			<action application="answer"/>
+			<action application="conference" data="$1-${domain_name}@cdquality"/>
+		</condition>
+	</extension>

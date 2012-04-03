@@ -39,6 +39,10 @@ for FAX transmission.
 \section t4_page_sec_1 How does it work?
 */
 
+/*! This function is a callback from the image decoders, to write the decoded bi-level image,
+    row by row. It is called for each row, with len set to the number of bytes per row. At the
+    end of the image it is called with len set to zero, to indicate the end of image condition.
+    \return 0 for OK, or non-zero for a problem that requires the image be interrupted. */
 typedef int (*t4_row_write_handler_t)(void *user_data, const uint8_t buf[], size_t len);
 
 /*! Supported compression modes. */
@@ -60,11 +64,21 @@ typedef enum
     T4_COMPRESSION_ITU_T43 = 6,
     /*! T.45 run length colour compression */
     T4_COMPRESSION_ITU_T45 = 7,
-    /*! T.81 + T.30 Annex E colour JPEG coding */
-    T4_COMPRESSION_ITU_T81 = 8,
-    /*! T.81 + T.30 Annex K colour sYCC-JPEG coding */
-    T4_COMPRESSION_ITU_SYCC_T81 = 9
+    /*! T.42 + T.81 + T.30 Annex E colour JPEG coding */
+    T4_COMPRESSION_ITU_T42 = 8,
+    /*! T.42 + T.81 + T.30 Annex K colour sYCC-JPEG coding */
+    T4_COMPRESSION_ITU_SYCC_T42 = 9
 } t4_image_compression_t;
+
+/*! Image type */
+typedef enum
+{
+    T4_IMAGE_TYPE_BILEVEL = 0,
+    T4_IMAGE_TYPE_GRAY_8BIT = 1,
+    T4_IMAGE_TYPE_GRAY_12BIT = 2,
+    T4_IMAGE_TYPE_COLOUR_8BIT = 3,
+    T4_IMAGE_TYPE_COLOUR_12BIT = 4
+} t4_image_types_t;
 
 /*! Supported X resolutions, in pixels per metre. */
 typedef enum

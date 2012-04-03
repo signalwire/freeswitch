@@ -80,7 +80,7 @@ static int traceback(lua_State * L)
 	return 1;
 }
 
-int docall(lua_State * L, int narg, int clear, int perror)
+int docall(lua_State * L, int narg, int nresults, int perror)
 {
 	int status;
 	int base = lua_gettop(L) - narg;	/* function index */
@@ -88,7 +88,7 @@ int docall(lua_State * L, int narg, int clear, int perror)
 	lua_pushcfunction(L, traceback);	/* push traceback function */
 	lua_insert(L, base);		/* put it under chunk and args */
 
-	status = lua_pcall(L, narg, (clear ? 0 : LUA_MULTRET), base);
+	status = lua_pcall(L, narg, nresults, base);
 
 	lua_remove(L, base);		/* remove traceback function */
 	/* force a complete garbage collection in case of errors */
@@ -371,6 +371,8 @@ static switch_status_t do_config(void)
 			if (!strcmp(var, "startup-script")) {
 				if (val) {
 					lua_thread(val);
+					/* wait 10ms to avoid lua init issues */
+					switch_yield(10000);
 				}
 			}
 		}

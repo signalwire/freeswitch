@@ -314,7 +314,8 @@ typedef enum {
 	SCF_CLEAR_SQL = (1 << 17),
 	SCF_THREADED_SYSTEM_EXEC = (1 << 18),
 	SCF_SYNC_CLOCK_REQUESTED = (1 << 19),
-	SCF_CORE_ODBC_REQ = (1 << 20)
+	SCF_CORE_ODBC_REQ = (1 << 20),
+	SCF_DEBUG_SQL = (1 << 21)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -1208,6 +1209,8 @@ typedef enum {
 	CF_VIDEO_REFRESH_REQ,
 	CF_SERVICE_AUDIO,
 	CF_SERVICE_VIDEO,
+	CF_ZRTP_HASH,
+	CF_ZRTP_PASS,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -1741,7 +1744,8 @@ typedef enum {
 	SCSC_PAUSE_CHECK,
 	SCSC_READY_CHECK,
 	SCSC_THREADED_SYSTEM_EXEC,
-	SCSC_SYNC_CLOCK_WHEN_IDLE
+	SCSC_SYNC_CLOCK_WHEN_IDLE,
+	SCSC_DEBUG_SQL,
 } switch_session_ctl_t;
 
 typedef enum {

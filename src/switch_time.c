@@ -59,9 +59,10 @@
 #define MAX_ELEMENTS 3600
 #define IDLE_SPEED 100
 
-/* In Windows, enable the montonic timer for better timer accuracy on Windows 2003 Server, XP and older */
-/* GetSystemTimeAsFileTime does not update on timeBeginPeriod on these OS. */
-/* Flag SCF_USE_WIN32_MONOTONIC must be enabled to activate it (start parameter -monotonic-clock) */
+/* In Windows, enable the montonic timer for better timer accuracy,
+ * GetSystemTimeAsFileTime does not update on timeBeginPeriod on these OS.
+ * Flag SCF_USE_WIN32_MONOTONIC must be enabled to activate it (start parameter -monotonic-clock).
+ */
 
 #if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
 static int MONO = 1;
@@ -91,9 +92,12 @@ static int COND = 1;
 static int MATRIX = 1;
 
 #ifdef WIN32
+static CRITICAL_SECTION timer_section;
 static switch_time_t win32_tick_time_since_start = -1;
 static DWORD win32_last_get_time_tick = 0;
-CRITICAL_SECTION  timer_section;
+
+static uint8_t win32_use_qpc = 0;
+static uint64_t win32_qpc_freq = 0;
 #endif
 
 static switch_memory_pool_t *module_pool = NULL;
@@ -321,7 +325,7 @@ SWITCH_DECLARE(time_t) switch_epoch_time_now(time_t *t)
 
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable)
 {
-#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+#if (defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)) || defined(WIN32)
 	MONO = enable ? 1 : 0;
 	switch_time_sync();
 #else
@@ -375,24 +379,32 @@ static switch_time_t time_now(int64_t offset)
 		clock_gettime(CLOCK_MONOTONIC, &ts);
 		now = ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec / 1000) + offset;
 #else
-		DWORD tick_now;
-		DWORD tick_diff;
-
-		tick_now = timeGetTime();
-		if (win32_tick_time_since_start != -1) {
-			EnterCriticalSection(&timer_section);
-			/* just add diff (to make it work more than 50 days). */
-			tick_diff = tick_now - win32_last_get_time_tick;
-			win32_tick_time_since_start += tick_diff;
-
-			win32_last_get_time_tick = tick_now;
-			now = (win32_tick_time_since_start * 1000) + offset;
-			LeaveCriticalSection(&timer_section);
+		if (win32_use_qpc) {
+			/* Use QueryPerformanceCounter */
+			uint64_t count = 0;
+			QueryPerformanceCounter((LARGE_INTEGER*)&count);
+			now = ((count * 1000000) / win32_qpc_freq) + offset;
 		} else {
-			/* If someone is calling us before timer is initialized,
-			 * return the current tick + offset
-			 */
-			now = (tick_now * 1000) + offset;
+			/* Use good old timeGetTime() */
+			DWORD tick_now;
+			DWORD tick_diff;
+
+			tick_now = timeGetTime();
+			if (win32_tick_time_since_start != -1) {
+				EnterCriticalSection(&timer_section);
+				/* just add diff (to make it work more than 50 days). */
+				tick_diff = tick_now - win32_last_get_time_tick;
+				win32_tick_time_since_start += tick_diff;
+
+				win32_last_get_time_tick = tick_now;
+				now = (win32_tick_time_since_start * 1000) + offset;
+				LeaveCriticalSection(&timer_section);
+			} else {
+				/* If someone is calling us before timer is initialized,
+				 * return the current tick + offset
+				 */
+				now = (tick_now * 1000) + offset;
+			}
 		}
 #endif
 	} else {
@@ -415,6 +427,8 @@ static switch_time_t last_time = 0;
 
 SWITCH_DECLARE(void) switch_time_sync(void)
 {
+	runtime.time_sync++; /* Indicate that we are syncing time right now */
+
 	runtime.reference = switch_time_now();
 
 	runtime.offset = runtime.reference - time_now(0);
@@ -423,6 +437,8 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Clock synchronized to system time.\n");
 	}
 	last_time = runtime.reference;
+
+	runtime.time_sync++; /* Indicate that we are finished syncing time */
 }
 
 SWITCH_DECLARE(void) switch_micro_sleep(switch_interval_time_t t)
@@ -546,6 +562,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 #define check_roll() if (private_info->roll < TIMER_MATRIX[timer->interval].roll) {	\
 		private_info->roll++;											\
 		private_info->reference = private_info->start = TIMER_MATRIX[timer->interval].tick;	\
+		private_info->start--; /* Must have a diff */					\
 	}																	\
 
 
@@ -562,7 +579,7 @@ static switch_status_t timer_step(switch_timer_t *timer)
 	samples = timer->samples * (private_info->reference - private_info->start);
 
 	if (samples > UINT32_MAX) {
-		private_info->start = private_info->reference;
+		private_info->start = private_info->reference - 1; /* Must have a diff */
 		samples = timer->samples;
 	}
 
@@ -691,6 +708,55 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void win32_init_timers(void)
+{
+#ifdef WIN32
+	OSVERSIONINFOEX version_info; /* Used to fetch current OS version from Windows */
+
+	EnterCriticalSection(&timer_section);
+
+	ZeroMemory(&version_info, sizeof(OSVERSIONINFOEX));
+	version_info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+
+	/* Check if we should use timeGetTime() (pre-Vista) or QueryPerformanceCounter() (Vista and later) */
+
+	if (GetVersionEx((OSVERSIONINFO*) &version_info)) {
+		if (version_info.dwPlatformId == VER_PLATFORM_WIN32_NT && version_info.dwMajorVersion >= 6) {
+			if (QueryPerformanceFrequency((LARGE_INTEGER*)&win32_qpc_freq) && win32_qpc_freq > 0) {
+				/* At least Vista, and QueryPerformanceFrequency() suceeded, enable qpc */
+				win32_use_qpc = 1;
+			} else {
+				/* At least Vista, but QueryPerformanceFrequency() failed, disable qpc */
+				win32_use_qpc = 0;
+			}
+		} else {
+			/* Older then Vista, disable qpc */
+			win32_use_qpc = 0;
+		}
+	} else {
+		/* Unknown version - we want at least Vista, disable qpc */
+		win32_use_qpc = 0;
+	}
+
+	if (win32_use_qpc) {
+		uint64_t count = 0;
+
+		if (!QueryPerformanceCounter((LARGE_INTEGER*)&count) || count == 0) {
+			/* Call to QueryPerformanceCounter() failed, disable qpc again */
+			win32_use_qpc = 0;
+		}
+	}
+
+	if (!win32_use_qpc) {
+		/* This will enable timeGetTime() instead, qpc init failed */
+		win32_last_get_time_tick = timeGetTime();
+		win32_tick_time_since_start = win32_last_get_time_tick;
+	}
+
+	LeaveCriticalSection(&timer_section);
+#endif
+}
+
 SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 {
 	switch_time_t too_late = runtime.microseconds_per_tick * 1000;
@@ -700,6 +766,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	int fwd_errs = 0, rev_errs = 0;
 	int profile_tick = 0;
 	int tfd = -1;
+	uint32_t time_sync = runtime.time_sync;
 
 #ifdef HAVE_TIMERFD_CREATE
 	int last_MICROSECONDS_PER_TICK = runtime.microseconds_per_tick;
@@ -738,6 +805,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 #endif
 
 	switch_time_sync();
+	time_sync = runtime.time_sync;
 
 	globals.STARTED = globals.RUNNING = 1;
 	switch_mutex_lock(runtime.throttle_mutex);
@@ -775,6 +843,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 
 	switch_time_sync();
+	time_sync = runtime.time_sync;
 
 	globals.use_cond_yield = COND;
 	globals.RUNNING = 1;
@@ -795,8 +864,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		while (((ts = time_now(runtime.offset)) + 100) < runtime.reference) {
 			if (ts < last) {
 				if (MONO) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
-					switch_time_sync();
+					if (time_sync == runtime.time_sync) { /* Only resync if not in the middle of switch_time_sync() already */
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
+						win32_init_timers(); /* Make sure to reinit timers on WIN32 */
+						switch_time_sync();
+						time_sync = runtime.time_sync;
+					}
 				} else {
 					int64_t diff = (int64_t) (ts - last);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Reverse Clock Skew Detected!\n");
@@ -807,9 +880,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 					rev_errs++;
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-								  "If you see this message many times try setting the param enable-clock-nanosleep to true in switch.conf.xml or consider a nicer machine to run me on. I AM *FREE* afterall.\n");
-
+				if (!MONO || time_sync == runtime.time_sync) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+									  "If you see this message many times try setting the param enable-clock-nanosleep to true in switch.conf.xml or consider a nicer machine to run me on. I AM *FREE* afterall.\n");
+				}
 			} else {
 				rev_errs = 0;
 			}
@@ -823,7 +897,19 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 					r = read(tfd, &exp, sizeof(exp));
 					r++;
 				} else {
-					do_sleep(runtime.microseconds_per_tick);
+					switch_time_t timediff = runtime.reference - ts;
+
+					if (runtime.microseconds_per_tick < timediff) {
+						/* Only sleep for runtime.microseconds_per_tick if this value is lower then the actual time diff we need to sleep */
+						do_sleep(runtime.microseconds_per_tick);
+					} else {
+#ifdef WIN32
+						/* Windows only sleeps in ms precision, try to round the usec value as good as possible */
+						do_sleep((switch_interval_time_t)floor((timediff / 1000.0) + 0.5) * 1000);
+#else
+						do_sleep(timediff);
+#endif
+					}
 				}
 			}
 
@@ -832,13 +918,15 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 		if (ts > (runtime.reference + too_late)) {
 			if (MONO) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
-				switch_time_sync();
+				if (time_sync == runtime.time_sync) { /* Only resync if not in the middle of switch_time_sync() already */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
+					win32_init_timers(); /* Make sure to reinit timers on WIN32 */
+					switch_time_sync();
+					time_sync = runtime.time_sync;
+				}
 			} else {
 				switch_time_t diff = ts - runtime.reference - runtime.microseconds_per_tick;
-#ifndef WIN32
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Forward Clock Skew Detected!\n");
-#endif
 				fwd_errs++;
 				runtime.reference = switch_time_now();
 				current_ms = 0;
@@ -852,12 +940,17 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		if (fwd_errs > 9 || rev_errs > 9) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Auto Re-Syncing clock.\n");
 			switch_time_sync();
+			time_sync = runtime.time_sync;
 			fwd_errs = rev_errs = 0;
 		}
 
 		runtime.timestamp = ts;
 		current_ms += (runtime.microseconds_per_tick / 1000);
 		tick += (runtime.microseconds_per_tick / 1000);
+
+		if (time_sync < runtime.time_sync) {
+			time_sync++; /* Only step once for each loop, we want to make sure to keep this thread safe */
+		}
 
 		if (tick >= (1000000 / runtime.microseconds_per_tick)) {
 			if (++profile_tick == 1) {
@@ -1117,11 +1210,12 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 	switch_timer_interface_t *timer_interface;
 	module_pool = pool;
 
-#if defined(WIN32)
+#ifdef WIN32
 	timeBeginPeriod(1);
+
 	InitializeCriticalSection(&timer_section);
-	win32_last_get_time_tick = timeGetTime();
-	win32_tick_time_since_start = win32_last_get_time_tick;
+
+	win32_init_timers(); /* Init timers for Windows, if we should use timeGetTime() or QueryPerformanceCounters() */
 #endif
 
 	memset(&globals, 0, sizeof(globals));
@@ -1155,15 +1249,26 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 		switch_clear_flag((&runtime), SCF_CALIBRATE_CLOCK);
 	}
 
+#ifdef WIN32
+	if (switch_test_flag((&runtime), SCF_USE_WIN32_MONOTONIC)) {
+		MONO = 1;
+
+		if (win32_use_qpc) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabled Windows monotonic clock, using QueryPerformanceCounter()\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabled Windows monotonic clock, using timeGetTime()\n");
+		}
+	}
+
+	/* No need to calibrate clock in Win32, we will only sleep ms anyway, it's just not accurate enough */
+	switch_clear_flag((&runtime), SCF_CALIBRATE_CLOCK);
+#endif
+
 	if (switch_test_flag((&runtime), SCF_CALIBRATE_CLOCK)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Calibrating timer, please wait...\n");
 		switch_time_calibrate_clock();
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clock calibration disabled.\n");
-	}
-
-	if (switch_test_flag((&runtime), SCF_USE_WIN32_MONOTONIC)) {
-		MONO = 1;
 	}
 
 	/* indicate that the module should continue to be loaded */

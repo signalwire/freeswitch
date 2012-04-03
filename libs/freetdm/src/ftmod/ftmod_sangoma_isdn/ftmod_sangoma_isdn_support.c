@@ -595,6 +595,11 @@ ftdm_status_t set_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb)
 	if (!len) {
 		return FTDM_SUCCESS;
 	}
+
+	if (!strncasecmp(caller_data->cid_num.digits, "0000000000", strlen("0000000000"))) {
+		return FTDM_SUCCESS;
+	}
+
 	cgPtyNmb->eh.pres			= PRSNT_NODEF;
 
 	cgPtyNmb->screenInd.pres	= PRSNT_NODEF;

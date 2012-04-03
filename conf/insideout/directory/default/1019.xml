@@ -1,0 +1,18 @@
+<include>
+  <user id="1019" mailbox="1019">
+    <params>
+      <param name="password" value="1234"/>
+      <param name="vm-password" value="1019"/>
+    </params>
+    <variables>
+      <variable name="toll_allow" value="domestic,international,local"/>
+      <variable name="accountcode" value="1019"/>
+      <variable name="user_context" value="default"/>
+      <variable name="effective_caller_id_name" value="Ray"/>
+      <variable name="effective_caller_id_number" value="1019"/>
+<!--      <variable name="effective_caller_id_name" value="like this?"/>
+      <variable name="effective_caller_id_number" value="+12345678900"/>-->
+      <variable name="callgroup" value="techsupport"/>
+    </variables>
+  </user>
+</include>

@@ -1,0 +1,18 @@
+Test driver for Digital Signature Algorithm operations.
+
+This program generates DSA keys (currently, of a few compiled-in
+sizes) and does timing tests on DSA operations.
+
+The command line is a seed string which is used to generate the
+public parameters.  The use of a seed lets you verify that the
+key was not generated in a weak manner.
+
+Currently, the list of key sizes to generate is compiled in.
+
+After key generation, the program DSA-signs and verifies a
+random message, and displays the timing.
+
+Example invocation lines:
+
+dsatest arbitrary seed string
+dsatest foo

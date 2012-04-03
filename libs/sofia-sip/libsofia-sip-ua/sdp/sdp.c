@@ -1875,10 +1875,11 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
 				       sdp_rtpmap_t const *rm)
 {
   char const *lparam, *rparam;
+  sdp_rtpmap_t const *cp_list = NULL;
 
   if (rm == NULL)
     return NULL;
-
+    
   for (; list; list = list->rm_next) {
     if (rm->rm_rate != list->rm_rate)
       continue;
@@ -1888,8 +1889,11 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
 
     lparam = rm->rm_params; rparam = list->rm_params;
 
-    if (lparam == rparam)
-      break;
+    if (lparam == rparam) {
+          cp_list = list;
+          if (rm->rm_pt != list->rm_pt) continue;
+          break;
+    }
 
     if (!lparam) lparam = "1"; if (!rparam) rparam = "1";
     if (!su_casematch(lparam, rparam))
@@ -1898,5 +1902,5 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
     break;
   }
 
-  return (sdp_rtpmap_t *)list;
+  return cp_list ? (sdp_rtpmap_t *) cp_list : (sdp_rtpmap_t *)list;
 }

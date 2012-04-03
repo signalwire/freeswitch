@@ -50,17 +50,16 @@ static int tests_failed = FALSE;
 
 static int msg_step = 0;
 static int msg2_step = 0;
-static int error_step = 0;
 static int msg_done = FALSE;
 static int msg2_done = FALSE;
-static int error_done = FALSE;
 
-static void message_handler(int level, const char *text)
+static void message_handler(void *user_data, int level, const char *text)
 {
     const char *ref[] =
     {
         "TAG Log with tag 1 2 3\n",
         "Log with protocol 1 2 3\n",
+        "ERROR Log with severity log 1 2 3\n",
         "FLOW NewTag Log with new tag 1 2 3\n",
         "FLOW Protocol NewTag Log with protocol 1 2 3\n",
         "FLOW Protocol NewTag Buf 00 01 02 03 04 05 06 07 08 09\n",
@@ -78,6 +77,8 @@ static void message_handler(int level, const char *text)
         ""
     };
 
+    if (ref[msg_step][0] == '\0')
+        return;
     if (strcmp(ref[msg_step], text))
     {
         printf(">>>: %s", ref[msg_step]);
@@ -89,7 +90,7 @@ static void message_handler(int level, const char *text)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void message_handler2(int level, const char *text)
+static void message_handler2(void *user_data, int level, const char *text)
 {
     /* TODO: This doesn't check if the date/time field makes sense */
     if (strcmp(" FLOW Protocol NewTag Date/time tagged log 1 2 3\n", text + 23))
@@ -100,25 +101,6 @@ static void message_handler2(int level, const char *text)
     if (++msg2_step == 10)
         msg2_done = TRUE;
     printf("MSG: %s", text);
-}
-/*- End of function --------------------------------------------------------*/
-
-static void error_handler(const char *text)
-{
-    const char *ref[] =
-    {
-        "ERROR Log with severity log 1 2 3\n",
-        ""
-    };
-    
-    if (strcmp(ref[error_step], text))
-    {
-        printf(">>>: %s", ref[error_step]);
-        tests_failed = TRUE;
-    }
-    if (ref[++error_step][0] == '\0')
-        error_done = TRUE;
-    printf("ERR: %s", text);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -143,8 +125,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Not logged.\n");
 
     /* Now set a custom log handler */
-    span_log_set_message_handler(&log, &message_handler);
-    span_log_set_error_handler(&log, &error_handler);
+    span_log_set_message_handler(&log, &message_handler, NULL);
     span_log_set_sample_rate(&log, 44100);
 
     /* Try the different logging elements */
@@ -176,7 +157,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Logged.\n");
     else
         fprintf(stderr, "Not logged.\n");
-    
+
     /* Test logging of buffer contents */
     for (i = 0;  i < 1000;  i++)
         buf[i] = i;
@@ -199,7 +180,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    
+
     /* Check timestamping by samples */
     span_log_set_level(&log, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW | SPAN_LOG_SHOW_SAMPLE_TIME);
     for (i = 0;  i < 10;  i++)
@@ -209,7 +190,7 @@ int main(int argc, char *argv[])
     }
 
     /* Check timestamping by current date and time */
-    span_log_set_message_handler(&log, &message_handler2);
+    span_log_set_message_handler(&log, &message_handler2, NULL);
     span_log_set_level(&log, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW | SPAN_LOG_SHOW_DATE);
     for (i = 0;  i < 10;  i++)
     {
@@ -218,13 +199,13 @@ int main(int argc, char *argv[])
         delay.tv_nsec = 20000000;
         nanosleep(&delay, NULL);
     }
-    if (tests_failed  ||  !msg_done  ||  !error_done)
+    if (tests_failed  ||  !msg_done)
     {
-        printf("Tests failed - %d %d %d.\n", tests_failed, msg_done, error_done);
+        printf("Tests failed - %d %d.\n", tests_failed, msg_done);
         return 2;
     }
-    
-    span_log_set_message_handler(&log, &message_handler);
+
+    span_log_set_message_handler(&log, &message_handler, NULL);
 
     printf("Tests passed.\n");
     return 0;

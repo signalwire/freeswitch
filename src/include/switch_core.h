@@ -217,6 +217,8 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_clear_flag(_In_ switch_media_bug_
 */
 SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame);
 
+SWITCH_DECLARE(uint32_t) switch_core_cpu_count(void);
+
 /*!
   \brief Remove a media bug from the session
   \param session the session to remove the bug from
@@ -269,6 +271,8 @@ SWITCH_DECLARE(void) switch_core_media_bug_flush(_In_ switch_media_bug_t *bug);
   \param session the session to flush the read/write buffers for all media bugs on the session
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_flush_all(_In_ switch_core_session_t *session);
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_set_pre_buffer_framecount(switch_media_bug_t *bug, uint32_t framecount);
 
 ///\}
 

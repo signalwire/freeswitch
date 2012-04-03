@@ -98,7 +98,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
     i = (int) (intptr_t) user_data;
     snprintf(tag, sizeof(tag), "%c: Phase D", i);
     printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
-    fax_log_transfer_statistics(s, tag);
+    fax_log_page_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
     return T30_ERR_OK;
@@ -114,7 +114,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     i = (int) (intptr_t) user_data;
     snprintf(tag, sizeof(tag), "%c: Phase E", i);
     printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));
-    fax_log_transfer_statistics(s, tag);
+    fax_log_final_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
     t30_get_transfer_statistics(s, &t);
@@ -422,7 +422,8 @@ int main(int argc, char *argv[])
         t38_set_t38_version(t38_core, t38_version);
         t38_terminal_set_config(t38_terminal_state, options);
         t38_terminal_set_tep_mode(t38_terminal_state, use_tep);
-    
+        t38_terminal_set_fill_bit_removal(t38_terminal_state, fill_removal);
+
         logging = t38_terminal_get_logging_state(t38_terminal_state);
         span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
         span_log_set_tag(logging, "T.38");
@@ -445,7 +446,7 @@ int main(int argc, char *argv[])
         t30_set_phase_b_handler(t30, phase_b_handler, (void *) (intptr_t) 'A');
         t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) 'A');
         t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) 'A');
-        t30_set_ecm_capability(t30, TRUE);
+        t30_set_ecm_capability(t30, use_ecm);
         t30_set_supported_compressions(t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION | T30_SUPPORT_T85_COMPRESSION);
 
         if (pcap_scan_pkts(input_file_name, src_addr, src_port, dest_addr, dest_port, t38_terminal_timing_update, process_packet, NULL))
@@ -474,7 +475,7 @@ int main(int argc, char *argv[])
         t38_core = t38_gateway_get_t38_core_state(t38_gateway_state);
         t38_gateway_set_transmit_on_idle(t38_gateway_state, use_transmit_on_idle);
         t38_set_t38_version(t38_core, t38_version);
-        t38_gateway_set_ecm_capability(t38_gateway_state, TRUE);
+        t38_gateway_set_ecm_capability(t38_gateway_state, use_ecm);
 
         logging = t38_gateway_get_logging_state(t38_gateway_state);
         span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
@@ -502,7 +503,7 @@ int main(int argc, char *argv[])
         t30_set_phase_b_handler(t30, phase_b_handler, (void *) (intptr_t) 'B');
         t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) 'B');
         t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) 'B');
-        t30_set_ecm_capability(t30, TRUE);
+        t30_set_ecm_capability(t30, use_ecm);
         t30_set_supported_compressions(t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
 
         logging = fax_get_logging_state(fax_state);

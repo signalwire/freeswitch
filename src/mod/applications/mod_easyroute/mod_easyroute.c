@@ -43,7 +43,7 @@ typedef struct easyroute_results {
 	char dialstring[256];
 	char group[16];
 	char acctcode[17];
-	char translated[17];
+	char translated[61];
 } easyroute_results_t;
 
 
@@ -53,7 +53,7 @@ typedef struct route_callback {
 	char techprofile[129];
 	char limit[129];
 	char acctcode[129];
-	char translated[17];
+	char translated[61];
 } route_callback_t;
 
 static struct {
@@ -88,7 +88,7 @@ static int route_callback(void *pArg, int argc, char **argv, char **columnNames)
 	switch_copy_string(cbt->limit, argv[2], 128);
 	switch_copy_string(cbt->techprofile, argv[3], 128);
 	switch_copy_string(cbt->acctcode, argv[4], 128);
-	switch_copy_string(cbt->translated, argv[5], 16);
+	switch_copy_string(cbt->translated, argv[5], 60);
 
 	return 0;
 }

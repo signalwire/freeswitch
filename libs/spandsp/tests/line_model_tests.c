@@ -366,23 +366,18 @@ int main(int argc, char *argv[])
 {
     int line_model_no;
     int speech_test;
-    int log_audio;
     int opt;
 
     channel_codec = MUNGE_CODEC_NONE;
-    log_audio = FALSE;
     line_model_no = 0;
     rbs_pattern = 0;
     speech_test = FALSE;
-    while ((opt = getopt(argc, argv, "c:lm:r:s:")) != -1)
+    while ((opt = getopt(argc, argv, "c:m:r:s:")) != -1)
     {
         switch (opt)
         {
         case 'c':
             channel_codec = atoi(optarg);
-            break;
-        case 'l':
-            log_audio = TRUE;
             break;
         case 'm':
             line_model_no = atoi(optarg);

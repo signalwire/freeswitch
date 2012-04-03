@@ -69,7 +69,6 @@ int main(int argc, char *argv[])
     SNDFILE *refhandle;
     SNDFILE *outhandle;
     int frames;
-    int outframes;
     double pre_energy;
     double post_energy;
     double ref_energy;
@@ -186,7 +185,7 @@ int main(int argc, char *argv[])
         while ((len = read(decompress_file, lpc10_data, BLOCKS_PER_READ*7)) > 0)
         {
             lpc10_decode(lpc10_dec_state, post_amp, lpc10_data, len/7);
-            outframes = sf_writef_short(outhandle, post_amp, BLOCK_LEN*len/7);
+            sf_writef_short(outhandle, post_amp, BLOCK_LEN*len/7);
         }
     }
     else
@@ -216,9 +215,9 @@ int main(int argc, char *argv[])
             }
             block_no++;
             if (log_error)
-                outframes = sf_writef_short(outhandle, log_amp, dec_len);
+                sf_writef_short(outhandle, log_amp, dec_len);
             else
-                outframes = sf_writef_short(outhandle, post_amp, dec_len);
+                sf_writef_short(outhandle, post_amp, dec_len);
         }
         if (sf_close_telephony(inhandle))
         {

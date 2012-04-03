@@ -543,7 +543,6 @@ int main(int argc, char *argv[])
     SNDFILE *inhandle;
     SNDFILE *outhandle;
     int frames;
-    int outframes;
     int bytes;
     int16_t pre_amp[HIST_LEN];
     int16_t post_amp[HIST_LEN];
@@ -605,7 +604,7 @@ int main(int argc, char *argv[])
         {
             bytes = gsm0610_encode(gsm0610_enc_state, gsm0610_data, pre_amp, frames);
             gsm0610_decode(gsm0610_dec_state, post_amp, gsm0610_data, bytes);
-            outframes = sf_writef_short(outhandle, post_amp, frames);
+            sf_writef_short(outhandle, post_amp, frames);
         }
     
         if (sf_close_telephony(inhandle))

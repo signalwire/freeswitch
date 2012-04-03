@@ -689,6 +689,17 @@ void sngisdn_rcv_q921_ind(BdMngmt *status)
 						DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
 						DECODE_LLD_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
 						DECODE_LLD_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
+
+			if (FTDM_SPAN_IS_BRI(ftdmspan) && (status->t.usta.alarm.event == PROT_ST_DN)) {
+				/* Q.921 link is down - This is a line where the Q.921 stops transmitting
+					after the line goes idle.
+
+					Do not drop current calls, but set sigstatus do down so that we
+					can try to re-initialize link before trying new outbound calls */
+
+				sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_DOWN);
+				sngisdn_set_span_avail_rate(ftdmspan, SNGISDN_AVAIL_PWR_SAVING);
+			}
 			break;
 		default:
 			ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q921] %s: %s: %s(%d): %s(%d)\n",

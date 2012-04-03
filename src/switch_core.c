@@ -724,6 +724,11 @@ SWITCH_DECLARE(int32_t) set_realtime_priority(void)
 	return 0;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_cpu_count(void)
+{
+	return runtime.cpu_count;
+}
+
 SWITCH_DECLARE(int32_t) set_normal_priority(void)
 {
 	return 0;
@@ -733,12 +738,17 @@ SWITCH_DECLARE(int32_t) set_auto_priority(void)
 {
 #ifndef WIN32
 	runtime.cpu_count = sysconf (_SC_NPROCESSORS_ONLN);
+#else
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo( &sysinfo );
+	runtime.cpu_count = sysinfo.dwNumberOfProcessors;
+#endif
 
 	/* If we have more than 1 cpu, we should use realtime priority so we can have priority threads */
 	if (runtime.cpu_count > 1) {
 		return set_realtime_priority();
 	}
-#endif
+
 	return 0;
 }
 
@@ -1403,6 +1413,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.dbname = NULL;
 #ifndef WIN32
 	runtime.cpu_count = sysconf (_SC_NPROCESSORS_ONLN);
+#else
+	{
+		SYSTEM_INFO sysinfo;
+		GetSystemInfo( &sysinfo );
+		runtime.cpu_count = sysinfo.dwNumberOfProcessors;
+	}
 #endif	
 
 	/* INIT APR and Create the pool context */
@@ -1859,6 +1875,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	runtime.runlevel++;
 
 	switch_core_set_signal_handlers();
+	switch_load_network_lists(SWITCH_FALSE);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
@@ -1868,7 +1885,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_load_network_lists(SWITCH_FALSE);
+
 
 	switch_load_core_config("post_load_switch.conf");
 
@@ -1998,6 +2015,17 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	}
 
 	switch (cmd) {
+	case SCSC_DEBUG_SQL:
+		{
+			if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
+				switch_clear_flag((&runtime), SCF_DEBUG_SQL);
+				newintval = 0;
+			} else {
+				switch_set_flag((&runtime), SCF_DEBUG_SQL);
+				newintval = 1;
+			}
+		}
+		break;
 	case SCSC_VERBOSE_EVENTS:
 		if (intval) {
 			if (oldintval > -1) {

@@ -89,6 +89,10 @@ super_tone_tx_step_t *nutone_tree = NULL;
 super_tone_tx_step_t *congestiontone_tree = NULL;
 super_tone_tx_step_t *waitingtone_tree = NULL;
 
+int level;
+
+#define SAMPLES_PER_CHUNK           160
+
 #if defined(HAVE_LIBXML2)
 static int parse_tone(super_tone_rx_descriptor_t *desc, int tone_id, super_tone_tx_step_t **tree, xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur)
 {
@@ -366,52 +370,16 @@ static void tone_segment(void *data, int f1, int f2, int duration)
 }
 /*- End of function --------------------------------------------------------*/
 
-int main(int argc, char *argv[])
+static int talk_off_tests(super_tone_rx_state_t *super)
 {
-    int x;
     int16_t amp[8000];
     int sample;
     int frames;
-    awgn_state_t noise_source;
-    super_tone_rx_state_t *super;
-    super_tone_rx_descriptor_t desc;
+    int j;
+    int x;
 
-    if ((inhandle = sf_open_telephony_read(IN_FILE_NAME, 1)) == NULL)
-    {
-        fprintf(stderr, "    Cannot open audio file '%s'\n", IN_FILE_NAME);
-        exit(2);
-    }
-    super_tone_rx_make_descriptor(&desc);
-#if defined(HAVE_LIBXML2)
-    get_tone_set(&desc, "../spandsp/global-tones.xml", (argc > 1)  ?  argv[1]  :  "hk");
-#endif
-    super_tone_rx_fill_descriptor(&desc);
-    if ((super = super_tone_rx_init(NULL, &desc, wakeup, (void *) "test")) == NULL)
-    {
-        printf("    Failed to create detector.\n");
-        exit(2);
-    }
-    super_tone_rx_segment_callback(super, tone_segment);
-    awgn_init_dbm0(&noise_source, 1234567, -30.0f);
-    printf("Processing file\n");
-    while ((frames = sf_readf_short(inhandle, amp, 8000)))
-    {
-        /* Add some noise to the signal for a more meaningful test. */
-        //for (sample = 0;  sample < frames;  sample++)
-        //    amp[sample] += saturate(amp[sample] + awgn (&noise_source));
-        for (sample = 0;  sample < frames;  )
-        {
-            x = super_tone_rx(super, amp + sample, frames - sample);
-            sample += x;
-        }
-    }
-    if (sf_close_telephony(inhandle))
-    {
-        fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME);
-        exit(2);
-    }
-#if 0
     /* Test for voice immunity */
+    printf("Talk off tests\n");
     for (j = 0;  bellcore_files[j][0];  j++)
     {
         if ((inhandle = sf_open_telephony_read(bellcore_files[j], 1)) == NULL)
@@ -433,7 +401,101 @@ int main(int argc, char *argv[])
             exit(2);
     	}
     }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int detection_range_tests(super_tone_rx_state_t *super)
+{
+    int16_t amp[SAMPLES_PER_CHUNK];
+    int i;
+    int j;
+    int x;
+    uint32_t phase;
+    int32_t phase_inc;
+    int scale;
+
+    printf("Detection range tests\n");
+    super_tone_rx_tone_callback(super, wakeup, (void *) "test");
+    phase = 0;
+    phase_inc = dds_phase_rate(440.0f);
+    for (level = -80;  level < 0;  level++)
+    {
+        printf("Testing at %ddBm0\n", level);
+        scale = dds_scaling_dbm0(level);
+        for (j = 0;  j < 100;  j++)
+        {
+            for (i = 0;  i < SAMPLES_PER_CHUNK;  i++)
+                amp[i] = (dds(&phase, phase_inc)*scale) >> 15;
+            x = super_tone_rx(super, amp, SAMPLES_PER_CHUNK);
+        }
+    }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int file_decode_tests(super_tone_rx_state_t *super, const char *file_name)
+{
+    int16_t amp[8000];
+    int sample;
+    int frames;
+    int x;
+    awgn_state_t noise_source;
+
+    printf("File decode tests\n");
+    super_tone_rx_tone_callback(super, wakeup, (void *) "test");
+    awgn_init_dbm0(&noise_source, 1234567, -30.0f);
+    printf("Processing file\n");
+    if ((inhandle = sf_open_telephony_read(file_name, 1)) == NULL)
+    {
+        fprintf(stderr, "    Cannot open audio file '%s'\n", file_name);
+        exit(2);
+    }
+    while ((frames = sf_readf_short(inhandle, amp, 8000)))
+    {
+        /* Add some noise to the signal for a more meaningful test. */
+        //for (sample = 0;  sample < frames;  sample++)
+        //    amp[sample] += saturate(amp[sample] + awgn (&noise_source));
+        for (sample = 0;  sample < frames;  )
+        {
+            x = super_tone_rx(super, amp + sample, frames - sample);
+            sample += x;
+        }
+    }
+    if (sf_close_telephony(inhandle))
+    {
+        fprintf(stderr, "    Cannot close audio file '%s'\n", file_name);
+        exit(2);
+    }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+int main(int argc, char *argv[])
+{
+    const char *file_name;
+    super_tone_rx_state_t *super;
+    super_tone_rx_descriptor_t desc;
+
+    super_tone_rx_make_descriptor(&desc);
+#if defined(HAVE_LIBXML2)
+    get_tone_set(&desc, "../spandsp/global-tones.xml", (argc > 1)  ?  argv[1]  :  "hk");
 #endif
+    super_tone_rx_fill_descriptor(&desc);
+    if ((super = super_tone_rx_init(NULL, &desc, wakeup, (void *) "test")) == NULL)
+    {
+        printf("    Failed to create detector.\n");
+        exit(2);
+    }
+    super_tone_rx_segment_callback(super, tone_segment);
+
+    detection_range_tests(super);
+
+    file_name = IN_FILE_NAME;
+    file_decode_tests(super, file_name);
+
+    talk_off_tests(super);
+
     super_tone_rx_free(super);
     printf("Done\n");
     return 0;

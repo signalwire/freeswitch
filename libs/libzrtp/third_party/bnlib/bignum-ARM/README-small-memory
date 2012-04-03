@@ -1,0 +1,6 @@
+This directory contains a stripped-down version of Colin Plumb's bnlib bignum package for ARM processors in minimal memory environments, such as embedded Wireless USB controllers.  All unnecessary functions have been removed, and code has been reorganized for shrinking the memory footprint.  These functions duplicate the functionality of similar functions in the main bnlib package, but with smaller memory footprints.  Wireless USB only requires Diffie-Hellman, and little else.
+
+For more information, see the documentation in the main bnlib package, which is not in this directory.  Or contact:
+
+Philip Zimmermann <prz@mit.edu>
+October 2007

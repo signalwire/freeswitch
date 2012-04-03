@@ -170,6 +170,14 @@ SPAN_DECLARE(void) dtmf_rx_parms(dtmf_rx_state_t *s,
     \return The number of samples unprocessed. */
 SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples);
 
+/*! Fake processing of a missing block of received DTMF audio samples.
+    (e.g due to packet loss).
+    \brief Fake processing of a missing block of received DTMF audio samples.
+    \param s The DTMF receiver context.
+    \param len The number of samples to fake.
+    \return The number of samples unprocessed. */
+SPAN_DECLARE(int) dtmf_rx_fillin(dtmf_rx_state_t *s, int samples);
+
 /*! Get the status of DTMF detection during processing of the last audio
     chunk.
     \brief Get the status of DTMF detection during processing of the last

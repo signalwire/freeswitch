@@ -259,9 +259,6 @@ int main(int argc, char *argv[])
     int clean;
     int16_t rx;
     int16_t tx;
-    int local_cur;
-    int far_cur;
-    int result_cur;
     int line_model_no;
     time_t now;
     power_meter_t power_before;
@@ -302,9 +299,6 @@ int main(int argc, char *argv[])
         start_echo_can_monitor(256);
 #endif
 
-    local_cur = 0;
-    far_cur = 0;
-    result_cur = 0;
     channel_model_create(line_model_no);
 #if defined(ENABLE_GUI)
     if (use_gui)

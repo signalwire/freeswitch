@@ -2902,6 +2902,12 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 										v_campon_fallback_exten,
 										switch_channel_get_variable(caller_channel, "campon_fallback_dialplan"),
 										switch_channel_get_variable(caller_channel, "campon_fallback_context"));
+
+			if (peer_session) {
+				switch_channel_hangup(switch_core_session_get_channel(peer_session), SWITCH_CAUSE_ORIGINATOR_CANCEL);
+				switch_core_session_rwunlock(peer_session);
+			}
+
 			return;
 		}
 
@@ -3038,6 +3044,11 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	} else {
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
+			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
+				switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
+				switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+			}
 			switch_ivr_signal_bridge(session, peer_session);
 		} else {
 			switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -3240,7 +3251,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_call_cause_t *cancel_cause)
 {
 	switch_xml_t x_user = NULL, x_param, x_params;
-	char *user = NULL, *domain = NULL, *dup_domain = NULL;
+	char *user = NULL, *domain = NULL, *dup_domain = NULL, *dialed_user = NULL;
 	const char *dest = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	unsigned int timelimit = 60;
@@ -3310,9 +3321,14 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 	}
 
+	dialed_user = (char *)switch_xml_attr(x_user, "id");
+
 	if (var_event) {
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", user);
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
 		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+		if (!zstr(dest) && !strstr(dest, "presence_id=")) {
+			switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "presence_id", "%s@%s", dialed_user, domain);
+		}
 	}
 
 	if (!dest) {
@@ -3338,7 +3354,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				timelimit = atoi(varval);
 			}
 
-			switch_channel_set_variable(channel, "dialed_user", user);
+			switch_channel_set_variable(channel, "dialed_user", dialed_user);
 			switch_channel_set_variable(channel, "dialed_domain", domain);
 
 			d_dest = switch_channel_expand_variables(channel, dest);
@@ -3359,7 +3375,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				switch_assert(event);
 			}
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", user);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 			d_dest = switch_event_expand_headers(event, dest);
 			switch_event_destroy(&event);
@@ -3374,7 +3390,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 
 
-		switch_snprintf(stupid, sizeof(stupid), "user/%s", user);
+		switch_snprintf(stupid, sizeof(stupid), "user/%s", dialed_user);
 		if (switch_stristr(stupid, d_dest)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Waddya Daft? You almost called '%s' in an infinate loop!\n",
 							  stupid);

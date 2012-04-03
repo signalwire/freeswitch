@@ -7,9 +7,20 @@ if [ ! -d .git ]; then
     exit 1;
 fi
 
-if [ -z "$1" ]; then
-    echo "usage: ./scripts/tagscript.sh MAJOR.MINOR.MICRO[.REVISION]" 1>&2
+showusage() {
+    echo "usage: ./scripts/tagscript.sh [-s] MAJOR.MINOR.MICRO[.REVISION]" 1>&2
     exit 1;
+}
+
+while getopts "s" o; do
+    case "$o" in
+        s) opts="-s" ;;
+    esac
+done
+shift $(($OPTIND-1))
+
+if [ -z "$1" ]; then
+    showusage
 fi
 
 ver="$1"
@@ -46,7 +57,7 @@ fi
 
 git add configure.in
 git commit -m "Release freeswitch-$ver"
-git tag -a -m "freeswitch-$ver release" v$ver
+git tag -a ${opts} -m "freeswitch-$ver release" v$ver
 
 git clone $src_repo $dst_dir
 if [ -n "$stash_saved" ]; then

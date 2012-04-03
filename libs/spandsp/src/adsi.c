@@ -528,9 +528,11 @@ SPAN_DECLARE(void) adsi_tx_set_preamble(adsi_tx_state_t *s,
     }
     if (postamble_ones_len < 0)
     {
+#if 0
         if (s->standard == ADSI_STANDARD_JCLIP)
             s->postamble_ones_len = 5;
         else
+#endif
             s->postamble_ones_len = 5;
     }
     else

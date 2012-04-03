@@ -39,7 +39,7 @@ struct logging_state_s
     const char *protocol;
 
     message_handler_func_t span_message;
-    error_handler_func_t span_error;
+    void *user_data;
 };
 
 #endif

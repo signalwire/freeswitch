@@ -107,18 +107,11 @@ typedef void (*put_bit_func_t)(void *user_data, int bit);
 /*! Bit get function for data pumps */
 typedef int (*get_bit_func_t)(void *user_data);
 
+#define modem_rx_status_func_t modem_status_func_t
+#define modem_tx_status_func_t modem_status_func_t
+
 /*! Status change callback function for data pumps */
 typedef void (*modem_status_func_t)(void *user_data, int status);
-
-enum
-{
-    /*! No parity bit should be used */
-    ASYNC_PARITY_NONE = 0,
-    /*! An even parity bit will exist, after the data bits */
-    ASYNC_PARITY_EVEN,
-    /*! An odd parity bit will exist, after the data bits */
-    ASYNC_PARITY_ODD
-};
 
 /*!
     Asynchronous data transmit descriptor. This defines the state of a single
@@ -133,6 +126,16 @@ typedef struct async_tx_state_s async_tx_state_t;
     in FSK modems.
 */
 typedef struct async_rx_state_s async_rx_state_t;
+
+enum
+{
+    /*! No parity bit should be used */
+    ASYNC_PARITY_NONE = 0,
+    /*! An even parity bit will exist, after the data bits */
+    ASYNC_PARITY_EVEN,
+    /*! An odd parity bit will exist, after the data bits */
+    ASYNC_PARITY_ODD
+};
 
 #if defined(__cplusplus)
 extern "C"

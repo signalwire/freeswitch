@@ -21,6 +21,7 @@ export PS1='\n\[\033[01;31m\]\u@\h\[\033[01;36m\] [\d \@] \[\033[01;33m\] \w\n\[
 export PS2="\[\033[1m\]> \[\033[0m\]"
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
 export VISUAL=emacs
+export GIT_SSL_NO_VERIFY=true
 
 umask 022
 alias e='emacs'

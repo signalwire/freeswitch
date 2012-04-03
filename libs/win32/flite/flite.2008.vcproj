@@ -4,7 +4,7 @@
 	Version="9.00"
 	Name="flite"
 	ProjectGUID="{0AD1177E-1FD8-4643-9391-431467A11084}"
-	RootNamespace="flite-1.3-current"
+	RootNamespace="flite-1.5.4"
 	TargetFrameworkVersion="196613"
 	>
 	<Platforms>
@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\flite-1.3.99\include&quot;;&quot;..\..\flite-1.3.99\lang\usenglish&quot;;&quot;..\..\flite-1.3.99\lang\cmulex&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\flite-1.5.4\include&quot;;&quot;..\..\flite-1.5.4\lang\usenglish&quot;;&quot;..\..\flite-1.5.4\lang\cmulex&quot;"
 				PreprocessorDefinitions="CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -106,7 +106,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\flite-1.3.99\include&quot;;&quot;..\..\flite-1.3.99\lang\usenglish&quot;;&quot;..\..\flite-1.3.99\lang\cmulex&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\flite-1.5.4\include&quot;;&quot;..\..\flite-1.5.4\lang\usenglish&quot;;&quot;..\..\flite-1.5.4\lang\cmulex&quot;"
 				PreprocessorDefinitions="CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -170,7 +170,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;..\..\flite-1.3.99\include&quot;;&quot;..\..\flite-1.3.99\lang\usenglish&quot;;&quot;..\..\flite-1.3.99\lang\cmulex&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\flite-1.5.4\include&quot;;&quot;..\..\flite-1.5.4\lang\usenglish&quot;;&quot;..\..\flite-1.5.4\lang\cmulex&quot;"
 				PreprocessorDefinitions="CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				RuntimeLibrary="2"
@@ -235,7 +235,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;..\..\flite-1.3.99\include&quot;;&quot;..\..\flite-1.3.99\lang\usenglish&quot;;&quot;..\..\flite-1.3.99\lang\cmulex&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\flite-1.5.4\include&quot;;&quot;..\..\flite-1.5.4\lang\usenglish&quot;;&quot;..\..\flite-1.5.4\lang\cmulex&quot;"
 				PreprocessorDefinitions="CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				RuntimeLibrary="2"
@@ -282,387 +282,351 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\audio\au_command.c"
+				RelativePath="..\..\flite-1.5.4\src\audio\au_command.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\audio\au_none.c"
+				RelativePath="..\..\flite-1.5.4\src\audio\au_none.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\audio\au_streaming.c"
+				RelativePath="..\..\flite-1.5.4\src\audio\au_streaming.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\audio\au_wince.c"
+				RelativePath="..\..\flite-1.5.4\src\audio\audio.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\audio\audio.c"
+				RelativePath="..\..\flite-1.5.4\lang\cmulex\cmu_lex.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\audio\auserver.c"
+				RelativePath="..\..\flite-1.5.4\lang\cmulex\cmu_lex_data.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmulex\cmu_lex.c"
+				RelativePath="..\..\flite-1.5.4\lang\cmulex\cmu_lex_entries.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmulex\cmu_lex_data.c"
+				RelativePath="..\..\flite-1.5.4\lang\cmulex\cmu_lts_model.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmulex\cmu_lex_entries.c"
+				RelativePath="..\..\flite-1.5.4\lang\cmulex\cmu_lts_rules.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmulex\cmu_lts_model.c"
+				RelativePath="..\..\flite-1.5.4\lang\cmulex\cmu_postlex.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmulex\cmu_lts_rules.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_alloc.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmulex\cmu_postlex.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_args.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb.c"
+				RelativePath="..\..\flite-1.5.4\src\stats\cst_cart.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="include;lang/usenglish"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="include;lang/usenglish"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="include;lang/usenglish"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="include;lang/usenglish"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb_cart.c"
+				RelativePath="..\..\flite-1.5.4\src\cg\cst_cg.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb_clunits.c"
+				RelativePath="..\..\flite-1.5.4\src\cg\cst_cg_dump_voice.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb_lex_entry.c"
+				RelativePath="..\..\flite-1.5.4\src\cg\cst_cg_load_voice.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb_lpc.c"
+				RelativePath="..\..\flite-1.5.4\src\cg\cst_cg_map.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_time_awb\cmu_time_awb_mcep.c"
+				RelativePath="..\..\flite-1.5.4\src\wavesynth\cst_clunits.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_kal\cmu_us_kal.c"
+				RelativePath="..\..\flite-1.5.4\src\wavesynth\cst_diphone.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_kal\cmu_us_kal_diphone.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_endian.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_kal\cmu_us_kal_lpc.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_error.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_kal\cmu_us_kal_res.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_features.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_kal\cmu_us_kal_residx.c"
+				RelativePath="..\..\flite-1.5.4\src\hrg\cst_ffeature.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_alloc.c"
+				RelativePath="..\..\flite-1.5.4\src\synth\cst_ffeatures.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_args.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_file_stdio.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\stats\cst_cart.c"
+				RelativePath="..\..\flite-1.5.4\src\hrg\cst_item.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\cg\cst_cg.c"
+				RelativePath="..\..\flite-1.5.4\src\lexicon\cst_lexicon.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\wavesynth\cst_clunits.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\cst_lpcres.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\wavesynth\cst_diphone.c"
+				RelativePath="..\..\flite-1.5.4\src\lexicon\cst_lts.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_endian.c"
+				RelativePath="..\..\flite-1.5.4\src\lexicon\cst_lts_rewrites.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_error.c"
+				RelativePath="..\..\flite-1.5.4\src\cg\cst_mlpg.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_features.c"
+				RelativePath="..\..\flite-1.5.4\src\cg\cst_mlsa.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\hrg\cst_ffeature.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_mmap_win32.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\synth\cst_ffeatures.c"
+				RelativePath="..\..\flite-1.5.4\src\synth\cst_phoneset.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_file_stdio.c"
+				RelativePath="..\..\flite-1.5.4\src\wavesynth\cst_reflpc.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\hrg\cst_item.c"
+				RelativePath="..\..\flite-1.5.4\src\regex\cst_regex.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\lexicon\cst_lexicon.c"
+				RelativePath="..\..\flite-1.5.4\src\hrg\cst_rel_io.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\speech\cst_lpcres.c"
+				RelativePath="..\..\flite-1.5.4\src\hrg\cst_relation.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\lexicon\cst_lts.c"
+				RelativePath="..\..\flite-1.5.4\src\wavesynth\cst_sigpr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\lexicon\cst_lts_rewrites.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_socket.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\cg\cst_mlpg.c"
+				RelativePath="..\..\flite-1.5.4\src\cg\cst_spamf0.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\cg\cst_mlsa.c"
+				RelativePath="..\..\flite-1.5.4\src\stats\cst_ss.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_mmap_win32.c"
+				RelativePath="..\..\flite-1.5.4\src\synth\cst_ssml.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\synth\cst_phoneset.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_string.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\wavesynth\cst_reflpc.c"
+				RelativePath="..\..\flite-1.5.4\src\wavesynth\cst_sts.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\regex\cst_regex.c"
+				RelativePath="..\..\flite-1.5.4\src\synth\cst_synth.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\hrg\cst_rel_io.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_tokenstream.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\hrg\cst_relation.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\cst_track.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\wavesynth\cst_sigpr.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\cst_track_io.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_socket.c"
+				RelativePath="..\..\flite-1.5.4\src\wavesynth\cst_units.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\stats\cst_ss.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_url.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_string.c"
+				RelativePath="..\..\flite-1.5.4\src\synth\cst_utt_utils.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\wavesynth\cst_sts.c"
+				RelativePath="..\..\flite-1.5.4\src\hrg\cst_utterance.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\synth\cst_synth.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_val.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_tokenstream.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_val_const.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\speech\cst_track.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_val_user.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\speech\cst_track_io.c"
+				RelativePath="..\..\flite-1.5.4\src\cg\cst_vc.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\wavesynth\cst_units.c"
+				RelativePath="..\..\flite-1.5.4\src\stats\cst_viterbi.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\synth\cst_utt_utils.c"
+				RelativePath="..\..\flite-1.5.4\src\synth\cst_voice.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\hrg\cst_utterance.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\cst_wave.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_val.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\cst_wave_io.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_val_const.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\cst_wave_utils.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\utils\cst_val_user.c"
+				RelativePath="..\..\flite-1.5.4\src\utils\cst_wchar.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\cg\cst_vc.c"
+				RelativePath="..\..\flite-1.5.4\src\synth\flite.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\stats\cst_viterbi.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\g721.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\synth\cst_voice.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\g723_24.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\speech\cst_wave.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\g723_40.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\speech\cst_wave_io.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\g72x.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\speech\cst_wave_utils.c"
+				RelativePath="..\..\flite-1.5.4\src\speech\rateconv.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\synth\flite.c"
+				RelativePath="..\..\flite-1.5.4\src\regex\regexp.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\speech\rateconv.c"
+				RelativePath="..\..\flite-1.5.4\src\regex\regsub.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\regex\regexp.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_aswd.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\regex\regsub.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_dur_stats.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_aswd.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_durz_cart.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_dur_stats.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_expand.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_durz_cart.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_f0_model.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_expand.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_f0lr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_f0_model.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_ffeatures.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_f0lr.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_gpos.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_ffeatures.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_int_accent_cart.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_gpos.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_int_tone_cart.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_int_accent_cart.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_nums_cart.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_int_tone_cart.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_phoneset.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_nums_cart.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_phrasing_cart.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_phoneset.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_pos_cart.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_phrasing_cart.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_text.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_text.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\usenglish.c"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\usenglish.c"
 				>
 			</File>
 		</Filter>
@@ -672,223 +636,231 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmulex\cmu_lts_model.h"
+				RelativePath="..\..\flite-1.5.4\lang\cmulex\cmu_lex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmulex\cmulex.h"
+				RelativePath="..\..\flite-1.5.4\lang\cmulex\cmu_lts_model.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_alloc.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_alloc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_args.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_args.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_audio.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_audio.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_cart.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_cart.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_cg.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_cg.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_clunits.h"
+				RelativePath="..\..\flite-1.5.4\src\cg\cst_cg_map.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_diphone.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_clunits.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_endian.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_diphone.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_error.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_endian.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_features.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_error.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_file.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_features.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_hrg.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_ffeatures.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_item.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_file.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_lexicon.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_hrg.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_lts.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_item.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_lts_rewrites.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_lexicon.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_math.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_lts.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\cg\cst_mlpg.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_lts_rewrites.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\cg\cst_mlsa.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_math.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_phoneset.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_phoneset.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_regex.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_regex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_relation.h"
+				RelativePath="..\..\flite-1.5.4\src\regex\cst_regex_defs.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_sigpr.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_relation.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_socket.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_sigpr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_ss.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_socket.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_string.h"
+				RelativePath="..\..\flite-1.5.4\src\cg\cst_spamf0.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_sts.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_ss.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_synth.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_string.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_tokenstream.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_sts.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_track.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_synth.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_units.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_tokenstream.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_utt_utils.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_track.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_utterance.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_units.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_val.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_utt_utils.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_val_const.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_utterance.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_val_defs.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_val.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\cg\cst_vc.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_val_const.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_viterbi.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_val_defs.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_voice.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_viterbi.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\cst_wave.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_voice.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\include\flite.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_wave.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\src\audio\native_audio.h"
+				RelativePath="..\..\flite-1.5.4\include\cst_wchar.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_durz_cart.h"
+				RelativePath="..\..\flite-1.5.4\include\flite.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_f0.h"
+				RelativePath="..\..\flite-1.5.4\src\speech\g72x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_ffeatures.h"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_durz_cart.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_int_accent_cart.h"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_f0.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_int_tone_cart.h"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_ffeatures.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_nums_cart.h"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_int_accent_cart.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_phrasing_cart.h"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_int_tone_cart.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\us_text.h"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_nums_cart.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\usenglish\usenglish.h"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_phrasing_cart.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_time_awb\voxdefs.h"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_pos_cart.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_kal\voxdefs.h"
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_regexes.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\us_text.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\flite-1.5.4\lang\usenglish\usenglish.h"
 				>
 			</File>
 		</Filter>
@@ -899,148 +871,308 @@
 			>
 		</Filter>
 		<Filter
-			Name="sltvoice"
+			Name="voices"
 			>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt.c"
+			<Filter
+				Name="awb"
 				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg.c"
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb_cart.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb_clunits.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb_lex_entry.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb_lpc.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb_mcep.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_durmodel.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_durmodel.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_f0_trees.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_f0_trees.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_phonestate.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_single_mcep_trees.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_single_mcep_trees.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_single_params.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_spamf0_accent.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_spamf0_accent.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_spamf0_accent_params.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_spamf0_phrase.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_spamf0_phrase.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_time_awb\voxdefs.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_awb\voxdefs.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="kal"
 				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_durmodel.c"
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal_diphone.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal_lpc.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal_res.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal_residx.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal_ressize.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal\voxdefs.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="kal16"
 				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_durmodel.h"
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal16\cmu_us_kal16.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal16\cmu_us_kal16_diphone.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal16\cmu_us_kal16_lpc.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal16\cmu_us_kal16_res.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal16\cmu_us_kal16_residx.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_kal16\voxdefs.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="rms"
 				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_f0_trees.c"
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_durmodel.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_durmodel.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_f0_trees.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_f0_trees.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_phonestate.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_single_mcep_trees.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_single_mcep_trees.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_single_params.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_spamf0_accent.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_spamf0_accent.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_spamf0_accent_params.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_spamf0_phrase.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_spamf0_phrase.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_voice.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\stdafx.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_rms\voxdefs.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="slt"
 				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_f0_trees.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_mcep_trees.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_mcep_trees.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_params.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\cmu_us_slt_cg_phonestate.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_slt\voxdefs.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="awbvoice"
-			>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_durmodel.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_durmodel.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_f0_trees.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_f0_trees.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_mcep_trees.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_mcep_trees.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_params.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\cmu_us_awb_cg_phonestate.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_awb\voxdefs.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="rmsvoice"
-			>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_durmodel.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_durmodel.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_f0_trees.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_f0_trees.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_mcep_trees.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_mcep_trees.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_params.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\cmu_us_rms_cg_phonestate.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_rms\voxdefs.h"
-				>
-			</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_durmodel.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_durmodel.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_f0_trees.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_f0_trees.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_phonestate.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_single_mcep_trees.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_single_mcep_trees.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_single_params.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_spamf0_accent.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_spamf0_accent.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_spamf0_accent_params.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_spamf0_phrase.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_spamf0_phrase.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\flite-1.5.4\lang\cmu_us_slt\voxdefs.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>

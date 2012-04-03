@@ -605,8 +605,10 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 		free(vals);
 	}
 
+	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	stmt = NULL; /* Make sure we don't try to free this handle again */
+	
 	if (!err_cnt) {
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 		return SWITCH_ODBC_SUCCESS;
 	}
 

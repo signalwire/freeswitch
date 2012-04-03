@@ -747,6 +747,8 @@ static const char *cli_usage =
 static int process_command(esl_handle_t *handle, const char *cmd)
 {
 	while (*cmd == ' ') cmd++;
+
+
 	if ((*cmd == '/' && cmd++) || !strncasecmp(cmd, "...", 3)) {
 		if (!strcasecmp(cmd, "help")) {
 			output_printf("%s", cli_usage);
@@ -793,6 +795,13 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 	} else {
 		char cmd_str[1024] = "";
 		const char *err = NULL;
+
+		if (!strncasecmp(cmd, "console loglevel ", 17)) { 
+			snprintf(cmd_str, sizeof(cmd_str), "log %s", cmd + 17);
+			esl_send_recv(handle, cmd_str);
+			printf("%s\n", handle->last_sr_reply);
+		}
+
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", cmd);
 		if (esl_send_recv(handle, cmd_str)) {
 			output_printf("Socket interrupted, bye!\n");

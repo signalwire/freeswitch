@@ -1,0 +1,16 @@
+<include>		
+	<extension name="snom-demo-1">
+		<condition field="destination_number" expression="^9000$">
+			<!-- <key> <light> <label> <user> <host> <profile> <action_name> <action> -->
+			<action application="eval" data="${snom_bind_key(2 on DND ${sip_from_user} ${sip_from_host} ${sofia_profile_name} message api+uuid_transfer ${uuid} 9001)}"/>
+			<action application="playback" data="$${hold_music}"/>
+		</condition>
+	</extension>
+
+	<extension name="snom-demo-2">
+		<condition field="destination_number" expression="^9001$">
+			<action application="eval" data="${snom_bind_key(2 off DND ${sip_from_user} ${sip_from_host} ${sofia_profile_name} message notused)}"/>
+			<action application="transfer" data="3000"/>
+		</condition>
+	</extension>
+</include>

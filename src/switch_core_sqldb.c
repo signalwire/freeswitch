@@ -34,7 +34,7 @@
 
 #include <switch.h>
 #include "private/switch_core_pvt.h"
-//#define DEBUG_SQL 1
+
 #define SWITCH_SQL_QUEUE_LEN 100000
 #define SWITCH_SQL_QUEUE_PAUSE_LEN 90000
 
@@ -466,7 +466,12 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 		break;
 	case SCDB_TYPE_CORE_DB:
 		{
-			status = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, NULL, NULL, &errmsg);
+			int ret = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, NULL, NULL, &errmsg);
+
+			if (ret == SWITCH_CORE_DB_OK) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
+
 			if (errmsg) {
 				switch_strdup(tmp, errmsg);
 				switch_core_db_free(errmsg);
@@ -832,7 +837,11 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 		break;
 	case SCDB_TYPE_CORE_DB:
 		{
-			status = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, callback, pdata, &errmsg);
+			int ret = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, callback, pdata, &errmsg);
+
+			if (ret == SWITCH_CORE_DB_OK || ret == SWITCH_CORE_DB_ABORT) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
 
 			if (errmsg) {
 				dbh->last_used = switch_epoch_time_now(NULL) - (SQL_CACHE_TIMEOUT * 2);
@@ -1010,11 +1019,11 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 					
 					if (new_mlen < runtime.max_sql_buffer_len) {
 						sql_len = new_mlen;
-#ifdef DEBUG_SQL
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-										  "REALLOC %ld %d %d\n", (long int)sql_len, switch_queue_size(sql_manager.sql_queue[0]), 
-										  switch_queue_size(sql_manager.sql_queue[1]));
-#endif
+						if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+											  "REALLOC %ld %d %d\n", (long int)sql_len, switch_queue_size(sql_manager.sql_queue[0]), 
+											  switch_queue_size(sql_manager.sql_queue[1]));
+						}
 						if (!(tmp = realloc(sqlbuf, sql_len))) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread ending on mem err\n");
 							abort();
@@ -1022,10 +1031,10 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 						}
 						sqlbuf = tmp;
 					} else {
-#ifdef DEBUG_SQL
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-										  "SAVE %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]));
-#endif
+						if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+											  "SAVE %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]));
+						}
 						save_sql = sql;
 						sql = NULL;
 						lc = 0;
@@ -1068,16 +1077,16 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 		wrote = 0;
 
 		if (trans && iterations && (iterations > target || !lc)) {
-#ifdef DEBUG_SQL
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-							  "RUN %d %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]), iterations);
-#endif
+			if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+								  "RUN %d %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]), iterations);
+			}
 			if (switch_cache_db_persistant_execute_trans(sql_manager.event_db, sqlbuf, 1) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread unable to commit transaction, records lost!\n");
 			}
-#ifdef DEBUG_SQL
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DONE\n");
-#endif
+			if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) { 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DONE\n");
+			}
 
 
 			iterations = 0;

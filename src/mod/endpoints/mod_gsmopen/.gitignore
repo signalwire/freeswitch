@@ -1,4 +1,3 @@
 !/gsmlib/gsmlib-*/aclocal.m4
 !/gsmlib/gsmlib-*/configure
-!/gsmlib/gsmlib-1.10.tar.gz
-!/gsmlib/gsmlib_1.10-12ubuntu1.diff.gz
+!/gsmlib/gsmlib_1.10.orig.tar.gz

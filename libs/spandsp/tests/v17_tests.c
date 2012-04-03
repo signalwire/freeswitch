@@ -122,7 +122,11 @@ static void v17_rx_status(void *user_data, int status)
     v17_rx_state_t *s;
     int i;
     int len;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    complexi16_t *coeffs;
+#else
     complexf_t *coeffs;
+#endif
 
     printf("V.17 rx status is %s (%d)\n", signal_status_to_str(status), status);
     s = (v17_rx_state_t *) user_data;
@@ -132,7 +136,11 @@ static void v17_rx_status(void *user_data, int status)
         len = v17_rx_equalizer_state(s, &coeffs);
         printf("Equalizer:\n");
         for (i = 0;  i < len;  i++)
+#if defined(SPANDSP_USE_FIXED_POINTx)
+            printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/4096.0f, coeffs[i].im/4096.0f);
+#else
             printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+#endif
         break;
     }
 }
@@ -165,7 +173,11 @@ static int v17getbit(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static void qam_report(void *user_data, const complexi16_t *constel, const complexi16_t *target, int symbol)
+#else
 static void qam_report(void *user_data, const complexf_t *constel, const complexf_t *target, int symbol)
+#endif
 {
     int i;
     int len;
@@ -208,10 +220,18 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
             len = v17_rx_equalizer_state(rx, &coeffs);
             printf("Equalizer A:\n");
             for (i = 0;  i < len;  i++)
+#if defined(SPANDSP_USE_FIXED_POINTx)
+                printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/4096.0f, coeffs[i].im/4096.0f);
+#else
                 printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+#endif
 #if defined(ENABLE_GUI)
             if (use_gui)
+#if defined(SPANDSP_USE_FIXED_POINTx)
+                qam_monitor_update_int_equalizer(qam_monitor, coeffs, len);
+#else
                 qam_monitor_update_equalizer(qam_monitor, coeffs, len);
+#endif
 #endif
             update_interval = 100;
         }
@@ -405,7 +425,7 @@ int main(int argc, char *argv[])
         tx = v17_tx_init(NULL, test_bps, tep, v17getbit, NULL);
         logging = v17_tx_get_logging_state(tx);
         span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-        span_log_set_tag(logging, "V.17 tx");
+        span_log_set_tag(logging, "V.17-tx");
         v17_tx_power(tx, signal_level);
         v17_tx_set_modem_status_handler(tx, v17_tx_status, (void *) tx);
 #if defined(WITH_SPANDSP_INTERNALS)
@@ -429,11 +449,11 @@ int main(int argc, char *argv[])
     }
 
     rx = v17_rx_init(NULL, test_bps, v17putbit, NULL);
-    v17_rx_set_modem_status_handler(rx, v17_rx_status, (void *) rx);
-    v17_rx_set_qam_report_handler(rx, qam_report, (void *) rx);
     logging = v17_rx_get_logging_state(rx);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "V.17 rx");
+    span_log_set_tag(logging, "V.17-rx");
+    v17_rx_set_modem_status_handler(rx, v17_rx_status, (void *) rx);
+    v17_rx_set_qam_report_handler(rx, qam_report, (void *) rx);
 
 #if defined(ENABLE_GUI)
     if (use_gui)
@@ -550,7 +570,7 @@ int main(int argc, char *argv[])
 #endif
     if (decode_test_file)
     {
-        if (sf_close(inhandle))
+        if (sf_close_telephony(inhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
@@ -558,7 +578,7 @@ int main(int argc, char *argv[])
     }
     if (log_audio)
     {
-        if (sf_close(outhandle))
+        if (sf_close_telephony(outhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
