@@ -3892,10 +3892,22 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 		if (zstr(attr->a_name)) {
 			continue;
 		}
-
 		if (!strcasecmp(attr->a_name, "ptime")) {
 			dptime = atoi(attr->a_value);
 			break;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Looking for zrtp-hash to set sdp_zrtp_hash_string\n");
+	for (m = sdp->sdp_media; m; m = m->m_next) {
+		for (attr = m->m_attributes; attr; attr = attr->a_next) {
+			if (zstr(attr->a_name)) continue;
+			if (!strcasecmp(attr->a_name, "zrtp-hash") && attr->a_value) {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Found zrtp-hash, setting sdp_zrtp_hash_string=%s\n", attr->a_value);
+				switch_channel_set_variable(channel, "sdp_zrtp_hash_string", attr->a_value);
+				switch_channel_set_flag(channel, CF_ZRTP_HASH);
+				break;
+			}
 		}
 	}
 
