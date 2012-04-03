@@ -522,7 +522,8 @@ typedef struct sngss7_chan_data {
 	sngss7_group_data_t		tx_grs;
 	sngss7_group_data_t		ucic;
 	ftdm_queue_t 			*event_queue;
-	struct sngss7_chan_data *peer_data;
+	struct sngss7_chan_data         *peer_data;
+	uint8_t peer_event_transfer_cnt;
 } sngss7_chan_data_t;
 
 #define SNGSS7_RX_GRS_PENDING (1 << 0)
@@ -536,7 +537,6 @@ typedef struct sngss7_span_data {
 	sngss7_group_data_t		rx_cgu;
 	sngss7_group_data_t		tx_cgu;
 	ftdm_queue_t 			*event_queue;
-	ftdm_queue_t                    *peer_chans;
 } sngss7_span_data_t;
 
 typedef struct sngss7_event_data
@@ -970,7 +970,7 @@ if (ftdmchan->state == new_state) { \
 #define SS7_INFO_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_INFO, msg , ##args)
 #define SS7_WARN_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_WARNING, msg , ##args)
 #define SS7_ERROR_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_ERROR, msg , ##args)
-#define SS7_CTRIT_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_CRIT, msg , ##args)
+#define SS7_CRIT_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_CRIT, msg , ##args)
 
 #ifdef SS7_CODE_DEVEL
 #define SS7_DEVEL_DEBUG(a,...)   ftdm_log(FTDM_LOG_DEBUG,a,##__VA_ARGS__ );

@@ -48,6 +48,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	SiConEvnt 			iam;
 	ftdm_bool_t         native_going_up = FTDM_FALSE;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
+	sngss7_event_data_t *event_clone = NULL;
 	
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
@@ -72,33 +73,28 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 						var, peer_span->signal_type);
 			} else {
 				peer_info = peer_chan->call_data;
-				if (peer_info) {
-					SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Starting native bridge with peer CIC %d\n", 
-							sngss7_info->circuit->cic, peer_info->circuit->cic);
+				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Starting native bridge with peer CIC %d\n", 
+						sngss7_info->circuit->cic, peer_info->circuit->cic);
 
-					/* make each one of us aware of the native bridge */
-					peer_info->peer_data = sngss7_info;
-					sngss7_info->peer_data = peer_info;
+				/* retrieve only first message from the others guys queue (must be IAM) */
+				event_clone = ftdm_queue_dequeue(peer_info->event_queue);
 
-					/* flush our own queue */
-					sngss7_flush_queue(sngss7_info->event_queue);
+				/* make each one of us aware of the native bridge */
+				peer_info->peer_data = sngss7_info;
+				sngss7_info->peer_data = peer_info;
 
-					/* Go to up until release comes, note that state processing is done different and much simpler when there is a peer,
-					   We can't go to UP state right away yet though, so do not set the state to UP here, wait until the end of this function
-					   because moving from one state to another causes the ftdmchan->usrmsg structure to be wiped 
-					   and we still need those variables for further IAM processing */
-					native_going_up = FTDM_TRUE;
-				}
+				/* Go to up until release comes, note that state processing is done different and much simpler when there is a peer,
+				   We can't go to UP state right away yet though, so do not set the state to UP here, wait until the end of this function
+				   because moving from one state to another causes the ftdmchan->usrmsg structure to be wiped 
+				   and we still need those variables for further IAM processing */
+				native_going_up = FTDM_TRUE;
 			}
 		}
 	}
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE) && sngss7_info->peer_data) {
-		sngss7_span_data_t *span_data = ftdmchan->span->signal_data;
-		sngss7_event_data_t *event_clone = ftdm_queue_dequeue(sngss7_info->peer_data->event_queue);
-		/* Retrieve IAM from our peer */
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
 		if (!event_clone) {
-			SS7_ERROR_CHAN(ftdmchan, "No event clone in peer queue!%s\n", "");
+			SS7_ERROR_CHAN(ftdmchan, "No IAM event clone in peer queue!%s\n", "");
 		} else if (event_clone->event_id != SNGSS7_CON_IND_EVENT) {
 			/* first message in the queue should ALWAYS be an IAM */
 			SS7_ERROR_CHAN(ftdmchan, "Invalid initial peer message type '%d'\n", event_clone->event_id);
@@ -143,9 +139,6 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 				copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
 			}
 		}
-		/* since this is the first time we dequeue an event from the peer, make sure our main thread process any other events,
-		   this will trigger the interrupt in our span peer_chans queue which will wake up our main thread if it is sleeping */
-		ftdm_queue_enqueue(span_data->peer_chans, sngss7_info->peer_data->ftdmchan);
 	} else if (sngss7_info->circuit->transparent_iam &&
 		sngss7_retrieve_iam(ftdmchan, &iam) == FTDM_SUCCESS) {
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Transparent)\n", sngss7_info->circuit->cic);
@@ -236,7 +229,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		  the user sending FTDM_SIGEVENT_UP which can cause the application to misbehave (ie, no audio) */
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
 		ftdm_channel_advance_states(ftdmchan);
-    }
+	}
+	
+	ftdm_safe_free(event_clone);
 
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
