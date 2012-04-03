@@ -1,0 +1,262 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{c0e76076-0064-445d-8c07-32b6c762622b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{a03c0d83-0064-4848-9704-22cdce5ab144}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bnlib">
+      <UniqueIdentifier>{dbe8a34e-0064-495e-8df7-e82218921e60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bgaes">
+      <UniqueIdentifier>{96d1a5c9-0064-4230-a764-a0ed11f434a7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\zrtp.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_base.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_config.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_config_user.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_config_win.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_crypto.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_ec.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_engine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_error.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_iface.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_iface_builtin.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_iface_cache.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_iface_system.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_legal.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_list.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_log.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_pbx.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_protocol.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_srtp.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_srtp_builtin.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_string.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_types.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_utils.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zrtp_version.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bnlib\bn.h">
+      <Filter>bnlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bnlib\bn32.h">
+      <Filter>bnlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bnlib\bnsize00.h">
+      <Filter>bnlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bnlib\kludge.h">
+      <Filter>bnlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bnlib\lbn.h">
+      <Filter>bnlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bnlib\lbn32.h">
+      <Filter>bnlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bnlib\lbnmem.h">
+      <Filter>bnlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bnlib\legal.h">
+      <Filter>bnlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bgaes\aes.h">
+      <Filter>bgaes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bgaes\aesopt.h">
+      <Filter>bgaes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bgaes\aestab.h">
+      <Filter>bgaes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bgaes\bg2zrtp.h">
+      <Filter>bgaes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bgaes\brg_types.h">
+      <Filter>bgaes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bgaes\sha1.h">
+      <Filter>bgaes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\bgaes\sha2.h">
+      <Filter>bgaes</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\zrtp.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_crc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_crypto_aes.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_crypto_atl.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_crypto_ec.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_crypto_ecdh.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_crypto_hash.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_crypto_pk.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_crypto_sas.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_datatypes.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_engine.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_engine_driven.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_iface_cache.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_iface_scheduler.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_iface_sys.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_initiator.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_legal.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_list.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_log.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_pbx.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_protocol.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_responder.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_rng.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_srtp_builtin.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_string.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_utils.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\zrtp_utils_proto.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bnlib\bn.c">
+      <Filter>bnlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bnlib\bn32.c">
+      <Filter>bnlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bnlib\bninit32.c">
+      <Filter>bnlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bnlib\bntest00.c">
+      <Filter>bnlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bnlib\lbn32.c">
+      <Filter>bnlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bnlib\lbnmem.c">
+      <Filter>bnlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bnlib\legal.c">
+      <Filter>bnlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bgaes\aes_modes.c">
+      <Filter>bgaes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bgaes\aescrypt.c">
+      <Filter>bgaes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bgaes\aeskey.c">
+      <Filter>bgaes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bgaes\aestab.c">
+      <Filter>bgaes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bgaes\sha1.c">
+      <Filter>bgaes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\bgaes\sha2.c">
+      <Filter>bgaes</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\ChangeLog" />
+    <None Include="..\..\News" />
+  </ItemGroup>
+</Project>

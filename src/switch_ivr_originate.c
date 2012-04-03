@@ -3508,6 +3508,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (*bleg) {
 		switch_channel_t *bchan = switch_core_session_get_channel(*bleg);
 
+		
+
 		if (session && caller_channel) {
 			switch_caller_profile_t *cloned_profile, *peer_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(*bleg));
 
@@ -3518,6 +3520,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			switch_channel_set_variable(caller_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(*bleg));
+			// Now main SWITCH_SIGNAL_BOND_VARIABLE is populated, don't need this one anymore...
+			switch_channel_set_variable(caller_channel, "originate_signal_bond", NULL);
 		}
 		
 
@@ -3525,8 +3529,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			switch_cond_next();
 		}
 
+		switch_channel_audio_sync(bchan);
 
-		switch_ivr_sleep(*bleg, 0, SWITCH_TRUE, NULL);
+		if (caller_channel) {
+			switch_channel_audio_sync(caller_channel);
+		}
 	}
 
 	if (oglobals.session) {

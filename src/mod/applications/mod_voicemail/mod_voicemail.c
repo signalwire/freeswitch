@@ -1544,8 +1544,6 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	char cid_buf[1024] = "";
 
 	if (switch_channel_ready(channel)) {
-		const char *vm_announce_cid = NULL;
-
 		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_number, cbt->cid_name);
 
 		msg.from = __FILE__;
@@ -1556,10 +1554,8 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 						  cid_buf, switch_channel_get_name(channel));
 		switch_core_session_receive_message(session, &msg);
 		
-		if (!zstr(cbt->cid_number) && (vm_announce_cid = switch_channel_get_variable(channel, "vm_announce_cid"))) {
-			switch_ivr_play_file(session, NULL, vm_announce_cid, NULL);
-			switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
-			switch_ivr_say(session, cbt->cid_number, NULL, "name_spelled", "pronounced", NULL, NULL);
+		if (!zstr(cbt->cid_number) && (switch_true(switch_channel_get_variable(channel, "vm_announce_cid")))) {
+			TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_PHONE_NUMBER_MACRO, cbt->cid_number, NULL, NULL));
 		}
 		
 		args.input_callback = cancel_on_dtmf;
@@ -1865,6 +1861,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
 	int auth_only = 0, authed = 0;
+	switch_event_t *event;
 
 	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
 		caller_id_name = caller_profile->caller_id_name;
@@ -2457,6 +2454,14 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						}
 					}
 				}
+
+				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Action", "authentication");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Auth-Result", auth ? "success" : "fail");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-User", myid);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
+				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
 
 				FREE_DOMAIN_ROOT();
 
@@ -4378,7 +4383,7 @@ SWITCH_STANDARD_API(voicemail_inject_api_function)
 static int api_del_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 
-	unlink(argv[2]);
+	unlink(argv[3]);
 	
     return 0;
 }

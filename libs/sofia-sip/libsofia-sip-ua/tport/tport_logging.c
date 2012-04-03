@@ -180,7 +180,7 @@ int tport_open_log(tport_master_t *mr, tagi_t *tags)
                 return n;
         }
 
-        memcpy(port, p, sizeof(p));
+        strncpy(port, p, sizeof(port));
                         
         *p = '\0'; 
         

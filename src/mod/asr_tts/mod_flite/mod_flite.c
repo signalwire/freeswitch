@@ -44,6 +44,10 @@ void unregister_cmu_us_rms(cst_voice * v);
 cst_voice *register_cmu_us_slt(void);
 void unregister_cmu_us_slt(cst_voice * v);
 
+cst_voice *register_cmu_us_kal16(void);
+void unregister_cmu_us_kal16(cst_voice * v);
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_flite_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_flite_shutdown);
 SWITCH_MODULE_DEFINITION(mod_flite, mod_flite_load, mod_flite_shutdown, NULL);
@@ -53,6 +57,7 @@ static struct {
 	cst_voice *kal;
 	cst_voice *rms;
 	cst_voice *slt;
+	cst_voice *kal16;
 } globals;
 
 struct flite_data {
@@ -75,13 +80,18 @@ static switch_status_t flite_speech_open(switch_speech_handle_t *sh, const char 
 	if (!strcasecmp(voice_name, "awb")) {
 		flite->v = globals.awb;
 	} else if (!strcasecmp(voice_name, "kal")) {
-		flite->v = globals.kal;
+/*  "kal" is 8kHz and the native rate is set to 16kHz
+ *  so kal talks a little bit too fast ...
+ *  for now: "symlink" kal to kal16
+ */		flite->v = globals.kal16;
 	} else if (!strcasecmp(voice_name, "rms")) {
 		flite->v = globals.rms;
 	} else if (!strcasecmp(voice_name, "slt")) {
 		flite->v = globals.slt;
+	} else if (!strcasecmp(voice_name, "kal16")) {
+		flite->v = globals.kal16;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Valid voice names are awb, kal, rms or slt.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Valid voice names are awb, rms, slt or kal.\n");
 	}
 
 	if (flite->v) {
@@ -179,6 +189,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_flite_load)
 	globals.kal = register_cmu_us_kal();
 	globals.rms = register_cmu_us_rms();
 	globals.slt = register_cmu_us_slt();
+	globals.kal16 = register_cmu_us_kal16();
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -203,6 +214,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_flite_shutdown)
 	unregister_cmu_us_kal(globals.kal);
 	unregister_cmu_us_rms(globals.rms);
 	unregister_cmu_us_slt(globals.slt);
+	unregister_cmu_us_kal16(globals.kal16);
 
 	return SWITCH_STATUS_UNLOAD;
 }

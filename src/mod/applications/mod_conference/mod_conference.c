@@ -1104,6 +1104,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 		if (test_eflag(conference, EFLAG_FLOOR_CHANGE)) {
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+			conference_add_event_data(conference, event); 
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d", member->id);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "none");
@@ -1257,15 +1258,17 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		}
 
 		session = conference->floor_holder->session;
-		switch_core_session_read_lock(session);
-		switch_mutex_unlock(conference->mutex);
-		if (!switch_channel_ready(switch_core_session_get_channel(session))) {
-			status = SWITCH_STATUS_FALSE;
-		} else {
-			status = switch_core_session_read_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if ((status = switch_core_session_read_lock(session)) == SWITCH_STATUS_SUCCESS) {
+			switch_mutex_unlock(conference->mutex);
+			if (!switch_channel_ready(switch_core_session_get_channel(session))) {
+				status = SWITCH_STATUS_FALSE;
+			} else {
+				status = switch_core_session_read_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+			}
+			switch_mutex_lock(conference->mutex);
+			switch_core_session_rwunlock(session);
 		}
-		switch_mutex_lock(conference->mutex);
-		switch_core_session_rwunlock(session);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			yield = 100000;
@@ -6954,7 +6957,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_uuid_t uuid;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_channel_t *channel = NULL;
-	const char *force_rate = NULL, *force_interval = NULL;
+	const char *force_rate = NULL, *force_interval = NULL, *presence_id = NULL;
 	uint32_t force_rate_i = 0, force_interval_i = 0;
 
 	/* Validate the conference name */
@@ -6969,6 +6972,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		switch_core_session_get_read_impl(session, &read_impl);
 		channel = switch_core_session_get_channel(session);
 		
+		presence_id = switch_channel_get_variable(channel, "presence_id");
+
 		if ((force_rate = switch_channel_get_variable(channel, "conference_force_rate"))) {
 			if (!strcasecmp(force_rate, "auto")) {
 				force_rate_i = read_impl.actual_samples_per_second;
@@ -7362,7 +7367,11 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 	conference->name = switch_core_strdup(conference->pool, name);
 
-	if ((name_domain = strchr(conference->name, '@'))) {
+	if (presence_id && (name_domain = strchr(presence_id, '@'))) {
+		name_domain++;
+		conference->domain = switch_core_strdup(conference->pool, name_domain);
+	} else if ((name_domain = strchr(conference->name, '@'))) {
+		name_domain++;
 		conference->domain = switch_core_strdup(conference->pool, name_domain);
 	} else if (domain) {
 		conference->domain = switch_core_strdup(conference->pool, domain);

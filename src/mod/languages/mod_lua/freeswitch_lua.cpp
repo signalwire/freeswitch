@@ -4,7 +4,7 @@
 using namespace LUA;
 
 extern "C" {
-	int docall(lua_State * L, int narg, int clear, int perror);
+	int docall(lua_State * L, int narg, int nresults, int perror);
 };
 
 Session::Session():CoreSession()
@@ -147,7 +147,7 @@ void Session::do_hangup_hook()
 			arg_count++;
 		}
 
-		docall(L, arg_count, 0, 1);
+		docall(L, arg_count, 1, 1);
 
 		const char *err = lua_tostring(L, -1);
 		
@@ -294,7 +294,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 				arg_count++;
 			}
 
-			docall(L, arg_count, 0, 1);
+			docall(L, arg_count, 1, 1);
 
 			ret = lua_tostring(L, -1);
 			lua_pop(L, 1);
@@ -385,6 +385,7 @@ bool Dbh::test_reactive(char *test_sql, char *drop_sql, char *reactive_sql)
 int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
 {
   SWIGLUA_FN *lua_fun = (SWIGLUA_FN *)pArg;
+	int ret = 0;
 
   lua_pushvalue(lua_fun->L, lua_fun->idx); /* get the lua callback function onto the stack */
 
@@ -396,13 +397,13 @@ int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
     lua_settable(lua_fun->L, -3);
   }
 
-  docall(lua_fun->L, 1, 1, 1); /* 1 in, 1 out */
+	docall(lua_fun->L, 1, 1, 1);
+	ret = lua_tonumber(lua_fun->L, -1);
+	lua_pop(lua_fun->L, 1);
 
-  if (lua_isnumber(lua_fun->L, -1)) {
-    if (lua_tonumber(lua_fun->L, -1) != 0) {
-      return 1;
-    }
-  }
+	if (ret != 0) {
+		return 1;
+	}
 
   return 0; /* 0 to continue with next row */
 }

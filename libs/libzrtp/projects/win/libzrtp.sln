@@ -1,0 +1,28 @@
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libzrtp_test", "libzrtp_test.vcproj", "{BA35741B-8C8E-4A39-9CA1-0CE032D6E4ED}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C13CC324-E0CA-4492-9A30-310A6BD64FF5} = {C13CC324-E0CA-4492-9A30-310A6BD64FF5}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libzrtp", "libzrtp.vcproj", "{C13CC324-E0CA-4492-9A30-310A6BD64FF5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BA35741B-8C8E-4A39-9CA1-0CE032D6E4ED}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BA35741B-8C8E-4A39-9CA1-0CE032D6E4ED}.Debug|Win32.Build.0 = Debug|Win32
+		{BA35741B-8C8E-4A39-9CA1-0CE032D6E4ED}.Release|Win32.ActiveCfg = Release|Win32
+		{BA35741B-8C8E-4A39-9CA1-0CE032D6E4ED}.Release|Win32.Build.0 = Release|Win32
+		{C13CC324-E0CA-4492-9A30-310A6BD64FF5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C13CC324-E0CA-4492-9A30-310A6BD64FF5}.Debug|Win32.Build.0 = Debug|Win32
+		{C13CC324-E0CA-4492-9A30-310A6BD64FF5}.Release|Win32.ActiveCfg = Release|Win32
+		{C13CC324-E0CA-4492-9A30-310A6BD64FF5}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

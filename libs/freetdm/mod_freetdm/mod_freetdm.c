@@ -617,6 +617,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		break;
 	case FTDM_CHAN_TYPE_FXS:
 		{
+			tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
 			if (!ftdm_channel_call_check_busy(tech_pvt->ftdmchan) && !ftdm_channel_call_check_done(tech_pvt->ftdmchan)) {
 				if (tokencnt) {
 					cycle_foreground(tech_pvt->ftdmchan, 0, NULL);
@@ -5063,11 +5064,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	ftdm_global_set_config_directory(SWITCH_GLOBAL_dirs.conf_dir);
 
 	if (ftdm_global_init() != FTDM_SUCCESS) {
+		ftdm_global_destroy();
 		ftdm_log(FTDM_LOG_ERROR, "Error loading FreeTDM\n");
 		return SWITCH_STATUS_TERM;
 	}
 
 	if (ftdm_global_configuration() != FTDM_SUCCESS) {
+		ftdm_global_destroy();
 		ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM\n");
 		return SWITCH_STATUS_TERM;
 	}

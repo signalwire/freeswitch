@@ -55,6 +55,8 @@ executive override tone, confirmation tone).
 /*! Tone detection indication callback routine */
 typedef void (*tone_report_func_t)(void *user_data, int code, int level, int delay);
 
+typedef void (*tone_segment_func_t)(void *data, int f1, int f2, int duration);
+
 typedef struct super_tone_rx_segment_s super_tone_rx_segment_t;
 
 typedef struct super_tone_rx_descriptor_s super_tone_rx_descriptor_t;
@@ -125,13 +127,24 @@ SPAN_DECLARE(int) super_tone_rx_release(super_tone_rx_state_t *s);
 */
 SPAN_DECLARE(int) super_tone_rx_free(super_tone_rx_state_t *s);
 
+/*! Define a callback routine to be called  to report the valid detection or termination of
+    one of the monitored tones.
+    \param s The supervisory tone context.
+    \param callback The callback routine called to report the valid detection or termination of
+           one of the monitored tones.
+    \param user_data An opaque pointer passed when calling the callback routine.
+*/
+SPAN_DECLARE(void) super_tone_rx_tone_callback(super_tone_rx_state_t *s,
+                                               tone_report_func_t callback,
+                                               void *user_data);
+
 /*! Define a callback routine to be called each time a tone pattern element is complete. This is
     mostly used when analysing a tone.
     \param s The supervisory tone context.
     \param callback The callback routine.
 */
 SPAN_DECLARE(void) super_tone_rx_segment_callback(super_tone_rx_state_t *s,
-                                                  void (*callback)(void *data, int f1, int f2, int duration));
+                                                  tone_segment_func_t callback);
 
 /*! Apply supervisory tone detection processing to a block of audio samples.
     \brief Apply supervisory tone detection processing to a block of audio samples.
@@ -141,6 +154,14 @@ SPAN_DECLARE(void) super_tone_rx_segment_callback(super_tone_rx_state_t *s,
     \return The number of samples processed.
 */
 SPAN_DECLARE(int) super_tone_rx(super_tone_rx_state_t *super, const int16_t amp[], int samples);
+
+/*! Allow for a missing block of samples to a supervisory tone detector.
+    \brief Allow for a missing block of samples to a supervisory tone detector.
+    \param super The supervisory tone context.
+    \param samples The number of samples to allow for.
+    \return The number of samples processed.
+*/
+SPAN_DECLARE(int) super_tone_rx_fillin(super_tone_rx_state_t *s, int samples);
 
 #if defined(__cplusplus)
 }

@@ -121,6 +121,52 @@ static void STATE_TRACE(const char *format, ...)
 #define STATE_TRACE(...) /**/
 #endif
 
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+/* TIFF-FX related extensions to the tag set supported by libtiff */
+static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
+{
+    {TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, FIELD_CUSTOM, FALSE, FALSE, (char *) "Indexed"},
+    {TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "GlobalParametersIFD"},
+    {TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ProfileType"},
+    {TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "FaxProfile"},
+    {TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "CodingMethods"},
+    {TIFFTAG_VERSIONYEAR, 4, 4, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "VersionYear"},
+    {TIFFTAG_MODENUMBER, 1, 1, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "ModeNumber"},
+    {TIFFTAG_DECODE, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SRATIONAL, FIELD_CUSTOM, FALSE, FALSE, (char *) "Decode"},
+    {TIFFTAG_IMAGEBASECOLOR, TIFF_SPP, TIFF_SPP, TIFF_SHORT, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageBaseColor"},
+    {TIFFTAG_T82OPTIONS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "T82Options"},
+    {TIFFTAG_STRIPROWCOUNTS, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_LONG, FIELD_CUSTOM, FALSE, TRUE, (char *) "StripRowCounts"},
+    {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageLayer"},
+};
+
+static TIFFExtendProc _ParentExtender = NULL;
+
+static void TIFFFXDefaultDirectory(TIFF *tif)
+{
+    /* Install the extended tag field info */
+    TIFFMergeFieldInfo(tif, tiff_fx_tiff_field_info, 11);
+
+    /* Since we may have overriddden another directory method, we call it now to
+       allow it to set up the rest of its own methods. */
+    if (_ParentExtender) 
+        (*_ParentExtender)(tif);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) TIFF_FX_init(void)
+{
+    static int first_time = TRUE;
+    
+    if (!first_time)
+        return;
+    first_time = FALSE;
+    
+    /* Grab the inherited method and install */
+    _ParentExtender = TIFFSetTagExtender(TIFFFXDefaultDirectory);
+}
+/*- End of function --------------------------------------------------------*/
+#endif
+
 /*! T.4 run length table entry */
 typedef struct
 {

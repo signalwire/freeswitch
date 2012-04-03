@@ -1,0 +1,304 @@
+* The organization of the BigNum Library
+
+As mentioned in bn.doc, the library should compile on anything with an
+ANSI C compiler and 16 and 32-bit data types.  (Non-power-of-2 word
+lengths probably wouldn't be *too* hard, but the matter is likely to
+remain academic.)  However, assembly subroutines can be added in a
+great variety of ways to speed up computations.
+
+It's even possible to vary the word length dynamically at run time.
+Currently, 80x86 and 680x0 assembly primitives have been written in 16
+and 32-bit forms, as not all members of these families support 32x32->64
+bit multiply.  In future, 32/64 bit routines may be nice for the MIPS
+and PowerPC processors.  (The SPARC has a 64-bit extension, but it still
+only produces a maximum 64-bit multiply result.  The MIPS, PowerPC and
+Alpha give access to 128 bits of product.)
+
+The way that this works is that the file bn.c declares a big pile of
+function pointers, and the first bnInit() call figures out which set
+of functions to point these to.  The functions are named so that
+it is possible to link several sets into the same executable without
+collisions.
+
+The library can store numbers in big-endian or little-endian word order,
+although the order of bytes within a word is always the platform native
+order.  As long as you're using the pure C version, you can compile
+independent of the native byte ordering, but the flexibility is available
+in case assembly primitives are easier to write one way or the other.
+(In the absence of other considerations, little-endian is somewhat more
+efficient, and is the default.  This is controlled by BN_XXX_ENDIAN.)
+
+In fact, it would be possible to change the word order at run time,
+except that there is no naming convention to support linking in
+functions that differ only in endianness.  (Which is because the
+point of doing so is unclear.)
+
+The core of the library is in the files lbn??.c and bn??.c, where "??"
+is 16, 32, or 64.  The 32 and 64-bit files are generated from the 16-bit
+version by a simple textual substitution.  The 16-bit files are generally
+considered the master source, and the others generated from it with sed.
+
+Usually, only one set of these files is used on any given platform,
+but if you want multiple word sizes, you include one for each supported
+word size.  The files bninit??.c define a bnInit function for a given
+word size, which calls bnInit_??() internally.  Only one of these may
+be included at a time, and multiple word sizes are handled by a more
+complex bnInit function such as the ones in bn8086.c and bn68000.c,
+which determine the word size of the processor they're running on and
+call the appropriate bnInit_??() function.
+
+The file lbn.h uses <limits.h> to find the platform's available data
+types.  The types are defined both as macros (BNWORD32) and as typedefs
+(bnword32) which aren't used anywhere but can come in very handy when
+using a debugger (which doesn't know about macros).  Any of these may
+be overridden either on the compiler command line (cc -DBN_BIG_ENDIAN
+-DBNWORD32="unsigned long"), or from an extra include file BNINCLUDE
+defined on the command line.  (cc -DBNINCLUDE=lbnmagic.h)  This is the
+preferred way to specify assembly primitives.
+
+So, for example, to build a 68020 version of the library, compile the
+32-bit library with -DBNINCLUDE=lbn68020.h, and compile and link in
+lbn68020.c (which is actually an assembly source file, if you look).
+
+Both 16- and 32-bit 80x86 code is included in lbn8086.h and .asm.  That
+code uses 16-bit large-model addressing.  lbn80386.h and .asm use 32-bit
+flat-model addressing.
+
+Three particularly heavily used macros defined by lbn.h are BIG(x),
+LITTLE(y) and BIGLITTLE(x,y).  These expand to x (or nothing) on
+a big-endian system, and y (or nothing) on a little-endian system.
+These are used to conditionalize the rest of the code without taking
+up entire lines to say "#ifdef BN_BIG_ENDIAN", "#else" and "#endif".
+
+* The lbn??.c files
+
+The lbn?? file contains the low-level bignum functions.  These universally
+expect their numbers to be passed to them in (buffer, length) form and
+do not attempt to extend the buffers.  (In some cases, they do allocate
+temporary buffers.)  The buffer pointer points to the least-significant
+end of the buffer.  If the machine uses big-endian word ordering, that
+is a pointer to the end of the buffer.  This is motivated by considering
+pointers to point to the boundaries between words (or bytes).  If you
+consider a pointer to point to a word rather than between words, the
+pointer in the big-endian case points to the first word past the end of the
+buffer.
+
+All of the primitives have names of the form  lbnAddN_16, where the
+_16 is the word size.  All are surrounded by "#ifndef lbnAddN_16".
+If you #define lbnAddN_16 previously (either on the command like or
+in the BNINCLUDE file), the C code will neither define *nor declare* the
+corresponding function.  The declaration must be suppressed in case you
+declare it in a magic way with special calling attributes or define it as
+a macro.
+
+If you wish to write an assembly primitive, lbnMulAdd1_??, which
+multiplies N words by 1 word and adds the result to N words, returning
+the carry word, is by FAR the most important function - almost all of
+the time spent performing a modular exponentiation is spent in this
+function.  lbnMulSub1_??, which does the same but subtracts the product
+and returns a word of borrow, is used heavily in the division routine
+and thus by GCD and modular inverse computation.
+
+These two functions are the only functions which *require* some sort
+of double-word data type, so if you define them in assembly language,
+the ?? may be the widest word your C compiler supports; otherwise, you
+must limit your implementation to half of the maximum word size.  Other
+functions will, however, use a double-word data type if available.
+
+Actually, there are some even simpler primitives which you can provide
+to allow double-width multiplication: mul??_ppmm, mul??_ppmma and
+mul??_ppmmaa These are expected to be defined as macros (all arguments
+are always side-effect-free lvalues), and must return two words of result
+of the computation m1*m2 + a1 + a2.  It is best to define all three,
+although any that are not defined will be generated from the others in
+the obvious way.  GCC's inline assembler can be used to define these.
+(The names are borrowed from the GNU MP package.)
+
+There is also lbnMulN1_??, which stores the result rather than adding or
+subtracting it, but it is less critical.  If it is not provided, but
+lbnMulAdd1_?? is, it will be implemented in terms of lbnMulAdd1_?? in the
+obvious way.
+
+lbnDiv21_??, which divides two words by one word and returns a quotient
+and remainder, is greatly sped up by a double-word data type, macro
+definition, or assembly implementation, but has a version which will run
+without one.  If your platform has a double/single divide with remainder,
+it would help to define this, and it's quite simple.
+
+lbnModQ_?? (return a multi-precision number reduced modulo a "quick"
+(< 65536) modulus is used heavily by prime generation for trial division,
+but is otherwise little used.
+
+Other primitives may be implemented depending on the expected usage mix.
+It is generally not worth implementing lbnAddN_?? and lbnSubN_?? unless
+you want to start learning to write assembly primitives on something
+simple; they just aren't used very much.  (Of course, if you do, you'll
+probably get some improvements, in both speed and object code size, so
+it's worth keeping them in, once written.)
+
+* The bn??.c files
+
+While the lbn??.c files deal in words, the bn??.c files provide the
+public interface to the library and deal in bignum structures.  These
+contain a buffer pointer, an allocated length, and a used length.
+The lengths are specified in words, but as long as the user doesn't go
+prying into such innards, all of the different word-size libraries
+provide the same interface; they may be exchanged at link time, or even
+at run time.
+
+The bn.c file defines a large collection of function pointers and one
+function, bnInit.  bnInit is responsible for setting the function pointers
+to point to the appropriate bn??.c functions.  Each bn??.c file
+provides a bnInit_?? function which sets itself up; it is the job
+of bnInit to figure out which word size to use and call the appropriate
+bnInit_?? function.
+
+If only one word size is in use, you may link in the file bninit??.c,
+which provides a trivial bnInit function.  If multiple word sizes are
+in use, you must provide the appropriate bnInit function.  See
+bn8086.c as an example.
+
+For maximum portability, you may just compile and link in the files
+lbn00.c, bn00.c and bninit00.c, which determine, using the preprocessor
+at compile time, the best word size to use.  (The logic is actually
+located in the file bnsize00.h, so that the three .c files cannot get out
+of sync.)
+
+The bignum buffers are allocated using the memory management routines in
+lbnmem.c.  These are word-size independent; they expect byte counts and
+expect the system malloc() to return suitably aligned buffers.  The
+main reason for this wrapper layer is to support any customized allocators
+that the user might want to provide.
+
+* Other bn*.c files
+
+bnprint.c is a simple routine for printing a bignum in hex.  It is
+provided in a separate file so that its calls to stdio can be eliminated
+from the link process if the capability is not needed.
+
+bntest??.c is a very useful regression test if you're implementing
+assembly primitives.  If it doesn't complain, you've probably
+got it right.  It also does timing tests so you can see the effects
+of any changes.
+
+* Other files
+
+sieve.c contains some primitives which use the bignum library to perform
+sieving (trial division) of ranges of numbers looking for candidate primes.
+This involves two steps: using a sieve of Eratosthenes to generate the
+primes up to 65536, and using that to do trial division on a range of
+numbers following a larger input number.  Note that this is designed
+for large numbers, greater than 65536, since there is no check to see
+if the input is one of the small primes; if it is divisible, it is assumed
+composite.
+
+prime.c uses sieve.c to generate primes.  It uses sieve.c to eliminate
+numbers with trivial divisors, then does strong pseudoprimality tests
+with some small bases.  (Actually, the first test, to the base 2, is
+optimized a bit to be faster when it fails, which is the common case,
+but 1/8 of the time it's not a strong pseudoprimality test, so an extra,
+strong, test is done in that case.)
+
+It prints progress indicators as it searches.  The algorithm
+searches a range of numbers starting at a given prime, but it does
+so in a "shuffled" order, inspired by algorithm M from Knuth.  (The
+random number generator to use for this is passed in; if no function
+is given, the numbers are searched in sequential order and the
+returns value will be the next prime >= the input value.)
+
+germain.c operates similarly, but generates Sophie Germain primes;
+that is, primes p such that (p-1)/2 is also prime.  It lacks the
+shuffling feature - searching is always sequential.
+
+jacobi.c computes the Jacobi symbol between a small integer and a BigNum.
+It's currently only ever used in germain.c.
+
+* Sources
+
+Obviously, a key source of information was Knuth, Volume 2,
+particularly on division algorithms.
+
+The greatest inspiration, however, was Arjen Lenstra's LIP
+(Large Integer Package), distributed with the RSA-129 effort.
+While very difficult to read (there is no internal documentation on
+sometimes very subtle algorithms), it showed me many useful tricks,
+notably the windowed exponentiation algorithm that saves so many
+multiplies.  If you need a more general-purpose large-integer package,
+with only a minor speed penalty, the LIP package is almost certainly
+the best available.  It implements a great range of efficient
+algorithms.
+
+The second most important source was Torbjorn Granlund's gmp
+(GNU multi-precision) library.  A number of C coding tricks were
+adapted from there.  I'd like to thank Torbjorn for some useful
+discussions and letting me see his development work on GMP 2.0.
+
+Antoon Bosselaers, Rene' Govaerts and Joos Vandewalle, in their CRYPTO
+'93 paper, "Comparison of three modular reduction functions", brought
+Montgomery reduction to my attention, for which I am grateful.
+
+Burt Kaliski's article in the September 1993 Dr. Dobb's Journal,
+"The Z80180 and Big-number Arithmetic" pointed out the advantages (and
+terminology) of product scanning to me, although the limited
+experiments I've done have shown no improvement from trying it in C.
+
+Hans Reisel's book, "Prime Numbers and Computer Methods for Factorization"
+was of great help in designing the prime testing, although some of
+the code in the book, notably the Jacobi function in Appendix 3,
+is an impressive example of why GOTO should be considered harmful.
+Papers by R. G. E. Pinch and others in Mathematics of Computation were
+also very useful.
+
+Keith Geddes, Stephen Czapor and George Labahn's book "Algorithms
+for Computer Algebra", although it's mostly about polynomials,
+has some useful multi-precision math examples.
+
+Philip Zimmermann's mpi (multi-precision integer) library suggested
+storing the numbers in native byte order to facilitate assembly
+subroutines, although the core modular multiplication algorithms are
+so confusing that I still don't understand them.  His boasting about
+the speed of his library (albeit in 1986, before any of the above were
+available for study) also inspired me to particular effort to soundly
+beat it.  It also provoked a strong reaction from me against fixed
+buffer sizes, and complaints about its implementation from Paul Leyland
+(interface) and Robert Silverman (prime searching) contributed usefully
+to the design of this current library.
+
+I'd like to credit all of the above, plus the Berkeley MP package, with
+giving me difficulty finding a short, unique distinguishing prefix for
+my library's functions.  (I have just, sigh, discovered that Eric Young
+is using the same prefix for *his* library, although with the
+bn_function_name convention as opposed to the bnFunctionName one.)
+
+I'd like to thank the original implementor of Unix "dc" and "factor"
+for providing useful tools for verifying the correct operation of
+my library.
+
+* Future
+
+- Obviously, assembly-language subroutines for more platforms would
+  always be nice.
+- There's a special case in the division for a two-word denominator
+  which should be completed.
+- When the quotient of a division is big enough, compute an inverse of
+  the high word of the denominator and use multiplication by that
+  to do the divide.
+- A more efficient GCD algorithm would be nice to have.
+- More efficient modular inversion is possible.  Do it.
+- Extend modular inversion to deal with non-relatively-prime
+  inputs.  Produce y = inv(x,m) with y * x == gcd(x,m) mod m.
+- Try some product scanning in assembly.
+- Karatsuba's multiplication and squaring speedups would be nice.
+- I *don't* think that FFT-based algorithms are worth implementing yet,
+  but it's worth a little bit of study to make sure.
+- More general support for numbers in Montgomery form, so they can
+  be used by more than the bowels of lbnExpMod.
+- Provide an lbnExpMod optimized for small arguments > 2, using
+  conventional (or even Barrett) reduction of the multiplies, and
+  Montgomery reduction of the squarings.
+- Adding a Lucas-based prime test would be a real coup, although it's
+  hard to give rational reasons why it's necessary.  I have a number of
+  ideas on this already.  Find out if norm-1 (which is faster to
+  compute) suffices.
+- Split up the source code more to support linking with smaller subsets
+  of the library.

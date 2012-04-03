@@ -59,7 +59,6 @@ int main(int argc, char *argv[])
     int16_t amp[16384];
     int len;
     SNDFILE *outhandle;
-    int outframes;
     int add_digits;
 
     if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
@@ -71,7 +70,7 @@ int main(int argc, char *argv[])
     gen = dtmf_tx_init(NULL);
     len = dtmf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (dtmf_tx_put(gen, "123", -1))
     {
         printf("Ooops\n");
@@ -79,7 +78,7 @@ int main(int argc, char *argv[])
     }
     len = dtmf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (dtmf_tx_put(gen, "456", -1))
     {
         printf("Ooops\n");
@@ -87,7 +86,7 @@ int main(int argc, char *argv[])
     }
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (dtmf_tx_put(gen, "789", -1))
     {
         printf("Ooops\n");
@@ -95,7 +94,7 @@ int main(int argc, char *argv[])
     }
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (dtmf_tx_put(gen, "*#", -1))
     {
         printf("Ooops\n");
@@ -103,16 +102,14 @@ int main(int argc, char *argv[])
     }
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     add_digits = 1;
     do
     {
         len = dtmf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
-        {
-            outframes = sf_writef_short(outhandle, amp, len);
-        }
+            sf_writef_short(outhandle, amp, len);
         if (add_digits)
         {
             if (dtmf_tx_put(gen, "1234567890", -1))
@@ -127,7 +124,7 @@ int main(int argc, char *argv[])
     dtmf_tx_init(gen);
     len = dtmf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (dtmf_tx_put(gen, "123", -1))
     {
         printf("Ooops\n");
@@ -135,7 +132,7 @@ int main(int argc, char *argv[])
     }
     len = dtmf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (dtmf_tx_put(gen, "456", -1))
     {
         printf("Ooops\n");
@@ -143,7 +140,7 @@ int main(int argc, char *argv[])
     }
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (dtmf_tx_put(gen, "789", -1))
     {
         printf("Ooops\n");
@@ -151,7 +148,7 @@ int main(int argc, char *argv[])
     }
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (dtmf_tx_put(gen, "0*#", -1))
     {
         printf("Ooops\n");
@@ -159,7 +156,7 @@ int main(int argc, char *argv[])
     }
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (dtmf_tx_put(gen, "ABCD", -1))
     {
         printf("Ooops\n");
@@ -167,7 +164,7 @@ int main(int argc, char *argv[])
     }
     len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
 
     /* Try modifying the level and length of the digits */
     printf("Try different levels and timing\n");
@@ -183,7 +180,7 @@ int main(int argc, char *argv[])
         len = dtmf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
-            outframes = sf_writef_short(outhandle, amp, len);
+            sf_writef_short(outhandle, amp, len);
     }
     while (len > 0);
     printf("Restore normal levels and timing\n");
@@ -201,9 +198,7 @@ int main(int argc, char *argv[])
         len = dtmf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
-        {
-            outframes = sf_writef_short(outhandle, amp, len);
-        }
+            sf_writef_short(outhandle, amp, len);
         if (add_digits)
         {
             if (dtmf_tx_put(gen, "1234567890", -1))

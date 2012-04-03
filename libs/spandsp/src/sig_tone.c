@@ -31,7 +31,6 @@
 #endif
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <inttypes.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
@@ -648,9 +647,9 @@ SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int
     }
     memset(s, 0, sizeof(*s));
 #if !defined(SPANDSP_USE_FIXED_POINT)
-    for (i = 0;  i < 3;  i++)
+    for (j = 0;  j < 2;  j++)
     {
-        for (j = 0;  j < 2;  j++)
+        for (i = 0;  i < 3;  i++)
         {
             s->tone[j].notch_z1[i] = 0.0f;
             s->tone[j].notch_z2[i] = 0.0f;

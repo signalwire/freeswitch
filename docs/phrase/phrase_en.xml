@@ -241,6 +241,13 @@
       <prompt phrase="The person you are trying to reach is not available and does not have voicemail." filename="vm-not_available_no_voicemail.wav"/>
       <prompt phrase="The PIN you entered is below the minimum length." filename="vm-pin_below_minimum_length.wav"/>
       <prompt phrase="The minimum PIN length is..." filename="vm-minimum_pin_length_is.wav"/>
+      <prompt phrase="Your password has been changed." filename="vm-password_has_been_changed.wav"/>
+      <prompt phrase="Please enter your new password, then press the pound key." filename="vm-enter_new_pin.wav"/>
+      <prompt phrase="The password you entered is not valid on this system." filename="vm-password_not_valid.wav"/>
+      <prompt phrase="A password such as '1111' or '1234' is not secure." filename="vm-password_is_not_secure.wav"/>
+      <prompt phrase="Please choose a password that does not contain all repeating or all consecutive digits." filename="vm-choose_password.wav"/>
+      <prompt phrase="Remember that your voicemail password is also your Web interface password." filename="vm-voicemail_password_is_web_password.wav"/>
+      <prompt phrase="Message from..." filename="vm-message_from.wav"/>
     </voicemail>
     <directory>
       <prompt phrase="Please enter the first few letters of the persons" filename="dir-enter_person.wav"/>
@@ -296,6 +303,10 @@
       <prompt phrase="Entry sound..." filename="conf-entry_sound.wav"/>
       <prompt phrase="Exit sound..." filename="conf-exit_sound.wav"/>
       <prompt phrase="This conference is full. Please contact the conference moderator." filename="conf-conference_is_full.wav"/>
+      <prompt phrase="Your conference will start shortly. Please stay on the line." filename="conf-conference_will_start_shortly.wav"/>
+      <prompt phrase="...other persons in this conference." filename="conf-other_persons_conference.wav"/>
+      <prompt phrase="There is one other person in this conference." filename="conf-one_other_person_conference.wav"/>
+      <prompt phrase="There is one other member in this conference." filename="conf-one_other_member_conference.wav"/>
     </conference>
     <ivr>
       <prompt phrase="Account number" filename="ivr-account_number.wav"/>
@@ -494,22 +505,29 @@
       <prompt phrase="3... 2... 1... WE'RE ASTERISK FREE!!!" filename="ivr-were_asterisk_free.wav"/>
       <prompt phrase="Thank you for calling Douche Telecom, where we make sure that your communications never have that 'not so fresh' feeling!" filename="ivr-douche_telecom.wav"/>
       <prompt phrase="To learn more about FreeSWITCH..." filename="ivr-to_learn_more_about_freeswitch.wav"/>
+      <prompt phrase="Asterisk is like syphilis: it hurts until it's gone." filename="ivr-asterisk_like_syphilis.wav"/>
+      <prompt phrase="There is..." filename="ivr-there_is.wav"/>
+      <prompt phrase="That number is on the Do Not Call list." filename="ivr-do_not_call_list.wav"/>
+      <prompt phrase="The call attempt has been aborted." filename="ivr-call_attempt_aborted.wav"/>
+      <prompt phrase="To wait for the next available representative, please stay on the line." filename="ivr_to_wait_stay_on_the_line.wav"/>
+      <prompt phrase="If you would like us to call you back, press..." filename="ivr-if_you_would_like_us_to_call_back.wav"/>
+      <prompt phrase="It appears that your phone number is..." filename="ivr-it_appears_that_your_phone_number_is.wav"/>
+      <prompt phrase="Would you like to receive a call at this number?" filename="ivr-would_you_like_to_receive_a_call_at_this_number.wav"/>
+      <prompt phrase="Please enter the number where we can reach you." filename="ivr-please_enter_the_number_where_we_can_reach_you.wav"/>
+      <prompt phrase="We will return your call at this number as soon as possible." filename="ivr-we_will_return_your_call_at_this_number.wav"/>
+      <prompt phrase="Anonymous caller." filename="ivr-anonymous_caller.wav"/>
+      <prompt phrase="Have your self a slice of free gooey pie!" filename="ivr-freeguipy.wav"/>
+      <prompt phrase="Learn more at F-R-E-E-G-U-I-P-Y dot O-R-G" filename="ivr-learn_more_freeguipydotorg.wav"/>
+      <prompt phrase="Something went terribly, terribly wrong... (awkward!)" filename="ivr-terribly_wrong_awkward.wav"/>
+      <prompt phrase="Well I'll be a monkey's bitch! It *was* that bug!" filename="ivr-it_was_that_bug.wav"/>
+      <prompt phrase="CONCENTRATE! Focus on the bunny! FOCUS ON THE BUNNY!" filename="ivr-concentrate.wav"/>
+      <prompt phrase="If you dont like it, you can file a JIRA!" filename="ivr-file_a_jira.wav"/>
+      <prompt phrase="Allow me to introduce, the founder of FreeSOURCE, Anthony Ministrone." filename="ivr-founder_of_freesource.wav"/>
+      <prompt phrase="Man, that is cold foolish...COLD Foolish" filename="ivr-cold_foolish.wav"/>
+      <prompt phrase="Congratulations! You've earned 1500 Trollover minutes this month!" filename="ivr-trollover_minutes.wav"/>
+      <prompt phrase="Y U NO Silent Drill?!" filename="ivr-yuno_silent_drill.wav"/>
+      <prompt phrase="Beacuase, the voices where pretty good" filename="ivr-beacuase.wav"/>
       <!-- The following phrases still need to be recorded -->
-	  <prompt phrase="Your password has been changed." filename="vm-password_has_been_changed.wav"/>
-	  <prompt phrase="Please enter your new password, then press the pound key." filename="vm-enter_new_pin.wav"/>
-	  <prompt phrase="The password you entered is not valid on this system." filename="vm-password_not_valid.wav"/>	
-	  <prompt phrase="A password such as '1111' or '1234' is not secure." filename="vm-password_is_not_secure.wav"/>	
-	  <prompt phrase="Please choose a password that does not contain all repeating or all consecutive digits." filename="vm-choose_password.wav"/>
-	  <prompt phrase="Remember that your voicemail password is also your Web interface password." filename="vm-voicemail_password_is_web_password.wav"/>	
-	  <prompt phrase="Your conference will start shortly. Please stay on the line." filename="conf-conference_will_start_shortly.wav"/>	
-	  <prompt phrase="Asterisk is like syphilis: it hurts until it's gone." filename="ivr-asterisk_like_syphilis.wav"/>	
-	  <prompt phrase="...other persons in this conference." filename="conf-other_persons_conference.wav"/>	
-	  <prompt phrase="...other person in this conference." filename="conf-other_person_conference.wav"/>	
-	  <prompt phrase="...other member in this conference." filename="conf-other_member_conference.wav"/>	
-	  <prompt phrase="There is..." filename="ivr-there_is.wav"/>	
-	  <prompt phrase="That number is on the Do Not Call list." filename="ivr-do_not_call_list.wav"/>	
-	  <prompt phrase="The call attempt has been aborted." filename="ivr-call_attempt_aborted.wav"/>	
-	  <prompt phrase="" filename=""/>	
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
@@ -529,6 +547,8 @@
       <prompt phrase="ClueCon brings together a wide range of VoIP engineers, software developers, and business persons." filename="misc-wide_range_of_persons.wav"/>
       <prompt phrase="By attending ClueCon, you are showing support not only for FreeSWITCH but also the entire spectrum of open source telephony software." filename="misc-support_open_source_by_attending.wav"/>
       <prompt phrase="CudaTel! You know you want one!" filename="misc-cudatel_you_know_you_want_one.wav"/>
+      <prompt phrase="FreeSWITCH is open source software that is sponsored by OSTAG - the Open Source Telephony Advancement Group." filename="misc-freeswitch_sponsored_by_ostag.wav"/>
+      <prompt phrase="OSTAG is advancing the next generation of telephony through open-source software. Learn more at www.ostag.org." filename="misc-ostag_learn_more.wav"/>
     </misc>
     <zrtp>
       <!-- base256 prompts for SAS -->
@@ -1064,8 +1084,13 @@
   </en>
 </language>
 <!--
+For Emacs:
 Local Variables:
 mode:xml
 indent-tabs-mode:nil
+tab-width:2
+c-basic-offset:2
 End:
+For VIM:
+vim:set softtabstop=2 shiftwidth=2 tabstop=2 expandtab:
 -->

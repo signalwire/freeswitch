@@ -32,8 +32,8 @@ typedef struct
 {
     /*! \brief Internet Aware FAX mode bit mask. */
     int iaf;
-    /*! \brief Required time between T.38 transmissions, in ms. */
-    int ms_per_tx_chunk;
+    /*! \brief Required time between T.38 transmissions, in microseconds. */
+    int us_per_tx_chunk;
     /*! \brief Bit fields controlling the way data is packed into chunked for transmission. */
     int chunking_modes;
 
@@ -42,6 +42,9 @@ typedef struct
 
     /*! \brief The current transmit step being timed */
     int timed_step;
+
+    /*! \brief The timed step to go to when we reach idle from the current timed step */
+    int queued_timed_step;
 
     /*! \brief TRUE is there has been some T.38 data missed (i.e. lost packets) in the current
                reception period. */

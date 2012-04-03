@@ -68,7 +68,6 @@ int main(int argc, char *argv[])
     SNDFILE *outhandle;
     int frames;
     int dec_frames;
-    int outframes;
     int ima_bytes;
     double pre_energy;
     double post_energy;
@@ -180,7 +179,7 @@ int main(int argc, char *argv[])
                 hist_out = 0;
             diff_energy += (double) xx * (double) xx;
         }
-        outframes = sf_writef_short(outhandle, post_amp, dec_frames);
+        sf_writef_short(outhandle, post_amp, dec_frames);
     }
     if (sf_close_telephony(inhandle))
     {

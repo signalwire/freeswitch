@@ -1,0 +1,4 @@
+mod_ladspa is a module that allow to use Linux Audio Developer's Simple Plugin API inside freeswitch in realtime. 
+see http://wiki.freeswitch.org/wiki/Mod_ladspa for installation and configuration documentation.
+
+Please Note Currently this module only works on Linux.

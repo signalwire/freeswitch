@@ -36,14 +36,38 @@
 ???.
 */
 
-/*! A table of the country names associated with each possible value of the T.35 country code
-    selector octet. */
-extern const char *t35_country_codes[256];
-
 #if defined(__cplusplus)
 extern "C"
 {
 #endif
+
+/*! Resolve a T.35 country code its probable likely real value, using heuristics to try to resolve issues
+    of broken bit order in the country code.
+    \brief Resolve a T.35 country code with bit reversal resolution.
+    \param country_code The country code.
+    \param country_code_extension The country code extension.
+    \return The true country code, or -1 for an invalid code.
+*/
+SPAN_DECLARE(int) t35_real_country_code(int country_code, int country_code_extension);
+
+/*! Decode a T.35 country code to a country name, using heuristics to try to resolve issues of broken bit order
+    in the country code.
+    \brief Decode a T.35 country code to a country name, with bit reversal resolution.
+    \param country_code The country code.
+    \param country_code_extension The country code extension.
+    \return The country name, or NULL for an invalid country code.
+*/
+SPAN_DECLARE(const char *) t35_real_country_code_to_str(int country_code, int country_code_extension);
+
+/*! Decode a T.35 country code to a country name.
+    \brief Decode a T.35 country code to a country name.
+    \param country_code The country code.
+    \param country_code_extension The country code extension.
+    \return The country name, or NULL for an invalid country code.
+*/
+SPAN_DECLARE(const char *) t35_country_code_to_str(int country_code, int country_code_extension);
+
+SPAN_DECLARE(const char *) t35_vendor_to_str(const uint8_t *msg, int len);
 
 /*! Decode an NSF field to try to determine the make and model of the
     remote machine.

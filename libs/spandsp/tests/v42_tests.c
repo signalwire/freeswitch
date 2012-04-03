@@ -66,7 +66,7 @@ static void v42_status(void *user_data, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v42_get_frames(void *user_data, uint8_t *msg, int len)
+static int v42_get_frames(void *user_data, uint8_t msg[], int len)
 {
     int i;
     int j;
@@ -98,7 +98,7 @@ static int v42_get_frames(void *user_data, uint8_t *msg, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void v42_put_frames(void *user_data, const uint8_t *msg, int len)
+static void v42_put_frames(void *user_data, const uint8_t msg[], int len)
 {
     int i;
     v42_state_t *s;

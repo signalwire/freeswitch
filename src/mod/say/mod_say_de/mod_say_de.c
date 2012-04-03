@@ -87,7 +87,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 	if (a) {
 		/*german nominativ for "one" in numbers like 21, 171, 4591 is flexed("ein" instead of "eins"), 2-9 are not*/
 		if ( a == 1 ) {
-			say_file("digits/s-%d.wav");
+			say_file("digits/s-1.wav");
 		} else {
 			say_file("digits/%d.wav", a);
 		}
@@ -98,7 +98,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 		if (b > 1) {
 			/*german nominativ for "one" in numbers like 21, 171, 4591 is flexed, 2-9 are not*/
 			if ( c == 1 ) {
-				say_file("digits/s-%d.wav");
+				say_file("digits/s-1.wav");
 			} else {
 				say_file("digits/%d.wav", c);
 			} 
@@ -127,7 +127,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 			if ( b == 0  && c == 1 && gender == SSG_FEMININE ) {        
 				say_file("digits/%d_f.wav", c);                         
 			} else if ( b == 0 && c == 1 && what ) {
-				say_file("digits/s-%d.wav");
+				say_file("digits/s-1.wav");
 			} else {
 				say_file("digits/%d.wav", c);
 			}

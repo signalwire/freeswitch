@@ -95,15 +95,18 @@ struct t38_core_state_s
     /*! \brief The fastest data rate supported by the T.38 channel. */
     int fastest_image_data_rate;
 
+    /*! \brief Pace transmission */
+    int pace_transmission;
+
+    /*! \brief TRUE if IFP packet sequence numbers are relevant. For some transports, like TPKT
+               over TCP they are not relevent. */
+    int check_sequence_numbers;
+
     /*! \brief The number of times each packet type will be sent (low byte). The 
                depth of redundancy (2nd byte). Higher numbers may increase reliability
                for UDP transmission. Zero is valid for the indicator packet category,
                to suppress all indicator packets (typicaly for TCP transmission). */
     int category_control[5];
-
-    /*! \brief TRUE if IFP packet sequence numbers are relevant. For some transports, like TPKT
-               over TCP they are not relevent. */
-    int check_sequence_numbers;
 
     /*! \brief The sequence number for the next packet to be transmitted */
     int tx_seq_no;

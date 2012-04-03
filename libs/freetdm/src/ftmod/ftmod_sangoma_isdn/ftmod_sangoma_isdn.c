@@ -682,16 +682,26 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 		break;
 	case FTDM_CHANNEL_STATE_DIALING: /* outgoing call request */
 		{			
-			if (FTDM_SPAN_IS_BRI(ftdmchan->span) &&
-				ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM) &&
-				ftdm_test_flag(ftdmchan->span, FTDM_SPAN_PWR_SAVING)) {
-
-				sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
-				
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Requesting Line activation\n");
-				sngisdn_set_flag(sngisdn_info, FLAG_ACTIVATING);				
-				ftdm_sangoma_isdn_wakeup_phy(ftdmchan);
-				ftdm_sched_timer(signal_data->sched, "timer_t3", signal_data->timer_t3*1000, sngisdn_t3_timeout, (void*) sngisdn_info, NULL);
+			if (FTDM_SPAN_IS_BRI(ftdmchan->span) && ftdm_test_flag(ftdmchan->span, FTDM_SPAN_PWR_SAVING)) {
+				ftdm_signaling_status_t sigstatus;
+				ftdm_span_get_sig_status(ftdmchan->span, &sigstatus);
+				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+					sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)ftdmchan->span->signal_data;
+							
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Requesting Physical Line activation\n");
+					sngisdn_set_flag(sngisdn_info, FLAG_ACTIVATING);
+					ftdm_sangoma_isdn_wakeup_phy(ftdmchan);
+					ftdm_sched_timer(signal_data->sched, "timer_t3", signal_data->timer_t3*1000, sngisdn_t3_timeout, (void*) sngisdn_info, NULL);
+				} else if (sigstatus == FTDM_SIG_STATE_DOWN) {
+					sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)ftdmchan->span->signal_data;
+					
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Requesting Q.921 Line activation\n");
+					sngisdn_set_flag(sngisdn_info, FLAG_ACTIVATING);
+					sngisdn_snd_info_req(ftdmchan);
+					ftdm_sched_timer(signal_data->sched, "timer_t3", signal_data->timer_t3*1000, sngisdn_t3_timeout, (void*) sngisdn_info, NULL);
+				} else {
+					sngisdn_snd_setup(ftdmchan);
+				}
 			} else {
 				sngisdn_snd_setup(ftdmchan);
 			}

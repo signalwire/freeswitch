@@ -68,7 +68,6 @@ int main(int argc, char *argv[])
     int num_packets;
     int model_no;
     int speed_pattern_no;
-    int use_gui;
     int simulation_time;
     int i;
     int len;
@@ -87,11 +86,16 @@ int main(int argc, char *argv[])
     int highest_seq_no_got;
     int opt;
     FILE *out_file;
+#if defined(ENABLE_GUI)
+    int use_gui;
+#endif
 
+#if defined(ENABLE_GUI)
+    use_gui = FALSE;
+#endif
     model_no = MODEL_NO;
     speed_pattern_no = SPEED_PATTERN_NO;
     simulation_time = SIMULATION_TIME;
-    use_gui = FALSE;
     while ((opt = getopt(argc, argv, "gm:s:t:")) != -1)
     {
         switch (opt)

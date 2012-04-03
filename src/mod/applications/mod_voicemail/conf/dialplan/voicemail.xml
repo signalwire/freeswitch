@@ -1,0 +1,20 @@
+<include>
+	<!-- This is a _VERY_ abbreviated demo for voicemail. A better demo would be useful -->
+
+	<!-- voicemail main extension -->
+	<extension name="vmain">
+		<condition field="destination_number" expression="^vmain$|^4000$|^\*98$">
+			<action application="answer"/>
+			<action application="sleep" data="1000"/>
+			<action application="voicemail" data="check default ${domain_name}"/>
+		</condition>
+	</extension>
+
+	<extension name="Local_Voicemail">
+		<condition field="destination_number" expression="^(10[01][0-9])$">
+			<action application="export" data="dialed_extension=$1"/>
+			<action application="export" data="domain=default"/>
+			<action application="bridge" data="loopback/app=voicemail:default ${domain_name} ${dialed_extension}"/>
+		</condition>
+	</extension>
+</include>

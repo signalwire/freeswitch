@@ -360,7 +360,7 @@ switch_status_t load_configuration(switch_bool_t reload)
     spandsp_globals.timezone = "";
 
 	/* TODO make configuration param */
-	spandsp_globals.tonedebug = 1;
+	spandsp_globals.tonedebug = 0;
 
 	if ((xml = switch_xml_open_cfg("spandsp.conf", &cfg, NULL)) || (xml = switch_xml_open_cfg("fax.conf", &cfg, NULL))) {
         status = SWITCH_STATUS_SUCCESS;

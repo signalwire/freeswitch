@@ -34,39 +34,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <esl.h>
-
+#include <errno.h>
 
 static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr)
 {
 	esl_handle_t handle = {{0}};
-	char path_buffer[1024] = { 0 };
 	const char *path;
 	
 	if (esl_attach_handle(&handle, client_sock, addr) != ESL_SUCCESS || !handle.info_event) {
+		close(client_sock);
 		esl_log(ESL_LOG_ERROR, "Socket Error\n");
-		exit(0);
+		return;
 	}
 
 	if (!(path = esl_event_get_header(handle.info_event, "variable_ivr_path"))) {
 		esl_disconnect(&handle);
 		esl_log(ESL_LOG_ERROR, "Missing ivr_path param!\n");
-		exit(0);
+		return;
 	}
 
-	strncpy(path_buffer, path, sizeof(path_buffer) - 1);
-	
 	/* hotwire the socket to STDIN/STDOUT */
-	dup2(client_sock, STDIN_FILENO);
-	dup2(client_sock, STDOUT_FILENO);
+	if (!(dup2(client_sock, STDIN_FILENO)) && !(dup2(client_sock, STDOUT_FILENO))){
+		esl_disconnect(&handle);
+		esl_log(ESL_LOG_ERROR, "Socket Error hotwiring socket to STDIN/STDOUT!\n");
+		return;
+	}
 
-	/* close the handle but leak the socket on purpose cos the child will need it open */
-	handle.sock = -1;
+	if(system(path)) {
+		 esl_log(ESL_LOG_ERROR, "System Call Failed! [%s]\n", strerror(errno));
+	}
 	esl_disconnect(&handle);
 	
-	execl(path_buffer, path_buffer, (char *)NULL);
-	//system(path_buffer);
-	close(client_sock);
-	exit(0);
 }
 
 int main(int argc, char *argv[])

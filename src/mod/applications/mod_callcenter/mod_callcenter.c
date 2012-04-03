@@ -1371,6 +1371,22 @@ end:
 	return status;
 }
 
+static void playback_array(switch_core_session_t *session, const char *str) {
+	if (str && !strncmp(str, "ARRAY::", 7)) {
+		char *i = (char*) str + 7, *j = i;
+		while (1) {
+			if ((j = strstr(i, "::"))) {
+				*j = 0;
+			}
+			switch_ivr_play_file(session, NULL, i, NULL);
+			if (!j) break;
+			i = j + 2;
+		}
+	} else {
+		switch_ivr_play_file(session, NULL, str, NULL);
+	}
+}
+
 static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct call_helper *h = (struct call_helper *) obj;
@@ -1429,6 +1445,14 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 	/* CallBack Mode */
 	if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_CALLBACK)) {
+		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
+		char *cid_name = NULL;
+		const char *cid_name_prefix = NULL;
+		if ((cid_name_prefix = switch_channel_get_variable(member_channel, "cc_outbound_cid_name_prefix"))) {
+			cid_name = switch_mprintf("%s%s", cid_name_prefix, h->member_cid_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Setting outbound caller_id_name to: %s\n", cid_name);
+		}
+
 		switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_queue", "%s", h->queue_name);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_uuid", "%s", h->member_uuid);
@@ -1444,9 +1468,9 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		t_agent_called = local_epoch_time_now(NULL);
 		dialstr = switch_mprintf("%s", h->originate_string);
-		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, h->member_cid_name, h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
-
+		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
 		switch_safe_free(dialstr);
+		switch_safe_free(cid_name);
 
 		switch_event_destroy(&ovars);
 	/* UUID Standby Mode */
@@ -1489,6 +1513,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
 		switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
 		const char *other_loopback_leg_uuid = switch_channel_get_variable(agent_channel, "other_loopback_leg_uuid");
+		const char *o_announce = NULL;
 
 		switch_channel_set_variable(agent_channel, "cc_member_pre_answer_uuid", NULL);
 
@@ -1615,6 +1640,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" <%s> from queue %s%s\n",
 				h->agent_name, h->member_cid_name, h->member_cid_number, h->queue_name, (h->record_template?" (Recorded)":""));
+
+		if ((o_announce = switch_channel_get_variable(member_channel, "cc_outbound_announce"))) {
+			playback_array(agent_session, o_announce);
+		}
 
 		switch_ivr_uuid_bridge(h->member_session_uuid, switch_core_session_get_uuid(agent_session));
 
@@ -2340,6 +2369,7 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 
 struct moh_dtmf_helper {
 	const char *queue_name;
+	const char *exit_keys;
 	char dtmf;
 };
 
@@ -2348,10 +2378,9 @@ static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, 
 
 	switch (itype) {
 		case SWITCH_INPUT_TYPE_DTMF:
-			{
-				/* Just laywork for people who want to get some DTMF actions */
+			if (h->exit_keys && *(h->exit_keys)) {
 				switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-				if (strchr("#", dtmf->digit)) {
+				if (strchr(h->exit_keys, dtmf->digit)) {
 					h->dtmf = dtmf->digit;
 					return SWITCH_STATUS_BREAK;
 				}
@@ -2552,6 +2581,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 		switch_input_args_t args = { 0 };
 		struct moh_dtmf_helper ht;
 
+		ht.exit_keys = switch_channel_get_variable(member_channel, "cc_exit_keys");
 		ht.dtmf = '\0';
 		args.input_callback = moh_on_dtmf;
 		args.buf = (void *) &ht;
@@ -2575,17 +2605,21 @@ SWITCH_STANDARD_APP(callcenter_function)
 				/* Sadly, there doesn't seem to be a return to switch_ivr_play_file that tell you the file wasn't found.  FALSE also mean that the channel got switch to BRAKE state, so we check for read acceptable */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Couldn't play file '%s', continuing wait with no audio\n", cur_moh);
 				moh_valid = SWITCH_FALSE;
-
+			} else if (status == SWITCH_STATUS_BREAK) {
+				char buf[2] = { ht.dtmf, 0 };
+				switch_channel_set_variable(member_channel, "cc_exit_key", buf);
+				break;
 			} else if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
-
 		} else {
-			switch_ivr_collect_digits_callback(session, &args, 0, 0);
+			if ((switch_ivr_collect_digits_callback(member_session, &args, 0, 0)) == SWITCH_STATUS_BREAK) {
+				char buf[2] = { ht.dtmf, 0 };
+				switch_channel_set_variable(member_channel, "cc_exit_key", buf);
+				break;
+			}
 		}
-
 		switch_yield(1000);
-
 	}
 
 	/* Make sure an agent was found, as we might break above without setting it */

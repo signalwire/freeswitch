@@ -776,7 +776,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 			state = switch_channel_get_state(other_channel);
 			running_state = switch_channel_get_running_state(other_channel);
 
-			if (switch_channel_down_nosig(other_channel) || switch_channel_down_nosig(channel)) {
+			if (switch_channel_down_nosig(other_channel) || switch_channel_down(channel)) {
 				break;
 			}
 
@@ -1194,6 +1194,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	switch_channel_set_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);
 	switch_channel_clear_flag(peer_channel, CF_BRIDGE_ORIGINATOR);
 
+	switch_channel_audio_sync(caller_channel);
+	switch_channel_audio_sync(peer_channel);
+
 	b_leg->session = peer_session;
 	switch_copy_string(b_leg->b_uuid, switch_core_session_get_uuid(session), sizeof(b_leg->b_uuid));
 	b_leg->stream_id = stream_id;
@@ -1244,6 +1247,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 			if (!switch_channel_ready(caller_channel)) {
 				abort_call(caller_channel, peer_channel);
+				switch_core_session_rwunlock(peer_session);
 				goto done;
 			}
 

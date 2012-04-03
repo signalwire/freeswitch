@@ -746,17 +746,14 @@ static int valid_data_state(v42_state_t *ss)
 static void receive_information_frame(v42_state_t *ss, const uint8_t *frame, int len)
 {
     lapm_state_t *s;
-    int ret;
-    int n;
 
     s = &ss->lapm;
     if (!valid_data_state(ss))
         return;
     if (len > s->rx_n401 + 3)
         return;
-    ret = 0;
     /* Ack I frames: NR - 1 */
-    n = ack_info(ss, frame[2] >> 1);
+    ack_info(ss, frame[2] >> 1);
     if (s->local_busy)
     {
         /* 8.4.7 */
@@ -786,7 +783,6 @@ static void receive_information_frame(v42_state_t *ss, const uint8_t *frame, int
 static void rx_supervisory_cmd_frame(v42_state_t *ss, const uint8_t *frame, int len)
 {
     lapm_state_t *s;
-    int n;
 
     s = &ss->lapm;
     /* If l->local_busy each RR,RNR,REJ with p=1 should be replied by RNR with f=1 (8.4.7) */
@@ -794,20 +790,20 @@ static void rx_supervisory_cmd_frame(v42_state_t *ss, const uint8_t *frame, int 
     {
     case LAPM_S_RR:
         s->far_busy = FALSE;
-        n = ack_info(ss, frame[2] >> 1);
+        ack_info(ss, frame[2] >> 1);
         /* If p = 1 may be used for status checking? */
         tx_information_rr_rnr_response(ss, frame, len);
         break;
     case LAPM_S_RNR:
         s->far_busy = TRUE;
-        n = ack_info(ss, frame[2] >> 1);
+        ack_info(ss, frame[2] >> 1);
         /* If p = 1 may be used for status checking? */
         if ((frame[2] & 0x1))
             tx_supervisory_frame(s, s->rsp_addr, (s->local_busy)  ?  LAPM_S_RNR  :  LAPM_S_RR, 1);
         break;
     case LAPM_S_REJ:
         s->far_busy = FALSE;
-        n = ack_info(ss, frame[2] >> 1);
+        ack_info(ss, frame[2] >> 1);
         if (s->retry_count == 0)
         {
             t401_stop_t403_start(ss);
@@ -827,7 +823,6 @@ static void rx_supervisory_cmd_frame(v42_state_t *ss, const uint8_t *frame, int 
 static void rx_supervisory_rsp_frame(v42_state_t *ss, const uint8_t *frame, int len)
 {
     lapm_state_t *s;
-    int n;
 
     s = &ss->lapm;
     if (s->retry_count == 0  &&  (frame[2] & 0x1))
@@ -837,7 +832,7 @@ static void rx_supervisory_rsp_frame(v42_state_t *ss, const uint8_t *frame, int 
     {
     case LAPM_S_RR:
         s->far_busy = FALSE;
-        n = ack_info(ss, frame[2] >> 1);
+        ack_info(ss, frame[2] >> 1);
         if (s->retry_count  &&  (frame[2] & 0x1))
         {
             reject_info(s);
@@ -846,7 +841,7 @@ static void rx_supervisory_rsp_frame(v42_state_t *ss, const uint8_t *frame, int 
         break;
     case LAPM_S_RNR:
         s->far_busy = TRUE;
-        n = ack_info(ss, frame[2] >> 1);
+        ack_info(ss, frame[2] >> 1);
         if (s->retry_count  &&  (frame[2] & 0x1))
         {
             reject_info(s);
@@ -857,7 +852,7 @@ static void rx_supervisory_rsp_frame(v42_state_t *ss, const uint8_t *frame, int 
         break;
     case LAPM_S_REJ:
         s->far_busy = FALSE;
-        n = ack_info(ss, frame[2] >> 1);
+        ack_info(ss, frame[2] >> 1);
         if (s->retry_count == 0  ||  (frame[2] & 0x1))
         {
             reject_info(s);

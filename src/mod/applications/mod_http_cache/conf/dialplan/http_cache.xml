@@ -1,0 +1,7 @@
+<include>
+	<extension "http_cache_demo">
+		<condition field="destination_number" expression="^(.*)$">
+			<action application="playback" data="${http_get(http://myserver.yo/media/hello_world.wav)}"/>
+		</condition>
+	</extension>
+</include>

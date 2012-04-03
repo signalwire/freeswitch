@@ -1097,28 +1097,26 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_size_t len;
 			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 			switch_frame_t frame = { 0 };
+			switch_status_t status;
 
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
-			for (;;) { 
-				switch_status_t status = switch_core_media_bug_read(bug, &frame, SWITCH_FALSE);
 
-				if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-					break;
-				}
-				
+			status = switch_core_media_bug_read(bug, &frame, SWITCH_FALSE);
+
+			if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {
 				len = (switch_size_t) frame.datalen / 2;
+
 				if (len && switch_core_file_write(rh->fh, data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 					return SWITCH_FALSE;
 				}
-
-				if (status == SWITCH_STATUS_BREAK) break;
 			}
 
+				
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
@@ -1641,10 +1639,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 
 	fh->channels = channels;
 
-	vval = switch_channel_get_variable(channel, "enable_file_write_buffering");
-	if (!vval || switch_true(vval)) {
+	if ((vval = switch_channel_get_variable(channel, "enable_file_write_buffering"))) {
+		int tmp = atoi(vval);
+		
+		if (tmp > 0) {
+			fh->pre_buffer_datalen = tmp;
+		} else if (switch_true(vval)) {
+			fh->pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
+		}
+
+	} else {
 		fh->pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	}
+
 	
 	if (!switch_is_file_path(file)) {
 		char *tfile = NULL;
@@ -1763,6 +1770,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
 		switch_core_file_close(fh);
 		return status;
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_PRE_BUFFER_FRAMES"))) {
+		int tmp = atoi(p);
+		
+		if (tmp > 0) {
+			switch_core_media_bug_set_pre_buffer_framecount(bug, tmp);
+		}
+	} else {
+		switch_core_media_bug_set_pre_buffer_framecount(bug, 25);
 	}
 
 	switch_channel_set_private(channel, file, bug);
@@ -2604,8 +2621,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		{
-			int skip = 0;
-
+			
 			if (type == SWITCH_ABC_TYPE_READ_REPLACE) {
 				frame = switch_core_media_bug_get_read_replace_frame(bug);
 			} else {
@@ -2613,6 +2629,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 			}
 
 			for (i = 0; i < cont->index; i++) {
+				int skip = 0;
 
 				if (cont->list[i].sleep) {
 					cont->list[i].sleep--;
@@ -2634,7 +2651,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					skip = 1;
 
 				if (skip)
-					return SWITCH_TRUE;
+					continue;
 
 				if (teletone_multi_tone_detect(&cont->list[i].mt, frame->data, frame->samples)) {
 					switch_event_t *event;

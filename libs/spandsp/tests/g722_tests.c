@@ -224,6 +224,7 @@ static void itu_compliance_tests(void)
     int j;
     int k;
     int len_comp;
+    int len_comp_lower;
     int len_comp_upper;
     int len_data;
     int len;
@@ -243,6 +244,11 @@ static void itu_compliance_tests(void)
         /* Get the reference output data */
         len_comp = get_test_vector(encode_test_files[file + 1], itu_ref, MAX_TEST_VECTOR_LEN);
 
+        if (len_data != len_comp)
+        {
+            printf("Test data length mismatch\n");
+            exit(2);
+        }
         /* Process the input data */
         /* Skip the reset stuff at each end of the data */
         for (i = 0;  i < len_data;  i++)
@@ -294,13 +300,18 @@ static void itu_compliance_tests(void)
 
             /* Get the input data */
             len_data = get_test_vector(decode_test_files[file], (uint16_t *) itu_data, MAX_TEST_VECTOR_LEN);
-        
+
             /* Get the lower reference output data */
-            len_comp = get_test_vector(decode_test_files[file + mode], itu_ref, MAX_TEST_VECTOR_LEN);
-    
+            len_comp_lower = get_test_vector(decode_test_files[file + mode], itu_ref, MAX_TEST_VECTOR_LEN);
+
             /* Get the upper reference output data */
             len_comp_upper = get_test_vector(decode_test_files[file + 4], itu_ref_upper, MAX_TEST_VECTOR_LEN);
-    
+
+            if (len_data != len_comp_lower  ||  len_data != len_comp_lower)
+            {
+                printf("Test data length mismatch\n");
+                exit(2);
+            }
             /* Process the input data */
             /* Skip the reset stuff at each end of the data */
             for (i = 0;  i < len_data;  i++)
@@ -378,6 +389,7 @@ static void signal_to_distortion_tests(void)
         in_level = power_meter_update(&in_meter, original[i]);
     len2 = g722_encode(&enc_state, compressed, original, len);
     len3 = g722_decode(&dec_state, decompressed, compressed, len2);
+    out_level = 0;
     for (i = 0;  i < len3;  i++)
         out_level = power_meter_update(&out_meter, decompressed[i]);
     printf("Silence produces %d at the output\n", out_level);

@@ -1,0 +1,225 @@
+Welcome to my multiprecision math library!  I'm a little bit proud
+of it, particularly its speed.  If you have a machine for which
+assembly-language subroutines are available (you can probably guess
+from the filename), it will go even faster.  Instructions for
+building the library with assembly subroutines are included later.
+
+Barring that, on many machines using GCC, the GNU C compiler, helps
+the speed significantly, because it not only supports "long long"
+64-bit data types, but it can perform operations on them in line.
+Some other compilers that support "long long" generate inefficient
+code for working with them.
+
+For a description of what the library does, see bn.doc.  For a description
+of how it's organized, see bnintern.doc.  For the real nitty-gritty,
+read the code.  I'm very curious what you all think of it.  One thing I
+tried to do was to comment it better than most, although that is more
+apparent in the lower-level parts of the code (the lbn* files) that I
+wrote first rather than the higher levels, when I didn't need comments
+to explain what I was doing to myself.
+
+I can't put a full number theory course in the comments, so there
+are some parts that are just going to be confusing unless you
+have the background.  I'd rather not answer questions that elementary.
+But really, I can't stop you from saying whatever you want.  If you'd
+like to send some comments, good or bad, send me some mail.
+-- 
+	-Colin <colin@nyx.net>
+
+
+** How to build the library
+
+For the full details of how all the bits go together, see bnintern.doc.
+If you're on a Unix machine, run the "configure" script (generated from
+configure.in using GNU autoconf) and it will set up the basic C version
+automatically.  Assembly-language support is still configured by hand.
+(Just edit the generated Makefile.)  If you're on another machine,
+you'll have to do everything by hand, although it's still not hard.
+
+This library works in three word sizes: 16, 32 and 64 bits.  The limiting
+factor is that it needs a double-word multiply, so even a 64-bit SPARC
+must use the 32-bit code, because it only produces a 64-bit multiply
+result.  The DEC Alpha, MIPS R4000 (and up) and the upcoming 64-bit
+PowerPC, however, can use the 64-bit version, as they provide access to
+the high 64 bits of an integer multiply result.
+
+Trying to compile the file "sizetest.c" will produce an error telling
+you what word size is needed.  In the absence of any assembly-language
+support routines, if your compiler has 64-bit longs or 64-bit long longs,
+you'll get the 32-bit version.  Otherwise, you'll get the 16-bit version.
+
+The shipped archive contains only the 16-bit version of six important
+source files: bn16.c, bn16.h, lbn16.c, lbn16.h, bninit16.c and bntest16.c.
+The 32- and 64-bit versions are produced by a trivial replacement process
+from those.  They are built automatically on demand by the Unix Makefile;
+other platforms will have to build them by hand if needed.
+
+If you have the Unix stream editor sed, you can do:
+	sed -e s/32/64/g -e s/16/32/g bn16.c > bn32.c
+	sed -e s/32/64/g -e s/16/32/g bn16.h > bn32.h
+	sed -e s/32/64/g -e s/16/32/g lbn16.c > lbn32.c
+	sed -e s/32/64/g -e s/16/32/g lbn16.h > lbn32.h
+	sed -e s/32/64/g -e s/16/32/g bninit16.c > bninit32.c
+	sed -e s/32/64/g -e s/16/32/g bntest16.c > bntest32.c
+
+If you don't, you'll have to use your favourite text editor and manually:
+	Copy bn16.c to bn32.c
+	Copy bn16.h to bn32.h
+	Copy lbn16.c to lbn32.c
+	Copy lbn16.h to lbn32.h
+	Copy bninit16.c to bninit32.c
+	Copy bntest16.c to bntest32.c
+	Edit bn32.c, bn32.h, lbn32.c, lbn32.h, bninit32.c and bntest32.c (*32.?)
+	Globally replace all "32" by "64"
+	Globally replace all "16" by "32"
+
+I don't know of any non-Unix platforms that can use the 64-bit version,
+so you probably won't need it, but the process is siliar, just replace
+every "32" with "128" and every "16" with "64".
+
+Once you have all the word size versions you need you can compile them.
+If you're compiling a pure C version, or even a simple assembly-language
+version, there are some special auto-size-detecting files that will
+figure out (at compile time, using <limits.h> and the C preprocessor)
+the largest size that it can compile and #include it.  To compile that
+version, you need to compile the following files:
+
+- bn.c
+- bn00.c
+- lbn00.c
+- lbnmem.c
+- legal.c
+
+The file "bntest00.c" (see README.bntest) is a low-level test program
+that will check the correct operation of the core low-level routines of
+the library.  It needs only lbn00.c, lbnmem.c and legal.c.
+
+The file "germtest.c" is a simple program to generate Sophie Germain
+primes which demonstrates the library's use.  This uses the full library.
+
+
+** Adding assembly-language support routines
+
+It is possible to include some assembly-language primitives in this.
+For example, for the DEC Alpha primitives, you need to compile everything
+with the -DBNINCLUDE=lbnalpha.h flag (or somehow get the effect of
+"#define BNINCLUDE lbnalpha.h" in all of the code), and assemble and
+link in "lbnalpha.s".
+
+If you want to compile a specific version of the library, say the
+32-bit version, you need to compile together the following files:
+
+- bn.c
+- bn32.c
+- bninit32.c
+- lbn32.c
+- lbnmem.c
+- legal.c
+
+Note the extra "bninit32.c" file.  It contains only the function
+"bnInit()" which does nothing but call "bnInit_32()".  This is included in
+"bn00.c", but is separated out here so that you can compile the library
+for two word sizes and replace the bnInit() function with one that will
+select a version to initialize at run time!  That's described later.
+
+To include assembly-language support routines for a given processor
+(as an example, I'll use the mythical "DLX" processor), compile all the
+C files with -DBNINCLUDE=lbndlx.h and (or somehow get the effect of
+"#define BNINCLUDE lbndlx.h" when compiling all the .c files), and
+assemble and link in the lbndlx.s assembly-language file.
+
+The fun comes when you compile a version of the library for two
+word sizes.  This is currently only supported for the 680x0 and 80x86
+processors, which come in 16- and 32-bit versions, but this also makes
+sense on MIPS and PowerPC processors that have 32- and 64-bit versions.
+
+To do this, you need to compile the library in two word sizes and include
+a custom bndlx.c file that defines a smart bnInit() which chooses between
+the two.  For the 80x8 family (or the 680x0 family), you want to compile
+the following with -DBNINCLUDE=lbn8086.h (or -DBNINCLUDE=lbn68000.h):
+
+- bn.c
+- bn16.c
+- bn32.c
+- lbn16.c
+- lbn32.c
+- lbnmem.c
+- legal.c
+- lbn8086.asm (or lbn68000.c and lbn68020.c for the 680x0)
+- bn8086.c (or bn68000.c for the 680x0)
+
+The lbn8086.asm file contains the assembly-language subroutines.
+The lbn8086.h file contains declarations for them and the
+necessary information to call them instead of the C versions
+The bn8086.c file contains the single function bnInit(), which
+determines the word size of the processor when called and calls
+bnInit_16() or bnInit_32(), as appropriate.
+
+To summarize:
+
+To build a (not necessarily optimal) version on any machine, do the following,
+or get your favourite make(1)-like utility to do it:
+
+- Compile bn.c, bn00.c, lbn00.c, lbnmem.c and legal.c, with as much
+  optimization as possible.
+- Link all of the .o files together
+
+To build an MS-DOS version that will run well on an 8088 and up,
+compile with -DBNINCLUDE=lbn8086.h:
+
+- Compile bn.c, bn16.c, bn32.c, lbn16.c, lbn32.c, lbnmem.c, legal.c and
+  bn8086.c, with -DBNINCLUDE=lbn8086.h
+- Assemble lbn8086.asm
+- Link all of the .obj files together
+
+To build an 80x86 WIN16 version (16-bit segmented addressing, 32-bit processor):
+
+- Compile bn.c, bn00.c (or bn32.c and bninit32.c), lbn00.c (or lbn32.c),
+  lbnmem.c and legal.c, with -DBNINCLUDE=lbn8086.h
+- Assemble lbn8086.asm
+- Link all of the .obj files together
+
+To build an 80x86 WIN32 version (32-bit flat model),
+
+- Compile bn.c, bn00.c (or bn32.c and bninit32.c), lbn00.c (or lbn32.c),
+  lbnmem.c and legal.c, with -DBNINCLUDE=lbn80386.h
+- Assemble lbn80386.asm
+- Link all of the .obj files together
+
+To build a Mac 68K version that will work well on a 68000 and up,
+
+- Compile bn.c, bn16.c, bn32.c, lbn16.c, lbn32.c, lbnmem.c, legal.c and
+  bn8086.c, with -DBNINCLUDE=lbn68000.h  (On Metrowerks, you may have to
+  build your own precompiled header to achieve this effect.)
+- Assemble lbn68000.c and lbn68020.c
+- Link all of the .o files together
+
+To build a Mac 68K version which will only work on a 68020 or better,
+
+- Compile bn.c, bn00.c (or bn32.c and bninit32.c), lbn00.c (or lbn32.c),
+  lbnmem.c and legal.c, with -DBNINCLUDE=lbn68020.h  (On Metrowerks, you
+  may have to build your own precompiled header to achieve this effect.)
+- Assemble lbn68020.c
+- Link all of the .o files together
+
+To build a Mac PowerPC version,
+
+- Compile bn.c, bn00.c (or bn32.c and bninit32.c), lbn00.c (or lbn32.c),
+  lbnmem.c and legal.c, with -DBNINCLUDE=lbnppc.h  (On Metrowerks, you
+  may have to build your own precompiled header to achieve this effect.)
+- Assemble lbnppc.c
+- Link all of the .o files together
+
+To build a Unix 80x86 version (32-bit flat model, AT&T assembler mnemonics),
+
+- Compile bn.c, bn00.c (or bn32.c and bninit32.c), lbn00.c (or lbn32.c),
+  lbnmem.c and legal.c, with -DBNINCLUDE=lbn80386.h
+- Assemble lbn80386.s
+- Link all of the .o files together
+
+To build a DEC Alpha version (64-bit math; this *screams*),
+
+- Compile bn.c, bn00.c (or bn64.c and bninit64.c), lbn00.c (or lbn64.c),
+  lbnmem.c and legal.c, with -DBNINCLUDE=lbnalpha.h
+- Assemble lbnalpha.s
+- Link all of the .o files together

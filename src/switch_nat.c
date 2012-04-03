@@ -304,7 +304,7 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t * t
 						pos++;
 					}
 					if (!strncmp(pos, "ssdp:alive", 10)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UPnP keep alive packet: \n%s\n", buf);
+						/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UPnP keep alive packet: \n%s\n", buf); */
 						/* did pub ip change */
 						newip[0] = '\0';
 						if (get_upnp_pubaddr(newip) != SWITCH_STATUS_SUCCESS) {

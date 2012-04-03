@@ -109,33 +109,50 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void v22bis_rx_status(void *user_data, int status)
+{
+    endpoint_t *s;
+    int bit_rate;
+    int i;
+    int len;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    complexi16_t *coeffs;
+#else
+    complexf_t *coeffs;
+#endif
+
+    /* Special conditions */
+    s = (endpoint_t *) user_data;
+    printf("V.22bis rx %p status is %s (%d)\n", user_data, signal_status_to_str(status), status);
+    switch (status)
+    {
+    case SIG_STATUS_TRAINING_SUCCEEDED:
+        bit_rate = v22bis_get_current_bit_rate(s->v22bis);
+        printf("Negotiated bit rate: %d\n", bit_rate);
+        len = v22bis_rx_equalizer_state(s->v22bis, &coeffs);
+        printf("Equalizer:\n");
+        for (i = 0;  i < len;  i++)
+#if defined(SPANDSP_USE_FIXED_POINTx)
+            printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/1024.0f, coeffs[i].im/1024.0f);
+#else
+            printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+#endif
+        break;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
 static void v22bis_putbit(void *user_data, int bit)
 {
     endpoint_t *s;
-    int i;
-    int len;
-    int bit_rate;
-    complexf_t *coeffs;
-    
-    s = (endpoint_t *) user_data;
+
     if (bit < 0)
     {
-        /* Special conditions */
-        printf("V.22bis rx %p status is %s (%d)\n", user_data, signal_status_to_str(bit), bit);
-        switch (bit)
-        {
-        case SIG_STATUS_TRAINING_SUCCEEDED:
-            bit_rate = v22bis_get_current_bit_rate(s->v22bis);
-            printf("Negotiated bit rate: %d\n", bit_rate);
-            len = v22bis_rx_equalizer_state(s->v22bis, &coeffs);
-            printf("Equalizer:\n");
-            for (i = 0;  i < len;  i++)
-                printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
-            break;
-        }
+        v22bis_rx_status(user_data, bit);
         return;
     }
 
+    s = (endpoint_t *) user_data;
     if (decode_test_file)
         printf("Rx bit %p-%d - %d\n", user_data, rx_bits++, bit);
     else
@@ -154,11 +171,20 @@ static int v22bis_getbit(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static void qam_report(void *user_data, const complexi16_t *constel, const complexi16_t *target, int symbol)
+#else
 static void qam_report(void *user_data, const complexf_t *constel, const complexf_t *target, int symbol)
+#endif
 {
     int i;
     int len;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    complexi16_t *coeffs;
+    complexf_t constel_point;
+#else
     complexf_t *coeffs;
+#endif
     float fpower;
     endpoint_t *s;
 
@@ -195,10 +221,18 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
         len = v22bis_rx_equalizer_state(s->v22bis, &coeffs);
         printf("Equalizer A:\n");
         for (i = 0;  i < len;  i++)
+#if defined(SPANDSP_USE_FIXED_POINTx)
+            printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/1024.0f, coeffs[i].im/1024.0f);
+#else
             printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+#endif
 #if defined(ENABLE_GUI)
         if (use_gui)
+#if defined(SPANDSP_USE_FIXED_POINTx)
+            qam_monitor_update_int_equalizer(s->qam_monitor, coeffs, len);
+#else
             qam_monitor_update_equalizer(s->qam_monitor, coeffs, len);
+#endif
 #endif
     }
 }
