@@ -305,6 +305,7 @@ void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan)
 	return;
 }
 
+/* This is used to request Q.921 to initiate link establishment */
 void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan)
 {
 	CnStEvnt cnStEvnt;
