@@ -9,15 +9,16 @@ BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
 SUBDIRS="ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip \
         speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-3.8.2 broadvoice silk libcodec2";
+SUBDIRS_ONLY=false
 
 while getopts 'jhd:' o; do 
   case "$o" in
     j) BGJOB=true;;
-    d) SUBDIRS="$OPTARG";;
+    d) SUBDIRS="$OPTARG" SUBDIRS_ONLY=true;;
     h) echo "Usage: $0 <options>"
       echo "  Options:"
       echo "           -d 'library1 library2'"
-      echo "             => Override directories to bootstrap"
+      echo "             => Bootstrap only specified subdirectories"
       echo "           -j => Run Jobs in Background"
       exit;;
   esac
@@ -393,9 +394,9 @@ run() {
   check_lt_ver
   check_libtoolize
   print_autotools_vers
-  bootstrap_apr
+  test $SUBDIRS_ONLY || bootstrap_apr
   bootstrap_libs
-  bootstrap_fs
+  test $SUBDIRS_ONLY || bootstrap_fs
   if [ "${BGJOB}" = "true" ]; then
     wait
   fi
