@@ -300,7 +300,7 @@ bootstrap_apr() {
 
   echo "Entering directory ${LIBDIR}/apr-util"
   cd ${LIBDIR}/apr-util
-  if [ "${BGJOB}" = "false" ]; then
+  if ! ${BGJOB}; then
     ./buildconf
   else
     ./buildconf &
@@ -384,11 +384,12 @@ bootstrap_libs() {
   for i in ${SUBDIRS}; do
     case "$i" in
       apr|fs|libzrtp)
-        [ "${BGJOB}" = "true" ] && wait
-        bootstrap_$i && continue
+        ${BGJOB} && wait
+        bootstrap_$i
+        continue
         ;;
     esac
-    if [ "${BGJOB}" = "false" ]; then
+    if ! ${BGJOB}; then
       libbootstrap ${i}
     else
       libbootstrap ${i} &
@@ -406,7 +407,7 @@ run() {
   check_libtoolize
   print_autotools_vers
   bootstrap_libs
-  if [ "${BGJOB}" = "true" ]; then
+  if ${BGJOB}; then
     wait
   fi
 }
