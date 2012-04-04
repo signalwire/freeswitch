@@ -5971,7 +5971,7 @@ void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *sess
 	}
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
-		xml_cdr_text = switch_xml_toxml(cdr, SWITCH_FALSE);
+		xml_cdr_text = switch_xml_toxml_nolock(cdr, SWITCH_FALSE);
 		switch_xml_free(cdr);
 	}
 

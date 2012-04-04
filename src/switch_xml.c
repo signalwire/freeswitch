@@ -2451,12 +2451,22 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	}
 }
 
+SWITCH_DECLARE(char *) switch_xml_toxml_nolock(switch_xml_t xml, switch_bool_t prn_header)
+{
+	char *s = (char *) malloc(SWITCH_XML_BUFSIZE);
+	switch_assert(s);
+	return switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
+}
+
+
 SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_header)
 {
 	char *r, *s;
-	switch_mutex_lock(XML_GEN_LOCK);
+
 	s = (char *) malloc(SWITCH_XML_BUFSIZE);
 	switch_assert(s);
+
+	switch_mutex_lock(XML_GEN_LOCK);
 	r = switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
 	switch_mutex_unlock(XML_GEN_LOCK);
 	return r;

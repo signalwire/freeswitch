@@ -214,7 +214,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_get(_In_ switch_xml_t xml,...);
 ///\param prn_header add <?xml version..> header too
 ///\return the xml text string
 SWITCH_DECLARE(char *) switch_xml_toxml(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header);
-
+SWITCH_DECLARE(char *) switch_xml_toxml_nolock(switch_xml_t xml, _In_ switch_bool_t prn_header);
 ///\brief Converts an switch_xml structure back to xml using the buffer passed in the parameters.
 ///\param xml the xml node
 ///\param buf buffer to use
