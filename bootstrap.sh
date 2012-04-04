@@ -8,7 +8,7 @@ BGJOB=false
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
 SUBDIRS="apr \
-  ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip \
+  libzrtp ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip \
   speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-3.8.2 broadvoice silk libcodec2 \
   fs";
 
@@ -307,6 +307,10 @@ bootstrap_apr() {
   fi
 }
 
+bootstrap_libzrtp() {
+  (cd ${LIBDIR}/libzrtp/projects/gnu && ./bootstrap.sh)
+}
+
 # Libs automake automation function
 libbootstrap() {
   i=$1
@@ -379,7 +383,7 @@ bootstrap_fs() {
 bootstrap_libs() {
   for i in ${SUBDIRS}; do
     case "$i" in
-      apr|fs) bootstrap_$i && continue ;;
+      apr|fs|libzrtp) bootstrap_$i && continue ;;
     esac
     if [ "${BGJOB}" = "false" ]; then
       libbootstrap ${i}
