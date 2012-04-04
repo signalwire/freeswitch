@@ -383,7 +383,10 @@ bootstrap_fs() {
 bootstrap_libs() {
   for i in ${SUBDIRS}; do
     case "$i" in
-      apr|fs|libzrtp) bootstrap_$i && continue ;;
+      apr|fs|libzrtp)
+        [ "${BGJOB}" = "true" ] && wait
+        bootstrap_$i && continue
+        ;;
     esac
     if [ "${BGJOB}" = "false" ]; then
       libbootstrap ${i}
