@@ -2,21 +2,23 @@
 echo "bootstrap: checking installation..."
 
 BGJOB=false
-while getopts jh arg
-do 
-  case $arg in
-    j) BGJOB=true;;
-    h) echo "Usage: $0 <options>"
-       echo "  Options:"
-       echo "           -j => Run Jobs in Background"
-       exit;;
-  esac
-done
-
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
 SUBDIRS="ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip \
         speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-3.8.2 broadvoice silk libcodec2";
+
+while getopts 'jhd:' o; do 
+  case "$o" in
+    j) BGJOB=true;;
+    d) SUBDIRS="$OPTARG";;
+    h) echo "Usage: $0 <options>"
+       echo "  Options:"
+       echo "           -d 'library1 library2'"
+       echo "             => Override directories to bootstrap"
+       echo "           -j => Run Jobs in Background"
+       exit;;
+  esac
+done
 
 if [ ! -f modules.conf ]; then 
     cp build/modules.conf.in modules.conf
