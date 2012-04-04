@@ -7,14 +7,15 @@ echo "bootstrap: checking installation..."
 BGJOB=false
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
-SUBDIRS="ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip \
-        speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-3.8.2 broadvoice silk libcodec2";
-SUBDIRS_ONLY=false
+SUBDIRS="apr \
+  ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip \
+  speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-3.8.2 broadvoice silk libcodec2 \
+  fs";
 
 while getopts 'jhd:' o; do 
   case "$o" in
     j) BGJOB=true;;
-    d) SUBDIRS="$OPTARG" SUBDIRS_ONLY=true;;
+    d) SUBDIRS="$OPTARG";;
     h) echo "Usage: $0 <options>"
       echo "  Options:"
       echo "           -d 'library1 library2'"
@@ -377,6 +378,9 @@ bootstrap_fs() {
 
 bootstrap_libs() {
   for i in ${SUBDIRS}; do
+    case "$i" in
+      apr|fs) bootstrap_$i && continue ;;
+    esac
     if [ "${BGJOB}" = "false" ]; then
       libbootstrap ${i}
     else
@@ -394,9 +398,7 @@ run() {
   check_lt_ver
   check_libtoolize
   print_autotools_vers
-  test $SUBDIRS_ONLY || bootstrap_apr
   bootstrap_libs
-  test $SUBDIRS_ONLY || bootstrap_fs
   if [ "${BGJOB}" = "true" ]; then
     wait
   fi
