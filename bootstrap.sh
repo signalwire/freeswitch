@@ -407,9 +407,7 @@ run() {
   check_libtoolize
   print_autotools_vers
   bootstrap_libs
-  if ${BGJOB}; then
-    wait
-  fi
+  ${BGJOB} && wait
 }
 
 run
