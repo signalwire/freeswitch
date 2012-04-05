@@ -151,7 +151,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bgaes
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bnlib
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/include
 libfreeswitch_la_LDFLAGS += -Llibs/libzrtp/third_party/bnlib -lbn -Llibs/libzrtp/projects/gnu/build -lzrtp
-CORE_LIBS += libs/libzrtp/projects/gnu/libzrtp.a
+CORE_LIBS += libs/libzrtp/projects/gnu/build/libzrtp.a
 endif
 
 library_includedir      = $(includedir)
