@@ -408,6 +408,7 @@ run() {
   print_autotools_vers
   bootstrap_libs
   ${BGJOB} && wait
+  return 0
 }
 
 run
