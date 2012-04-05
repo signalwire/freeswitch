@@ -464,7 +464,7 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
 
-libs/libzrtp/projects/gnu/libzrtp.a: libs/libzrtp libs/libzrtp/projects/gnu/.update
+libs/libzrtp/projects/gnu/build/libzrtp.a: libs/libzrtp libs/libzrtp/projects/gnu/.update
 	@cd libs/libzrtp/projects/gnu && $(MAKE)
 	@$(TOUCH_TARGET)
 
