@@ -1628,10 +1628,7 @@ static char create_channels_sql[] =
 	"   call_uuid  VARCHAR(256),\n"
 	"   sent_callee_name  VARCHAR(1024),\n"
 	"   sent_callee_num  VARCHAR(256)\n"
-	");\n"
-	"create index chidx1 on channels (hostname);\n"
-	"create index uuindex on channels (uuid);\n"
-	"create index uuindex2 on channels (call_uuid);\n";
+	");\n";
 
 static char create_calls_sql[] =
 	"CREATE TABLE calls (\n"
@@ -1641,11 +1638,7 @@ static char create_calls_sql[] =
 	"   caller_uuid      VARCHAR(256),\n"
 	"   callee_uuid      VARCHAR(256),\n"
 	"   hostname VARCHAR(256)\n"
-	");\n"
-	"create index callsidx1 on calls (hostname);\n"
-	"create index eruuindex on calls (caller_uuid);\n"
-	"create index eeuuindex on calls (callee_uuid);\n"
-	"create index eeuuindex2 on calls (call_uuid);\n";
+	");\n";
 
 static char create_interfaces_sql[] =
 	"CREATE TABLE interfaces (\n"
@@ -1688,8 +1681,8 @@ static char create_registrations_sql[] =
 	"   network_port VARCHAR(256),\n"
 	"   network_proto VARCHAR(256),\n"
 	"   hostname VARCHAR(256)\n"
-	");\n"
-	"create index regindex1 on registrations (reg_user,realm,hostname);\n";
+	");\n";
+
 	
 
 
@@ -2051,6 +2044,15 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_execute_sql(dbh, "create index nat_map_port_proto on nat (port,proto,hostname)", NULL);
 	switch_cache_db_execute_sql(dbh, "create index channels1 on channels(hostname)", NULL);
 	switch_cache_db_execute_sql(dbh, "create index calls1 on calls(hostname)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index chidx1 on channels (hostname)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index uuindex on channels (uuid)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index uuindex2 on channels (call_uuid)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index callsidx1 on calls (hostname)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index eruuindex on calls (caller_uuid)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index eeuuindex on calls (callee_uuid)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index eeuuindex2 on calls (call_uuid)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index regindex1 on registrations (reg_user,realm,hostname)", NULL);
+
 
  skip:
 
