@@ -5,6 +5,7 @@
 echo "bootstrap: checking installation..."
 
 BGJOB=false
+VERBOSE=false
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
 SUBDIRS="apr \
@@ -12,10 +13,11 @@ SUBDIRS="apr \
   speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-3.8.2 broadvoice silk libcodec2 \
   fs";
 
-while getopts 'jhd:' o; do 
+while getopts 'jhd:v' o; do 
   case "$o" in
     j) BGJOB=true;;
     d) SUBDIRS="$OPTARG";;
+    v) VERBOSE=true;;
     h) echo "Usage: $0 <options>"
       echo "  Options:"
       echo "           -d 'library1 library2'"
@@ -24,6 +26,11 @@ while getopts 'jhd:' o; do
       exit;;
   esac
 done
+
+ex() {
+  test $VERBOSE && echo "bootstrap: $@" >&2
+  $@
+}
 
 setup_modules() {
   if [ ! -f modules.conf ]; then 
@@ -316,8 +323,8 @@ libbootstrap() {
   i=$1
   if [ -d ${LIBDIR}/${i} ]; then
     echo "Entering directory ${LIBDIR}/${i}"
-    cd ${LIBDIR}/${i}
-    rm -f aclocal.m4
+    ex cd ${LIBDIR}/${i}
+    ex rm -f aclocal.m4
     CFFILE=
     if [ -f ${LIBDIR}/${i}/configure.in ]; then
       CFFILE="${LIBDIR}/${i}/configure.in"
@@ -336,33 +343,33 @@ libbootstrap() {
       AXTEST=`grep "ACX_LIBTOOL_C_ONLY" ${CFFILE}`
 
       echo "Creating aclocal.m4"
-      ${ACLOCAL:-aclocal} ${ACLOCAL_OPTS} ${ACLOCAL_FLAGS}
+      ex ${ACLOCAL:-aclocal} ${ACLOCAL_OPTS} ${ACLOCAL_FLAGS}
 
       # only run if AC_PROG_LIBTOOL is in configure.in/configure.ac
       if [ ! -z "${LTTEST}" -o "${LTTEST2}" -o "${AXTEST}" ]; then
         echo "Running libtoolize..."
         if ${libtoolize} -n --install >/dev/null 2>&1; then
-          $libtoolize --force --copy --install
+          ex $libtoolize --force --copy --install
         else
-          $libtoolize --force --copy
+          ex $libtoolize --force --copy
         fi
       fi
 
       echo "Creating configure"
-      ${AUTOCONF:-autoconf}
+      ex ${AUTOCONF:-autoconf}
 
       # only run if AC_CONFIG_HEADERS is found in configure.in/configure.ac
       if [ ! -z "${AHTEST}" ]; then
         echo "Running autoheader..."
-        ${AUTOHEADER:-autoheader};
+        ex ${AUTOHEADER:-autoheader};
       fi
 
       # run if AM_INIT_AUTOMAKE / AC_PROG_INSTALL is in configure.in/configure.ac
       if [ ! -z "${AMTEST}" -o "${AMTEST2}" ]; then
         echo "Creating Makefile.in"
-        ${AUTOMAKE:-automake} --no-force --add-missing --copy;
+        ex ${AUTOMAKE:-automake} --no-force --add-missing --copy;
       fi
-      rm -rf autom4te*.cache
+      ex rm -rf autom4te*.cache
     fi
   else
     echo "Skipping directory ${LIBDIR}/${i}"
