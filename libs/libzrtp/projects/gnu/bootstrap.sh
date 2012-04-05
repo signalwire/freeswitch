@@ -2,6 +2,7 @@
 
 reconf () {
   aclocal
+  mkdir -p config
   libtoolize --copy --automake
   autoconf
   autoheader
