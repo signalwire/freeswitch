@@ -71,7 +71,7 @@ static switch_mutex_t *port_lock = NULL;
 typedef srtp_hdr_t rtp_hdr_t;
 
 #ifdef ENABLE_ZRTP
-#include <libzrtp/zrtp.h>
+#include "zrtp.h"
 static zrtp_global_t *zrtp_global;
 static zrtp_zid_t zid = { "FreeSWITCH01" };
 static int zrtp_on = 0;

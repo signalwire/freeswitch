@@ -147,7 +147,11 @@ libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)
 endif
 
 if ENABLE_ZRTP
-libfreeswitch_la_LDFLAGS += -lzrtp -lbn
+CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bgaes
+CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bnlib
+CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/include
+libfreeswitch_la_LDFLAGS += -Llibs/libzrtp/third_party/bnlib -lbn -Llibs/libzrtp/projects/gnu/build -lzrtp
+CORE_LIBS += libs/libzrtp/projects/gnu/libzrtp.a
 endif
 
 library_includedir      = $(includedir)
@@ -460,6 +464,9 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
 
+libs/libzrtp/projects/gnu/libzrtp.a: libs/libzrtp libs/libzrtp/projects/gnu/.update
+	@cd libs/libzrtp/projects/gnu && $(MAKE)
+	@$(TOUCH_TARGET)
 
 ##
 ## helper targets
