@@ -319,7 +319,7 @@ user-agent			: <string>		mod_httapi/1.0	User Agent header value.
 
 
 <permissions>: * = default
-<permission name="" value="">
+<permission name="" value="true">
 
 *set-params                     : <params> tag can be parsed for session params.
 set-vars                        : <variables> tag can be parsed to set channel vars.
