@@ -433,7 +433,7 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
 
-libs/libzrtp/projects/gnu/build/libzrtp.a: 
+libs/libzrtp/projects/gnu/build/libzrtp.a:
 	cd libs/libzrtp/projects/gnu && $(MAKE)
 
 libs/curl/Makefile:
