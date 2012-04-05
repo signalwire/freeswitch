@@ -150,7 +150,11 @@ if ENABLE_ZRTP
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bgaes
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bnlib
 CORE_CFLAGS += -isystem $(switch_srcdir)/libs/libzrtp/include
-libfreeswitch_la_LDFLAGS += -Llibs/libzrtp/third_party/bnlib -lbn -Llibs/libzrtp/projects/gnu/build -lzrtp
+ZRTP_LDFLAGS = -Llibs/libzrtp/third_party/bnlib
+ZRTP_LDFLAGS += -Llibs/libzrtp/projects/gnu/build
+ZRTP_LIBS = -lbn -lzrtp
+libfreeswitch_la_LDFLAGS += $(ZRTP_LDFLAGS)
+libfreeswitch_la_LIBADD += $(ZRTP_LIBS)
 CORE_LIBS += libs/libzrtp/projects/gnu/build/libzrtp.a
 LIBS += libs/libzrtp/third_party/bnlib/libbn.a
 endif
