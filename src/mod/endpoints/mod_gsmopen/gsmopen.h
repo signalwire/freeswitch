@@ -52,10 +52,6 @@
 #define ALARM_NETWORK_NO_SIGNAL 4
 #define ALARM_NETWORK_LOW_SIGNAL 5
 
-
-
-
-
 #undef GIOVA48
 
 #ifndef GIOVA48
@@ -63,7 +59,6 @@
 #else // GIOVA48
 #define SAMPLES_PER_FRAME 960
 #endif // GIOVA48
-
 
 #ifndef GIOVA48
 #define     GSMOPEN_FRAME_SIZE   160
@@ -89,7 +84,6 @@
 #define ALSA_PCM_NEW_SW_PARAMS_API
 #include <alsa/asoundlib.h>
 #endif /* GSMOPEN_ALSA */
-
 
 //#include "celliax_spandsp.h"
 #ifndef WIN32
@@ -342,7 +336,6 @@ struct private_object {
 	unsigned long ib_failed_calls;
 	unsigned long ob_failed_calls;
 
-
 	char controldevice_name[50];	/*!< \brief name of the serial device controlling the interface, possibly none */
 	int controldevprotocol;		/*!< \brief which protocol is used for serial control of this interface */
 	char controldevprotocolname[50];	/*!< \brief name of the serial device controlling protocol, one of "at" "fbus2" "no_serial" "alsa_voicemodem" */
@@ -352,7 +345,7 @@ struct private_object {
 	int controldevice_speed;
 #else
 	speed_t controldevice_speed;
-#endif// WIN32
+#endif							// WIN32
 	int controldev_dead;
 
 	char at_dial_pre_number[64];
@@ -429,7 +422,6 @@ struct private_object {
 	time_t gsmopen_serial_synced_timestamp;
 	struct s_result line_array;
 
-
 	int unread_sms_msg_id;
 	int reading_sms_msg;
 	char sms_message[4800];
@@ -442,7 +434,6 @@ struct private_object {
 	int sms_cnmi_not_supported;
 	int sms_pdu_not_supported;
 	//char sms_receiving_program[256];
-
 
 	struct timeval call_incoming_time;
 	switch_mutex_t *controldev_lock;
@@ -483,27 +474,27 @@ struct private_object {
 
 	int no_sound;
 
-		 dtmf_rx_state_t dtmf_state;
-		 int active;
-		 int home_network_registered;
-		 int roaming_registered;
-		 int not_registered;
-		 int got_signal;
-		 char imei[128];
-		 int requesting_imei;
-		 char imsi[128];
-		 int requesting_imsi;
-		 int network_creg_not_supported;
-		 char creg[128];
+	dtmf_rx_state_t dtmf_state;
+	int active;
+	int home_network_registered;
+	int roaming_registered;
+	int not_registered;
+	int got_signal;
+	char imei[128];
+	int requesting_imei;
+	char imsi[128];
+	int requesting_imsi;
+	int network_creg_not_supported;
+	char creg[128];
 
 	char controldevice_audio_name[50];
-	int controldev_audio_fd;	
+	int controldev_audio_fd;
 	int controldevice_audio_speed;
 	int controldev_audio_dead;
 	switch_mutex_t *controldev_audio_lock;
-	ctb::SerialPort* serialPort_serial_audio;
+	               ctb::SerialPort * serialPort_serial_audio;
 
-	ctb::SerialPort* serialPort_serial_control;
+	               ctb::SerialPort * serialPort_serial_control;
 
 	char buffer2[320];
 	int buffer2_full;
@@ -512,30 +503,30 @@ struct private_object {
 
 typedef struct private_object private_t;
 
-void *SWITCH_THREAD_FUNC gsmopen_api_thread_func(switch_thread_t * thread, void *obj);
-int gsmopen_audio_read(private_t * tech_pvt);
-int gsmopen_audio_init(private_t * tech_pvt);
-int gsmopen_signaling_read(private_t * tech_pvt);
+void *SWITCH_THREAD_FUNC gsmopen_api_thread_func(switch_thread_t *thread, void *obj);
+int gsmopen_audio_read(private_t *tech_pvt);
+int gsmopen_audio_init(private_t *tech_pvt);
+int gsmopen_signaling_read(private_t *tech_pvt);
 
-int gsmopen_call(private_t * tech_pvt, char *idest, int timeout);
-int gsmopen_senddigit(private_t * tech_pvt, char digit);
+int gsmopen_call(private_t *tech_pvt, char *idest, int timeout);
+int gsmopen_senddigit(private_t *tech_pvt, char digit);
 
 void *gsmopen_do_tcp_srv_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC gsmopen_do_tcp_srv_thread(switch_thread_t * thread, void *obj);
+void *SWITCH_THREAD_FUNC gsmopen_do_tcp_srv_thread(switch_thread_t *thread, void *obj);
 
 void *gsmopen_do_tcp_cli_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC gsmopen_do_tcp_cli_thread(switch_thread_t * thread, void *obj);
+void *SWITCH_THREAD_FUNC gsmopen_do_tcp_cli_thread(switch_thread_t *thread, void *obj);
 
 void *gsmopen_do_gsmopenapi_thread_func(void *obj);
-void *SWITCH_THREAD_FUNC gsmopen_do_gsmopenapi_thread(switch_thread_t * thread, void *obj);
-int dtmf_received(private_t * tech_pvt, char *value);
-int start_audio_threads(private_t * tech_pvt);
-int new_inbound_channel(private_t * tech_pvt);
-int outbound_channel_answered(private_t * tech_pvt);
+void *SWITCH_THREAD_FUNC gsmopen_do_gsmopenapi_thread(switch_thread_t *thread, void *obj);
+int dtmf_received(private_t *tech_pvt, char *value);
+int start_audio_threads(private_t *tech_pvt);
+int new_inbound_channel(private_t *tech_pvt);
+int outbound_channel_answered(private_t *tech_pvt);
 //int gsmopen_signaling_write(private_t * tech_pvt, char *msg_to_gsmopen);
 #if defined(WIN32) && !defined(__CYGWIN__)
-int gsmopen_pipe_read(switch_file_t * pipe, short *buf, int howmany);
-int gsmopen_pipe_write(switch_file_t * pipe, short *buf, int howmany);
+int gsmopen_pipe_read(switch_file_t *pipe, short *buf, int howmany);
+int gsmopen_pipe_write(switch_file_t *pipe, short *buf, int howmany);
 /* Visual C do not have strsep ? */
 char *strsep(char **stringp, const char *delim);
 #else
@@ -543,30 +534,26 @@ int gsmopen_pipe_read(int pipe, short *buf, int howmany);
 int gsmopen_pipe_write(int pipe, short *buf, int howmany);
 #endif /* WIN32 */
 int gsmopen_close_socket(unsigned int fd);
-private_t *find_available_gsmopen_interface_rr(private_t * tech_pvt_calling);
-int remote_party_is_ringing(private_t * tech_pvt);
-int remote_party_is_early_media(private_t * tech_pvt);
+private_t *find_available_gsmopen_interface_rr(private_t *tech_pvt_calling);
+int remote_party_is_ringing(private_t *tech_pvt);
+int remote_party_is_early_media(private_t *tech_pvt);
 //int gsmopen_answer(private_t * tech_pvt, char *id, char *value);
 #if 0
-int gsmopen_transfer(private_t * tech_pvt, char *id, char *value);
+int gsmopen_transfer(private_t *tech_pvt, char *id, char *value);
 #endif //0
-int gsmopen_socket_create_and_bind(private_t * tech_pvt, int *which_port);
-
-
-
-
+int gsmopen_socket_create_and_bind(private_t *tech_pvt, int *which_port);
 
 void *gsmopen_do_controldev_thread(void *data);
 //#ifdef WIN32
-int gsmopen_serial_init(private_t * tech_pvt, int controldevice_speed);
+int gsmopen_serial_init(private_t *tech_pvt, int controldevice_speed);
 //#else
 //int gsmopen_serial_init(private_t * tech_pvt, speed_t controldevice_speed);
 //#endif //WIN32
-int gsmopen_serial_monitor(private_t * tech_pvt);
-int gsmopen_serial_sync(private_t * tech_pvt);
-int gsmopen_serial_sync_AT(private_t * tech_pvt);
-int gsmopen_serial_config(private_t * tech_pvt);
-int gsmopen_serial_config_AT(private_t * tech_pvt);
+int gsmopen_serial_monitor(private_t *tech_pvt);
+int gsmopen_serial_sync(private_t *tech_pvt);
+int gsmopen_serial_sync_AT(private_t *tech_pvt);
+int gsmopen_serial_config(private_t *tech_pvt);
+int gsmopen_serial_config_AT(private_t *tech_pvt);
 
 #define gsmopen_serial_write_AT_expect(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 1, 0)
 #define gsmopen_serial_write_AT_expect_noexpcr(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 0, 0)
@@ -574,28 +561,28 @@ int gsmopen_serial_config_AT(private_t * tech_pvt);
 // 20.5 sec timeout, used for querying the SIM and sending SMSs
 #define gsmopen_serial_write_AT_expect_longtime(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 1, 20)
 #define gsmopen_serial_write_AT_expect_longtime_noexpcr(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 0, 20)
-int gsmopen_serial_write_AT(private_t * tech_pvt, const char *data);
-int gsmopen_serial_write_AT_nocr(private_t * tech_pvt, const char *data);
-int gsmopen_serial_write_AT_ack(private_t * tech_pvt, const char *data);
-int gsmopen_serial_write_AT_ack_nocr_longtime(private_t * tech_pvt, const char *data);
-int gsmopen_serial_write_AT_noack(private_t * tech_pvt, const char *data);
-int gsmopen_serial_write_AT_expect1(private_t * tech_pvt, const char *data, const char *expected_string, int expect_crlf, int seconds);
-int gsmopen_serial_AT_expect(private_t * tech_pvt, const char *expected_string, int expect_crlf, int seconds);
-int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_usec, int timeout_sec, const char *expected_string, int expect_crlf);
-int gsmopen_serial_read(private_t * tech_pvt);
+int gsmopen_serial_write_AT(private_t *tech_pvt, const char *data);
+int gsmopen_serial_write_AT_nocr(private_t *tech_pvt, const char *data);
+int gsmopen_serial_write_AT_ack(private_t *tech_pvt, const char *data);
+int gsmopen_serial_write_AT_ack_nocr_longtime(private_t *tech_pvt, const char *data);
+int gsmopen_serial_write_AT_noack(private_t *tech_pvt, const char *data);
+int gsmopen_serial_write_AT_expect1(private_t *tech_pvt, const char *data, const char *expected_string, int expect_crlf, int seconds);
+int gsmopen_serial_AT_expect(private_t *tech_pvt, const char *expected_string, int expect_crlf, int seconds);
+int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_usec, int timeout_sec, const char *expected_string, int expect_crlf);
+int gsmopen_serial_read(private_t *tech_pvt);
 #ifdef NOTDEF
-int gsmopen_serial_getstatus(private_t * tech_pvt);
-int gsmopen_serial_hangup(private_t * tech_pvt);
-int gsmopen_serial_answer(private_t * tech_pvt);
-int gsmopen_serial_answer_AT(private_t * tech_pvt);
-int gsmopen_serial_hangup_AT(private_t * tech_pvt);
-int gsmopen_serial_call_AT(private_t * tech_pvt, char *dstr);
-int gsmopen_serial_getstatus_AT(private_t * tech_pvt);
+int gsmopen_serial_getstatus(private_t *tech_pvt);
+int gsmopen_serial_hangup(private_t *tech_pvt);
+int gsmopen_serial_answer(private_t *tech_pvt);
+int gsmopen_serial_answer_AT(private_t *tech_pvt);
+int gsmopen_serial_hangup_AT(private_t *tech_pvt);
+int gsmopen_serial_call_AT(private_t *tech_pvt, char *dstr);
+int gsmopen_serial_getstatus_AT(private_t *tech_pvt);
 #endif // NOTDEF
 #define RESULT_FAILURE 0
 #define RESULT_SUCCESS 1
-int utf_to_ucs2(private_t * tech_pvt, char *utf_in, size_t inbytesleft, char *ucs2_out, size_t outbytesleft);
-int ucs2_to_utf8(private_t * tech_pvt, char *ucs2_in, char *utf8_out, size_t outbytesleft);
+int utf_to_ucs2(private_t *tech_pvt, char *utf_in, size_t inbytesleft, char *ucs2_out, size_t outbytesleft);
+int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outbytesleft);
 //#define PUSHA_UNLOCKA(x)    pthread_cleanup_push(gsmopen_unlocka_log, (void *) x);
 //#define POPPA_UNLOCKA(x)    pthread_cleanup_pop(0);
 
@@ -610,42 +597,38 @@ int ucs2_to_utf8(private_t * tech_pvt, char *ucs2_in, char *utf8_out, size_t out
 
 #define ast_setstate(x, y) ERRORA("ast_setstate: %p, %d\n", GSMOPEN_P_LOG, (void *)x, y);
 
-int gsmopen_serial_read(private_t * tech_pvt);
-int gsmopen_answer(private_t * tech_pvt);
-int gsmopen_serial_answer(private_t * tech_pvt);
-int gsmopen_serial_answer_AT(private_t * tech_pvt);
-int gsmopen_serial_hangup(private_t * tech_pvt);
-int gsmopen_serial_hangup_AT(private_t * tech_pvt);
-int gsmopen_hangup(private_t * tech_pvt);
-int gsmopen_serial_call(private_t * tech_pvt, char *dstr);
-int gsmopen_serial_call_AT(private_t * tech_pvt, char *dstr);
-int gsmopen_sendsms(private_t * tech_pvt, char *dest, char *text);
+int gsmopen_serial_read(private_t *tech_pvt);
+int gsmopen_answer(private_t *tech_pvt);
+int gsmopen_serial_answer(private_t *tech_pvt);
+int gsmopen_serial_answer_AT(private_t *tech_pvt);
+int gsmopen_serial_hangup(private_t *tech_pvt);
+int gsmopen_serial_hangup_AT(private_t *tech_pvt);
+int gsmopen_hangup(private_t *tech_pvt);
+int gsmopen_serial_call(private_t *tech_pvt, char *dstr);
+int gsmopen_serial_call_AT(private_t *tech_pvt, char *dstr);
+int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text);
 
 #ifdef GSMOPEN_ALSA
-int alsa_init(private_t * tech_pvt);
-int alsa_shutdown(private_t * tech_pvt);
-snd_pcm_t *alsa_open_dev(private_t * tech_pvt, snd_pcm_stream_t stream);
-int alsa_write(private_t * tech_pvt, short *data, int datalen);
-int alsa_read(private_t * tech_pvt, short *data, int datalen);
+int alsa_init(private_t *tech_pvt);
+int alsa_shutdown(private_t *tech_pvt);
+snd_pcm_t *alsa_open_dev(private_t *tech_pvt, snd_pcm_stream_t stream);
+int alsa_write(private_t *tech_pvt, short *data, int datalen);
+int alsa_read(private_t *tech_pvt, short *data, int datalen);
 
 #endif /* GSMOPEN_ALSA */
 
-
 void gsmopen_store_boost(char *s, double *boost);
 int gsmopen_sound_boost(void *data, int samples_num, double boost);
-int sms_incoming(private_t * tech_pvt);
-int gsmopen_ring(private_t * tech_pvt);
+int sms_incoming(private_t *tech_pvt);
+int gsmopen_ring(private_t *tech_pvt);
 
-int iso_8859_1_to_utf8(private_t * tech_pvt, char *iso_8859_1_in, char *utf8_out, size_t outbytesleft);
-int gsmopen_serial_getstatus_AT(private_t * tech_pvt);
-
+int iso_8859_1_to_utf8(private_t *tech_pvt, char *iso_8859_1_in, char *utf8_out, size_t outbytesleft);
+int gsmopen_serial_getstatus_AT(private_t *tech_pvt);
 
 int dump_event(private_t *tech_pvt);
-int alarm_event(private_t * tech_pvt, int alarm_code, const char *alarm_message);
-int dump_event_full(private_t * tech_pvt, int is_alarm, int alarm_code, const char *alarm_message);
+int alarm_event(private_t *tech_pvt, int alarm_code, const char *alarm_message);
+int dump_event_full(private_t *tech_pvt, int is_alarm, int alarm_code, const char *alarm_message);
 
-
-int gsmopen_serial_init_audio_port(private_t * tech_pvt, int controldevice_audio_speed);
-int serial_audio_init(private_t * tech_pvt);
-int serial_audio_shutdown(private_t * tech_pvt);
-
+int gsmopen_serial_init_audio_port(private_t *tech_pvt, int controldevice_audio_speed);
+int serial_audio_init(private_t *tech_pvt);
+int serial_audio_shutdown(private_t *tech_pvt);
