@@ -387,23 +387,11 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 	if (res) {
 		DEBUGA_GSMOPEN("AT+CMGF? failed, continue\n", GSMOPEN_P_LOG);
 	}
-#ifdef NO_GSMLIB
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=1");
 	if (res) {
 		ERRORA("Error setting SMS sending mode to TEXT on the cellphone, let's hope is TEXT by default. Continuing\n", GSMOPEN_P_LOG);
 	}
 	tech_pvt->sms_pdu_not_supported = 1;
-#else // NO_GSMLIB
-	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
-	if (res) {
-		WARNINGA("Error setting SMS sending mode to PDU on the cellphone, falling back to TEXT mode. Continuing\n", GSMOPEN_P_LOG);
-		tech_pvt->sms_pdu_not_supported = 1;
-		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=1");
-		if (res) {
-			ERRORA("Error setting SMS sending mode to TEXT on the cellphone, let's hope is TEXT by default. Continuing\n", GSMOPEN_P_LOG);
-		}
-	}
-#endif // NO_GSMLIB
 	/* what is the Charset of SMSs? */
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS?");
 	if (res) {
