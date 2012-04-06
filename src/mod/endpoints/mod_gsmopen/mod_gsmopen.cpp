@@ -272,15 +272,6 @@ switch_status_t gsmopen_tech_init(private_t *tech_pvt, switch_core_session_t *se
 	dtmf_rx_init(&tech_pvt->dtmf_state, NULL, NULL);
 	dtmf_rx_parms(&tech_pvt->dtmf_state, 0, 10, 10, -99);
 
-#ifdef GSMOPEN_ALSA
-	if (tech_pvt->no_sound == 0) {
-		if (alsa_init(tech_pvt)) {
-			ERRORA("alsa_init failed\n", GSMOPEN_P_LOG);
-			return SWITCH_STATUS_FALSE;
-
-		}
-	}
-#endif // GSMOPEN_ALSA
 	if (tech_pvt->no_sound == 0) {
 		if (serial_audio_init(tech_pvt)) {
 			ERRORA("serial_audio_init failed\n", GSMOPEN_P_LOG);
@@ -519,11 +510,6 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		switch_core_timer_destroy(&tech_pvt->timer_read);
 		switch_core_timer_destroy(&tech_pvt->timer_write);
 
-#ifdef GSMOPEN_ALSA
-		if (tech_pvt->no_sound == 0) {
-			alsa_shutdown(tech_pvt);
-		}
-#endif // GSMOPEN_ALSA
 		if (tech_pvt->no_sound == 0) {
 			serial_audio_shutdown(tech_pvt);
 		}
@@ -699,10 +685,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	switch_byte_t *data;
-#if defined(GSMOPEN_ALSA)
-	int samples;
-	char digit_str[256];
-#endif // defined(GSMOPEN_ALSA)
 
 	int samples;
 	int samples2;
@@ -733,10 +715,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	if (tech_pvt->no_sound == 1) {
 		goto cng;
 	}
-#ifdef GSMOPEN_ALSA
-	//if ((samples = snd_pcm_readi(tech_pvt->alsac, tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_packet)) > 0) 
-	if ((samples = alsa_read(tech_pvt, (short *) tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_packet)) > 0)
-#endif // GSMOPEN_ALSA
 //  if ((samples = tech_pvt->serialPort_serial_audio->Read((char *) tech_pvt->read_frame.data, 320)) >0)
 
 		if ((samples = tech_pvt->serialPort_serial_audio->Read(buffer2, 640)) >= 320) {
@@ -872,9 +850,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-#if defined(GSMOPEN_ALSA)
-	unsigned int sent;
-#endif // defined(GSMOPEN_ALSA)
 
 	unsigned int sent;
 
@@ -906,16 +881,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	//snd_pcm_writei(tech_pvt->alsap, (short *) frame->data, (int) (frame->datalen / 2));
 
 	gsmopen_sound_boost(frame->data, frame->samples, tech_pvt->playback_boost);
-#ifdef GSMOPEN_ALSA
-
-	switch_core_timer_next(&tech_pvt->timer_write);
-	sent = alsa_write(tech_pvt, (short *) frame->data, (int) (frame->datalen));
-//DEBUGA_GSMOPEN("sent=%d \n", GSMOPEN_P_LOG, sent);
-
-	if (sent && sent != frame->datalen / 2 && sent != -1) {
-		DEBUGA_GSMOPEN("sent %d\n", GSMOPEN_P_LOG, sent);
-	}
-#endif // GSMOPEN_ALSA
 	sent = tech_pvt->serialPort_serial_audio->Write((char *) frame->data, (int) (frame->datalen));
 
 	if (sent && sent != frame->datalen && sent != -1) {
@@ -960,10 +925,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
-#if defined(GSMOPEN_ALSA)
-	int samples;
-	short tmp_buffer[1280];
-#endif // defined(GSMOPEN_ALSA)
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -984,11 +945,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		switch_core_timer_sync(&tech_pvt->timer_read);
 		switch_core_timer_sync(&tech_pvt->timer_write);
 
-#ifdef GSMOPEN_ALSA
-		while ((samples = alsa_read(tech_pvt, tmp_buffer, tech_pvt->read_codec.implementation->samples_per_packet * 4)) > 160) {
-			//WARNINGA("read %d samples\n", GSMOPEN_P_LOG, samples);
-		}
-#endif // GSMOPEN_ALSA
 		break;
 
 	default:
@@ -1301,23 +1257,15 @@ static switch_status_t load_config(int reload_type)
 			const char *alsa_capture_is_mono = "1";
 			const char *capture_boost = "0";
 			const char *playback_boost = "0";
-#if defined(GSMOPEN_ALSA)
 			const char *no_sound = "0";
-#else
-			const char *no_sound = "0";
-#endif // defined(GSMOPEN_ALSA)
 			const char *portaudiocindex = "1";
 			const char *portaudiopindex = "1";
 			const char *speexecho = "1";
 			const char *speexpreprocess = "1";
 
 			uint32_t interface_id = 0;
-#ifdef WIN32
 			int controldevice_speed = 115200;	//FIXME TODO
-#else
-			uint32_t controldevice_speed = B115200;	//FIXME TODO
-			uint32_t controldevice_audio_speed = B115200;	//FIXME TODO
-#endif //WIN32
+			int controldevice_audio_speed = 115200;	//FIXME TODO
 			uint32_t controldevprotocol = PROTOCOL_AT;	//FIXME TODO
 			uint32_t running = 1;	//FIXME TODO
 			const char *gsmopen_serial_sync_period = "300";	//FIXME TODO
@@ -1654,30 +1602,14 @@ static switch_status_t load_config(int reload_type)
 				switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].at_indicator_callsetupremoteringing_string,
 								  at_indicator_callsetupremoteringing_string);
 				//switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].sms_receiving_program, sms_receiving_program);
-#ifdef GSMOPEN_ALSA
-				switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].alsacname, alsacname);
-				switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].alsapname, alsapname);
-#endif // GSMOPEN_ALSA
-
 				globals.GSMOPEN_INTERFACES[interface_id].at_early_audio = atoi(at_early_audio);
 				globals.GSMOPEN_INTERFACES[interface_id].at_after_preinit_pause = atoi(at_after_preinit_pause);
 				globals.GSMOPEN_INTERFACES[interface_id].at_initial_pause = atoi(at_initial_pause);
 				globals.GSMOPEN_INTERFACES[interface_id].at_has_clcc = atoi(at_has_clcc);
 				globals.GSMOPEN_INTERFACES[interface_id].at_has_ecam = atoi(at_has_ecam);
-#ifdef GSMOPEN_ALSA
-				globals.GSMOPEN_INTERFACES[interface_id].alsa_period_size = atoi(alsa_period_size);
-				globals.GSMOPEN_INTERFACES[interface_id].alsa_periods_in_buffer = atoi(alsa_periods_in_buffer);
-				globals.GSMOPEN_INTERFACES[interface_id].gsmopen_sound_rate = atoi(gsmopen_sound_rate);
-				globals.GSMOPEN_INTERFACES[interface_id].alsa_play_is_mono = atoi(alsa_play_is_mono);
-				globals.GSMOPEN_INTERFACES[interface_id].alsa_capture_is_mono = atoi(alsa_capture_is_mono);
-#endif // GSMOPEN_ALSA
 				globals.GSMOPEN_INTERFACES[interface_id].capture_boost = atoi(capture_boost);
 				globals.GSMOPEN_INTERFACES[interface_id].playback_boost = atoi(playback_boost);
-#if defined(GSMOPEN_ALSA)
 				globals.GSMOPEN_INTERFACES[interface_id].no_sound = atoi(no_sound);
-#else
-				globals.GSMOPEN_INTERFACES[interface_id].no_sound = 0;
-#endif //  defined(GSMOPEN_ALSA)
 				globals.GSMOPEN_INTERFACES[interface_id].gsmopen_serial_sync_period = atoi(gsmopen_serial_sync_period);
 
 				globals.GSMOPEN_INTERFACES[interface_id].controldevice_speed = controldevice_speed;	//FIXME
@@ -1693,11 +1625,6 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_GSMOPEN("destination=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].destination);
 				DEBUGA_GSMOPEN("controldevice_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].controldevice_name);
 				DEBUGA_GSMOPEN("controldevice_audio_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].controldevice_audio_name);
-#ifdef GSMOPEN_ALSA
-				DEBUGA_GSMOPEN("alsacname=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].alsacname);
-				DEBUGA_GSMOPEN("alsapname=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].alsapname);
-#endif // GSMOPEN_ALSA
-
 				DEBUGA_GSMOPEN("gsmopen_serial_sync_period=%d\n", GSMOPEN_P_LOG,
 							   (int) globals.GSMOPEN_INTERFACES[interface_id].gsmopen_serial_sync_period);
 
@@ -1744,31 +1671,6 @@ static switch_status_t load_config(int reload_type)
 				}
 
 				if (globals.GSMOPEN_INTERFACES[interface_id].no_sound == 0) {
-#ifdef GSMOPEN_ALSA
-					if (alsa_init(&globals.GSMOPEN_INTERFACES[interface_id])) {
-						ERRORA("alsa_init failed\n", GSMOPEN_P_LOG);
-						ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
-						//return SWITCH_STATUS_FALSE;
-						globals.GSMOPEN_INTERFACES[interface_id].running = 0;
-						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "alsa_init failed");
-						globals.GSMOPEN_INTERFACES[interface_id].active = 0;
-						globals.GSMOPEN_INTERFACES[interface_id].name[0] = '\0';
-						continue;
-
-					}
-
-					if (alsa_shutdown(&globals.GSMOPEN_INTERFACES[interface_id])) {
-						ERRORA("alsa_shutdown failed\n", GSMOPEN_P_LOG);
-						ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
-						//return SWITCH_STATUS_FALSE;
-						globals.GSMOPEN_INTERFACES[interface_id].running = 0;
-						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "alsa_shutdown failed");
-						globals.GSMOPEN_INTERFACES[interface_id].active = 0;
-						globals.GSMOPEN_INTERFACES[interface_id].name[0] = '\0';
-						continue;
-
-					}
-#endif // GSMOPEN_ALSA
 					if (serial_audio_init(&globals.GSMOPEN_INTERFACES[interface_id])) {
 						ERRORA("serial_audio_init failed\n", GSMOPEN_P_LOG);
 						ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
@@ -1833,10 +1735,6 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_GSMOPEN("dialplan=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].dialplan);
 				DEBUGA_GSMOPEN("destination=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].destination);
 				DEBUGA_GSMOPEN("controldevice_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].controldevice_name);
-#ifdef GSMOPEN_ALSA
-				DEBUGA_GSMOPEN("alsacname=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].alsacname);
-				DEBUGA_GSMOPEN("alsapname=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].alsapname);
-#endif // GSMOPEN_ALSA
 				DEBUGA_GSMOPEN("gsmopen_serial_sync_period=%d\n", GSMOPEN_P_LOG, (int) globals.GSMOPEN_INTERFACES[i].gsmopen_serial_sync_period);
 				DEBUGA_GSMOPEN("controldevice_audio_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].controldevice_audio_name);
 			}
@@ -2554,10 +2452,6 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 					stream->write_function(stream, "controldevice_name = %s\n", tech_pvt->controldevice_name);
 					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->no_sound);
 					stream->write_function(stream, "no_sound = %s\n", value);
-#ifdef GSMOPEN_ALSA
-					stream->write_function(stream, "alsacname = %s\n", tech_pvt->alsacname);
-					stream->write_function(stream, "alsapname = %s\n", tech_pvt->alsapname);
-#endif // GSMOPEN_ALSA
 					snprintf(value, sizeof(value) - 1, "%f", tech_pvt->playback_boost);
 					stream->write_function(stream, "playback_boost = %s\n", value);
 					snprintf(value, sizeof(value) - 1, "%f", tech_pvt->capture_boost);
@@ -2616,10 +2510,6 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 			stream->write_function(stream, "controldevice_name = %s\n", tech_pvt->controldevice_name);
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->no_sound);
 			stream->write_function(stream, "no_sound = %s\n", value);
-#ifdef GSMOPEN_ALSA
-			stream->write_function(stream, "alsacname = %s\n", tech_pvt->alsacname);
-			stream->write_function(stream, "alsapname = %s\n", tech_pvt->alsapname);
-#endif // GSMOPEN_ALSA
 			snprintf(value, sizeof(value) - 1, "%f", tech_pvt->playback_boost);
 			stream->write_function(stream, "playback_boost = %s\n", value);
 			snprintf(value, sizeof(value) - 1, "%f", tech_pvt->capture_boost);
@@ -3015,10 +2905,6 @@ int dump_event_full(private_t *tech_pvt, int is_alarm, int alarm_code, const cha
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "controldevice_name", tech_pvt->controldevice_name);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->no_sound);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "no_sound", value);
-#ifdef GSMOPEN_ALSA
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alsacname", tech_pvt->alsacname);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alsapname", tech_pvt->alsapname);
-#endif // GSMOPEN_ALSA
 		snprintf(value, sizeof(value) - 1, "%f", tech_pvt->playback_boost);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "playback_boost", value);
 		snprintf(value, sizeof(value) - 1, "%f", tech_pvt->capture_boost);
