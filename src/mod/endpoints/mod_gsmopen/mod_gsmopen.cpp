@@ -251,11 +251,6 @@ static switch_status_t gsmopen_codec(private_t *tech_pvt, int sample_rate, int c
 switch_status_t gsmopen_tech_init(private_t *tech_pvt, switch_core_session_t *session)
 {
 
-#ifdef WANT_SPEEX
-	int ciapa;
-	long level;
-	int tmp;
-#endif // WANT_SPEEX
 	switch_assert(tech_pvt != NULL);
 	switch_assert(session != NULL);
 	tech_pvt->read_frame.data = tech_pvt->databuf;
@@ -309,93 +304,6 @@ switch_status_t gsmopen_tech_init(private_t *tech_pvt, switch_core_session_t *se
 	}
 
 	switch_core_timer_sync(&tech_pvt->timer_write);
-
-#ifdef WANT_SPEEX
-	/* Echo canceller with 100 ms tail length */
-#ifndef GIOVA48
-	tech_pvt->echo_state = speex_echo_state_init(160, 1024);
-	ciapa = 8000;
-#else // GIOVA48
-	tech_pvt->echo_state = speex_echo_state_init(960, 4800);
-	ciapa = 48000;
-#endif // GIOVA48
-	speex_echo_ctl(tech_pvt->echo_state, SPEEX_ECHO_SET_SAMPLING_RATE, &ciapa);
-
-#if 1							//NO MORE
-	/* Setup preprocessor and associate with echo canceller for residual echo suppression */
-#ifndef GIOVA48
-	tech_pvt->preprocess = speex_preprocess_state_init(160, 8000);
-#else // GIOVA48
-	tech_pvt->preprocess = speex_preprocess_state_init(960, 48000);
-#endif // GIOVA48
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_SET_ECHO_STATE, tech_pvt->echo_state);
-
-#if 0
-	/* Setup preprocessor various other goodies */
-	tmp = 0;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_SET_AGC, &tmp);
-	//level=8000.1; 
-	//speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_SET_AGC_LEVEL, &level);
-
-	// Let's turn off all of the 'denoisers' (eg denoise and dereverb, and vad too) because they start automatic gain on mic input on cm108 usb, also if it (the agc on usb) disbled through mixer
-	tmp = 0;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_SET_DENOISE, &tmp);
-	tmp = 0;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_SET_DEREVERB, &tmp);
-	tmp = 0;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_SET_VAD, &tmp);
-#endif
-
-	tmp = 0;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_SET_DENOISE, &tmp);
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_AGC, &tmp);
-	fprintf(stderr, "AGC is: %d\n", tmp);
-	level = 1.0;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_AGC_LEVEL, &level);
-	fprintf(stderr, "AGC_LEVEL is: %f\n", level);
-	//tmp=1;
-	//speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_AGC_TARGET, &tmp);
-	//fprintf( stderr, "AGC_TARGET is: %d\n", tmp );
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_DENOISE, &tmp);
-	fprintf(stderr, "DENOISE is: %d\n", tmp);
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_DEREVERB, &tmp);
-	fprintf(stderr, "DEREVERB is: %d\n", tmp);
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_VAD, &tmp);
-	fprintf(stderr, "VAD is: %d\n", tmp);
-
-#if 0
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_NOISE_SUPPRESS, &tmp);
-	fprintf(stderr, "SPEEX_PREPROCESS_GET_NOISE_SUPPRESS is: %d\n", tmp);
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_ECHO_SUPPRESS, &tmp);
-	fprintf(stderr, "SPEEX_PREPROCESS_GET_ECHO_SUPPRESS is: %d\n", tmp);
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE, &tmp);
-	fprintf(stderr, "SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE is: %d\n", tmp);
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_AGC_MAX_GAIN, &tmp);
-	fprintf(stderr, "SPEEX_PREPROCESS_GET_AGC_MAX_GAIN is: %d\n", tmp);
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_AGC_INCREMENT, &tmp);
-	fprintf(stderr, "SPEEX_PREPROCESS_GET_AGC_INCREMENT is: %d\n", tmp);
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_AGC_DECREMENT, &tmp);
-	fprintf(stderr, "SPEEX_PREPROCESS_GET_AGC_DECREMENT is: %d\n", tmp);
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_PROB_START, &tmp);
-	fprintf(stderr, "SPEEX_PREPROCESS_GET_PROB_START is: %d\n", tmp);
-	tmp = 1;
-	speex_preprocess_ctl(tech_pvt->preprocess, SPEEX_PREPROCESS_GET_PROB_CONTINUE, &tmp);
-	fprintf(stderr, "SPEEX_PREPROCESS_GET_PROB_CONTINUE is: %d\n", tmp);
-#endif //0
-#endif // 0 //NO MORE
-
-#endif // WANT_SPEEX
 
 	switch_clear_flag(tech_pvt, TFLAG_HANGUP);
 	DEBUGA_GSMOPEN("gsmopen_codec SUCCESS\n", GSMOPEN_P_LOG);
