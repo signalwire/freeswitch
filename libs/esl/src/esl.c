@@ -51,7 +51,7 @@
 
 #include <esl.h>
 #ifndef WIN32
-#define closesocket(x) close(x)
+#define closesocket(x) shutdown(x, 2); close(x)
 #include <fcntl.h>
 #include <errno.h>
 #else

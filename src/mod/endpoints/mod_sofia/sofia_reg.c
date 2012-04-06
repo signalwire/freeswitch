@@ -2101,7 +2101,8 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	} else if (gateway) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, 
+						  "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
 		goto cancel;
 	}
 
@@ -2114,7 +2115,9 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	tl_gets(tags, NUTAG_CALLSTATE_REF(ss_state), SIPTAG_WWW_AUTHENTICATE_REF(authenticate), TAG_END());
 
-	nua_authenticate(nh, SIPTAG_EXPIRES_STR(gateway ? gateway->expires_str : "3600"), NUTAG_AUTH(authentication), TAG_END());
+	nua_authenticate(nh, 
+					 TAG_IF(sofia_private && sofia_private->gateway, SIPTAG_EXPIRES_STR(gateway ? gateway->expires_str : "3600")), 
+					 NUTAG_AUTH(authentication), TAG_END());
 
 	goto end;
 

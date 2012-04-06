@@ -2439,11 +2439,22 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch (cid_type) {
 		case CID_TYPE_PID:
 			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-				tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>", use_name, use_number, rpid_domain);
+				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s>",
+																		use_number, rpid_domain);
+				} else {
+					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>",
+																		use_name, use_number, rpid_domain);
+				}
 			} else {
-				tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>",
-																	 tech_pvt->caller_profile->caller_id_name,
-																	 tech_pvt->caller_profile->caller_id_number, rpid_domain);
+				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s>",
+																		 tech_pvt->caller_profile->caller_id_number, rpid_domain);
+				} else {
+					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>",
+																		 tech_pvt->caller_profile->caller_id_name,
+																		 tech_pvt->caller_profile->caller_id_number, rpid_domain);
+				}
 			}
 
 			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
@@ -2604,8 +2615,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
 				   TAG_IF(tech_pvt->redirected, NUTAG_URL(tech_pvt->redirected)),
-				   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 				   TAG_IF(!zstr(recover_via), SIPTAG_VIA_STR(recover_via)),
+				   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 				   TAG_IF(!zstr(tech_pvt->rpid), SIPTAG_REMOTE_PARTY_ID_STR(tech_pvt->rpid)),
 				   TAG_IF(!zstr(tech_pvt->preferred_id), SIPTAG_P_PREFERRED_IDENTITY_STR(tech_pvt->preferred_id)),
 				   TAG_IF(!zstr(tech_pvt->asserted_id), SIPTAG_P_ASSERTED_IDENTITY_STR(tech_pvt->asserted_id)),
@@ -2638,8 +2649,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
 				   TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
 				   TAG_IF(tech_pvt->redirected, NUTAG_URL(tech_pvt->redirected)),
-				   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 				   TAG_IF(!zstr(recover_via), SIPTAG_VIA_STR(recover_via)),
+				   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 				   TAG_IF(!zstr(tech_pvt->rpid), SIPTAG_REMOTE_PARTY_ID_STR(tech_pvt->rpid)),
 				   TAG_IF(!zstr(tech_pvt->preferred_id), SIPTAG_P_PREFERRED_IDENTITY_STR(tech_pvt->preferred_id)),
 				   TAG_IF(!zstr(tech_pvt->asserted_id), SIPTAG_P_ASSERTED_IDENTITY_STR(tech_pvt->asserted_id)),
@@ -3881,10 +3892,22 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 		if (zstr(attr->a_name)) {
 			continue;
 		}
-
 		if (!strcasecmp(attr->a_name, "ptime")) {
 			dptime = atoi(attr->a_value);
 			break;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Looking for zrtp-hash to set sdp_zrtp_hash_string\n");
+	for (m = sdp->sdp_media; m; m = m->m_next) {
+		for (attr = m->m_attributes; attr; attr = attr->a_next) {
+			if (zstr(attr->a_name)) continue;
+			if (!strcasecmp(attr->a_name, "zrtp-hash") && attr->a_value) {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Found zrtp-hash, setting sdp_zrtp_hash_string=%s\n", attr->a_value);
+				switch_channel_set_variable(channel, "sdp_zrtp_hash_string", attr->a_value);
+				switch_channel_set_flag(channel, CF_ZRTP_HASH);
+				break;
+			}
 		}
 	}
 
@@ -5948,7 +5971,7 @@ void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *sess
 	}
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
-		xml_cdr_text = switch_xml_toxml(cdr, SWITCH_FALSE);
+		xml_cdr_text = switch_xml_toxml_nolock(cdr, SWITCH_FALSE);
 		switch_xml_free(cdr);
 	}
 

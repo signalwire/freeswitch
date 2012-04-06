@@ -34,7 +34,7 @@
 
 #include <switch.h>
 #include "private/switch_core_pvt.h"
-//#define DEBUG_SQL 1
+
 #define SWITCH_SQL_QUEUE_LEN 100000
 #define SWITCH_SQL_QUEUE_PAUSE_LEN 90000
 
@@ -1019,11 +1019,11 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 					
 					if (new_mlen < runtime.max_sql_buffer_len) {
 						sql_len = new_mlen;
-#ifdef DEBUG_SQL
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-										  "REALLOC %ld %d %d\n", (long int)sql_len, switch_queue_size(sql_manager.sql_queue[0]), 
-										  switch_queue_size(sql_manager.sql_queue[1]));
-#endif
+						if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+											  "REALLOC %ld %d %d\n", (long int)sql_len, switch_queue_size(sql_manager.sql_queue[0]), 
+											  switch_queue_size(sql_manager.sql_queue[1]));
+						}
 						if (!(tmp = realloc(sqlbuf, sql_len))) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread ending on mem err\n");
 							abort();
@@ -1031,10 +1031,10 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 						}
 						sqlbuf = tmp;
 					} else {
-#ifdef DEBUG_SQL
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-										  "SAVE %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]));
-#endif
+						if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+											  "SAVE %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]));
+						}
 						save_sql = sql;
 						sql = NULL;
 						lc = 0;
@@ -1077,16 +1077,16 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 		wrote = 0;
 
 		if (trans && iterations && (iterations > target || !lc)) {
-#ifdef DEBUG_SQL
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-							  "RUN %d %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]), iterations);
-#endif
+			if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+								  "RUN %d %d %d\n", switch_queue_size(sql_manager.sql_queue[0]), switch_queue_size(sql_manager.sql_queue[1]), iterations);
+			}
 			if (switch_cache_db_persistant_execute_trans(sql_manager.event_db, sqlbuf, 1) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread unable to commit transaction, records lost!\n");
 			}
-#ifdef DEBUG_SQL
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DONE\n");
-#endif
+			if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) { 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DONE\n");
+			}
 
 
 			iterations = 0;
@@ -1628,10 +1628,7 @@ static char create_channels_sql[] =
 	"   call_uuid  VARCHAR(256),\n"
 	"   sent_callee_name  VARCHAR(1024),\n"
 	"   sent_callee_num  VARCHAR(256)\n"
-	");\n"
-	"create index chidx1 on channels (hostname);\n"
-	"create index uuindex on channels (uuid);\n"
-	"create index uuindex2 on channels (call_uuid);\n";
+	");\n";
 
 static char create_calls_sql[] =
 	"CREATE TABLE calls (\n"
@@ -1641,11 +1638,7 @@ static char create_calls_sql[] =
 	"   caller_uuid      VARCHAR(256),\n"
 	"   callee_uuid      VARCHAR(256),\n"
 	"   hostname VARCHAR(256)\n"
-	");\n"
-	"create index callsidx1 on calls (hostname);\n"
-	"create index eruuindex on calls (caller_uuid);\n"
-	"create index eeuuindex on calls (callee_uuid);\n"
-	"create index eeuuindex2 on calls (call_uuid);\n";
+	");\n";
 
 static char create_interfaces_sql[] =
 	"CREATE TABLE interfaces (\n"
@@ -1688,8 +1681,8 @@ static char create_registrations_sql[] =
 	"   network_port VARCHAR(256),\n"
 	"   network_proto VARCHAR(256),\n"
 	"   hostname VARCHAR(256)\n"
-	");\n"
-	"create index regindex1 on registrations (reg_user,realm,hostname);\n";
+	");\n";
+
 	
 
 
@@ -2051,6 +2044,15 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_execute_sql(dbh, "create index nat_map_port_proto on nat (port,proto,hostname)", NULL);
 	switch_cache_db_execute_sql(dbh, "create index channels1 on channels(hostname)", NULL);
 	switch_cache_db_execute_sql(dbh, "create index calls1 on calls(hostname)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index chidx1 on channels (hostname)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index uuindex on channels (uuid)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index uuindex2 on channels (call_uuid)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index callsidx1 on calls (hostname)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index eruuindex on calls (caller_uuid)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index eeuuindex on calls (callee_uuid)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index eeuuindex2 on calls (call_uuid)", NULL);
+	switch_cache_db_execute_sql(dbh, "create index regindex1 on registrations (reg_user,realm,hostname)", NULL);
+
 
  skip:
 

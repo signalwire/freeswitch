@@ -226,7 +226,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	bytes = 16;
 	switch_socket_sendto(socket, control_packet_addr, 0, (void *) &control_packet, &bytes);
 
-	for (;;) {
+	while (switch_channel_ready(channel)) {
 
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 

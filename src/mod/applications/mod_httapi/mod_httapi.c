@@ -1498,7 +1498,7 @@ static switch_status_t httapi_sync(client_t *client)
 
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 
-	if (method != NULL && strcasecmp(method, "get") && strcasecmp(method, "post")) {
+	if (!zstr(method)) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, method);
 	}
 

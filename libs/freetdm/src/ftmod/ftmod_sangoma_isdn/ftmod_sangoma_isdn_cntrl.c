@@ -49,6 +49,16 @@ void sngisdn_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status
 	sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
 	sig.ev_data.sigstatus.status = status;
 	ftdm_span_send_signal(ftdmchan->span, &sig);
+
+	if (FTDM_SPAN_IS_BRI(ftdmchan->span)) {		
+		sngisdn_chan_data_t		*sngisdn_info = ftdmchan->call_data;
+		sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)ftdmchan->span->signal_data;
+		if (ftdm_test_flag(sngisdn_info, FLAG_ACTIVATING)) {
+			ftdm_clear_flag(sngisdn_info, FLAG_ACTIVATING);
+
+			ftdm_sched_timer(signal_data->sched, "delayed_setup", 1000, sngisdn_delayed_setup, (void*) sngisdn_info, NULL);
+		}
+	}
 	return;
 }
 

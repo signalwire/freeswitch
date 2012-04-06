@@ -1169,12 +1169,13 @@ static ftdm_status_t sngisdn_bring_down(ftdm_channel_t *ftdmchan)
 
 void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 {
+	ftdm_signaling_status_t sigstatus;
 	int16_t suId = sngisdn_event->suId;
 	int16_t dChan = sngisdn_event->dChan;
 	uint8_t ces = sngisdn_event->ces;
 	uint8_t evntType = sngisdn_event->evntType;
 	uint8_t chan_no = 0;
-	Rst *rstEvnt = &sngisdn_event->event.rstEvnt;
+	Rst *rstEvnt = &sngisdn_event->event.rstEvnt;	
 	
 	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[dChan].spans[1];
 	if (!signal_data) {
@@ -1213,23 +1214,26 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 				return;
 		}
 	}
+	
+	ftdm_span_get_sig_status(signal_data->ftdm_span, &sigstatus);
+	if (sigstatus == FTDM_SIG_STATE_DOWN) {
+		if (chan_no) { /* For a single channel */
+			if (chan_no > ftdm_span_get_chan_count(signal_data->ftdm_span)) {
+				ftdm_log(FTDM_LOG_CRIT, "Received RESTART on invalid channel:%d\n", chan_no);
+			} else {
+				ftdm_channel_t *ftdmchan = ftdm_span_get_channel(signal_data->ftdm_span, chan_no);
+				sngisdn_bring_down(ftdmchan);
+			}
+		} else { /* for all channels */
+			ftdm_iterator_t *chaniter = NULL;
+			ftdm_iterator_t *curr = NULL;
 
-	if (chan_no) { /* For a single channel */
-		if (chan_no > ftdm_span_get_chan_count(signal_data->ftdm_span)) {
-			ftdm_log(FTDM_LOG_CRIT, "Received RESTART on invalid channel:%d\n", chan_no);
-		} else {
-			ftdm_channel_t *ftdmchan = ftdm_span_get_channel(signal_data->ftdm_span, chan_no);
-			sngisdn_bring_down(ftdmchan);
+			chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
+			for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+				sngisdn_bring_down((ftdm_channel_t*)ftdm_iterator_current(curr));
+			}
+			ftdm_iterator_free(chaniter);
 		}
-	} else { /* for all channels */
-		ftdm_iterator_t *chaniter = NULL;
-		ftdm_iterator_t *curr = NULL;
-
-		chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
-		for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
-			sngisdn_bring_down((ftdm_channel_t*)ftdm_iterator_current(curr));
-		}
-		ftdm_iterator_free(chaniter);
 	}
 
 	ftdm_log(FTDM_LOG_DEBUG, "Processing RESTART CFM (suId:%u dChan:%d ces:%d type:%d)\n", suId, dChan, ces, evntType);

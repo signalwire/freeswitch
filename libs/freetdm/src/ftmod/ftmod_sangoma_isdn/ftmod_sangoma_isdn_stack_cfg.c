@@ -972,8 +972,19 @@ ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span)
 	cfg.t.cfg.s.inLCe.sapId = signal_data->dchan_id;
 
 	cfg.t.cfg.s.inLCe.lnkUpDwnInd = TRUE;
-	cfg.t.cfg.s.inLCe.tCon.enb = TRUE;
-	cfg.t.cfg.s.inLCe.tCon.val = 35;
+
+	if (FTDM_SPAN_IS_BRI(span)) {
+		/* tCon Timer causes unwanted hangup on BRI links
+			where the Q.921 link goes into disconnected
+			state when idle. */
+
+		cfg.t.cfg.s.inLCe.tCon.enb = FALSE;
+		cfg.t.cfg.s.inLCe.tCon.val = 0;
+	} else {
+		cfg.t.cfg.s.inLCe.tCon.enb = TRUE;
+		cfg.t.cfg.s.inLCe.tCon.val = 35;
+	}
+	
 	cfg.t.cfg.s.inLCe.tDisc.enb = TRUE;
 	cfg.t.cfg.s.inLCe.tDisc.val = 35;
 	cfg.t.cfg.s.inLCe.t314.enb = FALSE; /* if segmentation enabled, set to TRUE */

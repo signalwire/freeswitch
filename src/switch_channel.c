@@ -1380,7 +1380,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 	
 	for (;;) {
 		if ((channel->state < CS_HANGUP && channel->state == channel->running_state && channel->running_state == want_state) ||
-			(other_channel && switch_channel_down_nosig(other_channel)) || switch_channel_down_nosig(channel)) {
+			(other_channel && switch_channel_down_nosig(other_channel)) || switch_channel_down(channel)) {
 			break;
 		}
 		switch_yield(20000);
@@ -1398,6 +1398,8 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state_timeout(switch_channel_t *cha
 		if ((channel->state == channel->running_state && channel->running_state == want_state) || channel->state >= CS_HANGUP) {
 			break;
 		}
+
+		switch_channel_check_signal(channel, SWITCH_TRUE);
 
 		switch_cond_next();
 
@@ -1866,11 +1868,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 	switch_channel_clear_flag(channel, CF_TAGGED);
 	
 
-
-	switch_mutex_lock(channel->state_mutex);
-
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_DEBUG, "(%s) Running State Change %s\n",
 					  channel->name, state_names[state]);
+
+	switch_mutex_lock(channel->state_mutex);
 
 	channel->running_state = state;
 

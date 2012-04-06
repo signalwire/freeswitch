@@ -1875,6 +1875,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	runtime.runlevel++;
 
 	switch_core_set_signal_handlers();
+	switch_load_network_lists(SWITCH_FALSE);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
@@ -1884,7 +1885,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_load_network_lists(SWITCH_FALSE);
+
 
 	switch_load_core_config("post_load_switch.conf");
 
@@ -2014,6 +2015,17 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	}
 
 	switch (cmd) {
+	case SCSC_DEBUG_SQL:
+		{
+			if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
+				switch_clear_flag((&runtime), SCF_DEBUG_SQL);
+				newintval = 0;
+			} else {
+				switch_set_flag((&runtime), SCF_DEBUG_SQL);
+				newintval = 1;
+			}
+		}
+		break;
 	case SCSC_VERBOSE_EVENTS:
 		if (intval) {
 			if (oldintval > -1) {
