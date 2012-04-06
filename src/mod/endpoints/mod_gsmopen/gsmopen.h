@@ -76,7 +76,6 @@
 #endif //WIN32
 //#include <libteletone.h>
 
-
 //#include "celliax_spandsp.h"
 #ifndef WIN32
 #include <sys/time.h>
@@ -586,7 +585,6 @@ int gsmopen_hangup(private_t *tech_pvt);
 int gsmopen_serial_call(private_t *tech_pvt, char *dstr);
 int gsmopen_serial_call_AT(private_t *tech_pvt, char *dstr);
 int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text);
-
 
 void gsmopen_store_boost(char *s, double *boost);
 int gsmopen_sound_boost(void *data, int samples_num, double boost);

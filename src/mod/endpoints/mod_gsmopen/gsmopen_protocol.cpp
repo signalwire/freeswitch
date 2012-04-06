@@ -2468,7 +2468,6 @@ int gsmopen_senddigit(private_t *tech_pvt, char digit)
 	return 0;
 }
 
-
 int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 {
 	//char *idest = data;

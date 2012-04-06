@@ -717,17 +717,37 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 //  if ((samples = tech_pvt->serialPort_serial_audio->Read((char *) tech_pvt->read_frame.data, 320)) >0)
 
-		if ((samples = tech_pvt->serialPort_serial_audio->Read(buffer2, 640)) >= 320) {
+	if ((samples = tech_pvt->serialPort_serial_audio->Read(buffer2, 640)) >= 320) {
+		tech_pvt->buffer2_full = 0;
+
+		if (samples >= 640) {
+			DEBUGA_GSMOPEN("samples=%d\n", GSMOPEN_P_LOG, samples);
+			memcpy(tech_pvt->buffer2, buffer2 + 320, 320);
+			tech_pvt->buffer2_full = 1;
+		}
+		samples = 320;
+
+		memcpy(tech_pvt->read_frame.data, buffer2, 320);
+		tech_pvt->read_frame.datalen = samples;
+		tech_pvt->read_frame.samples = samples / 2;
+
+		tech_pvt->read_frame.timestamp = tech_pvt->timer_read.samplecount;
+
+		*frame = &tech_pvt->read_frame;
+
+		//if ((samples2 = tech_pvt->serialPort_serial_audio->Read((char *) tech_pvt->read_frame.data, 320)) >0){
+		//  WARNINGA("samples2=%d\n", GSMOPEN_P_LOG, samples2);
+		//}
+		//status = SWITCH_STATUS_SUCCESS;
+		switch_set_flag(tech_pvt, TFLAG_VOICE);
+	} else {
+		DEBUGA_GSMOPEN("MINGA samples=%d\n", GSMOPEN_P_LOG, samples);
+		if (tech_pvt->buffer2_full) {
+			memcpy(tech_pvt->read_frame.data, tech_pvt->buffer2, 320);
 			tech_pvt->buffer2_full = 0;
-
-			if (samples >= 640) {
-				DEBUGA_GSMOPEN("samples=%d\n", GSMOPEN_P_LOG, samples);
-				memcpy(tech_pvt->buffer2, buffer2 + 320, 320);
-				tech_pvt->buffer2_full = 1;
-			}
 			samples = 320;
+			DEBUGA_GSMOPEN("samples=%d FROM BUFFER\n", GSMOPEN_P_LOG, samples);
 
-			memcpy(tech_pvt->read_frame.data, buffer2, 320);
 			tech_pvt->read_frame.datalen = samples;
 			tech_pvt->read_frame.samples = samples / 2;
 
@@ -740,29 +760,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			//}
 			//status = SWITCH_STATUS_SUCCESS;
 			switch_set_flag(tech_pvt, TFLAG_VOICE);
-		} else {
-			DEBUGA_GSMOPEN("MINGA samples=%d\n", GSMOPEN_P_LOG, samples);
-			if (tech_pvt->buffer2_full) {
-				memcpy(tech_pvt->read_frame.data, tech_pvt->buffer2, 320);
-				tech_pvt->buffer2_full = 0;
-				samples = 320;
-				DEBUGA_GSMOPEN("samples=%d FROM BUFFER\n", GSMOPEN_P_LOG, samples);
-
-				tech_pvt->read_frame.datalen = samples;
-				tech_pvt->read_frame.samples = samples / 2;
-
-				tech_pvt->read_frame.timestamp = tech_pvt->timer_read.samplecount;
-
-				*frame = &tech_pvt->read_frame;
-
-				//if ((samples2 = tech_pvt->serialPort_serial_audio->Read((char *) tech_pvt->read_frame.data, 320)) >0){
-				//  WARNINGA("samples2=%d\n", GSMOPEN_P_LOG, samples2);
-				//}
-				//status = SWITCH_STATUS_SUCCESS;
-				switch_set_flag(tech_pvt, TFLAG_VOICE);
-			}
-
 		}
+
+	}
 	//WARNINGA("samples=%d\n", GSMOPEN_P_LOG, samples);
 	if (samples != 320) {
 		DEBUGA_GSMOPEN("samples=%d\n", GSMOPEN_P_LOG, samples);
