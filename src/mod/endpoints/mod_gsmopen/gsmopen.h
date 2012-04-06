@@ -505,6 +505,9 @@ struct private_object {
 
 	ctb::SerialPort* serialPort_serial_control;
 
+	char buffer2[320];
+	int buffer2_full;
+
 };
 
 typedef struct private_object private_t;
@@ -554,11 +557,11 @@ int gsmopen_socket_create_and_bind(private_t * tech_pvt, int *which_port);
 
 
 void *gsmopen_do_controldev_thread(void *data);
-#ifdef WIN32
+//#ifdef WIN32
 int gsmopen_serial_init(private_t * tech_pvt, int controldevice_speed);
-#else
-int gsmopen_serial_init(private_t * tech_pvt, speed_t controldevice_speed);
-#endif //WIN32
+//#else
+//int gsmopen_serial_init(private_t * tech_pvt, speed_t controldevice_speed);
+//#endif //WIN32
 int gsmopen_serial_monitor(private_t * tech_pvt);
 int gsmopen_serial_sync(private_t * tech_pvt);
 int gsmopen_serial_sync_AT(private_t * tech_pvt);

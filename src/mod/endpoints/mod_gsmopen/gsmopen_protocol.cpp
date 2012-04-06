@@ -60,7 +60,8 @@ int gsmopen_serial_init(private_t * tech_pvt, int controldevice_speed)
 
 	tech_pvt->serialPort_serial_control = new ctb::SerialPort();
 
-	if( tech_pvt->serialPort_serial_control->Open( "COM9", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
+	//if( tech_pvt->serialPort_serial_control->Open( "COM9", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
+	if( tech_pvt->serialPort_serial_control->Open( "/dev/ttyUSB3", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
 		ERRORA("port SUCCESS open\n", GSMOPEN_P_LOG);
 	} else {
 		ERRORA("port NOT open\n", GSMOPEN_P_LOG);
@@ -214,6 +215,16 @@ int gsmopen_serial_config_AT(private_t * tech_pvt)
 /* go until first empty preinit string, or last preinit string */
 	while (1) {
 
+		char trash[4096];
+		res=tech_pvt->serialPort_serial_control->Read(trash, 4096);
+		if(res)
+			ERRORA("READ %d on serialport init\n", GSMOPEN_P_LOG, res);
+
+	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT^CURC=0");
+	if (res) {
+		ERRORA("no response to AT^CURC=0\n", GSMOPEN_P_LOG);
+		return -1;
+	}
 		if (strlen(tech_pvt->at_preinit_1)) {
 			res = gsmopen_serial_write_AT_expect(tech_pvt, tech_pvt->at_preinit_1, tech_pvt->at_preinit_1_expect);
 			if (res) {
@@ -274,6 +285,9 @@ int gsmopen_serial_config_AT(private_t * tech_pvt)
 		ERRORA("no response to AT\n", GSMOPEN_P_LOG);
 		return -1;
 	}
+
+
+
 	/* for motorola, bring it back to "normal" mode if it happens to be in another mode */
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+mode=0");
 	if (res) {
@@ -3578,7 +3592,8 @@ int gsmopen_serial_init_audio_port(private_t * tech_pvt, int controldevice_audio
 {
 	tech_pvt->serialPort_serial_audio = new ctb::SerialPort();
 
-	if( tech_pvt->serialPort_serial_audio->Open( "COM8", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
+	//if( tech_pvt->serialPort_serial_audio->Open( "COM8", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
+	if( tech_pvt->serialPort_serial_audio->Open( "/dev/ttyUSB2", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
 		ERRORA("port SUCCESS open\n", GSMOPEN_P_LOG);
 	} else {
 		ERRORA("port NOT open\n", GSMOPEN_P_LOG);
