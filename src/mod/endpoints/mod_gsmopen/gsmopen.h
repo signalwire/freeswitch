@@ -67,9 +67,6 @@
 #endif //GIOVA48
 #define     SAMPLERATE_GSMOPEN   8000
 
-#ifndef NO_ALSA
-#define GSMOPEN_ALSA
-#endif // NO_ALSA
 #include <switch.h>
 #include <switch_version.h>
 #ifndef WIN32
@@ -79,11 +76,6 @@
 #endif //WIN32
 //#include <libteletone.h>
 
-#ifdef GSMOPEN_ALSA
-#define ALSA_PCM_NEW_HW_PARAMS_API
-#define ALSA_PCM_NEW_SW_PARAMS_API
-#include <alsa/asoundlib.h>
-#endif /* GSMOPEN_ALSA */
 
 //#include "celliax_spandsp.h"
 #ifndef WIN32
@@ -450,19 +442,6 @@ struct private_object {
 
 	struct timeval ringtime;
 	ciapa_t *owner;
-#ifdef GSMOPEN_ALSA
-	snd_pcm_t *alsac;			/*!< \brief handle of the ALSA capture audio device */
-	snd_pcm_t *alsap;			/*!< \brief handle of the ALSA playback audio device */
-	char alsacname[50];			/*!< \brief name of the ALSA capture audio device */
-	char alsapname[50];			/*!< \brief name of the ALSA playback audio device */
-	int alsa_period_size;		/*!< \brief ALSA period_size, in byte */
-	int alsa_periods_in_buffer;	/*!< \brief how many periods in ALSA buffer, to calculate buffer_size */
-	unsigned long int alsa_buffer_size;	/*!< \brief ALSA buffer_size, in byte */
-	int alsawrite_filled;
-	int alsa_capture_is_mono;
-	int alsa_play_is_mono;
-	struct pollfd pfd;
-#endif							// GSMOPEN_ALSA
 
 	time_t audio_play_reset_timestamp;
 	int audio_play_reset_period;
@@ -608,14 +587,6 @@ int gsmopen_serial_call(private_t *tech_pvt, char *dstr);
 int gsmopen_serial_call_AT(private_t *tech_pvt, char *dstr);
 int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text);
 
-#ifdef GSMOPEN_ALSA
-int alsa_init(private_t *tech_pvt);
-int alsa_shutdown(private_t *tech_pvt);
-snd_pcm_t *alsa_open_dev(private_t *tech_pvt, snd_pcm_stream_t stream);
-int alsa_write(private_t *tech_pvt, short *data, int datalen);
-int alsa_read(private_t *tech_pvt, short *data, int datalen);
-
-#endif /* GSMOPEN_ALSA */
 
 void gsmopen_store_boost(char *s, double *boost);
 int gsmopen_sound_boost(void *data, int samples_num, double boost);

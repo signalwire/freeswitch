@@ -878,7 +878,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	//sent = frame->datalen;
 
 	//ERRORA("PLAY \n", GSMOPEN_P_LOG);
-	//snd_pcm_writei(tech_pvt->alsap, (short *) frame->data, (int) (frame->datalen / 2));
 
 	gsmopen_sound_boost(frame->data, frame->samples, tech_pvt->playback_boost);
 	sent = tech_pvt->serialPort_serial_audio->Write((char *) frame->data, (int) (frame->datalen));
@@ -1243,18 +1242,12 @@ static switch_status_t load_config(int reload_type)
 			const char *at_indicator_callsetupoutgoing_string = "CIEV: 6;2";
 			const char *at_indicator_callsetupremoteringing_string = "CIEV: 6;3";
 			//const char *sms_receiving_program = "/usr/local/bin/ciapalo";
-			const char *alsacname = "plughw:1";
-			const char *alsapname = "plughw:1";
 			const char *at_early_audio = "0";
 			const char *at_after_preinit_pause = "500000";
 			const char *at_initial_pause = "500000";
 			const char *at_has_clcc = "0";
 			const char *at_has_ecam = "0";
-			const char *alsa_period_size = "160";
-			const char *alsa_periods_in_buffer = "4";
 			const char *gsmopen_sound_rate = "8000";
-			const char *alsa_play_is_mono = "1";
-			const char *alsa_capture_is_mono = "1";
 			const char *capture_boost = "0";
 			const char *playback_boost = "0";
 			const char *no_sound = "0";
@@ -1402,10 +1395,6 @@ static switch_status_t load_config(int reload_type)
 					at_indicator_callsetupremoteringing_string = val;
 					//} else if (!strcasecmp(var, "sms_receiving_program")) {
 					//sms_receiving_program = val;
-				} else if (!strcasecmp(var, "alsacname")) {
-					alsacname = val;
-				} else if (!strcasecmp(var, "alsapname")) {
-					alsapname = val;
 				} else if (!strcasecmp(var, "portaudiocindex")) {
 					portaudiocindex = val;
 				} else if (!strcasecmp(var, "portaudiopindex")) {
@@ -1424,16 +1413,8 @@ static switch_status_t load_config(int reload_type)
 					at_has_clcc = val;
 				} else if (!strcasecmp(var, "at_has_ecam")) {
 					at_has_ecam = val;
-				} else if (!strcasecmp(var, "alsa_period_size")) {
-					alsa_period_size = val;
-				} else if (!strcasecmp(var, "alsa_periods_in_buffer")) {
-					alsa_periods_in_buffer = val;
 				} else if (!strcasecmp(var, "gsmopen_sound_rate")) {
 					gsmopen_sound_rate = val;
-				} else if (!strcasecmp(var, "alsa_play_is_mono")) {
-					alsa_play_is_mono = val;
-				} else if (!strcasecmp(var, "alsa_capture_is_mono")) {
-					alsa_capture_is_mono = val;
 				} else if (!strcasecmp(var, "capture_boost")) {
 					capture_boost = val;
 				} else if (!strcasecmp(var, "playback_boost")) {
@@ -1490,25 +1471,8 @@ static switch_status_t load_config(int reload_type)
 				ERRORA("interface param 'at_has_ecam' MUST be a number, now at_has_ecam='%s'\n", GSMOPEN_P_LOG, at_has_ecam);
 				continue;
 			}
-			if (!switch_is_number(alsa_period_size)) {
-				ERRORA("interface param 'alsa_period_size' MUST be a number, now alsa_period_size='%s'\n", GSMOPEN_P_LOG, alsa_period_size);
-				continue;
-			}
-			if (!switch_is_number(alsa_periods_in_buffer)) {
-				ERRORA("interface param 'alsa_periods_in_buffer' MUST be a number, now alsa_periods_in_buffer='%s'\n", GSMOPEN_P_LOG,
-					   alsa_periods_in_buffer);
-				continue;
-			}
 			if (!switch_is_number(gsmopen_sound_rate)) {
 				ERRORA("interface param 'gsmopen_sound_rate' MUST be a number, now gsmopen_sound_rate='%s'\n", GSMOPEN_P_LOG, gsmopen_sound_rate);
-				continue;
-			}
-			if (!switch_is_number(alsa_play_is_mono)) {
-				ERRORA("interface param 'alsa_play_is_mono' MUST be a number, now alsa_play_is_mono='%s'\n", GSMOPEN_P_LOG, alsa_play_is_mono);
-				continue;
-			}
-			if (!switch_is_number(alsa_capture_is_mono)) {
-				ERRORA("interface param 'alsa_capture_is_mono' MUST be a number, now alsa_capture_is_mono='%s'\n", GSMOPEN_P_LOG, alsa_capture_is_mono);
 				continue;
 			}
 			if (!switch_is_number(capture_boost)) {
