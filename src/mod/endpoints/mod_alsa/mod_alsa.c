@@ -948,6 +948,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_alsa_shutdown)
 	}
 	switch_core_hash_destroy(&globals.call_hash);
 
+	switch_event_free_subclass(MY_EVENT_RINGING);
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.cid_name);
 	switch_safe_free(globals.cid_num);
