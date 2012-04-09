@@ -83,7 +83,7 @@ static int EC = 0;
 /* the maximum value for the IIR score [keeps loud & longwinded people from getting overweighted] */
 #define SCORE_MAX_IIR 25000
 /* the minimum score for which you can be considered to be loud enough to now have the floor */
-#define SCORE_IIR_SPEAKING_MAX 3000
+#define SCORE_IIR_SPEAKING_MAX 300
 /* the threshold below which you cede the floor to someone loud (see above value). */
 #define SCORE_IIR_SPEAKING_MIN 100
 
