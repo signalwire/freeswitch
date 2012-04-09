@@ -2630,9 +2630,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
 			}
 
-			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>",
-														 from_user, !zstr(from_domain) ? from_domain : proxy, register_transport);
-
+			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s>",
+				 from_user, !zstr(from_domain) ? from_domain : proxy);
 
 			if (ping_freq) {
 				if (ping_freq >= 5) {
@@ -2640,10 +2639,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					gateway->ping_max = ping_max;
 					gateway->ping_min = ping_min;
 					gateway->ping = switch_epoch_time_now(NULL) + ping_freq;
-					gateway->options_to_uri = switch_core_sprintf(gateway->pool, "<sip:%s;transport=%s>",
-															   !zstr(from_domain) ? from_domain : proxy, register_transport);
-					//gateway->options_from_uri = switch_core_sprintf(gateway->pool, "<sip:%s;transport=%s>",
-					//												profile->extrtpip ? profile->extrtpip : profile->sipip, register_transport);
+					gateway->options_to_uri = switch_core_sprintf(gateway->pool, "<sip:%s>",
+						!zstr(from_domain) ? from_domain : proxy);
 					gateway->options_from_uri = gateway->options_to_uri;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: invalid ping!\n");
