@@ -1324,7 +1324,7 @@ static void cleanup_attachments(client_t *client)
 
 	for (hp = client->params->headers; hp; hp = hp->next) {
 		if (!strncasecmp(hp->name, "attach_file:", 12)) {
-			if (switch_file_exists(hp->value, client->pool)) {
+			if (switch_file_exists(hp->value, client->pool) == SWITCH_STATUS_SUCCESS) {
 				printf("DELETE %s\n", hp->value);
 				unlink(hp->value);
 			}
