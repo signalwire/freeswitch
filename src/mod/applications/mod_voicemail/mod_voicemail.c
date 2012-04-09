@@ -2583,8 +2583,6 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 	char *convert_cmd = profile->convert_cmd;
 	char *convert_ext = profile->convert_ext;
-	int del_file = 0;
-
 	
 	if (!params) {
 		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
@@ -2901,10 +2899,6 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 				switch_safe_free(headers);
 			}
 		}
-
-		if (!insert_db) {
-			del_file = 1;
-		}
 	}
 
 	if (session) {
@@ -2926,7 +2920,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
   failed:
 
-	if (del_file && file_path && switch_file_exists(file_path, pool)) {
+	if (!insert_db && file_path && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		if (unlink(file_path) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 		}
