@@ -59,13 +59,17 @@
 #define TO_HZ(r, f) (((r) * (f)) / (2.0 * M_PI))
 /*! Minimum beep frequency in Hertz */
 #define MIN_FREQUENCY (300.0)
+#define MIN_FREQUENCY_R(r) ((2.0 * M_PI * MIN_FREQUENCY) / (r))
 /*! Maximum beep frequency in Hertz */
-#define MAX_FREQUENCY (1500.0)
+#define MAX_FREQUENCY (2500.0)
+#define MAX_FREQUENCY_R(r) ((2.0 * M_PI * MAX_FREQUENCY) / (r))
+/* decrease this value to eliminate false positives */
+#define VARIANCE_THRESHOLD (0.001)
 
 #include "amplitude.h"
 #include "buffer.h"
 #include "desa2.h"
-#include "goertzel.h"
+//#include "goertzel.h"
 #include "psi.h"
 #include "sma_buf.h"
 #include "options.h"
@@ -111,7 +115,9 @@ typedef struct {
     uint32_t rate;
     circ_buffer_t b;
     sma_buffer_t sma_b;
+    sma_buffer_t sqa_b;
     size_t pos;
+    double f;
     /* freq_table_t ft; */
     avmd_state_t state;
 } avmd_session_t;
@@ -134,11 +140,18 @@ static void init_avmd_session_data(avmd_session_t *avmd_session,  switch_core_se
 
     avmd_session->session = fs_session;
     avmd_session->pos = 0;
+    avmd_session->f = 0.0;
     avmd_session->state.last_beep = 0;
     avmd_session->state.beep_state = BEEP_NOTDETECTED;
 
     INIT_SMA_BUFFER(
         &avmd_session->sma_b,
+        BEEP_LEN(avmd_session->rate) / SINE_LEN(avmd_session->rate),
+        fs_session
+    );
+
+    INIT_SMA_BUFFER(
+        &avmd_session->sqa_b,
         BEEP_LEN(avmd_session->rate) / SINE_LEN(avmd_session->rate),
         fs_session
     );
@@ -474,17 +487,18 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
     circ_buffer_t *b;
     size_t pos;
     double f;
-    double a;
-    double error = 0.0;
-    double success = 0.0;
-    double amp = 0.0;
-    double s_rate;
+    double v;
+//    double error = 0.0;
+//    double success = 0.0;
+//    double amp = 0.0;
+//    double s_rate;
 //    double e_rate;
-    double avg_a;
+//    double avg_a;
     double sine_len;
     uint32_t sine_len_i;
-    int valid;
-    
+    uint32_t beep_len_i;
+//    int valid;
+
 	b = &session->b;
 
 	/*! If beep has already been detected skip the CPU heavy stuff */
@@ -495,56 +509,38 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 	/*! Precompute values used heavily in the inner loop */
     sine_len_i = SINE_LEN(session->rate);
     sine_len = (double)sine_len_i;
-
+    beep_len_i = BEEP_LEN(session->rate);
 
     channel = switch_core_session_get_channel(session->session);
 
 	/*! Insert frame of 16 bit samples into buffer */
     INSERT_INT16_FRAME(b, (int16_t *)(frame->data), frame->samples);
 
+    //switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_INFO, "<<< AVMD sine_len_i=%d >>>\n", sine_len_i);
+
     /*! INNER LOOP -- OPTIMIZATION TARGET */
-    for(pos = GET_BACKLOG_POS(b); pos != (GET_CURRENT_POS(b) - P); pos++){
+    for(pos = session->pos; pos < (GET_CURRENT_POS(b) - P); pos++){
+       if ((pos % sine_len_i) == 0) {
+                 /*! Get a desa2 frequency estimate every sine len */
+		f = desa2(b, pos);
 
-		/*! Get a desa2 frequency estimate in Hertz */
-        f = TO_HZ(session->rate, desa2(b, pos));
+		if(f < MIN_FREQUENCY_R(session->rate) || f > MAX_FREQUENCY_R(session->rate)) {
+			v = 99999.0;
+        	        RESET_SMA_BUFFER(&session->sma_b);
+ 	               	RESET_SMA_BUFFER(&session->sqa_b);
+ 		} else {
+			APPEND_SMA_VAL(&session->sma_b, f);
+			APPEND_SMA_VAL(&session->sqa_b, f * f);
+			
+			/* calculate variance */
+			v = session->sqa_b.sma - (session->sma_b.sma * session->sma_b.sma);
 
-        /*! Don't caculate amplitude if frequency is not within range */
-        if(f < MIN_FREQUENCY || f > MAX_FREQUENCY) {
-            a = 0.0;
-            error += 1.0;
-        } else {
-            a = amplitude(b, pos, f);
-            success += 1.0;
-            if(!ISNAN(a)){
-                amp += a;
-            }
-        }
-		
-		/*! Every once in a while we evaluate the desa2 and amplitude results */
-        if(((pos + 1) % sine_len_i) == 0){
-            s_rate = success / (error + success);
-//            e_rate = error   / (error + success);
-            avg_a  = amp     / sine_len;
+        	   	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_INFO, "<<< AVMD v=%f f=%f %fHz sma=%f sqa=%f >>>\n", v, f, TO_HZ(session->rate, f), session->sma_b.sma, session->sqa_b.sma);
+		}
 
-			/*! Results out of these ranges are considered invalid */
-            valid = 0;
-            if(     s_rate >  0.60 && avg_a > 0.50)	valid = 1;
-            else if(s_rate >  0.65 && avg_a > 0.45)	valid = 1;
-            else if(s_rate >  0.70 && avg_a > 0.40)	valid = 1;
-            else if(s_rate >  0.80 && avg_a > 0.30)	valid = 1;
-            else if(s_rate >  0.95 && avg_a > 0.05)	valid = 1;
-            else if(s_rate >= 0.99 && avg_a > 0.04)	valid = 1;
-            else if(s_rate == 1.00 && avg_a > 0.02)	valid = 1;
+		/*! If variance is less than threshold then we have detection */
+            	if(v < VARIANCE_THRESHOLD){
 
-			if(valid) {
-				APPEND_SMA_VAL(&session->sma_b, s_rate * avg_a);
-			}
-			else {
-				APPEND_SMA_VAL(&session->sma_b, 0.0           );
-			}
-
-			/*! If sma is higher then 0 we have some kind of detection (increase this value to eliminate false positives ex: 0.01) */
-            if(session->sma_b.sma > 0.00){
 				/*! Throw an event to FreeSWITCH */
                 status = switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, AVMD_EVENT_BEEP);
                 if(status != SWITCH_STATUS_SUCCESS) {
@@ -565,16 +561,18 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected >>>\n");
                 switch_channel_set_variable(channel, "avmd_detect", "TRUE");
                 RESET_SMA_BUFFER(&session->sma_b);
+		RESET_SMA_BUFFER(&session->sqa_b);
                 session->state.beep_state = BEEP_DETECTED;
 
                 return;
             }
 
-            amp = 0.0;
-            success = 0.0;
-            error = 0.0;
+            //amp = 0.0;
+            //success = 0.0;
+            //error = 0.0;
         }
     }
+    session->pos = pos;
 }
 
 /* For Emacs:
