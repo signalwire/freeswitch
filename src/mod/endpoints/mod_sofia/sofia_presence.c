@@ -3901,7 +3901,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 
 			event_type = sip_header_as_string(nh->nh_home, (void *) sip->sip_event);
 
-			if (count < 2) {
+			if (count != 1) {
 				if ((sql = switch_mprintf("delete from sip_presence where sip_user='%q' and sip_host='%q' "
 										  " and profile_name='%q' and hostname='%q'", 
 										  from_user, from_host, profile->name, mod_sofia_globals.hostname))) {
