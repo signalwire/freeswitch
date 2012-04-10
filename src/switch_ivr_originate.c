@@ -997,6 +997,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 					switch_core_file_seek(ringback.fh, &pos, 0, SEEK_SET);
 					switch_core_file_read(ringback.fh, write_frame.data, &olen);
 					if (olen == 0) {
+						switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_ERROR, 
+										  "Failure to read or re-read after seeking to beginning on file [%s]\n", ringback.fh->file_path);
 						break;
 					}
 				}
