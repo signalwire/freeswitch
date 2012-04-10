@@ -70,7 +70,7 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 	}
 
 	switch_core_session_kill_channel(vh->session_b, SWITCH_SIG_BREAK);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s video thread ended.\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(vh->session_a), SWITCH_LOG_DEBUG, "%s video thread ended.\n", switch_channel_get_name(channel));
 
 	vh->up = 0;
 	return NULL;
@@ -243,7 +243,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 	if (bypass_media_after_bridge) {
 		if (switch_stristr("loopback", switch_channel_get_name(chan_a)) || switch_stristr("loopback", switch_channel_get_name(chan_b))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot bypass media while bridged to a loopback address.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_WARNING, "Cannot bypass media while bridged to a loopback address.\n");
 			bypass_media_after_bridge = 0;
 		}
 	}
@@ -253,7 +253,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_core_session_get_read_impl(session_a, &read_impl);
 
 		if (!switch_channel_media_ready(chan_a)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel has no media!\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_ERROR, "Channel has no media!\n");
 			goto end_of_bridge_loop;
 		}
 
@@ -277,7 +277,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 				silence_val = 0;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup generated silence from %s to %s at %d\n", switch_channel_get_name(chan_a),
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Setup generated silence from %s to %s at %d\n", switch_channel_get_name(chan_a),
 								  switch_channel_get_name(chan_b), silence_val);
 				silence_frame.codec = &silence_codec;
 				silence_frame.data = silence_data;
@@ -380,7 +380,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 					if (cb_status == SWITCH_STATUS_IGNORE) {
 						send_dtmf = 0;
 					} else if (cb_status != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
 						switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 						goto end_of_bridge_loop;
 					}
@@ -406,7 +406,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 
 		if (!ans_a && answer_limit && switch_epoch_time_now(NULL) > answer_limit) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Answer timeout hit on %s.\n", switch_channel_get_name(chan_a));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Answer timeout hit on %s.\n", switch_channel_get_name(chan_a));
 			switch_channel_hangup(chan_a, SWITCH_CAUSE_ALLOTTED_TIMEOUT);
 		}
 
@@ -415,13 +415,13 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 					switch_channel_pass_callee_id(chan_b, chan_a);
 					if (switch_channel_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
 						goto end_of_bridge_loop;
 					}
 					ans_a = 1;
 				} else if (!pre_b && switch_channel_test_flag(chan_b, CF_EARLY_MEDIA)) {
 					if (switch_channel_pre_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
 						goto end_of_bridge_loop;
 					}
 					pre_b = 1;
@@ -445,7 +445,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				}
 
 				if (switch_channel_answer(un) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(un));
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(un));
 					goto end_of_bridge_loop;
 				}
 
@@ -496,13 +496,13 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 			if (status != SWITCH_STATUS_BREAK && !switch_channel_test_flag(chan_a, CF_HOLD)) {
 				if (switch_core_session_write_frame(session_b, read_frame, SWITCH_IO_FLAG_NONE, stream_id) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG,
 									  "%s ending bridge by request from write function\n", switch_channel_get_name(chan_b));
 					goto end_of_bridge_loop;
 				}
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ending bridge by request from read function\n", switch_channel_get_name(chan_a));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s ending bridge by request from read function\n", switch_channel_get_name(chan_a));
 			goto end_of_bridge_loop;
 		}
 	}
@@ -516,7 +516,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_channel_set_flag(chan_b, CF_NOT_READY);
 		switch_core_session_kill_channel(session_a, SWITCH_SIG_BREAK);
 		switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ending video thread.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Ending video thread.\n");
 	}
 #endif
 
@@ -538,7 +538,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 		SWITCH_STANDARD_STREAM(stream);
 		switch_api_execute(cmd, arg, NULL, &stream);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nPost-Bridge Command %s(%s):\n%s\n", cmd, arg, switch_str_nil((char *) stream.data));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "\nPost-Bridge Command %s(%s):\n%s\n", cmd, arg, switch_str_nil((char *) stream.data));
 		switch_safe_free(stream.data);
 	}
 
@@ -546,7 +546,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if ((app_name = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE))) {
 			switch_caller_extension_t *extension = NULL;
 			if ((extension = switch_caller_extension_new(session_a, app_name, app_name)) == 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_CRIT, "memory error!\n");
 				goto end;
 			}
 			app_arg = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_ARG_VARIABLE);
@@ -572,7 +572,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_core_session_kill_channel(session_a, SWITCH_SIG_BREAK);
 			switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ending video thread.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Ending video thread.\n");
 		switch_thread_join(&st, vid_thread);
 		switch_channel_clear_flag(chan_a, CF_NOT_READY);
 		switch_channel_clear_flag(chan_b, CF_NOT_READY);
@@ -583,7 +583,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 	switch_core_session_reset(session_a, SWITCH_TRUE, SWITCH_TRUE);
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 
 	if (switch_channel_test_flag(chan_a, CF_LEG_HOLDING) && switch_channel_ready(chan_b)) {
@@ -625,7 +625,7 @@ static void transfer_after_bridge(switch_core_session_t *session, const char *wh
 		if ((argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 			switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No extension specified.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No extension specified.\n");
 		}
 	}
 }
@@ -684,7 +684,7 @@ static switch_status_t audio_bridge_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM ROUTING\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM ROUTING\n", switch_channel_get_name(channel));
 
 	/* put the channel in a passive state so we can loop audio to it */
 	switch_channel_set_state(channel, CS_CONSUME_MEDIA);
@@ -695,7 +695,7 @@ static switch_status_t audio_bridge_on_consume_media(switch_core_session_t *sess
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM HOLD\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM HOLD\n", switch_channel_get_name(channel));
 
 	/* put the channel in a passive state so we can loop audio to it */
 	return SWITCH_STATUS_FALSE;
@@ -731,7 +731,7 @@ static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM RESET\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM RESET\n", switch_channel_get_name(channel));
 
 	switch_channel_clear_flag(channel, CF_ORIGINATING);
 
@@ -756,7 +756,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 	switch_core_session_t *other_session;
 	const char *other_uuid = NULL;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE\n", switch_channel_get_name(channel));
 	switch_channel_clear_state_handler(channel, &uuid_bridge_state_handlers);
 
 	if (!switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
@@ -1383,7 +1383,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bridge Failed %s->%s\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Bridge Failed %s->%s\n",
 						  switch_channel_get_name(caller_channel), switch_channel_get_name(peer_channel)
 			);
 		switch_channel_hangup(peer_channel, SWITCH_CAUSE_NO_ANSWER);
@@ -1511,7 +1511,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 
 
 			if (switch_channel_down_nosig(originator_channel)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s is hungup refusing to bridge.\n", switch_channel_get_name(originatee_channel));
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(originator_session), SWITCH_LOG_DEBUG, "%s is hungup refusing to bridge.\n", switch_channel_get_name(originatee_channel));
 				switch_core_session_rwunlock(originator_session);
 				switch_core_session_rwunlock(originatee_session);
 				return SWITCH_STATUS_FALSE;
@@ -1526,9 +1526,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 					swap_channel = originator_channel;
 					originator_channel = originatee_channel;
 					originatee_channel = swap_channel;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "reversing order of channels so this will work!\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(originatee_session), SWITCH_LOG_WARNING, "reversing order of channels so this will work!\n");
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Neither channel is answered, cannot bridge them.\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(originator_session), SWITCH_LOG_CRIT, "Neither channel is answered, cannot bridge them.\n");
 					switch_core_session_rwunlock(originator_session);
 					switch_core_session_rwunlock(originatee_session);
 					return SWITCH_STATUS_FALSE;
@@ -1627,11 +1627,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			switch_core_session_rwunlock(originatee_session);
 
 		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(originator_session), SWITCH_LOG_DEBUG, "originatee uuid %s is not present\n", originatee_uuid);
 			switch_core_session_rwunlock(originator_session);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "originatee uuid %s is not present\n", originatee_uuid);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "originator uuid %s is not present\n", originator_uuid);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(originator_session), SWITCH_LOG_DEBUG, "originator uuid %s is not present\n", originator_uuid);
 	}
 
 	return status;
@@ -1670,13 +1670,13 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 		if (switch_ivr_find_bridged_uuid(uuid, brto, sizeof(brto)) == SWITCH_STATUS_SUCCESS) {
 			uuid = switch_core_session_strdup(session, brto);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no uuid bridged to %s\n", uuid);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "no uuid bridged to %s\n", uuid);
 			return;
 		}
 	}
 
 	if (zstr(uuid) || !(rsession = switch_core_session_locate(uuid))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no uuid %s\n", uuid);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "no uuid %s\n", uuid);
 		return;
 	}
 

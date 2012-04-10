@@ -1204,7 +1204,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 									  read_codec->implementation->number_of_channels,
 									  read_codec->implementation->actual_samples_per_second,
 									  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing File\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals->session), SWITCH_LOG_ERROR, "Error Playing File\n");
 				switch_safe_free(tmp_data);
 				switch_goto_status(SWITCH_STATUS_GENERR, end);
 				//switch_goto_status(SWITCH_STATUS_FALSE, end);
@@ -1226,12 +1226,12 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 
 			teletone_init_session(&ringback->ts, 0, teletone_handler, ringback);
 			ringback->ts.rate = read_codec->implementation->actual_samples_per_second;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals->session), SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
 			/* ringback->ts.debug = 1;
 			   ringback->ts.debug_stream = switch_core_get_console(); */
 
 			if (teletone_run(&ringback->ts, ringback_data)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals->session), SWITCH_LOG_ERROR, "Error Playing Tone\n");
 				teletone_destroy_session(&ringback->ts);
 				switch_buffer_destroy(&ringback->audio_buffer);
 				switch_goto_status(SWITCH_STATUS_GENERR, end);
@@ -1412,7 +1412,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 
 	/* extract channel variables, allowing multiple sets of braces */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing ultra-global variables\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsing ultra-global variables\n");
 	while (*data == '<') {
 		char *parsed = NULL;
 
@@ -1883,7 +1883,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	/* extract channel variables, allowing multiple sets of braces */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing global variables\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsing global variables\n");
 	while (*data == '{') {
 		char *parsed = NULL;
 
@@ -2300,7 +2300,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				
 				if (*chan_type == '[') {
 					switch_event_create_plain(&local_var_event, SWITCH_EVENT_CHANNEL_DATA);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parsing session specific variables\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsing session specific variables\n");
 				}
 
 				while (*chan_type == '[') {

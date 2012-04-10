@@ -1465,7 +1465,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	if (switch_core_hash_find(session_manager.session_table, use_uuid)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Duplicate UUID!\n");
 		switch_mutex_unlock(runtime.session_hash_mutex);
 		return SWITCH_STATUS_FALSE;
 	}
