@@ -3494,6 +3494,18 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							profile->sip_expires_max_deviation = 0;
 						}
+					} else if (!strcasecmp(var, "p-asserted-id-parse")) {
+						if (!strncasecmp(val, "default", 7)) {
+							profile->paid_type = PAID_DEFAULT;
+						} else if (!strncasecmp(val, "user-only", 9)) {
+							profile->paid_type = PAID_USER;
+						} else if (!strncasecmp(val, "user-domain", 11)) {
+							profile->paid_type = PAID_USER_DOMAIN;
+						} else if (!strncasecmp(val, "verbatim", 8)) {
+							profile->paid_type = PAID_VERBATIM;
+						} else {
+							profile->paid_type = PAID_DEFAULT;
+						}
 					}
 				}
 			}
@@ -3753,6 +3765,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
 				profile->te = 101;
 				profile->ireg_seconds = IREG_SECONDS;
+				profile->paid_type = PAID_DEFAULT;
 
 
                                 profile->tls_verify_policy = TPTLS_VERIFY_NONE;
@@ -4567,6 +4580,18 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_NO_CONNECTION_REUSE);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_NO_CONNECTION_REUSE);
+						}
+					} else if (!strcasecmp(var, "p-asserted-id-parse")) {
+						if (!strncasecmp(val, "default", 7)) {
+							profile->paid_type = PAID_DEFAULT;
+						} else if (!strncasecmp(val, "user-only", 9)) {
+							profile->paid_type = PAID_USER;
+						} else if (!strncasecmp(val, "user-domain", 11)) {
+							profile->paid_type = PAID_USER_DOMAIN;
+						} else if (!strncasecmp(val, "verbatim", 8)) {
+							profile->paid_type = PAID_VERBATIM;
+						} else {
+							profile->paid_type = PAID_DEFAULT;
 						}
 					}
 				}
@@ -7781,9 +7806,17 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if ((passerted = sip_p_asserted_identity(sip))) {
 		if (passerted->paid_url && passerted->paid_url->url_user) {
 			char *full_paid_header = sip_header_as_string(nh->nh_home, (void *) passerted);
+			//char *full_paid_header = (char *)(passerted->paid_common->h_data);
 			from_user = passerted->paid_url->url_user;
 			if (!zstr(full_paid_header)) {
-				switch_channel_set_variable(channel, "sip_P-Asserted-Identity", from_user);
+				if (profile->paid_type == PAID_DEFAULT || profile->paid_type == PAID_USER) {
+					switch_channel_set_variable(channel, "sip_P-Asserted-Identity", from_user);
+				} else if (profile->paid_type == PAID_USER_DOMAIN) {
+					switch_channel_set_variable(channel, "sip_P-Asserted-Identity",
+								switch_core_session_sprintf(session, "%s@%s", passerted->paid_url->url_user, passerted->paid_url->url_host));
+				} else if (profile->paid_type == PAID_VERBATIM) {
+					switch_channel_set_variable(channel, "sip_P-Asserted-Identity",  full_paid_header);
+				}
 			}
 		}
 		if (!zstr(passerted->paid_display)) {
