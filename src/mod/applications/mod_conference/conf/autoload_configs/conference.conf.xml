@@ -120,6 +120,8 @@
       <!-- <param name="ivr-input-timeout" value="0" /> -->
       <!-- Delay before a conference is asked to be terminated -->
       <!-- <param name="endconf-grace-time" value="120" /> -->
+      <!-- Set conference flags, separate by "|" -->
+      <!-- <param name="conference-flags" value="wait-mod|video-bridge|video-floor-only"/> -->
     </profile>
 
     <profile name="wideband">
