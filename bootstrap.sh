@@ -186,6 +186,51 @@ check_libtoolize() {
   fi
 }
 
+check_make() {
+  #
+  # Check to make sure we have GNU Make installed
+  #  
+  
+  make=`which make`
+  if [ -x "$make" ]; then
+     make_version=`$make --version | grep GNU`
+     if [ $? -ne 0 ]; then
+        make=`which gmake`
+        if [ -x "$make" ]; then
+          make_version=`$make --version | grep GNU`
+	  if [ $? -ne 0 ]; then 
+            echo "GNU Make does not exist or is not executable"
+            exit 1;
+          fi
+        fi
+      fi
+   fi
+}
+
+
+check_awk() {
+  #
+  # Check to make sure we have GNU Make installed
+  #  
+  
+  awk=`which awk`
+  if [ -x "$awk" ]; then
+     awk_version=`$awk --version | head -n 1 |grep GNU`
+     if [ $? -ne 0 ]; then
+        awk=`which gawk`
+        if [ -x "$awk" ]; then
+          awk_version=`$awk --version | head -n 1 |grep GNU`
+	  if [ $? -ne 0 ]; then 
+            echo "GNU awk does not exist or is not executable"
+            exit 1;
+          fi
+        fi
+      fi
+   fi
+}
+
+
+
 print_autotools_vers() {
   #
   # Info output
@@ -196,6 +241,8 @@ print_autotools_vers() {
   echo "  aclocal   : ${ACLOCAL:-`which aclocal`}"
   echo "  libtool   : ${libtool} (${lt_version})"
   echo "  libtoolize: ${libtoolize}"
+  echo "  make      : ${make} (${make_version})"
+  echo "  awk       : ${awk} (${awk_version})"
   echo
 }
 
@@ -426,6 +473,8 @@ bootstrap_libs() {
 run() {
   setup_modules
   setup_gnu
+  check_make
+  check_awk
   check_ac_ver
   check_am_ver
   check_acl_ver
