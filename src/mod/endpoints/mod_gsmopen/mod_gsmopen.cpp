@@ -721,14 +721,14 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		tech_pvt->buffer2_full = 0;
 
 		if (samples >= 640) {
-			DEBUGA_GSMOPEN("samples=%d\n", GSMOPEN_P_LOG, samples);
+			DEBUGA_GSMOPEN("read more than 320, samples=%d\n", GSMOPEN_P_LOG, samples);
 			memcpy(tech_pvt->buffer2, buffer2 + 320, 320);
 			tech_pvt->buffer2_full = 1;
 		}
 		samples = 320;
 		memcpy(tech_pvt->read_frame.data, buffer2, 320);
 	} else {
-		DEBUGA_GSMOPEN("MINGA samples=%d\n", GSMOPEN_P_LOG, samples);
+		DEBUGA_GSMOPEN("read less than 320, samples=%d\n", GSMOPEN_P_LOG, samples);
 		if (tech_pvt->buffer2_full) {
 			memcpy(tech_pvt->read_frame.data, tech_pvt->buffer2, 320);
 			tech_pvt->buffer2_full = 0;
@@ -747,7 +747,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_set_flag(tech_pvt, TFLAG_VOICE);
 
 	if (samples != 320) {
-		DEBUGA_GSMOPEN("samples=%d\n", GSMOPEN_P_LOG, samples);
+		DEBUGA_GSMOPEN("samples=%d, goto cng\n", GSMOPEN_P_LOG, samples);
 		goto cng;
 	}
 
