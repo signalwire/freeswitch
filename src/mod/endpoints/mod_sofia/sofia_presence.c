@@ -2647,7 +2647,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		if (!zstr(astate) && !zstr(uuid) && 
 			helper && helper->stream.data && strcmp(helper->last_uuid, uuid) && strcasecmp(astate, "terminated") && strchr(uuid, '-')) {
 			helper->stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where hostname='%q' and profile_name='%q' and uuid='%s';", 
-										  mod_sofia_globals.hostname, profile->name, astate, uuid);
+										  astate, mod_sofia_globals.hostname, profile->name, uuid);
 			switch_copy_string(helper->last_uuid, uuid, sizeof(helper->last_uuid));
 		}
 
@@ -2778,8 +2778,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		
 		if (!zstr(uuid) && strchr(uuid, '-') && !zstr(status_line) && !zstr(rpid) && (zstr(register_source) || strcasecmp(register_source, "register"))) {
 		    char *sql = switch_mprintf("update sip_dialogs set rpid='%q',status='%q' where hostname='%q' and profile_name='%q' and uuid='%q'", 
-									   mod_sofia_globals.hostname, profile->name,
-									   rpid, status_line, uuid);
+									   rpid, status_line,
+									   mod_sofia_globals.hostname, profile->name, uuid);
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 	}
@@ -3588,8 +3588,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								  " from sip_subscriptions where hostname='%q' and profile_name='%q' and "
 								  "event='message-summary' and sip_user='%q' "
 								  "and (sip_host='%q' or presence_hosts like '%%%q%%')", 
-								  mod_sofia_globals.hostname, profile->name,
-								  to_host, to_user, to_host, to_host))) {
+								  to_host, mod_sofia_globals.hostname, profile->name,
+								  to_user, to_host, to_host))) {
 			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_reg_callback, profile);
 
 			switch_safe_free(sql);
