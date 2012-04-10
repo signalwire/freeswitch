@@ -1121,7 +1121,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 									 "(fifo_name,caller_uuid,caller_caller_id_name,caller_caller_id_number,consumer_uuid,consumer_outgoing_uuid,bridge_start) "
 									 "values ('%q','%q','%q','%q','%q','%q',%ld)",
 									 MANUAL_QUEUE_NAME,
-									 "N/A",
+									 (msg->string_arg && strchr(msg->string_arg, '-')) ? msg->string_arg : "00000000-0000-0000-0000-000000000000",
 									 ced_name,
 									 ced_number,
 									 switch_core_session_get_uuid(session),
