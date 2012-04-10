@@ -748,14 +748,6 @@ static switch_io_routines_t channel_io_routines = {
 	/*.receive_message */ channel_receive_message
 };
 
-static switch_endpoint_interface_t channel_endpoint_interface = {
-	/*.interface_name */ "alsa",
-	/*.io_routines */ &channel_io_routines,
-	/*.event_handlers */ &channel_event_handlers,
-	/*.private */ NULL,
-	/*.next */ NULL
-};
-
 
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
    that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
@@ -766,7 +758,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_call_cause_t *cancel_cause)
 {
 
-	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(alsa_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
@@ -956,6 +948,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_alsa_shutdown)
 	}
 	switch_core_hash_destroy(&globals.call_hash);
 
+	switch_event_free_subclass(MY_EVENT_RINGING);
 	switch_safe_free(globals.dialplan);
 	switch_safe_free(globals.cid_name);
 	switch_safe_free(globals.cid_num);
@@ -1437,7 +1430,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 	}
 	dest = argv[0];
 
-	if ((session = switch_core_session_request(&channel_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL)) != 0) {
+	if ((session = switch_core_session_request(alsa_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		char *dialplan = globals.dialplan;
