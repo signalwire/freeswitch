@@ -60,95 +60,14 @@ int gsmopen_serial_init(private_t *tech_pvt, int controldevice_speed)
 
 	tech_pvt->serialPort_serial_control = new ctb::SerialPort();
 
-	//if( tech_pvt->serialPort_serial_control->Open( "COM9", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
-	if (tech_pvt->serialPort_serial_control->Open("/dev/ttyUSB3", 115200, "8N1", ctb::SerialPort::NoFlowControl) >= 0) {
-		ERRORA("port SUCCESS open\n", GSMOPEN_P_LOG);
+	if (tech_pvt->serialPort_serial_control->Open(tech_pvt->controldevice_name, 115200, "8N1", ctb::SerialPort::NoFlowControl) >= 0) {
+		DEBUGA_GSMOPEN("port %s, SUCCESS open\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
 	} else {
-		ERRORA("port NOT open\n", GSMOPEN_P_LOG);
+		ERRORA("port %s, NOT open\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+		return -1;
 	}
 
 	return 0;
-#ifdef NOTDEF
-
-	int fd;
-	int rt;
-	struct termios tp;
-	unsigned int status = 0;
-	unsigned int flags = TIOCM_DTR;
-
-/* if there is a file descriptor, close it. But it is probably just an old value, so don't check for close success*/
-	fd = tech_pvt->controldevfd;
-	if (fd) {
-		close(fd);
-	}
-/*  open the serial port */
-//#ifdef __CYGWIN__
-	fd = open(tech_pvt->controldevice_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
-	sleep(1);
-	close(fd);
-//#endif /* __CYGWIN__ */
-	fd = open(tech_pvt->controldevice_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
-	if (fd == -1) {
-		perror("open error ");
-		DEBUGA_GSMOPEN("serial error: %s\n", GSMOPEN_P_LOG, strerror(errno));
-		tech_pvt->controldevfd = fd;
-		return -1;
-	}
-/*  flush it */
-	rt = tcflush(fd, TCIFLUSH);
-	if (rt == -1) {
-		ERRORA("serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-/*  attributes */
-	tp.c_cflag = B0 | CS8 | CLOCAL | CREAD | HUPCL;
-	tp.c_iflag = IGNPAR;
-	tp.c_cflag &= ~CRTSCTS;
-	tp.c_oflag = 0;
-	tp.c_lflag = 0;
-	tp.c_cc[VMIN] = 1;
-	tp.c_cc[VTIME] = 0;
-/*  set controldevice_speed */
-	rt = cfsetispeed(&tp, tech_pvt->controldevice_speed);
-	if (rt == -1) {
-		ERRORA("serial error: %s, speed was: %d", GSMOPEN_P_LOG, strerror(errno), tech_pvt->controldevice_speed);
-	}
-	rt = cfsetospeed(&tp, tech_pvt->controldevice_speed);
-	if (rt == -1) {
-		ERRORA("serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-/*  set port attributes */
-	if (tcsetattr(fd, TCSADRAIN, &tp) == -1) {
-		ERRORA("serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-	rt = tcsetattr(fd, TCSANOW, &tp);
-	if (rt == -1) {
-		ERRORA("serial error: %s", GSMOPEN_P_LOG, strerror(errno));
-	}
-#ifndef __CYGWIN__
-	ioctl(fd, TIOCMGET, &status);
-	status |= TIOCM_DTR;		/*  Set DTR high */
-	status &= ~TIOCM_RTS;		/*  Set RTS low */
-	ioctl(fd, TIOCMSET, &status);
-	ioctl(fd, TIOCMGET, &status);
-	ioctl(fd, TIOCMBIS, &flags);
-	flags = TIOCM_RTS;
-	ioctl(fd, TIOCMBIC, &flags);
-	ioctl(fd, TIOCMGET, &status);
-#else /* __CYGWIN__ */
-	ioctl(fd, TIOCMGET, &status);
-	status |= TIOCM_DTR;		/*  Set DTR high */
-	status &= ~TIOCM_RTS;		/*  Set RTS low */
-	ioctl(fd, TIOCMSET, &status);
-#endif /* __CYGWIN__ */
-	tech_pvt->controldevfd = fd;
-	DEBUGA_GSMOPEN("Syncing Serial, fd=%d, protocol=%d\n", GSMOPEN_P_LOG, fd, tech_pvt->controldevprotocol);
-	rt = gsmopen_serial_sync(tech_pvt);
-	if (rt == -1) {
-		ERRORA("Serial init error\n", GSMOPEN_P_LOG);
-		return -1;
-	}
-	return (fd);
-#endif // NOTDEF
 }
 
 int gsmopen_serial_read(private_t *tech_pvt)
@@ -215,8 +134,9 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 
 		char trash[4096];
 		res = tech_pvt->serialPort_serial_control->Read(trash, 4096);
-		if (res)
-			ERRORA("READ %d on serialport init\n", GSMOPEN_P_LOG, res);
+		if (res){
+			DEBUGA_GSMOPEN("READ %d on serialport init\n", GSMOPEN_P_LOG, res);
+		}
 
 		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT^CURC=0");
 		if (res) {
@@ -404,7 +324,7 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 		WARNINGA("AT+CSCS=\"UCS2\" (set TE messages to ucs2)  do not got OK from the phone, let's try with 'GSM'\n", GSMOPEN_P_LOG);
 		tech_pvt->no_ucs2 = 1;
 	}
-#ifdef NOTDEF					//GSMLIB?
+#ifdef NOTDEF					//GSMLIB? XXX
 	if (tech_pvt->no_ucs2) {
 		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"GSM\"");
 		if (res) {
@@ -2840,10 +2760,11 @@ int gsmopen_serial_init_audio_port(private_t *tech_pvt, int controldevice_audio_
 	tech_pvt->serialPort_serial_audio = new ctb::SerialPort();
 
 	//if( tech_pvt->serialPort_serial_audio->Open( "COM8", 115200, "8N1", ctb::SerialPort::NoFlowControl ) >= 0 ) {
-	if (tech_pvt->serialPort_serial_audio->Open("/dev/ttyUSB2", 115200, "8N1", ctb::SerialPort::NoFlowControl) >= 0) {
-		ERRORA("port SUCCESS open\n", GSMOPEN_P_LOG);
+	if (tech_pvt->serialPort_serial_audio->Open(tech_pvt->controldevice_audio_name, 115200, "8N1", ctb::SerialPort::NoFlowControl) >= 0) {
+		DEBUGA_GSMOPEN("port %s, SUCCESS open\n", GSMOPEN_P_LOG, tech_pvt->controldevice_audio_name);
 	} else {
-		ERRORA("port NOT open\n", GSMOPEN_P_LOG);
+		ERRORA("port %s, NOT open\n", GSMOPEN_P_LOG, tech_pvt->controldevice_audio_name);
+		return -1;
 	}
 
 	return 0;
@@ -2855,7 +2776,7 @@ int serial_audio_init(private_t *tech_pvt)
 	int err;
 
 	res = gsmopen_serial_init_audio_port(tech_pvt, tech_pvt->controldevice_audio_speed);
-	ERRORA("serial_audio_init res=%d\n", GSMOPEN_P_LOG, res);
+	DEBUGA_GSMOPEN("serial_audio_init res=%d\n", GSMOPEN_P_LOG, res);
 
 	if (res == 0)
 		err = 0;
@@ -2872,7 +2793,7 @@ int serial_audio_shutdown(private_t *tech_pvt)
 	int err;
 
 	res = tech_pvt->serialPort_serial_audio->Close();
-	ERRORA("serial_audio_shutdown res=%d (controldev_audio_fd is %d)\n", GSMOPEN_P_LOG, res, tech_pvt->controldev_audio_fd);
+	DEBUGA_GSMOPEN("serial_audio_shutdown res=%d (controldev_audio_fd is %d)\n", GSMOPEN_P_LOG, res, tech_pvt->controldev_audio_fd);
 	err = res;
 
 	return err;

@@ -1156,7 +1156,7 @@ static switch_status_t load_config(int reload_type)
 			const char *context = "default";
 			const char *dialplan = "XML";
 			const char *destination = "5000";
-			const char *controldevice_name = "/dev/ttyACM0";
+			const char *controldevice_name = "/dev/ttyUSB3";
 			const char *controldevice_audio_name = "/dev/ttyUSB2";
 			char *digit_timeout = NULL;
 			char *max_digits = NULL;
