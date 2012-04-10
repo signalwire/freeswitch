@@ -188,7 +188,7 @@ static switch_bool_t cidlookup_execute_sql_callback(char *sql, switch_core_db_ca
 	switch_bool_t retval = SWITCH_FALSE;
 	switch_cache_db_handle_t *dbh = NULL;
 
-	if (globals.odbc_dsn && (dbh = cidlookup_get_db_handle())) {
+	if (!zstr(globals.odbc_dsn) && (dbh = cidlookup_get_db_handle())) {
 		if (switch_cache_db_execute_sql_callback(dbh, sql, callback, (void *) cbt, err) != SWITCH_STATUS_SUCCESS) {
 			retval = SWITCH_FALSE;
 		} else {
@@ -533,7 +533,7 @@ static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, con
 	callback_t cbt = { 0 };
 	cbt.pool = pool;
 
-	if (globals.odbc_dsn) {
+	if (!zstr(globals.odbc_dsn)) {
 		newsql = switch_event_expand_headers(event, sql);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "SQL: %s\n", newsql);
 		if (cidlookup_execute_sql_callback(newsql, cidlookup_callback, &cbt, &err)) {
@@ -655,8 +655,6 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 
 SWITCH_STANDARD_APP(cidlookup_app_function)
 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
 	char *argv[4] = { 0 };
 	int argc;
 	char *mydata = NULL;
@@ -705,7 +703,7 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 
 	if (switch_string_var_check_const(cid->name)) {
 		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid CID data {%s} contains a variable\n", cid->name);
-		switch_goto_status(SWITCH_STATUS_GENERR, done);
+		goto done;
 	}
 
 	if (cid && channel) {
@@ -719,7 +717,6 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 		profile->caller_id_name = switch_core_strdup(profile->pool, cid->name);;
 	}
 
-	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 
   done:
 	if (event) {
@@ -727,9 +724,6 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	}
 	if (!session && pool) {
 		switch_core_destroy_memory_pool(&pool);
-	}
-	/* This is so compile doesn't failed because status is never used */
-	if (status) {
 	}
 }
 
