@@ -7042,14 +7042,17 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 		
 
 		if (contact->m_url->url_params) {
-			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s;%s>%s",
+			contact_str = switch_mprintf("%s <sip:%s%s%s%s%s%s;%s>%s",
 										 display, contact->m_url->url_user,
+										 contact->m_url->url_user ? "@" : "",
 										 ipv6 ? "[" : "",
 										 contact_host, ipv6 ? "]" : "", new_port, contact->m_url->url_params, np->is_nat ? ";fs_nat=yes" : "");
 		} else {
-			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s>%s",
+			contact_str = switch_mprintf("%s <sip:%s%s%s%s%s%s>%s",
 										 display,
-										 contact->m_url->url_user, ipv6 ? "[" : "", contact_host, ipv6 ? "]" : "", new_port, np->is_nat ? ";fs_nat=yes" : "");
+										 contact->m_url->url_user,
+										 contact->m_url->url_user ? "@" : "",
+										 ipv6 ? "[" : "", contact_host, ipv6 ? "]" : "", new_port, np->is_nat ? ";fs_nat=yes" : "");
 		}
 	}
 		
