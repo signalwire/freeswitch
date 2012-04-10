@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
 my $myname ;
-my $skype_download_url = "http://mirrors.kernel.org/archlinux/community/os/i686/skype-oss-2.0.0.72-2-i686.pkg.tar.gz";
-my $skype_download_pkg = "skype-oss-2.0.0.72-2-i686.pkg.tar.gz";
+my $skype_download_url = "http://mirrors.kernel.org/archlinux/community/os/i686/skype-oss-2.0.0.72-3-i686.pkg.tar.xz";
+my $skype_download_pkg = "skype-oss-2.0.0.72-3-i686.pkg.tar.xz";
 my $skype_binary_dir = "/usr/bin";
 my $skype_download_dir = "/tmp/skype_download";
 my $skype_share_dir = "/usr/share/skype";
@@ -203,7 +203,7 @@ printf("\n");
 
 system("mkdir -p $skype_download_dir");
 system("cd $skype_download_dir ; wget -c $skype_download_url");
-system("cd $skype_download_dir ; tar -xzf $skype_download_pkg");
+system("cd $skype_download_dir ; tar -xJf $skype_download_pkg");
 
 system("mkdir -p $skype_binary_dir");
 system("cd $skype_download_dir/usr/bin ; cp skype $skype_binary_dir/");
