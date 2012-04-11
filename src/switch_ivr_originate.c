@@ -122,6 +122,7 @@ typedef struct {
 	int bridge_early_media;
 	switch_thread_t *ethread;
 	switch_caller_profile_t *caller_profile_override;
+	switch_bool_t check_vars;
 	switch_memory_pool_t *pool;
 } originate_global_t;
 
@@ -1764,6 +1765,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 											   caller_profile_override, ovars, flags, cancel_cause);
 	}
 
+	oglobals.check_vars = SWITCH_TRUE;
 	oglobals.ringback_ok = 1;
 	oglobals.bridge_early_media = -1;
 	oglobals.file = NULL;
@@ -1880,6 +1882,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	/* strip leading spaces */
 	while (data && *data && *data == ' ') {
 		data++;
+	}
+
+	if ((ovars && switch_true(switch_event_get_header(ovars,"origination_nested_vars"))) || 
+		(caller_channel && switch_true(switch_channel_get_variable(caller_channel, "origination_nested_vars"))) 
+		|| switch_true(switch_core_get_variable("origination_nested_vars")) || switch_stristr("origination_nested_vars=true", data)) {
+		oglobals.check_vars = SWITCH_FALSE;
 	}
 
 	/* extract channel variables, allowing multiple sets of braces */
@@ -2510,7 +2518,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_event_header_t *header;
 						/* install the vars from the {} params */
 						for (header = var_event->headers; header; header = header->next) {
-							switch_channel_set_variable(originate_status[i].peer_channel, header->name, header->value);
+							switch_channel_set_variable_var_check(originate_status[i].peer_channel, header->name, header->value, oglobals.check_vars);
 						}
 					}
 				}
@@ -2519,7 +2527,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (local_var_event) {
 					switch_event_header_t *header;
 					for (header = local_var_event->headers; header; header = header->next) {
-						switch_channel_set_variable(originate_status[i].peer_channel, header->name, header->value);
+						switch_channel_set_variable_var_check(originate_status[i].peer_channel, header->name, header->value, oglobals.check_vars);
 					}
 					switch_event_destroy(&local_var_event);
 				}
@@ -2529,7 +2537,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_event_header_t *header;
 						/* install the vars from the {} params */
 						for (header = var_event->headers; header; header = header->next) {
-							switch_channel_set_variable(originate_status[i].peer_channel, header->name, header->value);
+							switch_channel_set_variable_var_check(originate_status[i].peer_channel, header->name, header->value, oglobals.check_vars);
 						}
 					}
 				}
