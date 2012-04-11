@@ -131,6 +131,16 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 		/* KONRAD FIX ME : check in case there is a ckt and grp block */
 	}
+	
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_TX);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_SENT);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_RX);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_RX_DN);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_TX);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_SENT);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_RX);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_RX_DN);
+	sngss7_clear_ckt_flag(sngss7_info, FLAG_FULL_NUMBER);
 
 	/* check whether the ftdm channel is in a state to accept a call */
 	switch (ftdmchan->state) {
@@ -175,6 +185,12 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					/* fill in ANI */
 					ftdm_set_string(ftdmchan->caller_data.ani.digits, ftdmchan->caller_data.cid_num.digits);
 				}
+				else {
+					if (g_ftdm_sngss7_data.cfg.force_inr) {
+						sngss7_set_ckt_flag(sngss7_info, FLAG_INR_TX);
+						sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_SENT);
+					}
+				}
 
 				if (siConEvnt->cgPtyNum.scrnInd.pres) {
 					/* fill in the screening indication value */
@@ -186,6 +202,11 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 					ftdmchan->caller_data.pres = siConEvnt->cgPtyNum.presRest.val;
 				}	
 			} else {
+				if (g_ftdm_sngss7_data.cfg.force_inr) {
+					sngss7_set_ckt_flag(sngss7_info, FLAG_INR_TX);
+					sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_SENT);
+				}
+
 				SS7_INFO_CHAN(ftdmchan,"No Calling party (ANI) information in IAM!%s\n", " ");
 			}
 
@@ -437,10 +458,26 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	/**************************************************************************/
 	case (INFORMATION):
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx INF\n", sngss7_info->circuit->cic);
+
+		SS7_DEBUG_CHAN (ftdmchan, "Cancelling T.39 timer %s\n", " ");
+		/* check if t39 is active */
+		if (sngss7_info->t39.hb_timer_id) {
+			ftdm_sched_cancel_timer (sngss7_info->t39.sched, sngss7_info->t39.hb_timer_id);
+			SS7_DEBUG_CHAN (ftdmchan, "T.39 timer has been cancelled upon receiving INF message %s\n", " ");
+		}
+
+		sngss7_set_ckt_flag(sngss7_info, FLAG_INF_RX_DN);
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_IDLE);		
+		
 		break;
 	/**************************************************************************/
 	case (INFORMATREQ):
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx INR\n", sngss7_info->circuit->cic);
+
+		ft_to_sngss7_inf(ftdmchan);
+
+		sngss7_set_ckt_flag(sngss7_info, FLAG_INR_RX);
+		
 		break;
 	/**************************************************************************/
 	case (SUBSADDR):

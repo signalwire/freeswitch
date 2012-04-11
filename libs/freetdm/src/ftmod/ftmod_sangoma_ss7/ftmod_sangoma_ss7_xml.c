@@ -146,6 +146,7 @@ typedef struct sng_ccSpan
 	uint32_t		t16;
 	uint32_t		t17;
 	uint32_t		t35;
+	uint32_t		t39;
 	uint32_t		tval;
 } sng_ccSpan_t;
 
@@ -487,6 +488,7 @@ static int ftmod_ss7_parse_sng_gen(ftdm_conf_node_t *sng_gen)
 
 	/* Set the transparent_iam_max_size to default value */
 	g_ftdm_sngss7_data.cfg.transparent_iam_max_size=800;
+	g_ftdm_sngss7_data.cfg.force_inr = 0;
 
 	/* extract all the information from the parameters */
 	for (i = 0; i < num_parms; i++) {
@@ -507,6 +509,14 @@ static int ftmod_ss7_parse_sng_gen(ftdm_conf_node_t *sng_gen)
 		else if (!strcasecmp(parm->var, "glare-reso")) {
 			ftmod_ss7_set_glare_resolution (parm->val);
 			SS7_DEBUG("Found glare resolution configuration = %d  %s\n", g_ftdm_sngss7_data.cfg.glareResolution, parm->val );
+		}
+		else if (!strcasecmp(parm->var, "force-inr")) {
+			if (!strcasecmp(parm->val, "true")) {
+				g_ftdm_sngss7_data.cfg.force_inr = 1;
+			} else {
+				g_ftdm_sngss7_data.cfg.force_inr = 0;
+			}
+			SS7_DEBUG("Found INR force configuration = %s\n", parm->val );
 		}
 		else {
 			SS7_ERROR("Found an invalid parameter \"%s\"!\n", parm->val);
@@ -2062,6 +2072,11 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 			sng_ccSpan.t35 = atoi(parm->val);
 			SS7_DEBUG("Found isup t35 = %d\n",sng_ccSpan.t35);
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "isup.t39")) {
+		/**********************************************************************/
+			sng_ccSpan.t39 = atoi(parm->val);
+			SS7_DEBUG("Found isup t39 = %d\n",sng_ccSpan.t39);
+		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "isup.tval")) {
 		/**********************************************************************/
 			sng_ccSpan.tval = atoi(parm->val);
@@ -3044,6 +3059,12 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 		} else {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t35		= ccSpan->t35;
 		}
+		if (ccSpan->t39 == 0) {
+			g_ftdm_sngss7_data.cfg.isupCkt[x].t39		= 120;
+		} else {
+			g_ftdm_sngss7_data.cfg.isupCkt[x].t39		= ccSpan->t39;
+		}
+		
 		if (ccSpan->tval == 0) {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].tval		= 10;
 		} else {
@@ -3147,6 +3168,13 @@ static int ftmod_ss7_fill_in_circuits(sng_span_t *sngSpan)
 		ss7_info->t10.beat		= (isupCkt->t10) * 100; /* beat is in ms, t10 is in 100ms */
 		ss7_info->t10.callback		= handle_isup_t10;
 		ss7_info->t10.sngss7_info	= ss7_info;
+
+		/* prepare the timer structures */
+		ss7_info->t39.sched		= ((sngss7_span_data_t *)(ftdmspan->signal_data))->sched;
+		ss7_info->t39.counter		= 1;
+		ss7_info->t39.beat		= (isupCkt->t39) * 100; /* beat is in ms, t39 is in 100ms */
+		ss7_info->t39.callback		= handle_isup_t39;
+		ss7_info->t39.sngss7_info	= ss7_info;
 
 
 	/**************************************************************************/

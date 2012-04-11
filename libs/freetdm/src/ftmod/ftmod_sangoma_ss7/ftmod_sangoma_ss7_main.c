@@ -1080,23 +1080,91 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 		}
 
 		/* check if the end of pulsing (ST) character has arrived or the right number of digits */
-		if (ftdmchan->caller_data.dnis.digits[i-1] == 'F') {
+		if (ftdmchan->caller_data.dnis.digits[i-1] == 'F'
+		    || sngss7_test_ckt_flag(sngss7_info, FLAG_FULL_NUMBER) ) 
+		{
 			SS7_DEBUG_CHAN(ftdmchan, "Received the end of pulsing character %s\n", "");
 
-			/* remove the ST */
-			ftdmchan->caller_data.dnis.digits[i-1] = '\0';
+			if (!sngss7_test_ckt_flag(sngss7_info, FLAG_FULL_NUMBER)) {
+				/* remove the ST */
+				ftdmchan->caller_data.dnis.digits[i-1] = '\0';
+				sngss7_set_ckt_flag(sngss7_info, FLAG_FULL_NUMBER);
+			}
 			
-			/*now go to the RING state */
-			state_flag = 0;
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
-			
+			if (sngss7_test_ckt_flag(sngss7_info, FLAG_INR_TX)) {
+				if (!sngss7_test_ckt_flag(sngss7_info, FLAG_INR_SENT) ) {
+					ft_to_sngss7_inr(ftdmchan);
+					sngss7_set_ckt_flag(sngss7_info, FLAG_INR_SENT);
+					
+					SS7_DEBUG_CHAN (ftdmchan, "Scheduling T.39 timer %s \n", " ");
+					
+					/* start ISUP t39 */
+					if (ftdm_sched_timer (sngss7_info->t39.sched,
+										"t39",
+										sngss7_info->t39.beat,
+										sngss7_info->t39.callback,
+										&sngss7_info->t39,
+										&sngss7_info->t39.hb_timer_id)) 
+					{
+				
+						SS7_ERROR ("Unable to schedule timer T39, hanging up call!\n");
+
+						ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE;
+						sngss7_set_ckt_flag (sngss7_info, FLAG_LOCAL_REL);
+				
+						/* end the call */
+						state_flag = 0;
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
+					}
+				}else {
+					state_flag = 0;
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+				}
+			} else {
+				state_flag = 0;
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+			}
 		} else if (i >= sngss7_info->circuit->min_digits) {
 			SS7_DEBUG_CHAN(ftdmchan, "Received %d digits (min digits = %d)\n", i, sngss7_info->circuit->min_digits);
 
-			/*now go to the RING state */
-			state_flag = 0;
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
-			
+			if (sngss7_test_ckt_flag(sngss7_info, FLAG_INR_TX)) {
+				if (!sngss7_test_ckt_flag(sngss7_info, FLAG_INR_SENT) ) {
+					ft_to_sngss7_inr(ftdmchan);
+					sngss7_set_ckt_flag(sngss7_info, FLAG_INR_SENT);
+					
+					SS7_DEBUG_CHAN (ftdmchan, "Scheduling T.39 timer %s\n", " " );
+					
+					/* start ISUP t39 */
+					if (ftdm_sched_timer (sngss7_info->t39.sched,
+										"t39",
+										sngss7_info->t39.beat,
+										sngss7_info->t39.callback,
+										&sngss7_info->t39,
+										&sngss7_info->t39.hb_timer_id)) 
+					{
+				
+						SS7_ERROR ("Unable to schedule timer T39, hanging up call!\n");
+
+						ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE;
+						sngss7_set_ckt_flag (sngss7_info, FLAG_LOCAL_REL);
+				
+						/* end the call */
+						state_flag = 0;
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
+					}
+					
+					state_flag = 0;
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
+				}else {
+					if (sngss7_test_ckt_flag(sngss7_info, FLAG_INF_RX_DN) ) {
+						state_flag = 0;
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+					}
+				}
+			} else {
+				state_flag = 0;
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+			}
 		} else {
 			/* if we are coming from idle state then we have already been here once before */
 			if (ftdmchan->last_state != FTDM_CHANNEL_STATE_IDLE) {
@@ -1152,6 +1220,15 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_RING:	/*incoming call request */
 
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_TX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_SENT);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_RX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_RX_DN);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_TX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_SENT);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_RX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_RX_DN);
+		
 		if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
 			SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
 			break;
@@ -1160,6 +1237,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 		/* kill t35 if active */
 		if (sngss7_info->t35.hb_timer_id) {
 			ftdm_sched_cancel_timer (sngss7_info->t35.sched, sngss7_info->t35.hb_timer_id);
+		}
+
+		/* cancel t39 timer */
+		if (sngss7_info->t39.hb_timer_id) {
+			ftdm_sched_cancel_timer (sngss7_info->t39.sched, sngss7_info->t39.hb_timer_id);
 		}
 
 		SS7_DEBUG_CHAN(ftdmchan, "Sending incoming call from %s to %s to FTDM core\n",

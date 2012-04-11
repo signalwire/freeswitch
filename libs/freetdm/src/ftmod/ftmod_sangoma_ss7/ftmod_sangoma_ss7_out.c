@@ -237,6 +237,85 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	return;
 }
 
+void ft_to_sngss7_inf(ftdm_channel_t *ftdmchan)
+{
+	SiCnStEvnt evnt;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	/*
+	const char *CallerId = NULL;
+	const char *CallerCat = NULL;
+	const char *sipvar;
+	*/
+
+	memset (&evnt, 0x0, sizeof (evnt));
+	
+	evnt.infoInd.eh.pres	   = PRSNT_NODEF;
+	
+	evnt.infoInd.cgPtyAddrRespInd.pres = PRSNT_NODEF;
+	evnt.infoInd.cgPtyAddrRespInd.val=CGPRTYADDRESP_INCL;
+	copy_cgPtyNum_to_sngss7 (ftdmchan, &evnt.cgPtyNum);
+
+
+	evnt.infoInd.cgPtyCatRespInd.pres = PRSNT_NODEF;
+	evnt.infoInd.cgPtyCatRespInd.val = CGPRTYCATRESP_INCL;
+	copy_cgPtyCat_to_sngss7 (ftdmchan, &evnt.cgPtyCat);
+
+	evnt.infoInd.chrgInfoRespInd.pres =  PRSNT_NODEF;
+	evnt.infoInd.chrgInfoRespInd.val = 0;
+
+	evnt.infoInd.solInfoInd.pres = PRSNT_NODEF;
+	evnt.infoInd.solInfoInd.val = 0;
+
+	evnt.infoInd.holdProvInd.pres =  PRSNT_NODEF;
+	evnt.infoInd.holdProvInd.val = 0;
+	
+	evnt.infoInd.spare.pres =  PRSNT_NODEF;
+	evnt.infoInd.spare.val = 0;
+	
+	sng_cc_inf(1, 
+			  sngss7_info->suInstId,
+			  sngss7_info->spInstId,
+			  sngss7_info->circuit->id, 
+			  &evnt, 
+			  INFORMATION);
+
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx INF\n", sngss7_info->circuit->cic);
+	
+}
+
+void ft_to_sngss7_inr(ftdm_channel_t *ftdmchan)
+{
+	SiCnStEvnt evnt;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+
+	memset (&evnt, 0x0, sizeof (evnt));
+
+	evnt.infoReqInd.eh.pres	   = PRSNT_NODEF;
+	evnt.infoReqInd.cgPtyAdReqInd.pres = PRSNT_NODEF;
+	evnt.infoReqInd.cgPtyAdReqInd.val=CGPRTYADDREQ_REQ;
+
+	evnt.infoReqInd.holdingInd.pres =  PRSNT_NODEF;
+	evnt.infoReqInd.holdingInd.val = HOLD_NOTREQ;
+
+	evnt.infoReqInd.cgPtyCatReqInd.pres = PRSNT_NODEF;
+	evnt.infoReqInd.cgPtyCatReqInd.val = CGPRTYCATREQ_REQ;
+
+	evnt.infoReqInd.chrgInfoReqInd.pres =  PRSNT_NODEF;
+	evnt.infoReqInd.chrgInfoReqInd.val = CHRGINFO_NOTREQ;
+
+	evnt.infoReqInd.malCaIdReqInd.pres =  PRSNT_NODEF;
+	evnt.infoReqInd.malCaIdReqInd.val = MLBG_INFONOTREQ;
+
+	sng_cc_inr(1, 
+			  sngss7_info->suInstId,
+			  sngss7_info->spInstId,
+			  sngss7_info->circuit->id, 
+			  &evnt, 
+			  INFORMATREQ);
+
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx INR\n", sngss7_info->circuit->cic);
+}
+
 void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 {
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
