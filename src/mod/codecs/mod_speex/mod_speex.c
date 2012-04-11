@@ -117,143 +117,51 @@ struct speex_context {
 
 static switch_status_t switch_speex_fmtp_parse(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
 {
-	speex_codec_settings_t *codec_settings = NULL;
-	int x, argc;
-	char *argv[10];
-	char *fmtp_dup = NULL;
+	if (codec_fmtp) {
+		speex_codec_settings_t *codec_settings = NULL;
+		if (codec_fmtp->private_info) {
+			codec_settings = codec_fmtp->private_info;
+			memcpy(codec_settings, &default_codec_settings, sizeof(*codec_settings));
+		}
 
-	if (!codec_fmtp) {
-		return SWITCH_STATUS_FALSE;
-	}
-	
-	if (!fmtp) {
+		if (fmtp) {
+			int x, argc;
+			char *argv[10];
+			char *fmtp_dup = strdup(fmtp);
+
+			switch_assert(fmtp_dup);
+
+			argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+
+			for (x = 0; x < argc; x++) {
+				char *data = argv[x];
+				char *arg;
+				switch_assert(data);
+				while (*data == ' ') {
+					data++;
+				}
+				if ((arg = strchr(data, '='))) {
+					*arg++ = '\0';
+					/*
+					   if (!strcasecmp(data, "bitrate")) {
+					   bit_rate = atoi(arg);
+					   }
+					 */
+					/*
+					   if (codec_settings) {
+					   if (!strcasecmp(data, "vad")) {
+					   bit_rate = atoi(arg);
+					   }
+					   }
+					 */			
+				}
+			}
+			free(fmtp_dup);
+		}
+		/*codec_fmtp->bits_per_second = bit_rate;*/
 		return SWITCH_STATUS_SUCCESS;
 	}
-
-	/* load default settings */
-	if (codec_fmtp->private_info) {
-		codec_settings = codec_fmtp->private_info;
-		memcpy(codec_settings, &default_codec_settings, sizeof(*codec_settings));
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "codec_fmtp->private_info is NULL\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "got fmtp: %s\n", fmtp);
-
-	fmtp_dup = strdup(fmtp);
-	switch_assert(fmtp_dup);
-
-	/* parse ; separated fmtp args */
-	argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-	for (x = 0; x < argc; x++) {
-		char *data = argv[x];
-		char *arg;
-		switch_assert(data);
-		while (*data == ' ') {
-			data++;
-		}
-		if (!(arg = strchr(data, '='))) {
-			continue;
-		}
-		*arg++ = '\0';
-		if (zstr(arg)) {
-			continue;
-		}
-
-		if (!strcasecmp("vbr", data)) {
-			/* vbr can be on/off/vad */
-			if (!strcasecmp("vad", arg)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "enabling speex vbr=vad\n");
-				codec_settings->vbr = 0;
-				codec_settings->vad = 1;
-				codec_settings->pp_vad = 1;
-			} else {
-				if (switch_true(arg)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "enabling speex vbr\n");
-					codec_settings->vbr = 1;
-					codec_settings->vad = 0;
-					codec_settings->pp_vad = 1;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "disabling speex vbr\n");
-					codec_settings->vbr = 0;
-					codec_settings->vad = 0;
-					codec_settings->pp_vad = 0;
-				}
-			}
-		} else if (!strcasecmp("cng", data)) {
-			/* TODO don't know how to turn on CNG */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "speex cng is unsupported\n");
-		} else if (!strcasecmp("mode", data)) {
-			/* mode is a comma-separate list of preferred modes.  Use the first mode in the list */
-			char *arg_dup;
-			char *mode[2];
-			if (!strncasecmp("any", arg, 3)) {
-				/* "any", keep the default setting */
-				continue;
-			}
-			arg_dup = strdup(arg);
-			if (switch_separate_string(arg_dup, ',', mode, (sizeof(mode) / sizeof(mode[0])))) {
-				int mode_num = -1;
-				char *mode_str = mode[0];
-				if (mode_str[0] == '"') {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "mode starts with \"\n");
-					mode_str++;
-				}
-				if (switch_is_number(mode_str)) {
-					mode_num = atoi(mode_str);
-				}
-				/* TODO there might be a way to set the mode directly instead of changing the quality */
-				if (codec_fmtp->actual_samples_per_second == 8000) {
-					switch (mode_num) {
-					case 1:
-						codec_settings->quality = 0;
-						break;
-					case 2:
-						codec_settings->quality = 2;
-						break;
-					case 3:
-						codec_settings->quality = 4;
-						break;
-					case 4:
-						codec_settings->quality = 6;
-						break;
-					case 5:
-						codec_settings->quality = 8;
-						break;
-					case 6:
-						codec_settings->quality = 9;
-						break;
-					case 7:
-						codec_settings->quality = 10;
-						break;
-					case 8:
-						codec_settings->quality = 1;
-						break;
-					default:
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "ignoring invalid speex/8000 mode %s\n", mode_str);
-						continue;
-					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "choosing speex/8000 mode %s\n", mode_str);
-					codec_settings->quality = codec_settings->quality;
-					codec_settings->vbr_quality = codec_settings->quality;
-				} else {
-					if (mode_num >= 0 && mode_num <= 10) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "choosing speex/%d mode %s\n", codec_fmtp->actual_samples_per_second, mode_str);
-						codec_settings->quality = mode_num;
-						codec_settings->vbr_quality = mode_num;
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "ignoring invalid speex/%d mode %s\n", codec_fmtp->actual_samples_per_second, mode_str);
-						continue;
-					}
-				}
-			}
-			free(arg_dup);
-		}
-	}
-	free(fmtp_dup);
-	/*codec_fmtp->bits_per_second = bit_rate;*/
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_FALSE;
 }
 
 
@@ -274,7 +182,6 @@ static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_fla
 
 		memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
 		codec_fmtp.private_info = &codec_settings;
-		codec_fmtp.actual_samples_per_second = codec->implementation->actual_samples_per_second;
 		switch_speex_fmtp_parse(codec->fmtp_in, &codec_fmtp);
 
 		memcpy(&context->codec_settings, &codec_settings, sizeof(context->codec_settings));
@@ -298,24 +205,11 @@ static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_fla
 			speex_encoder_ctl(context->encoder_state, SPEEX_GET_FRAME_SIZE, &context->encoder_frame_size);
 			speex_encoder_ctl(context->encoder_state, SPEEX_SET_COMPLEXITY, &context->codec_settings.complexity);
 			if (context->codec_settings.preproc) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "preprocessor on\n");
 				context->pp = speex_preprocess_state_init(context->encoder_frame_size, codec->implementation->actual_samples_per_second);
-				if (context->codec_settings.pp_vad) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "preprocessor vad on\n");
-				}
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_VAD, &context->codec_settings.pp_vad);
-				if (context->codec_settings.pp_agc) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "preprocessor agc on\n");
-				}
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_AGC, &context->codec_settings.pp_agc);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_AGC_LEVEL, &context->codec_settings.pp_agc_level);
-				if (context->codec_settings.pp_denoise) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "preprocessor denoise on\n");
-				}
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DENOISE, &context->codec_settings.pp_denoise);
-				if (context->codec_settings.pp_dereverb) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "preprocessor dereverb on\n");
-				}
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB, &context->codec_settings.pp_dereverb);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB_DECAY, &context->codec_settings.pp_dereverb_decay);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB_LEVEL, &context->codec_settings.pp_dereverb_level);
@@ -324,21 +218,17 @@ static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_fla
 			if (!context->codec_settings.abr && !context->codec_settings.vbr) {
 				speex_encoder_ctl(context->encoder_state, SPEEX_SET_QUALITY, &context->codec_settings.quality);
 				if (context->codec_settings.vad) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "vad on\n");
 					speex_encoder_ctl(context->encoder_state, SPEEX_SET_VAD, &context->codec_settings.vad);
 				}
 			}
 			if (context->codec_settings.vbr) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "vbr on\n");
 				speex_encoder_ctl(context->encoder_state, SPEEX_SET_VBR, &context->codec_settings.vbr);
 				speex_encoder_ctl(context->encoder_state, SPEEX_SET_VBR_QUALITY, &context->codec_settings.vbr_quality);
 			}
 			if (context->codec_settings.abr) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "abr on\n");
 				speex_encoder_ctl(context->encoder_state, SPEEX_SET_ABR, &context->codec_settings.abr);
 			}
 			if (context->codec_settings.dtx) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "dtx on\n");
 				speex_encoder_ctl(context->encoder_state, SPEEX_SET_DTX, &context->codec_settings.dtx);
 			}
 		}
@@ -353,7 +243,6 @@ static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_fla
 
 
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "initialized Speex codec \n");
 		codec->private_info = context;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -390,15 +279,17 @@ static switch_status_t switch_speex_encode(switch_codec_t *codec,
 
 	if (is_speech) {
 		switch_clear_flag(context, SWITCH_CODEC_FLAG_SILENCE);
+		*flag |= SWITCH_CODEC_FLAG_SILENCE_STOP;
 		*flag &= ~SFF_CNG;
 	} else {
 		if (switch_test_flag(context, SWITCH_CODEC_FLAG_SILENCE)) {
 			*encoded_data_len = 0;
-			*flag |= SFF_CNG;
+			*flag |= SWITCH_CODEC_FLAG_SILENCE | SFF_CNG;
 			return SWITCH_STATUS_SUCCESS;
 		}
 
 		switch_set_flag(context, SWITCH_CODEC_FLAG_SILENCE);
+		*flag |= SWITCH_CODEC_FLAG_SILENCE_START;
 	}
 
 
