@@ -1113,7 +1113,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		if (cur) {
 			fh->samples = sample_start = 0;
 			if (sleep_val_i) {
-				switch_ivr_sleep(session, sleep_val_i, SWITCH_FALSE, args);
+				status = switch_ivr_sleep(session, sleep_val_i, SWITCH_FALSE, args);
+                                if(status != SWITCH_STATUS_SUCCESS) {
+                                        break;
+                                }
 			}
 		}
 
