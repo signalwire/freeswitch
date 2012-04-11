@@ -474,7 +474,7 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	case (INFORMATREQ):
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Rx INR\n", sngss7_info->circuit->cic);
 
-		ft_to_sngss7_inf(ftdmchan);
+		ft_to_sngss7_inf(ftdmchan, siCnStEvnt);
 
 		sngss7_set_ckt_flag(sngss7_info, FLAG_INR_RX);
 		

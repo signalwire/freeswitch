@@ -841,7 +841,7 @@ void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_itx (ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_txa (ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_inr(ftdm_channel_t * ftdmchan);
-void ft_to_sngss7_inf(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_inf(ftdm_channel_t *ftdmchan, SiCnStEvnt *inr);
 
 
 
