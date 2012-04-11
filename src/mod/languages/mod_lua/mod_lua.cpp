@@ -187,7 +187,7 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 				switch_assert(fdup);
 				file = fdup;
 			}
-			error = luaL_loadfile(L, file) || docall(L, 0, 1, 0);
+			error = luaL_loadfile(L, file) || docall(L, 0, 0, 0);
 			switch_safe_free(fdup);
 		}
 	}
