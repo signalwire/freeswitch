@@ -669,7 +669,7 @@ SWITCH_STANDARD_SCHED_FUNC(zrtp_cache_save_callback)
 	zrtp_status_t status = zrtp_status_ok;
 
 	status = zrtp_def_cache_store(zrtp_global);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Saving ZRTP cache: %s\n", zrtp_status_ok == status ? "OK" : "FAIL");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Saving ZRTP cache: %s\n", zrtp_status_ok == status ? "OK" : "FAIL");
 	task->runtime = switch_epoch_time_now(NULL) + 900;
 }
 
@@ -828,7 +828,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 
 static void zrtp_logger(int level, const char *data, int len, int offset)
 {
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s", data);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s", data);
 }
 #endif
 
@@ -869,7 +869,7 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 		} else {
 			switch_core_set_variable("zrtp_enabled", NULL);
 			zrtp_on = 0;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "ZRTP init failed!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "ZRTP init failed!\n");
 		}
 
 	}
@@ -4080,12 +4080,12 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 				case zrtp_status_ok:
 					break;
 				case zrtp_status_drop:
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
 					ret = (int) bytes;
 					goto end;
 					break;
 				case zrtp_status_fail:
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
 					break;
 				default:
 					break;
@@ -4412,12 +4412,12 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		case zrtp_status_ok:
 			break;
 		case zrtp_status_drop:
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
 			ret = (int) bytes;
 			goto end;
 			break;
 		case zrtp_status_fail:
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
 			break;
 		default:
 			break;
