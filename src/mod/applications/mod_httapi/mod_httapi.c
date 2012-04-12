@@ -1142,7 +1142,8 @@ static switch_status_t parse_xml(client_t *client)
 								switch_channel_get_variables(client->channel, &templ_data);
 								switch_event_merge(templ_data, client->params);
 								expanded = switch_event_expand_headers_check(templ_data, tag->txt, 
-																			 client->profile->var_params.expand_var_list, client->profile->var_params.api_list);
+																			 client->profile->var_params.expand_var_list, 
+																			 client->profile->var_params.api_list, 0);
 								switch_event_destroy(&templ_data);
 							}
 
