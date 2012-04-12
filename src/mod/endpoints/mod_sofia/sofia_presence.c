@@ -3880,16 +3880,24 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				open_closed = basic->txt;
 			}
 
-			if ((person = switch_xml_child(xml, "dm:person")) && (note = switch_xml_child(person, "dm:note"))) {
-				note_txt = note->txt;
+			if ((person = switch_xml_child(xml, "dm:person"))) {
+				if ((note = switch_xml_child(person, "dm:note"))) {
+					note_txt = note->txt;
+				} else if ((note = switch_xml_child(person, "rpid:note"))) {
+					note_txt = note->txt;
+				}
+				if ((act = switch_xml_child(person, "rpid:activities")) && act->child && act->child->name) {
+					if ((rpid = strchr(act->child->name, ':'))) {
+						rpid++;
+					} else {
+						rpid = act->child->name;
+					}
+				}
+				if (zstr(note_txt)) note_txt = rpid;
 			}
 
-			if (person && (act = switch_xml_child(person, "rpid:activities")) && act->child && act->child->name) {
-				if ((rpid = strchr(act->child->name, ':'))) {
-					rpid++;
-				} else {
-					rpid = act->child->name;
-				}
+			if (!strcasecmp(open_closed, "closed")) {
+				rpid = note_txt = "Unregistered";
 			}
 
 			if (sofia_test_pflag(profile, PFLAG_MULTIREG) && !open) {
