@@ -818,13 +818,13 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 				if (err < 2) {
 					ERRORA("|%s| is not formatted as: |+CSQ: xx,yy|\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
 				} else {
-					if (signal_quality < 11 || signal_quality == 99) {
+					if (signal_quality < 9 || signal_quality == 99) {
 						ERRORA
 							("|%s| CELLPHONE GETS ALMOST NO SIGNAL, consider to move it or additional antenna\n",
 							 GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
 						tech_pvt->got_signal = 0;
 						alarm_event(tech_pvt, ALARM_NETWORK_NO_SIGNAL, "CELLPHONE GETS ALMOST NO SIGNAL, consider to move it or additional antenna");
-					} else if (signal_quality < 15) {
+					} else if (signal_quality < 11) {
 						WARNINGA("|%s| CELLPHONE GETS SIGNAL LOW\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
 						tech_pvt->got_signal = 1;
 						alarm_event(tech_pvt, ALARM_NETWORK_LOW_SIGNAL, "CELLPHONE GETS SIGNAL LOW");
