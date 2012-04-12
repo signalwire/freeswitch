@@ -330,8 +330,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, con
 
 SWITCH_DECLARE(switch_status_t) switch_event_set_body(switch_event_t *event, const char *body);
 
-SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, const char *in, switch_event_t *var_list, switch_event_t *api_list);
-#define switch_event_expand_headers(_event, _in) switch_event_expand_headers_check(_event, _in, NULL, NULL)
+SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, const char *in, switch_event_t *var_list, switch_event_t *api_list, uint32_t recur);
+#define switch_event_expand_headers(_event, _in) switch_event_expand_headers_check(_event, _in, NULL, NULL, 0)
 
 SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char *file, _In_z_ char *func, _In_ int line,
 																	 _In_z_ const char *proto, _In_z_ const char *login,

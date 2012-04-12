@@ -1992,7 +1992,7 @@ if ((dp = realloc(data, olen))) {\
     memset(c, 0, olen - cpos);\
  }}                           \
 
-SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, const char *in, switch_event_t *var_list, switch_event_t *api_list)
+SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, const char *in, switch_event_t *var_list, switch_event_t *api_list, uint32_t recur)
 {
 	char *p, *c = NULL;
 	char *data, *indup, *endof_indup;
@@ -2002,6 +2002,10 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 	char *func_val = NULL;
 	int nv = 0;
 	char *gvar = NULL, *sb = NULL;
+
+	if (recur > 100) {
+		return (char *) in;
+	}
 
 	if (zstr(in)) {
 		return (char *) in;
@@ -2132,7 +2136,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 					char *ptr;
 					int idx = -1;
 					
-					if ((expanded = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list)) == vname) {
+					if ((expanded = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list, recur+1)) == vname) {
 						expanded = NULL;
 					} else {
 						vname = expanded;
@@ -2162,7 +2166,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 						}
 
 
-						if ((expanded_sub_val = switch_event_expand_headers(event, sub_val)) == sub_val) {
+						if ((expanded_sub_val = switch_event_expand_headers_check(event, sub_val, var_list, api_list, recur+1)) == sub_val) {
 							expanded_sub_val = NULL;
 						} else {
 							sub_val = expanded_sub_val;
@@ -2198,13 +2202,13 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 					if (stream.data) {
 						char *expanded_vname = NULL;
 
-						if ((expanded_vname = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list)) == vname) {
+						if ((expanded_vname = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list, recur+1)) == vname) {
 							expanded_vname = NULL;
 						} else {
 							vname = expanded_vname;
 						}
 
-						if ((expanded = switch_event_expand_headers_check(event, vval, var_list, api_list)) == vval) {
+						if ((expanded = switch_event_expand_headers_check(event, vval, var_list, api_list, recur+1)) == vval) {
 							expanded = NULL;
 						} else {
 							vval = expanded;
