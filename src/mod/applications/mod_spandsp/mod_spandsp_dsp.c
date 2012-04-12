@@ -43,6 +43,10 @@ typedef struct {
 	uint32_t last_digit_end;
 	uint32_t digit_begin;
 	uint32_t min_dup_digit_spacing;
+	int twist;
+	int reverse_twist;
+	int filter_dialtone;
+	int threshold;
 } switch_inband_dtmf_t;
 
 static void spandsp_dtmf_rx_realtime_callback(void *user_data, int code, int level, int delay)
@@ -74,16 +78,12 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 {
 	switch_inband_dtmf_t *pvt = (switch_inband_dtmf_t *) user_data;
 	switch_frame_t *frame = NULL;
-	switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT: {
-		const char *min_dup_digit_spacing_str = switch_channel_get_variable(channel, "min_dup_digit_spacing_ms");
 		pvt->dtmf_detect = dtmf_rx_init(NULL, NULL, NULL);
+		dtmf_rx_parms(pvt->dtmf_detect, pvt->filter_dialtone, pvt->twist, pvt->reverse_twist, pvt->threshold);
 		dtmf_rx_set_realtime_callback(pvt->dtmf_detect, spandsp_dtmf_rx_realtime_callback, pvt);
-		if (!zstr(min_dup_digit_spacing_str)) {
-			pvt->min_dup_digit_spacing = atoi(min_dup_digit_spacing_str) * 8;
-		}
 		break;
 	}
 	case SWITCH_ABC_TYPE_CLOSE:
@@ -126,6 +126,7 @@ switch_status_t spandsp_inband_dtmf_session(switch_core_session_t *session)
 	switch_status_t status;
 	switch_inband_dtmf_t *pvt;
 	switch_codec_implementation_t read_impl = { 0 };
+	const char *value;
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -133,8 +134,60 @@ switch_status_t spandsp_inband_dtmf_session(switch_core_session_t *session)
 		return SWITCH_STATUS_MEMERR;
 	}
 
-   	pvt->session = session;
+	pvt->session = session;
 
+	/* get detector params */
+	pvt->min_dup_digit_spacing = 0;
+	value = switch_channel_get_variable(channel, "min_dup_digit_spacing_ms");
+	if (!zstr(value) && switch_is_number(value)) {
+		int val = atoi(value) * 8; /* convert from ms to samples */
+		if (val < 0) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "min_dup_digit_spacing_ms must be >= 0\n");
+		} else {
+			pvt->min_dup_digit_spacing = val;
+		}
+	}
+
+	pvt->threshold = -100;
+	value = switch_channel_get_variable(channel, "spandsp_dtmf_rx_threshold");
+	if (!zstr(value) && switch_is_number(value)) {
+		int val = atoi(value);
+		if (val < -99) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "spandsp_dtmf_rx_threshold must be >= -99 dBm0\n");
+		} else {
+			pvt->threshold = val;
+		}
+	}
+
+	pvt->twist = -1;
+	value = switch_channel_get_variable(channel, "spandsp_dtmf_rx_twist");
+	if (!zstr(value) && switch_is_number(value)) {
+		int val = atoi(value);
+		if (val < 0) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "spandsp_dtmf_rx_twist must be >= 0 dB\n");
+		} else {
+			pvt->twist = val;
+		}
+	}
+
+	pvt->reverse_twist = -1;
+	value = switch_channel_get_variable(channel, "spandsp_dtmf_rx_reverse_twist");
+	if (!zstr(value) && switch_is_number(value)) {
+		int val = atoi(value);
+		if (val < 0) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "spandsp_dtmf_rx_reverse_twist must be >= 0 dB\n");
+		} else {
+			pvt->reverse_twist = val;
+		}
+	}
+
+	pvt->filter_dialtone = -1;
+	value = switch_channel_get_variable(channel, "spandsp_dtmf_rx_filter_dialtone");
+	if (switch_true(value)) {
+		pvt->filter_dialtone = 1;
+	} else if (switch_false(value)) {
+		pvt->filter_dialtone = 0;
+	}
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
