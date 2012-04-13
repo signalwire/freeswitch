@@ -49,10 +49,11 @@ typedef struct {
 	int threshold;
 } switch_inband_dtmf_t;
 
-static void spandsp_dtmf_rx_realtime_callback(void *user_data, int code, int level, int delay)
+static void spandsp_dtmf_rx_realtime_callback(void *user_data, int code, int level, int duration)
 {
 	switch_inband_dtmf_t *pvt = (switch_inband_dtmf_t *)user_data;
 	char digit = (char)code;
+	pvt->samples += duration;
 	if (digit) {
 		/* prevent duplicate DTMF */
 		if (digit != pvt->last_digit || (pvt->samples - pvt->last_digit_end) > pvt->min_dup_digit_spacing) {
@@ -93,7 +94,6 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 		if ((frame = switch_core_media_bug_get_read_replace_frame(bug))) {
-			pvt->samples += frame->samples;
 			dtmf_rx(pvt->dtmf_detect, frame->data, frame->samples);
 			switch_core_media_bug_set_read_replace_frame(bug, frame);
 		}
