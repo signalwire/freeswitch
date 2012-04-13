@@ -138,9 +138,13 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 			DEBUGA_GSMOPEN("READ %d on serialport init\n", GSMOPEN_P_LOG, res);
 		}
 
+		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CFUN=1");
+		if (res) {
+			DEBUGA_GSMOPEN("no response to AT+CFUN=1. Continuing\n", GSMOPEN_P_LOG);
+		}
 		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT^CURC=0");
 		if (res) {
-			ERRORA("no response to AT^CURC=0\n", GSMOPEN_P_LOG);
+			DEBUGA_GSMOPEN("no response to AT^CURC=0. Continuing\n", GSMOPEN_P_LOG);
 			return -1;
 		}
 		if (strlen(tech_pvt->at_preinit_1)) {
@@ -312,6 +316,12 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 		ERRORA("Error setting SMS sending mode to TEXT on the cellphone, let's hope is TEXT by default. Continuing\n", GSMOPEN_P_LOG);
 	}
 	tech_pvt->sms_pdu_not_supported = 1;
+
+	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,8");	//unicode, 16 bit message
+	if (res) {
+		WARNINGA("AT+CSMP do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
+	}
+
 	/* what is the Charset of SMSs? */
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS?");
 	if (res) {
@@ -324,7 +334,6 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 		WARNINGA("AT+CSCS=\"UCS2\" (set TE messages to ucs2)  do not got OK from the phone, let's try with 'GSM'\n", GSMOPEN_P_LOG);
 		tech_pvt->no_ucs2 = 1;
 	}
-#ifdef NOTDEF					//GSMLIB? XXX
 	if (tech_pvt->no_ucs2) {
 		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"GSM\"");
 		if (res) {
@@ -335,13 +344,20 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 		if (res) {
 			WARNINGA("AT+CSMP do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
 		}
-	} else {
+	}
+
+
+
+#ifdef NOTDEF					//GSMLIB? XXX
+
+ else {
 		//res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,20"); //"flash", class 0 sms 16 bit unicode
 		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,8");	//unicode, 16 bit message
 		if (res) {
 			WARNINGA("AT+CSMP do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
 		}
 	}
+#endif // NOTDEF
 
 	/* is the unsolicited reporting of mobile equipment event supported? */
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMER=?");
@@ -374,7 +390,6 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 	} else {
 		tech_pvt->at_has_ecam = 1;
 	}
-#endif // NOTDEF
 
 	/* disable unsolicited signaling of call list */
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CLCC=0");
@@ -1534,9 +1549,9 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 								memset(content2, '\0', sizeof(content2));
 								if (which_field == 1) {
 									//FIXME why this? err = ucs2_to_utf8(tech_pvt, content, content2, sizeof(content2));
-									//err = ucs2_to_utf8(tech_pvt, content, content2, sizeof(content2));
-									err = 0;
-									strncpy(content2, content, sizeof(content2));
+									err = ucs2_to_utf8(tech_pvt, content, content2, sizeof(content2));
+									//err = 0;
+									//strncpy(content2, content, sizeof(content2));
 								} else {
 									err = 0;
 									strncpy(content2, content, sizeof(content2));
@@ -1575,7 +1590,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						}
 
 					}
-#endif //0
+#endif //1
 				}				//it was the +CMGR answer from the cellphone
 				else {
 					DEBUGA_GSMOPEN("body=%s\n", GSMOPEN_P_LOG, sms_body);
@@ -1586,6 +1601,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 
 						//int howmanyleft;
 
+						memset(content3, '\0', sizeof(content3));
 						DEBUGA_GSMOPEN("sms_message=%s\n", GSMOPEN_P_LOG, tech_pvt->sms_message);
 						ucs2_to_utf8(tech_pvt, tech_pvt->sms_message, content3, sizeof(content3));
 						DEBUGA_GSMOPEN("content3=%s\n", GSMOPEN_P_LOG, content3);
@@ -2075,7 +2091,7 @@ int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outb
 
 	memset(converted, '\0', sizeof(converted));
 
-	DEBUGA_GSMOPEN("ucs2_in=%s\n", GSMOPEN_P_LOG, ucs2_in);
+	DEBUGA_GSMOPEN("ucs2_in=|%s|, utf8_out=|%s| èèè, %s\n", GSMOPEN_P_LOG, ucs2_in, utf8_out, "èèè");
 	/* cicopet */
 	for (c = 0; c < strlen(ucs2_in); c++) {
 		sprintf(stringa, "0x%c%c", ucs2_in[c], ucs2_in[c + 1]);
@@ -2089,6 +2105,7 @@ int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outb
 	inbuf = converted;
 
 	iconv_format = iconv_open("UTF8", "UCS-2BE");
+	//iconv_format = iconv_open("UTF8", "UCS2");
 	if (iconv_format == (iconv_t) -1) {
 		ERRORA("error: %s\n", GSMOPEN_P_LOG, strerror(errno));
 		return -1;
@@ -2160,7 +2177,7 @@ int iso_8859_1_to_utf8(private_t *tech_pvt, char *iso_8859_1_in, char *utf8_out,
 	return 0;
 }
 
-int utf_to_ucs2(private_t *tech_pvt, char *utf_in, size_t inbytesleft, char *ucs2_out, size_t outbytesleft)
+int utf8_to_ucs2(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *ucs2_out, size_t outbytesleft)
 {
 	/* cicopet */
 #ifndef WIN32
@@ -2176,7 +2193,7 @@ int utf_to_ucs2(private_t *tech_pvt, char *utf_in, size_t inbytesleft, char *ucs
 	memset(converted, '\0', sizeof(converted));
 
 	outbuf = converted;
-	inbuf = utf_in;
+	inbuf = utf8_in;
 
 	iconv_format = iconv_open("UCS-2BE", "UTF8");
 	if (iconv_format == (iconv_t) -1) {
@@ -2185,16 +2202,16 @@ int utf_to_ucs2(private_t *tech_pvt, char *utf_in, size_t inbytesleft, char *ucs
 	}
 	outbytesleft = 16000;
 
-	DEBUGA_GSMOPEN("in=%s, inleft=%d, out=%s, outleft=%d, utf_in=%s, converted=%s\n",
-				   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, utf_in, converted);
+	DEBUGA_GSMOPEN("in=%s, inleft=%d, out=%s, outleft=%d, utf8_in=%s, converted=%s\n",
+				   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, utf8_in, converted);
 	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 	if (iconv_res == (size_t) -1) {
 		ERRORA("error: %s %d\n", GSMOPEN_P_LOG, strerror(errno), errno);
 		return -1;
 	}
 	DEBUGA_GSMOPEN
-		("iconv_res=%d,  in=%s, inleft=%d, out=%s, outleft=%d, utf_in=%s, converted=%s\n",
-		 GSMOPEN_P_LOG, iconv_res, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, utf_in, converted);
+		("iconv_res=%d,  in=%s, inleft=%d, out=%s, outleft=%d, utf8_in=%s, converted=%s\n",
+		 GSMOPEN_P_LOG, iconv_res, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, utf8_in, converted);
 	iconv_close(iconv_format);
 
 	for (i = 0; i < 16000 - outbytesleft; i++) {
@@ -2436,7 +2453,7 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 			}
 
 			memset(dest2, '\0', sizeof(dest2));
-			utf_to_ucs2(tech_pvt, dest, strlen(dest), dest2, sizeof(dest2));
+			utf8_to_ucs2(tech_pvt, dest, strlen(dest), dest2, sizeof(dest2));
 			sprintf(smscommand, "AT+CMGS=\"%s\"", dest2);	//TODO: support phones that only accept pdu mode
 		}
 		//TODO: support phones that only accept pdu mode
@@ -2476,12 +2493,13 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 		}
 #endif
 
-		//sprintf(text,"ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大"); //let's test the beauty of utf
+		//sprintf(text,"ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大cuc"); //let's test the beauty of utf8
+		//sprintf(text,":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù"); //let's test the beauty of utf8
 		memset(smscommand, '\0', sizeof(smscommand));
 		if (tech_pvt->no_ucs2) {
 			sprintf(smscommand, "%s", text);
 		} else {
-			utf_to_ucs2(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
+			utf8_to_ucs2(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
 		}
 
 		smscommand[strlen(smscommand)] = 0x1A;

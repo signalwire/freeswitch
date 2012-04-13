@@ -559,7 +559,7 @@ int gsmopen_serial_getstatus_AT(private_t *tech_pvt);
 #endif // NOTDEF
 #define RESULT_FAILURE 0
 #define RESULT_SUCCESS 1
-int utf_to_ucs2(private_t *tech_pvt, char *utf_in, size_t inbytesleft, char *ucs2_out, size_t outbytesleft);
+int utf8_to_ucs2(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *ucs2_out, size_t outbytesleft);
 int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outbytesleft);
 //#define PUSHA_UNLOCKA(x)    pthread_cleanup_push(gsmopen_unlocka_log, (void *) x);
 //#define POPPA_UNLOCKA(x)    pthread_cleanup_pop(0);
