@@ -1457,7 +1457,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 	switch_event_t *e = *event;
 	char *var_array[1024] = { 0 };
 	int var_count = 0;
-	char *next;
+	char *next = NULL, *vnext = NULL;
 
 	if (dup) {
 		vdatap = strdup(data);
@@ -1479,6 +1479,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 	if (check_a) end = check_a;
 	
 	if (end) {
+		next = end;
 		vdata++;
 		*end++ = '\0';
 	} else {
@@ -1494,13 +1495,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 
 	
 	for (;;) {
-		if ((next = strchr(vdata, b))) {
+		if (next) {
 			char *pnext;
+
 			*next++ = '\0';
 
 			if ((pnext = switch_strchr_strict(next, a, " "))) {
 				next = pnext + 1;
 			}
+
+			vnext = switch_find_end_paren(next, a, b);
+			next = NULL;
 		}
 			
 
@@ -1525,8 +1530,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 			}
 		}
 
-		if (next) {
-			vdata = next;
+		if (vnext) {
+			vdata = vnext;
 		} else {
 			break;
 		}
@@ -1987,16 +1992,20 @@ if ((dp = realloc(data, olen))) {\
     memset(c, 0, olen - cpos);\
  }}                           \
 
-SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, const char *in, switch_event_t *var_list, switch_event_t *api_list)
+SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, const char *in, switch_event_t *var_list, switch_event_t *api_list, uint32_t recur)
 {
 	char *p, *c = NULL;
 	char *data, *indup, *endof_indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
 	const char *sub_val = NULL;
-	char *cloned_sub_val = NULL;
+	char *cloned_sub_val = NULL, *expanded_sub_val = NULL;
 	char *func_val = NULL;
 	int nv = 0;
 	char *gvar = NULL, *sb = NULL;
+
+	if (recur > 100) {
+		return (char *) in;
+	}
 
 	if (zstr(in)) {
 		return (char *) in;
@@ -2127,7 +2136,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 					char *ptr;
 					int idx = -1;
 					
-					if ((expanded = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list)) == vname) {
+					if ((expanded = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list, recur+1)) == vname) {
 						expanded = NULL;
 					} else {
 						vname = expanded;
@@ -2156,23 +2165,30 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 							sub_val = "INVALID";
 						}
 
-					}
 
-					if (offset || ooffset) {
-						cloned_sub_val = strdup(sub_val);
-						switch_assert(cloned_sub_val);
-						sub_val = cloned_sub_val;
-					}
+						if ((expanded_sub_val = switch_event_expand_headers_check(event, sub_val, var_list, api_list, recur+1)) == sub_val) {
+							expanded_sub_val = NULL;
+						} else {
+							sub_val = expanded_sub_val;
+						}
+					
 
-					if (offset >= 0) {
-						sub_val += offset;
-					} else if ((size_t) abs(offset) <= strlen(sub_val)) {
-						sub_val = cloned_sub_val + (strlen(cloned_sub_val) + offset);
-					}
+						if (offset || ooffset) {
+							cloned_sub_val = strdup(sub_val);
+							switch_assert(cloned_sub_val);
+							sub_val = cloned_sub_val;
+						}
+						
+						if (offset >= 0) {
+							sub_val += offset;
+						} else if ((size_t) abs(offset) <= strlen(sub_val)) {
+							sub_val = cloned_sub_val + (strlen(cloned_sub_val) + offset);
+						}
 
-					if (ooffset > 0 && (size_t) ooffset < strlen(sub_val)) {
-						if ((ptr = (char *) sub_val + ooffset)) {
-							*ptr = '\0';
+						if (ooffset > 0 && (size_t) ooffset < strlen(sub_val)) {
+							if ((ptr = (char *) sub_val + ooffset)) {
+								*ptr = '\0';
+							}
 						}
 					}
 
@@ -2186,13 +2202,13 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 					if (stream.data) {
 						char *expanded_vname = NULL;
 
-						if ((expanded_vname = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list)) == vname) {
+						if ((expanded_vname = switch_event_expand_headers_check(event, (char *) vname, var_list, api_list, recur+1)) == vname) {
 							expanded_vname = NULL;
 						} else {
 							vname = expanded_vname;
 						}
 
-						if ((expanded = switch_event_expand_headers_check(event, vval, var_list, api_list)) == vval) {
+						if ((expanded = switch_event_expand_headers_check(event, vval, var_list, api_list, recur+1)) == vval) {
 							expanded = NULL;
 						} else {
 							vval = expanded;
@@ -2232,6 +2248,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 
 				switch_safe_free(func_val);
 				switch_safe_free(cloned_sub_val);
+				switch_safe_free(expanded_sub_val);
 				sub_val = NULL;
 				vname = NULL;
 				vtype = 0;

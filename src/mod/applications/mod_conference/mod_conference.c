@@ -174,7 +174,8 @@ typedef enum {
 	CFLAG_INHASH = (1 << 11),
 	CFLAG_EXIT_SOUND = (1 << 12),
 	CFLAG_ENTER_SOUND = (1 << 13),
-	CFLAG_VIDEO_BRIDGE = (1 << 14)
+	CFLAG_VIDEO_BRIDGE = (1 << 14),
+	CFLAG_AUDIO_ALWAYS = (1 << 15)
 } conf_flag_t;
 
 typedef enum {
@@ -2670,8 +2671,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 		}
 
 		/* skip frames that are not actual media or when we are muted or silent */
-		if ((switch_test_flag(member, MFLAG_TALKING) || member->energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK) &&
-			!switch_test_flag(member->conference, CFLAG_WAIT_MOD)) {
+		if ((switch_test_flag(member, MFLAG_TALKING) || member->energy_level == 0 || switch_test_flag(member->conference, CFLAG_AUDIO_ALWAYS)) 
+			&& switch_test_flag(member, MFLAG_CAN_SPEAK) &&	!switch_test_flag(member->conference, CFLAG_WAIT_MOD)) {
 			switch_audio_resampler_t *read_resampler = member->read_resampler;
 			void *data;
 			uint32_t datalen;
@@ -4426,6 +4427,10 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		switch_xml_set_attr_d(x_conference, "wait_mod", "true");
 	}
 
+	if (switch_test_flag(conference, CFLAG_AUDIO_ALWAYS)) {
+		switch_xml_set_attr_d(x_conference, "audio_always", "true");
+	}
+
 	if (switch_test_flag(conference, CFLAG_RUNNING)) {
 		switch_xml_set_attr_d(x_conference, "running", "true");
 	}
@@ -5962,6 +5967,8 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_VID_FLOOR;
 			} else if (!strcasecmp(argv[i], "video-bridge")) {
 				*f |= CFLAG_VIDEO_BRIDGE;
+			} else if (!strcasecmp(argv[i], "audio-always")) {
+				*f |= CFLAG_AUDIO_ALWAYS;
 			}
 		}		
 

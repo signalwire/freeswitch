@@ -758,10 +758,6 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		rval = SWITCH_FALSE;
 	}
 
-	if (unlink(filename) != 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", filename);
-	}
-
 	if (zstr(err)) {
 		if (file) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed file [%s] to [%s]\n", filename, to);
@@ -777,6 +773,11 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	if (fd > -1) {
 		close(fd);
 	}
+
+	if (unlink(filename) != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", filename);
+	}
+
 	if (ifd > -1) {
 		close(ifd);
 	}

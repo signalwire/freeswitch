@@ -273,6 +273,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_hold_music_partner(switch_channe
 
 SWITCH_DECLARE(uint32_t) switch_channel_del_variable_prefix(switch_channel_t *channel, const char *prefix);
 
+#define switch_channel_set_variable_safe(_channel, _var, _val) switch_channel_set_variable_var_check(_channel, _var, _val, SWITCH_FALSE)
 #define switch_channel_set_variable(_channel, _var, _val) switch_channel_set_variable_var_check(_channel, _var, _val, SWITCH_TRUE)
 #define switch_channel_set_variable_partner(_channel, _var, _val) switch_channel_set_variable_partner_var_check(_channel, _var, _val, SWITCH_TRUE)
 
@@ -592,8 +593,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(_In_ switch_channel_
   \return the original string if no expansion takes place otherwise a new string that must be freed
   \note it's necessary to test if the return val is the same as the input and free the string if it is not.
 */
-SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *channel, const char *in, switch_event_t *var_list, switch_event_t *api_list);
-#define switch_channel_expand_variables(_channel, _in) switch_channel_expand_variables_check(_channel, _in, NULL, NULL)
+SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *channel, const char *in, switch_event_t *var_list, switch_event_t *api_list, uint32_t recur);
+#define switch_channel_expand_variables(_channel, _in) switch_channel_expand_variables_check(_channel, _in, NULL, NULL, 0)
 
 
 SWITCH_DECLARE(char *) switch_channel_build_param_string(_In_ switch_channel_t *channel, _In_opt_ switch_caller_profile_t *caller_profile,

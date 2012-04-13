@@ -491,7 +491,9 @@ ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t s
 ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event)
 {
 	char *txt;
-	char event_buf[256] = "";
+	char *event_buf = NULL;
+	esl_status_t status = ESL_FAIL;
+	size_t len = 0;
 
 	if (!handle->connected || !event) {
 		return ESL_FAIL;
@@ -500,23 +502,20 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
 	esl_event_serialize(event, &txt, ESL_FALSE);
 
 	esl_log(ESL_LOG_DEBUG, "SEND EVENT\n%s\n", txt);
-		
-	snprintf(event_buf, sizeof(event_buf), "sendevent %s\n", esl_event_name(event->event_id));
 	
-	if (send(handle->sock, event_buf, strlen(event_buf), 0) <= 0) goto fail;
-	if (send(handle->sock, txt, strlen(txt), 0) <= 0) goto fail;
+	len = strlen(txt) + 100;
+	event_buf = malloc(len);
+	assert(event_buf);
+	memset(event_buf, 0, len);
 	
-	free(txt);
-
-	return esl_recv(handle);
-
- fail:
-
-	handle->connected = 0;
+	snprintf(event_buf, len, "sendevent %s\n%s", esl_event_name(event->event_id), txt);
+	
+	status = esl_send_recv(handle, event_buf);
 
 	free(txt);
+	free(event_buf);
 
-	return ESL_FAIL;
+	return status;
 
 }
 
@@ -554,34 +553,36 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 
 ESL_DECLARE(esl_status_t) esl_sendmsg(esl_handle_t *handle, esl_event_t *event, const char *uuid)
 {
-	char cmd_buf[128] = "sendmsg\n";
+	char *cmd_buf = NULL;
 	char *txt;
-	
+	size_t len = 0;
+	esl_status_t status = ESL_FAIL;
+
     if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
         return ESL_FAIL;
     }
 
+	esl_event_serialize(event, &txt, ESL_FALSE);
+	len = strlen(txt) + 100;
+	cmd_buf = malloc(len);
+	assert(cmd_buf);
+	memset(cmd_buf, 0, len);	
+
+
 	if (uuid) {
-		snprintf(cmd_buf, sizeof(cmd_buf), "sendmsg %s\n", uuid);
+		snprintf(cmd_buf, sizeof(cmd_buf), "sendmsg %s\n%s", uuid, txt);
+	} else {
+		snprintf(cmd_buf, sizeof(cmd_buf), "sendmsg\n%s", txt);
 	}
 	
-	esl_event_serialize(event, &txt, ESL_FALSE);
 	esl_log(ESL_LOG_DEBUG, "%s%s\n", cmd_buf, txt);
 
-	if (send(handle->sock, cmd_buf, strlen(cmd_buf), 0) <= 0) goto fail;
-	if (send(handle->sock, txt, strlen(txt), 0) <= 0) goto fail;
-	
-	free(txt);
-
-	return esl_recv(handle);
-
- fail:
-
-	handle->connected = 0;
+	status = esl_send_recv(handle, cmd_buf);
 
 	free(txt);
+	free(cmd_buf);
 
-	return ESL_FAIL;
+	return status;
 }
 
 

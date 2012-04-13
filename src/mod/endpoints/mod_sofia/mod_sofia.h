@@ -515,6 +515,13 @@ typedef enum {
 	MEDIA_OPT_BYPASS_AFTER_ATT_XFER = (1 << 1)
 } sofia_media_options_t;
 
+typedef enum {
+       PAID_DEFAULT = 0,
+       PAID_USER,
+       PAID_USER_DOMAIN,
+       PAID_VERBATIM
+} sofia_paid_type_t;
+
 #define MAX_RTPIP 50
 
 struct sofia_profile {
@@ -652,6 +659,7 @@ struct sofia_profile {
 	uint32_t sip_force_expires;
 	uint32_t sip_expires_max_deviation;
 	int ireg_seconds;
+	sofia_paid_type_t paid_type;
 };
 
 struct private_object {
