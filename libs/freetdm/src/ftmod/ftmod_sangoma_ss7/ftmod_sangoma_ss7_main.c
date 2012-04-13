@@ -997,6 +997,9 @@ static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t 
 			ftdm_channel_t *close_chan = ftdmchan;
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_SUS_RECVD);
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
+			sngss7_clear_ckt_flag (sngss7_info, FLAG_SENT_ACM);
+			sngss7_clear_ckt_flag (sngss7_info, FLAG_SENT_CPG);
+
 			sngss7_flush_queue(sngss7_info->event_queue);
 			sngss7_info->peer_data = NULL;
 			ftdm_channel_close (&close_chan);
