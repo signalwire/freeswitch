@@ -2545,7 +2545,13 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				}
 
 				if (holding) {
-					astate = "early";
+					if (profile->pres_held_type == PRES_HELD_CONFIRMED) {
+						astate = "confirmed";
+					} else if (profile->pres_held_type == PRES_HELD_TERMINATED) {
+						astate = "terminated";
+					} else {
+						astate = "early";
+					}
 				}
 
 

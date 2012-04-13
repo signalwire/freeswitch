@@ -510,6 +510,12 @@ typedef enum {
 } sofia_presence_type_t;
 
 typedef enum {
+	PRES_HELD_EARLY = 0,
+	PRES_HELD_CONFIRMED = 1,
+	PRES_HELD_TERMINATED = 2
+} sofia_presence_held_calls_type_t;
+
+typedef enum {
 	MEDIA_OPT_NONE = 0,
 	MEDIA_OPT_MEDIA_ON_HOLD = (1 << 0),
 	MEDIA_OPT_BYPASS_AFTER_ATT_XFER = (1 << 1)
@@ -623,6 +629,7 @@ struct sofia_profile {
 	int server_rport_level;
 	int client_rport_level;
 	sofia_presence_type_t pres_type;
+	sofia_presence_held_calls_type_t pres_held_type;
 	sofia_media_options_t media_options;
 	uint32_t force_subscription_expires;
 	uint32_t force_publish_expires;

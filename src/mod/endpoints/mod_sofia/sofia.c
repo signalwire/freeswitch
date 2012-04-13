@@ -4213,6 +4213,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else if (switch_true(val)) {
 							profile->pres_type = PRES_TYPE_FULL;
 						}
+					} else if (!strcasecmp(var, "presence-hold-state")) {
+						if (!strcasecmp(val, "confirmed")) {
+							profile->pres_held_type = PRES_HELD_CONFIRMED;
+						} else if (!strcasecmp(val, "terminated")) {
+							profile->pres_held_type = PRES_HELD_TERMINATED;
+						}
 					} else if (!strcasecmp(var, "presence-privacy")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PRESENCE_PRIVACY);
