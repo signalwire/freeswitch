@@ -115,7 +115,6 @@ static FIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 }
 
 
-#ifdef PRI_NEW_SET_API
 /**
  * \brief Logs a libpri message
  * \param pri	libpri structure
@@ -147,25 +146,6 @@ static void s_pri_error(struct pri *pri, char *s)
 		ftdm_log(FTDM_LOG_ERROR, "%s", s);
 	}
 }
-#else	/* !PRI_NEW_SET_API */
-/**
- * \brief Logs a libpri message
- * \param s	Message string
- */
-static void s_pri_message(char *s)
-{
-	ftdm_log(FTDM_LOG_DEBUG, "%s", s);
-}
-
-/**
- * \brief Logs a libpri error
- * \param s	Error string
- */
-static void s_pri_error(char *s)
-{
-	ftdm_log(FTDM_LOG_ERROR, "%s", s);
-}
-#endif
 
 
 #define PRI_DEBUG_Q921_ALL	(PRI_DEBUG_Q921_RAW | PRI_DEBUG_Q921_DUMP | PRI_DEBUG_Q921_STATE)

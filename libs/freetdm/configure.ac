@@ -236,6 +236,21 @@ then
 		 AC_MSG_ERROR([libpri not found or unusable (see config.log for details)])]
 	)
 
+	AC_MSG_CHECKING([whether libpri is too old])
+	AC_PREPROC_IFELSE(
+		[AC_LANG_PROGRAM(
+			[#include <libpri.h>],
+			[#if !defined(PRI_IO_FUNCS)
+			 #error "libpri is lacking PRI_IO_FUNCS"
+			 #elif !defined(PRI_NEW_SET_API)
+			 #error "libpri is lacking PRI_NEW_SET_API"
+			 #endif]
+		 )],
+		[AC_MSG_RESULT([no])],
+		[AC_MSG_RESULT([yes])
+		 AC_MSG_ERROR([Your version of libpri is too old (pre 1.2), please update!])]
+	)
+
 	AC_MSG_CHECKING([whether libpri has BRI support])
 	AC_LINK_IFELSE(
 		[AC_LANG_PROGRAM(
