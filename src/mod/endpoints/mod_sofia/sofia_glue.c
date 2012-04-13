@@ -2355,28 +2355,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch_channel_set_variable(channel, "sip_to_host", sofia_glue_get_host(to_str, switch_core_session_get_pool(session)));
 		switch_channel_set_variable(channel, "sip_from_host", sofia_glue_get_host(from_str, switch_core_session_get_pool(session)));
 
-		if (!switch_channel_get_variable(channel, "presence_id")) {
-			char *from = switch_core_session_strdup(session, from_str);
-			const char *s;
-
-			if ((s = switch_stristr("<", from))) {
-				from = (char *)s + 1;
-			}
-
-			if (!strncasecmp(from, "sip:", 4)) {
-				from += 4;
-			}
-
-			if (!strncasecmp(from, "sips:", 5)) {
-				from += 5;
-			}
-
-			if ((p = strchr(from, ':')) || (p = strchr(from, ';')) || (p = strchr(from, '>'))) {
-				*p++ = '\0';
-			}
-			
-			switch_channel_set_variable(channel, "presence_id", from);
-		}
 
 		if (!(tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 										NUTAG_URL(url_str),
