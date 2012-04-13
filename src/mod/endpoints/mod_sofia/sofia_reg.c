@@ -127,22 +127,20 @@ static void sofia_reg_kill_sub(sofia_gateway_t *gateway_ptr)
 static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 {
 
-	if (gateway_ptr->nh) {
-		nua_handle_bind(gateway_ptr->nh, NULL);
-	}
-
-	if (gateway_ptr->state != REG_STATE_REGED && gateway_ptr->state != REG_STATE_UNREGISTER) {
-		if (gateway_ptr->nh) {
-			nua_handle_destroy(gateway_ptr->nh);
-			gateway_ptr->nh = NULL;
-		}
+	if (!gateway_ptr->nh) {
 		return;
 	}
 
-	if (gateway_ptr->nh) {
+	if (gateway_ptr->state == REG_STATE_REGED || gateway_ptr->state == REG_STATE_UNREGISTER) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UN-Registering %s\n", gateway_ptr->name);
 		nua_unregister(gateway_ptr->nh, NUTAG_URL(gateway_ptr->register_url), NUTAG_REGISTRAR(gateway_ptr->register_proxy), TAG_END());
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Destroying registration handle for %s\n", gateway_ptr->name);
 	}
+
+	nua_handle_bind(gateway_ptr->nh, NULL);
+	nua_handle_destroy(gateway_ptr->nh);
+	gateway_ptr->nh = NULL;
 }
 
 void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int status, const char *phrase)
