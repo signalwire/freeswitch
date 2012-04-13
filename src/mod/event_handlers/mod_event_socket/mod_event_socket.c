@@ -1344,7 +1344,8 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			}
 		}
 
-		if (switch_test_flag(listener, LFLAG_HANDLE_DISCO) && switch_epoch_time_now(NULL) > listener->linger_timeout) {
+		if (switch_test_flag(listener, LFLAG_HANDLE_DISCO) && 
+			listener->linger_timeout != (time_t) -1 && switch_epoch_time_now(NULL) > listener->linger_timeout) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_DEBUG, "linger timeout, closing socket\n");
 			status = SWITCH_STATUS_FALSE;
 			break;
@@ -1356,8 +1357,18 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 				char message[128] = "";
 				char disco_buf[512] = "";
 
-				switch_snprintf(message, sizeof(message),
-								"Channel %s has disconnected, lingering by request from remote.\n", switch_channel_get_name(channel));
+				if (listener->linger_timeout != (time_t) -1) {
+					listener->linger_timeout += switch_epoch_time_now(NULL);
+					switch_snprintf(message, sizeof(message),
+						"Channel %s has disconnected, lingering %d seconds by request from remote.\n",
+						switch_channel_get_name(channel), listener->linger_timeout);
+				} else {
+					switch_snprintf(message, sizeof(message),
+						"Channel %s has disconnected, lingering by request from remote.\n",
+						switch_channel_get_name(channel));
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s", message);
+
 				mlen = strlen(message);
 
 				switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
@@ -2056,8 +2067,12 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			if (async) {
 				if ((status = switch_core_session_queue_private_event(listener->session, event, SWITCH_FALSE)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
+				} else if (status == SWITCH_STATUS_TERM) {
+					switch_snprintf(reply, reply_len, "-ERR closed queue");
+					status = SWITCH_STATUS_SUCCESS;
 				} else {
 					switch_snprintf(reply, reply_len, "-ERR memory error");
+					status = SWITCH_STATUS_SUCCESS;
 				}
 			} else {
 				switch_ivr_parse_event(listener->session, *event);
@@ -2067,8 +2082,12 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			if (!zstr(uuid) && (session = switch_core_session_locate(uuid))) {
 				if ((status = switch_core_session_queue_private_event(session, event, SWITCH_FALSE)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
+				} else if (status == SWITCH_STATUS_TERM) {
+					switch_snprintf(reply, reply_len, "-ERR closed queue");
+					status = SWITCH_STATUS_SUCCESS;
 				} else {
 					switch_snprintf(reply, reply_len, "-ERR memory error");
+					status = SWITCH_STATUS_SUCCESS;
 				}
 				switch_core_session_rwunlock(session);
 			} else {
@@ -2267,15 +2286,20 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 	} else if (!strncasecmp(cmd, "linger", 6)) {
 		if (listener->session) {
-			uint32_t linger_time = 600; /* sounds reasonable? */
+			time_t linger_time = 600; /* sounds reasonable? */
 			if (*(cmd+6) == ' ' && *(cmd+7)) { /*how long do you want to linger?*/
-				linger_time = (uint32_t)atoi(cmd+7);
+				linger_time = (time_t) atoi(cmd+7);
+			} else {
+				linger_time = (time_t) -1;
 			}
 
-			/*do we need a mutex to update linger_timeout ?*/
-			listener->linger_timeout = switch_epoch_time_now(NULL) + linger_time;
+			listener->linger_timeout = linger_time;
 			switch_set_flag_locked(listener, LFLAG_LINGER);
-			switch_snprintf(reply, reply_len, "+OK will linger %d seconds", linger_time);
+			if (listener->linger_timeout != (time_t) -1) {
+				switch_snprintf(reply, reply_len, "+OK will linger %d seconds", linger_time);
+			} else {
+				switch_snprintf(reply, reply_len, "+OK will linger");
+			}
 		} else {
 			switch_snprintf(reply, reply_len, "-ERR not controlling a session");
 		}
