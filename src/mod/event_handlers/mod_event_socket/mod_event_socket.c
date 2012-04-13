@@ -2067,12 +2067,8 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			if (async) {
 				if ((status = switch_core_session_queue_private_event(listener->session, event, SWITCH_FALSE)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
-				} else if (status == SWITCH_STATUS_TERM) {
-					switch_snprintf(reply, reply_len, "-ERR closed queue");
-					status = SWITCH_STATUS_SUCCESS;
 				} else {
 					switch_snprintf(reply, reply_len, "-ERR memory error");
-					status = SWITCH_STATUS_SUCCESS;
 				}
 			} else {
 				switch_ivr_parse_event(listener->session, *event);
@@ -2082,12 +2078,8 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			if (!zstr(uuid) && (session = switch_core_session_locate(uuid))) {
 				if ((status = switch_core_session_queue_private_event(session, event, SWITCH_FALSE)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
-				} else if (status == SWITCH_STATUS_TERM) {
-					switch_snprintf(reply, reply_len, "-ERR closed queue");
-					status = SWITCH_STATUS_SUCCESS;
 				} else {
 					switch_snprintf(reply, reply_len, "-ERR memory error");
-					status = SWITCH_STATUS_SUCCESS;
 				}
 				switch_core_session_rwunlock(session);
 			} else {
