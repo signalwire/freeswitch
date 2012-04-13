@@ -1547,7 +1547,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	char cid_buf[1024] = "";
 
 	if (switch_channel_ready(channel)) {
-		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_number, cbt->cid_name);
+		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_name, cbt->cid_number);
 
 		msg.from = __FILE__;
 		msg.string_arg = cid_buf;
