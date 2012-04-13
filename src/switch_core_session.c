@@ -531,7 +531,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				switch_codec2str(read_codec, rc, sizeof(rc));
 				if (vid_read_codec && vid_read_codec->implementation && switch_core_codec_ready(vid_read_codec)) {
 					vrc[0] = ',';
-					switch_codec2str(read_codec, vrc + 1, sizeof(vrc) - 1);
+					switch_codec2str(vid_read_codec, vrc + 1, sizeof(vrc) - 1);
 					switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE, vrc + 1);
 				}
 
