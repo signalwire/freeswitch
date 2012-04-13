@@ -35,7 +35,7 @@
  *
  */
 
-#if 0 
+#if 0
 #define SMG_RELAY_DBG
 #endif
 
@@ -1332,7 +1332,7 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 					}
 		
 #ifdef SMG_RELAY_DBG
-					stream->write_function(stream," blk_flag=%x | ckt_flag=%x | chan_flag=%x", ss7_info->blk_flags, ss7_info->ckt_flags, ftdmchan->flags);
+					stream->write_function(stream," | blk_flag=%x | ckt_flag=%x", ss7_info->blk_flags, ss7_info->ckt_flags);
 #endif
 					stream->write_function(stream, "\n");
 				} /* if ( hole, sig, voice) */
@@ -1374,36 +1374,26 @@ static ftdm_status_t handle_tx_blo(ftdm_stream_handle_t *stream, int span, int c
 			}
 
 			if ((ftdmchan->physical_span_id == lspan) && (ftdmchan->physical_chan_id == lchan)) {
-				/* now that we have the right channel...put a lock on it so no-one else can use it */
 				ftdm_mutex_lock(ftdmchan->mutex);
 
 				/* check if there is a pending state change|give it a bit to clear */
 				if (check_for_state_change(ftdmchan)) {
 					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", ss7_info->circuit->cic);
-					/* check if we need to die */
 					ftdm_assert(0, "State change not completed\n");
-					/* unlock the channel again before we exit */
 					ftdm_mutex_unlock(ftdmchan->mutex);
-					/* move to the next channel */
 					continue;
 				} else {
-					/* throw the ckt block flag */
 					sngss7_set_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
-
-					/* set the channel to suspended state */
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 				}
-
-				/* unlock the channel again before we exit */
+				
 				ftdm_mutex_unlock(ftdmchan->mutex);
+			}
 
-			} /* if ( span and chan) */
+		}
 
-		} /* if ( cic != 0) */
-
-		/* go the next circuit */
 		x++;
-	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
+	}
 
 	handle_show_blocks(stream, span, chan, verbose);
 
@@ -1440,33 +1430,22 @@ static ftdm_status_t handle_tx_ubl(ftdm_stream_handle_t *stream, int span, int c
 			}
 
 			if ((ftdmchan->physical_span_id == lspan) && (ftdmchan->physical_chan_id == lchan)) {
-				/* now that we have the right channel...put a lock on it so no-one else can use it */
 				ftdm_mutex_lock(ftdmchan->mutex);
 
 				/* check if there is a pending state change|give it a bit to clear */
 				if (check_for_state_change(ftdmchan)) {
 					SS7_ERROR("Failed to wait for pending state change on CIC = %d\n", ss7_info->circuit->cic);
-					/* check if we need to die */
 					ftdm_assert(0, "State change not completed\n");
-					/* unlock the channel again before we exit */
 					ftdm_mutex_unlock(ftdmchan->mutex);
-					/* move to the next channel */
 					continue;
 				} else {
-					/* throw the ckt block flag */
 					sngss7_set_ckt_blk_flag(ss7_info, FLAG_CKT_MN_UNBLK_TX);
-
-					/* clear the block flag */
 					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_CKT_MN_BLOCK_TX);
-
-					/* check group blocking */
 					sngss7_clear_ckt_blk_flag(ss7_info, FLAG_GRP_MN_BLOCK_TX); 
 					
-					/* set the channel to suspended state */
 					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 				}
 
-				/* unlock the channel again before we exit */
 				ftdm_mutex_unlock(ftdmchan->mutex);
 
 			}
@@ -1812,6 +1791,8 @@ static ftdm_status_t handle_tx_cgb(ftdm_stream_handle_t *stream, int span, int c
 				/* throw the grp maint. block flag */
 				sngss7_set_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_TX);
 
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
+
 				/* bring the sig status down */
 				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
 
@@ -1945,6 +1926,7 @@ static ftdm_status_t handle_tx_cgu(ftdm_stream_handle_t *stream, int span, int c
 
 				/* bring the sig status up */
 				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 
 				/* if this is the first channel in the range */
 				if (!main_chan) {

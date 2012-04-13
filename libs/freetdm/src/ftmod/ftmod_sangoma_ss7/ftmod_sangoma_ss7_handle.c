@@ -1181,11 +1181,12 @@ ftdm_status_t handle_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGBRSP:			/* mntc. oriented CGB response */
-		/*handle_cgb_req(suInstId, spInstId, circuit, globalFlg, evntType, siStaEvnt);*/
+		SS7_INFO(" Rx CGBA \n");
 		break;
 	/**************************************************************************/
 	case SIT_STA_CGURSP:			/* mntc. oriented CGU response */
 		/*SS7_WARN(" %s indication not currently supported\n", DECODE_LCC_EVENT(evntType));*/
+		SS7_INFO(" Rx CGUA \n");
 		break;
 	/**************************************************************************/
 	case SIT_STA_GRSREQ:			/* circuit group reset request */
@@ -2510,6 +2511,7 @@ ftdm_status_t handle_cgb_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 				/* bring the sig status down */
 				sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_DOWN);
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 
 				/* unlock the channel again before we exit */
 				ftdm_mutex_unlock(ftdmchan->mutex);
@@ -2665,7 +2667,8 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 				if (sngss7_channel_status_clear(sngss7_info)) {
 					sngss7_set_sig_status(sngss7_info, FTDM_SIG_STATE_UP);
 				}
-			
+				
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
 				ftdm_mutex_unlock(ftdmchan->mutex);
 
 				/* update the bit and byte counter*/
