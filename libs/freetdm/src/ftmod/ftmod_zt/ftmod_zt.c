@@ -561,7 +561,7 @@ static FIO_CONFIGURE_FUNCTION(zt_configure)
 			}
 		} else if (!strcasecmp(var, "echo_cancel_level")) {
 			num = atoi(val);
-			if (num < 0 || num > 256) {
+			if (num < 0 || num > 1024) {
 				ftdm_log(FTDM_LOG_WARNING, "invalid echo can val at line %d\n", lineno);
 			} else {
 				zt_globals.eclevel = num;
