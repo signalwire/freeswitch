@@ -2417,6 +2417,7 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 	//int found = 0;
 	int failed = 0;
 	int err = 0;
+	char mesg_test[1024];
 
 	//strncpy(rdest, idest, sizeof(rdest) - 1);
 	DEBUGA_GSMOPEN("GSMopenSendsms: dest=%s text=%s\n", GSMOPEN_P_LOG, dest, text);
@@ -2493,8 +2494,10 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 		}
 #endif
 
-		//sprintf(text,"ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大cuc"); //let's test the beauty of utf8
-		//sprintf(text,":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù"); //let's test the beauty of utf8
+		memset(mesg_test, '\0', sizeof(mesg_test));
+		sprintf(mesg_test,":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù"); //let's test the beauty of utf8
+		//text=mesg_test;
+		
 		memset(smscommand, '\0', sizeof(smscommand));
 		if (tech_pvt->no_ucs2) {
 			sprintf(smscommand, "%s", text);
