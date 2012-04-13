@@ -537,8 +537,10 @@ int gsmopen_serial_config_AT(private_t *tech_pvt);
 #define gsmopen_serial_write_AT_expect_noexpcr(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 0, 0)
 #define gsmopen_serial_write_AT_expect_noexpcr_tout(P, D, S, T) gsmopen_serial_write_AT_expect1(P, D, S, 0, T)
 // 20.5 sec timeout, used for querying the SIM and sending SMSs
-#define gsmopen_serial_write_AT_expect_longtime(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 1, 20)
-#define gsmopen_serial_write_AT_expect_longtime_noexpcr(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 0, 20)
+//#define gsmopen_serial_write_AT_expect_longtime(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 1, 20)
+//#define gsmopen_serial_write_AT_expect_longtime_noexpcr(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 0, 20)
+#define gsmopen_serial_write_AT_expect_longtime(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 1, 5)
+#define gsmopen_serial_write_AT_expect_longtime_noexpcr(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 0, 5)
 int gsmopen_serial_write_AT(private_t *tech_pvt, const char *data);
 int gsmopen_serial_write_AT_nocr(private_t *tech_pvt, const char *data);
 int gsmopen_serial_write_AT_ack(private_t *tech_pvt, const char *data);

@@ -1893,7 +1893,8 @@ int gsmopen_serial_write_AT_ack_nocr_longtime(private_t *tech_pvt, const char *d
 		return -1;
 	}
 
-	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, 20, NULL, 1);	// 20.5 sec timeout
+	//at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, 20, NULL, 1);	// 20.5 sec timeout
+	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, 3, NULL, 1);	// 3.5 sec timeout
 	UNLOCKA(tech_pvt->controldev_lock);
 	POPPA_UNLOCKA(tech_pvt->controldev_lock);
 
@@ -2466,7 +2467,7 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 			failed = 1;
 			goto uscita;
 		}
-		err = gsmopen_serial_AT_expect(tech_pvt, "> ", 0, 1);	// wait 1.5s for the prompt, no  crlf
+		err = gsmopen_serial_AT_expect(tech_pvt, "> ", 0, 1);	// wait 1.1s for the prompt, no  crlf
 #if 1
 		if (err) {
 			DEBUGA_GSMOPEN
@@ -2557,10 +2558,12 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 		POPPA_UNLOCKA(&tech_pvt->controldev_lock);
 	}
 
+#ifdef NOTDEF
 	err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
 	if (err) {
 		DEBUGA_GSMOPEN("AT+CMGF=0 (set message sending to PDU (as opposed to TEXT)  do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
 	}
+#endif// NOTDEF
 
 	DEBUGA_GSMOPEN("FINISH\n", GSMOPEN_P_LOG);
 	if (failed)
