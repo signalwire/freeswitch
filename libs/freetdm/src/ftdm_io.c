@@ -2199,9 +2199,12 @@ static ftdm_status_t _ftdm_channel_call_hangup_nl(const char *file, const char *
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 
-	if (ftdm_test_flag(chan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
+	/* In native sigbridge mode we ignore hangup requests from the user and hangup only when the signaling module decides it */
+	if (ftdm_test_flag(chan, FTDM_CHANNEL_NATIVE_SIGBRIDGE) && chan->state != FTDM_CHANNEL_STATE_TERMINATING) {
+
 		ftdm_log_chan_ex(chan, file, func, line, FTDM_LOG_LEVEL_DEBUG, 
 				"Ignoring hangup in channel in state %s (native bridge enabled)\n", ftdm_channel_state2str(chan->state));
+		ftdm_set_flag(chan, FTDM_CHANNEL_USER_HANGUP);
 		goto done;
 	}
 
