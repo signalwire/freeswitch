@@ -1101,6 +1101,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Write Buffer Failed!\n");
 					goto error;
 				}
+
+				/* Need to retrain the recording data */
+				switch_core_media_bug_flush_all(session);
 			}
 
 			if (!(switch_buffer_write(session->raw_write_buffer, write_frame->data, write_frame->datalen))) {

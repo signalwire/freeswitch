@@ -126,6 +126,10 @@ SWITCH_DECLARE(void) switch_core_media_bug_flush(switch_media_bug_t *bug)
 		switch_buffer_zero(bug->raw_write_buffer);
 		switch_mutex_unlock(bug->write_mutex);
 	}
+
+	bug->record_frame_size = 0;
+	bug->record_pre_buffer_count = 0;
+
 }
 
 SWITCH_DECLARE(void) switch_core_media_bug_inuse(switch_media_bug_t *bug, switch_size_t *readp, switch_size_t *writep)
