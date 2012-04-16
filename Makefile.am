@@ -64,7 +64,7 @@ cd-moh-install: uhd-moh-install sounds-music-48000-install
 all-recursive: libfreeswitch.la
 clean-recusive: clean_core
 install-recursive: install-libLTLIBRARIES install-binPROGRAMS
-$(RECURSIVE_TARGETS):
+$(RECURSIVE_TARGETS): freeswitch
 	@failcom='exit 1'; \
 	for f in x $$MAKEFLAGS; do \
 	  case $$f in \
