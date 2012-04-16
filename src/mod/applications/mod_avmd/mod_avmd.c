@@ -494,9 +494,9 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 //    double s_rate;
 //    double e_rate;
 //    double avg_a;
-    double sine_len;
+    //double sine_len;
     uint32_t sine_len_i;
-    uint32_t beep_len_i;
+    //uint32_t beep_len_i;
 //    int valid;
 
 	b = &session->b;
@@ -508,9 +508,9 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 
 	/*! Precompute values used heavily in the inner loop */
     sine_len_i = SINE_LEN(session->rate);
-    sine_len = (double)sine_len_i;
-    beep_len_i = BEEP_LEN(session->rate);
-
+    //sine_len = (double)sine_len_i;
+    //beep_len_i = BEEP_LEN(session->rate);
+	
     channel = switch_core_session_get_channel(session->session);
 
 	/*! Insert frame of 16 bit samples into buffer */
