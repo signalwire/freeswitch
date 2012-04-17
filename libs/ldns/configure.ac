@@ -486,3 +486,4 @@ AC_OUTPUT
 COPY_HEADER_FILES(ldns/, ldns/)
 
 AC_CONFIG_SUBDIRS([drill])
+AC_REQUIRE_AUX_FILE([install-sh])
