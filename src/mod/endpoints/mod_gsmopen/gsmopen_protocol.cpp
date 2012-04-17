@@ -1685,6 +1685,26 @@ read:
 						//servicecentretimestamp = sms->serviceCentreTimestamp();
 						//sender_recipient_address = sms->address();
 
+
+
+#ifdef NOTDEF_SENDING_EXAMPLE
+						SMSMessageRef smsMessage;
+						// message text has probably to be in 8859-1
+						smsMessage = new SMSSubmitMessage("submit me ", "3472665618");
+						cout << smsMessage->toString() << endl;
+						string pdu = smsMessage->encode();
+						cout << pdu << endl;
+						//cout << intToStr(pdu.length() / 2 - getSCAddressLen())  << endl;
+						cout << intToStr(pdu.length() / 2 - 1)  << endl;
+
+						/*
+						   string pdu = encode();
+						   Parser p(_at->sendPdu("+CMGS=" +
+						   intToStr(pdu.length() / 2 - getSCAddressLen()),
+						   "+CMGS:", pdu));
+						   */
+#endif// NOTDEF_SENDING_EXAMPLE
+
 #endif// WANT_GSMLIB
 
 
