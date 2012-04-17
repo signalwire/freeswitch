@@ -1,0 +1,138 @@
+OVERVIEW
+
+     The GSM library is written in C++ and uses the latest C++
+     features: namespaces, exceptions, the standard template library.
+
+     The actual library source code is in the gsmlib subdirectory of
+     this distribution. The following modules are available:
+
+     gsm_alloca.h      OS-specific alloca defines
+     gsm_at.h          Utility classes for AT command sequence handling
+     gsm_error.h       Error codes and error handling functions
+     gsm_event.h       Event handler interface
+     gsm_me_ta.h       Mobile Equipment/Terminal Adapter and SMS functions
+                       (ETSI GSM 07.07 and 07.05)
+     gsm_parser.h      Parser to parse MA/TA result strings
+     gsm_phonebook.h   Phonebook management functions
+     gsm_port.h        Abstract port definition
+     gsm_sms.h         SMS functions (ETSI GSM 07.05)
+     gsm_sms_codec.h   Coder and Encoder for SMS TPDUs
+     gsm_sms_store.h   SMS functions, SMS store (ETSI GSM 07.05)
+     gsm_sorted_phonebook.h Alphabetically sorted phonebook
+                            (residing in files or in the ME)
+     gsm_sorted_sms_store.h Sorted SMS store
+			    (sorted by address, time or type)
+                            (residing in files or in the ME)
+     gsm_unix_serial.h UNIX serial port implementation
+     gsm_util.h        Various utilities
+
+
+REQUIREMENTS
+
+     I have used egcs-1.1.2 and libstdc++.so.2.8.0 for compiling the
+     library and all programs. Older probably don't work because of
+     missing features.
+
+
+AVAILABLE DOCUMENTATION
+
+     If you want to do your own programming using the GSM library please
+     refer to the extensively documented header files or to the example
+     programs in the test or apps subdirectory.
+
+     I have used the following documentation to develop this software:
+
+       gts_gsm_02.30_v5.2.0.pdf
+       gts_gsm_03.40_v5.3.0.pdf
+       gts_gsm_04.11_v5.1.0.pdf
+       gts_gsm_02.82_v5.0.0.pdf
+       gts_gsm_03.41_v5.2.0.pdf
+       gts_gsm_07.05_v5.3.0.pdf
+       gts_gsm_03.38_v5.3.0.pdf
+       gts_gsm_04.08_v5.1.0.pdf
+       gts_gsm_07.07_v5.0.0.pdf
+
+    Due to copyright reasons I cannot include this documentation in
+    this distribution. You can download it from the ETSI website
+    (www.etsi.org) for free, though.
+
+
+COMPILATION
+
+    The code is automatically compiled without debugging code enabled
+    (mostly assert()'s). 
+
+     If there are any problems you can generate a debug version
+     by issuing
+
+       CXXFLAGS="-g" ./configure --disable-shared
+
+     To switch on asserts and additional debugging output change the line
+
+       CXXFLAGS="-DNEBUG $CXXFLAGS"
+
+     in configure.in do
+
+       dnl CXXFLAGS="-DNEBUG $CXXFLAGS"
+
+     Then regenerate configure by executing autoconf.
+
+     You must use at least gcc-2.95.2 to compile gsmlib successfully.
+
+
+TESTS
+
+    The tests directory contains a number of software tests. Two kinds 
+    of test programs are provided: Those, that run without a mobile
+    phone and those that require a mobile phone to be connected to a
+    serial port.
+
+    No access to mobile phone needed:
+    runparser.sh      Test the parser for AT responses
+    runsms.sh         Test SMS message encoding and decoding routines
+    runspb.sh         Test sorted phonebook module
+    runssms.sh        Test sorted SMS store module
+
+    Give mobile phone device as argument:
+    testsms2          Manipulate SMS store in the mobile phone (read/write)
+    testgsmlib        Test the gsm_me_ta module (readonly)
+    testpb            Dump all phonebooks in the mobile phone to the stdout
+                      (readonly)
+    testpb2           Manipulate phonebook in the mobile phone (read/write)
+
+    The tests that do not require a mobile phone can be executed by
+    issuing "make check" in the tests subdirectory. The others must be 
+    invoked manually. WARNING: These tests alter the contents of the
+    mobile phone's phonebook or SMS message memory!!! Make sure, that
+    you understand what the test does and be prepared for loss of data in
+    the mobile phone.
+
+HINTS
+
+    - By default gsmlib is compiled with NDEBUG set. There are lots
+      of assert()s all over the library that may help to find problems
+      in programs that use the library. Disable NDEBUG to get best
+      debugging support.
+
+CUSTOM BACKENDS
+
+    gsmlib now allows custom backends to be defined for sorted phonebooks
+    and sorted SMS stores. This can be used to store phonebook entries in
+    relational databases or LDAP servers. The interfaces are defined in
+    gsm_sorted_phonebook_base.h and gsm_sorted_sms_store_base.h,
+    respectively.
+
+    To register a custom backend (eg. for sorted phonebooks) follow
+    these steps:
+
+    1. Define a subclass of CustomPhonebookFactory.
+
+    2. Define a static initializer class in your module that uses the
+       interface CustomPhonebookRegistry::registerCustomPhonebookFactory()
+       to make your custom backend available.
+
+    3. Link your module to any application that should use your custom 
+       backend. The gsmpb and gsmsmsstore programs are prepared to use the
+       CustomPhonebookRegistry class to obtain your custom backend
+       objects.
+

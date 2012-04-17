@@ -1,0 +1,289 @@
+This is my list of TODOs for development of this software (not
+necessarily in order of importance):
+
+("+" = DONE)
+
++ handle:
+  > --> AT+COPS=?
+  > <-- 
+  > <-- +COPS: (1,"AMENA",,"21403"),(3,"MOVISTAR",,"21407"),
+  > <-- (3,"E VODAFONE",,"21401"),,(0,1),(2)
+  > <-- 
+  > <-- OK
+  > gsmctl[ERROR]: expected comma (at position 45 of string '(1,"AMENA",,"21403"),(3,"MOVISTAR",,"21407"),')
+
++ extend README and web site with names of working phones (Siemens S45,...)
+
++ add workaround:
+  > <ME0>  Manufacturer: Nokia Mobile Phones
+  > <ME1>  Model: 8290
+  > <ME2>  Revision: SW5.22
+  > <ME3>  Serial Number: 010070303406434
+  > <FUN>  Functionality Level: 1
+  > gsmctl[ERROR]: expected number, got '(2)'
+
+- add fork to gsmsmsd
+
++ document "on" and "off" operations of gsmctl
+
+- Just assume full functionality and issue AT+CGMF=0 if we haven't already 
+  done so for this MeTa.
+
++ make update po
+
++ add find function
+
++ specify exact location of manual files in /usr/man/man* in spec
+  file, so that erase does not try to delete these directories
+
++ update PO
+
++ add option to gsmsendsms/gsmsmsd to request delivery reports
+
++ Fix CBM reception in gsmsmsd, see testcb.cc program
+
++ fix gsmsmsd:
+  --> AT+CNMI=?
+  <-- 
+  <-- +CNMI: (1),(1),(0),(0),(0)
+  <-- 
+  <-- OK
+  --> AT+CNMI=1,0,0,0,0
+  <-- 
+  <-- +CME ERROR: 003
+  ./gsmsmsd[ERROR]: ME/TA error 'operation not allowed' (code 003)
+
++ Wenn ich den SMS-Speicher auslesen möchte, bricht gsmlib ab, weil der
+  Speicherplatz 1 auf der SIM-Karte nicht belegt ist. Das kann z.B.
+  passieren, wenn man Nachrichten im Handy löscht. Es kommt der Fehlercode
+  321 (Invalid memory index). Wie wäre es, in der Leseroutine alle
+  ungültigen Plätze zu ignorieren und solange zu lesen, bis die Anzahl der
+   vorhandenen Nachrichten im Speicher eingelesen ist?
+
++ document --charset option of gsmpb
+
++ Problems with PDUs with alphanumeric SCA, e.g.:
+  07911497941902F00414D0E474989D769F5DE4320839001040122151820000
+
++ > 2. Ich kann mit meinem Nokia 6210 nicht den Telefon-SMS-Speicher
+    auslesen. Dies liegt an der Speicherwahl, die vor dem Auslesen
+    an das Telefon übermittelt wird. Von der gsmlib wird anscheinend
+    immer die Anzahl der Speicher aus dem "CPMS=?"-Befehl genommen 
+    (z.B. "SM","SM","SM"). Notwendig ist es aber nur, die erste
+    Position (zum Lesen und Löschen) bzw. die ersten beiden 
+    Positionen (zum Schreiben) zu benutzen. 
+    Das Nokia 6210 unterstützt aber an der ritten Stelle nur "SM",
+    nicht "ME". So kann ich die SMS im Telefon leider nicht
+    auslesen :-(
+
+- add option to gsmpb/gsmssmstore deletion to delete ALL entries
+
+- recheck Solaris port
+
++ cache character set settings in MeTa
+
++ add documentation for new gsmctl and gsmpb charset parameters
+
++ support characters sets other than GSM default alphabet for phone books
+
++ create non-existent files (gsmpb and gsmsmsstore)
+
++ rename libgsm to libgsmme, new major version 1
+
++ document sca/setsca operations/parameters in gsmctl
+
++ document option to set SCA in SMS-related apps
+
++ implement option to set SCA in SMS-related apps
+
++ convert NDEBUG test output from cout to cerr
+
++ test new gsm_unix_serial behaviour
+
++ apply checks for telephone number in gsm_sorted_phonebook
+
++ add interrupted() checks
+
++ check for gcc-2.95.2 in configure
+
+- document custom backend options of gsmpb (and gsmsmsstore)
+
+- /var/lock/LCK..modem
+
++ make gsmctl all continue even if there are some failures
+
++ CPIN thing
+
++ bring German translations up-to-date
+
++ document -I parameter
+
++ make chat routines robust against TAs that insist on echoing AT commands
+
++ ericsson sh 888:
+  <-- AT+CLCK="P2",2,,1
+  <-- 
+  +CME ERROR: 4
+  gsmctl[ERROR]: ME/TA error 'operation not supported' (code 4)
+
++ put README etc. into gsmlib package (not only devel)
+
++ make SMS decoding routines more robust against bad SMS (especially
+  premature end of PDU)
+
++ stop gsm_sorted_sms_store.cc from copying back SMS that came from
+  the SC (SMS_DELIVER, SMS_STATUS_REPORT, SMS_SUBMIT_REPORT). Their
+  message type is ambiguous and the ME may misinterpret them.
+
++ gsmsmsd: reinitialize modem every hour or so (signal termination implemented)
+
++ implement store, flush and spool options of gsmsmsd,
+  document them in man pages
+
++ test case for COPS answer numeric operator name in quotation marks
+  (testparser.cc)
+
++ retry when initializing TA (ATZ/ATE0 sequences)
+
++ correctly parse malformed SMS PDUs without SCA with Ericsson phone,
+  introduce Capability object for that. Ericsson ID:
+  <ME0>  Manufacturer: ERICSSON
+  <ME1>  Model: 6050102
+  <ME2>  Revision: 990225 1852 CXC112143
+  <ME3>  Serial Number: 520001690279310
+
++ Determine CPMS number of parameters for CPMS command (Ericsson
+  phone/GM12 GSM modem):
+  AT+CPMS?                                                                     
+  +CPMS: "ME",0,10,"ME",0,10         
+  AT+CPMS=?                               
+  +CPMS: ("ME","SM"),("ME","SM")          
+
++ accept string as numeric value when interpreting COPS=? response
+  (Ericsson phone + GSM12 GSM module)
+
++ accept string as numeric value when interpreting COPS? response
+  (Ericsson phone + GSM12 GSM module)
+
++ It would be nice if it was possible to send sms:es
+  via gsmsmsd as well, via a spool directory or a socket (or stdin, in which
+  case one can put another program in front of this program and then
+  feed it with outgoing messages any way one wants). That way the program
+  could be the gateway between programs and the sms network.  Now one has
+  to stop gsmsmsd to send an sms and that's not so elegant or write
+  ones own program.
+
++ gsmsmsd geht davon aus, das ein platz frei ist und benutzt nur diesen....
+  Wenn also eine SMS kommt, dann zieht es Sie raus, und löscht den
+  Speicherplatz.
+  Wenn aber die Karte voll ist, passiert gar nichts. Für eine automatisierte
+  umgebung ist das schlecht. besser wäre es, bei startup von gsmsmsd alle
+  Speicherplätze abzufrühstücken, und die Action aufzurufen.
+
++ Ein RING bringt den gsmsmsd ziemlich heftig aus dem Tritt. Hab jetzt ´ne
+  Rufumleitung eingebaut.
+
++ Links section in homepage
+
++ AT+CNMI=? liefert bei mir folgendes zurück:
+  +CNMI: (0-3),(0-3),(0-2),0,(0-1)
+  Parameter 4 (<ds>) liefert also keine Liste sondern nur ein Int zurück, du
+  versuchts aber ein ( zu parsen.
+  Was sagt die ETSI-spec. dazu ?? Ist das konform ??
+
++ give name of command at beginning of synopsis in man pages
+
++ list combinations of mobiles phones/GSM modems in the README
+
++ test ALARM in case of timeout when writing or reading to TA
+
++ install headers in gsmlib subdirectory
+
++ RPM spec file
+
++ test index changes for sorted phonebook -> write second test case
+
++ sort phone numbers the same way in gsm_sorted_sms_store and
+  gsm_sorted_phonebook
+
++ write glossary for all these nice abbreviations (TA, ME, SC, SME, TE)
+
++ HAVE_VSNPRINTF instead of HAVE_VPRINTF
+
++ internationalization of messages with GNU gettext. Files:
+  +gsm_at.cc               +gsm_parser.cc           +gsm_sorted_phonebook.cc
+  +gsm_error.cc            +gsm_phonebook.cc        +gsm_sorted_sms_store.cc
+  +gsm_event.cc            +gsm_sms.cc              +gsm_unix_serial.cc
+  +gsm_me_ta.cc            +gsm_sms_codec.cc        +gsm_util.cc
+  +gsm_nls.cc              +gsm_sms_store.cc
+  +gsmctl.cc               +gsmpb.cc                +gsmsendsms.cc
+  +gsmsmsd.cc              +gsmsmsstore.cc
+
++ implement indexed phonebook ops in gsmpb.cc
+
++ describe phonebook file format in gsmpb.man
+
++ update list of compatible hardware in README
+
++ all #include <gsm_config.h> must be enclosed in #ifdef's
+
++ check for getopt_long in configure
+
++ remove asserts regarding lengths of numeric data types, put them
+into configure script
+(string)
+
++ sort options in apps/*.cc alphabetically
+
++ in gsm_sorted_sms_store compare telephone numbers numerically
+
++ introduce -v option to gsmpb and gsmsmsstore to report execution
+statistics (gives a nicer feeling to users)
+
++ test new synchronization function in gsmpb program
+
++ implement equality operator for SMSSToreEntry
+
++ test 'make install'
+
++ implement operations in the gsmctl program
+
++ test operations in the gsmctl program
+
++ document operations in the gsmctl program
+
++ rewrite test cases (compare output)
+
++ write gsm_sorted_sms_store module (along the lines of gsm_sorted_phonebook)
+
++ complete gsmsmsstore program (using abovementioned modules)
+
+TODO low priority:
+
+- implement SMS text mode
+
+- The action command of gsmsmsd would be easier to make, if the program
+  sent the values in environment variables instead (except the user data
+  which could be sent on stdin).
+
++ Upgrade to latest autoheader, autoconf, libtool
+
+- provide German translations for manual pages
+
+- organize doc subdirectory for translated READMEs, manual pages
+
++ Win32 port
+
+- test: optimization when accessing phonebooks: use size information
+available via AT command to stop reading entries known to be empty (I
+cannot test this with my hardware since CPBS? is not fully supported)
+
+- make apps accept stdin or stdout
+
++ maybe strip leading and trailing whitespace from phonebook entries
+when reading them from ME/TA or file? (not done, perhaps users want to 
+achieve special effects with white space)
+
+- support international character sets (8-bit, 16-bit) in phonebook
+operations (I'd like to have input from users who need this)
+

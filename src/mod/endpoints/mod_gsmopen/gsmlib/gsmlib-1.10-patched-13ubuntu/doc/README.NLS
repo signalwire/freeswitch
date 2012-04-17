@@ -1,0 +1,72 @@
+0 Introduction
+--------------
+
+This version of gsmlib contains national language support (NLS) using
+the GNU (or OS-supplied) gettext library. gettext eases the handling
+of translations of (usually english) output messages to other
+languages by introducing the concept of message catalogs.
+
+Message catalogs can exist in various formats. The human-readable and
+-editable format is the PO file format. I have written a PO-file for
+the german language (de.po). These human-readable files are then
+translated to MO files which can be used by the gettext library.
+
+Please refer to the GNU gettext documentation (at the time of this
+writing gettext-0.10) for further details.
+
+
+1 Compiling gsmlib with localized messages
+------------------------------------------
+
+Gsmlib is compiled by default with NLS enabled. If you don't want
+NLS invoke configure with the option
+
+./configure --disable-nls
+
+
+2 Adding new message dialogs
+----------------------------
+
+1. Edit the ALL_LINGUAS line in "source/configure.in" and add your
+   language, eg. French:
+
+   ALL_LINGUAS="de fr"
+
+2. Execute "autoconf" to create a new "configure" script (possible
+   problem: incompatible "autoconf")
+
+3. Now issue "./configure" in the "sources" directory.
+
+4. go to the "po" subdirectory
+
+5. do a "touch fr.po" to create an initially empty PO-file.
+
+6. do a "make update-po". This extracts all the strings from the files 
+   listed in "POTFILES" and puts them with empty translations into "fr.po"
+   (it also updates existing po-Files such as "de.po").
+
+7. Now use the editor of your choice to provide translations in
+   "fr.po". There is an emacs major mode (po-mode) that eases this
+   process.
+
+8. now issue "make". This causes an "fr.mo" to be created.
+
+
+3 Adding new strings to gsmlib source code
+------------------------------------------
+
+1. If you add new strings to the gsmlib source code that need
+   translation enclose them with "_(" and ")" (see gettext documentation
+   for special cases).
+
+2. go to the "po" directory.
+
+3. do a "make update-po". This updates all existing PO-files (removing 
+   obsolete translations, providing new, emptry entries).
+
+4. Provide translations for the new, empty entries (ideally using
+   emacs po-mode)
+
+5. now issue "make". This causes up-to-date MO-files to be created.
+
+

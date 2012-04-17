@@ -1,0 +1,75 @@
+Extended support for Siemens mobile phones via gsmlib
+-----------------------------------------------------
+
+* Hardware:
+
+Supported phones: S25, S35, S45, ME45, SL45
+Tested phones: S45, ME45
+
+* Feature list:
+
+ - ACM: Output ACM (accumulated call meter) and ACMmax	=> maybe not
+
+ - BNR/BNW: Binary read and write			=> yes, xfer
+
+ - CID: Output card ID					=> maybe
+
+ - CKS: Output SIM card status				=> maybe
+
+ - CNI: Output call number information			=> maybe
+
+ - DBR: Database Read					=> yes, phonebook
+
+ - DLD: Delete the "last number redial" memory		=> maybe dangerous?
+
+ - GAUTH: Select Type of Authentication for PPP		=> no
+
+ - ICO: Icon control					=> no
+
+ - LCK: Switch locks on and off				=> yes, lock/unlock
+
+ - LNG: Language settings				=> maybe
+
+ - MGL: List SMS					=> no
+
+ - MGO: SMS overflow indicator				=> no
+
+ - MGR: Read SMS (same as AT+CMGR)			=> no
+
+ - MSO: Switch device off				=> maybe not
+
+ - NFS: Select NF hardware				=> maybe
+
+ - NFV: Set the volume					=> maybe
+
+ - PBC: Seek in telephone book				=> no
+
+ - PBG: Sorted telephone book				=> yes
+
+ - PBS: Select a telephone book				=> yes
+
+ - PIC: Output PIN counter				=> maybe
+
+ - PLM: Read the PLMN list				=> yes
+
+ - PLR/PLW: read/write preferred-operator list		=> yes
+
+ - PST: Play Signal Tone				=> yes
+
+ - PWD: Change password to a lock			=> maybe
+
+ - RTC: Set the ringing tone				=> yes
+
+ - STK: SIM toolkit					=> no
+
+
+* Additional References
+
+http://www.s45-world.net/vissie.htm
+
+
+* Author and contact
+
+Christian W. Zuckschwerdt <zany@triq.net>
+http://triq.net/gsm.html
+

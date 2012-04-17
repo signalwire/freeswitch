@@ -1,0 +1,11 @@
+var/spool/sms/queue1
+var/spool/sms/queue2
+var/spool/sms/queue3
+var/spool/sms/sent1
+var/spool/sms/sent2
+var/spool/sms/sent3
+var/spool/sms/failed1
+var/spool/sms/failed2
+var/spool/sms/failed3
+var/spool/sms/tmp
+var/run/gsm-utils
