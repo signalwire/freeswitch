@@ -2926,12 +2926,27 @@ SWITCH_STANDARD_APP(fifo_function)
 				if (!(switch_channel_ready(channel))) {
 					const char *app = switch_channel_get_variable(other_channel, "current_application");
 					const char *arg = switch_channel_get_variable(other_channel, "current_application_data");
-					switch_caller_extension_t *extension = NULL;
+					switch_caller_extension_t *extension = NULL;                
+
+
+					switch_channel_set_variable_printf(channel, "last_sent_callee_id_name", "%s (AGENT FAIL)", 
+													   switch_channel_get_variable(other_channel, "caller_id_name"));
+					switch_channel_set_variable(channel, "last_sent_callee_id_number", switch_channel_get_variable(other_channel, "caller_id_number"));
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+									  "Customer %s %s [%s] appears to be abandoned by agent %s [%s] "
+									  "but is still on the line, redirecting them back to the queue with VIP status.\n",
+									  switch_channel_get_name(other_channel), 
+									  switch_channel_get_variable(other_channel, "caller_id_name"), 
+									  switch_channel_get_variable(other_channel, "caller_id_number"),
+									  switch_channel_get_variable(channel, "caller_id_name"),
+									  switch_channel_get_variable(channel, "caller_id_number"));
+
+					switch_channel_wait_for_state_timeout(other_channel, CS_HIBERNATE, 5000);
 
 					send_presence(node);
 					check_cancel(node);
-
-
+					
 					if (app) {
 						extension = switch_caller_extension_new(other_session, app, arg);
 						switch_caller_extension_add_application(other_session, extension, app, arg);
@@ -2940,6 +2955,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					} else {
 						switch_channel_hangup(other_channel, SWITCH_CAUSE_NORMAL_CLEARING);
 					}
+					switch_channel_set_variable(other_channel, "fifo_vip", "true");
 
 					switch_core_session_rwunlock(other_session);
 					break;
@@ -3098,6 +3114,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				send_presence(node);
 				check_cancel(node);
+
 				switch_core_session_rwunlock(other_session);
 
 
@@ -3230,7 +3247,6 @@ SWITCH_STANDARD_APP(fifo_function)
 	switch_channel_clear_app_flag_key(FIFO_APP_KEY, channel, FIFO_APP_BRIDGE_TAG);
 
 	switch_core_media_bug_resume(session);
-
 }
 
 struct xml_helper {
