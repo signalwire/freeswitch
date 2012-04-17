@@ -217,6 +217,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_core_session_t *b_session;
 	char name[128];
 	switch_caller_profile_t *caller_profile;
+	switch_event_t *vars = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -273,8 +274,18 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 
 		switch_channel_set_flag(channel, CF_ACCEPT_CNG);
-		//switch_ivr_transfer_variable(session, tech_pvt->other_session, "process_cdr");
-		switch_ivr_transfer_variable(session, tech_pvt->other_session, NULL);
+
+		if ((vars = (switch_event_t *) switch_channel_get_private(channel, "__loopback_vars__"))) {
+			switch_event_header_t *h;
+		
+			switch_channel_set_private(channel, "__loopback_vars__", NULL);
+
+			for (h = vars->headers; h; h = h->next) {
+				switch_channel_set_variable(tech_pvt->other_channel, h->name, h->value);
+			}
+
+			switch_event_destroy(&vars);
+		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_APP)) {
 			switch_set_flag(b_tech_pvt, TFLAG_APP);
@@ -382,12 +393,18 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	void *pop;
+	switch_event_t *vars;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 
+	if ((vars = (switch_event_t *) switch_channel_get_private(channel, "__loopback_vars__"))) {
+		switch_channel_set_private(channel, "__loopback_vars__", NULL);
+		switch_event_destroy(&vars);
+	}
+	
 	if (tech_pvt) {
 		switch_core_timer_destroy(&tech_pvt->timer);
 
@@ -741,7 +758,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
-	int done = 1;
+	int done = 1, pass = 0;
 	
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -799,7 +816,27 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	}
 
 
-	if (!done && tech_pvt->other_session && switch_test_flag(tech_pvt, TFLAG_RUNNING_APP)) {
+	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_DISPLAY:
+		{
+
+			if (!zstr(msg->string_array_arg[0])) {
+				switch_channel_set_profile_var(tech_pvt->other_channel, "callee_id_name", msg->string_array_arg[0]);
+			}
+
+			if (!zstr(msg->string_array_arg[1])) {
+				switch_channel_set_profile_var(tech_pvt->other_channel, "callee_id_number", msg->string_array_arg[1]);
+			}
+			
+			pass = 1;
+		}
+		break;
+	default:
+		break;
+	}
+
+
+	if (!done && tech_pvt->other_session && (pass || switch_test_flag(tech_pvt, TFLAG_RUNNING_APP))) {
 		switch_status_t r = SWITCH_STATUS_FALSE;
 		switch_core_session_t *other_session;
 		
@@ -889,6 +926,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
+		switch_event_t *clone = NULL;
 
 		switch_core_session_add_stream(*new_session, NULL);
 
@@ -904,6 +942,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		}
+
+		if (switch_event_dup(&clone, var_event) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_set_private(channel, "__loopback_vars__", clone);
 		}
 
 		if (outbound_profile) {

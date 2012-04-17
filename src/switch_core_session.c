@@ -681,12 +681,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		switch_channel_clear_flag(session->channel, CF_EARLY_MEDIA);
 	}
 
-	if (message->message_id == SWITCH_MESSAGE_INDICATE_DISPLAY &&
-		switch_true(switch_channel_get_variable(session->channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
-						  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG1, "Ignoring display update.\n");
-		status = SWITCH_STATUS_SUCCESS;
-		goto end;
+	if (message->message_id == SWITCH_MESSAGE_INDICATE_DISPLAY) {
+		char *arg = NULL;
+
+		if (zstr(message->string_array_arg[0]) && !zstr(message->string_arg)) {
+			arg = switch_core_session_strdup(session, message->string_arg);
+			switch_separate_string(arg, '|', (char **)message->string_array_arg, 2);			
+		}
+
+		if (!zstr(message->string_array_arg[0])) {
+			switch_channel_set_variable(session->channel, "last_sent_callee_id_name", message->string_array_arg[0]);
+		}
+
+		if (!zstr(message->string_array_arg[1])) {
+			switch_channel_set_variable(session->channel, "last_sent_callee_id_number", message->string_array_arg[1]);
+		}
+		
+
+		if (switch_true(switch_channel_get_variable(session->channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
+							  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG1, "Ignoring display update.\n");
+			status = SWITCH_STATUS_SUCCESS;
+			goto end;
+		}
+
 	}
 
 	if (switch_channel_down_nosig(session->channel) && message->message_id != SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {

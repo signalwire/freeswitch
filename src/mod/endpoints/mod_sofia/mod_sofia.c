@@ -2082,20 +2082,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
 		{
 			const char *name = msg->string_array_arg[0], *number = msg->string_array_arg[1];
-			char *arg = NULL;
-			char *argv[2] = { 0 };
-			//int argc;
-
-			if (zstr(name) && !zstr(msg->string_arg)) {
-				arg = strdup(msg->string_arg);
-				switch_assert(arg);
-
-				switch_separate_string(arg, '|', argv, (sizeof(argv) / sizeof(argv[0])));
-				name = argv[0];
-				number = argv[1];
-
-			}
-
+			
 			if (!zstr(name)) {
 				char message[256] = "";
 				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
@@ -2176,9 +2163,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 						tech_pvt->last_sent_callee_id_name = switch_core_session_strdup(tech_pvt->session, name);
 						tech_pvt->last_sent_callee_id_number = switch_core_session_strdup(tech_pvt->session, number);
-
-						switch_channel_set_variable(channel, "last_sent_callee_id_name", name);
-						switch_channel_set_variable(channel, "last_sent_callee_id_number", number);
 						
 
 						if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
@@ -2203,8 +2187,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					}
 				}
 			}
-
-			switch_safe_free(arg);
 		}
 		break;
 
