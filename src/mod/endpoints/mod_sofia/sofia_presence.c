@@ -3942,7 +3942,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 									 
 									 switch_str_nil(payload->pl_data), 
 									 mod_sofia_globals.hostname, profile->name,
-									 from_user, from_host, event_type);
+									 from_user, from_host, event_type, contact_str);
 									 
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_send_sql, &cb);
 				switch_safe_free(sql);
