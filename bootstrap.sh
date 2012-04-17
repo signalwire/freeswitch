@@ -340,6 +340,8 @@ bootstrap_apr() {
   ${ACLOCAL:-aclocal} ${ACLOCAL_OPTS}
 
   ### do some work to toss config.cache?
+  rm -rf config.cache
+
   echo "Creating configure ..."
   ${AUTOCONF:-autoconf}
 
