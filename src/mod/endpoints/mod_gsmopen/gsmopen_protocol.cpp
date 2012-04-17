@@ -1,5 +1,23 @@
 #include "gsmopen.h"
 
+#define WANT_GSMLIB
+
+#ifdef WANT_GSMLIB
+#include <gsmlib/gsm_sms.h>
+//#ifdef WIN32
+//#include <gsmlib/gsm_win32_serial.h>
+//#else
+//#include <gsmlib/gsm_unix_serial.h>
+//#endif
+//#include <gsmlib/gsm_me_ta.h>
+//#include <iostream>
+
+
+using namespace std;
+using namespace gsmlib;
+#endif// WANT_GSMLIB
+
+
 extern int running;				//FIXME
 int gsmopen_dir_entry_extension = 1;	//FIXME
 int option_debug = 100;			//FIXME
@@ -347,6 +365,7 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 	if (res) {
 		DEBUGA_GSMOPEN("AT+CMGF? failed, continue\n", GSMOPEN_P_LOG);
 	}
+#ifndef WANT_GSMLIB
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=1");
 	if (res) {
 		ERRORA("Error setting SMS sending mode to TEXT on the cellphone, let's hope is TEXT by default. Continuing\n", GSMOPEN_P_LOG);
@@ -382,7 +401,26 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 		}
 	}
 
+#else// WANT_GSMLIB
 
+	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
+	if (res) {
+		ERRORA("Error setting SMS sending mode to TEXT on the cellphone, let's hope is TEXT by default. Continuing\n", GSMOPEN_P_LOG);
+	}
+	tech_pvt->sms_pdu_not_supported = 0;
+	tech_pvt->no_ucs2 = 1;
+	if (tech_pvt->no_ucs2) {
+		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"GSM\"");
+		if (res) {
+			WARNINGA("AT+CSCS=\"GSM\" (set TE messages to GSM)  do not got OK from the phone\n", GSMOPEN_P_LOG);
+		}
+		//res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,16"); //"flash", class 0  sms 7 bit
+		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,0");	//normal, 7 bit message
+		if (res) {
+			WARNINGA("AT+CSMP do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
+		}
+	}
+#endif// WANT_GSMLIB
 
 #ifdef NOTDEF					//GSMLIB? XXX
 
@@ -1599,6 +1637,58 @@ read:
 							DEBUGA_GSMOPEN("2 content3=%s\n", GSMOPEN_P_LOG, content3);
 						}
 					} else {
+
+
+#ifdef WANT_GSMLIB
+						char content2[1000];
+						SMSMessageRef sms;
+						//MessageType messagetype;
+						//Address servicecentreaddress;
+						//Timestamp servicecentretimestamp;
+						//Address sender_recipient_address;
+
+						sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
+
+						DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
+
+						memset(content2, '\0', sizeof(content2));
+						if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
+							iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
+						} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
+							ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
+									sizeof(content2));
+						} else {
+							ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
+
+						}
+						DEBUGA_GSMOPEN("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
+						DEBUGA_GSMOPEN("dataCodingScheme=%s\n", GSMOPEN_P_LOG, sms->dataCodingScheme().toString().c_str());
+						DEBUGA_GSMOPEN("address=%s\n", GSMOPEN_P_LOG, sms->address().toString().c_str());
+						DEBUGA_GSMOPEN("serviceCentreAddress=%s\n", GSMOPEN_P_LOG, sms->serviceCentreAddress().toString().c_str());
+						DEBUGA_GSMOPEN("serviceCentreTimestamp=%s\n", GSMOPEN_P_LOG, sms->serviceCentreTimestamp().toString().c_str());
+						DEBUGA_GSMOPEN("messageType=%d\n", GSMOPEN_P_LOG, sms->messageType());
+						DEBUGA_GSMOPEN("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
+
+
+						memset(sms_body, '\0', sizeof(sms_body));
+						strncpy(sms_body, content2, sizeof(sms_body));
+						DEBUGA_GSMOPEN("body=%s\n", GSMOPEN_P_LOG, sms_body);
+						strncpy(tech_pvt->sms_body, sms_body, sizeof(tech_pvt->sms_body));
+						strncpy(tech_pvt->sms_sender, sms->address().toString().c_str(), sizeof(tech_pvt->sms_sender));
+						strncpy(tech_pvt->sms_date, sms->serviceCentreTimestamp().toString().c_str(), sizeof(tech_pvt->sms_date));
+						strncpy(tech_pvt->sms_datacodingscheme, sms->dataCodingScheme().toString().c_str(), sizeof(tech_pvt->sms_datacodingscheme));
+						strncpy(tech_pvt->sms_servicecentreaddress, sms->serviceCentreAddress().toString().c_str(),
+								sizeof(tech_pvt->sms_servicecentreaddress));
+						tech_pvt->sms_messagetype = sms->messageType();
+						//messagetype = sms->messageType();
+						//servicecentreaddress = sms->serviceCentreAddress();
+						//servicecentretimestamp = sms->serviceCentreTimestamp();
+						//sender_recipient_address = sms->address();
+
+#endif// WANT_GSMLIB
+
+
+
 					}
 
 				}				//it was the UCS2 from cellphone
