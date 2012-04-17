@@ -1110,7 +1110,7 @@ read:
 
 						memset(at_command, 0, sizeof(at_command));
 						sprintf(at_command, "AT+CMGR=%d", tech_pvt->unread_sms_msg_id);
-						//memset(tech_pvt->sms_message, 0, sizeof(tech_pvt->sms_message));
+						memset(tech_pvt->sms_message, 0, sizeof(tech_pvt->sms_message));
 
 						tech_pvt->reading_sms_msg = 1;
 						res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
