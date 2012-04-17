@@ -1890,6 +1890,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		oglobals.check_vars = SWITCH_FALSE;
 	}
 
+
+	/* extract channel variables, allowing multiple sets of braces */
+	if (*data == '<') {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsing ultra-global variables\n");
+		while (*data == '<') {
+			char *parsed = NULL;
+
+			if (switch_event_create_brackets(data, '<', '>', ',', &var_event, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error!\n");
+				switch_goto_status(SWITCH_STATUS_GENERR, done);
+			}
+			
+			data = parsed;
+		}
+	}
+
 	/* extract channel variables, allowing multiple sets of braces */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Parsing global variables\n");
 	while (*data == '{') {
