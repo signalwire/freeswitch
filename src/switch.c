@@ -212,7 +212,7 @@ void WINAPI service_main(DWORD numArgs, char **args)
 	memset(&status, 0, sizeof(SERVICE_STATUS));
 	status.dwServiceType = SERVICE_WIN32;
 	status.dwCurrentState = SERVICE_START_PENDING;
-	status.dwControlsAccepted = SERVICE_ACCEPT_STOP;
+	status.dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
 
 	/* register our handler for service control messages */
 	hStatus = RegisterServiceCtrlHandler(service_name, &ServiceCtrlHandler);
