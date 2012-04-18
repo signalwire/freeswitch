@@ -3532,6 +3532,21 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			tech_pvt->cng_pt = 0;
 		}
 
+		if (tech_pvt->profile->rtp_digit_delay || ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_digit_delay")))) {
+			uint32_t delay = tech_pvt->profile->rtp_digit_delay;
+
+			if (!delay) {
+				int delayi = atoi(val);
+				if (delayi < 0) delayi = 0;
+				delay = (uint32_t) delay;
+			}
+
+			switch_rtp_set_interdigit_delay(tech_pvt->rtp_session, delay);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+							  "%s Set rtp dtmf delay to %u\n", switch_channel_get_name(tech_pvt->channel), delay);
+			
+		}
+
 		if (tech_pvt->cng_pt && !sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", tech_pvt->cng_pt);
 			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);

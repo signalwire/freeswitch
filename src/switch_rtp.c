@@ -193,6 +193,7 @@ struct switch_rtp {
 	uint32_t last_cng_ts;
 	uint32_t last_write_samplecount;
 	uint32_t delay_samples;
+	uint32_t next_write_samplecount;
 	uint32_t max_next_write_samplecount;
 	uint32_t queue_delay;
 	switch_time_t last_write_timestamp;
@@ -248,6 +249,15 @@ struct switch_rtp {
 	uint32_t sync_packets;
 	int rtcp_interval;
 	switch_bool_t rtcp_fresh_frame;
+
+	switch_time_t send_time;
+	switch_byte_t auto_adj_used;
+	uint8_t pause_jb;
+	uint16_t last_seq;
+	switch_time_t last_read_time;
+	switch_size_t last_flush_packet_count;
+	uint32_t interdigit_delay;
+
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -256,12 +266,7 @@ struct switch_rtp {
 	int zinit;
 #endif
 
-	switch_time_t send_time;
-	switch_byte_t auto_adj_used;
-	uint8_t pause_jb;
-	uint16_t last_seq;
-	switch_time_t last_read_time;
-	switch_size_t last_flush_packet_count;
+
 };
 
 struct switch_rtcp_senderinfo {
@@ -2223,6 +2228,11 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	return;
 }
 
+SWITCH_DECLARE(void) switch_rtp_set_interdigit_delay(switch_rtp_t *rtp_session, uint32_t delay) 
+{
+	rtp_session->interdigit_delay = delay;
+}
+
 SWITCH_DECLARE(switch_socket_t *) switch_rtp_get_rtp_socket(switch_rtp_t *rtp_session)
 {
 	return rtp_session->sock_input;
@@ -2289,6 +2299,7 @@ static void set_dtmf_delay(switch_rtp_t *rtp_session, uint32_t ms, uint32_t max_
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 		rtp_session->max_next_write_samplecount = rtp_session->timer.samplecount + max_upsamp;
+		rtp_session->next_write_samplecount = rtp_session->timer.samplecount + upsamp;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Queue digit delay of %dms\n", ms);	
@@ -2359,7 +2370,11 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 			}
 
 			rtp_session->dtmf_data.out_digit_dur = 0;
-			set_dtmf_delay(rtp_session, 40, 500);
+
+			if (rtp_session->interdigit_delay) {
+				set_dtmf_delay(rtp_session, rtp_session->interdigit_delay, rtp_session->interdigit_delay * 10);
+			}
+
 			return;
 		}
 	}
@@ -2368,7 +2383,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 		void *pop;
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-			if (rtp_session->timer.samplecount < rtp_session->max_next_write_samplecount) {
+			if (rtp_session->timer.samplecount < rtp_session->next_write_samplecount) {
 				return;
 			}
 

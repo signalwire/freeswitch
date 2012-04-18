@@ -668,6 +668,7 @@ struct sofia_profile {
 	uint32_t sip_expires_max_deviation;
 	int ireg_seconds;
 	sofia_paid_type_t paid_type;
+	uint32_t rtp_digit_delay;
 };
 
 struct private_object {

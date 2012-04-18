@@ -2957,6 +2957,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_PASS_CALLEE_ID);
 						}
+					} else if (!strcasecmp(var, "rtp-digit-timeout")) {
+						int delay = val ? atoi(val) : 0;
+						
+						if (delay < 0) delay = 0;
+
+						profile->rtp_digit_delay = (uint32_t) delay;
 					} else if (!strcasecmp(var, "watchdog-enabled")) {
 						profile->watchdog_enabled = switch_true(val);
 					} else if (!strcasecmp(var, "watchdog-step-timeout")) {
@@ -3839,6 +3845,13 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LIBERAL_DTMF);
 						}
+					} else if (!strcasecmp(var, "rtp-digit-timeout")) {
+						int delay = val ? atoi(val) : 0;
+						
+						if (delay < 0) delay = 0;
+
+						profile->rtp_digit_delay = (uint32_t) delay;
+						
 					} else if (!strcasecmp(var, "watchdog-enabled")) {
 						profile->watchdog_enabled = switch_true(val);
 					} else if (!strcasecmp(var, "watchdog-step-timeout")) {

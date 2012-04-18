@@ -27,6 +27,11 @@
   </domains>
   
   <settings>
+
+
+    <!-- inject delay between dtmf digits on send to help some slow interpreters (also per channel with rtp_digit_delay var -->
+    <!-- <param name="rtp-digit-delay" value="40"/>-->
+
     <!--
 	When calls are in no media this will bring them back to media
 	when you press the hold button.

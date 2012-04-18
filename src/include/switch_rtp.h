@@ -461,6 +461,7 @@ SWITCH_DECLARE(void) switch_rtp_intentional_bugs(switch_rtp_t *rtp_session, swit
 
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_rtp_get_stats(switch_rtp_t *rtp_session, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_byte_t) switch_rtp_check_auto_adj(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(void) switch_rtp_set_interdigit_delay(switch_rtp_t *rtp_session, uint32_t delay);
 
 /*!
   \}
