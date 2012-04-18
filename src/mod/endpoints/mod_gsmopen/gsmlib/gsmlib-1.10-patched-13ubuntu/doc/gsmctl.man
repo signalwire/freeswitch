@@ -1,0 +1,683 @@
+.TH GSMCTL 8 "##DATE##" "gsmctl v##VERSION##"
+.SH NAME
+gsmctl, gsmsiectl \- GSM mobile phone control program
+.SH SYNOPSIS
+.B gsmctl
+.RB [\| \-b
+.IR  baudrate \|]
+.RB [\| \-\-baudrate
+.IR baudrate\| ]
+.RB [ \|\-d
+.IR device\| ]
+.RB [ \|\-\-device
+.IR device\fP ]
+.RB [ \|\-h\| ]
+.RB [ \|\-\-help\| ]
+.RB [ \|\-I
+.IR "init string" \|]
+.RB [ \|\-\-init
+.IR "init string" \|]
+.RB [ \|\-v\| ]
+.RB [ \|\-\-version\| ]
+.RB [ \|\-X\| ]
+.RB [ \|\-\-xonxoff\| ]
+.BI \-o \ operation
+.RB  | \ \-\-operation
+.IR operation \ |
+.I parameters
+.PP
+.B gsmsiectl
+.RB [\| \-b
+.IR  baudrate \|]
+.RB [\| \-\-baudrate
+.IR baudrate\| ]
+.RB [ \|\-d
+.IR device\| ]
+.RB [ \|\-\-device
+.IR device\fP ]
+.RB [ \|\-h\| ]
+.RB [ \|\-\-help\| ]
+.RB [ \|\-I
+.IR "init string" \|]
+.RB [ \|\-\-init
+.IR "init string" \|]
+.RB [ \|\-v\| ]
+.RB [ \|\-\-version\| ]
+.RB [ \|\-X\| ]
+.RB [ \|\-\-xonxoff\| ]
+.BI \-o \ operation
+.RB  | \ \-\-operation
+.IR operation \ |
+.I parameters
+.SH DESCRIPTION
+.B gsmctl
+can request information from or perform operations on an GSM mobile
+phone.
+.PP
+.B gsmctl 
+attaches itself to the 
+.I device
+given on the command line (usually an GSM modem) using the specified
+.IR baudrate .  
+If no
+.I device
+is given, the device
+.I /dev/mobilephone
+is used. If no 
+.I baudrate
+is given, a default baud rate of 38400 is used.
+.PP
+.B gsmctl
+can be used in to modes: If no 
+.B \-\-operation
+option is given the
+.I parameters
+specify the status information to be retrieved from
+the mobile phone. See the section 
+.B STATUS INFORMATION
+for more details. If an 
+.B \-\-operation
+option is given the requested
+.I operation
+is performed on the mobile using the
+.IR parameters . 
+See the section 
+.B OPERATIONS
+for more details.
+.PP
+.B gsmsiectl
+is the same program with some extension for Siemens mobile phones.
+Some extra 
+.B OPERATIONS
+are available in this case.
+.PP
+Error messages are printed to the standard error output.  If the
+program terminates on error the error code 1 is returned.
+.SH OPTIONS
+.TP
+.BI \-b\  baudrate ,\ \-\-baudrate\  baudrate
+The baud rate to use.  Defaults to 38400.
+.TP
+.BI \-d\  device ,\ \-\-device\  device
+The device to which the GSM modem is connected. The default is
+.IR /dev/mobilephone .
+.TP
+.B \-h,\ \-\-help
+Prints an option summary.
+.TP
+.BI \-I\  "init string" ,\ \-\-init\  "init string"
+Initialization string to send to the TA (default: "E0"). Note that the
+sequence "ATZ" is sent first.
+.TP
+.BI \-o\  operation ,\ \-\-operation\  operation
+This option is used to perform an operation on the mobile phone. Refer
+to the section 
+.B OPERATIONS
+for more information on the available
+operations and the 
+.I parameters
+required for each operation.
+.TP
+.B \-v,\ \-\-version
+Prints the program version.
+.TP
+.B \-X,\ \-\-xonxoff
+Uses software handshaking (XON/XOFF) for accessing the device.
+.SH STATUS INFORMATION
+If called without the 
+.B \-\-operation
+option 
+.B gsmctl
+prints out default mobile phone status information as specified by the
+.I parameters
+described below:
+.TP 7
+.B ALL
+Prints all available information.
+.TP 7
+.B BATT
+Prints out information about the current battery status. Two lines of
+the form "<BATT0> text" and "<BATT1>  charge" are printed. Text may be 
+of "0 ME is powered by the battery", "1 ME has a battery connected,
+but is not powered by it", "2 ME does not have a battery connected",
+or  "3 Recognized power fault, calls inhibited". Charge is a number in 
+the range 0..100 where 0 means that the battery is empty or not
+connected and 100 means full charge.
+.TP 7
+.B BITERR
+Prints information about the current bit error rate. The output is of
+form "<BITERR0>  value" where value can be of 0..7, 99 (99 means not
+available or not detectable).
+.TP 7
+.B CLIP
+This option prints a line of the form "<CLIP0> on" if caller line
+identification is turned on in the network, "<CLIP0> off" otherwise.
+.TP 7
+.B CSET
+Display info about charsets.  The output is in the form "<CSET0>
+available" and "<CSET1> current", which describes the charsets
+available and which is current.
+.TP 7
+.B CURROP
+Prints information about the current operator. The output line has the
+form "<CURROP0> Long name: \'xxxx\' Short name: \'yyyy\' Numeric Name: zzzz".
+.TP 7
+.B FLCAP
+Prints out the two-letter names of available facility locks. The
+meaning of standardized facility lock names is as follows:
+.RS
+.TP 3
+.I CS
+Lock control surface (eg. phone keyboard)
+.TP 3
+.I PS
+Lock phone to SIM card (mobile phone asks password when other than
+current SIM card inserted)
+.TP 3
+.I SC
+Lock SIM card (SIM asks password in mobile phone power-up and when
+this lock command issued)
+.TP 3
+.I AO
+Barr all outgoing calls
+.TP 3
+.I OI
+Barr outgoing international calls
+.TP 3
+.I OX
+Barr outgoing international calls except to home country
+.TP 3
+.I AI
+Barr all incoming calls
+.TP 3
+.I IR
+Barr incoming calls when roaming outside the home country
+.TP 3
+.I NT
+Barr incoming calls from numbers not stored to TA memory
+.TP 3
+.I NM
+Barr incoming calls from numbers not stored to mobile phone memory
+.TP 3
+.I NS
+Barr incoming calls from numbers not stored to SIM memory
+.TP 3
+.I NA
+Barr incoming calls from numbers not stored in Any memory
+.TP 3
+.I AB
+All Barring services (FIXME)
+.TP 3
+.I AG
+All outGoing barring services (FIXME)
+.TP 3
+.I AC
+All inComing barring services (FIXME)
+.TP 3
+.I FD
+SIM fixed dialling memory feature (if PIN2 authentication has not been
+done during the current session, PIN2 is required as <passwd>)
+.PP
+Note that mobile phones may implement facility locks not documented
+here.
+.RE
+.TP 7
+.B FLSTAT
+Prints information about the status of facility locking in the mobile
+phone. For each facility a line of the form "<FLSTATn> \'facilityname\'
+classes" is printed. The classes may be "Voice", "Data", and/or "Fax"
+depending on the class for which the facility is enabled. If "unknown"
+is printed out this means that the TA is not able to report the
+status. If the facility is not enabled for any class, no class
+identifier is printed. See 
+.B FLCAP
+for information about the available two-letter names of facility
+locks.
+.TP 7
+.B FORW
+Prints information about call forwarding enabled in the mobile
+phone. For each combination of reason (UnconditionalReason,
+MobileBusyReason, NoReplyReason, and NotReachableReason) and class
+(Voice, Data, and Fax) a line of the form "<FORWn.m> reason class
+number: xxx subaddr: yyy time: zzz" is printed. The time is the number 
+of seconds to wait before forwarding in case of NoReplyReason.
+.TP 7
+.B ME
+Prints manufacturer, model, revision, and serial number of
+the mobile phone (ME = mobile equipment). Output lines are numbered from 
+"<ME0>" to "<ME3>".
+.TP 7
+.B OP
+Prints information about the currently available mobile network
+operators. For each operator an output line of the form "<OPn> status 
+Long name: \'xxxx\' Short name: \'yyyy\' Numeric name: zzz" is returned
+where status may be of:
+.RS
+.TP 10
+.I unknown
+The status of the operator is unknown.
+.TP
+.I current
+This is the currently selected operator.
+.TP
+.I available
+This operator is available for selection.
+.TP
+.I forbidden
+This operator is not available for selection, ie. not
+accessible with this SIM card.
+.RE
+.TP 7
+.B PIN
+Prints information about the current PIN status. The output is of
+form "<PIN0>  status". Where status can be one of the following lines:
+.RS
+.TP 10
+.I READY
+ME is not pending for any password.
+.TP
+.I SIM PIN
+ME is waiting SIM PIN to be given.
+.TP
+.I SIM PUK
+ME is waiting SIM PUK to be given.
+.TP
+.I PH\-SIM PIN
+ME is waiting phone/-to/-SIM card password to be given.
+.TP
+.I PH/-FSIM PIN
+ME is waiting phone/-to/-very first SIM card password to be given.
+.TP
+.I PH/-FSIM PUK
+ME is waiting phone/-to/-very first SIM card unblocking password to be
+given.
+.TP
+.I SIM PIN2
+ME is waiting SIM PIN2 to be given.
+.TP
+.I SIM PUK2
+ME is waiting SIM PUK2 to be given.
+.TP
+.I PH/-NET PIN
+ME is waiting network personalisation password to be given.
+.TP
+.I PH/-NET PUK
+ME is waiting network personalisation unblocking password to be given.
+.TP
+.I PH/-NETSUB PIN
+ME is waiting network subset personalisation password to be given.
+.RE
+.TP 7
+.B PW
+Facilities in the mobile phone may be protected by passwords (ie. PINs 
+or PUKs). This option prints out lines of the form "<PWn>
+\'facilityname\' len" for each facility for which a facility lock
+password exists. See 
+.B FLCAP
+for information about the available two-letter names of facility
+locks.
+.TP 7
+.B SCA
+Reports the default SMS service centre address currently set in the
+mobile phone.
+.TP 7
+.B SIG
+Prints information about the current network signal
+strength. The output is of the form "<SIG0> value". Following values
+are possible:
+.TP
+.po +7
+.I 0
+-113 dBm or less
+.TP
+.I 1
+-111 dBm
+.TP
+.I 2...30
+-109... -53 dBm (in steps of 2 dBm)
+.TP
+.I 31
+-51 dBm or greater
+.TP
+.I 99
+not known or not detectable
+.PP
+.po 
+.SH OPERATIONS
+.TP
+.BI dial\  number
+Dials 
+.IR number .
+After dialling 
+.B gsmctl
+waits for a <CR> keypress to terminate.
+.PP
+.B forw
+.IR mode\ reason\ number\  [\| facilityclass\| ]\ [ forwardtime ]
+.RS
+Changes the call forwarding behaviour in the network. 
+.I mode
+can be any of:
+.RS 3
+.I disable
+Call forwarding is disabled.
+.PP
+.I enable
+Call forwarding is enabled. The call forwarding reason, number, and
+(optionally) forwardtime must be registered beforehand.
+.PP
+.I register
+This registers the call forwarding reason, number, and forwardtime in
+the network.
+.PP
+.I erase
+This is the counterpart to register. It erase the call forwarding info 
+in the network.
+.RE
+.PP
+.I reason
+can be any of:
+.RS 3
+.I unconditional
+This applies to every call.
+.PP
+.I mobilebusy
+The mobile phone is busy.
+.PP
+.I noreply
+The call is not answered in \fIforwardtime\fP seconds.
+.PP
+.I notreachable
+Mobile phone cannot be reached (ie. switched off).
+.PP
+.I all
+This refers to all forwarding reasons.
+.PP
+.I allconditional
+This refers to all conditional forward reasons 
+.RI ( mobilebusy ,\  noreply ,\  notreachable ).
+.RE
+.PP
+.I number
+is the number the incoming call is forwarded to. See the explanation
+for 
+.I lock
+operation for the meaning of 
+.IR facilityclass .
+The default for 
+.I forwardtime
+is 20 seconds if omitted. 
+.I forwardtime
+can be in the range 1..30.
+.RE
+.PP
+.TP
+.BI off
+Sets functionality level of the phone to 0 (low functionality). The
+effects of this command depend on the phone (eg. sets low power
+consumption).
+.PP
+.TP
+.BI on
+Sets functionality level of the phone to 1 (high functionality). The
+effects of this command depend on the phone.
+.PP
+.TP
+.BI pin\  pin
+Sets PIN code. Use
+.BI gsmctl\ pin
+to get the current pin status.
+.PP
+.B lock
+.IR facility\  [\| facilityclass \|]\ [\| passwd \|]
+.RS 
+Locks the named facility. Use 
+.BI gsmctl\  flcap
+to get a list of supported facilities. The 
+.I facilityclass
+can be any of:
+.RS 3
+.I all
+Voice, data, and fax.
+.PP
+.I v\ vf\ vd\ f\ fd\ d
+Any combination of voice, data and fax.
+.RE
+.PP
+The default is \fIall\fP if \fIfacilityclass\fP is omitted. The
+\fIpasswd\fP is password for the facility. If no password is given
+this parameter can be omitted.
+.RE
+.PP
+.BI setop\  opmode\ numericname
+.RS
+Sets the current operator to 
+.IR numericname . 
+Use 
+.BI gsmctl\  op
+to get a list of operators with their numeric codes. 
+.I opmode
+can be any of:
+.RS 3
+.I automatic
+.PP
+.I manual
+.PP
+.I deregister
+Deregister from network.
+.PP
+.I manualautomatic
+If manual selection fails, automatic mode is entered.
+.RE
+.RE
+.PP
+.B setpw
+.IR facility\  [\| oldpasswd\| ]\ [\| newpasswd\| ]
+.RS
+Sets the password for the facility. If one of the passwords is omitted 
+this means that the facility has no password protection. Passwords are 
+PIN1, PIN2, PUK etc.
+.RE
+.TP
+.BI setsca\  service\ centre\ address
+Sets the default SMS service centre address.
+.PP
+.B unlock
+.IR facility\  [\| facilityclass\| ]\ [ \|passwd\| ]
+.RS
+This is the reverse operation to \fBlock\fP. See above for a
+description of the parameters.
+.RE
+.PP
+.B Extra operators for gsmsiectl:
+.PP
+.B cset
+.RS 
+Charset info.
+.RE
+.PP
+.B pbook
+.RS 
+Phone book info.
+.RE
+.PP
+.B signal
+.RS 
+Signal tone info.
+.RE
+.PP
+.B ring
+.RS 
+Ringing tone info.
+.RE
+.PP
+.B binary
+.RS 
+Binary info.
+.RE
+.SH EXAMPLES
+The following invocation of 
+.I gsmctl
+prints out all available status information for the mobile phone
+connected to
+.B /dev/mobilephone
+.PP
+.nf
+.IP "" 3 
+gsmctl all
+.fi
+.PP
+The output could look like (lines edited to fit):
+.RS 3
+.PP
+.PD 0
+<ME0>  Manufacturer: SIEMENS
+.HP
+<ME1>  Model: S10
+.HP
+<ME2>  Revision: 06
+.HP
+<ME3>  Serial Number: 448058511817585
+.HP
+<OP0>  Status: available  Long name: 'D1/-TELEKOM' Short name: '' Numeric name: 26201
+.HP
+<OP1>  Status: forbidden  Long name: 'D2  PRIVAT' Short name: '' Numeric name: 26202
+.HP
+<CURROP0>  Long name: 'D1/-TELEKOM'   Short name: '' Numeric name: 26201 Mode: automatic
+.HP
+<FLSTAT0>  'CS'
+.HP
+<FLSTAT1>  'PS'
+.HP
+<FLSTAT2>  'SC'  Voice  Data  Fax
+.HP
+<FLSTAT3>  'AO'
+.HP
+<FLSTAT4>  'OI'
+.HP
+<FLSTAT5>  'OX'
+.HP
+<FLSTAT6>  'AI'
+.HP
+<FLSTAT7>  'IR'
+.HP
+<FLCAP0>  'CS' 'PS' 'SC' 'AO' 'OI' 'OX' 'AI' 'IR' 'AB' 'AG' 'AC' 
+.HP
+<PW0>  'PS' 8
+.HP
+<PW1>  'SC' 8
+.HP
+<PW2>  'AO' 4
+.HP
+<PW3>  'OI' 4
+.HP
+<PW4>  'OX' 4
+.HP
+<PW5>  'AI' 4
+.HP
+<PW6>  'IR' 4
+.HP
+<PW7>  'AB' 4
+.HP
+<PW8>  'AG' 4
+.HP
+<PW9>  'AC' 4
+.HP
+<CLIP0>  on
+.HP
+<FORW0.0>  UnconditionalReason  Voice  inactive number:   subaddr:  time: -1
+.HP
+<FORW0.1>  UnconditionalReason  Data  inactive number:   subaddr:  time: -1
+.HP
+<FORW0.2>  UnconditionalReason  Fax  inactive number:   subaddr:  time: -1
+.HP
+<FORW1.0>  MobileBusyReason  Voice  active number: +494012345678  subaddr:   time: -1
+.HP
+<FORW1.1>  MobileBusyReason  Data  inactive number:   subaddr:  time: -1
+.HP
+<FORW1.2>  MobileBusyReason  Fax  inactive number:   subaddr:  time: -1
+.HP
+<FORW2.0>  NoReplyReason  Voice  active number: +494012345678  subaddr:   time: 20
+.HP
+<FORW2.1>  NoReplyReason  Data  inactive number:   subaddr:  time: -1
+.HP
+<FORW2.2>  NoReplyReason  Fax  inactive number:   subaddr:  time: -1
+.HP
+<FORW3.0>  NotReachableReason  Voice  active number: +494012345678  subaddr:  time: -1
+.HP
+<FORW3.1>  NotReachableReason  Data  inactive number:  subaddr:  time: -1
+.HP
+<FORW3.2>  NotReachableReason  Fax  inactive number:  subaddr:  time: -1
+.HP
+<BATT0>   0 ME is powered by the battery
+.HP
+<BATT1>  100
+.HP
+<BITERR0>  0
+.HP
+<SIG0>  19
+.RE
+.PD
+.PP
+The following locks the keys on the mobile phone:
+.nf
+.IP "" 3
+gsmctl -o lock cs
+.fi
+.PP
+This changes the SIM card PIN from 1234 to 2345:
+.nf
+.IP "" 3
+gsmctl -o setpw sc 1234 2345
+.fi
+.PP
+Switch off all call forwarding (actually erase the numbers):
+.nf
+.IP "" 3
+gsmctl -o forw erase all
+.fi
+.PP
+Switch on call forwarding to German D1 voice box:
+.nf
+.IP "" 3
+gsmctl -o forw register notreachable 3313
+gsmctl -o forw enable notreachable
+.fi
+.PP
+.SH FILES
+.TP
+.B /dev/mobilephone
+Default mobile phone device.
+.SH AUTHOR
+Peter Hofmann <software@pxh.de>
+.SH BUGS
+Report bugs to software@pxh.de.  Include a complete, self-ncontained
+example that will allow the bug to be reproduced, and say which
+version of \fIgsmctl\fP you are using.
+.SH COPYRIGHT
+Copyright \(co 1999 Peter Hofmann
+.PP
+.B gsmctl
+is free software; you can redistribute it and/or modify it under the
+terms of the GNU Library General Public License as published by the
+Free Software Foundation; either version 2, or (at your option) any
+later version.
+.PP
+.B gsmctl
+is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library General Public
+License for more details.
+.PP
+You should have received a copy of the GNU Library General Public
+License along with 
+.BR gsmctl ; 
+see the file COPYING.  If not, write to the Free Software Foundation,
+675 Mass Ave, Cambridge, MA 02139, USA.
+.SH "SEE ALSO"
+.BR gsminfo (7),
+.BR gsmpb (1),
+.BR gsmsendsms (1),
+.BR gsmsmsd (8),
+.BR gsmsmsstore (1).
+
