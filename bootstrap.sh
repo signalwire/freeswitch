@@ -445,6 +445,11 @@ bootstrap_libs() {
         continue
         ;;
     esac
+    if ! ${BGJOB}; then
+      libbootstrap ${i} ;
+    else
+      ((libbootstrap ${i} ; ) &)
+    fi
   done
 }
 
