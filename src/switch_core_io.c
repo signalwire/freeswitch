@@ -236,14 +236,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
-	if (switch_test_flag(*frame, SFF_CNG)) {
-		status = SWITCH_STATUS_SUCCESS;
-		if (!session->bugs && !session->plc) {
-			goto done;
-		}
-		is_cng = 1;
-	}
-
 	switch_assert((*frame)->codec != NULL);
 
 	if (!(session->read_codec && (*frame)->codec && (*frame)->codec->implementation) && switch_core_codec_ready((*frame)->codec)) {
@@ -265,8 +257,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		do_bugs = 1;
 		need_codec = 1;
 	}
-	
-	if (((*frame)->flags & SFF_NOT_AUDIO)) {
+
+	if (switch_test_flag(*frame, SFF_CNG)) {
+		if (!session->bugs && !session->plc) {
+			/* Check if other session has bugs */
+			unsigned int other_session_bugs = 0;
+			switch_core_session_t *other_session = NULL;
+			if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_BRIDGED) &&
+				switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				if (other_session->bugs) {
+					other_session_bugs = 1;
+				}
+				switch_core_session_rwunlock(other_session);
+			}
+
+			/* Don't process CNG frame */
+			if (!other_session_bugs) {
+				status = SWITCH_STATUS_SUCCESS;
+				goto done;
+			}
+		}
+		is_cng = 1;
+		need_codec = 1;
+	} else if (switch_test_flag(*frame, SFF_NOT_AUDIO)) {
 		do_resample = 0;
 		do_bugs = 0;
 		need_codec = 0;
