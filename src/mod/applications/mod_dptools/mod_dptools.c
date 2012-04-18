@@ -1965,7 +1965,7 @@ SWITCH_STANDARD_APP(speak_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char buf[10];
-	char *argv[4] = { 0 };
+	char *argv[3] = { 0 };
 	int argc;
 	const char *engine = NULL;
 	const char *voice = NULL;
@@ -1984,14 +1984,14 @@ SWITCH_STANDARD_APP(speak_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Params!\n");
 		return;
 	} else if (argc == 1) {
-		text = argv[0];
+		text = switch_core_session_strdup(session, data); /* unstripped text */
 	} else if (argc == 2) {
 		voice = argv[0];
-		text = argv[1];
+		text = switch_core_session_strdup(session, data + (argv[1] - argv[0])); /* unstripped text */
 	} else {
 		engine = argv[0];
 		voice = argv[1];
-		text = argv[2];
+		text = switch_core_session_strdup(session, data + (argv[2] - argv[0])); /* unstripped text */
 	}
 
 	if (!engine) {
@@ -2766,7 +2766,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	switch_thread_t *thread = NULL;
 	switch_threadattr_t *thd_attr = NULL;
 	char *camp_data = NULL;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	int camp_loops = 0;
 
 	if (zstr(data)) {
@@ -3936,7 +3936,7 @@ static switch_status_t file_string_file_read(switch_file_handle_t *handle, void 
 			*len = context->samples;
 		}
 
-		context->samples -= *len;
+		context->samples -= (int) *len;
 		memset(data, 255, *len *2);
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
@@ -3991,7 +3991,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 
 	file_string_supported_formats[0] = "file_string";
 
-	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface = (switch_file_interface_t *) switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
 	file_interface->extens = file_string_supported_formats;
 	file_interface->file_open = file_string_file_open;
@@ -4000,15 +4000,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	file_interface->file_seek = file_string_file_seek;
 
 
-	error_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	error_endpoint_interface = (switch_endpoint_interface_t *) switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	error_endpoint_interface->interface_name = "error";
 	error_endpoint_interface->io_routines = &error_io_routines;
 
-	group_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	group_endpoint_interface = (switch_endpoint_interface_t *) switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	group_endpoint_interface->interface_name = "group";
 	group_endpoint_interface->io_routines = &group_io_routines;
 
-	user_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	user_endpoint_interface = (switch_endpoint_interface_t *) switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	user_endpoint_interface->interface_name = "user";
 	user_endpoint_interface->io_routines = &user_io_routines;
 
