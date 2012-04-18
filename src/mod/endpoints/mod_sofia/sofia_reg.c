@@ -1241,6 +1241,20 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "username", username);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
+            switch (auth_res) {
+            case AUTH_OK:
+                switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "auth-result", "SUCCESS");
+                break;
+            case AUTH_RENEWED:
+                switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "auth-result", "RENEWED");
+                break;
+            case AUTH_STALE:
+                switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "auth-result", "STALE");
+                break;
+            case AUTH_FORBIDDEN:
+                switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "auth-result", "FORBIDDEN");
+                break;
+            }
 			switch_event_fire(&s_event);
 		}
 
@@ -1378,6 +1392,14 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 								  (regtype == REG_INVITE) ? "INVITE" : "REGISTER", profile->name, to_user, to_host, network_ip);
 			}
 
+			if (forbidden && switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER_FAILURE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", to_user);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", to_host);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "registration-type", (regtype == REG_INVITE) ? "INVITE" : "REGISTER");
+				switch_event_fire(&s_event);
+			}
 			switch_goto_int(r, 1, end);
 		}
 	}

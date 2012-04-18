@@ -78,6 +78,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_REGISTER "sofia::register"
 #define MY_EVENT_PRE_REGISTER "sofia::pre_register"
 #define MY_EVENT_REGISTER_ATTEMPT "sofia::register_attempt"
+#define MY_EVENT_REGISTER_FAILURE "sofia::register_failure"
 #define MY_EVENT_UNREGISTER "sofia::unregister"
 #define MY_EVENT_EXPIRE "sofia::expire"
 #define MY_EVENT_GATEWAY_STATE "sofia::gateway_state"
