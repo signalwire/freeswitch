@@ -2501,6 +2501,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					switch_clear_flag_locked(member, MFLAG_TALKING);
 					check_agc_levels(member);
 					clear_avg(member);
+					member->score_iir = 0;
 
 					if (test_eflag(member->conference, EFLAG_STOP_TALKING) &&
 						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
