@@ -963,9 +963,16 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				}
 
 				switch_channel_set_variable(channel, "loopback_app", app);
+
+				if (clone) {
+					switch_event_add_header(clone, SWITCH_STACK_BOTTOM, "loopback_app", app);
+				}
 				
 				if (arg) {
 					switch_channel_set_variable(channel, "loopback_app_arg", arg);
+					if (clone) {
+						switch_event_add_header(clone, SWITCH_STACK_BOTTOM, "loopback_app_arg", arg);
+					}
 				}
 
 				switch_set_flag(tech_pvt, TFLAG_APP);
