@@ -1,6 +1,6 @@
 #include "gsmopen.h"
 
-#define WANT_GSMLIB
+#undef WANT_GSMLIB
 
 #ifdef WANT_GSMLIB
 #include <gsmlib/gsm_sms.h>
