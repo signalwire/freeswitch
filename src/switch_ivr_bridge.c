@@ -984,6 +984,7 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 				}
 			}
 			switch_yield(20000);
+			switch_ivr_parse_all_messages(session);
 		}
 	}
 	
@@ -1337,6 +1338,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 
 			while (switch_channel_get_state(peer_channel) == CS_EXCHANGE_MEDIA) {
+				switch_ivr_parse_all_messages(session);
 				switch_cond_next();
 			}
 

@@ -49,6 +49,7 @@ static switch_status_t originate_on_consume_media_transmit(switch_core_session_t
 			} else {
 				switch_ivr_sleep(session, 10, SWITCH_FALSE, NULL);
 			}
+			switch_ivr_parse_all_messages(session);
 		}
 	}
 
@@ -944,6 +945,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	while (switch_channel_ready(peer_channel) && !switch_channel_media_ready(peer_channel)) {
 		int diff = (int) (switch_micro_time_now() - start);
 
+		switch_ivr_parse_all_messages(session);
+
 		if (caller_channel && cancel_key) {
 			if (switch_channel_has_dtmf(caller_channel)) {
 				switch_dtmf_t dtmf = { 0, 0 };
@@ -1059,6 +1062,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		switch_channel_state_t peer_state = switch_channel_get_state(peer_channel);
 
 		while (switch_channel_ready(peer_channel) && switch_channel_get_state(peer_channel) == peer_state) {
+			switch_ivr_parse_all_messages(session);
 			switch_channel_ready(caller_channel);
 			switch_yield(20000);
 		}
@@ -1314,6 +1318,7 @@ static void *SWITCH_THREAD_FUNC enterprise_originate_ringback_thread(switch_thre
 	switch_core_session_read_lock(session);
 
 	while (rb_data->running && switch_channel_ready(channel)) {
+		switch_ivr_parse_all_messages(session);
 		if (status != SWITCH_STATUS_BREAK) {
 			if (zstr(rb_data->ringback_data) || !strcasecmp(rb_data->ringback_data, "silence")) {
 				status = switch_ivr_collect_digits_callback(session, NULL, 0, 0);

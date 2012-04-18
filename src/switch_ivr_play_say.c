@@ -1597,6 +1597,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					switch_status_t tstatus;
 					
 					while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
+						switch_ivr_parse_all_messages(session);
 						switch_yield(10000);
 					}
 
@@ -2260,6 +2261,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 				switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 				while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
+					switch_ivr_parse_all_messages(session);
 					switch_yield(10000);
 				}
 
@@ -2332,6 +2334,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 			while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
+				switch_ivr_parse_all_messages(session);
 				switch_yield(10000);
 			}
 
