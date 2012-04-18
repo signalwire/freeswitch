@@ -436,24 +436,6 @@ bootstrap_fs() {
   rm -rf autom4te*.cache
 }
 
-bootstrap_libs_pre() {
-  case "$1" in
-    *) return 0;;
-  esac
-}
-
-bootstrap_libs_post() {
-  case "$1" in
-    ldns)
-      cd $BASEDIR/libs/ldns
-      if test ! -x install-sh; then
-        ex automake --add-missing --copy
-        ex rm -rf autom4te*.cache
-      fi
-      ;;
-  esac
-}
-
 bootstrap_libs() {
   for i in ${SUBDIRS}; do
     case "$i" in
@@ -463,12 +445,6 @@ bootstrap_libs() {
         continue
         ;;
     esac
-    bootstrap_libs_pre ${i}
-    if ! ${BGJOB}; then
-      libbootstrap ${i} ; bootstrap_libs_post ${i}
-    else
-      ((libbootstrap ${i} ; bootstrap_libs_post ${i}) &)
-    fi
   done
 }
 
