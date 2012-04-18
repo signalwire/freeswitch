@@ -2706,7 +2706,8 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 			SMSMessageRef smsMessage;
 
 			memset(mesg_test, '\0', sizeof(mesg_test));
-			sprintf(mesg_test,":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù"); //let's test the beauty of utf8
+			//sprintf(mesg_test,":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù"); //let's test the beauty of utf8
+			sprintf(mesg_test,":) ciao belè èéàòìù"); 
 			//text=mesg_test;
 
 			utf8_to_iso_8859_1(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
@@ -2718,6 +2719,31 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 			sprintf(smscommand, "AT+CMGS=%d", pdulenght);	
 
 #ifdef NOTDEF
+
+*** 9. How to support unicode?
+
+You need 6 steps:
+
+1. set datacodingschema to DCS_SIXTEEN_BIT_ALPHABET
+
+2. set your locale correctly, for example, my locale, china.
+    setlocale(LC_ALL, "chs");
+
+3. translate MBCS(multiple byte character set) string to unicode string.
+    wchar_t wstr[ 1000 ];
+    memset(wstr, 0, 2000);
+    mbstowcs(wstr, data.c_str(), data.length());
+
+4. get unicode string length.
+    int wcs_len = wcslen(wstr);
+
+5. change unicode string to net order.
+    for (int i = 0; i < wcs_len; i++)
+        wstr[ i ] = htons(wstr[ i ]);
+
+6. put unicode string into pdu.
+                                                       
+
 						char content2[1000];
 						SMSMessageRef sms;
 						//MessageType messagetype;
