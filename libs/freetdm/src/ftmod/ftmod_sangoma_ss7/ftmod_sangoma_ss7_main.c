@@ -1599,6 +1599,7 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 			ftdm_channel_t *close_chan = ftdmchan;
 			/* close the channel */
 			SS7_DEBUG_CHAN(ftdmchan,"FTDM Channel Close %s\n", "");
+			sngss7_flush_queue(sngss7_info->event_queue);
 			ftdm_channel_close (&close_chan);
 		}
 
