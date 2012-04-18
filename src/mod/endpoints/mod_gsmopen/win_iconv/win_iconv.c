@@ -1065,7 +1065,7 @@ xstrndup(const char *s, size_t n)
 {
     char *p;
 
-    p = malloc(n + 1);
+    p = (char *)malloc(n + 1);
     if (p == NULL)
         return NULL;
     memcpy(p, s, n);

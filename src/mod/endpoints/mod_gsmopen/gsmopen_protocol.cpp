@@ -1,5 +1,7 @@
 #include "gsmopen.h"
-
+#ifdef WIN32
+#include "win_iconv.c"
+#endif// WIN32
 #undef WANT_GSMLIB
 
 #ifdef WANT_GSMLIB
@@ -2282,7 +2284,7 @@ int gsmopen_serial_call_AT(private_t *tech_pvt, char *dstr)
 int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outbytesleft)
 {
 	char converted[16000];
-#ifndef WIN32
+//#ifndef WIN32
 	iconv_t iconv_format;
 	int iconv_res;
 	char *outbuf;
@@ -2319,7 +2321,7 @@ int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outb
 	DEBUGA_GSMOPEN("1 ciao in=%s, inleft=%d, out=%s, outleft=%d, converted=%s, utf8_out=%s\n",
 				   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, converted, utf8_out);
 
-	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+	iconv_res = iconv(iconv_format, (const char **)&inbuf, &inbytesleft, &outbuf, &outbytesleft);
 	if (iconv_res == (size_t) -1) {
 		DEBUGA_GSMOPEN("2 ciao in=%s, inleft=%d, out=%s, outleft=%d, converted=%s, utf8_out=%s\n",
 					   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, converted, utf8_out);
@@ -2332,13 +2334,13 @@ int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outb
 		 GSMOPEN_P_LOG, iconv_res, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, converted, utf8_out);
 	iconv_close(iconv_format);
 
-#endif //WIN32
+//#endif //WIN32
 	return 0;
 }
 int utf8_to_iso_8859_1(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *iso_8859_1_out, size_t outbytesleft)
 {
 	/* cicopet */
-#ifndef WIN32
+//#ifndef WIN32
 	iconv_t iconv_format;
 	int iconv_res;
 	char *outbuf;
@@ -2356,7 +2358,7 @@ int utf8_to_iso_8859_1(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, c
 
 	DEBUGA_GSMOPEN("in=%s, inleft=%d, out=%s, outleft=%d, utf8_in=%s, iso_8859_1_out=%s\n",
 				   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, utf8_in, iso_8859_1_out);
-	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+	iconv_res = iconv(iconv_format, (const char **)&inbuf, &inbytesleft, &outbuf, &outbytesleft);
 	if (iconv_res == (size_t) -1) {
 		ERRORA("error: %s %d\n", GSMOPEN_P_LOG, strerror(errno), errno);
 		return -1;
@@ -2377,14 +2379,14 @@ int utf8_to_iso_8859_1(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, c
 		DEBUGA_GSMOPEN("stringa=%s, stringa2=%s, iso_8859_1_out=%s\n", GSMOPEN_P_LOG, stringa, stringa2, iso_8859_1_out);
 	}
 #endif //0
-#endif //WIN32
+//#endif //WIN32
 	return 0;
 }
 
 
 int iso_8859_1_to_utf8(private_t *tech_pvt, char *iso_8859_1_in, char *utf8_out, size_t outbytesleft)
 {
-#ifndef WIN32
+//#ifndef WIN32
 	iconv_t iconv_format;
 	int iconv_res;
 	char *outbuf;
@@ -2407,7 +2409,7 @@ int iso_8859_1_to_utf8(private_t *tech_pvt, char *iso_8859_1_in, char *utf8_out,
 	}
 
 	inbytesleft = strlen(iso_8859_1_in) * 2;
-	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+	iconv_res = iconv(iconv_format, (const char **)&inbuf, &inbytesleft, &outbuf, &outbytesleft);
 	if (iconv_res == (size_t) -1) {
 		DEBUGA_GSMOPEN("ciao in=%s, inleft=%d, out=%s, outleft=%d, utf8_out=%s\n",
 					   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, utf8_out);
@@ -2420,14 +2422,14 @@ int iso_8859_1_to_utf8(private_t *tech_pvt, char *iso_8859_1_in, char *utf8_out,
 
 	iconv_close(iconv_format);
 
-#endif //WIN32
+//#endif //WIN32
 	return 0;
 }
 
 int utf8_to_ucs2(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *ucs2_out, size_t outbytesleft)
 {
 	/* cicopet */
-#ifndef WIN32
+//#ifndef WIN32
 	iconv_t iconv_format;
 	int iconv_res;
 	char *outbuf;
@@ -2451,7 +2453,7 @@ int utf8_to_ucs2(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *u
 
 	DEBUGA_GSMOPEN("in=%s, inleft=%d, out=%s, outleft=%d, utf8_in=%s, converted=%s\n",
 				   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, utf8_in, converted);
-	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+	iconv_res = iconv(iconv_format, (const char **)&inbuf, &inbytesleft, &outbuf, &outbytesleft);
 	if (iconv_res == (size_t) -1) {
 		ERRORA("error: %s %d\n", GSMOPEN_P_LOG, strerror(errno), errno);
 		return -1;
@@ -2471,7 +2473,7 @@ int utf8_to_ucs2(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *u
 		strncat(ucs2_out, stringa2, ((outbytesleft - strlen(ucs2_out)) - 1));	//add the received line to the buffer
 		DEBUGA_GSMOPEN("stringa=%s, stringa2=%s, ucs2_out=%s\n", GSMOPEN_P_LOG, stringa, stringa2, ucs2_out);
 	}
-#endif //WIN32
+//#endif //WIN32
 	return 0;
 }
 
