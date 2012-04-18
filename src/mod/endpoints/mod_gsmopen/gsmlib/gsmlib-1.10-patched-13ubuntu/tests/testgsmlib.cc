@@ -13,6 +13,7 @@
 #include <gsm_config.h>
 #endif
 #ifdef WIN32
+#include <gsm_config.h>
 #include <gsmlib/gsm_win32_serial.h>
 #else
 #include <gsmlib/gsm_unix_serial.h>
