@@ -11,6 +11,10 @@
     <interface id="1" name="gsm01">
     	<param name="controldevice_name" value="/dev/ttyUSB3"/>
     	<param name="controldevice_audio_name" value="/dev/ttyUSB2"/>
+    <!-- in windowz would be:
+	<param name="controldevice_name" value="COM9"/>
+	<param name="controldevice_audio_name" value="COM8"/>
+    -->
     </interface>
     <!-- following interfaces are commented out!
     -->
