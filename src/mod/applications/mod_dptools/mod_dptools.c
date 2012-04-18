@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
- * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Ken Rice <krice@freeswitch.org>
  * Michael Murdock <mike at mmurdock dot org>
  * Neal Horman <neal at wanlink dot com>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
