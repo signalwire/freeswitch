@@ -25,15 +25,17 @@ dst_version="$major.$minor.$micro"
 dst_name="freeswitch-$dst_version"
 dst_parent="/tmp/"
 dst_dir="/tmp/$dst_name"
-
+dst_version_full="$dst_version.$rev"
+dst_name_full="freeswitch-$dst_name_full"
 
 mkdir -p $src_repo/debbuild/
 
 tar xvjf src_dist/$dst_name.tar.bz2 -C $src_repo/debbuild/
-cp src_dist/$dst_name.tar.bz2 $src_repo/debbuild/freeswitch_${dst_version}.orig.tar.bz2
+mv $src_repo/debbuild/$dst_name $src_repo/debbuild/$dst_name_full
+cp src_dist/$dst_name.tar.bz2 $src_repo/debbuild/freeswitch_${dst_version_full}.orig.tar.bz2
 
 # Build the debian source package first, from the source tar file.
-cd $src_repo/debbuild/$dst_name
+cd $src_repo/debbuild/$dst_name_full
 
 dch -v $dst_version-$build "Nightly Build"
 
