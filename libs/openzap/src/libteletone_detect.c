@@ -1,6 +1,6 @@
 /* 
  * libteletone
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Much less efficient expansion interface was added to allow for the detection of 
  * a single arbitrary tone combination which may also exceed 2 simultaneous tones.
