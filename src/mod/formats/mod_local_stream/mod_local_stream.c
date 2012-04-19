@@ -877,7 +877,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	switch_mutex_unlock(globals.mutex);
 	if (source) {
 		source->stopped = 0;
-		stream->write_function(stream, "+OK");
+		stream->write_function(stream, "+OK stream: %s[%s] %s", source->name, source->location, source->shuffle ? "shuffle" : "no shuffle");
 		goto done;
 	}
 
