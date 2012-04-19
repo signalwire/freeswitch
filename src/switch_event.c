@@ -2190,7 +2190,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 							*ptr = '\0';
 						}
 					}
-				}
+					
 
 					switch_safe_free(expanded);
 				} else {
