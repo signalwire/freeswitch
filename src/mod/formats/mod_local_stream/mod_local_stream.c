@@ -94,14 +94,10 @@ struct local_stream_source {
 
 typedef struct local_stream_source local_stream_source_t;
 
-static unsigned int S = 0;
-
 static int do_rand(void)
 {
 	double r;
 	int index;
-	unsigned int seed = ++S + getpid();
-	srand(seed);
 	r = ((double) rand() / ((double) (RAND_MAX) + (double) (1)));
 	index = (int) (r * 9) + 1;
 	return index;
