@@ -909,7 +909,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, read_stream_thread, source, source->pool);
 
-	stream->write_function(stream, "+OK");
+	stream->write_function(stream, "+OK stream: %s[%s] %s", source->name, source->location, source->shuffle ? "shuffle" : "no shuffle");
 	goto done;
 
   usage:
