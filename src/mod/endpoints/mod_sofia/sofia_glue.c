@@ -4880,12 +4880,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				map_bit_rate = switch_known_bitrate((switch_payload_t)map->rm_pt);
 				
 				if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
-					ptime = codec_ms = 30;
+					codec_ms = 30;
 				}
 				
 				if (zstr(map->rm_fmtp)) {
 					if (!strcasecmp(map->rm_encoding, "ilbc")) {
-						ptime = codec_ms = 30;
+						codec_ms = 30;
 						map_bit_rate = 13330;
 					}
 				} else {
