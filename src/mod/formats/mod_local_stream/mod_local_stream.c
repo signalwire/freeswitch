@@ -752,10 +752,11 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	char *mycmd = NULL, *argv[8] = { 0 };
-	char *local_stream_name = NULL, *path = NULL, *timer_name = NULL;
+	char *local_stream_name = NULL, *path = NULL, *timer_name = NULL, *chime_list = NULL, *list_dup = NULL;
 	uint32_t prebuf = 1;
-	int rate = 8000, shuffle = 1, interval = 20;
+	int rate = 8000, shuffle = 1, interval = 20, chime_freq = 30;
 	uint8_t channels = 1;
+	uint32_t chime_max = 0;
 	int argc = 0;
 	char *cf = "local_stream.conf";
 	switch_xml_t cfg, xml, directory, param;
@@ -851,6 +852,18 @@ SWITCH_STANDARD_API(start_local_stream_function)
 						}
 					} else if (!strcasecmp(var, "timer-name")) {
 						timer_name = strdup(val);
+					} else if (!strcasecmp(var, "chime-freq")) {
+						tmp = atoi(val);
+						if (tmp > 1) {
+							chime_freq = (uint32_t) tmp;
+						}
+					} else if (!strcasecmp(var, "chime-max")) {
+						tmp = atoi(val);
+						if (tmp > 1) {
+							chime_max = (uint32_t) tmp;
+						}
+					} else if (!strcasecmp(var, "chime-list")) {
+		                                chime_list = val;
 					}
 				}
 				break;
@@ -893,6 +906,16 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	source->interval = interval;
 	source->channels = channels;
 	source->timer_name = switch_core_strdup(source->pool, timer_name ? timer_name : (argv[7] ? argv[7] : "soft"));
+	list_dup = switch_core_strdup(source->pool, chime_list);
+	source->chime_total = switch_separate_string(list_dup, ',', source->chime_list, (sizeof(source->chime_list) / sizeof(source->chime_list[0])));
+	if (source->chime_total) {
+		source->chime_freq = chime_freq;
+
+		if (chime_max) {
+			source->chime_max = chime_max * source->rate;
+		}
+	}
+	source->chime_counter = source->rate * source->chime_freq;
 	source->prebuf = prebuf;
 	source->stopped = 0;
 	source->shuffle = shuffle;
