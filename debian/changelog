@@ -1,4 +1,4 @@
-freeswitch (1.1.head-git.master.20120419.1-1) unstable; urgency=low
+freeswitch (1.1.beta2.1-1) unstable; urgency=low
 
   * Fixing FS-3449 as well as a bit of cleanup in prep for 1.2 release
     packaging. Also a handful of lintian errors/warnings are now fixed.

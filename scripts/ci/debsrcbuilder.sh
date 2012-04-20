@@ -37,6 +37,8 @@ mv $src_repo/debbuild/$dst_name $src_repo/debbuild/$dst_full_name
 mv src_dist/$dst_name.tar.bz2 $src_repo/debbuild/freeswitch_${dst_full_version}.orig.tar.bz2
 
 # Build the debian source package first, from the source tar file.
+echo "changing directory to $src_repo/debbuild/$dst_full_name"
+
 cd $src_repo/debbuild/$dst_full_name
 
 dch -v "${dst_full_version}-0" -M --force-distribution -D "$distro" "Nightly Build"
