@@ -1397,6 +1397,9 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", to_user);
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", to_host);
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", network_port_c);
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "registration-type", (regtype == REG_INVITE) ? "INVITE" : "REGISTER");
 				switch_event_fire(&s_event);
 			}
