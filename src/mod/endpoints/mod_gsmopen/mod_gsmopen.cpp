@@ -1118,7 +1118,7 @@ static switch_status_t load_config(int reload_type)
 	DEBUGA_GSMOPEN("Windows CODEPAGE Output =%d\n", GSMOPEN_P_LOG, GetConsoleOutputCP());
 	SetConsoleOutputCP(65001);
 	DEBUGA_GSMOPEN("Windows CODEPAGE Output =%d\n", GSMOPEN_P_LOG, GetConsoleOutputCP());
-	//let's hope to have utf8 in console now, you need to use Lucida Console charset for the command prompt to show unicode
+	//let's hope to have unicode in console now. You need to use Lucida Console or, much better, Courier New font for the command prompt to show unicode
 #endif// WIN32
 	NOTICA("GSMOPEN Charset Output Test 0 %s\n", GSMOPEN_P_LOG, "èéòàù");
 	NOTICA("GSMOPEN Charset Output Test 1 %s\n", GSMOPEN_P_LOG, "ç°§^£");
