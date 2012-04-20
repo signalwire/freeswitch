@@ -1981,6 +1981,10 @@ static void switch_loadable_module_sort_codecs(const switch_codec_implementation
 
 	for (i = 0; i < arraylen; i++) {
 		int this_ptime = array[i]->microseconds_per_packet / 1000;
+		
+		if (!strcasecmp(array[i]->iananame, "ilbc")) {
+			this_ptime = 20;
+		}
 
 		if (!sorted_ptime) {
 			sorted_ptime = this_ptime;
@@ -1998,6 +2002,10 @@ static void switch_loadable_module_sort_codecs(const switch_codec_implementation
 #endif
 			for(j = i; j < arraylen; j++) {
 				int check_ptime = array[j]->microseconds_per_packet / 1000;
+
+				if (!strcasecmp(array[i]->iananame, "ilbc")) {
+					check_ptime = 20;
+				}
 
 				if (check_ptime == sorted_ptime) {
 #ifdef DEBUG_CODEC_SORTING
@@ -2069,7 +2077,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array, int arraylen, char **prefs, int preflen)
 {
-	int x, i = 0;
+	int x, i = 0, j = 0;
 	switch_codec_interface_t *codec_interface;
 	const switch_codec_implementation_t *imp;
 
@@ -2078,6 +2086,12 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	for (x = 0; x < preflen; x++) {
 		char *cur, *next = NULL, *name, *p, buf[256];
 		uint32_t interval = 0, rate = 0, bit = 0;
+
+		for(j = 0; j < x; j++) {
+			if (!strcasecmp(prefs[j], prefs[x])) {
+				goto next_x;
+			}
+		}
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
 		name = next = cur = buf;
@@ -2164,6 +2178,10 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			}
 
 		}
+
+	next_x:
+
+		continue;
 	}
 
 	switch_mutex_unlock(loadable_modules.mutex);
