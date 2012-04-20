@@ -2310,11 +2310,6 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 	switch_frame_flag_t flags = 0;
 	uint32_t samples = rtp_session->samples_per_interval;
 
-	if (rtp_session->sending_dtmf > 1) {
-		rtp_session->sending_dtmf--;
-		return;
-	}
-
 	if (!rtp_session->last_write_ts) {
 		return;
 	}
@@ -2409,8 +2404,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 
 
 		if (!rtp_session->sending_dtmf) {
-			rtp_session->sending_dtmf = 2;
-			return;
+			rtp_session->sending_dtmf = 1;
 		}
 
 		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
@@ -2983,7 +2977,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			do_2833(rtp_session, session);
 
-			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity || rtp_session->sending_dtmf > 0 || 
+			if (rtp_session->dtmf_data.out_digit_dur > 0 || rtp_session->dtmf_data.in_digit_sanity || rtp_session->sending_dtmf || 
 				switch_queue_size(rtp_session->dtmf_data.dtmf_queue) || switch_queue_size(rtp_session->dtmf_data.dtmf_inqueue)) {
 				pt = 20000;
 			}
