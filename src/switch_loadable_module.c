@@ -2124,7 +2124,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 		for(j = 0; j < x; j++) {
 			char *jname;
 			uint32_t jinterval = 0, jrate = 0, jbit = 0;
-			uint32_t ointerval = interval, orate = rate, obit = bit;
+			uint32_t ointerval = interval, orate = rate;
 
 			if (ointerval == 0) {
 				ointerval = switch_default_ptime(name, 0);
