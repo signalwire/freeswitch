@@ -2075,6 +2075,37 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 }
 
+char *parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit)
+{
+	char *cur, *next = NULL, *name, *p;
+
+	name = next = cur = buf;
+
+	for (;;) {
+		if (!next) {
+			break;
+		}
+
+		if ((p = strchr(next, '@'))) {
+			*p++ = '\0';
+		}
+		next = p;
+
+		if (cur != name) {
+			if (strchr(cur, 'i')) {
+				*interval = atoi(cur);
+			} else if ((strchr(cur, 'k') || strchr(cur, 'h'))) {
+				*rate = atoi(cur);
+			} else if (strchr(cur, 'b')) {
+				*bit = atoi(cur);
+			}
+		}
+		cur = next;
+	}
+	
+	return name;
+}
+
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array, int arraylen, char **prefs, int preflen)
 {
 	int x, i = 0, j = 0;
@@ -2084,38 +2115,39 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	switch_mutex_lock(loadable_modules.mutex);
 
 	for (x = 0; x < preflen; x++) {
-		char *cur, *next = NULL, *name, *p, buf[256];
+		char *name, buf[256], jbuf[256];
 		uint32_t interval = 0, rate = 0, bit = 0;
 
+		switch_copy_string(buf, prefs[x], sizeof(buf));
+		name = parse_codec_buf(buf, &interval, &rate, &bit);
+
 		for(j = 0; j < x; j++) {
-			if (!strcasecmp(prefs[j], prefs[x])) {
+			char *jname;
+			uint32_t jinterval = 0, jrate = 0, jbit = 0;
+			uint32_t ointerval = interval, orate = rate, obit = bit;
+
+			if (ointerval == 0) {
+				ointerval = switch_default_ptime(name, 0);
+			}
+			
+			if (orate == 0) {
+				orate = 8000;
+			}
+
+			switch_copy_string(jbuf, prefs[j], sizeof(jbuf));
+			jname = parse_codec_buf(jbuf, &jinterval, &jrate, &jbit);
+
+			if (jinterval == 0) {
+				jinterval = switch_default_ptime(jname, 0);
+			}
+
+			if (jrate == 0) {
+				jrate = 8000;
+			}
+
+			if (!strcasecmp(name, jname) && ointerval == jinterval && orate == jrate) {
 				goto next_x;
 			}
-		}
-
-		switch_copy_string(buf, prefs[x], sizeof(buf));
-		name = next = cur = buf;
-
-		for (;;) {
-			if (!next) {
-				break;
-			}
-
-			if ((p = strchr(next, '@'))) {
-				*p++ = '\0';
-			}
-			next = p;
-
-			if (cur != name) {
-				if (strchr(cur, 'i')) {
-					interval = atoi(cur);
-				} else if ((strchr(cur, 'k') || strchr(cur, 'h'))) {
-					rate = atoi(cur);
-				} else if (strchr(cur, 'b')) {
-					bit = atoi(cur);
-				}
-			}
-			cur = next;
 		}
 
 		if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0) {
