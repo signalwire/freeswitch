@@ -41,7 +41,7 @@ echo "changing directory to $src_repo/debbuild/$dst_full_name"
 
 cd $src_repo/debbuild/$dst_full_name
 
-dch -v "${dst_full_version}-0" -M --force-distribution -D "$distro" "Nightly Build"
+dch -v "${dst_full_version}-1" -M --force-distribution -D "$distro" "Nightly Build"
 
 dpkg-buildpackage -rfakeroot -S -us -uc
 
