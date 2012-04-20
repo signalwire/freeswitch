@@ -19,11 +19,13 @@ minor=$(echo "$ver" | cut -d. -f2)
 micro=$(echo "$ver" | cut -d. -f3)
 rev=$(echo "$ver" | cut -d. -f4)
 
+tmp_dir=${TMP_DIR:="/tmp"}
+
 build="$2"
 
 dst_name="freeswitch-$major.$minor.$micro"
-dst_parent="/tmp/jenkis.$$/"
-dst_dir="/tmp/jenkins.$$/$dst_name"
+dst_parent="${tmp_dir}/jenkis.$$/"
+dst_dir="${tmp_dir}/jenkins.$$/$dst_name"
 
 if [ -d "$dst_dir" ]; then
   echo "error: destination directory $dst_dir already exists." 1>&2

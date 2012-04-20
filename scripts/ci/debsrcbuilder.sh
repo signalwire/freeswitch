@@ -20,6 +20,7 @@ micro=$(echo "$ver" | cut -d. -f3)
 rev=$(echo "$ver" | cut -d. -f4)
 
 build="$2"
+distro=${3:="unstable"}
 
 dst_version="$major.$minor.$micro"
 dst_name="freeswitch-$dst_version"
@@ -37,7 +38,7 @@ mv src_dist/$dst_name.tar.bz2 $src_repo/debbuild/freeswitch_${dst_full_version}.
 # Build the debian source package first, from the source tar file.
 cd $src_repo/debbuild/$dst_full_name
 
-dch -v $dst_full_version-1 "Nightly Build"
+dch -v "${dst_full_version}-0" -M --force-distribution -D "$distro" "Nightly Build"
 
 dpkg-buildpackage -rfakeroot -S -us -uc
 
