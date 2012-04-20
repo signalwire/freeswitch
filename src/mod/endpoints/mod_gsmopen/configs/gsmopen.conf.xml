@@ -9,12 +9,17 @@
   <!-- one entry here per gsmopen interface -->
   <per_interface_settings>
     <interface id="1" name="gsm01">
-    	<param name="controldevice_name" value="/dev/ttyUSB3"/>
-    	<param name="controldevice_audio_name" value="/dev/ttyUSB2"/>
-    <!-- in windowz would be:
-	<param name="controldevice_name" value="COM9"/>
-	<param name="controldevice_audio_name" value="COM8"/>
-    -->
+      <param name="controldevice_name" value="/dev/ttyUSB3"/>
+      <param name="controldevice_audio_name" value="/dev/ttyUSB2"/>
+    <!-- in windowz would be, eg: -->
+      <!--
+      <param name="controldevice_name" value="COM4"/>
+      -->
+      <!-- 3G PC UI Interface is controldevice_name -->
+      <!--
+      <param name="controldevice_audio_name" value="COM2"/>
+      -->
+      <!-- 3G Application Interface is controldevice_audio_name -->
     </interface>
     <!-- following interfaces are commented out!
     -->
