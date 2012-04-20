@@ -1118,10 +1118,10 @@ static switch_status_t load_config(int reload_type)
 	DEBUGA_GSMOPEN("Windows CODEPAGE Output =%d\n", GSMOPEN_P_LOG, GetConsoleOutputCP());
 	SetConsoleOutputCP(65001);
 	DEBUGA_GSMOPEN("Windows CODEPAGE Output =%d\n", GSMOPEN_P_LOG, GetConsoleOutputCP());
-	DEBUGA_GSMOPEN("Windows CODEPAGE Output Test %s\n", GSMOPEN_P_LOG, "èéòàùç°§^£");
-	DEBUGA_GSMOPEN("Windows CODEPAGE Output Test %s\n", GSMOPEN_P_LOG, "Согласие» в различных регионах страны.");
 	//let's hope to have utf8 in console now, you need to use Lucida Console charset for the command prompt to show unicode
 #endif// WIN32
+	DEBUGA_GSMOPEN("Charset Output Test %s\n", GSMOPEN_P_LOG, "èéòàùç°§^£");
+	DEBUGA_GSMOPEN("Charset Output Test %s\n", GSMOPEN_P_LOG, "Согласие в различных регионах страны.");
 
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, gsmopen_module_pool);
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
