@@ -1,3 +1,10 @@
+freeswitch (1.1.head-git.master.20120419.1-1) unstable; urgency=low
+
+  * Fixing FS-3449 as well as a bit of cleanup in prep for 1.2 release
+    packaging. Also a handful of lintian errors/warnings are now fixed.
+
+ -- William King <quentusrex@gmail.com>  Thu, 19 Apr 2012 19:23:18 -0700
+
 freeswitch (1.0.head-git.master.20110530.1-1) unstable; urgency=low
 
   * added mod_cdr_sqlite

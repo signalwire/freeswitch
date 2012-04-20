@@ -177,14 +177,9 @@ config.status: configure
 	for i in $(MODULES); do echo $$i >> modules.conf; done
 	./configure --prefix=/opt/freeswitch --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
 
-configure: bootstrap.sh # .pc/applied-patches
-	   dh_testdir
-	   test -e /usr/share/misc/config.sub && cp -f /usr/share/misc/config.sub build/config/config.sub
-	   test -e /usr/share/misc/config.guess && cp -f /usr/share/misc/config.guess build/config/config.guess
-	   AUTOCONF=${AUTOCONF} ./bootstrap.sh
-
-
-build: build-stamp
+build: build-arch build-indep
+build-arch: build-stamp
+build-indep: build-stamp
 build-stamp:  config.status
 	dh_testdir
 
@@ -197,8 +192,8 @@ clean:  # .pc/applied-patches
 	dh_testroot
 	rm -f build-stamp 
 
-	-$(MAKE) update-clean
-	rm -f configure config.status
+	[ ! -f Makefile ] || $(MAKE) distclean
+	rm -f config.status
 	rm -f */*/config.status
 	rm -f */*/*/config.status
 	dh_clean
