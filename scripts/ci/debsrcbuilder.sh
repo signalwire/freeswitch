@@ -20,7 +20,8 @@ micro=$(echo "$ver" | cut -d. -f3)
 rev=$(echo "$ver" | cut -d. -f4)
 
 build="$2"
-distro=${3:="unstable"}
+input_distro=$3
+distro=${input_distro:="unstable"}
 
 dst_version="$major.$minor.$micro"
 dst_name="freeswitch-$dst_version"
@@ -31,7 +32,7 @@ dst_full_name="freeswitch-$dst_full_version"
 
 mkdir -p $src_repo/debbuild/
 
-tar xvjf src_dist/$dst_name.tar.bz2 -C $src_repo/debbuild/
+tar xjf src_dist/$dst_name.tar.bz2 -C $src_repo/debbuild/
 mv $src_repo/debbuild/$dst_name $src_repo/debbuild/$dst_full_name
 mv src_dist/$dst_name.tar.bz2 $src_repo/debbuild/freeswitch_${dst_full_version}.orig.tar.bz2
 
