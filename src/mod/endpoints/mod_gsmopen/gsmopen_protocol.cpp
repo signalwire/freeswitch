@@ -2297,7 +2297,7 @@ int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outb
 
 	memset(converted, '\0', sizeof(converted));
 
-	DEBUGA_GSMOPEN("ucs2_in=|%s|, utf8_out=|%s| èèè, %s\n", GSMOPEN_P_LOG, ucs2_in, utf8_out, "èèè");
+	DEBUGA_GSMOPEN("ucs2_in=|%s|, utf8_out=|%s|\n", GSMOPEN_P_LOG, ucs2_in, utf8_out);
 	/* cicopet */
 	for (c = 0; c < strlen(ucs2_in); c++) {
 		sprintf(stringa, "0x%c%c", ucs2_in[c], ucs2_in[c + 1]);
@@ -2724,8 +2724,8 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 			SMSMessageRef smsMessage;
 
 			memset(mesg_test, '\0', sizeof(mesg_test));
-			//sprintf(mesg_test,":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù"); //let's test the beauty of utf8
-			sprintf(mesg_test,":) ciao belè èéàòìù"); 
+			sprintf(mesg_test,":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù"); //let's test the beauty of utf8
+			//sprintf(mesg_test,":) ciao belè èéàòìù"); 
 			//text=mesg_test;
 
 			utf8_to_iso_8859_1(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
