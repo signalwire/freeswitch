@@ -178,6 +178,8 @@ config.status: configure
 	./configure --prefix=/opt/freeswitch --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
 
 build: build-arch build-indep
+build-arch: build-stamp
+build-indep: build-stamp
 build-stamp:  config.status
 	dh_testdir
 
@@ -196,7 +198,7 @@ clean:  # .pc/applied-patches
 	rm -f */*/*/config.status
 	dh_clean
 
-install: build-stamp
+install: build
 	dh_testdir
 	dh_testroot
 	dh_prep
@@ -207,11 +209,11 @@ install: build-stamp
 
 
 # Build architecture-independent files here.
-binary-indep: build-stamp install
+binary-indep: build install
 # We have nothing to do by default.
 
 # Build architecture-dependent files here.
-binary-arch: build-stamp install
+binary-arch: build install
 	dh_testdir
 	dh_testroot
 	dh_installdocs
