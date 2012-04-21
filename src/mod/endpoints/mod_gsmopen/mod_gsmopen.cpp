@@ -1915,9 +1915,16 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_gsmopen_shutdown)
 			//DEBUGA_GSMOPEN("SHUTDOWN tech_pvt->controldevfd=%d\n", GSMOPEN_P_LOG, tech_pvt->controldevfd);
 			if (fd) {
 				//close(fd);
-				//tech_pvt->controldevfd = -1;
+				tech_pvt->controldevfd = -1;
 				DEBUGA_GSMOPEN("SHUTDOWN tech_pvt->controldevfd=%d\n", GSMOPEN_P_LOG, tech_pvt->controldevfd);
 			}
+
+			serial_audio_shutdown(tech_pvt);
+
+			int res;
+			res = tech_pvt->serialPort_serial_control->Close();
+			DEBUGA_GSMOPEN("serial_shutdown res=%d (controldevfd is %d)\n", GSMOPEN_P_LOG, res, tech_pvt->controldevfd);
+
 #ifndef WIN32
 			shutdown(tech_pvt->audiogsmopenpipe[0], 2);
 			close(tech_pvt->audiogsmopenpipe[0]);
