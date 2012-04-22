@@ -1,0 +1,24 @@
+/* -*- c -*- */
+
+/**@MODULEPAGE "utils" - Sofia-SIP Command Line Utilities
+ *
+ * @section utils_meta Module Meta Information
+ *
+ * Command line utilities for <a href="../index.html">Sofia-SIP</a>.
+ *
+ * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @STATUS @SofiaSIP utilities
+ *
+ * @LICENSE LGPL
+ *
+ * @section utuils_overview Overview
+ *
+ * The Sofia-SIP provides a few command line utilities:
+ * - @ref sip-date "sip-date" - print or parse SIP date
+ * - @ref sip-dig "sip-dig" - resolve SIP URIs
+ * - @ref sip-options "sip-options" - query SIP OPTIONS
+ * - @ref localinfo "localinfo" - list local network addresses
+ * - @ref stunc "stunc" - STUN test client
+ */
+

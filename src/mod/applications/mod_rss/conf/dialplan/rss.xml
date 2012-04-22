@@ -1,0 +1,7 @@
+<include>
+	<extension name="rss">
+		<condition field="destination_number" expression="^rss$">
+			<action application="rss"/>
+		</condition>
+	</extension>
+</include>

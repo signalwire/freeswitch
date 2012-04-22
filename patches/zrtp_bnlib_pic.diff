@@ -1,0 +1,5 @@
+--- libzrtp-0.81.514.orig/third_party/bnlib/cfg.debug	2009-03-22 08:26:34.000000000 -0500
++++ libzrtp-0.81.514.patched/third_party/bnlib/cfg.debug	2009-05-20 11:42:52.000000000 -0500
+@@ -1 +1 @@
+-./configure CFLAGS="-O0 -g3"
++./configure CFLAGS="-O0 -g3 -fPIC"

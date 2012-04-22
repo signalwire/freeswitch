@@ -1,0 +1,102 @@
+2006-05-03  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* poll_test.c: Renamed call s/su_create_wait/su_wait_create/.
+
+2006-01-17  Martti Mela  <martti.mela@nokia.com>
+
+  * su_localinfo.c: su_getlocalinfo() works now on OS X
+
+  * su_memmem.c: malloc fetched from different header file in OS X
+
+  * su_config.h: reference to su_configure_win32.h removed.
+
+    M ./libsofia-sip-ua/su/su_localinfo.c -8 +97
+
+
+2006-01-13  Martti Mela  <martti.mela@nokia.com>
+
+  * su_wait.h: Added su_wait_socket(). (it returns associated fd)
+
+2005-10-12  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Added tl_llist(), tl_vllist(). Better semantics for tl_next().
+
+    M ./libsofia-sip-ua/su/su_tag.h -1 +3
+    M ./libsofia-sip-ua/su/su_tag_test.c -5 +26
+    M ./libsofia-sip-ua/su/su_taglist.c -7 +102
+
+  * su_home_auto() now accepts unaligned pointer.
+
+    M ./libsofia-sip-ua/su/su_alloc.c -4 +11
+
+2005-10-11  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Fixed superfluous assertion failure here.
+
+    M ./libsofia-sip-ua/su/su_root.c -3 +1
+
+2005-10-10  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Using glib in the clone test, too.
+
+    M ./libsofia-sip-ua/su/run_su_test -4 +26
+    M ./libsofia-sip-ua/su/su_test.c -22 +51
+
+  * Fixed su_home_new() documentation.
+
+    M ./libsofia-sip-ua/su/su_alloc.c -4 +2
+
+  * Remove su_home_incref()/su_home_decref() - they were never implemented.
+
+    M ./libsofia-sip-ua/su/su_alloc.h -4
+
+  * Added more debugging information from SU_PORT_DECREF().
+
+    M ./libsofia-sip-ua/su/su_port.c -3 +5
+
+  * Added su_clone_start()/su_clone_wait() tests.
+
+    M ./libsofia-sip-ua/su/su_root_test.c -42 +104
+
+  * Fixed warning about getenv().
+
+    M ./libsofia-sip-ua/su/su_torture.c +1
+
+2005-10-03  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Fixed bug in stack allocation.
+
+    M ./libsofia-sip-ua/su/su_memmem.c -1 +1
+
+  * Improved test coverage. Fixed bug in allocating arrays from stack.
+
+    M ./libsofia-sip-ua/su/su_memmem.c -11 +10
+    M ./libsofia-sip-ua/su/torture_su_memmem.c +119
+
+  * Added constant reference type su_msg_cr[].
+
+    M ./libsofia-sip-ua/su/su_root.c -2 +2
+    M ./libsofia-sip-ua/su/su_wait.h -14 +17
+
+2005-09-28  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Added tl_filtered_tlist().
+
+    M ./libsofia-sip-ua/su/su_tag.h +3
+    M ./libsofia-sip-ua/su/su_taglist.c +16
+
+  * Added su_home_auto().
+
+    M ./libsofia-sip-ua/su/su_alloc.c -10 +55
+    M ./libsofia-sip-ua/su/su_alloc.h +4
+    M ./libsofia-sip-ua/su/su_alloc_test.c +33
+
+2005-08-17  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Added su_strlst_dup() and su_strlst_copy().
+
+	* Added { to BEGIN() and } to END() in <tstdef.h>
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Initial import of the module to Sofia-SIP tree.

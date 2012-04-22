@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="mrcpengine"
+	InheritedPropertySheets=".\mpf.vsprops;.\mrcp.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)libs\mrcp-engine\include&quot;"
+	/>
+</VisualStudioPropertySheet>

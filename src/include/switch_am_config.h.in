@@ -1,0 +1,19 @@
+#ifndef SWITCH_AM_CONFIG_H
+#define SWITCH_AM_CONFIG_H
+
+
+#define SWITCH_INT_16  @short_value@
+#define SWITCH_INT_32  @int_value@
+#define SWITCH_INT_64  @long_value@
+#define SWITCH_SIZE_T  @size_t_value@
+#define SWITCH_SSIZE_T @ssize_t_value@
+
+#define SWITCH_SIZEOF_VOIDP @voidp_size@
+#define SWITCH_PREFIX_DIR "@prefix@"
+
+@ssize_t_fmt@
+@size_t_fmt@
+@int64_t_fmt@
+@uint64_t_fmt@
+
+#endif

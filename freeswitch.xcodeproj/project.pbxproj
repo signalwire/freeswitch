@@ -1,0 +1,2566 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		492050492050492050000000 /* ALL_BUILD */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 493290493290493290000000 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildPhases = (
+				492230492230492230000000 /* CMake ReRun */,
+				492920492920492920000000 /* CMake Rules */,
+			);
+			dependencies = (
+				629320629320629320000000 /* PBXTargetDependency */,
+				629A30629A30629A30000000 /* PBXTargetDependency */,
+				62A1F062A1F062A1F0000000 /* PBXTargetDependency */,
+				62A96062A96062A960000000 /* PBXTargetDependency */,
+				62B0E062B0E062B0E0000000 /* PBXTargetDependency */,
+				62B83062B83062B830000000 /* PBXTargetDependency */,
+			);
+			name = ALL_BUILD;
+			productName = ALL_BUILD;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		499420499420499420000000 /* switch.c in Sources */ = {isa = PBXBuildFile; fileRef = 499250499250499250000000 /* switch.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4A38304A38304A3830000000 /* switch_apr.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A36304A36304A3630000000 /* switch_apr.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4A42704A42704A4270000000 /* switch_buffer.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A3DB04A3DB04A3DB0000000 /* switch_buffer.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4A4D304A4D304A4D30000000 /* switch_caller.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A48704A48704A4870000000 /* switch_caller.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4A58104A58104A5810000000 /* switch_channel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A53304A53304A5330000000 /* switch_channel.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4A62D04A62D04A62D0000000 /* switch_console.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A5DF04A5DF04A5DF0000000 /* switch_console.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4A6DE04A6DE04A6DE0000000 /* switch_core_media_bug.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A68D04A68D04A68D0000000 /* switch_core_media_bug.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4A79004A79004A7900000000 /* switch_core_timer.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A78304A78304A7830000000 /* switch_core_timer.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4A83504A83504A8350000000 /* switch_core_asr.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A7E704A7E704A7E70000000 /* switch_core_asr.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4A8EA04A8EA04A8EA0000000 /* switch_core_event_hook.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A89304A89304A8930000000 /* switch_core_event_hook.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4A9A104A9A104A9A10000000 /* switch_core_speech.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A98604A98604A9860000000 /* switch_core_speech.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4AA4504AA4504AA450000000 /* switch_core_memory.c in Sources */ = {isa = PBXBuildFile; fileRef = 4AA3804AA3804AA380000000 /* switch_core_memory.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4AAF004AAF004AAF00000000 /* switch_core_codec.c in Sources */ = {isa = PBXBuildFile; fileRef = 4AAE304AAE304AAE30000000 /* switch_core_codec.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4AB9504AB9504AB950000000 /* switch_core_file.c in Sources */ = {isa = PBXBuildFile; fileRef = 4AB4704AB4704AB470000000 /* switch_core_file.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4AC4104AC4104AC410000000 /* switch_core_hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 4ABF304ABF304ABF30000000 /* switch_core_hash.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4ACED04ACED04ACED0000000 /* switch_core_sqldb.c in Sources */ = {isa = PBXBuildFile; fileRef = 4AC9F04AC9F04AC9F0000000 /* switch_core_sqldb.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4AD9904AD9904AD990000000 /* switch_core_session.c in Sources */ = {isa = PBXBuildFile; fileRef = 4AD4B04AD4B04AD4B0000000 /* switch_core_session.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4AE5404AE5404AE540000000 /* switch_core_directory.c in Sources */ = {isa = PBXBuildFile; fileRef = 4AE3E04AE3E04AE3E0000000 /* switch_core_directory.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4AF0304AF0304AF030000000 /* switch_core_state_machine.c in Sources */ = {isa = PBXBuildFile; fileRef = 4AEF504AEF504AEF50000000 /* switch_core_state_machine.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4AFA904AFA904AFA90000000 /* switch_core_io.c in Sources */ = {isa = PBXBuildFile; fileRef = 4AEFC04AEFC04AEFC0000000 /* switch_core_io.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B05104B05104B0510000000 /* switch_core_rwlock.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B00304B00304B0030000000 /* switch_core_rwlock.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B10404B10404B1040000000 /* switch_core_port_allocator.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B0F604B0F604B0F60000000 /* switch_core_port_allocator.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B1B204B1B204B1B20000000 /* switch_core.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B0FD04B0FD04B0FD0000000 /* switch_core.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B25404B25404B2540000000 /* switch_scheduler.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B20604B20604B2060000000 /* switch_scheduler.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B30004B30004B3000000000 /* switch_core_db.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B2B204B2B204B2B20000000 /* switch_core_db.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B3B204B3B204B3B20000000 /* switch_dso.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B35E04B35E04B35E0000000 /* switch_dso.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B45904B45904B4590000000 /* switch_loadable_module.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B40A04B40A04B40A0000000 /* switch_loadable_module.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B50904B50904B5090000000 /* switch_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B4FC04B4FC04B4FC0000000 /* switch_utils.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B5B204B5B204B5B20000000 /* switch_event.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B56404B56404B5640000000 /* switch_event.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B65E04B65E04B65E0000000 /* switch_resample.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B61004B61004B6100000000 /* switch_resample.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B70A04B70A04B70A0000000 /* switch_regex.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B6BC04B6BC04B6BC0000000 /* switch_regex.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B7BC04B7BC04B7BC0000000 /* switch_rtp.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B76804B76804B7680000000 /* switch_rtp.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B86204B86204B8620000000 /* switch_ivr_bridge.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B81404B81404B8140000000 /* switch_ivr_bridge.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B90C04B90C04B90C0000000 /* switch_ivr_originate.c in Sources */ = {isa = PBXBuildFile; fileRef = 4B8C004B8C004B8C00000000 /* switch_ivr_originate.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4B9CE04B9CE04B9CE0000000 /* switch_ivr_async.c in Sources */ = {isa = PBXBuildFile; fileRef = 4AEED04AEED04AEED0000000 /* switch_ivr_async.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4BA7704BA7704BA770000000 /* switch_ivr_play_say.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BA2904BA2904BA290000000 /* switch_ivr_play_say.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4BB2904BB2904BB290000000 /* switch_ivr_menu.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BB1C04BB1C04BB1C0000000 /* switch_ivr_menu.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4BBD404BBD404BBD40000000 /* switch_ivr.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BB8004BB8004BB800000000 /* switch_ivr.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4BC8004BC8004BC800000000 /* switch_stun.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C04BC2C04BC2C0000000 /* switch_stun.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4BD2C04BD2C04BD2C0000000 /* switch_log.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BCD804BCD804BCD80000000 /* switch_log.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4BDD804BDD804BDD80000000 /* switch_xml.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BD8404BD8404BD840000000 /* switch_xml.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4BE7E04BE7E04BE7E0000000 /* switch_config.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BE3004BE3004BE300000000 /* switch_config.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4BF3004BF3004BF300000000 /* switch_time.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BEDC04BEDC04BEDC0000000 /* switch_time.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4BFDC04BFDC04BFDC0000000 /* stfu.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BF8804BF8804BF880000000 /* stfu.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4C08204C08204C0820000000 /* switch_cpp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4C03404C03404C0340000000 /* switch_cpp.cpp */; settings = {COMPILER_FLAGS = ""; }; };
+		4C12A04C12A04C12A0000000 /* g711.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C0E004C0E004C0E00000000 /* g711.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4C1DA04C1DA04C1DA0000000 /* switch_pcm.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C1CB04C1CB04C1CB0000000 /* switch_pcm.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4C28004C28004C2800000000 /* libteletone_detect.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C23004C23004C2300000000 /* libteletone_detect.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4C33304C33304C3330000000 /* libteletone_generate.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C27704C27704C2770000000 /* libteletone_generate.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4E2E004E2E004E2E00000000 /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = 4CF2804CF2804CF280000000 /* resample.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4E38C04E38C04E38C0000000 /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = 4E37F04E37F04E37F0000000 /* filterkit.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4E43704E43704E4370000000 /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = 4E42704E42704E4270000000 /* resamplesubs.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4EF3004EF3004EF300000000 /* libteletone_detect.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C23004C23004C2300000000 /* libteletone_detect.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4EFF804EFF804EFF80000000 /* libteletone_generate.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C27704C27704C2770000000 /* libteletone_generate.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4FA6604FA6604FA660000000 /* pcre_compile.c in Sources */ = {isa = PBXBuildFile; fileRef = 4FA4804FA4804FA480000000 /* pcre_compile.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4FB0F04FB0F04FB0F0000000 /* pcre_tables.c in Sources */ = {isa = PBXBuildFile; fileRef = 4FABD04FABD04FABD0000000 /* pcre_tables.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4FBB504FBB504FBB50000000 /* pcre_config.c in Sources */ = {isa = PBXBuildFile; fileRef = 4FB6904FB6904FB690000000 /* pcre_config.c */; settings = {COMPILER_FLAGS = ""; }; };
+		600670600670600670000000 /* pcre_try_flipped.c in Sources */ = {isa = PBXBuildFile; fileRef = 600100600100600100000000 /* pcre_try_flipped.c */; settings = {COMPILER_FLAGS = ""; }; };
+		601100601100601100000000 /* pcre_dfa_exec.c in Sources */ = {isa = PBXBuildFile; fileRef = 601010601010601010000000 /* pcre_dfa_exec.c */; settings = {COMPILER_FLAGS = ""; }; };
+		601C70601C70601C70000000 /* pcre_ucp_searchfuncs.c in Sources */ = {isa = PBXBuildFile; fileRef = 6016C06016C06016C0000000 /* pcre_ucp_searchfuncs.c */; settings = {COMPILER_FLAGS = ""; }; };
+		6026C06026C06026C0000000 /* pcre_exec.c in Sources */ = {isa = PBXBuildFile; fileRef = 602600602600602600000000 /* pcre_exec.c */; settings = {COMPILER_FLAGS = ""; }; };
+		603130603130603130000000 /* pcre_valid_utf8.c in Sources */ = {isa = PBXBuildFile; fileRef = 602C70602C70602C70000000 /* pcre_valid_utf8.c */; settings = {COMPILER_FLAGS = ""; }; };
+		603C90603C90603C90000000 /* pcre_fullinfo.c in Sources */ = {isa = PBXBuildFile; fileRef = 603740603740603740000000 /* pcre_fullinfo.c */; settings = {COMPILER_FLAGS = ""; }; };
+		6047C06047C06047C0000000 /* pcre_version.c in Sources */ = {isa = PBXBuildFile; fileRef = 604220604220604220000000 /* pcre_version.c */; settings = {COMPILER_FLAGS = ""; }; };
+		605220605220605220000000 /* dftables.c in Sources */ = {isa = PBXBuildFile; fileRef = 604690604690604690000000 /* dftables.c */; settings = {COMPILER_FLAGS = ""; }; };
+		605CB0605CB0605CB0000000 /* pcre_get.c in Sources */ = {isa = PBXBuildFile; fileRef = 605790605790605790000000 /* pcre_get.c */; settings = {COMPILER_FLAGS = ""; }; };
+		606780606780606780000000 /* pcre_xclass.c in Sources */ = {isa = PBXBuildFile; fileRef = 606230606230606230000000 /* pcre_xclass.c */; settings = {COMPILER_FLAGS = ""; }; };
+		607240607240607240000000 /* pcre_globals.c in Sources */ = {isa = PBXBuildFile; fileRef = 606CF0606CF0606CF0000000 /* pcre_globals.c */; settings = {COMPILER_FLAGS = ""; }; };
+		607C60607C60607C60000000 /* pcre_info.c in Sources */ = {isa = PBXBuildFile; fileRef = 6077B06077B06077B0000000 /* pcre_info.c */; settings = {COMPILER_FLAGS = ""; }; };
+		609CD0609CD0609CD0000000 /* pcre_maketables.c in Sources */ = {isa = PBXBuildFile; fileRef = 609810609810609810000000 /* pcre_maketables.c */; settings = {COMPILER_FLAGS = ""; }; };
+		60B26060B26060B260000000 /* pcre_ord2utf8.c in Sources */ = {isa = PBXBuildFile; fileRef = 60ADA060ADA060ADA0000000 /* pcre_ord2utf8.c */; settings = {COMPILER_FLAGS = ""; }; };
+		60B8B060B8B060B8B0000000 /* stfu.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BF8804BF8804BF880000000 /* stfu.c */; settings = {COMPILER_FLAGS = ""; }; };
+		60BDE060BDE060BDE0000000 /* pcredemo.c in Sources */ = {isa = PBXBuildFile; fileRef = 60BD2060BD2060BD20000000 /* pcredemo.c */; settings = {COMPILER_FLAGS = ""; }; };
+		60C8C060C8C060C8C0000000 /* pcre_refcount.c in Sources */ = {isa = PBXBuildFile; fileRef = 60C3A060C3A060C3A0000000 /* pcre_refcount.c */; settings = {COMPILER_FLAGS = ""; }; };
+		60D30060D30060D300000000 /* pcregrep.c in Sources */ = {isa = PBXBuildFile; fileRef = 60CE5060CE5060CE50000000 /* pcregrep.c */; settings = {COMPILER_FLAGS = ""; }; };
+		60DDC060DDC060DDC0000000 /* pcreposix.c in Sources */ = {isa = PBXBuildFile; fileRef = 60D91060D91060D910000000 /* pcreposix.c */; settings = {COMPILER_FLAGS = ""; }; };
+		60FE1060FE1060FE10000000 /* pcre_scanner_unittest.cc in Sources */ = {isa = PBXBuildFile; fileRef = 60F96060F96060F960000000 /* pcre_scanner_unittest.cc */; settings = {COMPILER_FLAGS = ""; }; };
+		610930610930610930000000 /* pcretest.c in Sources */ = {isa = PBXBuildFile; fileRef = 6108B06108B06108B0000000 /* pcretest.c */; settings = {COMPILER_FLAGS = ""; }; };
+		614A00614A00614A00000000 /* pcre_chartables.c in Sources */ = {isa = PBXBuildFile; fileRef = 613ED0613ED0613ED0000000 /* pcre_chartables.c */; settings = {COMPILER_FLAGS = ""; }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		628E90628E90628E90000000 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4904E04904E04904E0000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 49B9E049B9E049B9E0000000;
+			remoteInfo = freeswitch;
+		};
+		6295B06295B06295B0000000 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4904E04904E04904E0000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4DA6F04DA6F04DA6F0000000;
+			remoteInfo = freeswitch_la;
+		};
+		629CF0629CF0629CF0000000 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4904E04904E04904E0000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 616770616770616770000000;
+			remoteInfo = pcre;
+		};
+		62A46062A46062A460000000 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4904E04904E04904E0000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4E68704E68704E6870000000;
+			remoteInfo = resample;
+		};
+		62ABF062ABF062ABF0000000 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4904E04904E04904E0000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 621070621070621070000000;
+			remoteInfo = stfu;
+		};
+		62B37062B37062B370000000 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4904E04904E04904E0000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F22D04F22D04F22D0000000;
+			remoteInfo = teletone;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		499250499250499250000000 /* switch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch.c"; sourceTree = "<absolute>"; };
+		4999A04999A04999A0000000 /* switch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch.h"; sourceTree = "<absolute>"; };
+		4A2F104A2F104A2F10000000 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A36304A36304A3630000000 /* switch_apr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_apr.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_apr.c"; sourceTree = "<absolute>"; };
+		4A3DB04A3DB04A3DB0000000 /* switch_buffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_buffer.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_buffer.c"; sourceTree = "<absolute>"; };
+		4A48704A48704A4870000000 /* switch_caller.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_caller.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_caller.c"; sourceTree = "<absolute>"; };
+		4A53304A53304A5330000000 /* switch_channel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_channel.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_channel.c"; sourceTree = "<absolute>"; };
+		4A5DF04A5DF04A5DF0000000 /* switch_console.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_console.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_console.c"; sourceTree = "<absolute>"; };
+		4A68D04A68D04A68D0000000 /* switch_core_media_bug.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_media_bug.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_media_bug.c"; sourceTree = "<absolute>"; };
+		4A78304A78304A7830000000 /* switch_core_timer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_timer.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_timer.c"; sourceTree = "<absolute>"; };
+		4A7E704A7E704A7E70000000 /* switch_core_asr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_asr.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_asr.c"; sourceTree = "<absolute>"; };
+		4A89304A89304A8930000000 /* switch_core_event_hook.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_event_hook.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_event_hook.c"; sourceTree = "<absolute>"; };
+		4A98604A98604A9860000000 /* switch_core_speech.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_speech.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_speech.c"; sourceTree = "<absolute>"; };
+		4AA3804AA3804AA380000000 /* switch_core_memory.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_memory.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_memory.c"; sourceTree = "<absolute>"; };
+		4AAE304AAE304AAE30000000 /* switch_core_codec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_codec.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_codec.c"; sourceTree = "<absolute>"; };
+		4AB4704AB4704AB470000000 /* switch_core_file.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_file.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_file.c"; sourceTree = "<absolute>"; };
+		4ABF304ABF304ABF30000000 /* switch_core_hash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_hash.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_hash.c"; sourceTree = "<absolute>"; };
+		4AC9F04AC9F04AC9F0000000 /* switch_core_sqldb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_sqldb.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_sqldb.c"; sourceTree = "<absolute>"; };
+		4AD4B04AD4B04AD4B0000000 /* switch_core_session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_session.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_session.c"; sourceTree = "<absolute>"; };
+		4AE3E04AE3E04AE3E0000000 /* switch_core_directory.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_directory.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_directory.c"; sourceTree = "<absolute>"; };
+		4AEED04AEED04AEED0000000 /* switch_ivr_async.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_ivr_async.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_ivr_async.c"; sourceTree = "<absolute>"; };
+		4AEF504AEF504AEF50000000 /* switch_core_state_machine.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_state_machine.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_state_machine.c"; sourceTree = "<absolute>"; };
+		4AEFC04AEFC04AEFC0000000 /* switch_core_io.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_io.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_io.c"; sourceTree = "<absolute>"; };
+		4B00304B00304B0030000000 /* switch_core_rwlock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_rwlock.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_rwlock.c"; sourceTree = "<absolute>"; };
+		4B0F604B0F604B0F60000000 /* switch_core_port_allocator.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_port_allocator.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_port_allocator.c"; sourceTree = "<absolute>"; };
+		4B0FD04B0FD04B0FD0000000 /* switch_core.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core.c"; sourceTree = "<absolute>"; };
+		4B20604B20604B2060000000 /* switch_scheduler.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_scheduler.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_scheduler.c"; sourceTree = "<absolute>"; };
+		4B2B204B2B204B2B20000000 /* switch_core_db.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_core_db.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_core_db.c"; sourceTree = "<absolute>"; };
+		4B35E04B35E04B35E0000000 /* switch_dso.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_dso.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_dso.c"; sourceTree = "<absolute>"; };
+		4B40A04B40A04B40A0000000 /* switch_loadable_module.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_loadable_module.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_loadable_module.c"; sourceTree = "<absolute>"; };
+		4B4FC04B4FC04B4FC0000000 /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_utils.c"; sourceTree = "<absolute>"; };
+		4B56404B56404B5640000000 /* switch_event.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_event.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_event.c"; sourceTree = "<absolute>"; };
+		4B61004B61004B6100000000 /* switch_resample.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_resample.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_resample.c"; sourceTree = "<absolute>"; };
+		4B6BC04B6BC04B6BC0000000 /* switch_regex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_regex.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_regex.c"; sourceTree = "<absolute>"; };
+		4B76804B76804B7680000000 /* switch_rtp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_rtp.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_rtp.c"; sourceTree = "<absolute>"; };
+		4B81404B81404B8140000000 /* switch_ivr_bridge.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_ivr_bridge.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_ivr_bridge.c"; sourceTree = "<absolute>"; };
+		4B8C004B8C004B8C00000000 /* switch_ivr_originate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_ivr_originate.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_ivr_originate.c"; sourceTree = "<absolute>"; };
+		4BA2904BA2904BA290000000 /* switch_ivr_play_say.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_ivr_play_say.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_ivr_play_say.c"; sourceTree = "<absolute>"; };
+		4BB1C04BB1C04BB1C0000000 /* switch_ivr_menu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_ivr_menu.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_ivr_menu.c"; sourceTree = "<absolute>"; };
+		4BB8004BB8004BB800000000 /* switch_ivr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_ivr.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_ivr.c"; sourceTree = "<absolute>"; };
+		4BC2C04BC2C04BC2C0000000 /* switch_stun.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_stun.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_stun.c"; sourceTree = "<absolute>"; };
+		4BCD804BCD804BCD80000000 /* switch_log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_log.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_log.c"; sourceTree = "<absolute>"; };
+		4BD8404BD8404BD840000000 /* switch_xml.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_xml.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_xml.c"; sourceTree = "<absolute>"; };
+		4BE3004BE3004BE300000000 /* switch_config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_config.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_config.c"; sourceTree = "<absolute>"; };
+		4BEDC04BEDC04BEDC0000000 /* switch_time.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_time.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_time.c"; sourceTree = "<absolute>"; };
+		4BF8804BF8804BF880000000 /* stfu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stfu.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/stfu/stfu.c"; sourceTree = "<absolute>"; };
+		4C03404C03404C0340000000 /* switch_cpp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = switch_cpp.cpp; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_cpp.cpp"; sourceTree = "<absolute>"; };
+		4C0E004C0E004C0E00000000 /* g711.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = g711.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/g711.c"; sourceTree = "<absolute>"; };
+		4C1CB04C1CB04C1CB0000000 /* switch_pcm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_pcm.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_pcm.c"; sourceTree = "<absolute>"; };
+		4C23004C23004C2300000000 /* libteletone_detect.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libteletone_detect.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src/libteletone_detect.c"; sourceTree = "<absolute>"; };
+		4C27704C27704C2770000000 /* libteletone_generate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libteletone_generate.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src/libteletone_generate.c"; sourceTree = "<absolute>"; };
+		4C32C04C32C04C32C0000000 /* switch_am_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_am_config.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_am_config.h"; sourceTree = "<absolute>"; };
+		4C4F504C4F504C4F50000000 /* switch_apr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_apr.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_apr.h"; sourceTree = "<absolute>"; };
+		4C56004C56004C5600000000 /* switch_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_buffer.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_buffer.h"; sourceTree = "<absolute>"; };
+		4C60D04C60D04C60D0000000 /* switch_caller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_caller.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_caller.h"; sourceTree = "<absolute>"; };
+		4C6BB04C6BB04C6BB0000000 /* switch_channel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_channel.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_channel.h"; sourceTree = "<absolute>"; };
+		4C7AD04C7AD04C7AD0000000 /* switch_console.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_console.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_console.h"; sourceTree = "<absolute>"; };
+		4C85B04C85B04C85B0000000 /* switch_core_event_hook.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_core_event_hook.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_core_event_hook.h"; sourceTree = "<absolute>"; };
+		4C86404C86404C8640000000 /* switch_scheduler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_scheduler.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_scheduler.h"; sourceTree = "<absolute>"; };
+		4C9BB04C9BB04C9BB0000000 /* switch_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_core.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_core.h"; sourceTree = "<absolute>"; };
+		4CA2604CA2604CA260000000 /* switch_core_db.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_core_db.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_core_db.h"; sourceTree = "<absolute>"; };
+		4CB1704CB1704CB170000000 /* switch_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_config.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_config.h"; sourceTree = "<absolute>"; };
+		4CB7F04CB7F04CB7F0000000 /* switch_event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_event.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_event.h"; sourceTree = "<absolute>"; };
+		4CC2C04CC2C04CC2C0000000 /* switch_frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_frame.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_frame.h"; sourceTree = "<absolute>"; };
+		4CCD904CCD904CCD90000000 /* switch_ivr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_ivr.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_ivr.h"; sourceTree = "<absolute>"; };
+		4CD8504CD8504CD850000000 /* switch_dso.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_dso.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_dso.h"; sourceTree = "<absolute>"; };
+		4CE3104CE3104CE310000000 /* switch_loadable_module.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_loadable_module.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_loadable_module.h"; sourceTree = "<absolute>"; };
+		4CE7804CE7804CE780000000 /* switch_module_interfaces.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_module_interfaces.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_module_interfaces.h"; sourceTree = "<absolute>"; };
+		4CF2804CF2804CF280000000 /* resample.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = resample.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/libresample/src/resample.c"; sourceTree = "<absolute>"; };
+		4CF3004CF3004CF300000000 /* switch_platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_platform.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_platform.h"; sourceTree = "<absolute>"; };
+		4D08504D08504D0850000000 /* switch_resample.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_resample.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_resample.h"; sourceTree = "<absolute>"; };
+		4D13304D13304D1330000000 /* switch_regex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_regex.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_regex.h"; sourceTree = "<absolute>"; };
+		4D19B04D19B04D19B0000000 /* switch_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_types.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_types.h"; sourceTree = "<absolute>"; };
+		4D24804D24804D2480000000 /* switch_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_utils.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_utils.h"; sourceTree = "<absolute>"; };
+		4D2F504D2F504D2F50000000 /* switch_rtp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_rtp.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_rtp.h"; sourceTree = "<absolute>"; };
+		4D3A104D3A104D3A10000000 /* switch_stun.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_stun.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_stun.h"; sourceTree = "<absolute>"; };
+		4D44D04D44D04D44D0000000 /* switch_log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_log.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_log.h"; sourceTree = "<absolute>"; };
+		4D4F904D4F904D4F90000000 /* switch_xml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_xml.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_xml.h"; sourceTree = "<absolute>"; };
+		4D5A504D5A504D5A50000000 /* switch_cpp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_cpp.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_cpp.h"; sourceTree = "<absolute>"; };
+		4D65104D65104D6510000000 /* libteletone_detect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libteletone_detect.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src/libteletone_detect.h"; sourceTree = "<absolute>"; };
+		4D69804D69804D6980000000 /* libteletone_generate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libteletone_generate.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src/libteletone_generate.h"; sourceTree = "<absolute>"; };
+		4D74D04D74D04D74D0000000 /* libteletone.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libteletone.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src/libteletone.h"; sourceTree = "<absolute>"; };
+		4D7FA04D7FA04D7FA0000000 /* switch_odbc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = switch_odbc.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_odbc.h"; sourceTree = "<absolute>"; };
+		4E26604E26604E2660000000 /* libfreeswitch_la.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libfreeswitch_la.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4E37F04E37F04E37F0000000 /* filterkit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = filterkit.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/libresample/src/filterkit.c"; sourceTree = "<absolute>"; };
+		4E42704E42704E4270000000 /* resamplesubs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = resamplesubs.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/libresample/src/resamplesubs.c"; sourceTree = "<absolute>"; };
+		4E43004E43004E4300000000 /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/libresample/include/libresample.h"; sourceTree = "<absolute>"; };
+		4EE3404EE3404EE340000000 /* libresample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libresample.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F9DA04F9DA04F9DA0000000 /* libteletone.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libteletone.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FA4804FA4804FA480000000 /* pcre_compile.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_compile.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_compile.c"; sourceTree = "<absolute>"; };
+		4FABD04FABD04FABD0000000 /* pcre_tables.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_tables.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_tables.c"; sourceTree = "<absolute>"; };
+		4FB6904FB6904FB690000000 /* pcre_config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_config.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_config.c"; sourceTree = "<absolute>"; };
+		600100600100600100000000 /* pcre_try_flipped.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_try_flipped.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_try_flipped.c"; sourceTree = "<absolute>"; };
+		601010601010601010000000 /* pcre_dfa_exec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_dfa_exec.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_dfa_exec.c"; sourceTree = "<absolute>"; };
+		6016C06016C06016C0000000 /* pcre_ucp_searchfuncs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_ucp_searchfuncs.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_ucp_searchfuncs.c"; sourceTree = "<absolute>"; };
+		602600602600602600000000 /* pcre_exec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_exec.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_exec.c"; sourceTree = "<absolute>"; };
+		602C70602C70602C70000000 /* pcre_valid_utf8.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_valid_utf8.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_valid_utf8.c"; sourceTree = "<absolute>"; };
+		603740603740603740000000 /* pcre_fullinfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_fullinfo.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_fullinfo.c"; sourceTree = "<absolute>"; };
+		604220604220604220000000 /* pcre_version.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_version.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_version.c"; sourceTree = "<absolute>"; };
+		604690604690604690000000 /* dftables.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dftables.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/dftables.c"; sourceTree = "<absolute>"; };
+		605790605790605790000000 /* pcre_get.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_get.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_get.c"; sourceTree = "<absolute>"; };
+		606230606230606230000000 /* pcre_xclass.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_xclass.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_xclass.c"; sourceTree = "<absolute>"; };
+		606CF0606CF0606CF0000000 /* pcre_globals.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_globals.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_globals.c"; sourceTree = "<absolute>"; };
+		6077B06077B06077B0000000 /* pcre_info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_info.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_info.c"; sourceTree = "<absolute>"; };
+		608270608270608270000000 /* pcrecpp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = pcrecpp.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcrecpp.h"; sourceTree = "<absolute>"; };
+		608D30608D30608D30000000 /* pcre_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = pcre_internal.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_internal.h"; sourceTree = "<absolute>"; };
+		609810609810609810000000 /* pcre_maketables.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_maketables.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_maketables.c"; sourceTree = "<absolute>"; };
+		60A2E060A2E060A2E0000000 /* pcrecpparg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = pcrecpparg.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcrecpparg.h"; sourceTree = "<absolute>"; };
+		60ADA060ADA060ADA0000000 /* pcre_ord2utf8.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_ord2utf8.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_ord2utf8.c"; sourceTree = "<absolute>"; };
+		60BD2060BD2060BD20000000 /* pcredemo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcredemo.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcredemo.c"; sourceTree = "<absolute>"; };
+		60C3A060C3A060C3A0000000 /* pcre_refcount.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_refcount.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_refcount.c"; sourceTree = "<absolute>"; };
+		60CE5060CE5060CE50000000 /* pcregrep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcregrep.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcregrep.c"; sourceTree = "<absolute>"; };
+		60D91060D91060D910000000 /* pcreposix.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcreposix.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcreposix.c"; sourceTree = "<absolute>"; };
+		60E3D060E3D060E3D0000000 /* pcre_scanner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = pcre_scanner.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_scanner.h"; sourceTree = "<absolute>"; };
+		60EE9060EE9060EE90000000 /* pcreposix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = pcreposix.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcreposix.h"; sourceTree = "<absolute>"; };
+		60F96060F96060F960000000 /* pcre_scanner_unittest.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = pcre_scanner_unittest.cc; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_scanner_unittest.cc"; sourceTree = "<absolute>"; };
+		6108B06108B06108B0000000 /* pcretest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcretest.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcretest.c"; sourceTree = "<absolute>"; };
+		610F30610F30610F30000000 /* pcre_stringpiece.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = pcre_stringpiece.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_stringpiece.h"; sourceTree = "<absolute>"; };
+		6114A06114A06114A0000000 /* pcre_stringpiece.h.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode; name = pcre_stringpiece.h.in; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_stringpiece.h.in"; sourceTree = "<absolute>"; };
+		612930612930612930000000 /* ucp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = ucp.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/ucp.h"; sourceTree = "<absolute>"; };
+		612FB0612FB0612FB0000000 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = pcre.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre.h"; sourceTree = "<absolute>"; };
+		613A60613A60613A60000000 /* ucpinternal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = ucpinternal.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/ucpinternal.h"; sourceTree = "<absolute>"; };
+		613ED0613ED0613ED0000000 /* pcre_chartables.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_chartables.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_chartables.c"; sourceTree = "<absolute>"; };
+		61E47061E47061E470000000 /* libpcre.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libpcre.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		61F2B061F2B061F2B0000000 /* stfu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = stfu.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/stfu/stfu.h"; sourceTree = "<absolute>"; };
+		628790628790628790000000 /* libstfu.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libstfu.a; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		486D20486D20486D20000000 = {
+			isa = PBXGroup;
+			children = (
+				486FE0486FE0486FE0000000 /* Sources */,
+				487420487420487420000000 /* Resources */,
+				4877E04877E04877E0000000 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		486FE0486FE0486FE0000000 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				4879C04879C04879C0000000 /* freeswitch */,
+				4888D04888D04888D0000000 /* freeswitch_la */,
+				487880487880487880000000 /* resample */,
+				48CB2048CB2048CB20000000 /* teletone */,
+				48DA9048DA9048DA90000000 /* pcre */,
+				48DA2048DA2048DA20000000 /* stfu */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+		487420487420487420000000 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		4877E04877E04877E0000000 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4A2F104A2F104A2F10000000 /* freeswitch */,
+				4E26604E26604E2660000000 /* libfreeswitch_la.a */,
+				4EE3404EE3404EE340000000 /* libresample.a */,
+				4F9DA04F9DA04F9DA0000000 /* libteletone.a */,
+				61E47061E47061E470000000 /* libpcre.a */,
+				628790628790628790000000 /* libstfu.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		487880487880487880000000 /* resample */ = {
+			isa = PBXGroup;
+			children = (
+				48C1D048C1D048C1D0000000 /* Source Files */,
+				48C75048C75048C750000000 /* Header Files */,
+			);
+			name = resample;
+			sourceTree = "<group>";
+		};
+		4879C04879C04879C0000000 /* freeswitch */ = {
+			isa = PBXGroup;
+			children = (
+				487E20487E20487E20000000 /* Source Files */,
+				4882E04882E04882E0000000 /* Header Files */,
+			);
+			name = freeswitch;
+			sourceTree = "<group>";
+		};
+		487E20487E20487E20000000 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				499250499250499250000000 /* switch.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		4882E04882E04882E0000000 /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				4999A04999A04999A0000000 /* switch.h */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+		4888D04888D04888D0000000 /* freeswitch_la */ = {
+			isa = PBXGroup;
+			children = (
+				488C80488C80488C80000000 /* Source Files */,
+				48A97048A97048A970000000 /* Header Files */,
+			);
+			name = freeswitch_la;
+			sourceTree = "<group>";
+		};
+		488C80488C80488C80000000 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				4A36304A36304A3630000000 /* switch_apr.c */,
+				4A3DB04A3DB04A3DB0000000 /* switch_buffer.c */,
+				4A48704A48704A4870000000 /* switch_caller.c */,
+				4A53304A53304A5330000000 /* switch_channel.c */,
+				4A5DF04A5DF04A5DF0000000 /* switch_console.c */,
+				4A68D04A68D04A68D0000000 /* switch_core_media_bug.c */,
+				4A78304A78304A7830000000 /* switch_core_timer.c */,
+				4A7E704A7E704A7E70000000 /* switch_core_asr.c */,
+				4A89304A89304A8930000000 /* switch_core_event_hook.c */,
+				4A98604A98604A9860000000 /* switch_core_speech.c */,
+				4AA3804AA3804AA380000000 /* switch_core_memory.c */,
+				4AAE304AAE304AAE30000000 /* switch_core_codec.c */,
+				4AB4704AB4704AB470000000 /* switch_core_file.c */,
+				4ABF304ABF304ABF30000000 /* switch_core_hash.c */,
+				4AC9F04AC9F04AC9F0000000 /* switch_core_sqldb.c */,
+				4AD4B04AD4B04AD4B0000000 /* switch_core_session.c */,
+				4AE3E04AE3E04AE3E0000000 /* switch_core_directory.c */,
+				4AEF504AEF504AEF50000000 /* switch_core_state_machine.c */,
+				4AEFC04AEFC04AEFC0000000 /* switch_core_io.c */,
+				4B00304B00304B0030000000 /* switch_core_rwlock.c */,
+				4B0F604B0F604B0F60000000 /* switch_core_port_allocator.c */,
+				4B0FD04B0FD04B0FD0000000 /* switch_core.c */,
+				4B20604B20604B2060000000 /* switch_scheduler.c */,
+				4B2B204B2B204B2B20000000 /* switch_core_db.c */,
+				4B35E04B35E04B35E0000000 /* switch_dso.c */,
+				4B40A04B40A04B40A0000000 /* switch_loadable_module.c */,
+				4B4FC04B4FC04B4FC0000000 /* switch_utils.c */,
+				4B56404B56404B5640000000 /* switch_event.c */,
+				4B61004B61004B6100000000 /* switch_resample.c */,
+				4B6BC04B6BC04B6BC0000000 /* switch_regex.c */,
+				4B76804B76804B7680000000 /* switch_rtp.c */,
+				4B81404B81404B8140000000 /* switch_ivr_bridge.c */,
+				4B8C004B8C004B8C00000000 /* switch_ivr_originate.c */,
+				4AEED04AEED04AEED0000000 /* switch_ivr_async.c */,
+				4BA2904BA2904BA290000000 /* switch_ivr_play_say.c */,
+				4BB1C04BB1C04BB1C0000000 /* switch_ivr_menu.c */,
+				4BB8004BB8004BB800000000 /* switch_ivr.c */,
+				4BC2C04BC2C04BC2C0000000 /* switch_stun.c */,
+				4BCD804BCD804BCD80000000 /* switch_log.c */,
+				4BD8404BD8404BD840000000 /* switch_xml.c */,
+				4BE3004BE3004BE300000000 /* switch_config.c */,
+				4BEDC04BEDC04BEDC0000000 /* switch_time.c */,
+				4BF8804BF8804BF880000000 /* stfu.c */,
+				4C03404C03404C0340000000 /* switch_cpp.cpp */,
+				4C0E004C0E004C0E00000000 /* g711.c */,
+				4C1CB04C1CB04C1CB0000000 /* switch_pcm.c */,
+				4C23004C23004C2300000000 /* libteletone_detect.c */,
+				4C27704C27704C2770000000 /* libteletone_generate.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		48A97048A97048A970000000 /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				4C32C04C32C04C32C0000000 /* switch_am_config.h */,
+				4999A04999A04999A0000000 /* switch.h */,
+				4C4F504C4F504C4F50000000 /* switch_apr.h */,
+				4C56004C56004C5600000000 /* switch_buffer.h */,
+				4C60D04C60D04C60D0000000 /* switch_caller.h */,
+				4C6BB04C6BB04C6BB0000000 /* switch_channel.h */,
+				4C7AD04C7AD04C7AD0000000 /* switch_console.h */,
+				4C85B04C85B04C85B0000000 /* switch_core_event_hook.h */,
+				4C86404C86404C8640000000 /* switch_scheduler.h */,
+				4C9BB04C9BB04C9BB0000000 /* switch_core.h */,
+				4CA2604CA2604CA260000000 /* switch_core_db.h */,
+				4CB1704CB1704CB170000000 /* switch_config.h */,
+				4CB7F04CB7F04CB7F0000000 /* switch_event.h */,
+				4CC2C04CC2C04CC2C0000000 /* switch_frame.h */,
+				4CCD904CCD904CCD90000000 /* switch_ivr.h */,
+				4CD8504CD8504CD850000000 /* switch_dso.h */,
+				4CE3104CE3104CE310000000 /* switch_loadable_module.h */,
+				4CE7804CE7804CE780000000 /* switch_module_interfaces.h */,
+				4CF3004CF3004CF300000000 /* switch_platform.h */,
+				4D08504D08504D0850000000 /* switch_resample.h */,
+				4D13304D13304D1330000000 /* switch_regex.h */,
+				4D19B04D19B04D19B0000000 /* switch_types.h */,
+				4D24804D24804D2480000000 /* switch_utils.h */,
+				4D2F504D2F504D2F50000000 /* switch_rtp.h */,
+				4D3A104D3A104D3A10000000 /* switch_stun.h */,
+				4D44D04D44D04D44D0000000 /* switch_log.h */,
+				4D4F904D4F904D4F90000000 /* switch_xml.h */,
+				4D5A504D5A504D5A50000000 /* switch_cpp.h */,
+				4D65104D65104D6510000000 /* libteletone_detect.h */,
+				4D69804D69804D6980000000 /* libteletone_generate.h */,
+				4D74D04D74D04D74D0000000 /* libteletone.h */,
+				4D7FA04D7FA04D7FA0000000 /* switch_odbc.h */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+		48C1D048C1D048C1D0000000 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				4CF2804CF2804CF280000000 /* resample.c */,
+				4E37F04E37F04E37F0000000 /* filterkit.c */,
+				4E42704E42704E4270000000 /* resamplesubs.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		48C75048C75048C750000000 /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				4E43004E43004E4300000000 /* libresample.h */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+		48CB2048CB2048CB20000000 /* teletone */ = {
+			isa = PBXGroup;
+			children = (
+				48CF6048CF6048CF60000000 /* Header Files */,
+				48D3D048D3D048D3D0000000 /* Source Files */,
+			);
+			name = teletone;
+			sourceTree = "<group>";
+		};
+		48CF6048CF6048CF60000000 /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				4D74D04D74D04D74D0000000 /* libteletone.h */,
+				4D65104D65104D6510000000 /* libteletone_detect.h */,
+				4D69804D69804D6980000000 /* libteletone_generate.h */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+		48D3D048D3D048D3D0000000 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				4C23004C23004C2300000000 /* libteletone_detect.c */,
+				4C27704C27704C2770000000 /* libteletone_generate.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		48DA2048DA2048DA20000000 /* stfu */ = {
+			isa = PBXGroup;
+			children = (
+				48FA9048FA9048FA90000000 /* Source Files */,
+				48FEE048FEE048FEE0000000 /* Header Files */,
+			);
+			name = stfu;
+			sourceTree = "<group>";
+		};
+		48DA9048DA9048DA90000000 /* pcre */ = {
+			isa = PBXGroup;
+			children = (
+				48DEB048DEB048DEB0000000 /* Source Files */,
+				48E9F048E9F048E9F0000000 /* Header Files */,
+			);
+			name = pcre;
+			sourceTree = "<group>";
+		};
+		48DEB048DEB048DEB0000000 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				4FA4804FA4804FA480000000 /* pcre_compile.c */,
+				4FABD04FABD04FABD0000000 /* pcre_tables.c */,
+				4FB6904FB6904FB690000000 /* pcre_config.c */,
+				600100600100600100000000 /* pcre_try_flipped.c */,
+				601010601010601010000000 /* pcre_dfa_exec.c */,
+				6016C06016C06016C0000000 /* pcre_ucp_searchfuncs.c */,
+				602600602600602600000000 /* pcre_exec.c */,
+				602C70602C70602C70000000 /* pcre_valid_utf8.c */,
+				603740603740603740000000 /* pcre_fullinfo.c */,
+				604220604220604220000000 /* pcre_version.c */,
+				604690604690604690000000 /* dftables.c */,
+				605790605790605790000000 /* pcre_get.c */,
+				606230606230606230000000 /* pcre_xclass.c */,
+				606CF0606CF0606CF0000000 /* pcre_globals.c */,
+				6077B06077B06077B0000000 /* pcre_info.c */,
+				609810609810609810000000 /* pcre_maketables.c */,
+				60ADA060ADA060ADA0000000 /* pcre_ord2utf8.c */,
+				60BD2060BD2060BD20000000 /* pcredemo.c */,
+				60C3A060C3A060C3A0000000 /* pcre_refcount.c */,
+				60CE5060CE5060CE50000000 /* pcregrep.c */,
+				60D91060D91060D910000000 /* pcreposix.c */,
+				60F96060F96060F960000000 /* pcre_scanner_unittest.cc */,
+				6108B06108B06108B0000000 /* pcretest.c */,
+				613ED0613ED0613ED0000000 /* pcre_chartables.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		48E9F048E9F048E9F0000000 /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				608270608270608270000000 /* pcrecpp.h */,
+				608D30608D30608D30000000 /* pcre_internal.h */,
+				60A2E060A2E060A2E0000000 /* pcrecpparg.h */,
+				60E3D060E3D060E3D0000000 /* pcre_scanner.h */,
+				60EE9060EE9060EE90000000 /* pcreposix.h */,
+				610F30610F30610F30000000 /* pcre_stringpiece.h */,
+				6114A06114A06114A0000000 /* pcre_stringpiece.h.in */,
+				612930612930612930000000 /* ucp.h */,
+				612FB0612FB0612FB0000000 /* pcre.h */,
+				613A60613A60613A60000000 /* ucpinternal.h */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+		48FA9048FA9048FA90000000 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				4BF8804BF8804BF880000000 /* stfu.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		48FEE048FEE048FEE0000000 /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				61F2B061F2B061F2B0000000 /* stfu.h */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		49B9E049B9E049B9E0000000 /* freeswitch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 49BDD049BDD049BDD0000000 /* Build configuration list for PBXNativeTarget "freeswitch" */;
+			buildPhases = (
+				49ABD049ABD049ABD0000000 /* CMake ReRun */,
+				49A46049A46049A460000000 /* Sources */,
+				49B28049B28049B280000000 /* CMake PostBuild Rules */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				62B83062B83062B830000000 /* PBXTargetDependency */,
+				62A1F062A1F062A1F0000000 /* PBXTargetDependency */,
+				62A96062A96062A960000000 /* PBXTargetDependency */,
+				629A30629A30629A30000000 /* PBXTargetDependency */,
+				62B0E062B0E062B0E0000000 /* PBXTargetDependency */,
+			);
+			name = freeswitch;
+			productName = freeswitch;
+			productReference = 4A2F104A2F104A2F10000000 /* freeswitch */;
+			productType = "com.apple.product-type.tool";
+		};
+		4DA6F04DA6F04DA6F0000000 /* libfreeswitch_la.a */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4DAAD04DAAD04DAAD0000000 /* Build configuration list for PBXNativeTarget "libfreeswitch_la.a" */;
+			buildPhases = (
+				4D98F04D98F04D98F0000000 /* CMake ReRun */,
+				4D90604D90604D9060000000 /* Sources */,
+				4D9FA04D9FA04D9FA0000000 /* CMake PostBuild Rules */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libfreeswitch_la.a;
+			productName = libfreeswitch_la.a;
+			productReference = 4E26604E26604E2660000000 /* libfreeswitch_la.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		4E68704E68704E6870000000 /* libresample.a */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4E6D204E6D204E6D20000000 /* Build configuration list for PBXNativeTarget "libresample.a" */;
+			buildPhases = (
+				4E5B104E5B104E5B10000000 /* CMake ReRun */,
+				4E4DC04E4DC04E4DC0000000 /* Sources */,
+				4E61C04E61C04E61C0000000 /* CMake PostBuild Rules */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libresample.a;
+			productName = libresample.a;
+			productReference = 4EE3404EE3404EE340000000 /* libresample.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		4F22D04F22D04F22D0000000 /* libteletone.a */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F27804F27804F2780000000 /* Build configuration list for PBXNativeTarget "libteletone.a" */;
+			buildPhases = (
+				4F15704F15704F1570000000 /* CMake ReRun */,
+				4EF2904EF2904EF290000000 /* Sources */,
+				4F1C204F1C204F1C20000000 /* CMake PostBuild Rules */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libteletone.a;
+			productName = libteletone.a;
+			productReference = 4F9DA04F9DA04F9DA0000000 /* libteletone.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		616770616770616770000000 /* libpcre.a */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6169F06169F06169F0000000 /* Build configuration list for PBXNativeTarget "libpcre.a" */;
+			buildPhases = (
+				6157E06157E06157E0000000 /* CMake ReRun */,
+				614FC0614FC0614FC0000000 /* Sources */,
+				615E90615E90615E90000000 /* CMake PostBuild Rules */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libpcre.a;
+			productName = libpcre.a;
+			productReference = 61E47061E47061E470000000 /* libpcre.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		621070621070621070000000 /* libstfu.a */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6212F06212F06212F0000000 /* Build configuration list for PBXNativeTarget "libstfu.a" */;
+			buildPhases = (
+				6200D06200D06200D0000000 /* CMake ReRun */,
+				61F38061F38061F380000000 /* Sources */,
+				6207B06207B06207B0000000 /* CMake PostBuild Rules */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libstfu.a;
+			productName = libstfu.a;
+			productReference = 628790628790628790000000 /* libstfu.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4904E04904E04904E0000000 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 490AA0490AA0490AA0000000 /* Build configuration list for PBXProject "freeswitch" */;
+			compatibilityVersion = "Xcode 2.4";
+			hasScannedForEncodings = 0;
+			mainGroup = 486D20486D20486D20000000;
+			projectDirPath = "";
+			projectRoot = "/Users/shaneburrell/freeswitch-svn-real";
+			targets = (
+				492050492050492050000000 /* ALL_BUILD */,
+				49B9E049B9E049B9E0000000 /* freeswitch */,
+				4DA6F04DA6F04DA6F0000000 /* libfreeswitch_la.a */,
+				4E68704E68704E6870000000 /* libresample.a */,
+				4F22D04F22D04F22D0000000 /* libteletone.a */,
+				616770616770616770000000 /* libpcre.a */,
+				621070621070621070000000 /* libstfu.a */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		492230492230492230000000 /* CMake ReRun */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake ReRun";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real -f /Users/shaneburrell/freeswitch-svn-real/CMakeScripts/ReRunCMake.make";
+		};
+		492920492920492920000000 /* CMake Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real -f /Users/shaneburrell/freeswitch-svn-real/CMakeScripts/ALL_BUILD_cmakeRulesBuildPhase.make$CONFIGURATION all";
+		};
+		49ABD049ABD049ABD0000000 /* CMake ReRun */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake ReRun";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real -f /Users/shaneburrell/freeswitch-svn-real/CMakeScripts/ReRunCMake.make";
+		};
+		49B28049B28049B280000000 /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real -f /Users/shaneburrell/freeswitch-svn-real/CMakeScripts/freeswitch_postBuildPhase.make$CONFIGURATION all";
+		};
+		4D98F04D98F04D98F0000000 /* CMake ReRun */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake ReRun";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real -f /Users/shaneburrell/freeswitch-svn-real/CMakeScripts/ReRunCMake.make";
+		};
+		4D9FA04D9FA04D9FA0000000 /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real/src -f /Users/shaneburrell/freeswitch-svn-real/src/CMakeScripts/freeswitch_la_postBuildPhase.make$CONFIGURATION all";
+		};
+		4E5B104E5B104E5B10000000 /* CMake ReRun */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake ReRun";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real -f /Users/shaneburrell/freeswitch-svn-real/CMakeScripts/ReRunCMake.make";
+		};
+		4E61C04E61C04E61C0000000 /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real/libs/libresample -f /Users/shaneburrell/freeswitch-svn-real/libs/libresample/CMakeScripts/resample_postBuildPhase.make$CONFIGURATION all";
+		};
+		4F15704F15704F1570000000 /* CMake ReRun */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake ReRun";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real -f /Users/shaneburrell/freeswitch-svn-real/CMakeScripts/ReRunCMake.make";
+		};
+		4F1C204F1C204F1C20000000 /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real/libs/libteletone -f /Users/shaneburrell/freeswitch-svn-real/libs/libteletone/CMakeScripts/teletone_postBuildPhase.make$CONFIGURATION all";
+		};
+		6157E06157E06157E0000000 /* CMake ReRun */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake ReRun";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real -f /Users/shaneburrell/freeswitch-svn-real/CMakeScripts/ReRunCMake.make";
+		};
+		615E90615E90615E90000000 /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real/libs/pcre -f /Users/shaneburrell/freeswitch-svn-real/libs/pcre/CMakeScripts/pcre_postBuildPhase.make$CONFIGURATION all";
+		};
+		6200D06200D06200D0000000 /* CMake ReRun */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake ReRun";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real -f /Users/shaneburrell/freeswitch-svn-real/CMakeScripts/ReRunCMake.make";
+		};
+		6207B06207B06207B0000000 /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/shaneburrell/freeswitch-svn-real/libs/stfu -f /Users/shaneburrell/freeswitch-svn-real/libs/stfu/CMakeScripts/stfu_postBuildPhase.make$CONFIGURATION all";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		49A46049A46049A460000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				499420499420499420000000 /* switch.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D90604D90604D9060000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A38304A38304A3830000000 /* switch_apr.c in Sources */,
+				4A42704A42704A4270000000 /* switch_buffer.c in Sources */,
+				4A4D304A4D304A4D30000000 /* switch_caller.c in Sources */,
+				4A58104A58104A5810000000 /* switch_channel.c in Sources */,
+				4A62D04A62D04A62D0000000 /* switch_console.c in Sources */,
+				4A6DE04A6DE04A6DE0000000 /* switch_core_media_bug.c in Sources */,
+				4A79004A79004A7900000000 /* switch_core_timer.c in Sources */,
+				4A83504A83504A8350000000 /* switch_core_asr.c in Sources */,
+				4A8EA04A8EA04A8EA0000000 /* switch_core_event_hook.c in Sources */,
+				4A9A104A9A104A9A10000000 /* switch_core_speech.c in Sources */,
+				4AA4504AA4504AA450000000 /* switch_core_memory.c in Sources */,
+				4AAF004AAF004AAF00000000 /* switch_core_codec.c in Sources */,
+				4AB9504AB9504AB950000000 /* switch_core_file.c in Sources */,
+				4AC4104AC4104AC410000000 /* switch_core_hash.c in Sources */,
+				4ACED04ACED04ACED0000000 /* switch_core_sqldb.c in Sources */,
+				4AD9904AD9904AD990000000 /* switch_core_session.c in Sources */,
+				4AE5404AE5404AE540000000 /* switch_core_directory.c in Sources */,
+				4AF0304AF0304AF030000000 /* switch_core_state_machine.c in Sources */,
+				4AFA904AFA904AFA90000000 /* switch_core_io.c in Sources */,
+				4B05104B05104B0510000000 /* switch_core_rwlock.c in Sources */,
+				4B10404B10404B1040000000 /* switch_core_port_allocator.c in Sources */,
+				4B1B204B1B204B1B20000000 /* switch_core.c in Sources */,
+				4B25404B25404B2540000000 /* switch_scheduler.c in Sources */,
+				4B30004B30004B3000000000 /* switch_core_db.c in Sources */,
+				4B3B204B3B204B3B20000000 /* switch_dso.c in Sources */,
+				4B45904B45904B4590000000 /* switch_loadable_module.c in Sources */,
+				4B50904B50904B5090000000 /* switch_utils.c in Sources */,
+				4B5B204B5B204B5B20000000 /* switch_event.c in Sources */,
+				4B65E04B65E04B65E0000000 /* switch_resample.c in Sources */,
+				4B70A04B70A04B70A0000000 /* switch_regex.c in Sources */,
+				4B7BC04B7BC04B7BC0000000 /* switch_rtp.c in Sources */,
+				4B86204B86204B8620000000 /* switch_ivr_bridge.c in Sources */,
+				4B90C04B90C04B90C0000000 /* switch_ivr_originate.c in Sources */,
+				4B9CE04B9CE04B9CE0000000 /* switch_ivr_async.c in Sources */,
+				4BA7704BA7704BA770000000 /* switch_ivr_play_say.c in Sources */,
+				4BB2904BB2904BB290000000 /* switch_ivr_menu.c in Sources */,
+				4BBD404BBD404BBD40000000 /* switch_ivr.c in Sources */,
+				4BC8004BC8004BC800000000 /* switch_stun.c in Sources */,
+				4BD2C04BD2C04BD2C0000000 /* switch_log.c in Sources */,
+				4BDD804BDD804BDD80000000 /* switch_xml.c in Sources */,
+				4BE7E04BE7E04BE7E0000000 /* switch_config.c in Sources */,
+				4BF3004BF3004BF300000000 /* switch_time.c in Sources */,
+				4BFDC04BFDC04BFDC0000000 /* stfu.c in Sources */,
+				4C08204C08204C0820000000 /* switch_cpp.cpp in Sources */,
+				4C12A04C12A04C12A0000000 /* g711.c in Sources */,
+				4C1DA04C1DA04C1DA0000000 /* switch_pcm.c in Sources */,
+				4C28004C28004C2800000000 /* libteletone_detect.c in Sources */,
+				4C33304C33304C3330000000 /* libteletone_generate.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4E4DC04E4DC04E4DC0000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4E2E004E2E004E2E00000000 /* resample.c in Sources */,
+				4E38C04E38C04E38C0000000 /* filterkit.c in Sources */,
+				4E43704E43704E4370000000 /* resamplesubs.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4EF2904EF2904EF290000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4EF3004EF3004EF300000000 /* libteletone_detect.c in Sources */,
+				4EFF804EFF804EFF80000000 /* libteletone_generate.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		614FC0614FC0614FC0000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4FA6604FA6604FA660000000 /* pcre_compile.c in Sources */,
+				4FB0F04FB0F04FB0F0000000 /* pcre_tables.c in Sources */,
+				4FBB504FBB504FBB50000000 /* pcre_config.c in Sources */,
+				600670600670600670000000 /* pcre_try_flipped.c in Sources */,
+				601100601100601100000000 /* pcre_dfa_exec.c in Sources */,
+				601C70601C70601C70000000 /* pcre_ucp_searchfuncs.c in Sources */,
+				6026C06026C06026C0000000 /* pcre_exec.c in Sources */,
+				603130603130603130000000 /* pcre_valid_utf8.c in Sources */,
+				603C90603C90603C90000000 /* pcre_fullinfo.c in Sources */,
+				6047C06047C06047C0000000 /* pcre_version.c in Sources */,
+				605220605220605220000000 /* dftables.c in Sources */,
+				605CB0605CB0605CB0000000 /* pcre_get.c in Sources */,
+				606780606780606780000000 /* pcre_xclass.c in Sources */,
+				607240607240607240000000 /* pcre_globals.c in Sources */,
+				607C60607C60607C60000000 /* pcre_info.c in Sources */,
+				609CD0609CD0609CD0000000 /* pcre_maketables.c in Sources */,
+				60B26060B26060B260000000 /* pcre_ord2utf8.c in Sources */,
+				60BDE060BDE060BDE0000000 /* pcredemo.c in Sources */,
+				60C8C060C8C060C8C0000000 /* pcre_refcount.c in Sources */,
+				60D30060D30060D300000000 /* pcregrep.c in Sources */,
+				60DDC060DDC060DDC0000000 /* pcreposix.c in Sources */,
+				60FE1060FE1060FE10000000 /* pcre_scanner_unittest.cc in Sources */,
+				610930610930610930000000 /* pcretest.c in Sources */,
+				614A00614A00614A00000000 /* pcre_chartables.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		61F38061F38061F380000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60B8B060B8B060B8B0000000 /* stfu.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		629320629320629320000000 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 49B9E049B9E049B9E0000000 /* freeswitch */;
+			targetProxy = 628E90628E90628E90000000 /* PBXContainerItemProxy */;
+		};
+		629A30629A30629A30000000 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4DA6F04DA6F04DA6F0000000 /* libfreeswitch_la.a */;
+			targetProxy = 6295B06295B06295B0000000 /* PBXContainerItemProxy */;
+		};
+		62A1F062A1F062A1F0000000 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 616770616770616770000000 /* libpcre.a */;
+			targetProxy = 629CF0629CF0629CF0000000 /* PBXContainerItemProxy */;
+		};
+		62A96062A96062A960000000 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4E68704E68704E6870000000 /* libresample.a */;
+			targetProxy = 62A46062A46062A460000000 /* PBXContainerItemProxy */;
+		};
+		62B0E062B0E062B0E0000000 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 621070621070621070000000 /* libstfu.a */;
+			targetProxy = 62ABF062ABF062ABF0000000 /* PBXContainerItemProxy */;
+		};
+		62B83062B83062B830000000 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F22D04F22D04F22D0000000 /* libteletone.a */;
+			targetProxy = 62B37062B37062B370000000 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		490B80490B80490B80000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		490D40490D40490D40000000 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		490EF0490EF0490EF0000000 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = MinSizeRel;
+		};
+		491170491170491170000000 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = RelWithDebInfo;
+		};
+		4935F04935F04935F0000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Debug;
+		};
+		4948E04948E04948E0000000 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Release;
+		};
+		495AF0495AF0495AF0000000 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = MinSizeRel;
+		};
+		496C70496C70496C70000000 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = RelWithDebInfo;
+		};
+		49C11049C11049C110000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-headerpad_max_install_names",
+					"-Llibs/apr/.libs",
+					"-lapr-1",
+					"-L/libs/apr-util/.libs",
+					"-laprutil-1",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src/.libs/libsndfile.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libcryptomath.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libsrtp.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite/.libs/libsqlite3.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src/.libs/libvoipcodecs.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/Debug/libteletone.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/Debug/libpcre.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/Debug/libresample.a",
+					"/Users/shaneburrell/freeswitch-svn-real/src/Debug/libfreeswitch_la.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/Debug/libstfu.a",
+					"-Llibs/apr/.libs",
+					"-lapr-1",
+					"-L/libs/apr-util/.libs",
+					"-laprutil-1",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src/.libs/libsndfile.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libcryptomath.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libsrtp.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite/.libs/libsqlite3.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src/.libs/libvoipcodecs.a",
+				);
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Debug;
+		};
+		49D81049D81049D810000000 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-headerpad_max_install_names",
+					"-Llibs/apr/.libs",
+					"-lapr-1",
+					"-L/libs/apr-util/.libs",
+					"-laprutil-1",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src/.libs/libsndfile.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libcryptomath.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libsrtp.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite/.libs/libsqlite3.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src/.libs/libvoipcodecs.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/Release/libteletone.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/Release/libpcre.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/Release/libresample.a",
+					"/Users/shaneburrell/freeswitch-svn-real/src/Release/libfreeswitch_la.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/Release/libstfu.a",
+					"-Llibs/apr/.libs",
+					"-lapr-1",
+					"-L/libs/apr-util/.libs",
+					"-laprutil-1",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src/.libs/libsndfile.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libcryptomath.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libsrtp.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite/.libs/libsqlite3.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src/.libs/libvoipcodecs.a",
+				);
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Release;
+		};
+		49EDE049EDE049EDE0000000 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-headerpad_max_install_names",
+					"-Llibs/apr/.libs",
+					"-lapr-1",
+					"-L/libs/apr-util/.libs",
+					"-laprutil-1",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src/.libs/libsndfile.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libcryptomath.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libsrtp.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite/.libs/libsqlite3.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src/.libs/libvoipcodecs.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/MinSizeRel/libteletone.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/MinSizeRel/libpcre.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/MinSizeRel/libresample.a",
+					"/Users/shaneburrell/freeswitch-svn-real/src/MinSizeRel/libfreeswitch_la.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/MinSizeRel/libstfu.a",
+					"-Llibs/apr/.libs",
+					"-lapr-1",
+					"-L/libs/apr-util/.libs",
+					"-laprutil-1",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src/.libs/libsndfile.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libcryptomath.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libsrtp.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite/.libs/libsqlite3.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src/.libs/libvoipcodecs.a",
+				);
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = MinSizeRel;
+		};
+		4A03A04A03A04A03A0000000 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-headerpad_max_install_names",
+					"-Llibs/apr/.libs",
+					"-lapr-1",
+					"-L/libs/apr-util/.libs",
+					"-laprutil-1",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src/.libs/libsndfile.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libcryptomath.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libsrtp.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite/.libs/libsqlite3.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src/.libs/libvoipcodecs.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/RelWithDebInfo/libteletone.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/RelWithDebInfo/libpcre.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/RelWithDebInfo/libresample.a",
+					"/Users/shaneburrell/freeswitch-svn-real/src/RelWithDebInfo/libfreeswitch_la.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/RelWithDebInfo/libstfu.a",
+					"-Llibs/apr/.libs",
+					"-lapr-1",
+					"-L/libs/apr-util/.libs",
+					"-laprutil-1",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src/.libs/libsndfile.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libcryptomath.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/.libs/libsrtp.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite/.libs/libsqlite3.a",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src/.libs/libvoipcodecs.a",
+				);
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = RelWithDebInfo;
+		};
+		4DAE504DAE504DAE50000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_4)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_4 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/libresample/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/srtp/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_CPLUSPLUSFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch_la;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/src";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Debug;
+		};
+		4DC6D04DC6D04DC6D0000000 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_4)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_4 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/libresample/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/srtp/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_CPLUSPLUSFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch_la;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/src";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Release;
+		};
+		4DDED04DDED04DDED0000000 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_4)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_4 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/libresample/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/srtp/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_CPLUSPLUSFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch_la;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/src";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = MinSizeRel;
+		};
+		4DF6704DF6704DF670000000 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_4)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_4 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/libresample/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/srtp/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_CPLUSPLUSFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch_la;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/src";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = RelWithDebInfo;
+		};
+		4E70604E70604E7060000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/libresample";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Debug;
+		};
+		4E88204E88204E8820000000 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/libresample";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Release;
+		};
+		4E9E404E9E404E9E40000000 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/libresample";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = MinSizeRel;
+		};
+		4EB4D04EB4D04EB4D0000000 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/libresample";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = RelWithDebInfo;
+		};
+		4F2AC04F2AC04F2AC0000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/libteletone";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Debug;
+		};
+		4F42804F42804F4280000000 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/libteletone";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Release;
+		};
+		4F58A04F58A04F58A0000000 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/libteletone";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = MinSizeRel;
+		};
+		4F6F304F6F304F6F30000000 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/libteletone";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = RelWithDebInfo;
+		};
+		616D20616D20616D20000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_CPLUSPLUSFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = pcre;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Debug;
+		};
+		6185B06185B06185B0000000 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_CPLUSPLUSFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = pcre;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Release;
+		};
+		619CD0619CD0619CD0000000 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_CPLUSPLUSFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = pcre;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = MinSizeRel;
+		};
+		61B45061B45061B450000000 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_CPLUSPLUSFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = pcre;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = RelWithDebInfo;
+		};
+		621620621620621620000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = stfu;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/stfu";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Debug;
+		};
+		622DA0622DA0622DA0000000 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = stfu;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/stfu";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Release;
+		};
+		6243B06243B06243B0000000 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-DNDEBUG";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = stfu;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/stfu";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = MinSizeRel;
+		};
+		6259F06259F06259F0000000 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2)",
+					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_1 = "'CMAKE_INTDIR=\"$(CONFIGURATION)\"'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_2 = "'MACOSX'";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_FOR_TARGET_3 = "'HAVE_NETDB_H'";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libsndfile/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/srtp/crypto/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/sqlite",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
+					"/Users/shaneburrell/freeswitch-svn-real/src/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
+					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/include",
+				);
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PREBINDING = NO;
+				PRODUCT_NAME = stfu;
+				SECTORDER_FLAGS = "";
+				SYMROOT = "/Users/shaneburrell/freeswitch-svn-real/libs/stfu";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = RelWithDebInfo;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		490AA0490AA0490AA0000000 /* Build configuration list for PBXProject "freeswitch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				490B80490B80490B80000000 /* Debug */,
+				490D40490D40490D40000000 /* Release */,
+				490EF0490EF0490EF0000000 /* MinSizeRel */,
+				491170491170491170000000 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		493290493290493290000000 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4935F04935F04935F0000000 /* Debug */,
+				4948E04948E04948E0000000 /* Release */,
+				495AF0495AF0495AF0000000 /* MinSizeRel */,
+				496C70496C70496C70000000 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		49BDD049BDD049BDD0000000 /* Build configuration list for PBXNativeTarget "freeswitch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				49C11049C11049C110000000 /* Debug */,
+				49D81049D81049D810000000 /* Release */,
+				49EDE049EDE049EDE0000000 /* MinSizeRel */,
+				4A03A04A03A04A03A0000000 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4DAAD04DAAD04DAAD0000000 /* Build configuration list for PBXNativeTarget "libfreeswitch_la.a" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4DAE504DAE504DAE50000000 /* Debug */,
+				4DC6D04DC6D04DC6D0000000 /* Release */,
+				4DDED04DDED04DDED0000000 /* MinSizeRel */,
+				4DF6704DF6704DF670000000 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4E6D204E6D204E6D20000000 /* Build configuration list for PBXNativeTarget "libresample.a" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4E70604E70604E7060000000 /* Debug */,
+				4E88204E88204E8820000000 /* Release */,
+				4E9E404E9E404E9E40000000 /* MinSizeRel */,
+				4EB4D04EB4D04EB4D0000000 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4F27804F27804F2780000000 /* Build configuration list for PBXNativeTarget "libteletone.a" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F2AC04F2AC04F2AC0000000 /* Debug */,
+				4F42804F42804F4280000000 /* Release */,
+				4F58A04F58A04F58A0000000 /* MinSizeRel */,
+				4F6F304F6F304F6F30000000 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6169F06169F06169F0000000 /* Build configuration list for PBXNativeTarget "libpcre.a" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				616D20616D20616D20000000 /* Debug */,
+				6185B06185B06185B0000000 /* Release */,
+				619CD0619CD0619CD0000000 /* MinSizeRel */,
+				61B45061B45061B450000000 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6212F06212F06212F0000000 /* Build configuration list for PBXNativeTarget "libstfu.a" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				621620621620621620000000 /* Debug */,
+				622DA0622DA0622DA0000000 /* Release */,
+				6243B06243B06243B0000000 /* MinSizeRel */,
+				6259F06259F06259F0000000 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 4904E04904E04904E0000000 /* Project object */;
+}

@@ -1,0 +1,11 @@
+POST /cgi-bin/sample-cgi.cgi 1.0
+Host: localhost
+Content-Type: text/xml
+Content-Length: 141
+
+<?xml version="1.0" encoding="UTF-8"?>
+<methodCall>
+  <methodName>system.listMethods</methodName>
+  <params>
+  </params>
+</methodCall>

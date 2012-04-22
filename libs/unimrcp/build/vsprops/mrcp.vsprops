@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="mrcp"
+	InheritedPropertySheets=".\apt.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)libs\mrcp\include&quot;;&quot;$(ProjectRootDir)libs\mrcp\message\include&quot;;&quot;$(ProjectRootDir)libs\mrcp\control\include&quot;;&quot;$(ProjectRootDir)libs\mrcp\resources\include&quot;"
+		PreprocessorDefinitions="MRCP_STATIC_LIB"
+	/>
+</VisualStudioPropertySheet>

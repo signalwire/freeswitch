@@ -1,0 +1,7 @@
+<include>
+  <extension name="pulver.com">
+    <condition field="destination_number" expression="^1393(.*)$">
+      <action application="bridge" data="sofia/gateway/fwd.pulver.com/$1"/>
+    </condition>
+  </extension>
+</include>

@@ -1,0 +1,31 @@
+<!ELEMENT include (context*)>
+
+<!ELEMENT context (extension*)>
+<!ATTLIST context
+	name CDATA #REQUIRED
+>
+
+<!ELEMENT extension (condition*)>
+<!ATTLIST extension 
+	name CDATA #REQUIRED
+	continue CDATA #IMPLIED
+>
+
+<!ELEMENT condition (action*, anti-action*)>
+<!ATTLIST condition 
+	field CDATA #IMPLIED
+	expression CDATA #IMPLIED
+	continue CDATA #IMPLIED
+>
+
+<!ELEMENT action EMPTY>
+<!ATTLIST action 
+	application CDATA #REQUIRED
+	data CDATA #IMPLIED
+>
+
+<!ELEMENT anti-action EMPTY>
+<!ATTLIST anti-action
+        application CDATA #REQUIRED
+        data CDATA #IMPLIED
+>

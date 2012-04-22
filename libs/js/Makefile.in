@@ -1,0 +1,233 @@
+##
+##  OSSP js - JavaScript Engine
+##  Copyright (c) 1998-2006 Mozilla <http://www.mozilla.org/>
+##
+##  This file is part of OSSP js, a distribution of the Mozilla JavaScript
+##  reference implementation, which can found at http://www.ossp.org/pkg/lib/js/
+##
+##  Permission to use, copy, modify, and distribute this software for
+##  any purpose with or without fee is hereby granted, provided that
+##  the above copyright notice and this permission notice appear in all
+##  copies.
+##
+##  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+##  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+##  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+##  IN NO EVENT SHALL THE AUTHORS AND COPYRIGHT HOLDERS AND THEIR
+##  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+##  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+##  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+##  USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+##  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+##  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+##  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+##  SUCH DAMAGE.
+##
+##  Makefile.in: make(1) build procedure
+##
+
+@SET_MAKE@
+
+VPATH        = @srcdir@
+srcdir       = @srcdir@
+top_srcdir   = @top_srcdir@
+
+prefix       = @prefix@
+exec_prefix  = @exec_prefix@
+datarootdir  = @datarootdir@
+bindir       = @bindir@
+libdir       = @libdir@
+includedir   = @includedir@
+mandir       = @mandir@
+
+CC           = @CC@
+CPPFLAGS     = @CPPFLAGS@ @DEFS@ -Isrc
+CFLAGS       = @CFLAGS@
+LDFLAGS      = @LDFLAGS@
+LIBS         = @LIBS@
+
+CLI_CFLAGS   = @CLI_CFLAGS@
+CLI_CPPFLAGS = @CLI_CPPFLAGS@
+CLI_LDFLAGS  = @CLI_LDFLAGS@
+CLI_LIBS     = @CLI_LIBS@
+LIBPATH      = @LIBPATH@
+
+RM           = rm -f
+CP           = cp
+RMDIR        = rmdir
+SHTOOL       = ./shtool
+LIBTOOL      = ./libtool
+PERL         = @PERL@
+TRUE         = true
+
+LIB_OBJS     = src/jsapi.lo                \
+               src/jsarena.lo              \
+               src/jsarray.lo              \
+               src/jsatom.lo               \
+               src/jsbool.lo               \
+               src/jscntxt.lo              \
+               src/jsdate.lo               \
+               src/jsdbgapi.lo             \
+               src/jsdhash.lo              \
+               src/jsdtoa.lo               \
+               src/jsemit.lo               \
+               src/jsexn.lo                \
+               src/jsfile.lo               \
+               src/jsfun.lo                \
+               src/jsgc.lo                 \
+               src/jshash.lo               \
+               src/jsinterp.lo             \
+               src/jslock.lo               \
+               src/jslog2.lo               \
+               src/jslong.lo               \
+               src/jsmath.lo               \
+               src/jsnum.lo                \
+               src/jsobj.lo                \
+               src/jsopcode.lo             \
+               src/jsparse.lo              \
+               src/jsprf.lo                \
+               src/jsregexp.lo             \
+               src/jsscan.lo               \
+               src/jsscope.lo              \
+               src/jsscript.lo             \
+               src/jsstr.lo                \
+               src/jsutil.lo               \
+               src/jsxdrapi.lo             \
+               src/jsxml.lo                \
+               src/prmjtime.lo             \
+               src/jsdso.lo                \
+               src/fdlibm/e_acos.lo        \
+               src/fdlibm/e_asin.lo        \
+               src/fdlibm/e_atan2.lo       \
+               src/fdlibm/e_exp.lo         \
+               src/fdlibm/e_fmod.lo        \
+               src/fdlibm/e_log.lo         \
+               src/fdlibm/e_pow.lo         \
+               src/fdlibm/e_rem_pio2.lo    \
+               src/fdlibm/s_scalbn.lo      \
+               src/fdlibm/e_sqrt.lo        \
+               src/fdlibm/k_cos.lo         \
+               src/fdlibm/k_sin.lo         \
+               src/fdlibm/k_rem_pio2.lo    \
+               src/fdlibm/k_tan.lo         \
+               src/fdlibm/s_atan.lo        \
+               src/fdlibm/s_ceil.lo        \
+               src/fdlibm/s_copysign.lo    \
+               src/fdlibm/s_cos.lo         \
+               src/fdlibm/s_fabs.lo        \
+               src/fdlibm/s_finite.lo      \
+               src/fdlibm/s_floor.lo       \
+               src/fdlibm/s_isnan.lo       \
+               src/fdlibm/s_lib_version.lo \
+               src/fdlibm/s_sin.lo         \
+               src/fdlibm/s_tan.lo         \
+               src/fdlibm/w_acos.lo        \
+               src/fdlibm/w_asin.lo        \
+               src/fdlibm/w_atan2.lo       \
+               src/fdlibm/w_exp.lo         \
+               src/fdlibm/w_fmod.lo        \
+               src/fdlibm/w_log.lo         \
+               src/fdlibm/w_pow.lo         \
+               src/fdlibm/w_sqrt.lo
+
+LIB_NAME     = libjs.la
+
+CLI_OBJS     = src/js.o @CLI_OBJS@
+CLI_NAME     = js
+
+WITH_PERL    = @WITH_PERL@
+
+TARGETS      = $(LIB_NAME) $(CLI_NAME)
+
+.SUFFIXES:
+.SUFFIXES: .c .o .lo
+
+all: $(TARGETS) subdirs
+
+subdirs:
+	@if [ ".$(WITH_PERL)" = ".yes" ]; then \
+	    (cd src/perlconnect; $(PERL) Makefile.PL; $(MAKE) $(MFLAGS)); \
+	fi
+
+.c.o:
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
+
+.c.lo:
+	@$(LIBTOOL) --mode=compile $(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
+
+$(LIB_NAME): $(LIB_OBJS)
+	@$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) -o $(LIB_NAME) $(LIB_OBJS) -rpath $(libdir) -version-info 1:6
+
+$(CLI_NAME): $(CLI_OBJS) $(LIB_NAME)
+	@$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(CLI_LDFLAGS) $(CFLAGS) -o $(CLI_NAME) $(CLI_OBJS) $(LIB_NAME) $(LIBS) $(CLI_LIBS)
+src/js.o: src/js.c
+	$(CC) $(CPPFLAGS) $(CLI_CPPFLAGS) $(CFLAGS) $(CLI_CFLAGS) -o $@ -c $<
+src/perlconnect/jsperl.o: src/perlconnect/jsperl.c
+	$(CC) $(CPPFLAGS) $(CLI_CPPFLAGS) $(CFLAGS) $(CLI_CFLAGS) -o $@ -c $<
+
+src/js.c: src/jstypes.h
+src/jstypes.h: src/jsautocfg.h
+$(LIB_OBJS): src/jsautocfg.h
+src/jsautocfg.h: jscpucfg
+	-rm -f $@ src/jsautocfg.h
+	$(LIBPATH) $(LIBTOOL) --mode=execute ./jscpucfg >src/jsautocfg.h
+jscpucfg.o: src/jscpucfg.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
+jscpucfg: jscpucfg.o
+	@$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(CFLAGS) -o jscpucfg jscpucfg.o $(LIBS) $(CLI_LIBS)
+src/jsopcode.h src/jsopcode.c: src/jsopcode.tbl
+
+.PHONY: install
+install: all
+	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(prefix)
+#	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(bindir)
+#	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(mandir)/man1
+#	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(mandir)/man3
+#	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(includedir)/js
+#	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(libdir)/pkgconfig
+#	$(SHTOOL) install -c -m 644 js.1 $(DESTDIR)$(mandir)/man1/
+#	$(SHTOOL) install -c -m 644 js-config.1 $(DESTDIR)$(mandir)/man1/
+#	$(SHTOOL) install -c -m 644 js.3 $(DESTDIR)$(mandir)/man3/
+#	$(SHTOOL) install -c -m 644 src/js*.h $(DESTDIR)$(includedir)/js/
+#	$(SHTOOL) install -c -m 644 src/jsopcode.tbl $(DESTDIR)$(includedir)/js/
+#	$(SHTOOL) install -c -m 644 src/js.msg $(DESTDIR)$(includedir)/js/
+	@$(LIBTOOL) --mode=install $(SHTOOL) install -c -m 644 $(LIB_NAME) $(DESTDIR)$(libdir)/
+#	$(SHTOOL) install -c -m 644 js.pc $(DESTDIR)$(libdir)/pkgconfig/
+#	$(SHTOOL) install -c -m 755 js-config.sh $(DESTDIR)$(bindir)/js-config
+#	@$(LIBTOOL) --mode=install $(SHTOOL) install -c -m 755 js $(DESTDIR)$(bindir)/
+#	$(SHTOOL) install -e 's;#!\./js;#!$(bindir)/js;' -c -m 755 jslint.js $(DESTDIR)$(bindir)/jslint
+#	@if [ ".$(WITH_PERL)" = ".yes" ]; then \
+#	    (cd src/perlconnect; $(MAKE) $(MFLAGS) install DESTDIR=$(DESTDIR)); \
+#	fi
+
+.PHONY: clean
+clean:
+	-$(RM) jscpucfg $(LIB_NAME) $(LIB_OBJS)
+	-$(RM) js src/js.o
+	-$(RM) -r .libs >/dev/null 2>&1 || $(TRUE)
+	-$(RM) -r src/.libs src/fdlibm/.libs >/dev/null 2>&1 || $(TRUE)
+	-$(RM) *.o *.lo
+	@if [ ".$(WITH_PERL)" = ".yes" ]; then \
+	    ( cd src/perlconnect; \
+	      if [ -f Makefile ]; then $(MAKE) $(MFLAGS) clean || $(TRUE); fi; \
+	      if [ -f Makefile.old ]; then mv Makefile.old Makefile; fi; \
+	    ); \
+	fi
+
+distclean: clean
+	-$(RM) config.log config.status config.cache
+	-$(RM) Makefile config.h js.pc js-config.sh
+	-$(RM) libtool
+	-$(RM) src/perlconnect/Makefile.PL
+	@if [ ".$(WITH_PERL)" = ".yes" ]; then \
+	    ( cd src/perlconnect; \
+	      if [ -f Makefile ]; then $(MAKE) $(MFLAGS) distclean || $(TRUE); fi; \
+	      $(RM) -f Makefile Makefile.old || $(TRUE); \
+	    ); \
+	fi
+
+realclean: distclean
+	-$(RM) configure config.h.in config.h.in~
+	-$(RM) shtool
+	-$(RM) ltmain.sh libtool.m4 config.guess config.sub
+

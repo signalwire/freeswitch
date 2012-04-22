@@ -1,0 +1,170 @@
+Index: libs/portaudio/src/hostapi/coreaudio/pa_mac_core.c
+===================================================================
+--- libs/portaudio/src/hostapi/coreaudio/pa_mac_core.c	(revision 14988)
++++ libs/portaudio/src/hostapi/coreaudio/pa_mac_core.c	(working copy)
+@@ -801,8 +801,8 @@
+                                    const double sampleRate,
+                                    void *refCon )
+ {
+-    ComponentDescription desc;
+-    Component comp;
++    AudioComponentDescription desc;
++    AudioComponent comp;
+     /*An Apple TN suggests using CAStreamBasicDescription, but that is C++*/
+     AudioStreamBasicDescription desiredFormat;
+     OSStatus result = noErr;
+@@ -873,7 +873,7 @@
+     desc.componentFlags        = 0;
+     desc.componentFlagsMask    = 0;
+     /* -- find the component -- */
+-    comp = FindNextComponent( NULL, &desc );
++    comp = AudioComponentFindNext( NULL, &desc );
+     if( !comp )
+     {
+        DBUG( ( "AUHAL component not found." ) );
+@@ -882,7 +882,7 @@
+        return paUnanticipatedHostError;
+     }
+     /* -- open it -- */
+-    result = OpenAComponent( comp, audioUnit );
++    result = AudioComponentInstanceNew( comp, audioUnit );
+     if( result )
+     {
+        DBUG( ( "Failed to open AUHAL component." ) );
+@@ -1224,7 +1224,7 @@
+ #undef ERR_WRAP
+ 
+     error:
+-       CloseComponent( *audioUnit );
++       AudioComponentInstanceDispose( *audioUnit );
+        *audioUnit = NULL;
+        if( result )
+           return PaMacCore_SetError( result, line, 1 );
+@@ -2146,13 +2146,13 @@
+                                              xrunCallback );
+        if( stream->outputUnit && stream->outputUnit != stream->inputUnit ) {
+           AudioUnitUninitialize( stream->outputUnit );
+-          CloseComponent( stream->outputUnit );
++          AudioComponentInstanceDispose( stream->outputUnit );
+        }
+        stream->outputUnit = NULL;
+        if( stream->inputUnit )
+        {
+           AudioUnitUninitialize( stream->inputUnit );
+-          CloseComponent( stream->inputUnit );
++          AudioComponentInstanceDispose( stream->inputUnit );
+           stream->inputUnit = NULL;
+        }
+        if( stream->inputRingBuffer.buffer )
+@@ -2211,12 +2211,12 @@
+ 
+ // it's not clear from appl's docs that this really waits
+ // until all data is flushed.
+-static ComponentResult BlockWhileAudioUnitIsRunning( AudioUnit audioUnit, AudioUnitElement element )
++static OSStatus BlockWhileAudioUnitIsRunning( AudioUnit audioUnit, AudioUnitElement element )
+ {
+     Boolean isRunning = 1;
+     while( isRunning ) {
+        UInt32 s = sizeof( isRunning );
+-       ComponentResult err = AudioUnitGetProperty( audioUnit, kAudioOutputUnitProperty_IsRunning, kAudioUnitScope_Global, element,  &isRunning, &s );
++       OSStatus err = AudioUnitGetProperty( audioUnit, kAudioOutputUnitProperty_IsRunning, kAudioUnitScope_Global, element,  &isRunning, &s );
+        if( err )
+           return err;
+        Pa_Sleep( 100 );
+Index: libs/portaudio/src/common/pa_types.h
+===================================================================
+--- libs/portaudio/src/common/pa_types.h	(revision 14988)
++++ libs/portaudio/src/common/pa_types.h	(working copy)
+@@ -62,7 +62,11 @@
+ #endif
+ 
+ #ifndef SIZEOF_LONG
++#ifdef __LP64__
++#define SIZEOF_LONG 8
++#else
+ #define SIZEOF_LONG 4
++#endif /* __LP64__ */
+ #endif
+ 
+ 
+Index: libs/libsndfile/M4/ltsugar.m4
+===================================================================
+--- libs/libsndfile/M4/ltsugar.m4	(revision 14988)
++++ libs/libsndfile/M4/ltsugar.m4	(working copy)
+@@ -1,13 +1,13 @@
+ # ltsugar.m4 -- libtool m4 base layer.                         -*-Autoconf-*-
+ #
+-# Copyright (C) 2004, 2005, 2007, 2008 Free Software Foundation, Inc.
+-# Written by Gary V. Vaughan, 2004
++#   Copyright (C) 2004, 2005, 2007 Free Software Foundation, Inc.
++#   Written by Gary V. Vaughan, 2004
+ #
+ # This file is free software; the Free Software Foundation gives
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+ 
+-# serial 6 ltsugar.m4
++# serial 5 ltsugar.m4
+ 
+ # This is to help aclocal find these macros, as it can't see m4_define.
+ AC_DEFUN([LTSUGAR_VERSION], [m4_if([0.1])])
+@@ -63,14 +63,14 @@
+ # Produce a SEP delimited list of all paired combinations of elements of
+ # PREFIX-LIST with SUFFIX1 through SUFFIXn.  Each element of the list
+ # has the form PREFIXmINFIXSUFFIXn.
+-# Needed until we can rely on m4_combine added in Autoconf 2.62.
+ m4_define([lt_combine],
+-[m4_if(m4_eval([$# > 3]), [1],
+-       [m4_pushdef([_Lt_sep], [m4_define([_Lt_sep], m4_defn([lt_car]))])]]dnl
+-[[m4_foreach([_Lt_prefix], [$2],
+-	     [m4_foreach([_Lt_suffix],
+-		]m4_dquote(m4_dquote(m4_shift(m4_shift(m4_shift($@)))))[,
+-	[_Lt_sep([$1])[]m4_defn([_Lt_prefix])[$3]m4_defn([_Lt_suffix])])])])])
++[m4_if([$2], [], [],
++  [m4_if([$4], [], [],
++    [lt_join(m4_quote(m4_default([$1], [[, ]])),
++      lt_unquote(m4_split(m4_normalize(m4_foreach(_Lt_prefix, [$2],
++		   [m4_foreach(_Lt_suffix, lt_car([m4_shiftn(3, $@)]),
++			       [_Lt_prefix[]$3[]_Lt_suffix ])])))))])])dnl
++])
+ 
+ 
+ # lt_if_append_uniq(MACRO-NAME, VARNAME, [SEPARATOR], [UNIQ], [NOT-UNIQ])
+Index: libs/libsndfile/M4/ltversion.m4
+===================================================================
+--- libs/libsndfile/M4/ltversion.m4	(revision 14988)
++++ libs/libsndfile/M4/ltversion.m4	(working copy)
+@@ -9,15 +9,15 @@
+ 
+ # Generated from ltversion.in.
+ 
+-# serial 3012 ltversion.m4
++# serial 2976 ltversion.m4
+ # This file is part of GNU Libtool
+ 
+-m4_define([LT_PACKAGE_VERSION], [2.2.6])
+-m4_define([LT_PACKAGE_REVISION], [1.3012])
++m4_define([LT_PACKAGE_VERSION], [2.2.4])
++m4_define([LT_PACKAGE_REVISION], [1.2976])
+ 
+ AC_DEFUN([LTVERSION_VERSION],
+-[macro_version='2.2.6'
+-macro_revision='1.3012'
++[macro_version='2.2.4'
++macro_revision='1.2976'
+ _LT_DECL(, macro_version, 0, [Which release of libtool.m4 was used?])
+ _LT_DECL(, macro_revision, 0)
+ ])
+Index: libs/libsndfile/M4/ltoptions.m4
+===================================================================
+--- libs/libsndfile/M4/ltoptions.m4	(revision 14988)
++++ libs/libsndfile/M4/ltoptions.m4	(working copy)
+@@ -125,7 +125,7 @@
+ [enable_win32_dll=yes
+ 
+ case $host in
+-*-*-cygwin* | *-*-mingw* | *-*-pw32* | *-cegcc*)
++*-*-cygwin* | *-*-mingw* | *-*-pw32*)
+   AC_CHECK_TOOL(AS, as, false)
+   AC_CHECK_TOOL(DLLTOOL, dlltool, false)
+   AC_CHECK_TOOL(OBJDUMP, objdump, false)

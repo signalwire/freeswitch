@@ -1,0 +1,10 @@
+<configuration name="http_cache.conf" description="HTTP GET cache">
+  <settings>
+    <param name="max-urls" value="10000"/>
+    <param name="location" value="$${base_dir}/http_cache"/>
+    <param name="default-max-age" value="86400"/>
+    <param name="prefetch-thread-count" value="8"/>
+    <param name="prefetch-queue-size" value="100"/>
+  </settings>
+</configuration>
+

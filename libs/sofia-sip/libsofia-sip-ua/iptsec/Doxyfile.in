@@ -1,0 +1,26 @@
+PROJECT_NAME         = "iptsec"
+OUTPUT_DIRECTORY     = ../docs/html/iptsec
+
+INPUT 		     = @srcdir@/iptsec.docs @srcdir@/sofia-sip @srcdir@ .
+
+@INCLUDE_PATH = . @srcdir@
+@INCLUDE = ../docs/Doxyfile.conf
+@INCLUDE = ../sip/sip.doxyaliases
+
+TAGFILES           += ../docs/su.doxytags=../su
+TAGFILES           += ../docs/ipt.doxytags=../ipt
+TAGFILES           += ../docs/bnf.doxytags=../bnf
+TAGFILES           += ../docs/url.doxytags=../url
+TAGFILES           += ../docs/msg.doxytags=../msg
+TAGFILES           += ../docs/sip.doxytags=../sip
+TAGFILES           += ../docs/http.doxytags=../http
+TAGFILES           += ../docs/sresolv.doxytags=../sresolv
+TAGFILES           += ../docs/tport.doxytags=../tport
+TAGFILES           += ../docs/nta.doxytags=../nta
+
+GENERATE_TAGFILE    = ../docs/iptsec.doxytags
+
+ALIASES 	   +=  "iptsec=@ref index \"iptsec\""
+
+PREDEFINED         += SOFIA_EXTEND_AUTH_CLIENT=1
+

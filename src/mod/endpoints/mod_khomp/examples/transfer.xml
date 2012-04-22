@@ -1,0 +1,43 @@
+<include>
+
+<!-- ########################### FXS Context ############################### -->
+<context name="khomp-fxs-00">
+
+  <extension name="main">
+    <condition field="destination_number" expression="^(\d{4})$">
+    <action application="set"    data="continue_on_fail=true"/>
+    <action application="set"    data="dialed_extension=$1"/>
+    <action application="export" data="dialed_extension=$1"/>
+    <action application="bind_meta_app" data="1 b s execute_extension::attented_xfer XML khomp-features"/>
+    <action application="set"    data="transfer_ringback=$${hold_music}"/>
+    <action application="set"    data="call_timeout=10"/>
+    <action application="set"    data="hangup_after_bridge=true"/>
+    <action application="bridge" data="khomp/r$1"/>
+    <action application="bridge" data="sofia/external/$1@169.1.1.1"/>
+    <action application="hangup"/>
+    </condition>
+  </extension>
+
+</context>
+<!-- ####################################################################### -->
+<!-- ########################## Features ################################### -->
+<context name="khomp-features">
+
+  <extension name="attented_xfer">
+    <condition field="destination_number" expression="^attented_xfer$">
+      <action application="set"      data="continue_on_fail=true"/>
+      <action application="set"      data="ringback=${us-ring}"/>
+
+      <action application="read"     data="3 4 misc/8000/transfer1.wav attxfer_callthis 30000 #"/>
+      <action application="set"      data="origination_cancel_key=#" />
+
+      <action application="att_xfer" data="khomp/r${attxfer_callthis}"/>
+      <action application="att_xfer" data="sofia/external/${attxfer_callthis}@169.1.1.1" />
+    </condition>
+  </extension>
+
+</context>
+<!-- ####################################################################### -->
+
+</include>
+

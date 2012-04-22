@@ -1,0 +1,5 @@
+v=0
+o=watson 4858949 4858949 IN IP4 192.1.2.3
+s=I'm on my way
+c=IN IP4 boston.bell-tel.com
+m=audio 5004 RTP/AVP 0 3

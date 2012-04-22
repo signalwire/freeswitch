@@ -1,0 +1,30 @@
+--- export/src/term.c	2007-08-31 00:02:46.000000000 +0200
++++ ../src/term.c	2007-08-31 00:03:08.000000000 +0200
+@@ -51,19 +51,18 @@
+ #include <string.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+-#ifdef HAVE_TERMCAP_H
+-#include <termcap.h>
+-#endif
++
+ #ifdef HAVE_CURSES_H
+-#include <curses.h>
+-#endif
+-#ifdef HAVE_NCURSES_H
+-#include <ncurses.h>
++# include <curses.h>
++#elif HAVE_NCURSES_H
++# include <ncurses.h>
+ #endif
++
+ /* Solaris's term.h does horrid things. */
+-#if (defined(HAVE_TERM_H) && !defined(SUNOS))
+-#include <term.h>
++#if (defined(HAVE_TERM_H) && !defined(_SUNOS))
++# include <term.h>
+ #endif
++
+ #include <sys/types.h>
+ #include <sys/ioctl.h>
+ 

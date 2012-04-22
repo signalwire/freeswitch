@@ -1,0 +1,165 @@
+   _        ___  ____ ____  ____     _      
+  |_|_ _   / _ \/ ___/ ___||  _ \   (_)___  
+  _|_||_| | | | \___ \___ \| |_) |  | / __| 
+ |_||_|_| | |_| |___) |__) |  __/   | \__ \ 
+  |_|_|_|  \___/|____/____/|_|     _/ |___/ 
+                                  |__/      
+
+  OSSP js - Mozilla JavaScript Engine
+
+  CHANGELOG
+
+  This is a list of all changes to OSSP js.
+
+  Changes between 1.6.20060803 and 1.6.20060820 (2006-08-03 to 2006-08-20)
+
+   o Add support for UTF-8 C strings in the API and internally by
+     adding a --with-utf8 build-time options which builds the code
+     with JS_C_STRINGS_ARE_UTF8.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Upgrade to upstream sources as of 2006-08-20.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+  Changes between 1.6.20060731 and 1.6.20060803 (2006-07-31 to 2006-08-03)
+
+   o Add optional Dynamic Shared Object (DSO) support (see src/jsdso.[ch]).
+     This comes in two flavors:
+
+     1. Provide two public C API functions...
+        JSBool JS_DSOLoad   (JSContext *cx, int *id, const char *filename);
+        JSBool JS_DSOUnload (JSContext *cx, int  id);
+        ...as an ultra-thin wrapper around the POSIX dlopen(3) API. It
+        especially mimics the BSD RTLD behaviour of calling pre-defined
+        functions (mandatory "js_DSO_load" and optional "js_DSO_unload")
+        inside the DSO after/before the dlopen/dlclose calls. This
+        allows the DSOs to perform their init/shutdown actions.
+
+     2. Provide a small JavaScript global object "DSO" which binds
+        the two public DSO C API functions into the JavaScript language
+        as "DSO.load" and "DSO.unload". The "DSO" object can be created
+        by the friend C API function js_InitDSOClass(). This function is
+        used by the command-linne interface "js" by default.
+
+     As a result the OSSP Mozilla JavaScript engine is now able to
+     dynamically load C extensions similar to what other programming
+     languages provide since a longer time.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Be more clean and replace weak "#if JS_HAS_FILE_OBJECT" constructs
+     with the stronger "#if defined(JS_HAS_FILE_OBJECT) && (JS_HAS_FILE_OBJECT - 0)"
+     as the JS_HAS_FILE_OBJECT can be not defined at all (in contrast to
+     other JS_HAS_XXXX defines which are all listed in src/jsconfig.h)
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Fix a bunch of compiler warnings.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Change from -O2 to -O0 and without -Wshadow under --enable-debug.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+  Changes between 1.6.20060730 and 1.6.20060731 (2006-07-30 to 2006-07-31)
+
+   o Fix "make distclean": src/perlconnect/Makefile.PL is always generated
+     and hence has to be always deleted.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Fix "devtool dist" command: "make man" does not exist.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Fix "make install": the executable "js" was not installed via GNU
+     libtool and this way under --enable-shared the wrapper script was
+     installed only.
+     [Alfred Reibenschuh <alfred.reibenschuh@it-austria.com>]
+
+   o Add a src/perlconnect/MANIFEST file to make ExtUtils::MakeMaker more happy.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Fix "make install": js-config.1 was not installed.
+     [Alfred Reibenschuh <alfred.reibenschuh@it-austria.com>]
+
+   o Use Autoconf macros AC_CANONICAL_BUILD and AC_CANONICAL_HOST to
+     make sure that the host identification is really available.
+     [Alfred Reibenschuh <alfred.reibenschuh@it-austria.com>]
+
+   o Upgrade to upstream sources as of 2006-07-31.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+  Changes between 1.6.20060729 and 1.6.20060730 (2006-07-29 to 2006-07-30)
+
+   o Add support for Windows CygWin and MinGW environments.
+     [Ralf S. Engelschall <rse@engelschall.com>,
+      Andrew Vajoczki <vajoczki@yahoo.com>]
+
+   o Upgrade to upstream sources as of 2006-07-30.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+  Changes between 1.6.20060724 and 1.6.20060729 (2006-07-24 to 2006-07-29)
+
+   o Upgrade to upstream sources as of 2006-07-29.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Changed GNU libtool shared library versioning from 0:0 to 1:6.
+     [Ralf S. Engelschall <rse@engelschall.com>,
+      Alfred Reibenschuh <alfred.reibenschuh@it-austria.com>]
+
+   o Increase portability by gracefully downgrading the stat(2) use of
+     st_birthtime to st_birthtimensec or even st_ctime.
+     [Ralf S. Engelschall <rse@engelschall.com>,
+      Andrew Vajoczki <vajoczki@yahoo.com>]
+
+   o Apply a few more upstream fixes to jsfile.c.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+  Changes between 1.6.20060722 and 1.6.20060724 (2006-07-22 to 2006-07-24)
+
+   o Apply multiple code cleanups and bugfixes.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Move definitions of XP_UNIX and EXPORT_JS_API back from jstypes.h
+     to configure.ac (and this way the command-line) to not break the
+     use of jstypes.h as a regular API header in JS based applications.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Consistently mark all OSSP bugfixes with a "/* BUGFIX */" tag on
+     the "#ifdef OSSP" line. This way one can more easily see what
+     are specific OSSP specific changes what should be taken over by
+     upstream vendor.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Fix an incorrect argument type bug in jsfile.c related to a call to
+     js_InflateString(). A "size_t *" has to be passed, not a "size_t".
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Upgrade from (the Mozilla Firefox 1.5 pinned version) SpiderMonkey
+     1.6.20060722 to the (SPIDERMONKEY_1_6_0_BRANCH based) 1.6.20060724
+     upstream version.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Added jslint (see http://www.jslint.com/) together with some
+     home-brewn option parser. The result is installed as
+     a stand-alone "jslint" program.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Install all src/js*.h headers during "make install" to allow
+     applications to at least optionally poke around in the internals.
+     This also allows an application to call js_InitFileClass() from
+     <jsfile.h> without us having to really call this function in the
+     standard API function JS_InitStandardClasses().
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+   o Change the default of the --with-file/--without from --without-file
+     to --with-file (enable the File object by default), but activate
+     it only in the CLI (where it doesn't hurt and where it is actually
+     really required to get something useful running there in practice)
+     but explicitly _NOT_ in JS_InitStandardClasses() (as this is
+     what would hurt the security in applications which assume that
+     JS_InitStandardClasses() initialized only really the standard
+     classes).
+     [Ralf S. Engelschall <rse@engelschall.com>]
+
+  Changes between *GENESIS* and 1.6.20060722 (2006-06-XX to 2006-07-22)
+   
+   o Initial OSSP js distribution of Mozilla JavaScript 1.6 as of 2006-07-22.
+     [Ralf S. Engelschall <rse@engelschall.com>]
+

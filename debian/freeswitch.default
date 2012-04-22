@@ -1,0 +1,11 @@
+# Startup settings for FreeSWITCH
+
+# Enable initd (let init handle start and stop of freeswitch). 
+# Set to "true" (lowercase) to enable.
+
+FREESWITCH_ENABLED="false"
+
+# The parameters Freeswitch should be started with
+
+FREESWITCH_PARAMS="-nc"
+

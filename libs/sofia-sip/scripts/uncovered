@@ -1,0 +1,122 @@
+#! /bin/sh
+#
+# show uncovered lines as errors
+#
+
+#
+# Copyright (C) 2007 Nokia Corporation
+# Contact: Pekka Pessi <pekka.pessi@nokia.com>
+# Licensed under LGPL. See file COPYING.
+#
+
+usage()
+{
+  test X$1 == X0 || exec >&2
+  cat <<EOF
+usage: uncovered OPTIONS
+where OPTIONS are
+   --srcdir=DIR                  specify source directory
+   --lcov-dir=DIR | -l DIR       specify directory for lcov.info files
+EOF
+  exit $1;
+}
+
+GENHTML_OPTIONS= o= ldir=
+
+while test $# -gt 0;
+do
+  case $1 in
+  --lcov-dir | -l ) test -z "$2" && usage 1; shift; ldir=$1; shift; ;;
+  --lcov-dir=* ) ldir=${1#--ldir=}; shift ;;
+  --srcdir | -s )
+    test -z "$2" && usage 1; shift; srcdir=$1; shift; ;;
+  --srcdir=* )
+    srcdir=${1#--srcdir=}; shift ;;
+  --help | '-?' | -h ) usage 0 ;;
+  - ) shift; break ;;
+  -* ) usage 1; ;;
+  * ) break ;;
+  esac
+done
+
+cwd=`pwd`
+
+tdir=${TMPDIR:-/tmp}/$USER.uncovered.$$
+info=${tdir}/lcov.info geninfo=${tdir}/genhtml.info
+
+test -d ${tdir} && { echo ${tdir}: already exists ; exit 2 ; }
+
+mkdir -p ${tdir} &&
+{
+    # Find all lcov.info0 under -t DIR
+    test -d ${ldir} &&
+    find ${ldir} -name lcov.info |
+    while read s
+    do
+      find $cwd -type f -not -newer $s | xargs lcov -q -e $s
+    done
+
+    lcov -q -c -d . --compat-libtool
+} > ${info}
+
+test -e ${info} || exit 1
+
+{
+  # remove system includes with with inlined functions
+  lcov -q -l ${info} | grep -v "`cd ${srcdir:-.} && pwd`"
+  # remove test programs
+  lcov -q -l ${info} | grep "/test\|/torture\|_test[.]c$"
+} |
+cut -d: -f1 |
+xargs lcov -q -r ${info} > ${geninfo} &&
+cd ${tdir} &&
+genhtml -q --prefix=$cwd/ --output-directory . ${geninfo} &&
+find . -name '*.gcov.html' |
+xargs perl -e '
+while (<>) {
+  if (m:<pre[^>]*>:) { $pre=1; }
+  if ($pre && m:</pre[^>]*>:) {
+    $pre=0;
+    if ($uncovered) {
+      print $uncovered;
+      $uncovered = "";
+    }
+  }
+  if ($pre) {
+    s/<[^>]+>//g;
+
+    s/&lt;/</g; s/&gt;/>/g; s/&quot;/\"/g; s/&amp;/&/g;
+
+    if (m/^ *\d+ *[1-9]\d* :/) {
+      if ($uncovered) {
+        print $uncovered;
+        $uncovered = "";
+      }
+    }
+    else {
+      if ($uncovered) {
+        if (m/^[^:]+: [{]/) { # Hack: show line number if line starts with {
+          s/^ +(\d+)[^:]+:/$1:/;
+        }
+        else {
+          s/^ +(\d+)[^:]+:/sprintf("%*s", 1 + length($1), " ")/e;
+        }
+        $uncovered .= $f . ":" . $_;
+      }
+      elsif (m/^ *\d+ *0 :/) {
+        for ($f = $ARGV) {
+          s:^[.]'$cwd/'::o;
+          s:[.]gcov[.]html$::;
+        }
+        s/^ +(\d+)[^:]+:/$1:/;
+        $uncovered = $f . ":" . $_;
+      }
+    }
+  }
+}
+' /dev/null
+
+rc=$?
+cd /
+rm -rf $tdir
+exit $rc

@@ -1,0 +1,648 @@
+2007-08-02  Gurer
+	* tst-iks.c: test for new append/prepend functions added.
+
+2007-08-01  Gurer
+	* Patch from Benjamin Bennett:
+	  base64.c: fix padding
+	* sha.c: 64bit fix (long -> int)
+	* iks.c: new funcs: iks_append, iks_prepend
+	  iks_append_cdata, iks_prepend_cdata
+	* stream.c: iks_sasl_challenge split into smaller functions
+	  This change also fixes some possible leaks which are detected
+	  by Coverity Inc's excellent Prevent product.
+
+2006-05-19  Gurer
+	* dom.c: fixed (size % FILE_IO_BUFFER_SIZE) problem in iks_load()
+
+2005-08-29  Gurer
+	* Patch from Jakob Schroter:
+	  iksemel.texi: small documentation update
+	* Patch from Darrell Karbott:
+	  sax.c: use fixed instead of floating point (for arm)
+	  mark static const data properly
+	  explicit char* uchar* casts
+
+2004-08-14  Gurer
+	* version bump to 1.3
+	* patch from Roland Hedberg
+	  io-posix.c: io_connect now tries all addrinfo values.
+
+2004-08-05  Gurer
+	* iksemel.h: ikstransport cosmetic cleanup.
+	* iksemel.texi: mingw notice added.
+
+2004-07-30  Gurer
+	* iksemel.h: get_fd and connect_fd is removed from ikstransport api.
+	  ikstransport structure now has an abi_version field.
+	  new IKS_TRANSPORT_V1 macro defined for using in abi_version.
+	* io-posix.c: modified for new ikstransport scheme.
+	* stream.c: iks_connect_fd and iks_fd now works directly.
+
+2004-07-30  Gurer
+	* sax.c: bug in parser's utf8 checker fixed.
+
+2004-07-28  Gurer
+	* stream.c: buffer size corrected in iks_send_header.
+
+2004-07-26  Gurer
+	* iksroster.c: "iksroster" resource is default, if not given by user.
+	* stream.c: iks_start_tls() cosmetic cleanup.
+
+2004-07-23  Gurer
+	* iks.c: ikstack value of attribute nodes wasnt set correctly. fixed.
+
+2004-07-21  Gurer
+	* patch from Benoit Laniel
+	  configure.ac: objdump check for cross compiling
+	  iksroster.c, perf.c, io-unix.c: WIN32 is changed to _WIN32
+
+2004-07-19  Gurer
+	* iks.c: iks_child() verifies that node is a tag before accessing
+	  children field in struct.
+
+2004-07-13  Gurer
+	* stream.c: if no realm is provided in sasl, server name is used
+
+2004-06-14  Gurer
+	* iksemel.texi: sasl&tls funcs documented a bit.
+
+2004-06-14  Gurer
+	* patch from Darrell Karbott
+	  iksemel.h: async events are passed as a struct
+	    ikstransport struct is defined as const
+	    server_name is passed to the iksTConnectAsync
+	    additional network error codes
+	  stream.c: iks_recv() checks if iks_disconnect called during parsing
+
+2004-05-22  Gurer
+	* iks.c: iks_cdata() returns value for attributes
+	* sax.c: utf8 stack_pos fix
+
+2004-05-19  Gurer
+	* io-posix.c: now compiles without getaddrinfo()
+
+2004-05-05  Gurer
+	* sax.c: iks_parser_stack() added, returns the ikstack of an iksparser
+	* stream.c: ikstranport api is now passing iksparser instead of ikstack
+	  to the connect functions.
+
+2004-05-05  Gurer
+	* stream.c: patch from Rafal Piotrowski
+	  iks_sasl_challenge() cleanup
+
+2004-05-01  Gurer
+	* iksroster.c: sasl auth finally works.
+
+2004-04-30  Gurer
+	* iksroster.c: cleanup.
+
+2004-04-30  Gurer
+	* Another patch from Rafal Piotrowski
+	  tst-md5.c: test code for md5.c functions, and new utils:
+	  iks_make_resource_bind(), iks_make_session(), iks_stream_features()
+	* iksemel.h: iks_auth_sasl renamed to iks_start_sasl
+	   IKS_AUTH_SASL_PLAIN renamed to IKS_SASL_PLAIN
+	   IKS_AUTH_SASL_DIGEST_MD5 renamed to IKS_SASL_DIGEST_MD5
+
+2004-04-29  Gurer
+	* Patch from Rafal Piotrowski applied
+	  md5 and base64 api, and sasl auth support!
+	* iksroster.c: --sasl option added.
+
+2004-04-27  Gurer
+	* io-unix.c: renamed to io-posix.c, it runs on windows with mingw
+	  so less confusion this way.
+	* stream.c: warnings cleaned up, iks_connect_async_with finished.
+
+2004-04-26  Gurer
+	* iksemel.h: new error code IKS_NET_TLSFAIL
+	* stream.c: tls code cleaned up.
+	* configure.ac: new option --disable-default-io
+	  you can use it to disable compiling of io-unix.c if you dont need
+	  it and want to use your own socket code.
+
+2004-04-13  Gurer
+	* iksemel.h: new error code IKS_NET_NOTSUPP
+	* stream.c: not supported error code is supported now :)
+	* sha.c: free() is replaced with iks_free()
+
+2004-04-10  Gurer
+	* stream.c: saga continues, tls is working on ikstransport.
+	* iksroster.c: --log option for turning on xml debug output.
+
+2004-04-10  Gurer
+	* stream.c: second part:
+	  it is using iks_default_transport (provided by io-unix.c) now.
+	  all network code is removed.
+	  iks_connect_with() allows you to use your own transport code.
+	  (note: testing needed and async api is not fully implemented yet)
+
+2004-04-10  Gurer
+	* iksemel.h: first part of the long expected socket abstraction.
+	  many thanks to Darrell Karbott for ideas and a sample implementation.
+	* io-unix.c: new file, transport code for unix sockets.
+
+2004-03-22  Gurer
+	* dom.c: iks_load() now frees the resources if iks_parse returns error.
+
+2004-03-19  Gurer
+	* stream.c: iks_is_secure() added, checks that if a stream is secured.
+	* iksroster.c: cleanup a bit.
+
+2004-03-18  Gurer
+	* iksroster.c, stream.c: secure connection works, but api isn't
+	stablized yet, and some cleanup needed.
+
+2004-03-08  Gurer
+	* iksroster.c: new option for secure connection, needs testing.
+
+2004-03-01  Gurer
+	* sax.c: second part, IKS_NOMEM conditions are checked properly.
+
+2004-02-29  Gurer
+	* iksemel.h: stddef.h is included to get size_t for C apps.
+	* sax.c: first part of the memory usage optimization.
+
+2004-02-27  Gurer
+	* iksemel.h: cstddef is included for C++ apps to provide size_t type.
+
+2004-02-25  Gurer
+	* src/sha.c: iks_sha_print() uses lowercase hex numbers now.
+
+2004-02-10  Gurer
+	* src/iks.c: Tag, cdata and attribute structures have different sizes now.
+	  Saves 8 bytes per tag, 20 bytes per cdata/attrib on 32 bit archs.
+
+2004-02-10  Gurer
+	* src/ikstack.c: iks_stack_stats is dead, long live iks_stack_stat.
+	* tools/iksperf.c: dom test now iks_delete()s the parsed tree
+		and even measures the freeing time.
+
+2004-02-07  Gurer
+	* src/ikstack.c: iks_stack_stats returns total values.
+
+2004-02-06  Gurer
+	* src/ikstack.c: new stack implementation, all callers changed too.
+
+2004-02-03  Gurer
+	* test/tst-ikstack.c: tst-ikstack-str.c moved here.
+	* test/tst-ikstack.c: alignment test added.
+	* src/ikstack.c: iks_stack_alloc() always returns aligned memory.
+	* src/ikstack.c: patch from Ilkka Lyytinen:
+		iks_stack_strecat alignment fix.
+
+2003-10-16  Gurer
+	* src/iks.c: escape_size off by one bug in iks_string() is fixed.
+	* src/dom.c: iks_load and iks_save uses (const char *) for filename now.
+
+2003-10-09  Gurer
+	* src/Makefile.am: --no-undefined changed to -no-undefined
+	* stream.c: data->current is NULLed *before* calling the hook,
+	  so you can keep the node in memory when you are returning
+	  an error from your hook.
+	* tools/perf.c: GetTickCount is used instead of gettimeofday on Windows.
+
+2003-10-08  Gurer
+	* dom.c: iks_save is not using unnecessary object stack.
+	* A great patch from Benoit Laniel <nels@pgroupe.net> applied.
+	This allows iksemel to be compiled on Windows with MinGW.
+	Detailed changes:
+	* configure.ac: check for st_blksize in stat structure (which is
+	  missing in Windows). Check for libwsock32, the Windows socket library.
+	  The check is only done when compiling for a MinGW host to avoid
+	  problems when having Wine libraries.
+	* src/Makefile.am: add -no-undefined to libiksmel_la_LDFLAGS to enable
+	  DLL compilation on Windows.
+	* src/stream.c: include winsock.h and do not include posix socket
+	  headers on Windows. Use closesocket instead of close on Windows.
+	  Check socket errors with '== -1' instead of '< 0'.
+	* tools/ikslint.c: conditional use of st_blksize.
+	* tools/iksroster.c: add Winsock initialization and cleanup code
+	  (needed to use sockets on Windows).
+
+2003-10-05  Gurer
+	* utility.c: iks_set_mem_funcs() added.
+	* iksperf.c: --memdbg option added.
+	* tools/perf.c: mallinfo stuff removed.
+
+2003-09-15  Gurer
+	* version bump to 1.2
+	* stream.c: iks_start_tls() added with the help of gnutls library.
+
+2003-09-11  Gurer
+	* stream.c: iks_connect_via() added. it can send a different name to the
+	  connected server. useful for connecting the server via a ssh tunnel.
+	  suggestion and patch by Wolf Bergenheim.
+
+2003-09-09  Gurer
+	* stream.c: network buffer is allocated inside the stack at the first
+	  connect call, and not free()d with reset.
+
+2003-09-08  Gurer
+	* sax.c: iks_parser_reset() no longer free()s allocated buffers.
+	  it also calls the delete hook of the extending parser.
+	* dom.c: reset zeroes internal state.
+	* stream.c: resetting the parser is now equal to iks_disconnect ()
+
+2003-09-07  Gurer
+	* sax.c: malloc()s changed with iks_malloc()
+	  attr buffer is not freed after each tag. minor speedup.
+
+2003-09-05  Gurer
+	* ikslint.c: tag histogram is per file now instead of global.
+
+2003-09-04  Gurer
+	* iksemel.texi: resource links moved to here from HACKING.
+	* utility.c: iks_malloc(), iks_free() wrappers added.
+	  all malloc() and free() calls are changed with them.
+
+2003-09-03  Gurer
+	* ikslint.c: can display tag usage histogram now.
+
+2003-09-03  Gurer
+	* ikslint.c: benchmark options removed. reading from stdin supported.
+	  reports tag mismatchs.
+	* dom.c: iks_tree() added. converts a string into a tree.
+	* iksemel.texi: iks_tree, iks_set_size_hint, iks_copy documented.
+
+2003-09-03  Gurer
+	* iks.c: iks_string() now malloc()s memory if no stack is given.
+	  it also runs *very* fast now.
+
+2003-09-02  Gurer
+	* iksperf.c: errors are redirected to stderr again.
+	  tree serialization test added.
+
+2003-08-31  Gurer
+	* dom.c: default chunk size is increased. iks_set_size_hint()
+	  function added. you can give an approximate size for the
+	  file, and a better chunk size is selected for memory allocations.
+	  greatly speeds up dom parser.
+	* iksperf.c: dom test uses iks_set_size_hint(). small fixes.
+	* iksperf.c: sha1 test.
+
+2003-08-31  Gurer
+	* tools/iksperf.c: new tool for speed/memory usage testing.
+	* iksemel.texi: a new chapter about iksemel development added.
+
+2003-08-23  Gurer
+	* doc/iksemel.texi: document license changed to GPL from GNU Free
+	  Documentation License.
+	* ikstack.c: iks_stack_strecat() added.
+	* iks.c: iks_insert_cdata() modified to use iks_stack_strecat().
+	  this greatly reduces memory usage when data is parsed in very small
+	  chunks or cdata sections contains lots of escaped characters.
+
+2003-07-29  Gurer
+	* iksemel.h: iks_connect_tcp(), iks_send_stream() and
+	  iks_send_raw() now take const arguments.
+	* iks.c: iks_root() added.
+	* iks.c: iks_string() works on cdata nodes.
+
+2003-07-20  Gurer
+	* iks.c: iks_copy() bug is fixed.
+
+2003-07-15  Gurer
+	* dom.c: whitespace outside of markup won't added to the tree.
+	* stream.c: iks_connect_fd correctly sets SF_FOREIGN flag.
+	* src/Makefile.am: libtool revision bump, forgot that while doing 1.1 bump.
+	* iks.c: new iks_copy() and iks_copy_within() functions.
+
+2003-06-29  Gurer
+	* 1.0 release!
+	* version bump to 1.1
+
+2003-06-26  Gurer
+	* ikstack.c: reallocation bug in iks_stack_strcat() fixed.
+	* ikstack.c: iks_stack_strcat() and iks_stack_strcatv() now returns
+	  a non-zero value if there isn't enough memory.
+	* iks.c: new functions: iks_next_tag(), iks_prev_tag(), iks_first_tag().
+	* iks.c: new function: iks_find_with_attrib().
+
+2003-06-19  Gurer
+	* stream.c: new function iks_connect_fd ().
+	* stream.c: iks_send_header () is modified.
+
+2003-06-17  Gurer
+	* sax.c: tags without attributes which contain whitespace before '>'
+	  parsed correctly.
+
+2003-06-16  Gurer
+	* stream.c: node isn't deleted automatically after hook anymore.
+	* iksroster.c: upload is working.
+
+2003-06-15  Gurer
+	* tools/iksroster.c: new goodie. backups your jabber roster.
+	* iks.c: iks_insert_attrib() can be used for modifying and deleting attributes.
+	* stream.c: return value of the stream hook is actually used.
+
+2003-06-13  Gurer
+	* iksemel.texi: more text.
+	* iksemel.h: iksFilterHook now returns 'int' instead of 'enum iksfilterret'.
+
+2003-06-12  Gurer
+	* iksemel.h: iksStreamHook's return type is changed 'enum ikserror' to int.
+	  type is changed 'enum iksnodetype' to int.
+	* iksemel.texi: more text.
+
+2003-06-09  Gurer
+	* doc/iksemel.texi: restructured.
+	* iksemel.h: 'enum ikstagtype' type is changed to 'int' in iksTagHook.
+	  'enum ikserror' changed to 'int' in iksTagHook, iksCDataHook, iks_parse().
+	  'enum iksfileerror' changed to 'int' in iks_load() and iks_save().
+	  'enum iksneterror' changed to 'int' in stream.c functions.
+	  common error values removed from iksfileerror and iksneterror.
+	* dom.c: iks_load() checks the return value of iks_parse() now.
+
+2003-06-02  Gurer
+	* filter.c: rules now has priority:
+	  id > from = from_partial > ns > subtype > type
+
+2003-05-29  Gurer
+	* jabber.c: fixes and API cleanup:
+	  iks_id_new() now sets id->partial field.
+	  pak->to field removed.
+	  'to' argument added to iks_make_s10n()
+	  'type' and 'to' arguments removed from iks_make_pres()
+	  const keyword added to prototypes.
+	* filter.c: TO rule removed, FROM_PARTIAL rule added.
+
+2003-05-26  Gurer
+	* sax.c: new function iks_nr_lines(), returns how much lines parsed.
+	* ikslint.c: document's line number is displayed in errors. some cleanup.
+
+2003-05-26  Gurer
+	* sax.c: a bug in C_TAG context is found and fixed.
+
+2003-05-24  Gurer
+	* sax.c: saga continues:
+	  UTF8 validity checks added. You can't feed famous 0xC0 0x80 anymore.
+	  <![CDATA[ ... ]]> sections are recognized.
+	* tst-sax.c: related tests added as usual.
+
+2003-05-23  Gurer
+	* tools/ikslint.c: new goodie, checks xml files for well-formedness.
+	* sax.c: Attribute values can contain ' or " if they are quoted within
+	  the other quote character.
+
+2003-05-23  Gurer
+	* tst-sax.c: framework and tests for badly formed xml.
+	* sax.c: more cleanup, and well-formedness checks:
+	  iks_parse() argument for xml data is now const char*.
+	  0xFF, 0xFE and 0x00 bytes are invalid utf8.
+	  Close tags have no attributes.
+	  Single tags must end with '/>'.
+
+2003-05-22  Gurer
+	* sax.c: some cleanup.
+	* sax.c: iks_get_udata() renamed to iks_user_data()
+	* sax.c: new function iks_nr_bytes(), returns how much bytes parsed.
+	* tst-sax.c, tst-dom.c: uses iks_nr_bytes() when reporting bugs.
+
+2003-05-22  Gurer
+	* iks.c: iks_string() was printing siblings of the toplevel tag. fixed.
+	  thanks David Yitzchak Cohen for reporting.
+	* HACKING: URLs of related standart documents added.
+	* tst-filter.c: new framework.
+	* tst-dom.c: new framework and tests.
+
+2003-05-20  Gurer
+	* sax.c: '>' is valid and '--' is invalid inside the comments.
+
+2003-05-17  Gurer
+	* HACKING: explanation of iksemel's design goals added.
+	* sax.c: parser now ignores PIs, markup and comments.
+	* dom.c, stream.c: PI checks removed.
+
+2003-05-16  Gurer
+	* sax.c: several fixes.
+	* tst-sax.c: attribute checks and more tests.
+
+2003-05-16  Gurer
+	* tst-sax.c: improved framework and more tests.
+	* finetune.h: DEFAULT_DOM_CHUNK_SIZE, DEFAULT_STREAM_CHUNK_SIZE
+	* stream.c, dom.c: now uses chunk size values from finetune.h
+
+2003-05-07  Gurer
+	* complete redesign here.
+
+2002-01-16  Evan Prodromou <mr.bad@pigdog.org>
+	* test/testiks.c: removed buggy unit test for previous entry,
+	  since I couldn't figure out why it segfaulted. Will investigate
+	  and fix later.
+	
+2002-01-07  Evan Prodromou <mr.bad@pigdog.org>
+	* core.c: fixed off-by-one bug with reallocation of attributes.
+	* test/testiks.c: added test for above bug.
+	
+2002-12-20  Evan Prodromou <mr.bad@pigdog.org>
+	* COPYING: New version of the LGPL.
+	* INSTALL: New FSF install info. Both of these were updated by autoreconf.
+		
+2002-12-12  Evan Prodromou <mr.bad@pigdog.org>
+	* include/iksemel.h: added id to Jabber packets.
+	* src/jabber.c: get ID in Jabber packets.
+
+2002-12-9  Evan Prodromou <mr.bad@pigdog.org>
+	* doc/ROADMAP: added this file.
+
+2002-11-28  Evan Prodromou <mr.bad@pigdog.org>
+	* io.c: broke out stream initialization to its own function, in
+	  anticipation of supporting other kinds of streams.
+	* iksemel.h: added new stream function.
+
+2002-11-15  Evan Prodromou <mr.bad@pigdog.org>
+	* configure.in: added check to see if you want to build with dmalloc.
+	* parser.c: make Jabber parsers use pool memory. Also, make Jabber
+	  parser delete packets after posting them to callback function.
+	* convert.c: made converter used pool memory.
+	* iks.c: fixed iks constructor/destructor so they mark pool owner
+	  and only delete the pool if the iks is the owner.
+	* sha.c: changed sha objects to use pool memory.
+	
+2002-11-07  Evan Prodromou <mr.bad@pigdog.org>
+
+	* ikspool.c: added ALIGN_ON, ALIGNED(), *_OFFSET macros.
+	  Try to make sure that all pointer math is done with
+	  aligned (val % ALIGN_ON == 0) values.
+	  Fixed bug in _realloc() where incoming size wasn't
+	  checked for alignment, size.
+	* testpool.c: added tests for absurdly small values
+	  of page size, alloc size, realloc size.
+
+2002-11-06  Evan Prodromou <mr.bad@pigdog.org>
+
+	* iksemel.h: added IKS_NS_XROSTER, for jabber:x:roster NS.
+
+2002-11-06  Evan Prodromou <mr.bad@pigdog.org>
+
+	* core.c: changed iks_parse to use realloc instead of
+	  malloc, copy, free.
+
+2002-11-04  Evan Prodromou <mr.bad@pigdog.org>
+
+	* ikspool.c: For iks_pool_realloc, made it call _alloc if the
+	  passed-in pointer is NULL. This is the way realloc() works.
+        * testpool.c: added a test for the above condition.
+	
+2002-11-04  Evan Prodromou <mr.bad@pigdog.org>
+
+	* ikspool.c: Added some comments.
+
+2002-11-03  Evan Prodromou <mr.bad@pigdog.org>
+
+	* iksid.c: changed contract for iks_id_new, iks_id_set: const char *
+	           instead of char *.
+	* iksemel.h: changed prototypes for iks_id_new, iks_id_set.
+
+2002-11-03  Evan Prodromou <mr.bad@pigdog.org>
+
+	* iksid.c: fixed bug in iks_id_set causing segfault if field was
+	           previously NULL.
+	* testid.c: added tests to check for above bug.
+	* test/.cvsignore: Ignore testpool and testid.
+	
+2002-11-03  Evan Prodromou <mr.bad@pigdog.org>
+
+	* iksid.c: fixed bug in iks_id_new with partial (no resource) IDs.
+	* testid.c: added tests to check for above bug.
+	
+2002-11-03  Evan Prodromou <mr.bad@pigdog.org>
+
+	* iksid.c: moved iksid functions to this file from jabber.c.
+	           added new function, iks_id_delete, to delete an iksid.
+		   implemented iks_id_set.
+		   made iks_id_new use iks_pool_set_owner if it creates a pool.
+		   changed iks_id_new so it doesn't write on src.
+	* iksemel.h: added prototype for iks_id_delete.
+	* testid.c: created basic unit tests for iksid.	
+
+2002-11-02  Evan Prodromou <mr.bad@pigdog.org>
+
+	* Added the beginnings of unit tests for memory allocation.
+	  More needed.
+		
+2002-11-02  Evan Prodromou <mr.bad@pigdog.org>
+
+	* ikspool.c: added new best-fit memory allocation functions.
+	* utility.c: removed old memory-allocation functions.
+	* iksemel.h: added new memory allocation functions:
+	  	     iks_pool_owner
+		     iks_pool_set_owner
+		     iks_pool_realloc
+		     iks_pool_calloc
+		     iks_pool_free
+		     redefined ikspool structure for hiding.
+
+2001-06-08  Gurer <palpa@jabber.org>
+
+	* core.c: xml unescaping.
+
+2001-06-07  Gurer <palpa@jabber.org>
+
+	* convert.c: small bugfix in iks_conv_new()
+
+2001-05-25  Gurer <palpa@jabber.org>
+
+	* configure.in: now checks gcc before adding -Wall to CFLAGS
+	* io.c: iks_recv() and iks_load() fixes.
+
+2001-05-24  Gurer <palpa@jabber.org>
+
+	* configure.in: more checks.
+	* include/common.h: deals with including right files depending on
+	  configure checks, source files include this.
+
+2001-05-22  Gurer <palpa@jabber.org>
+
+	* jabber.c: iks_id_printx() added
+	            new packet type IKS_PAK_ERROR for <stream:error>
+	* sha.c: iks_sha_delete() added
+	* configure.in, parser.c: optional expat support
+
+2001-05-21  Gurer <palpa@jabber.org>
+
+	* parser.c: restructured. now parsers are allocated via iks_sax_new
+	* core.c: actual parser is moved to here
+	* convert.c: charset conversion stuff moved to here
+	* utility.c: alignment bug of iks_pool_alloc fixed
+
+2001-04-10  Gurer <palpa@jabber.org>
+
+	* utility.c: charset convertion functions now use a static buffer and
+	             require string length argument
+
+2001-03-19  Gurer <palpa@jabber.org>
+
+	* utility.c: iks_conv_from/to renamed to iks_conv_utf8/locale
+	             iconv fixes
+
+2001-03-17  Gurer <palpa@jabber.org>
+
+	* utility.c: iks_conv_from/to() fixes
+	* doc/: a bit more documentation
+
+2001-03-15  Gurer <palpa@jabber.org>
+
+	* jabber.c: iks_packet() uses the namespace of first child in IQ packets
+	            instead of looking for a <query> tag.
+	* utility.c: iks_conv_ functions for utf8<->locale convertions
+
+2001-03-13  Fabien Ninoles <fabien@debian.org>
+
+	* autogen.sh: Well, autoconf are better run into the src directory, indeed.
+	* configure.in: Add iconv check, ripped from gabber.
+	* src/Makefile.am: Oops! include dir is in srcdir!
+
+2001-03-12  Gurer <palpa@jabber.org>
+
+	* doc/ : new files, basic structure for documentation
+
+2001-03-09  Fabien Ninoles <fabien@debian.org>
+
+	* utility.c: Correction to the unescape routine... which do some
+	             mess around with indexes.
+	* parser.c: Unescape CDATA et attrib value before inserting them.
+	* autogen.sh: Enable running it from a build directory.
+
+2000-03-07  Gurer <palpa@jabber.org>
+
+	* iks.c: iks_string() now works correctly with a NULL ikspool argument
+	* io.c: return code check of fputs in iks_save() is corrected
+	* doc: new directory
+	* doc/main.texi: started documenting the library API in Texinfo format
+
+2000-03-05  Gurer <palpa@jabber.org>
+
+	* iksemel.h: IKS_NS_ macros synced with latest jabber server
+	* parser.c: attribute buffer grow bug fixed
+	* iks.c: iks_hide() implemented
+
+2000-02-01  Gurer <palpa@jabber.org>
+
+	* parser.c: attribute pointers bug fixed
+	* testiks.c: new test for parser
+
+2000-01-30  Gurer <palpa@jabber.org>
+
+	* configure.in, makefile.am, test/makefile.am: make check target works now
+	* testiks.c: new tests for string and xml node functions
+
+2000-01-28  Gurer <palpa@jabber.org>
+
+	* test: new directory
+	* test/testiks.c: a simple program for self testing
+	* makefile.am, src/makefile.am: fixes for make dist
+
+2000-01-25  Gurer <palpa@jabber.org>
+
+	* sha.c: sha1 implementation
+	* jabber.c: iks_make_auth() now supports digest auth
+
+2000-01-16  Gurer <palpa@jabber.org>
+
+	* io.c: iks_load() implemented
+
+2000-12-20  Gurer <palpa@jabber.org>
+
+	* initial commit.

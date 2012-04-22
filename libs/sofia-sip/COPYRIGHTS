@@ -1,0 +1,251 @@
+This package contains the Sofia-SIP library.
+
+Copyright (C) 2005-2006 Nokia Corporation and others (see the
+in individual files for a detailed list of copyright holders).
+
+Contact: Pekka Pessi <Pekka.Pessi@nokia.com>
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1 of
+the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License (LICENSE) for more details.
+
+----------------------------------------------------------------------------
+
+libsofia-sip-ua/su/inet_ntop.c
+
+The package also contains files licensed by Internet Software Consortium.
+These files are distributed with the following copyright notice:
+
+Copyright (c) 1996 by Internet Software Consortium.
+
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND INTERNET SOFTWARE CONSORTIUM DISCLAIMS
+ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL INTERNET SOFTWARE
+CONSORTIUM BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+SOFTWARE.
+
+----------------------------------------------------------------------------
+
+libsofia-sip-ua/su/inet_pton.c
+
+The package also contains files licensed by Internet Software Consortium and
+Internet Systems Consortium, Inc.. These files are distributed with the
+following copyright notice:
+
+Copyright (c) 2004 by Internet Systems Consortium, Inc. ("ISC")
+Copyright (c) 1996,1999 by Internet Software Consortium.
+
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS.  IN NO EVENT SHALL ISC BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+----------------------------------------------------------------------------
+
+libsofia-sip-ua/su/sofia-sip/su_addrinfo.h
+libsofia-sip-ua/su/su_addrinfo.c
+
+The package also contains files licensed by WIDE Project. These files are
+distributed with the following copyright notice:
+
+Copyright (C) 1995, 1996, 1997, 1998, and 1999 WIDE Project.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of the project nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+
+----------------------------------------------------------------------------
+
+libsofia-sip-ua/su/getopt.c
+
+The package also contains files licensed by IBM Corporation. These files are
+distributed with the following copyright notice:
+
+           This module contains code made available by IBM
+           Corporation on an AS IS basis.  Any one receiving the
+           module is considered to be licensed under IBM copyrights
+           to use the IBM-provided source code in any way he or she
+           deems fit, including copying it, compiling it, modifying
+           it, and redistributing it, with or without
+           modifications.  No license under any IBM patents or
+           patent applications is to be implied from this copyright
+           license.
+
+           A user of the module should understand that IBM cannot
+           provide technical support for the module and will not be
+           responsible for any consequences of use of the program.
+
+           Any notices, including this one, are not to be removed
+           from the module without the prior written consent of
+           IBM.
+
+----------------------------------------------------------------------------
+
+libsofia-sip-ua/su/su_md5.c
+
+The package also contains files written by Colin Plumb. These files are
+distributed with the following copyright notice:
+
+This code implements the MD5 message-digest algorithm. The algorithm is due
+to Ron Rivest. This code was initially written by Colin Plumb in 1993, no
+copyright is claimed. This code is in the public domain; do with it what you
+wish.
+
+Equivalent code is available from RSA Data Security, Inc.  This code has
+been tested against that, and is equivalent, except that you don't need
+to include two pages of legalese with every copy.
+
+----------------------------------------------------------------------------
+
+libsofia-sip-ua/su/strtoull.c
+
+The package also contains files licensed by University of California and Sun
+Microsystems. These files are distributed with the following copyright
+notice:
+
+Copyright (c) 1988 The Regents of the University of California.
+Copyright (c) 1994 Sun Microsystems, Inc.
+
+The following license.terms for information on usage and redistribution
+of this individual file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+This software is copyrighted by the Regents of the University of
+California, Sun Microsystems, Inc., Scriptics Corporation, ActiveState
+Corporation and other parties.  The following terms apply to all files
+associated with the software unless explicitly disclaimed in
+individual files.
+
+The authors hereby grant permission to use, copy, modify, distribute,
+and license this software and its documentation for any purpose, provided
+that existing copyright notices are retained in all copies and that this
+notice is included verbatim in any distributions. No written agreement,
+license, or royalty fee is required for any of the authorized uses.
+Modifications to this software may be copyrighted by their authors
+and need not follow the licensing terms described here, provided that
+the new terms are clearly indicated on the first page of each file where
+they apply.
+
+IN NO EVENT SHALL THE AUTHORS OR DISTRIBUTORS BE LIABLE TO ANY PARTY
+FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE, ITS DOCUMENTATION, OR ANY
+DERIVATIVES THEREOF, EVEN IF THE AUTHORS HAVE BEEN ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+THE AUTHORS AND DISTRIBUTORS SPECIFICALLY DISCLAIM ANY WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.  THIS SOFTWARE
+IS PROVIDED ON AN "AS IS" BASIS, AND THE AUTHORS AND DISTRIBUTORS HAVE
+NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR
+MODIFICATIONS.
+
+GOVERNMENT USE: If you are acquiring this software on behalf of the
+U.S. government, the Government shall have only "Restricted Rights"
+in the software and related documentation as defined in the Federal
+Acquisition Regulations (FARs) in Clause 52.227.19 (c) (2).  If you
+are acquiring the software on behalf of the Department of Defense, the
+software shall be classified as "Commercial Computer Software" and the
+Government shall have only "Restricted Rights" as defined in Clause
+252.227-7013 (c) (1) of DFARs.  Notwithstanding the foregoing, the
+authors grant the U.S. Government and others acting in its behalf
+permission to use and distribute the software in accordance with the
+terms specified in this license.
+
+----------------------------------------------------------------------------
+
+libsofia-sip-ua/ipt/rc4.c
+
+The package also contains files written by Pekka Pessi. These files are
+distributed with the following copyright notice:
+
+Copyright (c) 1996 Pekka Pessi. All rights reserved.
+
+This source code is provided for unrestricted use. Users may copy or
+modify this source code without charge.
+
+THIS SOURCE CODE IS PROVIDED AS IS WITH NO WARRANTIES OF ANY KIND
+INCLUDING THE WARRANTIES OF DESIGN, MERCHANTIBILITY AND FITNESS FOR A
+PARTICULAR PURPOSE, OR ARISING FROM A COURSE OF DEALING, USAGE OR TRADE
+PRACTICE.
+
+This source code is provided with no support and without any obligation
+on the part of author to assist in its use, correction, modification or
+enhancement.
+
+AUTHOR SHALL HAVE NO LIABILITY WITH RESPECT TO THE INFRINGEMENT OF
+COPYRIGHTS, TRADE SECRETS OR ANY PATENTS BY THIS SOFTWARE OR ANY PART
+THEREOF.
+
+In no event will author be liable for any lost revenue or profits or
+other special, indirect and consequential damages, even if author has
+been advised of the possibility of such damages.
+
+----------------------------------------------------------------------------
+
+libsofia-sip-ua/su/poll.c
+
+The package also contains files from GNU C Library by Free Software
+Foundation.
+
+These files are distributed with the following copyright notice:
+
+Copyright (C) 1994,1996,1997,1998,1999,2001,2002
+Free Software Foundation, Inc.
+This file is part of the GNU C Library.
+
+The GNU C Library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+The GNU C Library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with the GNU C Library; if not, write to the Free
+Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+02111-1307 USA.
+
+----------------------------------------------------------------------------

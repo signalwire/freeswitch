@@ -1,0 +1,270 @@
+/**@MODULEPAGE "sresolv" - Asynchronous DNS Resolver
+
+@section sresolv_meta Module Information
+
+The Sofia @b sresolv module consists of an asynchronous DNS resolver with
+EDNS extensions. The interface to library using #su_root_t is declared in
+<sofia-sip/sresolv.h>.
+
+An alternative interface is defined by <sofia-resolv/sres.h>,
+<sofia-resolv/sres_record.h>, <sofia-resolv/sres_async.h>, and
+<sofia-resolv/sres_cache.h>.
+
+@sa @RFC1034, @RFC1035, @RFC1886, @RFC2671, @RFC2782, @RFC2915
+
+@CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@STATUS @SofiaSIP Core library
+
+@LICENSE LGPL
+
+@todo Caching Policy and Cache Poisoning
+
+The policy for caching non-authoritave entries should be solved.
+
+@section sresolv_overview Why Sofia Resolver?
+
+The generally available open source DNS libraries are either synchronous,
+that is, they block the thread making the query or they resolve only host
+names. As SIP protocol uses NAPTR and SRV records in addition ot the usual A
+or AAAA records, these DNS libraries are inadequate for a SIP application.
+
+Sofia resolver uses the usual configuration for DNS. In Unix-based systems,
+the DNS configuration is stored in the file /etc/resolv.conf, on Windows, it
+is available through the registry. Sofia resolvers reloads the configuration
+when it detect that it has been changed.
+
+In addition to the configuration files, the environment variables
+#SRES_OPTIONS and #RES_OPTIONS can be used to change the behaviour of the
+resolver.
+
+@section sresolv_interfaces Using Sofia Resolver
+
+Sofia resolver works usually asynchronously, in other words, it generates a
+a query, sends it to DNS server and returns immediately to the caller. When
+a response is received and the query is completed, sresolv signals
+application through a callback function.
+
+The application can either explicitly poll(2) or select(2) on file
+descriptors used by resolver and call the driver functions, or it can use
+@ref su_root_t "su root" a pointer to a #su_root_t object. Third option is to
+use resolver synchronously with sres_blocking_query().
+
+There is an internal cache used by sresolv. The query functions add
+records to the cache: using the cache is made similar as if receiving
+entries directly from DNS server.
+
+Please note that you have to create a separate resolver object for each
+thread using Sofia resolver. The resolver objects can share the cache,
+however.
+
+@section sofia_sip_sresolv_h Interface in <sofia-sip/sresolv.h>
+
+The simple use of Sofia resolver driven from #su_root_t is defined in
+<sofia-sip/sresolv.h>. The resolver object can be created with
+sres_resolver_create(). The provided @ref su_root_t "root object" takes care
+of calling the sres_query() and sres_query_sockaddr() callback functions.
+
+@code
+#include <sofia-sip/sresolv.h>
+
+sres_resolver_t *sres_resolver_create(su_root_t *root,
+				      char const *resolv_conf,
+				      tag_type_t, tag_value_t, ...);
+
+int sres_resolver_destroy(sres_resolver_t *res);
+
+@endcode
+
+@section sres_query Sending DNS Queries
+
+The second part of interface is used when sending DNS queries:
+
+@code
+sres_query_t *sres_query(sres_resolver_t *res,
+			 sres_answer_f *callback,
+			 sres_context_t *context,
+			 int socket,
+			 uint16_t type,
+			 char const *domain);
+
+sres_query_t *sres_query_sockaddr(sres_resolver_t *res,
+				  sres_answer_f *callback,
+				  sres_context_t *context,
+				  int socket,
+				  uint16_t type,
+				  struct sockaddr const *addr);
+
+void sres_query_bind(sres_query_t *q,
+                     sres_answer_f *callback,
+                     sres_context_t *context);
+@endcode
+
+@section sres_record Handling DNS Records
+
+The third part is used to handle the records which were returned by DNS
+query or stored into the cache:
+
+@code
+sres_record_t **sres_cached_answers(sres_resolver_t *res,
+				    uint16_t type,
+				    char const *domain);
+
+sres_record_t **sres_cached_answers_sockaddr(sres_resolver_t *res,
+                                             uint16_t type,
+					     struct sockaddr const *addr);
+
+int sres_sort_answers(sres_resolver_t *res, sres_record_t **answers);
+
+int sres_filter_answers(sres_resolver_t *sres, sres_record_t **answers,
+			uint16_t type);
+
+void sres_free_answers(sres_resolver_t *res, sres_record_t **answers);
+
+void sres_free_answer(sres_resolver_t *res, sres_record_t *answer);
+
+@endcode
+
+@section sofia_resolv_sres_h Interface in <sofia-resolv/sres.h>
+
+The generic interface to Sofia resolver is defined in <sofia-resolv/sres.h>.
+The first part of interface consists of functions for handling resolver
+objects:
+
+@code
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#include <sofia-resolv/sres.h>
+
+sres_resolver_t *sres_resolver_new(char const *resolv_conf_path);
+
+sres_resolver_t *sres_resolver_new_with_cache(char const *conf_file_path,
+					      sres_cache_t *cache,
+			                      char const *options, ...);
+
+sres_resolver_t *sres_resolver_ref(sres_resolver_t *res);
+void sres_resolver_unref(sres_resolver_t *res);
+
+sres_resolver_t *sres_resolver_copy(sres_resolver_t *);
+
+void *sres_resolver_set_userdata(sres_resolver_t *res, void *userdata);
+void *sres_resolver_get_userdata(sres_resolver_t const *res);
+
+@endcode
+
+@subsection sresolv_blocking Using Sofia Resolver Synchronously
+
+The blocking interface defined in <sofia-resolv/sres.h> makes it possible to
+use Sofia resolver synchronously, that is, the function call making the DNS
+query does not return until the query is responded or it times out.
+
+@code
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#include <sofia-resolv/sres.h>
+
+int sres_blocking_query(sres_resolver_t *res,
+			uint16_t type,
+			char const *domain,
+			sres_record_t ***return_records);
+
+int sres_blocking_query_sockaddr(sres_resolver_t *res,
+				 uint16_t type,
+				 struct sockaddr const *addr,
+				 sres_record_t ***return_records);
+
+@endcode
+
+@subsection sresolv_async Asynchronous Interface in <sofia-resolv/sres_async.h>
+
+It is also possible to use resolver asynchronously without #su_root_t object.
+
+@code
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#include <sofia-resolv/sres_async.h>
+
+sres_async_t *sres_resolver_set_async(sres_resolver_t *res,
+				      sres_update_f *update,
+				      sres_async_t *async,
+				      int update_all);
+sres_async_t *sres_resolver_get_async(sres_resolver_t const *res,
+				      sres_update_f *update);
+
+int sres_resolver_sockets(sres_resolver_t const *res, int *sockets, int n);
+void sres_resolver_timer(sres_resolver_t *, int socket);
+
+int sres_resolver_receive(sres_resolver_t *res, int socket);
+int sres_resolver_error(sres_resolver_t *res, int socket);
+
+@endcode
+
+Here is a short code fragment showing how to use resolver driven from
+#su_root_t:
+
+@code
+
+#define SRES_CONTEXT_T struct context
+
+#include <sofia-sip/sresolv.h>
+
+...
+
+struct context
+{
+  ...
+  su_root_t *root;
+  sres_resolver_t *sres;
+  sres_query_t *query;
+  ...
+} *context;
+
+...
+
+  context->sres = sres_resolver_create(context->root, NULL, TAG_END());
+
+...
+
+  sres_record_t *results;
+
+  results = sres_cached_answers(context->sres, sres_type_naptr, domain);
+  if (results) {
+    process_natpr(context, NULL, results);
+  }
+  else {
+    context->query = sres_query(context->sres,
+                                process_natpr, context,
+	                        sres_type_naptr, domain);
+    if (!context->query)
+      process_naptr(context, NULL, NULL);
+  }
+}
+...
+
+void process_natpr(sres_context_t *context,
+		   sres_query_t *q,
+		   sres_record_t *answers[])
+{
+  sres_sort_answers(context->sres, answers);
+
+  ...
+
+  sres_free_answers(context->sres, answers);
+}
+@endcode
+
+*/
+
+/** @defgroup sresolv_env Environment Variables Used by sresolv Module
+
+In addition to the standard #RES_OPTIONS and #LOCALDOMAIN environment
+variables, the #SRES_OPTIONS and #SRESOLV_DEBUG variables are supported.
+
+*/

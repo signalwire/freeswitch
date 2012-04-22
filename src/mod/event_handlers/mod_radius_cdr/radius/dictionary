@@ -1,0 +1,353 @@
+#
+# Updated 97/06/13 to livingston-radius-2.01 miquels@cistron.nl
+#
+#	This file contains dictionary translations for parsing
+#	requests and generating responses.  All transactions are
+#	composed of Attribute/Value Pairs.  The value of each attribute
+#	is specified as one of 4 data types.  Valid data types are:
+#
+#	string - 0-253 octets
+#	ipaddr - 4 octets in network byte order
+#	integer - 32 bit value in big endian order (high byte first)
+#	date - 32 bit value in big endian order - seconds since
+#					00:00:00 GMT,  Jan.  1,  1970
+#
+#	Enumerated values are stored in the user file with dictionary
+#	VALUE translations for easy administration.
+#
+#	Example:
+#
+#	ATTRIBUTE	  VALUE
+#	---------------   -----
+#	Framed-Protocol = PPP
+#	7		= 1	(integer encoding)
+#
+
+#
+#	Following are the proper new names. Use these.
+#
+ATTRIBUTE	User-Name		1	string
+ATTRIBUTE	Password		2	string
+ATTRIBUTE	CHAP-Password		3	string
+ATTRIBUTE	NAS-IP-Address		4	ipaddr
+ATTRIBUTE	NAS-Port-Id		5	integer
+ATTRIBUTE	Service-Type		6	integer
+ATTRIBUTE	Framed-Protocol		7	integer
+ATTRIBUTE	Framed-IP-Address	8	ipaddr
+ATTRIBUTE	Framed-IP-Netmask	9	ipaddr
+ATTRIBUTE	Framed-Routing		10	integer
+ATTRIBUTE	Filter-Id		11	string
+ATTRIBUTE	Framed-MTU		12	integer
+ATTRIBUTE	Framed-Compression	13	integer
+ATTRIBUTE	Login-IP-Host		14	ipaddr
+ATTRIBUTE	Login-Service		15	integer
+ATTRIBUTE	Login-TCP-Port		16	integer
+ATTRIBUTE	Reply-Message		18	string
+ATTRIBUTE	Callback-Number		19	string
+ATTRIBUTE	Callback-Id		20	string
+ATTRIBUTE	Framed-Route		22	string
+ATTRIBUTE	Framed-IPX-Network	23	ipaddr
+ATTRIBUTE	State			24	string
+ATTRIBUTE	Class			25	string
+ATTRIBUTE	Vendor-Specific		26	string
+ATTRIBUTE	Session-Timeout		27	integer
+ATTRIBUTE	Idle-Timeout		28	integer
+ATTRIBUTE	Termination-Action	29	integer
+ATTRIBUTE	Called-Station-Id	30	string
+ATTRIBUTE	Calling-Station-Id	31	string
+ATTRIBUTE	NAS-Identifier		32	string
+ATTRIBUTE	Proxy-State		33	string
+ATTRIBUTE	Login-LAT-Service	34	string
+ATTRIBUTE	Login-LAT-Node		35	string
+ATTRIBUTE	Login-LAT-Group		36	string
+ATTRIBUTE	Framed-AppleTalk-Link	37	integer
+ATTRIBUTE	Framed-AppleTalk-Network	38	integer
+ATTRIBUTE	Framed-AppleTalk-Zone	39	string
+ATTRIBUTE	Acct-Status-Type	40	integer
+ATTRIBUTE	Acct-Delay-Time		41	integer
+ATTRIBUTE	Acct-Input-Octets	42	integer
+ATTRIBUTE	Acct-Output-Octets	43	integer
+ATTRIBUTE	Acct-Session-Id		44	string
+ATTRIBUTE	Acct-Authentic		45	integer
+ATTRIBUTE	Acct-Session-Time	46	integer
+ATTRIBUTE	Acct-Input-Packets	47	integer
+ATTRIBUTE	Acct-Output-Packets	48	integer
+ATTRIBUTE	Acct-Terminate-Cause	49	integer
+ATTRIBUTE	Acct-Multi-Session-Id	50	string
+ATTRIBUTE	Acct-Link-Count		51	integer
+ATTRIBUTE	Event-Timestamp		55	integer
+ATTRIBUTE	CHAP-Challenge		60	string
+ATTRIBUTE	NAS-Port-Type		61	integer
+ATTRIBUTE	Port-Limit		62	integer
+ATTRIBUTE	Login-LAT-Port		63	integer
+ATTRIBUTE	Connect-Info		77	string
+
+#
+#	RFC3162 IPv6 attributes
+#
+ATTRIBUTE	NAS-IPv6-Address	95	string
+ATTRIBUTE	Framed-Interface-Id	96	string
+ATTRIBUTE	Framed-IPv6-Prefix	97	string
+ATTRIBUTE	Login-IPv6-Host		98	string
+ATTRIBUTE	Framed-IPv6-Route	99	string
+ATTRIBUTE	Framed-IPv6-Pool	100	string
+
+#
+#	Experimental Non Protocol Attributes used by Cistron-Radiusd
+#
+ATTRIBUTE	Huntgroup-Name		221	string
+ATTRIBUTE	User-Category		1029	string
+ATTRIBUTE	Group-Name		1030	string
+ATTRIBUTE	Simultaneous-Use	1034	integer
+ATTRIBUTE	Strip-User-Name		1035	integer
+ATTRIBUTE	Fall-Through		1036	integer
+ATTRIBUTE	Add-Port-To-IP-Address	1037	integer
+ATTRIBUTE	Exec-Program		1038	string
+ATTRIBUTE	Exec-Program-Wait	1039	string
+ATTRIBUTE	Hint			1040	string
+
+#
+#	Non-Protocol Attributes
+#	These attributes are used internally by the server
+#
+ATTRIBUTE	Expiration		  21	date
+ATTRIBUTE	Auth-Type		1000	integer
+ATTRIBUTE	Menu			1001	string
+ATTRIBUTE	Termination-Menu	1002	string
+ATTRIBUTE	Prefix			1003	string
+ATTRIBUTE	Suffix			1004	string
+ATTRIBUTE	Group			1005	string
+ATTRIBUTE	Crypt-Password		1006	string
+ATTRIBUTE	Connect-Rate		1007	integer
+
+#
+#	Integer Translations
+#
+
+#	User Types
+
+VALUE		Service-Type		Login-User		1
+VALUE		Service-Type		Framed-User		2
+VALUE		Service-Type		Callback-Login-User	3
+VALUE		Service-Type		Callback-Framed-User	4
+VALUE		Service-Type		Outbound-User		5
+VALUE		Service-Type		Administrative-User	6
+VALUE		Service-Type		NAS-Prompt-User		7
+
+#	Framed Protocols
+
+VALUE		Framed-Protocol		PPP			1
+VALUE		Framed-Protocol		SLIP			2
+
+#	Framed Routing Values
+
+VALUE		Framed-Routing		None			0
+VALUE		Framed-Routing		Broadcast		1
+VALUE		Framed-Routing		Listen			2
+VALUE		Framed-Routing		Broadcast-Listen	3
+
+#	Framed Compression Types
+
+VALUE		Framed-Compression	None			0
+VALUE		Framed-Compression	Van-Jacobson-TCP-IP	1
+
+#	Login Services
+
+VALUE		Login-Service		Telnet			0
+VALUE		Login-Service		Rlogin			1
+VALUE		Login-Service		TCP-Clear		2
+VALUE		Login-Service		PortMaster		3
+
+#	Status Types
+
+VALUE		Acct-Status-Type	Start			1
+VALUE		Acct-Status-Type	Stop			2
+VALUE		Acct-Status-Type	Alive			3
+VALUE		Acct-Status-Type	Accounting-On		7
+VALUE		Acct-Status-Type	Accounting-Off		8
+
+#	Authentication Types
+
+VALUE		Acct-Authentic		RADIUS			1
+VALUE		Acct-Authentic		Local			2
+VALUE		Acct-Authentic		PowerLink128		100
+
+#	Termination Options
+
+VALUE		Termination-Action	Default			0
+VALUE		Termination-Action	RADIUS-Request		1
+
+#	NAS Port Types, available in 3.3.1 and later
+
+VALUE		NAS-Port-Type		Async			0
+VALUE		NAS-Port-Type		Sync			1
+VALUE		NAS-Port-Type		ISDN			2
+VALUE		NAS-Port-Type		ISDN-V120		3
+VALUE		NAS-Port-Type		ISDN-V110		4
+
+#	Acct Terminate Causes, available in 3.3.2 and later
+
+VALUE           Acct-Terminate-Cause    User-Request            1
+VALUE           Acct-Terminate-Cause    Lost-Carrier            2
+VALUE           Acct-Terminate-Cause    Lost-Service            3
+VALUE           Acct-Terminate-Cause    Idle-Timeout            4
+VALUE           Acct-Terminate-Cause    Session-Timeout         5
+VALUE           Acct-Terminate-Cause    Admin-Reset             6
+VALUE           Acct-Terminate-Cause    Admin-Reboot            7
+VALUE           Acct-Terminate-Cause    Port-Error              8
+VALUE           Acct-Terminate-Cause    NAS-Error               9
+VALUE           Acct-Terminate-Cause    NAS-Request             10
+VALUE           Acct-Terminate-Cause    NAS-Reboot              11
+VALUE           Acct-Terminate-Cause    Port-Unneeded           12
+VALUE           Acct-Terminate-Cause    Port-Preempted          13
+VALUE           Acct-Terminate-Cause    Port-Suspended          14
+VALUE           Acct-Terminate-Cause    Service-Unavailable     15
+VALUE           Acct-Terminate-Cause    Callback                16
+VALUE           Acct-Terminate-Cause    User-Error              17
+VALUE           Acct-Terminate-Cause    Host-Request            18
+
+#
+#	Non-Protocol Integer Translations
+#
+
+VALUE		Auth-Type		Local			0
+VALUE		Auth-Type		System			1
+VALUE		Auth-Type		SecurID			2
+VALUE		Auth-Type		Crypt-Local		3
+VALUE		Auth-Type		Reject			4
+
+#
+#	Cistron extensions
+#
+VALUE		Auth-Type		Pam			253
+VALUE		Auth-Type		Accept			254
+
+#
+#	Experimental Non-Protocol Integer Translations for Cistron-Radiusd
+#
+VALUE		Fall-Through		No			0
+VALUE		Fall-Through		Yes			1
+VALUE		Add-Port-To-IP-Address	No			0
+VALUE		Add-Port-To-IP-Address	Yes			1
+
+#
+#	Configuration Values
+#	uncomment these two lines to turn account expiration on
+#
+
+#VALUE		Server-Config		Password-Expiration	30
+#VALUE		Server-Config		Password-Warning	5
+
+# -*- text -*-
+#
+# dictionary.freeswitch
+#
+# cparker@segv.org
+#
+# Version:	$Id: $
+#
+
+VENDOR		Freeswitch				27880
+
+#
+#	Standard attribute
+#
+BEGIN-VENDOR	Freeswitch
+
+ATTRIBUTE	Freeswitch-AVPair			1	string	Freeswitch
+ATTRIBUTE	Freeswitch-CLID				2	string	Freeswitch
+ATTRIBUTE	Freeswitch-Dialplan			3	string  Freeswitch
+ATTRIBUTE	Freeswitch-Src				4	string  Freeswitch
+ATTRIBUTE	Freeswitch-Dst				5	string  Freeswitch
+ATTRIBUTE	Freeswitch-Src-Channel			6	string  Freeswitch
+ATTRIBUTE	Freeswitch-Dst-Channel			7	string  Freeswitch
+ATTRIBUTE	Freeswitch-Ani				8	string  Freeswitch
+ATTRIBUTE	Freeswitch-Aniii			9	string  Freeswitch
+ATTRIBUTE	Freeswitch-Lastapp			10	string  Freeswitch
+ATTRIBUTE	Freeswitch-Lastdata			11	string  Freeswitch
+ATTRIBUTE	Freeswitch-Disposition			12	string  Freeswitch
+ATTRIBUTE	Freeswitch-Hangupcause			13	integer Freeswitch
+ATTRIBUTE	Freeswitch-Billusec			15	integer Freeswitch
+ATTRIBUTE	Freeswitch-AMAFlags			16	integer Freeswitch
+ATTRIBUTE	Freeswitch-RDNIS			17      string  Freeswitch
+ATTRIBUTE	Freeswitch-Context                      18      string  Freeswitch
+ATTRIBUTE	Freeswitch-Source                       19      string  Freeswitch
+ATTRIBUTE	Freeswitch-Callstartdate		20	string  Freeswitch
+ATTRIBUTE	Freeswitch-Callanswerdate		21	string  Freeswitch
+ATTRIBUTE	Freeswitch-Calltransferdate		22	string  Freeswitch
+ATTRIBUTE	Freeswitch-Callenddate			23	string  Freeswitch
+ATTRIBUTE	Freeswitch-Direction			24	string  Freeswitch
+ATTRIBUTE	Freeswitch-Other-Leg-Id			25	string	Freeswitch
+
+#
+#  Freeswitch-Hangupcause
+#
+VALUE		Freeswitch-Hangupcause		None				0
+VALUE		Freeswitch-Hangupcause		Unallocated-Number		1
+VALUE		Freeswitch-Hangupcause		No-Route-Transit-Net		2
+VALUE		Freeswitch-Hangupcause		No-Route-Destination		3
+VALUE		Freeswitch-Hangupcause		Channel-Unacceptable		6
+VALUE		Freeswitch-Hangupcause		Call-Awarded-Delivery		7
+VALUE		Freeswitch-Hangupcause		Normal-Clearing			16
+VALUE		Freeswitch-Hangupcause		User-Busy			17
+VALUE		Freeswitch-Hangupcause		No-User-Response		18
+VALUE		Freeswitch-Hangupcause		No-Answer			19
+VALUE		Freeswitch-Hangupcause		Subscriber-Absent		20
+VALUE		Freeswitch-Hangupcause		Call-Rejected			21
+VALUE		Freeswitch-Hangupcause		Number-Changed			22
+VALUE		Freeswitch-Hangupcause		Redirecto-To-New-Destination	23
+VALUE		Freeswitch-Hangupcause		Exchange-Routing-Error		25
+VALUE		Freeswitch-Hangupcause		Destination-Out-Of-Order	27
+VALUE		Freeswitch-Hangupcause		Invalid-Number-Format		28
+VALUE		Freeswitch-Hangupcause		Facility-Rejected		29
+VALUE		Freeswitch-Hangupcause		Response-To-Status-Enquiry	30
+VALUE		Freeswitch-Hangupcause		Normal-Unspecified		31
+VALUE		Freeswitch-Hangupcause		Normal-Circuit-Congestion	34
+VALUE		Freeswitch-Hangupcause		Network-Out-Of-Order		38
+VALUE		Freeswitch-Hangupcause		Normal-Temporary-Failure	41
+VALUE		Freeswitch-Hangupcause		Switch-Congestion		42
+VALUE		Freeswitch-Hangupcause		Access-Info-Discarded		43
+VALUE		Freeswitch-Hangupcause		Requested-Chan-Unavail		44
+VALUE		Freeswitch-Hangupcause		Pre-Empted			45
+VALUE		Freeswitch-Hangupcause		Facility-Not-Subscribed		50
+VALUE		Freeswitch-Hangupcause		Outgoing-Call-Barred		52
+VALUE		Freeswitch-Hangupcause		Incoming-Call-Barred		54
+VALUE		Freeswitch-Hangupcause		Bearercapability-Notauth	57
+VALUE		Freeswitch-Hangupcause		Bearercapability-Notavail	58
+VALUE		Freeswitch-Hangupcause		Service-Unavailable		63
+VALUE		Freeswitch-Hangupcause		Bearercapability-Notimpl	65
+VALUE		Freeswitch-Hangupcause		Chan-Not-Implemented		66
+VALUE		Freeswitch-Hangupcause		Facility-Not-Implemented	69
+VALUE		Freeswitch-Hangupcause		Service-Not-Implemented		79
+VALUE		Freeswitch-Hangupcause		Invalid-Call-Reference		81
+VALUE		Freeswitch-Hangupcause		Incompatible-Destination	88
+VALUE		Freeswitch-Hangupcause		Invalid-Msg-Unspecified		95
+VALUE		Freeswitch-Hangupcause		Mandatory-IE-Missing		96
+VALUE		Freeswitch-Hangupcause		Message-Type-Nonexist		97
+VALUE		Freeswitch-Hangupcause		Wrong-Message			98
+VALUE		Freeswitch-Hangupcause		IE-Nonexist			99
+VALUE		Freeswitch-Hangupcause		Invalid-IE-Contents		100
+VALUE		Freeswitch-Hangupcause		Wrong-Call-State		101
+VALUE		Freeswitch-Hangupcause		Recovery-On-Timer-Expire	102
+VALUE		Freeswitch-Hangupcause		Mandatory-IE-Length-Error	103
+VALUE		Freeswitch-Hangupcause		Protocol-Error			111
+VALUE		Freeswitch-Hangupcause		Interworking			127
+VALUE		Freeswitch-Hangupcause		Success				142
+VALUE		Freeswitch-Hangupcause		Originator-Cancel		487
+VALUE		Freeswitch-Hangupcause		Crash				500
+VALUE		Freeswitch-Hangupcause		System-Shutdown			501
+VALUE		Freeswitch-Hangupcause		Lose-Race			502
+VALUE		Freeswitch-Hangupcause		Manager-Request			503
+VALUE		Freeswitch-Hangupcause		Blind-Transfer			600
+VALUE		Freeswitch-Hangupcause		Attended-Transfer		601
+VALUE		Freeswitch-Hangupcause		Allotted-Timeout		602
+VALUE		Freeswitch-Hangupcause		User-Challenge			603
+VALUE		Freeswitch-Hangupcause		Media-Timeout			604
+VALUE		Freeswitch-Hangupcause		Picked-Off			605
+VALUE		Freeswitch-Hangupcause		User-Not-Registered		606
+
+#
+#
+#
+
+END-VENDOR	Freeswitch

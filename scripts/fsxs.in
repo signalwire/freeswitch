@@ -1,0 +1,321 @@
+#!/usr/bin/perl
+#
+# FreeSWITCH fsxs
+#
+# (C) 2006-2008 Stefan Knoblich <stkn@netdomination.org>
+
+use strict;
+
+#
+# @FOO@ will be replaced by the freeswitch build process
+#
+my %vars = (
+	CC => '@CC@',
+	LD => '@LD@',
+	MKDIR => '@MKINSTALLDIRS@',
+	INSTALL => '@INSTALL@',
+	LIBS => '@LIBS@',
+	CFLAGS => '@CFLAGS@',
+	INCLUDES => '@INCLUDES@',
+	LDFLAGS => '@LDFLAGS@',
+	SOLINK => '@SOLINK@',
+
+	MODULESDIR => '@MODULES_DIR@',
+	LIBDIR => '@LIB_DIR@',
+	BINDIR => '@BIN_DIR@',
+	INCLUDEDIR => '@INC_DIR@',
+	DBDIR => '@DB_DIR@',
+	CONFDIR => '@CFG_DIR@',
+	PREFIX => '@PREFIX@'
+);
+
+#
+# Misc variables
+#
+my @files = ();
+
+my $command;
+my $target;
+
+my $needs_target = 1;
+my $debug = 0;
+
+#
+# functions 
+#
+
+sub do_exec {
+	my $retval = system( "@_ >/dev/null" );
+	if( $retval ) {
+		exit $retval;
+	}
+}
+
+sub fsxs_usage {
+	print "FreeSWITCH fsxs\n(C) 2006-2008 Stefan Knoblich <stkn\@netdomination.org>\n";
+	print "\n";
+	print "Usage:\n";
+	print "\t$0 compile [options] <file1 ...>\n";
+	print "\t$0 link    [options] <target> <file1 ...>\n";
+	print "\t$0 build   [options] <target> <file1 ...>\n";
+	print "\t$0 install [options] <file1 ...>\n\n";
+	print "\t$0 show    <var1 ...varN>\n";
+	print "\t$0         <--var1 ...--varN>\n\n";
+
+	print "Command description:\n";
+	print "\tcompile: Compile source file(s) into object file(s)\n";
+	print "\tlink:    Create module from object file(s)\n";
+	print "\tbuild:   Build module from source file(s) (compile + link)\n";
+	print "\tinstall: Install module(s) into FreeSWITCH module directory\n";
+	print "\tshow:    Show defined variable(s)\n";
+	print "\n";
+
+	print "Options:\n";
+	print "\t--add-cflags  Append custom cflags   [compile, build]\n";
+	print "\t--set-cflags  Override cflags        [compile, build]\n";
+	print "\n";
+	print "\t--add-ldflags Append custom ldflags  [link, build]\n";
+	print "\t--set-ldflags Override ldflags       [link, build]\n";
+	print "\t--add-libs    Append additional libs [link, build]\n";
+	print "\t--set-libs    Override libs          [link, build]\n";
+	print "\n";
+	print "\t--destdir     Installation prefix    [install]\n";
+	print "\n";
+
+	print "Variable names for \"fsxs show\" / \"fsxs --var\":\n";
+	print "\tcflags ldflags libs solink includes cc ld mkdir install\n";
+	print "\tprefix libdir modulesdir dbdir includedir confdir bindir\n";
+	print "\n";
+
+	print "Examples:\n";
+	print "\t$0 compile --add-cflags=\"-DFOO=1 -DBAR\" mod_test.c mod_test2.c\n\n";
+	print "\t$0 link --add-ldflags=\"-ltest\" mod_test.so mod_test.o mod_test2.o\n\n";
+	print "\t$0 build --add-cflags=\"-DFOO\" --add-ldflags=\"-ltest\" mod_test.so mod_test.c mod_test2.c\n\n";
+	exit 1;
+}
+
+sub fsxs_compile {
+	my $cc_cmd;
+
+	$cc_cmd = "$vars{CC}";
+	if( defined( $vars{INCLUDES} ) && $vars{INCLUDES} ) {
+		$cc_cmd = $cc_cmd . " $vars{INCLUDES}"
+	}
+	$cc_cmd = $cc_cmd . " $vars{CFLAGS} -c -o";
+
+	foreach( @_ ) {
+		chomp( $_ );
+
+		# replace file extension
+		my $outfile = $_;
+		$outfile =~ s/\.(cpp|cc|c)$/.o/;
+
+		print "CC\t$_\n";
+		if( $debug ) {
+			print "$cc_cmd $outfile $_\n"
+		}
+		do_exec( "$cc_cmd $outfile $_" );
+	}
+}
+
+sub fsxs_link {
+	my $target = shift;
+	my @objs = @_;
+	my $ld_cmd;
+
+	$ld_cmd = "$vars{LD}";
+	$ld_cmd = $ld_cmd . " $vars{LDFLAGS} $vars{SOLINK} -o";
+
+	print "LD\t$target\t[@objs]\n";
+	if( $debug ) {
+		print "$ld_cmd $target @objs $vars{LIBS}\n"
+	}
+	do_exec( "$ld_cmd $target @objs $vars{LIBS}" );
+}
+
+sub fsxs_install {
+	my @files = @_;
+	my $destination = $vars{DESTDIR} . $vars{MODULESDIR};
+
+	# check if destination exists, create if it doesn't
+	if( ! -e $destination ) {
+		if( $debug ) {
+			print "$vars{MKDIR} $destination\n";
+		}
+		do_exec( "$vars{MKDIR} $destination" );
+	}
+	if( $debug ) {
+		print "$vars{INSTALL} -m644 @files $destination\n";
+	}
+	do_exec( "$vars{INSTALL} -m644 @files $destination" );
+}
+
+sub fsxs_show {
+	my @varlist = @_;
+
+	if( $#varlist < 0 ) {
+		# none requested, show all variables with names
+		my $key;
+		foreach $key ( keys %vars ) {
+			print "$key: $vars{$key}\n";
+		}
+	}
+	elsif( $#varlist > 0 ) {
+		# more than one requested, show with name
+		foreach( @varlist ) {
+			if( defined $vars{$_} ) {
+				print "$_: $vars{$_}\n";
+			}
+		}
+	} else {
+		# show only one variable, without name
+		if( defined $vars{$varlist[0]} ) {
+			print "$vars{$varlist[0]}\n";
+		}
+	}
+}
+
+sub fsxs_showq {
+	my @varlist = @_;
+	my $count = 0;
+
+	if( $#varlist >= 0 ) {
+		foreach( @varlist ) {
+			if( defined $vars{$_} ) {
+				print "$vars{$_}" . (($count < $#varlist) ? " " : "");
+			}
+			$count++;
+		}
+	}
+}
+
+#
+# main part
+#
+if( $#ARGV < 0 ) {
+	fsxs_usage;
+}
+
+if( @ARGV[0] =~ /^\--.+$/ ) {
+	# 'show' shortcut for using fsxs in scripts
+	$needs_target = 0;
+	$command = "showq";
+}
+else {
+	chomp( $command = shift @ARGV );
+
+	if( $command =~ /^install|build|link|compile|show$/ ) {
+
+		# add -lfreeswitch to the front of the library list
+		# we don't want it to be in the show / showq output
+		# but we still want to be able to override it with --set-libs
+		if( $command ne "show" ) {
+			$vars{LIBS} = "-lfreeswitch $vars{LIBS}";
+		}
+
+		if( $command =~ /^show|compile|install$/ ) {
+			$needs_target = 0;
+		}
+	}
+	else {
+		print STDERR "Unknown command: $command\n";
+		fsxs_usage;
+	}
+}
+
+# parse environment variables
+if( defined $ENV{DEBUG} && $ENV{DEBUG} ) {
+	$debug = 1;
+}
+
+# parse arguments
+foreach(@ARGV) {
+	chomp( $_ );
+
+	if( $command ne "show" && $command ne "showq" )
+	{
+		if( /^\--add-cflags=(.*)$/ ) {
+			$vars{CFLAGS} = "$vars{CFLAGS} $1";
+		}
+		elsif( /^\--set-cflags=(.*)$/ ) {
+			$vars{CFLAGS} = "$1";
+		}
+		elsif( /^\--add-ldflags=(.*)$/ ) {
+			$vars{LDFLAGS} = "$vars{LDFLAGS} $1";
+		}
+		elsif( /^\--set-ldflags=(.*)$/ ) {
+			$vars{LDFLAGS} = "$1";
+		}
+		elsif( /^\--add-libs=(.*)$/ ) {
+			$vars{LIBS} = "$vars{LIBS} $1";
+		}
+		elsif( /^\--set-libs=(.*)$/ ) {
+			$vars{LIBS} = "$1";
+		}
+		elsif( /^\--destdir=(.*)$/ ) {
+			$vars{DESTDIR} = "$1";
+		}
+		elsif( /^\--debug$/ ) {
+			$debug = 1;
+		}
+		elsif( /^(DESTDIR|CFLAGS|CC|LDFLAGS|LD|LIBS)=(.*)$/ ) {
+			if( $debug ) {
+				print "Overriding $1 (new value: $2)\n";
+			}
+			$vars{$1} = "$2";
+		}
+		elsif( /^([^\-]+.*)$/ ) {
+			if( $needs_target ) {
+				$target = "$1";
+				$needs_target = 0;
+			} else {
+				push(@files, "$1");
+			}
+		}
+	} else {
+		# show command has different parameter handling
+		if( /^\--(.*)$/ ) {
+			push( @files, uc "$1" );
+		}
+		elsif( /^([^\-]+.*)$/ ) {
+			push( @files, uc "$1" );
+		}
+	}
+}
+
+#
+# execute commands
+#
+if( $command eq 'link' ) {
+	fsxs_link( $target, @files );
+}
+elsif( $command eq 'compile' ) {
+	fsxs_compile( @files );
+}
+elsif( $command eq 'build' ) {
+	my @objs = ();
+
+	fsxs_compile( @files );
+
+	foreach( @files ) {
+		chomp( $_ );
+		$_ =~ s/\.(cpp|cc|c)$/.o/;
+		push( @objs, "$_" );
+	}
+
+	fsxs_link( $target, @objs );
+}
+elsif( $command eq 'show' ) {
+	fsxs_show( @files );
+}
+elsif( $command eq 'showq' ) {
+	fsxs_showq( @files );
+}
+elsif( $command eq 'install' ) {
+	fsxs_install( @files );
+}
+else {
+	fsxs_usage;
+}
+
+exit 0;

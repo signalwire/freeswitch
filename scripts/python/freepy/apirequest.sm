@@ -1,0 +1,96 @@
+%start MainMap::Startup
+%class ApiRequest
+
+%map MainMap
+%%
+
+Startup
+{
+        ApiResponse
+                ApiResponseStarted
+                {
+                }
+}
+
+ApiResponseStarted
+{
+        ContentLength
+                ContentPreStarted
+                {
+                }
+
+}
+
+ContentPreStarted
+{
+        BlankLine
+                ContentStarted
+                {
+                }
+
+}
+
+ContentStarted
+{
+        ProcessLine(line)
+           [ctxt.add_content(line) == True]
+                Startup
+                {
+		setRequestFinished(); callbackDeferred(ctxt.getResponse());		
+                }
+
+        ProcessLine(line)
+                nil
+                {
+		// for some reason, have to add doNothing() here or
+                // importing smc will fail.  looks like smc bug.
+		doNothing();
+                }
+
+
+
+}
+
+
+
+
+
+Default
+{
+    	BlankLine			
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting blank line");		
+		}
+
+    	ContentFinished		
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting content to be finished");		
+		}
+
+    	ContentLength
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting content-length header");		
+		}
+
+    	ApiResponse			
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting api response");		
+		}
+
+        ProcessLine(line)
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting needing to process a line");		
+		}
+}
+
+%%

@@ -1,0 +1,31 @@
+<configuration name="mod_radius_cdr.conf" description="RADIUS CDR Configuration">
+	<settings>
+		<!-- location of the radius dictionary file -->
+		<param name="dictionary" value="/usr/local/freeswitch/conf/radius/dictionary"/>
+		<!-- location of the radius sequence file -->
+		<param name="seqfile" value="/var/run/radius.seq"/>
+
+		<!-- accounting servers, up to 8 allowed -->
+		<!-- value is "host:port:secret", port is optional -->
+		<!-- use IP ADDRESSES, not hostnames -->
+		<param name="acctserver" value="127.0.0.1:1813:testing123"/>
+		<param name="acctserver" value="10.0.0.254:1813:testing123"/>
+		<param name="acctserver" value="192.168.10.10:1813:testing123"/>
+
+		<!-- number of retries for each server -->
+		<param name="radius_retries" value="3"/>
+		<!-- number of seconds to wait between retries -->
+		<param name="radius_timeout" value="5"/>
+		<!-- The length of time in seconds that we skip a nonresponsive RADIUS
+			 server for transaction requests. Server(s) being in the "dead" state
+			 are tried only after all other non-dead servers have been tried and
+			 failed or timeouted. The deadtime interval starts when the server
+			 does not respond to an authentication/accounting request transmissions.
+			 When the interval expires, the "dead" server would be re-tried again,
+			 and if it's still down then it will be considered "dead" for another
+			 such interval and so on. This option is no-op if there is only one
+			 server in the list. Set to 0 in order to disable the feature. -->
+		<param name="radius_deadtime" value="0"/>
+	</settings>
+</configuration>
+

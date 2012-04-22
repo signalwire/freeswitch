@@ -1,0 +1,55 @@
+Intellectual Property Due Diligence
+-----------------------------------
+
+Modems and voice coding are heavily patented areas. Implementing these without
+serious consideration of IP issues would be foolish. This document describes
+the basis on which the software has been implemented.
+
+
+A check of the intellectual property information at the ITU web site shows a
+number of patent claims against the current standards implemented by spandsp.
+It is important to realise, however, that some of these patents have long
+since expired (group III fax dates back to the 1970s). Also, many are
+related to recent additions to the FAX standard, such as colour FAX handling,
+which few people ever use.
+
+The V.14 rate adaption standard seems free of patent encumberance.
+
+One patent is listed as relevant to the V.17 standard. It is a patent from
+IBM, but the ITU database does not specify its nature. I believe it is
+related to the trellis coding used, and I think it has expired. I do not
+know for sure. The techniques used in the implementation should be free of
+patent encumberance. Most of the implementation is similar to the V.29
+modem. The key addition the trellis code processing. The trellis encoding
+is trivial. The decoding uses Viterbi techniques, which are quite old.
+
+The V.21 standard dates from the 1950s. The V.23 standard is also very old.
+There is no possibility that any patents related to it are still in force.
+However, the implementation also needs to be free of patented techniques.
+The implementation only uses very mature numerical oscillator and quadrature
+correlation techniques, so there should be no patent issues.
+
+Only one patent is listed as relevant to the V.29 standard. This dates from
+the 1970s, and must have expired. The modem has been implemented using only
+very mature techniques, none of which can be less than 20 years old. There
+seem no possibility, therefore, that any patents are still in force related
+to the techniques used.
+
+Some aspect of the V.8 standard seems to have patents associated with it,
+according to the ITU patent database. I am unclear what these are. V.8 is a
+very simple standard. There seems to be nothing innovative about it.
+
+Many patents are listed as relevant to the T.30 standard. However, they all
+appear to relate to newer features, such as colour FAX, added in recent years.
+The current implementation only covers the original features from the late
+1970s, where there appear to be patent issues.
+
+The T.4 standard defines the image compression and decompression techniques
+used for group 3 FAXes. The spandsp implementation is based on code derived
+from freely available implementations of T.4. These have existed for a number
+of years without IP issues. The standard is old enough for any patents to have
+expired, anyway.
+
+V.42bis compression uses the LZW algorithm. This is the same algorithm used in
+GIF files. Unisys patented this algorithm. However, the Unisys patent has now
+expired.

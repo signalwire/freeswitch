@@ -1,0 +1,11 @@
+SDP Parser and Printer
+======================
+
+	This directory contains SDP parser and printer code.  Parser takes an
+	message and returns a corresponding C structure. Printer takes a C
+	structure and returns a SDP message.
+
+	There is an incomplete documentation in sdp.html on usage of
+	parser and printer.
+
+	Please refer to RFC 2327 for further information.

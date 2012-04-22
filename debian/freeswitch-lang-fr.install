@@ -1,0 +1,6 @@
+opt/freeswitch/conf/lang/fr/fr.xml
+opt/freeswitch/conf/lang/fr/demo/demo.xml
+opt/freeswitch/conf/lang/fr/dir/sounds.xml
+opt/freeswitch/conf/lang/fr/dir/tts.xml
+opt/freeswitch/conf/lang/fr/vm/sounds.xml
+opt/freeswitch/mod/mod_say_fr.so*

@@ -1,0 +1,152 @@
+Adding a SIP Header to Sofia SIP
+================================
+
+by Pekka Pessi (2002-08-16, last updated 2007-09-19)
+
+There are two recommended ways to extend the Sofia SIP parser, including a
+standard header in extra headers or putting the extension headers into a
+separate library.
+
+In the text below, we use "Example" header as our example with following
+ABNF:
+
+   sip-example = "Example" COLON 1*DIGIT
+
+
+IF YOUR HEADER IS A STANDARD ONE
+--------------------------------
+
+  * In <sofia-sip/sip_extra.h>, add:
+
+  - Add typedef to the header structure.
+
+    You should add a typedef line like this:
+
+     typedef struct sip_example_s sip_example_t;
+
+    Note that the typedefs are documented together with the
+    implementation in the .c file.
+
+ - Add the actual header structure:
+
+    The header structure would look like below. The first field MUST be a
+    sip_common_t structure, second field MUST be a pointer to next header
+    with same name. As a convention, if there can be only one header field
+    of this kind, the type of the "next" pointer is sip_error_t.
+
+    The fields representing the header value are located after the mandatory
+    fields, usually in the order they are present in the header contents. In
+    this case, the Example header consist of a 32-bit integer:
+
+       /**@ingroup sip_example
+        * @brief Structure for Example header.
+        */
+       struct sip_example_s {
+         sip_common_t   ex_common[1];	    /**< Common fragment info. */
+         sip_error_t   *ex_next;	    /**< Link to next (dummy). */
+         unsigned long  ex_value;	    /**< Value of example. */
+       };
+
+  * Add entry to sip_extra_headers.txt:
+   - In this case:
+     example @NEW_2_0 /* Example header */
+   - The first is the base C name used for functions and types related to
+     the type. The AWK script msg_parser.awk automatically creates the
+     default prototypes and tags for the newly created header. It will
+     complain about mismatches between header name and the base name.
+
+   - If the entry is before #### DEFAULT HEADER LIST ENDS HERE ####
+     the new header is added to the default parser
+   - If after, the new header is added only to the extended parser.
+
+   - The extended parser will be used after call to
+     sip_update_default_mclass(NULL)
+
+  * Write parsing tests for your new headers in torture_sip.c:
+
+    Add all relevant parsing/processing cases you can think of
+    at the end of function sip_header_test() or add a testing
+    function of your own.
+
+  * Add implementation in a suitable ".c" file
+    - For an simple example, see implementation of Date header in sip_basic.c
+    - Add a documentation group with @defgroup
+    - Document the typedef
+    - Add header class structure
+    - Add parsing and printing functions:
+      + sip_example_d(), sip_example_e()
+    - Add functions used when copying the header structure:
+      + sip_example_dup_xtra(), sip_example_dup_one()
+
+  * If you added a .c file, add to the Makefile.am
+    - remember to run autogen.sh unless you have given --enable-maintainer-mode
+      to configure script
+
+  * Run "make check" after you are ready
+
+  * Run "make check" after you are ready. Really.
+
+
+IF YOUR HEADERS ARE COMPLETELY NON-STANDARD
+-------------------------------------------
+
+  * Add a separate library package for them
+
+    - There is an example package sofia-sip-2543.tar.gz, available from
+      sofia-sip.sourceforge.net
+
+      See the extension package for 1)
+
+    - Create a header template for your header just like
+      sofia-sip/rfc2543.h.in (found in <sofia-sip/rfc2543.h> package),
+      e.g, sip_example.h.in:
+
+---8<----8<----8<----8<----8<----8<----8<----8<----8<----8<----8<----8<---
+/**@file sip_example.h.in
+ *
+ * Template for <sip_example.h>.
+ */
+
+#ifndef SIP_EXAMPLE_H
+/** Defined when <sip_example.h> has been included. */
+#define SIP_EXAMPLE_H
+
+/**@file sip_example.h
+*
+ * @brief Example header.
+ *
+ * #AUTO#
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
+ *
+ * @date Created: Fri May 27 18:40:38 EEST 2005 ppessi
+ */
+
+#ifndef SIP_H
+#include <sofia-sip/sip.h>
+#endif
+#ifndef SIP_HEADER_H
+#include <sofia-sip/sip_header.h>
+#endif
+
+/**@ingroup sip_example
+ * @brief Structure for @b Example header.
+ */
+struct sip_example_s
+{
+  sip_common_t   ex_common[1];    /**< Common fragment info */
+  sip_error_t   *ex_next;	  /**< Link to next (dummy). */
+  uint32_t       ex_value;	  /**< Value of Example */
+};
+
+typedef struct sip_example_s sip_example_t;
+
+struct sip_example_dummy_structure {
+  /* === Headers start here */
+  sip_example_t *sip_example;                            /**< Example */
+  /* === Headers end here */
+};
+
+
+#endif /** !defined(SIP_EXAMPLE_H) */
+--->8---->8---->8---->8---->8---->8---->8---->8---->8---->8---->8---->8---

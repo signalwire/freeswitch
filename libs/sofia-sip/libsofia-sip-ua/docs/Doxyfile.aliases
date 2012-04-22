@@ -1,0 +1,66 @@
+# Doxyfile 1.0.0 format
+#
+
+PREDEFINED = DOX \
+ DOXYGEN_ONLY=1 \
+ DOCUMENTATION_ONLY=1 \
+ SU_HAVE_INLINE=1 su_inline=inline \
+ SOFIA_BEGIN_DECLS SOFIA_END_DECLS SOFIAPUBFUN SOFIACALL \
+ SOFIAPUBVAR=extern \
+ SU_DLL SIP_DLL RTSP_DLL SU_DLL NTA_DLL NUA_DLL MSG_DLL AUTH_DLL \
+ NTH_DLL HTTP_DLL \
+ __attribute__()=
+
+ALIASES = \
+ "MODULEPAGE=\mainpage Sofia SIP User Agent Library - " \
+ "CONTACT=\par Contact:\n" \
+ "STATUS=\par Status:\n" \
+ "LICENSE=\par License:\n" \
+ "SofiaSIP=<a href=\"../index.html\">Sofia SIP</a>" \
+ "SU=@ref su_index \"SU\"" "su=@ref su_index \"su\"" \
+ "msg=@ref msg_index \"msg\"" \
+ "sip=@ref sip_index \"sip\"" \
+ "nua=@ref nua_index \"nua\"" \
+ "nta=@ref nta_index \"nta\"" \
+ "soa=@ref soa_index \"soa\"" \
+ "DEF=\def" \
+ "TAGS=\par Related Tags:" \
+ "TAG=\par \n" \
+ "EVENTS=\par Events:\n" \
+ "RESPONSES=\par Related Response Codes:\n" \
+ "CFILE=\internal \file" \
+ "IFILE=\file" \
+ "HI=\hideinitializer " \
+ "HIDE=\hideinitializer " \
+ "SHOW=\showinitializer " \
+ "LGPL2=\par Lesser GNU Public License Version 2:\n \ref lgpl2\n \if 0\n" \
+ "ENDLGPL2=\endif \n" \
+ "GPL2=\par GNU Public License Version 2:\n \ref gpl2\n \if 0\n" \
+ "ENDGPL2=\endif \n" \
+ "ERRORS=\par Errors: " \
+ "ERROR=\par \n \b " \
+ "NEW_1_12_2=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.2.txt\">1.12.2</a>" \
+ "VERSION_1_12_2=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.2.txt\">1.12.2</a>" \
+ "NEW_1_12_4=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.4.txt\">1.12.4</a>" \
+ "VERSION_1_12_4=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.4.txt\">1.12.4</a>" \
+ "VERSION_1_12_5=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.5.txt\">1.12.5</a>" \
+ "NEW_1_12_5=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.5.txt\">1.12.5</a>" \
+ "EXP_1_12_5=@since Experimental in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.5.txt\">1.12.5</a>, available if --enable-experimental configuration option is given" \
+ "VERSION_1_12_6=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.6.txt\">1.12.6</a>" \
+ "NEW_1_12_6=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.6.txt\">1.12.6</a>" \
+ "EXP_1_12_6=@since Experimental in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.6.txt\">1.12.6</a>, available if --enable-experimental configuration option is given" \
+ "VERSION_1_12_7=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.7.txt\">1.12.7</a>" \
+ "NEW_1_12_7=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.7.txt\">1.12.7</a>" \
+ "EXP_1_12_7=@since Experimental in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.7.txt\">1.12.7</a>, available if --enable-experimental configuration option is given" \
+ "VERSION_1_12_8=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.8.txt\">1.12.8</a>" \
+ "NEW_1_12_8=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.8.txt\">1.12.8</a>" \
+ "VERSION_1_12_9=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.9.txt\">1.12.9</a>" \
+ "NEW_1_12_9=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.9.txt\">1.12.9</a>" \
+ "VERSION_1_12_10=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.10.txt\">1.12.10</a>" \
+ "NEW_1_12_10=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.10.txt\">1.12.10</a>" \
+ "VERSION_1_12_11=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.11.txt\">1.12.11</a>" \
+ "NEW_1_12_11=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.11.txt\">1.12.11</a>" \
+ "VERSION_UNRELEASED=UNRELEASED" \
+ "NEW_UNRELEASED=@since Not yet released" \
+
+

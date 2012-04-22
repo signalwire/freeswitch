@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This may or may not be legal XML-RPC, but some old clients (including
+Ruby and xmlrpc-epi) send it.  This should be interpreted as a call with no
+parameters. -->
+
+<methodCall>
+  <methodName>foo</methodName>
+</methodCall>

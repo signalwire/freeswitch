@@ -1,0 +1,52 @@
+INVITE sip:user@company.com SIP/2.0
+To: "I have a user name of extreme proportion" <sip:user@company.com:6000;other-param=1234567890somethingelselong1234567890>
+From: sip:caller@university.edu
+Call-ID: kl24ahsd546folnyt2vbak9sad98u23naodiunzds09a3bqw0sdfbsk34poouymnae0043nsed09mfkvc74bd0cuwnms05dknw87hjpobd76f
+CSeq: 1 INVITE
+My-State: sldkjflzdsfaret0803adgaasd0afds0asdaasd
+Via: SIP/2.0/UDP sip33.example.com
+Via: SIP/2.0/UDP sip32.example.com
+Via: SIP/2.0/UDP sip31.example.com
+Via: SIP/2.0/UDP sip30.example.com
+Via: SIP/2.0/UDP sip29.example.com
+Via: SIP/2.0/UDP sip28.example.com
+Via: SIP/2.0/UDP sip27.example.com
+Via: SIP/2.0/UDP sip26.example.com
+Via: SIP/2.0/UDP sip25.example.com
+Via: SIP/2.0/UDP sip24.example.com
+Via: SIP/2.0/UDP sip23.example.com
+Via: SIP/2.0/UDP sip22.example.com
+Via: SIP/2.0/UDP sip21.example.com
+Via: SIP/2.0/UDP sip20.example.com
+Via: SIP/2.0/UDP sip19.example.com
+Via: SIP/2.0/UDP sip18.example.com
+Via: SIP/2.0/UDP sip17.example.com
+Via: SIP/2.0/UDP sip16.example.com
+Via: SIP/2.0/UDP sip15.example.com
+Via: SIP/2.0/UDP sip14.example.com
+Via: SIP/2.0/UDP sip13.example.com
+Via: SIP/2.0/UDP sip12.example.com
+Via: SIP/2.0/UDP sip11.example.com
+Via: SIP/2.0/UDP sip10.example.com
+Via: SIP/2.0/UDP sip9.example.com
+Via: SIP/2.0/UDP sip8.example.com
+Via: SIP/2.0/UDP sip7.example.com
+Via: SIP/2.0/UDP sip6.example.com
+Via: SIP/2.0/UDP sip5.example.com
+Via: SIP/2.0/UDP sip4.example.com
+Via: SIP/2.0/UDP sip3.example.com
+Via: SIP/2.0/UDP sip2.example.com
+Via: SIP/2.0/UDP sip1.example.com
+Via: SIP/2.0/UDP host.example.com;received=135.180.130.133;branch=C1C3344E2710000000E299E568E7potato10potato0potato0
+Content-Type: application/sdp
+
+v=0
+o=mhandley 29739 7272939 IN IP4 126.5.4.3
+s=SIP Call
+t=3149328700 0
+c=IN IP4 135.180.130.88
+m=audio 492170 RTP/AVP 0 12
+m=video 3227 RTP/AVP 31
+a=rtpmap:31 LPC
+
+

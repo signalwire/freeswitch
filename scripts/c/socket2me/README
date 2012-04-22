@@ -1,0 +1,20 @@
+EXAMPLE OF EVENT SOCKET EXTERNAL APP: REQUIRES mod_event_socket
+
+Set this or something similar in your dialplan
+
+<extension name="fax">
+  <condition field="destination_number" expression="^866">
+    <action application="set" data="fax_file_name=/tmp/cool.tiff"/>
+    <!--"send" or "recv"-->
+    <action application="set" data="fax_mode=send"/>
+    <action application="socket" data="127.0.0.1:8084 async"/>
+  </condition>
+</extension>
+
+
+and in a separate process run 
+#./socket2me 127.0.0.1 127.0.0.1 8084
+
+
+
+

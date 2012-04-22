@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="unimrcpclient"
+	InheritedPropertySheets="unimrcpsdk.vsprops"
+	>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalDependencies="libunimrcpclient.lib mrcpsofiasip.lib mrcpunirtsp.lib unirtsp.lib mrcpclient.lib mrcpv2transport.lib mrcpsignaling.lib libsofia_sip_ua.lib ws2_32.lib winmm.lib"
+	/>
+</VisualStudioPropertySheet>

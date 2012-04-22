@@ -1,0 +1,39 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# This file is public domain software, originally written by Joey Hess. 
+
+# Uncomment this to turn on verbose mode.
+ export DH_VERBOSE=1
+export DH_OPTIONS
+export DH_COMPAT=4
+export DEB_DH_INSTALL_SOURCEDIR=debian/tmp
+
+
+build:
+	dh_testdir
+	mkdir -p debian/tmp/opt/freeswitch/sounds
+	cp -a music debian/tmp/opt/freeswitch/sounds/
+	./debian/buildsounds.sh debian/tmp/opt/freeswitch/sounds/music	
+clean:
+	dh_testdir
+	dh_testroot
+	dh_clean -k 
+	rm -f build-stamp 
+	rm -Rf debian/tmp
+
+install:
+	dh_testdir
+	dh_testroot
+	dh_installdirs -A --sourcedir=debian/tmp
+	dh_install --sourcedir=debian/tmp
+
+# Build architecture-independent files here.
+binary-indep: build install
+	dh_compress
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep
+.PHONY: build clean binary-indep binary install 

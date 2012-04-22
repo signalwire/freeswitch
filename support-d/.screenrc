@@ -1,0 +1,4 @@
+hardstatus alwaysignore
+startup_message off
+escape ^\b
+defscrollback 8000

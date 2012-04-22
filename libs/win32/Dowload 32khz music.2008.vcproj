@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9.00"
+	Name="Download 32khz music"
+	ProjectGUID="{1F0A8A77-E661-418F-BB92-82172AE43803}"
+	RootNamespace="Download 32khz music"
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+				CommandLine=""
+				Outputs=""
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\32khzsound\cleancount"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading 32khzsound."
+					CommandLine="set /P SOUND_VERSION=&lt;&quot;$(ProjectDir)..\..\build\moh_version.txt&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\32000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-32000-%SOUND_VERSION%.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\sounds\music\32000"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading 32khzsound."
+					CommandLine="set /P SOUND_VERSION=&lt;&quot;$(ProjectDir)..\..\build\moh_version.txt&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\32000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-32000-%SOUND_VERSION%.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\sounds\music\32000"
+				/>
+			</FileConfiguration>
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

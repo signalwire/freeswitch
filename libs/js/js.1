@@ -1,0 +1,167 @@
+.TH JS 1 "22 July 2006"
+.SH NAME
+.BR js " - Mozilla JavaScript Shell"
+.SH SYNOPSIS
+.B js
+.RB [ -w ]
+.RB [ -W ]
+.RB [ -S ]
+.RB [ -x ]
+.RB [ -C ]
+.RB [ -c
+.IR stackchunksize ]
+.RB [ -S
+.IR maxstacksize ]
+.RB [ -b
+.IR maxbranches ]
+.RB [ -P ]
+.RB [ -v
+.IR version ]
+.RB [ -e
+.IR script ]
+.RB [ -f
+.IR scriptfile ]
+.RI [ scriptfile ]
+.RI [ scriptarg " ..." "" ]
+.SH DESCRIPTION
+The Mozilla JavaScript Shell
+.B js
+is a command line interface to the 
+.B Mozilla JavaScript
+language engine ("SpiderMonkey"),
+as provided by the
+.B OSSP js
+distribution.
+The
+.B js
+program provides a test vehicle for easily evaluating JavaScript scripts, calling JavaScript functions,
+trying out debugger primitives, etc.
+.SH OPTIONS
+.SS Compile-Time Options
+.TP 8
+.B -w
+Disable the printing of warnings.
+.TP 8
+.B -W
+Enable the printing of warnings.
+.TP 8
+.B -s
+Enable strict language parsing during compile-time.
+This will print warnings on dubious JavaScript programming practices. 
+.TP 8
+.B -x
+Enable ECMAScript for XML (E4X) support during compile-time.
+.TP 8
+.B -C
+Compile only. This compiles the script but does not
+execute it.
+.SS Run-Time Options
+.TP 8
+.BI -c " stackchunksize"
+Set the stack chunk size to
+.I stackchunksize
+bytes. The default is
+.BR 8192 .
+.TP 8
+.BI -S " maxstacksize"
+Set a maximum stack size limit to
+.I maxstacksize
+bytes in order to restruct script resource consumption.
+The default is a stack of unlimited size.
+.TP 8
+.BI -b " maxbranches"
+Set a maximum branch number limit to
+.I maxbranches
+in order to restrict script resource consumption. The default is an
+unlimited number of branches.
+.TP 8
+.B -P
+In case the prototype object of the (potentially changed) global object
+is no longer connected to the global class, create a new global object
+(which is again connected to the global class) and set its prototype
+object to the old global object.
+.TP 8
+.BI -v " version"
+override the numerical JavaScript version number, which the JavaScript
+.B version()
+function returns, with the value
+.IR version .
+The argument
+.I version
+usually is one of the following integer values:
+.B 0
+(default),
+.B 100
+(JS 1.0),
+.B 110
+(JS 1.1),
+.B 120
+(JS 1.2),
+.B 130
+(JS 1.3),
+.B 140
+(JS 1.4),
+.B 148
+(ECMA-3),
+.B 150
+(JS 1.5),
+.B 160
+(JS 1.6).
+.SS Script Execution
+.TP 8
+.BI -e " script"
+Command-line passed JavaScript script to execute.
+This is executed immediately during command
+line parsing, so specify it after
+.B "Compile-Time Options"
+and
+.BR "Run-Time Options" .
+.TP 7
+.BI -f " scriptfile"
+Externally passed JavaScript script to execute.
+This is executed immediately during command
+line parsing, so specify it after
+.B "Compile-Time Options"
+and
+.BR "Run-Time Options" .
+.SH ARGUMENTS
+.TP 8
+.RI scriptfile
+Externally passed JavaScript script to execute.
+This is executed after command line parsing
+(and this way after scripts of options
+.BR -e " and " -f
+were executed.
+This additional way of executing an external JavaScript
+script exists to especially support Unix "shebang"
+style scripts.
+.TP 8
+.IR scriptarg
+Zero or more arguments which are passed to the executed
+.IR scriptfile .
+They are available in the script through the global
+array object
+.BR arguments .
+.SH SEE ALSO
+.BR js ( 3 ),
+.BR js-config ( 1 )
+.PP
+.RS 0
+http://www.mozilla.org/js/spidermonkey/
+.RE
+.RS 0
+http://www.ossp.org/pkg/lib/js/
+.RE
+.SH AUTHOR
+The author of the 
+.B Mozilla JavaScript
+language implementation ("SpiderMonkey") is
+.I Brendan Eich
+from the 
+.IR "Mozilla Foundation" .
+This manual page was written by 
+.I Ralf S. Engelschall
+for the 
+.B OSSP js
+distribution of 
+.BR "Mozilla JavaScript" .

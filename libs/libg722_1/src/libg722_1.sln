@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libg722_1", "libg722_1.vcproj", "{CF70F278-3364-4395-A2E1-23501C9B8AD2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1CED5987-A529-46DC-B30F-870D85FF9C94} = {1CED5987-A529-46DC-B30F-870D85FF9C94}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "at_dictionary_gen", "src\msvc\at_dictionary_gen.vcproj", "{1CED5987-A529-46DC-B30F-870D85FF9C94}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CF70F278-3364-4395-A2E1-23501C9B8AD2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CF70F278-3364-4395-A2E1-23501C9B8AD2}.Debug|Win32.Build.0 = Debug|Win32
+		{CF70F278-3364-4395-A2E1-23501C9B8AD2}.Release|Win32.ActiveCfg = Release|Win32
+		{CF70F278-3364-4395-A2E1-23501C9B8AD2}.Release|Win32.Build.0 = Release|Win32
+		{1CED5987-A529-46DC-B30F-870D85FF9C94}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1CED5987-A529-46DC-B30F-870D85FF9C94}.Debug|Win32.Build.0 = Debug|Win32
+		{1CED5987-A529-46DC-B30F-870D85FF9C94}.Release|Win32.ActiveCfg = Release|Win32
+		{1CED5987-A529-46DC-B30F-870D85FF9C94}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

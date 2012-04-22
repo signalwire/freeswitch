@@ -1,0 +1,23 @@
+PROJECT_NAME         = "features"
+OUTPUT_DIRECTORY     = ../docs/html/features
+
+INPUT 		     = @srcdir@/features.docs @srcdir@/sofia-sip sofia-sip @srcdir@ .
+
+@INCLUDE_PATH = . @srcdir@
+@INCLUDE             = ../docs/Doxyfile.conf
+
+TAGFILES            += ../docs/docs.doxytags=..
+TAGFILES            += ../docs/su.doxytags=../su
+TAGFILES            += ../docs/ipt.doxytags=../ipt
+TAGFILES            += ../docs/bnf.doxytags=../bnf
+TAGFILES            += ../docs/url.doxytags=../url
+TAGFILES            += ../docs/msg.doxytags=../msg
+TAGFILES            += ../docs/sip.doxytags=../sip
+TAGFILES            += ../docs/sresolv.doxytags=../sresolv
+TAGFILES            += ../docs/tport.doxytags=../tport
+TAGFILES            += ../docs/nta.doxytags=../nta
+TAGFILES            += ../docs/sdp.doxytags=../sdp
+
+GENERATE_TAGFILE     = ../docs/features.doxytags
+
+ALIASES             +=

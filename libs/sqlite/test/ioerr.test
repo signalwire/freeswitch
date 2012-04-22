@@ -1,0 +1,263 @@
+# 2001 October 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing for correct handling of I/O errors
+# such as writes failing because the disk is full.
+# 
+# The tests in this file use special facilities that are only
+# available in the SQLite test fixture.
+#
+# $Id: ioerr.test,v 1.29 2007/01/04 14:58:14 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+
+# If SQLITE_DEFAULT_AUTOVACUUM is set to true, then a simulated IO error
+# on the 8th IO operation in the SQL script below doesn't report an error.
+#
+# This is because the 8th IO call attempts to read page 2 of the database
+# file when the file on disk is only 1 page. The pager layer detects that
+# this has happened and suppresses the error returned by the OS layer.
+#
+do_ioerr_test ioerr-1 -erc 1 -sqlprep {
+  SELECT * FROM sqlite_master;
+} -sqlbody {
+  CREATE TABLE t1(a,b,c);
+  SELECT * FROM sqlite_master;
+  BEGIN TRANSACTION;
+  INSERT INTO t1 VALUES(1,2,3);
+  INSERT INTO t1 VALUES(4,5,6);
+  ROLLBACK;
+  SELECT * FROM t1;
+  BEGIN TRANSACTION;
+  INSERT INTO t1 VALUES(1,2,3);
+  INSERT INTO t1 VALUES(4,5,6);
+  COMMIT;
+  SELECT * FROM t1;
+  DELETE FROM t1 WHERE a<100;
+} -exclude [expr [string match [execsql {pragma auto_vacuum}] 1] ? 4 : 0]
+
+finish_test
+return
+
+# Test for IO errors during a VACUUM. 
+#
+# The first IO call is excluded from the test. This call attempts to read
+# the file-header of the temporary database used by VACUUM. Since the
+# database doesn't exist at that point, the IO error is not detected.
+# 
+# Additionally, if auto-vacuum is enabled, the 12th IO error is not 
+# detected. Same reason as the 8th in the test case above.
+# 
+ifcapable vacuum {
+  do_ioerr_test ioerr-2 -cksum true -sqlprep { 
+    BEGIN; 
+    CREATE TABLE t1(a, b, c); 
+    INSERT INTO t1 VALUES(1, randstr(50,50), randstr(50,50)); 
+    INSERT INTO t1 SELECT a+2, b||'-'||rowid, c||'-'||rowid FROM t1; 
+    INSERT INTO t1 SELECT a+4, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 SELECT a+8, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 SELECT a+16, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 SELECT a+32, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 SELECT a+64, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 SELECT a+128, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 VALUES(1, randstr(600,600), randstr(600,600));
+    CREATE TABLE t2 AS SELECT * FROM t1;
+    CREATE TABLE t3 AS SELECT * FROM t1;
+    COMMIT;
+    DROP TABLE t2;
+  } -sqlbody {
+    VACUUM;
+  } -exclude [list \
+      1 [expr [string match [execsql {pragma auto_vacuum}] 1]?9:-1]]
+}
+
+do_ioerr_test ioerr-3 -tclprep {
+  execsql {
+    PRAGMA cache_size = 10;
+    BEGIN;
+    CREATE TABLE abc(a);
+    INSERT INTO abc VALUES(randstr(1500,1500)); -- Page 4 is overflow
+  }
+  for {set i 0} {$i<150} {incr i} {
+    execsql {
+      INSERT INTO abc VALUES(randstr(100,100)); 
+    }
+  }
+  execsql COMMIT
+} -sqlbody {
+  CREATE TABLE abc2(a);
+  BEGIN;
+  DELETE FROM abc WHERE length(a)>100;
+  UPDATE abc SET a = randstr(90,90);
+  COMMIT;
+  CREATE TABLE abc3(a);
+} 
+
+# Test IO errors that can occur retrieving a record header that flows over
+# onto an overflow page.
+do_ioerr_test ioerr-4 -tclprep {
+  set sql "CREATE TABLE abc(a1"
+  for {set i 2} {$i<1300} {incr i} {
+    append sql ", a$i"
+  }
+  append sql ");"
+  execsql $sql
+  execsql {INSERT INTO abc (a1) VALUES(NULL)}
+} -sqlbody {
+ SELECT * FROM abc;
+}
+
+# Test IO errors that may occur during a multi-file commit.
+#
+# Tests 8 and 17 are excluded when auto-vacuum is enabled for the same 
+# reason as in test cases ioerr-1.XXX
+set ex ""
+if {[string match [execsql {pragma auto_vacuum}] 1]} {
+  set ex [list 4 17]
+}
+do_ioerr_test ioerr-5 -sqlprep {
+  ATTACH 'test2.db' AS test2;
+} -sqlbody {
+  BEGIN;
+  CREATE TABLE t1(a,b,c);
+  CREATE TABLE test2.t2(a,b,c);
+  COMMIT;
+} -exclude $ex
+
+# Test IO errors when replaying two hot journals from a 2-file 
+# transaction. This test only runs on UNIX.
+ifcapable crashtest {
+  if {![catch {sqlite3 -has_codec} r] && !$r} {
+    do_ioerr_test ioerr-6 -tclprep {
+      execsql {
+        ATTACH 'test2.db' as aux;
+        CREATE TABLE tx(a, b);
+        CREATE TABLE aux.ty(a, b);
+      }
+      set rc [crashsql 2 test2.db-journal {
+        ATTACH 'test2.db' as aux;
+        PRAGMA cache_size = 10;
+        BEGIN;
+        CREATE TABLE aux.t2(a, b, c);
+        CREATE TABLE t1(a, b, c);
+        COMMIT;
+      }]
+      if {$rc!="1 {child process exited abnormally}"} {
+        error "Wrong error message: $rc"
+      }
+    } -sqlbody {
+      SELECT * FROM sqlite_master;
+      SELECT * FROM aux.sqlite_master;
+    }
+  }
+} 
+
+# Test handling of IO errors that occur while rolling back hot journal
+# files.
+#
+# These tests can't be run on windows because the windows version of 
+# SQLite holds a mandatory exclusive lock on journal files it has open.
+#
+btree_breakpoint
+if {$tcl_platform(platform)!="windows"} {
+  do_ioerr_test ioerr-7 -tclprep {
+    db close
+    sqlite3 db2 test2.db
+    db2 eval {
+      PRAGMA synchronous = 0;
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+      BEGIN;
+      INSERT INTO t1 VALUES(3, 4);
+    }
+    copy_file test2.db test.db
+    copy_file test2.db-journal test.db-journal
+    db2 close
+  } -tclbody {
+    sqlite3 db test.db
+    db eval {
+      SELECT * FROM t1;
+    }
+  } -exclude 1
+}
+
+# For test coverage:  Cause an I/O failure while trying to read a
+# short field (one that fits into a Mem buffer without mallocing
+# for space).
+#
+do_ioerr_test ioerr-8 -tclprep {
+  execsql {
+    CREATE TABLE t1(a,b,c);
+    INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
+  }
+  db close
+  sqlite3 db test.db
+} -sqlbody {
+  SELECT c FROM t1;
+}
+
+# For test coverage: Cause an IO error whilst reading the master-journal
+# name from a journal file.
+if {$tcl_platform(platform)=="unix"} {
+  do_ioerr_test ioerr-9 -tclprep {
+    execsql {
+      CREATE TABLE t1(a,b,c);
+      INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
+      BEGIN;
+      INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
+    }
+    copy_file test.db-journal test2.db-journal
+    execsql {
+      COMMIT;
+    }
+    copy_file test2.db-journal test.db-journal
+    set f [open test.db-journal a]
+    fconfigure $f -encoding binary
+    puts -nonewline $f "hello"
+    puts -nonewline $f "\x00\x00\x00\x05\x01\x02\x03\x04"
+    puts -nonewline $f "\xd9\xd5\x05\xf9\x20\xa1\x63\xd7"
+    close $f
+  } -sqlbody {
+    SELECT a FROM t1;
+  }
+}
+
+# For test coverage: Cause an IO error during statement playback (i.e. 
+# a constraint).
+do_ioerr_test ioerr-10 -tclprep {
+  execsql {
+    BEGIN;
+    CREATE TABLE t1(a PRIMARY KEY, b);
+  }
+  for {set i 0} {$i < 500} {incr i} {
+    execsql {INSERT INTO t1 VALUES(:i, 'hello world');}
+  }
+  execsql {
+    COMMIT;
+  }
+} -tclbody {
+
+  catch {execsql {
+    BEGIN;
+    INSERT INTO t1 VALUES('abc', 123);
+    INSERT INTO t1 VALUES('def', 123);
+    INSERT INTO t1 VALUES('ghi', 123);
+    INSERT INTO t1 SELECT (a+500)%900, 'good string' FROM t1;
+  }} msg
+
+  if {$msg != "column a is not unique"} {
+    error $msg
+  }
+}
+
+finish_test

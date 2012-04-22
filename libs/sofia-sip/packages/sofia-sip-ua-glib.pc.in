@@ -1,0 +1,14 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+libexecdir=@libexecdir@
+includedir=@includedir@
+include_sofiadir=@include_sofiadir@
+gobject=@HAVE_GOBJECT@
+
+Name: sofia-sip-ua-glib
+Description: Sofia-SIP library bindings for glib
+Version: @PACKAGE_VERSION@
+Requires: sofia-sip-ua, @SOFIA_GLIB_PKG_REQUIRES@
+Libs: -L${libdir} -lsofia-sip-ua-glib
+Cflags: -I@include_sofiadir@

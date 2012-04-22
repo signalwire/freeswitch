@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="mpf"
+	InheritedPropertySheets="apt.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)libs\mpf\include&quot;"
+		PreprocessorDefinitions="MPF_STATIC_LIB"
+	/>
+</VisualStudioPropertySheet>

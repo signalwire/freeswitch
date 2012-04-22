@@ -1,0 +1,59 @@
+; Code Composer Project File, Version 2.0 (do not modify or remove this line)
+
+[Project Settings]
+ProjectDir="C:\Speex\speex_14274\ti\speex_C55_test\"
+ProjectType=Executable
+CPUFamily=TMS320C55XX
+Tool="Compiler"
+Tool="CustomBuilder"
+Tool="DspBiosBuilder"
+Tool="Linker"
+Config="Debug"
+Config="Release"
+
+[Source Files]
+Source="..\..\libspeex\bits.c"
+Source="..\..\libspeex\cb_search.c"
+Source="..\..\libspeex\exc_10_16_table.c"
+Source="..\..\libspeex\exc_10_32_table.c"
+Source="..\..\libspeex\exc_20_32_table.c"
+Source="..\..\libspeex\exc_5_256_table.c"
+Source="..\..\libspeex\exc_5_64_table.c"
+Source="..\..\libspeex\exc_8_128_table.c"
+Source="..\..\libspeex\filters.c"
+Source="..\..\libspeex\gain_table.c"
+Source="..\..\libspeex\gain_table_lbr.c"
+Source="..\..\libspeex\lpc.c"
+Source="..\..\libspeex\lsp.c"
+Source="..\..\libspeex\lsp_tables_nb.c"
+Source="..\..\libspeex\ltp.c"
+Source="..\..\libspeex\modes.c"
+Source="..\..\libspeex\nb_celp.c"
+Source="..\..\libspeex\quant_lsp.c"
+Source="..\..\libspeex\sb_celp.c"
+Source="..\..\libspeex\speex.c"
+Source="..\..\libspeex\speex_callbacks.c"
+Source="..\..\libspeex\vbr.c"
+Source="..\..\libspeex\vq.c"
+Source="..\..\libspeex\window.c"
+Source="..\..\ti\testenc-TI-C5x.c"
+Source="speex_C55_test.cmd"
+
+["Compiler" Settings: "Debug"]
+Options=-g -q -o3 -fr"..\ti\speex_C55_test\Debug" -i"..\ti" -i"..\include" -d"_DEBUG" -d"CONFIG_TI_C55X" -d"HAVE_CONFIG_H" -mn
+
+["Compiler" Settings: "Release"]
+Options=-q -o2 -fr"..\ti\speex_C55_test\Release" -i"..\ti" -i"..\include" -d"CONFIG_TI_C55X" -d"HAVE_CONFIG_H" -mn
+
+["DspBiosBuilder" Settings: "Debug"]
+Options=-v55
+
+["DspBiosBuilder" Settings: "Release"]
+Options=-v55
+
+["Linker" Settings: "Debug"]
+Options=-q -c -m".\Debug\speex_C55_test.map" -o".\Debug\speex_C55_test.out" -w -x
+
+["Linker" Settings: "Release"]
+Options=-q -c -m".\Release\speex_C55_test.map" -o".\Release\speex_C55_test.out" -w -x
+

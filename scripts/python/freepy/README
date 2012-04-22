@@ -1,0 +1,40 @@
+
+DESCRIPTION
+===========
+
+Socket library to interface w/ freeswitch mod_event_socket from Twisted python applications.  Used by WikiPBX for all non-http communication w/ Freeswitch.
+
+Install
+=======
+
+See INSTALL
+
+Using/Examples
+==============
+
+The WikiPBX project uses this lib heavily, so looking at that code (wikipbx.org) is a good example until more docs are added.
+
+
+Debugging
+=========
+
+Set FREEPY_DEBUG_ON = True in globals.py
+
+TODO: pull this from an environment variable or a config file
+
+Rebulding State Machines
+========================
+
+(you only need to do this if you changed an .sm file)
+
+for each .sm file:
+
+java -jar /usr/src/smc/bin/Smc.jar -python -g THE.sm
+
+and loginrequest.sm -> loginrequest_sm.py with the state machine.
+
+TODO: create a Makefile to do this stuff
+TODO: use Miro Samek's HSM framework instead of SMC
+
+
+

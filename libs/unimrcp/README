@@ -1,0 +1,51 @@
+INTRODUCTION
+============
+UniMRCP is an open source MRCP Project.
+
+
+INSTALLATION
+============
+See the file "INSTALLATION" for installation tips.
+
+
+DOCUMENTATION
+=============
+See the directory "docs/dox" for doxygen generated documentation.
+See the directory "docs/ea" for UML based design concepts
+   (Enterpise Architect generated HTML pages).
+
+
+REFERENCES
+==========
+Website:
+   http://www.unimrcp.org
+
+Project Home:
+   http://code.google.com/p/unimrcp
+
+Wiki:
+   http://code.google.com/p/unimrcp/w/list
+
+Issue Tracker:
+   http://code.google.com/p/unimrcp/issues/list
+
+Discussion Group:
+   http://groups.google.com/group/unimrcp
+
+Version Control Repository (SVN):
+   http://unimrcp.googlecode.com/svn/trunk
+
+UML Documentation File (Enterpise Architect):
+   http://unimrcp.googlecode.com/svn/misc/unimrcp.eap
+
+Commit Monitor:
+   http://code.google.com/p/unimrcp/source/list
+   http://groups.google.com/group/unimrcp-svn-commits
+
+
+LICENSING
+=========
+UniMRCP is licensed under terms of the Apache 2.0 license.
+See the file "LICENSE" for more information.
+
+Copyright 2008 - 2010 Arsen Chaloyan

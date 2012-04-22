@@ -1,0 +1,47 @@
+# Recursive Makefile targets
+# --------------------------
+
+all-recursive: built-sources-recursive
+built-sources: built-sources-recursive
+clean-built-sources: clean-built-sources-recursive
+valcheck: valcheck-recursive
+
+SOFIA_RECURSIVE = \
+	valcheck-recursive \
+	checklib-recursive
+
+SOFIA_DIST_RECURSIVE = \
+	built-sources-recursive \
+	clean-built-sources-recursive
+
+$(SOFIA_RECURSIVE):
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
+	  || eval $$failcom; \
+	done; \
+	test -z "$$fail"
+
+$(SOFIA_DIST_RECURSIVE):
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
+	  || eval $$failcom; \
+	done; \
+	test -z "$$fail"

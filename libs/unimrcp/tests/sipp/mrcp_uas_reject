@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE scenario SYSTEM "sipp.dtd">
+
+
+<scenario name="MRCP Rejected Offer UAS">
+  <!-- By adding rrs="true" (Record Route Sets), the route sets         -->
+  <!-- are saved and used for following messages sent. Useful to test   -->
+  <!-- against stateful SIP proxies/B2BUAs.                             -->
+  <recv request="INVITE" crlf="true">
+  </recv>
+
+  <!-- The '[last_*]' keyword is replaced automatically by the          -->
+  <!-- specified header if it was present in the last message received  -->
+  <!-- (except if it was a retransmission). If the header was not       -->
+  <!-- present or if no message has been received, the '[last_*]'       -->
+  <!-- keyword is discarded, and all bytes until the end of the line    -->
+  <!-- are also discarded.                                              -->
+  <!--                                                                  -->
+  <!-- If the specified header was present several times in the         -->
+  <!-- message, all occurences are concatenated (CRLF seperated)        -->
+  <!-- to be used in place of the '[last_*]' keyword.                   -->
+
+  <send retrans="500">
+    <![CDATA[
+
+      SIP/2.0 404 OK
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Contact: <sip:[local_ip]:[local_port];transport=[transport]>
+      Content-Length: 0
+    ]]>
+  </send>
+
+  <recv request="ACK"
+        optional="true"
+        rtd="true"
+        crlf="true">
+  </recv>
+
+  <!-- definition of the response time repartition table (unit is ms)   -->
+  <ResponseTimeRepartition value="10, 20, 30, 40, 50, 100, 150, 200"/>
+
+  <!-- definition of the call length repartition table (unit is ms)     -->
+  <CallLengthRepartition value="10, 50, 100, 500, 1000, 5000, 10000"/>
+
+</scenario>

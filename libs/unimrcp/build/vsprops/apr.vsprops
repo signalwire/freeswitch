@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="apr"
+	InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unibase.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(AprDir)\include&quot;;&quot;$(AprUtilDir)\include&quot;"
+	/>
+	<UserMacro
+		Name="AprDir"
+		Value="$(LibRootDir)libs\apr"
+	/>
+	<UserMacro
+		Name="AprUtilDir"
+		Value="$(LibRootDir)libs\apr-util"
+	/>
+	<UserMacro
+		Name="AprIconvDir"
+		Value="$(LibRootDir)libs\apr-iconv"
+	/>
+</VisualStudioPropertySheet>

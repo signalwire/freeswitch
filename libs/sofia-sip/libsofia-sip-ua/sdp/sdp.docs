@@ -1,0 +1,120 @@
+/* -*- c -*- */
+
+/**@MODULEPAGE "sdp" - SDP Module
+
+@section sdp_meta Module Meta Information
+
+The @b sdp module provides a simple "C" parser interface for SDP [@RFC2327],
+<em>Session Description Protocol</em>. The parser also implements support
+for IPv6 addresses as per @RFC3266. The @RFC4566 should be supported, but we
+have not checked since draft-eitf-mmusic-sdp-new-17 or so.
+
+@CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@STATUS @SofiaSIP Core library
+
+@LICENSE LGPL
+
+Contributor(s):
+- Pekka Pessi <Pekka.Pessi@nokia.com>
+- Jari Selin <Jari.Selin@nokia.com>
+
+@section sdp_parser SDP Parser
+
+SDP parser parses an SDP message and converts it to internally used SDP
+structure #sdp_session_t.
+
+Typically, the SDP parser is used as follows:
+
+@code
+ sdp_parser_t *parser = sdp_parse(home, message, len, 0);
+
+ if (!sdp_session(parser)) {
+   show(sdp_parsing_error(parser));
+ } else {
+   sdp_session_t *sdp = sdp_session(parser);
+@endcode
+  Act upon session description, then free the parser:
+@code
+ }
+ sdp_parser_free(parser);
+@endcode
+
+There are various flags indicating what kind of SDP variants the sdp_parse()
+accepts. The sanity check run after parsing can be disabled by including
+flag #sdp_f_insane. The parser can be used to parse syntactically vague
+configuration files when using flag #sdp_f_config. The parser will then
+accept * for media, protocol and port, for instance.
+
+@section sdp_printer SDP Printer
+
+SDP printer converts internally used SDP structure #sdp_session_t to the
+standard SDP format.
+
+Typically, the SDP printer is used as follows:
+@code
+ char buffer[512];
+ sdp_printer_t *printer = sdp_print(home, session, buffer, sizeof(buffer), 0);
+
+ if (sdp_message(printer)) {
+   char const *msg = sdp_message(printer);
+   size_t msgsize = sdp_message_size(printer);
+@endcode
+
+At this point, application can use the SDP message contents, e.g., it can
+send them to network, and then free the message:
+@code
+ }
+ else {
+   show_critical_error(sdp_printing_error(printer));
+ }
+ sdp_printer_free(printer);
+@endcode
+
+@section sdp_example Example
+
+Examples on using SDP parser can be found from test_sdp.c and soa.c. Here is
+an simple example, which decodes an SDP text in @a original, increments the
+version number in the origin line, and encodes the SDP description again to
+@a buf.
+
+@code
+size_t increment_sdp_version(char buf[], size_t bsize,
+                             char const *original, size_t osize)
+{
+  su_home_t home[1] = { SU_HOME_INIT(home) };
+  sdp_parser_t *parser = sdp_parse(home, original, osize, 0);
+  sdp_printer_t *printer;
+  size_t retval = 0;
+
+  if (sdp_session(parser)) {
+    sdp_session_t *sdp = sdp_session(parser);
+
+    sdp->sdp_origin->o_version++;
+
+    printer = sdp_print(home, sdp, buf, bsize, 0);
+
+    if (sdp_message(printer)) {
+      retval = sdp_message_size(printer);
+    }
+    else {
+      fprintf(stderr, "increment_sdp_version: %s\n",
+              sdp_printing_error(printer));
+    }
+
+    sdp_printer_free(printer);
+  }
+  else {
+    fprintf(stderr, "increment_sdp_version: %s\n",
+            sdp_parsing_error(parser));
+  }
+
+  sdp_parser_free(parser);
+
+  su_home_deinit(home);
+
+  return retval;
+}
+@endcode
+
+*/

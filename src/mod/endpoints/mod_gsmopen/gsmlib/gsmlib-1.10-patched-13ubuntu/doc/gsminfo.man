@@ -1,0 +1,56 @@
+.\" -*- eval: (nroff-mode) -*-
+.de TQ
+.br
+.ns
+.TP \\$1
+..
+.\" Like TP, but if specified indent is more than half
+.\" the current line-length - indent, use the default indent.
+.de Tp
+.ie \\n(.$=0:((0\\$1)*2u>(\\n(.lu-\\n(.iu)) .TP
+.el .TP "\\$1"
+..
+.TH GSMINFO 7 "##DATE##" "gsmctl v##VERSION##"
+.PP
+.SH NAME
+gsminfo \- GSM general information
+.PP
+.SH DESCRIPTION
+\fIgsmlib\fP is a library to access GSM mobile phones through GSM
+modems or via IrDA devices. In the \fIgsmlib\fP documentation and error
+messages the following abbreviations are used:
+.TP .7i
+\fBME\fP
+Mobile Equipment. The mobile phone, usually.
+.TP .7i
+\fBSC\fP
+Service Centre. In the context of this documentation, the center
+responsible for sending and relaying SMs.
+.TP .7i
+\fBSM\fP
+Short Message.
+.TP .7i
+\fBSME\fP
+Short Message Equipment. Usually the mobile phone.
+.TP .7i
+\fBTA\fP
+Terminal Adapter. This can be a GSM modem PC card or it can be
+integrated into the ME.
+.TP .7i
+\fBTE\fP
+Terminal Equipment. This is the device to which the TA is connected,
+usually the computer.
+.PP
+.SH AUTHOR
+Peter Hofmann <software@pxh.de>
+.PP
+.SH COPYRIGHT
+Copyright \(co 1999 Peter Hofmann
+.PP
+.SH "SEE ALSO"
+.BR gsmctl(1),
+.BR gsmpb(1),
+.BR gsmsendsms(1),
+.BR gsmsmsd(8),
+.BR gsmsmsstore(1).
+

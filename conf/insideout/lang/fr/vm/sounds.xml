@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<include><!--This line will be ignored it's here to validate the xml and is optional -->
+  <macro name="voicemail_enter_id">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="Entrez votre Identification, suivi par $1."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_enter_pass">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="Entrez votre code, suivi par $1."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_fail_auth">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="Identification incorrect."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_hello">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="Bienvenu sur votre répondeur."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_goodbye">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="Aurevoir."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_abort">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="Trop de tentatives échouées."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_message_count">
+    <input pattern="^([^:]+):([^:]+):{0,1}(.*)">
+      <match>
+	<action function="speak-text" data="Vous avez $1 $2 message$3 dans le répertoir ${voicemail_current_folder}."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_menu">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+	<action function="speak-text" 
+		data="Pour écouter les nouveaux message, tappez $1, Pour écouter les messages enregistrés, tappez $2, Pour les options avancées, tappez $3, pour sortir, tappez $4."/>
+      </match>
+    </input>
+  </macro>
+
+
+  <macro name="voicemail_config_menu">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+	<action function="speak-text" 
+		data="pour enregistrer un message d'accueil, tappez $1, Pour choisir votre message d'accueil, tappez $2, Pour enregistrer votre nom, tappez $3, pour retourner au menu principale, tappez $4."/>
+      </match>
+    </input>
+  </macro>
+
+
+  <macro name="voicemail_record_name">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="enregistrez votre nom au bip, puis tappez une touche ou arretez de parler pour arreter l'enregistrement."/>
+
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_file_check">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+	<action function="speak-text" 
+		data="Pour écouter l'enregistrement, tappez $1, pour sauvegarder l'enregistrement, tappez $2, Pour réenregistrer, tappez $3."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_urgent_check">
+    <input pattern="^([0-9#*]):([0-9#*])$">
+      <match>
+	<action function="speak-text" 
+		data="Pour indiquer ce messange comme étant urgent, tappez $1, Pour continuer, tappez $2."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_listen_file_check">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+	<action function="speak-text" 
+		data="Pour réécouter l'enregistrement à nouveau, tappez $1, Pour sauvegarder l'enregistrement, tappez $2,  Pour supprimer l'enregistrement, tappez $3, pour transférer l'enregistrement à votre mail, tappez $4."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_choose_greeting">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="choisissez un message d'accueil entre 1 et 3."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_choose_greeting_fail">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="valeur incorrect."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_greeting">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="enregistrez votre message d'accueil au bip, puis tappez une touche ou arretez de parler pour arreter l'enregistrement."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_message">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="enregistrez votre message au bip, puis tappez une touche ou arretez de parler pour arreter l'enregistrement."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_greeting_selected">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="message d'accueil numero $1 selectionné."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_play_greeting">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="$1 n'est pas valide."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_number">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="$1"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_message_number">
+    <input pattern="^([a-z]+):(.*)$">
+      <match>
+	<action function="speak-text" data="$1 message numero $2."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_phone_number">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="$1."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_name">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="$1."/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_ack">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="message $1"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_date">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="$strftime($1|%A, %B %d %Y, %I %M %p)"/>
+      </match>
+    </input>
+  </macro>
+
+</include><!--This line will be ignored it's here to validate the xml and is optional -->

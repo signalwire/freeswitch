@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<!DOCTYPE fax-tests SYSTEM "./fax-tests.dtd">
+<fax-tests>
+<config>
+    <path type="IMAGE" value="../test-data/etsi/fax"/>
+</config>
+<messages>
+    <!-- TCF = 2700 bytes at 14400, 2250 at 12000, 1800 at 9600, 1350 at 7200, 900 at 4800 or 450 at 2400 -->
+    <!-- Bad TCF == 10101010.... -->
+    <!-- slow HDLC preamble == 37 flag bytes -->
+    <!-- slow HDLC inter-frame flag sequence == 1 flag byte -->
+    <!-- slow HDLC end flag sequence == 5 flag bytes -->
+    <!-- synchronisation sequence == 250ms of zeros. = 450 bytes at 14400, 375 at 12000, 300 at 9600, 225 at 7200, 150 at 4800 or 75 at 2400 -->
+    <!-- fast HDLC inter-frame flag sequence == 1 flag byte -->
+    <!-- fast HDLC end flag sequence == 10 flag bytes -->
+    <!-- STAIRSTEP image is 1728x1728 pixels. Its is about 15k, so an average of 68.2 bits per row. To
+         cook it as a 31k page requires a min_bits of 141. To cook it as a 63k page requires a min_bits of
+         286. To cook it as a 64k page requires a min_bits of 291 -->
+</messages>
+<test-group name="Supplementary">
+    <test name="PPS-MPS-lost-PPS">
+        <!-- Tester calls DUT and sends one 31k byte STAIRSTEP page and one 15k byte STAIRSTEP page. -->
+        <step type="CALL"/>
+
+        <!--<step dir="T" type="CNG"/>-->
+
+        <step dir="R" type="CED"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..." timeout="60000"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DCS" value="FF C8 41 00 50 1F 30"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="TCF" modem="V.27ter/4800" value="900"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="CFR" value="FF C8 21"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 00 08"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-MPS" value="FF C8 7D 72 00 80 08"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="SILENCE"/>
+
+        <!-- Repeat the last chunk, as though we missed the MCF -->
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-MPS" value="FF C8 7D 72 00 80 08"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_white.tif"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-MPS" value="FF C8 7D 72 80 00 08"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
+        <step dir="T" type="POSTAMBLE"/>
+    </test>
+</test-group>
+</fax-tests>

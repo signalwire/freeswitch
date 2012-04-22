@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<title>Xmlrpc_transport User Manual</title>
+<body>
+
+<p><b>xmlrpc_transport</b> transports data to a server as if to make an
+XML-RPC remote procedure call and displays the response from the server.
+
+<p>You supply the call in XML form on Standard Input and get the response
+in XML form on Standard Output.  <b>xmlrpc_transport</b> doesn't really know
+anything about XML; it sends the characters you supply and displays the
+characters it gets back.
+
+<p><b>xmlrpc_transport</b> uses the lower levels of the XML-RPC For C/C++
+client libraries.
+
+<p>This program is mainly useful for debugging and learning about
+XML-RPC servers and the XML-RPC For C/C++ client XML transports.
+
+
+<h2>Examples</h2>
+
+&lt;
+
+<pre>
+<tt>
+     $ xmlrpc_transport http://localhost:8080/RPC2 &lt;&lt;-EOF
+        &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+        &lt;methodCall&gt;
+        &lt;methodName&gt;sample.add&lt;/methodName&gt;
+        &lt;params&gt;
+        &lt;param&gt;&lt;value&gt;&lt;i4&gt;5&lt;/i4&gt;&lt;/value&gt;&lt;/param&gt;
+        &lt;param&gt;&lt;value&gt;&lt;i4&gt;7&lt;/i4&gt;&lt;/value&gt;&lt;/param&gt;
+        &lt;/params&gt;
+        &lt;/methodCall&gt;
+        EOF
+     &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+     &lt;methodResponse&gt;
+     &lt;params&gt;
+     &lt;param&gt;&lt;value&gt;&lt;i4&gt;12&lt;/i4&gt;&lt;/value&gt;&lt;/param&gt;
+     &lt;/params&gt;
+     &lt;/methodResponse&gt;
+</tt>
+</pre>
+
+<h2>Overview</h2>
+<p>
+<b>xmlrpc_transport</b>
+<i>url</i>
+[<b>-transport=</b><i>transportname</i>]
+[<b>-username=</b><i>username</i> <b>-password=</b><i>password</i>]
+
+<P>Minimum unique abbreviation of option is acceptable.  You may use double
+hyphens instead of single hyphen to denote options.  You may use white
+space in place of the equals sign to separate an option name from its value.
+
+
+<h2>Arguments</h2>
+
+<dl>
+<dt><i>url</i>
+
+<dd>This is the URL of the XML-RPC server.  As XML-RPC uses HTTP, this
+must be an HTTP url.  However, if you don't specify a type (&quot;http:&quot;)
+in the URL, <b>xmlrpc_transport</b> assumes an &quot;http://&quot; prefix and a
+&quot;/RPC2&quot; suffix.  <b>RPC2</b> is the conventional file name for
+an XML-RPC responder.
+
+</dl>
+
+
+<h2>Options</h2>
+
+<dl>
+<dt><b>-transport=</b><i>transportname</i>
+
+<dd>This selects the XML transport facility (e.g. libwww) that
+<b>xmlrpc_transport</b> uses to perform the RPC.
+
+<p>The name <i>transportname</i> is one that the Xmlrpc-c programming
+library recognizes.  This is typically <b>libwww</b>, <b>curl</b>, and
+<b>wininet</b>.
+
+<p>By default, <b>xmlrpc_transport</b> lets the Xmlrpc-c library choose.
+
+<dt><b>-username=</b><i>username</i>
+<dt><b>-password=</b><i>password</i>
+
+<dd>These options, which must be used together, cause the client to
+authenticate itself to the server, if the server requires it, using
+HTTP Basic Authentication and the specified username and password.
+
+</dl>
+
+</body>
+

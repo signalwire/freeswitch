@@ -1,0 +1,55 @@
+This is the source code for XML-RPC for C/C++, called Xmlrpc-c for short.
+
+XML-RPC for C/C++ is programming libraries and related tools to help you
+write an XML-RPC server or client in C or C++.
+
+Documentation for the package is at
+
+  http://xmlrpc-c.sourceforge.net/doc
+
+See the Xmlrpc-c website at:
+
+  http://xmlrpc-c.sourceforge.net/
+
+
+PREREQUISITES
+-------------
+
+To build a useful Xmlrpc-c client library, you'll need to have at
+least one HTTP library.  Xmlrpc-c knows how to use W3C Libwww (Version
+5.3.2 or newer), Curl, and Wininet.  The configurator gives you the
+option of building libraries that use any or all of these, and
+defaults to every one you appear to have installed.  If you don't
+appear to have any installed, the configurator causes the build to
+omit client facilities altogether.
+
+Information about W3C Libwww, including how to get it are at
+<http://www.w3.org/Library>.
+
+For Curl, see <http://curl.haxx.se>.
+
+Wininet comes with Windows, and isn't available for any other platform.
+
+You also need an XML parser/builder library.  An old version of Expat
+is included in the package and used by default, so there's no actual
+prerequisite here.  But if you separately obtain Libxml2, you can
+configure the build to use that instead.  There's no really pressing
+reason to do that, though.
+
+BUILDING, INSTALLING
+--------------------
+
+See the file doc/INSTALL.
+
+In the simplest case, it's just a conventional
+
+  $ ./configure
+  $ make
+  $ make install
+
+
+ADDITIONAL INFORMATION
+----------------------
+
+See the doc/ directory of the source tree for information about the
+source code.  User documentation is on the web, as described above.

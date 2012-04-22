@@ -1,0 +1,741 @@
+/* -*- text -*- */
+
+/**@mainpage Sofia SIP User Agent Library - sofia-sip-ua
+
+@section Introduction
+
+This document contains automatically generated reference documentation
+for Sofia-SIP components. Some introductory material and
+pointers to the example code are also included.
+
+For a list of module specific pages, see @ref subdirs
+"source tree structure" or direct links to submodules:<br>
+<a href="nua/index.html">nua</a>
+<a href="su/index.html">su</a>
+<a href="features/index.html">features</a>
+<a href="soa/index.html">soa</a>
+<a href="sdp/index.html">sdp</a>
+<a href="nta/index.html">nta</a>
+<a href="tport/index.html">tport</a>
+<a href="sresolv/index.html">sresolv</a>
+<a href="sip/index.html">sip</a>
+<a href="msg/index.html">msg</a>
+<a href="url/index.html">url</a>
+<a href="stun/index.html">stun</a>
+<a href="iptsec/index.html">iptsec</a>
+<a href="nea/index.html">nea</a>
+<a href="nth/index.html">nth</a>
+<a href="http/index.html">http</a>
+<a href="bnf/index.html">bnf</a>
+<a href="ipt/index.html">ipt</a>
+
+@section who Contact Information
+
+You can download latest Sofia SIP from the project
+<a href="http://sofia-sip.sf.net">home page</a> at
+<a href="sf.net">Sourceforge.net</a>.
+
+Please contact us if you have questions regarding this software:
+
+<ul>
+<li>Pekka Pessi <Pekka.Pessi@nokia.com></li>
+<li>Kai Vehmanen <Kai.Vehmanen@nokia.com></li>
+</ul>
+
+Or post to the Sofia-SIP mailing list:
+
+<ul>
+<li>mailto:sofia-sip-devel@lists.sourceforge.net</li>
+<li>http://lists.sourceforge.net/lists/listinfo/sofia-sip-devel</li>
+</ul>
+
+*/
+
+/**@page building Source Tree Structure
+
+@section subdirs Directory Structure
+
+In libsofia-sip-ua, there are subdirectories for different modules listed
+below.
+
+Terminal and high-level libraries used for both signaling and media:
+
+Common runtime library:
+ - <a href="su/index.html">"su" - sockets, memory management, threads</a>
+ - <a href="sresolv/index.html">"sresolv" - Asynchronous DNS resolver</a>
+ - <a href="ipt/index.html">"ipt" - IPT utility library</a>
+
+SIP Signaling:
+ - <a href="nua/index.html">"nua" - SIP User Agent library</a>
+ - <a href="nea/index.html">"nea" - SIP Event API</a>
+ - <a href="iptsec/index.html">"iptsec" -
+    Digest authentication for HTTP and SIP</a>
+ - <a href="nta/index.html">"nta" - SIP transaction engine</a>
+ - <a href="tport/index.html">"tport" - Message transport</a>
+ - <a href="sip/index.html">"sip" - SIP messages and headers</a>
+ - <a href="msg/index.html">"msg" - Message handling </a>
+ - <a href="url/index.html">"url" - URL handling</a>
+ - <a href="bnf/index.html">"url" - low level parsing</a>
+
+HTTP subsystem:
+ - <a href="nth/index.html">"nth" - HTTP protocol engine</a>
+ - <a href="http/index.html">"http" - HTTP messages and headers</a>
+
+SDP processing:
+ - <a href="soa/index.html">"soa" - SDP Offer/Answer engine for SIP</a>
+ - <a href="sdp/index.html">"sdp" - SDP parser</a>
+
+Other:
+ - <a href="stun/index.html">"stun" - STUN library</a>
+
+Features provided by Sofia-SIP library:
+ - <a href="features/index.html">"features" - Features provided by Sofia SIP</a>
+
+Documentation:
+ - "docs" - Doxygen reference documentation
+
+*/
+
+/**
+@page styleguide C Style Guide
+
+This document gives general guidelines on generic C style and code
+formatting within Sofia-SIP. The guidelines include identifier naming
+conventions, indenting convention, and tool usage directions.
+
+Please note that C style is always a matter of taste.
+
+@section naming Naming Conventions
+
+Generally, identifiers within each module are prefixed with the name of
+that module. For instance, the functions within http parser module @b http
+have prefix @c http_. Identifiers composed of multiple words have an
+underscore "_" between the words, the words themselves are in lower
+case. For instance, http_request_create().
+
+Macros should be in upper case. File names should be in lower case using
+underscore as delimiter if needed.
+
+Normal typedefs have suffix @c _t, however, function types have suffix @c
+_f. The enum names also sometimes have @c _e, struct names have @c _s and
+union names @c _u.
+
+It is recommended that type itself is typedef'ed, not a pointer to the
+type. It should be clear from variable declaration if the variable is a
+pointer or not.
+
+@code
+typedef struct foo_s foo_t;
+typedef int f_fun(foo_t *f, char const *s);
+@endcode
+
+Struct and union members should have common prefix. For instance,
+@code
+struct foo_s {
+  int    f_len;
+  char  *f_name;
+  fun_f *f_fun;
+};
+@endcode
+
+This prefix makes it easier to find where members are used.
+
+@section formatting Indenting and Formatting code
+
+Indentation in Sofia-SIP C code generally follows the @e K&R style with indent
+of 2 characters (so you can use the default "GNU" c-style in Emacs). The
+maximum line length should be 80 characters.
+
+For example,
+
+@code
+void kluge(int foo)
+{
+  if (foo) {
+    bar();
+  }
+  else {
+    switch (baz()) {
+    case a:
+      eeny();
+      break;
+    case b:
+      meeny();
+      break;
+    default:
+      moe();
+      break;
+    }
+  }
+}
+@endcode
+
+The default indentation can be achieved with GNU indent with options
+@code
+-nbad -bap -bbo -nbc -br -brs -c33 -cd33 -ncdb -ce -ci2 -cli0 -cp33 -cs
+-d0 -di1 -nfc1 -nfca -hnl -i2 -ip0 -l79 -lp -npcs -nprs -npsl -saf -sai
+-saw -nsc -nsob -nss
+@endcode
+
+Loops without condition use @c for @c (;;) instead of @c while @c (1).
+
+@code
+  for (;;) {
+    foo();
+    if (bar())
+      break;
+    baz();
+  }
+@endcode
+
+There should be whitespace on both sides of infix operators, except
+<code>.</code> or <code>-></code>, which require no space, or
+<code>,</code> (comma) which requires space only after). There should be
+whitespace between a keyword and parenthesis following it, but no
+whitespace between an identifier and parenthesis following it. E.g.,
+
+@code
+  while (i++ < n)
+    baz();
+  for (;;) {
+    x->x_foo();
+    if (bar())
+      break;
+    z.z_baz++;
+  }
+  return (13 * i);
+@endcode
+
+ */
+
+/**
+@page programming Programming Guide
+
+@section porting Writing Portable Code
+
+Most of Sofia-SIP software is written as portable. All core modules are
+(or at least should be) written in ANSI C 89 with some ANSI C 99
+features. If there are platform specific parts, they are collected to
+separate C files and isolated from the rest of the software with a
+wrapper interface.
+
+SU module handles abstraction to OS specific functionality such as
+memory management, sockets, threads and time functions.
+
+@subsection ansi_99 ANSI C 99 features
+
+The following ANSI C 99 features are to be used in Sofia-SIP software:
+- Integer types
+- functions va_copy() and snprintf()
+
+The following ANSI C 99 features shall not be used in Sofia-SIP software:
+- definition of a variable in the middle of function code.
+  (so always define your variables in the beginning of the block)
+
+@subsection port_ints Integer Types
+
+As you should know, the length of native storage size depends on hardware,
+OS and compiler. This means in practice that the length of int or long is
+not necessarily 32 bits. As a consequence, you need to make sure that the
+value you intend to store in the int, can actually fit in int on different
+platforms. As a rule of thumb, if the integer value can exceed 8 bits, you
+should use types that have a defined length.
+
+Nevertheless its OK to use native integer types if you bear in mind
+what was said above. The original reason for having only native
+data type was performance. The int type is always stored in the
+fastest (and usually biggest size) possible.
+
+Never assume anything on the length of the type. Alway use sizeof()
+operator to find out the length.
+
+C 99 standard defines the following fixed length data types:
+
+- int64_t
+- uint64_t
+- int32_t
+- uint32_t
+- int16_t
+- uint16_t
+- int8_t
+- uint8_t
+
+To use these data types you must include the <sofia-sip/su_types.h> header, which
+takes care of including correct file. If @b su includes are not available,
+you must include the following code segment to each file where you plan to
+use them:
+
+@code
+#if HAVE_STDINT_H
+#include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#else
+#error Define HAVE_STDINT_H as 1 if you have <stdint.h>, \
+ or HAVE_INTTYPES_H if you have <inttypes.h>
+#endif
+@endcode
+
+@subsection port_byte_sex Byte order
+
+The host byte order on different platforms vary. When you do only
+local processing, need not to worry about the byte order. But as
+soon as you start writing code that send or receives anything to
+the network, you need to start worrying.
+
+If you wish to convert the byte order, it is simply done by calling
+one the following functions:
+
+The htonl() function converts the unsigned integer hostlong from
+host byte order to network byte order.
+
+The htons() function converts the unsigned short integer hostshort
+from host byte order to network byte order.
+
+The ntohl() function converts the unsigned integer netlong from
+network byte order to host byte order.
+
+The ntohs() function converts the unsigned short integer netshort
+from network byte order to host byte order.
+
+You need to include <netinet/in.h> or <sofia-sip/su.h> to use these functions.
+
+@subsection port_struct Packing structures
+
+By default, compilers usually arrange structures so that they are
+quick to access. This means that most fields in the structure start
+at the 32 bit boundary. If you need to conserve memory, you may use
+structure packing.
+
+To tell the compiler that you only need certain amount of bits to
+store a variable, you can use bit-fields. Compiler may or may not
+pack the bit-fields.
+
+@code
+struct foo {
+  unsigned bar:5;
+  unsigned foo:2;
+  unsigned :0;
+  int      something;
+}
+@endcode
+
+If compiler decides to pack this structure, this code generates a
+structure that has @a bar and @a foo in the first seven bits, and then
+@a something beginning from the next 32 bit boundary.
+
+One problem arises when using packed bit-fields: on ARM it is
+generally not possible to access a 32 bit field that does not start from
+the 32-bit boundary. Hence the example has the :0 padding member in the
+structure. Seems handy but beware: initialization of this structure fails
+on some ARM gcc compilers. (Ask Kai Vehmanen for details).
+
+A way to force packing of a structure is to use preprocessor
+directive @c @#pragma(pack). This directive is compiler specific, so if
+you plan to write truly portable code, you cannot use it. We have
+used it in some parts of the Sofia-SIP though. Only alternative is to
+write functions that fetch the desired bits from a 32 bit field
+with bit operations; not very handy and error prone.
+
+The same aligment problem also arises if you cast for example char
+buffer to a int32_t. You can only read int32_t from the 32bit boundary
+on ARM platform. So be careful.
+
+As a conclusion, when using bit-fields and stucture packing, beware
+of the pitfalls. If you don't really need to use them (as in parsing
+binary protocols), don't use them.
+
+@section file_organization File and Directory Structure
+
+A Sofia-SIP library module can be defined as a subdirectory under the
+libsofia-sip-ua directory hierarchy that contains a file \<modulename\>.docs
+(where the \<modulename\> of course referes to the actual name of
+the module).
+
+In case you like to start developing a new module, please
+contact Sofia-SIP development team so that they can help you to set up
+the basic module for you.
+
+An overview of the contents of a module directory:
+  - file \<modulename\>.docs \n
+    Main documentation file for the module. See @ref module_docs
+    for more information
+  - subdirectory pictures \n
+    Contains any pictures/images
+    that are needed by the module documentation. The
+    file formats to use are GIF (for html pages) and
+    EPS (for latex). If some program (e.g. MS Visio) is
+    used to create the pictures, also the original
+    files must be stored here.\n
+    (Note that old modules may have "images" subdirectory instead of
+    "pictures")
+  - files Makefile.am \n
+    See section @ref build "dealing with GNU Autotools" below.
+  - (optionally) source code file(s) of the module and module tests.
+    The source code file(s) can also be located in subdirectories if necesary.
+
+
+@section oo_with_c Writing Object-Oriented Code
+
+While C does not provide any special object-oriented features on its own, it
+is possible to program in object-oriented way using C, too. Sofia code make
+use of many object-oriented features while being written entirely in C.
+
+@subsection oo_hiding Data Hiding
+
+Data hiding is a practice that makes separation between two modules very
+clear. Outside code cannot directly access the data within a module, but it
+has to use functions provided for that purpose. Data hiding also makes it
+easier to define a protocol between two objects - all communication happens
+using function calls.
+
+How to implement data hiding in C? Easiest answer is to only declare data
+structures in the header files, not to define them. We have a typedef #msg_t
+for @link msg_s struct msg_s @endlink in <sofia-sip/msg.h>, but the actual
+structure is defined in "msg_internal.h". Programs outside @b msg module
+does not have access to the @link msg_s struct msg_s @endlink, but they have
+to to access the #msg_t object through method functions provided in
+<sofia-sip/msg.h>. The @b msg implementation is also free to change the
+internal layout of the structure, only keeping the function interface
+unmodified.
+
+@subsection oo_interface Interfaces
+
+Abstract interface is another object-oriented practice used in Sofia. Parser
+headers, defined in <sofia-sip/msg_types.h>, is a good example of abstract
+interface. The type for message headers, #msg_header_t, is defined using two
+C structures @link msg_common_s struct msg_common_s @endlink
+(#msg_common_t), and @link msg_hclass_s struct msg_hclass_s @endlink
+(#msg_hclass_t).
+
+Abstract interface is achieved using virtual function table in #msg_hclass_t
+structure, bit like C++ typically implements abstract classes and virtual
+functions. For implemenation of each header, the function table is
+initialized with functions responsible for decoding, encoding and
+manipulating the header structure. Unlike C++, the class of the object
+(#msg_hclass_t) is represented by a real data structure which also contains
+header-specific data, like header name.
+
+@dontinclude sip_basic.c
+@skipline msg_hclass_t sip_contact_class
+@skip {{
+@until }};
+
+@subsection oo_derived Inheritance and Derived Objects
+
+Inheritance is a object-oriented practice that has limited use in Sofia.
+Most common example of inheritance is use of #su_home_t. Many objects are
+derived from #su_home_t, which means that they can use the various
+home-based memory management functions from <su_alloc.h>.
+
+In this sence, inheritance means that a pointer to a derived object can be
+casted as a pointer to a base object. In other words, the derived object
+must have the base object at the beginning of its memory area:
+
+@code
+struct derived
+{
+  struct base base[1];
+  int         extra;
+  char       *data;
+};
+@endcode
+
+There are three alternatives to cast a pointer to derived to a pointer to
+base:
+@code
+struct base *base1 = (struct base *)derived;
+struct base *base2 = &derived->base;
+struct base *base3 = derived->base;
+@endcode
+The third alternative works because base was used as a 1-element array.
+
+@subsection oo_templates Templates
+
+There are a few template types implemented as macros in Sofia libraries.
+They include hash table, defined in <sofia-sip/htable.h>, which can be used
+to define hash tables types and accessor functions for different object, and
+red-black tree, defined in <sofia-sip/rbtree.h>.
+
+@section memory Memory Management
+
+The home-based memory management is useful when a lot of memory blocks are
+allocated for given task. The allocations are done via the memory home,
+which keeps a reference to each allocated memory block. When the memory
+home is then freed, it will free all memory blocks to which it has
+reference. This simplifies application logic because application code does
+not need to keep track of the allocated memory and free every allocated block
+separately.
+
+See documentation of <sofia-sip/su_alloc.h> and @ref su_alloc "memory managment tutorial"
+for more information of memory management services.
+
+@subsection contextdata Memory management of context data
+
+A typical example of use of a memory home is to have a memory home structure
+(#su_home_t) as part of operation context information structure.
+
+@code
+  /* context info structure */
+  struct context {
+    su_home_t  ctx_home[1];      /* memory home */
+    other_t   *ctx_other_stuff;  /* example of memory areas */
+    ...
+  };
+
+  /* context pointer */
+  struct context *ctx;
+
+  /* Allocate memory for context structure and initialize memory home */
+  ctx = su_home_clone(NULL, sizeof (struct context));
+
+  /* Allocate memory and register it with memory home */
+  ctx->ctx_other_stuff = su_zalloc(ctx->ctx_home, sizeof(other_t));
+
+  ... processing and allocating more memory ...
+
+  /* Release registered memory areas, home, and context structure */
+  su_home_zap(ctx->ctx_home);
+
+@endcode
+
+@subsection combining Combining allocations
+
+Another place where home-based memory management makes programmers
+life easier is case where a sub-procedure makes multiple memory allocations
+and, in case the sub-procedure fails, all the allocations must be released
+and, in case the sub-procedure is succesfull, all allocations must be
+controlled by upper level memory management.
+
+@code
+  /* example sub-procedure. top_home is upper-level memory home */
+  int sub_procedure( su_home_t *top_home, ... )
+  {
+    su_home_t temphome[1] = { SU_HOME_INIT(temphome) };
+
+    ... allocations and other processing ...
+
+    /* was processing successfull ? */
+    if (success) {
+      /* ok -> move registered allocated memory to upper level memory home */
+      su_home_move( top_home, temphome );
+    }
+    /* destroy temporary memory home (and registered allocations) */
+    /* Note than in case processing was succesfull the memory     */
+    /* registrations were already moved to upper level home.      */
+    su_home_deinit(temphome);
+
+    /* return ok/not-ok */
+    return success;
+  }
+@endcode
+
+@section testing Testing Your Code
+
+See <sofia-sip/tstdef.h> for example of how to write module tests with macros provided
+by Sofia.
+
+Here are some ideas of what you should test:
+- "Smoke test" \n
+  See that the module compiles, links and executes.
+- Module API functions should be tested with\n
+  - valid args
+  - not valid args
+- Aim for 100% line coverage\n
+  (If there is a line of code that you have not tested, you don't know
+  if its working.) \n
+  For selected part of code you should also aim for
+  100% branch/path coverage.\n
+  But be anyway reasonable with these because in practise complete
+  coverage is next to impossible to achive (so 80% is ok in practise).
+- Create test to check assumptions and/or tricks used in code.\n
+  For example if you rely on some compiler feature, create a test that
+  will fail with a compiler that does not have that feature.
+
+@subsection check Running Module Tests
+
+Automake, which is used to build Sofia SIP, has builtin
+support for unit tests. To add an automatically run test to your module,
+you just have to add the following few lines to your module's Makefile.am
+(of course, you have to write the test programs, too):
+
+@code
+TESTS = test_foo test_bar
+
+check_PROGRAMS = test_foo test_bar
+
+test_foo_SOURCES = foo.c foo.h
+test_foo_LDADD = -L. -lmy
+
+test_bar_SOURCES = bar.c bar.h
+test_foo_LDADD = -L. -lmy
+@endcode
+
+Each test program should either return zero for success or a non-zero
+error code in its main function. Now when you run "make check",
+@b my_test_foo and @b my_test_bar will be built and then run.
+Make will print a
+summary of how the tests went. As these tests are run from the build
+system, the tests must be non-interactive (no questions asked) and not
+rely on any files that are not in version control system.
+
+Sofia SIP's top-level makefile contains a recursive check target, so
+you can use "cd sofia-sip ; make check" to run all the existing tests
+with a single command.
+
+@section build Dealing with GNU Autotools
+
+Sofia-SIP build system is based on the GNU tools automake, autoconf and
+libtool. This toolset has become the de-facto way of building Linux
+software. Because of this there is a lot of publicly available documentation
+about these tools, and of course, lots and lots of examples.
+
+A good introduction to these tools is available at
+<a href="http://developer.gnome.org/doc/books/WGA/generating-makefiles.html">
+developer.gnome.org</a>. <a href="http://sources.redhat.com/autobook">Autobook</a>
+provides more detailed documentation for autoconf and automake.
+The <a href="http://www.gnu.org/manual/make/">GNU make manual</a>
+is also a good source of information.
+
+@subsection autogen_sh autogen.sh
+
+At top-level there is a shell script called @b autogen.sh. It calls a
+convenient tool called @b autoreconf which will generate configure script
+for you. It also fixes the mode bits: the mode bits are not stored in
+<a href="http://darcs.net">darcs</a> version control system.
+
+@code
+$ sh autogen.sh
+$ ./configure ... with your configure options ...
+@endcode
+
+@subsection configure_ac configure.ac
+
+The @b configure.ac file (older autoconf versions used also @b configure.in)
+contains the primary configuration for autoconf. configure.ac contains
+checks for all external libraries, non-standard language and compiler
+features that are needed to build the target module.
+
+This file is created by the developer of the module.
+
+@subsection sofia_m4 m4 files
+
+Sofia-SIP's own autoconf macros are stored in the top-level direcry called @b
+m4. These macros, along with all other macros used by @b configure.ac, are
+copied into the module-specific @b aclocal.m4 file by an utility called
+aclocal.
+
+Contact Sofia-SIP development team, if you need changes to these files.
+
+@subsection aclocal_m4 aclocal.m4
+
+The aclocal.m4 contains the definitions of the autoconf macros used in
+@b configure.ac.
+
+This file is generated by aclocal command.
+
+@subsection Makefile_am Makefile.am
+
+Makefile.am is where you define what programs and libraries should
+be built, and also what source files are needed to create them.
+When you run automake, it creates the file Makefile.in.
+
+This file is created by the developer of the module.
+
+@subsection configure configure
+
+When you run configure script, it performs all the checks defined in
+@b configure.ac and then replaces all @b xxx.in files with equivalent
+@b xxx files. All @c @@FOO@@ variables in the source @b *.in files are
+replaced with values found during the configuration process. For instance
+the variable @c @@srcdir@@ in @b Makefile.in is replaced in @b Makefile
+with the source directory path (useful when compiling outside the main
+source tree).
+
+This file is generated by autoconf command.
+
+@subsection config_status config.status
+
+This script stores the last parameters given to configre command.
+If necessary you can rerun the last given configure script (with given
+parameters) by using command "./config.status -r" or
+"./config.status --recheck".
+
+This file is generated by configure script.
+
+@subsection config_cache config.cache
+
+This file contains results of the various checks that configure script
+performed. In case the configure script failed, you might try to
+delete this file and run the configure script again.
+
+This file is generated by configure script.
+
+@subsection Makefile Makefile
+
+The @b Makefile contains the actual rules how to build the target
+libraries and program. It is used by the @c make program. @b Makefile
+is generated from @b Makefile.in when you run @c autoconf command.
+Ensure that "make dist" and "make install" targets work.
+
+This file is generated by config.status and configure scripts.
+
+@subsection config_h config.h
+
+This file contains C language defines of various confurable issues.
+
+This file is generated by config.status and configure script.
+
+@subsection sofia_sip_configure_h sofia-sip/su_configure.h
+
+This file contains C language defines describing how the Sofia SIP UA
+library is configured.
+
+This file is generated by config.status and configure script.
+
+*/
+
+/**
+@page debug_logs Debugging Logs
+
+The Sofia-SIP components can output various debugging information. The
+detail of the debugging output is determined by the debugging level. The
+level is usually module-specific and it can be modified by module-specific
+environment variable. There is also a default level for all modules,
+controlled by environment variable #SOFIA_DEBUG.
+
+The environment variables controlling the logging and other debug output are
+as follows:
+- #SOFIA_DEBUG	Default debug level (0..9)
+- #NUA_DEBUG	User Agent engine (<a href="nua/index.html">nua</a>) debug level (0..9)
+- #SOA_DEBUG	SDP Offer/Answer engine (<a href="soa/index.html">soa</a>) debug level (0..9)
+- #NEA_DEBUG	Event engine (<a href="nea/index.html">nea</a>) debug level (0..9)
+- #IPTSEC_DEBUG	HTTP/SIP autentication module debug level (0..9)
+- #NTA_DEBUG	Transaction engine debug level (0..9)
+- #TPORT_DEBUG	Transport event debug level (0..9)
+  - #TPORT_LOG	If set, print out all parsed SIP messages on transport layer
+  - #TPORT_DUMP	Filename for dumping unparsed messages from transport
+- #SU_DEBUG	<a href="nea/index.html">su</a> module debug level (0..9)
+
+The defined debug output levels are:
+- 0 SU_DEBUG_0() - fatal errors, panic
+- 1 SU_DEBUG_1() - critical errors, minimal progress at subsystem level
+- 2 SU_DEBUG_2() - non-critical errors
+- 3 SU_DEBUG_3() - warnings, progress messages
+- 5 SU_DEBUG_5() - signaling protocol actions (incoming packets, ...)
+- 7 SU_DEBUG_7() - media protocol actions (incoming packets, ...)
+- 9 SU_DEBUG_9() - entering/exiting functions, very verbatim progress
+
+In addition to the macros mentioned above, there is also functions for
+printing logging messages:
+- su_llog(), su_vllog()
+- su_perror(), su_perror2()
+
+The log level can be set (to a level defined in a configuration file, for
+instance) with following functions
+- su_log_set_level(), su_log_soft_set_level()
+
+The log output can be redirected to, e.g., system log or loggin server, with
+su_log_redirect().
+
+*/

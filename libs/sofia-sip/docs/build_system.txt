@@ -1,0 +1,105 @@
+=============================
+Sofia-SIP build system README
+=============================
+
+:Author: Kai Vehmanen <kai -dot vehmanen -at- nokia -dot- com>
+:Author: Pekka Pessi <pekka -dot pessi -at- nokia -dot- com>
+:Version: 20051011-5
+:Formatting: reStructuredText, http://docutils.sourceforge.net/rst.html
+
+Introduction
+============
+
+The Sofia-SIP build system practices are documented in this
+file. The instructions are aimed at developers.
+
+Quick start
+===========
+
+To build Sofia-IP::
+
+  sh> ``./autogen.sh`` (if building from a fresh CVS checkout)
+  sh> ``./configure``
+  sh> ``make``
+
+Autotool notes
+==============
+
+Macros
+------
+
+Sofia-SIP specific macros are prefixed with "``SAC\_``" and are
+defined in files under the toplevel "m4/" directory.
+
+Makefile target notes
+---------------------
+
+- all optionally compiled source files should be listed
+  separately in ``DIST_SOURCES`` variable (otherwise ``make dist``
+  will fail)
+
+Makefile fragments
+------------------
+
+Some common makefile rules are in 'rules' subdirectory.
+
+Maintainer mode
+---------------
+
+Sofia-SIP tree is by default configured with automake
+maintainer mode disable. In other words, Makefiles do not
+contain rules for recreating or updating configure, Makefiles
+or other autotool-generated files. To update these files,
+you need to run top-level autogen.sh script.
+
+Those developers who need to often modify configure.ac, Makefile.am
+and macro files, can enable maintainer mode with configure
+option '--enable-maintainer-mode'.
+
+Running tests
+=============
+
+Sofia-SIP has quite complete suite of test cases. It is prudent to run
+them while making changes and before committing them to revision control
+system. However, running certain tests takes quite a long time to
+execture. Therefore, they are run only if the environment variable
+EXPENSIVE_CHECKS has been set. EXPENSIVE_CHECKS is also set by the build
+system if configure option '--enable-expensive-checks' has been used.
+
+On hosts with i386 architecture, it is possible to run tests under
+valgrind. Use the make target 'valcheck' for that purpose.
+
+Code-tree layout
+================
+
+Most of the code resides in the libsofia-sip-ua directory.
+The main library, libsofia-sip-ua.so, is created by
+collecting object files (for example bnf/bnf_objs.o) from
+individual modules.
+
+There are some portability issues with the way the
+shared library is currently built, and we are looking
+for ways to improve the situation.
+
+Making releases
+===============
+
+See sofia-sip/docs/release_management.txt
+
+Developer documentation
+=======================
+
+Generating reference documentation from source code
+---------------------------------------------------
+
+The libsofia-sip-ua library has a top-level make target
+"doxygen" for generating the HTML reference documentation.
+The pages will be created to libsofia-sip-ua/docs
+subdirectory.
+
+This special target is primarily meant for use by
+the Sofia-SIP website admins, but can be used by anyone
+with the proper set of tools:
+
+- Doxygen, http://www.stack.nl/~dimitri/doxygen/
+- Dot graph tool, http://www.research.att.com/sw/tools/graphviz/

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="mod_say_he"
+	ProjectGUID="{0E1117D4-56BF-4B5F-926C-273FD99593DE}"
+	RootNamespace="mod_say_he"
+	Keyword="Win32Proj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCCLCompilerTool"
+				UsePrecompiledHeader="0"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCCLCompilerTool"
+				UsePrecompiledHeader="0"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\mod_say_he.c"
+			>
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

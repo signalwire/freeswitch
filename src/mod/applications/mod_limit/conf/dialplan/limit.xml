@@ -1,0 +1,14 @@
+<include>
+	<extension name="limit_exceeded">
+		<condition field="destination_number" expression="^limit_exceeded$">
+			<action application="playback" data="/sounds/overthelimit.wav"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+
+	<extension name="limit" continue="true">
+		<condition>
+			<action application="limit" data="db $${domain} ${sip_auth_username} ${max_calls}"/>
+		</condition>
+	</extension> 
+</include>

@@ -1,0 +1,7 @@
+# See uscan(1) for format
+
+# Compulsory line, this is a version 1 file
+version=1
+
+# <Webpage URL> <string match>
+http://soft-switch.org/downloads/voipcodecs/ broadvoice-(.*)\.tgz debian svn-upgrade

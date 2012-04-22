@@ -1,0 +1,176 @@
+`/**@file sofia-sip/sip_extra.h.in
+ *  -*- C -*-
+ * Template for <sofia-sip/sip_extra.h>.
+ *
+ * @date Created: Thu Oct  5 19:10:58 EEST 2006
+ */
+
+/* -*- C -*-
+ *
+ * This file is part of the Sofia-SIP package
+ *
+ * Copyright (C) 2006 Nokia Corporation.
+ *
+ * Contact: Pekka Pessi <pekka.pessi@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+#ifndef SIP_EXTRA_H
+/** Defined when <sofia-sip/sip_extra.h> has been included. */
+#define SIP_EXTRA_H
+
+/**@file sofia-sip/sip_extra.h
+*
+ * @brief Extension headers for SIP.
+ *
+ * #AUTO#
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
+ */
+
+#ifndef SIP_H
+#include <sofia-sip/sip.h>
+#endif
+
+#ifndef SIP_HEADER_H
+#include <sofia-sip/sip_header.h>
+#endif
+
+SOFIA_BEGIN_DECLS
+
+typedef struct sip_refer_sub_s      sip_refer_sub_t;
+
+/**@ingroup sip_refer_sub
+ * @brief Structure for @ReferSub header.
+ */
+struct sip_refer_sub_s
+{
+  sip_common_t        rs_common[1];   	/**< Common fragment info */
+  sip_error_t        *rs_next;        	/**< Dummy link to next */
+  char const         *rs_value;       	/**< "true" or "false" */
+  msg_param_t const  *rs_params;      	/**< List of extension parameters */
+};
+
+typedef struct sip_alert_info_s sip_alert_info_t;
+
+/**@ingroup sip_alert_info
+ * @brief Structure for @AlertInfo header.
+ */
+struct sip_alert_info_s
+{
+  sip_common_t        ai_common[1];     /**< Common fragment info */
+  sip_alert_info_t   *ai_next;		/**< Link to next @AlertInfo */
+  url_t               ai_url[1];	/**< URI to alert info */
+  msg_param_t const  *ai_params;	/**< List of optional parameters */
+};
+
+typedef struct sip_reply_to_s sip_reply_to_t;
+
+/**@ingroup sip_reply_to
+ * @brief Structure for @ReplyTo header.
+ */
+struct sip_reply_to_s
+{
+  sip_common_t        rplyto_common[1];	/**< Common fragment info */
+  sip_error_t        *rplyto_next;	/**< Dummy link to next header */
+  char const         *rplyto_display;	/**< Display name */
+  url_t               rplyto_url[1];	/**< Return URI */
+  msg_param_t const  *rplyto_params;	/**< List of optional parameters */
+};
+
+typedef struct sip_suppress_body_if_match_s sip_suppress_body_if_match_t;
+
+/**@ingroup sip_suppress_body_if_match
+ * @brief Structure for @SuppressBodyIfMatch header.
+ */
+struct sip_suppress_body_if_match_s
+{
+  sip_common_t   sbim_common[1];	/**< Common fragment info */
+  sip_error_t   *sbim_next;		/**< Dummy link to next header */
+  char const    *sbim_tag;		/**< Entity-tag */
+};
+
+typedef struct sip_suppress_notify_if_match_s sip_suppress_notify_if_match_t;
+
+/**@ingroup sip_suppress_notify_if_match
+ * @brief Structure for @SuppressNotifyIfMatch header.
+ */
+struct sip_suppress_notify_if_match_s
+{
+  sip_common_t   snim_common[1];	/**< Common fragment info */
+  sip_error_t   *snim_next;		/**< Dummy link to next header */
+  char const    *snim_tag;		/**< Entity-tag */
+};
+
+typedef struct sip_p_asserted_identity_s sip_p_asserted_identity_t;
+
+/**@ingroup sip_p_asserted_identity
+ * @brief Structure for @PAssertedIdentity header.
+ */
+struct sip_p_asserted_identity_s
+{
+  sip_common_t       paid_common[1];/**< Common fragment info */
+  sip_p_asserted_identity_t
+                    *paid_next;	    /**< Link to next identity */
+  char const        *paid_display;  /**< Display name */
+  url_t              paid_url[1];   /**< SIP, SIPS or TEL URL */
+};
+
+typedef struct sip_p_preferred_identity_s sip_p_preferred_identity_t;
+
+/**@ingroup sip_p_preferred_identity
+ * @brief Structure for @PPreferredIdentity header.
+ */
+struct sip_p_preferred_identity_s
+{
+  sip_common_t       ppid_common[1];/**< Common fragment info */
+  sip_p_preferred_identity_t
+                    *ppid_next;	    /**< Link to next identity */
+  char const        *ppid_display;  /**< Display name */
+  url_t              ppid_url[1];   /**< SIP, SIPS or TEL URL */
+};
+
+
+int sip_p_initialize_remote_party_id_headers(msg_mclass_t *mclass);
+
+typedef struct sip_remote_party_id_s sip_remote_party_id_t;
+
+/**@ingroup sip_remote_party_id
+ * @brief Structure for @RemotePartyID header.
+ */
+struct sip_remote_party_id_s
+{
+  sip_common_t       rpid_common[1];/**< Common fragment info */
+  sip_remote_party_id_t
+                    *rpid_next;	    /**< Link to next identity */
+  char const        *rpid_display;  /**< Display name */
+  url_t              rpid_url[1];   /**< URL */
+  sip_param_t const *rpid_params;   /**< Parameters */
+  /** Shortcuts to screen, party, id-type and privacy parameters */
+  char const        *rpid_screen, *rpid_party, *rpid_id_type, *rpid_privacy;
+};
+
+
+
+/** Defined as 1 if the @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" is supported */
+#define SIP_HAVE_#XXXXXX# 1
+
+
+SOFIA_END_DECLS
+
+#endif /** !defined(SIP_EXTRA_H) */

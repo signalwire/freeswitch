@@ -1,0 +1,47 @@
+The UniMRCP Project (http://www.unimrcp.org)
+Copyright (C) 2008-2010 Arsen Chaloyan
+Licensed under the Apache License, Version 2.0 (the "License").
+
+This product includes a number of subcomponents with
+separate copyright notices and license terms.
+
+
+Notice for APR (Apache Portable Runtime) library
+---------------------------------------------------
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+Portions of this software were developed at the National Center
+for Supercomputing Applications (NCSA) at the University of
+Illinois at Urbana-Champaign.
+
+This software contains code derived from the RSA Data Security
+Inc. MD5 Message-Digest Algorithm.
+---------------------------------------------------
+
+
+Notice for Sofia-SIP library
+---------------------------------------------------
+Copyright (C) 2005-2006 Nokia Corporation and others (see the
+in individual files for a detailed list of copyright holders).
+Contact: Pekka Pessi <Pekka.Pessi@nokia.com>
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1 of
+the License, or (at your option) any later version.
+---------------------------------------------------
+
+
+Notice for G711 implementation
+---------------------------------------------------
+g711.h/g711.c - A-law and u-law transcoding routines
+
+Written by Steve Underwood <steveu@coppice.org>
+Copyright (C) 2006 Steve Underwood
+
+Despite my general liking of the GPL, I place this code in the
+public domain for the benefit of all mankind - even the slimy
+ones who might try to proprietize my work and use it to my
+detriment.
+---------------------------------------------------

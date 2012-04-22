@@ -1,0 +1,642 @@
+<html>
+	<head>
+		
+	    <meta http-equiv="Pragma" content="no-cache">
+	    <meta http-equiv="Expires" content="-1">
+	    <meta http-equiv="cache-control" content="no-store">
+	    <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+	
+		<script language="javascript" content-type="text/javascript" src="swfobject.js"></script>
+	    <script language="javascript" content-type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
+	    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.3/jquery-ui.min.js" ></script>
+	 	<script language="javascript" type="text/javascript" src="jquery.query-2.1.7.js"></script>
+	 	<script language="javascript" type="text/javascript" src="jquery.tmpl.js"></script>
+		
+		<script language="javascript" content-type="text/javascript">		
+			var flashvars = { 
+				rtmp_url: 'rtmp://my.ip.address.here/phone'
+			};
+			
+			var params  = {
+				allowScriptAccess: 'always'
+			};
+			
+			function makeCall(number, account, options) {
+				$("#flash")[0].makeCall(number, account, options);
+			}
+			
+			function sendDTMF(digit, duration) {
+				$("#flash")[0].sendDTMF(digit, duration);
+			}
+			
+			function onDisplayUpdate(uuid, name, number) {
+				var elm = $("#call_" + uuid);
+				elm.children(".callerid_name").text(name);
+				elm.children(".callerid_number").text(number);
+				elm.data("name", name);
+				elm.data("number", number);
+				
+				if (uuid == $("#incoming_call").data("uuid")) {
+					$("#incoming_name").text(name);
+					$("#incoming_number").text(number);
+				}
+			}
+			
+			function hangup(uuid) {
+				$("#flash")[0].hangup(uuid);
+			}
+			
+			function answer(uuid) {
+				$("#flash")[0].answer(uuid);
+			}
+			
+			function attach(uuid) {
+				$("#flash")[0].attach(uuid);
+			}
+			
+			function transfer(uuid, dest) {
+				$("#flash")[0].transfer(uuid, dest);
+			}
+			
+			function ui_transfer(uuid) {
+				$("#transfer").data("uuid", uuid);
+				$("#transfer").dialog('open');
+			}
+			
+			function three_way(uuid1, uuid2) {
+				$("#flash")[0].three_way(uuid1, uuid2);
+			}
+			
+			function do_three_way(uuid) {
+				var a = $(".active_call").data("uuid");
+				if (a != "") {
+					three_way(a, uuid);
+				}
+			}
+
+			function do_join(uuid) {
+				var a = $(".active_call").data("uuid");
+				if (a != "") {
+					join(a, uuid);
+				}
+			}
+
+			
+			function join(uuid1, uuid2) {
+				$("#flash")[0].join(uuid1, uuid2);
+			}
+			
+			function onCallState(uuid, state) {
+				$("#call_"+uuid).children('.call_state').text(state);
+			}
+			
+			function onIncomingCall(uuid, name, number, account, evt) {
+				if (name == "") {
+					name = "Unknown Name";
+				}
+				if (number == "") {
+					number = "Unknown Number";
+				}
+				
+				add_call(uuid, name, number);
+				
+				$("#incoming_call").data("uuid", uuid);
+				$("#incoming_name").text(name);
+				$("#incoming_number").text(number);
+				$("#incoming_account").text(account);
+				$("#incoming_call").dialog('open');
+			}
+			
+			function onDisconnected() {
+				$("#status").text("Disconnected");
+				$("#sessionid").text("");
+				setTimeout(function() {
+					$("#status").text("Connecting...");
+					$("#flash")[0].connect();
+				}, 5000);
+			}
+			
+			function onMakeCall(uuid, number, account) {
+				add_call(uuid, "", number, account);
+			}
+			
+			function onHangup(uuid, cause) {
+				if ($("#incoming_call").data("uuid") == uuid) {
+					$("#incoming_call").dialog('close');
+				}
+				
+				$("#call_" + uuid).children(".hangupcause").text(cause);
+				
+				setTimeout(function() {
+					remove_call(uuid);
+				}, 1000);
+			}
+
+			function onDebug(message) {
+				$("#log").append(message + "<br/>");
+			}
+	
+			function onAttach(uuid) {
+				$(".active_call").removeClass('active_call');
+				
+				if (uuid == "") {
+						$("a", "#controls").button("option", "disabled", true);
+ 				} else {
+						$("a", "#controls").button("option", "disabled", false); 
+						$("#call_" + uuid).addClass('active_call');
+				}
+			}
+			
+			function checkMic() {
+				try {
+					if ($("#flash")[0].isMuted()) {
+						$("#no_mic").show();
+						$("#input_source").hide();
+						return false;
+					} else {
+						$("#no_mic").hide();
+						$("#input_source").show();
+						return true;
+					}					
+				} catch(err) {
+					return false;
+				}
+			}
+			
+			function onConnected(sessionid) {
+				$("#sessionid").text(sessionid);
+				$(".call", "#call_container").remove();
+				$(".account", "#account_container").remove();
+				$("#status").text("Connected");
+				
+				if (!checkMic()) {
+					$("#security").dialog('open');
+				}
+			}
+			
+			function login(user,pass) {
+				$("#flash")[0].login(user,pass);
+			} 
+			
+			function logout(account) {
+				$("#flash")[0].logout(account);
+			}
+			
+			function onLogin(status, user, domain) {
+				if (status != "success") {
+					softAlert("Authentication failed!", "onAuth");
+				} else {
+					//$("#status").html("Connected as <span class='user'>" + user + "</span>@<span class='domain'>" + domain + "</span>");
+					var u = user + '@' + domain;
+					$("#flash")[0].register(u, $.query.get('code'));
+					add_account(user, domain);
+				}
+			}
+			
+			function onLogout(user,domain) {
+				remove_account(user, domain);
+			}
+			
+			function onInit() {
+				var mics = eval($("#flash")[0].micList());
+				var sources = $("#input_source");
+				var current_mic = $("#flash")[0].getMic();
+				sources.children().remove();
+				
+				$("#status").text("Connecting...");
+
+				for (i = 0; i < mics.length; i++) {
+					var a = (i == current_mic) ? "selected" : "";
+					sources.append("<option value='"+ i + "' " + a + " >" + mics[i] + "</option");
+				}
+			}
+			
+			function onEvent(data) {
+				onDebug("Got event: " + data);
+			}
+			
+			function softAlert(message,title) {
+				$("#message_text").text(message);
+				$("#message").dialog('option', 'title', title);
+				$("#message").dialog('open');
+			}
+			
+			function get_uuid(object) {
+				return object.parent(".call").data("uuid");
+			}
+			
+			function add_call(uuid, name, number, account) {
+				var c = [ {uuid: uuid, name: name, number: number, account: account } ];
+				
+				var elm = $("#call_template").tmpl(c);
+
+				elm.data("uuid", uuid);
+				elm.data("name", name);
+				elm.data("number", number);
+				elm.data("account", account);
+				
+				elm.appendTo("#call_container");
+			}
+			
+			function remove_call(uuid) {
+				var c = $('#call_'+ uuid);
+				c.fadeOut("slow", function() { c.remove() } );
+			}
+			
+			function get_user(object) {
+				return object.parent(".account").data("user");
+			}
+			
+			function add_account(suser, domain) {
+				var u = suser + "@" + domain;
+				var sid = u.replace("@", "_").replace(/\./g, "_");
+				var c = [ { id: sid, user: u} ];
+				var elm = $("#account_template").tmpl(c);
+				elm.data("user", u);
+				elm.appendTo("#account_container");
+				$("a", "#account_" + sid).button();
+			}
+			
+			function remove_account(suser,domain) {
+				var u = suser + "_" + domain;
+				var sid = u.replace(/\./g, "_")
+				
+				var c = $('#account_'+ sid);
+				c.fadeOut("slow", function() { c.remove() } );
+			}
+			
+			function showSecurity() {
+				$("#security").dialog('open');
+			}
+			
+			
+			function newcall(account) {
+				$("#callout").data('account', account);
+				$("#callout").dialog('open');
+			}
+			
+		 $(document).ready(function() {
+			swfobject.embedSWF("freeswitch.swf", "flash", "250", "150", "9.0.0", "expressInstall.swf", flashvars, params, []);
+			
+			if (swfobject.ua.ie) {
+				$("#flash").css("top", "-500px"); 
+				$("#flash").css("left", "-500px");				
+			} else {
+				$("#flash").css("visibility", "hidden"); 				
+			}
+			
+		   $("#incoming_call").dialog({ 
+			autoOpen: false,
+			resizable: false,
+			buttons: { 
+				"Answer": function() { 
+					answer($(this).data("uuid"));
+					$(this).dialog("close"); 
+				},
+				"Decline": function() { 
+					hangup($(this).data("uuid"));
+					$(this).dialog("close"); 
+				}
+			}});
+			
+		   $("#callout").dialog({ 
+				autoOpen: false, 
+				resizable: false,
+				width: 600,
+				buttons: { 
+					"Call": function() { 
+						makeCall($("#number").val(), $(this).data('account'), []);
+						$(this).dialog("close"); 
+					},
+					"Cancel": function() { 
+						$(this).dialog("close"); }
+					}
+				});
+			$("#message").dialog({ 
+				autoOpen: false,
+				resizable: false,
+				buttons: { 
+					"Ok": function() { 
+						$(this).dialog("close"); 
+					}
+				}});
+				
+			$("#controls").dialog({
+				title: "Keypad",
+				autoOpen: false,
+				resizable: false,
+				width: 200,
+				height: 220
+			});
+			
+			$("#auth").dialog({
+				modal: true,
+				autoOpen: false,
+				resizable: false,
+				buttons: {
+					"Ok": function() {
+						login($("#username").val(), $("#password").val());
+						$("#password").val('');
+						$(this).dialog('close');
+					},
+					"Cancel": function() {
+						$(this).dialog('close');
+					}
+				}
+			});
+			
+			$("#transfer").dialog({
+				autoOpen: false,
+				resizable: false,
+				width: 600,
+				buttons: {
+					"Ok": function() {
+						transfer($(this).data("uuid"), $("#transfer_number").val());
+						$(this).dialog('close');
+					},
+					"Cancel": function() {
+						$(this).dialog('close');
+					}
+				}
+			});
+				
+			$("#security").dialog({
+				autoOpen: false,
+				modal: true,
+				resizable: false,
+				buttons: {
+					"Ok": function() { 
+						$(this).dialog("close"); 
+					}
+				},
+				minWidth: 300,
+				minHeight: 170,
+				drag: function () {
+					var flash = $("#flash");
+					var fake_flash = $("#fake_flash");
+					var offset = fake_flash.offset();
+					
+					flash.css("left", offset.left);
+					flash.css("top", offset.top + 20);	
+				},
+				open: function () {
+					var flash = $("#flash");
+					var fake_flash = $("#fake_flash");
+					var offset = fake_flash.offset();
+					
+					fake_flash.css("width", flash.width())
+					fake_flash.css("height", flash.height() + 20)
+					
+					flash.css("left", offset.left);
+					flash.css("top", offset.top + 20);
+					flash.css("visibility", "visible");
+					flash.css("z-index", $("#security").parent(".ui-dialog").css("z-index") + 1);
+					flash[0].showPrivacy();
+				},
+				close: function() {
+					var flash = $("#flash");
+					flash.css("visibility", "hidden");
+					flash.css("left", 0);
+					flash.css("top", 0);
+					flash.css("z-index", "auto");
+					
+					checkMic();
+				}
+			});
+			$("a", "#controls").button({ disabled: true });
+			$("a", "#call_container").button();
+			$("a", "#guest_account").button();
+		 });
+		
+			function testevent() {
+				var evt = {
+					test1: "hello",
+					test2: "hallo",
+					test3: "allo"
+				};
+				$("#flash")[0].sendevent(evt);
+			}
+		
+		</script>
+		<style type="text/css">
+			.dtmfrow {
+				min-width: 50px;
+				width: 20px;
+				height: 20px;
+				text-align: center;
+				vertical-align: center;
+			}
+			
+			#call_container {
+				float: right;
+			}
+			
+			#account_container {
+				float: left;
+			}
+			
+			.call {
+				border: 1px solid #181469;
+				width: 400px;
+				height: 120px;
+			}
+			
+			.account, #guest_account {
+				border: 1px solid #181469;
+				height: 100px;
+				width: 300px;
+				padding-left: 20px;
+			}
+		
+			#call_add {
+				width: 400px;
+				text-align: right;
+			}
+		
+			.active_call {
+				background-color: #DBF2C2;
+			}
+			
+			.three_way {
+				background-color: #C0DAF2;
+			}
+			
+			#controls {
+				float: left;
+			}
+			
+			#flash {
+				float: left;
+				visibility: hidden;
+				position: absolute;
+				top: 0;
+				left: 0;
+			}
+			
+			#log {
+				font-size: 13px;
+			}
+			
+			#header {
+				background-color: #003366;
+				color: white;
+				height: 30px;
+				width: 100%;
+				padding-top: 10px;
+				padding-left: 5px;
+			}
+			
+			#input_source_container {
+
+			}
+			
+			#status {
+				
+			}
+			
+			#sessionid {
+				margin-left: 20px;
+			}
+			
+			#header a, #header a:visited, #header a:hover {
+				color: #white;
+				text-decoration: underline;
+			}
+			
+			#no_mic {
+				float: right;
+				padding-right: 10px;
+				display: none;
+			}
+			
+			#input_source {
+				float: right;
+				padding-right: 10px;
+			}
+		</style>
+		<script id="call_template" type="text/html">
+		<div class="call" id="call_{{= uuid}}">
+			<p class="callerid">
+				Account: {{= account}}<br/>
+				<span class="callerid_name">{{= name}}</span> <span class="callerid_number">{{= number}}</span>
+			</p>
+			Call state: <span class="call_state"></span> <span class="hangupcause"></span><br/>
+			<a href="#" onClick="attach(get_uuid($(this)))">Switch</a>
+			<a href="#" onClick="hangup(get_uuid($(this)))">Hangup</a>
+			<a href="#" onClick="do_three_way(get_uuid($(this)))">3-way</a>
+			<a href="#" onClick="do_join(get_uuid($(this)))">Join</a>
+			<a href="#" onClick="ui_transfer(get_uuid($(this)))">Transfer</a>
+		</div>
+		</script>
+		<script id="account_template" type="text/html">
+		<div class="account" id="account_{{= id}}">
+			<p>User: {{= user}}</p>
+			<a href="#" onClick="logout(get_user($(this)))">Logout</a>
+			<a href="#" onClick="newcall(get_user($(this)));">+ New Call</a>
+		</div>
+		</script>
+	</head>
+	<body>
+
+		<!-- Dialogs -->
+		<div id="incoming_call" title="Incoming call">
+			Account: <span id="incoming_account"></span><br/>
+			<h3><span id="incoming_name"></span></h3>
+			<h3><span id="incoming_number"></span></h3>
+		</div>
+		
+		<div id="callout" title="Call out">
+			 <input type="text" id="number" value="sip:888@conference.freeswitch.org" size="58" />
+		</div>
+		
+		<div id="message">
+			<span id="message_text"></span>
+		</div>
+		
+		<div id="transfer" title="Transfer call">
+			<input type="text" id="transfer_number" value="sip:888@conference.freeswitch.org" size="58" />
+		</div>
+		
+		<div id="security" title="Permissions required">
+			You must accept to use your microphone on this site in order to be able to make phone calls
+			<div id="fake_flash" width="300" height="170"></div>
+		</div>
+		
+		<div id="auth" title="Login">
+			Username: <input type="text" name="username" value="" id="username" />
+			Password: <input type="password" name="password" value="" id="password" />
+		</div>
+		
+		<!-- End Dialogs -->
+		
+		<div id="header">
+			<span id="status">Waiting for flash...</span> 
+			<span id="sessionid"></span>
+			<span id="no_mic">
+				<img src="warning-icon.png" width="21" height="20" />
+				<a href="#" onClick="showSecurity();">Microphone not allowed</a>
+			</span>
+
+			<select id="input_source" onChange="$('#flash')[0].setMic($(this).val())" >
+			</select>
+
+		</div>
+		
+		<div id="flash">
+			<h1>Alternative content</h1>
+			<p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p>
+		</div>
+		
+		<div id="call_container">
+			<div id="call_add" class="button">
+				<a href="#" onClick="attach('');">Hold</a>
+			</div>
+		</div>
+
+		<div>
+			<a href="#" onClick="showSecurity();">Privacy</a>
+			<a href="#" onClick="$('#log').html('')" >Clear log</a>
+			<a href="#" onClick="$('#controls').dialog('open');">Show Keypad</a>
+			<a href="#" onClick="$('#auth').dialog('open');">Login</a>
+		</div>
+
+		<div id="controls" class="button">	
+			<table cols=3 border=0>
+				<tr>
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('1', 2000)">1</a></td>
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('2', 2000)">2</a></td>
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('3', 2000)">3</a></td>
+				</tr>                      
+				<tr>                       
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('4', 2000)">4</a></td>
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('5', 2000)">5</a></td>
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('6', 2000)">6</a></td>
+				</tr>                      
+				<tr>                       
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('7', 2000)">7</a></td>
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('8', 2000)">8</a></td>
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('9', 2000)">9</a></td>
+				</tr>                      
+				<tr>                       
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('*', 2000)">*</a></td>
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('0', 2000)">0</a></td>
+					<td class="dtmfrow"><a href="#" onClick="sendDTMF('#', 2000)">#</a></td>
+				</tr>
+			</table>
+			
+			<div id="#input_device">
+			</div>
+		</div>
+		
+		<div id="account_container">
+			<div class="guest_account" id="guest_account">
+				<p>Guest account</p>
+				<a href="#" onClick="newcall('');">+ New Call</a>
+			</div>
+		</div>
+
+		<div id="log">
+		</div>
+		
+	</body>
+</html>

@@ -1,0 +1,92 @@
+%start MainMap::Startup
+%class LoginRequest
+
+%map MainMap
+%%
+
+Startup
+{
+        AuthRequest
+                AuthRequestStarted
+                {
+                }
+}
+
+AuthRequestStarted
+{
+        BlankLine
+                AuthRequestFinished
+                {
+                }
+
+}
+
+AuthRequestFinished
+{
+        CommandReply
+                CommandReplyStarted
+                {
+                }
+
+}
+
+CommandReplyStarted
+{
+        ReplyText
+                GotReplyText
+                {
+                }
+
+}
+
+
+GotReplyText
+{
+        BlankLine
+		Startup                
+                {
+		setRequestFinished(); callOrErrback();		
+                }
+
+}
+
+
+Default
+{
+    	BlankLine			
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - Was not expecting a blank line");		
+		}
+
+    	AuthRequest			
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - Was not expecting auth request");		
+		}
+
+    	CommandReply			
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting a command reply");		
+		}
+
+    	ReplyText			
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting reply text");		
+		}
+
+        ProcessLine(line)
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting need to receive a line that needs to be processed");		
+		}
+
+}
+%%

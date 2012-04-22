@@ -1,0 +1,266 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<title>Xmlrpc User Manual</title>
+<body>
+
+<p><b>xmlrpc</b> makes an XML-RPC remote procedure call (RPC) and displays
+the response.  <b>xmlrpc</b> runs an XML-RPC client.
+
+<p>This program is mainly useful for debugging and learning about
+XML-RPC servers.  XML-RPC is such that the RPCs normally need to be made
+by a program rather than a person to be of use.
+
+<p>A similar tool done as a web form is at <a
+href="http://gggeek.damacom.it/debugger/">
+http://gggeek.damacom.it/debugger/</a>
+
+<h2>Examples</h2>
+
+<pre>
+<tt>
+     $ xmlrpc http://localhost:8080/RPC2 sample.add i/3 i/5
+       Result:
+         Integer: 8
+</tt>
+</pre>
+
+<pre>
+<tt>
+     $ xmlrpc localhost:8080 sample.add i/3 i/5
+       Result:
+         Integer: 8
+     
+</tt>
+</pre>
+
+<pre>
+<tt>
+     $ xmlrpc http://xmlrpc.server.net/~bryanh echostring \
+         &quot;s/This is a string&quot;
+     Result:
+       String: This is a string
+
+</tt>
+</pre>
+
+<pre>
+<tt>
+     $ xmlrpc http://xmlrpc.server.net/~bryanh echostring \
+         &quot;This is a string in shortcut syntax&quot;
+     Result:
+       String: This is a string in shortcut syntax
+
+</tt>
+</pre>
+<pre>
+<tt>
+     $ xmlrpc http://xmlrpc.server.net sample.add i/3 i/5 \
+         transport=curl -curlinterface=eth1 -username=bryanh -password=passw0rd
+       Result:
+         Integer: 8
+     
+</tt>
+</pre>
+
+<h2>Overview</h2>
+<p>
+<b>xmlrpc</b>
+<i>url</i>
+<i>methodName</i>
+<i>parameter</i> ...
+[<b>-transport=</b><i>transportname</i>]
+[<b>-username=</b><i>username</i> <b>-password=</b><i>password</i>]
+[<b>-curlinterface</b>={<i>interface</i>|<i>host</i>}]
+[<b>-curlnoverifypeer</b>]
+[<b>-curlnoverifyhost</b>]
+
+<p><i>parameter</i>:
+
+<p>
+<b>i/</b><i>integer</i> |
+<b>s/</b><i>string</i> |
+<b>h/</b><i>hexstring</i> |
+<b>b/</b>{<b>true</b>|<b>false</b>|<b>t</b>|<b>f</b>} |
+<b>d/</b><i>realnum</i> |
+<b>n/</b> |
+<b><i>string</i></b>
+
+
+<P>Minimum unique abbreviation of option is acceptable.  You may use double
+hyphens instead of single hyphen to denote options.  You may use white
+space in place of the equals sign to separate an option name from its value.
+
+
+<h2>Arguments</h2>
+
+<dl>
+<dt><i>url</i>
+
+<dd>This is the URL of the XML-RPC server.  As XML-RPC uses HTTP, this
+must be an HTTP url.  However, if you don't specify a type (&quot;http:&quot;)
+in the URL, <b>xmlrpc</b> assumes an &quot;http://&quot; prefix and a
+&quot;/RPC2&quot; suffix.  <b>RPC2</b> is the conventional file name for
+an XML-RPC responder.
+
+<dt><i>methodName</i>
+
+<dd>The name of the XML-RPC method you want to invoke.
+
+<dt><i>parameter</i> ...
+
+<dd>The list of parameters for the RPC.  <b>xmlrpc</b> turns each of these
+arguments into an XML-RPC parameter, in the order given.  You may specify
+no parameters if you like.
+
+<p>You specify the data type of the parameter with a prefix ending in
+a slash.  Example: <b>i/5</b>.  Here, the &quot;i&quot; signifies an
+integer data type.  &quot;5&quot; is the value.
+
+<p><b>xmlrpc</b> is capable of only a subset of the 
+possible XML-RPC types, as follows by prefix:
+
+<dl>
+<dt>i/
+<dd>integer (&lt;i4&gt;) (32 bit)
+
+<dt>s/
+<dd>string (&lt;string&gt;)
+
+<dt>h/
+<dd>byte string (&lt;base64&gt;).  Specify the value in hexadecimal.
+
+<dt>b/
+<dd>boolean (&lt;boolean&gt;).  Specify the value as &quot;true&quot; or
+&quot;t&quot; for true; &quot;false&quot; or &quot;f&quot; for false.
+
+<dt>d/
+<dd>double (&lt;double&gt;)  (i.e. real number)
+
+<dt>n/
+<dd>nil (&lt;nil&gt;)
+
+<dt>I/
+<dd>64 bit integer (&lt;i8&gt;)
+
+</dl>
+
+<p>As a shortcut, if you don't specify a prefix (i.e. your argument does
+not contain a slash), <b>xmlrpc</b> assumes string data type.
+
+</dl>
+
+
+<h2>Options</h2>
+
+<dl>
+<dt><b>-transport=</b><i>transportname</i>
+
+<dd>This selects the XML transport facility (e.g. libwww) that
+<b>xmlrpc</b> uses to perform the RPC.
+
+<p>The name <i>transportname</i> is one that the Xmlrpc-c programming
+library recognizes.  This is typically <b>libwww</b>, <b>curl</b>, and
+<b>wininet</b>.
+
+<p>By default, <b>xmlrpc</b> lets the Xmlrpc-c library choose.
+
+<dt><b>-username=</b><i>username</i>
+<dt><b>-password=</b><i>password</i>
+
+<dd>These options, which must be used together, cause the client to
+authenticate itself to the server, if the server requires it, using
+HTTP Basic Authentication and the specified username and password.
+
+<dt><b>-curlinterface</b>={<i>interface</i>|<i>host</i>}
+
+<dd>
+This option gives the &quot;interface&quot; option for a Curl XML transport.
+
+<p>The exact meaning of this option is up to the Curl library, and the
+best documentation for it is the manual for the 'curl' program that comes
+with the Curl library.
+
+<p>But essentially, it chooses the local network interface through which
+to send the RPC.  It causes the Curl library to perform a
+&quot;bind&quot; operation on the socket it uses for the
+communication.  It can be the name of a network interface (e.g. on
+Linux, &quot;eth1&quot;) or an IP address of the interface or a host
+name that resolves to the IP address of the interface.  Unfortunately,
+you can't explicitly state which form you're specifying, so there's
+some ambiguity.
+
+<p>Examples:
+
+<ul>
+
+<li>
+<kbd>
+-interface=eth1
+</kbd>
+
+<li>
+<kbd>
+-interface=64.171.19.66
+</kbd>
+
+<li>
+<kbd>
+-interface=giraffe.giraffe-data.com
+</kbd>
+
+</ul>
+
+<p>This option causes <b>xmlrpc</b> to default to using the Curl
+XML transport.  You may not specify any other transport.
+
+<dt><b>-curlnoverifypeer</b>
+
+<dd>
+This option gives the &quot;no_ssl_verifypeer&quot; option for the Curl
+XML transport, which is essentially the CURLOPT_SSL_VERIFYPEER option
+of the Curl library.
+
+<p>See the <b>curl_easy_setopt()</b> man page for details on this, but
+essentially it means that the client does not authenticate the server's
+certificate of identity -- it just believes whatever the server says.
+
+<p>You may want to use <b>-curlnoverifyhost</b> as well.  Since you're
+not authenticating the server's identity, there's not much sense in
+checking it.
+
+<p>This option causes <b>xmlrpc</b> to default to using the Curl
+XML transport.  You may not specify any other transport.
+
+
+<dt><b>-curlnoverifyhost</b>
+
+<dd>
+This option gives the &quot;no_ssl_verifyhost&quot; option for the Curl
+XML transport, which is essentially the CURLOPT_SSL_VERIFYHOST option
+of the Curl library.
+
+<p>See the <b>curl_easy_setopt()</b> man page for details on this, but
+essentially it means that the client does not verify the server's
+identity.  It just assumes that if the server answers the IP address
+of the server as indicated by the URL (probably via host name), then
+it's the intended server.
+
+<p>You may want to use <b>-curlnoverifypeer</b> as well.  As long as
+you don't care who the server says it is, there's no point in
+authenticating its identity.
+
+<p>This option causes <b>xmlrpc</b> to default to using the Curl
+XML transport.  You may not specify any other transport.
+
+
+</dl>
+
+<h2>Limitations</h2>
+
+<p>If you run <b>xmlrpc</b> in an environment in which programs get 
+their arguments encoded some way other than UTF-8, <b>xmlrpc</b>
+will generate garbage for the XML-RPC call and display garbage for
+the XML-RPC response.  Typically, you control this aspect of the
+environment with a <b>LANG</b> environment variable.  One safe value
+for <b>LANG</b> is &quot;C&quot;.
+
+</body>

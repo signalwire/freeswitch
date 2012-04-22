@@ -1,0 +1,12 @@
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/UDP srlab.sr.ntc.nokia.com:5060;maddr=192.168.102.5
+Via: SIP/2.0/UDP 172.21.9.155
+Record-Route: <sip:garage.sr.ntc.nokia.com:5060;maddr=srlab.sr.ntc.nokia.com>
+From: sip:digest@garage.sr.ntc.nokia.com
+To: sip:digest@garage.sr.ntc.nokia.com
+Call-ID: 982773899-reg@172.21.9.155
+CSeq: 1 REGISTER
+WWW-Authenticate: Digest realm="garage.sr.ntc.nokia.com", 
+  nonce="MjAwMS0wMS0yMSAxNTowODo1OA==", algorithm=MD5, qop="auth"
+Content-Length: 0
+

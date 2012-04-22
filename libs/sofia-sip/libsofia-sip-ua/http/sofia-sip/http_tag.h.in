@@ -1,0 +1,236 @@
+/**@file sofia-sip/http_tag.h.in
+ *
+ * Template for <http_tag.h>.
+ *
+ * @date Created: Wed Feb 21 11:01:45 2001 ppessi
+ */
+
+/*
+ * This file is part of the Sofia-SIP package
+ *
+ * Copyright (C) 2005 Nokia Corporation.
+ *
+ * Contact: Pekka Pessi <pekka.pessi@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+#ifndef HTTP_TAG_H
+/** Defined when <sofia-sip/http_tag.h> has been included. */
+#define HTTP_TAG_H
+
+/**@file sofia-sip/http_tag.h
+ * @brief Tag class for HTTP headers
+ *
+ * #AUTO#
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ */
+
+#ifndef SU_TAG_H
+#include <sofia-sip/su_tag.h>
+#endif
+#ifndef SU_TAG_CLASS_H
+#include <sofia-sip/su_tag_class.h>
+#endif
+#ifndef SU_TAG_CLASS_H
+#include <sofia-sip/su_tag_class.h>
+#endif
+
+#ifndef HTTP_H
+#include <sofia-sip/http.h>
+#endif
+
+SOFIA_BEGIN_DECLS
+
+#define HTTPTAG(c, x)         httptag_##c, httptag_##c##_v(x)
+#define HTTPTAG_REF(c, x)     httptag_##c##_ref, httptag_##c##_vr(&(x))
+#define HTTPTAG_STR(c, s)     httptag_##c##_str, tag_str_v(s)
+#define HTTPTAG_STR_REF(c, s) httptag_##c##_str_ref, tag_str_vr(&(s))
+
+/** Test if tag type marks a http_t structure. @HIDE */
+#define HTTPTAG_P(tt)     ((tt)->tt_class == httphdrtag_class)
+/** Test if tag type marks a HTTP header string. @HIDE */
+#define HTTPTAG_STR_P(tt) ((tt)->tt_class == httpstrtag_class)
+/** Test if tag type marks a HTTP header structure. @HIDE */
+#define HTTPTAG_HTTP_P(tt) ((tt)->tt_class == httpmsgtag_class)
+
+/** Test if tag item contains http_t structure. @HIDE */
+#define HTTPTAGI_P(t)     (HTTPTAG_P((t)->t_tag))
+/** Test if tag item contains a HTTP header string. @HIDE */
+#define HTTPTAGI_STR_P(t) (HTTPTAG_STR_P((t)->t_tag))
+/** Test if tag item contains a HTTP header structure. @HIDE */
+#define HTTPTAGI_HTTP_P(t) (HTTPTAG_HTTP_P((t)->t_tag))
+
+SOFIAPUBVAR tag_class_t httphdrtag_class[1];
+SOFIAPUBVAR tag_class_t httpstrtag_class[1];
+SOFIAPUBVAR tag_class_t httpmsgtag_class[1];
+
+/** Filter tag matching any http tag. */
+#define HTTPTAG_ANY()         httptag_any, ((tag_value_t)0)
+SOFIAPUBVAR tag_typedef_t httptag_any;
+
+/**Tag list item for @c http_t object.
+ *
+ * The HTTPTAG_HTTP() macro is used to include a tag item for a http_t object
+ * in the tag list.
+ *
+ * @param x pointer to a http_t message object, or NULL.
+ *
+ * @HIDE
+ */
+#define HTTPTAG_HTTP(x)       httptag_http, httptag_http_v((x))
+
+/** Tag for @c http_t */
+SOFIAPUBVAR tag_typedef_t httptag_http;
+
+#define HTTPTAG_HTTP_REF(x)   httptag_http_ref, httptag_http_vr(&(x))
+SOFIAPUBVAR tag_typedef_t httptag_http_ref;
+
+#if SU_INLINE_TAG_CAST
+su_inline
+tag_value_t httptag_http_v(http_t const *v) { return (tag_value_t)v; }
+su_inline
+tag_value_t httptag_http_vr(http_t const **vp) { return (tag_value_t)vp; }
+#else
+#define httptag_http_v(v)   (tag_value_t)(v)
+#define httptag_http_vr(vp) (tag_value_t)(vp)
+#endif
+
+/**Tag list item for http protocol version.
+ *
+ * The HTTPTAG_VERSION() macro is used to include a tag item for a HTTP
+ * protocol version in the tag list.
+ *
+ * @param x pointer to a http_t message object, or NULL.
+ */
+#define HTTPTAG_VERSION(x)       httptag_http, (tag_value_t)x
+
+extern tag_typedef_t httptag_version;
+
+/** Reference to HTTPTAG_VERSION */
+#define HTTPTAG_VERSION_REF(x)   httptag_http_ref, (tag_value_t)&(x)
+
+extern tag_typedef_t httptag_version_ref;
+
+/**Tag list item for header string.
+ *
+ * The HTTPTAG_HEADER() macro is used to include a tag item containing an
+ * unknown HTTP header in the tag list, e.g.,
+ * @code
+ * http_header_t *hdr;
+ *
+ * HTTPTAG_HEADER(hdr).
+ * @endcode
+ *
+ * @param x pointer to a header structure, or NULL.
+ *
+ * @HIDE
+ */
+#define HTTPTAG_HEADER(x)       httptag_header, httptag_header_v((x))
+
+/** Tag for header string */
+SOFIAPUBVAR tag_typedef_t httptag_header;
+
+#define HTTPTAG_HEADER_REF(x)   httptag_header_ref, httptag_header_vr(&(x))
+SOFIAPUBVAR tag_typedef_t httptag_header_ref;
+
+#if SU_INLINE_TAG_CAST
+su_inline tag_value_t
+httptag_header_v(http_header_t const *v)
+{ return (tag_value_t)v; }
+su_inline tag_value_t
+httptag_header_vr(http_header_t const **vp)
+{ return (tag_value_t)vp; }
+#else
+#define httptag_header_v(v)   (tag_value_t)(v)
+#define httptag_header_vr(vp) (tag_value_t)(vp)
+#endif
+
+/**Tag list item for header string.
+ *
+ * The HTTPTAG_HEADER_STR() macro is used to include a tag item containing a
+ * header string in the tag list.
+ *
+ * @param x pointer to a string, or NULL.
+ *
+ * @HIDE
+ */
+#define HTTPTAG_HEADER_STR(x)       httptag_header_str, tag_str_v((x))
+
+/** Tag for header string */
+SOFIAPUBVAR tag_typedef_t httptag_header_str;
+
+#define HTTPTAG_HEADER_STR_REF(x)   httptag_header_str_ref, tag_str_vr(&(x))
+SOFIAPUBVAR tag_typedef_t httptag_header_str_ref;
+
+
+/**@ingroup http_#xxxxxx#
+ *
+ * Tag list item for pointer to a #xxxxxxx_xxxxxxx# object.
+ *
+ * The HTTPTAG_#XXXXXX#() macro is used to include a tag item with a
+ * pointer to a http_#xxxxxx#_t object in a tag list.
+ *
+ * @param x pointer to a http_#xxxxxx#_t header structure, or NULL.
+ *
+ * @HIDE
+ */
+#define HTTPTAG_#XXXXXX#(x)        	  HTTPTAG(#xxxxxx#, x)
+
+SOFIAPUBVAR tag_typedef_t httptag_#xxxxxx#;
+
+/**@ingroup http_#xxxxxx#
+ *
+ * Tag list item for string with #xxxxxxx_xxxxxxx# value.
+ *
+ * The HTTPTAG_#XXXXXX#_STR() macro is used to include a tag item with a
+ * string containing value of a http_#xxxxxx#_t header in a tag list.
+ *
+ * @param s pointer to a string containing http_#xxxxxx#_t value, or NULL.
+ *
+ * The HTTPTAG_#XXXXXX#_STR string can be converted to a
+ * http_#xxxxxx#_t header structure by giving the string @a s has
+ * second argument to function http_#xxxxxx#_make().
+ *
+ * @HIDE
+ */
+#define HTTPTAG_#XXXXXX#_STR(s)    	  HTTPTAG_STR(#xxxxxx#, s)
+
+SOFIAPUBVAR tag_typedef_t httptag_#xxxxxx#_str;
+
+#define HTTPTAG_#XXXXXX#_REF(x)        	  HTTPTAG_REF(#xxxxxx#, x)
+SOFIAPUBVAR tag_typedef_t httptag_#xxxxxx#_ref;
+
+#define HTTPTAG_#XXXXXX#_STR_REF(x)        HTTPTAG_STR_REF(#xxxxxx#, x)
+SOFIAPUBVAR tag_typedef_t httptag_#xxxxxx#_str_ref;
+
+#if SU_INLINE_TAG_CAST
+su_inline tag_value_t
+httptag_#xxxxxx#_v(http_#xxxxxx#_t const *v)
+{ return (tag_value_t)v; }
+su_inline tag_value_t
+httptag_#xxxxxx#_vr(http_#xxxxxx#_t const **vp)
+{ return (tag_value_t)vp; }
+#else
+#define httptag_#xxxxxx#_v(v)   (tag_value_t)(v)
+#define httptag_#xxxxxx#_vr(vp) (tag_value_t)(vp)
+#endif
+
+SOFIA_END_DECLS
+#endif /* !defined(HTTP_TAG_H) */

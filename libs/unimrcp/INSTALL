@@ -1,0 +1,129 @@
+BUILD REQUIREMENTS
+==================
+UniMRCP depends on a number of third party tools and libraries, 
+which are required and must be installed first.
+
+The easiest and recommended way is to install an appropriate 
+dependency package from the download area, which contains APR, 
+APR-Util and Sofia-SIP libraries prepackaged for UniMRCP use.
+
+http://code.google.com/p/unimrcp/downloads/
+
+Alternatively, the original packages of APR, APR-Util and
+Sofia-SIP libraries and patches for them can be downloaded from
+
+http://www.unimrcp.org/dependencies/
+
+References:
+  
+1. Apache Portable Runtime [>=1.2.x] (http://apr.apache.org/). 
+Whenever you want to build any part of UniMRCP, you need the 
+Apache Portable Runtime (APR) and the APR Utility (APR-util) 
+libraries.
+
+2. Sofia-SIP [>=1.12.6] (http://sofia-sip.sourceforge.net/). 
+Sofia-SIP library is used to implement MRCPv2 specification 
+compliant SIP signaling. Sofia-SIP is an open-source SIP User-Agent
+library, compliant with the IETF RFC3261 specification.
+
+
+GNU BUILD
+===================
+Additional requirements
+- autoconf 2.57 or newer
+- automake
+- libtool 1.4 or newer
+- gcc
+- pkg-config
+
+Build procedure
+$ ./bootstrap
+$ ./configure
+$ make
+$ make install
+
+Installed directory layout
+bin      - binaries (unimrcpserver, unimrcpclient)
+conf     - configuration files
+data     - data files
+include  - header files
+lib      - shared (convenient) libraries
+log      - log files
+plugin   - run-time loadable modules
+
+There are a couple of options to "./configure".
+To specify where to look for the APR and APR-util libraries
+use the "--with-apr=" and "--with-apr-util=" options.
+For example
+$ ./configure --with-apr=/usr/local/apr \
+              --with-apr-util=/usr/local/apr
+
+To specify  where to look for the Sofia-SIP library
+use the "--with-sofia-sip=" option. 
+For example
+$ ./configure --with-sofia-sip=/usr/local/sofia-sip
+
+To cross-compile for 64-bit platform use
+CFLAGS=-m64 CXXFLAGS=-m64 LDFLAGS=-m64 ./configure
+
+To cross-compile for 32-bit platform use
+CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 ./configure
+
+To install the default configuration use
+$ cd conf
+$ make def-conf
+
+To install the default data use
+$ cd data
+$ make def-data
+
+To generate doxygen documentation from the source use
+$ make dox
+
+
+
+WINDOWS BUILD
+======================
+Additional requirements
+- Microsoft Visual Studio 2005
+
+One-time pre-build preparation
+You may need to adjust the paths for 3-rd party libraries
+in appropriate property sheets to match your local installation,
+while below are the defaults (build/vsprops).
+
+apr.vsprops
+	<UserMacro
+		Name="AprDir"
+		Value="$(SolutionDir)libs\apr"
+	/>
+	<UserMacro
+		Name="AprUtilDir"
+		Value="$(SolutionDir)libs\apr-util"
+	/>
+	
+sofiasip.vsprops
+	<UserMacro
+		Name="SofiaDir"
+		Value="$(SolutionDir)libs\sofia-sip"
+	/>
+
+Build procedure
+- open unimrcp.sln solution file
+- choose an appropriate solution platform (Build -> Configuration Manager) either win32 or x64
+- choose an appropriate solution configuration (Build -> Configuration Manager) either Debug or Release
+- build the solution (Build -> Build Solution)
+
+One-time pre-run output directory preparation
+Build prepare.vcproj utility project (right click on tools -> prebuild in 
+Solution Explorer and select Build from context menu). This is a one-time 
+output directory preparation. It copies all the required APR and SofiaSIP 
+libraries and the default configuration to the output directory. 
+
+Output directory layout
+bin      - binaries (unimrcpserver, unimrcpclient) and all the required dlls
+conf     - configuration files
+data     - data files
+lib      - libraries
+log      - log files
+plugin   - run-time loadable modules

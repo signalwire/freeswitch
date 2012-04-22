@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9.00"
+	Name="Download 8khzsound"
+	ProjectGUID="{3CE1DC99-8246-4DB1-A709-74F19F08EC67}"
+	RootNamespace="Download 8khzsound"
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+				CommandLine=""
+				Outputs=""
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\8khzsound\cleancount"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading 8khzsound."
+					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\en\us\callie\voicemail\8000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzipSounds en-us-callie 8000 &quot;$(ProjectDir)..\sounds&quot; &quot;$(ProjectDir)..\..\build\sounds_version.txt&quot;"
+					Outputs="$(ProjectDir)..\sounds\en\us\callie\voicemail\8000"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading 8khzsound."
+					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\en\us\callie\voicemail\8000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzipSounds en-us-callie 8000 &quot;$(ProjectDir)..\sounds&quot; &quot;$(ProjectDir)..\..\build\sounds_version.txt&quot;"
+					Outputs="$(ProjectDir)..\sounds\en\us\callie\voicemail\8000"
+				/>
+			</FileConfiguration>
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

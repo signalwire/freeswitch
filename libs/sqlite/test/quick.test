@@ -1,0 +1,89 @@
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file runs all tests.
+#
+# $Id: quick.test,v 1.47 2006/11/23 21:09:11 drh Exp $
+
+proc lshift {lvar} {
+  upvar $lvar l
+  set ret [lindex $l 0]
+  set l [lrange $l 1 end]
+  return $ret
+}
+while {[set arg [lshift argv]] != ""} {
+  switch -- $arg {
+    -sharedpagercache {
+      sqlite3_enable_shared_cache 1
+    }
+    default {
+      set argv [linsert $argv 0 $arg]
+      break
+    }
+  }
+}
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+rename finish_test really_finish_test
+proc finish_test {} {}
+set ISQUICK 1
+
+set EXCLUDE {
+  all.test
+  async.test
+  async2.test
+  btree2.test
+  btree3.test
+  btree4.test
+  btree5.test
+  btree6.test
+  corrupt.test
+  crash.test
+  loadext.test
+  malloc.test
+  malloc2.test
+  malloc3.test
+  memleak.test
+  misuse.test
+  quick.test
+  speed1.test
+
+  autovacuum_crash.test
+  btree8.test
+  utf16.test
+  shared_err.test
+  vtab_err.test
+}
+
+if {[sqlite3 -has-codec]} {
+  # lappend EXCLUDE \
+  #  conflict.test
+}
+
+
+# Files to include in the test.  If this list is empty then everything
+# that is not in the EXCLUDE list is run.
+#
+set INCLUDE {
+}
+
+foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+  set tail [file tail $testfile]
+  if {[lsearch -exact $EXCLUDE $tail]>=0} continue
+  if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
+  source $testfile
+  catch {db close}
+  if {$sqlite_open_file_count>0} {
+    puts "$tail did not close all files: $sqlite_open_file_count"
+    incr nErr
+    lappend ::failList $tail
+  }
+}
+source $testdir/misuse.test
+
+set sqlite_open_file_count 0
+really_finish_test

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="mod_ldap"
+	ProjectGUID="{EC3E5C7F-EE09-47E2-80FE-546363D14A98}"
+	RootNamespace="mod_ldap"
+	Keyword="Win32Proj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_ldap Debug"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\include&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;LDAP_DEPRECATED"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="olber32.lib oldap_r.lib"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\$(OutDir)&quot;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_ldap Release"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\include&quot;"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="olber32.lib oldap_r.lib"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\$(OutDir)&quot;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug MS-LDAP|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\include&quot;"
+				PreprocessorDefinitions="MSLDAP"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="Wldap32.lib"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\$(OutDir)&quot;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release MS-LDAP|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\include&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;MSLDAP"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="Wldap32.lib"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\$(OutDir)&quot;"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\mod_ldap.c"
+			>
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

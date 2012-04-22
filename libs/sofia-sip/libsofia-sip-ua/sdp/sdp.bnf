@@ -1,0 +1,249 @@
+   ; BNF from RFC 2327
+
+   announcement =        proto-version
+                         origin-field
+                         session-name-field
+                         information-field
+                         uri-field
+                         email-fields
+                         phone-fields
+                         connection-field
+                         bandwidth-fields
+                         time-fields
+                         key-field
+                         attribute-fields
+                         media-descriptions
+
+   proto-version =       "v=" 1*DIGIT CRLF
+                         ;this memo describes version 0
+
+   origin-field =        "o=" username space
+                         sess-id space sess-version space
+                         nettype space addrtype space
+                         addr CRLF
+
+   session-name-field =  "s=" text CRLF
+
+   information-field =   ["i=" text CRLF]
+
+   uri-field =           ["u=" uri CRLF]
+
+   email-fields =        *("e=" email-address CRLF)
+
+   phone-fields =        *("p=" phone-number CRLF)
+
+
+   connection-field =    ["c=" nettype space addrtype space
+                         connection-address CRLF]
+                         ;a connection field must be present
+                         ;in every media description or at the
+                         ;session-level
+
+
+   bandwidth-fields =    *("b=" bwtype ":" bandwidth CRLF)
+
+
+   time-fields =         1*( "t=" start-time space stop-time
+                         *(CRLF repeat-fields) CRLF)
+                         [zone-adjustments CRLF]
+
+
+   repeat-fields =       "r=" repeat-interval space typed-time
+                         1*(space typed-time)
+
+
+   zone-adjustments =    "z=" time space ["-"] typed-time
+                         *(space time space ["-"] typed-time)
+
+
+   key-field =           ["k=" key-type CRLF]
+
+
+   key-type =            "prompt" |
+                         "clear:" key-data |
+                         "base64:" key-data |
+                         "uri:" uri
+
+
+   key-data =            email-safe | "~" | "
+
+
+   attribute-fields =    *("a=" attribute CRLF)
+
+
+   media-descriptions =  *( media-field
+                         information-field
+                         *(connection-field)
+                         bandwidth-fields
+                         key-field
+                         attribute-fields )
+
+
+   media-field =         "m=" media space port ["/" integer]
+                         space proto 1*(space fmt) CRLF
+
+
+   media =               1*(alpha-numeric)
+                         ;typically "audio", "video", "application"
+                         ;or "data"
+
+   fmt =                 1*(alpha-numeric)
+                         ;typically an RTP payload type for audio
+                         ;and video media
+
+   proto =               1*(alpha-numeric | "/") ; PPe
+                         ;typically "RTP/AVP" or "udp" for IP4
+
+
+   port =                1*(DIGIT)
+                         ;should in the range "1024" to "65535" inclusive
+                         ;for UDP based media
+
+
+   attribute =           (att-field ":" att-value) | att-field
+
+
+   att-field =           1*(alpha-numeric)
+
+
+   att-value =           byte-string
+
+
+   sess-id =             1*(DIGIT)
+                         ;should be unique for this originating username/host
+
+
+   sess-version =        1*(DIGIT)
+                         ;0 is a new session
+
+
+   connection-address =  multicast-address
+                         | addr
+
+
+   multicast-address =   3*(decimal-uchar ".") decimal-uchar "/" ttl
+                         [ "/" integer ]
+                         ;multicast addresses may be in the range
+                         ;224.0.0.0 to 239.255.255.255
+
+   ttl =                 decimal-uchar
+
+   start-time =          time | "0"
+
+   stop-time =           time | "0"
+
+   time =                POS-DIGIT 9*(DIGIT)
+                         ;sufficient for 2 more centuries
+
+
+   repeat-interval =     typed-time
+
+   typed-time =          1*(DIGIT) [fixed-len-time-unit]
+
+
+   fixed-len-time-unit = "d" | "h" | "m" | "s"
+
+
+   bwtype =              1*(alpha-numeric)
+
+   bandwidth =           1*(DIGIT)
+
+
+   username =            safe
+                         ;pretty wide definition, but doesn't include space
+
+
+   email-address =       email | email "(" email-safe ")" |
+                         email-safe "<" email ">"
+
+
+   email =               ;defined in RFC822
+
+
+   uri=                  ;defined in RFC1630
+
+
+   phone-number =        phone | phone "(" email-safe ")" |
+                         email-safe "<" phone ">"
+
+
+   phone =               "+" POS-DIGIT 1*(space | "-" | DIGIT)
+                         ;there must be a space or hyphen between the
+                         ;international code and the rest of the number.
+
+
+   nettype =             "IN"
+                         ;list to be extended
+
+
+   addrtype =            "IP4" | "IP6"
+                         ;list to be extended
+
+
+   addr =                FQDN | unicast-address
+
+
+   FQDN =                4*(alpha-numeric|"-"|".")
+                         ;fully qualified domain name as specified in RFC1035
+
+   unicast-address =     IP4-address | IP6-address
+
+
+   IP4-address =         b1 "." decimal-uchar "." decimal-uchar "." b4
+   b1 =                  decimal-uchar
+                         ;less than "224"; not "0" or "127"
+   b4 =                  decimal-uchar
+                         ;not "0"
+
+   IP6-address =         ;to be defined
+
+
+   text =                byte-string
+                         ;default is to interpret this as IS0-10646 UTF8
+                         ;ISO 8859-1 requires a "a=charset:ISO-8859-1"
+                         ;session-level attribute to be used
+
+
+   byte-string =         1*(0x01..0x09|0x0b|0x0c|0x0e..0xff)
+                         ;any byte except NUL, CR or LF
+
+
+   decimal-uchar =       DIGIT
+                         | POS-DIGIT DIGIT
+                         | ("1" 2*(DIGIT))
+                         | ("2" ("0"|"1"|"2"|"3"|"4") DIGIT)
+                         | ("2" "5" ("0"|"1"|"2"|"3"|"4"|"5"))
+
+
+   integer =             POS-DIGIT *(DIGIT)
+
+
+   alpha-numeric =       ALPHA | DIGIT
+
+
+   DIGIT =               "0" | POS-DIGIT
+
+
+   POS-DIGIT =           "1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
+
+
+   ALPHA =               "a"|"b"|"c"|"d"|"e"|"f"|"g"|"h"|"i"|"j"|"k"|
+                         "l"|"m"|"n"|"o "|"p"|"q"|"r"|"s"|"t"|"u"|"v"|
+                         "w"|"x"|"y"|"z"|"A"|"B"|"C "|"D"|"E"|"F"|"G"|
+                         "H"|"I"|"J"|"K"|"L"|"M"|"N"|"O"|"P"|" Q"|"R"|
+                         "S"|"T"|"U"|"V"|"W"|"X"|"Y"|"Z"
+
+
+   email-safe =          safe | space | tab
+
+
+   safe =                alpha-numeric |
+                         "'" | "'" | "-" | "." | "/" | ":" | "?" | """ |
+                         "#" | "$" | "&" | "*" | ";" | "=" | "@" | "[" |
+                         "]" | "^" | "_" | "`" | "{" | "|" | "}" | "+" |
+                         "~" | "
+
+
+   space =               %d32
+   tab =                 %d9
+   CRLF =                %d13.10

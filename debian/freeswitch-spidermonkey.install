@@ -1,0 +1,6 @@
+opt/freeswitch/conf/autoload_configs/spidermonkey.conf.xml
+opt/freeswitch/lib/libjs.so*
+opt/freeswitch/lib/libnspr4.so*
+opt/freeswitch/lib/libplc4.so*
+opt/freeswitch/lib/libplds4.so*
+opt/freeswitch/mod/mod_spidermonkey*.so*

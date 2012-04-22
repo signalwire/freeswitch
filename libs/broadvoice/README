@@ -1,0 +1,17 @@
+broadvoice - a library for the BroadVoice 16 and 32 codecs
+----------------------------------------------------------
+
+The BroadVoice 16 speech codec is a 16kbps codec for narrowband (3.5kHz) speech.
+
+The BroadVoice 32 speech codec is a 32kbps codec for wideband (7kHz) speech.
+
+These codecs were developed by Broadcom, and are currently deployed in some popular
+VoIP phones. Broadcom have provided reference source code, under the LGPL 2.1
+licence. However, this code is not in a suitable form for easy integration with
+VoIP applications, and has a number of portability issues.
+
+This library is based on the Broadcom reference code, but has been heavily modified
+so that it builds into a proper library, with a clean usable interface, on a
+range of platforms.
+
+Steve Underwood <steveu@coppice.org>

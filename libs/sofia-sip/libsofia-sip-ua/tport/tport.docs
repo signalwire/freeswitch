@@ -1,0 +1,196 @@
+/**@MODULEPAGE "tport" - Transport Module
+
+@section tport_meta Module Information
+
+The @b tport module contains a generic transport interface used by SIP,
+RTSP, and HTTP protocols. It is an abstraction layer between a protocol
+stack and a transport protocol implementation. The interface is implemented
+via transport objects. The tag parameters for transport objects are defined
+in <sofia-sip/tport_tag.h>.
+
+@CONTACT Pekka.Pessi@nokia.com
+
+@STATUS @SofiaSIP Core library
+
+@LICENSE LGPL
+
+@section tp_primary Master, Primary and Secondary Transport Objects
+
+A transport object can be used in three roles. Master transport object
+represents all available transport. It is used to store stack and root
+interface as well as common data such as SigComp state handler. The primary
+transport objects represent available transports. The secondary transports
+represent actual transport connections.
+
+A protocol stack first creates a @e master @e transport object and binds a
+number of primary transport objects (each representing a transport protocol
+such as UDP, TCP, TLS/TCP, SCTP, etc). The binding process creates a new
+primary transport object for each transport supported. If the protocol stack
+is used as a server, the binding process also creates the necessary server
+sockets and binds them to the specified server ports.
+
+Secondary transport objects are created for each transport-level
+connection. The @b tport module takes care of automatically creating them
+and discarding them when they are no more used. The secondary transport
+objects are required to transmit messages when a connection-oriented
+transport protocol is used.
+
+A secondary transport object can be created for two reasons. A server may
+accept a new connection from a client, or a client may connect to a
+server. When the connection belonging to a secondary transport has been
+established, the protocol stack can send or receive messages through it.
+
+@section tp_init Initializing Transports
+
+When the primary transport object is created with tport_tcreate(), the
+protocol stack must pass a #tport_stack_class_t structure containing
+function pointers to the new transport object. These function pointers
+are used to
+
+-# create new message objects used to store received messages
+-# pass received messages to the protocol stack, and
+-# report transport errors to the protocol stack.
+
+The transport protocols are bound to the primary transport objects with
+the method tport_tbind(). The protocol stack gives the desired server
+transport name (transport name is a structure containing a text-formatted
+socket address along with transport name) along with the list of
+transport protocols supported by the stack. The function tport_tbind()
+can be called multiple times, if, for example, the server port(s) used by
+transport protocol differ (for example, default TCP port for SIP is 5060,
+and default TLS port is 5061).
+
+@subsection tp_connect Connection-Oriented and Connection-Less Transports
+
+A secondary transport objects is created for each transport-level
+connection. The tport module takes care of automatically creating them,
+and discarding them when they are no more used. The secondary transport
+objects are required to transmit messages when a connection-oriented
+transport protocol is used.
+
+A secondary transport can be created for two reasons. A server may accept
+a new connection from a client, or a client may connect to a server. When
+the connection belonging to a secondary transport has been established,
+the protocol stack can send or receive messages through it.
+
+@par Connection-Oriented and Connection-Less Transports
+
+A transport can be connection-oriented (TCP, SCTP) or connectionless
+(UDP). A connection-oriented transport needs a connection to be
+established before messages can be sent. It can also send messages only
+to a single destination. For a connectionless transport, a destination
+address must always be given.
+
+A connectionless transport can be used to send messages to several
+distinct destinations. The destination address must be given to the
+kernel whenever a message is sent using connectionless transport.
+
+Note that UDP can be used in connection-oriented manner (client does not
+use sendto(), but connect() and then send()), if tport_set_params() is
+called with TPTAG_CONNECT(1) argument.
+
+@subsection tp_stream Stream and Datagram Transports
+
+A connection-oriented transport can also be stream-based (TCP, SCTP) or
+packet-based (UDP, SCTP). A stream-based transport protocol takes care of
+ordering the data within a stream, a data chunk sent earlier is always
+delivered before chunks sent after it. A packet-based transport delivers
+data chunks independent of each other and does not maintain the relative
+order, for instance, if a data chunk is lost by the network and then
+retransmitted, application can receive it later than a data chunk that
+was sent after lost one but did not need any retransmissions.
+
+@subsection tp_magic Transport Magic
+
+Transport magic is a cookie, a piece of data specified by stack that can
+be associated with a transport (e.g., a Via header). The protocol stack
+can change the type of transport magic by defining the macro
+#TP_MAGIC_T before including <sofia-sip/tport.h>.
+
+@section tp_op Transport Operations
+
+@subsection tp_send Sending Messages
+
+A message can be sent by the tport_tsend() method. The method can be
+called either from the primary or from the secondary transport. If a
+secondary transport is needed to send the message, it is created and
+connected automatically.
+
+The transport gets the data to be sent from the message object with
+msg_iovec() call. The transport tries to send all the data using one
+su_vsend() call. If the call would fail, for instance, because the send
+buffer is too short, the transport object would create a reference to the
+message and queue it in its own queue.
+
+@subsection tp_recv Receiving Messages
+
+When a primary connectionless transport object or a secondary transport
+object receives new data, it allocates a new message object. The message
+object is created using the factory function tpac_alloc() provided by the
+protocl stack. The incoming data is passed to the message object, data is
+parsed and when a message is complete, it is passed to the application
+using the tpac_recv() function provided when the transport was created.
+
+@subsection tp_refcnt Reference Counting
+
+In order to destroy unused connections, each secondary transport object
+needs to know if there is a reference to it from the stack. A protocol
+stack creates a reference to a transport when it receives an incoming
+request and needs to send the response using the same transport, or when
+it expects a reply from the server coming on the connection used to send
+the request.
+
+@note While the reference counting has been implemented in the tport
+module, the transport objects are not destroyed by timers by default as
+all the protocol stacks do @b not properly handle the reference counting.
+Timers are activated when the tag TPTAG_IDLE() is used.
+
+@subsection tp_pend Pending Requests
+
+The protocol stack can mark requests as @e pending using tport_pend()
+function. The tport_pend() function associates a request message with a
+callback and a handle to a client object. When a transport error occurs,
+it is reported to the client object using the associated callback
+function.
+
+When the stack receives a response to the request it has marked as
+pending, it calls tport_release(). The request can be still considered
+pending, if the response was a preliminary one. In this case, the @a
+still_pending argument is true. The function tport_release() is also
+called without response message, if the stack is no more interested in
+the response, for instance, after a timeout.
+
+@subsection tp_queue Send Queue
+
+Each stream-based transport also supports send queue. The queue can be
+used either to queue messages during congestion, or to maintain the
+relative ordering of responses. Usually, queue is used implicitly for the
+first purpose, e.g., if a transport is busy sending a message it queues
+further messages when tport_tsend() is called.
+
+Explicit queueing is needed when the protocol (like HTTP/1.1) requires
+that the relative order of responses is maintained. When the protocol
+stack receives a request, it queues an empty response message to the
+transport with tport_tqueue(). Such an empty response is marked as
+incomplete, not ready to send. When application responds to the request
+via tport_tqsend(), the transport object marks the message ready to send
+and, if there are no other queued responses before it, sends it.
+
+@section tp_debug Logging and Dumping Messages
+
+Seeing message contents and network events is extremely useful when
+debugging protocols. There are environment variables that are used to
+activate message logging within @b tport module.
+<dl compact>
+<dt>@b #TPORT_LOG
+   <dd>if set, tport module prints out the message contents
+       after parsing
+<dt>@b #TPORT_DUMP
+   <dd>contains dump file name - incoming data is written
+       dump file @e before parsing
+<dt>@b #TPORT_DEBUG
+   <dd>integer in range -1..9 controlling amount of
+       debugging printout from @b tport module. See also #tport_log.
+</dl>
+ */
+

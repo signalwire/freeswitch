@@ -1,0 +1,114 @@
+#!/bin/sh
+#
+# Calculate coverage of source files
+#
+
+gcovflags=-n
+
+usage ()
+{
+    cat <<EOF
+usage: coverage [OPTIONS] [output-files]
+    where OPTIONS are:
+    --output      generate .gcov files
+    --help -h -?  print this message
+EOF
+    exit $1
+}
+
+while true; do
+case "$1" in
+--output ) gcovflags= ; shift ;;
+'-?' | -h | --help ) usage ;;
+- ) shift ; break ;;
+-* ) usage 1 ;;
+* ) break ;;
+esac
+done
+
+{
+for f in *.bb
+do
+    test "$f" = "*.bb" && { echo "run 'make check' first"; exit 1; }
+    gcov $gcovflags "$f" 2>/dev/null
+done
+for f in $@
+do
+    gcov $gcovflags "$f" 2>/dev/null
+done
+} |
+awk '
+BEGIN {
+'"$(for f in "$@"; do echo 'include["'$f'"] = 1;'; done)"'
+}
+
+/^File/ {
+    if (sub(/^File `\/home\/ppessi\/sofia-proxy\/(proxy\/..\/)?/, "")) {
+	sub(/.$/, "");
+	file=$0;
+	if (file ~ /torture/) file = "";
+    }
+    else
+	file = "";
+}
+file ~ /\.[hc]$/ && /Lines executed/ {
+	sub(/Lines executed:/, "");
+	covered = int($3*$1/100 + 0.5);
+
+#	printf "%-5u %-5u %-5u %-7s %s\n", $3, covered, $3 - covered, $1, file;
+	if ($3 == 0) {
+		/* skip */
+        }
+	else if (!lines[file]) {
+          	names[i++] = file; lines[file] = $3; coverage[file] = covered;
+		coverage[file] = $3*$1/100;
+        }
+	else if (coverage[file] < covered) {
+		lines[file] = $3; coverage[file] = covered;
+		coverage[file] = $3*$1/100;
+        }
+}
+
+/torture/ { next; }
+/test/ { next; }
+/\/usr\/include/ { next; }
+
+/(source )?lines executed in file (.*\/)?[-A-Za-z_0-9]+\.[ch]/ {
+        file = $0;
+	sub(/.* in file /, "", file);
+	sub(/.*\//, "", file);
+	covered = int($3*$1/100 + 0.5);
+	#printf "%-5u %-5u %-5u %-7s %s\n", $3, covered, $3 - covered, $1, file;
+
+	if ($3 == 0) {
+		/* skip */
+        }
+	else if (!file in lines) {
+		lines[file] = $3; coverage[file] = $3*$1/100;
+        }
+	else if (coverage[file] <= $3*$1/100) {
+		lines[file] = $3; coverage[file] = $3*$1/100;
+        }
+}
+
+END {
+    for (file in lines) {
+        if (!(file in include))
+	    continue;
+	l = lines[file]; c = coverage[file];
+	covered = int(c + 0.5);
+        total += l; total_coverage += c;
+	printf "%-5u %-5u %-5u %6.2f%%  %s\n",
+		l, covered, l - covered, 100.0 * c / l, file;
+    }
+    if (total) {
+      module = ENVIRON["PWD"];
+      gsub(/\/+$/, "", module);
+      gsub(/.*\//, "", module);
+      printf "%-5u %-5u %-5u %6.2f%%  %s in %s\n",
+	total, total_coverage, total - total_coverage,
+	100.0 * total_coverage / total, "TOTAL", module;
+  }
+}
+' |
+sort -n

@@ -1,0 +1,22 @@
+PROJECT_NAME         = "nea"
+OUTPUT_DIRECTORY     = ../docs/html/nea
+
+INPUT 		     = @srcdir@/nea.docs @srcdir@/sofia-sip @srcdir@ .
+
+@INCLUDE_PATH = . @srcdir@
+@INCLUDE = ../docs/Doxyfile.conf
+
+EXCLUDE_PATTERNS     = test*.c torture*.c
+
+TAGFILES            += \
+	"../docs/su.doxytags=../su" \
+	"../docs/ipt.doxytags=../ipt" \
+	"../docs/bnf.doxytags=../bnf" \
+	"../docs/url.doxytags=../url" \
+	"../docs/msg.doxytags=../msg" \
+	"../docs/sip.doxytags=../sip" \
+	"../docs/nta.doxytags=../nta"
+
+GENERATE_TAGFILE    = ../docs/nea.doxytags
+
+ALIASES            +=

@@ -1,0 +1,98 @@
+mod_radius_cdr - A cdr Accounting module for FreeSWITCH.
+
+cparker at segv dot org
+
+=========================================================================================
+
+Currently, this is in it's infancy, and is still being worked on.  It is not
+yet enabled by default in building.
+
+Comments, code, patches are always welcome.  :)
+
+=========================================================================================
+
+Pre-reqs:
+
+In order to use this module you will need to have the CVS head of the freeradius-client
+library installed.
+
+CVS version as of June 14, 2007 or later will be sufficient.
+
+Instructions on how to retrieve and install this can be found here:
+
+   http://wiki.freeradius.org/Radiusclient
+
+=========================================================================================
+
+Building:
+
+1) Compile and install freeradius-client library.
+
+2) Edit the top level 'configure.in'.  At approx line 336 you need to add:
+
+---
+AC_CONFIG_FILES([Makefile
+                src/Makefile
+                src/mod/Makefile
+                src/mod/event_handlers/mod_cdr/Makefile
++               src/mod/event_handlers/mod_radius_cdr/Makefile
+                src/mod/endpoints/mod_sofia/Makefile
+                src/include/switch_am_config.h
+                build/getlib.sh
+                build/modmake.rules])
+---
+
+3) Rerun bootstrap, re-run configure
+
+4) Edit the top-level 'modules.conf'.  Add the following entry:
+
+...
+event_handlers/mod_radius_cdr
+...
+
+5) Run make, and make install.  Make sure the module is built and installed.
+
+6) Configure FreeSWITCH to load mod_radius_cdr
+
+   - Copy the 'mod_radius_cdr.conf.xml' file to the FreeSWITCH conf directory
+   - Copy the 'radius/' directory to the FreeSWITCH conf directory
+   - Edit 'conf/modules.conf' to load mod_radius_cdr
+   - Edit 'conf/freeswitch.xml' to include 'mod_radius_cdr.conf.xml'
+
+=========================================================================================
+
+Here's a sample RADIUS transaction ( logged to a detail file via FreeRADIUS server ):
+
+Fri Jun  8 08:23:10 2007
+        Acct-Status-Type = Start
+        Acct-Session-Id = "d734ff5e-bf04-4045-8cb3-f5744574808b"
+        Freeswitch-Src = "8478797989"
+        Freeswitch-CLID = "Chris Parker"
+        Freeswitch-Dst = "888"
+        Freeswitch-Dialplan = "XML"
+        NAS-Port = 0
+        Acct-Delay-Time = 0
+        NAS-IP-Address = 127.0.0.1
+        Client-IP-Address = 127.0.0.1
+        Acct-Unique-Session-Id = "4b7754541b5902fa"
+        Timestamp = 1181308990
+
+Fri Jun  8 08:23:31 2007
+        Acct-Status-Type = Stop
+        Acct-Session-Id = "d734ff5e-bf04-4045-8cb3-f5744574808b"
+        Freeswitch-Hangupcause = Normal-Clearing
+        Freeswitch-Src = "8478797989"
+        Freeswitch-CLID = "Chris Parker"
+        Freeswitch-Dst = "888"
+        Freeswitch-Dialplan = "XML"
+        Freeswitch-Lastapp = "bridge"
+        Freeswitch-Billusec = 21460442
+        NAS-Port = 0
+        Acct-Delay-Time = 0
+        NAS-IP-Address = 127.0.0.1
+        Client-IP-Address = 127.0.0.1
+        Acct-Unique-Session-Id = "4b7754541b5902fa"
+        Timestamp = 1181309011
+
+
+

@@ -1,0 +1,72 @@
+LIBRARY libspeexdsp
+EXPORTS
+
+
+;
+;	speex_buffer.h
+;
+speex_buffer_init
+speex_buffer_destroy
+speex_buffer_write
+speex_buffer_writezeros
+speex_buffer_read
+speex_buffer_get_available
+speex_buffer_resize
+
+;
+;	speex_echo.h
+;
+speex_echo_state_init
+speex_echo_state_destroy
+speex_echo_cancellation
+speex_echo_cancel
+speex_echo_capture
+speex_echo_playback
+speex_echo_state_reset
+speex_echo_ctl
+
+;
+;	speex_jitter.h
+;
+jitter_buffer_init
+jitter_buffer_reset
+jitter_buffer_destroy
+jitter_buffer_put
+jitter_buffer_get
+jitter_buffer_get_pointer_timestamp
+jitter_buffer_tick
+jitter_buffer_update_delay
+
+;
+;	speex_preprocess.h
+;
+speex_preprocess_state_init
+speex_preprocess_state_destroy
+speex_preprocess_run
+speex_preprocess
+speex_preprocess_estimate_update
+speex_preprocess_ctl
+
+;
+;	speex_resampler.h
+;
+speex_resampler_init
+speex_resampler_init_frac
+speex_resampler_destroy
+speex_resampler_process_float
+speex_resampler_process_int
+speex_resampler_process_interleaved_float
+speex_resampler_process_interleaved_int
+speex_resampler_set_rate
+speex_resampler_get_rate
+speex_resampler_set_rate_frac
+speex_resampler_get_ratio
+speex_resampler_set_quality
+speex_resampler_get_quality
+speex_resampler_set_input_stride
+speex_resampler_get_input_stride
+speex_resampler_set_output_stride
+speex_resampler_get_output_stride
+speex_resampler_skip_zeros
+speex_resampler_reset_mem
+speex_resampler_strerror

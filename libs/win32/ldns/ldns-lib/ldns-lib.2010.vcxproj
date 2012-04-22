@@ -1,0 +1,247 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>ldns</ProjectName>
+    <ProjectGuid>{23B4D303-79FC-49E0-89E2-2280E7E28940}</ProjectGuid>
+    <RootNamespace>ldns</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\extdll.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\extdll.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\extdll.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\w32\extdll.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\..\ldns\;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\..\ldns\;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PreprocessorDefinitions>HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\ldns\;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PreprocessorDefinitions>HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\ldns\;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
+if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\ldns\compat\b32_ntop.c" />
+    <ClCompile Include="..\..\..\ldns\compat\b32_pton.c" />
+    <ClCompile Include="..\..\..\ldns\compat\b64_ntop.c" />
+    <ClCompile Include="..\..\..\ldns\compat\b64_pton.c" />
+    <ClCompile Include="..\..\..\ldns\buffer.c" />
+    <ClCompile Include="..\..\..\ldns\compat\ctime_r.c" />
+    <ClCompile Include="..\..\..\ldns\dname.c" />
+    <ClCompile Include="..\..\..\ldns\dnssec.c" />
+    <ClCompile Include="..\..\..\ldns\dnssec_sign.c" />
+    <ClCompile Include="..\..\..\ldns\dnssec_verify.c" />
+    <ClCompile Include="..\..\..\ldns\dnssec_zone.c" />
+    <ClCompile Include="..\..\..\ldns\error.c" />
+    <ClCompile Include="..\..\..\ldns\compat\fake-rfc2553.c" />
+    <ClCompile Include="..\..\..\ldns\compat\gettimeofday.c" />
+    <ClCompile Include="..\..\..\ldns\compat\gmtime_r.c" />
+    <ClCompile Include="..\..\..\ldns\higher.c" />
+    <ClCompile Include="..\..\..\ldns\host2str.c" />
+    <ClCompile Include="..\..\..\ldns\host2wire.c" />
+    <ClCompile Include="..\..\..\ldns\compat\inet_aton.c" />
+    <ClCompile Include="..\..\..\ldns\compat\inet_ntop.c" />
+    <ClCompile Include="..\..\..\ldns\compat\inet_pton.c" />
+    <ClCompile Include="..\..\..\ldns\compat\isblank.c" />
+    <ClCompile Include="..\..\..\ldns\keys.c" />
+    <ClCompile Include="..\..\..\ldns\linktest.c" />
+    <ClCompile Include="..\..\..\ldns\compat\malloc.c" />
+    <ClCompile Include="..\..\..\ldns\compat\memmove.c" />
+    <ClCompile Include="..\..\..\ldns\net.c" />
+    <ClCompile Include="..\..\..\ldns\packet.c" />
+    <ClCompile Include="..\..\..\ldns\parse.c" />
+    <ClCompile Include="..\..\..\ldns\rbtree.c" />
+    <ClCompile Include="..\..\..\ldns\rdata.c" />
+    <ClCompile Include="..\..\..\ldns\compat\realloc.c" />
+    <ClCompile Include="..\..\..\ldns\resolver.c" />
+    <ClCompile Include="..\..\..\ldns\rr.c" />
+    <ClCompile Include="..\..\..\ldns\rr_functions.c" />
+    <ClCompile Include="..\..\..\ldns\sha1.c" />
+    <ClCompile Include="..\..\..\ldns\sha2.c" />
+    <ClCompile Include="..\..\..\ldns\compat\snprintf.c" />
+    <ClCompile Include="..\..\..\ldns\str2host.c" />
+    <ClCompile Include="..\..\..\ldns\compat\strlcpy.c" />
+    <ClCompile Include="..\..\..\ldns\compat\timegm.c" />
+    <ClCompile Include="..\..\..\ldns\tsig.c" />
+    <ClCompile Include="..\..\..\ldns\update.c" />
+    <ClCompile Include="..\..\..\ldns\util.c" />
+    <ClCompile Include="..\..\..\ldns\wire2host.c" />
+    <ClCompile Include="..\..\..\ldns\zone.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\ldns\compat\fake-rfc2553.h" />
+    <ClInclude Include="..\..\..\ldns\compat\gettimeofday.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\buffer.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\common.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\config.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\dname.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\dnssec.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\dnssec_sign.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\dnssec_verify.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\dnssec_zone.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\error.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\higher.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\host2str.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\host2wire.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\keys.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\ldns.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\net.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\packet.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\parse.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\rbtree.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\rdata.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\resolver.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\rr.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\rr_functions.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\sha1.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\sha2.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\str2host.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\tsig.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\update.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\util.h" />
+    <ClInclude Include="..\..\..\ldns\ldns\zone.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ldns\util.h.in" />
+    <None Include="ldns\readme.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

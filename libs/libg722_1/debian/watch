@@ -1,0 +1,7 @@
+# See uscan(1) for format
+
+# Compulsory line, this is a version 3 file
+version=3
+
+# <Webpage URL> <string match>
+http://soft-switch.org/downloads/voipcodecs/ g722_1-(.*)\.tgz debian svn-upgrade

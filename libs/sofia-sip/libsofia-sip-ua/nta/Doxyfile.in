@@ -1,0 +1,26 @@
+PROJECT_NAME         = "nta"
+OUTPUT_DIRECTORY     = ../docs/html/nta
+
+INPUT 		     = @srcdir@/nta.docs @srcdir@/sofia-sip @srcdir@ .
+
+@INCLUDE_PATH = . @srcdir@
+@INCLUDE = ../docs/Doxyfile.conf
+
+TAGFILES           += ../docs/su.doxytags=../su
+TAGFILES           += ../docs/ipt.doxytags=../ipt
+TAGFILES           += ../docs/bnf.doxytags=../bnf
+TAGFILES           += ../docs/url.doxytags=../url
+TAGFILES           += ../docs/msg.doxytags=../msg
+TAGFILES           += ../docs/sip.doxytags=../sip
+TAGFILES           += ../docs/sresolv.doxytags=../sresolv
+TAGFILES           += ../docs/tport.doxytags=../tport
+TAGFILES           += ../docs/nua.doxytags=../nua
+
+GENERATE_TAGFILE    = ../docs/nta.doxytags
+
+EXCLUDE_PATTERNS   += sl_*.h sl_*.c nta_compat.*
+
+ALIASES            +=
+
+@INCLUDE_PATH = . @srcdir@
+@INCLUDE = ../sip/sip.doxyaliases

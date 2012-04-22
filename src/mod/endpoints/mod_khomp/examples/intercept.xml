@@ -1,0 +1,26 @@
+<include>
+
+<!-- ########################### FXS Context ############################### -->
+<context name="khomp-fxs-00">
+
+  <extension name="main">
+    <condition field="destination_number" expression="^(\d{4})$">
+    <action application="set"    data="called_party_callgroup=1"/>
+    <action application="db"     data="insert/last_dial/${called_party_callgroup}/${uuid}"/>
+    <action application="bridge" data="khomp/r$1"/>
+    </condition>
+  </extension>
+
+  <extension name="intercept">
+    <condition field="destination_number" expression="^55$">
+      <action application="answer"/>
+      <action application="set"       data="intercept_unbridged_only=true"/>
+      <action application="intercept" data="${db(select/last_dial/1)}"/>
+    </condition>
+  </extension>
+
+</context>
+<!-- ####################################################################### -->
+
+</include>
+

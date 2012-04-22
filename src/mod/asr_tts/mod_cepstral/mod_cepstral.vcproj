@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="mod_cepstral"
+	ProjectGUID="{692F6330-4D87-4C82-81DF-40DB5892636E}"
+	RootNamespace="mod_cepstral"
+	Keyword="Win32Proj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Cepstral\sdk\lib\winnt&quot;;&quot;C:\Program Files\Cepstral\sdk\lib\windows&quot;"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="swift.lib"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\Cepstral\sdk\lib\winnt&quot;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Cepstral\sdk\lib\winnt&quot;;&quot;C:\Program Files\Cepstral\sdk\lib\windows&quot;"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="swift.lib"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\Cepstral\sdk\lib\winnt&quot;"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\mod_cepstral.c"
+			>
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

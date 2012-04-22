@@ -1,0 +1,85 @@
+#!/bin/sh
+#
+# broadvoice - a library for the BroadVoice 16 and 32 codecs
+#
+# regression_tests.sh
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2, as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+# $Id: regression_tests.sh.in,v 1.2 2009/11/20 13:12:24 steveu Exp $
+#
+
+STDOUT_DEST=xyzzy
+STDERR_DEST=xyzzy2
+VECTOR_CLASS=@BROADVOICE_VECTORS_FOR_TESTS@
+TMP_FILE=tmp
+
+echo Performing basic BroadVoice 16 and 32 regression tests
+echo
+
+./broadvoice_tests E I 32000 ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.raw $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.bv32.ref
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo broadvoice_tests encode failed!
+    exit $RETVAL
+fi
+./broadvoice_tests E I 16000 ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.raw $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.bv16.ref
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo broadvoice_tests encode failed!
+    exit $RETVAL
+fi
+echo broadvoice_tests encode completed OK
+
+./broadvoice_tests D I 32000 ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.bv32.ref $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.bv32.ref.raw
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo broadvoice_tests decode failed!
+    exit $RETVAL
+fi
+./broadvoice_tests D I 16000 ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.bv16.ref $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.bv16.ref.raw
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo broadvoice_tests decode failed!
+    exit $RETVAL
+fi
+
+./broadvoice_tests D I 32000 ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.bfe10.bv32 $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv32/tv.bv32.bfe10.ref.raw
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo broadvoice_tests decode failed!
+    exit $RETVAL
+fi
+./broadvoice_tests D I 16000 ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.bfe10.bv16 $TMP_FILE
+diff $TMP_FILE ../test-data/broadcom/$VECTOR_CLASS/bv16/tv.bv16.bfe10.ref.raw
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo broadvoice_tests decode failed!
+    exit $RETVAL
+fi
+echo broadvoice_tests decode completed OK
+
+echo
+echo All regression tests successfully completed

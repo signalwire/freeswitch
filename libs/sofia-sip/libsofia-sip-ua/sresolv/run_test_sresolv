@@ -1,0 +1,191 @@
+#! /bin/sh
+#
+# Run sresolv_test using our own name server
+#
+# --------------------------------------------------------------------
+#
+# This file is part of the Sofia-SIP package
+#
+# Copyright (C) 2005 Nokia Corporation.
+#
+# Contact: Pekka Pessi <pekka.pessi@nokia.com>
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1 of
+# the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+# 02110-1301 USA
+#
+# --------------------------------------------------------------------
+#
+# Author(s): Pekka Pessi <Pekka.Pessi@nokia.com>.
+#
+
+s=`dirname $0`
+test x$s = x. && s=`pwd`
+
+PATH=/usr/sbin:/usr/local/sbin:/sbin:$PATH
+export PATH
+
+# Test for support for IPv6 on Linux. This probably fails on everything else.
+ipv6='sysctl net.ipv6.conf.default.mtu >/dev/null 2>&1'
+# Bind not working with IPv6 on RHEL 4:
+# client.c:1325: unexpected error: failed to get request's destination: failure
+#ipv6=false
+
+port=`expr $$ % \( 65536 - 1024 \) + 1024`
+
+# Try to find a free port
+if netstat --ip >/dev/null 2>&1 ; then
+    while netstat --ip -n -a | fgrep ":$port " > /dev/null
+    do
+	port=`expr $port + 1`
+	if test $port = 65536 ; then
+	    port=1024
+	fi
+    done
+fi
+
+# No BIND 9, no fun
+{ type named >/dev/null &&
+  named -v | grep BIND.*9 > /dev/null
+} || {
+echo test_sresolv: there is no BIND 9 named in you path, skipping
+exit 77
+}
+
+if eval $ipv6
+then
+    # Figure out nice IPv6 address for us
+    ns=`ip addr ls | awk '
+    /^[0-9]:/ { up = ($3 ~ /UP/) && ($3 !~ /LOOPBACK/); }
+    /inet6 fe80::/ { next; } # no link-local
+    up && $1 ~ /inet6/ { sub(/\/.*$/, "", $2); print $2; exit 0; }'`
+
+    # Nothing found, use localnode ::1
+    if test -z "$ns"; then ns=::1 ; fi
+
+    listen6="listen-on-v6 port $port { any; };"
+else
+    ns="127.0.0.1"
+    listen4="listen-on port $port { 127.0.0.1; };"
+fi
+
+#
+# Set up configuration. First, nice tmpdir
+#
+t=${TMPDIR:-/tmp}/sofia-sip-sresolv-$USER-$$
+
+mkdir $t || exit 77
+
+# Main resolv.conf (with primary nameserver not answering)
+cat > $t/resolv.conf <<EOF
+# Zeroconf subnet, reserved range - no-one should answer this
+#nameserver 169.254.0.2
+#...but bind9 listens to it if using IPv6 ... and chokes on it.
+
+# 00:10:c6:e3:da:7f belongs to a Nokia WLAN card tucked safely in my closet
+nameserver fe80::10:c6ff:fee3:da7f
+
+# This is bind we set up
+nameserver $ns
+
+domain example.com
+
+# This is our addition
+port $port
+EOF
+
+# Resolv.conf with bad namserver addresses
+cat > $t/error.conf <<EOF
+nameserver 0.0.0.2
+nameserver 1.1.1.1.1
+search example.com
+port $port
+EOF
+
+absolute=`cd $s; pwd`
+
+cat > $t/named.conf <<EOF
+options {
+	directory "$absolute";
+	pid-file "$t/named.pid";
+	notify no;
+	$listen4
+	$listen6
+};
+
+zone "example.com" in {
+        type master;
+        file "example.com";
+};
+
+zone "." in {
+        type master;
+        file "root.zone";
+};
+
+zone "188.2.194.in-addr.arpa" in {
+        type master;
+	file "194.2.188";
+};
+
+zone "0.0.127.in-addr.arpa" in {
+        type master;
+	file "127.zone";
+};
+
+zone "0.0.0.c.2.1.0.3.0.0.2.1.e.f.f.3.ip6.int" in {
+        type master;
+	file "3.f.f.e.1.2.0.0.3.0.1.2.c.0.0.0";
+};
+
+zone "0.0.0.c.2.1.0.3.0.0.2.1.e.f.f.3.ip6.arpa" in {
+        type master;
+	file "3.f.f.e.1.2.0.0.3.0.1.2.c.0.0.0.arpa";
+};
+
+EOF
+
+named -f -d 999 -c $t/named.conf &
+
+echo $0: started named pid $!
+for i in 1 2 3 4 5; do
+    test -r $t/named.pid && break
+    sleep 1;
+done
+
+test -r $t/named.pid || {
+    echo $0: cannot start named >&2 ;
+    if fgrep -i -e SELINUX=enforcing /etc/selinux/config >/dev/null 2>&1 ; then
+	echo $0: perhaps you have to disable SELinux protection for named
+    elif test -d /etc/apparmor.d ; then
+	echo $0: perhaps you have to disable apparmor protection for named
+    else
+	echo $0: perhaps you have to disable apparmor or SELinux
+    fi
+    exit 77
+}
+
+kill_named ()
+{
+    kill `cat $t/named.pid`
+    rm $t/named.conf $t/resolv.conf $t/error.conf $t/named.pid 2>/dev/null
+    rmdir $t
+}
+trap kill_named EXIT
+
+# export SOFIA_DEBUG=9
+
+$VALGRIND ./test_sresolv "$@" - $t/resolv.conf $t/error.conf || exit 1
+
+exit 0

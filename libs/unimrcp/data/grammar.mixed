@@ -1,0 +1,19 @@
+
+--break
+Content-Type:text/uri-list
+Content-Length: 22
+
+builtin:grammar/digits
+
+--break
+Content-Type:application/srgs+xml
+Content-Length: 230
+
+<?xml version="1.0"?>
+<grammar root="digit" version="1.0" xml:lang="en-US" 
+         xmlns="http://www.w3.org/2001/06/grammar">
+  <rule id="digit" scope="public">
+    <item>one two three four five</item>
+  </rule>
+</grammar>
+--break--

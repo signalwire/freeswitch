@@ -1,0 +1,82 @@
+#############################################################
+# $Id: Makefile.m32,v 1.32 2004/12/19 11:52:31 giva Exp $
+#
+## Makefile for building libcurl.a with MingW32 (GCC-3.2) and
+## optionally OpenSSL (0.9.7)
+##
+## Use: make -f Makefile.m32
+##
+## Comments to: Troy Engel <tengel@sonic.net> or
+##              Joern Hartroth <hartroth@acm.org>
+
+ifndef OPENSSL_PATH
+OPENSSL_PATH = ../../openssl-0.9.7d
+endif
+ifndef ZLIB_PATH
+ZLIB_PATH = ../../zlib-1.2.1
+endif
+
+CC = gcc
+AR = ar
+RM = rm -f
+RANLIB = ranlib
+STRIP = strip -g
+
+########################################################
+## Nothing more to do below this line!
+
+INCLUDES = -I. -I../include
+CFLAGS = -g -O2 -DMINGW32 -DBUILDING_LIBCURL -DHAVE_LONGLONG
+ifdef SSL
+  INCLUDES += -I"$(OPENSSL_PATH)/outinc" -I"$(OPENSSL_PATH)/outinc/openssl"
+  CFLAGS += -DUSE_SSLEAY -DUSE_OPENSSL -DHAVE_OPENSSL_ENGINE_H -DHAVE_OPENSSL_PKCS12_H \
+            -DHAVE_ENGINE_LOAD_BUILTIN_ENGINES -DOPENSSL_NO_KRB5 \
+            -DCURL_CA_BUNDLE='getenv("CURL_CA_BUNDLE")'
+  DLL_LIBS = -L$(OPENSSL_PATH)/out -leay32 -lssl32
+endif
+ifdef ZLIB
+  INCLUDES += -I"$(ZLIB_PATH)"
+  CFLAGS += -DHAVE_LIBZ -DHAVE_ZLIB_H
+  DLL_LIBS += -L$(ZLIB_PATH) -lz
+endif
+COMPILE = $(CC) $(INCLUDES) $(CFLAGS)
+
+# Makefile.inc provides the CSOURCES and HHEADERS defines
+include Makefile.inc
+
+libcurl_a_OBJECTS := $(patsubst %.c,%.o,$(strip $(CSOURCES)))
+
+libcurl_a_LIBRARIES = libcurl.a
+libcurl_a_DEPENDENCIES = $(strip $(CSOURCES) $(HHEADERS))
+
+all: libcurl.a libcurl.dll libcurldll.a
+
+libcurl.a: $(libcurl_a_OBJECTS) $(libcurl_a_DEPENDENCIES)
+	$(RM) libcurl.a
+	$(AR) cru libcurl.a $(libcurl_a_OBJECTS)
+	$(RANLIB) libcurl.a
+	$(STRIP) $@
+
+RESOURCE = libcurl.res
+
+# remove the last line above to keep debug info
+
+libcurl.dll libcurldll.a: $(libcurl_a_OBJECTS) $(RESOURCE)
+	$(RM) $@
+	$(CC) -s -shared -Wl,--out-implib,libcurldll.a -o libcurl.dll \
+	  $(libcurl_a_OBJECTS) $(RESOURCE) $(DLL_LIBS) -lws2_32 -lwinmm
+
+# remove the above '-s' to keep debug info
+
+.c.o:
+	$(COMPILE) -c $<
+
+libcurl.res: libcurl.rc
+	windres -DCURLDEBUG=0 -O COFF -o $@ -i $^
+
+clean:
+	$(RM) $(libcurl_a_OBJECTS) $(RESOURCE)
+
+distrib: clean
+	$(RM) $(libcurl_a_LIBRARIES)
+

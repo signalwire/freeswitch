@@ -1,0 +1,15 @@
+APIs that result in an event when the API returns FTDM_SUCCESS
+
+ftdm_channel_call_answer()
+ftdm_channel_call_indicate()
+ftdm_channel_call_transfer()
+	FTDM_SIGEVENT_INDICATION_COMPLETED
+	*note that FTDM_SIGEVENT_INDICATION_COMPLETED has associated data to indicate the result of the indication
+	*note this event is only delivered on non-blocking channels
+
+ftdm_call_place
+	FTDM_SIGEVENT_DIALING
+
+ftdm_channel_call_hangup
+	FTDM_SIGEVENT_RELEASED
+

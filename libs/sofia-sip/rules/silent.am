@@ -1,0 +1,53 @@
+# Silent compilation w/ Automake 1.9 or 1.10
+# ----------------------------------------------------------
+
+# Automake 1.9.6 is not clever enough to override suffix rules within if
+# if SOFIA_COMPILE_SILENT
+
+SOFIA_SILENT=@
+
+LIBTOOL_FLAGS = --silent
+
+# From Automake 1.9.6 - 
+LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(LIBTOOL_FLAGS) \
+	$(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+
+LINK = 	${SOFIA_SILENT}test "${SOFIA_SILENT}" != @ || echo '	 LINK $@'; \
+	$(LIBTOOL) --tag=CC --mode=link $(LIBTOOL_FLAGS) \
+	$(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+
+# Rules from depend2.am (GENERIC = TRUE, SUBDIROBJ = FALSE, %FASTDEP% = am_fastdepCC) silenced. 
+.c.o:
+	@test "${SOFIA_SILENT}" != @ || echo '	 COMPILE $@'
+if am__fastdepCC
+	${SOFIA_SILENT}if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+else
+if AMDEP
+	${SOFIA_SILENT}source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+	DEPDIR="$(DEPDIR)" $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c -o $@ $<
+else
+	${SOFIA_SILENT}$(COMPILE) -c -o $@ $<
+endif
+endif
+
+.c.lo:
+	@test "${SOFIA_SILENT}" != @ || echo '	 LTCOMPILE $@'
+if am__fastdepCC
+	${SOFIA_SILENT}if $(LTCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+else
+if AMDEP
+	${SOFIA_SILENT}source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+	DEPDIR="$(DEPDIR)" $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LTCOMPILE) -c -o $@ $<
+else
+	${SOFIA_SILENT}$(LTCOMPILE) -c -o $@ $<
+endif
+endif
+
+# endif

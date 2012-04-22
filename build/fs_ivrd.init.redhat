@@ -1,0 +1,102 @@
+#!/bin/bash
+#
+#       /etc/rc.d/init.d/fs_ivrd
+#
+#       The FreeSwitch Open Source Voice Platform
+#
+#  chkconfig: 345 89 14
+#  description: Starts and stops the fs_ivrd server daemon
+#  processname: fs_ivrd
+#  pidfile: /usr/local/fs_ivrd/run/fs_ivrd.pid
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+PROG_NAME=fs_ivrd
+PID_FILE=${PID_FILE-/usr/local/freeswitch/run/fs_ivrd.pid}
+#FS_USER=${FS_USER-freeswitch}
+FS_USER=${FS_USER-root}
+FS_FILE=${FS_FILE-/usr/local/freeswitch/bin/fs_ivrd} 
+FS_HOME=${FS_HOME-/usr/local/freeswitch}
+LOCK_FILE=/var/lock/subsys/fs_ivrd
+IVRD_ARGS="-h localhost -p 9090"
+RETVAL=0
+
+# Source options file
+if [ -f /etc/sysconfig/fs_ivrd ]; then
+        . /etc/sysconfig/fs_ivrd
+fi
+
+# <define any local shell functions used by the code that follows>
+
+start() {
+        echo -n "Starting $PROG_NAME: "
+        if [ -e $LOCK_FILE ]; then
+            if [ -e $PID_FILE ] && [ -e /proc/`cat $PID_FILE` ]; then
+                echo
+                echo -n $"$PROG_NAME is already running.";
+                failure $"$PROG_NAME is already running.";
+                echo
+                return 1
+            fi
+        fi
+        cd $FS_HOME
+        daemon --user $FS_USER --pidfile $PID_FILE "$FS_FILE $IVRD_ARGS $IVRD_PARAMS >/dev/null 2>&1 &"
+                echo
+                RETVAL=$?
+        [ $RETVAL -eq 0 ] && touch $LOCK_FILE;
+        echo
+        return $RETVAL
+}
+
+stop() {
+        echo -n "Shutting down $PROG_NAME: "
+        if [ ! -e $LOCK_FILE ]; then
+            echo
+            echo -n $"cannot stop $PROG_NAME: $PROG_NAME is not running."
+            failure $"cannot stop $PROG_NAME: $PROG_NAME is not running."
+            echo
+            return 1;
+        fi
+        cd $FS_HOME
+        $FS_FILE -stop > /dev/null 2>&1
+        killproc $PROG_NAME
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] &&  rm -f $LOCK_FILE;
+        return $RETVAL
+}
+
+rhstatus() {
+        status $PROG_NAME;
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $PROG_NAME
+        RETVAL=$?
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    reload)
+#        <cause the service configuration to be reread, either with
+#        kill -HUP or by restarting the daemons, in a manner similar
+#        to restart above>
+        ;;
+    condrestart)
+        ;;
+    *)
+        echo "Usage: $PROG_NAME {start|stop|status|restart}"
+        exit 1
+        ;;
+esac
+exit $RETVAL

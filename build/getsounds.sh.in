@@ -1,0 +1,38 @@
+#!/bin/sh
+
+TAR=@TAR@
+ZCAT=@ZCAT@
+WGET=@WGET@
+CURL=@CURL@
+
+DIR=`pwd`
+
+if [ -x "$WGET" ] ; then
+    DOWNLOAD_CMD=$WGET
+fi
+if [ "x${DOWNLOAD_CMD}" = "x" -a -x "$CURL" ] ; then
+    DOWNLOAD_CMD="$CURL -O"
+fi
+
+base=http://files.freeswitch.org/
+tarfile=$1
+install=$2
+
+echo -n "#"
+pwd
+echo "# $0 $1 $2"
+
+if [ ! -f $tarfile ] ; then
+    $DOWNLOAD_CMD $base$tarfile
+    if [ ! -f $tarfile ] ; then
+        echo cannot find $tarfile
+	exit 1
+    fi
+fi
+
+if [ ! -z $install ] ; then
+   test -d $install || mkdir $install
+   cd $install && $ZCAT -c -d $DIR/$tarfile | $TAR xf -
+fi
+
+exit 0

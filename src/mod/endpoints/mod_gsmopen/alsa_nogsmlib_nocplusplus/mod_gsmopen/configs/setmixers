@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# ALSA can manage a max of 8 cards
+CARD_LIST="0 1 2 3 4 5 6 7"
+
+for i in $CARD_LIST; do
+
+#amixer -c ${i}  -q set Mic 0% mute
+amixer -c ${i}  -q set Speaker 70% unmute >/dev/null 2>&1
+amixer -c ${i}  -q set Mic cap mute 70%	>/dev/null 2>&1
+amixer -c ${i}  -q set "Auto Gain Control" off	>/dev/null 2>&1
+
+done

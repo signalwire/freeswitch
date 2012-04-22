@@ -1,0 +1,7 @@
+2006-06-15  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* sofia-sip/hostdomain.h (host_is_local): Function added.
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Initial import of the module to Sofia-SIP tree.

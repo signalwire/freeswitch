@@ -1,0 +1,5 @@
+opt/freeswitch/log
+opt/freeswitch/db
+opt/freeswitch/bin/scripts
+etc/monit
+

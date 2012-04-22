@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="unimrcp"
+	InheritedPropertySheets="..\..\..\..\w32\apr.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(SolutionDir)libs\unimrcp\platforms\libunimrcp-client\include&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\mrcp-client\include&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\mrcp-signaling\include&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\apr-toolkit\include&quot;;&quot;$(SolutionDir)libs\unimrcp\build&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\mrcp\include&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\mrcp\message\include&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\mrcp\control\include&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\mrcp\resources\include&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\mpf\include&quot;;&quot;$(SolutionDir)libs\unimrcp\libs\mrcpv2-transport\include&quot;;&quot;$(SolutionDir)libs\unimrcp\modules\mrcp-sofiasip\include&quot;;&quot;$(SolutionDir)libs\unimrcp\modules\mrcp-unirtsp\include&quot;"
+		PreprocessorDefinitions="MRCP_STATIC_LIB MPF_STATIC_LIB APT_STATIC_LIB"
+	/>
+</VisualStudioPropertySheet>

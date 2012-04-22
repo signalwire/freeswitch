@@ -1,0 +1,19 @@
+diff -ur a/erts/etc/unix/Install.src b/erts/etc/unix/Install.src
+--- a/erts/etc/unix/Install.src	2010-02-19 10:03:27.000000000 -0800
++++ b/erts/etc/unix/Install.src	2010-07-07 04:41:13.000000000 -0700
+@@ -139,14 +139,4 @@
+ cp -p $Name.boot start.boot
+ cp -p ../releases/%I_SYSTEM_VSN%/$Name.script start.script
+ 
+-#
+-# Fixing the man pages
+-#
+-
+-if [ -d $ERL_ROOT/man ]
+-then
+-    cd $ERL_ROOT
+-    ./misc/format_man_pages $ERL_ROOT
+-fi
+-
+ exit 0
+

@@ -1,0 +1,499 @@
+attributetype ( 1.3.6.1.4.1.65535.1.1.0 NAME 'fstag'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.1 NAME 'action'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.2 NAME 'application'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.3 NAME 'bindings'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.4 NAME 'break'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.5 NAME 'breakonmatch'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.6 NAME 'cidr'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.7 NAME 'content'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.8 NAME 'continue'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.9 NAME 'data'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.10 NAME 'default'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.11 NAME 'digit-len'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.12 NAME 'digits'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.13 NAME 'domain'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.14 NAME 'exit-sound'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.15 NAME 'expression'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.16 NAME 'field'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.17 NAME 'function'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.18 NAME 'greet-long'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.19 NAME 'greet-short'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.20 NAME 'id'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.21 NAME 'inter-digit-timeout'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.22 NAME 'invalid-sound'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.23 NAME 'mailbox'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.24 NAME 'max-failures'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.25 NAME 'method'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.26 NAME 'module'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.27 NAME 'param'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.28 NAME 'parse'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.29 NAME 'path'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.30 NAME 'pattern'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.31 NAME 'regex'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.32 NAME 'replace'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.33 NAME 'service'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.34 NAME 'sound-path'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.35 NAME 'status'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.36 NAME 'timeout'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.37 NAME 'tts-engine'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.38 NAME 'tts-voice'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.39 NAME 'type'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+attributetype ( 1.3.6.1.4.1.65535.1.1.40 NAME 'value'
+    DESC '%attr_desc%'
+    EQUALITY caseIgnoreIA5Match
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.0 NAME 'FSaction'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ application $ content $ data $ function $ method $ type ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.1 NAME 'FSadvertise'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.2 NAME 'FSalias'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.3 NAME 'FSaliases'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.4 NAME 'FSanti-action'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ application $ data ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.5 NAME 'FSbinding'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.6 NAME 'FSbindings'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.7 NAME 'FScaller-controls'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.8 NAME 'FScli-keybindings'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.9 NAME 'FScondition'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ break $ expression $ field ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.10 NAME 'FSconfiguration'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ description ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.11 NAME 'FScontext'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.12 NAME 'FScontrol'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ action $ digits ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.13 NAME 'FSdirectory'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ path ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.14 NAME 'FSdocument'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ type ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.15 NAME 'FSdomain'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ parse ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.16 NAME 'FSdomains'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.17 NAME 'FSemail'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.18 NAME 'FSentry'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ action $ digits $ param ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.19 NAME 'FSextension'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ continue ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.20 NAME 'FSglobalsettings'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.21 NAME 'FSgroup'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.22 NAME 'FSinput'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ breakonmatch $ pattern ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.23 NAME 'FSinterface'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.24 NAME 'FSjavavm'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ path ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.25 NAME 'FSkey'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ value ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.26 NAME 'FSlanguage'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ sound-path $ tts-engine $ tts-voice ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.27 NAME 'FSlist'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ default ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.28 NAME 'FSload'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ module ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.29 NAME 'FSmacro'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.30 NAME 'FSmacros'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.31 NAME 'FSmap'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ value ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.32 NAME 'FSmappings'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.33 NAME 'FSmatch'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.34 NAME 'FSmenu'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ digit-len $ exit-sound $ greet-long $ greet-short $ inter-digit-timeout $ invalid-sound $ max-failures $ timeout ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.35 NAME 'FSmenus'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.36 NAME 'FSmodules'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.37 NAME 'FSnetwork-lists'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.38 NAME 'FSnode'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ cidr $ type ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.39 NAME 'FSnomatch'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.40 NAME 'FSoption'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ value ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.41 NAME 'FSoptions'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.42 NAME 'FSparam'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ bindings $ value ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.43 NAME 'FSparams'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.44 NAME 'FSprispans'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.45 NAME 'FSprofile'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ description $ domain ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.46 NAME 'FSprofiles'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.47 NAME 'FSroom'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ status ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.48 NAME 'FSroute'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ regex $ replace $ service ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.49 NAME 'FSroutes'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.50 NAME 'FSsection'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ description ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.51 NAME 'FSsettings'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.52 NAME 'FSspan'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ id ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.53 NAME 'FStemplate'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ content ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.54 NAME 'FStemplates'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.55 NAME 'FSuser'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ id $ mailbox ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.56 NAME 'FSvariable'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ value ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.57 NAME 'FSvariables'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name ) )
+
+objectclass ( 1.3.6.1.4.1.65535.1.2.58 NAME 'FSx-profile'
+    SUP top STRUCTURAL
+    DESC '%obj_desc%'
+    MAY ( fstag $ name $ type ) )

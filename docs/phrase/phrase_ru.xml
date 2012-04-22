@@ -1,0 +1,1207 @@
+<language>
+  <ru>
+	<ascii>
+		<prompt phrase="Пробел" filename="32.wav"/>  <!--    -->
+		<prompt phrase="Решётка" filename="35.wav"/>
+		<prompt phrase="Звездочка" filename="42.wav"/>
+		<prompt phrase="Точка" filename="46.wav"/>
+		<prompt phrase="A" filename="97.wav"/>
+		<prompt phrase="B" filename="98.wav"/>
+		<prompt phrase="C" filename="99.wav"/>
+		<prompt phrase="D" filename="100.wav"/>
+		<prompt phrase="E" filename="101.wav"/>
+		<prompt phrase="F" filename="102.wav"/>
+		<prompt phrase="G" filename="103.wav"/>
+		<prompt phrase="H" filename="104.wav"/>
+		<prompt phrase="I" filename="105.wav"/>
+		<prompt phrase="J" filename="106.wav"/>
+		<prompt phrase="K" filename="107.wav"/>
+		<prompt phrase="L" filename="108.wav"/>
+		<prompt phrase="M" filename="109.wav"/>
+		<prompt phrase="N" filename="110.wav"/>
+		<prompt phrase="O" filename="111.wav"/>
+		<prompt phrase="P" filename="112.wav"/>
+		<prompt phrase="Q" filename="113.wav"/>
+		<prompt phrase="R" filename="114.wav"/>
+		<prompt phrase="S" filename="115.wav"/>
+		<prompt phrase="T" filename="116.wav"/>
+		<prompt phrase="U" filename="117.wav"/>
+		<prompt phrase="V" filename="118.wav"/>
+		<prompt phrase="W" filename="119.wav"/>
+		<prompt phrase="X" filename="120.wav"/>
+		<prompt phrase="Y" filename="121.wav"/>
+		<prompt phrase="Z" filename="122.wav"/>
+    </ascii>
+	<phonetic-ascii>
+		<prompt phrase="Пробел" filename="32.wav"/>
+		<prompt phrase="Решётка" filename="35.wav"/>
+		<prompt phrase="Точка" filename="46.wav"/>
+		<prompt phrase="Alpha" filename="97.wav"/>
+		<prompt phrase="Bravo" filename="98.wav"/>
+		<prompt phrase="Charlie" filename="99.wav"/>
+		<prompt phrase="Delta" filename="100.wav"/>
+		<prompt phrase="Echo" filename="101.wav"/>
+		<prompt phrase="Foxtrot" filename="102.wav"/>
+		<prompt phrase="Golf" filename="103.wav"/>
+		<prompt phrase="Hotel" filename="104.wav"/>
+		<prompt phrase="India" filename="105.wav"/>
+		<prompt phrase="Juliet" filename="106.wav"/>
+		<prompt phrase="Kilo" filename="107.wav"/>
+		<prompt phrase="Lima" filename="108.wav"/>
+		<prompt phrase="Mike" filename="109.wav"/>
+		<prompt phrase="November" filename="110.wav"/>
+		<prompt phrase="Oscar" filename="111.wav"/>
+		<prompt phrase="Papa" filename="112.wav"/>
+		<prompt phrase="Quebec" filename="113.wav"/>
+		<prompt phrase="Romeo" filename="114.wav"/>
+		<prompt phrase="Sierra" filename="115.wav"/>
+		<prompt phrase="Tango" filename="116.wav"/>
+		<prompt phrase="Unifor" filename="117.wav"/>
+		<prompt phrase="Victor" filename="118.wav"/>
+		<prompt phrase="Whiskey" filename="119.wav"/>
+		<prompt phrase="Xray" filename="120.wav"/>
+		<prompt phrase="Yankee" filename="121.wav"/>
+		<prompt phrase="Zulu" filename="122.wav"/>
+	</phonetic-ascii>
+	<digits>
+		<prompt phrase="ноль" filename="0.wav"/>
+		<prompt phrase="нулевая" filename="h-0f.wav"/>
+		<prompt phrase="нулевой" filename="h-0m.wav"/>
+		<prompt phrase="Нулевое" filename="h-0n.wav"/>
+		<prompt phrase="нулевого" filename="h-0x.wav"/>
+		<prompt phrase="Один" filename="1.wav"/>
+		<prompt phrase="Одна" filename="1f.wav"/>
+		<prompt phrase="Одно" filename="1n.wav"/>
+		<prompt phrase="Одного" filename="1x.wav"/>
+		<prompt phrase="Одной" filename="1xx.wav"/>
+		<prompt phrase="Первого" filename="h-1x.wav"/>
+		<prompt phrase="Первый" filename="h-1m.wav"/>
+		<prompt phrase="Первое" filename="h-1n.wav"/>
+		<prompt phrase="Первая" filename="h-1f.wav"/>
+		<prompt phrase="Одной" filename="h-1xx.wav"/>
+		<prompt phrase="Два" filename="2.wav"/>
+		<prompt phrase="Две" filename="2f.wav"/>
+		<prompt phrase="Два" filename="2n.wav"/>
+		<prompt phrase="Двух" filename="h-2xx.wav"/>
+		<prompt phrase="Второе" filename="h-2n.wav"/>
+		<prompt phrase="Второго" filename="h-2x.wav"/>
+		<prompt phrase="Второй" filename="h-2m.wav"/>
+		<prompt phrase="Вторая" filename="h-2f.wav"/>
+		<prompt phrase="Три" filename="3.wav"/>
+		<prompt phrase="Третьего" filename="h-3x.wav"/>
+		<prompt phrase="Третий" filename="h-3m.wav"/>
+		<prompt phrase="Третья" filename="h-3f.wav"/>
+		<prompt phrase="третье" filename="h-3n.wav"/>
+		<prompt phrase="Трёх" filename="h-3xx.wav"/>
+		<prompt phrase="Четыре" filename="4.wav"/>
+		<prompt phrase="Четвёртая" filename="h-4f.wav"/>
+		<prompt phrase="Четвёртого" filename="h-4x.wav"/>
+		<prompt phrase="Четвёртый" filename="h-4m.wav"/>
+		<prompt phrase="Четвёртое" filename="h-4n.wav"/>
+		<prompt phrase="Четырёх" filename="h-4xx.wav"/>
+		<prompt phrase="Пять" filename="5.wav"/>
+		<prompt phrase="Пятая" filename="h-5f.wav"/>
+		<prompt phrase="Пятого" filename="h-5x.wav"/>
+		<prompt phrase="Пятый" filename="h-5m.wav"/>
+		<prompt phrase="Пятое" filename="h-5n.wav"/>
+		<prompt phrase="Пяти" filename="h-5xx.wav"/>
+		<prompt phrase="Шесть" filename="6.wav"/>
+		<prompt phrase="Шестая" filename="h-6f.wav"/>
+		<prompt phrase="Шестого" filename="h-6x.wav"/>
+		<prompt phrase="Шестой" filename="h-6m.wav"/>
+		<prompt phrase="Шестое" filename="h-6n.wav"/>
+		<prompt phrase="Шести" filename="h-6xx.wav"/>
+		<prompt phrase="Семь" filename="7.wav"/>
+		<prompt phrase="Седьмая" filename="h-7f.wav"/>
+		<prompt phrase="Седьмого" filename="h-7x.wav"/>
+		<prompt phrase="Седьмой" filename="h-7m.wav"/>
+		<prompt phrase="Седьмое" filename="h-7n.wav"/>
+		<prompt phrase="Семи" filename="h-7xx.wav"/>
+		<prompt phrase="Восемь" filename="8.wav"/>
+		<prompt phrase="Восьмая" filename="h-8f.wav"/>
+		<prompt phrase="Восьмого" filename="h-8x.wav"/>
+		<prompt phrase="Восьмой" filename="h-8m.wav"/>
+		<prompt phrase="Восьмое" filename="h-8n.wav"/>
+		<prompt phrase="Восьми" filename="h-8xx.wav"/>
+		<prompt phrase="Девять" filename="9.wav"/>
+		<prompt phrase="Девятая" filename="h-9f.wav"/>
+		<prompt phrase="Девятого" filename="h-9x.wav"/>
+		<prompt phrase="Девятый" filename="h-9m.wav"/>
+		<prompt phrase="Девятое" filename="h-9n.wav"/>
+		<prompt phrase="Девяти" filename="h-9xx.wav"/>
+		<prompt phrase="Десять" filename="10.wav"/>
+		<prompt phrase="Десятая" filename="h-10f.wav"/>
+		<prompt phrase="Десятого" filename="h-10x.wav"/>
+		<prompt phrase="Десятый" filename="h-10m.wav"/>
+		<prompt phrase="Десятое" filename="h-10n.wav"/>
+		<prompt phrase="Десяти" filename="h-10xx.wav"/>
+		<prompt phrase="Одинадцать" filename="11.wav"/>
+		<prompt phrase="Одинадцатая" filename="h-11f.wav"/>
+		<prompt phrase="Одинадцатого" filename="h-11x.wav"/>
+		<prompt phrase="Одинадцатый" filename="h-11m.wav"/>
+		<prompt phrase="Одинадцатое" filename="h-11n.wav"/>
+		<prompt phrase="Одинадцати" filename="h-11xx.wav"/>
+		<prompt phrase="Двенадцать" filename="12.wav"/>
+		<prompt phrase="Двенадцатая" filename="h-12f.wav"/>
+		<prompt phrase="Двенадцатого" filename="h-12x.wav"/>
+		<prompt phrase="Двенадцатый" filename="h-12m.wav"/>
+		<prompt phrase="Двенадцатое" filename="h-12n.wav"/>
+		<prompt phrase="Двенадцати" filename="h-12xx.wav"/>
+		<prompt phrase="Тринадцать" filename="13.wav"/>
+		<prompt phrase="Тринадцатая" filename="h-13f.wav"/>
+		<prompt phrase="Тринадцатого" filename="h-13x.wav"/>
+		<prompt phrase="Тринадцатый" filename="h-13m.wav"/>
+		<prompt phrase="Тринадцатое" filename="h-13n.wav"/>
+		<prompt phrase="Тринадцати" filename="h-13xx.wav"/>
+		<prompt phrase="Четырнадцать" filename="14.wav"/>
+		<prompt phrase="Четырнадцатая" filename="h-14f.wav"/>
+		<prompt phrase="Четырнадцатого" filename="h-14x.wav"/>
+		<prompt phrase="Четырнадцатый" filename="h-14m.wav"/>
+		<prompt phrase="Четырнадцатое" filename="h-14n.wav"/>
+		<prompt phrase="Четырнадцати" filename="h-14xx.wav"/>
+		<prompt phrase="Пятнадцать" filename="15.wav"/>
+		<prompt phrase="Пятнадцатая" filename="h-15f.wav"/>
+		<prompt phrase="Пятнадцатого" filename="h-15x.wav"/>
+		<prompt phrase="Пятнадцатый" filename="h-15m.wav"/>
+		<prompt phrase="Пятнадцатое" filename="h-15n.wav"/>
+		<prompt phrase="Пятнадцати" filename="h-15xx.wav"/>
+		<prompt phrase="Шестнадцать" filename="16.wav"/>
+		<prompt phrase="Шестнадцатая" filename="h-16f.wav"/>
+		<prompt phrase="Шестнадцатого" filename="h-16x.wav"/>
+		<prompt phrase="Шестнадцатый" filename="h-16m.wav"/>
+		<prompt phrase="Шестнадцатое" filename="h-16n.wav"/>
+		<prompt phrase="Шестнадцати" filename="h-16xx.wav"/>
+		<prompt phrase="Семнадцать" filename="17.wav"/>
+		<prompt phrase="Семнадцатая" filename="h-17f.wav"/>
+		<prompt phrase="Семнадцатого" filename="h-17x.wav"/>
+		<prompt phrase="Семнадцатый" filename="h-17m.wav"/>
+		<prompt phrase="Семнадцатое" filename="h-17n.wav"/>
+		<prompt phrase="Семнадцати" filename="h-17xx.wav"/>
+		<prompt phrase="Восемнадцать" filename="18.wav"/>
+		<prompt phrase="Восемнадцатая" filename="h-18f.wav"/>
+		<prompt phrase="Восемнадцатого" filename="h-18x.wav"/>
+		<prompt phrase="Восемнадцатый" filename="h-18m.wav"/>
+		<prompt phrase="Восемнадцатое" filename="h-18n.wav"/>
+		<prompt phrase="Восемнадцати" filename="h-18xx.wav"/>
+		<prompt phrase="Девятнадцать" filename="19.wav"/>
+		<prompt phrase="Девятнадцатая" filename="h-19f.wav"/>
+		<prompt phrase="Девятнадцатого" filename="h-19x.wav"/>
+		<prompt phrase="Девятнадцатый" filename="h-19m.wav"/>
+		<prompt phrase="Девятнадцатое" filename="h-19n.wav"/>
+		<prompt phrase="Девятнадцати" filename="h-19xx.wav"/>
+		<prompt phrase="Двадцать" filename="20.wav"/>
+		<prompt phrase="Двадцатая" filename="h-20f.wav"/>
+		<prompt phrase="Двадцатого" filename="h-20x.wav"/>
+		<prompt phrase="Двадцатый" filename="h-20m.wav"/>
+		<prompt phrase="Двадцатое" filename="h-20n.wav"/>
+		<prompt phrase="Двадцати" filename="h-20xx.wav"/>
+		<prompt phrase="Тридцать" filename="30.wav"/>
+		<prompt phrase="Тридцатая" filename="h-30f.wav"/>
+		<prompt phrase="Тридцатого" filename="h-30x.wav"/>
+		<prompt phrase="Тридцатый" filename="h-30m.wav"/>
+		<prompt phrase="Тридцатое" filename="h-30n.wav"/>
+		<prompt phrase="Тридцати" filename="h-30xx.wav"/>
+		<prompt phrase="Сорок" filename="40.wav"/>
+		<prompt phrase="Сороковая" filename="h-40f.wav"/>
+		<prompt phrase="Сорокового" filename="h-40x.wav"/>
+		<prompt phrase="Сороковой" filename="h-40m.wav"/>
+		<prompt phrase="Сороковое" filename="h-40n.wav"/>
+		<prompt phrase="Сорока" filename="h-40xx.wav"/>
+		<prompt phrase="Пятьдесят" filename="50.wav"/>
+		<prompt phrase="Пятидесятая" filename="h-50f.wav"/>
+		<prompt phrase="Пятидесятого" filename="h-50x.wav"/>
+		<prompt phrase="Пятидесятый" filename="h-50m.wav"/>
+		<prompt phrase="Пятидесятое" filename="h-50n.wav"/>
+		<prompt phrase="Пятидесяти" filename="h-50xx.wav"/>
+		<prompt phrase="Шестьдесят" filename="60.wav"/>
+		<prompt phrase="Шестидесятая" filename="h-60f.wav"/>
+		<prompt phrase="Шестидесятого" filename="h-60x.wav"/>
+		<prompt phrase="Шестидесятый" filename="h-60m.wav"/>
+		<prompt phrase="Шестидесятое" filename="h-60n.wav"/>
+		<prompt phrase="Шестидесяти" filename="h-60xx.wav"/>
+		<prompt phrase="Семьдесят" filename="70.wav"/>
+		<prompt phrase="Семидесятая" filename="h-70f.wav"/>
+		<prompt phrase="Семидесятого" filename="h-70x.wav"/>
+		<prompt phrase="Семидесятый" filename="h-70m.wav"/>
+		<prompt phrase="Семидесятое" filename="h-70n.wav"/>
+		<prompt phrase="Семидесяти" filename="h-70xx.wav"/>
+		<prompt phrase="Восемьдесят" filename="80.wav"/>
+		<prompt phrase="Восьмидесятая" filename="h-80f.wav"/>
+		<prompt phrase="Восемидесятого" filename="h-80x.wav"/>
+		<prompt phrase="Восемидесятый" filename="h-80m.wav"/>
+		<prompt phrase="Восьмидесятое" filename="h-80n.wav"/>
+		<prompt phrase="Восьмидесяти" filename="h-80xx.wav"/>
+		<prompt phrase="Девяносто" filename="90.wav"/>
+		<prompt phrase="Девяностая" filename="h-90f.wav"/>
+		<prompt phrase="Девяностого" filename="h-90x.wav"/>
+		<prompt phrase="Девяностый" filename="h-90m.wav"/>
+		<prompt phrase="Девяностое" filename="h-90n.wav"/>
+		<prompt phrase="Девяноста" filename="h-90xx.wav"/>
+		<prompt phrase="Сто" filename="100.wav"/>
+		<prompt phrase="Сотая" filename="h-100f.wav"/>
+		<prompt phrase="Сотого" filename="h-100x.wav"/>
+		<prompt phrase="Сотый" filename="h-100m.wav"/>
+		<prompt phrase="Сотое" filename="h-100n.wav"/>
+		<prompt phrase="Ста" filename="h-100xx.wav"/>
+		<prompt phrase="Двести" filename="200.wav"/>
+		<prompt phrase="Двухсотая" filename="h-200f.wav"/>
+		<prompt phrase="Двухсотого" filename="h-200x.wav"/>
+		<prompt phrase="Двухсотый" filename="h-200m.wav"/>
+		<prompt phrase="Двухсотое" filename="h-200n.wav"/>
+		<prompt phrase="Двухсот" filename="h-200xx.wav"/>
+		<prompt phrase="Триста" filename="300.wav"/>
+		<prompt phrase="Трёхсотая" filename="h-300f.wav"/>
+		<prompt phrase="Трёхсотого" filename="h-300x.wav"/>
+		<prompt phrase="Трёхсотый" filename="h-300m.wav"/>
+		<prompt phrase="Трёхсотое" filename="h-300n.wav"/>
+		<prompt phrase="Трёхсот" filename="h-300xx.wav"/>
+		<prompt phrase="Четыреста" filename="400.wav"/>
+		<prompt phrase="Четырёхсотая" filename="h-400f.wav"/>
+		<prompt phrase="Четырёхсотого" filename="h-400x.wav"/>
+		<prompt phrase="Четырёхсотый" filename="h-400m.wav"/>
+		<prompt phrase="Четырёхсотое" filename="h-400n.wav"/>
+		<prompt phrase="Четырёхсот" filename="h-400xx.wav"/>
+		<prompt phrase="Пятьсот" filename="500.wav"/>
+		<prompt phrase="Пятисотая" filename="h-500f.wav"/>
+		<prompt phrase="Пятисотого" filename="h-500x.wav"/>
+		<prompt phrase="Пятисотый" filename="h-500m.wav"/>
+		<prompt phrase="Пятисотое" filename="h-500n.wav"/>
+		<prompt phrase="Пятисот" filename="h-500xx.wav"/>
+		<prompt phrase="Шестьсот" filename="600.wav"/>
+		<prompt phrase="Шестисотая" filename="h-600f.wav"/>
+		<prompt phrase="Шестисотого" filename="h-600x.wav"/>
+		<prompt phrase="Шестисотый" filename="h-600m.wav"/>
+		<prompt phrase="Шестисотое" filename="h-600n.wav"/>
+		<prompt phrase="Шестисот" filename="h-600xx.wav"/>
+		<prompt phrase="Семьсот" filename="700.wav"/>
+		<prompt phrase="Семисотая" filename="h-700f.wav"/>
+		<prompt phrase="Семисотого" filename="h-700x.wav"/>
+		<prompt phrase="Семисотый" filename="h-700m.wav"/>
+		<prompt phrase="Семисотое" filename="h-700n.wav"/>
+		<prompt phrase="Семисот" filename="h-700xx.wav"/>
+		<prompt phrase="Восемьсот" filename="800.wav"/>
+		<prompt phrase="Восьмисотая" filename="h-800f.wav"/>
+		<prompt phrase="Восьмисотого" filename="h-800x.wav"/>
+		<prompt phrase="Восьмисотый" filename="h-800m.wav"/>
+		<prompt phrase="Восьмисотое" filename="h-800n.wav"/>
+		<prompt phrase="Восьмисот" filename="h-800xx.wav"/>
+		<prompt phrase="Девятьсот" filename="900.wav"/>
+		<prompt phrase="Девятисотая" filename="h-900f.wav"/>
+		<prompt phrase="Девятосотого" filename="h-900x.wav"/>
+		<prompt phrase="Девятисотый" filename="h-900m.wav"/>
+		<prompt phrase="Девятисотое" filename="h-900n.wav"/>
+		<prompt phrase="Девятисот" filename="h-900xx.wav"/>
+		<prompt phrase="Тысяча" filename="thousand.wav"/>
+		<prompt phrase="Тысячи" filename="thousands-i.wav"/>
+		<prompt phrase="Тысяч" filename="thousands.wav"/>
+		<prompt phrase="Тысячная" filename="h-thousandf.wav"/>
+		<prompt phrase="Тысячного" filename="h-thousandx.wav"/>
+		<prompt phrase="Тысячный" filename="h-thousandm.wav"/>
+		<prompt phrase="Тысячное" filename="h-thousandn.wav"/>
+		<prompt phrase="Тысячных" filename="h-thousandxxx.wav"/>
+		<prompt phrase="Миллион" filename="million.wav"/>
+		<prompt phrase="Миллиона" filename="million-a.wav"/>
+		<prompt phrase="Миллионов" filename="millions.wav"/>
+		<prompt phrase="Миллионная" filename="h-millionf.wav"/>
+		<prompt phrase="Миллионного" filename="h-millionx.wav"/>
+		<prompt phrase="Миллионный" filename="h-millionm.wav"/>
+		<prompt phrase="Миллионное" filename="h-millionn.wav"/>
+		<prompt phrase="Миллионных" filename="h-millionxxx.wav"/>
+		<prompt phrase="Точка" filename="dot.wav"/>
+		<prompt phrase="Точка" filename="period.wav"/><!--period -->
+		<prompt phrase="Точка" filename="point.wav"/>
+		<prompt phrase="Решётка" filename="pound.wav"/>
+		<prompt phrase="Звёздочка" filename="star.wav"/>
+	</digits>
+	<currency>
+		<prompt phrase="и" filename="and.wav"/>
+		<prompt phrase="Цент" filename="cent.wav"/>
+		<prompt phrase="Цента" filename="centa.wav"/>
+		<prompt phrase="центральный" filename="central.wav"/>
+		<prompt phrase="Центов в минуту" filename="cents-per-minute.wav"/>
+		<prompt phrase="Центов" filename="centov.wav"/>
+		<prompt phrase="Центы" filename="cents.wav"/>
+		<prompt phrase="Доллар" filename="dollar.wav"/>
+		<prompt phrase="Долларов" filename="dollars.wav"/>
+		<prompt phrase="Доллара" filename="dollara.wav"/>
+		<prompt phrase="Доллары" filename="dollari.wav"/>
+		<prompt phrase="Минус" filename="minus.wav"/>
+		<prompt phrase="Отрицательный" filename="negative.wav"/>
+		<prompt phrase="Копейки" filename="kopeck-i.wav"/>
+		<prompt phrase="Копейка" filename="kopeck.wav"/>
+		<prompt phrase="Копеек" filename="kopecks.wav"/>
+		<prompt phrase="Рубль" filename="ruble.wav"/>
+		<prompt phrase="Рубля" filename="ruble-a.wav"/>
+		<prompt phrase="Рублей" filename="rubles.wav"/>
+	</currency>
+	<time>
+		<prompt phrase="до полудня" filename="a-m.wav"/>
+		<prompt phrase="В" filename="at.wav"/>
+		<prompt phrase="Воскресенье" filename="day-0.wav"/>
+		<prompt phrase="Понедельник" filename="day-1.wav"/>
+		<prompt phrase="Вторник" filename="day-2.wav"/>
+		<prompt phrase="Среда" filename="day-3.wav"/>
+		<prompt phrase="Четверг" filename="day-4.wav"/>
+		<prompt phrase="Пятница" filename="day-5.wav"/>
+		<prompt phrase="Суббота" filename="day-6.wav"/>
+		<prompt phrase="час" filename="hour.wav"/>
+		<prompt phrase="часа" filename="hours-a.wav"/>
+		<prompt phrase="часов" filename="hours.wav"/>
+		<prompt phrase="минута" filename="minute.wav"/>
+		<prompt phrase="Минуты" filename="minutes-i.wav"/>
+		<prompt phrase="минут" filename="minutes.wav"/>
+		<prompt phrase="секунда" filename="second.wav"/>
+		<prompt phrase="секунды" filename="seconds-i.wav"/>
+		<prompt phrase="секунд" filename="seconds.wav"/>
+		<prompt phrase="января" filename="mon-0.wav"/>
+		<prompt phrase="февраля" filename="mon-1.wav"/>
+		<prompt phrase="марта" filename="mon-2.wav"/>
+		<prompt phrase="апреля" filename="mon-3.wav"/>
+		<prompt phrase="мая" filename="mon-4.wav"/>
+		<prompt phrase="июня" filename="mon-5.wav"/>
+		<prompt phrase="июля" filename="mon-6.wav"/>
+		<prompt phrase="августа" filename="mon-7.wav"/>
+		<prompt phrase="сентября" filename="mon-8.wav"/>
+		<prompt phrase="октября" filename="mon-9.wav"/>
+		<prompt phrase="ноября" filename="mon-10.wav"/>
+		<prompt phrase="декабря" filename="mon-11.wav"/>
+		<prompt phrase="после полудня" filename="p-m.wav"/>
+		<prompt phrase="сегодня" filename="today.wav"/>
+		<prompt phrase="завтра" filename="tomorrow.wav"/>
+		<prompt phrase="вчера" filename="yesterday.wav"/>
+		<prompt phrase="Год" filename="year.wav"/>
+		<prompt phrase="Года" filename="h-year.wav"/>
+		<prompt phrase="Годов" filename="years.wav"/>
+		<prompt phrase="Лет" filename="yearsx.wav"/>
+	</time>
+	<voicemail>
+		<prompt phrase="Абонент с номером" filename="vm-person.wav"/>   <!-- The person at extension-->
+		<prompt phrase="Помечено как важное" filename="vm-marked-urgent.wav"/> <!-- marked urgent-->
+		<prompt phrase="отправлен на электронную почту" filename="vm-emailed.wav"/><!-- emailed-->
+		<prompt phrase="у Вас" filename="vm-you_have.wav"/><!--you have    -->
+		<prompt phrase="Пожалуйста, введите свой идентификатор, завершив нажатием на клавишу" filename="vm-enter_id.wav"/><!--   please enter your i d, followed by -->
+		<prompt phrase="Пожалуйста, введите свой пароль , завершив нажатием на клавишу" filename="vm-enter_pass.wav"/><!-- please enter your password, followed by   -->
+		<prompt phrase="Неправильный номер" filename="vm-fail_auth.wav"/><!-- login incorrect   -->
+		<prompt phrase="Добро пожаловать в Вашу голосовую почту" filename="vm-hello.wav"/><!-- welcome to your voicemail   -->
+		<prompt phrase="До свидания" filename="vm-goodbye.wav"/><!--goodbye    -->
+		<prompt phrase="После сигнала, пожалуйста, сообщите свое имя, для окончания записи нажмите любую клавишу или перестаньте говорить." filename="vm-record_name1.wav"/><!--at the tone please record your name, press any key or stop talking to end the recording.    -->
+		<prompt phrase="Выберите приветствие от единицы до девяти" filename="vm-choose_greeting_choose.wav"/><!--choose a greeting between 1 and 9    -->
+		<prompt phrase="Неправильное значение" filename="vm-choose_greeting_fail.wav"/><!--invalid value    -->
+		<prompt phrase="Слишком много неудачных попыток" filename="vm-abort.wav"/><!--too many failed attempts    -->
+		<prompt phrase="Для изменения Вашего пароля" filename="vm-change_password.wav"/><!-- to change your password   -->
+		<prompt phrase="После сигнала, запишите свое приветствие, для окончания записи нажмите любую клавишу или перестаньте говорить" filename="vm-to_record_greeting.wav"/><!-- record your greeting at the tone, press any key or stop talking to end the recording   -->
+		<prompt phrase="После сигнала, запишите свое сообщение, для окончания записи нажмите любую клавишу или перестаньте говорить" filename="vm-record_message.wav"/><!--record your message at the tone, press any key or stop talking to end the recording   -->
+		<prompt phrase="не доступно" filename="vm-play_greeting.wav"/><!-- is not available   -->
+		<prompt phrase="новых срочных" filename="vm-urgent-newx.wav"/><!-- urgent new   -->
+		<prompt phrase="новое срочное" filename="vm-urgent-new.wav"/><!--    -->
+		<prompt phrase="новое" filename="vm-new.wav"/><!-- new   -->
+		<prompt phrase="новых" filename="vm-newx.wav"/><!--    -->
+		<prompt phrase="срочное сообщение сохранено" filename="vm-urgent-saved.wav"/><!--urgent saved    -->
+		<prompt phrase="сохранено" filename="vm-saved.wav"/><!--saved    -->
+		<prompt phrase="сохранённых" filename="vm-savedx.wav"/><!--saved    -->
+		<prompt phrase="сохранное" filename="vm-save.wav"/><!--saved    -->
+		<prompt phrase="сообщение" filename="vm-message.wav"/><!--message    -->
+		<prompt phrase="сообщений" filename="vm-messagex.wav"/><!--messages    -->
+		<prompt phrase="сообщения" filename="vm-messages.wav"/><!-- message   -->
+		<prompt phrase="нажмите" filename="vm-press.wav"/><!-- press   -->
+		<prompt phrase="чтобы прослушать новые сообщения" filename="vm-listen_new.wav"/><!-- to listen to new messages   -->
+		<prompt phrase="для прослушивания сохраненных сообщений" filename="vm-listen_saved.wav"/><!-- to listen to saved messages   -->
+		<prompt phrase="для дополнительных параметров" filename="vm-advanced.wav"/><!-- for advanced options   -->
+		<prompt phrase="для выхода" filename="vm-to_exit.wav"/><!-- to exit   -->
+		<prompt phrase="для записи приветствия" filename="vm-record_greeting.wav"/><!-- to record a greeting   -->
+		<prompt phrase="для выбора приветствия" filename="vm-choose_greeting.wav"/><!-- to choose greeting   -->
+		<prompt phrase="для записи Вашего имени" filename="vm-record_name2.wav"/><!-- to record your name   -->
+		<prompt phrase="для перехода в главное меню" filename="vm-main_menu.wav"/><!-- for the main menu   -->
+		<prompt phrase="прослушать запись" filename="vm-listen_to_recording.wav"/><!--  to listen to the recording  -->
+		<prompt phrase="сохранить запись" filename="vm-save_recording.wav"/><!-- to save the recording   -->
+		<prompt phrase="записать" filename="vm-rerecord.wav"/><!--  to rerecord  -->
+		<prompt phrase="пометить это сообщение как срочное" filename="vm-mark-urgent.wav"/><!--  to mark this message urgent  -->
+		<prompt phrase="для продолжения" filename="vm-continue.wav"/><!--  to continue  -->
+		<prompt phrase="прослушать запись снова" filename="vm-listen_to_recording_again.wav"/><!-- to listen to the recording again   -->
+		<prompt phrase="удалить запись" filename="vm-delete_recording.wav"/><!-- to delete the recording   -->
+		<prompt phrase="переслать это сообщение" filename="vm-to_forward.wav"/><!-- to forward the recording to your email   -->
+		<prompt phrase="переслать запись на электронную почту" filename="vm-forward_to_email.wav"/><!--    -->
+		<prompt phrase="приветствие" filename="vm-greeting.wav"/><!--greeting    -->
+		<prompt phrase="выбрано" filename="vm-selected.wav"/><!-- selected   -->
+		<prompt phrase="не доступен" filename="vm-not_available.wav"/><!--  is not available  -->
+		<prompt phrase="сообщение номер" filename="vm-message_number.wav"/><!-- message number   -->
+		<prompt phrase="удалено" filename="vm-deleted.wav"/><!-- deleted   -->
+		<prompt phrase="Ваша запись короче минимально допустимой длинны, пожалуйста попробуйте снова" filename="vm-too-small.wav"/><!--  Your recording is below the minimum acceptable length, please try again  -->
+		<prompt phrase="в папке Входящие" filename="vm-in_folder.wav"/><!-- in folder inbox   -->
+		<prompt phrase="что бы перезвонить" filename="vm-return_call_1.wav"/><!-- to return the call now   -->
+		<prompt phrase="для возврата вызова" filename="vm-return_call.wav"/><!-- to return the call now   -->
+		<prompt phrase="Срочное" filename="vm-urgent.wav"/><!--  urgent  -->
+		<prompt phrase="добавить вступление к сообщению" filename="vm-forward_add_intro.wav"/><!--  to add an introduction to this message  -->
+		<prompt phrase="для того что бы послать собощение" filename="vm-send_message_now.wav"/><!--  to send this messege now  -->
+		<prompt phrase="пожалуйста, введите добавочный номер для отправки сообщения" filename="vm-forward_enter_ext.wav"/><!--please, enter the extention to forward this message to    -->
+		<prompt phrase="Неправильный добавочный номер" filename="vm-that_was_an_invalid_ext.wav"/><!--    -->
+		<prompt phrase="Почтовый ящик переполнен. Пожалуйста перезвоните позже" filename="vm-mailbox_full.wav"/><!--  That mailbox is full. Please try your call again later.  -->
+		<!-- Дописать-->
+		<prompt phrase="Ваш персональный номер, он же пин, используется для предотвращения доступа другими к вашим голосовым сообщениям. Хотите сменить его сейчас?" filename="vm-tutorial_change_pin.wav"/><!--Your personal identification number, or 'pin', is used to prevent others from accessing your voicemail messages. Would you like to change it now? -->
+		<prompt phrase="Вызываемый абонент сейчас недоступен и не имеет голосовой почты" filename="vm-not_available_no_voicemail.wav"/> <!-- The person you are trying to reach is not available and does not have voicemail.-->
+		<prompt phrase="Добро пожаловать в Вашу новую голосовую почту. Для того, что бы прослушать инструкцию и настроить вашу голосовую почту, нажмите 1. Чтобы пропустить этот шаг, нажмите 2" filename="vm-tutorial_yes_no.wav"/><!-- Welcome to your new voicemail. To listen to a tutorial and setup your voice mail box, press 1. To skip, press 2.-->
+		<prompt phrase="Необходимо записать Ваше имя и фамилию. Эта запись используется системой, включая справочник организации" filename="vm-tutorial_record_name.wav"/><!--I need to record your first and last name. This recording is used throughout the system, including in the company directory.-->
+		<!-- Дописать-->
+		
+	</voicemail>
+	<directory>
+		<!-- The following phrases still need to be recorded -->
+    		<prompt phrase="Пожалуйста, введите первые буквы имени абонента" filename="dir-enter_person.wav"/> <!--Please enter the first few letters of the persons--> 
+        	<prompt phrase="Фамилии" filename="dir-last_name.wav"/> <!--last name.-->
+                <prompt phrase="Искать по ..." filename="dir-to_search_by.wav"/><!--To search by-->
+                <prompt phrase="Имени" filename="dir-first_name.wav"/><!--first name.-->
+                <prompt phrase="По Вашему запросу ничего не найдено" filename="dir-no_match_entry.wav"/><!--Your search matched no results.-->
+                <prompt phrase="результаты Вашего запроса" filename="dir-result_match.wav"/><!--results matched your search.-->
+                <prompt phrase="По Вашему запросу найдено слишком много вариантов, пожалуйста, попробуйте уточнить запрос" filename="dir-too_many_result.wav"/><!--Your search returned too many results, please try again.-->
+                <prompt phrase="нет больше вариантов" filename="dir-no_more_results.wav"/><!--No more results.-->
+                <prompt phrase="Номер варианта" filename="dir-result_number.wav"/><!--Result number.-->
+                <prompt phrase="добавочный номер" filename="dir-at_extension.wav"/><!--at extension-->
+                <prompt phrase="Для выбора этой записи" filename="dir-to_select_entry.wav"/><!--To select this entry-->
+                <prompt phrase="Для выбора следующей записи" filename="dir-for_next.wav"/><!--For the next entry-->
+                <prompt phrase="Для выбора предыдущей записи" filename="dir-for_prev.wav"/><!--For the previous entry-->
+                <prompt phrase="Для начала нового поиска" filename="dir-start_new_search.wav"/><!--To start a new search-->
+                <prompt phrase="Вам необходимо указать минимум ..." filename="dir-specify_mininum.wav"/><!--You need to specify a minimum of-->
+                <prompt phrase="букв имени абонента" filename="dir-letters_of_person_name.wav"/><!--letters of the person name.-->
+                <prompt phrase="нажмите" filename="dir-press.wav"/> <!--press  vm-press.wav-->
+                <prompt phrase="Попробуйте снова" filename="dir-please_try_again.wav"/>^<!--  Please try again.   ivr-please_try_again.wav-->
+    		<!--дописать-->
+    		<prompt phrase="Пожалуйста, введите первые буквы имени или фамилии абонента" filename="dir-enter_person_first_or_last.wav"/><!-- Please enter the first few letters of the person's first or last name-->
+    		<prompt phrase="нет результатов по запросу." filename="dir-no_matching_results.wav"/><!-- There were no matching results.-->
+    		<!--дописать-->
+                
+        </directory>
+                                                                                                      
+
+	<conference>
+		<prompt phrase="NULL" filename="conf-ack.wav" type="tone"/><!--    -->
+		<prompt phrase="NULL" filename="conf-nack.wav" type="tone"/><!--    -->
+		<prompt phrase="Ваш микрофон отключен" filename="conf-muted.wav"/><!-- You are now muted.   -->
+		<prompt phrase="Ваш микрофон включён" filename="conf-unmuted.wav"/><!-- You are now unmuted.   -->
+		<prompt phrase="Вы единственный участник конференции" filename="conf-alone.wav"/><!-- You are currently the only person in this conference.   -->
+		<prompt phrase="NULL" filename="conf-perpetual.wav" type="music"/>
+		<prompt phrase="NULL" filename="conf-enter.wav" type="tone"/><!--    -->
+		<prompt phrase="NULL" filename="conf-exit.wav" type="tone"/><!--    -->
+		<prompt phrase="Вы были отключены от конференции" filename="conf-kicked.wav"/><!--  You have been kicked from this conference.  -->
+		<prompt phrase="Эта конференция заблокирована" filename="conf-locked.wav"/><!--  This conference is locked.  -->
+		<prompt phrase="Конференция заблокирована" filename="conf-is-locked.wav"/><!--  The conference is now locked.  -->
+		<prompt phrase="Конференция разблокирована" filename="conf-is-unlocked.wav"/><!--   The conference is now unlocked. -->
+		<prompt phrase="Пожалуйста, введите пин-код конференции" filename="conf-pin.wav"/><!--  Please enter the conference pin number.  -->
+		<prompt phrase="Неправильный пин-код, попробуйте снова" filename="conf-bad-pin.wav"/><!-- Invalid pin number, try again.   -->
+		<prompt phrase="До свидания" filename="conf-goodbye.wav"/><!-- goodbye   -->
+		<prompt phrase="Добро пожаловать в конференцию" filename="conf-welcome.wav"/><!--Welcome to the conference.    -->
+		<!-- дописать -->
+		<prompt phrase="Пожалуйста, введите номер конференции, завершив нажатием на клавишу решетка" filename="conf-enter_conf_number.wav"/> <!--  Please enter the conference number, followed by the pound key  -->
+		<prompt phrase="Ваш микрофон уже выключен." filename="conf-you_are_already_muted.wav"/> <!--  You are already muted.  -->
+		<prompt phrase="Звук и микрофон сейчас выключены." filename="conf-you_are_now_bidirectionally_muted.wav"/> <!--  You are now bi-directionally muted.  -->
+		<prompt phrase="...Вошёл в конференцию." filename="conf-has_joined.wav"/> <!--  ...has entered the conference.  -->
+		<prompt phrase="Введите ПИН код конференции, завершив нажатием  на клавишу решётка." filename="conf-enter_conf_pin.wav"/> <!--  Enter the conference PIN number, followed by the pound key.  -->
+    		<prompt phrase="...Покинул конференцию." filename="conf-has_left.wav"/> <!--  ...has left the conference.  -->
+		<!-- дописать -->
+     		
+	</conference>
+	<ivr>
+		<prompt phrase="Номер счета" filename="ivr-account_number.wav"/><!-- Account number   -->
+		<prompt phrase="Соединение с вызывающим абонентом" filename="ivr-connect_to_caller.wav"/><!--Connect to caller    -->
+		<prompt phrase="Если Вам известен добавочный номер вызываемого абонента, пожалуйста введите его сейчас" filename="ivr-enter_ext_pound.wav"/><!-- If you know your party's extension, please enter it now   -->
+		<prompt phrase="Пожалуйста, введите добавочный номер абонента завершив нажатием на клавишу решётка" filename="ivr-enter_ext.wav"/><!-- Please enter an extension followed by the pound sign-->
+		<prompt phrase="Для этого абонента" filename="ivr-for_this_person.wav"/><!-- For this person   -->
+		<prompt phrase="Пожалуйста, оставайтесь на линии, идет соединение" filename="ivr-hold_connect_call.wav"/><!-- Please hold while I connect your call   -->
+		<prompt phrase="Извините" filename="ivr-im_sorry.wav"/> <!-- I'm sorry   -->
+		<prompt phrase="Пожалуйста" filename="ivr-please.wav"/><!--  Please  -->
+		<prompt phrase="Пожалуйста, перезвоните нам в …" filename="ivr-please_return_our_call_at.wav"/><!--  Please return our call at  -->
+		<prompt phrase="относительно номера ссылки" filename="ivr-regarding_reference_number.wav"/><!-- Regarding reference number   -->
+		<prompt phrase="Это пример голосового подменю" filename="ivr-sample_submenu.wav"/><!-- This is a sample IVR submenu...   -->
+		<prompt phrase="Пожалуйста, представьтесь после сигнала" filename="ivr-say_name.wav"/><!-- Please say your name after the tone   -->
+		<prompt phrase="Перенаправить на голосовую почту" filename="ivr-send_to_voicemail.wav"/><!--  Send this caller to voicemail  -->
+		<prompt phrase="Для разговора с представителем по обслуживанию клиентов" filename="ivr-speak_to_a_customer_service_representative.wav"/><!-- To speak to a customer service representative   -->
+		<prompt phrase="принять сообщение." filename="ivr-take_a_message.wav"/><!--  Take a message  -->
+		<prompt phrase="Спасибо" filename="ivr-thank_you.wav"/><!-- Thank you   -->
+		<prompt phrase="Неправильное значение" filename="ivr-that_was_an_invalid_entry.wav"/><!-- That was an invalid entry   -->
+		<prompt phrase="Этот звонок от" filename="ivr-this_is_a_call_from.wav"/><!-- This is a call from   -->
+		<prompt phrase="это голосовое меню позволит Вам протестировать некоторые функции" filename="ivr-this_ivr_will_let_you_test_features.wav"/><!-- This IVR will let you test some of the features...   -->
+		<prompt phrase="Для того чтобы набрать конференцию ФС ___" filename="ivr-to_call_the_freeswitch_conference.wav"/><!--  To call the FreeSWITCH conference  -->
+		<prompt phrase="Для выполнения эхо-теста в ФС" filename="ivr-to_do_a_freeswitch_echo_test.wav"/><!--  To do a FreeSWITCH echo test  -->
+		<prompt phrase="Для выполнения эхо-теста free world dialed" filename="ivr-to_do_a_fwd_echo_test.wav"/><!--  To do a fwd echo test  -->
+		<prompt phrase="чтобы прослушать пример голосового подменю" filename="ivr-to_hear_sample_submenu.wav"/><!--  To hear a sample IVR submenu  -->
+		<prompt phrase="Чтобы услышать кричащих обезьян" filename="ivr-to_hear_screaming_monkeys.wav"/><!-- To hear screaming monkeys   -->
+		<prompt phrase="Для прослушивания списка мелодий в режиме ожидания" filename="ivr-to_listen_to_moh.wav"/><!-- To list to music on hold   -->
+		<prompt phrase="Для повтора этих параметров" filename="ivr-to_repeat_these_options.wav"/><!-- To repeat these options   -->
+		<prompt phrase="Для возврата к предыдущему меню" filename="ivr-to_return_to_previous_menu.wav"/><!-- To return to the previous menu   -->
+		<prompt phrase="Для соединения с оператором" filename="ivr-to_speak_with_an_operator.wav"/><!-- To speak with an operator   -->
+		<prompt phrase="Добро пожаловать в FreeSwitch, будущее телефонии" filename="ivr-welcome_to_freeswitch.wav"/><!-- Welcome to FreeSWITCH, the future of telephony   -->
+		<prompt phrase="Вы можете выйти в любое время повесив трубку" filename="ivr-you_may_exit_by_hanging_up.wav"/><!-- You may exit at any time by simply hanging up   -->
+		<prompt phrase="или" filename="ivr-or.wav"/><!-- or   -->
+		<prompt phrase="не" filename="ivr-not.wav"/><!-- not   -->
+		<prompt phrase="Вызов" filename="ivr-call.wav"/><!-- call   -->
+		<prompt phrase="Вы можете" filename="ivr-you_may.wav"/><!-- You may   -->
+		<prompt phrase="Здравствуйте" filename="ivr-hello.wav"/><!-- hello   -->
+		<prompt phrase="Используя клавиатуру телефона…" filename="ivr-using_telephone_keypad.wav"/><!-- Using your telephone keypad...  переименовать ivr-use_telephone_keypad.wav -->
+		<prompt phrase="Пожалуйста, назовите имя сотрудника, которому пытаетесь дозвониться" filename="ivr-spell_name.wav"/><!-- please spell the name of the person you are trying to reach.   -->
+		<prompt phrase="Сначала фамилия" filename="ivr-last_name_first.wav"/><!--Last name firs    -->
+		<prompt phrase="Сначала имя" filename="ivr-first_name_first.wav"/><!--First name first    -->
+		<prompt phrase="Нажмите 1 для Q или Z." filename="ivr-press_one_q_or_z.wav"/><!--Press 1 for Q or Z.    -->
+		<prompt phrase="Отдел продаж" filename="ivr-sales.wav"/><!-- Sales   -->
+		<prompt phrase="Центр обслуживания клиентов" filename="ivr-customer_service.wav"/><!-- Customer service   -->
+		<prompt phrase="Отдел технической поддержки" filename="ivr-technical_support.wav"/><!-- Technical support   -->
+		<prompt phrase="Оператор" filename="ivr-operator.wav"/><!-- Operator   -->
+		<prompt phrase="Вы набрали несуществующий добавочный номер" filename="ivr-you_have_dialed_an_invalid_extension.wav"/><!--You have dialed an invalid extension.    -->
+		<prompt phrase="Пожалйста, наберите добавочный номер и нажмите клавишу решетка" filename="ivr-please_enter_extension_followed_by_pound.wav"/><!--Please enter your extension, followed by the pound sign.    -->
+		<prompt phrase="Пожалуйста введите Ваш пинкод и нажмите клавишу решётка" filename="ivr-please_enter_pin_followed_by_pound.wav"/><!-- Please enter your pin number, followed by the pound sign.   -->
+		<prompt phrase="Ваш пин код или номер не верны" filename="ivr-pin_or_extension_is-invalid.wav"/><!--  Your pin number or extension is invalid.  -->
+		<prompt phrase="Вы закрепляете этот телефон за Вашей учётной записью" filename="ivr-you_are_about_to_provision_this_phone.wav"/><!-- You are about to provision this phone to your account...   -->
+		<prompt phrase="Пожалуйста повторите Ваш пин код для подтверждения" filename="ivr-please_reenter_your_pin.wav"/><!-- Please re-enter your pin number to confirm.   -->
+		<prompt phrase="Для регистрации на clueCon , пожалуйста нажмите .." filename="ivr-register_for_cluecon.wav"/><!-- To register for ClueCon, please press...   -->
+		<prompt phrase="Для входа" filename="ivr-to_log_in.wav"/><!--   to log in -->
+		<prompt phrase="Для выхода" filename="ivr-to_log_out.wav"/><!--  to log out  -->
+		<prompt phrase="Вы вошли" filename="ivr-you_are_now_logged_in.wav"/><!--  You are now logged in  -->
+		<prompt phrase="Вы вышли" filename="ivr-you_are_now_logged_out.wav"/><!--  You are now logged out  -->
+		<prompt phrase="Попробуйте снова" filename="ivr-please_try_again.wav"/><!--  Please try again.  -->
+		<prompt phrase="Вы закрепляете этот телефон за Вашим добавочным номером" filename="ivr-provision_phone_permanently_to_extension.wav"/><!--  You are about to provision this phone permanently to your extension.  -->
+		<prompt phrase="Пожалуйста введите добавочный номер за которым вы хотите закрепить этот телефон и нажмите решётку" filename="ivr-extension_to_provision_this_phone.wav"/><!-- Please enter the extension number to which you would like to provision this phone,followed by the pound sign.   -->
+		<prompt phrase="Спасибо, этот телефон сейчас перезагрузится" filename="ivr-this_phone_will_now_reboot.wav"/><!--   Thank you, this phone will now reboot. -->
+		<prompt phrase="Спасибо. Ваше сообщение было записано." filename="ivr-recording_saved.wav"/> <!-- Thank you. Your recording has been saved. -->
+		<prompt phrase="Нажмите 1 что бы сохранить сообщение. Нажмите 2 что бы прослушать Ваше сообщение. Нажмите 3 что бы перезаписать" filename="ivr-save_review_record.wav"/><!-- Press 1 to save your recording. Press 2 to review your recording. Press 3 to re-record. -->
+	        <prompt phrase="Система не смогла сохранить Ваше сообщение. Попробуйте позднее." filename="ivr-unable_save_old.wav"/><!-- The system is unable to save your sound file at this time. Please try again later. -->
+    		
+    		<prompt phrase="Системе не удается сохранить Ваш звуковой файл в данный момент. Пожалуйста, попробуйте позже" filename="ivr-unable_save.wav" attr="Needs_to_be_recorded!"/><!--The system is unable to save your sound file at this time. Please try again later. -->
+        	<prompt phrase="Ваш номер ..." filename="ivr-you_are_number.wav" attr="Needs_to_be_recorded!"/><!-- "You are number-->
+                <prompt phrase="на линии" filename="ivr-in_line.wav" attr="Needs_to_be_recorded!"/><!-- "In line."-->
+                <prompt phrase="Спасибо Вам за ожидание" filename="ivr-thank_you_for_holding.wav" attr="Needs_to_be_recorded!"/><!--"Thank you for holding." -->
+                <prompt phrase="Ваше время ожидания составит примерно ..." filename="ivr-estimated_hold_time.wav" attr="Needs_to_be_recorded!"/><!--"Your estimated hold time is..." -->
+                <prompt phrase="Больше чем..." filename="ivr-more_than.wav" attr="Needs_to_be_recorded!"/><!--"More than..." -->
+                <prompt phrase="Меньше чем..." filename="ivr-less_than.wav" attr="Needs_to_be_recorded!"/><!-- "Less than..."-->
+                <prompt phrase="Начать запись" filename="ivr-begin_recording.wav " attr="Needs_to_be_recorded!"/><!--"Begin recording." -->
+                <prompt phrase="Переадресация звонков была отменена" filename="ivr-call_forwarding_has_been_cancelled.wav" attr="Needs_to_be_recorded!"/><!--"Call forwarding has been cancelled."  -->
+                <prompt phrase="Переадресация звонков была настроена" filename="ivr-call_forwarding_has_been_set.wav" attr="Needs_to_be_recorded!"/><!--"Call forwarding has been set." -->
+                <prompt phrase="Пожалуйста, введите номер телефона" filename="ivr-please_enter_the_phone_number.wav" attr="Needs_to_be_recorded!"/><!--"Please enter the phone number." -->
+                <prompt phrase="Пожалуйста, назовите свое имя и цель Вашего звонка" filename="ivr-please_state_your_name_and_reason_for_calling.wav " attr="Needs_to_be_recorded!"/><!--"Please state your name and the reason for your call." -->
+                <prompt phrase="Что бы принять звонок нажмите 1, чтобы отклонить звонок нажмите 2. Для отправки голосовой почты нажмите 3" filename="ivr-accept_reject_voicemail.wav" attr="Needs_to_be_recorded!"/><!--"To accept, press 1. To reject, press 2. To send to voicemail, press 3." -->
+                <prompt phrase="Входящий звонок" filename="ivr-incoming_call.wav" attr="Needs_to_be_recorded!"/><!--"Incoming call." -->
+                <prompt phrase="Спасибо за Ваш звонок" filename="ivr-thank_you_for_calling.wav" attr="Needs_to_be_recorded!"/><!--"Thank you for calling." -->
+                <prompt phrase="Пожалуйста, оставайтесь на линии. Ваш звонок будет принят немедленно" filename="ivr-stay_on_line_call_answered_momentarily.wav" attr="Needs_to_be_recorded!"/><!--"Please stay on the line. You call will be answered momentarily." -->
+                <prompt phrase="Ваш звонок был переведен" filename="ivr-call_being_transferred.wav" attr="Needs_to_be_recorded!"/><!--"Your call is being transferred." filename="ivr-call_being_transferred.wav" -->
+                <prompt phrase="Пожалуйста, наслаждайтесь музыкой, пока Ваш вонок переводится" filename="ivr-enjoy_music_while_transfer.wav" attr="Needs_to_be_recorded!"/> <!--"Please enjoy the music while your call is being transferred." -->
+                
+                
+                <!-- Дописать -->
+		<prompt phrase="...покинул здание." filename="ivr-has_left_the_building.wav"/> <!--  ...has left the building.  -->
+		<prompt phrase="Добро пожаловать в..." filename="ivr-welcome_to.wav"/> <!--  Welcome to...  -->
+		<prompt phrase="У вас есть звонок от..." filename="ivr-call_from.wav"/> <!--  You have a call from...  -->
+		<prompt phrase="Подождите, пожалуйста." filename="ivr-one_moment_please.wav"/> <!--  One moment please.  -->
+		<prompt phrase="Режим не беспокоить был отменён." filename="ivr-dnd_cancelled.wav"/> <!--  Do not disturb has been cancelled.  -->
+		<prompt phrase="Доброе утро." filename="ivr-good_morning.wav"/> <!--  Good morning.  -->
+		<prompt phrase="Если нет, нажмите..." filename="ivr-if_not_press.wav"/> <!--  If not, press...  -->
+		<prompt phrase="Для справочника, нажмите..." filename="ivr-for_directory_press.wav"/> <!--  For a directory, press...  -->
+		<prompt phrase="Добрый вечер." filename="ivr-good_evening.wav"/> <!--  Good evening.  -->
+		<prompt phrase="Нажмите любую другую цифру..." filename="ivr-any_other_digit.wav"/> <!--  Press any other digit...  -->
+		<prompt phrase="Введите первые буквы имени абонента." filename="ivr-enter_letters_first_or_last_name.wav"/> <!--  Enter the first few letters of the person's first or last name. dir-enter_person.wav --> 
+		<prompt phrase="Пожалуйста введите..." filename="ivr-please_enter_the.wav"/> <!--  Please enter the...  -->
+		<prompt phrase="Пожалуйста, введите первые буквы фамилии абонента" filename="ivr-enter_letters_last_name.wav"/> <!--  Enter the first few letters of the person's last name.  -->
+		<prompt phrase="Вы вошли..." filename="ivr-you_entered.wav"/> <!--  You entered...  -->
+		<prompt phrase="для..." filename="ivr-for.wav"/> <!--  For... не нужно -->
+		<prompt phrase="Внутренний номер..." filename="ivr-extension_number.wav"/> <!--  Extension number...  -->
+                <prompt phrase="Остаток на счёте составляет..." filename="ivr-account_balance_is.wav"/> <!--  The account balance is...  -->
+                <prompt phrase="Когда закончите нажмите клавишу решётка." filename="ivr-finished_pound_hash_key.wav"/> <!--  When you are finished, press the pound or hash key.  -->
+                <prompt phrase="...вызвал аварийные службы" filename="ivr-has_called_emergency_services.wav"/> <!--  ...has called emergency services  -->
+                <prompt phrase="Пожалуйста, укажите ваше имя и причину вашего звонка." filename="ivr-please_state_your_name_and_reason_for_calling.wav"/> <!--  Please state your name and the reason for your call.  -->
+                <prompt phrase="Если это правильно, нажмите..." filename="ivr-if_correct_press.wav"/> <!--  If this is correct, press...  -->
+                <prompt phrase="Добро пожаловать." filename="ivr-welcome.wav"/> <!--  Welcome.  -->
+                <prompt phrase="Пожалуйста введите номер очереди,завершив нажатием на клавишу решетка." filename="ivr-enter_queue_number.wav"/> <!--  Please enter the queue number, followed by the pound or hash sign.  -->
+                <prompt phrase="...завершив нажатием на клавишу решетка." filename="ivr-followed_by_pound.wav"/> <!--  ...followed by the pound or hash key.  -->
+                <prompt phrase="Этот телефон не предназначен для совершения внешних звонков." filename="ivr-phone_is_unassigned.wav"/> <!--  This phone is unassigned and may not be used to make external calls.  -->
+                <prompt phrase="Номер." filename="ivr-number.wav"/> <!--  Number.  -->
+                <prompt phrase="Нету вызовов ожидающих в этой очереди." filename="ivr-no_calls_waiting_in_queue.wav"/> <!--  There are no calls waiting in this queue.  -->
+                <prompt phrase="...Файлы..." filename="ivr-files-.wav"/> <!--  ...files...  -->
+                <prompt phrase="...файл..." filename="ivr-file.wav"/> <!--  ...file...  -->
+                <prompt phrase="Нажмите один для ДА. Нажмите два для НЕТ." filename="ivr-one_yes_two_no.wav"/> <!--  Press one for yes. Press two for no.  -->
+                <prompt phrase="Это меню не содержит никаких элементов. Пожалуйста, обратитесь к администратору." filename="ivr-no_menu_items.wav"/> <!--  This menu has no items. Please contact the administrator.  -->
+                <prompt phrase="Поздравляем! Этот телефон настроен правильно и теперь могут быть установлен пользователю." filename="ivr-phone_is_configured_properly.wav"/> <!--  Congratulations! This phone is configured properly and may now be assigned to a user.  -->
+                <prompt phrase="Этот телефон не правильно настроен." filename="ivr-phone_not_configured.wav"/> <!--  This phone is not configured properly.  -->
+                <prompt phrase="Добрый день." filename="ivr-good_afternoon.wav"/> <!--  Good afternoon.  -->
+                <prompt phrase="Спасибо за звонок. Если вы знаете внутренний номер телефона, пожалуйста, введите его сейчас или набрать девять для каталога." filename="ivr-generic_greeting.wav"/> <!--  Thank you for calling. If you know your party's extension, please enter it now, or dial nine for a directory.  -->
+                <prompt phrase="Спасибо." filename="ivr-Thank_you.wav"/> <!--  Thank you.  -->
+                <prompt phrase="Если это правильно нажмите один. Если нет, нажмите 2" filename="ivr-if_correct_one_if_not_two.wav"/> <!--  If this is correct, press 1. If not, press 2.  -->
+                <!-- Дописать -->
+
+
+
+                
+	</ivr>
+	<misc>
+		<prompt phrase="Этот звонок шифруется" filename="call_secured.wav"/><!-- This call has been secured   -->
+		<prompt phrase="завершаемый нажатием на клавишу решетка" filename="followed.wav"/><!-- Followed by pound   -->
+		<prompt phrase="Если вы этот человек" filename="if_you_are_this_person.wav"/><!--  If you are this person  -->
+		<prompt phrase="Если вы хотите" filename="if_you_would_like_to.wav"/><!--   If you would like to -->
+		<prompt phrase="Предоставьте номер ссылки" filename="provide_reference_number.wav"/><!--  Provide reference number  -->
+		<prompt phrase="Пожалуйста, введите добавочный номер на который хотите перевести звонок" filename="transfer1.wav"/><!--  Please enter extension you want to transfer to  -->
+		<prompt phrase="Перевод" filename="transfer2.wav"/><!--  Transfer  -->
+		<prompt phrase="Мы пытаемся связаться..." filename="we_are_trying_to_reach.wav"/><!-- We are trying to reach   -->
+		<prompt phrase="Произошла ошибка, пожалуйста обратитесь к администратору" filename="error.wav"/><!-- An error has occurred please contact the administrator   -->
+		<!-- Записать-->
+    		<prompt phrase="Ваш звонок будет завершен через" filename="misc-your_call_will_be_terminated_in.wav"/>
+		<prompt phrase="Ваш звонок был завершён" filename="misc-your_call_has_been_terminated.wav"/>
+		<!-- Записать-->
+	</misc>
+    	<base256>
+      		<!-- base256 prompts for SAS -->
+      		<prompt phrase="Algol" filename="Algol.wav"/>
+      		<prompt phrase="Apollo" filename="Apollo.wav"/>
+      		<prompt phrase="Athens" filename="Athens.wav"/>
+      		<prompt phrase="Atlantic" filename="Atlantic.wav"/>
+      		<prompt phrase="Aztec" filename="Aztec.wav"/>
+      		<prompt phrase="Babylon" filename="Babylon.wav"/>
+      		<prompt phrase="Belfast" filename="Belfast.wav"/>
+      		<prompt phrase="Bradbury" filename="Bradbury.wav"/>
+      		<prompt phrase="Brazilian" filename="Brazilian.wav"/>
+      		<prompt phrase="Burbank" filename="Burbank.wav"/>
+      		<prompt phrase="Burlington" filename="Burlington.wav"/>
+      		<prompt phrase="Camelot" filename="Camelot.wav"/>
+      		<prompt phrase="Capricorn" filename="Capricorn.wav"/>
+      		<prompt phrase="Cherokee" filename="Cherokee.wav"/>
+      		<prompt phrase="Chicago" filename="Chicago.wav"/>
+      		<prompt phrase="Christmas" filename="Christmas.wav"/>
+      		<prompt phrase="Dakota" filename="Dakota.wav"/>
+      		<prompt phrase="December" filename="December.wav"/>
+      		<prompt phrase="Dupont" filename="Dupont.wav"/>
+      		<prompt phrase="Eskimo" filename="Eskimo.wav"/>
+      		<prompt phrase="Galveston" filename="Galveston.wav"/>
+      		<prompt phrase="Geiger" filename="Geiger.wav"/>
+      		<prompt phrase="Hamilton" filename="Hamilton.wav"/>
+      		<prompt phrase="Istanbul" filename="Istanbul.wav"/>
+      		<prompt phrase="Jamaica" filename="Jamaica.wav"/>
+      		<prompt phrase="Jupiter" filename="Jupiter.wav"/>
+      		<prompt phrase="Medusa" filename="Medusa.wav"/>
+      		<prompt phrase="Mohawk" filename="Mohawk.wav"/>
+      		<prompt phrase="Montana" filename="Montana.wav"/>
+      		<prompt phrase="Neptune" filename="Neptune.wav"/>
+      		<prompt phrase="Norwegian" filename="Norwegian.wav"/>
+      		<prompt phrase="Oakland" filename="Oakland.wav"/>
+      		<prompt phrase="October" filename="October.wav"/>
+      		<prompt phrase="Ohio" filename="Ohio.wav"/>
+      		<prompt phrase="Orlando" filename="Orlando.wav"/>
+      		<prompt phrase="Pacific" filename="Pacific.wav"/>
+      		<prompt phrase="Pandora" filename="Pandora.wav"/>
+      		<prompt phrase="Pegasus" filename="Pegasus.wav"/>
+      		<prompt phrase="Pluto" filename="Pluto.wav"/>
+      		<prompt phrase="Saturday" filename="Saturday.wav"/>
+      		<prompt phrase="Scotland" filename="Scotland.wav"/>
+      		<prompt phrase="Trojan" filename="Trojan.wav"/>
+      		<prompt phrase="Virginia" filename="Virginia.wav"/>
+      		<prompt phrase="Vulcan" filename="Vulcan.wav"/>
+      		<prompt phrase="Waterloo" filename="Waterloo.wav"/>
+      		<prompt phrase="Wichita" filename="Wichita.wav"/>
+      		<prompt phrase="Wilmington" filename="Wilmington.wav"/>
+      		<prompt phrase="Wyoming" filename="Wyoming.wav"/>
+      		<prompt phrase="Yucatan" filename="Yucatan.wav"/>
+      		<prompt phrase="Zulu" filename="Zulu.wav"/>
+      		<prompt phrase="aardvark" filename="aardvark.wav"/>
+      		<prompt phrase="absurd" filename="absurd.wav"/>
+      		<prompt phrase="accrue" filename="accrue.wav"/>
+      		<prompt phrase="acme" filename="acme.wav"/>
+      		<prompt phrase="adrift" filename="adrift.wav"/>
+      		<prompt phrase="adroitness" filename="adroitness.wav"/>
+      		<prompt phrase="adult" filename="adult.wav"/>
+      		<prompt phrase="adviser" filename="adviser.wav"/>
+      		<prompt phrase="afflict" filename="afflict.wav"/>
+      		<prompt phrase="aftermath" filename="aftermath.wav"/>
+      		<prompt phrase="aggregate" filename="aggregate.wav"/>
+      		<prompt phrase="ahead" filename="ahead.wav"/>
+      		<prompt phrase="aimless" filename="aimless.wav"/>
+      		<prompt phrase="alkali" filename="alkali.wav"/>
+      		<prompt phrase="allow" filename="allow.wav"/>
+      		<prompt phrase="almighty" filename="almighty.wav"/>
+      		<prompt phrase="alone" filename="alone.wav"/>
+      		<prompt phrase="ammo" filename="ammo.wav"/>
+      		<prompt phrase="amulet" filename="amulet.wav"/>
+      		<prompt phrase="amusement" filename="amusement.wav"/>
+      		<prompt phrase="ancient" filename="ancient.wav"/>
+      		<prompt phrase="antenna" filename="antenna.wav"/>
+      		<prompt phrase="apple" filename="apple.wav"/>
+      		<prompt phrase="applicant" filename="applicant.wav"/>
+      		<prompt phrase="armistice" filename="armistice.wav"/>
+      		<prompt phrase="article" filename="article.wav"/>
+      		<prompt phrase="artist" filename="artist.wav"/>
+      		<prompt phrase="assume" filename="assume.wav"/>
+      		<prompt phrase="asteroid" filename="asteroid.wav"/>
+      		<prompt phrase="atlas" filename="atlas.wav"/>
+      		<prompt phrase="atmosphere" filename="atmosphere.wav"/>
+      		<prompt phrase="autopsy" filename="autopsy.wav"/>
+      		<prompt phrase="baboon" filename="baboon.wav"/>
+      		<prompt phrase="backfield" filename="backfield.wav"/>
+      		<prompt phrase="backward" filename="backward.wav"/>
+      		<prompt phrase="backwater" filename="backwater.wav"/>
+      		<prompt phrase="banjo" filename="banjo.wav"/>
+      		<prompt phrase="barbecue" filename="barbecue.wav"/>
+      		<prompt phrase="beaming" filename="beaming.wav"/>
+      		<prompt phrase="bedlamp" filename="bedlamp.wav"/>
+      		<prompt phrase="beehive" filename="beehive.wav"/>
+      		<prompt phrase="beeswax" filename="beeswax.wav"/>
+      		<prompt phrase="befriend" filename="befriend.wav"/>
+      		<prompt phrase="belowground" filename="belowground.wav"/>
+      		<prompt phrase="berserk" filename="berserk.wav"/>
+      		<prompt phrase="bifocals" filename="bifocals.wav"/>
+      		<prompt phrase="billiard" filename="billiard.wav"/>
+      		<prompt phrase="bison" filename="bison.wav"/>
+      		<prompt phrase="blackjack" filename="blackjack.wav"/>
+      		<prompt phrase="blockade" filename="blockade.wav"/>
+      		<prompt phrase="blowtorch" filename="blowtorch.wav"/>
+      		<prompt phrase="bluebird" filename="bluebird.wav"/>
+      		<prompt phrase="bodyguard" filename="bodyguard.wav"/>
+      		<prompt phrase="bombast" filename="bombast.wav"/>
+      		<prompt phrase="bookseller" filename="bookseller.wav"/>
+      		<prompt phrase="bookshelf" filename="bookshelf.wav"/>
+      		<prompt phrase="borderline" filename="borderline.wav"/>
+      		<prompt phrase="bottomless" filename="bottomless.wav"/>
+      		<prompt phrase="brackish" filename="brackish.wav"/>
+      		<prompt phrase="bravado" filename="bravado.wav"/>
+      		<prompt phrase="breadline" filename="breadline.wav"/>
+      		<prompt phrase="breakaway" filename="breakaway.wav"/>
+      		<prompt phrase="breakup" filename="breakup.wav"/>
+      		<prompt phrase="brickyard" filename="brickyard.wav"/>
+      		<prompt phrase="briefcase" filename="briefcase.wav"/>
+      		<prompt phrase="businessman" filename="businessman.wav"/>
+      		<prompt phrase="butterfat" filename="butterfat.wav"/>
+      		<prompt phrase="button" filename="button.wav"/>
+      		<prompt phrase="buzzard" filename="buzzard.wav"/>
+      		<prompt phrase="candidate" filename="candidate.wav"/>
+      		<prompt phrase="cannonball" filename="cannonball.wav"/>
+      		<prompt phrase="caravan" filename="caravan.wav"/>
+      		<prompt phrase="caretaker" filename="caretaker.wav"/>
+      		<prompt phrase="celebrate" filename="celebrate.wav"/>
+      		<prompt phrase="cellulose" filename="cellulose.wav"/>
+      		<prompt phrase="cement" filename="cement.wav"/>
+      		<prompt phrase="certify" filename="certify.wav"/>
+      		<prompt phrase="chairlift" filename="chairlift.wav"/>
+      		<prompt phrase="chambermaid" filename="chambermaid.wav"/>
+      		<prompt phrase="chatter" filename="chatter.wav"/>
+      		<prompt phrase="checkup" filename="checkup.wav"/>
+      		<prompt phrase="chisel" filename="chisel.wav"/>
+      		<prompt phrase="choking" filename="choking.wav"/>
+      		<prompt phrase="chopper" filename="chopper.wav"/>
+      		<prompt phrase="clamshell" filename="clamshell.wav"/>
+      		<prompt phrase="classic" filename="classic.wav"/>
+      		<prompt phrase="classroom" filename="classroom.wav"/>
+      		<prompt phrase="cleanup" filename="cleanup.wav"/>
+      		<prompt phrase="clergyman" filename="clergyman.wav"/>
+      		<prompt phrase="clockwork" filename="clockwork.wav"/>
+      		<prompt phrase="cobra" filename="cobra.wav"/>
+      		<prompt phrase="coherence" filename="coherence.wav"/>
+      		<prompt phrase="combustion" filename="combustion.wav"/>
+      		<prompt phrase="commando" filename="commando.wav"/>
+      		<prompt phrase="commence" filename="commence.wav"/>
+      		<prompt phrase="company" filename="company.wav"/>
+      		<prompt phrase="component" filename="component.wav"/>
+      		<prompt phrase="concert" filename="concert.wav"/>
+      		<prompt phrase="concurrent" filename="concurrent.wav"/>
+      		<prompt phrase="confidence" filename="confidence.wav"/>
+      		<prompt phrase="conformist" filename="conformist.wav"/>
+      		<prompt phrase="congregate" filename="congregate.wav"/>
+      		<prompt phrase="consensus" filename="consensus.wav"/>
+      		<prompt phrase="consulting" filename="consulting.wav"/>
+      		<prompt phrase="corporate" filename="corporate.wav"/>
+      		<prompt phrase="corrosion" filename="corrosion.wav"/>
+      		<prompt phrase="councilman" filename="councilman.wav"/>
+      		<prompt phrase="cowbell" filename="cowbell.wav"/>
+      		<prompt phrase="crackdown" filename="crackdown.wav"/>
+      		<prompt phrase="cranky" filename="cranky.wav"/>
+      		<prompt phrase="crossover" filename="crossover.wav"/>
+      		<prompt phrase="crowfoot" filename="crowfoot.wav"/>
+      		<prompt phrase="crucial" filename="crucial.wav"/>
+      		<prompt phrase="crucifix" filename="crucifix.wav"/>
+      		<prompt phrase="crumpled" filename="crumpled.wav"/>
+      		<prompt phrase="crusade" filename="crusade.wav"/>
+      		<prompt phrase="cubic" filename="cubic.wav"/>
+      		<prompt phrase="cumbersome" filename="cumbersome.wav"/>
+      		<prompt phrase="customer" filename="customer.wav"/>
+      		<prompt phrase="dashboard" filename="dashboard.wav"/>
+      		<prompt phrase="deadbolt" filename="deadbolt.wav"/>
+      		<prompt phrase="decadence" filename="decadence.wav"/>
+      		<prompt phrase="decimal" filename="decimal.wav"/>
+      		<prompt phrase="deckhand" filename="deckhand.wav"/>
+      		<prompt phrase="designing" filename="designing.wav"/>
+      		<prompt phrase="detector" filename="detector.wav"/>
+      		<prompt phrase="detergent" filename="detergent.wav"/>
+      		<prompt phrase="determine" filename="determine.wav"/>
+      		<prompt phrase="dictator" filename="dictator.wav"/>
+      		<prompt phrase="dinosaur" filename="dinosaur.wav"/>
+      		<prompt phrase="direction" filename="direction.wav"/>
+      		<prompt phrase="disable" filename="disable.wav"/>
+      		<prompt phrase="disbelief" filename="disbelief.wav"/>
+      		<prompt phrase="disruptive" filename="disruptive.wav"/>
+      		<prompt phrase="distortion" filename="distortion.wav"/>
+      		<prompt phrase="document" filename="document.wav"/>
+      		<prompt phrase="dogsled" filename="dogsled.wav"/>
+      		<prompt phrase="dragnet" filename="dragnet.wav"/>
+      		<prompt phrase="drainage" filename="drainage.wav"/>
+      		<prompt phrase="dreadful" filename="dreadful.wav"/>
+      		<prompt phrase="drifter" filename="drifter.wav"/>
+      		<prompt phrase="dropper" filename="dropper.wav"/>
+      		<prompt phrase="drumbeat" filename="drumbeat.wav"/>
+      		<prompt phrase="drunken" filename="drunken.wav"/>
+      		<prompt phrase="dwelling" filename="dwelling.wav"/>
+      		<prompt phrase="eating" filename="eating.wav"/>
+      		<prompt phrase="edict" filename="edict.wav"/>
+      		<prompt phrase="egghead" filename="egghead.wav"/>
+      		<prompt phrase="eightball" filename="eightball.wav"/>
+      		<prompt phrase="embezzle" filename="embezzle.wav"/>
+      		<prompt phrase="enchanting" filename="enchanting.wav"/>
+      		<prompt phrase="endorse" filename="endorse.wav"/>
+      		<prompt phrase="endow" filename="endow.wav"/>
+      		<prompt phrase="enlist" filename="enlist.wav"/>
+      		<prompt phrase="enrollment" filename="enrollment.wav"/>
+      		<prompt phrase="enterprise" filename="enterprise.wav"/>
+      		<prompt phrase="equation" filename="equation.wav"/>
+      		<prompt phrase="equipment" filename="equipment.wav"/>
+      		<prompt phrase="erase" filename="erase.wav"/>
+      		<prompt phrase="escapade" filename="escapade.wav"/>
+      		<prompt phrase="escape" filename="escape.wav"/>
+      		<prompt phrase="everyday" filename="everyday.wav"/>
+      		<prompt phrase="examine" filename="examine.wav"/>
+      		<prompt phrase="exceed" filename="exceed.wav"/>
+      		<prompt phrase="existence" filename="existence.wav"/>
+      		<prompt phrase="exodus" filename="exodus.wav"/>
+      		<prompt phrase="eyeglass" filename="eyeglass.wav"/>
+      		<prompt phrase="eyetooth" filename="eyetooth.wav"/>
+      		<prompt phrase="facial" filename="facial.wav"/>
+      		<prompt phrase="fallout" filename="fallout.wav"/>
+      		<prompt phrase="fascinate" filename="fascinate.wav"/>
+      		<prompt phrase="filament" filename="filament.wav"/>
+      		<prompt phrase="finicky" filename="finicky.wav"/>
+      		<prompt phrase="flagpole" filename="flagpole.wav"/>
+      		<prompt phrase="flatfoot" filename="flatfoot.wav"/>
+      		<prompt phrase="flytrap" filename="flytrap.wav"/>
+      		<prompt phrase="forever" filename="forever.wav"/>
+      		<prompt phrase="fortitude" filename="fortitude.wav"/>
+      		<prompt phrase="fracture" filename="fracture.wav"/>
+      		<prompt phrase="framework" filename="framework.wav"/>
+      		<prompt phrase="freedom" filename="freedom.wav"/>
+      		<prompt phrase="frequency" filename="frequency.wav"/>
+      		<prompt phrase="frighten" filename="frighten.wav"/>
+      		<prompt phrase="gadgetry" filename="gadgetry.wav"/>
+      		<prompt phrase="gazelle" filename="gazelle.wav"/>
+      		<prompt phrase="getaway" filename="getaway.wav"/>
+      		<prompt phrase="glitter" filename="glitter.wav"/>
+      		<prompt phrase="glossary" filename="glossary.wav"/>
+      		<prompt phrase="glucose" filename="glucose.wav"/>
+      		<prompt phrase="goggles" filename="goggles.wav"/>
+      		<prompt phrase="goldfish" filename="goldfish.wav"/>
+      		<prompt phrase="gossamer" filename="gossamer.wav"/>
+      		<prompt phrase="graduate" filename="graduate.wav"/>
+      		<prompt phrase="gravity" filename="gravity.wav"/>
+      		<prompt phrase="gremlin" filename="gremlin.wav"/>
+      		<prompt phrase="guidance" filename="guidance.wav"/>
+      		<prompt phrase="guitarist" filename="guitarist.wav"/>
+      		<prompt phrase="hamburger" filename="hamburger.wav"/>
+      		<prompt phrase="hamlet" filename="hamlet.wav"/>
+      		<prompt phrase="handiwork" filename="handiwork.wav"/>
+      		<prompt phrase="hazardous" filename="hazardous.wav"/>
+      		<prompt phrase="headwaters" filename="headwaters.wav"/>
+      		<prompt phrase="hemisphere" filename="hemisphere.wav"/>
+      		<prompt phrase="hesitate" filename="hesitate.wav"/>
+      		<prompt phrase="hideaway" filename="hideaway.wav"/>
+      		<prompt phrase="highchair" filename="highchair.wav"/>
+      		<prompt phrase="hockey" filename="hockey.wav"/>
+      		<prompt phrase="holiness" filename="holiness.wav"/>
+      		<prompt phrase="hurricane" filename="hurricane.wav"/>
+      		<prompt phrase="hydraulic" filename="hydraulic.wav"/>
+      		<prompt phrase="impartial" filename="impartial.wav"/>
+      		<prompt phrase="impetus" filename="impetus.wav"/>
+      		<prompt phrase="inception" filename="inception.wav"/>
+      		<prompt phrase="indigo" filename="indigo.wav"/>
+      		<prompt phrase="indoors" filename="indoors.wav"/>
+      		<prompt phrase="indulge" filename="indulge.wav"/>
+      		<prompt phrase="inertia" filename="inertia.wav"/>
+      		<prompt phrase="infancy" filename="infancy.wav"/>
+      		<prompt phrase="inferno" filename="inferno.wav"/>
+      		<prompt phrase="informant" filename="informant.wav"/>
+      		<prompt phrase="insincere" filename="insincere.wav"/>
+      		<prompt phrase="insurgent" filename="insurgent.wav"/>
+      		<prompt phrase="integrate" filename="integrate.wav"/>
+      		<prompt phrase="intention" filename="intention.wav"/>
+      		<prompt phrase="inventive" filename="inventive.wav"/>
+      		<prompt phrase="inverse" filename="inverse.wav"/>
+      		<prompt phrase="involve" filename="involve.wav"/>
+      		<prompt phrase="island" filename="island.wav"/>
+      		<prompt phrase="jawbone" filename="jawbone.wav"/>
+      		<prompt phrase="keyboard" filename="keyboard.wav"/>
+      		<prompt phrase="kickoff" filename="kickoff.wav"/>
+      		<prompt phrase="kiwi" filename="kiwi.wav"/>
+      		<prompt phrase="klaxon" filename="klaxon.wav"/>
+      		<prompt phrase="leprosy" filename="leprosy.wav"/>
+      		<prompt phrase="letterhead" filename="letterhead.wav"/>
+      		<prompt phrase="liberty" filename="liberty.wav"/>
+      		<prompt phrase="locale" filename="locale.wav"/>
+      		<prompt phrase="lockup" filename="lockup.wav"/>
+      		<prompt phrase="maritime" filename="maritime.wav"/>
+      		<prompt phrase="matchmaker" filename="matchmaker.wav"/>
+      		<prompt phrase="maverick" filename="maverick.wav"/>
+      		<prompt phrase="megaton" filename="megaton.wav"/>
+      		<prompt phrase="merit" filename="merit.wav"/>
+      		<prompt phrase="microscope" filename="microscope.wav"/>
+      		<prompt phrase="microwave" filename="microwave.wav"/>
+      		<prompt phrase="midsummer" filename="midsummer.wav"/>
+      		<prompt phrase="millionaire" filename="millionaire.wav"/>
+      		<prompt phrase="minnow" filename="minnow.wav"/>
+      		<prompt phrase="miracle" filename="miracle.wav"/>
+      		<prompt phrase="miser" filename="miser.wav"/>
+      		<prompt phrase="misnomer" filename="misnomer.wav"/>
+      		<prompt phrase="molasses" filename="molasses.wav"/>
+      		<prompt phrase="molecule" filename="molecule.wav"/>
+      		<prompt phrase="monument" filename="monument.wav"/>
+      		<prompt phrase="mosquito" filename="mosquito.wav"/>
+      		<prompt phrase="mural" filename="mural.wav"/>
+      		<prompt phrase="music" filename="music.wav"/>
+      		<prompt phrase="narrative" filename="narrative.wav"/>
+      		<prompt phrase="nebula" filename="nebula.wav"/>
+      		<prompt phrase="necklace" filename="necklace.wav"/>
+      		<prompt phrase="newborn" filename="newborn.wav"/>
+      		<prompt phrase="newsletter" filename="newsletter.wav"/>
+      		<prompt phrase="nightbird" filename="nightbird.wav"/>
+      		<prompt phrase="obtuse" filename="obtuse.wav"/>
+      		<prompt phrase="offload" filename="offload.wav"/>
+      		<prompt phrase="onlooker" filename="onlooker.wav"/>
+      		<prompt phrase="optic" filename="optic.wav"/>
+      		<prompt phrase="opulent" filename="opulent.wav"/>
+      		<prompt phrase="orca" filename="orca.wav"/>
+      		<prompt phrase="outfielder" filename="outfielder.wav"/>
+      		<prompt phrase="pandemic" filename="pandemic.wav"/>
+      		<prompt phrase="paperweight" filename="paperweight.wav"/>
+      		<prompt phrase="paragon" filename="paragon.wav"/>
+      		<prompt phrase="paragraph" filename="paragraph.wav"/>
+      		<prompt phrase="paramount" filename="paramount.wav"/>
+      		<prompt phrase="passenger" filename="passenger.wav"/>
+      		<prompt phrase="payday" filename="payday.wav"/>
+      		<prompt phrase="peachy" filename="peachy.wav"/>
+      		<prompt phrase="pedigree" filename="pedigree.wav"/>
+      		<prompt phrase="penetrate" filename="penetrate.wav"/>
+      		<prompt phrase="perceptive" filename="perceptive.wav"/>
+      		<prompt phrase="performance" filename="performance.wav"/>
+      		<prompt phrase="pharmacy" filename="pharmacy.wav"/>
+      		<prompt phrase="pheasant" filename="pheasant.wav"/>
+      		<prompt phrase="phonetic" filename="phonetic.wav"/>
+      		<prompt phrase="photograph" filename="photograph.wav"/>
+      		<prompt phrase="physique" filename="physique.wav"/>
+      		<prompt phrase="pioneer" filename="pioneer.wav"/>
+      		<prompt phrase="playhouse" filename="playhouse.wav"/>
+      		<prompt phrase="pocketful" filename="pocketful.wav"/>
+      		<prompt phrase="politeness" filename="politeness.wav"/>
+      		<prompt phrase="positive" filename="positive.wav"/>
+      		<prompt phrase="potato" filename="potato.wav"/>
+      		<prompt phrase="preclude" filename="preclude.wav"/>
+      		<prompt phrase="prefer" filename="prefer.wav"/>
+      		<prompt phrase="preshrunk" filename="preshrunk.wav"/>
+      		<prompt phrase="printer" filename="printer.wav"/>
+      		<prompt phrase="processor" filename="processor.wav"/>
+      		<prompt phrase="provincial" filename="provincial.wav"/>
+      		<prompt phrase="prowler" filename="prowler.wav"/>
+      		<prompt phrase="proximate" filename="proximate.wav"/>
+      		<prompt phrase="puberty" filename="puberty.wav"/>
+      		<prompt phrase="publisher" filename="publisher.wav"/>
+      		<prompt phrase="pupil" filename="pupil.wav"/>
+      		<prompt phrase="puppy" filename="puppy.wav"/>
+      		<prompt phrase="pyramid" filename="pyramid.wav"/>
+      		<prompt phrase="python" filename="python.wav"/>
+      		<prompt phrase="quadrant" filename="quadrant.wav"/>
+      		<prompt phrase="quantity" filename="quantity.wav"/>
+      		<prompt phrase="quiver" filename="quiver.wav"/>
+      		<prompt phrase="quota" filename="quota.wav"/>
+      		<prompt phrase="racketeer" filename="racketeer.wav"/>
+      		<prompt phrase="ragtime" filename="ragtime.wav"/>
+      		<prompt phrase="ratchet" filename="ratchet.wav"/>
+      		<prompt phrase="rebellion" filename="rebellion.wav"/>
+      		<prompt phrase="rebirth" filename="rebirth.wav"/>
+      		<prompt phrase="recipe" filename="recipe.wav"/>
+      		<prompt phrase="recover" filename="recover.wav"/>
+      		<prompt phrase="reform" filename="reform.wav"/>
+      		<prompt phrase="regain" filename="regain.wav"/>
+      		<prompt phrase="reindeer" filename="reindeer.wav"/>
+      		<prompt phrase="rematch" filename="rematch.wav"/>
+      		<prompt phrase="repay" filename="repay.wav"/>
+      		<prompt phrase="repellent" filename="repellent.wav"/>
+      		<prompt phrase="replica" filename="replica.wav"/>
+      		<prompt phrase="reproduce" filename="reproduce.wav"/>
+      		<prompt phrase="resistor" filename="resistor.wav"/>
+      		<prompt phrase="responsive" filename="responsive.wav"/>
+      		<prompt phrase="retouch" filename="retouch.wav"/>
+      		<prompt phrase="retraction" filename="retraction.wav"/>
+      		<prompt phrase="retrieval" filename="retrieval.wav"/>
+      		<prompt phrase="retrospect" filename="retrospect.wav"/>
+      		<prompt phrase="revenge" filename="revenge.wav"/>
+      		<prompt phrase="revenue" filename="revenue.wav"/>
+      		<prompt phrase="revival" filename="revival.wav"/>
+      		<prompt phrase="revolver" filename="revolver.wav"/>
+      		<prompt phrase="reward" filename="reward.wav"/>
+      		<prompt phrase="rhythm" filename="rhythm.wav"/>
+      		<prompt phrase="ribcage" filename="ribcage.wav"/>
+      		<prompt phrase="ringbolt" filename="ringbolt.wav"/>
+      		<prompt phrase="robust" filename="robust.wav"/>
+      		<prompt phrase="rocker" filename="rocker.wav"/>
+      		<prompt phrase="ruffled" filename="ruffled.wav"/>
+      		<prompt phrase="sailboat" filename="sailboat.wav"/>
+      		<prompt phrase="sandalwood" filename="sandalwood.wav"/>
+      		<prompt phrase="sardonic" filename="sardonic.wav"/>
+      		<prompt phrase="savagery" filename="savagery.wav"/>
+      		<prompt phrase="sawdust" filename="sawdust.wav"/>
+      		<prompt phrase="scallion" filename="scallion.wav"/>
+      		<prompt phrase="scavenger" filename="scavenger.wav"/>
+      		<prompt phrase="scenic" filename="scenic.wav"/>
+      		<prompt phrase="scorecard" filename="scorecard.wav"/>
+      		<prompt phrase="seabird" filename="seabird.wav"/>
+      		<prompt phrase="select" filename="select.wav"/>
+      		<prompt phrase="sensation" filename="sensation.wav"/>
+      		<prompt phrase="sentence" filename="sentence.wav"/>
+      		<prompt phrase="shadow" filename="shadow.wav"/>
+      		<prompt phrase="shamrock" filename="shamrock.wav"/>
+      		<prompt phrase="showgirl" filename="showgirl.wav"/>
+      		<prompt phrase="skullcap" filename="skullcap.wav"/>
+      		<prompt phrase="skydive" filename="skydive.wav"/>
+      		<prompt phrase="slingshot" filename="slingshot.wav"/>
+      		<prompt phrase="slowdown" filename="slowdown.wav"/>
+      		<prompt phrase="snapline" filename="snapline.wav"/>
+      		<prompt phrase="snapshot" filename="snapshot.wav"/>
+      		<prompt phrase="snowcap" filename="snowcap.wav"/>
+      		<prompt phrase="snowslide" filename="snowslide.wav"/>
+      		<prompt phrase="sociable" filename="sociable.wav"/>
+      		<prompt phrase="solo" filename="solo.wav"/>
+      		<prompt phrase="southward" filename="southward.wav"/>
+      		<prompt phrase="souvenir" filename="souvenir.wav"/>
+      		<prompt phrase="soybean" filename="soybean.wav"/>
+      		<prompt phrase="spaniel" filename="spaniel.wav"/>
+      		<prompt phrase="spearhead" filename="spearhead.wav"/>
+      		<prompt phrase="specialist" filename="specialist.wav"/>
+      		<prompt phrase="speculate" filename="speculate.wav"/>
+      		<prompt phrase="spellbind" filename="spellbind.wav"/>
+      		<prompt phrase="spheroid" filename="spheroid.wav"/>
+      		<prompt phrase="spigot" filename="spigot.wav"/>
+      		<prompt phrase="spindle" filename="spindle.wav"/>
+      		<prompt phrase="spyglass" filename="spyglass.wav"/>
+      		<prompt phrase="stagehand" filename="stagehand.wav"/>
+      		<prompt phrase="stagnate" filename="stagnate.wav"/>
+      		<prompt phrase="stairway" filename="stairway.wav"/>
+      		<prompt phrase="standard" filename="standard.wav"/>
+      		<prompt phrase="stapler" filename="stapler.wav"/>
+      		<prompt phrase="steamship" filename="steamship.wav"/>
+      		<prompt phrase="sterling" filename="sterling.wav"/>
+      		<prompt phrase="stethoscope" filename="stethoscope.wav"/>
+      		<prompt phrase="stockman" filename="stockman.wav"/>
+      		<prompt phrase="stopwatch" filename="stopwatch.wav"/>
+      		<prompt phrase="stormy" filename="stormy.wav"/>
+      		<prompt phrase="stupendous" filename="stupendous.wav"/>
+      		<prompt phrase="sugar" filename="sugar.wav"/>
+      		<prompt phrase="supportive" filename="supportive.wav"/>
+      		<prompt phrase="surmount" filename="surmount.wav"/>
+      		<prompt phrase="surrender" filename="surrender.wav"/>
+      		<prompt phrase="suspense" filename="suspense.wav"/>
+      		<prompt phrase="suspicious" filename="suspicious.wav"/>
+      		<prompt phrase="sweatband" filename="sweatband.wav"/>
+      		<prompt phrase="swelter" filename="swelter.wav"/>
+      		<prompt phrase="sympathy" filename="sympathy.wav"/>
+      		<prompt phrase="tactics" filename="tactics.wav"/>
+      		<prompt phrase="talon" filename="talon.wav"/>
+      		<prompt phrase="tambourine" filename="tambourine.wav"/>
+      		<prompt phrase="tapeworm" filename="tapeworm.wav"/>
+      		<prompt phrase="telephone" filename="telephone.wav"/>
+      		<prompt phrase="tempest" filename="tempest.wav"/>
+      		<prompt phrase="therapist" filename="therapist.wav"/>
+      		<prompt phrase="tiger" filename="tiger.wav"/>
+      		<prompt phrase="tissue" filename="tissue.wav"/>
+      		<prompt phrase="tobacco" filename="tobacco.wav"/>
+      		<prompt phrase="tolerance" filename="tolerance.wav"/>
+      		<prompt phrase="tomorrow" filename="tomorrow.wav"/>
+      		<prompt phrase="tonic" filename="tonic.wav"/>
+      		<prompt phrase="topmost" filename="topmost.wav"/>
+      		<prompt phrase="torpedo" filename="torpedo.wav"/>
+      		<prompt phrase="tracker" filename="tracker.wav"/>
+      		<prompt phrase="tradition" filename="tradition.wav"/>
+      		<prompt phrase="transit" filename="transit.wav"/>
+      		<prompt phrase="trauma" filename="trauma.wav"/>
+      		<prompt phrase="travesty" filename="travesty.wav"/>
+      		<prompt phrase="treadmill" filename="treadmill.wav"/>
+      		<prompt phrase="trombonist" filename="trombonist.wav"/>
+      		<prompt phrase="trouble" filename="trouble.wav"/>
+      		<prompt phrase="truncated" filename="truncated.wav"/>
+      		<prompt phrase="tumor" filename="tumor.wav"/>
+      		<prompt phrase="tunnel" filename="tunnel.wav"/>
+      		<prompt phrase="tycoon" filename="tycoon.wav"/>
+      		<prompt phrase="typewriter" filename="typewriter.wav"/>
+      		<prompt phrase="ultimate" filename="ultimate.wav"/>
+      		<prompt phrase="uncut" filename="uncut.wav"/>
+      		<prompt phrase="undaunted" filename="undaunted.wav"/>
+      		<prompt phrase="underfoot" filename="underfoot.wav"/>
+      		<prompt phrase="unearth" filename="unearth.wav"/>
+      		<prompt phrase="unicorn" filename="unicorn.wav"/>
+      		<prompt phrase="unify" filename="unify.wav"/>
+      		<prompt phrase="universe" filename="universe.wav"/>
+      		<prompt phrase="unravel" filename="unravel.wav"/>
+      		<prompt phrase="unwind" filename="unwind.wav"/>
+      		<prompt phrase="upcoming" filename="upcoming.wav"/>
+      		<prompt phrase="uproot" filename="uproot.wav"/>
+      		<prompt phrase="upset" filename="upset.wav"/>
+      		<prompt phrase="upshot" filename="upshot.wav"/>
+      		<prompt phrase="vacancy" filename="vacancy.wav"/>
+      		<prompt phrase="vagabond" filename="vagabond.wav"/>
+      		<prompt phrase="vapor" filename="vapor.wav"/>
+      		<prompt phrase="vertigo" filename="vertigo.wav"/>
+      		<prompt phrase="village" filename="village.wav"/>
+      		<prompt phrase="virus" filename="virus.wav"/>
+      		<prompt phrase="visitor" filename="visitor.wav"/>
+      		<prompt phrase="vocalist" filename="vocalist.wav"/>
+      		<prompt phrase="voyager" filename="voyager.wav"/>
+      		<prompt phrase="waffle" filename="waffle.wav"/>
+      		<prompt phrase="wallet" filename="wallet.wav"/>
+      		<prompt phrase="warranty" filename="warranty.wav"/>
+      		<prompt phrase="watchword" filename="watchword.wav"/>
+      		<prompt phrase="wayside" filename="wayside.wav"/>
+      		<prompt phrase="whimsical" filename="whimsical.wav"/>
+      		<prompt phrase="willow" filename="willow.wav"/>
+      		<prompt phrase="woodlark" filename="woodlark.wav"/>
+      		<prompt phrase="yesteryear" filename="yesteryear.wav"/>
+    	</base256>
+    	<zrtp>
+      		<!-- Event prompts -->
+      		<prompt phrase="Добро пожаловать в агента регистрации шифрования ZRTP" filename="zrtp-enroll_welcome.wav"/>
+      		<!-- Welcome to the ZRTP security enrollment agent.   -->
+      		<prompt phrase="Вы должны выбрать строку аутентификации с партнером по разговору, Если она не совпадет, система сообщит Вам разрывом линии." filename="zrtp-check_sas.wav"/>
+      		<!-- You must check the authentication string with your partner. If it doesn't match, it indicates the presence of a wire tapper.   -->
+      		<prompt phrase="Только телефоны, прошедшие аутентификацию, могут быть сконфигурированы для доверия системе для обеспечения ZRTP шифрованных звонков, так что такой звонок не даст эффекта." filename="zrtp-enroll_not_sip_registered.wav"/>
+      		<!-- Only phones that are authenticated can be configured to trust this system to relay ZRTP secured calls.  Your phone is not authenticated with this system, so this call will have no effect.  -->
+      		<prompt phrase="Ваш телефон сообщит, что он уже доверяет системе для перенаправления ZRTP шифрованных звонков, так что больше делать ничего не нужно будет" filename="zrtp-enroll_already_enrolled.wav"/>
+      		<!-- Your phone indicates that it already trusts this system to relay ZRTP secured calls, so you do not need to do anything more. -->
+      		<prompt phrase="Только телефоны, с поддержкой протокола ZRTP могут использовать такую функцию. Ваш телефон не поддерживает ZRTP протокол и звонок не даст эффекта ZRTP защиты." filename="zrtp-enroll_notzrtp.wav"/>
+      		<!-- Only phones equipped with the ZRTP protocol can use this extension. Your phone is not a ZRTP-enable phone, so this call will have no effect.-->
+      		<prompt phrase="Система оборудована для проведения шифрованных ZRTP звонков. Вы должны решить, если вы хотите чтобы система была задействована для приема и возможно мониторинга Ваших защищенных звонков. Вы можете повесить трубку после окончания разговора." filename="zrtp-enroll_confirmed.wav"/>
+      		<!-- This system is equipped to handle ZRTP encrypted phone calls. You must decide if you want to allow this system to be in a position to intercept and possibly monitor your secure phone calls. You may hang up after you've done this. -->
+      		<prompt phrase="Договоритесь с партнером по разговору о парольной фразе." filename="zrtp-is_secure.wav"/>
+      		<!-- Verbally compare this authentication code with your partner.   -->
+      		<prompt phrase="Парольная фраза на данный момент не проверена" filename="zrtp-is_unverified.wav"/>
+      		<!-- Authentication code is now unverified.   -->
+      		<prompt phrase="Парольная фраза проверена." filename="zrtp-is_verified.wav"/>
+      		<!-- Authentication code is now verified.   -->
+      		<prompt phrase="Спасибо за звонок. До свидания." filename="zrtp-thankyou_goodbye.wav"/>
+      		<!-- Thank you for calling. Goodbye.   -->
+      		<prompt phrase="Что-то происходит не так." filename="zrtp-somethings_wrong.wav"/>
+      		<!-- Something's wrong   -->
+      		<prompt phrase="Ошибка." filename="zrtp-status_error.wav"/>
+      		<!-- Error.   -->
+      		<prompt phrase="Ваш разговор не шифруется" filename="zrtp-status_notsecure.wav"/>
+      		<!-- Call is not secure.   -->
+      		<prompt phrase="Ваш разговор шифруется." filename="zrtp-status_secure.wav"/>
+      		<!-- Call is secure.   -->
+      		<prompt phrase="Шифрованный вызов." filename="zrtp-status_securing.wav"/>
+      		<!-- Securing call.   -->
+    	</zrtp>
+    	<users>
+    		<prompt phrase="Для отправки факса" filename="to_send_a_fax.wav"/>
+    		<prompt phrase="Абонент с номером ... не отвечает, пожалуйста..." filename="no_answer_please.wav"/>
+    		<prompt phrase="для соединения с секретарем." filename="to_connect_secretary.wav"/>
+    		<prompt phrase="чтобы оставить голосовое сообщение..." filename="to_leave_a_voice_message.wav"/>
+    		<prompt phrase="для звонка на мобильный сотрудника" filename="to_call_the_mobile_employee.wav"/>
+    		<prompt phrase="Извините, сейчас все линии заняты, пожалуйста, перезвоните позже" filename="sorry_call_back_later.wav"/>
+    		<prompt phrase="Извините сейчас мы не можем принять ваш звонок, пожалуйста, перезвоните через несколько минут" filename="sorry_call_back_later2.wav"/>
+    		<prompt phrase="Факс работает в автоматическом режиме " filename="auto_fax.wav"/>
+    		<prompt phrase="Нажмите старт, для принятия факса." filename="press_start_to_receive_a_fax.wav"/>
+    		<prompt phrase="Нажмите старт, для отправки факса." filename="press_start_to_send_a_fax.wav"/>
+    	</users>
+  </ru>                                                                                                                                                                      
+</language>                                                                                                                                                                  
+

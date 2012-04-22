@@ -1,0 +1,12 @@
+#!/bin/sh
+fspid=$(cat /usr/local/freeswitch/run/freeswitch.pid)
+gcore -o /usr/local/freeswitch/log/freeswitch.gcore $fspid && \
+	gdb /usr/local/freeswitch/bin/freeswitch \
+	-c /usr/local/freeswitch/log/freeswitch.gcore.$fspid \
+	--eval-command='set pagination off' \
+	--eval-command='bt' \
+	--eval-command='bt full' \
+	--eval-command='thread apply all bt' \
+	--eval-command='thread apply all bt full' \
+	--eval-command='quit'
+#rm /usr/local/freeswitch/log/freeswitch.gcore.$fspid

@@ -1,0 +1,6 @@
+This directory contains a javascript auto attendant which queries
+FreeSWITCH for name / extension information rather than using
+hardcoded values.  It requires a wave file which says:
+
+  Please spell the name of the person using your telephone keypad
+  last name first.  Press 1 for Q or Z.

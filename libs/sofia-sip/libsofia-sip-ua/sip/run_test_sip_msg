@@ -1,0 +1,88 @@
+#! /bin/sh
+#
+# Run the parser tests
+#
+# usage: env srcdir=dir run_sip_test_msg
+#
+# --------------------------------------------------------------------
+#
+# This file is part of the Sofia-SIP package
+#
+# Copyright (C) 2005 Nokia Corporation.
+#
+# Contact: Pekka Pessi <pekka.pessi@nokia.com>
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1 of
+# the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+# 02110-1301 USA
+#
+# --------------------------------------------------------------------
+#
+
+rc=0
+
+if test ! -d "${srcdir:=.}/tests"
+then
+    echo Please set environment variable srcdir
+    exit 77
+fi
+
+test=./test_sip_msg
+
+# These are messages that the parser should pass
+good="-t test1.txt test2.txt test3.txt test4.txt
+      -u test5.txt -t test6.txt test7.txt -u test8.txt -t test9.txt
+      test14.txt test20.txt test23.txt test24.txt test31.txt
+      own1.txt own2.txt own3.txt own4.txt own5.txt own6.txt"
+# These are messages that the parser should fail
+bad="test10.txt test11.txt test12.txt test13.txt test15.txt
+     test16.txt test17.txt test18.txt test19.txt
+     test21.txt test22.txt
+     test26.txt test29.txt test33.txt
+     test35.txt
+     test40.txt"
+# These are ugly messages that parser should pass
+ugly="-t test25.txt -u test27.txt test28.txt -t test30.txt
+      -u test32.txt test34.txt -t test36.txt -u test37.txt
+      test38.txt test39.txt test41.txt test42.txt"
+
+# These are messages that parser should pass, but it does not
+goodish=""
+# These are messages that parser should not pass, but it does
+baddish=""
+
+flag=-t
+for n in $good $ugly;
+do
+    if test $n = -t ; then
+	flag=$n
+    elif test $n = -u ; then
+	flag=
+    elif "$test" $flag < "$srcdir/tests/$n" > /dev/null ; then
+	echo "PASS: $n"
+    else
+	echo "ERROR: $n"; rc=1
+    fi
+done
+
+for n in $bad;
+do
+    if "$test" -t < "$srcdir/tests/$n" > /dev/null 2>/dev/null ; then
+	echo "ERROR: $n (no error detected)"; rc=1
+    else
+	echo "PASS: $n"
+    fi
+done
+
+exit $rc

@@ -1,0 +1,136 @@
+===================================
+Sofia-SIP release management README
+===================================
+
+:Author: Kai Vehmanen <kai -dot vehmanen -at- nokia -dot- com>
+:Version: 20060809-12
+:Formatting: reStructuredText, http://docutils.sourceforge.net/rst.html
+
+Introduction
+============
+
+This README contains instructions for making new Sofia-SIP releases.
+
+Links to other resources
+========================
+
+sofia-sip/README.developers
+
+The release notes
+=================
+
+The release notes should contain the following sections:
+
+- about Sofia-SIP
+    - copied verbatim from sofia-sip/README
+- list of changes since last release
+    - maintained in sofia-sip/RELEASE
+    - see diff between cvs/darcs between previous and
+      this version
+    - written in freshmeat.net "Changes:" style
+- notes on API/ABI interface changes
+    - maintained in sofia-sip/RELEASE
+    - all changes in public interfaces, plus other
+      notes that developers should be aware of
+- contributors to this release
+    - maintained in sofia-sip/RELEASE
+    - also sofia-sip/AUTHORS should be updated (file
+      should list all persons/companies who have code/scripts/etc
+      copyrighted to them in the sofia-sip tree)
+
+See the RELEASE.template file for a full list of release note
+sections.
+
+Making the release tarball
+==========================
+
+- basics: check system clock of the build host ;)
+- update the version number in sofia-sip/configure.ac
+- make sure the library versions are correct, and you've
+  frozen all library interfaces (with correct entries in
+  ChangeLog files), see README.developers for more information
+  on library versioning in general
+- make sure everything that is supposed to be in the
+  release is in the master darcs tree
+- run 'make distcheck' to verify everything is ready for
+  release (requires automake-1.7 or newer)
+- tag repos (darcs and any slave trees) with release tag
+  'rel-sofia-sip-x_y_z', where x_y_z is the version number (see
+  README.developers):
+    sh> darcs tag -m"rel-sofia-sip-x_y_z"
+    sh> cvs tag rel-sofia-sip-x_y_z
+- take a fresh checkout of the release using the release tag
+    sh> darcs get http://sofia-sip.org/repos/sofia-sip --tag=rel-sofia-sip-1_yy_z
+- create the release tarball with "make distcheck" (make sure depcomp et
+  al libtool scripts are correctly created)
+- calculate md5 and sha1 hashes using md5sum and sha1sum utilities,
+  and copy the values to the release-notes (see below)
+
+Creating the release notes and updating the website
+===================================================
+
+- combine the sofia-sip/RELEASE contents with
+  the template found from sfnet_www/templates/relnotes.txt
+- store the resulting release notes to
+  sfnet_www/relnotes/relnotes-sofia-sip-x.y.z.txt
+- add explicit link to the release notes to
+  sfnet_www/download.html (three most recent releases,
+  see guidelines in the html comments)
+- update sfnet_www/index.html to mention the latest
+  release
+- commit the change to sf.net website CVS, and run the
+  sfnet_www/put_online.sh script
+
+Uploading the release to sourceforge.net
+========================================
+
+- use the the 'Admin' -> 'File releases' tool for
+  creating a new release
+- to upload the file, you can use for example rsync:
+  rsync -avP -e ssh sofia-sip-x.y.z.tar.gz USER@frs.sourceforge.net:uploads/
+- attach the release notes (relnotes-sofia-sip-x.y.z.txt)
+  to the file release
+
+Announcing releases
+===================
+
+- send an announcement mail, containing the
+  release notes, to sofia-sip-devel@lists.sourceforge.net
+- post a news item to freshmeat.net 'sofia-sip'
+  project (current project owner: Kai Vehmanen)
+
+After release
+=============
+
+- replace the RELEASE file with RELEASE.template, and
+  commit it to master source repository (see sofia-sip/README.developers)
+- change version in configure.ac from "X.Y.Z" to
+  "X.Y.Zdevel" (as it is in many cases unknown what the
+  next version will be)
+- make a "tree open for development" commit
+
+Syncing CVS and darcs (or some other VCS)
+=========================================
+
+Some tips for synchronizing from/to different version controlled
+tree.
+
+- As CVS cannot trace file addition/move/removals, you need
+  to be extra careful with these. With darcs, you can use the
+  'darcs changes -v' command to track down all fileops since
+  last synchronization.
+
+- Always tag the src-tree with "syncuser-fromvcs-to-tovcs-yearmmdd".
+
+- Add a top-level ChangeLog entry that documents all the
+  changes made outside the target tree (what, who and when -
+  for example produced with the "darcs changes --summary"
+  command).
+
+Checking API/ABI compatibility
+==============================
+
+- Use a unit test binary built against an old library,
+  to verify a new library version (forwards-compatibility).
+- Use the 'icheck' tool (in Debian) to make comparison
+  between two released versions.

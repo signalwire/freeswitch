@@ -1,0 +1,56 @@
+These are all of the changes and additions necessary to build a loopback application for the 
+TI C6415, C5509A, or C5416 simulators using the TI Code Composer Studio (CCS) development system.  
+A trial version of the tools can be downloaded from the TI website.
+
+This build runs 8kbps narrowband, with minimum complexity.
+
+Several changes are introduced in Speex 1.1.11 which are used in these applications:
+
+arch.h: Added switch for compilers not supporting "long long" (C55x does, C54x, CCS 2.x C64x does not)
+bits.c: Allow external definition for max buffer size, changed MAX_BYTES_PER_FRAME
+        to MAX_CHARS_PER_FRAME for consistency
+misc.c: Added override switches to alloc routines, conditional include of user file "user_misc.h".
+        These changes allow manual memory allocation rather than using heap
+
+The arch.h change allows operation with 2.x versions of Code Composer Studio.
+The bits.c change reduces the data memory usage.
+The misc.c change allows private memory allocation, for cases where it is not
+desirable to use the normal heap.
+
+Added files:
+
+testenc-TI-C5x.c  (For C54x and C55x builds, derived from testenc.c, 
+                       manual alloc, byte packing/unpacking added)
+testenc-TI-C64x.c  (For C64x builds, derived from testenc.c, manual alloc, byte packing/unpacking added)
+
+config.h (not automatically generated, sets memory sizes, enables/disables manual alloc)
+user_misc.h (contains the manual memory alloc routines, with debug code to display mem usage)
+speex\speex_config_types.h (match Speex types to compiler types, not generated from types.in)
+
+speex_c54_test\speex_c54_test.cmd (C5416 linker command file)
+speex_c54_test\speex_c54_test.pjt (Code Composer Studio Project File )
+speex_c55_test\speex_c55_test.cmd (C5509A linker command file)
+speex_c55_test\speex_c55_test.pjt (Code Composer Studio Project File )
+speex_c64_test\speex_c64_test.cmd (C6415 linker command file)
+speex_c64_test\speex_c64_test.pjt (Code Composer Studio Project File )
+
+samples\male.snd  
+
+Usage:
+1. Create a Speex 1.1.11 (or later) source tree.
+2. Edit the files testenc-TI-C5x.c and/or testenc-TI-C64x.c to change the hard-coded path 
+   for the test audio and data files.
+   This build uses the file e:\speextrunktest\samples\male.snd.
+   Note:  This is a headerless 16-bit stereo audio file derived from the male.wav test file 
+          http://www.speex.org/samples/male.wav
+3. Edit the .pjt file with a text editor and change projdir or projectdir to the correct path 
+   (one place near the top of the file).
+4. Edit config.h if desired, to change the memory allocation method (calloc or manual),
+   and to enable/disable debug prints for the memory allocation 
+   (this makes it easier to determine the required size).
+5. Run Code Composer Studio, and open the project for the desired target (e.g. speex_c55_test).
+   Note that the correct simulator must be selected (in CCS Setup) before starting CCS.
+6. Build and run the simulation.
+
+Note that assembly optimizations will be required to run C54x in real time.
+There are no assembly optimizations in any of these builds.

@@ -1,0 +1,20 @@
+<configuration name="mongo.conf">
+  <settings>
+    <!-- 
+      connection-string handles different ways to connect to mongo
+      samples:
+         server:port
+         foo/server:port,server:port   SET
+    -->
+    <param name="connection-string" value="127.0.0.1:27017"/>
+    <param name="min-connections" value="10"/>
+    <param name="max-connections" value="100"/>
+
+<!--
+    <param name="map" value="function() { emit(this.a, 1); }"/>
+    <param name="reduce" value="function(key, values) { return Array.sum(values); }"/>
+    <param name="finalize" value="function(key, value) { return value;}"/>
+-->
+
+  </settings>
+</configuration>

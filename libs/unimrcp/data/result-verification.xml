@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<result>
+  <verification-result>
+    <voiceprint id="johnsmith">
+      <incremental>
+        <utterance-length> 500 </utterance-length>
+        <device> cellular-phone </device>
+        <gender> male </gender>
+        <decision> accepted </decision>
+        <verification-score> 0.85 </verification-score>
+      </incremental>
+      <cumulative>
+        <utterance-length> 1500 </utterance-length>
+        <device> cellular-phone </device>
+        <gender> male </gender>
+        <decision> accepted </decision>
+        <verification-score> 0.75 </verification-score>
+      </cumulative>
+    </voiceprint>
+  </verification-result>
+</result>

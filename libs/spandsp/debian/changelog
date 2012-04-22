@@ -1,0 +1,119 @@
+spandsp (0.0.6~pre7-1) unstable; urgency=low
+
+  [ Steve Underwood ]
+  * New upstream release.
+  * Fixed upstream file name for get-orig-source.
+  * Updates to 64bit archs support
+  * Removal of obsoleted files
+
+ -- Steve Underwood <steveu@coppice.org>  Sat, 14 Mar 2009 09:23:36 +0100
+
+spandsp (0.0.5~pre2-1) unstable; urgency=low
+
+  [ Massimo Cetra ]
+  * New upstream release.
+  * Fixed upstream file name for get-orig-source.
+  * Updates to 64bit archs support
+  * Removal of obsoleted files
+
+ -- Massimo Cetra <devel@navynet.it>  Mon, 5 May 2008 09:23:36 +0100
+
+spandsp (0.0.4~pre3-1) unstable; urgency=low
+
+  [ Santiago Ruano Rincón ]
+  * Added Conflicts: libspandsp2
+  * Fixed URL in debian/rules
+
+  [ Tzafrir Cohen ]
+  * New upstream release.
+  * Fixed upstream file name for get-orig-source.
+  * standards version updated to 3.7.2 .
+
+ -- Tzafrir Cohen <tzafrir.cohen@xorcom.com>  Mon, 18 Jun 2007 09:53:06 +0300
+
+spandsp (0.0.4~pre1-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Santiago Ruano Rincón <santiago@debian.org>  Fri, 11 May 2007 15:24:41 -0500
+
+spandsp (0.0.3pre27-2) experimental; urgency=low
+
+  * Conflict with libspandsp1 due to /usr/share/spandsp/global-tones.xml
+
+ -- Kilian Krause <kilian@debian.org>  Thu,  4 Jan 2007 00:29:10 +0100
+
+spandsp (0.0.3pre27-1) experimental; urgency=low
+
+  * New upstream release.
+  * Bump library name due to API incompatibility with 0.0.2 versions.
+
+ -- Kilian Krause <kilian@debian.org>  Wed,  3 Jan 2007 21:31:17 +0100
+
+spandsp (0.0.3pre26-1) experimental; urgency=low
+
+  * New upstream release
+    - New version of spandsp available (Closes: #339293)
+    - Remove src/spandsp/mmx.h is not GPL and has no license attached (Closes:
+    #357813)
+  * Lintian: outdated-autotools-helper-file - Build-Depends: autotools-dev
+  * Add debian/watch
+
+ -- Mark Purcell <msp@debian.org>  Sat,  9 Dec 2006 14:00:57 +0000
+
+spandsp (0.0.2pre26-1) unstable; urgency=low
+
+  * New upstream release.
+  * Added get-orig-source target.
+  * Removed unneeded and buggy nommx.dpatch (Closes: #376249, #377374)
+
+ -- Tzafrir Cohen <tzafrir.cohen@xorcom.com>  Tue,  1 Aug 2006 06:27:47 +0100
+
+spandsp (0.0.2pre25-1) unstable; urgency=low
+
+  * New upstream version.
+  * debian/copyright: Source's URL in copyright file updated to the new author' site.
+  * Added -doc package, with the API documentation.
+  * Fixed package name to follow new upstream's version.
+
+ -- Kilian Krause <kilian@debian.org>  Sat, 18 Feb 2006 22:10:21 +0100
+
+spandsp (0.0.2pre17-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Kilian Krause <kk@verfaction.de>  Mon,  9 May 2005 21:56:53 +0200
+
+spandsp (0.0.2pre10-3) unstable; urgency=low
+
+  * debian/control: fixed overrides. again. (Back to the old optional)
+
+ -- Kilian Krause <kk@verfaction.de>  Mon, 21 Mar 2005 10:39:30 +0100
+
+spandsp (0.0.2pre10-2) unstable; urgency=low
+
+  * debian/control: fixed overrides.
+  * debian/patches/mmx.dpatch: Added compilation on non-i386 and non-amd64.
+
+ -- Kilian Krause <kk@verfaction.de>  Sun, 20 Mar 2005 23:32:48 +0100
+
+spandsp (0.0.2pre10-1) unstable; urgency=low
+
+  * New upstream release.
+  * Debian VoIP Team takes this package from Simon. Thanks!
+  * debian/rules: fixed how config.[sub,guess] files are linked from
+    autotools-dev and cleaned.
+
+ -- Kilian Krause <kk@verfaction.de>  Sat, 22 Jan 2005 13:44:28 +0100
+
+spandsp (0.0.2-2) unstable; urgency=low
+
+  * Corrected build dependencies.
+
+ -- Simon Richter <sjr@debian.org>  Mon,  3 Jan 2005 13:33:33 +0100
+
+spandsp (0.0.2-1) unstable; urgency=low
+
+  * Initial Release (Closes: #262032).
+
+ -- Simon Richter <sjr@debian.org>  Sun,  2 Jan 2005 15:22:58 +0100

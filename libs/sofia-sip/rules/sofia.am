@@ -1,0 +1,72 @@
+# common Makefile targets for libsofia-sip-ua(-glib) modules
+# ----------------------------------------------------------
+
+sofiasrcdir = ${top_srcdir}/libsofia-sip-ua
+sofiabuilddir = ${top_builddir}/libsofia-sip-ua
+
+AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) $(openssl_CFLAGS) $(SOFIA_PLAT_CFLAGS)
+
+SOFIA_COVERAGE = $(COVERAGE_FLAGS)
+
+# Use with --enable-ndebug
+if NDEBUG
+AM_CFLAGS += -DNDEBUG
+endif
+
+built-sources: $(BUILT_SOURCES)
+
+DISTCLEANFILES = $(BUILT_SOURCES)
+
+clean-built-sources:
+	-rm -rf $(BUILT_SOURCES) $(BUILT_SOURCES:%=$(srcdir)/%)
+
+# rules for building tag files
+
+TAG_AWK=${sofiasrcdir}/su/tag_dll.awk
+
+*_tag_ref.c: $(TAG_AWK)
+
+SUFFIXES = _tag_ref.c _tag.c
+
+_tag.c_tag_ref.c:
+	$(AWK) -f $(TAG_AWK) NODLL=1 $(TAG_DLL_FLAGS) REF=$@ $<
+
+../bnf/libbnf.la ../http/libhttp.la ../ipt/libipt.la ../iptsec/libiptsec.la \
+ ../msg/libmsg.la ../nea/libnea.la ../nta/libnta.la ../nth/libnth.la \
+ ../nua/libnua.la ../sdp/libsdp.la ../sip/libsip.la ../soa/libsoa.la \
+ ../sresolv/libsresolv.la ../stun/libstun.la ../su/libsu.la \
+ ../tport/libtport.la ../url/liburl.la:
+	cd $(@D) && $(MAKE) $(@F)
+
+checklib: $(noinst_LTLIBRARIES) $(check_LTLIBRARIES)
+
+INTERNAL_INCLUDES = \
+    -I${sofiasrcdir}/features -I${sofiabuilddir}/features \
+    -I${sofiasrcdir}/ipt -I${sofiabuilddir}/ipt \
+    -I${sofiasrcdir}/iptsec -I${sofiabuilddir}/iptsec \
+    -I${sofiasrcdir}/bnf -I${sofiabuilddir}/bnf \
+    -I${sofiasrcdir}/http -I${sofiabuilddir}/http \
+    -I${sofiasrcdir}/msg -I${sofiabuilddir}/msg \
+    -I${sofiasrcdir}/nth -I${sofiabuilddir}/nth \
+    -I${sofiasrcdir}/nta -I${sofiabuilddir}/nta \
+    -I${sofiasrcdir}/nea -I${sofiabuilddir}/nea \
+    -I${sofiasrcdir}/nua -I${sofiabuilddir}/nua \
+    -I${sofiasrcdir}/soa -I${sofiabuilddir}/soa \
+    -I${sofiasrcdir}/sdp -I${sofiabuilddir}/sdp \
+    -I${sofiasrcdir}/sip -I${sofiabuilddir}/sip \
+    -I${sofiasrcdir}/soa -I${sofiabuilddir}/soa \
+    -I${sofiasrcdir}/sresolv -I${sofiabuilddir}/sresolv \
+    -I${sofiasrcdir}/tport -I${sofiabuilddir}/tport \
+    -I${sofiasrcdir}/stun -I${sofiabuilddir}/stun \
+    -I${sofiasrcdir}/url -I${sofiabuilddir}/url \
+    -I${sofiasrcdir}/su -I${sofiabuilddir}/su
+
+PHONY = built-sources clean-built-sources
+
+include $(top_srcdir)/rules/valcheck.am
+
+if HAVE_LCOV
+include $(top_srcdir)/rules/lcov.am
+endif
+
+include $(top_srcdir)/rules/silent.am

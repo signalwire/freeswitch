@@ -1,0 +1,100 @@
+Session Methods
+=======================================
+
+session.streamFile
+
+Usage:
+
+session.streamFile(file, timer, callback);
+
+  file     = Path to the file to play (ie /tmp/file.wav)
+  timer    = Timer to use for async mode. (optional)
+  callback = Which function to fire when a dtmf digit is pressed. (optional)
+
+Callback return values and meanings:
+
+	 seek:ms - +1000 or -1000 will seek 1000ms forward or backwards, seek 0 will start the file over.
+	 speed:  - +1,-1 or 0 for normal speed.  (valid ranges are +1,+2, 0 or -1,-2)
+	 pause:  - toggles pause and play modes on the file.
+
+	 You can also return arbitrary values and act on them as you
+	 wish.  In our example we return "hangup" when the caller
+	 press the * key on the keypad.
+	 
+
+Example:
+
+function on_dtmf(digits)
+{
+	if (digits == "3") {
+	   return "seek:+1000";
+	}
+	if (digits == "1") {
+	   return "seek:-1000";
+	}
+	if (digits == "*") {
+	   return "hangup";
+	}
+}
+
+session.answer();
+
+while(session.ready()) {
+		    return_value = session.streamFile("/tmp/demo.wav", "", "on_dtmf");
+		    if (return_value == "hangup") {
+		       session.hangup(); // or break;
+		    }	
+}
+
+To Document(these are in mod_spidermonkey already and just need
+documentation and examples):
+
+Methods:
+session.recordFile
+session.speak
+session.getDigits
+session.answer
+session.ready
+session.waitForAnswer
+session.hangup
+session.execute
+
+Properties:
+session.name
+session.state
+session.dialplan
+session.caller_id_name
+session.caller_id_num
+session.network_addr
+session.ani
+session.ani2
+session.destination
+
+Methods:
+DB.exec
+DB.next
+DB.fetch
+DB.prepare
+
+Properties
+DB.path
+
+Methods:
+teletone.generate
+teletone.onDTMF
+teletone.addTone
+
+Properties:
+teletone.name
+
+Other functions:
+console_log
+include
+email
+bridge
+apiExecute
+
+If you have CURL installed:
+fetchURLHash
+fetchURLFile
+

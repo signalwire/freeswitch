@@ -1,0 +1,29 @@
+		</Filter>
+		<File
+			RelativePath=".\msvc\spandsp.h"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Copying $(InputPath) to $(ProjectDir)$(InputFileName)"
+					CommandLine="copy &quot;$(InputPath)&quot; &quot;$(ProjectDir)$(InputFileName)&quot;"
+					Outputs="$(ProjectDir)$(InputFileName)"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Copying $(InputPath) to $(ProjectDir)$(InputFileName)"
+					CommandLine="copy &quot;$(InputPath)&quot; &quot;$(ProjectDir)$(InputFileName)&quot;"
+					Outputs="$(ProjectDir)$(InputFileName)"
+				/>
+			</FileConfiguration>
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

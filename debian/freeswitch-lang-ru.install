@@ -1,0 +1,8 @@
+opt/freeswitch/conf/lang/ru/demo/demo-ivr.xml
+opt/freeswitch/conf/lang/ru/demo/demo.xml
+opt/freeswitch/conf/lang/ru/dir/sounds.xml
+opt/freeswitch/conf/lang/ru/dir/tts.xml
+opt/freeswitch/conf/lang/ru/ru.xml
+opt/freeswitch/conf/lang/ru/vm/sounds.xml
+opt/freeswitch/conf/lang/ru/vm/tts.xml
+opt/freeswitch/mod/mod_say_ru.so*

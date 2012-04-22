@@ -1,0 +1,14 @@
+Snom_300,key,CANCEL
+Snom_360,key,CANCEL
+Snom_370,key,CANCEL
+Snom_300,key,ONHOOK
+Snom_360,key,ONHOOK
+Snom_370,key,ONHOOK,1
+Snom_300,number,1006,1
+Snom_360,key,OFFHOOK, 1
+Snom_360,key,F_HOLD, 1
+Snom_360,number,1007,2
+Snom_370,key,OFFHOOK,1
+Snom_360,key,F_TRANSFER,2
+Snom_360,key,ONHOOK
+

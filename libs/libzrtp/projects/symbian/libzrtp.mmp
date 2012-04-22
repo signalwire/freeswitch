@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2006-2009 Philip R. Zimmermann. All rights reserved.
+ * Contact: http://philzimmermann.com
+ * For licensing and other legal details, see the file zrtp_legal.c.
+ */
+
+TARGET		libzrtp.lib
+TARGETTYPE	lib
+UID		0x0FFFFFF0
+	
+VENDORID	0
+
+//OPTION		GCC	+Wno-ctor-dtor-privacy
+MACRO ZRTP_USE_STACK_MINIM
+
+USERINCLUDE .
+
+SOURCEPATH .
+SOURCE 	  DelayRuner.cpp
+SOURCE    zrtp_iface_symb.cpp
+
+SOURCEPATH	..\..\third_party\bnlib
+SOURCE		bn.c
+SOURCE		bn32.c
+SOURCE		bninit32.c
+SOURCE		lbn32.c
+SOURCE		lbnmem.c
+SOURCE		legal.c
+
+SOURCEPATH	..\..\src
+SOURCE		zrtp_crc.c
+SOURCE		zrtp_crypto_aes.c
+SOURCE		zrtp_crypto_atl.c
+SOURCE		zrtp_crypto_hash.c
+SOURCE		zrtp_crypto_pk.c
+SOURCE		zrtp_crypto_sas.c
+SOURCE		zrtp_datatypes.c
+SOURCE		zrtp_engine.c
+SOURCE		zrtp_iface_cache.c
+SOURCE		zrtp_iface_scheduler.c
+SOURCE		zrtp_iface_sys.c
+SOURCE		zrtp_initiator.c
+SOURCE		zrtp_list.c
+SOURCE		zrtp_log.c
+SOURCE		zrtp_pbx.c
+SOURCE		zrtp_protocol.c
+SOURCE		zrtp_responder.c
+SOURCE		zrtp_rng.c
+SOURCE		zrtp_srtp_builtin.c
+SOURCE		zrtp_string.c
+SOURCE		zrtp_utils.c
+SOURCE		zrtp_utils_proto.c
+SOURCE		zrtp.c
+
+SOURCEPATH	..\..\third_party\bgaes
+SOURCE		aes_modes.c
+SOURCE		aescrypt.c
+SOURCE		aeskey.c
+SOURCE		aestab.c
+SOURCE		sha1.c
+SOURCE		sha2.c
+
+SYSTEMINCLUDE	..\..\.
+SYSTEMINCLUDE	..\..\include
+SYSTEMINCLUDE	..\..\third_party\bnlib
+SYSTEMINCLUDE	..\..\third_party\bgaes
+
+SYSTEMINCLUDE	\epoc32\include
+SYSTEMINCLUDE	\epoc32\include\libc
+
+LIBRARY		euser.lib 
+
+SOURCEPATH ..\..\src
+SOURCE zrtp_crypto_ec.c zrtp_crypto_ecdh.c zrtp_crypto_ecdsa.c zrtp_engine_driven.c zrtp_legal.c zrtp_srtp_dm.c

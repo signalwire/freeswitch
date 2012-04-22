@@ -1,0 +1,70 @@
+/**@ingroup msg_mime
+ * @IFILE msg_mime_table.c.in
+ *
+ * Template for <msg_mime_table.c>.
+ *
+ * @date Created: Wed Feb 21 11:01:45 2001 ppessi
+ */
+
+/*
+ * This file is part of the Sofia-SIP package
+ *
+ * Copyright (C) 2005 Nokia Corporation.
+ *
+ * Contact: Pekka Pessi <pekka.pessi@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+/**@ingroup msg_mime
+ *
+ * @CFILE msg_mime_table.c
+ * @brief Parser table used for testing.
+ *
+ * #AUTO#
+ *
+ * This file is generated from template <msg_mime_table.c.in>.
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>
+ */
+
+#include "config.h"
+
+#include <stddef.h>
+#include <string.h>
+
+#include <sofia-sip/msg_mime.h>
+#include <sofia-sip/msg_mime_protos.h>
+
+#include <sofia-sip/msg_mclass.h>
+
+#define msg_multipart_extract_body NULL
+
+#define msg_request_class NULL
+#define mp_request mp_common
+
+#define msg_status_class NULL
+#define mp_status  mp_common
+
+#define msg_multipart_update NULL
+
+#define MSG_MULTIPART_HCLASS                                   \
+MSG_HEADER_CLASS(msg_, multipart, NULL, "", mp_common, append, \
+	         msg_multipart, msg_multipart)
+
+
+

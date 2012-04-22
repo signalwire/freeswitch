@@ -1,0 +1,235 @@
+#!/bin/sh
+
+CONFDIR=@prefix@/conf/ssl
+DAYS=2190
+KEY_SIZE=2048
+export KEY_SIZE=${KEY_SIZE}
+
+TMPFILE="/tmp/fs-ca-$$-$(date +%Y%m%d%H%M%S)"
+
+COMMON_NAME="FreesSWITCH CA"
+ALT_NAME="DNS:test.freeswitch.org"
+ORG_NAME="FreeSWITCH"
+OUTFILE="agent.pem"
+
+umask 037
+
+check_ca() {
+	for x in cacert.pem cakey.pem config.tpl; do
+		if [ ! -e "${CONFDIR}/CA/${x}" ]; then
+			return 1
+		fi
+	done
+
+	return 0
+}
+
+setup_ca() {
+	if check_ca; then
+		echo "Existing CA found in \"${CONFDIR}/CA\""
+		echo "(Use \"gentls_cert remove\" to delete)"
+		exit 1
+	fi
+
+	echo "Creating new CA..."
+
+	if [ ! -d "${CONFDIR}/CA" ]; then
+		mkdir -p -m 750 "${CONFDIR}/CA" || exit  1
+	fi
+
+	if [ -e "${CONFDIR}/CA/config.tpl" ]; then
+		if [ $0 -nt "${CONFDIR}/CA/config.tpl" ]; then
+			echo "WARNING! genttls_cert has a modified time more recent than ${CONFDIR}/CA/config.tpl remove config.tpl to re-generate it"
+		fi
+	else
+		cat > "${CONFDIR}/CA/config.tpl" <<-EOF
+			[ req ]
+			default_bits            = \$ENV::KEY_SIZE
+			prompt                  = no
+			distinguished_name      = req_dn
+
+			[ req_dn ]
+			commonName              = %CN%
+			organizationName	= %ORG%
+
+			[ server ]
+			nsComment="FS Server Cert"
+			basicConstraints=CA:FALSE
+			subjectKeyIdentifier=hash
+			authorityKeyIdentifier=keyid,issuer:always
+			subjectAltName=%ALTNAME%
+			nsCertType=server
+			extendedKeyUsage=serverAuth
+
+			[ client ]
+			nsComment="FS Client Cert"
+			basicConstraints=CA:FALSE
+			subjectKeyIdentifier=hash
+			authorityKeyIdentifier=keyid,issuer:always
+			subjectAltName=%ALTNAME%
+			nsCertType=client
+			extendedKeyUsage=clientAuth
+		EOF
+	fi
+
+	sed \
+		-e "s|%CN%|$COMMON_NAME|" \
+		-e "s|%ORG%|$ORG_NAME|" \
+		-e "/%ALTNAME%/d" \
+		-e "s|CA:FALSE|CA:TRUE|" \
+		"${CONFDIR}/CA/config.tpl" \
+			> "${TMPFILE}.cfg" || exit 1
+
+	openssl req -out "${CONFDIR}/CA/cacert.pem" \
+		-new -x509 -keyout "${CONFDIR}/CA/cakey.pem" \
+		-config "${TMPFILE}.cfg" -nodes -sha1 >/dev/null || exit 1
+	cat "${CONFDIR}/CA/cacert.pem" > "${CONFDIR}/cafile.pem"
+	rm "${TMPFILE}.cfg"
+
+	echo "DONE"
+}
+
+generate_cert() {
+	local val=""
+
+	if ! check_ca; then
+		echo "No existing CA found, please create one with \"gentls_cert setup\" first"
+		exit 1
+	fi
+
+	echo "Generating new certificate..."
+
+	echo
+	echo "--------------------------------------------------------"
+	echo "CN: \"${COMMON_NAME}\""
+	echo "ORG_NAME: \"${ORG_NAME}\""
+	echo "ALT_NAME: \"${ALT_NAME}\""
+	echo
+	echo "Certificate filename \"${OUTFILE}\""
+	echo
+	echo "[Is this OK? (y/N)]"
+	read val
+	if [ "${val}" != "y" ] && [ "${val}" != "Y" ]; then
+		echo "Aborted"
+		return 2
+	fi
+
+	sed \
+		-e "s|%CN%|$COMMON_NAME|" \
+		-e "s|%ALTNAME%|$ALT_NAME|" \
+		-e "s|%ORG%|$ORG_NAME|" \
+		"${CONFDIR}/CA/config.tpl" \
+			> "${TMPFILE}.cfg" || exit 1
+
+	openssl req -new -out "${TMPFILE}.req" \
+		-newkey rsa:${KEY_SIZE} -keyout "${TMPFILE}.key" \
+		-config "${TMPFILE}.cfg" -nodes -sha1 >/dev/null || exit 1
+
+	openssl x509 -req -CAkey "${CONFDIR}/CA/cakey.pem" -CA "${CONFDIR}/CA/cacert.pem" -CAcreateserial \
+		-in "${TMPFILE}.req" -out "${TMPFILE}.crt" -extfile "${TMPFILE}.cfg" \
+		-extensions "${EXTENSIONS}" -days ${DAYS} -sha1 >/dev/null || exit 1
+
+	cat "${TMPFILE}.crt" "${TMPFILE}.key" > "${CONFDIR}/${OUTFILE}"
+
+	rm "${TMPFILE}.cfg" "${TMPFILE}.crt" "${TMPFILE}.key" "${TMPFILE}.req"
+
+	echo "DONE"
+}
+
+remove_ca() {
+	echo "Removing CA"
+
+	if [ -d "${CONFDIR}/CA" ]; then
+		rm "${CONFDIR}/CA/"*
+		rmdir "${CONFDIR}/CA"
+	fi
+
+	echo "DONE"
+}
+OUTFILESET="0"
+command="$1"
+shift
+
+while [ $# -gt 0 ]; do
+	case $1 in
+		-cn)
+			shift
+			COMMON_NAME="$1"
+			;;
+		-alt)
+			shift
+			ALT_NAME="$1"
+			;;
+		-org)
+			shift
+			ORG_NAME="$1"
+			;;
+		-out)
+			shift
+			OUTFILE="$1"
+			OUTFILESET="1"
+			;;
+		-days)
+			shift
+			DAYS="$1"
+			;;
+	esac
+	shift
+done
+
+
+case ${command} in
+	setup)
+		setup_ca
+		;;
+
+	create)
+		EXTENSIONS="server"
+		generate_cert
+		;;
+	create_server)
+		EXTENSIONS="server"
+		generate_cert
+		;;
+	create_client)
+		EXTENSIONS="client"
+		if [ "${OUTFILESET}" = "0" ]; then
+			OUTFILE="client.pem"
+ 		fi
+		generate_cert
+		;;
+
+	remove)
+		echo "Are you sure you want to delete the CA? [YES to delete]"
+		read val
+		if [ "${val}" = "YES" ]; then
+			remove_ca
+		else
+			echo "Not deleting CA"
+		fi
+		;;
+
+	*)
+		cat <<-EOF
+		$0 <setup|create_server|create_client|clean> [options]
+
+		  * commands:
+
+		    setup  - Setup new CA
+		    remove - Remove CA
+
+		    create_server - Create new certificate (overwriting existing!)
+		    create_client - Create a new client certificate (overwrites existing!)
+
+		  * options:
+
+		   -cn       Set common name
+		   -alt      Set alternative name (use prefix 'DNS:' or 'URI:')
+		   -org      Set organization name
+		   -out      Filename for new certificate (create only)
+		   -days     Certificate expires in X days (default: 365)
+
+		EOF
+		exit 1
+		;;
+esac

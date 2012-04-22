@@ -1,0 +1,30 @@
+Source: xmlrpc-c
+Section: devel
+Priority: optional
+Maintainer: Eric Kidd <eric.kidd@pobox.com>
+Build-Depends: debhelper (>> 3.0.0), libwww0 (>= 5.3.2), libwww-dev (>= 5.3.2)
+Standards-Version: 3.5.2
+
+Package: xmlrpc-c0
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: A library implementing XML-based remote procedure calls
+ XML-RPC is a lightweight RPC protocol based on XML and HTTP. This package
+ is used by XML-RPC clients and servers written in C and C++. 
+
+Package: xmlrpc-c-dev
+Architecture: any
+Depends: xmlrpc-c0 (= ${Source-Version}), libc6-dev, libstdc++-dev, libfrontier-rpc-perl
+Description: Libraries and header files for developing XML-RPC applications
+ Static libraries and header files for writing XML-RPC applications in C and
+ C++.
+
+Package: xmlrpc-c-apps
+Architecture: any
+Depends: xmlrpc-c0 (= ${Source-Version}), ${shlibs:Depends}
+Description: Sample XML-RPC applications
+ Some handy XML-RPC demo applications based on the Meerkat Open Wire Service
+ (found at http://www.oreillynet.com/meerkat/). You can use 'query-meerkat' to
+ perform a regex search on recent news items, or 'meerkat-app-list' to get
+ a list of recent Linux software releases.
+

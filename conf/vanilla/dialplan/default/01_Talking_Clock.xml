@@ -1,0 +1,32 @@
+<include>
+  <extension name="Talking Clock Time" ><!--e.g. 10:56pm-->
+    <condition field="destination_number" expression="^9170$">
+      <action application="answer"/>
+      <action application="sleep" data="1000"/>
+      <action application="say" data="en CURRENT_TIME pronounced
+				      ${strepoch()}"/>
+      <action application="hangup"/>
+    </condition>
+  </extension>
+  
+  <extension name="Talking Clock Date" ><!--e.g. March 8, 2011-->
+    <condition field="destination_number" expression="^9171$">
+      <action application="answer"/>
+      <action application="sleep" data="1000"/>
+      <action application="say" data="en CURRENT_DATE pronounced
+				      ${strepoch()}"/>
+      <action application="hangup"/>
+    </condition>
+  </extension>
+  
+  <extension name="Talking Clock Date and Time" ><!--e.g. March 8, 2011
+						     10:56pm-->
+    <condition field="destination_number" expression="^9172$">
+      <action application="answer"/>
+      <action application="sleep" data="1000"/>
+      <action application="say" data="en CURRENT_DATE_TIME pronounced
+				      ${strepoch()}"/>
+      <action application="hangup"/>
+    </condition>
+  </extension>
+</include>

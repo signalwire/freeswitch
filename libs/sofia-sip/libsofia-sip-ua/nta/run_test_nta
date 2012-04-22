@@ -1,0 +1,222 @@
+#! /bin/sh
+#
+# Run nta_test with our own name server
+#
+# --------------------------------------------------------------------
+#
+# This file is part of the Sofia-SIP package
+#
+# Copyright (C) 2005 Nokia Corporation.
+#
+# Contact: Pekka Pessi <pekka.pessi@nokia.com>
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1 of
+# the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+# 02110-1301 USA
+#
+# --------------------------------------------------------------------
+#
+# Author: Pekka Pessi <Pekka.Pessi@nokia.com>.
+#
+
+#set -x
+
+s=${0%/*}
+
+resolvfile=.test$$.resolv.conf
+namedfile=.test$$.named.conf
+pidfile=.test$$.named.pid
+zonefile=.test$$.example.zone
+
+test x$s = x$0 && s=`pwd`
+
+test -z "$srcdir" && srcdir=$s
+export srcdir
+
+PATH=/usr/sbin:/usr/local/sbin:/sbin:$PATH
+
+export PATH
+
+me6="::1"
+
+if ../su/localinfo -6 -n -g -s > /dev/null 2>&1 ; then
+    ipv6=true aaaa=aaaa v6flag=-6
+    me6=$(../su/localinfo -6 -n -s -g | awk '{print $1; exit(0); }')
+else
+    if ! ../su/localinfo '--help' > /dev/null 2>&1 ; then
+	echo "warning: $0: missing 'localinfo', cannot test IPv6"
+    else
+	echo "warning: $0: no valid IPv6 addresses available"
+    fi
+    ipv6=false aaaa=a
+fi
+
+if type named > /dev/null 2>&1 && ./portbind --help > /dev/null 2>&1
+then
+
+port=$(./portbind $v6flag) sink=$port
+port=$(./portbind $v6flag $((port + 1))) down=$port
+port=$(./portbind $v6flag $((port + 1))) bind=$port
+port=$(./portbind $v6flag $((port + 1))) contact=$port
+port=$(./portbind $v6flag $((port + 1))) sips=$port
+
+# Disable IPv6 resolver for now
+if false && eval $ipv6 ; then
+    listen="listen-on-v6 port $bind { any; };"
+    ns=$me6
+else
+    listen="listen-on port $bind { 127.0.0.1; };"
+    ns="127.0.0.1"
+fi
+
+cat > $resolvfile <<EOF
+nameserver $ns
+domain example.com
+port $bind
+EOF
+
+cat > $namedfile <<EOF
+options {
+	pid-file "$pidfile";
+	$listen
+};
+
+zone "example.org" in {
+        type master;
+        file "$zonefile";
+};
+EOF
+
+cat > $zonefile << EOF
+;
+; Zone file for example.org
+; SIP targets: example.org
+;              srv.example.org
+;		down.example.org
+;              na.example.org
+;              ipv6-20-80.example.org
+;              ipv.example.org
+;
+\$TTL     60
+@ 	IN SOA ns root (
+	    2002042901 ; SERIAL
+	    7200       ; REFRESH
+	    600        ; RETRY
+	    36000000   ; EXPIRE
+	    60         ; MINIMUM
+	    )
+	NS	ns
+	;;  order pref flags service           regexp  replacement
+        NAPTR 20 15 "s" "SIP+D2U" "" _sip._udp
+        NAPTR 40 25 "s" "SIPS+D2T" "" _sips._tcp
+        NAPTR 40 50 "s" "SIP+D2T" "" _sip._tcp
+
+ns	AAAA	$me6
+	A	127.0.0.1
+
+_sip._udp	SRV 1 100 $contact me
+_sips._tcp	SRV 3 100 $sips me
+_sip._tcp	SRV 2 100 $contact me
+
+_sip._udp.srv	SRV 1 100 $contact a
+_sips._tcp.srv	SRV 3 100 $sips a
+_sip._tcp.srv	SRV 2 100 $contact $aaaa
+
+_sip._udp.srv2	SRV 1 200 $contact c
+	        SRV 1 100 $contact b
+	        SRV 1 50 $contact a
+
+me	AAAA	$me6
+	A	127.0.0.1
+
+a	A	127.0.0.1
+b	A	0.0.0.2
+c	A	0.0.0.3
+
+aaaa	AAAA	$me6
+
+; Directly from NAPTR to A/AAAA (Test 1.6c)
+na      NAPTR 20 15 "a" "SIP+D2T" "" a2
+
+; No sensible NAPTR match (and we get 503)
+na503   NAPTR 20 15 "S" "SIP+D2F" "" a2
+
+; No SIP NAPTR match
+nona   NAPTR 20 15 "S" "ZIP+D2U" "" a2
+_sip._udp.nona   SRV 1 10 $contact ip4
+
+; First SIP SRV is not found
+nosrv	NAPTR 20 1 "s" "SIP+D2U" "" _sip._udp.nosrv
+	NAPTR 20 2 "s" "SIP+D2T" "" _sip._tcp.nosrv
+        NAPTR 20 3 "s" "SIP+D2U" "" _sip._udp.srv
+	NAPTR 20 4 "s" "SIP+D2T" "" _sip._tcp.srv
+
+; Redirect with TLS
+
+
+; This fails (and we get 503)
+a2	A	127.0.0.2
+
+; IP6 should get 80%, IP4 20%
+ipv6-20-80 NAPTR 20 15 "s" "SIP+D2U" "" _sip._udp.ipv6-20-80
+
+_sip._udp.ipv6-20-80 SRV 1 80 $contact ip6
+		     SRV 1 20 $contact ip4
+
+_sip._udp.ipv	SRV 1 100 $contact ip6
+_sip._udp.ipv	SRV 1 100 $contact ip4
+
+ip6	AAAA	$me6
+ip4	A	127.0.0.1
+
+; SRV failover to me...
+down	NAPTR 20 15 "s" "SIP+D2U" "" _sip._udp.down
+_sip._udp.down	SRV 1 100 $down me
+_sip._udp.down	SRV 2 100 $contact me
+
+; A failover
+down2	A	0.0.0.2
+	A	0.0.0.3
+	A	127.0.0.1
+EOF
+
+# -g is also very nice option for named
+named -f -c $namedfile &
+pid=$!
+while ! test -r $pidfile && kill -0 $! 2>/dev/null
+do
+    sleep 1
+done
+
+if test -r $pidfile ; then
+# export SOFIA_DEBUG=9
+    sink=$sink down=$down \
+    ipv6=$ipv6 \
+    SIPCONTACT="sip:*:$contact;comp=sigcomp" \
+    SIPSCONTACT="sips:*:$sips;comp=sigcomp" \
+    TEST_NTA_CERTDIR=$srcdir/../tport/ \
+    $VALGRIND ./test_nta "$@" - $resolvfile
+    exit=$?
+    kill $(cat $pidfile)
+    rm $pidfile $zonefile $resolvfile $namedfile 2>/dev/null
+    exit $exit
+else
+    echo "$0: cannot start named (check apparmor/selinux)"
+    ipv6=$ipv6 $VALGRIND exec ./test_nta "$@"
+fi
+
+else # not having BIND and portbind
+    ipv6=$ipv6 $VALGRIND exec ./test_nta "$@"
+fi
+

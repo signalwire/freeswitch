@@ -1,0 +1,29 @@
+===============================================================
+TODO / Sofia-SIP
+===============================================================
+
+version: 20060907-2
+
+Release roadmap
+---------------
+
+1.11/1.12 series
+    - first version of the new nua+soa API
+ 	- nua_respond_nit() (non-INVITEs)
+	- nua_set_hparams()/nua_get_hparams() [DONE]
+	- session object ownership changes [DONE]
+        - allow multiple registrations (lines) and selecting
+          service route, outbound proxy, and transport independently
+          for each handle; NUTAG_IDENTITY
+    - doxygen documentation updates [DONE]
+    - rpm and dpkg packaging [DONE]
+    - NAT work: STUN fixes (DNS support) [DONE]
+
+not roadmapped:
+    - expand the call-state-change mechanism
+    - update http headers TE, Cookie, Set-Cookie
+
+2.0 serias
+    - a verified stable API (1.12 is the current stable candidate)
+
+See README.developers for information about versioning.

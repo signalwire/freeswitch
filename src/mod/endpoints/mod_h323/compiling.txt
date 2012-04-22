@@ -1,0 +1,1 @@
+To compile this module use latest ptlib/h323plis combinations listed at http://www.gnugk.org/compiling-gnugk.html

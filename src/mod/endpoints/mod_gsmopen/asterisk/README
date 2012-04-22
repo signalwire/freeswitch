@@ -1,0 +1,96 @@
+**************************************************************
+* CHAN_CELLIAX DRIVER FOR AN EXISTING ASTERISK INSTALLATION
+*   (works for Asterisk 1.2.xx 1.4.xx 1.6.0.xx series)
+*      (do NOT works for Asterisk 1.6.1.xx series)
+**************************************************************
+==============================================================
+1) To build celliax you need the ALSA development libraries
+==============================================================
+
+To build celliax on Linux you need to install ALSA-dev libs
+
+You can do it on Debian/Ubuntu with:
+# apt-get install libasound2-dev
+
+You can do it on Fedora/CentOS with:
+# yum --nogpgcheck -y install alsa-lib-devel
+
+===============================================================
+2) build chan_celliax
+===============================================================
+
+go into the celliax source directory, edit the Makefile, 
+insert the asterisk version (1.2.x or 1.4.x or 1.6.0.x, 
+NOT 1.6.1.x), the location of your asterisk sources, then
+
+# make clean
+# make
+
+copy chan_celliax.so in the asterisk modules directory
+
+===============================================================
+2) configure chan_celliax and asterisk
+===============================================================
+
+edit and copy celliax.conf in the asterisk configuration 
+directory
+
+copy ciapalo (or your program that accepts text in stdini) in 
+the location defined in celliax.conf (sms_receiving_program)
+
+edit modules.conf and put noload in front of *BOTH* chan_oss.so
+AND chan_alsa.so AND chan_console.so
+
+copy asound.conf in /etc/asound.conf
+
+if you enable debug in logger.conf and "set debug 100" on 
+Asterisk, you'll get *a lot* of info on celliax inner workings
+
+===============================================================
+3) Troubleshooting
+===============================================================
+Check that you set the correct serial device in celliax.conf
+You can check how the device is called on your platform with:
+dmesg | grep ttyU
+dmesg | grep ttyA
+
+Check that you set the correct audio device in celliax.conf
+You can check how the device is called on your platform with:
+aplay -l
+it will give you the number to put on "plughw:N" in celliax.conf
+
+Check the volume for both play and capture, and that capture 
+is activated (press spacebar when alsamixer in capture mode)
+alsamixer -c[soundcard_number] -Vplay
+alsamixer -c[soundcard_number] -Vcapture
+we found good results with capt(31) autogain(on) speaker(75)
+
+If you get double digits (bounces) on DTMFs, check if the capture
+volume is too high
+
+The SMSs are managed in Unicode (UTF8) for international characters
+compatibility. Check that your console and/or text editor displays
+UTF8 characters
+
+If you have bad sound, it's a timing problem. Use a 1000HZ kernel,
+or add a timing device (ztdummy or zaptel interfaces)
+***************************************************************
+* END CHAN_CELLIAX DRIVER FOR AN EXISTING ASTERISK INSTALLATION
+***************************************************************
+
+
+
+chan_celliax adds to Asterisk the DIALPLAN application:
+
+          CelliaxSendsms
+
+You can type at the Asterisk CLI 'show application [application]' 
+to obtain more specific info on usage.
+
+
+
+Enjoy!
+
+-giovanni
+
+< gmaruzz at gmail dot com >

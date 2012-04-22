@@ -1,0 +1,30 @@
+<configuration name="h323.conf" description="H323 Endpoints">
+  <settings>
+    <param name="trace-level" value="10"/>
+    <param name="context" value="default"/>
+    <param name="dialplan" value="XML"/>
+    <param name="codec-prefs" value="PCMA,PCMU,GSM,G729"/>
+    <param name="use-rtp-timer" value="true"/> <!-- enable RTP timer - should always be enabled -->
+    <param name="rtp-timer-name" value="soft"/> <!-- Timer name, soft is default -->
+    <!-- <param name="ptime-override-value" value="20"/> --> <!-- Override negotiated ptime value with this value -->
+    <param name="gk-address" value=""/>    <!-- empty to disable, "*" to search LAN -->
+    <param name="gk-identifer" value=""/>  <!-- optional name of gk -->
+    <param name="gk-interface" value=""/>  <!-- optional UDP listener interface (IP:port) -->
+    <param name="gk-retry" value="30"/>  <!-- optional GK register retry timer -->
+    <param name="faststart" value="true"/>  <!-- optional -->
+    <param name="h245tunneling" value="true"/>  <!-- optional -->
+    <param name="h245insetup" value="true"/>  <!-- optional -->
+    <param name="jitter-size" value="60"/>  <!-- optional -->
+    <param name="progress-indication" value="8"/> <!-- optional - PI value in progress message-->
+    <param name="alerting-indication" value="8"/> <!-- optional - PI value in alerting message-->
+    <param name="endpoint-name" value="fs"/>
+    <param name="fax-old-asn" value="true"/>
+  </settings>
+  <listeners>
+    <listener name="default">
+      <param name="h323-ip" value="$${local_ip_v4}"/>
+      <param name="h323-port" value="1720"/>
+    </listener>
+  </listeners>
+</configuration>
+

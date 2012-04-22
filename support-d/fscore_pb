@@ -1,0 +1,150 @@
+#!/bin/sh
+
+arg=$1
+shift
+
+if [ -f "config.status" ] ; then
+    prefix=$(cat config.status | grep @prefix@ | awk -F, '{print $3}')
+fi
+if [ -f "config.status" -a -z "$prefix" ] ; then
+    prefix=$(cat config.status | grep '"prefix"' | awk -F\" '{print $4}')
+fi
+
+if [ -z "$prefix" -a -d "/usr/local/freeswitch" ] ; then
+    prefix="/usr/local/freeswitch"
+fi
+if [ -z "$prefix" -a -d "/opt/freeswitch" ] ; then
+    prefix="/opt/freeswitch"
+fi
+
+if [ -z "$prefix" ] ; then
+    prefix=$FS_PREFIX
+fi
+
+if [ -z "$prefix" -a -f "./bin/freeswitch" ] ; then
+    prefix=`pwd`
+fi
+
+if [ -z "$prefix" ] ; then
+    echo "Unable to locate freeswitch prefix directory."
+    exit 255
+fi
+
+if [ "$arg" = "gcore" ] ; then
+	user=$1
+	shift
+	fspid=`cat $prefix/run/freeswitch.pid`
+	echo "pulling gcore $fspid"
+	gcore -o core $fspid
+else
+    user=$arg
+fi
+
+
+core=`ls -1t core.* | head -1 2> /dev/null`
+
+if [ -z "$core" ] ; then
+	core=`ls -1 core 2> /dev/null`
+fi
+
+if [ -z "$core" ] ; then
+	core=`ls -1 freeswitch.core 2> /dev/null`
+fi
+
+if [ -z "$core" ] ; then
+	echo "You must be in the current directory with a core file from FreeSWITCH!"
+	exit 255
+fi
+
+if [ -x `which gdb` ] ; then
+  echo "Found gdb"
+else
+  echo "Unable to locate gdb, is it installed?"
+  exit 255
+fi
+
+echo "core is $core"
+
+line="--------------------------------------------------------------------------------"
+
+mypwd=`pwd`
+tmpdir=/tmp/fscore_pb.tmp
+post_file=$mypwd/fscore_pb.post
+
+
+if [ -z $user ] ; then
+	user=$SUDO_USER
+fi
+
+if [ -z $user ] ; then
+	user=$USER
+fi
+
+if [ -z $user ] ; then
+	user="anon"
+fi
+
+
+echo "Gathering Data Please Wait........."
+
+echo -n "paste=Send&remember=0&poster=$user&format=none&expiry=f&code2=" > $post_file
+
+echo "LSB RELEASE:" >> $post_file
+echo $line >> $post_file
+if [ -f /etc/redhat-release ] ; then
+    cat /etc/redhat-release  >> $post_file
+else
+    lsb_release -a >> $post_file
+fi
+
+echo "CPU INFO:" >> $post_file
+echo $line >> $post_file
+cat /proc/cpuinfo >> $post_file
+
+echo "GIT INFO:" >> $post_file
+echo $line >> $post_file
+echo -n "Revision: " >> $post_file
+if [ -d ".git" ] ; then
+    git log -1 | cat  >> $post_file
+    printf "\n\n\n" >> $post_file
+    git status >> $post_file
+else
+    echo "Not run from an git managed directory." >> $post_file
+fi
+
+echo "GDB BACKTRACE:" >> $post_file
+echo $line >> $post_file
+
+gdb $prefix/bin/freeswitch `echo $core | tail -n1` \
+        --eval-command="echo \n\n" \
+        --eval-command="set pagination off" \
+        --eval-command="echo Thread Info\n" \
+        --eval-command="echo $line\n" \
+        --eval-command="info threads" \
+        --eval-command="echo Stack Trace\n" \
+        --eval-command="echo $line\n" \
+        --eval-command="bt" \
+        --eval-command="echo \n\n\n\n Stack Trace (full)\n" \
+        --eval-command="echo $line\n" \
+        --eval-command="bt full" \
+        --eval-command="echo \n\n\n\n Stack Trace (all threads)\n" \
+        --eval-command="echo $line\n" \
+        --eval-command="thread apply all bt" \
+        --eval-command="echo \n\n\n\n Stack Trace (all threads) (full)\n" \
+        --eval-command="echo $line\n" \
+        --eval-command="thread apply all bt full" \
+        --eval-command="quit" 1>> $post_file 2>/dev/null
+
+rm -fr $tmpdir 
+mkdir -p $tmpdir
+cd $tmpdir
+
+
+
+wget --output-file=/dev/null --http-user=pastebin --http-password=freeswitch http://pastebin.freeswitch.org --post-file=$post_file
+
+pb=`ls [0-9]*`
+
+mv $post_file $tmpdir
+echo "Finished."
+echo "Please report http://pastebin.freeswitch.org/$pb to the developers."

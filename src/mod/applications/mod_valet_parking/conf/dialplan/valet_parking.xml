@@ -1,0 +1,24 @@
+<include>
+    <!--
+         Valet park retrieval, works with valet_park extension below.
+         Retrieve a valet parked call by dialing 6000 + park number + #
+    -->
+    <extension name="valet_park">
+      <condition field="destination_number" expression="^(6000)$">
+        <action application="answer"/>
+        <action application="valet_park" data="valet_parking_lot ask 1 11 10000 ivr/ivr-enter_ext_pound.wav"/>
+      </condition>
+    </extension>
+
+    <!--
+         Valet park 6001-6099.  Blind x-fer to 6001, 6002, etc. to valet park the call.
+         Dial 6001, 6002, etc. to retrieve a call that is already valet parked.
+         After call is retrieved, park extension is free for another call.
+    -->
+    <extension name="valet_park">
+      <condition field="destination_number" expression="^(60\d[1-9])$">
+        <action application="answer"/>
+        <action application="valet_park" data="valet_parking_lot $1"/>
+      </condition>
+    </extension>
+</include>

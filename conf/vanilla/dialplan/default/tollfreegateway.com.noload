@@ -1,0 +1,7 @@
+<include>
+  <extension name="tollfreegateway.com">
+    <condition field="destination_number" expression="^1?(8(00|55|66|77|88)[2-9]\d{6})$">
+      <action application="bridge" data="{absolute_codec_string=PCMU\,PCMA}sofia/${use_profile}/9313371$1@sip.tollfreegateway.com"/>
+    </condition>
+  </extension>
+</include>

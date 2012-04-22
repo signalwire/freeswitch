@@ -1,0 +1,7 @@
+2005-08-10  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Added agent.pem and cafile.pem.
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Initial import of the module to Sofia-SIP tree.

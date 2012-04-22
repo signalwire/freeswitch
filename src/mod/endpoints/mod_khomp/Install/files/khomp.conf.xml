@@ -1,0 +1,511 @@
+<configuration name="khomp.conf" description="Khomp Configuration">
+<!-- Config for all boards -->
+<settings>
+
+<!--
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;; This is the configuration file for the Khomp ;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Endpoint 1.0 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+-->
+ 
+<channels>
+<!-- Section for main configurations about channels. -->
+
+<!--
+Name of the dialplan module in use.
+(default = XML)
+
+<param name="dialplan" value="XML"/>
+-->
+
+<!--
+Enable/disable generalized echo cancellation in the channel, for calls
+passing inside FreeSWITCH (disabled for bridged calls).
+(default = yes)
+
+<param name="echo-canceller" value="yes"/>
+-->
+
+<!--
+Enable/disable AGC (auto gain control). Should be used carefully, as it
+can make line noise really loud.
+(default = yes)
+
+<param name="auto-gain-control" value="yes"/>
+-->
+
+<!--
+Enable/disable sending DTMFs out-band as a way to pass detected DTMFs to
+FreeSWITCH. Needed if FreeSWITCH generates digits for us in bridge application 
+or is being used for IVR ("URA", in pt_BR).
+(default = yes)
+
+<param name="out-of-band-dtmfs" value="yes"/>
+-->
+
+<!--
+Enable/disable DTMF suppression delay. WARNING: if you disable this, DTMFs
+will not be suppressed anymore! You should only use this option if
+"out-of-band-dtmfs" is "no".
+(default = yes)
+
+<param name="suppression-delay" value="yes"/>
+-->
+
+<!--
+Adjust connection automagically if a FAX tone is detected.
+(default = yes)
+
+<param name="auto-fax-adjustment" value="yes"/>
+-->
+
+<!--
+Time (is seconds) since connection, when we may detect FAX tone and perform
+automagical adjustment. After this, FAX tone detection is ignored.
+Possible values: 0 - 9999
+(default = 30).
+
+<param name="fax-adjustment-timeout" value="30"/>
+-->
+
+<!--
+Enable/disable pulse detection (reported as DTMF digits).
+(default = yes)
+
+<param name="pulse-forwarding" value="yes"/>
+-->
+
+<!--
+Enable correct standard following for R2/MFC protocol. Disabled by default,
+as using FreeSWITCH behind a PBX may timeout all outgoing calls without this.
+However, you can set this to "yes" if FreeSWITCH is directly connected to a
+CO (central office) or to a fast signaling PBX, and have a correct
+behaviour for condition obtaining/reporting.
+(default = no)
+
+<param name="r2-strict-behaviour" value="no"/>
+-->
+
+<!--
+Set the delay (in ms) after sending ringback condition where audio stream
+should be opened for the channel. Limited to 25ms min, 500ms max.
+(default = 250)
+
+<param name="r2-preconnect-wait" value="250"/>
+-->
+
+<!--
+Defines the incoming context for calls on E1 channels. Some wildcards are
+accepted, and described in the bottom of this file.
+(default = khomp-DD-LL)
+
+<param name="context-digital" value="khomp-DD-LL"/>
+-->
+
+<!--
+Defines the incoming context for calls on FXS channels. Some wildcards are
+accepted, and described in the bottom of this file.
+(default = khomp-DD-CC)
+
+<param name="context-fxs" value="khomp-DD-CC"/>
+-->
+
+<!--
+Defines the incoming context for calls on FXO channels. Some wildcards are
+accepted, and described in the bottom of this file.
+(default = khomp-DD-CC)
+
+<param name="context-fxo" value="khomp-DD-CC"/>
+-->
+
+<!--
+Defines the incoming context for calls on GSM channels. Some wildcards are
+accepted, and described in the bottom of this file.
+(default = khomp-DD-CC)
+
+<param name="context-gsm-call" value="khomp-DD-CC"/>
+-->
+
+<!--
+Defines the incoming context for messages on GSM channels. Some wildcards are
+accepted, and described in the bottom of this file.
+(default = khomp-sms-DD-CC)
+
+<param name="context-gsm-sms" value="khomp-sms-DD-CC"/>
+-->
+
+<!--
+Defines the incoming context for calls on Passive Record boards (KPR). Some 
+wildcards are accepted, and described in the bottom of this file.
+(default = khomp-DD-CC)
+
+<param name="context-pr" value="khomp-DD-CC"/>
+-->
+
+<!--
+Set the logging of messages to console. Possible values (to set more than one,
+separate the values with comma):
+
+ errors    - Error messages, when something goes really wrong.
+ warnings  - Warnings, used when something might not be going as expected.
+ messages  - Generic messages, used to indicate some information.
+ events    - Show received K3L events as console messages.
+ commands  - Show sent K3L commands as console messages.
+ audio     - Enable messages for K3L audio events (very verbose!).
+ modem     - Enable messages for data received from KGSM modems.
+ link      - Enable logging of link status changes.
+ standard  - Special, enable default messages (RECOMMENDED).
+ all       - Special, enable ALL messages (should not be used naively).
+
+(default = standard)
+
+<param name="log-to-console" value="standard"/>
+-->
+
+<!--
+Set the logging of messages to disk. Possible values (to set more than one,
+separate the values with comma):
+
+ errors    - Error messages, when something goes really wrong.
+ warnings  - Warnings, used when something might not be going as expected.
+ messages  - Generic messages, used to indicate some information.
+ events    - Record received K3L events as log messages.
+ commands  - Record sent K3L commands as log messages.
+ audio     - Enable messages for K3L audio events (very verbose!).
+ modem     - Enable messages for data received from KGSM modems.
+ link      - Enable logging of link status changes.
+ functions - Enable debugging for functions. Should not be used naively!).
+ threads   - Enable debugging for threads. Should not be used naively!).
+ locks     - Enable debugging for locks. Should not be used naively!).
+ streams   - Enable debugging for streams. Should not be used naively!).
+ standard  - Special, enable default messages (RECOMMENDED).
+ debugging - Special, enable debug messages (should not be used naively).
+ all       - Special, enable ALL messages (DO NOT USE THIS!).
+
+(default = standard)
+
+<param name="log-to-disk" value="standard"/>
+-->
+
+<!--
+Set the low level tracing. DO NOT USE THIS UNLESS YOU WERE ADVISED TO DO SO.
+Possible values (to set more than one, separate the values with comma):
+
+k3l  - Enable the low level tracing of board's API. 
+        If you are using 'kserver', this option will take no effect. For
+        the k3l tracing to proceed, you will need to (re)start kserver 
+        with 'debug' option. E.g. '#> kserver start -debug'.
+rdsi - Enable ISDN low level debugging.
+r2   - Enable r2 protocol low level debugging.
+
+(default = <empty>)
+
+<param name="trace" value=""/>
+-->
+
+<!--
+Set output volume level. Possible values:
+
+  * '+ N' = increase N times;
+  * '- N' = decrease N times.
+  *   '0' = leave default.
+
+(default = 0)
+
+<param name="output-volume" value="0"/>
+-->
+
+<!--
+Set input volume level. Can only be used if AGC (and not pulse detection)
+is enabled on the board configuration. Possible values:
+
+  * '+ N' = increase N times;
+  * '- N' = decrease N times.
+  *   '0' = leave default.
+
+(default = 0)
+
+<param name="input-volume" value="0"/>
+-->
+
+<!--
+Sets the account code for calls placed on the channel. The account code may
+be any alphanumeric string
+default = <empty>)
+
+<param name="accountcode" value=""/>
+-->
+
+<!--
+Set the language of the channel (useful for selecting audio messages of a
+specific language on answer).
+
+(default = <empty>)
+
+<param name="language" value="pt_BR"/>
+-->
+
+<!--
+Sets the global orig (CALLERID) base for FXS boards. This number is added
+to a sequencial number, which is incremented for each FXS board and FXS
+channel in the system.
+(default = 0)
+
+<param name="fxs-global-orig" value="0"/>
+-->
+
+<!--
+Sets the numbers (separated by comma) in which the 'pbx-dialtone' from
+FXS boards will be changed to 'co-dialtone' (public tone), when they are
+pressed.
+(default = <empty>)
+
+<param name="fxs-co-dialtone" value="0,90"/>
+-->
+
+<!--
+Enable or disable sending number of A throught BINA DTMF signalization to
+a FXS branch.
+(default = yes)
+
+<param name="fxs-bina" value="yes"/>
+-->
+
+<!--
+Enables/disables the use of sharp (#) as an end-of-number digit on FXS 
+channels for instant dialing. This does not affect special numbers which
+start on sharp, like #8 or #1. 
+(default = yes) 
+
+<param name="fxs-sharp-dial" value="yes" />
+-->
+
+<!--
+This is the delay time to really disconnect a channel after the disconnect
+event arrive. If a connect event comes up in this interval, then the 
+disconnection is ignored and the call keeps going on. Values in ms.
+(default = 0)
+
+<param name="disconnect-delay" value="0"/>
+-->
+
+<!--
+This timer controls the delay associated with ringback generation in the
+Khomp channel, when the other side *does not send audio* - in other words,
+this is used when calling peers located at VoIP channels.
+Values are in milliseconds.
+(default = 1500)
+
+<param name="delay-ringback-co" value="1500"/>
+-->
+
+<!--
+This timer controls the delay associated with ringback generation in the
+Khomp channel when the other side report a continuous stream of audio in
+silence - in other words, this is used when the audio is present but does
+not have any tone. Values are in milliseconds.
+(default = 2500)
+
+<param name="delay-ringback-pbx" value="2500"/>
+-->
+
+<!--
+Defines if the channel should ignore some uncommon DTMF digits detected by
+the board (A, B, C and D). This reduces the number of false positives which
+may happen sometimes, without affecting correctness on traditional
+scenarios. However, if you need to pass those digits througth the board,
+you may need to set this option to 'no'.
+(default = yes)
+
+<param name="ignore-letter-dtmfs" value="yes"/>
+-->
+
+<!--
+When there is a request to indicate busy for an incoming KFXO call, the 
+ringing channel is taken off hook and then placed on hook, so it now goes
+to answered state and we can send audio throught the line.
+
+If the off/on hook time interval is too short, the PSTN may ignore it, and 
+keep the line in a ringing state. If it is too long, the call may be charged.
+The option below defines the delay between the line being answered and being
+disconnected, in miliseconds (from 50ms to 90000ms).
+
+(default = 1250)
+
+<param name="fxo-busy-disconnection" value="1250"/>
+-->
+
+<!--
+For KFXO series boards, defines if audio will be allowed being sent into
+outgoing calls before it has been connected.
+(default = yes)
+
+<param name="fxo-send-pre-audio" value="yes"/>
+-->
+
+<!--
+Defines the timeout, in seconds, between digits of a FXS board's extension.
+(default = 7)
+
+<param name="fxs-digit-timeout" value="7"/>
+-->
+
+<!--
+Enables/Disables the action of dropping collect calls. If enabled, all
+collect calls will be dropped no matter what KDropCollectCall is set to.
+(default = no)
+
+<param name="drop-collect-call" value="no"/>
+-->
+
+<!--
+Defines if the activation and deactivation of Kommuter is done automatically by the channel,
+or manually by the user. Possible values:
+
+auto     - Khomp channel driver starts all kommuter devices at initialization and stops them if the module is unloaded.
+manual   - The user must explicity call the CLI command < khomp kommuter on/off >, that starts or stops the kommuter devices connected to this machine.
+(default = auto)
+
+<param name="kommuter-activation" value="auto"/>
+-->
+
+<!--
+Defines the default value for the Kommuter watchdog in seconds.
+All kommuters conected to this machine will be initialized with this value,
+and will commute the links after reaching this time with no response of the channel.
+The minimum is 0 (will never commute the links), and maximum value is 255 seconds.
+(default = 10)
+
+<param name="kommuter-timeout" value="10"/>
+-->
+
+<!--
+When adjusted to some DTMF digit sequence, it will define those as the digits
+to be used to initialize a call transfer using PBX-to-PBX signaling.
+(default = empty)
+
+<param name="user-transfer-digits" value="#2"/>
+-->
+
+<!--
+Defines the digits to be sent when the flash is detected.
+
+<param name="flash-to-digits" value="*1"/>
+-->
+
+<!--
+;;;;;;;;;;;;;;;;;;;; CONTEXTS WILDCARDS ;;;;;;;;;;;;;;;;;;;;;;
+
+For incoming contexts, you can use the following wildcards:
+
+'DD' (device number): the sequence number of the board on the
+system (can be checked using "khomp summary", valid for all
+board models);
+
+'LL' (link number): the sequence number of link where the call
+has arrived on the board. valid only for E1 boards.
+
+'SSSS' (serial number): the serial number of the board (can
+be checked using "khomp summary", and it's valid for all
+board models);
+
+'CC' (channel number): the channel number on which the call
+or message has arrived (valid for FXO, FXS and GSM boards);
+
+'CCC' (channel number): same as above, but valid only for E1
+channels;
+-->
+
+</channels>
+
+<!--  Section for configuring allocation groups. -->
+<groups>
+<!--
+In this section, you should define options using the following syntax:
+
+<groupname> = <allocation-string>[:<context>]
+
+<param name="pstn" value="b0l0 + b1c38"/>
+<param name="pstn" value="b0l0 + b1c38:from-pstn"/>
+
+You may define your own groups. In the example above, the group 
+called pstn can be used in the bridge string as <action application="brigde" data="Khomp/Gpstn/..." />
+or <action application="brigde" data="Khomp/Gpstn/..." />. As a result, the allocation string will be
+replaced with the one associated with the group "pstn". This is the same
+of doing <action application="brigde" data="Khomp/b0l0 + b1c38/... />.
+In the second example, a context is also defined which can be used in
+extensions.conf for inbound calls on that allocation string's range.
+-->
+</groups>
+
+<!--
+Section for configuring cadences used on FXS boards and the whole
+channel (fast busy, ringback tones, etc).
+-->
+<cadences>
+<!--
+Default value for cadences. You may define your own cadences, and
+also use them in the bridge arguments as "cadence=your_cadence_name".
+
+ "0,0" means a continuous dialtone.
+
+ (default as defined below)
+ <param name="fast-busy" value="100,100" />
+ <param name="ringback" value="1000,4000" />
+ <param name="pbx-dialtone" value="1000,100" />
+ <param name="vm-dialtone " value="1000,100,100,100" />
+ <param name="co-dialtone " value="0,0" />
+-->
+</cadences>
+
+
+<!-- Section for configuring CALLERID's associated with FXS boards. -->
+<fxs-branches>
+<!--
+In this section, you should define options using the following syntax:
+
+'orig_prefix = serial number 0, serial number 1, ...'
+
+ex: <param name="880" value="111,222"/>
+
+In the example above (assuming KFXS-SPX boards 1234 and 4535), the
+branches will be numbered from 800 to 829 in board 1234, and from
+830 to 859 in board 4535.
+-->
+</fxs-branches>
+
+<!-- Section for configuring FXS hotlines. -->
+<fxs-hotlines>
+<!--
+In this section, you should define options using the following syntax:
+
+'orig_prefix = destination_number'
+
+ex: <param name="804" value="32332933" />
+
+In the example above, the branch numbered 804 will call the number
+3233-2933 (Khomp support number) every time the FXS branch goes off hook.
+-->
+</fxs-hotlines>
+
+<!-- Section for configuring specific options for FXS branches. -->
+<fxs-options>
+<!--
+In this section, you should define options using the following syntax:
+
+orig_prefix = option1:value | option2:value | option3:value ...
+
+ex: <param name="804" value="output-volume:+2" />
+
+In the example above, the branch numbered 804 will have specific
+configuration for default output volume set to +2.
+
+Possible values to options is:
+context, input-volume, output-volume, language,
+accountcode, calleridnum, calleridname, flash-to-digits.
+-->
+</fxs-options>
+
+</settings>
+</configuration>

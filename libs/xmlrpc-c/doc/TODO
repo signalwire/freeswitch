@@ -1,0 +1,60 @@
+Here are some changes we'd like to see to Xmlrpc-c.  While it's unlikely
+anyone will ever do them, the list is at least useful as an indication of
+what direction the maintainer wants the package to take, and that should
+be useful to anyone proposing changes of any kind.
+
+
+FUNCTIONAL CHANGES
+------------------
+
+Put details in the manual for the xmlrpc-c/server_abyss.hpp interface:
+libxmlrpc_server_abyss++.html.
+
+Implement pluggable XML transports on the server side like on the
+client side.
+
+Create a non-XML non-HTTP efficient transport, client and server.
+The tools/binmode-rpc-kit/ directory might be useful.  Consider XDR.
+
+Change the argument order of asynchronous response callbacks to be
+more consistent with the xmlrpc_client_call_asynch function.  Also
+take a look at the server method callback.
+
+Make an optional destructor function for XMLRPC_TYPE_C_PTR.
+
+Return XMLRPC_LIMIT_EXCEEDED_ERROR when nesting limits are exceeded.
+This will break binary and source API compatibility in a very minor
+way.
+
+Expand the Perl interface to Xmlrpc-c libraries to do server functions.
+Maybe match some other features of RPC::XML.
+
+Don't use xmlrpc_value for things that aren't part of an XML-RPC call or
+response.  It's confusing.  In particular, we use an xmlrpc_value
+array to pass the parameters of an RPC to xmlrpc_client_call(), and it
+should instead be a normal C array plus count, or variable argument list.
+
+Don't use XML-RPC fault codes internally.  It's confusing.  Plus, there's
+no need for fault codes at all.  Just use the string descriptions.
+
+Add a function to deregister a method from a method registry.
+
+Add a "registry" type that works via a filesystem directory.  There is
+a .so file for each method with its code, and probably a configuration
+file.  Make it dynamically updatable.
+
+
+IMPLEMENTATION CHANGES
+----------------------
+
+Use function pointers to access cleanup code in xmlrpc_DECREF?
+
+Or even better: Should we create some kind of class-like system to declare
+XML-RPC types, with a per-type dispatch table?
+
+Fix abstract XML parser API to access children via functions named
+xml_element_child(env,elem,index) and xml_element_child_count(env,elem).
+Clean up corresponding client code.
+
+Make the C++ server implementation less based on the C functions.
+

@@ -1,0 +1,360 @@
+<!-- This file is a work in progress.
+     If you know how to translate from English to Spanish then please
+     contact Michael Collins (msc@freeswitch.org or IRC: mercutioviz)
+-->
+<language>
+  <en>
+    <ascii>
+      <prompt phrase="Espacio" filename="32.wav"/>
+      <prompt phrase="Signo de número" filename="35.wav"/>
+      <prompt phrase="Asterisco" filename="42.wav"/>
+      <prompt phrase="Punto" filename="46.wav"/>
+      <prompt phrase="A" filename="97.wav"/>
+      <prompt phrase="B" filename="98.wav"/>
+      <prompt phrase="C" filename="99.wav"/>
+      <prompt phrase="D" filename="100.wav"/>
+      <prompt phrase="E" filename="101.wav"/>
+      <prompt phrase="F" filename="102.wav"/>
+      <prompt phrase="G" filename="103.wav"/>
+      <prompt phrase="H" filename="104.wav"/>
+      <prompt phrase="I" filename="105.wav"/>
+      <prompt phrase="J" filename="106.wav"/>
+      <prompt phrase="K" filename="107.wav"/>
+      <prompt phrase="L" filename="108.wav"/>
+      <prompt phrase="LL" filename="???.wav"/>
+      <prompt phrase="M" filename="109.wav"/>
+      <prompt phrase="N" filename="110.wav"/>
+      <prompt phrase="Ñ" filename="???.wav"/>
+      <prompt phrase="O" filename="111.wav"/>
+      <prompt phrase="P" filename="112.wav"/>
+      <prompt phrase="Q" filename="113.wav"/>
+      <prompt phrase="R" filename="114.wav"/>
+      <prompt phrase="S" filename="115.wav"/>
+      <prompt phrase="T" filename="116.wav"/>
+      <prompt phrase="U" filename="117.wav"/>
+      <prompt phrase="V" filename="118.wav"/>
+      <prompt phrase="W" filename="119.wav"/>
+      <prompt phrase="X" filename="120.wav"/>
+      <prompt phrase="Y" filename="121.wav"/>
+      <prompt phrase="Z" filename="122.wav"/>
+    </ascii>
+    <phonetic-ascii>
+      <prompt phrase="Espacio" filename="32.wav"/>
+      <prompt phrase="Punto" filename="46.wav"/>
+      <prompt phrase="Alpha" filename="97.wav"/>
+      <prompt phrase="Bravo" filename="98.wav"/>
+      <prompt phrase="Charlie" filename="99.wav"/>
+      <prompt phrase="Delta" filename="100.wav"/>
+      <prompt phrase="Echo" filename="101.wav"/>
+      <prompt phrase="Foxtrot" filename="102.wav"/>
+      <prompt phrase="Golf" filename="103.wav"/>
+      <prompt phrase="Hotel" filename="104.wav"/>
+      <prompt phrase="India" filename="105.wav"/>
+      <prompt phrase="Juliet" filename="106.wav"/>
+      <prompt phrase="Kilo" filename="107.wav"/>
+      <prompt phrase="Lima" filename="108.wav"/>
+      <prompt phrase="Mike" filename="109.wav"/>
+      <prompt phrase="November" filename="110.wav"/>
+      <prompt phrase="Oscar" filename="111.wav"/>
+      <prompt phrase="Papa" filename="112.wav"/>
+      <prompt phrase="Quebec" filename="113.wav"/>
+      <prompt phrase="Romeo" filename="114.wav"/>
+      <prompt phrase="Sierra" filename="115.wav"/>
+      <prompt phrase="Tango" filename="116.wav"/>
+      <prompt phrase="Unifor" filename="117.wav"/>
+      <prompt phrase="Victor" filename="118.wav"/>
+      <prompt phrase="Whiskey" filename="119.wav"/>
+      <prompt phrase="Xray" filename="120.wav"/>
+      <prompt phrase="Yankee" filename="121.wav"/>
+      <prompt phrase="Zulu" filename="122.wav"/>
+    </phonetic-ascii>
+    <digits>
+      <prompt phrase="Cero" filename="0.wav"/>
+      <prompt phrase="Uno" filename="1.wav"/>
+      <prompt phrase="Dos" filename="2.wav"/>
+      <prompt phrase="Tres" filename="3.wav"/>
+      <prompt phrase="Cuatro" filename="4.wav"/>
+      <prompt phrase="Cinco" filename="5.wav"/>
+      <prompt phrase="Seis" filename="6.wav"/>
+      <prompt phrase="Siete" filename="7.wav"/>
+      <prompt phrase="Ocho" filename="8.wav"/>
+      <prompt phrase="Nueve" filename="9.wav"/>
+      <prompt phrase="Diez" filename="10.wav"/>
+      <prompt phrase="Once" filename="11.wav"/>
+      <prompt phrase="Doce" filename="12.wav"/>
+      <prompt phrase="Trece" filename="13.wav"/>
+      <prompt phrase="Catorce" filename="14.wav"/>
+      <prompt phrase="Quince" filename="15.wav"/>
+      <prompt phrase="Dieciséis" filename="16.wav"/>
+      <prompt phrase="Diecisiete" filename="17.wav"/>
+      <prompt phrase="Dieciocho" filename="18.wav"/>
+      <prompt phrase="Diecinueve" filename="19.wav"/>
+      <prompt phrase="Veinte" filename="20.wav"/>
+	  
+	  <!-- New File neccesary
+	  In english we just say twenty one
+in spanish we say veintiuno etc in the 20's
+and treinta y uno etc from 30's on
+-->
+	  <prompt phrase="Veinti" filename="veinti.wav"/>
+	  
+<!--     this is not neccesary 
+In english we just say twenty one
+in spanish we say veintiuno etc in the 20's
+and treinta y uno etc from 30's on
+-->
+      <!-- <prompt phrase="Veintiuno" filename="21.wav"/>
+      <prompt phrase="Veintidos" filename="22.wav"/>
+      <prompt phrase="Veintitrés" filename="23.wav"/>
+      <prompt phrase="Veinticuatro" filename="24.wav"/>
+      <prompt phrase="Veinticinco" filename="25.wav"/>
+      <prompt phrase="Veintiséis" filename="26.wav"/>
+      <prompt phrase="Veintisiete" filename="27.wav"/>
+      <prompt phrase="Veintiocho" filename="28.wav"/>
+      <prompt phrase="Veintinueve" filename="29.wav"/> -->
+	  
+	  
+      <prompt phrase="Treinta" filename="30.wav"/>
+      <prompt phrase="Cuarenta" filename="40.wav"/>
+      <prompt phrase="Cincuenta" filename="50.wav"/>
+      <prompt phrase="Sesenta" filename="60.wav"/>
+      <prompt phrase="Setenta" filename="70.wav"/>
+      <prompt phrase="Ochenta" filename="80.wav"/>
+      <prompt phrase="Noventa" filename="90.wav"/>
+      <prompt phrase="Punto" filename="dot.wav"/>
+	  
+	  
+	  <!--  New Files neccesaries  -->
+	  <prompt phrase="Cien" filename="100.wav"/>
+	  <prompt phrase="Quinientos" filename="500.wav"/>
+	  <prompt phrase="Setecientos" filename="700.wav"/>
+	  <prompt phrase="Novecientos" filename="900.wav"/>
+	  
+	  
+<!-- This part is not easy... it depends on context
+When used as an adjective, ordinal numbers must agree 
+with the nouns the refer to in both number and gender: 
+el segundo coche ("the second car"), 
+but la segunda vez ("the second time").
+
+Note also that when primero and tercero precede a singular 
+masculine noun, the final -o is dropped: 
+el primer rey ("the first king"), 
+el tercer trimestre ("the third trimester").
+I will assume a non singular masculine noun for the sake
+of translating something
+-->
+      <prompt phrase="Primero" filename="h-1.wav"/>
+      <prompt phrase="Segundo" filename="h-2.wav"/>
+      <prompt phrase="Tercero" filename="h-3.wav"/>
+      <prompt phrase="Cuarto" filename="h-4.wav"/>
+      <prompt phrase="Quinto" filename="h-5.wav"/>
+      <prompt phrase="Sexto" filename="h-6.wav"/>
+      <prompt phrase="Séptimo" filename="h-7.wav"/>
+      <prompt phrase="Octavo" filename="h-8.wav"/>
+      <prompt phrase="Noveno" filename="h-9.wav"/>
+      <prompt phrase="Décimo" filename="h-10.wav"/>
+<!-- For larger numbers, it is common to use simply the 
+cardinal number, especially in speech. Thus el siglo veinte 
+("the 20th century") is more common than the cardinal form, 
+el siglo vigésimo, and in writing the numerical form (el siglo 20) 
+is often used. It is also common to word a sentence in such a way 
+that the ordinal form is not used. So, for example, cumple cuarenta 
+y cinco años would be the most common way of saying it is someone's 
+45th birthday. In general, the ordinal numbers for 11th and above 
+can be considered mostly a formal usage.
+I will translate them anyways
+-->
+      <prompt phrase="Undécimo" filename="h-11.wav"/>
+      <prompt phrase="Duodécimo" filename="h-12.wav"/>
+      <prompt phrase="Decimotecero" filename="h-13.wav"/>
+      <prompt phrase="Decimocuarto" filename="h-14.wav"/>
+      <prompt phrase="Decimoquinto" filename="h-15.wav"/>
+      <prompt phrase="Decimosexto" filename="h-16.wav"/>
+      <prompt phrase="Decimoséptimo" filename="h-17.wav"/>
+      <prompt phrase="Decimoctavo" filename="h-18.wav"/>
+      <prompt phrase="Decimonoveno" filename="h-19.wav"/>
+      <prompt phrase="Vigésimo" filename="h-20.wav"/>
+      <prompt phrase="Trigésimo" filename="h-30.wav"/>
+      <prompt phrase="Cien" filename="hundred.wav"/>
+      <prompt phrase="Millón" filename="million.wav"/>
+      <prompt phrase="Período" filename="period.wav"/>
+      <prompt phrase="Punto" filename="point.wav"/>
+      <prompt phrase="Signo de número" filename="pound.wav"/>
+      <prompt phrase="Asterisco" filename="star.wav"/>
+      <prompt phrase="Mil" filename="thousand.wav"/>
+    </digits>
+    <currency>
+      <prompt phrase="Y" filename="and.wav"/>
+      <prompt phrase="Centavo" filename="cent.wav"/>
+      <prompt phrase="Central" filename="central.wav"/>
+      <prompt phrase="Centavos por minuto" filename="cents-per-minute.wav"/>
+      <prompt phrase="Centavos" filename="cents.wav"/>
+      <prompt phrase="Dolar" filename="dollar.wav"/>
+      <prompt phrase="Dólares" filename="dollars.wav"/>
+      <prompt phrase="Menos" filename="minus.wav"/>
+      <prompt phrase="Negativo" filename="negative.wav"/>
+    </currency>
+    <time>
+      <prompt phrase="A.M." filename="a-m.wav"/>
+      <prompt phrase="A" filename="at.wav"/>
+      <prompt phrase="Domingo" filename="day-0.wav"/>
+      <prompt phrase="Lunes" filename="day-1.wav"/>
+      <prompt phrase="Martes" filename="day-2.wav"/>
+      <prompt phrase="Miércoles" filename="day-3.wav"/>
+      <prompt phrase="Jueves" filename="day-4.wav"/>
+      <prompt phrase="Viernes" filename="day-5.wav"/>
+      <prompt phrase="Sábado" filename="day-6.wav"/>
+      <prompt phrase="Hora" filename="hour.wav"/>
+      <prompt phrase="Horas" filename="hours.wav"/>
+      <prompt phrase="Minuto" filename="minute.wav"/>
+      <prompt phrase="Minutos" filename="minutes.wav"/>
+      <prompt phrase="Enero" filename="mon-0.wav"/>
+      <prompt phrase="Febrero" filename="mon-1.wav"/>
+      <prompt phrase="Marzo" filename="mon-2.wav"/>
+      <prompt phrase="Abril" filename="mon-3.wav"/>
+      <prompt phrase="Mayo" filename="mon-4.wav"/>
+      <prompt phrase="Junio" filename="mon-5.wav"/>
+      <prompt phrase="Julio" filename="mon-6.wav"/>
+      <prompt phrase="Agosto" filename="mon-7.wav"/>
+      <prompt phrase="Septiembre" filename="mon-8.wav"/>
+      <prompt phrase="Octubre" filename="mon-9.wav"/>
+      <prompt phrase="Noviembre" filename="mon-10.wav"/>
+      <prompt phrase="Diciembre" filename="mon-11.wav"/>
+      <prompt phrase="En punto" filename="oclock.wav"/>
+      <prompt phrase="oh" filename="oh.wav"/>
+      <prompt phrase="P.M." filename="p-m.wav"/>
+      <prompt phrase="Segundo" filename="second.wav"/>
+      <prompt phrase="Segundos" filename="seconds.wav"/>
+      <prompt phrase="Hoy" filename="today.wav"/>
+      <prompt phrase="Mañana" filename="tomorrow.wav"/>
+      <prompt phrase="Ayer" filename="yesterday.wav"/>
+    </time>
+    <voicemail>
+      <prompt phrase="La persona a la extensión" filename="vm-person.wav"/>
+      <prompt phrase="marcado urgente" filename="vm-marked-urgent.wav"/>
+      <prompt phrase="correo electrónico" filename="vm-emailed.wav"/>
+      <prompt phrase="usted tiene" filename="vm-you_have.wav"/>
+      <prompt phrase="por favor ingrese su numero de usuario, seguido por" filename="vm-enter_id.wav"/>
+      <prompt phrase="por favor ingrese su contraseña, seguido por" filename="vm-enter_pass.wav"/>
+      <prompt phrase="inicio de sesión incorrectos" filename="vm-fail_auth.wav"/>
+      <prompt phrase="bienvenido a su buzon de voz" filename="vm-hello.wav"/>
+      <prompt phrase="Gracias por llamar" filename="vm-goodbye.wav"/>
+      <prompt phrase="después del tono, por favor anote su nombre, pulse cualquier tecla o deje de hablar para poner fin a la grabación." filename="vm-record_name1.wav"/>
+      <prompt phrase="elija un saludo entre 1 y 9" filename="vm-choose_greeting_choose.wav"/>
+      <prompt phrase="valor inválido" filename="vm-choose_greeting_fail.wav"/>
+      <prompt phrase="demasiados intentos fallidos" filename="vm-abort.wav"/>
+      <prompt phrase="para cambiar su clave" filename="vm-change_password.wav"/>
+      <prompt phrase="grabe su saludo después del tono, pulse cualquier tecla o deje de hablar para poner fin a la grabación" filename="vm-record_greeting.wav"/>
+      <prompt phrase="grabe su mensaje después del tono, pulse cualquier tecla o deje de hablar para poner fin a la grabación" filename="vm-record_message.wav"/>
+      <prompt phrase="no está disponible" filename="vm-play_greeting.wav"/>
+      <prompt phrase="urgente nuevo" filename="vm-urgent-new.wav"/>
+      <prompt phrase="nuevo" filename="vm-new.wav"/>
+      <prompt phrase="urgente guardado" filename="vm-urgent-saved.wav"/>
+      <prompt phrase="guardado" filename="vm-saved.wav"/>
+      <prompt phrase="mensaje" filename="vm-message.wav"/>
+      <prompt phrase="mensajes" filename="vm-messages.wav"/>
+      <prompt phrase="presione" filename="vm-press.wav"/>
+      <prompt phrase="para escuchar mensajes nuevos" filename="vm-listen_new.wav"/>
+      <prompt phrase="para escuchar mensajes guardados" filename="vm-listen_saved.wav"/>
+      <prompt phrase="para opciones avanzadas" filename="vm-advanced.wav"/>
+      <prompt phrase="para salir" filename="vm-to_exit.wav"/>
+      <prompt phrase="para guardar un saludo" filename="vm-record_greeting.wav"/>
+      <prompt phrase="para elegir un saludo" filename="vm-choose_greeting.wav"/>
+      <prompt phrase="para grabar su nombre" filename="vm-record_name2.wav"/>
+      <prompt phrase="para el menú principal" filename="vm-main_menu.wav"/>
+      <prompt phrase="para escuchar la grabación" filename="vm-listen_to_recording.wav"/>
+      <prompt phrase="para guardar la grabación" filename="vm-save_recording.wav"/>
+      <prompt phrase="para regrabar" filename="vm-rerecord.wav"/>
+      <prompt phrase="para marcar este mensaje como urgente" filename="vm-mark-urgent.wav"/>
+      <prompt phrase="para continuar" filename="vm-continue.wav"/>
+      <prompt phrase="para escuchar la grabación de nuevo" filename="vm-listen_to_recording_again.wav"/>
+      <prompt phrase="para eliminar la grabación" filename="vm-delete_recording.wav"/>
+      <prompt phrase="para enviar la grabación a su e-mail" filename="vm-forward_to_email.wav"/>
+      <prompt phrase="saludo" filename="vm-greeting.wav"/>
+      <prompt phrase="seleccionado" filename="vm-selected.wav"/>
+      <prompt phrase="no está disponible" filename="vm-not_available.wav"/>
+      <prompt phrase="mensaje número" filename="vm-message_number.wav"/>
+      <prompt phrase="eliminado" filename="vm-deleted.wav"/>
+      <prompt phrase="Su grabación es demasiado corta, por favor intente de nuevo" filename="vm-too-small.wav"/>
+      <prompt phrase="en la bandeja de entrada" filename="vm-in_folder.wav"/>
+      <prompt phrase="para devolver la llamada" filename="vm-return_call.wav"/>
+      <prompt phrase="urgente" filename="vm-urgent.wav"/>
+    </voicemail>
+    <conference>
+      <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
+      <prompt phrase="NULL" filename="conf-nack.wav" type="tone"/>
+      <prompt phrase="Usted ahora está silenciado." filename="conf-muted.wav"/>
+      <prompt phrase="Usted ya no está silenciado." filename="conf-unmuted.wav"/>
+      <prompt phrase="En este momento usted es la única persona en la conferencia." filename="conf-alone.wav"/>
+      <prompt phrase="NULL" filename="conf-perpetual.wav" type="music"/>
+      <prompt phrase="NULL" filename="conf-enter.wav" type="tone"/>
+      <prompt phrase="NULL" filename="conf-exit.wav" type="tone"/>
+      <prompt phrase="Usted ha sido expulsado de la conferencia." filename="conf-kicked.wav"/>
+      <prompt phrase="Esta conferencia está bloqueada." filename="conf-locked.wav"/>
+      <prompt phrase="La conferencia está ahora bloqueada." filename="conf-is-locked.wav"/>
+      <prompt phrase="La conferencia está ahora desbloqueada." filename="conf-is-unlocked.wav"/>
+      <prompt phrase="Por favor ingrese el pin de la conferencia." filename="conf-pin.wav"/>
+      <prompt phrase="Pin inválido, intente de nuevo." filename="conf-bad-pin.wav"/>
+      <prompt phrase="hasta luego" filename="conf-goodbye.wav"/>
+      <prompt phrase="Bienvenido a la conferencia." filename="conf-welcome.wav"/>
+    </conference>
+    <ivr>
+      <prompt phrase="Número de cuenta" filename="ivr-account_number.wav"/>
+      <prompt phrase="Conectar con quien llama" filename="ivr-connect_to_caller.wav"/>
+      <prompt phrase="Si conoce la extensión, por favor ingrésela ahora" filename="ivr-enter_ext_pound.wav"/>
+      <prompt phrase="por favor ingrese el número de una extensión seguido del signo de número" filename="ivr-enter_ext.wav"/>
+      <prompt phrase="Para esta persona" filename="ivr-for_this_person.wav"/>
+      <prompt phrase="Por favor espere mientras conecto su llamada" filename="ivr-hold_connect_call.wav"/>
+      <prompt phrase="Lo siento" filename="ivr-im_sorry.wav"/>
+      <prompt phrase="Por favor" filename="ivr-please.wav"/>
+      <prompt phrase="Por favor devuelva nuestra llamada al" filename="ivr-please_return_our_call_at.wav"/>
+      <prompt phrase="Acerca del número de referencia" filename="ivr-regarding_reference_number.wav"/>
+      <prompt phrase="Este es un ejemplo de un submenú de audiorrespuesta..." filename="ivr-sample_submenu.wav"/>
+      <prompt phrase="Por favor diga su nombre después del tono" filename="ivr-say_name.wav"/>
+      <prompt phrase="Enviar a esta persona que llama al buzón de voz" filename="ivr-send_to_voicemail.wav"/>
+      <prompt phrase="Para hablar con un representante de servicio al cliente" filename="ivr-speak_to_a_customer_service_representative.wav"/>
+      <prompt phrase="Tomar un mensaje" filename="ivr-take_a_message.wav"/>
+      <prompt phrase="Gracias" filename="ivr-thank_you.wav"/>
+      <prompt phrase="Esa fue una entrada inválida" filename="ivr-that_was_an_invalid_entry.wav"/>
+      <prompt phrase="Esta es una llamada de" filename="ivr-this_is_a_call_from.wav"/>
+      <prompt phrase="Este menú de audiorrespuesta le permitirá probar algunas de las características..." filename="ivr-this_ivr_will_let_you_test_features.wav"/>
+      <prompt phrase="Para llamar a la conferencia de FreeSWITCH" filename="ivr-to_call_the_freeswitch_conference.wav"/>
+      <prompt phrase="Para hacer una prueba de eco de FreeSWITCH" filename="ivr-to_do_a_freeswitch_echo_test.wav"/>
+      <prompt phrase="Para hacer una prueba de eco de FWD" filename="ivr-to_do_a_fwd_echo_test.wav"/>
+      <prompt phrase="Para escuchar un ejemplo de un submenú de audio respuesta" filename="ivr-to_hear_sample_submenu.wav"/>
+      <prompt phrase="Para escuchar simios gritando" filename="ivr-to_hear_screaming_monkeys.wav"/>
+      <prompt phrase="Para escuchar música de llamada en espera" filename="ivr-to_listen_to_moh.wav"/>
+      <prompt phrase="Para repetir estas opciones" filename="ivr-to_repeat_these_options.wav"/>
+      <prompt phrase="Para regresar al menú anterior" filename="ivr-to_return_to_previous_menu.wav"/>
+      <prompt phrase="Para hablar con un operador" filename="ivr-to_speak_with_an_operator.wav"/>
+      <prompt phrase="Bienvenido a FreeSWITCH, el futuro de la telefonía" filename="ivr-welcome_to_freeswitch.wav"/>
+      <prompt phrase="Usted puede colgar en cualquier momento para salir" filename="ivr-you_may_exit_by_hanging_up.wav"/>
+      <prompt phrase="o" filename="ivr-or.wav"/>
+      <prompt phrase="no" filename="ivr-not.wav"/>
+      <prompt phrase="llamar" filename="ivr-call.wav"/>
+      <prompt phrase="Usted puede" filename="ivr-you_may.wav"/>
+      <prompt phrase="hola" filename="ivr-hello.wav"/>
+      <prompt phrase="Usando el teclado de su teléfono..." filename="ivr-use_telephone_keypad.wav"/>
+      <prompt phrase="por favor deletree el nombre de la persona a la cual está intentando contactar." filename="ivr-spell_name.wav"/>
+      <prompt phrase="Primero el apellido" filename="ivr-last_name_first.wav"/>
+      <prompt phrase="Primero el nombre" filename="ivr-first_name_first.wav"/>
+      <prompt phrase="Presione 1 para Q ó Z." filename="ivr-press_one_q_or_z.wav"/>
+      <prompt phrase="Ventas" filename="ivr-sales.wav"/>
+      <prompt phrase="Servicio al cliente" filename="ivr-customer_service.wav"/>
+      <prompt phrase="Soporte técnico" filename="ivr-technical_support.wav"/>
+      <prompt phrase="Operador" filename="ivr-operator.wav"/>
+    </ivr>
+    <misc>
+      <prompt phrase="Esta llamada ha sido asegurada" filename="call_secured.wav"/>
+      <prompt phrase="Seguido del signo de número" filename="followed.wav"/>
+      <prompt phrase="Si usted es esta persona" filename="if_you_are_this_person.wav"/>
+      <prompt phrase="Si usted desea" filename="if_you_would_like_to.wav"/>
+      <prompt phrase="Diga el número de referencia" filename="provide_reference_number.wav"/>
+      <prompt phrase="Por favor pulse la extensión a la cual desea transferir" filename="transfer1.wav"/>
+      <prompt phrase="Transferir" filename="transfer2.wav"/>
+      <prompt phrase="Estamos tratando de contactar" filename="we_are_trying_to_reach.wav"/>
+      <prompt phrase="Un error ha ocurrido, por favor contacte al administrador" filename="error.wav"/>
+    </misc>
+  </en>
+</language>

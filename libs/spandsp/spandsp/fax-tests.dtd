@@ -1,0 +1,52 @@
+<!-- FAX test scripts -->
+<!ELEMENT fax-tests (config|messages|test-group)* >
+<!ELEMENT config (path)* >
+<!ELEMENT path (EMPTY)* >
+<!ATTLIST path
+  type      CDATA   #REQUIRED
+  value     CDATA   #REQUIRED
+  >
+
+<!ELEMENT messages (message)* >
+<!ELEMENT message (EMPTY)* >
+<!ATTLIST message
+  type      CDATA   #REQUIRED
+  value     CDATA   #REQUIRED
+  >
+
+<!ELEMENT test-group (test)* >
+<!ATTLIST test-group
+  name      CDATA   #IMPLIED
+  >
+
+<!ELEMENT test (step|possible-step)* >
+<!ATTLIST test
+  name      CDATA   #IMPLIED
+  >
+
+<!ELEMENT possible-step (step)* >
+
+<!ELEMENT step (check|EMPTY)* >
+<!ATTLIST step
+  dir                   CDATA   #IMPLIED
+  type                  CDATA   #IMPLIED
+  modem                 CDATA   #IMPLIED
+  tag                   CDATA   #IMPLIED
+  value                 CDATA   #IMPLIED
+  timeout               CDATA   #IMPLIED
+  crc_error             CDATA   #IMPLIED
+  pattern               CDATA   #IMPLIED
+  bad_rows              CDATA   #IMPLIED
+  min_bits              CDATA   #IMPLIED
+  frame_size            CDATA   #IMPLIED
+  compression           CDATA   #IMPLIED
+  block                 CDATA   #IMPLIED
+  xxx                   CDATA   #IMPLIED
+  >
+
+<!ELEMENT check (EMPTY)* >
+<!ATTLIST check
+  name      CDATA   #IMPLIED
+  desc      CDATA   #IMPLIED
+  >
+

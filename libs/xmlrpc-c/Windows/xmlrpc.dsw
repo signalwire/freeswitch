@@ -1,0 +1,242 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "abyss"=".\abyss.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "cpptest"=".\cpptest.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name xmlrpccpp
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name abyss
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "gennmtab"=".\gennmtab.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "rpctest"=".\rpctest.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name abyss
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlhttpsys"=".\xmlhttpsys.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "xmlparse"=".\xmlparse.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmltok
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlrpc"=".\xmlrpc.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlparse
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name abyss
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlrpccpp"=".\xmlrpccpp.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlparse
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name abyss
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlrpc_sample_add_asynch_client"=".\xmlrpc_sample_add_asynch_client.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlrpc_sample_add_server"=".\xmlrpc_sample_add_server.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name abyss
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlrpc_sample_add_server_w32httpsys"=".\xmlrpc_sample_add_server_w32httpsys.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlhttpsys
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlrpc_sample_add_sync_client"=".\xmlrpc_sample_add_sync_client.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmlrpc_sample_auth_client"=".\xmlrpc_sample_auth_client.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name xmlrpc
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "xmltok"=".\xmltok.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name gennmtab
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

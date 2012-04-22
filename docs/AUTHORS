@@ -1,0 +1,44 @@
+The Initial Developer of the Original Code is
+Anthony Minessale II <anthm@freeswitch.org>
+Portions created by the Initial Developer are Copyright (C)
+the Initial Developer. All Rights Reserved.
+
+The PRIMARY AUTHORS are (and/or have been):
+
+ Anthony Minessale II <anthm@freeswitch.org> - Primary developer of all core components
+ 	and many of the included modules.  Much of freeswitch is based on his work.
+ 
+ Michael Jerris <mike@jerris.com> - Windows porter and responsible for the 
+  windows\msvc build system.
+
+
+And here is an inevitably incomplete list of MUCH-APPRECIATED CONTRIBUTORS --
+people who have submitted patches, reported bugs, and generally made Freeswitch
+that much better:
+
+ Brian K. West - For countless hours of work on BSD and Mac support, finding countless bugs, 
+  and moral support.  Xcode project files.
+ Joshua Colp - For his help making mod_exosip possible (which we are now getting rid of but oh well), 
+               and for just being a swell guy!
+ Michal "cypromis" Bielicki (michal.bielicki  AT voiceworks.pl) - Solaris porting, and autotools enhancements, debian, rpm and solaris packaging.
+ James Martelletti <james@nerdc0re.com> - All around cool guy (mod_syslog)
+ Johny Kadarisman <jkr888@gmail.com>
+ Yossi Neiman of Cartis Solutions, Inc. <freeswitch AT cartissolutions.com>  -  implementation of mod_cdr (perldd, mysql, csv)
+ Stefan Knoblich - Sofia TLS, various patches and support.  Thanks.
+ Justin Unger - <justinunger at gmail dot com> Lots of help with patches and SIP testing. Thanks! 
+ Paul D. Tinsley - Various patches and support. <pdt at jackhammer.org> 
+ Ken Rice - <krice AT suspicious.org> - xmlcdr, sofia improvements, load testing, 1 liners here and there.
+ Neal Horman <neal at wanlink dot com> - conference improvements, switch_ivr menu additions and other tweaks.
+ Johny Kadarisman <jkr888 at gmail.com> - mod_python fixups.
+ Michael Murdock <mike at mmurdock dot org> - testing, documentation, bug finding and usability enhancements.
+ Matt Klein <mklein@nmedia.net>
+ Jonas Gauffin <jonas at gauffin dot org> - mod_cdr_odbc, mod_spidermonkey_socket, Bugfixes and additions in mod_spidermonkey_odbc and mod_spidermonkey, .net event socket library.
+ Damjan Jovanovic <moctodliamgtavojtodnajmad backwards> - mod_java
+ Juan Jose Comellas <juanjo@comellas.org> - Patch to switch_utils for arg parsing.
+ Dale Thatcher <freeswitch at dalethatcher dot com> - Additions to mod_conference.
+ Simon Perreault & Marc Blanchet from Viagenie.ca - IPv6 Support.
+
+A big THANK YOU goes to:
+
+Justin Cassidy - Build related cleanups and automatic build setup.
+Bret McDanel - Javascript Documentation, constant feedback and input, many other things I am sure I am forgetting.

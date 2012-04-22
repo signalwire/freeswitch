@@ -1,0 +1,31 @@
+PROJECT_NAME         = "sip"
+OUTPUT_DIRECTORY     = ../docs/html/sip
+
+INPUT 		     = @srcdir@/sofia-sip sofia-sip @srcdir@/sip.docs @srcdir@/sip_parser.docs @srcdir@ .
+
+@INCLUDE_PATH = . @srcdir@
+@INCLUDE = ../docs/Doxyfile.conf
+
+TAGFILES            += \
+	../docs/su.doxytags=../su \
+	../docs/ipt.doxytags=../ipt \
+	../docs/bnf.doxytags=../bnf \
+	../docs/url.doxytags=../url \
+	../docs/msg.doxytags=../msg \
+	../docs/sdp.doxytags=../sdp \
+	../docs/iptsec.doxytags=../iptsec \
+	../docs/nta.doxytags=../nta \
+	../docs/nua.doxytags=../nua
+
+GENERATE_TAGFILE    = ../docs/sip.doxytags
+
+ALIASES += \
+	"SIP_TAG=@ingroup sip_tag\n" \
+	"SIP_HEADER=@ingroup sip_headers\n@defgroup" \
+        "SIP_PARSER=\n"
+
+@INCLUDE = sip.doxyaliases
+
+PREDEFINED += SU_HAVE_EXPERIMENTAL=1
+
+IMAGE_PATH           += @srcdir@/images

@@ -1,0 +1,50 @@
+Security Advisories
+===================
+
+The Xmlrpc-c maintainer will normally post security advisories related
+to xmlrpc-c to the xmlrpc-c-announce mailing list.  You can subscribe
+to this using the web:
+
+  http://xmlrpc-c.sourceforge.net/lists.php
+
+You will also find a list of all known bugs including those with
+security ramifications, in the release notes on Sourceforge.  To see
+the release notes for a release, go to the file download page and
+click on the release name.  The list is current only for the most
+current release -- i.e. we stop adding to the list for release N after
+we release N+1.
+
+
+XML-RPC Security
+================
+
+There are some security issues inherent in XML-RPC:
+
+  1) XML-RPC messages are not encrypted at the XML-RPC level.  This
+     means that unless you encrypt them at some lower level, someone
+     with sufficient access to the network can see them with standard
+     packet-sniffing and network administration tools.
+
+     This is especially dangerous because XML-RPC is a stateless protocol.
+     If you include reusable authentication tokens in an XML-RPC call, they
+     can probably be sniffed and used by attackers.
+
+     You can solve this problem by using SSL under HTTP.  This is possible
+     with Xmlrpc-c, but it's nontrivial to set up and the Xmlrpc-c
+     documentation doesn't tell you how.
+
+  2) There are no permission restrictions and no authentication built
+     into Xmlrpc-c by default -- any client can call any method on any
+     visible server and neither can know for sure to whom it is talking.
+
+     If you need permission and authentication, you either have to put
+     it above the XML-RPC layer or below.  For a server, above means in
+     the method code you supply and register with the Xmlrpc-c server
+     facilities; below means something like a firewall that lets clients
+     only from a certain IP address connect to your server.
+
+  3) XML-RPC is a complex protocol based on complex data structures.
+     Layers and layers of potentially buggy code gets run between the
+     time network data is received, and the time it is understood; and
+     conversely between the time data is conceived and the time it
+     gets sent.

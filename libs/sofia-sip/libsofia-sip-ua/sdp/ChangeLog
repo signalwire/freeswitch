@@ -1,0 +1,55 @@
+2005-10-17  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * In sdp_rtpmap_cmp() use default value "1" for rm_param.
+
+    M ./libsofia-sip-ua/sdp/sdp.c -3 +30
+
+2005-10-03  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Fixed documentation of sdp_parsing_error() and sdp_parsing_error()
+  contradicting with implementation. Use sdp_session() and sdp_message() to
+  check for error.
+
+    M ./libsofia-sip-ua/sdp/sdp.docs -2 +8
+
+2005-10-03  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* sdp_print.c (sdp_printing_error): Fixed return
+	for success to be NULL as defined in function
+	documentation.
+
+2005-09-29  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Added SDPTAG_TYPEDEF().
+
+    M ./libsofia-sip-ua/sdp/sdp_tag.h +3
+
+  * Not including <sdp.h>.
+
+    M ./libsofia-sip-ua/sdp/sdp_tag.h -7 +12
+
+2005-09-28  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Handle mode attributes (inactive, sendonly, recvonly, sendrecv).
+
+    M ./libsofia-sip-ua/sdp/sdp.h -1 +5
+    M ./libsofia-sip-ua/sdp/sdp_parse.c -12 +44
+    M ./libsofia-sip-ua/sdp/sdp_print.c -5 +54
+
+  * Setting mode flags on config sdp, too.
+
+    M ./libsofia-sip-ua/sdp/sdp_parse.c -3 +3
+
+  * Added sdp_media_match*(), sdp_media_count*()
+
+    M ./libsofia-sip-ua/sdp/sdp.c +91
+    M ./libsofia-sip-ua/sdp/sdp.h +20
+
+  * Added sdp_list_cmp() and sdp_rtpmap_cmp().
+
+    M ./libsofia-sip-ua/sdp/sdp.c -9 +54
+    M ./libsofia-sip-ua/sdp/sdp.h +6
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Initial import of the module to Sofia-SIP tree.

@@ -1,0 +1,272 @@
+# -*-makefile-*-    <-- an Emacs control
+
+# This file contains rules and variable settings for the convenience
+# of every other make file in the package.
+
+# No make file is required to use this file, but it usually saves a lot
+# of duplication.
+
+# The following make variables are meaningful as input to this file:
+#
+# SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
+# BUILDDIR: Name of directory which is the top of the Xmlrpc-c build tree.
+
+LIBTOOL = $(SRCDIR)/libtool
+LINK = $(LIBTOOL) --mode=link $(CCLD)
+
+GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline
+  # We need -Wwrite-strings after we fix all the missing consts
+
+GCC_C_WARNINGS = $(GCC_WARNINGS) \
+  -Wmissing-declarations -Wstrict-prototypes -Wmissing-prototypes
+
+GCC_CXX_WARNINGS = $(GCC_WARNINGS) -Woverloaded-virtual -Wsynth
+
+ifeq ($(C_COMPILER_GNU),yes)
+  CFLAGS_COMMON = $(GCC_C_WARNINGS) $(COMPILER_CFLAGS) -fno-common -g
+else
+  CFLAGS_COMMON = $(COMPILER_CFLAGS)
+endif
+
+ifeq ($(CXX_COMPILER_GNU),yes)
+  CXXFLAGS_COMMON = $(GCC_CXX_WARNINGS) $(COMPILER_CXXFLAGS)
+else
+  CXXFLAGS_COMMON = $(COMPILER_CXXFLAGS)
+endif
+
+DISTDIR = $(BUILDDIR)/$(PACKAGE)-$(VERSION)/$(SUBDIR)
+
+LDFLAGS_VERSINFO = -version-info 7:0:4
+
+# CURDIR was introduced in GNU Make 3.77.
+ifeq ($(CURDIR)x,x)
+  CURDIR := $(shell /bin/pwd)
+endif
+
+##############################################################################
+#                             RULES                                          #
+##############################################################################
+
+$(SUBDIRS:%=%/all): %/all: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(SUBDIRS:%=%/install): %/install: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(SUBDIRS:%=%/clean): %/clean: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(SUBDIRS:%=%/distclean): %/distclean: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(SUBDIRS:%=%/distdir): %/distdir: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(SUBDIRS:%=%/dep): %/dep: $(CURDIR)/%
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/$(SUBDIR)/$(dir $@)Makefile \
+	    $(notdir $@) 
+
+$(BUILDDIR)/lib/util/casprintf.lo: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/util/Makefile $(notdir $@) 
+
+$(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmlparse/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/expat/xmltok/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/lib/wininet_transport/xmlrpc_wininet_transport.lo: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/wininet_transport/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/lib/curl_transport/xmlrpc_curl_transport.lo: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/curl_transport/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/lib/libwww_transport/xmlrpc_libwww_transport.lo: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/libwww_transport/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/src/libxmlrpc.la: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/src/libxmlrpc_client.la: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
+	    $(notdir $@)
+
+$(BUILDDIR)/src/libxmlrpc_server.la: FORCE
+	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/Makefile \
+	    $(notdir $@)
+
+ifneq ($(OMIT_TRANSPORT_CONFIG_H),Y)
+$(BUILDDIR)/transport_config.h:
+	$(MAKE) -C $(dir $@) $(notdir $@)
+endif
+
+MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
+
+.PHONY: install-common install-libraries install-headers install-bin
+install-common: \
+  install-ltlibraries install-libraries install-headers install-bin
+
+INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
+RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
+
+install-libraries: $(LIBRARIES_TO_INSTALL)
+	$(MKINSTALLDIRS) $(DESTDIR)$(LIBINST_DIR)
+	@list='$(LIBRARIES_TO_INSTALL)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_LIB_CMD)"; \
+	    $(INSTALL_LIB_CMD); \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(LIBRARIES_TO_INSTALL)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(RANLIB_CMD)"; \
+	    $(RANLIB_CMD); \
+	  else :; fi; \
+	done
+
+LIBTOOL_INSTALL_CMD = $(LIBTOOL) --mode=install \
+  $(INSTALL) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
+
+install-ltlibraries: $(LTLIBRARIES_TO_INSTALL)
+	$(MKINSTALLDIRS) $(DESTDIR)$(LIBINST_DIR)
+	@list='$(LTLIBRARIES_TO_INSTALL)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(LIBTOOL_INSTALL_CMD)"; \
+	    $(LIBTOOL_INSTALL_CMD); \
+	  else :; fi; \
+	done
+
+HEADERDESTDIR = $(DESTDIR)$(HEADERINST_DIR)
+INSTALL_HDR_CMD = $(INSTALL_DATA) $$d$$p $(HEADERDESTDIR)/$$p 
+
+install-headers: $(HEADERS_TO_INSTALL)
+	$(MKINSTALLDIRS) $(HEADERDESTDIR)
+	$(MKINSTALLDIRS) $(HEADERDESTDIR)/xmlrpc-c
+	@list='$(HEADERS_TO_INSTALL)'; for p in $$list; do \
+	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	  echo " $(INSTALL_HDR_CMD)"; \
+	  $(INSTALL_HDR_CMD); \
+	done
+
+
+INSTALL_PROGRAM_CMD = $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) $$p \
+  $(DESTDIR)$(PROGRAMINST_DIR)/$$p
+
+install-bin: $(PROGRAMS_TO_INSTALL) $(DESTDIR)$(PROGRAMINST_DIR)
+	@list='$(PROGRAMS_TO_INSTALL)'; \
+         for p in $$list; do \
+	   echo "$(INSTALL_PROGRAM_CMD)"; \
+	   $(INSTALL_PROGRAM_CMD); \
+	   done
+
+$(DESTDIR)$(PROGRAMINST_DIR):
+	$(MKINSTALLDIRS) $@
+
+
+.PHONY: clean-common
+clean-common:
+	rm -f *.o *.a *.s *.i *.la *.lo
+	rm -rf .libs
+
+.PHONY: distclean-common
+distclean-common:
+# Makefile.depend is generated by 'make dep' and contains only dependencies
+# that make parts get _rebuilt_ when parts upon which they depend change.
+# It does not contain dependencies that are necessary to cause a part to
+# get built in the first place.  E.g. if foo.c uses bar.h and bar.h gets built
+# by a make rule, you must put the dependency of foo.c on bar.h somewhere
+# besides Makefile.depend.
+#
+# Because of this, a user doesn't need Makefile.depend, because he
+# doesn't modify source files.  A developer, on the other hand, must make his
+# own Makefile.depend, because 'make dep' creates Makefile.depend with 
+# absolute pathnames, specific to the developer's system.
+#
+# So we empty out Makefile.depend here.  The developer must do 'make dep' if
+# he wants to edit and rebuild.
+#
+# Other projects have 'make distclean' _remove_ Makefile.depend and then
+# have 'make' automatically build Makefile.depend.  We have
+# found that to be an utter disaster -- it's way too complicated and prone
+# to failure, especially with built .h files.  Better not to burden the user,
+# who gains nothing from it, with that.
+#
+	cat /dev/null >Makefile.depend
+	rm -f TAGS
+
+
+.PHONY: distdir-common
+distdir-common:
+	@for file in $(DISTFILES); do \
+	  d=$(SRCDIR); \
+	  if test -d $$d/$$file; then \
+	    cp -pr $$d/$$file $(DISTDIR)/$$file; \
+	  else \
+	    test -f $(DISTDIR)/$$file \
+	    || ln $$d/$$file $(DISTDIR)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(DISTDIR)/$$file || :; \
+	  fi; \
+	done
+
+TAGS: $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+   if test "$$subdir" = .; then :; else \
+	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
+   fi; \
+	done; \
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
+
+DEP_SOURCES = $(wildcard *.c *.cpp)
+
+# This is a filter to turn "foo.o:" rules into "foo.o foo.lo:" because Libtool
+# uses .lo for object files.  I'd like to purge the build of Libtool some day
+# and eliminate this complication.
+
+LIBTOOL_DEPEND_MASSAGER = perl -walnpe's{^(.*)\.o:}{$$1.o $$1.lo:}'
+
+
+
+.PHONY: dep-common
+dep-common: FORCE
+ifneq ($(DEP_SOURCES)x,x)
+	-$(CC) -MM -MG -I. $(INCLUDES) $(DEP_SOURCES) | \
+	  $(LIBTOOL_DEPEND_MASSAGER) \
+	  >Makefile.depend
+endif
+
+Makefile.depend:
+	cat /dev/null >$@
+
+# The automatic dependency generation is a pain in the butt and
+# totally unnecessary for people just installing the distributed code,
+# so to avoid needless failures in the field and a complex build, the
+# 'distclean' target simply makes Makefile.depend an empty file.  A
+# developer may do 'make dep' to create a Makefile.depend full of real
+# dependencies.
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:
+
+
+# Use the FORCE target as a dependency to force a target to get remade
+FORCE:

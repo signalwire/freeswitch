@@ -1,0 +1,3 @@
+A POE filter for FreeSWITCH (http://www.freeswitch.org) that parses event/log/etc... messages for you.  You must ask for events in plain mode.
+
+perldoc POE::Filter::FSSocket for more info and an example.

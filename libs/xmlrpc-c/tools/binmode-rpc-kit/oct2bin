@@ -1,0 +1,12 @@
+#!/usr/bin/perl
+# Turn C-style octal escapes into binary.
+# Call as "echo -n 'ab\0\001cd' | oct2bin > out.binmode".
+
+binmode STDOUT;
+
+while (<>) {
+    s/\\(\d\d\d)/chr(oct($1))/ge;
+    s/\\0/chr(0)/ge;
+    s/\\\\/\\/g;
+    print $_;
+}

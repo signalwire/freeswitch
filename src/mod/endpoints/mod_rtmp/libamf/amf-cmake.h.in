@@ -1,0 +1,105 @@
+#ifndef __AMF_H__
+#define __AMF_H__
+
+/* Name of package */
+#define PACKAGE "@PACKAGE@"
+
+/* Define to the address where bug reports for this package should be sent. */
+#define PACKAGE_BUGREPORT "@PACKAGE_BUGREPORT@"
+
+/* Define to the full name of this package. */
+#define PACKAGE_NAME "@PACKAGE_NAME@"
+
+/* Define to the full name and version of this package. */
+#define PACKAGE_STRING "@PACKAGE_STRING@"
+
+/* Define to the one symbol short name of this package. */
+#define PACKAGE_TARNAME "@PACKAGE_NAME@"
+
+/* Define to the version of this package. */
+#define PACKAGE_VERSION "@PACKAGE_VERSION@"
+
+/* The size of `double', as computed by sizeof. */
+#define SIZEOF_DOUBLE @SIZEOF_DOUBLE@
+
+/* The size of `float', as computed by sizeof. */
+#define SIZEOF_FLOAT @SIZEOF_FLOAT@
+
+/* The size of `long double', as computed by sizeof. */
+#define SIZEOF_LONG_DOUBLE @SIZEOF_LONG_DOUBLE@
+
+/* Version number of package */
+#define VERSION "@PACKAGE_VERSION@"
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#cmakedefine HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#cmakedefine HAVE_STDINT_H
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#cmakedefine HAVE_STDDEF_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H
+
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#cmakedefine WORDS_BIGENDIAN
+
+/* Define to the type of an integer type of width exactly 16 bits if
+   such a type exists and the standard includes do not define it. */
+#cmakedefine int16_t short int
+
+/* Define to the type of an integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+#cmakedefine int32_t int
+
+/* Define to the type of an integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#cmakedefine int64_t long long int
+
+/* Define to the type of an integer type of width exactly 8 bits if
+   such a type exists and the standard includes do not define it. */
+#cmakedefine int8_t char
+
+/* Define to the type of an unsigned integer type of width exactly 16 bits if
+   such a type exists and the standard includes do not define it. */
+#cmakedefine uint16_t unsigned short int
+
+/* Define to the type of an unsigned integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+#cmakedefine uint32_t unsigned int
+
+/* Define to the type of an unsigned integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#cmakedefine uint64_t unsigned long long int
+
+/* Define to the type of an unsigned integer type of width exactly 8 bits if
+   such a type exists and the standard includes do not define it. */
+#cmakedefine uint8_t unsigned char
+
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
+#include <stdlib.h>
+
+/* AMF number */
+typedef
+#if SIZEOF_FLOAT == 8
+float
+#elif SIZEOF_DOUBLE == 8
+double
+#elif SIZEOF_LONG_DOUBLE == 8
+long double
+#else
+uint64_t
+#endif
+number64_t;
+
+/* custom read/write function type */
+typedef size_t (*read_proc_t)(void * out_buffer, size_t size, void * user_data);
+typedef size_t (*write_proc_t)(const void * in_buffer, size_t size, void * user_data);
+
+#endif /* __AMF_H__ */

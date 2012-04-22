@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="mod_commands"
+	ProjectGUID="{30A5B29C-983E-4580-9FD0-D647CCDCC7EB}"
+	RootNamespace="mod_commands"
+	Keyword="Win32Proj">
+	<Platforms>
+		<Platform Name="Win32"/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
+			CharacterSet="2">
+			<Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			CharacterSet="2">
+			<Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File RelativePath=".\mod_commands.c"/>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

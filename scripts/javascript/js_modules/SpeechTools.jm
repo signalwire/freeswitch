@@ -1,0 +1,483 @@
+/* 
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005/2006, Anthony Minessale II <anthm@freeswitch.org>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthm@freeswitch.org>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * 
+ * Anthony Minessale II <anthm@freeswitch.org>
+ *
+ *
+ * SpeechTools.jm Speech Detection Interface
+ *
+ */
+
+/* Constructor for Grammar Class (Class to identify a grammar entity) */
+function Grammar(grammar_name, path, obj_path, min_score, confirm_score, halt) {
+	this.grammar_name = grammar_name;
+	this.path = path;
+	this.min_score = min_score;
+	this.confirm_score = confirm_score;
+	this.halt = halt;
+	this.obj_path = obj_path;
+
+	if (!this.min_score) {
+		this.min_score = 1;
+	}
+
+	if (!this.confirm_score) {
+		this.confirm_score = 400;
+	}
+}
+
+/* Constructor for SpeechDetect Class (Class to Detect Speech) */
+function SpeechDetect(session, mod, ip) {
+	this.ip = ip;
+	this.session = session;
+	this.mod = mod;
+	this.grammar_name = undefined;
+	this.grammar_hash = new Array();
+	this.grammar_name = false;
+	this.audio_base = "";
+	this.audio_ext = ".wav";
+	this.tts_eng = false;
+	this.tts_voice = false;
+	this.AutoUnload = false;
+	this.debug = false;
+
+	/* Set the TTS info */
+	this.setTTS = function (tts_eng, tts_voice) {
+		this.tts_eng = tts_eng;
+		this.tts_voice = tts_voice;		
+	}
+
+	/* Set the audio base */
+	this.setAudioBase = function (audio_base) {
+		this.audio_base = audio_base;
+	}
+
+	/* Set the audio extension */
+	this.setAudioExt= function (audio_ext) {
+		this.audio_ext = audio_ext;
+	}
+	
+	/* Add a grammar to be used */
+	this.addGrammar = function(grammar_object) {
+		this.grammar_hash[grammar_object.grammar_name] = grammar_object;
+	}
+
+	/* Play an audio file */
+	this.streamFile = function(str) {
+		var rv;
+		if (!str) {
+			console_log("error", "No file specified!\n");
+			return;
+		}
+		files = str.split(",");
+		for( x = 0; x < files.length; x++) {
+			if (!files[x] || files[x] == "noop") {
+				continue;
+			}
+			this.session.streamFile(this.audio_base + files[x] + this.audio_ext);
+		}
+	}
+
+	/* Speak with TTS */
+	this.speak = function(str) {
+		return this.session.speak(this.tts_eng, this.tts_voice, str);
+	}
+
+	/* Set the current grammar */
+	this.setGrammar = function (grammar_name) {
+		var grammar_object = this.grammar_hash[grammar_name];
+		
+		if (!grammar_object) {
+			console_log("error", "Missing Grammar!\n");
+			return false;
+		}
+
+		if (this.grammar_name) {
+			if (this.AutoUnload) {
+				console_log("debug", "Unloading grammar " + this.grammar_name + "\n");
+				this.session.execute("detect_speech", "nogrammar " + this.grammar_name);
+			}
+			if (grammar_object.path) {
+				this.session.execute("detect_speech", "grammar " + grammar_name + " " + grammar_object.path);
+			} else {
+				this.session.execute("detect_speech", "grammar " + grammar_name);
+			}
+		} else {
+			this.session.execute("detect_speech", this.mod + " " + grammar_name + " " + grammar_object.path + " " + this.ip);
+		}
+
+		this.grammar_name = grammar_name;
+	}
+
+	/* Pause speech detection */
+	this.pause = function() {
+		this.session.execute("detect_speech", "pause");
+	}
+
+	/* Resume speech detection */
+	this.resume = function() {
+		this.session.execute("detect_speech", "resume");
+	}
+
+	/* Stop speech detection */
+	this.stop = function() {
+		this.session.execute("detect_speech", "stop");
+	}
+
+	/* Callback function for streaming,TTS or bridged calls */
+	this.onInput = function(s, type, inputEvent, _this) {
+	    try {
+			if (type == "event") {
+				var speech_type = inputEvent.getHeader("Speech-Type");
+				var rv = new Array();
+		
+				if (!_this.grammar_name) {
+					console_log("error", "No Grammar name!\n");
+					_this.session.hangup();
+					return false;
+				}
+		
+				var grammar_object = _this.grammar_hash[_this.grammar_name];
+		
+				if (!grammar_object) {
+					console_log("error", "Can't find grammar for " + _this.grammar_name + "\n");
+					_this.session.hangup();
+					return false;
+				}
+		
+				if (speech_type == "begin-speaking") {
+					if (grammar_object.halt) {
+						return false;
+					}
+				} else {
+					var body = inputEvent.getBody();
+					var result;
+					var xml;
+
+					body = body.replace(/<\?.*?\?>/g, ''); 
+					xml = new XML("<xml>" + body + "</xml>"); 
+					result = xml.result;
+					
+					_this.lastDetect = body;
+		  
+					if (_this.debug) {
+						console_log("debug", "----XML:\n" + body + "\n");
+						console_log("debug", "----Heard [" + result.interpretation.input + "]\n");
+						console_log("debug", "----Hit score " + result.interpretation.@confidence + "/" + 
+									grammar_object.min_score + "/" + grammar_object.confirm_score + "\n");
+					}
+		  
+					if (result.interpretation.@confidence >= grammar_object.min_score) {
+						if (result.interpretation.@confidence < grammar_object.confirm_score) {
+							rv.push("_confirm_");
+						}
+		    
+						eval("xo = " + grammar_object.obj_path + ";");
+						for (x = 0; x < xo.length(); x++) {
+							rv.push(xo[x]);
+							console_log("info", "----" +xo[x] + "\n"); 
+						}
+					} else {
+						rv.push("_no_idea_");
+					}
+		  
+				}
+				delete interp;
+				return rv;
+			}
+	    }
+
+		catch(err) {
+			console_log("crit", "----ERROR:\n" + err + "\n");
+		}
+	}
+}  
+
+/* Constructor for SpeechObtainer Class (Class to collect data from a SpeechDetect Class) */
+function SpeechObtainer(asr, req, wait_time) {
+
+	this.items = new Array();
+	this.collected_items = new Array();
+	this.index = 0;
+	this.collected_index = 0;
+	this.req = req;
+	this.tts_eng = undefined;
+	this.tts_voice = false;
+	this.asr = asr;
+	this.top_sound = false;
+	this.add_sound = false;
+	this.dup_sound = false;
+	this.bad_sound = false;
+	this.needConfirm = false;
+	this.grammar_name = false;
+	this.audio_base = asr.audio_base;
+	this.audio_ext = asr.audio_ext;
+	this.tts_eng = asr.tts_eng;
+	this.tts_voice = asr.tts_voice;
+	this.debug = asr.debug;
+
+	if (!req) {
+		req = 1;
+	}
+
+	if (!wait_time) { 
+		wait_time = 5000;
+	}
+
+	this.waitTime = wait_time + 0;
+
+	/* Set the TTS info */
+	this.setTTS = function (tts_eng, tts_voice) {
+		this.tts_eng = tts_eng;
+		this.tts_voice = tts_voice;		
+	}
+
+	/* Set the audio base */
+	this.setAudioBase = function (audio_base) {
+		this.audio_base = audio_base;
+	}
+
+	/* Set the audio extension */
+	this.setAudioExt= function (audio_ext) {
+		this.audio_ext = audio_ext;
+	}
+
+	/* Set the grammar to use */
+	this.setGrammar = function (grammar_name, path, obj_path, min_score, confirm_score, halt) {
+		var grammar_object = new Grammar(grammar_name, path, obj_path, min_score, confirm_score, halt);
+		this.asr.addGrammar(grammar_object);
+		this.grammar_name = grammar_name;
+	}
+
+	/* Set the top audio file or tts for the collection */
+	this.setTopSound = function (top_sound) {
+		this.top_sound = top_sound;		
+	}
+
+	/* Set the audio file or tts for misunderstood input */
+	this.setBadSound = function (bad_sound) {
+		this.bad_sound = bad_sound;		
+	}
+
+	/* Set the audio file or tts for duplicate input */
+	this.setDupSound = function (dup_sound) {
+		this.dup_sound = dup_sound;		
+	}
+
+	/* Set the audio file or tts for accepted input */
+	this.setAddSound = function (add_sound) {
+		this.add_sound = add_sound;		
+	}
+
+	/* Add acceptable items (comma sep list) */
+	this.addItem = function(item) {
+		ia = item.split(",");
+		var x;
+		for (x = 0; x < ia.length; x++) {
+			this.items[this.index++] = ia[x];
+		}
+	}
+
+	this.addItemAlias = function(item,alias) {
+		ia = item.split(",");
+		var x;
+		for (x = 0; x < ia.length; x++) {
+			this.items[this.index++] = ia[x]  + ":::" + alias;
+		}
+	}
+
+	/* Add a regex */
+	this.addRegEx = function(item) {
+		this.items[this.index++] = item;
+	}
+
+	/* Reset the object and delete all collect items */
+	this.reset = function() {
+		this.collected_index = 0;
+		delete this.collected_items;
+		this.collected_items = new Array();
+	}
+
+	/* Stream a file, collecting input */
+	this.streamFile = function(str) {
+		var rv;
+		if (!str) {
+			console_log("error", "No file specified!\n");
+			return;
+		}
+		files = str.split(",");
+		for( x = 0; x < files.length; x++) {
+			if (!files[x] || files[x] == "noop") {
+				continue;
+			}
+			rv = this.asr.session.streamFile(this.audio_base + files[x] + this.audio_ext , this.asr.onInput, this.asr);
+			if (rv) {
+				break;
+			}
+		}
+
+		return rv;
+	}
+
+	/* Speak some text, collecting input */
+	this.speak = function(str) {
+		return this.asr.session.speak(this.tts_eng, this.tts_voice, str, this.asr.onInput, this.asr);
+	}
+
+	/* Process collected input */
+	this.react = function(say_str, play_str) {
+		var rv;
+
+
+		if (!rv) {
+			rv = this.asr.session.collectInput(this.asr.onInput, this.asr, 500);
+		}
+		if (!rv) {
+			this.asr.resume();
+			if (this.tts_eng && this.tts_voice) {
+				rv = this.speak(say_str);
+			} else {
+				rv = this.streamFile(play_str);
+			}
+		}
+
+		if (!rv) {
+			rv = this.asr.session.collectInput(this.asr.onInput, this.asr, 500);
+		}
+		
+		if (rv && !rv[0]) {
+			rv = false;
+		}
+
+		return rv;
+	}
+
+	/* Collect input */
+	this.run = function() {
+		var rv;
+		var hit;
+		var dup;
+
+		if (this.collected_index) {
+			this.reset();
+		}
+		
+		if (!this.grammar_name) {
+			console_log("error", "No Grammar name!\n");
+			this.session.hangup();
+			return false;
+		}
+
+		this.asr.setGrammar(this.grammar_name);
+
+		while(this.asr.session.ready() && this.collected_index < this.req) {
+			var x;
+			this.needConfirm = false;
+			if (!rv) {
+				rv = this.react(this.top_sound, this.top_sound);
+			}
+			if (!rv) {
+				this.asr.resume();
+				rv = this.asr.session.collectInput(this.asr.onInput, this.asr, this.waitTime);
+			}
+			hit = false;
+			if (rv) {
+				var items = rv;
+				rv = undefined;
+				for (y = 0; y < items.length; y++) {
+					if (items[y] == "_no_idea_") {
+						if (this.debug) {
+							console_log("debug", "----We don't understand this\n");
+						}
+						break;
+					}
+					if (items[y] == "_confirm_") {
+						this.needConfirm = true;
+						if (this.debug) {
+							console_log("debug", "----We need to confirm this one\n");
+						}
+						continue;
+					}
+					
+					for(x = 0 ; x < this.index; x++) {
+						if (this.debug) {
+							console_log("debug", "----Testing [" + y + "] [" + x + "] " + items[y] + " =~ [" + this.items[x] + "]\n");
+						}
+						str = this.items[x];
+						
+						ab = str.split(":::");
+
+						var re = new RegExp(ab[0], "i");
+						match = re.exec(items[y]);
+
+						if (match) {
+							
+							for (i = 0; i < match.length; i++) {
+								if (ab.length == 1) {
+									rep = match[i];
+								} else {
+									rep = ab[1];
+								}
+
+								dup = false;
+								for(z = 0; z < this.collected_items.length; z++) {
+									if (this.collected_items[z] == rep) {
+										dup = true;
+										break;
+									}
+								}
+								if (dup) {
+									if (this.dup_sound) {
+										rv = this.react(this.dup_sound + " " + rep, this.dup_sound + "," + rep);
+									}
+								} else {
+									if (this.debug) {
+										console_log("debug", "----Adding " + rep + "\n");
+									}
+									this.collected_items[this.collected_index++] = rep;
+									hit = true;
+									if (this.add_sound) {
+										rv = this.react(this.add_sound + " " + rep, this.add_sound + "," + rep);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if (!rv) {
+				rv = this.asr.session.collectInput(this.asr.onInput, this.asr, 1000);
+			}
+
+			if (!rv && !hit && !dup) {
+				rv = this.react(this.bad_sound, this.bad_sound);
+			}
+		}
+
+		return this.collected_items;
+
+	}
+}

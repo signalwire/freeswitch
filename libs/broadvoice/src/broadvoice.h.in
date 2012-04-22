@@ -1,0 +1,51 @@
+/*
+ * broadvoice - a library for the BroadVoice 16 and 32 codecs
+ *
+ * broadvoice.h - The head guy amongst the headers
+ *
+ * Written by Steve Underwood <steveu@coppice.org>
+ *
+ * Copyright (C) 2009 Steve Underwood
+ *
+ * All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License version 2.1,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * $Id: broadvoice.h.in,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
+ */
+
+/*! \file */
+
+#if !defined(_BROADVOICE_H_)
+#define _BROADVOICE_H_
+
+@BROADVOICE_USE_FIXED_POINT@
+@BROADVOICE_MISALIGNED_ACCESS_FAILS@
+
+@BROADVOICE_USE_EXPORT_CAPABILITY@
+
+#include <stdlib.h>
+@INSERT_INTTYPES_HEADER@
+#include <string.h>
+#include <limits.h>
+#include <time.h>
+@INSERT_MATH_HEADER@
+
+#include <broadvoice/broadvoice.h>
+
+#endif
+
+#if defined(BROADVOICE_EXPOSE_INTERNAL_STRUCTURES)
+#include <broadvoice/private/broadvoice.h>
+#endif
+/*- End of file ------------------------------------------------------------*/

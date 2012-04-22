@@ -1,0 +1,76 @@
+%start MainMap::Startup
+%class BgApiRequest
+
+%map MainMap
+%%
+
+Startup
+{
+        CommandReply
+                ApiResponseStarted
+                {
+                }
+}
+
+ApiResponseStarted
+{
+        ReplyText
+                GotReplyText
+                {
+                }
+
+}
+
+
+GotReplyText
+{
+        BlankLine
+				nil                
+                {
+				
+                }
+
+		JobUuid
+				Startup
+				{
+				setRequestFinished(); callOrErrback();			
+				}
+
+}
+
+
+
+
+
+Default
+{
+    	BlankLine			
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting blank line");			   }
+
+    	CommandReply		
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting command reply");		
+		}
+
+    	ReplyText
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure - was not expecting reply text");		
+		}
+
+        ProcessLine(line)
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure handling bgapi response - was not expecting line needing to be processed");		
+		}
+
+}
+
+%%

@@ -1,0 +1,30 @@
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
+
+# and define these variables to impact your build
+
+JAVA_FLAGS=@JAVA_FLAGS@
+# Without -fno-strict-aliasing, g++ generates invalid code for Java_org_freeswitch_freeswitchJNI_SWIGJavaSessionUpcast, which segfaults
+LOCAL_CFLAGS=$(JAVA_FLAGS) -fno-strict-aliasing
+LOCAL_OBJS=freeswitch_java.o switch_swig_wrap.o modjava.o
+CLASSES=src/org/freeswitch/Launcher.java \
+	src/org/freeswitch/HangupHook.java \
+	src/org/freeswitch/DTMFCallback.java \
+	src/org/freeswitch/FreeswitchScript.java \
+	src/org/freeswitch/Event.java \
+	src/org/freeswitch/swig/*
+include ../../../../build/modmake.rules
+
+
+local_depend:
+	mkdir -p classes
+	javac -sourcepath src -d classes $(CLASSES)
+	jar cf freeswitch.jar -C classes org
+
+reswig:
+	rm -f switch_swig_wrap.cpp
+	swig -java -c++ -I../../../include -package org.freeswitch.swig -outdir src/org/freeswitch/swig -o switch_swig_wrap.cpp mod_java.i
+
+local_install:
+	cp freeswitch.jar $(DESTDIR)@scriptdir@
+

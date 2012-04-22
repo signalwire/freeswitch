@@ -1,0 +1,7 @@
+	<extension name="hash_demo">
+		<condition field="destination_number" expression="^hash_demo$">
+			<action application="hash" data="insert/realm/key/value"/>
+			<action application="hash" data="delete/realm/key"/>
+			<action application="set" data="var=${hash(select/realm/key)}"/>
+		</condition>
+	</extension>

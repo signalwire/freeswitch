@@ -1,0 +1,3 @@
+examples/*.c
+examples/*.cc
+conf

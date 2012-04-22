@@ -1,0 +1,340 @@
+HT-TAPI Hyper-Text Telephony API and http file format plugin
+
+This module provides an HTTP based Telephony API using a standard FreeSWITCH application interface as well as a cached http file format interface.
+
+The file format plugin can be used like this:
+<action application="playback" data="http://some.com/sounds/foo.wav"/>
+
+This syntax is valid anywhere a filename parameter is requested in FreeSWITCH.
+
+
+The application is called like this:
+
+<action application="httapi" data="{url=http://some.host.com/app.cgi}"/>
+
+The target url is expected to be a CGI returning text/xml using the documentation below.
+
+The format is roughly as described below (We could use a DTD maybe).
+
+<document type="xml/freeswitch-httapi">
+  <params>
+   <someparam>someval</someparam>
+  </params>
+  <variables>
+   <somevar>someval</somevar>
+  </variables>
+  <work>
+  <...>
+  </work>
+</document>
+
+
+The profile name must be chosen to bind to a preset series of settings and permissions to use as a basis for the client session.
+It's chosen from the specified params or from the channel variable using the keyname 'httapi_profile' and if not specified will default to 'default'
+Any params specified in the initial data of the application encased in brackets {} will be parsed into the initial params similar to originate.
+These params remain set until the call ends and are supplied as form elements on each hit to the HTTP server.
+If the permissions allow, a <params> tag is parsed from the resulting document and set into this data set and will be mirrored back on subsequqent http posts.
+Also if the permissions allow a <variables> tag is parsed the same way setting channel variables.
+The <work> tag is required and contains one or more of the supported command tags that generally manipulate the call behaviour.
+The application will continue to do the task in the work section until an error is encoutered or when an action from the work tag warrants it.
+If the session exits the httapi app without hanging up it can do other tasks and make another call to httapi and the session data will remain preserved.
+
+
+EXAMPLE:
+
+<document type="xml/freeswitch-httapi">
+<params></params>
+<work>
+<playback name="exten" file="http://my.com/sounds/exten.wav" error-file="http://my.com/sounds/invalid.wav" input-timeout="5000">
+<bind strip="#">~\d+#</bind>
+</playback>
+</work>
+</document>
+
+BINDINGS
+Several of the work tags that indicate they support bindings can contain one of more bind tags that function with similar fashion to bind_digit_action
+
+<bind action strip>*EXPR*</bind>
+
+ATTRS:
+action              : a specific url to go to next if the binding is dialed
+strip               : a character to strip from in the result such as #
+
+WORK TAGS:
+<work>*ACTIONS*</work>
+
+
+<playback file name error-file action digit-timeout input-timeout loops asr-engine asr-grammar><bind action strip>*EXPR*</bind></playback>
+		    : Plays a file and optionally collects input.
+
+ATTRS:
+file                : The file
+name                : Param name to save result.
+error-file          : Error file to play on invalid input.
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
+digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
+input-timeout       : Timeout waiting for more digits in a multi-digit input.
+loops               : max times to play the file when input bindings are present.
+asr-engine          : ASR engine to use
+asr-grammar         : ASR grammar to use
+
+
+<vmname file name action digit-timeout input-timeout loops><bind action strip>*EXPR*</bind></playback>
+		    : Plays a vm name and optionally collects input.
+
+ATTRS:
+file                : The file
+name                : Param name to save result.
+error-file          : Error file to play on invalid input.
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
+digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
+input-timeout       : Timeout waiting for more digits in a multi-digit input.
+loops               : max times to play the file when input bindings are present.
+
+
+
+
+
+<record file name error-file action digit-timeout input-timeout><bind action strip>*EXPR*</bind></record>
+		    : Records a file, optionally collects input and posts the file back to the target url.
+
+ATTRS:
+file                : The file
+name                : Param name to save result.
+error-file          : Error file to play on invalid input.
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
+digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
+input-timeout       : Timeout waiting for more digits in a multi-digit input.
+
+
+
+
+
+<pause name error-file action digit-timeout input-timeout loops milliseconds><bind action strip>*EXPR*</bind></pause>
+		    : Waits for input for a specific amount of time.
+
+ATTRS:
+milliseconds        : Number of milliseconds to pause
+name                : Param name to save result.
+error-file          : Error file to play on invalid input.
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
+digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
+input-timeout       : Timeout waiting for more digits in a multi-digit input.
+loops               : max times to play the file when input bindings are present.
+
+
+
+
+
+<speak file name error-file action digit-timeout input-timeout loops engine voice><bind action strip>*EXPR*</bind></speak>
+		    : Read Text to Speech with optional input.
+
+ATTRS:
+file                : The file
+name                : Param name to save result.
+error-file          : Error file to play on invalid input.
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
+digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
+input-timeout       : Timeout waiting for more digits in a multi-digit input.
+loops               : max times to play the file when input bindings are present.
+engine              : tts engine to use.
+voice               : tts voice to use.
+
+
+
+
+
+<say file name error-file action digit-timeout input-timeout loops language type method gender><bind action strip>*EXPR*</bind></say>
+		    : Use the FS say engine to iterate sounds to similate a human speaker.
+
+ATTRS:
+file                : The file
+name                : Param name to save result.
+error-file          : Error file to play on invalid input.
+action              : Change the new target url.
+temp-action	    : Change url to submit to. just for the next loop.
+digit-timeout       : Timeout waiting for digits after file plays (when input bindings are present)
+input-timeout       : Timeout waiting for more digits in a multi-digit input.
+loops               : max times to play the file when input bindings are present.
+language            : language
+type                : type (fs param)
+method              : method (fs param)
+gender              : gender (fs param)
+
+
+
+
+
+<execute application data action>*DATA*</execute>
+		    : Execute a FreeSWITCH app.
+ATTRS:
+application         : The app to run
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
+data		    : Alternate source for app data
+*DATA*              : The app data
+
+
+
+<sms to action>DATA</sms>
+		    : Send a SMS message.
+ATTRS:
+to                  : The dest number
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
+*DATA*              : The message data
+
+
+
+
+
+<dial context dialplan caller-id-name caller-id-number action>*DATA*</dial>
+		    : Place an outbound call or transfer.
+
+ATTRS:
+context             : Dialplan context.
+dialplan            : Dialplan dialplan.
+caller-id-name      : Caller ID Name.
+caller-id-number    : Caller ID Number.
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
+*DATA*              : Number to dial or originate string
+
+
+
+
+
+<recordCall limit name action>
+		    : begin recording the call.  The file will be posted when the call ends.
+
+ATTRS:
+limit               : Timeout in seconds.
+name                : Name to use for input values.
+action              : URL action to use.
+temp-action	    : Change url to submit to. just for the next loop.
+
+
+
+
+<conference profile action>
+		    : Start a conference call.
+
+ATTRS:
+profile             : Conference profile to use.
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
+
+
+
+<hangup cause action>
+		    : Hangup the call
+
+ATTRS:
+cause               : Hangup cause
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
+
+
+
+<break>
+		    : Exit the httapi application and continue in the dialplan.
+
+
+
+
+
+<log level clean action>
+		    : Write a log line to fs_cli, console, logs, etc.
+ATTRS:
+level               : The log level to use.
+clean               : If true do not print log prefix.
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
+
+<continue action>
+                    : Just continue (no-op)
+
+ATTRS:
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
+
+
+<getVar action temp-action permanent/>
+                    : Get a Channel variable (depends on permissions)
+
+ATTRS:
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
+permanent	    : Add as a permanent param or just once.
+
+
+<voicemail action temp-action check auth-only profile domain id/>
+                    : Call the voicemail app without requiring "execute" permissions
+
+ATTRS:
+action		    : Change url to submit to.
+temp-action	    : Change url to submit to. just for the next loop.
+check		    : true to check (omit to leave)
+auth-only	    : authenticate only and move on
+profile		    : profile name to use (omit for "default")
+domain		    : domain to use (omit for global domain variable)
+id		    : id to use (omit to prompt for id)
+
+
+
+
+
+CONFIGURATION:
+
+<settings>:
+<param name="" value="">
+debug                           : <true|false>          false           Print debug data
+file-cache-ttl                  : <number of sec>       300             How long to wait before checking the server to see if audio file has changed.
+file-not-found-expires          : <number of sec>       300             How long to still preserve cached audio files that are not found by the server.
+
+<profile name="<name>">         : CREATE NEW PROFILE TO REFERENCE BY NAME
+gateway-url                     : <string>              ""              Initial URL to connect to.
+gateway-credentials             : <string>              ""              HTTP credentials.
+auth-scheme                     : <string               >               basic   auth scheme to use. [basic|digest|NTLM|GSS-NEGOTIATE|any]
+disable-100-continue            : <true|false>          true            Disable the 100 continue feature.
+method                          : <string>              ""              METHOD name to send.
+timeout                         : <number>              0               Timeout waiting for response.
+enable-cacert-check             : <true|false>          false           Check CA/CERT.
+ssl-cert-path                   : <string>              ""              path to file.
+ssl-key-path                    : <string>              ""              path to file.
+ssl-key-password                : <string>              ""              password to use.
+ssl-version                     : <string>              ""              ssl version
+ssl-cacert-file                 : <string>              ""              CA/CERT file.
+enable-ssl-verifyhost           : <true|false>          ""              Verify ssl host.
+cookie-file                     : <string>              ""              Path to file to use for cookie.
+enable-post-var                 : <param_name>          ""              Specify specifc param names ok to send.
+bind-local                      : <string>              ""              Interface to bind to.
+default-profile                 : <string>              default         Profile to use when not specified.
+user-agent			: <string>		mod_httapi/1.0	User Agent header value.
+
+
+<permissions>: * = default
+<permission name="" value="true">
+
+*set-params                     : <params> tag can be parsed for session params.
+set-vars                        : <variables> tag can be parsed to set channel vars.
+extended-data                   : Extended data is sent like full channel event data.
+execute-apps                    : <execute> tag is enabled to execute apps.
+expand-vars			: Allow expansion of FS ${variables}. (this opens up all FSAPI calls)
+*dial                           : <dial> tag is enabled allowing outbound dialing.
+dial-set-context                : <dial context=""> context attribute is permitted.
+dial-set-dialplan               : <dial dialplan=""> dialplan attribute is permitted.
+dial-set-cid-name               : <dial cid_name=""> cid_name attribute is permitted.
+dial-set-cid-number             : <dial cid_number=""> cid_number attribute is permitted.
+dial-full-originate             : <dial> full originate syntax is permitted instead of just a number.
+*conference                     : <conference> tag is enabled allowing creation of conferences.
+conference-set-profile          : <conference profile=""> attribure is permitted.
+all                             : all permissions are set
+none                            : no permissions are set
+
+

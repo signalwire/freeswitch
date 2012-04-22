@@ -1,0 +1,6 @@
+opt/freeswitch/conf/tones.conf
+opt/freeswitch/conf/autoload_configs/freetdm.conf.xml
+opt/freeswitch/conf/pika.conf
+opt/freeswitch/conf/freetdm.conf
+opt/freeswitch/conf/wanpipe.conf
+opt/freeswitch/conf/zt.conf

@@ -1,0 +1,8 @@
+## Type:                string
+## Default:             ""
+## Config:              ""
+## ServiceRestart:      freeswitch
+#
+# if not empty: parameters for freeswitch
+#
+FREESWITCH_PARAMS=""

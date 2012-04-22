@@ -1,0 +1,22 @@
+
+DEPENDENCIES
+============
+
+The State Machine Compiler is needed for the freepy connection library to function.
+
+    * wget http://ufpr.dl.sourceforge.net/sourceforge/smc/smc_5_0_0.tgz
+    * tar xvfz smc_5_0_0.tgz
+    * cd smc_5_0_0
+    * cd lib
+    * python setup.py install 
+
+PYTHONPATH
+==========
+
+- Add /path/to/freeswitch/scripts/socket to your PYTHONPATH
+
+TESTING
+=======
+
+- Copy/Paste the code from test1() in fshelper.py to your own test module
+- Adapt code as needed and run

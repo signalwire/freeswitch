@@ -1,0 +1,427 @@
+2007-04-25  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua interface v4 frozen (5:0:5) for the 1.12.6 release
+
+2007-02-09  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua interface v4 frozen (4:0:4) for the 1.12.5 release
+
+2006-10-12  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua interface v3 frozen (3:0:3) for the 1.12.3 release
+
+2006-09-26  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua interface v2 frozen (2:0:2) for the 1.12.2 release
+
+2006-08-30  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* nua: added tag nutag_refer_with_id.
+
+2006-08-28  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua interface v2 opened to development, version to 2:0:2.
+
+2006-08-25  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Added urltag_scan().
+
+2006-08-23  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* nta.c, nta.h: added nta_leg_make_replaces(), nta_leg_by_replaces().
+
+	* nua: event watcher (nua_subscribe, nua_watcher) now tries to re-establish
+	  subscription if the subscription was terminated with reason "deactivated" or
+	  "probation". Likewise, if SUBSCRIBE was returned a suitable error response
+	  with Retry-After header, nua tries to re-establish subscription after
+	  given interval.
+
+2006-07-27  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua interface v1 frozen (1.12.1), version to 1:0:1.
+
+2006-06-16  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua interface v0 frozen (1.12.0), version to 0:0:0.
+
+2005-11-28  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* <SUBDIRS>/Doxyfile: Fixed the use of doxytags. Now
+	a separate 'doxytags_MODNAME' file is created for each
+	module.
+
+2005-11-15  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* <SUBDIRS>/Makefile.am: Changed to use the 'include_sofia_HEADERS'
+	variable for listing public library headers. The variable
+	is defined in the top-level configure.ac.
+
+2005-10-27  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Always including stun library.
+
+    M ./libsofia-sip-ua/Makefile.am -6 +3
+
+  * Added rule to make missing module libraries in libsofia-sip-ua/sofia.am
+
+    M ./libsofia-sip-ua/sofia.am -1 +6
+
+  * Added LDFLAG -static to all test programs in their Makefile.am
+
+    M ./libsofia-sip-ua/bnf/Makefile.am -1 +1
+    M ./libsofia-sip-ua/http/Makefile.am -2 +2
+    M ./libsofia-sip-ua/ipt/Makefile.am -1 +2
+    M ./libsofia-sip-ua/iptsec/Makefile.am +2
+    M ./libsofia-sip-ua/msg/Makefile.am -2 +2
+    M ./libsofia-sip-ua/nta/Makefile.am -1 +1
+    M ./libsofia-sip-ua/nth/Makefile.am +2
+    M ./libsofia-sip-ua/nua/Makefile.am +2
+    M ./libsofia-sip-ua/sdp/Makefile.am +3
+    M ./libsofia-sip-ua/sip/Makefile.am +4
+    M ./libsofia-sip-ua/soa/Makefile.am +2
+    M ./libsofia-sip-ua/sresolv/Makefile.am -2 +2
+    M ./libsofia-sip-ua/stun/Makefile.am -6 +1
+
+2005-10-14  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	  * Shell syntax exercise.
+
+	    M ./autogen.sh -4 +4
+
+2005-10-13  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* <SUBDIRS>/Makefile.am: fixed COVERAGE_INPUT.
+
+2005-10-13  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* <SUBDIRS>/Makefile.am: Build all submodules as proper shared
+	libraries (noinst_LTLIBRARIES). Fixes sf.net:#1264030.
+
+2005-09-09  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* darcs changes --from-tag pessi-darcs-1:
+
+	Thu Sep  8 21:50:24 EEST 2005  Pekka.Pessi@nokia.com
+	  * There is no separate TLS test anymore.
+
+	    M ./tport/Makefile.am -1 +1
+
+	Thu Sep  8 21:36:46 EEST 2005  Pekka.Pessi@nokia.com
+	  * Logging.
+
+	    M ./nua/nua_stack.c -4 +2
+
+	Thu Sep  8 21:36:39 EEST 2005  Pekka.Pessi@nokia.com
+	  * Added tests for tport_convert_addr.
+
+	    M ./tport/tport_test.c +22
+
+	Thu Sep  8 21:36:27 EEST 2005  Pekka.Pessi@nokia.com
+	  * Fixed receiving empty SigComp message.
+
+	    M ./tport/tport.c +7
+
+	Thu Sep  8 21:32:48 EEST 2005  Pekka.Pessi@nokia.com
+	  * Updated ChangeLogs.
+
+	    M ./nta/ChangeLog -2 +10
+
+	Thu Sep  8 21:32:37 EEST 2005  Pekka.Pessi@nokia.com
+	  * Updated ChangeLog.
+
+	    M ./iptsec/ChangeLog +11
+
+	Thu Sep  8 21:31:16 EEST 2005  Pekka.Pessi@nokia.com
+	  * Added more tests.
+
+	    M ./nta/nta.c -2 +2
+	    M ./nta/nta_test.c -2 +44
+
+	Thu Sep  8 21:30:19 EEST 2005  Pekka.Pessi@nokia.com
+	  * Handling changes in alias list.
+
+	    M ./nta/nta.c -9 +22
+	    M ./nta/nta_test.c +1
+
+	Thu Sep  8 21:18:47 EEST 2005  Pekka.Pessi@nokia.com
+	  * Gcc4 fixes.
+
+	    M ./ipt/base64.c -1 +1
+	    M ./iptsec/auth_module.c -1 +1
+	    M ./iptsec/auth_plugin_delayed.c +4
+	    M ./nua/nua_stack.c -1 +1
+	    M ./nua/nua_tag.c -1 +1
+	    M ./nua/nua_tag.h -5 +5
+	    M ./su/htable2.h -1 +1
+	    M ./su/su.c -1 +1
+	    M ./tport/tport.c -7 +7
+
+	Thu Sep  8 21:16:39 EEST 2005  Pekka.Pessi@nokia.com
+	  * Added tests for tport_shutdown(). Do not assert() on invalid
+	    input.
+
+	    M ./tport/tport.c -2
+	    M ./tport/tport_test.c +5
+
+	Thu Sep  8 21:13:18 EEST 2005  Pekka.Pessi@nokia.com
+	  * Log when password file is read.
+
+	    M ./iptsec/auth_module.c +3
+
+	Thu Sep  8 21:12:49 EEST 2005  Pekka.Pessi@nokia.com
+	  * Allow empty allow list.
+
+	    M ./iptsec/auth_module.c -1 +1
+
+	Thu Sep  8 21:12:26 EEST 2005  Pekka.Pessi@nokia.com
+	  * Use unsigned as auth_htable_t hash type.
+
+	    M ./iptsec/auth_module.c -5 +5
+
+	Thu Sep  8 21:10:23 EEST 2005  Pekka.Pessi@nokia.com
+	  * Added auth_digest_credentials().
+	  Use opaque to match Authorization header.
+
+	    M ./iptsec/auth_digest_test.c -2 +3
+	    M ./iptsec/auth_module.c -1 +78
+	    M ./iptsec/auth_plugin.h +4
+
+	Thu Sep  8 21:07:57 EEST 2005  Pekka.Pessi@nokia.com
+	  * Fixed gcc4 problems with tag classes.
+
+	    M ./http/http_tag.h.in +3
+	    M ./msg/msg_mime_protos.h.in +3
+	    M ./sdp/sdp_tag.h +3
+	    M ./su/su_tag_class.h +12
+	    M ./su/su_tag_inline.h -1 +1
+	    M ./url/url_tag_class.h +3
+
+	Thu Sep  8 21:06:22 EEST 2005  Pekka.Pessi@nokia.com
+	  * Added sip_security_client_select().
+
+	    M ./sip/sip_util.c -37 +14
+	    M ./sip/sip_util.h +4
+
+	Thu Sep  8 19:32:19 EEST 2005  Pekka.Pessi@nokia.com
+	  * Not using su_home_deinit() to destroy homes that are not
+	    initialized.
+
+	    M ./nth/nth_server.c -3 +2
+	    M ./nua/nua.c -2 +1
+	    M ./su/su_vector.c -2 +1
+
+	Thu Sep  8 19:06:31 EEST 2005  Pekka.Pessi@nokia.com
+	  * Moved function types to msg_types.h.
+
+	    M ./msg/msg_header.h -7
+	    M ./msg/msg_types.h +9
+
+	Thu Sep  8 18:35:12 EEST 2005  Pekka.Pessi@nokia.com
+	  * Fixed su_clone_start() return value.
+
+	    M ./su/su_root.c -1 +1
+
+	Thu Sep  8 18:34:26 EEST 2005  Pekka.Pessi@nokia.com
+	  * Removed SIP_DLL_VAR.
+
+	    M ./sip/sip_dll.h -7
+
+	Thu Sep  8 18:29:27 EEST 2005  Pekka.Pessi@nokia.com
+	  * Avoid __func__.
+
+	    M ./sresolv/sresolv.c -3 +4
+
+	Thu Sep  8 18:29:09 EEST 2005  Pekka.Pessi@nokia.com
+	  * Fix includes.
+
+	    M ./nta/nta.c -2 +1
+	    M ./sresolv/sresolv.c -4 +7
+	    M ./sresolv/sresolv.h -1 +1
+
+	Thu Sep  8 18:26:35 EEST 2005  Pekka.Pessi@nokia.com
+	  * Using autoconf to figure out 64-bit types. Avoid off_t and
+	    64-bit constants.
+
+	    M ../configure.ac +6
+	    M ./nta/sl_read_payload.c -1 +1
+	    M ./nua/nua_stack.c -6 +5
+	    M ./sdp/sdp_parse.c -3 +2
+	    M ./sdp/sdp_print.c -5 +5
+	    M ./sip/validator.c -18 +18
+	    M ./soa/soa.c -3 +4
+	    M ./su/su_time.c -1 +1
+	    M ./su/tstdef.h -3 +3
+
+	Thu Sep  8 18:17:58 EEST 2005  Pekka.Pessi@nokia.com
+	  * Using RETSIGTYPE.
+
+	    M ../configure.ac -3 +4
+	    M ./nth/http-server.c -2 +2
+	    M ./soa/test_soa.c -1 +3
+	    M ./su/su_test.c -1 +1
+	    M ./su/su_timer_test.c -1 +1
+
+	Thu Sep  8 18:13:35 EEST 2005  Pekka.Pessi@nokia.com
+	  * Fixed macro expansion problem with VC6
+
+	    M ./nta/nta_test.c -2 +2
+
+	Thu Sep  8 18:12:45 EEST 2005  Pekka.Pessi@nokia.com
+	  * Compile without sresolv, too.
+
+	    M ./nta/nta.c -3 +5
+
+	Thu Sep  8 18:12:16 EEST 2005  Pekka.Pessi@nokia.com
+	  * Fixed const/non-const problems with gcc4/vc6.
+
+	    M ./msg/msg_mime.c -6 +6
+	    M ./msg/msg_parser.c -1 +1
+	    M ./nta/nta.c -4 +4
+	    M ./sip/sip_basic.c -1 +1
+	    M ./sip/sip_security.c -1 +1
+	    M ./sip/sip_util.c -2 +2
+	    M ./su/htable.h -10 +10
+
+	Thu Sep  8 18:06:04 EEST 2005  Pekka.Pessi@nokia.com
+	  * Moved msg_hclass_t definition into msg_types.h
+
+	    M ./msg/msg_header.h -37
+	    M ./msg/msg_types.h +40
+
+	Thu Sep  8 18:05:32 EEST 2005  Pekka.Pessi@nokia.com
+	  * Silenced vc6 warning.
+
+	    M ./iptsec/auth_module.c -1 +1
+
+	Thu Sep  8 18:05:07 EEST 2005  Pekka.Pessi@nokia.com
+	  * Not using __func__.
+
+	    M ./iptsec/auth_digest.c -2 +2
+
+	Thu Sep  8 18:04:38 EEST 2005  Pekka.Pessi@nokia.com
+	  * Silenced gcc4 warning.
+
+	    M ./tport/tport.c -1 +1
+
+	Thu Sep  8 18:04:16 EEST 2005  Pekka.Pessi@nokia.com
+	  * Better following autoconf macros
+
+	    M ./tport/tport.c +9
+
+	Thu Sep  8 18:02:53 EEST 2005  Pekka.Pessi@nokia.com
+	  * Using TPORT_DLL.
+
+	    M ./tport/tport.h -10 +19
+
+	Thu Sep  8 18:01:58 EEST 2005  Pekka.Pessi@nokia.com
+	  * Not using IS_EXCLUDED_MASK.
+
+	    M ./url/url.c -1 +6
+
+	Thu Sep  8 18:01:17 EEST 2005  Pekka.Pessi@nokia.com
+	  * Explicitly using <errno.h>
+
+	    M ./msg/msg.c +2
+	    M ./msg/msg_mclass.c +1
+	    M ./msg/msg_mime.c +1
+	    M ./msg/msg_parser.c +1
+	    M ./nta/nta.c +3
+	    M ./nth/nth_client.c +2
+	    M ./nth/nth_server.c +2
+	    M ./su/su_port.c +1
+	    M ./su/su_proxy.c +1
+	    M ./su/su_root.c +1
+
+	Thu Sep  8 17:54:28 EEST 2005  Pekka.Pessi@nokia.com
+	  * Using http_off_t instead of off_t.
+
+	    M ./http/http_basic.c -5 +5
+
+	Thu Sep  8 18:56:58 EEST 2005  Pekka.Pessi@nokia.com
+	  * Not using su_home_deinit().
+
+	    M ./nua/nua.c -3 +2
+
+	Thu Sep  8 16:40:30 EEST 2005  Pekka.Pessi@nokia.com
+	  * Adding soa_asynch.c
+
+	    A ./soa/soa_asynch.c
+
+	Thu Sep  8 03:23:00 EEST 2005  Pekka.Pessi@nokia.com
+	  * stab 2 at soa
+	  Added more functionality to soa. Stab at asynchronous API, too.
+
+	    M ./soa/Makefile.am -1 +2
+	    M ./soa/soa.c -146 +564
+	    M ./soa/soa.h -5 +24
+	    M ./soa/soa_add.h -2 +5
+	    M ./soa/soa_session.h -21 +48
+	    M ./soa/soa_static.c -30 +89
+	    M ./soa/soa_tag.c +64
+	    M ./soa/test_soa.c -7 +224
+	    M ./m4/sac-su2.m4 -1 +1
+
+	Thu Sep  8 03:12:28 EEST 2005  Pekka.Pessi@nokia.com
+	  * really run sdp tests
+	  Now really running SDP tests.
+
+	    M ./sdp/run-tests -1 +1
+
+	Thu Sep  8 03:11:35 EEST 2005  Pekka.Pessi@nokia.com
+	  * su_home_new and su_home_unref
+	  Added su_home_new() and su_home_unref().
+
+	  Fixed su_home_mutex_lock() and su_home_mutex_unlock().
+
+	  Slightly changed semantics of su_home_clone() versus
+	  su_home_threadsafe().
+
+	    M ./http/http_test.c -6 +6
+	    M ./msg/msg_test.c -2 +2
+	    M ./su/htable_test.c +3
+	    M ./su/su_alloc.c -173 +337
+	    M ./su/su_alloc.h -10 +18
+	    M ./su/su_alloc_lock.c -8 +31
+	    M ./su/su_alloc_test.c -5 +12
+
+	Thu Sep  8 03:07:17 EEST 2005  Pekka.Pessi@nokia.com
+	  * More liberal sdp parsing for config files.
+	  Be more liberal when parsing config files
+	  (do not require v=, accept -1 as len argument).
+
+	    M ./sdp/sdp_parse.c -9 +25
+
+	Thu Sep  8 01:05:02 EEST 2005  Pekka.Pessi@nokia.com
+	  * su_msg_is_non_null
+	  Added su_msg_is_non_null().
+
+	    M ./su/su_wait.h +11
+
+	Thu Sep  8 01:03:31 EEST 2005  Pekka.Pessi@nokia.com
+	  * sdp_parser_home
+	  Added sdp_parser_home()
+
+	    M ./sdp/sdp.h +2
+	    M ./sdp/sdp_parse.c +10
+
+2005-09-08  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Makefile.am: Workaround for automake bug related to adding
+	custom targets to RECURSIVE_TARGETS.
+
+2005-08-25  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Makefile.am: soa depends on ipt and sip, so has to
+	be after them in SUBDIRS.
+
+2005-08-17  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Fixed BEGIN()/END() pairs in test programs.
+
+2005-08-04  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Added soa module.
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua created.

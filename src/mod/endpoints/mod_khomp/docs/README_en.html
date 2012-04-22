@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"><title>Mod Khomp: README: en</title></head><body><a name="Quick_guide" id="Quick_guide"></a><h1> <span class="mw-headline"> Quick guide </span></h1>
+<p>After installing the card in the system and run the installation program for the first time, the <i>drivers</i> and Khomp services will be added at system startup, and automatically loaded.
+</p><p>If your system has at least one E1 trunk card and / or an FXO card, a basic setup screen will be presented at the end of the process, questioning signaling parameters - if there are signs E1 - and/or performing the adjustment cadences - where that FXO cards.
+</p><p>If all these steps were performed successfully, proceed to the item <b>Using Khomp Endpoint</b>. If a problem occurs, see the <a href=".htmlMod_Khomp/User_Guide" title="Mod Khomp/User Guide">User Guide</a>, in the section <a href=".htmlMod_Khomp/User_Guide#Troubleshooting" title="Mod Khomp/User Guide">Troubleshooting</a>.
+</p>
+<a name="Using_the_Khomp_Endpoint" id="Using_the_Khomp_Endpoint"></a><h1> <span class="mw-headline"> Using the Khomp Endpoint </span></h1>
+<p>After installation and startup services required by Khomp, FreeSWITCH can now be loaded or initialized.
+</p>
+<ul><li><b>WARNING</b>: Avoid using the <b>-nort</b>, as it disables real-time scheduling, it is essential that the <b>FreeSwitch</b> are using real-time scheduling, especially if it is running side-by-side with <i>web</i> servers or database . Use the <b>-nort</b> may result in loss of audio quality, causing a serious commitment on the progress of system connections.
+</li></ul>
+<p>After initialization of FreeSWITCH, you can verify that the module was loaded Khomp through the following command: <br />
+</p>
+<pre> freeswitch@hostname&gt; module_exists mod_khomp
+</pre>
+<p>The next line should answer something like:
+</p>
+<pre> true
+</pre>
+<p>To verify that the FreeSwitch recognize all the cards, type:
+</p>
+<pre> freeswitch@hostname&gt; khomp summary
+</pre>
+<p>The output of this command will show details of all cards accepted.
+</p><p>In the case of an E1 card, you can check the status of links with the following command:
+</p>
+<pre> freeswitch@hostname&gt; khomp show links
+</pre>
+<p>The state of individual channels, in turn, can be measured with the command:
+</p>
+<pre> freeswitch@hostname&gt; khomp show channels
+</pre>
+<p>For more details on the commands of the Endpoint khomp type in the console of FreeSWITCH:
+</p>
+<pre> freeswitch@hostname&gt; help khomp
+</pre>
+<ul><li><b>IMPORTANT</b>: To make full use of your card Khomp, you must configure your dialing rules, either through the extension.conf or from an external application by setting specific rules for conduct by receiving connections. <br /> In the <a href=".htmlMod_Khomp/User_Guide" title="Mod Khomp/User Guide">User Guide</a>, information can be found on the format of input contexts (responsible for receiving calls) and on the options available on application Dial (responsible for make calls) that can be used with the Endpoint Khomp, and other special features provided by it.
+</li></ul>
+<p><br />
+</p></body></html>

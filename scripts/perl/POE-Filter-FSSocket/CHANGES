@@ -1,0 +1,70 @@
+=========================
+2006-10-23 00:19:14 v0_07
+=========================
+
+  2006-10-23 00:19:14 (r7) by ptinsley
+
+    Potential fix for default POE modules on debian with perl 5.8.4, but I
+        I can't be sure because we can't make the problem happen again.
+
+=========================
+2006-10-23 00:15:32 v0_06
+=========================
+
+  2006-10-23 00:15:32 (r6) by ptinsley
+
+    reworked the handling of Content-Length based replies to deal with replies
+      that don't have \n at the end of their data block
+    Updated the curses example (fsconsole.pl)
+     - Added command/reply output
+
+=========================
+2006-10-14 00:08:00 v0_05
+=========================
+
+  2006-10-14 00:08:00 (r5) by ptinsley
+
+    Added some "bullet proofing" in the module to handle bad/unknown input
+    Updated the curses example (fsconsole.pl)
+    Added debug and strict parsing as part of the bullet proofing
+     to enable debug add debug => 1 in your new() and if you want the module
+     to croak when it doesn't properly parse something use strict => 1 in the
+     new().  Example Poe::Filter::FSSocket->new(debug => 1, strict => 1)
+     The default for debug and strict is 0
+
+=========================
+2006-10-14 00:08:00 v0_04
+=========================
+
+  2006-10-14 00:08:00 (r4) by ptinsley
+
+    Fixed support for log/data
+    Added an example that is a quick curses console for freeswitch
+
+=========================
+2006-09-18 21:08:00 v0_03
+=========================
+
+  2006-09-18 21:08:00 (r3) by ptinsley
+
+    Added support for log/data
+
+=========================
+2006-09-17 23:57:00 v0_02
+=========================
+
+  2006-09-17 23:57:00 (r2) by ptinsley
+
+    Added support for api/response type, data ends up in api-response variable.
+
+=========================
+2006-09-17 22:19:20 v0_01
+=========================
+
+  2006-09-17 22:19:20 (r1) by ptinsley
+
+    Initial package of the module.
+
+==============
+End of Excerpt
+==============

@@ -1,0 +1,48 @@
+// sofiatest component properties
+
+// General properties
+TARGET          torture_su_port.exe
+TARGETTYPE      exe
+CAPABILITY        ALL -TCB
+UID             0x100039CE 0x1F001AF1
+VENDORID 			0
+OPTION CW      -dialect c99 -inline on
+
+START RESOURCE  torture_su_port_reg.rss
+#ifdef WINSCW
+TARGETPATH 	    \private\10003a3f\apps
+#else
+TARGETPATH 	    \private\10003a3f\import\apps
+#endif
+END //RESOURCE
+
+//EPOCHEAPSIZE 4 4194304 // min. 4KB ja max 4MB
+
+// Allow global writeable static data
+EPOCALLOWDLLDATA
+
+MACRO 			SYMBIAN
+MACRO       IN_LIBSOFIA_SIP_UA
+
+// Source files
+SOURCEPATH 			..\..\libsofia-sip-ua\su
+SOURCE          torture_su_port.c
+
+
+USERINCLUDE		..
+USERINCLUDE		..\..\libsofia-sip-ua\su
+SYSTEMINCLUDE		..\..\libsofia-sip-ua\su
+SYSTEMINCLUDE		..
+//USERINCLUDE		..\..\libsofia-sip-ua\su\sofia-sip
+
+SYSTEMINCLUDE \Epoc32\include
+SYSTEMINCLUDE	\Epoc32\include\osextensions\stdapis
+
+
+// Library dependencies
+STATICLIBRARY	libcrt0.lib
+LIBRARY       libc.lib
+LIBRARY				libsofia-sip-ua.lib
+LIBRARY				euser.lib
+LIBRARY				libpthread.lib
+

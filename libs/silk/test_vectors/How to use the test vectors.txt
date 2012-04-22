@@ -1,0 +1,24 @@
+Use the following scripts to verify the decoder implementation:
+
+o test_encoder.bat / test_encoder.sh
+
+  Make sure the encoder executable to be tested exists in the parent directory, and run 
+  test_encoder.bat (win) or test_encoder.sh (linux/mac). This will run the encoder 
+  and compare the output bitstream with the reference bitstream files. The result is 
+  written to test_encoder_report.txt.
+  For each file, the bitstreams are either bit-exact or they differ. The compatibility 
+  test is passed if each file is reported as "PASS".
+
+o test_decoder.bat / test_decoder.sh
+
+  Make sure the decoder executable to be tested exists in the parent directory, and run 
+  test_decoder.bat (win) or test_decoder.sh (linux/mac). This will run the decoder 
+  and compare the output audio file with the reference audio files. The result is 
+  written to test_decoder_report.txt.
+  For each file, the bitstreams are either bit-exact or they match up to a certain
+  average weighted SNR. The compatibility test is passed if each file is reported as 
+  "PASS".
+
+
+NOTE: When using the shell script, make sure it is marked as executable.
+      This can be done by: chmod +x *.sh

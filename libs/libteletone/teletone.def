@@ -1,0 +1,13 @@
+EXPORTS
+teletone_run
+teletone_mux_tones
+teletone_destroy_session
+teletone_init_session
+teletone_set_map
+teletone_set_tone
+teletone_goertzel_update
+teletone_dtmf_get
+teletone_dtmf_detect
+teletone_dtmf_detect_init
+teletone_multi_tone_detect
+teletone_multi_tone_init

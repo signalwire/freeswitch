@@ -1,0 +1,18 @@
+#
+# FreeTDM pkg-config file
+#
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+modulesdir=@modinstdir@
+
+Name: FreeTDM
+Description:
+Version: @PACKAGE_VERSION@
+URL: http://www.openzap.org/
+Requires:
+Conflicts:
+Libs: -L${libdir} -lfreetdm
+Libs.private: -lm
+Cflags: -I${includedir}

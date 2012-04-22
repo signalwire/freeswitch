@@ -1,0 +1,954 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DOCUMENT type="Advanced Installer" CreateVersion="6.4" version="6.4" modules="freeware" RootPath="." Language="en">
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiPropsComponent">
+    <ROW Property="ALLUSERS" Value="2"/>
+    <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*"/>
+    <ROW Property="ARPURLINFOABOUT" Value="http://www.freeswitch.org"/>
+    <ROW Property="BannerBitmap" Value="AI_RES_default_banner.bmp" Type="1"/>
+    <ROW Property="DialogBitmap" Value="AI_RES_default_dialog.bmp" Type="1"/>
+    <ROW Property="Manufacturer" Value="FreeSWITCH" ValueLocId="*"/>
+    <ROW Property="ProductCode" Value="1033:{F8ED99E8-11F6-4D1E-816F-7B246E181816} "/>
+    <ROW Property="ProductLanguage" Value="1033"/>
+    <ROW Property="ProductName" Value="FreeSWITCH" ValueLocId="*"/>
+    <ROW Property="ProductVersion" Value="1.0.0"/>
+    <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
+    <ROW Property="UpgradeCode" Value="{ABC0148E-27D2-44E5-A8A9-F6FDD9FDA592}"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiDirsComponent">
+    <ROW Directory="APPDIR" Directory_Parent="TARGETDIR" DefaultDir="APPDIR:." IsPseudoRoot="1"/>
+    <ROW Directory="SHORTCUTDIR" Directory_Parent="TARGETDIR" DefaultDir="SHORTC~1|SHORTCUTDIR" IsPseudoRoot="1"/>
+    <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
+    <ROW Directory="__1_DIR" Directory_Parent="conference_DIR" DefaultDir="8000"/>
+    <ROW Directory="__2_DIR" Directory_Parent="currency_DIR" DefaultDir="8000"/>
+    <ROW Directory="__3_DIR" Directory_Parent="digits_DIR" DefaultDir="8000"/>
+    <ROW Directory="__4_DIR" Directory_Parent="ivr_DIR" DefaultDir="8000"/>
+    <ROW Directory="__5_DIR" Directory_Parent="misc_DIR" DefaultDir="8000"/>
+    <ROW Directory="__6_DIR" Directory_Parent="phonetic_ascii_DIR" DefaultDir="8000"/>
+    <ROW Directory="__7_DIR" Directory_Parent="time_DIR" DefaultDir="8000"/>
+    <ROW Directory="__8_DIR" Directory_Parent="voicemail_DIR" DefaultDir="8000"/>
+    <ROW Directory="__9_DIR" Directory_Parent="music_DIR" DefaultDir="8000"/>
+    <ROW Directory="__DIR" Directory_Parent="ascii_DIR" DefaultDir="8000"/>
+    <ROW Directory="ascii_DIR" Directory_Parent="callie_DIR" DefaultDir="ascii"/>
+    <ROW Directory="autoload_configs_DIR" Directory_Parent="conf_DIR" DefaultDir="autolo~1|autoload_configs"/>
+    <ROW Directory="callie_DIR" Directory_Parent="us_DIR" DefaultDir="callie"/>
+    <ROW Directory="conf_DIR" Directory_Parent="APPDIR" DefaultDir="conf"/>
+    <ROW Directory="conference_DIR" Directory_Parent="callie_DIR" DefaultDir="confer~1|conference"/>
+    <ROW Directory="currency_DIR" Directory_Parent="callie_DIR" DefaultDir="currency"/>
+    <ROW Directory="db_DIR" Directory_Parent="APPDIR" DefaultDir="db"/>
+    <ROW Directory="de_DIR" Directory_Parent="lang_DIR" DefaultDir="de"/>
+    <ROW Directory="default_DIR" Directory_Parent="directory_DIR" DefaultDir="default"/>
+    <ROW Directory="demo_1_DIR" Directory_Parent="en_DIR" DefaultDir="demo"/>
+    <ROW Directory="demo_2_DIR" Directory_Parent="fr_DIR" DefaultDir="demo"/>
+    <ROW Directory="demo_DIR" Directory_Parent="de_DIR" DefaultDir="demo"/>
+    <ROW Directory="dialplan_DIR" Directory_Parent="conf_DIR" DefaultDir="dialplan"/>
+    <ROW Directory="digits_DIR" Directory_Parent="callie_DIR" DefaultDir="digits"/>
+    <ROW Directory="directory_DIR" Directory_Parent="conf_DIR" DefaultDir="direct~1|directory"/>
+    <ROW Directory="en_1_DIR" Directory_Parent="sounds_DIR" DefaultDir="en"/>
+    <ROW Directory="en_DIR" Directory_Parent="lang_DIR" DefaultDir="en"/>
+    <ROW Directory="extensions_DIR" Directory_Parent="dialplan_DIR" DefaultDir="extens~1|extensions"/>
+    <ROW Directory="external_DIR" Directory_Parent="sip_profiles_DIR" DefaultDir="external"/>
+    <ROW Directory="fr_DIR" Directory_Parent="lang_DIR" DefaultDir="fr"/>
+    <ROW Directory="internal_DIR" Directory_Parent="sip_profiles_DIR" DefaultDir="internal"/>
+    <ROW Directory="ivr_DIR" Directory_Parent="callie_DIR" DefaultDir="ivr"/>
+    <ROW Directory="jingle_profiles_DIR" Directory_Parent="conf_DIR" DefaultDir="jingle~1|jingle_profiles"/>
+    <ROW Directory="lang_DIR" Directory_Parent="conf_DIR" DefaultDir="lang"/>
+    <ROW Directory="log_DIR" Directory_Parent="APPDIR" DefaultDir="log"/>
+    <ROW Directory="misc_DIR" Directory_Parent="callie_DIR" DefaultDir="misc"/>
+    <ROW Directory="mod_DIR" Directory_Parent="APPDIR" DefaultDir="mod"/>
+    <ROW Directory="mrcp_profiles_DIR" Directory_Parent="conf_DIR" DefaultDir="mrcp_p~1|mrcp_profiles"/>
+    <ROW Directory="music_DIR" Directory_Parent="sounds_DIR" DefaultDir="music"/>
+    <ROW Directory="nat_DIR" Directory_Parent="sip_profiles_DIR" DefaultDir="nat"/>
+    <ROW Directory="phonetic_ascii_DIR" Directory_Parent="callie_DIR" DefaultDir="phonet~1|phonetic-ascii"/>
+    <ROW Directory="prop_base_DIR" Directory_Parent="svn_1_DIR" DefaultDir="prop-b~1|prop-base"/>
+    <ROW Directory="sip_profiles_DIR" Directory_Parent="conf_DIR" DefaultDir="sip_pr~1|sip_profiles"/>
+    <ROW Directory="sounds_DIR" Directory_Parent="APPDIR" DefaultDir="sounds"/>
+    <ROW Directory="svn_10_DIR" Directory_Parent="vm_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_11_DIR" Directory_Parent="en_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_12_DIR" Directory_Parent="demo_1_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_13_DIR" Directory_Parent="vm_1_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_14_DIR" Directory_Parent="fr_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_15_DIR" Directory_Parent="demo_2_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_16_DIR" Directory_Parent="vm_2_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_17_DIR" Directory_Parent="mrcp_profiles_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_18_DIR" Directory_Parent="sip_profiles_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_19_DIR" Directory_Parent="external_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_1_DIR" Directory_Parent="autoload_configs_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_20_DIR" Directory_Parent="internal_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_21_DIR" Directory_Parent="nat_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_22_DIR" Directory_Parent="yaml_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_2_DIR" Directory_Parent="dialplan_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_3_DIR" Directory_Parent="extensions_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_4_DIR" Directory_Parent="directory_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_5_DIR" Directory_Parent="default_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_6_DIR" Directory_Parent="jingle_profiles_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_7_DIR" Directory_Parent="lang_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_8_DIR" Directory_Parent="de_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_9_DIR" Directory_Parent="demo_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="svn_DIR" Directory_Parent="conf_DIR" DefaultDir="svn~1|.svn"/>
+    <ROW Directory="text_base_10_DIR" Directory_Parent="svn_11_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_11_DIR" Directory_Parent="svn_12_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_12_DIR" Directory_Parent="svn_13_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_13_DIR" Directory_Parent="svn_14_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_14_DIR" Directory_Parent="svn_15_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_15_DIR" Directory_Parent="svn_16_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_16_DIR" Directory_Parent="svn_17_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_17_DIR" Directory_Parent="svn_18_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_18_DIR" Directory_Parent="svn_19_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_19_DIR" Directory_Parent="svn_20_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_1_DIR" Directory_Parent="svn_1_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_20_DIR" Directory_Parent="svn_21_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_21_DIR" Directory_Parent="svn_22_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_2_DIR" Directory_Parent="svn_2_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_3_DIR" Directory_Parent="svn_3_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_4_DIR" Directory_Parent="svn_4_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_5_DIR" Directory_Parent="svn_5_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_6_DIR" Directory_Parent="svn_6_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_7_DIR" Directory_Parent="svn_8_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_8_DIR" Directory_Parent="svn_9_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_9_DIR" Directory_Parent="svn_10_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="text_base_DIR" Directory_Parent="svn_DIR" DefaultDir="text-b~1|text-base"/>
+    <ROW Directory="time_DIR" Directory_Parent="callie_DIR" DefaultDir="time"/>
+    <ROW Directory="us_DIR" Directory_Parent="en_1_DIR" DefaultDir="us"/>
+    <ROW Directory="vm_1_DIR" Directory_Parent="en_DIR" DefaultDir="vm"/>
+    <ROW Directory="vm_2_DIR" Directory_Parent="fr_DIR" DefaultDir="vm"/>
+    <ROW Directory="vm_DIR" Directory_Parent="de_DIR" DefaultDir="vm"/>
+    <ROW Directory="voicemail_DIR" Directory_Parent="callie_DIR" DefaultDir="voicem~1|voicemail"/>
+    <ROW Directory="yaml_DIR" Directory_Parent="conf_DIR" DefaultDir="yaml"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
+    <ROW Component="FreeSwitch.dll" ComponentId="{975114DE-F1B9-4F53-AE86-EF7BEDC5398D}" Directory_="APPDIR" Attributes="0" KeyPath="FreeSwitch.dll"/>
+    <ROW Component="FreeSwitch.exe" ComponentId="{F0FB5536-90BE-48A0-BB72-0C4C11B56075}" Directory_="APPDIR" Attributes="0" KeyPath="FreeSwitch.exe"/>
+    <ROW Component="SHORTCUTDIR" ComponentId="{5493DD93-D539-4A29-BAE6-831C685DFA13}" Directory_="SHORTCUTDIR" Attributes="0"/>
+    <ROW Component="a_m.wav" ComponentId="{6B0D654D-C13E-4268-AC27-30B4FCEBE96D}" Directory_="__7_DIR" Attributes="0" KeyPath="a_m.wav" Type="0"/>
+    <ROW Component="acl.conf.xml" ComponentId="{3B75AC86-FC21-420F-9E85-B06C3AEADF40}" Directory_="autoload_configs_DIR" Attributes="0" KeyPath="acl.conf.xml" Type="0"/>
+    <ROW Component="acl.conf.xml.svn_base" ComponentId="{DA9B56EC-8B55-4A3D-AD2F-976254F4CFD1}" Directory_="text_base_1_DIR" Attributes="0" KeyPath="acl.conf.xml.svn_base" Type="0"/>
+    <ROW Component="all_wcprops" ComponentId="{21774162-2F85-4A54-A6C6-18486653EF22}" Directory_="svn_DIR" Attributes="0" KeyPath="all_wcprops" Type="0"/>
+    <ROW Component="all_wcprops_1" ComponentId="{BE93D96D-E11F-4301-AF20-7A471FC5AE20}" Directory_="svn_1_DIR" Attributes="0" KeyPath="all_wcprops_1" Type="0"/>
+    <ROW Component="all_wcprops_10" ComponentId="{FFF7B045-DDE5-4D5C-8C4A-D0490028DD95}" Directory_="svn_10_DIR" Attributes="0" KeyPath="all_wcprops_10" Type="0"/>
+    <ROW Component="all_wcprops_11" ComponentId="{6A9A48B1-AF0D-40D7-BBD7-3363D83FAF83}" Directory_="svn_11_DIR" Attributes="0" KeyPath="all_wcprops_11" Type="0"/>
+    <ROW Component="all_wcprops_12" ComponentId="{6454F640-DE65-4701-B11E-87B9058DB368}" Directory_="svn_12_DIR" Attributes="0" KeyPath="all_wcprops_12" Type="0"/>
+    <ROW Component="all_wcprops_13" ComponentId="{BC7874C4-BA6B-4BDD-B068-76C9852BA7F9}" Directory_="svn_13_DIR" Attributes="0" KeyPath="all_wcprops_13" Type="0"/>
+    <ROW Component="all_wcprops_14" ComponentId="{DC6B284F-9F4A-4F5A-914A-843AC378CF4E}" Directory_="svn_14_DIR" Attributes="0" KeyPath="all_wcprops_14" Type="0"/>
+    <ROW Component="all_wcprops_15" ComponentId="{D44A921A-B83D-43F1-B5B8-AB216B50370B}" Directory_="svn_15_DIR" Attributes="0" KeyPath="all_wcprops_15" Type="0"/>
+    <ROW Component="all_wcprops_16" ComponentId="{8330E75A-B87D-4C12-925D-0FC6DB660DE5}" Directory_="svn_16_DIR" Attributes="0" KeyPath="all_wcprops_16" Type="0"/>
+    <ROW Component="all_wcprops_17" ComponentId="{AED1697C-1984-42B7-A1A5-AC9023EA043C}" Directory_="svn_17_DIR" Attributes="0" KeyPath="all_wcprops_17" Type="0"/>
+    <ROW Component="all_wcprops_18" ComponentId="{9A94C3EB-9E3B-4B0B-881F-222818E056DF}" Directory_="svn_18_DIR" Attributes="0" KeyPath="all_wcprops_18" Type="0"/>
+    <ROW Component="all_wcprops_19" ComponentId="{EB9903EA-6904-4F38-901C-9DDB5054D8AF}" Directory_="svn_19_DIR" Attributes="0" KeyPath="all_wcprops_19" Type="0"/>
+    <ROW Component="all_wcprops_2" ComponentId="{63F6A54A-B97C-49E8-91BD-4760FD47BD67}" Directory_="svn_2_DIR" Attributes="0" KeyPath="all_wcprops_2" Type="0"/>
+    <ROW Component="all_wcprops_20" ComponentId="{21CA60BF-59B8-48B5-9D8A-40E0D1F7A2BF}" Directory_="svn_20_DIR" Attributes="0" KeyPath="all_wcprops_20" Type="0"/>
+    <ROW Component="all_wcprops_21" ComponentId="{53F46FAF-AFCB-4AD3-9B8E-36F291AB786C}" Directory_="svn_21_DIR" Attributes="0" KeyPath="all_wcprops_21" Type="0"/>
+    <ROW Component="all_wcprops_22" ComponentId="{FD7D5B23-105B-46A7-9361-072B53090172}" Directory_="svn_22_DIR" Attributes="0" KeyPath="all_wcprops_22" Type="0"/>
+    <ROW Component="all_wcprops_3" ComponentId="{5FFCEF52-2272-41D9-8557-6F6FF39BF59B}" Directory_="svn_3_DIR" Attributes="0" KeyPath="all_wcprops_3" Type="0"/>
+    <ROW Component="all_wcprops_4" ComponentId="{ABFA581C-4BF2-4664-BDE0-DA597691007F}" Directory_="svn_4_DIR" Attributes="0" KeyPath="all_wcprops_4" Type="0"/>
+    <ROW Component="all_wcprops_5" ComponentId="{D81D4E26-861F-43A9-A8EA-6B1F253158CC}" Directory_="svn_5_DIR" Attributes="0" KeyPath="all_wcprops_5" Type="0"/>
+    <ROW Component="all_wcprops_6" ComponentId="{CE07BE39-25B0-419A-8B23-F6642BC08628}" Directory_="svn_6_DIR" Attributes="0" KeyPath="all_wcprops_6" Type="0"/>
+    <ROW Component="all_wcprops_7" ComponentId="{883D822A-64AD-4993-BC8C-4CFC4CEB3F20}" Directory_="svn_7_DIR" Attributes="0" KeyPath="all_wcprops_7" Type="0"/>
+    <ROW Component="all_wcprops_8" ComponentId="{4252BFEF-9312-456F-A4A5-821EA24D7327}" Directory_="svn_8_DIR" Attributes="0" KeyPath="all_wcprops_8" Type="0"/>
+    <ROW Component="all_wcprops_9" ComponentId="{D5CC2CF0-57E7-4565-8D5A-AD9014C1D2D8}" Directory_="svn_9_DIR" Attributes="0" KeyPath="all_wcprops_9" Type="0"/>
+    <ROW Component="and.wav" ComponentId="{94967B1E-030F-4820-94B3-D57CBC588C80}" Directory_="__2_DIR" Attributes="0" KeyPath="and.wav" Type="0"/>
+    <ROW Component="aprtoolkit.lib" ComponentId="{1DFA8A06-1FE1-40D4-B177-8AB0ACBFB28D}" Directory_="APPDIR" Attributes="0" KeyPath="aprtoolkit.lib" Type="0"/>
+    <ROW Component="call_limit.db" ComponentId="{8169A38C-862B-49A1-BFAD-C336B7FE07C7}" Directory_="db_DIR" Attributes="0" KeyPath="call_limit.db" Type="0"/>
+    <ROW Component="call_secured.wav" ComponentId="{FC8EFF15-EEAE-49C5-9CDE-0998B2724029}" Directory_="__5_DIR" Attributes="0" KeyPath="call_secured.wav" Type="0"/>
+    <ROW Component="client.noload" ComponentId="{5B60D9B4-6F1B-4B34-808A-980F2B2A862C}" Directory_="jingle_profiles_DIR" Attributes="0" KeyPath="client.noload" Type="0"/>
+    <ROW Component="client.noload.svn_base" ComponentId="{42774E56-1072-4BD1-931C-57771C83B44C}" Directory_="text_base_6_DIR" Attributes="0" KeyPath="client.noload.svn_base" Type="0"/>
+    <ROW Component="conf_alone.wav" ComponentId="{ED46C806-891E-47A4-BDD5-DA843DB428C3}" Directory_="__1_DIR" Attributes="0" KeyPath="conf_alone.wav" Type="0"/>
+    <ROW Component="danza_espanola_op_37_h_142_xii_arabesca.wav" ComponentId="{D1185CF9-276D-4EE1-B1B2-920857B896A6}" Directory_="__9_DIR" Attributes="0" KeyPath="danza_espanola_op_37_h_142_xii_arabesca.wav" Type="0"/>
+    <ROW Component="de.xml" ComponentId="{9D96E6F0-8351-48C8-B424-6DE0ADA1E0DE}" Directory_="de_DIR" Attributes="0" KeyPath="de.xml" Type="0"/>
+    <ROW Component="de.xml.svn_base" ComponentId="{DBC4EAA3-8CBC-44E0-92A4-9EA5AA00C3FB}" Directory_="text_base_7_DIR" Attributes="0" KeyPath="de.xml.svn_base" Type="0"/>
+    <ROW Component="default.xml" ComponentId="{5E9CF1F0-2940-4393-8998-6DE2937EC798}" Directory_="dialplan_DIR" Attributes="0" KeyPath="default.xml" Type="0"/>
+    <ROW Component="default.xml.svn_base" ComponentId="{A75A7DFD-D460-4413-A550-9A8903BC284B}" Directory_="text_base_2_DIR" Attributes="0" KeyPath="default.xml.svn_base" Type="0"/>
+    <ROW Component="default.xml.svn_base_1" ComponentId="{890AD70D-2E43-4B12-8B3B-5F4CB592C567}" Directory_="text_base_4_DIR" Attributes="0" KeyPath="default.xml.svn_base_1" Type="0"/>
+    <ROW Component="default.xml_1" ComponentId="{5FE9A684-CE03-41E5-A515-162C5F011F02}" Directory_="directory_DIR" Attributes="0" KeyPath="default.xml_2" Type="0"/>
+    <ROW Component="demo.xml" ComponentId="{E468B11B-BC09-47EC-A509-5D0A4F8E7D06}" Directory_="demo_DIR" Attributes="0" KeyPath="demo.xml" Type="0"/>
+    <ROW Component="demo.xml.svn_base" ComponentId="{E3E98D2B-DD87-4C67-A922-4A60840690D2}" Directory_="text_base_8_DIR" Attributes="0" KeyPath="demo.xml.svn_base" Type="0"/>
+    <ROW Component="demo.xml.svn_base_1" ComponentId="{95B05B5A-E0AD-4D12-B43E-4F70DDE2D7D7}" Directory_="text_base_14_DIR" Attributes="0" KeyPath="demo.xml.svn_base_2" Type="0"/>
+    <ROW Component="demo.xml_1" ComponentId="{C6C2EFAD-9BE5-4F5D-9368-EA618A890E99}" Directory_="demo_2_DIR" Attributes="0" KeyPath="demo.xml_2" Type="0"/>
+    <ROW Component="demo_ivr.xml" ComponentId="{063F954F-BB5C-4A26-8A9E-0E7839216F9A}" Directory_="demo_1_DIR" Attributes="0" KeyPath="demo_ivr.xml" Type="0"/>
+    <ROW Component="demo_ivr.xml.svn_base" ComponentId="{6ED9B0F6-E343-4B39-B7CA-A023247A6AA8}" Directory_="text_base_11_DIR" Attributes="0" KeyPath="demo_ivr.xml.svn_base" Type="0"/>
+    <ROW Component="en.xml" ComponentId="{B08C6F96-899B-4820-80DA-CEA58F14ECB6}" Directory_="en_DIR" Attributes="0" KeyPath="en.xml" Type="0"/>
+    <ROW Component="en.xml.svn_base" ComponentId="{EB9D1AC9-D255-4B56-81C2-816F276263D6}" Directory_="text_base_10_DIR" Attributes="0" KeyPath="en.xml.svn_base" Type="0"/>
+    <ROW Component="enum.xml" ComponentId="{C2A0F9E6-8D3E-4C06-A4D7-FDA82A3BDF44}" Directory_="extensions_DIR" Attributes="0" KeyPath="enum.xml" Type="0"/>
+    <ROW Component="enum.xml.svn_base" ComponentId="{69474707-11B5-4C15-89E4-F012F6B33724}" Directory_="text_base_3_DIR" Attributes="0" KeyPath="enum.xml.svn_base" Type="0"/>
+    <ROW Component="example.xml" ComponentId="{04ABDA69-877A-4423-8222-BB597CEE85AB}" Directory_="external_DIR" Attributes="0" KeyPath="example.xml" Type="0"/>
+    <ROW Component="example.xml.svn_base" ComponentId="{9D23F4F6-3F0A-4C02-9868-774A368D837F}" Directory_="text_base_18_DIR" Attributes="0" KeyPath="example.xml.svn_base" Type="0"/>
+    <ROW Component="example.xml.svn_base_1" ComponentId="{22459E15-9B68-445F-AD65-4C8336B02226}" Directory_="text_base_19_DIR" Attributes="0" KeyPath="example.xml.svn_base_1" Type="0"/>
+    <ROW Component="example.xml.svn_base_2" ComponentId="{42991EB4-8939-45FB-9478-48125E59EAC4}" Directory_="text_base_20_DIR" Attributes="0" KeyPath="example.xml.svn_base_2" Type="0"/>
+    <ROW Component="example.xml_1" ComponentId="{1DC607EB-9192-4F1C-A332-E1211C57E47A}" Directory_="internal_DIR" Attributes="0" KeyPath="example.xml_1" Type="0"/>
+    <ROW Component="example.xml_2" ComponentId="{4574033A-0526-47A2-A1E7-403B67C6458E}" Directory_="nat_DIR" Attributes="0" KeyPath="example.xml_2" Type="0"/>
+    <ROW Component="extensions.conf" ComponentId="{D9DDF978-39A6-4342-A3FA-C87B294263BE}" Directory_="conf_DIR" Attributes="0" KeyPath="extensions.conf" Type="0"/>
+    <ROW Component="extensions.conf.svn_base" ComponentId="{D3A81485-587A-45E9-8F42-5C436ECC1BF5}" Directory_="text_base_DIR" Attributes="0" KeyPath="extensions.conf.svn_base" Type="0"/>
+    <ROW Component="extensions.yaml" ComponentId="{BCC62521-EC33-419C-BCC1-113A7D6B108B}" Directory_="yaml_DIR" Attributes="0" KeyPath="extensions.yaml" Type="0"/>
+    <ROW Component="extensions.yaml.svn_base" ComponentId="{69D53CED-C60E-400F-8FA3-30995C8B5456}" Directory_="text_base_21_DIR" Attributes="0" KeyPath="extensions.yaml.svn_base" Type="0"/>
+    <ROW Component="external.xml" ComponentId="{F4BA33B2-1D5A-4B43-B0A7-CD64E8A7E3B7}" Directory_="sip_profiles_DIR" Attributes="0" KeyPath="external.xml" Type="0"/>
+    <ROW Component="external.xml.svn_base" ComponentId="{D7A54E00-1CFD-445C-961A-67A597807621}" Directory_="text_base_17_DIR" Attributes="0" KeyPath="external.xml.svn_base" Type="0"/>
+    <ROW Component="fr.xml" ComponentId="{A37B8725-C761-473C-9BF1-8D7BFB6FD03C}" Directory_="fr_DIR" Attributes="0" KeyPath="fr.xml" Type="0"/>
+    <ROW Component="fr.xml.svn_base" ComponentId="{0FC28336-479A-415E-BF2B-24FC5412C3DC}" Directory_="text_base_13_DIR" Attributes="0" KeyPath="fr.xml.svn_base" Type="0"/>
+    <ROW Component="freeswitch.log" ComponentId="{DEFA742C-8AD0-4D72-8111-57000C27259F}" Directory_="log_DIR" Attributes="0" KeyPath="freeswitch.log" Type="0"/>
+    <ROW Component="ivr_account_number.wav" ComponentId="{75B79F50-CC70-4C91-876D-61A62FEA2475}" Directory_="__4_DIR" Attributes="0" KeyPath="ivr_account_number.wav" Type="0"/>
+    <ROW Component="js32.dll" ComponentId="{94319E14-70C1-46AC-ADB0-5FFF7BB38508}" Directory_="APPDIR" Attributes="0" KeyPath="js32.dll"/>
+    <ROW Component="libapr.dll" ComponentId="{C45F2232-A483-4802-B920-AFF8337121EB}" Directory_="APPDIR" Attributes="0" KeyPath="libapr.dll"/>
+    <ROW Component="libaprutil.dll" ComponentId="{7BE5379D-8574-4322-88A2-4FBFC218DE94}" Directory_="APPDIR" Attributes="0" KeyPath="libaprutil.dll"/>
+    <ROW Component="libteletone.dll" ComponentId="{6E5DD2A2-433E-41CF-B4EC-460E77994174}" Directory_="APPDIR" Attributes="0" KeyPath="libteletone.dll"/>
+    <ROW Component="local_stream.conf.xml.svn_base" ComponentId="{347DDDC6-D578-48E0-8ABB-7C2973FE1E49}" Directory_="prop_base_DIR" Attributes="0" KeyPath="local_stream.conf.xml.svn_base" Type="0"/>
+    <ROW Component="mod_PortAudio.dll" ComponentId="{A3DB6DEF-2F17-4FE7-A7D2-5772543775BC}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_PortAudio.dll"/>
+    <ROW Component="mod_amr.dll" ComponentId="{66763BAA-8CC1-48F8-BB67-94805C4289AE}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_amr.dll"/>
+    <ROW Component="mod_cdr_csv.dll" ComponentId="{59B575E7-C2B5-4092-BA07-73BA8A3B3821}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_cdr_csv.dll"/>
+    <ROW Component="mod_commands.dll" ComponentId="{7913FFA3-E2B8-469C-B2D7-084D96BC5A12}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_commands.dll"/>
+    <ROW Component="mod_conference.dll" ComponentId="{EDE5D290-4621-4F73-9D37-96545FC7CE51}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_conference.dll"/>
+    <ROW Component="mod_console.dll" ComponentId="{08880699-1CA7-48CB-A311-5F70F43A3301}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_console.dll"/>
+    <ROW Component="mod_dialplan_asterisk.dll" ComponentId="{E20D89B9-37E7-4FA9-9A9D-4C92D4FC4FB1}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_dialplan_asterisk.dll"/>
+    <ROW Component="mod_dialplan_directory.dll" ComponentId="{BBDD2FB1-F857-4D1C-8C40-90B859749627}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_dialplan_directory.dll"/>
+    <ROW Component="mod_dialplan_xml.dll" ComponentId="{684848B7-801A-45BF-A7F6-A7B3D3FC30C5}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_dialplan_xml.dll"/>
+    <ROW Component="mod_dingaling.dll" ComponentId="{9FEA7B7A-4D5F-44B2-B6ED-19C88C8103BE}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_dingaling.dll"/>
+    <ROW Component="mod_dptools.dll" ComponentId="{6ACE9E0C-79C1-4C48-8CEA-A6023511D72C}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_dptools.dll"/>
+    <ROW Component="mod_enum.dll" ComponentId="{86EFF3A3-D694-4C94-969B-0C64398FDD10}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_enum.dll"/>
+    <ROW Component="mod_esf.dll" ComponentId="{32D9FFBA-8BF5-489B-ADD0-57C8CBA6437B}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_esf.dll"/>
+    <ROW Component="mod_event_multicast.dll" ComponentId="{5CC3501C-D49A-416C-8390-DE639C3994F9}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_event_multicast.dll"/>
+    <ROW Component="mod_event_socket.dll" ComponentId="{4D03CF21-F902-491F-9E6E-CEBB598264CE}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_event_socket.dll"/>
+    <ROW Component="mod_expr.dll" ComponentId="{D831D642-1D92-4A4B-9211-9B80E7BD90F9}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_expr.dll"/>
+    <ROW Component="mod_fifo.dll" ComponentId="{6C962F88-6879-4335-A9DD-F33D64761130}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_fifo.dll"/>
+    <ROW Component="mod_fsv.dll" ComponentId="{28C7FD11-C491-4CAF-869A-A31098EC9A98}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_fsv.dll"/>
+    <ROW Component="mod_g723_1.dll" ComponentId="{9C080097-5031-40B0-828C-6DC367BDA083}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_g723_1.dll"/>
+    <ROW Component="mod_g729.dll" ComponentId="{A214F3F0-8188-436D-9310-4772B8985485}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_g729.dll"/>
+    <ROW Component="mod_h26x.dll" ComponentId="{8CBEFFAE-4A1C-49D7-814C-0EAC9E4DE210}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_h26x.dll"/>
+    <ROW Component="mod_iax.dll" ComponentId="{70D29E3B-21F3-45EF-B07D-78B091A1D878}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_iax.dll"/>
+    <ROW Component="mod_ilbc.dll" ComponentId="{82E41A90-5E0C-4913-BB82-47182B32ADC0}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_ilbc.dll"/>
+    <ROW Component="mod_ldap.dll" ComponentId="{8A0F2595-1F79-4105-9D26-4633242938C1}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_ldap.dll"/>
+    <ROW Component="mod_limit.dll" ComponentId="{0AF605F3-7BBD-478E-96B1-BC7AFD38AAC0}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_limit.dll"/>
+    <ROW Component="mod_local_stream.dll" ComponentId="{A0DA5786-4D87-48D4-95C4-259E08E807E1}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_local_stream.dll"/>
+    <ROW Component="mod_logfile.dll" ComponentId="{B67A8069-CF65-46E3-A265-E671C07B0F69}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_logfile.dll"/>
+    <ROW Component="mod_lua.dll" ComponentId="{D1494067-B668-4C08-8075-8A0139A52177}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_lua.dll"/>
+    <ROW Component="mod_native_file.dll" ComponentId="{F72A5A57-D5B1-4460-B953-53C3636566CC}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_native_file.dll"/>
+    <ROW Component="mod_openmrcp.dll" ComponentId="{1CCE7A22-0E89-4103-A8E3-D7989CF814C4}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_openmrcp.dll"/>
+    <ROW Component="mod_rss.dll" ComponentId="{5BDF4937-DCDF-4D50-844A-5FBA45B44AE6}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_rss.dll"/>
+    <ROW Component="mod_say_de.dll" ComponentId="{17FFE0CE-6753-4B55-BA1B-213CD2CC33FA}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_say_de.dll"/>
+    <ROW Component="mod_say_en.dll" ComponentId="{096CAAC5-F19F-48D1-8932-EC66C71FEFD7}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_say_en.dll"/>
+    <ROW Component="mod_say_es.dll" ComponentId="{1B893005-0FC0-4991-9C99-EB186B3269AB}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_say_es.dll"/>
+    <ROW Component="mod_say_fr.dll" ComponentId="{38700D02-472F-4DE1-A106-F2052E04C0BE}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_say_fr.dll"/>
+    <ROW Component="mod_say_it.dll" ComponentId="{05E77FA5-5A17-413E-913C-605625D930B2}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_say_it.dll"/>
+    <ROW Component="mod_say_nl.dll" ComponentId="{CECCD2C6-4A67-4AAF-97C3-64A3FF2802E2}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_say_nl.dll"/>
+    <ROW Component="mod_sndfile.dll" ComponentId="{282F28EE-BA87-40E9-90D2-B4ED7592DF35}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_sndfile.dll"/>
+    <ROW Component="mod_sofia.dll" ComponentId="{8F4A3201-5B55-40FC-A3D3-774C79C15062}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_sofia.dll"/>
+    <ROW Component="mod_speex.dll" ComponentId="{7B365ABB-FFB5-44EC-A65F-1E2229EACD5B}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_speex.dll"/>
+    <ROW Component="mod_spidermonkey.dll" ComponentId="{41DCAA68-87CE-4E99-8C39-AEE044E8ACA3}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_spidermonkey.dll"/>
+    <ROW Component="mod_spidermonkey_core_db.dll" ComponentId="{0AE5B17C-F087-46A0-8E52-009C0B44743B}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_spidermonkey_core_db.dll"/>
+    <ROW Component="mod_spidermonkey_curl.dll" ComponentId="{EED1F9CD-6067-49E3-B7ED-04694CD4E341}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_spidermonkey_curl.dll"/>
+    <ROW Component="mod_spidermonkey_odbc.dll" ComponentId="{E7838A9B-E466-45DA-BAE8-2B33188BD73F}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_spidermonkey_odbc.dll"/>
+    <ROW Component="mod_spidermonkey_socket.dll" ComponentId="{0369294B-897F-46E0-9DB3-A3E5B49D32CC}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_spidermonkey_socket.dll"/>
+    <ROW Component="mod_spidermonkey_teletone.dll" ComponentId="{C9182D49-0AEE-40D1-9665-7C8E14E6E590}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_spidermonkey_teletone.dll"/>
+    <ROW Component="mod_tone_stream.dll" ComponentId="{ED39C768-D9C5-4D44-9A45-D88D39D3CD82}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_tone_stream.dll"/>
+    <ROW Component="mod_voicemail.dll" ComponentId="{785706B9-90AA-46F1-89A3-89EF9FA29E08}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_voicemail.dll"/>
+    <ROW Component="mod_voipcodecs.dll" ComponentId="{F7382BC2-8D98-40A2-9463-F9B61A3466C8}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_voipcodecs.dll"/>
+    <ROW Component="mod_woomera.dll" ComponentId="{C1C6A67C-5910-4619-ABBB-FB46D3AF5219}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_woomera.dll"/>
+    <ROW Component="mod_xml_cdr.dll" ComponentId="{2E43F07E-7460-4041-9136-C53008155F3D}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_xml_cdr.dll"/>
+    <ROW Component="mod_xml_curl.dll" ComponentId="{CEA79D59-2944-4271-813C-491D3E6C6165}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_xml_curl.dll"/>
+    <ROW Component="mod_xml_rpc.dll" ComponentId="{26F2CB9D-04E2-4920-B778-49E460D5954F}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_xml_rpc.dll"/>
+    <ROW Component="mod_zeroconf.dll" ComponentId="{ACEF9F79-4807-4DA4-8DD0-91DEAEC1A1D1}" Directory_="mod_DIR" Attributes="0" KeyPath="mod_zeroconf.dll"/>
+    <ROW Component="openmrcp_v1.xml" ComponentId="{0B995078-BAEB-42D8-948B-F970730587CF}" Directory_="mrcp_profiles_DIR" Attributes="0" KeyPath="openmrcp_v1.xml" Type="0"/>
+    <ROW Component="openmrcp_v1.xml.svn_base" ComponentId="{75EB843F-FC29-492D-9BCD-51C80C7A9263}" Directory_="text_base_16_DIR" Attributes="0" KeyPath="openmrcp_v1.xml.svn_base" Type="0"/>
+    <ROW Component="pthreadVC2.dll" ComponentId="{1D08A291-682D-4161-B99A-38D69A4EA2ED}" Directory_="APPDIR" Attributes="0" KeyPath="pthreadVC2.dll"/>
+    <ROW Component="sounds.xml" ComponentId="{01EA6EFB-45F2-4864-A32E-9A0D6EDCDF42}" Directory_="vm_1_DIR" Attributes="0" KeyPath="sounds.xml" Type="0"/>
+    <ROW Component="sounds.xml.svn_base" ComponentId="{8AF229CB-E0DD-4A70-AC4D-17F5D9CC8B77}" Directory_="text_base_12_DIR" Attributes="0" KeyPath="sounds.xml.svn_base" Type="0"/>
+    <ROW Component="sounds.xml.svn_base_1" ComponentId="{F006D985-BEB1-4364-847E-06D22B11A50A}" Directory_="text_base_15_DIR" Attributes="0" KeyPath="sounds.xml.svn_base_1" Type="0"/>
+    <ROW Component="sounds.xml_1" ComponentId="{6BE55F91-A4FA-4A16-A2A7-C2FC93E166D2}" Directory_="vm_2_DIR" Attributes="0" KeyPath="sounds.xml_1" Type="0"/>
+    <ROW Component="tts.xml" ComponentId="{FB72DBD6-D639-4A92-B213-173E4C08F66C}" Directory_="vm_DIR" Attributes="0" KeyPath="tts.xml" Type="0"/>
+    <ROW Component="tts.xml.svn_base" ComponentId="{3C6D53ED-4B5A-4773-9C3B-0F170333D778}" Directory_="text_base_9_DIR" Attributes="0" KeyPath="tts.xml.svn_base" Type="0"/>
+    <ROW Component="vm_abort.wav" ComponentId="{2D3B90C3-C161-4390-93D4-BAFE18EBCA71}" Directory_="__8_DIR" Attributes="0" KeyPath="vm_abort.wav" Type="0"/>
+    <ROW Component="wav" ComponentId="{FC6B5071-5B2F-438A-BD41-E202C3986353}" Directory_="__DIR" Attributes="0" KeyPath="wav" Type="0"/>
+    <ROW Component="wav_1" ComponentId="{E7629902-9391-4AE6-8DBF-244E8BCC4B1E}" Directory_="__3_DIR" Attributes="0" KeyPath="wav_30" Type="0"/>
+    <ROW Component="wav_2" ComponentId="{D84BEA66-634D-42AC-8E03-49B49CA6955C}" Directory_="__6_DIR" Attributes="0" KeyPath="wav_58" Type="0"/>
+    <ROW Component="xml" ComponentId="{FA12FA98-BAB5-46C5-8337-39BF5FEF5468}" Directory_="default_DIR" Attributes="0" KeyPath="xml" Type="0"/>
+    <ROW Component="xml.svn_base" ComponentId="{3B5D1978-B8D2-40D3-BC9A-324D10B88113}" Directory_="text_base_5_DIR" Attributes="0" KeyPath="xml.svn_base" Type="0"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
+    <ROW Feature="MainFeature" Title="MainFeature" Description="Description" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="aprtoolkit.lib all_wcprops extensions.conf.svn_base all_wcprops_1 local_stream.conf.xml.svn_base acl.conf.xml.svn_base acl.conf.xml all_wcprops_2 default.xml.svn_base default.xml all_wcprops_3 enum.xml.svn_base enum.xml all_wcprops_4 default.xml.svn_base_1 all_wcprops_5 xml.svn_base xml default.xml_1 extensions.conf all_wcprops_6 client.noload.svn_base client.noload all_wcprops_7 all_wcprops_8 de.xml.svn_base de.xml all_wcprops_9 demo.xml.svn_base demo.xml all_wcprops_10 tts.xml.svn_base tts.xml all_wcprops_11 en.xml.svn_base all_wcprops_12 demo_ivr.xml.svn_base demo_ivr.xml en.xml all_wcprops_13 sounds.xml.svn_base sounds.xml all_wcprops_14 fr.xml.svn_base all_wcprops_15 demo.xml.svn_base_1 demo.xml_1 fr.xml all_wcprops_16 sounds.xml.svn_base_1 sounds.xml_1 all_wcprops_17 openmrcp_v1.xml.svn_base openmrcp_v1.xml all_wcprops_18 external.xml.svn_base all_wcprops_19 example.xml.svn_base example.xml external.xml all_wcprops_20 example.xml.svn_base_1 example.xml_1 all_wcprops_21 example.xml.svn_base_2 example.xml_2 all_wcprops_22 extensions.yaml.svn_base extensions.yaml call_limit.db FreeSwitch.dll FreeSwitch.exe js32.dll libapr.dll libaprutil.dll libteletone.dll freeswitch.log mod_amr.dll mod_cdr_csv.dll mod_commands.dll mod_conference.dll mod_console.dll mod_dialplan_asterisk.dll mod_dialplan_directory.dll mod_dialplan_xml.dll mod_dingaling.dll mod_dptools.dll mod_enum.dll mod_esf.dll mod_event_multicast.dll mod_event_socket.dll mod_expr.dll mod_fifo.dll mod_fsv.dll mod_g723_1.dll mod_g729.dll mod_h26x.dll mod_iax.dll mod_ilbc.dll mod_ldap.dll mod_limit.dll mod_local_stream.dll mod_logfile.dll mod_lua.dll mod_native_file.dll mod_openmrcp.dll mod_PortAudio.dll mod_rss.dll mod_say_de.dll mod_say_en.dll mod_say_es.dll mod_say_fr.dll mod_say_it.dll mod_say_nl.dll mod_sndfile.dll mod_sofia.dll mod_speex.dll mod_spidermonkey.dll mod_spidermonkey_core_db.dll mod_spidermonkey_curl.dll mod_spidermonkey_odbc.dll mod_spidermonkey_socket.dll mod_spidermonkey_teletone.dll mod_tone_stream.dll mod_voicemail.dll mod_voipcodecs.dll mod_woomera.dll mod_xml_cdr.dll mod_xml_curl.dll mod_xml_rpc.dll mod_zeroconf.dll pthreadVC2.dll wav conf_alone.wav and.wav wav_1 ivr_account_number.wav call_secured.wav wav_2 a_m.wav vm_abort.wav danza_espanola_op_37_h_142_xii_arabesca.wav SHORTCUTDIR"/>
+    <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
+    <ROW File="FreeSwitch.dll" Component_="FreeSwitch.dll" FileName="FreeSw~1.dll|FreeSwitch.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\FreeSwitch.dll" SelfReg="false" Sequence="293"/>
+    <ROW File="FreeSwitch.exe" Component_="FreeSwitch.exe" FileName="FreeSw~1.exe|FreeSwitch.exe" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\FreeSwitch.exe" SelfReg="false" Sequence="294"/>
+    <ROW File="a_m.wav" Component_="a_m.wav" FileName="a-m.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\a-m.wav" SelfReg="false" Sequence="538"/>
+    <ROW File="acl.conf.xml" Component_="acl.conf.xml" FileName="aclcon~1.xml|acl.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\acl.conf.xml" SelfReg="false" Sequence="53"/>
+    <ROW File="acl.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="aclcon~1.svn|acl.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\acl.conf.xml.svn-base" SelfReg="false" Sequence="19"/>
+    <ROW File="all_wcprops" Component_="all_wcprops" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\all-wcprops" SelfReg="false" Sequence="2"/>
+    <ROW File="all_wcprops_1" Component_="all_wcprops_1" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\all-wcprops" SelfReg="false" Sequence="15"/>
+    <ROW File="all_wcprops_10" Component_="all_wcprops_10" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\vm\.svn\all-wcprops" SelfReg="false" Sequence="204"/>
+    <ROW File="all_wcprops_11" Component_="all_wcprops_11" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\.svn\all-wcprops" SelfReg="false" Sequence="209"/>
+    <ROW File="all_wcprops_12" Component_="all_wcprops_12" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\demo\.svn\all-wcprops" SelfReg="false" Sequence="213"/>
+    <ROW File="all_wcprops_13" Component_="all_wcprops_13" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\vm\.svn\all-wcprops" SelfReg="false" Sequence="221"/>
+    <ROW File="all_wcprops_14" Component_="all_wcprops_14" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\.svn\all-wcprops" SelfReg="false" Sequence="228"/>
+    <ROW File="all_wcprops_15" Component_="all_wcprops_15" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\demo\.svn\all-wcprops" SelfReg="false" Sequence="232"/>
+    <ROW File="all_wcprops_16" Component_="all_wcprops_16" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\vm\.svn\all-wcprops" SelfReg="false" Sequence="238"/>
+    <ROW File="all_wcprops_17" Component_="all_wcprops_17" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\mrcp_profiles\.svn\all-wcprops" SelfReg="false" Sequence="244"/>
+    <ROW File="all_wcprops_18" Component_="all_wcprops_18" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\.svn\all-wcprops" SelfReg="false" Sequence="252"/>
+    <ROW File="all_wcprops_19" Component_="all_wcprops_19" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\external\.svn\all-wcprops" SelfReg="false" Sequence="258"/>
+    <ROW File="all_wcprops_2" Component_="all_wcprops_2" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\.svn\all-wcprops" SelfReg="false" Sequence="87"/>
+    <ROW File="all_wcprops_20" Component_="all_wcprops_20" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\internal\.svn\all-wcprops" SelfReg="false" Sequence="264"/>
+    <ROW File="all_wcprops_21" Component_="all_wcprops_21" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\nat\.svn\all-wcprops" SelfReg="false" Sequence="270"/>
+    <ROW File="all_wcprops_22" Component_="all_wcprops_22" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\yaml\.svn\all-wcprops" SelfReg="false" Sequence="280"/>
+    <ROW File="all_wcprops_3" Component_="all_wcprops_3" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\.svn\all-wcprops" SelfReg="false" Sequence="94"/>
+    <ROW File="all_wcprops_4" Component_="all_wcprops_4" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\.svn\all-wcprops" SelfReg="false" Sequence="111"/>
+    <ROW File="all_wcprops_5" Component_="all_wcprops_5" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\all-wcprops" SelfReg="false" Sequence="115"/>
+    <ROW File="all_wcprops_6" Component_="all_wcprops_6" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\.svn\all-wcprops" SelfReg="false" Sequence="180"/>
+    <ROW File="all_wcprops_7" Component_="all_wcprops_7" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\.svn\all-wcprops" SelfReg="false" Sequence="191"/>
+    <ROW File="all_wcprops_8" Component_="all_wcprops_8" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\.svn\all-wcprops" SelfReg="false" Sequence="194"/>
+    <ROW File="all_wcprops_9" Component_="all_wcprops_9" FileName="all-wc~1|all-wcprops" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\demo\.svn\all-wcprops" SelfReg="false" Sequence="199"/>
+    <ROW File="alsa.conf.xml" Component_="acl.conf.xml" FileName="alsaco~1.xml|alsa.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\alsa.conf.xml" SelfReg="false" Sequence="54"/>
+    <ROW File="alsa.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="alsaco~1.svn|alsa.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\alsa.conf.xml.svn-base" SelfReg="false" Sequence="20"/>
+    <ROW File="and.wav" Component_="and.wav" FileName="and.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\currency\8000\and.wav" SelfReg="false" Sequence="404"/>
+    <ROW File="aprtoolkit.lib" Component_="aprtoolkit.lib" FileName="aprtoo~1.lib|aprtoolkit.lib" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\aprtoolkit.lib" SelfReg="false" Sequence="1"/>
+    <ROW File="asterlink.com.noload" Component_="xml" FileName="asterl~1.nol|asterlink.com.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\asterlink.com.noload" SelfReg="false" Sequence="167"/>
+    <ROW File="asterlink.com.noload.svn_base" Component_="xml.svn_base" FileName="asterl~1.svn|asterlink.com.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\asterlink.com.noload.svn-base" SelfReg="false" Sequence="138"/>
+    <ROW File="at.wav" Component_="a_m.wav" FileName="at.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\at.wav" SelfReg="false" Sequence="539"/>
+    <ROW File="brian.xml" Component_="xml" FileName="brian.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\brian.xml" SelfReg="false" Sequence="168"/>
+    <ROW File="brian.xml.svn_base" Component_="xml.svn_base" FileName="brianx~1.svn|brian.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\brian.xml.svn-base" SelfReg="false" Sequence="139"/>
+    <ROW File="call_limit.db" Component_="call_limit.db" FileName="call_l~1.db|call_limit.db" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\db\call_limit.db" SelfReg="false" Sequence="287"/>
+    <ROW File="call_secured.wav" Component_="call_secured.wav" FileName="call_s~1.wav|call_secured.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\misc\8000\call_secured.wav" SelfReg="false" Sequence="500"/>
+    <ROW File="cdr_csv.conf.xml" Component_="acl.conf.xml" FileName="cdr_cs~1.xml|cdr_csv.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\cdr_csv.conf.xml" SelfReg="false" Sequence="55"/>
+    <ROW File="cdr_csv.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="cdr_cs~1.svn|cdr_csv.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\cdr_csv.conf.xml.svn-base" SelfReg="false" Sequence="21"/>
+    <ROW File="cent.wav" Component_="and.wav" FileName="cent.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\currency\8000\cent.wav" SelfReg="false" Sequence="405"/>
+    <ROW File="central.wav" Component_="and.wav" FileName="central.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\currency\8000\central.wav" SelfReg="false" Sequence="406"/>
+    <ROW File="cents.wav" Component_="and.wav" FileName="cents.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\currency\8000\cents.wav" SelfReg="false" Sequence="408"/>
+    <ROW File="cents_per_minute.wav" Component_="and.wav" FileName="cents-~1.wav|cents-per-minute.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\currency\8000\cents-per-minute.wav" SelfReg="false" Sequence="407"/>
+    <ROW File="client.noload" Component_="client.noload" FileName="client~1.nol|client.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\client.noload" SelfReg="false" Sequence="187"/>
+    <ROW File="client.noload.svn_base" Component_="client.noload.svn_base" FileName="client~1.svn|client.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\.svn\text-base\client.noload.svn-base" SelfReg="false" Sequence="183"/>
+    <ROW File="client.xml" Component_="client.noload" FileName="client.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\client.xml" SelfReg="false" Sequence="188"/>
+    <ROW File="client.xml.svn_base" Component_="client.noload.svn_base" FileName="client~2.svn|client.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\.svn\text-base\client.xml.svn-base" SelfReg="false" Sequence="184"/>
+    <ROW File="conf_alone.wav" Component_="conf_alone.wav" FileName="conf-a~1.wav|conf-alone.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\conference\8000\conf-alone.wav" SelfReg="false" Sequence="394"/>
+    <ROW File="conf_bad_pin.wav" Component_="conf_alone.wav" FileName="conf-b~1.wav|conf-bad-pin.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\conference\8000\conf-bad-pin.wav" SelfReg="false" Sequence="395"/>
+    <ROW File="conf_goodbye.wav" Component_="conf_alone.wav" FileName="conf-g~1.wav|conf-goodbye.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\conference\8000\conf-goodbye.wav" SelfReg="false" Sequence="396"/>
+    <ROW File="conf_is_locked.wav" Component_="conf_alone.wav" FileName="conf-i~1.wav|conf-is-locked.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\conference\8000\conf-is-locked.wav" SelfReg="false" Sequence="397"/>
+    <ROW File="conf_kicked.wav" Component_="conf_alone.wav" FileName="conf-k~1.wav|conf-kicked.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\conference\8000\conf-kicked.wav" SelfReg="false" Sequence="398"/>
+    <ROW File="conf_locked.wav" Component_="conf_alone.wav" FileName="conf-l~1.wav|conf-locked.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\conference\8000\conf-locked.wav" SelfReg="false" Sequence="399"/>
+    <ROW File="conf_muted.wav" Component_="conf_alone.wav" FileName="conf-m~1.wav|conf-muted.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\conference\8000\conf-muted.wav" SelfReg="false" Sequence="400"/>
+    <ROW File="conf_pin.wav" Component_="conf_alone.wav" FileName="conf-pin.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\conference\8000\conf-pin.wav" SelfReg="false" Sequence="401"/>
+    <ROW File="conf_unmuted.wav" Component_="conf_alone.wav" FileName="conf-u~1.wav|conf-unmuted.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\conference\8000\conf-unmuted.wav" SelfReg="false" Sequence="402"/>
+    <ROW File="conf_welcome.wav" Component_="conf_alone.wav" FileName="conf-w~1.wav|conf-welcome.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\conference\8000\conf-welcome.wav" SelfReg="false" Sequence="403"/>
+    <ROW File="conference.conf.xml" Component_="acl.conf.xml" FileName="confer~1.xml|conference.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\conference.conf.xml" SelfReg="false" Sequence="56"/>
+    <ROW File="conference.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="confer~1.svn|conference.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\conference.conf.xml.svn-base" SelfReg="false" Sequence="22"/>
+    <ROW File="console.conf.xml" Component_="acl.conf.xml" FileName="consol~1.xml|console.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\console.conf.xml" SelfReg="false" Sequence="57"/>
+    <ROW File="console.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="consol~1.svn|console.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\console.conf.xml.svn-base" SelfReg="false" Sequence="23"/>
+    <ROW File="core.db" Component_="call_limit.db" FileName="core.db" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\db\core.db" SelfReg="false" Sequence="288"/>
+    <ROW File="danza_espanola_op_37_h_142_xii_arabesca.wav" Component_="danza_espanola_op_37_h_142_xii_arabesca.wav" FileName="danza-~1.wav|danza-espanola-op-37-h-142-xii-arabesca.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\music\8000\danza-espanola-op-37-h-142-xii-arabesca.wav" SelfReg="false" Sequence="623"/>
+    <ROW File="day_0.wav" Component_="a_m.wav" FileName="day-0.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\day-0.wav" SelfReg="false" Sequence="540"/>
+    <ROW File="day_1.wav" Component_="a_m.wav" FileName="day-1.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\day-1.wav" SelfReg="false" Sequence="541"/>
+    <ROW File="day_2.wav" Component_="a_m.wav" FileName="day-2.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\day-2.wav" SelfReg="false" Sequence="542"/>
+    <ROW File="day_3.wav" Component_="a_m.wav" FileName="day-3.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\day-3.wav" SelfReg="false" Sequence="543"/>
+    <ROW File="day_4.wav" Component_="a_m.wav" FileName="day-4.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\day-4.wav" SelfReg="false" Sequence="544"/>
+    <ROW File="day_5.wav" Component_="a_m.wav" FileName="day-5.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\day-5.wav" SelfReg="false" Sequence="545"/>
+    <ROW File="day_6.wav" Component_="a_m.wav" FileName="day-6.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\day-6.wav" SelfReg="false" Sequence="546"/>
+    <ROW File="de.xml" Component_="de.xml" FileName="de.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\de.xml" SelfReg="false" Sequence="198"/>
+    <ROW File="de.xml.svn_base" Component_="de.xml.svn_base" FileName="dexml~1.svn|de.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\.svn\text-base\de.xml.svn-base" SelfReg="false" Sequence="197"/>
+    <ROW File="default.xml" Component_="default.xml" FileName="default.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\default.xml" SelfReg="false" Sequence="93"/>
+    <ROW File="default.xml.svn_base" Component_="default.xml.svn_base" FileName="defaul~1.svn|default.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\.svn\text-base\default.xml.svn-base" SelfReg="false" Sequence="90"/>
+    <ROW File="default.xml.svn_base_1" Component_="default.xml.svn_base_1" FileName="defaul~1.svn|default.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\.svn\text-base\default.xml.svn-base" SelfReg="false" Sequence="114"/>
+    <ROW File="default.xml.svn_base_2" Component_="xml.svn_base" FileName="defaul~1.svn|default.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\default.xml.svn-base" SelfReg="false" Sequence="140"/>
+    <ROW File="default.xml_1" Component_="xml" FileName="default.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\default.xml" SelfReg="false" Sequence="169"/>
+    <ROW File="default.xml_2" Component_="default.xml_1" FileName="default.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default.xml" SelfReg="false" Sequence="176"/>
+    <ROW File="demo.xml" Component_="demo.xml" FileName="demo.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\demo\demo.xml" SelfReg="false" Sequence="203"/>
+    <ROW File="demo.xml.svn_base" Component_="demo.xml.svn_base" FileName="demoxm~1.svn|demo.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\demo\.svn\text-base\demo.xml.svn-base" SelfReg="false" Sequence="202"/>
+    <ROW File="demo.xml.svn_base_1" Component_="demo_ivr.xml.svn_base" FileName="demoxm~1.svn|demo.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\demo\.svn\text-base\demo.xml.svn-base" SelfReg="false" Sequence="217"/>
+    <ROW File="demo.xml.svn_base_2" Component_="demo.xml.svn_base_1" FileName="demoxm~1.svn|demo.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\demo\.svn\text-base\demo.xml.svn-base" SelfReg="false" Sequence="235"/>
+    <ROW File="demo.xml_1" Component_="demo_ivr.xml" FileName="demo.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\demo\demo.xml" SelfReg="false" Sequence="219"/>
+    <ROW File="demo.xml_2" Component_="demo.xml_1" FileName="demo.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\demo\demo.xml" SelfReg="false" Sequence="236"/>
+    <ROW File="demo_ivr.xml" Component_="demo_ivr.xml" FileName="demo-ivr.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\demo\demo-ivr.xml" SelfReg="false" Sequence="218"/>
+    <ROW File="demo_ivr.xml.svn_base" Component_="demo_ivr.xml.svn_base" FileName="demo-i~1.svn|demo-ivr.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\demo\.svn\text-base\demo-ivr.xml.svn-base" SelfReg="false" Sequence="216"/>
+    <ROW File="dialplan_directory.conf.xml" Component_="acl.conf.xml" FileName="dialpl~1.xml|dialplan_directory.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\dialplan_directory.conf.xml" SelfReg="false" Sequence="58"/>
+    <ROW File="dialplan_directory.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="dialpl~1.svn|dialplan_directory.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\dialplan_directory.conf.xml.svn-base" SelfReg="false" Sequence="24"/>
+    <ROW File="dingaling.conf.xml" Component_="acl.conf.xml" FileName="dingal~1.xml|dingaling.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\dingaling.conf.xml" SelfReg="false" Sequence="59"/>
+    <ROW File="dingaling.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="dingal~1.svn|dingaling.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\dingaling.conf.xml.svn-base" SelfReg="false" Sequence="25"/>
+    <ROW File="dir_prop_base" Component_="all_wcprops" FileName="dir-pr~1|dir-prop-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\dir-prop-base" SelfReg="false" Sequence="3"/>
+    <ROW File="dollar.wav" Component_="and.wav" FileName="dollar.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\currency\8000\dollar.wav" SelfReg="false" Sequence="409"/>
+    <ROW File="dollars.wav" Component_="and.wav" FileName="dollars.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\currency\8000\dollars.wav" SelfReg="false" Sequence="410"/>
+    <ROW File="dot.wav" Component_="wav_1" FileName="dot.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\dot.wav" SelfReg="false" Sequence="441"/>
+    <ROW File="en.xml" Component_="en.xml" FileName="en.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\en.xml" SelfReg="false" Sequence="220"/>
+    <ROW File="en.xml.svn_base" Component_="en.xml.svn_base" FileName="enxml~1.svn|en.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\.svn\text-base\en.xml.svn-base" SelfReg="false" Sequence="212"/>
+    <ROW File="entries" Component_="all_wcprops" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\entries" SelfReg="false" Sequence="4"/>
+    <ROW File="entries_1" Component_="all_wcprops_1" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\entries" SelfReg="false" Sequence="16"/>
+    <ROW File="entries_10" Component_="all_wcprops_10" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\vm\.svn\entries" SelfReg="false" Sequence="205"/>
+    <ROW File="entries_11" Component_="all_wcprops_11" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\.svn\entries" SelfReg="false" Sequence="210"/>
+    <ROW File="entries_12" Component_="all_wcprops_12" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\demo\.svn\entries" SelfReg="false" Sequence="214"/>
+    <ROW File="entries_13" Component_="all_wcprops_13" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\vm\.svn\entries" SelfReg="false" Sequence="222"/>
+    <ROW File="entries_14" Component_="all_wcprops_14" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\.svn\entries" SelfReg="false" Sequence="229"/>
+    <ROW File="entries_15" Component_="all_wcprops_15" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\demo\.svn\entries" SelfReg="false" Sequence="233"/>
+    <ROW File="entries_16" Component_="all_wcprops_16" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\vm\.svn\entries" SelfReg="false" Sequence="239"/>
+    <ROW File="entries_17" Component_="all_wcprops_17" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\mrcp_profiles\.svn\entries" SelfReg="false" Sequence="245"/>
+    <ROW File="entries_18" Component_="all_wcprops_18" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\.svn\entries" SelfReg="false" Sequence="253"/>
+    <ROW File="entries_19" Component_="all_wcprops_19" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\external\.svn\entries" SelfReg="false" Sequence="259"/>
+    <ROW File="entries_2" Component_="all_wcprops_2" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\.svn\entries" SelfReg="false" Sequence="88"/>
+    <ROW File="entries_20" Component_="all_wcprops_20" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\internal\.svn\entries" SelfReg="false" Sequence="265"/>
+    <ROW File="entries_21" Component_="all_wcprops_21" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\nat\.svn\entries" SelfReg="false" Sequence="271"/>
+    <ROW File="entries_22" Component_="all_wcprops_22" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\yaml\.svn\entries" SelfReg="false" Sequence="281"/>
+    <ROW File="entries_3" Component_="all_wcprops_3" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\.svn\entries" SelfReg="false" Sequence="95"/>
+    <ROW File="entries_4" Component_="all_wcprops_4" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\.svn\entries" SelfReg="false" Sequence="112"/>
+    <ROW File="entries_5" Component_="all_wcprops_5" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\entries" SelfReg="false" Sequence="116"/>
+    <ROW File="entries_6" Component_="all_wcprops_6" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\.svn\entries" SelfReg="false" Sequence="181"/>
+    <ROW File="entries_7" Component_="all_wcprops_7" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\.svn\entries" SelfReg="false" Sequence="192"/>
+    <ROW File="entries_8" Component_="all_wcprops_8" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\.svn\entries" SelfReg="false" Sequence="195"/>
+    <ROW File="entries_9" Component_="all_wcprops_9" FileName="entries" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\demo\.svn\entries" SelfReg="false" Sequence="200"/>
+    <ROW File="enum.conf.xml" Component_="acl.conf.xml" FileName="enumco~1.xml|enum.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\enum.conf.xml" SelfReg="false" Sequence="60"/>
+    <ROW File="enum.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="enumco~1.svn|enum.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\enum.conf.xml.svn-base" SelfReg="false" Sequence="26"/>
+    <ROW File="enum.xml" Component_="enum.xml" FileName="99999_~1.xml|99999_enum.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\99999_enum.xml" SelfReg="false" Sequence="103"/>
+    <ROW File="enum.xml.svn_base" Component_="enum.xml.svn_base" FileName="99999_~1.svn|99999_enum.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\.svn\text-base\99999_enum.xml.svn-base" SelfReg="false" Sequence="97"/>
+    <ROW File="event_multicast.conf.xml" Component_="acl.conf.xml" FileName="event_~1.xml|event_multicast.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\event_multicast.conf.xml" SelfReg="false" Sequence="61"/>
+    <ROW File="event_multicast.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="event_~1.svn|event_multicast.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\event_multicast.conf.xml.svn-base" SelfReg="false" Sequence="27"/>
+    <ROW File="event_socket.conf.xml" Component_="acl.conf.xml" FileName="event_~2.xml|event_socket.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\event_socket.conf.xml" SelfReg="false" Sequence="62"/>
+    <ROW File="event_socket.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="event_~2.svn|event_socket.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\event_socket.conf.xml.svn-base" SelfReg="false" Sequence="28"/>
+    <ROW File="example.xml" Component_="example.xml" FileName="example.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\external\example.xml" SelfReg="false" Sequence="262"/>
+    <ROW File="example.xml.svn_base" Component_="example.xml.svn_base" FileName="exampl~1.svn|example.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\external\.svn\text-base\example.xml.svn-base" SelfReg="false" Sequence="261"/>
+    <ROW File="example.xml.svn_base_1" Component_="example.xml.svn_base_1" FileName="exampl~1.svn|example.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\internal\.svn\text-base\example.xml.svn-base" SelfReg="false" Sequence="267"/>
+    <ROW File="example.xml.svn_base_2" Component_="example.xml.svn_base_2" FileName="exampl~1.svn|example.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\nat\.svn\text-base\example.xml.svn-base" SelfReg="false" Sequence="273"/>
+    <ROW File="example.xml_1" Component_="example.xml_1" FileName="example.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\internal\example.xml" SelfReg="false" Sequence="268"/>
+    <ROW File="example.xml_2" Component_="example.xml_2" FileName="example.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\nat\example.xml" SelfReg="false" Sequence="274"/>
+    <ROW File="extensions.conf" Component_="extensions.conf" FileName="extens~1.con|extensions.conf" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\extensions.conf" SelfReg="false" Sequence="177"/>
+    <ROW File="extensions.conf.svn_base" Component_="extensions.conf.svn_base" FileName="extens~1.svn|extensions.conf.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\text-base\extensions.conf.svn-base" SelfReg="false" Sequence="6"/>
+    <ROW File="extensions.yaml" Component_="extensions.yaml" FileName="extens~1.yam|extensions.yaml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\yaml\extensions.yaml" SelfReg="false" Sequence="285"/>
+    <ROW File="extensions.yaml.svn_base" Component_="extensions.yaml.svn_base" FileName="extens~1.svn|extensions.yaml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\yaml\.svn\text-base\extensions.yaml.svn-base" SelfReg="false" Sequence="283"/>
+    <ROW File="external.xml" Component_="external.xml" FileName="external.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\external.xml" SelfReg="false" Sequence="263"/>
+    <ROW File="external.xml.svn_base" Component_="external.xml.svn_base" FileName="extern~1.svn|external.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\.svn\text-base\external.xml.svn-base" SelfReg="false" Sequence="255"/>
+    <ROW File="features.xml" Component_="default.xml" FileName="features.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\features.xml" SelfReg="false" Sequence="109"/>
+    <ROW File="features.xml.svn_base" Component_="default.xml.svn_base" FileName="featur~1.svn|features.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\.svn\text-base\features.xml.svn-base" SelfReg="false" Sequence="91"/>
+    <ROW File="followed.wav" Component_="call_secured.wav" FileName="followed.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\misc\8000\followed.wav" SelfReg="false" Sequence="501"/>
+    <ROW File="format" Component_="all_wcprops" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\format" SelfReg="false" Sequence="5"/>
+    <ROW File="format_1" Component_="all_wcprops_1" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\format" SelfReg="false" Sequence="17"/>
+    <ROW File="format_10" Component_="all_wcprops_10" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\vm\.svn\format" SelfReg="false" Sequence="206"/>
+    <ROW File="format_11" Component_="all_wcprops_11" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\.svn\format" SelfReg="false" Sequence="211"/>
+    <ROW File="format_12" Component_="all_wcprops_12" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\demo\.svn\format" SelfReg="false" Sequence="215"/>
+    <ROW File="format_13" Component_="all_wcprops_13" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\vm\.svn\format" SelfReg="false" Sequence="223"/>
+    <ROW File="format_14" Component_="all_wcprops_14" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\.svn\format" SelfReg="false" Sequence="230"/>
+    <ROW File="format_15" Component_="all_wcprops_15" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\demo\.svn\format" SelfReg="false" Sequence="234"/>
+    <ROW File="format_16" Component_="all_wcprops_16" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\vm\.svn\format" SelfReg="false" Sequence="240"/>
+    <ROW File="format_17" Component_="all_wcprops_17" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\mrcp_profiles\.svn\format" SelfReg="false" Sequence="246"/>
+    <ROW File="format_18" Component_="all_wcprops_18" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\.svn\format" SelfReg="false" Sequence="254"/>
+    <ROW File="format_19" Component_="all_wcprops_19" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\external\.svn\format" SelfReg="false" Sequence="260"/>
+    <ROW File="format_2" Component_="all_wcprops_2" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\.svn\format" SelfReg="false" Sequence="89"/>
+    <ROW File="format_20" Component_="all_wcprops_20" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\internal\.svn\format" SelfReg="false" Sequence="266"/>
+    <ROW File="format_21" Component_="all_wcprops_21" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\nat\.svn\format" SelfReg="false" Sequence="272"/>
+    <ROW File="format_22" Component_="all_wcprops_22" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\yaml\.svn\format" SelfReg="false" Sequence="282"/>
+    <ROW File="format_3" Component_="all_wcprops_3" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\.svn\format" SelfReg="false" Sequence="96"/>
+    <ROW File="format_4" Component_="all_wcprops_4" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\.svn\format" SelfReg="false" Sequence="113"/>
+    <ROW File="format_5" Component_="all_wcprops_5" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\format" SelfReg="false" Sequence="117"/>
+    <ROW File="format_6" Component_="all_wcprops_6" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\.svn\format" SelfReg="false" Sequence="182"/>
+    <ROW File="format_7" Component_="all_wcprops_7" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\.svn\format" SelfReg="false" Sequence="193"/>
+    <ROW File="format_8" Component_="all_wcprops_8" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\.svn\format" SelfReg="false" Sequence="196"/>
+    <ROW File="format_9" Component_="all_wcprops_9" FileName="format" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\demo\.svn\format" SelfReg="false" Sequence="201"/>
+    <ROW File="fr.xml" Component_="fr.xml" FileName="fr.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\fr.xml" SelfReg="false" Sequence="237"/>
+    <ROW File="fr.xml.svn_base" Component_="fr.xml.svn_base" FileName="frxml~1.svn|fr.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\.svn\text-base\fr.xml.svn-base" SelfReg="false" Sequence="231"/>
+    <ROW File="freeswitch.log" Component_="freeswitch.log" FileName="freesw~1.log|freeswitch.log" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\log\freeswitch.log" SelfReg="false" Sequence="302"/>
+    <ROW File="freeswitch.xml" Component_="extensions.conf" FileName="freesw~1.xml|freeswitch.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\freeswitch.xml" SelfReg="false" Sequence="178"/>
+    <ROW File="freeswitch.xml.fsxml" Component_="freeswitch.log" FileName="freesw~1.fsx|freeswitch.xml.fsxml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\log\freeswitch.xml.fsxml" SelfReg="false" Sequence="303"/>
+    <ROW File="freeswitch.xml.svn_base" Component_="extensions.conf.svn_base" FileName="freesw~1.svn|freeswitch.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\text-base\freeswitch.xml.svn-base" SelfReg="false" Sequence="7"/>
+    <ROW File="fur_elise.ttml" Component_="extensions.conf" FileName="fur_el~1.ttm|fur_elise.ttml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\fur_elise.ttml" SelfReg="false" Sequence="179"/>
+    <ROW File="fur_elise.ttml.svn_base" Component_="extensions.conf.svn_base" FileName="fur_el~1.svn|fur_elise.ttml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\text-base\fur_elise.ttml.svn-base" SelfReg="false" Sequence="8"/>
+    <ROW File="h_1.wav" Component_="wav_1" FileName="h-1.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-1.wav" SelfReg="false" Sequence="442"/>
+    <ROW File="h_10.wav" Component_="wav_1" FileName="h-10.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-10.wav" SelfReg="false" Sequence="443"/>
+    <ROW File="h_11.wav" Component_="wav_1" FileName="h-11.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-11.wav" SelfReg="false" Sequence="444"/>
+    <ROW File="h_12.wav" Component_="wav_1" FileName="h-12.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-12.wav" SelfReg="false" Sequence="445"/>
+    <ROW File="h_13.wav" Component_="wav_1" FileName="h-13.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-13.wav" SelfReg="false" Sequence="446"/>
+    <ROW File="h_14.wav" Component_="wav_1" FileName="h-14.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-14.wav" SelfReg="false" Sequence="447"/>
+    <ROW File="h_15.wav" Component_="wav_1" FileName="h-15.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-15.wav" SelfReg="false" Sequence="448"/>
+    <ROW File="h_16.wav" Component_="wav_1" FileName="h-16.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-16.wav" SelfReg="false" Sequence="449"/>
+    <ROW File="h_17.wav" Component_="wav_1" FileName="h-17.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-17.wav" SelfReg="false" Sequence="450"/>
+    <ROW File="h_18.wav" Component_="wav_1" FileName="h-18.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-18.wav" SelfReg="false" Sequence="451"/>
+    <ROW File="h_19.wav" Component_="wav_1" FileName="h-19.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-19.wav" SelfReg="false" Sequence="452"/>
+    <ROW File="h_2.wav" Component_="wav_1" FileName="h-2.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-2.wav" SelfReg="false" Sequence="453"/>
+    <ROW File="h_20.wav" Component_="wav_1" FileName="h-20.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-20.wav" SelfReg="false" Sequence="454"/>
+    <ROW File="h_3.wav" Component_="wav_1" FileName="h-3.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-3.wav" SelfReg="false" Sequence="455"/>
+    <ROW File="h_30.wav" Component_="wav_1" FileName="h-30.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-30.wav" SelfReg="false" Sequence="456"/>
+    <ROW File="h_4.wav" Component_="wav_1" FileName="h-4.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-4.wav" SelfReg="false" Sequence="457"/>
+    <ROW File="h_5.wav" Component_="wav_1" FileName="h-5.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-5.wav" SelfReg="false" Sequence="458"/>
+    <ROW File="h_6.wav" Component_="wav_1" FileName="h-6.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-6.wav" SelfReg="false" Sequence="459"/>
+    <ROW File="h_7.wav" Component_="wav_1" FileName="h-7.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-7.wav" SelfReg="false" Sequence="460"/>
+    <ROW File="h_8.wav" Component_="wav_1" FileName="h-8.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-8.wav" SelfReg="false" Sequence="461"/>
+    <ROW File="h_9.wav" Component_="wav_1" FileName="h-9.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\h-9.wav" SelfReg="false" Sequence="462"/>
+    <ROW File="hour.wav" Component_="a_m.wav" FileName="hour.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\hour.wav" SelfReg="false" Sequence="547"/>
+    <ROW File="hours.wav" Component_="a_m.wav" FileName="hours.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\hours.wav" SelfReg="false" Sequence="548"/>
+    <ROW File="hundred.wav" Component_="wav_1" FileName="hundred.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\hundred.wav" SelfReg="false" Sequence="463"/>
+    <ROW File="iax.conf.xml" Component_="acl.conf.xml" FileName="iaxcon~1.xml|iax.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\iax.conf.xml" SelfReg="false" Sequence="63"/>
+    <ROW File="iax.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="iaxcon~1.svn|iax.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\iax.conf.xml.svn-base" SelfReg="false" Sequence="29"/>
+    <ROW File="ideasip.com.noload" Component_="enum.xml" FileName="ideasi~1.nol|ideasip.com.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\ideasip.com.noload" SelfReg="false" Sequence="104"/>
+    <ROW File="ideasip.com.noload.svn_base" Component_="enum.xml.svn_base" FileName="ideasi~1.svn|ideasip.com.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\.svn\text-base\ideasip.com.noload.svn-base" SelfReg="false" Sequence="98"/>
+    <ROW File="ideasip.com.noload.svn_base_1" Component_="xml.svn_base" FileName="ideasi~1.svn|ideasip.com.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\ideasip.com.noload.svn-base" SelfReg="false" Sequence="141"/>
+    <ROW File="ideasip.com.noload_1" Component_="xml" FileName="ideasi~1.nol|ideasip.com.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\ideasip.com.noload" SelfReg="false" Sequence="170"/>
+    <ROW File="if_you_are_this_person.wav" Component_="call_secured.wav" FileName="if_you~1.wav|if_you_are_this_person.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\misc\8000\if_you_are_this_person.wav" SelfReg="false" Sequence="502"/>
+    <ROW File="if_you_would_like_to.wav" Component_="call_secured.wav" FileName="if_you~2.wav|if_you_would_like_to.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\misc\8000\if_you_would_like_to.wav" SelfReg="false" Sequence="503"/>
+    <ROW File="intelefone.net.noload" Component_="xml" FileName="intele~1.nol|intelefone.net.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\intelefone.net.noload" SelfReg="false" Sequence="171"/>
+    <ROW File="intelefone.net.noload.svn_base" Component_="xml.svn_base" FileName="intele~1.svn|intelefone.net.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\intelefone.net.noload.svn-base" SelfReg="false" Sequence="142"/>
+    <ROW File="internal.xml" Component_="external.xml" FileName="internal.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\internal.xml" SelfReg="false" Sequence="269"/>
+    <ROW File="internal.xml.svn_base" Component_="external.xml.svn_base" FileName="intern~1.svn|internal.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\.svn\text-base\internal.xml.svn-base" SelfReg="false" Sequence="256"/>
+    <ROW File="ivr.conf.xml" Component_="acl.conf.xml" FileName="ivrcon~1.xml|ivr.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\ivr.conf.xml" SelfReg="false" Sequence="64"/>
+    <ROW File="ivr.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="ivrcon~1.svn|ivr.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\ivr.conf.xml.svn-base" SelfReg="false" Sequence="30"/>
+    <ROW File="ivr_account_number.wav" Component_="ivr_account_number.wav" FileName="ivr-ac~1.wav|ivr-account_number.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-account_number.wav" SelfReg="false" Sequence="470"/>
+    <ROW File="ivr_connect_to_caller.wav" Component_="ivr_account_number.wav" FileName="ivr-co~1.wav|ivr-connect_to_caller.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-connect_to_caller.wav" SelfReg="false" Sequence="471"/>
+    <ROW File="ivr_enter_ext.wav" Component_="ivr_account_number.wav" FileName="ivr-en~1.wav|ivr-enter_ext.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-enter_ext.wav" SelfReg="false" Sequence="472"/>
+    <ROW File="ivr_enter_ext_pound.wav" Component_="ivr_account_number.wav" FileName="ivr-en~2.wav|ivr-enter_ext_pound.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-enter_ext_pound.wav" SelfReg="false" Sequence="473"/>
+    <ROW File="ivr_for_this_person.wav" Component_="ivr_account_number.wav" FileName="ivr-fo~1.wav|ivr-for_this_person.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-for_this_person.wav" SelfReg="false" Sequence="474"/>
+    <ROW File="ivr_hold_connect_call.wav" Component_="ivr_account_number.wav" FileName="ivr-ho~1.wav|ivr-hold_connect_call.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-hold_connect_call.wav" SelfReg="false" Sequence="475"/>
+    <ROW File="ivr_im_sorry.wav" Component_="ivr_account_number.wav" FileName="ivr-im~1.wav|ivr-im_sorry.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-im_sorry.wav" SelfReg="false" Sequence="476"/>
+    <ROW File="ivr_please.wav" Component_="ivr_account_number.wav" FileName="ivr-pl~1.wav|ivr-please.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-please.wav" SelfReg="false" Sequence="477"/>
+    <ROW File="ivr_please_return_our_call_at.wav" Component_="ivr_account_number.wav" FileName="ivr-pl~2.wav|ivr-please_return_our_call_at.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-please_return_our_call_at.wav" SelfReg="false" Sequence="478"/>
+    <ROW File="ivr_regarding_reference_number.wav" Component_="ivr_account_number.wav" FileName="ivr-re~1.wav|ivr-regarding_reference_number.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-regarding_reference_number.wav" SelfReg="false" Sequence="479"/>
+    <ROW File="ivr_sample_submenu.wav" Component_="ivr_account_number.wav" FileName="ivr-sa~1.wav|ivr-sample_submenu.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-sample_submenu.wav" SelfReg="false" Sequence="480"/>
+    <ROW File="ivr_say_name.wav" Component_="ivr_account_number.wav" FileName="ivr-sa~2.wav|ivr-say_name.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-say_name.wav" SelfReg="false" Sequence="481"/>
+    <ROW File="ivr_send_to_voicemail.wav" Component_="ivr_account_number.wav" FileName="ivr-se~1.wav|ivr-send_to_voicemail.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-send_to_voicemail.wav" SelfReg="false" Sequence="482"/>
+    <ROW File="ivr_speak_to_a_customer_service_representative.wav" Component_="ivr_account_number.wav" FileName="ivr-sp~1.wav|ivr-speak_to_a_customer_service_representative.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-speak_to_a_customer_service_representative.wav" SelfReg="false" Sequence="483"/>
+    <ROW File="ivr_take_a_message.wav" Component_="ivr_account_number.wav" FileName="ivr-ta~1.wav|ivr-take_a_message.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-take_a_message.wav" SelfReg="false" Sequence="484"/>
+    <ROW File="ivr_thank_you.wav" Component_="ivr_account_number.wav" FileName="ivr-th~1.wav|ivr-thank_you.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-thank_you.wav" SelfReg="false" Sequence="485"/>
+    <ROW File="ivr_that_was_an_invalid_entry.wav" Component_="ivr_account_number.wav" FileName="ivr-th~2.wav|ivr-that_was_an_invalid_entry.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-that_was_an_invalid_entry.wav" SelfReg="false" Sequence="486"/>
+    <ROW File="ivr_this_is_a_call_from.wav" Component_="ivr_account_number.wav" FileName="ivr-th~3.wav|ivr-this_is_a_call_from.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-this_is_a_call_from.wav" SelfReg="false" Sequence="487"/>
+    <ROW File="ivr_this_ivr_will_let_you_test_features.wav" Component_="ivr_account_number.wav" FileName="ivr-th~4.wav|ivr-this_ivr_will_let_you_test_features.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-this_ivr_will_let_you_test_features.wav" SelfReg="false" Sequence="488"/>
+    <ROW File="ivr_to_call_the_freeswitch_conference.wav" Component_="ivr_account_number.wav" FileName="ivr-to~1.wav|ivr-to_call_the_freeswitch_conference.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-to_call_the_freeswitch_conference.wav" SelfReg="false" Sequence="489"/>
+    <ROW File="ivr_to_do_a_freeswitch_echo_test.wav" Component_="ivr_account_number.wav" FileName="ivr-to~2.wav|ivr-to_do_a_freeswitch_echo_test.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-to_do_a_freeswitch_echo_test.wav" SelfReg="false" Sequence="490"/>
+    <ROW File="ivr_to_do_a_fwd_echo_test.wav" Component_="ivr_account_number.wav" FileName="ivr-to~3.wav|ivr-to_do_a_fwd_echo_test.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-to_do_a_fwd_echo_test.wav" SelfReg="false" Sequence="491"/>
+    <ROW File="ivr_to_hear_sample_submenu.wav" Component_="ivr_account_number.wav" FileName="ivr-to~4.wav|ivr-to_hear_sample_submenu.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-to_hear_sample_submenu.wav" SelfReg="false" Sequence="492"/>
+    <ROW File="ivr_to_hear_screaming_monkeys.wav" Component_="ivr_account_number.wav" FileName="ivr-to~5.wav|ivr-to_hear_screaming_monkeys.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-to_hear_screaming_monkeys.wav" SelfReg="false" Sequence="493"/>
+    <ROW File="ivr_to_listen_to_moh.wav" Component_="ivr_account_number.wav" FileName="ivr-to~6.wav|ivr-to_listen_to_moh.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-to_listen_to_moh.wav" SelfReg="false" Sequence="494"/>
+    <ROW File="ivr_to_repeat_these_options.wav" Component_="ivr_account_number.wav" FileName="ivr-to~7.wav|ivr-to_repeat_these_options.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-to_repeat_these_options.wav" SelfReg="false" Sequence="495"/>
+    <ROW File="ivr_to_return_to_previous_menu.wav" Component_="ivr_account_number.wav" FileName="ivr-to~8.wav|ivr-to_return_to_previous_menu.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-to_return_to_previous_menu.wav" SelfReg="false" Sequence="496"/>
+    <ROW File="ivr_to_speak_with_an_operator.wav" Component_="ivr_account_number.wav" FileName="ivr-to~9.wav|ivr-to_speak_with_an_operator.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-to_speak_with_an_operator.wav" SelfReg="false" Sequence="497"/>
+    <ROW File="ivr_welcome_to_freeswitch.wav" Component_="ivr_account_number.wav" FileName="ivr-we~1.wav|ivr-welcome_to_freeswitch.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-welcome_to_freeswitch.wav" SelfReg="false" Sequence="498"/>
+    <ROW File="ivr_you_may_exit_by_hanging_up.wav" Component_="ivr_account_number.wav" FileName="ivr-yo~1.wav|ivr-you_may_exit_by_hanging_up.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ivr\8000\ivr-you_may_exit_by_hanging_up.wav" SelfReg="false" Sequence="499"/>
+    <ROW File="java.conf.xml" Component_="acl.conf.xml" FileName="javaco~1.xml|java.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\java.conf.xml" SelfReg="false" Sequence="65"/>
+    <ROW File="java.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="javaco~1.svn|java.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\java.conf.xml.svn-base" SelfReg="false" Sequence="31"/>
+    <ROW File="js32.dll" Component_="js32.dll" FileName="js32.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\js32.dll" SelfReg="false" Sequence="295"/>
+    <ROW File="libapr.dll" Component_="libapr.dll" FileName="libapr.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\libapr.dll" SelfReg="false" Sequence="296"/>
+    <ROW File="libaprutil.dll" Component_="libaprutil.dll" FileName="libapr~1.dll|libaprutil.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\libaprutil.dll" SelfReg="false" Sequence="297"/>
+    <ROW File="libopenmrcpclient.lib" Component_="aprtoolkit.lib" FileName="libope~1.lib|libopenmrcpclient.lib" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\libopenmrcpclient.lib" SelfReg="false" Sequence="298"/>
+    <ROW File="libteletone.dll" Component_="libteletone.dll" FileName="libtel~1.dll|libteletone.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\libteletone.dll" SelfReg="false" Sequence="299"/>
+    <ROW File="libudns.lib" Component_="aprtoolkit.lib" FileName="libudns.lib" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\libudns.lib" SelfReg="false" Sequence="300"/>
+    <ROW File="libvoipcodecs.lib" Component_="aprtoolkit.lib" FileName="libvoi~1.lib|libvoipcodecs.lib" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\libvoipcodecs.lib" SelfReg="false" Sequence="301"/>
+    <ROW File="limit.conf.xml" Component_="acl.conf.xml" FileName="limitc~1.xml|limit.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\limit.conf.xml" SelfReg="false" Sequence="66"/>
+    <ROW File="limit.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="limitc~1.svn|limit.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\limit.conf.xml.svn-base" SelfReg="false" Sequence="32"/>
+    <ROW File="local_stream.conf.xml" Component_="acl.conf.xml" FileName="local_~1.xml|local_stream.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\local_stream.conf.xml" SelfReg="false" Sequence="67"/>
+    <ROW File="local_stream.conf.xml.svn_base" Component_="local_stream.conf.xml.svn_base" FileName="local_~1.svn|local_stream.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\prop-base\local_stream.conf.xml.svn-base" SelfReg="false" Sequence="18"/>
+    <ROW File="local_stream.conf.xml.svn_base_1" Component_="acl.conf.xml.svn_base" FileName="local_~1.svn|local_stream.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\local_stream.conf.xml.svn-base" SelfReg="false" Sequence="33"/>
+    <ROW File="logfile.conf.xml" Component_="acl.conf.xml" FileName="logfil~1.xml|logfile.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\logfile.conf.xml" SelfReg="false" Sequence="68"/>
+    <ROW File="logfile.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="logfil~1.svn|logfile.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\logfile.conf.xml.svn-base" SelfReg="false" Sequence="34"/>
+    <ROW File="lua.conf.xml" Component_="acl.conf.xml" FileName="luacon~1.xml|lua.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\lua.conf.xml" SelfReg="false" Sequence="69"/>
+    <ROW File="lua.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="luacon~1.svn|lua.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\lua.conf.xml.svn-base" SelfReg="false" Sequence="35"/>
+    <ROW File="mediaframe.lib" Component_="aprtoolkit.lib" FileName="mediaf~1.lib|mediaframe.lib" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mediaframe.lib" SelfReg="false" Sequence="304"/>
+    <ROW File="million.wav" Component_="wav_1" FileName="million.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\million.wav" SelfReg="false" Sequence="464"/>
+    <ROW File="mime.types" Component_="extensions.conf" FileName="mime~1.typ|mime.types" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\mime.types" SelfReg="false" Sequence="243"/>
+    <ROW File="mime.types.svn_base" Component_="extensions.conf.svn_base" FileName="mimety~1.svn|mime.types.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\text-base\mime.types.svn-base" SelfReg="false" Sequence="9"/>
+    <ROW File="minus.wav" Component_="and.wav" FileName="minus.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\currency\8000\minus.wav" SelfReg="false" Sequence="411"/>
+    <ROW File="minute.wav" Component_="a_m.wav" FileName="minute.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\minute.wav" SelfReg="false" Sequence="549"/>
+    <ROW File="minutes.wav" Component_="a_m.wav" FileName="minutes.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\minutes.wav" SelfReg="false" Sequence="550"/>
+    <ROW File="mod_PortAudio.dll" Component_="mod_PortAudio.dll" FileName="mod_Po~1.dll|mod_PortAudio.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_PortAudio.dll" SelfReg="false" Sequence="334"/>
+    <ROW File="mod_amr.dll" Component_="mod_amr.dll" FileName="mod_amr.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_amr.dll" SelfReg="false" Sequence="305"/>
+    <ROW File="mod_cdr_csv.dll" Component_="mod_cdr_csv.dll" FileName="mod_cd~1.dll|mod_cdr_csv.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_cdr_csv.dll" SelfReg="false" Sequence="306"/>
+    <ROW File="mod_commands.dll" Component_="mod_commands.dll" FileName="mod_co~1.dll|mod_commands.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_commands.dll" SelfReg="false" Sequence="307"/>
+    <ROW File="mod_conference.dll" Component_="mod_conference.dll" FileName="mod_co~2.dll|mod_conference.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_conference.dll" SelfReg="false" Sequence="308"/>
+    <ROW File="mod_console.dll" Component_="mod_console.dll" FileName="mod_co~3.dll|mod_console.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_console.dll" SelfReg="false" Sequence="309"/>
+    <ROW File="mod_dialplan_asterisk.dll" Component_="mod_dialplan_asterisk.dll" FileName="mod_di~1.dll|mod_dialplan_asterisk.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_dialplan_asterisk.dll" SelfReg="false" Sequence="310"/>
+    <ROW File="mod_dialplan_directory.dll" Component_="mod_dialplan_directory.dll" FileName="mod_di~2.dll|mod_dialplan_directory.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_dialplan_directory.dll" SelfReg="false" Sequence="311"/>
+    <ROW File="mod_dialplan_xml.dll" Component_="mod_dialplan_xml.dll" FileName="mod_di~3.dll|mod_dialplan_xml.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_dialplan_xml.dll" SelfReg="false" Sequence="312"/>
+    <ROW File="mod_dingaling.dll" Component_="mod_dingaling.dll" FileName="mod_di~4.dll|mod_dingaling.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_dingaling.dll" SelfReg="false" Sequence="313"/>
+    <ROW File="mod_dptools.dll" Component_="mod_dptools.dll" FileName="mod_dp~1.dll|mod_dptools.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_dptools.dll" SelfReg="false" Sequence="314"/>
+    <ROW File="mod_enum.dll" Component_="mod_enum.dll" FileName="mod_enum.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_enum.dll" SelfReg="false" Sequence="315"/>
+    <ROW File="mod_esf.dll" Component_="mod_esf.dll" FileName="mod_esf.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_esf.dll" SelfReg="false" Sequence="316"/>
+    <ROW File="mod_event_multicast.dll" Component_="mod_event_multicast.dll" FileName="mod_ev~1.dll|mod_event_multicast.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_event_multicast.dll" SelfReg="false" Sequence="317"/>
+    <ROW File="mod_event_socket.dll" Component_="mod_event_socket.dll" FileName="mod_ev~2.dll|mod_event_socket.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_event_socket.dll" SelfReg="false" Sequence="318"/>
+    <ROW File="mod_expr.dll" Component_="mod_expr.dll" FileName="mod_expr.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_expr.dll" SelfReg="false" Sequence="319"/>
+    <ROW File="mod_fifo.dll" Component_="mod_fifo.dll" FileName="mod_fifo.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_fifo.dll" SelfReg="false" Sequence="320"/>
+    <ROW File="mod_fsv.dll" Component_="mod_fsv.dll" FileName="mod_fsv.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_fsv.dll" SelfReg="false" Sequence="321"/>
+    <ROW File="mod_g723_1.dll" Component_="mod_g723_1.dll" FileName="mod_g7~1.dll|mod_g723_1.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_g723_1.dll" SelfReg="false" Sequence="322"/>
+    <ROW File="mod_g729.dll" Component_="mod_g729.dll" FileName="mod_g729.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_g729.dll" SelfReg="false" Sequence="323"/>
+    <ROW File="mod_h26x.dll" Component_="mod_h26x.dll" FileName="mod_h26x.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_h26x.dll" SelfReg="false" Sequence="324"/>
+    <ROW File="mod_iax.dll" Component_="mod_iax.dll" FileName="mod_iax.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_iax.dll" SelfReg="false" Sequence="325"/>
+    <ROW File="mod_ilbc.dll" Component_="mod_ilbc.dll" FileName="mod_ilbc.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_ilbc.dll" SelfReg="false" Sequence="326"/>
+    <ROW File="mod_ldap.dll" Component_="mod_ldap.dll" FileName="mod_ldap.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_ldap.dll" SelfReg="false" Sequence="327"/>
+    <ROW File="mod_limit.dll" Component_="mod_limit.dll" FileName="mod_li~1.dll|mod_limit.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_limit.dll" SelfReg="false" Sequence="328"/>
+    <ROW File="mod_local_stream.dll" Component_="mod_local_stream.dll" FileName="mod_lo~1.dll|mod_local_stream.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_local_stream.dll" SelfReg="false" Sequence="329"/>
+    <ROW File="mod_logfile.dll" Component_="mod_logfile.dll" FileName="mod_lo~2.dll|mod_logfile.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_logfile.dll" SelfReg="false" Sequence="330"/>
+    <ROW File="mod_lua.dll" Component_="mod_lua.dll" FileName="mod_lua.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_lua.dll" SelfReg="false" Sequence="331"/>
+    <ROW File="mod_native_file.dll" Component_="mod_native_file.dll" FileName="mod_na~1.dll|mod_native_file.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_native_file.dll" SelfReg="false" Sequence="332"/>
+    <ROW File="mod_openmrcp.dll" Component_="mod_openmrcp.dll" FileName="mod_op~1.dll|mod_openmrcp.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_openmrcp.dll" SelfReg="false" Sequence="333"/>
+    <ROW File="mod_rss.dll" Component_="mod_rss.dll" FileName="mod_rss.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_rss.dll" SelfReg="false" Sequence="335"/>
+    <ROW File="mod_say_de.dll" Component_="mod_say_de.dll" FileName="mod_sa~1.dll|mod_say_de.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_say_de.dll" SelfReg="false" Sequence="336"/>
+    <ROW File="mod_say_en.dll" Component_="mod_say_en.dll" FileName="mod_sa~2.dll|mod_say_en.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_say_en.dll" SelfReg="false" Sequence="337"/>
+    <ROW File="mod_say_es.dll" Component_="mod_say_es.dll" FileName="mod_sa~3.dll|mod_say_es.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_say_es.dll" SelfReg="false" Sequence="338"/>
+    <ROW File="mod_say_fr.dll" Component_="mod_say_fr.dll" FileName="mod_sa~4.dll|mod_say_fr.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_say_fr.dll" SelfReg="false" Sequence="339"/>
+    <ROW File="mod_say_it.dll" Component_="mod_say_it.dll" FileName="mod_sa~5.dll|mod_say_it.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_say_it.dll" SelfReg="false" Sequence="340"/>
+    <ROW File="mod_say_nl.dll" Component_="mod_say_nl.dll" FileName="mod_sa~6.dll|mod_say_nl.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_say_nl.dll" SelfReg="false" Sequence="341"/>
+    <ROW File="mod_sndfile.dll" Component_="mod_sndfile.dll" FileName="mod_sn~1.dll|mod_sndfile.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_sndfile.dll" SelfReg="false" Sequence="342"/>
+    <ROW File="mod_sofia.dll" Component_="mod_sofia.dll" FileName="mod_so~1.dll|mod_sofia.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_sofia.dll" SelfReg="false" Sequence="343"/>
+    <ROW File="mod_speex.dll" Component_="mod_speex.dll" FileName="mod_sp~1.dll|mod_speex.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_speex.dll" SelfReg="false" Sequence="344"/>
+    <ROW File="mod_spidermonkey.dll" Component_="mod_spidermonkey.dll" FileName="mod_sp~2.dll|mod_spidermonkey.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_spidermonkey.dll" SelfReg="false" Sequence="345"/>
+    <ROW File="mod_spidermonkey_core_db.dll" Component_="mod_spidermonkey_core_db.dll" FileName="mod_sp~3.dll|mod_spidermonkey_core_db.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_spidermonkey_core_db.dll" SelfReg="false" Sequence="346"/>
+    <ROW File="mod_spidermonkey_curl.dll" Component_="mod_spidermonkey_curl.dll" FileName="mod_sp~4.dll|mod_spidermonkey_curl.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_spidermonkey_curl.dll" SelfReg="false" Sequence="347"/>
+    <ROW File="mod_spidermonkey_odbc.dll" Component_="mod_spidermonkey_odbc.dll" FileName="mod_sp~5.dll|mod_spidermonkey_odbc.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_spidermonkey_odbc.dll" SelfReg="false" Sequence="348"/>
+    <ROW File="mod_spidermonkey_socket.dll" Component_="mod_spidermonkey_socket.dll" FileName="mod_sp~6.dll|mod_spidermonkey_socket.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_spidermonkey_socket.dll" SelfReg="false" Sequence="349"/>
+    <ROW File="mod_spidermonkey_teletone.dll" Component_="mod_spidermonkey_teletone.dll" FileName="mod_sp~7.dll|mod_spidermonkey_teletone.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_spidermonkey_teletone.dll" SelfReg="false" Sequence="350"/>
+    <ROW File="mod_tone_stream.dll" Component_="mod_tone_stream.dll" FileName="mod_to~1.dll|mod_tone_stream.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_tone_stream.dll" SelfReg="false" Sequence="351"/>
+    <ROW File="mod_voicemail.dll" Component_="mod_voicemail.dll" FileName="mod_vo~1.dll|mod_voicemail.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_voicemail.dll" SelfReg="false" Sequence="352"/>
+    <ROW File="mod_voipcodecs.dll" Component_="mod_voipcodecs.dll" FileName="mod_vo~2.dll|mod_voipcodecs.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_voipcodecs.dll" SelfReg="false" Sequence="353"/>
+    <ROW File="mod_woomera.dll" Component_="mod_woomera.dll" FileName="mod_wo~1.dll|mod_woomera.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_woomera.dll" SelfReg="false" Sequence="354"/>
+    <ROW File="mod_xml_cdr.dll" Component_="mod_xml_cdr.dll" FileName="mod_xm~1.dll|mod_xml_cdr.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_xml_cdr.dll" SelfReg="false" Sequence="355"/>
+    <ROW File="mod_xml_curl.dll" Component_="mod_xml_curl.dll" FileName="mod_xm~2.dll|mod_xml_curl.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_xml_curl.dll" SelfReg="false" Sequence="356"/>
+    <ROW File="mod_xml_rpc.dll" Component_="mod_xml_rpc.dll" FileName="mod_xm~3.dll|mod_xml_rpc.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_xml_rpc.dll" SelfReg="false" Sequence="357"/>
+    <ROW File="mod_yaml.yaml" Component_="extensions.yaml" FileName="mod_ya~1.yam|mod_yaml.yaml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\yaml\mod_yaml.yaml" SelfReg="false" Sequence="286"/>
+    <ROW File="mod_yaml.yaml.svn_base" Component_="extensions.yaml.svn_base" FileName="mod_ya~1.svn|mod_yaml.yaml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\yaml\.svn\text-base\mod_yaml.yaml.svn-base" SelfReg="false" Sequence="284"/>
+    <ROW File="mod_zeroconf.dll" Component_="mod_zeroconf.dll" FileName="mod_ze~1.dll|mod_zeroconf.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mod\mod_zeroconf.dll" SelfReg="false" Sequence="358"/>
+    <ROW File="modules.conf.xml" Component_="acl.conf.xml" FileName="module~1.xml|modules.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\modules.conf.xml" SelfReg="false" Sequence="70"/>
+    <ROW File="modules.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="module~1.svn|modules.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\modules.conf.xml.svn-base" SelfReg="false" Sequence="36"/>
+    <ROW File="mon_0.wav" Component_="a_m.wav" FileName="mon-0.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-0.wav" SelfReg="false" Sequence="551"/>
+    <ROW File="mon_1.wav" Component_="a_m.wav" FileName="mon-1.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-1.wav" SelfReg="false" Sequence="552"/>
+    <ROW File="mon_10.wav" Component_="a_m.wav" FileName="mon-10.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-10.wav" SelfReg="false" Sequence="553"/>
+    <ROW File="mon_11.wav" Component_="a_m.wav" FileName="mon-11.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-11.wav" SelfReg="false" Sequence="554"/>
+    <ROW File="mon_2.wav" Component_="a_m.wav" FileName="mon-2.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-2.wav" SelfReg="false" Sequence="555"/>
+    <ROW File="mon_3.wav" Component_="a_m.wav" FileName="mon-3.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-3.wav" SelfReg="false" Sequence="556"/>
+    <ROW File="mon_4.wav" Component_="a_m.wav" FileName="mon-4.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-4.wav" SelfReg="false" Sequence="557"/>
+    <ROW File="mon_5.wav" Component_="a_m.wav" FileName="mon-5.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-5.wav" SelfReg="false" Sequence="558"/>
+    <ROW File="mon_6.wav" Component_="a_m.wav" FileName="mon-6.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-6.wav" SelfReg="false" Sequence="559"/>
+    <ROW File="mon_7.wav" Component_="a_m.wav" FileName="mon-7.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-7.wav" SelfReg="false" Sequence="560"/>
+    <ROW File="mon_8.wav" Component_="a_m.wav" FileName="mon-8.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-8.wav" SelfReg="false" Sequence="561"/>
+    <ROW File="mon_9.wav" Component_="a_m.wav" FileName="mon-9.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\mon-9.wav" SelfReg="false" Sequence="562"/>
+    <ROW File="mrcpcore.lib" Component_="aprtoolkit.lib" FileName="mrcpcore.lib" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mrcpcore.lib" SelfReg="false" Sequence="359"/>
+    <ROW File="mrcpmediaframe.lib" Component_="aprtoolkit.lib" FileName="mrcpme~1.lib|mrcpmediaframe.lib" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mrcpmediaframe.lib" SelfReg="false" Sequence="360"/>
+    <ROW File="mrcpv2agent.lib" Component_="aprtoolkit.lib" FileName="mrcpv2~1.lib|mrcpv2agent.lib" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\mrcpv2agent.lib" SelfReg="false" Sequence="361"/>
+    <ROW File="nat.xml" Component_="external.xml" FileName="nat.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\nat.xml" SelfReg="false" Sequence="275"/>
+    <ROW File="nat.xml.svn_base" Component_="external.xml.svn_base" FileName="natxml~1.svn|nat.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\sip_profiles\.svn\text-base\nat.xml.svn-base" SelfReg="false" Sequence="257"/>
+    <ROW File="negative.wav" Component_="and.wav" FileName="negative.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\currency\8000\negative.wav" SelfReg="false" Sequence="412"/>
+    <ROW File="notify_voicemail.tpl" Component_="extensions.conf" FileName="notify~1.tpl|notify-voicemail.tpl" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\notify-voicemail.tpl" SelfReg="false" Sequence="251"/>
+    <ROW File="notify_voicemail.tpl.svn_base" Component_="extensions.conf.svn_base" FileName="notify~1.svn|notify-voicemail.tpl.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\text-base\notify-voicemail.tpl.svn-base" SelfReg="false" Sequence="10"/>
+    <ROW File="oclock.wav" Component_="a_m.wav" FileName="oclock.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\oclock.wav" SelfReg="false" Sequence="563"/>
+    <ROW File="oh.wav" Component_="a_m.wav" FileName="oh.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\oh.wav" SelfReg="false" Sequence="564"/>
+    <ROW File="openmrcp.conf.xml" Component_="acl.conf.xml" FileName="openmr~1.xml|openmrcp.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\openmrcp.conf.xml" SelfReg="false" Sequence="71"/>
+    <ROW File="openmrcp.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="openmr~1.svn|openmrcp.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\openmrcp.conf.xml.svn-base" SelfReg="false" Sequence="37"/>
+    <ROW File="openmrcp_v1.xml" Component_="openmrcp_v1.xml" FileName="openmr~1.xml|openmrcp-v1.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\mrcp_profiles\openmrcp-v1.xml" SelfReg="false" Sequence="249"/>
+    <ROW File="openmrcp_v1.xml.svn_base" Component_="openmrcp_v1.xml.svn_base" FileName="openmr~1.svn|openmrcp-v1.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\mrcp_profiles\.svn\text-base\openmrcp-v1.xml.svn-base" SelfReg="false" Sequence="247"/>
+    <ROW File="openmrcp_v2.xml" Component_="openmrcp_v1.xml" FileName="openmr~2.xml|openmrcp-v2.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\mrcp_profiles\openmrcp-v2.xml" SelfReg="false" Sequence="250"/>
+    <ROW File="openmrcp_v2.xml.svn_base" Component_="openmrcp_v1.xml.svn_base" FileName="openmr~2.svn|openmrcp-v2.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\mrcp_profiles\.svn\text-base\openmrcp-v2.xml.svn-base" SelfReg="false" Sequence="248"/>
+    <ROW File="p_m.wav" Component_="a_m.wav" FileName="p-m.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\p-m.wav" SelfReg="false" Sequence="565"/>
+    <ROW File="partita_no_3_in_e_major_bwv_1006_1_preludio.wav" Component_="danza_espanola_op_37_h_142_xii_arabesca.wav" FileName="partit~1.wav|partita-no-3-in-e-major-bwv-1006-1-preludio.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\music\8000\partita-no-3-in-e-major-bwv-1006-1-preludio.wav" SelfReg="false" Sequence="624"/>
+    <ROW File="period.wav" Component_="wav_1" FileName="period.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\period.wav" SelfReg="false" Sequence="465"/>
+    <ROW File="perl.conf.xml" Component_="acl.conf.xml" FileName="perlco~1.xml|perl.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\perl.conf.xml" SelfReg="false" Sequence="72"/>
+    <ROW File="perl.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="perlco~1.svn|perl.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\perl.conf.xml.svn-base" SelfReg="false" Sequence="38"/>
+    <ROW File="point.wav" Component_="wav_1" FileName="point.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\point.wav" SelfReg="false" Sequence="466"/>
+    <ROW File="ponce_preludio_in_e_major.wav" Component_="danza_espanola_op_37_h_142_xii_arabesca.wav" FileName="ponce-~1.wav|ponce-preludio-in-e-major.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\music\8000\ponce-preludio-in-e-major.wav" SelfReg="false" Sequence="625"/>
+    <ROW File="portaudio.conf.xml" Component_="acl.conf.xml" FileName="portau~1.xml|portaudio.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\portaudio.conf.xml" SelfReg="false" Sequence="73"/>
+    <ROW File="portaudio.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="portau~1.svn|portaudio.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\portaudio.conf.xml.svn-base" SelfReg="false" Sequence="39"/>
+    <ROW File="post_load_modules.conf.xml" Component_="acl.conf.xml" FileName="post_l~1.xml|post_load_modules.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\post_load_modules.conf.xml" SelfReg="false" Sequence="74"/>
+    <ROW File="post_load_modules.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="post_l~1.svn|post_load_modules.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\post_load_modules.conf.xml.svn-base" SelfReg="false" Sequence="40"/>
+    <ROW File="pound.wav" Component_="wav_1" FileName="pound.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\pound.wav" SelfReg="false" Sequence="467"/>
+    <ROW File="provide_reference_number.wav" Component_="call_secured.wav" FileName="provid~1.wav|provide_reference_number.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\misc\8000\provide_reference_number.wav" SelfReg="false" Sequence="504"/>
+    <ROW File="pthreadVC2.dll" Component_="pthreadVC2.dll" FileName="pthrea~1.dll|pthreadVC2.dll" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\pthreadVC2.dll" SelfReg="false" Sequence="362"/>
+    <ROW File="public.xml" Component_="default.xml" FileName="public.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\public.xml" SelfReg="false" Sequence="110"/>
+    <ROW File="public.xml.svn_base" Component_="default.xml.svn_base" FileName="public~1.svn|public.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\.svn\text-base\public.xml.svn-base" SelfReg="false" Sequence="92"/>
+    <ROW File="pulver.com.noload" Component_="enum.xml" FileName="pulver~1.nol|pulver.com.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\pulver.com.noload" SelfReg="false" Sequence="105"/>
+    <ROW File="pulver.com.noload.svn_base" Component_="enum.xml.svn_base" FileName="pulver~1.svn|pulver.com.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\.svn\text-base\pulver.com.noload.svn-base" SelfReg="false" Sequence="99"/>
+    <ROW File="pulver.com.noload.svn_base_1" Component_="xml.svn_base" FileName="pulver~1.svn|pulver.com.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\pulver.com.noload.svn-base" SelfReg="false" Sequence="143"/>
+    <ROW File="pulver.com.noload_1" Component_="xml" FileName="pulver~1.nol|pulver.com.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\pulver.com.noload" SelfReg="false" Sequence="172"/>
+    <ROW File="rss.conf.xml" Component_="acl.conf.xml" FileName="rsscon~1.xml|rss.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\rss.conf.xml" SelfReg="false" Sequence="75"/>
+    <ROW File="rss.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="rsscon~1.svn|rss.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\rss.conf.xml.svn-base" SelfReg="false" Sequence="41"/>
+    <ROW File="rtspcore.lib" Component_="aprtoolkit.lib" FileName="rtspcore.lib" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\rtspcore.lib" SelfReg="false" Sequence="363"/>
+    <ROW File="second.wav" Component_="a_m.wav" FileName="second.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\second.wav" SelfReg="false" Sequence="566"/>
+    <ROW File="seconds.wav" Component_="a_m.wav" FileName="seconds.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\seconds.wav" SelfReg="false" Sequence="567"/>
+    <ROW File="server.noload" Component_="client.noload" FileName="server~1.nol|server.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\server.noload" SelfReg="false" Sequence="189"/>
+    <ROW File="server.noload.svn_base" Component_="client.noload.svn_base" FileName="server~1.svn|server.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\.svn\text-base\server.noload.svn-base" SelfReg="false" Sequence="185"/>
+    <ROW File="server.xml" Component_="client.noload" FileName="server.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\server.xml" SelfReg="false" Sequence="190"/>
+    <ROW File="server.xml.svn_base" Component_="client.noload.svn_base" FileName="server~2.svn|server.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\jingle_profiles\.svn\text-base\server.xml.svn-base" SelfReg="false" Sequence="186"/>
+    <ROW File="sip.broadvoice.com.noload" Component_="xml" FileName="sipbro~1.nol|sip.broadvoice.com.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\sip.broadvoice.com.noload" SelfReg="false" Sequence="173"/>
+    <ROW File="sip.broadvoice.com.noload.svn_base" Component_="xml.svn_base" FileName="sipbro~1.svn|sip.broadvoice.com.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\sip.broadvoice.com.noload.svn-base" SelfReg="false" Sequence="144"/>
+    <ROW File="sipbroker.com.noload" Component_="enum.xml" FileName="sipbro~1.nol|sipbroker.com.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\sipbroker.com.noload" SelfReg="false" Sequence="106"/>
+    <ROW File="sipbroker.com.noload.svn_base" Component_="enum.xml.svn_base" FileName="sipbro~1.svn|sipbroker.com.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\.svn\text-base\sipbroker.com.noload.svn-base" SelfReg="false" Sequence="100"/>
+    <ROW File="sipphone.com.noload" Component_="enum.xml" FileName="sippho~1.nol|sipphone.com.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\sipphone.com.noload" SelfReg="false" Sequence="107"/>
+    <ROW File="sipphone.com.noload.svn_base" Component_="enum.xml.svn_base" FileName="sippho~1.svn|sipphone.com.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\.svn\text-base\sipphone.com.noload.svn-base" SelfReg="false" Sequence="101"/>
+    <ROW File="sipphone.com.noload.svn_base_1" Component_="xml.svn_base" FileName="sippho~1.svn|sipphone.com.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\sipphone.com.noload.svn-base" SelfReg="false" Sequence="145"/>
+    <ROW File="sipphone.com.noload_1" Component_="xml" FileName="sippho~1.nol|sipphone.com.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\sipphone.com.noload" SelfReg="false" Sequence="174"/>
+    <ROW File="sofia.conf.xml" Component_="acl.conf.xml" FileName="sofiac~1.xml|sofia.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\sofia.conf.xml" SelfReg="false" Sequence="76"/>
+    <ROW File="sofia.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="sofiac~1.svn|sofia.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\sofia.conf.xml.svn-base" SelfReg="false" Sequence="42"/>
+    <ROW File="sofia_reg_external.db" Component_="call_limit.db" FileName="sofia_~1.db|sofia_reg_external.db" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\db\sofia_reg_external.db" SelfReg="false" Sequence="289"/>
+    <ROW File="sofia_reg_internal.db" Component_="call_limit.db" FileName="sofia_~2.db|sofia_reg_internal.db" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\db\sofia_reg_internal.db" SelfReg="false" Sequence="290"/>
+    <ROW File="sofia_reg_nat.db" Component_="call_limit.db" FileName="sofia_~3.db|sofia_reg_nat.db" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\db\sofia_reg_nat.db" SelfReg="false" Sequence="291"/>
+    <ROW File="sounds.xml" Component_="sounds.xml" FileName="sounds.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\vm\sounds.xml" SelfReg="false" Sequence="226"/>
+    <ROW File="sounds.xml.svn_base" Component_="sounds.xml.svn_base" FileName="sounds~1.svn|sounds.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\vm\.svn\text-base\sounds.xml.svn-base" SelfReg="false" Sequence="224"/>
+    <ROW File="sounds.xml.svn_base_1" Component_="sounds.xml.svn_base_1" FileName="sounds~1.svn|sounds.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\vm\.svn\text-base\sounds.xml.svn-base" SelfReg="false" Sequence="241"/>
+    <ROW File="sounds.xml_1" Component_="sounds.xml_1" FileName="sounds.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\fr\vm\sounds.xml" SelfReg="false" Sequence="242"/>
+    <ROW File="spidermonkey.conf.xml" Component_="acl.conf.xml" FileName="spider~1.xml|spidermonkey.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\spidermonkey.conf.xml" SelfReg="false" Sequence="77"/>
+    <ROW File="spidermonkey.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="spider~1.svn|spidermonkey.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\spidermonkey.conf.xml.svn-base" SelfReg="false" Sequence="43"/>
+    <ROW File="star.wav" Component_="wav_1" FileName="star.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\star.wav" SelfReg="false" Sequence="468"/>
+    <ROW File="suite_espanola_op_47_leyenda.wav" Component_="danza_espanola_op_37_h_142_xii_arabesca.wav" FileName="suite-~1.wav|suite-espanola-op-47-leyenda.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\music\8000\suite-espanola-op-47-leyenda.wav" SelfReg="false" Sequence="626"/>
+    <ROW File="switch.conf.xml" Component_="acl.conf.xml" FileName="switch~1.xml|switch.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\switch.conf.xml" SelfReg="false" Sequence="78"/>
+    <ROW File="switch.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="switch~1.svn|switch.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\switch.conf.xml.svn-base" SelfReg="false" Sequence="44"/>
+    <ROW File="syslog.conf.xml" Component_="acl.conf.xml" FileName="syslog~1.xml|syslog.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\syslog.conf.xml" SelfReg="false" Sequence="79"/>
+    <ROW File="syslog.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="syslog~1.svn|syslog.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\syslog.conf.xml.svn-base" SelfReg="false" Sequence="45"/>
+    <ROW File="tetris.ttml" Component_="extensions.conf" FileName="tetris~1.ttm|tetris.ttml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\tetris.ttml" SelfReg="false" Sequence="276"/>
+    <ROW File="tetris.ttml.svn_base" Component_="extensions.conf.svn_base" FileName="tetris~1.svn|tetris.ttml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\text-base\tetris.ttml.svn-base" SelfReg="false" Sequence="11"/>
+    <ROW File="thousand.wav" Component_="wav_1" FileName="thousand.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\thousand.wav" SelfReg="false" Sequence="469"/>
+    <ROW File="today.wav" Component_="a_m.wav" FileName="today.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\today.wav" SelfReg="false" Sequence="568"/>
+    <ROW File="tollfreegateway.com.noload" Component_="enum.xml" FileName="tollfr~1.nol|tollfreegateway.com.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\tollfreegateway.com.noload" SelfReg="false" Sequence="108"/>
+    <ROW File="tollfreegateway.com.noload.svn_base" Component_="enum.xml.svn_base" FileName="tollfr~1.svn|tollfreegateway.com.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\dialplan\extensions\.svn\text-base\tollfreegateway.com.noload.svn-base" SelfReg="false" Sequence="102"/>
+    <ROW File="tomorrow.wav" Component_="a_m.wav" FileName="tomorrow.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\tomorrow.wav" SelfReg="false" Sequence="569"/>
+    <ROW File="transfer1.wav" Component_="call_secured.wav" FileName="transf~1.wav|transfer1.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\misc\8000\transfer1.wav" SelfReg="false" Sequence="505"/>
+    <ROW File="transfer2.wav" Component_="call_secured.wav" FileName="transf~2.wav|transfer2.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\misc\8000\transfer2.wav" SelfReg="false" Sequence="506"/>
+    <ROW File="tts.xml" Component_="tts.xml" FileName="tts.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\vm\tts.xml" SelfReg="false" Sequence="208"/>
+    <ROW File="tts.xml.svn_base" Component_="tts.xml.svn_base" FileName="ttsxml~1.svn|tts.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\de\vm\.svn\text-base\tts.xml.svn-base" SelfReg="false" Sequence="207"/>
+    <ROW File="tts.xml.svn_base_1" Component_="sounds.xml.svn_base" FileName="ttsxml~1.svn|tts.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\vm\.svn\text-base\tts.xml.svn-base" SelfReg="false" Sequence="225"/>
+    <ROW File="tts.xml_1" Component_="sounds.xml" FileName="tts.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\lang\en\vm\tts.xml" SelfReg="false" Sequence="227"/>
+    <ROW File="vars.xml" Component_="extensions.conf" FileName="vars.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\vars.xml" SelfReg="false" Sequence="277"/>
+    <ROW File="vars.xml.svn_base" Component_="extensions.conf.svn_base" FileName="varsxm~1.svn|vars.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\text-base\vars.xml.svn-base" SelfReg="false" Sequence="12"/>
+    <ROW File="vm_abort.wav" Component_="vm_abort.wav" FileName="vm-abort.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-abort.wav" SelfReg="false" Sequence="571"/>
+    <ROW File="vm_advanced.wav" Component_="vm_abort.wav" FileName="vm-adv~1.wav|vm-advanced.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-advanced.wav" SelfReg="false" Sequence="572"/>
+    <ROW File="vm_advanced_alt.wav" Component_="vm_abort.wav" FileName="vm-adv~2.wav|vm-advanced_alt.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-advanced_alt.wav" SelfReg="false" Sequence="573"/>
+    <ROW File="vm_choose_greeting.wav" Component_="vm_abort.wav" FileName="vm-cho~1.wav|vm-choose_greeting.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-choose_greeting.wav" SelfReg="false" Sequence="574"/>
+    <ROW File="vm_choose_greeting_choose.wav" Component_="vm_abort.wav" FileName="vm-cho~2.wav|vm-choose_greeting_choose.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-choose_greeting_choose.wav" SelfReg="false" Sequence="575"/>
+    <ROW File="vm_choose_greeting_fail.wav" Component_="vm_abort.wav" FileName="vm-cho~3.wav|vm-choose_greeting_fail.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-choose_greeting_fail.wav" SelfReg="false" Sequence="576"/>
+    <ROW File="vm_continue.wav" Component_="vm_abort.wav" FileName="vm-con~1.wav|vm-continue.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-continue.wav" SelfReg="false" Sequence="577"/>
+    <ROW File="vm_delete_recording.wav" Component_="vm_abort.wav" FileName="vm-del~2.wav|vm-delete_recording.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-delete_recording.wav" SelfReg="false" Sequence="579"/>
+    <ROW File="vm_deleted.wav" Component_="vm_abort.wav" FileName="vm-del~1.wav|vm-deleted.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-deleted.wav" SelfReg="false" Sequence="578"/>
+    <ROW File="vm_emailed.wav" Component_="vm_abort.wav" FileName="vm-ema~1.wav|vm-emailed.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-emailed.wav" SelfReg="false" Sequence="580"/>
+    <ROW File="vm_enter_id.wav" Component_="vm_abort.wav" FileName="vm-ent~1.wav|vm-enter_id.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-enter_id.wav" SelfReg="false" Sequence="581"/>
+    <ROW File="vm_enter_pass.wav" Component_="vm_abort.wav" FileName="vm-ent~2.wav|vm-enter_pass.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-enter_pass.wav" SelfReg="false" Sequence="582"/>
+    <ROW File="vm_fail_auth.wav" Component_="vm_abort.wav" FileName="vm-fai~1.wav|vm-fail_auth.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-fail_auth.wav" SelfReg="false" Sequence="583"/>
+    <ROW File="vm_forward_to_email.wav" Component_="vm_abort.wav" FileName="vm-for~1.wav|vm-forward_to_email.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-forward_to_email.wav" SelfReg="false" Sequence="584"/>
+    <ROW File="vm_goodbye.wav" Component_="vm_abort.wav" FileName="vm-goo~1.wav|vm-goodbye.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-goodbye.wav" SelfReg="false" Sequence="585"/>
+    <ROW File="vm_greeting.wav" Component_="vm_abort.wav" FileName="vm-gre~1.wav|vm-greeting.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-greeting.wav" SelfReg="false" Sequence="586"/>
+    <ROW File="vm_hello.wav" Component_="vm_abort.wav" FileName="vm-hello.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-hello.wav" SelfReg="false" Sequence="587"/>
+    <ROW File="vm_in_folder.wav" Component_="vm_abort.wav" FileName="vm-in_~1.wav|vm-in_folder.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-in_folder.wav" SelfReg="false" Sequence="588"/>
+    <ROW File="vm_listen_new.wav" Component_="vm_abort.wav" FileName="vm-lis~1.wav|vm-listen_new.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-listen_new.wav" SelfReg="false" Sequence="589"/>
+    <ROW File="vm_listen_saved.wav" Component_="vm_abort.wav" FileName="vm-lis~2.wav|vm-listen_saved.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-listen_saved.wav" SelfReg="false" Sequence="590"/>
+    <ROW File="vm_listen_to_recording.wav" Component_="vm_abort.wav" FileName="vm-lis~3.wav|vm-listen_to_recording.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-listen_to_recording.wav" SelfReg="false" Sequence="591"/>
+    <ROW File="vm_listen_to_recording_again.wav" Component_="vm_abort.wav" FileName="vm-lis~4.wav|vm-listen_to_recording_again.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-listen_to_recording_again.wav" SelfReg="false" Sequence="592"/>
+    <ROW File="vm_main_menu.wav" Component_="vm_abort.wav" FileName="vm-mai~1.wav|vm-main_menu.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-main_menu.wav" SelfReg="false" Sequence="593"/>
+    <ROW File="vm_main_menu_alt.wav" Component_="vm_abort.wav" FileName="vm-mai~2.wav|vm-main_menu_alt.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-main_menu_alt.wav" SelfReg="false" Sequence="594"/>
+    <ROW File="vm_mark_urgent.wav" Component_="vm_abort.wav" FileName="vm-mar~1.wav|vm-mark-urgent.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-mark-urgent.wav" SelfReg="false" Sequence="595"/>
+    <ROW File="vm_marked_urgent.wav" Component_="vm_abort.wav" FileName="vm-mar~2.wav|vm-marked-urgent.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-marked-urgent.wav" SelfReg="false" Sequence="596"/>
+    <ROW File="vm_message.wav" Component_="vm_abort.wav" FileName="vm-mes~1.wav|vm-message.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-message.wav" SelfReg="false" Sequence="597"/>
+    <ROW File="vm_message_alt.wav" Component_="vm_abort.wav" FileName="vm-mes~4.wav|vm-message_alt.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-message_alt.wav" SelfReg="false" Sequence="600"/>
+    <ROW File="vm_message_number.wav" Component_="vm_abort.wav" FileName="vm-mes~5.wav|vm-message_number.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-message_number.wav" SelfReg="false" Sequence="601"/>
+    <ROW File="vm_messages.wav" Component_="vm_abort.wav" FileName="vm-mes~2.wav|vm-messages.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-messages.wav" SelfReg="false" Sequence="598"/>
+    <ROW File="vm_messages_alt.wav" Component_="vm_abort.wav" FileName="vm-mes~3.wav|vm-messages_alt.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-messages_alt.wav" SelfReg="false" Sequence="599"/>
+    <ROW File="vm_new.wav" Component_="vm_abort.wav" FileName="vm-new.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-new.wav" SelfReg="false" Sequence="602"/>
+    <ROW File="vm_not_available.wav" Component_="vm_abort.wav" FileName="vm-not~1.wav|vm-not_available.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-not_available.wav" SelfReg="false" Sequence="603"/>
+    <ROW File="vm_person.wav" Component_="vm_abort.wav" FileName="vm-per~1.wav|vm-person.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-person.wav" SelfReg="false" Sequence="604"/>
+    <ROW File="vm_play_greeting.wav" Component_="vm_abort.wav" FileName="vm-pla~1.wav|vm-play_greeting.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-play_greeting.wav" SelfReg="false" Sequence="605"/>
+    <ROW File="vm_press.wav" Component_="vm_abort.wav" FileName="vm-press.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-press.wav" SelfReg="false" Sequence="606"/>
+    <ROW File="vm_record_greeting.wav" Component_="vm_abort.wav" FileName="vm-rec~1.wav|vm-record_greeting.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-record_greeting.wav" SelfReg="false" Sequence="607"/>
+    <ROW File="vm_record_message.wav" Component_="vm_abort.wav" FileName="vm-rec~2.wav|vm-record_message.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-record_message.wav" SelfReg="false" Sequence="608"/>
+    <ROW File="vm_record_name1.wav" Component_="vm_abort.wav" FileName="vm-rec~3.wav|vm-record_name1.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-record_name1.wav" SelfReg="false" Sequence="609"/>
+    <ROW File="vm_record_name2.wav" Component_="vm_abort.wav" FileName="vm-rec~4.wav|vm-record_name2.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-record_name2.wav" SelfReg="false" Sequence="610"/>
+    <ROW File="vm_rerecord.wav" Component_="vm_abort.wav" FileName="vm-rer~1.wav|vm-rerecord.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-rerecord.wav" SelfReg="false" Sequence="611"/>
+    <ROW File="vm_return_call.wav" Component_="vm_abort.wav" FileName="vm-ret~1.wav|vm-return_call.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-return_call.wav" SelfReg="false" Sequence="612"/>
+    <ROW File="vm_save_recording.wav" Component_="vm_abort.wav" FileName="vm-sav~1.wav|vm-save_recording.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-save_recording.wav" SelfReg="false" Sequence="614"/>
+    <ROW File="vm_saved.wav" Component_="vm_abort.wav" FileName="vm-saved.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-saved.wav" SelfReg="false" Sequence="613"/>
+    <ROW File="vm_selected.wav" Component_="vm_abort.wav" FileName="vm-sel~1.wav|vm-selected.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-selected.wav" SelfReg="false" Sequence="615"/>
+    <ROW File="vm_to_exit.wav" Component_="vm_abort.wav" FileName="vm-to_~1.wav|vm-to_exit.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-to_exit.wav" SelfReg="false" Sequence="616"/>
+    <ROW File="vm_to_exit_alt.wav" Component_="vm_abort.wav" FileName="vm-to_~2.wav|vm-to_exit_alt.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-to_exit_alt.wav" SelfReg="false" Sequence="617"/>
+    <ROW File="vm_to_record_greeting.wav" Component_="vm_abort.wav" FileName="vm-to_~3.wav|vm-to_record_greeting.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-to_record_greeting.wav" SelfReg="false" Sequence="618"/>
+    <ROW File="vm_urgent.wav" Component_="vm_abort.wav" FileName="vm-urg~3.wav|vm-urgent.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-urgent.wav" SelfReg="false" Sequence="621"/>
+    <ROW File="vm_urgent_new.wav" Component_="vm_abort.wav" FileName="vm-urg~1.wav|vm-urgent-new.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-urgent-new.wav" SelfReg="false" Sequence="619"/>
+    <ROW File="vm_urgent_saved.wav" Component_="vm_abort.wav" FileName="vm-urg~2.wav|vm-urgent-saved.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-urgent-saved.wav" SelfReg="false" Sequence="620"/>
+    <ROW File="vm_you_have.wav" Component_="vm_abort.wav" FileName="vm-you~1.wav|vm-you_have.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\voicemail\8000\vm-you_have.wav" SelfReg="false" Sequence="622"/>
+    <ROW File="voicemail.conf.xml" Component_="acl.conf.xml" FileName="voicem~1.xml|voicemail.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\voicemail.conf.xml" SelfReg="false" Sequence="80"/>
+    <ROW File="voicemail.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="voicem~1.svn|voicemail.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\voicemail.conf.xml.svn-base" SelfReg="false" Sequence="46"/>
+    <ROW File="voicemail.tpl" Component_="extensions.conf" FileName="voicem~1.tpl|voicemail.tpl" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\voicemail.tpl" SelfReg="false" Sequence="278"/>
+    <ROW File="voicemail.tpl.svn_base" Component_="extensions.conf.svn_base" FileName="voicem~1.svn|voicemail.tpl.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\text-base\voicemail.tpl.svn-base" SelfReg="false" Sequence="13"/>
+    <ROW File="voicemail_default.db" Component_="call_limit.db" FileName="voicem~1.db|voicemail_default.db" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\db\voicemail_default.db" SelfReg="false" Sequence="292"/>
+    <ROW File="voipuser.org.noload" Component_="xml" FileName="voipus~1.nol|voipuser.org.noload" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\voipuser.org.noload" SelfReg="false" Sequence="175"/>
+    <ROW File="voipuser.org.noload.svn_base" Component_="xml.svn_base" FileName="voipus~1.svn|voipuser.org.noload.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\voipuser.org.noload.svn-base" SelfReg="false" Sequence="146"/>
+    <ROW File="wanpipe.conf.xml" Component_="acl.conf.xml" FileName="wanpip~1.xml|wanpipe.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\wanpipe.conf.xml" SelfReg="false" Sequence="81"/>
+    <ROW File="wanpipe.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="wanpip~1.svn|wanpipe.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\wanpipe.conf.xml.svn-base" SelfReg="false" Sequence="47"/>
+    <ROW File="wav" Component_="wav" FileName="100.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\100.wav" SelfReg="false" Sequence="364"/>
+    <ROW File="wav_1" Component_="wav" FileName="101.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\101.wav" SelfReg="false" Sequence="365"/>
+    <ROW File="wav_10" Component_="wav" FileName="110.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\110.wav" SelfReg="false" Sequence="374"/>
+    <ROW File="wav_11" Component_="wav" FileName="111.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\111.wav" SelfReg="false" Sequence="375"/>
+    <ROW File="wav_12" Component_="wav" FileName="112.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\112.wav" SelfReg="false" Sequence="376"/>
+    <ROW File="wav_13" Component_="wav" FileName="113.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\113.wav" SelfReg="false" Sequence="377"/>
+    <ROW File="wav_14" Component_="wav" FileName="114.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\114.wav" SelfReg="false" Sequence="378"/>
+    <ROW File="wav_15" Component_="wav" FileName="115.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\115.wav" SelfReg="false" Sequence="379"/>
+    <ROW File="wav_16" Component_="wav" FileName="116.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\116.wav" SelfReg="false" Sequence="380"/>
+    <ROW File="wav_17" Component_="wav" FileName="117.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\117.wav" SelfReg="false" Sequence="381"/>
+    <ROW File="wav_18" Component_="wav" FileName="118.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\118.wav" SelfReg="false" Sequence="382"/>
+    <ROW File="wav_19" Component_="wav" FileName="119.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\119.wav" SelfReg="false" Sequence="383"/>
+    <ROW File="wav_2" Component_="wav" FileName="102.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\102.wav" SelfReg="false" Sequence="366"/>
+    <ROW File="wav_20" Component_="wav" FileName="120.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\120.wav" SelfReg="false" Sequence="384"/>
+    <ROW File="wav_21" Component_="wav" FileName="121.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\121.wav" SelfReg="false" Sequence="385"/>
+    <ROW File="wav_22" Component_="wav" FileName="122.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\122.wav" SelfReg="false" Sequence="386"/>
+    <ROW File="wav_23" Component_="wav" FileName="32.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\32.wav" SelfReg="false" Sequence="387"/>
+    <ROW File="wav_24" Component_="wav" FileName="35.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\35.wav" SelfReg="false" Sequence="388"/>
+    <ROW File="wav_25" Component_="wav" FileName="42.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\42.wav" SelfReg="false" Sequence="389"/>
+    <ROW File="wav_26" Component_="wav" FileName="46.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\46.wav" SelfReg="false" Sequence="390"/>
+    <ROW File="wav_27" Component_="wav" FileName="97.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\97.wav" SelfReg="false" Sequence="391"/>
+    <ROW File="wav_28" Component_="wav" FileName="98.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\98.wav" SelfReg="false" Sequence="392"/>
+    <ROW File="wav_29" Component_="wav" FileName="99.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\99.wav" SelfReg="false" Sequence="393"/>
+    <ROW File="wav_3" Component_="wav" FileName="103.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\103.wav" SelfReg="false" Sequence="367"/>
+    <ROW File="wav_30" Component_="wav_1" FileName="0.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\0.wav" SelfReg="false" Sequence="413"/>
+    <ROW File="wav_31" Component_="wav_1" FileName="1.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\1.wav" SelfReg="false" Sequence="414"/>
+    <ROW File="wav_32" Component_="wav_1" FileName="10.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\10.wav" SelfReg="false" Sequence="415"/>
+    <ROW File="wav_33" Component_="wav_1" FileName="11.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\11.wav" SelfReg="false" Sequence="416"/>
+    <ROW File="wav_34" Component_="wav_1" FileName="12.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\12.wav" SelfReg="false" Sequence="417"/>
+    <ROW File="wav_35" Component_="wav_1" FileName="13.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\13.wav" SelfReg="false" Sequence="418"/>
+    <ROW File="wav_36" Component_="wav_1" FileName="14.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\14.wav" SelfReg="false" Sequence="419"/>
+    <ROW File="wav_37" Component_="wav_1" FileName="15.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\15.wav" SelfReg="false" Sequence="420"/>
+    <ROW File="wav_38" Component_="wav_1" FileName="16.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\16.wav" SelfReg="false" Sequence="421"/>
+    <ROW File="wav_39" Component_="wav_1" FileName="17.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\17.wav" SelfReg="false" Sequence="422"/>
+    <ROW File="wav_4" Component_="wav" FileName="104.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\104.wav" SelfReg="false" Sequence="368"/>
+    <ROW File="wav_40" Component_="wav_1" FileName="18.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\18.wav" SelfReg="false" Sequence="423"/>
+    <ROW File="wav_41" Component_="wav_1" FileName="19.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\19.wav" SelfReg="false" Sequence="424"/>
+    <ROW File="wav_42" Component_="wav_1" FileName="2.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\2.wav" SelfReg="false" Sequence="425"/>
+    <ROW File="wav_43" Component_="wav_1" FileName="20.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\20.wav" SelfReg="false" Sequence="426"/>
+    <ROW File="wav_44" Component_="wav_1" FileName="3.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\3.wav" SelfReg="false" Sequence="427"/>
+    <ROW File="wav_45" Component_="wav_1" FileName="30.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\30.wav" SelfReg="false" Sequence="428"/>
+    <ROW File="wav_46" Component_="wav_1" FileName="4.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\4.wav" SelfReg="false" Sequence="429"/>
+    <ROW File="wav_47" Component_="wav_1" FileName="40.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\40.wav" SelfReg="false" Sequence="430"/>
+    <ROW File="wav_48" Component_="wav_1" FileName="5.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\5.wav" SelfReg="false" Sequence="431"/>
+    <ROW File="wav_49" Component_="wav_1" FileName="50.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\50.wav" SelfReg="false" Sequence="432"/>
+    <ROW File="wav_5" Component_="wav" FileName="105.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\105.wav" SelfReg="false" Sequence="369"/>
+    <ROW File="wav_50" Component_="wav_1" FileName="6.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\6.wav" SelfReg="false" Sequence="433"/>
+    <ROW File="wav_51" Component_="wav_1" FileName="60.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\60.wav" SelfReg="false" Sequence="434"/>
+    <ROW File="wav_52" Component_="wav_1" FileName="7.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\7.wav" SelfReg="false" Sequence="435"/>
+    <ROW File="wav_53" Component_="wav_1" FileName="70.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\70.wav" SelfReg="false" Sequence="436"/>
+    <ROW File="wav_54" Component_="wav_1" FileName="8.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\8.wav" SelfReg="false" Sequence="437"/>
+    <ROW File="wav_55" Component_="wav_1" FileName="80.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\80.wav" SelfReg="false" Sequence="438"/>
+    <ROW File="wav_56" Component_="wav_1" FileName="9.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\9.wav" SelfReg="false" Sequence="439"/>
+    <ROW File="wav_57" Component_="wav_1" FileName="90.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\digits\8000\90.wav" SelfReg="false" Sequence="440"/>
+    <ROW File="wav_58" Component_="wav_2" FileName="100.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\100.wav" SelfReg="false" Sequence="508"/>
+    <ROW File="wav_59" Component_="wav_2" FileName="101.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\101.wav" SelfReg="false" Sequence="509"/>
+    <ROW File="wav_6" Component_="wav" FileName="106.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\106.wav" SelfReg="false" Sequence="370"/>
+    <ROW File="wav_60" Component_="wav_2" FileName="102.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\102.wav" SelfReg="false" Sequence="510"/>
+    <ROW File="wav_61" Component_="wav_2" FileName="103.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\103.wav" SelfReg="false" Sequence="511"/>
+    <ROW File="wav_62" Component_="wav_2" FileName="104.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\104.wav" SelfReg="false" Sequence="512"/>
+    <ROW File="wav_63" Component_="wav_2" FileName="105.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\105.wav" SelfReg="false" Sequence="513"/>
+    <ROW File="wav_64" Component_="wav_2" FileName="106.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\106.wav" SelfReg="false" Sequence="514"/>
+    <ROW File="wav_65" Component_="wav_2" FileName="107.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\107.wav" SelfReg="false" Sequence="515"/>
+    <ROW File="wav_66" Component_="wav_2" FileName="108.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\108.wav" SelfReg="false" Sequence="516"/>
+    <ROW File="wav_67" Component_="wav_2" FileName="109.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\109.wav" SelfReg="false" Sequence="517"/>
+    <ROW File="wav_68" Component_="wav_2" FileName="110.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\110.wav" SelfReg="false" Sequence="518"/>
+    <ROW File="wav_69" Component_="wav_2" FileName="111.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\111.wav" SelfReg="false" Sequence="519"/>
+    <ROW File="wav_7" Component_="wav" FileName="107.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\107.wav" SelfReg="false" Sequence="371"/>
+    <ROW File="wav_70" Component_="wav_2" FileName="112.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\112.wav" SelfReg="false" Sequence="520"/>
+    <ROW File="wav_71" Component_="wav_2" FileName="113.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\113.wav" SelfReg="false" Sequence="521"/>
+    <ROW File="wav_72" Component_="wav_2" FileName="114.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\114.wav" SelfReg="false" Sequence="522"/>
+    <ROW File="wav_73" Component_="wav_2" FileName="115.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\115.wav" SelfReg="false" Sequence="523"/>
+    <ROW File="wav_74" Component_="wav_2" FileName="116.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\116.wav" SelfReg="false" Sequence="524"/>
+    <ROW File="wav_75" Component_="wav_2" FileName="117.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\117.wav" SelfReg="false" Sequence="525"/>
+    <ROW File="wav_76" Component_="wav_2" FileName="118.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\118.wav" SelfReg="false" Sequence="526"/>
+    <ROW File="wav_77" Component_="wav_2" FileName="119.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\119.wav" SelfReg="false" Sequence="527"/>
+    <ROW File="wav_78" Component_="wav_2" FileName="120.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\120.wav" SelfReg="false" Sequence="528"/>
+    <ROW File="wav_79" Component_="wav_2" FileName="121.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\121.wav" SelfReg="false" Sequence="529"/>
+    <ROW File="wav_8" Component_="wav" FileName="108.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\108.wav" SelfReg="false" Sequence="372"/>
+    <ROW File="wav_80" Component_="wav_2" FileName="122.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\122.wav" SelfReg="false" Sequence="530"/>
+    <ROW File="wav_81" Component_="wav_2" FileName="32.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\32.wav" SelfReg="false" Sequence="531"/>
+    <ROW File="wav_82" Component_="wav_2" FileName="35.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\35.wav" SelfReg="false" Sequence="532"/>
+    <ROW File="wav_83" Component_="wav_2" FileName="42.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\42.wav" SelfReg="false" Sequence="533"/>
+    <ROW File="wav_84" Component_="wav_2" FileName="46.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\46.wav" SelfReg="false" Sequence="534"/>
+    <ROW File="wav_85" Component_="wav_2" FileName="97.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\97.wav" SelfReg="false" Sequence="535"/>
+    <ROW File="wav_86" Component_="wav_2" FileName="98.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\98.wav" SelfReg="false" Sequence="536"/>
+    <ROW File="wav_87" Component_="wav_2" FileName="99.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\phonetic-ascii\8000\99.wav" SelfReg="false" Sequence="537"/>
+    <ROW File="wav_9" Component_="wav" FileName="109.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\ascii\8000\109.wav" SelfReg="false" Sequence="373"/>
+    <ROW File="we_are_trying_to_reach.wav" Component_="call_secured.wav" FileName="we_are~1.wav|we_are_trying_to_reach.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\misc\8000\we_are_trying_to_reach.wav" SelfReg="false" Sequence="507"/>
+    <ROW File="web_vm.tpl" Component_="extensions.conf" FileName="web-vm.tpl" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\web-vm.tpl" SelfReg="false" Sequence="279"/>
+    <ROW File="web_vm.tpl.svn_base" Component_="extensions.conf.svn_base" FileName="web-vm~1.svn|web-vm.tpl.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\.svn\text-base\web-vm.tpl.svn-base" SelfReg="false" Sequence="14"/>
+    <ROW File="woomera.conf.xml" Component_="acl.conf.xml" FileName="woomer~1.xml|woomera.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\woomera.conf.xml" SelfReg="false" Sequence="82"/>
+    <ROW File="woomera.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="woomer~1.svn|woomera.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\woomera.conf.xml.svn-base" SelfReg="false" Sequence="48"/>
+    <ROW File="xml" Component_="xml" FileName="1000.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1000.xml" SelfReg="false" Sequence="147"/>
+    <ROW File="xml.svn_base" Component_="xml.svn_base" FileName="1000xm~1.svn|1000.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1000.xml.svn-base" SelfReg="false" Sequence="118"/>
+    <ROW File="xml.svn_base_1" Component_="xml.svn_base" FileName="1001xm~1.svn|1001.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1001.xml.svn-base" SelfReg="false" Sequence="119"/>
+    <ROW File="xml.svn_base_10" Component_="xml.svn_base" FileName="1010xm~1.svn|1010.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1010.xml.svn-base" SelfReg="false" Sequence="128"/>
+    <ROW File="xml.svn_base_11" Component_="xml.svn_base" FileName="1011xm~1.svn|1011.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1011.xml.svn-base" SelfReg="false" Sequence="129"/>
+    <ROW File="xml.svn_base_12" Component_="xml.svn_base" FileName="1012xm~1.svn|1012.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1012.xml.svn-base" SelfReg="false" Sequence="130"/>
+    <ROW File="xml.svn_base_13" Component_="xml.svn_base" FileName="1013xm~1.svn|1013.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1013.xml.svn-base" SelfReg="false" Sequence="131"/>
+    <ROW File="xml.svn_base_14" Component_="xml.svn_base" FileName="1014xm~1.svn|1014.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1014.xml.svn-base" SelfReg="false" Sequence="132"/>
+    <ROW File="xml.svn_base_15" Component_="xml.svn_base" FileName="1015xm~1.svn|1015.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1015.xml.svn-base" SelfReg="false" Sequence="133"/>
+    <ROW File="xml.svn_base_16" Component_="xml.svn_base" FileName="1016xm~1.svn|1016.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1016.xml.svn-base" SelfReg="false" Sequence="134"/>
+    <ROW File="xml.svn_base_17" Component_="xml.svn_base" FileName="1017xm~1.svn|1017.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1017.xml.svn-base" SelfReg="false" Sequence="135"/>
+    <ROW File="xml.svn_base_18" Component_="xml.svn_base" FileName="1018xm~1.svn|1018.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1018.xml.svn-base" SelfReg="false" Sequence="136"/>
+    <ROW File="xml.svn_base_19" Component_="xml.svn_base" FileName="1019xm~1.svn|1019.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1019.xml.svn-base" SelfReg="false" Sequence="137"/>
+    <ROW File="xml.svn_base_2" Component_="xml.svn_base" FileName="1002xm~1.svn|1002.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1002.xml.svn-base" SelfReg="false" Sequence="120"/>
+    <ROW File="xml.svn_base_3" Component_="xml.svn_base" FileName="1003xm~1.svn|1003.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1003.xml.svn-base" SelfReg="false" Sequence="121"/>
+    <ROW File="xml.svn_base_4" Component_="xml.svn_base" FileName="1004xm~1.svn|1004.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1004.xml.svn-base" SelfReg="false" Sequence="122"/>
+    <ROW File="xml.svn_base_5" Component_="xml.svn_base" FileName="1005xm~1.svn|1005.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1005.xml.svn-base" SelfReg="false" Sequence="123"/>
+    <ROW File="xml.svn_base_6" Component_="xml.svn_base" FileName="1006xm~1.svn|1006.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1006.xml.svn-base" SelfReg="false" Sequence="124"/>
+    <ROW File="xml.svn_base_7" Component_="xml.svn_base" FileName="1007xm~1.svn|1007.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1007.xml.svn-base" SelfReg="false" Sequence="125"/>
+    <ROW File="xml.svn_base_8" Component_="xml.svn_base" FileName="1008xm~1.svn|1008.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1008.xml.svn-base" SelfReg="false" Sequence="126"/>
+    <ROW File="xml.svn_base_9" Component_="xml.svn_base" FileName="1009xm~1.svn|1009.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\.svn\text-base\1009.xml.svn-base" SelfReg="false" Sequence="127"/>
+    <ROW File="xml_1" Component_="xml" FileName="1001.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1001.xml" SelfReg="false" Sequence="148"/>
+    <ROW File="xml_10" Component_="xml" FileName="1010.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1010.xml" SelfReg="false" Sequence="157"/>
+    <ROW File="xml_11" Component_="xml" FileName="1011.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1011.xml" SelfReg="false" Sequence="158"/>
+    <ROW File="xml_12" Component_="xml" FileName="1012.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1012.xml" SelfReg="false" Sequence="159"/>
+    <ROW File="xml_13" Component_="xml" FileName="1013.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1013.xml" SelfReg="false" Sequence="160"/>
+    <ROW File="xml_14" Component_="xml" FileName="1014.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1014.xml" SelfReg="false" Sequence="161"/>
+    <ROW File="xml_15" Component_="xml" FileName="1015.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1015.xml" SelfReg="false" Sequence="162"/>
+    <ROW File="xml_16" Component_="xml" FileName="1016.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1016.xml" SelfReg="false" Sequence="163"/>
+    <ROW File="xml_17" Component_="xml" FileName="1017.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1017.xml" SelfReg="false" Sequence="164"/>
+    <ROW File="xml_18" Component_="xml" FileName="1018.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1018.xml" SelfReg="false" Sequence="165"/>
+    <ROW File="xml_19" Component_="xml" FileName="1019.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1019.xml" SelfReg="false" Sequence="166"/>
+    <ROW File="xml_2" Component_="xml" FileName="1002.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1002.xml" SelfReg="false" Sequence="149"/>
+    <ROW File="xml_3" Component_="xml" FileName="1003.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1003.xml" SelfReg="false" Sequence="150"/>
+    <ROW File="xml_4" Component_="xml" FileName="1004.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1004.xml" SelfReg="false" Sequence="151"/>
+    <ROW File="xml_5" Component_="xml" FileName="1005.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1005.xml" SelfReg="false" Sequence="152"/>
+    <ROW File="xml_6" Component_="xml" FileName="1006.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1006.xml" SelfReg="false" Sequence="153"/>
+    <ROW File="xml_7" Component_="xml" FileName="1007.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1007.xml" SelfReg="false" Sequence="154"/>
+    <ROW File="xml_8" Component_="xml" FileName="1008.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1008.xml" SelfReg="false" Sequence="155"/>
+    <ROW File="xml_9" Component_="xml" FileName="1009.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\directory\default\1009.xml" SelfReg="false" Sequence="156"/>
+    <ROW File="xml_cdr.conf.xml" Component_="acl.conf.xml" FileName="xml_cd~1.xml|xml_cdr.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\xml_cdr.conf.xml" SelfReg="false" Sequence="83"/>
+    <ROW File="xml_cdr.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="xml_cd~1.svn|xml_cdr.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\xml_cdr.conf.xml.svn-base" SelfReg="false" Sequence="49"/>
+    <ROW File="xml_curl.conf.xml" Component_="acl.conf.xml" FileName="xml_cu~1.xml|xml_curl.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\xml_curl.conf.xml" SelfReg="false" Sequence="84"/>
+    <ROW File="xml_curl.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="xml_cu~1.svn|xml_curl.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\xml_curl.conf.xml.svn-base" SelfReg="false" Sequence="50"/>
+    <ROW File="xml_rpc.conf.xml" Component_="acl.conf.xml" FileName="xml_rp~1.xml|xml_rpc.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\xml_rpc.conf.xml" SelfReg="false" Sequence="85"/>
+    <ROW File="xml_rpc.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="xml_rp~1.svn|xml_rpc.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\xml_rpc.conf.xml.svn-base" SelfReg="false" Sequence="51"/>
+    <ROW File="yesterday.wav" Component_="a_m.wav" FileName="yester~1.wav|yesterday.wav" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\sounds\en\us\callie\time\8000\yesterday.wav" SelfReg="false" Sequence="570"/>
+    <ROW File="zeroconf.conf.xml" Component_="acl.conf.xml" FileName="zeroco~1.xml|zeroconf.conf.xml" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\zeroconf.conf.xml" SelfReg="false" Sequence="86"/>
+    <ROW File="zeroconf.conf.xml.svn_base" Component_="acl.conf.xml.svn_base" FileName="zeroco~1.svn|zeroconf.conf.xml.svn-base" Attributes="0" SourcePath="..\..\..\..\freeswitch\Release\conf\autoload_configs\.svn\text-base\zeroconf.conf.xml.svn-base" SelfReg="false" Sequence="52"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.BuildComponent">
+    <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="0" Languages="en" InstallationType="4"/>
+    <ATTRIBUTE name="CurrentBuild" value="DefaultBuild"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.DictionaryComponent">
+    <ROW Path="&lt;AI_DICTS&gt;ui.ail"/>
+    <ROW Path="&lt;AI_DICTS&gt;ui_en.ail"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.FragmentComponent">
+    <ROW Fragment="FolderDlg.aip" Path="&lt;AI_FRAGS&gt;FolderDlg.aip"/>
+    <ROW Fragment="StaticUIStrings.aip" Path="&lt;AI_FRAGS&gt;StaticUIStrings.aip"/>
+    <ROW Fragment="UI.aip" Path="&lt;AI_FRAGS&gt;UI.aip"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiBinaryComponent">
+    <ROW Name="AI_CUSTACTS_aicustact.dll" SourcePath="&lt;AI_CUSTACTS&gt;aicustact.dll"/>
+    <ROW Name="AI_RES_default_banner.bmp" SourcePath="&lt;AI_RES&gt;default-banner.bmp"/>
+    <ROW Name="AI_RES_default_dialog.bmp" SourcePath="&lt;AI_RES&gt;default-dialog.bmp"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlComponent">
+    <ATTRIBUTE name="FixedSizeBitmaps" value="0"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiControlEventComponent">
+    <ROW Dialog_="FolderDlg" Control_="Back" Event="NewDialog" Argument="WelcomeDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="WelcomeDlg" Control_="Next" Event="NewDialog" Argument="FolderDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="FolderDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="FolderDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_INSTALL" Ordering="3"/>
+    <ROW Dialog_="MaintenanceTypeDlg" Control_="Back" Event="NewDialog" Argument="MaintenanceWelcomeDlg" Condition="AI_MAINT" Ordering="1"/>
+    <ROW Dialog_="MaintenanceWelcomeDlg" Control_="Next" Event="NewDialog" Argument="MaintenanceTypeDlg" Condition="AI_MAINT" Ordering="2"/>
+    <ROW Dialog_="VerifyReadyDlg" Control_="Back" Event="NewDialog" Argument="PatchWelcomeDlg" Condition="AI_PATCH" Ordering="1"/>
+    <ROW Dialog_="PatchWelcomeDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_PATCH" Ordering="3"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCreateFolderComponent">
+    <ROW Directory_="SHORTCUTDIR" Component_="SHORTCUTDIR"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
+    <ROW Action="AI_DOWNGRADE" Type="19" Target="4010"/>
+    <ROW Action="AI_PREPARE_UPGRADE" Type="65" Source="AI_CUSTACTS_aicustact.dll" Target="PrepareUpgrade"/>
+    <ROW Action="AI_RESTORE_LOCATION" Type="65" Source="AI_CUSTACTS_aicustact.dll" Target="RestoreLocation"/>
+    <ROW Action="AI_STORE_LOCATION" Type="51" Source="ARPINSTALLLOCATION" Target="[APPDIR]"/>
+    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="DefaultBuild:[ProgramFilesFolder]\[ProductName]"/>
+    <ROW Action="SET_SHORTCUTDIR" Type="307" Source="SHORTCUTDIR" Target="[ProgramMenuFolder][ProductName]"/>
+    <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiInstExSeqComponent">
+    <ROW Action="AI_DOWNGRADE" Condition="AI_NEWERPRODUCTFOUND AND (UILevel &lt;&gt; 5)" Sequence="210"/>
+    <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="740"/>
+    <ROW Action="AI_STORE_LOCATION" Condition="Not Installed" Sequence="1545"/>
+    <ROW Action="AI_PREPARE_UPGRADE" Condition="AI_UPGRADE=&quot;No&quot; AND (Not Installed)" Sequence="1300"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiInstallUISequenceComponent">
+    <ROW Action="AI_RESTORE_LOCATION" Condition="APPDIR=&quot;&quot;" Sequence="740"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiShortsComponent">
+    <ROW Shortcut="FreeSwitch.exe" Directory_="SHORTCUTDIR" Name="FreeSw~1.exe|FreeSwitch.exe" Component_="FreeSwitch.exe" Target="[#FreeSwitch.exe]" Description="FreeSwitch.exe" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.MsiUpgradeComponent">
+    <ROW UpgradeCode="[|UpgradeCode]" VersionMax="[|ProductVersion]" Attributes="1025" ActionProperty="OLDPRODUCTS"/>
+    <ROW UpgradeCode="[|UpgradeCode]" VersionMin="[|ProductVersion]" Attributes="2" ActionProperty="AI_NEWERPRODUCTFOUND"/>
+  </COMPONENT>
+</DOCUMENT>

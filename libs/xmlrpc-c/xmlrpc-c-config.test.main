@@ -1,0 +1,144 @@
+# This is like 'xmlrpc-c-config', but for testing Xmlrpc-c from its build
+# directory instead of for an installed instance of Xmlrpc-c.
+#
+# For example, the make file in the src/test/ directory uses this program
+# to link the test programs with the Xmlrpc-c libraries in the build
+# directory.  A real application program would instead use xmlrpc-c-config
+# and get the Xmlrpc-c libraries from their installed home.
+
+if test $# -eq 0; then
+      echo "You need to specify arguments"
+      exit 1
+fi
+
+the_libs=
+the_includes=
+the_rpath=
+the_wl_rpath=
+sopath=
+# It's important that packetsocket lib go after client, server libs
+packetsocket_lib=
+
+if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
+  LIBXML=`xml2-config --libs`
+else
+  LIBXML="${BLDDIR}/lib/expat/xmlparse/libxmlrpc_xmlparse.a"
+  sopath="${BLDDIR}/lib/expat/xmlparse:$sopath"
+  LIBXML="${LIBXML} ${BLDDIR}/lib/expat/xmltok/libxmlrpc_xmltok.a"
+  sopath="${BLDDIR}/lib/expat/xmltok:$sopath"
+fi
+
+needCpp=no
+
+LIBXMLRPC="${BLDDIR}/src/libxmlrpc.a"
+LIBXMLRPC_UTIL="${BLDDIR}/lib/libutil/libxmlrpc_util.a"
+
+the_libs="${LIBXMLRPC} ${LIBXMLRPC_UTIL} ${LIBXML} $the_libs"
+the_includes="-I${BLDDIR}/include -I${ABS_SRCDIR}/include $the_includes"
+sopath="${BLDDIR}/src:$sopath"
+
+while test $# -gt 0; do
+  case $1 in
+    c++)
+      # Unfortunately, there is just one legacy CPP library for
+      # everything, and it needs all the C libraries -- base, client,
+      # and server.  So all legacy C++ programs get linked with client
+      # and server libraries, whether they need them or not.
+
+      the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server_abyss.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_client.a $the_libs"
+      the_libs="${BLDDIR}/src/cpp/libxmlrpc_cpp.a $the_libs"
+      ;;
+    c++2)
+      needCpp=yes
+      the_libs="${BLDDIR}/src/cpp/libxmlrpc++.a $the_libs"
+      ;;
+    server-util)
+      the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
+      ;;
+    cgi-server)
+      the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server_cgi.a $the_libs"
+      ;;
+    abyss-server)
+      if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
+        the_libs="-lpthread $the_libs"
+        fi
+      the_libs="${LSOCKET} $the_libs"
+      the_libs="${BLDDIR}/lib/abyss/src/libxmlrpc_abyss.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server_abyss.a $the_libs"
+      if test "${needCpp}" = "yes"; then
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_abyss++.a $the_libs"
+        fi
+      sopath="${BLDDIR}/lib/abyss/src:$sopath"
+      ;;
+    pstream-server)
+      the_libs="${LSOCKET} $the_libs"
+      the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_pstream++.a $the_libs"
+      the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
+      the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
+      the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_pstream++.a $the_libs"
+      packetsocket_lib="${BLDDIR}/src/cpp/libxmlrpc_packetsocket.a"
+      ;;
+    client)
+      the_libs="${BLDDIR}/src/libxmlrpc_client.a $the_libs"
+      if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then
+        the_libs="$the_libs $WININET_LDADD"
+        the_rpath="$WININET_RPATH $the_rpath"
+        the_wl_rpath="$WININET_WL_RPATH $the_wl_rpath"
+        fi
+      if test "${MUST_BUILD_CURL_CLIENT}" = "yes"; then
+        the_libs="$the_libs $CURL_LDADD"
+        the_rpath="$CURL_RPATH $the_rpath"
+        the_wl_rpath="$CURL_WL_RPATH $the_wl_rpath"
+        fi
+      if test "${MUST_BUILD_LIBWWW_CLIENT}" = "yes"; then
+        the_libs="$the_libs $LIBWWW_LDADD"
+        the_rpath="$LIBWWW_RPATH $the_rpath"
+        the_wl_rpath="$LIBWWW_WL_RPATH $the_wl_rpath"
+        fi
+      if test "${needCpp}" = "yes"; then
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_client++.a $the_libs"
+        packetsocket_lib="${BLDDIR}/src/cpp/libxmlrpc_packetsocket.a"
+        fi
+      ;;
+    --version)
+      echo "$XMLRPC_MAJOR_RELEASE.$XMLRPC_MINOR_RELEASE.$XMLRPC_POINT_RELEASE"
+      ;;
+    --modules)
+      echo "$FEATURE_LIST"
+      ;;
+    --features)
+      echo "$FEATURE_LIST"
+      ;;
+    --cflags)
+      echo "$the_includes"
+      ;;
+    --libs)
+      echo "$the_libdirs $the_libs $packetsocket_lib $the_wl_rpath"
+      ;;
+    --ldadd)
+      echo "$the_libdirs $the_libs $packetsocket_lib"
+      ;;
+    --ldflags)
+      echo "$the_rpath"
+      ;;
+    --sopath)
+      echo "$sopath"
+      ;;
+    --help)
+      echo "See the real xmlrpc-c-config program" 1>&2
+      ;;
+    *)
+      echo "Unrecognized token '$1'"
+      echo "${usage}" 1>&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+exit 0

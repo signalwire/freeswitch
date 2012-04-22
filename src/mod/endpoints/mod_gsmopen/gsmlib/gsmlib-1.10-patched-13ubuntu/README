@@ -1,0 +1,166 @@
+INTRODUCTION
+
+     This distribution contains a library to access GSM mobile phones
+     through GSM modems or IrDA devices. Features include:
+
+     * modification of phonebooks stored in the mobile phone or on the 
+       SIM card
+
+     * reading and writing of SMS messages stored in the mobile phone
+
+     * sending and reception of SMS messages
+
+     Additionally, some simple command line programs are provided to
+     use these functionalities.
+
+
+REQUIREMENTS
+
+     You need a mobile phone that conforms to the GSM
+     standards ETSI GSM 07.07, ETSI GSM 07.05, and others.
+     Non-GSM mobile phones will not work! Additionally,
+     to access the mobile phone from the computer you will probably need an 
+     GSM modem (that would be a PC-CARD, usually). There might be some
+     mobile phones, however, that incorporate directly terminal
+     adapter (TA) functionality. Access via IrDA interfaces is also
+     reported to work.
+
+     If you want to compile the library yourself please also read
+     doc/README.developers.
+
+
+INSTALLATION
+
+     This distribution uses autoconf/automake/libtool. See the file
+     INSTALL for generic installation instructions. The default
+     commands for installation under /usr/local would be:
+
+       ./configure
+       make
+       make install
+
+     If there are any problems you can generate a debug version. See
+     doc/README.developers for details.
+
+
+AVAILABLE DOCUMENTATION
+
+     For the command line tools UNIX manual pages are available in the 
+     doc subdirectory of this distribution. These are installed by
+     default in the directories /usr/local/man1, man7, and man8.
+
+     See also the files doc/README.developers, doc/README.NLS and doc/FAQ.
+
+
+HARDWARE
+     
+     The following mobile phone/GSM modem combinations are reported to
+     be compatible in varying degrees with the current release:
+  
+     - Nokia 6150/Xircom REM56G.100
+     - Nokia 6150/Options "GSM-Ready(R) Cellular-Only" modem
+       from Option International
+     - Nokia 6210/- (Linux IrDA serial device)
+     - Nokia 8810/- (Linux IrDA serial device)
+     - Siemens S10D/Dr Neuhaus Gipsy Card GSM
+     - Siemens S25/- (Linux IrDA serial device)
+     - Siemens S35i/- (Linux IrDA serial device)
+     - Siemens S45
+     - Ericcson SH888/- (Linux IrDA serial device)
+     - Ericsson 6050102/GM 12 GSM module
+     - Ericsson T28s (firmware 000809 1106)
+     - Ericsson T20e (firmware R3A007)
+     - -/Siemens M20T (stand-alone GSM module)
+     - -/Wavecom WM02 GSM (stand-alone GSM module)
+     - Nokia 7110 (firware rev 4.80)/- (Linux IrDA serial device)
+     - Nokia 8290 (USA GSM 1900MHz)/- (Linux IrDA serial device)
+     - Falcom A2-1/- (stand-alone GSM module)
+     - Ericsson R320s/- (Linux IrDA serial device)
+     - Motorola Timeport 260/- (Serial cable and Linux IrDA serial device)
+     - Motorola Timeport 250/- (Linux IrDA serial device)
+     - Motorola Timeport P7389/- (Linux IrDA serial device)
+     - Nokia Cellular Card Phone RPE-1 GSM900 and
+     - Nokia Card Phone RPM-1 GSM900/1800
+     - Nokia Cardphone/Compaq iPAQ
+     - Omnipoint technologies Redhawk 2000 GSM modem
+     - Ericsson T28 (but one firmware revision is reported to have problems)
+     - Ericcson T65
+     - Ericcson T39m/Bluetooth
+     - Option International GlobeTrotter PCMCIA
+
+     Note 1: Some of the mobile phones have an integrated GSM modem
+     that can be accessed via the Linux IrDA drivers.
+
+     Note 2: Some of the abovementioned phones have still some glitches
+     with gsmlib (and I haven't tested them myself).
+
+     For the following phones I receive a lot of errors reports:
+
+     - Ericcson SH888: SMS function don't work with many firmware releases
+
+     This list is not exhaustive, there are probably many other types of
+     phone or GSM modem that work with gsmlib. Just try it and report back
+     to me!
+
+
+DISCLAIMER
+
+     Even though care has been taken in the design and implementation
+     of this software it can not be excluded that this software could
+     destroy data in your mobile phone or may even render your mobile
+     phone useless (by erroneous PIN settings, for example). The
+     author will not be held responsible legally, financially, or in any
+     other form for any kind of damage that might occur from using
+     this software.
+
+     This software is provided "as is" and without any expressed or implied
+     warranties, including, without limitation, the implied warranties of
+     merchantibility and fitness for any particular purpose.
+
+     If you are not ready to accept these conditions please don't use
+     this software.
+ 
+
+COPYING
+
+     This software is available on the LGPL (GNU LIBRARY GENERAL
+     PUBLIC LICENSE), ie. it is allowed to link 
+     the library to commercial programs.
+
+     See the file COPYING for details on the license.
+
+
+BUGS
+
+     There still seem to be some problems with IrDA devices under
+     Linux. There have been reports of gsmlib-based applications
+     (eg. gsmctl) hanging upon startup after initializing the serial port
+     /dev/ircomm. I would be thankful for any input on this problem.
+
+     If something does not work with your OS platform or the mobile/TA
+     combination please send a complete trace of the compilation or the
+     program execution that did fail. Make sure to compile with debugging 
+     information enabled. Otherwise it will not be possible for me to do
+     much about the problem. Send bug reports to the mailing list or
+     to software@pxh.de. I promise not to publish telephone numbers or other 
+     private information that might be contained in the execution traces
+     that you send me.
+
+
+MAILING LISTS
+
+     There are now two mailings lists available for announcements and
+     discussion of gsmlib-related issues (hosted on lists.over.net).
+     Refer to these pages for information on subscription procedures
+     and an archive of previous postings:
+
+       http://lists.over.net/mailman/listinfo/gsmlib-announce/
+         for announcements regarding GSMLIB
+
+       http://lists.over.net/mailman/listinfo/gsmlib-devel/
+         the GSMLIB development list
+
+
+AUTHOR
+
+     Peter Hofmann <software@pxh.de>.

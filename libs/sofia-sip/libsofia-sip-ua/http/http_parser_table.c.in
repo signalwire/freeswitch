@@ -1,0 +1,59 @@
+/** -*- C -*-
+ * @IFILE http_parser_table.c.in
+ *
+ * Template for <http_parser_table.c>.
+ *
+ * @date Created: Tue Oct  1 20:37:52 2002 ppessi
+ */
+
+/*
+ * This file is part of the Sofia-SIP package
+ *
+ * Copyright (C) 2005 Nokia Corporation.
+ *
+ * Contact: Pekka Pessi <pekka.pessi@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+/**@internal
+ * @CFILE http_parser_table.c
+ * @brief HTTP parser table
+ *
+ * #AUTO#
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @date Created: Tue Oct  1 20:37:52 2002 ppessi
+ */
+
+#include "config.h"
+
+#include <stddef.h>
+#include <string.h>
+
+/* Avoid casting http_t to msg_pub_t and http_header_t to msg_header_t  */
+#define MSG_PUB_T struct http_s
+#define MSG_HDR_T union http_header_u
+
+#include <sofia-sip/http_parser.h>
+#include <sofia-sip/msg_mclass.h>
+
+#define HTTP_PARSER_FLAGS (MSG_FLG_CHUNKING)
+
+
+

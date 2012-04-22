@@ -1,0 +1,15 @@
+INVITE sip:user@company.com SIP/2.0
+Via: SIP/2.0/UDP 255.255.255.255;branch=0
+Via: SIP/2.0/UDP 135.180.130.57;branch=0
+Call-ID: 0384840201@10.1.1.1
+CSeq: 0 INVITE
+To: sip:user@company.com
+From: sip:user@university.edu;tag=2229
+Content-Type: application/sdp
+
+v=0
+o=mhandley 29739 7272939 IN IP4 126.5.4.3
+c=IN IP4 224.2.17.12/127
+m=audio 492170 RTP/AVP 0 4 12
+m=video 3227 RTP/AVP 31
+a=rtpmap:31 LPC

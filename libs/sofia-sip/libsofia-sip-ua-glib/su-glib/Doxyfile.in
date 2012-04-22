@@ -1,0 +1,12 @@
+PROJECT_NAME         = "sofia-sip/su-glib"
+
+OUTPUT_DIRECTORY     = ../docs/html/su-glib
+
+INPUT 		     = @srcdir@/su_glib.docs @srcdir@ . @srcdir@/sofia-sip
+
+@INCLUDE_PATH        = @srcdir@ .
+@INCLUDE             = ../docs/Doxyfile.conf
+
+GENERATE_TAGFILE     = ../docs/su_glib.doxytags
+
+ALIASES             +=

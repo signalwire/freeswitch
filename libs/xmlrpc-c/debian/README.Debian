@@ -1,0 +1,7 @@
+xmlrpc-c for Debian
+-------------------
+
+This is my first attempt at porting my RPM packages to Debian.  User
+beware!
+
+ -- Eric Kidd <eric.kidd@pobox.com>, Tue, 26 Jun 2001 12:39:39 -0400

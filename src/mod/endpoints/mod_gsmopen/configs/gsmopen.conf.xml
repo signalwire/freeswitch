@@ -1,0 +1,27 @@
+<configuration name="gsmopen.conf" description="GSMopen Configuration">
+  <global_settings>
+    <param name="debug" value="8"/>
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="default"/>
+    <param name="hold-music" value="$${moh_uri}"/>
+    <param name="destination" value="5000"/>
+  </global_settings>
+  <!-- one entry here per gsmopen interface -->
+  <per_interface_settings>
+    <interface id="1" name="gsm01">
+      <param name="controldevice_name" value="/dev/ttyUSB3"/>
+      <param name="controldevice_audio_name" value="/dev/ttyUSB2"/>
+    <!-- in windowz would be, eg: -->
+      <!--
+      <param name="controldevice_name" value="COM4"/>
+      -->
+      <!-- 3G PC UI Interface is controldevice_name -->
+      <!--
+      <param name="controldevice_audio_name" value="COM2"/>
+      -->
+      <!-- 3G Application Interface is controldevice_audio_name -->
+    </interface>
+    <!-- following interfaces are commented out!
+    -->
+  </per_interface_settings>
+</configuration>

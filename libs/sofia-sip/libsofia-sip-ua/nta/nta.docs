@@ -1,0 +1,573 @@
+/* -*- c -*- */
+
+/**@MODULEPAGE "nta" - SIP Transactions Module
+ *
+ * @section nta_meta Module Meta Information
+ *
+ * Sofia SIP Transaction API (nta) provides simple interface to the SIP
+ * transaction, transport and message handling. The @b nta interface is
+ * intended for both network and user elements. The public interface for @b
+ * nta is mostly defined in <sofia-sip/nta.h>, but tag parameters are
+ * defined in <sofia-sip/nta_tag.h>.
+ *
+ * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @STATUS @SofiaSIP Core library
+ *
+ * @LICENSE LGPL
+ *
+ * @section nta_objects NTA Objects
+ *
+ * The NTA deals with a few kinds of objects: @e agent (#nta_agent_t), @e
+ * call @e legs (#nta_leg_t), @e outgoing @e client @e requests
+ * (#nta_outgoing_t), and @e incoming @e server @e requests
+ * (#nta_incoming_t).
+ *
+ * NTA also uses SIP message objects #msg_t and #sip_t for handling
+ * messages, as defined in <sofia-sip/msg.h> and <sofia-sip/sip.h>,
+ * respectively. The various SIP headers are also defined in
+ * <sofia-sip/sip.h>.
+ *
+ * @section nta_agent_t Creating an NTA Agent
+ *
+ * Most of the SIP entities, like @e user @e agent or @e proxy, consist of a
+ * SIP server and a SIP client working together.  The NTA provides a simple
+ * interface to SIP server and client with the #nta_agent_t objects.
+ *
+ * The #nta_agent_t object is created by calling nta_agent_create(). The
+ * object listens for incoming connections, receives messages, parses them,
+ * and pass them to the application. It also takes care of resolving the
+ * domain names and sending the messages.
+ *
+ * The agent needs a #su_root_t object to schedule its execution. A root
+ * object is used to wait for the network events, schedule the timer
+ * routines, and pass messages asyncronously. A root object can be created
+ * by, e.g., the function su_root_create(). The root object can be have its
+ * own thread, or its main loop can be executed by an application thread by
+ * calling the function su_root_run(). The main loop can be terminated by
+ * calling the function su_root_break().
+ *
+ * A simple agent could be created as follows:
+ * @code
+ *  registrar->reg_root = su_root_create(NULL);
+ *
+ *  if (registrar->reg_root) {
+ *    registrar->reg_agent = nta_agent_create(registrar->reg_root,
+ *                                            (url_string_t*)argv[1],
+ *                                            NULL,
+ *                                            NULL,
+ *                                            NULL);
+ *
+ *    if (registrar->reg_agent) {
+ *      su_root_run(registrar->reg_root);
+ *      nta_agent_destroy(registrar->reg_agent);
+ *    }
+ *
+ *    su_root_destroy(registrar->reg_root);
+ *  }
+ * @endcode
+ *
+ * @section nta_server SIP Server Action
+ *
+ * A SIP server responds to the transactions sent by a client. The SIP
+ * server can operate in two modes; it can be stateless or stateful. This
+ * section describes how a stateful SIP server uses NTA.
+ *
+ * @subsection nta_leg_t The NTA Legs
+ *
+ * A leg is required for stateful transaction processing.  A default
+ * leg is created like this:
+ * @code
+ * default_leg = nta_leg_tcreate(agent, process_requests, context,
+ *                               URLTAG_URL(url),
+ *                               NTATAG_NO_DIALOG(1),
+ *                               TAG_END());
+ * @endcode
+ *
+ * The @a url parameter is used to specify which URLs match to the leg. If
+ * it is given, only requests with requestURI matching are processed by the
+ * leg. The nta_leg_tcreate() is a @ref tagarg "tagarg" function, taking a
+ * tagged argument list as its arguments.
+ *
+ * Other, ordinary legs can be used to match incoming requests with existing
+ * dialogs, calls or transaction contexts, or to provide outgoing requests
+ * with consistent headers. When a call leg is created, it is provided with
+ * @From and @To headers, and optionally with other headers like
+ * @CallID, @Route, or @CSeq.
+ *
+ * A new call leg can be created as follows:
+ * @code
+ * call_leg = nta_leg_tcreate(agent,
+ *                            process_call_requests, call_context,
+ *                            SIPTAG_CALL_ID(sip->sip_call_id),
+ *                            SIPTAG_TO(sip->sip_from),
+ *                            SIPTAG_FROM(sip->sip_to),
+ *                            TAG_END());
+ * @endcode
+ *
+ * @note In the example above, the @From and @To are reversed. This
+ * happens if the headers are taken from an incoming request; the @From
+ * and @To headers change direction when an outgoing request is initiated.
+ *
+ * @note An existing leg can be used in any direction, however.  If the leg
+ * was created for an incoming INVITE transaction, it is also possible to
+ * use the leg for an outgoing BYE transaction.
+ *
+ * @subsection nta_leg_tag Tagging the Call Leg
+ *
+ * All the SIP UAS elements are required to tag the @To header in their
+ * final responses. The function nta_leg_tag() adds a tag to the leg's local
+ * address. Local address is used as the @To header in the reply messages,
+ * and as the @From header in the requests. The function nta_incoming_tag()
+ * adds a tag to a incoming transaction. They are usually used in together,
+ * using the tag from initial response to the dialog, too:
+ * e.g.,
+ * @code
+ *   if (!nta_leg_tag(leg, nta_incoming_tag(irq, NULL)))
+ *    nta_incoming_treply(irq, SIP_500_INTERNAL_SERVER_ERROR, TAG_END());
+ * @endcode
+ *
+ * @subsection nta_incoming_t Incoming Transactions
+ *
+ * An incoming transaction object (nta_incoming_t) is created by NTA for
+ * each unique incoming request message. When NTA has created the incoming
+ * transaction object, it invokes the callback function provided with
+ * nta_leg_tcreate().
+ *
+ * The simplest way to reply to the request is to return a valid status code
+ * from the callback function. Valid status codes are in range of 100 to
+ * 699, inclusive.  If no automatic response is desired, the callback
+ * function should return 0.
+ *
+ * @note If the status code is final, the incoming transaction object will
+ * be destroyed immediately after the callback function returns. It can not
+ * be used afterwards.
+ *
+ * @note It is not possible to respond with a 2xx status code to an incoming
+ * INVITE transaction by returning the status code from the callback.
+ *
+ * Valid return values for callback function are as follows:
+ * @li 0, 100 .. 699 for requests other than INVITE, and
+ * @li 0, 100 .. 199, 300..699 for INVITE requests.
+ *
+ * All other return codes are interpreted as 500, that is, a @e 500 @e
+ * Internal @e Server @e Error reply message is sent back to the client and
+ * the request is immediately destroyed.
+ *
+ * The simple registrar/redirect server may have a incoming request callback
+ * as follows:
+ * @code
+ * int process_request(server_t *server,
+ * 	               nta_leg_t *leg,
+ * 	     	       nta_incoming_t *irq,
+ * 	     	       sip_t const *sip)
+ * {
+ *   sip_contact_t *m;
+ *
+ *   switch (sip->sip_request->rq_method) {
+ *   case sip_method_register:
+ *     return registrar_add(server, leg, reply, sip);
+ *
+ *   case sip_method_ack:
+ *     return 500;
+ *
+ *   case sip_method_cancel:
+ *     return 200;
+ *
+ *   default:
+ *     if (registrar_find(server, sip->sip_request->rq_url, &m) {
+ *       nta_incoming_treply(irq, SIP_302_MOVED_TEMPORARILY,
+ *                           SIPTAG_CONTACT(m), TAG_END());
+ *       return 302;
+ *     }
+ *     else {
+ *       nta_incoming_treply(irq, SIP_404_NOT_FOUND, TAG_END());
+ *       return 404;
+ *     }
+ *   }
+ * }
+ * @endcode
+ *
+ * The default reply message will contain the status line with default
+ * phrase, then @Via, @To, @From, @CallID, @CSeq, and @ContentLength headers.
+ * If a more complex response message is required, the application should
+ * respond using the function nta_incoming_treply():
+ * @code
+ * nta_incoming_treply(reply, SIP_200_OK,
+ *                     SIPTAG_CONTACT(contact),
+ *                     SIPTAG_CONTENT_TYPE_STR("application/sdp"),
+ *                     SIPTAG_PAYLOAD(sdp),
+ *                     TAG_END());
+ * @endcode
+ *
+ * The nta_incoming_treply() is a @ref tagarg "tagarg" function, taking a
+ * tagged argument list as its argument.
+ *
+ * @note It is possible to send provisional replies (containing 1xx status
+ * codes) several times with nta_incoming_treply(), but only one final
+ * reply (containing status codes 2xx..6xx) can be sent. However, with
+ * INVITE requests, a proxy can send a final 2xx reply even after an error
+ * reply (3xx..6xx).
+ *
+ * @section nta_100rel Reliable Provisional Responses - "100rel"
+ *
+ * The <A href="../specs/rfc3262.txt"><B>100rel</B></A> SIP extension
+ * provides reliable provisional responses, provisional responses that are
+ * retransmitted until a special acknowledgement request, PRACK, is
+ * received. In addition the PRACK method, the extension defines two
+ * headers, @RSeq and @RAck, that are used to identify different
+ * response messages. PRACK method is usable on INVITE requests only.
+ *
+ * Using reliable responses is negotiated using the "100rel" option tag. The
+ * UAC (party sending the INVITE) can include the option tag to the
+ * @Supported or @Require header. In the first case, the UAC just
+ * announces support for reliable responses, in the second case, the UAC
+ * requires that the UAS (party responding to the call) always sends
+ * provisional responses in reliable manner.
+ *
+ * When reliable responses are enabled with NTATAG_REL100() tag, the @b nta
+ * engine automatically inserts the "100rel" option tag to the @Supported
+ * header in the INVITE requests.
+ *
+ * @subsection nta_reliable_t Responding Reliably
+ *
+ * When a UAS wants to respond reliably to a INVITE request, instead of
+ * familiar nta_incoming_treply() or nta_incoming_mreply() it uses the
+ * functions nta_reliable_treply() or nta_reliable_mreply(). These functions
+ * return a pointer to a special object, nta_reliable_t, that is used to
+ * keep track of unacknowledged responses and respond to the the PRACK
+ * acknowledgement request.
+ *
+ * Both the functions nta_reliable_treply () and nta_reliable_mreply() take
+ * a callback funtion pointer and an application context pointer as their
+ * arguments. The callback function is similar to the leg callback function.
+ * The callback is invoked when a corresponding PRACK request is received,
+ * or when there is a timeout.
+ *
+ * The @b nta takes care of assigning a serial number to each reliable
+ * response and resending them if no PRACK request is received. It also
+ * automatically adds the 100rel option tag to the @Require header.
+ *
+ * Also, if a request with 100rel in @Require header is responded with usual
+ * nta_incoming_treply()/nta_incoming_mreply() functions, the @b nta creates
+ * a reliable response object for each provisional response in behalf of
+ * application. As the application can not provide a PRACK callback function
+ * to @b nta, the PRACK requests are not delivered to the application.
+ *
+ * @subsection early_dialog UAC Receives a Reliable Response
+ *
+ * When a UAC receives a provisional response with a @RSeq header, it is
+ * required to acknowledge it. In order to do that, it must establish an @e
+ * early @e dialog with the UAS. In another view, a reliable response is
+ * used to establish the early dialog. UAC establishes a leg object for the
+ * early dialog by calling nta_leg_tcreate() with the parameters derived
+ * from the response message.
+ *
+ * @code
+ * int invite_callback(call_t *call,
+ * 		    nta_outgoing_t *orq,
+ * 		    sip_t const *sip)
+ * {
+ *   int status = sip->sip_status->st_status;
+ *
+ *   if (!call->has_dialog &&
+ *       (status >= 200 || (status > 100 && sip->sip_rseq))) {
+ *     nta_leg_t *early =
+ *       nta_leg_tcreate(call->nta_agent, mid_dialog_request, call,
+ * 		      SIPTAG_TO(sip->sip_to),
+ * 		      SIPTAG_FROM(sip->sip_from),
+ * 		      SIPTAG_CALL_ID(sip->sip_call_id),
+ * 		      SIPTAG_CSEQ(sip->sip_cseq),
+ * 		      TAG_END());
+ *
+ *     nta_leg_client_route(early,
+ * 			 sip->sip_record_route,
+ * 			 sip->sip_contact);
+ *
+ *     fork = call_fork(call, leg = early);
+ *
+ *     if (!fork) {
+ *       handle error;
+ *     }
+ *     call = fork;
+ *   }
+ * @endcode
+ *
+ * The original dialog object and client transaction object are used to
+ * process other call forks. For instance, if the early dialog is
+ * established with an announcement server it will never lead to an fully
+ * established call, but an another dialog will be used when the call is
+ * completed.
+ *
+ * @subsection nta_prack Acknowledging Reliable Response
+ *
+ * After an early dialog has been established, acknowledging the reliable
+ * response is trivial. The application can create a PRACK client
+ * transaction object by calling nta_outgoing_prack()
+ *
+ * @section nta_client SIP Client Action
+ *
+ * A SIP client initiates the transactions. In some cases, a SIP client is
+ * also required to invoke additional transactions, like @b ACK or @b
+ * CANCEL, to finalize the original transaction. This section describes how
+ * a SIP client uses NTA to make transactions.
+ *
+ * @subsection client_nta_leg_t Creating the Call Leg
+ *
+ * If the client does not have a suitable call leg, it must create it by
+ * calling the function nta_leg_tcreate():
+ * @code
+ * context->leg = nta_leg_tcreate(agent,
+ *                                callback, context,
+ *                                SIPTAG_CALL_ID(call_id),
+ *                                SIPTAG_FROM(from),
+ *                                SIPTAG_TO(to),
+ *                                TAG_END());
+ * @endcode
+ *
+ * The @p callback function and @p context pointer are used for incoming
+ * transactions, and they may be @c NULL if no such transactions are
+ * expected.  If the callback is @c NULL, NTA responds to incoming
+ * transactions with status @e 403 @e Forbidden.
+ *
+ * The @a call_id may be @c NULL or left out. In that case, NTA generates a
+ * new call ID.
+ *
+ * The @a from and @a to are used in outgoing transactions. They are also
+ * used to select which incoming messages belong to this leg.
+ *
+ * The initial sequence number can be supplied with SIPTAG_CSEQ() (taking a
+ * @CSeq structure as parameter).
+ *
+ * The additional parameters (after @a to) are included in outgoing messages
+ * using this leg. Currently, only @c SIPTAG_ROUTE() is supported.
+ *
+ * @note Additional tagged parameters are ignored.
+ *
+ * @subsection nta_outgoing_t Outgoing requests
+ *
+ * The outgoing request is created and sent by nta_outgoing_tcreate(). It
+ * can be used as follows:
+ * @code
+ * oreq = nta_outgoing_tcreate(leg, response_to_register, reg,
+ *                             proxy_url,
+ *                             SIP_METHOD_REGISTER,
+ *                             registrar_url,
+ *                             SIPTAG_CONTACT(my_contact),
+ *                             TAG_END());
+ * @endcode
+ *
+ * NTA invokes the callback function response_to_register() each time a
+ * provisional answer is received, and when a final answer is received.
+ *
+ * @note There may be multiple final answers to the INVITE request.
+ *
+ * If NTA does not receive answer in timely manner, it will generate a
+ * @e 408 @e Timeout response and hand that back to the application.
+ *
+ * @note After a provisional answer to the INVITE request, no timeout will
+ * occur inside NTA.  Application must itself timeout the INVITE
+ * transactions if any answer has been received.
+ *
+ * The request can be destroyed with NTA function nta_outgoing_destroy().
+ * If no final answer has been received, the request is cancelled when it is
+ * destroyed, too.  The application can also cancel the outgoing request by
+ * calling nta_outgoing_cancel().
+ *
+ * @subsection nta_ack Acknowledging Answers to INVITE
+ *
+ * The final answers to the INVITE request must be acknowledged. NTA takes
+ * care of acknowledging automatically the 3xx..6xx answers; the appliction
+ * must explicitly create a separate acknowledge transaction to final 2xx
+ * answers.
+ *
+ * The final answer can be acknowledged like this:
+ * @code
+ *  url = sip->sip_contact ? sip->sip_contact->m_url : original_url;
+ *  ack = nta_outgoing_tcreate(leg, NULL, NULL,
+ *                             SIP_METHOD_ACK,
+ *                             (url_string_t*)url,
+ *                             SIPTAG_CSEQ(sip->sip_cseq),
+ *                             SIPTAG_PAYLOAD(sdp),
+ *                             TAG_END());
+ * @endcode
+ *
+ * @note The ACK transaction should be sent to the @Contact specified in the
+ * 2xx reply.
+ *
+ * <a name="nta_register_f"></a>
+ * @section nta_stateless_callback Stateless Processing of SIP Messages
+ *
+ * When an NTA agent is created, it is possible to provide it with a
+ * stateless callback function. The callback function will be called when an
+ * incoming SIP request or response message does not match with an existing
+ * transaction.
+ *
+ * Before invoking the stateless callback the agent will try to match the
+ * incoming request message with an existing dialog or dialog-less leg (or
+ * default leg). So, if you have created a default leg, all request messages
+ * are processed statefully by it instead of being passed to the stateless
+ * callback function.
+ *
+ * If you want to process request messages with stateless callback and still
+ * use dialog-less legs (for instance, in order to look up domains with
+ * nta_leg_by_uri()), you have to switch over to @em stateless @em mode by
+ * including NTATAG_STATELESS(1) in nta_agent_create() or
+ * nta_agent_set_params() arguments.
+ *
+ * Also, if a response message does not match with an existing client
+ * transaction, the agent will try to use the default outgoing (client)
+ * transaction. If you have created an default outgoing transaction, all
+ * stray response messages are passed to it instead of the stateless
+ * processing function.
+ *
+ * @section nta_message_f_example Stateless Callback Function
+ *
+ * In addition to the message (@a msg) and its
+ * parsed contents (@a sip) the callback function gets the
+ * application-specific context pointer (in this case, @a registrar) and a
+ * pointer to the NTA agent (@a agent) as its arguments:
+ *
+ * @code
+ * int process_message(nta_agent_context_t *registrar,
+ * 		       nta_agent_t *agent,
+ * 		       msg_t *msg,
+ * 		       sip_t *sip);
+ * @endcode
+ *
+ * The application has three functions that can be used to process the
+ * messages in stateless manner:
+ * @li nta_msg_discard() ignores and destroys the message,
+ * @li nta_msg_tsend() forwards a request or response message, and
+ * @li nta_msg_treply() replies to a request message in a stateless way.
+ *
+ * Additionally, it is possible to process a request message statefully with
+ * nta_incoming_create().
+ *
+ * The functionality of the stateless callback function can vary greatly,
+ * depending the purpose of the application. An user-agent, a proxy or a
+ * registrar/redirect server each have very different callback functions.
+ *
+ * A simple redirect server could have a message callback function as
+ * follows.
+ *
+ * @code
+ * int process_message(redirect_t *r,
+ * 		       nta_agent_t *agent,
+ * 		       msg_t *msg,
+ * 		       sip_t *sip)
+ * {
+ *   sip_contact_t *m;
+ *   sip_unsupported_t *u;
+ *
+ * @endcode
+ *
+ * The incoming response messages are simply ignored. The @b ACK requests can
+ * safely be discarded, too, because the redirect server keeps no state.
+ *
+ * @code
+ *   if (!sip->sip_request || sip->sip_request->rq_method == sip_method_ack) {
+ *     nta_msg_discard(agent, msg);
+ *     return 0;
+ *   }
+ * @endcode
+ *
+ * Next, the redirect server first checks if processing the request requires
+ * a feature that is not supported by it:
+ * @code
+ *   u = sip_unsupported(msg_home(msg), sip->sip_require, r->r_supported);
+ *   if (u) {
+ *     nta_msg_treply(agent, msg, SIP_420_BAD_EXTENSION,
+ *                    SIPTAG_SUPPORTED(r->r_supported),
+ *                    SIPTAG_UNSUPPORTED(u),
+ *                    TAG_END());
+ *     return 0;
+ *   }
+ * @endcode
+ *
+ * The @b CANCEL requests terminate a transacton. A stateless redirect
+ * server does not have transactions, so it redirect replies with a @e 481
+ * @e Call @e Leg/Transaction @e Does @e Not @e Exist message:
+ * @code
+ *   if (sip->sip_request->rq_method == sip_method_cancel) {
+ *     nta_msg_treply(agent, msg, SIP_481_NO_TRANSACTION, TAG_END());
+ *     return 0;
+ *   }
+ * @endcode
+ *
+ *  All other requests are answered normally with a 302 response.
+ *  The location service is
+ *  searched for the request uri, and if a matching address was found, a
+ *  list of active bindings is returned to the client.
+ * @code
+ *   m = location_find(redirect, sip->sip_request->rq_url);
+ *   if (m) {
+ *     nta_msg_treply(agent, msg, SIP_302_MOVED_TEMPORARILY,
+ *                    SIPTAG_CONTACT(m),
+ *                    TAG_END());
+ *   }
+ * @endcode
+ *
+ *   Otherwise, @e 404 @e Not @e Found is sent:
+ * @code
+ *   else {
+ *     nta_msg_treply(agent, msg, SIP_404_NOT_FOUND, TAG_END());
+ *   }
+ *
+ *   return 0;
+ * }
+ * @endcode
+ *
+ */
+
+/**@page internal NTA Semantics and Internal Data Flows
+ *
+ * NTA implements simple state machines at transaction level. The figure
+ * below illustrates how a message is processed by NTA.
+ *
+ * @image html nta-receiving-message.gif "NTA processing incoming messages."
+ * @image latex nta-receiving-message.eps "NTA processing incoming messages."
+ *
+ *
+ */
+
+int invite_callback(call_t *call,
+		    nta_outgoing_t *orq,
+		    sip_t const *sip)
+{
+  int status = sip->sip_status->st_status;
+  nta_leg_t *leg = call->leg;
+
+  if (!call->has_dialog &&
+      (status >= 200 || (status > 100 && sip->sip_rseq))) {
+    nta_leg_t *early =
+      nta_leg_tcreate(call->nta_agent, mid_dialog_request, call,
+		      SIPTAG_TO(sip->sip_to),
+		      SIPTAG_FROM(sip->sip_from),
+		      SIPTAG_CALL_ID(sip->sip_call_id),
+		      SIPTAG_CSEQ(sip->sip_cseq),
+		      TAG_END());
+
+    nta_leg_client_route(early,
+			 sip->sip_record_route,
+			 sip->sip_contact);
+
+    fork = call_fork(call, leg = early);
+
+    if (!fork) {
+      handle error;
+    }
+    call = fork;
+  }
+
+  if (status > 100 && status < 200 && sip->sip_rseq) {
+    nta_outgoing_t *prack =
+      nta_outgoing_prack(leg, orq, NULL, NULL, NULL,
+			 sip,
+			 TAG_END());
+    nta_outgoing_destroy(prack);
+    return 0;
+  }
+
+  ...
+}

@@ -1,0 +1,21 @@
+ check process freeswitch with pidfile /opt/freeswitch/run/freeswitch.pid
+   group voice
+   start program = "/etc/init.d/freeswitch start"
+   stop  program = "/etc/init.d/freeswitch stop"
+   if failed port 5060 type UDP then restart
+   if 5 restarts within 5 cycles then timeout
+   depends on freeswitch_bin
+   depends on freeswitch_rc
+
+ check file freeswitch_bin with path /opt/freeswitch/bin/freeswitch
+   group voice
+   if failed checksum then unmonitor
+   if failed permission 755 then unmonitor
+   if failed uid freeswitch then unmonitor
+
+ check file freeswitch_rc with path /etc/init.d/freeswitch
+   group voice
+   if failed checksum then unmonitor
+   if failed permission 755 then unmonitor
+   if failed uid root then unmonitor
+   if failed gid root then unmonitor

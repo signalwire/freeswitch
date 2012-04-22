@@ -1,0 +1,93 @@
+Index: mod_python_wrap.cpp
+===================================================================
+--- mod_python_wrap.cpp	(revision 16581)
++++ mod_python_wrap.cpp	(working copy)
+@@ -5555,7 +5555,9 @@
+     SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "EventConsumer_pop" "', argument " "2"" of type '" "int""'");
+   } 
+   arg2 = static_cast< int >(val2);
++  Py_BEGIN_ALLOW_THREADS;
+   result = (Event *)(arg1)->pop(arg2);
++  Py_END_ALLOW_THREADS;
+   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
+   return resultobj;
+ fail:
+@@ -5577,7 +5579,9 @@
+     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_pop" "', argument " "1"" of type '" "EventConsumer *""'"); 
+   }
+   arg1 = reinterpret_cast< EventConsumer * >(argp1);
++  Py_BEGIN_ALLOW_THREADS;
+   result = (Event *)(arg1)->pop();
++  Py_END_ALLOW_THREADS;
+   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
+   return resultobj;
+ fail:
+@@ -9560,20 +9564,20 @@
+ }
+ 
+ 
+-SWIGINTERN PyObject *_wrap_new_Session__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
++SWIGINTERN PyObject *_wrap_new_Session__SWIG_0(PyObject *self, PyObject *args) {
+   PyObject *resultobj = 0;
+   PYTHON::Session *result = 0 ;
+   
+   if (!PyArg_ParseTuple(args,(char *)":new_Session")) SWIG_fail;
+   result = (PYTHON::Session *)new PYTHON::Session();
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   return resultobj;
+ fail:
+   return NULL;
+ }
+ 
+ 
+-SWIGINTERN PyObject *_wrap_new_Session__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
++SWIGINTERN PyObject *_wrap_new_Session__SWIG_1(PyObject *self, PyObject *args) {
+   PyObject *resultobj = 0;
+   char *arg1 = (char *) 0 ;
+   CoreSession *arg2 = (CoreSession *) 0 ;
+@@ -9598,7 +9602,7 @@
+   }
+   arg2 = reinterpret_cast< CoreSession * >(argp2);
+   result = (PYTHON::Session *)new PYTHON::Session(arg1,arg2);
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+   return resultobj;
+ fail:
+@@ -9607,7 +9611,7 @@
+ }
+ 
+ 
+-SWIGINTERN PyObject *_wrap_new_Session__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
++SWIGINTERN PyObject *_wrap_new_Session__SWIG_2(PyObject *self, PyObject *args) {
+   PyObject *resultobj = 0;
+   char *arg1 = (char *) 0 ;
+   PYTHON::Session *result = 0 ;
+@@ -9623,7 +9627,7 @@
+   }
+   arg1 = reinterpret_cast< char * >(buf1);
+   result = (PYTHON::Session *)new PYTHON::Session(arg1);
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+   return resultobj;
+ fail:
+@@ -9632,7 +9636,7 @@
+ }
+ 
+ 
+-SWIGINTERN PyObject *_wrap_new_Session__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
++SWIGINTERN PyObject *_wrap_new_Session__SWIG_3(PyObject *self, PyObject *args) {
+   PyObject *resultobj = 0;
+   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+   PYTHON::Session *result = 0 ;
+@@ -9647,7 +9651,7 @@
+   }
+   arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
+   result = (PYTHON::Session *)new PYTHON::Session(arg1);
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   return resultobj;
+ fail:
+   return NULL;

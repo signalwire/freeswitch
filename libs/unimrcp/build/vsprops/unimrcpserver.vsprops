@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="unimrcpserver"
+	InheritedPropertySheets=".\mrcpserver.vsprops;.\sofiasip.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)platforms\libunimrcp-server\include&quot;;&quot;$(ProjectRootDir)build&quot;"
+	/>
+	<UserMacro
+		Name="UniMRCPServerLibs"
+		Value="libunimrcpserver.lib mrcpsofiasip.lib mrcpunirtsp.lib unirtsp.lib mrcpserver.lib mrcpv2transport.lib mrcpsignaling.lib mrcpengine.lib mrcp.lib mpf.lib aprtoolkit.lib libaprutil-1.lib libapr-1.lib libsofia_sip_ua.lib ws2_32.lib winmm.lib"
+	/>
+</VisualStudioPropertySheet>

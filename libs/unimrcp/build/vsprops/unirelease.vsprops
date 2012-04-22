@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="unirelease"
+	InheritedPropertySheets="$(ProjectDir)..\..\build\vsprops\unibase.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		PreprocessorDefinitions="NDEBUG;"
+		RuntimeLibrary="2"
+		UsePrecompiledHeader="0"
+		DebugInformationFormat="3"
+	/>
+</VisualStudioPropertySheet>

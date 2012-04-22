@@ -1,0 +1,294 @@
+#!/usr/bin/perl
+# sipgrep version 0.2. Skin for ngrep. (C) 2005-2006 Alexandr Dubovikov <shurik@start4.info>
+# Modified 2007 Anthony Minessale <anthm@freeswitch.org>
+
+use Term::ANSIColor;
+use Getopt::Std;
+
+#colors: BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, ON_BLACK, ON_RED, ON_GREEN, ON_YELLOW, ON_BLUE, ON_MAGENTA, ON_CYAN, ON_WHITE
+#
+#type: BOLD, DARK, UNDERLINE, UNDERSCORE, BLINK, REVERSE, CONCEALED, 
+
+$COLORS{'method'}='bold red';
+$COLORS{'response'} ='bold yellow';
+$COLORS{'callid'} = 'bold magenta';
+$COLORS{'fromtag'} = 'bold blue';
+$COLORS{'totag'} = 'bold green';
+$COLORS{'viabranch'} = 'bold cyan';
+
+$limit=2000;
+$ngrep="/usr/bin/ngrep"; #path to NGREP
+$ngrep_flags="-l -d eth1"; # Flag for Ngrep
+
+$colorsmethods="INVITE|REGISTER|BYE|ACK|CANCEL|OPTIONS|REFER|NOTIFY|MESSAGE|INFO|PRACK|UPDATE";
+
+%options=();
+getopts("f:t:l:ahVp:d:TcCnArm:",\%options);
+
+$version=<<END;
+Sipgrep version 0.2
+    Created by Alexandr Dubovikov <shurik\@start4.info>
+
+END
+
+    $usage=<<END;
+Usage: sipgrep <-h> <-f number> <-t number> <-a> <-l file> <-V> <-p> <-d device> <-T> <-n|-c>
+
+    -h	  Displays this help message.
+    -A    Match anything.
+    -f    ARG Search ARG in From field.
+    -c    ARG Search ARG in Contact field.
+    -t    ARG Search ARG in To field.
+    -a	  Search the ARG from '-f' and '-t' parameters in To and From fields.
+    -l    ARG Debug file name.
+    -V	  Displays the current version.
+    -d	  Device for ngrep.
+    -p	  Port for ngrep.
+    -T	  Parameter for ngrep. Indicating the delta between packet matches.
+    -C    Allow colors in debug file.
+    -n    Not allow colors in STDOUT.
+    -m    Allowed METHODS to filter e.g. -m "INVITE,REGISTER"
+    -r    match replies as well when matching with -m
+Example: sipgrep -f 0123456 -t 0654321 -l debug.sip
+    or
+    sipgrep -f 0123456 -a -l debug.sip
+END
+
+#version
+    if(defined $options{V})
+{
+    print $version; exit;
+}
+
+#usage
+if((!defined $options{f} && !defined $options{t} && !defined $options{c} && !defined $options{A}) || defined $options{h}) 
+{
+    print $usage; exit;
+}
+
+#TimeStamp
+$ngrep_flags .= sprintf(" %s", (defined $options{T}) ? "-T" : "-t" );
+
+#Device
+$ngrep_flags .= sprintf(" -d %s", (defined $options{d}) ? $options{d} : "eth0" );
+
+#Port
+$ngrep_flags .= sprintf(" port %d", (defined $options{p}) ? $options{p} : "5060" );
+
+#our system variables
+$any=$options{A};
+$mstr=$options{m};
+$anumber=$options{f};
+$bnumber=$options{t};
+$cnumber=$options{c};
+$replies=$options{r};
+$all=$options{a};
+$filedebug=$options{l};
+$nocolors=$options{n};
+$debugfilecolors=$options{C};
+
+@METHODS = split(",", $mstr);
+
+#remove old debug file. 
+unlink $filedebug if(defined $filedebug);
+
+#open PIPE
+open(PIPE,"$ngrep $ngrep_flags |") or die "Can't run '$ngrep' programm: $!\n";
+
+select(PIPE); $| = 1;	# make unbuffered
+select(STDOUT); $| = 1;	# make unbuffered
+
+while(<PIPE>)
+{	
+    chomp($_);
+    s///ig;
+    s/  // if(/^ /);
+    
+    if(/\.\. (.*)$/)
+    {
+	$tmp.=$_;		
+
+	if(create_newline($tmp)==1)
+	{
+	    undef $firstvia;
+	    #system_out("----------------begin of packet -----------------------------\n");	
+	    foreach $key (@tmparray)
+	    {	
+		system_out($key."\n");
+	    }
+	    #system_out("------------------end of packet -----------------------------\n");			
+	}
+    }
+    elsif(/^#/) { undef $tmp;}
+	  elsif(/^U /) { $tmp=$_."....";}
+	  else { $tmp.=$_;}                 
+      }
+    close(PIPE);
+
+    sub create_newline
+{
+    my $tmpstring = shift;	
+    exit if($index > $limit);
+    undef @tmparray;
+    @tmparray=split(/\.\./,$tmpstring);		
+    $print_out=1;
+    undef $searchcallid;
+
+    if (@METHODS) {
+	$print_out=0;
+	foreach $key (@tmparray) {
+	    my $test = 0;
+	    $test = ($key =~ /^\S+\s+\S+\s+SIP\/2.0/) ? 1 : 0;
+
+	    if ($replies && !$test) {
+		$test = $key =~ /CSeq\:/i;
+	    }
+
+	    if ($test) {
+		foreach $m (@METHODS) {
+		    if ($key =~ $m) {
+			$print_out=1;
+			last;
+		    }
+		}
+	    }
+	}
+    }
+
+    if (!$print_out) {
+	return $print_out;
+    }
+
+    if ($any) {
+	$print_out=1; 
+	return $print_out;
+    }
+
+    foreach $key(@tmparray)
+    {
+	if(defined $anumber || defined $bnumber || defined $cnumber)
+	{
+	    $print_out=0;
+	    getmatch($key); #if(!$callid)
+	    $tmpcallid=getcallid($key);			
+	    if($searchcallid==1)
+	    {	
+		$GCALLID{$tmpcallid}=1;
+		$print_out=1;
+		last;
+	    }
+	}					
+    }
+    return $print_out;
+}
+
+sub getmatch
+{
+    my $tmps = shift;
+
+    #From: "Martin Mustermann" <sip:021173067200@qsc.de>;tag=2bdf62455c76484b9e1163154d2758cd;epid=46aa53832b	
+    if($tmps=~/^From:/i && ((defined $anumber && $tmps=~/$anumber/ig) || (defined $all && defined $bnumber && $tmps=~/$bnumber/ig)))
+    {
+	$searchcallid=1;
+    }
+    elsif($tmps=~/^To:/i && ((defined $bnumber && $tmps=~/$bnumber/ig) || (defined $all && defined $anumber && $tmps=~/$anumber/ig)))
+    {
+	$searchcallid=1;
+    }
+    elsif($tmps=~/^Contact:/i && ((defined $cnumber && $tmps=~/$cnumber/ig)))
+    {
+	$searchcallid=1;
+    }
+    if($tmps=~/^Call-ID:/ig)
+    {
+	(undef,$tmpcallid)=split(/: /,$tmps,2);
+	$print_out=1 if($GCALLID{$tmpcallid}==1);
+    }
+}
+
+sub getcallid
+{
+    my $tmps = shift;
+    (undef,$tmpcallid)=split(/: /,$tmps,2) if($tmps=~/^Call-ID:/ig);
+    return $tmpcallid;
+}
+
+
+sub system_out
+{
+    my $out = shift;
+    my $tmpmain, $tmpstr;
+    
+    #Method:	
+    if($out =~/^($colorsmethods) /ig)
+    {
+	($tmpmain,$tmpstr)=split(/ /,$out,2);
+
+	print_out($tmpmain, $COLORS{'method'});		        		
+
+	print_out(" ".$tmpstr);
+    }
+    #Response:
+    elsif($out =~/^SIP\/2\.0 [1-6][0-9][0-9] /ig)
+    {
+	($tmpstr, $tmpmain)=split(/ /,$out,2);
+	print_out($tmpstr." ");
+	print_out($tmpmain, $COLORS{'response'});		        		
+    }
+    #Callid
+    elsif($out =~/^(Call-ID):/ig)
+    {
+	($tmpstr, $tmpmain)=split(/: /,$out,2);
+	print_out($tmpstr.": ");
+	print_out($tmpmain, $COLORS{'callid'});		        		
+    }
+    #From/To: tag
+    elsif($out =~/^(From|f|To|t): /ig && $out=~/;tag=/ig)
+    {
+
+	($tmpstr, $tmpmain)=split(/;tag=/,$out,2);
+	print_out($tmpstr.";tag=");
+
+	($tmpmain, $tmpstr)=split(/;/,$tmpmain,2);
+	print_out($tmpmain, $out =~/^(From|f): / ? $COLORS{'fromtag'} : $COLORS{'totag'});		        		
+
+	print_out(";".$tmpstr) if(defined $tmpstr);
+    }	
+    #Via: branch
+    elsif($out =~/^(Via|v): /ig && $out=~/;branch=/ig && !defined $firstvia)
+    {
+
+	($tmpstr, $tmpmain)=split(/;branch=/,$out,2);
+	print_out($tmpstr.";branch=");
+
+	($tmpmain, $tmpstr)=split(/;/,$tmpmain,2);
+	print_out($tmpmain, $COLORS{'viabranch'});		        		
+	
+	print_out(";".$tmpstr) if(defined $tmpstr);
+	
+	$firstvia = 1;
+    }
+    else { print_out($out); }	
+}
+
+
+sub print_out
+{
+    my $ltext = shift;
+    my $lcolor = shift;
+    
+    $lcolor='reset' if(!defined $lcolor || defined $nocolors);
+    
+    print color $lcolor;
+
+    print $ltext;
+    
+    if(defined $filedebug)
+    {
+	open(DBG, ">>$filedebug");
+	$lcolor = 'reset' if(!(defined $debugfilecolors));		
+	print DBG color $lcolor if(!(defined $debugfilecolors));
+	print DBG $ltext;
+	close(DBG);	
+    }
+}

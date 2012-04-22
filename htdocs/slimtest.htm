@@ -1,0 +1,23 @@
+<p>
+    You can find more infos about slim.swf here:
+</p>
+<p>
+    http://musicplayer.sourceforge.net/#documentation
+</p>
+<p>
+    <br/>
+    Please remember that you should record your MP3s at 11Khz for slim.swf to play correctly
+
+    A quick example follows:
+</p>
+
+<object type="application/x-shockwave-flash" width="400" height="17"
+    data="/slim.swf?song_url=/data.mp3&song_title=This%20is%20the%20title">
+    <param name="movie" value="/slim.swf?song_url=/data.mp3&song_title=This%20is%20the%20title" />
+    <param name="quality" value="high"/>
+    <param name="bgcolor" value="#E6E6E6"/>
+</object>
+
+<p>
+    Remember that if this is not working for you, you should most probably point the song_url GET parameter to a real MP3 file that should be reachable through the web server.
+</p>

@@ -1,0 +1,48 @@
+#! /bin/bash
+#
+# /usr/bin/gsmsmsrequeue: Re-queues failed SMS
+#
+# written by Matthias Goebl <matthias@goebl.net>
+
+SPOOLDIR=/var/spool/sms
+PRIORITIES=3
+SMSADMIN=root
+SUBJECT="SMS delivery report:"
+
+send_notify()
+{
+  tmpfile="$SPOOLDIR/tmp/"`basename "$1"`
+  status="$2"
+  if mv "$1" "$tmpfile" 2>/dev/null; then
+    # extract the first tab-separated field after the phone number as
+    # email-address to send the notification to
+    mailto=` cat "$tmpfile" | sed -ne '1s/^[^	]*	\([^	]*\).*/\1/p' `
+    test -z "$mailto" && mailto="$SMSADMIN"
+    cat "$tmpfile" | mail -s "$SUBJECT $status" "$mailto"
+    rm "$tmpfile"
+  fi
+}
+do_accounting()
+{
+  true;
+}
+
+test -r /etc/default/gsm-utils && . /etc/default/gsm-utils
+
+for p in `seq 1 $PRIORITIES`; do
+  ls "$SPOOLDIR/failed$p" | while read file; do
+    if expr "$file" : ".*rrrrrrrrrrrr" >/dev/null; then
+      send_notify "$SPOOLDIR/failed$p/$file" "failed"
+    else
+      # re-queue SMS
+      mv "$SPOOLDIR/failed$p/$file" "$SPOOLDIR/queue$p/${file}r" 2>/dev/null
+    fi
+  done
+done
+
+for p in `seq 1 $PRIORITIES`; do
+  ls "$SPOOLDIR/sent$p" | while read file; do
+    do_accounting "$SPOOLDIR/sent$p/$file" "sent"
+    send_notify "$SPOOLDIR/sent$p/$file" "sent"
+  done
+done

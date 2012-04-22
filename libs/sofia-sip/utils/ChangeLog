@@ -1,0 +1,28 @@
+2006-02-08  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Makefile.am, nua_cli.c: nua_cli example add removed from the
+	distribution package.
+
+2005-09-29  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Printing all events.
+
+    M ./utils/nua_cli.c -4 +15
+
+  * Not using MSS-related tags.
+
+    M ./utils/nua_cli.c +2
+
+2005-09-28  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Not using soa directly anymore.
+
+	    M ./utils/nua_cli.c -5 +3
+
+2005-09-07  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* nua_cli.c: Cleaned up unused ifdefs.
+
+2005-09-07  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* ChangeLog: File created.

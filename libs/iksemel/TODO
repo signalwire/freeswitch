@@ -1,0 +1,12 @@
+
+This file contains a simple list of TODO items.
+More general ideas can be found in the roadmap part of the file HACKING.
+
+(in order of importance)
+
+* parser: &#1234; and &#xA25F; like entities must be unescaped.
+* packet filter or a generic xml filter? something like a simplified xpath?
+* a separate utf8 validator function can be useful
+* utf8 <-> utf16 conversion functions can be useful
+
+anything else? :-)

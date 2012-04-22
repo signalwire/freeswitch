@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{4ad6c9d4-436e-451a-8455-2cfce963ef3c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="amplitude.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="desa2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fast_acosf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="goertzel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="options.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="psi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sma_buf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="amplitude.c" />
+    <ClCompile Include="buffer.c" />
+    <ClCompile Include="desa2.c" />
+    <ClCompile Include="fast_acosf.c" />
+    <ClCompile Include="goertzel.c" />
+    <ClCompile Include="mod_avmd.c" />
+  </ItemGroup>
+</Project>

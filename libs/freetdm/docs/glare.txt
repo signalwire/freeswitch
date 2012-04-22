@@ -1,0 +1,25 @@
+Glare is a PITA.
+
+Although configuration of ISDN links can be done to minimize glare, we also must have a clear policy
+on how the FreeTDM API is supposed to behave on glare across signaling modules.
+
+There is a well-known race in the FreeTDM API since the beginning. When a user wants to place a call with
+the old APIs:
+
+1. ftdm_channel_open_xx (to hunt the channel by group, span or select a channel individually)
+2. ftdm_channel_call_place() to place the actual call.
+
+Since the user has no access to channel locking, between opening a channel and placing a call, an incoming call could be
+received. Therefore things can get complicated and that is why you should STOP USING those 2 deprecated functions.
+
+The replacement is ftdm_call_place().
+
+ftdm_call_place receives the information required to hunt the channel and place the call.
+
+If glare is detected after placing the call and the signaling stack decides to drop the local call, a regular
+SIGEVENT_STOP will be sent with the hangup cause FTDM_CAUSE_REQUESTED_CHAN_UNAVAIL.
+
+ftdm_call_place may return FTDM_BREAK if glare is detected while placing the call, in such cases you can try
+calling ftdm_call_place again to hunt another channel.
+
+

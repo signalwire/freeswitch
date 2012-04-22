@@ -1,0 +1,15 @@
+PROJECT_NAME         = "ipt"
+OUTPUT_DIRECTORY     = ../docs/html/ipt
+
+INPUT 		     = @srcdir@/ipt.docs
+INPUT               += @srcdir@/sofia-sip/base64.h @srcdir@/base64.c
+INPUT               += @srcdir@/sofia-sip/token64.h @srcdir@/token64.c
+
+@INCLUDE_PATH = . @srcdir@
+@INCLUDE = ../docs/Doxyfile.conf
+
+TAGFILES            += ../docs/su.doxytags=../su
+GENERATE_TAGFILE     = ../docs/ipt.doxytags
+
+ALIASES +=
+

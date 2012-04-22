@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+################################################################################
+# sendmail.pl
+# <rename this to /usr/sbin/sendmail for a FreeSWITCH
+#  voicemail gateway with no mail server>
+#
+# (c) 2005 Anthony Minessale II
+#  Anthony Minessale <anthm@freeswitch.org>
+#
+################################################################################
+use Net::SMTP;
+my $relayhost = "localhost"; # what is the internet address of your smtp server
+my $over_from = "";          # define this to override the to
+my $over_to = "";            # define this to override the from
+my $debug = 0;               # set to 1 to watch it deliver
+my $timeout = 60;            # when to give up.
+################################################################################
+
+
+$/ = undef;
+my $msg = <STDIN>;
+
+my ($to) = $over_to || $msg =~ /To: (.*)/;
+my ($from) = $over_from || $msg =~ /From: (.*)/;
+
+
+if($to =~ /<([^>]+)>/) {
+  $to = $1;
+} 
+
+if($from =~ /<([^>]+)>/) {
+  $from = $1;
+}
+
+my $smtp = Net::SMTP->new($relayhost, Debug => $debug, Timeout => $timout);
+$smtp->mail($from);
+$smtp->to(split /,/, $to);
+$smtp->data($msg);
+$smtp->quit();
+

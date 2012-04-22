@@ -1,0 +1,102 @@
+#
+# nta has an error mask specifying which headers cause nta to automatically
+# return 400 Bad Message if a critical header or pseudoheader in a request
+# has a parsing error.
+#
+# The parsing error can be later checked with msg_extract_errors(), too.
+#
+# See <sip_parser.h> for definition of mask values.
+#
+# The error flags for a particular header can be set when header is added
+# with msg_mclass_insert_header_flags().
+#
+# The flags of existing headers can be modified, if a copy of message class
+# is first made with msg_mclass_clone().
+#
+
+#
+# When updating this file, please update
+# NTATAG_BAD_RESP_MASK()/NTATAG_BAD_REQ_MASK() documentation, too.
+#
+
+#
+# Headers that must be valid for all requests
+#
+request = sip_mask_request | sip_mask_response
+status = sip_mask_request | sip_mask_response
+From = sip_mask_request | sip_mask_response
+To = sip_mask_request | sip_mask_response
+CSeq = sip_mask_request | sip_mask_response
+Call-ID = sip_mask_request | sip_mask_response
+Content-Length = sip_mask_request | sip_mask_response
+Via = sip_mask_request | sip_mask_response
+
+#
+# User-Agent headers
+#
+Content-Type = sip_mask_ua
+Content-Disposition = sip_mask_ua
+Content-Encoding = sip_mask_ua
+
+#
+# Proxy heades
+#
+Route = sip_mask_proxy
+Max-Forwards = sip_mask_proxy
+Proxy-Require = sip_mask_proxy
+Proxy-Authorization = sip_mask_proxy
+
+#
+# Registrar headers
+#
+Min-Expires = sip_mask_registrar
+Authorization = sip_mask_registrar
+Path = sip_mask_registrar
+
+#
+# Headers that must be valid in UA, proxy or registrar
+#
+Contact = sip_mask_ua | sip_mask_proxy | sip_mask_registrar
+Require = sip_mask_ua | sip_mask_registrar | sip_mask_timer
+Record-Route = sip_mask_ua | sip_mask_proxy
+
+Expires = sip_mask_registrar | sip_mask_events
+
+# Nothing bad can happen if something looks like it is not Supported
+# Supported = sip_mask_ua | sip_mask_proxy | sip_mask_registrar
+
+#
+# 100rel headers
+#
+RAck = sip_mask_100rel
+RSeq = sip_mask_100rel
+
+#
+# Event headers
+#
+Event = sip_mask_events
+Subscription-State = sip_mask_events
+
+#
+# 'timer' headers
+#
+Session-Expires = sip_mask_timer
+Min-SE = sip_mask_timer
+
+#
+# Privacy headers
+#
+Privacy = sip_mask_privacy
+
+#
+# Headers used in caller preferences
+#
+Request-Disposition = sip_mask_pref
+Accept-Contact = sip_mask_pref
+Reject-Contact = sip_mask_pref
+
+#
+# PUBLISH headers (NOTE: No SIP- here!)
+#
+Etag = sip_mask_publish
+If-Match = sip_mask_publish

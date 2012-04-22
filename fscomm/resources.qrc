@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="splash.png">resources/splash.png</file>
+        <file alias="pref_sip.png">resources/pref_sip.png</file>
+        <file alias="pref_audio.gif">resources/pref_audio.gif</file>
+        <file alias="pref_general.jpg">resources/pref_general.jpg</file>
+        <file alias="pref_accounts.jpg">resources/pref_accounts.jpg</file>
+        <file alias="taskbar_icon.png">resources/taskbar_icon.png</file>
+    </qresource>
+    <qresource prefix="/confs">
+        <file alias="freeswitch.xml">conf/freeswitch.xml</file>
+    </qresource>
+    <qresource prefix="/sounds">
+        <file alias="test.wav">resources/test.wav</file>
+    </qresource>
+</RCC>

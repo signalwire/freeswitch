@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="mrcpclient"
+	InheritedPropertySheets=".\mrcpsignaling.vsprops;.\mrcpv2transport.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(ProjectRootDir)libs\mrcp-client\include&quot;"
+	/>
+</VisualStudioPropertySheet>

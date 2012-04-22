@@ -1,0 +1,304 @@
+// part of Symbian build files for sofia-sip package
+//
+// Copyright (C) 2005,2006,2007 Nokia Corporation
+// Contact: Pekka Pessi <pekka.pessi@nokia.com>
+// Licensed under LGPL. See file COPYING.
+
+// General properties
+TARGET          libsofia-sip-ua.dll
+TARGETTYPE      dll
+CAPABILITY      All -Tcb //NetworkServices
+UID             0x1000008D 0xA000017E
+VENDORID        0
+OPTION CW       -dialect c99 -inline on -warn nounusedarg,nounusedvar
+OPTION ARMCC    --diag_suppress=1293,1295,188,186,550,111,174,177,187
+//CAPABILITY      NetworkServices NetworkControl CommDD UserEnvironment
+
+//EPOCHEAPSIZE 4 4194304
+
+// Allow global writeable static data
+EPOCALLOWDLLDATA
+
+MACRO           SYMBIAN
+MACRO           IN_LIBSOFIA_SIP_UA
+MACRO           IN_LIBSOFIA_SRES
+
+SOURCEPATH      ..\..\libsofia-sip-ua\su
+
+SOURCE          su_open_c_localinfo.cpp
+
+SOURCE          su.c
+SOURCE          su_errno.c
+SOURCE          su_addrinfo.c
+SOURCE          su_alloc.c
+SOURCE          su_alloc_lock.c
+SOURCE          su_strdup.c
+SOURCE          su_sprintf.c
+SOURCE          su_strlst.c
+SOURCE          su_vector.c
+SOURCE          su_time.c
+SOURCE          su_time0.c
+SOURCE          su_wait.c
+SOURCE          su_root.c
+SOURCE          su_timer.c
+SOURCE          su_port.c
+SOURCE          su_base_port.c
+SOURCE          su_pthread_port.c
+SOURCE          su_poll_port.c
+SOURCE          su_epoll_port.c
+SOURCE          su_select_port.c
+SOURCE          su_socket_port.c
+SOURCE          su_localinfo.c
+SOURCE          su_os_nw.c
+SOURCE          su_taglist.c
+SOURCE          su_tag.c
+SOURCE          su_tag_ref.c
+SOURCE          su_tag_io.c
+SOURCE          su_log.c
+SOURCE          su_global_log.c
+SOURCE          su_default_log.c
+SOURCE          su_md5.c
+SOURCE          su_uniqueid.c
+SOURCE          su_bm.c
+SOURCE          memmem.c
+SOURCE          memspn.c
+SOURCE          memcspn.c
+SOURCE          string0.c
+SOURCE          strtoull.c
+SOURCE          su_string.c
+SOURCE          getopt.c
+SOURCE          poll.c
+SOURCE          smoothsort.c
+SOURCE          su_kqueue_port.c
+SOURCE          su_devpoll_port.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\bnf
+
+SOURCE          bnf.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\features
+
+SOURCE          	features.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\http
+
+SOURCE          	http_parser.c
+SOURCE          	http_header.c
+SOURCE          	http_basic.c
+SOURCE          	http_extra.c
+SOURCE          	http_status.c
+SOURCE          	http_tag_class.c
+SOURCE          	http_tag.c
+SOURCE          	http_tag_ref.c
+SOURCE          	http_parser_table.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\ipt
+
+SOURCE          base64.c
+SOURCE          rc4.c
+//SOURCE          string0.c
+SOURCE          token64.c
+
+SOURCE          ucs2.c
+SOURCE          ucs4.c
+SOURCE          utf8.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\iptsec
+
+SOURCE          auth_client.c
+SOURCE          auth_common.c
+SOURCE          auth_digest.c
+SOURCE          auth_module.c
+SOURCE          auth_tag.c
+SOURCE          auth_tag_ref.c
+SOURCE          auth_plugin.c
+SOURCE          auth_plugin_delayed.c
+SOURCE          auth_module_sip.c
+SOURCE          iptsec_debug.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\msg
+
+SOURCE          	msg.c
+SOURCE            msg_tag.c
+SOURCE            msg_mime.c
+SOURCE            msg_mime_table.c
+SOURCE            msg_header_copy.c
+SOURCE            msg_header_make.c
+SOURCE            msg_parser.c
+SOURCE            msg_mclass.c
+SOURCE            msg_parser_util.c
+SOURCE            msg_basic.c
+SOURCE            msg_generic.c
+SOURCE            msg_date.c
+SOURCE            msg_auth.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\nea
+
+SOURCE          nea.c
+SOURCE          nea_event.c
+SOURCE          nea_server.c
+SOURCE          nea_debug.c
+SOURCE          nea_tag.c
+SOURCE          nea_tag_ref.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\nta
+
+SOURCE          nta.c
+SOURCE          nta_check.c
+SOURCE          nta_tag.c
+SOURCE          nta_tag_ref.c
+SOURCE          sl_utils_print.c
+SOURCE          sl_utils_log.c
+SOURCE          sl_read_payload.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\nth
+
+SOURCE          nth_client.c
+SOURCE          nth_server.c
+SOURCE          nth_tag.c
+SOURCE          nth_tag_ref.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\nua
+
+SOURCE          nua.c
+SOURCE          nua_common.c
+SOURCE          nua_stack.c
+SOURCE          nua_client.c
+SOURCE          nua_server.c
+SOURCE          nua_extension.c
+SOURCE          nua_dialog.c
+SOURCE          outbound.c
+SOURCE          nua_params.c
+SOURCE          nua_register.c
+SOURCE          nua_registrar.c
+SOURCE          nua_session.c
+SOURCE          nua_options.c
+SOURCE          nua_message.c
+SOURCE          nua_publish.c
+SOURCE          nua_subnotref.c
+SOURCE          nua_notifier.c
+SOURCE          nua_event_server.c
+SOURCE          nua_tag.c
+SOURCE          nua_tag_ref.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\sdp
+
+SOURCE          	sdp.c
+SOURCE          	sdp_parse.c
+SOURCE          	sdp_print.c
+SOURCE          	sdp_tag.c
+SOURCE          	sdp_tag_ref.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\sip
+
+SOURCE          sip_parser.c
+SOURCE          sip_header.c
+SOURCE          sip_util.c
+SOURCE          sip_pref_util.c
+SOURCE          sip_basic.c
+SOURCE          sip_extra.c
+SOURCE          sip_feature.c
+SOURCE          sip_mime.c
+SOURCE          sip_security.c
+SOURCE          sip_event.c
+SOURCE          sip_prack.c
+SOURCE          sip_refer.c
+SOURCE          sip_session.c
+SOURCE          sip_caller_prefs.c
+SOURCE          sip_reason.c
+SOURCE          sip_status.c
+SOURCE          sip_time.c
+SOURCE          sip_tag_class.c
+SOURCE          sip_tag.c
+SOURCE          sip_tag_ref.c
+SOURCE          sip_parser_table.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\soa
+
+SOURCE          	soa.c
+SOURCE          	soa_static.c
+SOURCE          	soa_tag.c
+SOURCE          	soa_tag_ref.c 
+
+SOURCEPATH 			..\..\libsofia-sip-ua\sresolv
+
+SOURCE          sres.c
+SOURCE          sres_cache.c
+SOURCE          sres_blocking.c
+SOURCE          sresolv.c
+SOURCE          sres_sip.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\stun
+
+SOURCE          stun.c
+SOURCE          stun_common.c
+SOURCE          stun_dns.c
+SOURCE          stun_mini.c
+SOURCE          stun_tag.c
+SOURCE          stun_tag_ref.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\msg
+
+SOURCE              test_class.c
+SOURCE              test_table.c
+
+SOURCEPATH 			..\..\libsofia-sip-ua\tport
+
+SOURCE          	tport.c
+SOURCE          	tport_logging.c
+SOURCE          	tport_stub_sigcomp.c
+SOURCE          	tport_type_udp.c
+SOURCE          	tport_type_tcp.c
+SOURCE          	tport_type_sctp.c
+SOURCE          	tport_tag.c
+SOURCE          	tport_tag_ref.c
+SOURCE          	tport_type_tls.c
+SOURCE          	tport_tls.c
+SOURCE          	tport_stub_stun.c
+SOURCE          	tport_type_stun.c
+SOURCE          	tport_type_connect.c
+
+SOURCEPATH      ..\..\libsofia-sip-ua\url
+
+SOURCE          url.c
+SOURCE          url_tag.c
+SOURCE          url_tag_ref.c
+
+USERINCLUDE		..
+USERINCLUDE		..\..\libsofia-sip-ua\su
+USERINCLUDE		..\..\libsofia-sip-ua\bnf
+USERINCLUDE		..\..\libsofia-sip-ua\ipt
+USERINCLUDE		..\..\libsofia-sip-ua\iptsec
+USERINCLUDE		..\..\libsofia-sip-ua\url
+USERINCLUDE		..\..\libsofia-sip-ua\msg
+USERINCLUDE		..\..\libsofia-sip-ua\stun
+USERINCLUDE		..\..\libsofia-sip-ua\soa
+USERINCLUDE		..\..\libsofia-sip-ua\sdp
+USERINCLUDE		..\..\libsofia-sip-ua\sresolv
+USERINCLUDE		..\..\libsofia-sip-ua\http
+USERINCLUDE		..\..\libsofia-sip-ua\tport
+USERINCLUDE		..\..\libsofia-sip-ua\features
+USERINCLUDE		..\..\libsofia-sip-ua\sip
+USERINCLUDE		..\..\libsofia-sip-ua\nta
+USERINCLUDE		..\..\libsofia-sip-ua\nth
+USERINCLUDE		..\..\libsofia-sip-ua\nea
+USERINCLUDE		..\..\libsofia-sip-ua\nua
+
+SYSTEMINCLUDE   \epoc32\include
+SYSTEMINCLUDE   \epoc32\include\stdapis
+SYSTEMINCLUDE   \epoc32\include\stdapis\openssl
+SYSTEMINCLUDE   \epoc32\include\osextensions
+SYSTEMINCLUDE   \epoc32\include\osextensions\sofia-sip
+
+// Library dependencies
+
+LIBRARY         commdb.lib
+STATICLIBRARY   libcrt0.lib
+LIBRARY         libc.lib
+LIBRARY         libm.lib
+LIBRARY         libpthread.lib
+LIBRARY         libcrypto.lib
+LIBRARY         libssl.lib
+LIBRARY         euser.lib
+LIBRARY         insock.lib
+LIBRARY         esock.lib

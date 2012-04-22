@@ -1,0 +1,3 @@
+opt/freeswitch/conf/autoload_configs/perl.conf.xml
+opt/freeswitch/mod/mod_perl.so*
+opt/freeswitch/perl/*

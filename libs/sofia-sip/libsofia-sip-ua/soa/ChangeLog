@@ -1,0 +1,325 @@
+2006-01-18  Martti Mela  <martti.mela@nokia.com>
+
+   * soa.c: removed #include <netat/sysglue.h> (with __APPLE_CC__)
+
+2006-01-17  Martti Mela  <martti.mela@nokia.com>
+
+   * if no EPROTO is found in OS X, redefine to EPROTOTYPE
+
+    M ./libsofia-sip-ua/soa/soa.c +8
+
+2005-10-17  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+   * Restore version numbers after our offer is rejected.
+
+    M ./libsofia-sip-ua/soa/soa_static.c +3
+
+2005-10-15  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Updated API of soa_get_local_sdp() and friends.
+
+  Added parameter for returning SDP C structure to soa_get_capability_sdp(),
+  soa_get_remote_sdp(), soa_get_user_sdp(), and soa_get_local_sdp().
+
+    M ./libsofia-sip-ua/soa/soa.c -35 +58
+    M ./libsofia-sip-ua/soa/soa.h -4 +8
+    M ./libsofia-sip-ua/soa/test_soa.c -17 +18
+
+  * Updated SOA_VALID_ACTIONS().
+
+    M ./libsofia-sip-ua/soa/soa.c -1 +13
+
+  * Added soa_name.
+
+    M ./libsofia-sip-ua/soa/soa.c +1
+    M ./libsofia-sip-ua/soa/soa_session.h +1
+    M ./libsofia-sip-ua/soa/soa_static.c +1
+
+  * Removed annoying "last modified".
+
+    M ./libsofia-sip-ua/soa/soa.c -1
+    M ./libsofia-sip-ua/soa/soa.h -1
+    M ./libsofia-sip-ua/soa/soa_add.h -1
+    M ./libsofia-sip-ua/soa/soa_asynch.c -1
+    M ./libsofia-sip-ua/soa/soa_session.h -1
+    M ./libsofia-sip-ua/soa/soa_static.c -1
+    M ./libsofia-sip-ua/soa/soa_tag.c -1
+    M ./libsofia-sip-ua/soa/soa_tag.h -1
+    M ./libsofia-sip-ua/soa/test_soa.c -1
+
+  * Logging each API call except predicates.
+
+    M ./libsofia-sip-ua/soa/soa.c -5 +99
+
+  * Naming soa_sip_require() and soa_sip_supported() consistently.
+  The SIP headers are called Require and Supported.
+
+    M ./libsofia-sip-ua/soa/soa.c -6 +6
+    M ./libsofia-sip-ua/soa/soa.h -2 +2
+    M ./libsofia-sip-ua/soa/soa_asynch.c -2 +2
+    M ./libsofia-sip-ua/soa/soa_session.h -4 +4
+    M ./libsofia-sip-ua/soa/soa_static.c -2 +2
+    M ./libsofia-sip-ua/soa/test_soa.c -2 +2
+
+2005-10-12  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Updated SOA_VALID_ACTIONS().
+
+    M ./libsofia-sip-ua/soa/soa.c -1 +13
+
+  * Added soa_name.
+
+    M ./libsofia-sip-ua/soa/soa.c +1
+    M ./libsofia-sip-ua/soa/soa_session.h +1
+    M ./libsofia-sip-ua/soa/soa_static.c +1
+
+  * Removed annoying "last modified".
+
+    M ./libsofia-sip-ua/soa/soa.c -1
+    M ./libsofia-sip-ua/soa/soa.h -1
+    M ./libsofia-sip-ua/soa/soa_add.h -1
+    M ./libsofia-sip-ua/soa/soa_asynch.c -1
+    M ./libsofia-sip-ua/soa/soa_session.h -1
+    M ./libsofia-sip-ua/soa/soa_static.c -1
+    M ./libsofia-sip-ua/soa/soa_tag.c -1
+    M ./libsofia-sip-ua/soa/soa_tag.h -1
+    M ./libsofia-sip-ua/soa/test_soa.c -1
+
+  * Logging each API call except predicates.
+
+    M ./libsofia-sip-ua/soa/soa.c -5 +99
+
+
+  * Naming soa_sip_require() and soa_sip_supported() consistently.
+  The SIP headers are called Require and Supported.
+
+    M ./libsofia-sip-ua/soa/soa.c -6 +6
+    M ./libsofia-sip-ua/soa/soa.h -2 +2
+    M ./libsofia-sip-ua/soa/soa_asynch.c -2 +2
+    M ./libsofia-sip-ua/soa/soa_session.h -4 +4
+    M ./libsofia-sip-ua/soa/soa_static.c -2 +2
+    M ./libsofia-sip-ua/soa/test_soa.c -2 +2
+
+2005-10-12  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Added more logging.
+
+    M ./libsofia-sip-ua/soa/soa_static.c -1 +17
+
+  * Using SDP O/A result to determine media activity.
+
+    M ./libsofia-sip-ua/soa/soa.c -2 +2
+
+  * Sanitized soa_sdp_upgrade_is_needed().
+
+    M ./libsofia-sip-ua/soa/soa_static.c -27 +11
+
+  * Fixed active tests.
+
+    M ./libsofia-sip-ua/soa/test_soa.c -36 +36
+
+  * Fixed soa_get_paramlist() for complex cases.
+
+    M ./libsofia-sip-ua/soa/soa.c -1 +1
+
+2005-09-29  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Added SOATAG_ACTIVE_* stuff.
+
+    M ./libsofia-sip-ua/soa/soa_tag.c +98
+    M ./libsofia-sip-ua/soa/soa_tag.h +31
+
+  * Removed mss-related tags.
+
+    M ./libsofia-sip-ua/soa/soa_tag.c -263
+    M ./libsofia-sip-ua/soa/soa_tag.h -89
+
+  * Using sdp tags to pass session descriptions.
+
+    M ./libsofia-sip-ua/soa/soa.c -1 +1
+    M ./libsofia-sip-ua/soa/soa_tag.c -6 +5
+    M ./libsofia-sip-ua/soa/soa_tag.h -17 +20
+    M ./libsofia-sip-ua/soa/test_soa.c +20
+
+2005-09-28  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Returning remote sdp via soa_get_paramlist().
+
+    M soa.c +5
+
+  * soa_get_paramlist() just returns NULL if given NULL session.
+
+    M soa.c -6 +4
+
+  * Returning local and user SDP via tags.
+
+    M soa.c -5 +17
+
+  * Keeping track of soa instance name.
+
+    M soa.c -2 +13
+    M soa_session.h +1
+
+  * Always upgrading a freshly created session.
+
+    M soa_static.c -1 +1
+
+  * Updated documentation. Glare.
+
+    M soa.docs -10 +79
+
+  * Added (selective!) hold, media upgrade.
+
+    M soa_session.h +2
+    M soa_static.c -52 +174
+    M test_soa.c -4 +65
+
+  * Added more bits to activity (so we can indicate SOA_ACTIVE_REJECTED).
+
+    M soa_session.h -4 +4
+
+  * Updated the mode update: keep track of rejected status, too.
+
+    M soa.c -20 +28
+
+  * Bump ss_user_version if parameters change.
+
+    M soa.c -2 +9
+
+  * Removed soa_static_actions.
+
+    M soa_static.c -24
+
+  * Updated API to handle separately user-supplied SDP and negotiated SDP.
+
+    M soa.c -146 +180
+    M soa.h -11 +18
+    M soa_session.h -36 +30
+    M soa_static.c -73 +475
+    M test_soa.c -22 +40
+
+  * Not using soa_static_actions.
+
+    M test_soa.c -1 +1
+
+  * Updated soa_static_get_paramlist() prototype.
+
+    M soa_static.c -3 +16
+
+  * Removed last traces of "default".
+
+    M soa.c -51 +1
+    M soa_add.h -2
+
+  * Added tag parameters to soa_get_paramlist() prototype.
+
+    M soa.c -9 +23
+    M soa.h -1 +2
+    M soa_session.h -2 +4
+    M test_soa.c -1 +1
+
+  * Not testing asynch.
+
+    M test_soa.c +6
+
+  * Not testing removed parameters.
+
+    M test_soa.c -13 +20
+
+  * Not compiling soa_asynch.c
+
+    M Makefile.am -1 +1
+
+  * Include "soa_tag.h" in "soa_session.h", too.
+
+    M soa_session.h +3
+
+  * Moved tags to soa_tag.h
+
+    M soa.h -200
+
+  * Removed mss-related parameters. Added hold.
+
+    M soa.c -117 +12
+    M soa_session.h -13 +1
+
+  * Renamed "local" as "user".
+
+    M soa_asynch.c -7 +7
+
+  * Added soatag_user_sdp().
+
+    M soa_tag.c -10 +42
+
+  * Added soa_tag.h.
+
+    A soa_tag.h
+
+2005-09-26  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Updated call flows.
+
+    M soa.docs -57 +67
+
+  * Added some code for soa_static_generate_offer().
+
+    M soa_static.c -18 +60
+
+  * Fixed soa_static_set_local_sdp().
+
+    M soa_static.c -1 +1
+
+  * Added setter functions for sdp in soa_static.
+
+    M soa_static.c -6 +44
+
+  * Using explicit soa_set_local_sdp() with "static" soa instance.
+
+    M test_soa.c -3 +9
+
+  * Added session sdp: soa_get_session_sdp(), soatag_session_sdp.
+
+    M soa.h +16
+
+  * Comments.
+
+    M soa.c -2 +2
+
+  * Not expanding "local" sdp with o=, s=, t= and c=.
+
+    M soa.c -45
+
+  * Added local/remote/session sdp to soa_get_params().
+
+    M soa.c +11
+
+  * Added handling of soatag_local_sdp tag.
+
+    M soa.c -2 +25
+
+  * Added session description ss_desc
+
+    M soa_session.h +2
+
+  * Added soatag_local_sdp and soatag_remote_sdp.
+
+    M soa.h +12
+    M soa_tag.c +32
+
+2005-09-22  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* soa.c (soa_get_remote_version): Added.
+
+	* soa.c (soa_get_local_version): Added.
+
+	* soa_session.h: Added ssd_version field to
+	soa_description struct.
+
+2005-09-19  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* soa_static.c: Fix generating offers.
+
+2005-08-17  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Updated API. Added tester.
+

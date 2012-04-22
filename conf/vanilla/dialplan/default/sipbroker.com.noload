@@ -1,0 +1,7 @@
+<include>
+  <extension name="sipbroker.com">
+    <condition field="destination_number" expression="^(^\*\d{3,})$">
+      <action application="bridge" data="sofia/${use_profile}/$1@sipbroker.com"/>
+    </condition>
+  </extension>
+</include>

@@ -1,0 +1,61 @@
+For a release-by-release change history, see
+<http://xmlrpc-c.sourceforge.net/change.html>.
+
+XML-RPC For C/C++ was created by Eric Kidd in 2000, when XML-RPC was
+new and vital.  Its development was funded in significant part by
+First Peer, Inc.  Eric released the package in January 2001 and set up
+an extensive project to maintain it.  The project used virtually every
+feature on Sourceforge, had about 8 official developers, and
+distributed code in various formats.  There were mailing lists,
+trackers, CVS branches, RPMs, and a full PHP-based web site, just to
+name a few features of the project.
+
+Then everything ground to a halt in June 2001, with the disappearance
+of Eric.  We don't know what happened to him, but Google searches in
+late 2004 indicated he dropped off the face of the web at that time.
+While people continued to use Xmlrpc-c, and some developed fixes and
+enhancements and posted them to the Sourceforge trackers, the release
+remained frozen at 0.9.10.  The web site also became frozen in time.
+
+In the years that followed the great freeze, XML-RPC became
+marginalized by more sophisticated alternatives such as SOAP.  XML-RPC
+consequently became rather stable and interest in Xmlrpc-c levelled
+off.
+
+This dark age of Xmlrpc-c lasted until October 2004, when Bryan Henderson
+set out to find an RPC mechanism to use in one of his projects.  Bryan
+found XML-RPC and then Xmlrpc-c.  He decided that the two were almost right
+for his needs, but he needed some small extensions.
+
+On finding out that the project was orphaned, Bryan decided to take it
+over.  Bryan became the Sourceforge project administrator through
+Sourceforge's abandonned project process, then gathered the patches
+that had been submitted over the years and made a come-back release
+called 1.0.
+
+Bryan then proceeded to add a lot of features in subsequent releases
+about every two months.  Most of it was code Bryan wrote himself, but
+significant parts were contributed by others, as you can see in the
+detailed history below.  Among the larger enhancements was a new
+C++ interface; the old one was a fairly weak wrapper around the
+C interface and required the user to manage memory and access the
+underlying C structures; the new one used pure C++ principles with
+automatic memory management.
+
+Bryan also wrote a complete user's manual.  Surprisingly, in spite of
+the wide array of features the project had, documentation wasn't one
+of them.  There was only a smattering of information available on how
+to use the package.
+
+One significant change Bryan made to the project was to strip it down
+considerably.  In order to concentrate the small amount of time Bryan
+had available for Xmlrpc-c development on actual code and
+documentation, Bryan had to greatly reduce the amount of bureaucracy
+involved in administering the project and making releases, and reduce
+the set of skills required to do it.  Bryan made static make files
+(for GNU Make) to replace the two extra build stages that originally
+generated make files.  Bryan moved away from Libtool and toward simple
+compiling and linking.  Bryan eliminated all pre-built distributions;
+each of his releases consisted of a single source code tarball, and
+that tarball was not signed.  Bryan removed some redundant sources of
+information from the package and the web site.

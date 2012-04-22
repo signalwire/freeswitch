@@ -1,0 +1,193 @@
+<!-- Global PSTN supervisory tones -->
+<!ELEMENT global-tones (tone-set)* >
+<!ELEMENT tone-set (dial-tone|ringback-tone|busy-tone|congestion-tone|number-unobtainable-tone|special-information-tone|call-waiting-tone|waiting-tone|payphone-recognition-tone|test-number-tone|end-of-three-party-service-tone|service-activated-tone|record-tone|facilities-tone|offering-tone|positive-indication-tone|negative-indication-tone|route-tone|pay-tone|confirmation-tone|intrusion-tone|intercept-tone|warning-tone|holding-tone|search-tone|acceptance-tone|executive-override-tone|function-acknowledge-tone|queue-tone|valid-tone-radio-paging|notify-tone|re-order-tone|preemption-tone|comfort-tone|connection-tone|refusal-tone|line-lockout-tone|permanent-signal-tone|identification-tone|reorder-tone|recall-dial-tone|special-ringback-tone|busy-verification-tone)* >
+
+<!ATTLIST tone-set
+  country   CDATA   #REQUIRED
+  uncode    CDATA   #REQUIRED
+  >
+
+<!ELEMENT dial-tone (step)* >
+<!ATTLIST dial-tone
+  domain    CDATA   #IMPLIED
+  type      CDATA   #IMPLIED
+  >
+<!ELEMENT ringback-tone (step)* >
+<!ATTLIST ringback-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT busy-tone (step)* >
+<!ATTLIST busy-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT congestion-tone (step)* >
+<!ATTLIST congestion-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT number-unobtainable-tone (step)* >
+<!ATTLIST number-unobtainable-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT special-information-tone (step)* >
+<!ATTLIST special-information-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT call-waiting-tone (step)* >
+<!ATTLIST call-waiting-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT pay-tone (step)* >
+<!ATTLIST pay-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT payphone-recognition-tone (step)* >
+<!ATTLIST payphone-recognition-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT warning-tone (step)* >
+<!ATTLIST warning-tone
+  type      CDATA   #IMPLIED
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT reorder-tone (step)* >
+<!ATTLIST reorder-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT recall-dial-tone (step)* >
+<!ATTLIST recall-dial-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT special-ringback-tone (step)* >
+<!ATTLIST special-ringback-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT busy-verification-tone (step)* >
+<!ATTLIST busy-verification-tone
+  domain    CDATA   #IMPLIED
+  >
+
+<!ELEMENT waiting-tone (step)* >
+<!ATTLIST waiting-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT test-number-tone (step)* >
+<!ATTLIST test-number-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT end-of-three-party-service-tone (step)* >
+<!ATTLIST end-of-three-party-service-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT service-activated-tone (step)* >
+<!ATTLIST service-activated-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT record-tone (step)* >
+<!ATTLIST record-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT facilities-tone (step)* >
+<!ATTLIST facilities-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT offering-tone (step)* >
+<!ATTLIST offering-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT positive-indication-tone (step)* >
+<!ATTLIST positive-indication-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT negative-indication-tone (step)* >
+<!ATTLIST negative-indication-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT route-tone (step)* >
+<!ATTLIST route-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT confirmation-tone (step)* >
+<!ATTLIST confirmation-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT intrusion-tone (step)* >
+<!ATTLIST intrusion-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT intercept-tone (step)* >
+<!ATTLIST intercept-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT holding-tone (step)* >
+<!ATTLIST holding-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT search-tone (step)* >
+<!ATTLIST search-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT acceptance-tone (step)* >
+<!ATTLIST acceptance-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT executive-override-tone (step)* >
+<!ATTLIST executive-override-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT function-acknowledge-tone (step)* >
+<!ATTLIST function-acknowledge-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT queue-tone (step)* >
+<!ATTLIST queue-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT valid-tone-radio-paging (step)* >
+<!ATTLIST valid-tone-radio-paging
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT notify-tone (step)* >
+<!ATTLIST notify-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT re-order-tone (step)* >
+<!ATTLIST re-order-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT preemption-tone (step)* >
+<!ATTLIST preemption-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT comfort-tone (step)* >
+<!ATTLIST comfort-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT connection-tone (step)* >
+<!ATTLIST connection-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT refusal-tone (step)* >
+<!ATTLIST refusal-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT line-lockout-tone (step)* >
+<!ATTLIST line-lockout-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT permanent-signal-tone (step)* >
+<!ATTLIST permanent-signal-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT identification-tone (step)* >
+<!ATTLIST identification-tone
+  domain    CDATA   #IMPLIED
+  >
+
+<!ELEMENT step (step|EMPTY)* >
+<!ATTLIST step
+  cycles                CDATA   #IMPLIED
+  freq                  CDATA   #IMPLIED
+  level                 CDATA   #IMPLIED
+  length                CDATA   #IMPLIED
+  recorded-announcement CDATA   #IMPLIED
+  >

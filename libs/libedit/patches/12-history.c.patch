@@ -1,0 +1,14 @@
+--- export/src/history.c	2007-08-31 00:02:46.000000000 +0200
++++ ../src/history.c	2007-08-31 00:03:08.000000000 +0200
+@@ -47,11 +47,7 @@
+ #include <string.h>
+ #include <stdlib.h>
+ #include <stdarg.h>
+-#ifdef HAVE_VIS_H
+ #include <vis.h>
+-#else
+-#include "np/vis.h"
+-#endif
+ #include <sys/stat.h>
+ 
+ static const char hist_cookie[] = "_HiStOrY_V2_\n";

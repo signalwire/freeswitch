@@ -1,0 +1,1091 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"><title>Mod Khomp: Manual</title></head><body>
+<a name="Considera.C3.A7.C3.B5es_iniciais" id="Considera.C3.A7.C3.B5es_iniciais"></a><h1> <span class="mw-headline"> Considerações iniciais </span></h1>
+<p>Este documento aborda informações sobre o <i>Endpoint</i> da Khomp como um todo, desde opções disponíveis de configuração, os <i>applications</i> disponibilizados, os possíveis comandos de <b>CLI</b>, entre outros.
+</p><p>Para procedimentos sobre a instalação, favor consultar o <a href=".htmlMod_Khomp/README" title="Mod Khomp/README">README do Endpoint</a>.
+<br />
+</p>
+<a name="Configura.C3.A7.C3.A3o" id="Configura.C3.A7.C3.A3o"></a><h1> <span class="mw-headline"> Configuração </span></h1>
+<p>Configurar o Endpoint da Khomp é uma tarefa que consiste de três etapas:
+</p>
+<ul><li> Configuração das placas, através da K3L;
+</li><li> Configuração do Endpoint;
+</li><li> Configuração do FreeSWITCH.
+</li></ul>
+<p>Estas etapas são descritas mais detalhadamente abaixo.
+<br />
+</p>
+<a name="Configura.C3.A7.C3.A3o_da_API_K3L" id="Configura.C3.A7.C3.A3o_da_API_K3L"></a><h2> <span class="mw-headline"> Configuração da API K3L </span></h2>
+<p>Esta etapa é realizada de maneira semi-automatizada através do programa <b>khompwizard</b>, um assistente que configura os parâmetros básicos das placas do sistema. Esse assistente inicializa os arquivos de configuração através de informações obtidas do usuário, quando estas forem necessárias, inicializando as configurações menos utilizadas com os valores padrões.
+</p><p>Normalmente, este programa é executado automaticamente após a instalação do sistema. Entretanto, pode ser necessário executá-lo manualmente caso uma atualização esteja sendo realizada, ou se novas placas foram adicionadas no sistema após a instalação dos <i>drivers</i> da placa.
+</p><p>Caso seja necessária a configuração de parâmetros avançados da placa e/ou da sinalização, o programa <b>k3lconfig</b> permite acessar todas as configurações disponíveis de cada placa instalada. Para maiores informações sobre este programa, consulte a documentação do mesmo. Para soluções de problemas de sincronismo, consulte a seção <a href="#Solu.C3.A7.C3.A3o_de_problemas" title="">Solução de problemas</a> sobre o procedimento de configuração manual das placas.
+<br />
+</p>
+<a name="Configura.C3.A7.C3.A3o_do_Endpoint" id="Configura.C3.A7.C3.A3o_do_Endpoint"></a><h2> <span class="mw-headline"> Configuração do Endpoint </span></h2>
+<p>A configuração padrão do sistema costuma atender à maior parte das necessidades. Entretanto, as configurações do Endpoint da Khomp podem ser modificadas através do arquivo de configuração '<b>/usr/local/freeswitch/conf/autoload_configs/khomp.conf.xml'</b>.
+</p><p>A lista de opções é a seguinte:
+</p>
+<a name=".3Cchannels.3E" id=".3Cchannels.3E"></a><h4> <span class="mw-headline"> &lt;channels&gt; </span></h4>
+<p>Define as configurações gerais de todos os canais da Khomp.
+</p>
+<pre><b>Sintaxe:</b> &lt;param name="..." value="..."/&gt;
+</pre>
+<p><br />
+</p>
+<ul><li><b>accountcode</b>: Define o account code padrão para chamadas no Endpoint. Esta opção pode ser qualquer string alfanumérica; 
+</li><li><b>dialplan</b>: Nome do módulo de <i>dialplan</i> em uso.
+</li><li><b>auto-fax-adjustment</b>: Ativa ("yes") ou desativa ("no") o ajuste automático do canal (desabilitar o cancelador de eco e a supressão DTMF) ao detectar tom de FAX; 
+</li><li><b>auto-gain-control</b>: Ativa ("yes") ou desativa ("no") a ativação do controle automático de ganho (AGC) pelo Endpoint; 
+</li><li><b>context-digital</b>: Contexto de entrada para ligações em placas digitais (o padrão é "khomp-DD-LL", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "LL" pelo número do link, "CCC" pelo número do canal e "SSSS" pelo número serial do dispositivo); 
+</li><li><b>context-fxo</b>: Contexto de entrada para placas FXO (o padrão é "khomp-DD-CC", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo); 
+</li><li><b>context-fxs</b>: Contexto de entrada para placas FXS (o padrão é "khomp-DD-CC", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo); 
+</li><li><b>context-gsm-call</b> (ou "context-gsm"): Contexto de entrada para ligações GSM (o padrão é "khomp-DD-CC", onde "DD" será substituído no momento da ligação pelo número do dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo); 
+</li><li><b>context-gsm-sms</b>: Contexto de entrada para SMSs (o padrão é "khomp-sms-DD-CC", onde "DD" será substituído pelo número de dispositivo, "CC" pelo número do canal, e "SSSS" pelo número serial do dispositivo);
+</li><li><b>context-pr</b>: Contexto de entrada para ligações em placas KPR (o padrão é "khomp-DD-CC", onde "DD" será substituído, no momento da ligação, pelo número do dispositivo, "CC" pelo número do canal);
+</li><li><b>delay-ringback-co</b>: Define o tempo de <i>delay</i> para ativar a geração de tom de controle de chamada (<i>ringback</i>) pelo Endpoint da Khomp quando há uma indicação de <i>ringback</i>, e não há áudio sendo enviado por quem indicou a situação de controle da chamada;
+</li><li><b>delay-ringback-pbx</b>: Define o tempo de <i>delay</i> para ativar a geração de controle de chamada (<i>ringback</i>) pelo Endpoint da Khomp quando há uma indicação de <i>ringback</i>, e o áudio de controle enviado não possui nenhum tom (ou seja, está em silêncio);
+</li><li><b>disconnect-delay</b>: Define o tempo em milissegundos para realizar o processamento de um evento de desconexão, para ignorar situações onde outros equipamentos realizam o duplo atendimento para derrubar chamadas a cobrar;
+</li><li><b>drop-collect-call</b>: Ativa ("yes") ou desativa ("no") o derrubamento de chamadas à cobrar. Caso ativo, todas as chamadas à cobrar serão derrubadas não importando o que foi ajustado na variável KDropCollectCall (o valor padrão é "no");
+</li><li><b>echo-canceller</b>: Ativa ("yes") ou desativa ("no") o cancelamento de eco automático pelo Endpoint; 
+</li><li><b>flash-to-digits</b>: Define os dígitos para serem enviados quando o FLASH é detectado na FXS;
+</li><li><b>fxo-send-pre-audio</b>: Quando ativada ("yes") libera canal de áudio sainte antes da conexão da chamada em placas KFXO (o valor padrão é "yes");
+</li><li><b>fxs-digit-timeout</b>: Define o <i>timeout</i>, em segundos, entre dígitos na FXS;
+</li><li><b>fxs-global-orig</b>: Número inicial para numeração seqüencial de ramais das placas <b>KFXS</b> que não estiverem listadas na seção <b>&lt;fxs-branches&gt;</b> (a numeração segue ordem crescente por número da placa e número do canal físico) (o padrão é "0"); 
+</li><li><b>fxs-co-dialtone</b>: Seqüências de números, separados por vírgula, que disparam um tom contínuo (de central pública) em ramais FXS (ex: "0,99" faz com que, ao discar "0" ou "99", o usuário receba o tom de linha contínuo) (o padrão é vazio);
+</li><li><b>fxs-bina</b>: Quando ativada ("yes"), ligações para ramais FXS enviarão os dígitos correspondentes ao telefone de origem em sinalização BINA DTMF (o valor padrão é "no");
+</li><li><b>language</b>: Define idioma para ligações nas placas Khomp; 
+</li><li><b>ignore-letter-dtmfs</b>: Define se o canal deve ignorar DTMFs incomuns detectados pela placa (A, B, C e D). Entretanto, se você necessita passar esses dígitos pela placa, você deve ajustar esta opção para "no" (o valor padrão é "yes");
+</li><li><b>input-volume</b>: Define o volume de entrada das ligações, varia de -10 a +10&nbsp;; 
+</li><li><b>kommuter-activation</b>: Define se a ativação de dispositivos kommuter encontrados no sistema será feita de forma automática ("auto"), ou de forma manual ("manual") pelo usuário, através do comando "khomp kommuter on/off"; 
+</li><li><b>kommuter-timeout</b>: Define o <i>timeout</i> (em segundos) com que os kommuters serão inicializados. Se chegarem a este <i>timeout</i> sem receberem notificação do channel, os dispositivos irão comutar para o estado "desligado". O valor mínimo é "0" , onde os links permanecerão sempre comutados no estado "ligado", e o valor máximo é "255"; 
+</li><li><b>log-to-console</b>: Define mensagens de log que devem ser impressas na console; 
+</li><li><b>log-to-disk</b>: Define mensagens de log que devem ser salvar em disco; 
+</li><li><b>out-of-band-dtmfs</b>: Ativa ("yes") ou desativa ("no") a supressão DTMF e o envio destes out-of-band; 
+</li><li><b>output-volume</b>: Define o volume de saída das ligações, varia de -10 a +10&nbsp;; 
+</li><li><b>pulse-forwarding</b>: Ativa ("yes") ou desativa ("no") a detecção de pulsos e a conversão dos mesmos em DTMFs; 
+</li><li><b>r2-preconnect-wait</b>: Define o tempo de espera do envio da sinalização de ringback, no protocolo R2/MFC, para iniciar o envio de áudio de silêncio. Apenas utilizado quando "r2-strict-behaviour" estiver ajustado para "no"; 
+</li><li><b>r2-strict-behaviour</b>: Ativa ("yes") ou desativa ("no") o comportamento da sinalização R2/MFC conforme a norma define. O padrão é "no", e pode ser alterado para "yes" caso seja necessário receber/enviar dados precisos da sinalização do protocolo (condição de B, por exemplo); 
+</li><li><b>suppression-delay</b>: Ativa ("yes") ou desativa ("no") o delay necessário para supressão DTMF. Se desativado ("no"), também desativa supressão de DTMFs; 
+</li><li><b>trace</b>: Define opções de depuração. Não deve ser utilizado em produção a não ser que estritamente necessário;
+</li><li><b>user-transfer-digits</b>: Define uma seqüência de dígitos DTMF para iniciar a transferencia entre o FreeSWITCH&reg; e um outro PABX (utilizando sinalização de usuário, como QSig ou FXO FLASH);
+</li></ul>
+<p><br />
+</p>
+<a name=".3Cgroups.3E" id=".3Cgroups.3E"></a><h4> <span class="mw-headline"> &lt;groups&gt; </span></h4>
+<p>Define os grupos para serem usados na alocação de canal.
+</p><p>Neste caso, as opções são usadas para definir nomes para <i>strings de alocação de canais</i>. O formato segue o padrão &lt;param name="nome grupo" value="string alocação"/&gt;, onde as <i>strings de alocação de canais</i> são as mesmas utilizadas no application bridge, e <i>nome do grupo</i> é um nome arbitrário escolhido pelo usuário. 
+</p>
+<dl><dd>Por exemplo, para definir o grupo <b>pstn</b> como os canais 0 e 5 da placa 0, deveria-se utilizar a linha:
+</dd></dl>
+<pre>&lt;param name="pstn" value="b0c0 + b0c5"/&gt; 
+</pre>
+<p>Este grupo, por sua vez, poderia ser usado no <i>application bridge</i> como <b>&lt;action application="bridge" data="Khomp/Gpstn/..."/&gt;</b>.
+</p>
+<dl><dd>Pode-se também associar um determinado contexto de entrada a um grupo de canais, bastando especificar um nome de contexto após a <i>string</i> de alocação, separado por ':' da mesma.
+</dd></dl>
+<p>Por exemplo, para definir o mesmo grupo <b>pstn</b> acima como os canais 0 até 20 da placa 0, com contexto de entrada <b>from-pstn</b>, poderia-se utilizar a linha:
+</p>
+<pre>&lt;param name="pstn" value="b0c0-20:from-pstn"/&gt;
+</pre>
+<p>Este grupo, por sua vez, poderia ser usado no <i>application bridge</i> como <b>&lt;action application="bridge" data="Khomp/Gpstn/..."/&gt;</b>, e todas as ligações vindas destes canais seriam tratadas no contexto <b>from-pstn</b>.
+<br />
+</p>
+<a name=".3Ccadences.3E" id=".3Ccadences.3E"></a><h4> <span class="mw-headline"> &lt;cadences&gt; </span></h4>
+<p>Define configurações de cadências para o Endpoint. 
+</p><p>Neste caso, as opções são nomes de cadências e um ou dois pares de números, que definem os intervalos de tom e silêncio a ser utilizado nas cadências. Para maiores detalhes, favor consultar o arquivo de configuração.
+<br />
+</p>
+<a name=".3Cfxs-branches.3E" id=".3Cfxs-branches.3E"></a><h4> <span class="mw-headline"> &lt;fxs-branches&gt; </span></h4>
+<p>Define números de origem para a placa KFXS. 
+</p><p>Neste caso, as opções são seqüências de prefixos de ramais e números seriais das placas, que definem os números base dos endereços de origem, e a ordem numérica das placas. O formato das opções é:
+</p>
+<pre>&lt;param name="prefixo" value="serial1, serial2, ...."/&gt;
+</pre>
+<p>Por exemplo, para definir que as placas K0374 e K2352 devem ser numeradas seqüencialmente, partido do ramal 200, basta escrever:
+</p>
+<pre>&lt;param name="200" value="374, 2352"/&gt;
+</pre>
+<p>Para maiores detalhes, favor consultar o arquivo de configuração.
+<br />
+</p>
+<a name=".3Cfxs-hotlines.3E" id=".3Cfxs-hotlines.3E"></a><h4> <span class="mw-headline"> &lt;fxs-hotlines&gt; </span></h4>
+<p>Define hotlines para a placa KFXS.
+</p><p>Neste caso, as opções são seqüências de ramais e números de destino, definindo os ramais listados nesta seção para serem tratados como "hotlines". Para cada ramal listado, o número de destino especificado será discado quando o ramal for retirado do gancho. Exemplo:
+</p>
+<pre>&lt;param name="100" value="1234"/&gt;
+&lt;param name="200" value="4321"/&gt; 
+</pre>
+<p>No primeiro exemplo, o ramal de número 100 irá telefonar para número 1234 ao ser retirado do gancho; no segundo, o ramal de número 200 irá telefonar para o número 4321 ao ser retirado do gancho.
+</p>
+<a name=".3Cfxs-options.3E" id=".3Cfxs-options.3E"></a><h4> <span class="mw-headline"> &lt;fxs-options&gt; </span></h4>
+<p>Permite definir configurações específicas por ramal FXS.
+</p><p>Neste caso, as configurações são números de ramais (baseado nos definidos na seção &lt;fxs-branches&gt;), e as opções e seus valores. As opções disponíveis são: 
+</p>
+<ul><li>context; 
+</li><li>input-volume; 
+</li><li>output-volume; 
+</li><li>language; 
+</li><li>accountcode;
+</li><li>calleridnum; 
+</li><li>calleridname;
+</li><li>flash-to-digits.
+</li></ul>
+<p>Cada opção é separada uma da outra por um pipe "|" ou uma barra "/" e definidas após dois pontos ":", exemplo:
+</p>
+<pre> &lt;param name="200" value="input-volume:1|context:master-branch" /&gt;
+</pre>
+<p>Para maiores informações sobre a sintaxe e exemplos, favor consultar o arquivo de configuração.
+</p><p><br />
+</p><p>Para maiores informações, consultar o arquivo de configuração '<b>khomp.conf.xml'</b>.
+<br />
+</p>
+<a name="Configura.C3.A7.C3.A3o_do_FreeSWITCH" id="Configura.C3.A7.C3.A3o_do_FreeSWITCH"></a><h2> <span class="mw-headline"> Configuração do FreeSWITCH </span></h2>
+<p>Quando as ligações são recebidas nas placas e dispositivos Khomp, estas são encaminhadas pelo <i>Endpoint</i> da Khomp para contextos específicos dentro do plano de discagem do FreeSWITCH&reg;. Estes contextos podem ser alterados através do arquivo de configurações <b>khomp.conf.xml</b>, disponível no diretório de configuração do FreeSWITCH (por padrão, "<b>/usr/local/freeswitch/conf/autoload_configs</b>").
+</p><p>Para maiores detalhes sobre os contextos específicos, consultar a seção de <a href="#Configura.C3.A7.C3.A3o_do_Endpoint" title="">Configuração do Endpoint</a>.
+</p><p>Abaixo, encontram-se informações de como configurar os contextos de entrada de chamadas:
+<br />
+</p><p><br />
+</p>
+<a name="Contextos_de_entrada_em_canais_E1" id="Contextos_de_entrada_em_canais_E1"></a><h3> <span class="mw-headline"> Contextos de entrada em canais E1 </span></h3>
+<p>Para placas E1, as ligações de entrada por padrão chegam em um contexto pré-definido conforme a opção <b>context-digital</b>:
+</p>
+<pre>&lt;param name="context-digital" value="khomp-DD-LL"/&gt;
+</pre>
+<p>Este contexto padrão define que as ligações serão redirecionadas de acordo com o número da placa e número do <i>link</i>: <b>DD</b> é o número dispositivo (com dois dígitos), e <b>LL</b> é o número do <i>link</i> (também com dois dígitos).
+</p><p>Entretanto, é possível configurar outros contextos de entrada, com formatos diferenciados. Pode-se utilizar a opção <b>CCC</b>, que significa o número do canal na placa (com três dígitos), e <b>SSSS</b>, que representa o número serial da placa (com quatro dígitos).
+</p><p>Exemplos de configuração no arquivo <b>khomp.conf.xml</b>:
+</p>
+<pre>&lt;!-- número seqüencial da placa e do link (ex: khomp-01-00) --&gt;
+&lt;param name="context-digital" value="khomp-DD-LL"/&gt;
+</pre>
+<pre>&lt;!-- número serial da placa e seqüencial do link (ex: khomp-3049-00) --&gt;
+&lt;param name="context-digital" value="khomp-SSSS-LL"/&gt;
+</pre>
+<pre>&lt;!-- número seqüencial da placa e do canal (ex: khomp-00-001) --&gt;
+&lt;param name="context-digital" value="khomp-DD-CCC"/&gt;
+</pre>
+<pre>&lt;!-- recebe todas as chamadas em um só contexto (khomp-digital) --&gt;
+&lt;param name="context-digital" value="khomp-digital"/&gt;
+</pre>
+<p>Abaixo um exemplo de contexto no plano de discagem:
+<!-- NEED 6 -->
+</p>
+<pre>&lt;!-- 
+Este contexto presente em seu arquivo de dialplan, irá manipular chamadas
+de entrada no link 0 (primeiro link) da placa 0.
+--&gt;
+&lt;context name="khomp-00-00"&gt;
+             .
+             .
+             .
+&lt;/context&gt;
+</pre>
+<p>Outro exemplo, utilizando o mesmo formato:
+<!-- NEED 6 -->
+</p>
+<pre>&lt;!-- 
+Este contexto presente em seu arquivo de dialplan, irá manipular chamadas
+de entrada no link 1 (segundo link) da placa 0.
+--&gt;
+&lt;context name="khomp-00-01&gt;
+             .
+             .
+             .
+&lt;/context&gt;
+</pre>
+<p>Um exemplo completo, com algumas ações simples:
+<!-- NEED 10 -->
+</p>
+<pre>&lt;context name="khomp-00-00"&gt;
+    &lt;extension name="exemplo_1"&gt;
+        &lt;condition field="destination_number" expression="^1234$"&gt;
+            &lt;action application="bridge" data="Khomp/b0L1/2345"/&gt;
+        &lt;/condition&gt;
+    &lt;/extension&gt;
+    &lt;extension name="exemplo_2"&gt;
+        &lt;condition field="destination_number" expression="^23(\d{2})$"&gt;
+            &lt;action application="bridge" data="sofia/${use_profile}/11$1@${sip_from_host}"/&gt;
+        &lt;/condition&gt;
+    &lt;/extension&gt;
+&lt;/context&gt;
+</pre>
+<pre>&lt;context name="khomp-00-01"&gt;
+    &lt;extension name="exemplo_3"&gt;
+        &lt;condition field="destination_number" expression="^1111$"&gt;
+            &lt;action application="bridge" data="Khomp/b0L0/2345"/&gt;
+        &lt;/condition&gt;
+    &lt;/extension&gt;
+&lt;/context&gt;
+</pre>
+<p>Este plano de discagem define o recebimento de chamadas na placa <b>0</b> e no link <b>0</b>, redirecionando chamadas para o número 1234 feitas para o link <b>1</b> da placa <b>0</b>, pro ramal/telefone <b>2345</b>, e redirecionando qualquer número de quatro dígitos começado com <b>23</b> para telefones SIP de quatro dígitos começados com <b>11</b> mais os dois últimos dígitos recebidos.
+</p><p>Também há mais uma extensão definida, onde as ligações recebidas no link <b>1</b> da placa <b>0</b> para o número <b>1111</b>, são redirecionadas para o link <b>0</b> da placa <b>0</b>, para o telefone/ramal <b>2345</b>.
+<br />
+</p>
+<a name="Contextos_de_entrada_em_canais_FXS.2FFXO.2FGSM" id="Contextos_de_entrada_em_canais_FXS.2FFXO.2FGSM"></a><h3> <span class="mw-headline"> Contextos de entrada em canais FXS/FXO/GSM </span></h3>
+<p>Da mesma forma que no contexto de placas E1, as ligações de entrada são encaminhadas pelo <i>Endpoint</i> para o FreeSWITCH. 
+</p><p>O contexto é pré-definido da seguinte forma, conforme o arquivo <b>khomp.conf.xml</b>:
+</p>
+<pre>&lt;param name="context-gsm" value="khomp-DD-CC"/&gt;&nbsp;;placas GSM
+</pre>
+<pre>&lt;param name="context-fxs" value="khomp-DD-CC"/&gt;&nbsp;; placas FXS
+</pre>
+<pre>&lt;param name="context-fxo" value="khomp-DD-CC"/&gt;&nbsp;; placas FXO
+</pre>
+<p><br />
+Nestes casos, <b>DD</b> é o número dispositivo (com dois dígitos), e <b>CC</b> é o número do canal da placa. Pode-se utilizar também <b>SSSS</b>, que representa o número serial da placa. 
+</p>
+<ul><li> <b>IMPORTANTE</b>: No caso da placa <b>KGSM</b>, as ligações entrantes são <b>sempre</b> encaminhadas para o <i>extension</i> <b>"s"</b> por padrão, visto que o protocolo GSM não identifica o número de destino nas ligações entrantes, apenas o número de origem - quando não omitido.
+</li></ul>
+<a name="Prioridade_de_contextos_na_placa_FXS" id="Prioridade_de_contextos_na_placa_FXS"></a><h4> <span class="mw-headline"> Prioridade de contextos na placa FXS </span></h4>
+<p>Em ligações originadas a partir de um ramal FXS, o Endpoint driver procura uma extensão válida (dos dígitos discados) após o dígito <b>#</b> ou após o timeout (configurável pela opção <b>fxs-digit-timeout</b>, no arquivo <b>khomp.conf.xml</b>). Essa busca é realizada no contexto específico do ramal (definido na seção <b>&lt;fxs-options&gt;</b> do arquivo de configuração <b>khomp.conf.xml</b>), caso não seja configurado, a busca é realizada no contexto definido na opção <b>context-fxs</b>;
+</p><p><br />
+</p>
+<a name="Contextos_de_mensagens_SMS_.28apenas_GSM.29" id="Contextos_de_mensagens_SMS_.28apenas_GSM.29"></a><h3> <span class="mw-headline"> Contextos de mensagens SMS (apenas GSM) </span></h3>
+<p>Mensagens SMS são recebidas pelo <i>Endpoint</i> da Khomp e encaminhadas para o FreeSWITCH como uma ligação normal, mas sem áudio, que possui algumas variáveis ajustadas com informações recebidas na mensagem - para maiores informações sobre estas variáveis, consulte a documentação das variáveis do <i>Endpoint</i>. Este contexto também pode ser alterado, de mesma forma que o contextos acima.
+</p><p>Esta ligação entra no seguinte contexto, conforme o arquivo <b>khomp.conf.xml</b>:
+</p>
+<pre>&lt;param name="context-gsm-sms" value="khomp-sms-DD-CC"/&gt; 
+</pre>
+<p>Onde <b>DD</b> é o número dispositivo (com dois dígitos), e <b>CC</b> é o número do canal (também com dois dígitos). Por exemplo:
+</p>
+<pre>&lt;context name="khomp-sms-00-01"&gt;
+    &lt;extension name="sms"&gt;
+        &lt;condition field="destination_number" expression="^s$"&gt;
+            &lt;action application="log" data="DEBUG KSmsType=${KSmsType}"/&gt;
+            &lt;action application="log" data="DEBUG KSmsBody=${KSmsBody}"/&gt;
+        &lt;/condition&gt;
+    &lt;/extension&gt;
+&lt;/context&gt;
+</pre>
+<a name="Contexto_de_entrada_em_canais_Khomp_PR_.28KPR.29" id="Contexto_de_entrada_em_canais_Khomp_PR_.28KPR.29"></a><h3> <span class="mw-headline"> Contexto de entrada em canais Khomp_PR (KPR) </span></h3>
+<p>Para estas placas, as ligações de entrada possuem um contexto pré-definido, conforme exemplo abaixo:
+</p>
+<pre>&lt;param name="context-pr" value="khomp-DD-CC"/&gt; 
+</pre>
+<p>Neste caso, <b>DD</b> é o número do dispositivo (com dois dígitos), e <b>CC</b> é o número do canal da placa.
+<br />
+</p>
+<a name="Contextos_por_grupo_de_chamada" id="Contextos_por_grupo_de_chamada"></a><h3> <span class="mw-headline">Contextos por grupo de chamada </span></h3>
+<p>A seção <b>groups</b>, no arquivo de configuração <b>khomp.conf.xml</b>, pode ser utilizado para definir contextos específicos para determinados grupos de canais.
+</p><p>Esta seção é detalhada na seção <b>Configuração do Endpoint</b>.
+<br />
+</p>
+<a name="Utiliza.C3.A7.C3.A3o_do_application_bridge" id="Utiliza.C3.A7.C3.A3o_do_application_bridge"></a><h3> <span class="mw-headline">Utilização do <i>application</i> bridge </span></h3>
+<p>O aplicativo (ou <i>application</i>) <b>bridge</b> é responsável por gerar chamadas no FreeSWITCH a partir de um <i>dialplan</i>. Este aplicativo pode ser utilizado para gerar chamadas a partir de diversos tipos de <i>Endpoints</i>, sendo que cada <i>Endpoint</i> segue um formato específico para definir tanto as opções quanto os canais de comunicações a serem utilizados.
+</p>
+<a name="Campos_relativos_ao_Endpoint" id="Campos_relativos_ao_Endpoint"></a><h4> <span class="mw-headline"> Campos relativos ao <i>Endpoint</i> </span></h4>
+<p>Quando utilizado para canais da <b>Khomp</b>, a <i>string</i> de <b>bridge</b> pode ter dois, três ou quatro campos separados por uma barra (/). Algumas <i>strings</i> de exemplo:
+<!-- NEED 11 -->
+</p>
+<pre>&lt;action application="bridge" data="Khomp/B2L0/32625644"/&gt;
+&lt;action application="bridge" data="Khomp/*B2L0/32625644"/&gt;
+&lt;action application="bridge" data="Khomp/S0411/99991234"/&gt;
+&lt;action application="bridge" data="Khomp/Gpstn/99991234"/&gt;
+&lt;action application="bridge" data="Khomp/*Gpstn/99991234"/&gt;
+&lt;action application="bridge" data="Khomp/B2C58/32625644/category=4:orig=4855553232"/&gt;
+&lt;action application="bridge" data="Khomp/b0c9"/&gt;
+&lt;action application="bridge" data="Khomp/b0c1+b0c14"/&gt;
+&lt;action application="bridge" data="Khomp/r304"/&gt;
+</pre>
+<p>Nos cinco primeiros exemplos, temos três campos sendo especificados; no sexto, quatros campos são utilizados; e por fim, nos três últimos exemplos, apenas dois são utilizados.
+</p><p>Sobre os campos utilizados, segue a descrição:
+</p>
+<ul><li> <b>1° campo</b>, 'Khomp': identifica o tipo do <i>Endpoint</i> em questão;
+</li><li> <b>2° campo</b>, 'B2L0', 'S0411', 'Gpstn', etc: representa a <b>Política de Alocação de Canais</b>;
+</li><li> <b>3° campo</b>, '32625644' e '99991234': são os números de destino, para onde será efetuada a ligação (ausente em placas <b>KFXS</b>);
+</li><li> <b>4° campo</b>, 'category=4:orig=4855553232': opções adicionais não-obrigatórias, detalhadas mais à frente.
+</li></ul>
+<p>OBS: A <i>string</i> de <b>bridge</b> com somente dois campos é específica à ligações para uma placa KFXS, onde o destino está atrelado automaticamente ao canal alocado, ou ao ramal especificado.
+</p>
+<a name="Pol.C3.ADtica_de_aloca.C3.A7.C3.A3o_de_canais" id="Pol.C3.ADtica_de_aloca.C3.A7.C3.A3o_de_canais"></a><h4> <span class="mw-headline"> Política de alocação de canais </span></h4>
+<p>A política de alocação de canais, no módulo da <b>Khomp</b>, pode ser especificado na própria <i>string</i> de <i>bridge</i> ou através de grupos, no arquivo de configuração <b>khomp.conf.xml</b>. Para especificar placas, canais e links a serem alocados existe a seguinte sintaxe disponível (considerando X, Y e Z como números quaisquer):
+</p>
+<ul><li> b<b>X</b>      -- busca os canais na placa 'X', de maneira crescente.
+</li><li> b<b>X</b>L<b>Y</b>    -- busca canais no link 'Y' da placa 'X', fazendo uma procura crescente (com relação ao número dos canais).
+</li><li> b<b>X</b>c<b>Y</b>    -- utiliza apenas o canal 'Y' da placa 'X'.
+</li><li> b<b>X</b>c<b>Y</b>-<b>Z</b>  -- busca por canais, iniciando do canal 'Y' e indo até o canal 'Z' (inclusive), da placa 'X', de maneira crescente.
+</li><li> B<b>X</b>c<b>Y</b>-<b>Z</b>  -- idem ao anterior, de maneira decrescente.
+</li><li> s<b>X</b>      -- busca os canais na placa de serial 'X', de maneira crescente.
+</li><li> s<b>X</b>L<b>Y</b>    -- busca canais no link 'Y' da placa de serial 'X', fazendo uma procura crescente (com relação ao número dos canais).
+</li><li> s<b>X</b>c<b>Y</b>    -- utiliza apenas o canal 'Y' da placa de serial 'X'.
+</li><li> s<b>X</b>c<b>Y</b>-<b>Z</b>  -- busca por canais, iniciando do canal 'Y' e indo até o canal 'Z' (inclusive), da placa de serial 'X', de maneira crescente.
+</li><li> S<b>X</b>c<b>Y</b>-<b>Z</b>  -- idem ao anterior, de maneira decrescente.
+</li></ul>
+<p>Para buscar por ramais de placas <b>KFXS</b> de acordo com o número do ramal, pode ser utilizada a seguinte sintaxe (considerando X e Y números de ramais válidos):
+</p>
+<ul><li> r<b>X</b>      -- busca ramal 'X'.
+</li><li> R<b>X</b>      -- equivalente ao anterior.
+</li><li> r<b>X</b>-<b>Y</b>    -- busca de ramal 'X' a 'Y', ordem crescente.
+</li><li> R<b>X</b>-<b>Y</b>    -- busca de ramal 'X' a 'Y', ordem decrescente.
+</li></ul>
+<p>É interessante notar que apenas a capitalização da letra 'B', 'S' ou 'R' define a ordem de busca dos canais; se minúscula, crescente, e se maiúscula, decrescente.
+</p><p>Já para a alocação de canais através de grupos, existe a seguinte sintaxe disponível:
+</p>
+<ul><li> Ggroupname  -- utiliza a string de <i>bridge</i> definida ao grupo "groupname" no arquivo de configuração; já detalhado na seção de configuração do Endpoint.
+</li><li> ggroupname  -- equivalente ao anterior.
+</li></ul>
+<a name="Agrupando_aloca.C3.A7.C3.B5es_de_canais" id="Agrupando_aloca.C3.A7.C3.B5es_de_canais"></a><h4> <span class="mw-headline"> Agrupando alocações de canais  </span></h4>
+<p>Existem casos onde é necessário buscar canais mais de um determinado dispositivo, ou determinado grupo de ramais. Para isto, existe uma extensão disponível na string de alocação, que diz respeito ao uso do símbolo de soma (<b>+</b>) para concatenar várias <i>strings</i> de ligação, da seguinte forma: <!-- NEED 6 --> 
+</p>
+<pre>&lt;action application="bridge" data="Khomp/B1L0+B2L0/32332933"/&gt;
+&lt;action application="bridge" data="Khomp/*B2+B3+B4/99887766"/&gt;
+&lt;action application="bridge" data="Khomp/S0411+B1L0/99887766"/&gt;
+&lt;action application="bridge" data="Khomp/Gpstn1+Gpstn2/99991234"/&gt;
+&lt;action application="bridge" data="Khomp/*gOperadora1+gOperadora2/98891234"/&gt;
+</pre>
+<p>Esta extensão está disponível tanto no <i>application</i> <b>bridge</b> quanto na especificação de grupos, e pode ser utilizada para agrupar qualquer <i>string</i> de alocação válida à outra. O processamento das <i>strings</i> de alocação se dá da esquerda para a direita - exceto quanto utilizando a alocação cíclica, onde <b>todos</b> os canais especificados são verificados simultaneamente.
+</p>
+<a name="Escolha_c.C3.ADclica_e.2Fou_justa" id="Escolha_c.C3.ADclica_e.2Fou_justa"></a><h4> <span class="mw-headline"> Escolha cíclica e/ou <i>justa</i>  </span></h4>
+<p>Uma variação da alocação de canais é através de uma escolha cíclica e/ou <i>justa</i>, que consiste em escolher o canal que <b>completou</b> - até o momento - o menor número de ligações <b>saintes</b>. Essa forma é caracterizada por um asterisco (<b>*</b>) antes da string de alocação de canais (conforme pode ser verificado acima, no segundo e quinto exemplos). 
+</p><p>Quando iniciada com um asterisco (<b>*</b>), as outras formas de alocação subseqüentes (crescente, decrescente, etc) são utilizadas para decidir, entre os canais com menor número de ligações saintes, qual será verificado primeiro para realizar a chamada. 
+</p>
+<ul><li><b>AVISO: O uso da alocação justa e/ou cíclica é recomendável <u>somente</u> em placas analógicas (KFXO), de ramais (KFXS) e de interface celular (KGSM)</b>. Conexões E1 tendem a alocar os canais de maneira crescente ou decrescente de um lado (na operadora, por exemplo), e o inverso do outro (no PABX, por exemplo), para evitar problemas de dupla ocupação (o que pode ocorrer na sinalização R2/MFC). A alocação cíclica/justa também consome mais recursos de memória e processamento que a alocação tradicional, o que é agravado ainda mais pelo fato de placas E1 terem um número muito maior de canais (30 por link).<br /><br />Por estes motivos, alocações justas e/ou cíclicas devem ser utilizadas apenas em sinalizações onde isso pode representar alguma diferença real, como equalizar a tarifação das linhas, o uso das mesmas, ou o número de ligações recebidas por cada ponto de atendimento (PA).
+</li></ul>
+<a name="Op.C3.A7.C3.B5es_dispon.C3.ADves" id="Op.C3.A7.C3.B5es_dispon.C3.ADves"></a><h4> <span class="mw-headline"> Opções disponíves </span></h4>
+<ul><li><b>orig</b>: Define o número de origem a ser utilizado na chamada, <b>sem alterar a variável ${origination_caller_id_number}</b>. Ou seja, a opção <b>orig</b> serve <b>apenas</b> para repassar um número de origem diferente do ${origination_caller_id_number}. Caso o FreeSWITCH já tenha ajustado a variável ${origination_caller_id_number}, o que é o comportamento padrão, o Endpoint utiliza este valor automaticamente como referência do número de origem, sem ser necessário repassar nenhuma opção adicional.<br /><br />Nas placas <b>KGSM</b>, se ajustado para <b>restricted</b>, omite o número de origem. Exemplo:<br />
+</li></ul>
+<pre>
+ &lt;action application=&quot;bridge&quot; data=&quot;Khomp/b0/99887766/orig=restricted&quot;/&gt;
+</pre>
+<ul><li><b>category</b>: Quando ajustado para um valor numérico, define a categoria do número de A. Disponível apenas em sinalização R2/MFC; 
+</li><li><b>uui</b>: Quando ajustado para um número e uma string de texto, separados por cerquilha ("#"), envia uma mensagem "User-to-User" para a outra ponta, antes de realizar a chamada, utilizando o descritor como o número e a mensagem como o texto. Disponível apenas em sinalização RDSI (ISDN); 
+</li><li><b>ring_cadence</b>: Quando ajustado para um identificador, utiliza cadência definida com este nome na seção "cadences" do arquivo de configuração do Endpoint da Khomp para chamar o canal desejado. Disponível apenas em sinalização FXS; 
+</li><li><b>ring</b>: Quando ajustado para dois números, separados por ponto ("."), define as cadências de chamada de um ramal FXS para estes valores, sendo o primeiro relativo ao tempo de chamando, e o segundo, ao tempo de silêncio; 
+</li><li><b>ring_ext</b>: Quando ajustado para dois números, separados por ponto ("."), define as cadências de chamada extendidas (a serem executadas depois da cadência principal) de um ramal FXS para estes valores, sendo o primeiro relativo ao tempo de chamando, e o segundo, ao tempo de silêncio; 
+</li><li><b>usr_xfer</b>: Quando ajustado para uma seqüência de dígitos DTMF, define estes como dígitos a serem utilizados para iniciar uma transferência entre PABXes (utilizando sinalizações de usuário); 
+</li><li><b>drop_on</b>: Quando ajustado para "message_box", "human_answer", "answering_machine", "carrier_message", "unknown" ou uma lista destes (separados por mais ("+") ou ponto (".")), faz com que a chamada seja derrubada ao detectar tons de caixa postal, atendimento humano, secretária eletrônica, mensagens da operadora, ou algum atendimento desconhecido - respectivamente. Disponível em sinalizações digitais (links E1 e placas KGSM). Adicionalmente, a informação de atendimento é reportada para o usuário na variável KCallAnswerInfo; 
+</li><li><b>answer_info</b>: Opção booleana (não necessita de valor). Quando especificada, reporta informações de atendimento para o usuário através da variável KCallAnswerInfo; 
+</li><li><b>pre</b>: Quando ajustado para uma seqüência de dígitos DTMF, utiliza estes para pre-alocar um canal de saída em um PABX analógico, discando o número de B desejado a seguir. Somente disponível para sinalização analógica (FXO);
+</li><li><b>pre_answer</b>: Opção booleana (não necessita de valor). Quando especificada, "antende" o canal antes de a ligação ser completada permitindo, por exemplo, que DTMFs possam ser enviados - útil para utilizar em um <b>DISA</b>;
+</li><li><b>output_volume</b>: Define o volume de saída da ligação. Varia de -10 a +10;
+</li><li><b>input_volume</b>: Define o volume de entrada da ligação. Varia de -10 a +10;
+</li></ul>
+<p><br />
+</p>
+<a name="Lista_das_vari.C3.A1veis" id="Lista_das_vari.C3.A1veis"></a><h3> <span class="mw-headline"> Lista das variáveis </span></h3>
+<p>Segue lista de variáveis disponíveis no Endpoint:
+</p>
+<ul><li><b>KDropCollectCall</b>: Quando definida antes do atendimento (ao receber uma chamada), ativa ("yes") ou desativa ("no", padrão) o derrubamento de chamadas à cobrar baseado na sinalização recebida da central pública; através do duplo atendimento; ou através do reconhecimento por áudio de uma chamada à cobrar (pode ser definido de maneira global);
+</li><li><b>KR2SendCondition</b>: Quando definida antes do envio de ringback pelo FreeSWITCH (ao receber uma chamada), ajusta a condição de B para o valor numérico que foi ajustada. Apenas disponível para sinalização R2; 
+</li><li><b>KR2GotCategory</b>: Ajustada pelo Endpoint ao receber uma chamada entrante, e possui a categoria do número de A. Apenas disponível para sinalização R2; 
+</li><li><b>KR2GotCondition</b>: Ajustada pelo Endpoint, e disponível após o retorno de uma chamada realizada pelo FreeSWITCH. Contém a condição de B recebida ao realizar a chamada. Apenas disponível para sinalização R2;
+</li><li><b>KISDNGotCause</b>: Ajustada pelo Endpoint, e disponível após o retorno de uma chamada realizada pelo FreeSWITCH. Contém o código de <i>cause</i> do ISDN recebido ao realizar a chamada. Apenas disponível para sinalização ISDN;
+</li><li><b>KCallAnswerInfo</b>: Ajustada pelo Endpoint, e disponível após o retorno de uma chamada realizada pelo FreeSWITCH. Contém as informações de atendimento detectadas ao realizar a chamada e está disponível apenas para sinalizações digitais (E1, GSM);
+</li><li><b>KSmsDelivered</b>: Ajustada pelo Endpoint ao enviar uma mensagem SMS com o <i>application</i> <b>KSendSMS</b>, e define se a mensagem foi entregue com sucesso ("yes") ou não ("no"); 
+</li><li><b>KSmsErrorCode</b>: Ajustada pelo Endpoint ao enviar uma mensagem SMS com o <i>application</i> <b>KSendSMS</b>, e define o código de erro ao enviar a mensagem; 
+</li><li><b>KSmsErrorName</b>: Ajustada pelo Endpoint ao enviar uma mensagem SMS com o <i>application</i> <b>KSendSMS</b>, contém o nome do erro em forma textual, ou "None" caso não tenha ocorrido nenhum erro.
+</li><li><b>KSmsType</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, define o tipo da mensagem recebida (pode conter os valores "message", "confirm" ou "broadcast"; 
+</li><li><b>KSmsFrom</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, define o número de origem da mensagem recebida (disponível em tipos "message" e "confirm"); 
+</li><li><b>KSmsDate</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, define a data de envio da mensagem (disponível em tipos "message" e "confirm"); 
+</li><li><b>KSmsSize</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, contém o tamanho (em bytes) da mensagem recebida (disponível em tipos "message" e "broadcast"); 
+</li><li><b>KSmsMode</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, contém o tipo codificação da mensagem recebida (disponível em tipos "message" e "broadcast"); 
+</li><li><b>KSmsBody</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, contém o texto da mensagem recebida (disponível em tipos "message" e "broadcast");
+</li><li><b>KSmsDelivery</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, contém a data de entrega de mensagem enviada anteriormente cuja confirmação foi requisitada (disponível no tipo "confirm");
+</li><li><b>KSmsStatus</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, contém o <i>status</i> de envio de mensagem anteriormente cuja confirmação foi requisitada (disponível no tipo "confirm");
+</li><li><b>KSmsSerial</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, contém o número de série da mensagem recebida (disponível no tipo "broadcast");
+</li><li><b>KSmsPage</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, contém o número da página relativo à mensagem recebida (disponível no tipo "broadcast");
+</li><li><b>KSmsPages</b>: Ajustada pelo Endpoint no contexto de entrada das mensagens SMS, contém o número total de páginas a serem recebidas (disponível no tipo "broadcast");
+</li><li><b>KUserInfoDescriptor</b>: Define/informa descritor do protoloco utilizado na mensagem User-to-User Information (RDSI). 
+</li><li><b>KUserInfoData</b>: Define/informa os dados na mensagem User-to-User Information (RDSI).
+</li><li><b>KFaxSent</b>: Ajustada pelo Endpoint ao enviar FAX com o application KSendFax, e define se o FAX foi enviado com sucesso ("yes") ou não ("no"); 
+</li><li><b>KFaxReceived</b>: Ajustada pelo Endpoint ao receber FAX com o application KReceiveFax, e define se o FAX foi recebido com sucesso ("yes") ou não ("no"); 
+</li><li><b>KFaxResult</b>: Ajustada pelo Endpoint ao enviar ou receber FAX com o application KSendFax ou KReceiveFax, respectivamente, e define o seu resultado.
+</li></ul>
+<p><br />
+</p>
+<a name="Descri.C3.A7.C3.A3o_das_vari.C3.A1veis" id="Descri.C3.A7.C3.A3o_das_vari.C3.A1veis"></a><h3> <span class="mw-headline"> Descrição das variáveis </span></h3>
+<p>Abaixo, segue uma explanação sobre como utilizar as variáveis do Endpoint da Khomp disponíveis no dialplan, tanto para comunicar quanto para receber informações: 
+</p><p><br />
+</p>
+<a name="KDropCollectCall" id="KDropCollectCall"></a><h4> <span class="mw-headline"> KDropCollectCall </span></h4>
+<p>Quando ativada, faz com que o Endpoint da Khomp derrube chamadas a cobrar através de duplo atendimento (disponível para sinalizações 'R2 Digital' e FXO), através da informação disponível no protocolo RDSI e R2/MFC, ou através da detecção do áudio de chamada a cobrar (disponível para qualquer sinalização digital por link E1, e para sinalização GSM).
+</p><p>Esta variável é útil para derrubar chamadas a cobrar para determinados ramais, e deve ser ajustado <b>obrigatoriamente</b> antes de realizar qualquer tipo de atendimento - aplicações como <b>playback</b> e <b>bridge</b> devem ser executadas sempre após ajustar esta variável, por exemplo.
+</p><p>Para melhor funcionalidade, é recomendado também que nenhum estado de chamada (<i>ringback</i>) seja enviado antes desta variável ser ajustada, então aplicações devem ser executadas apenas após o ajuste correto desta variável.
+</p><p>Esta variável pode ser ajustada localmente e globalmente, tanto para <b>yes</b> quanto para <b>no</b>. O ajuste da variável global para <b>yes</b> fará com que todas as chamadas a cobrar sejam derrubadas, a não ser que a chamada específica seja ajustada para <b>no</b> - isto permite a criação de um filtro global de chamadas a cobrar, com algumas poucas exceções.
+</p><p>Ativando a variável dentro do contexto <b>default</b>:
+<!-- NEED 5 --> 
+</p><p>&lt;context name="default"&gt;
+</p>
+<pre>&lt;extension name="exemplo"&gt;
+ .
+ .
+ .
+ &lt;action aplication="set" data="KDropCollectCall=yes"/&gt;
+ .
+ .
+ .
+&lt;/extension&gt;
+</pre>
+<p>&lt;/context&gt;
+</p><p>Ativando a variável no contexto global, lembrando que a mesma deve ser configurada no arquivo <b>vars.xml</b>:
+<!-- NEED 5 --> 
+</p>
+<pre>&lt;X-PRE-PROCESS cmd="set" data="KDropCollectCall=yes"/&gt;
+</pre>
+<a name="KR2SendCondition" id="KR2SendCondition"></a><h4> <span class="mw-headline"> KR2SendCondition </span></h4>
+<p>Ao receber uma chamada, pode ser definida antes do envio de ringback pelo FreeSWITCH (ou seja, antes do FreeSWITCH executar as aplicações answer, ou bridge). Quando utilizada em sinalização R2/MFC, esta variável ajusta a condição de B para o valor numérico desejado. 
+</p><p>Exemplo:
+<!-- NEED 6 --> 
+</p>
+<pre>&lt;!-- Condição "NUMBER CHANGED", avisa ao chamador que o número de B mudou. --&gt;
+&lt;action application="KR2SendCondition" data="3"/&gt;
+</pre>
+<a name="KR2GotCategory" id="KR2GotCategory"></a><h4> <span class="mw-headline"> KR2GotCategory </span></h4>
+<p>Ao receber uma chamada, é ajustada pelo Endpoint com a categoria recebida do número que originou a chamada. É ajustada na sinalização R2/MFC, e pode ser consultada em qualquer local do dialplan. 
+</p><p>Exemplo:
+<!-- NEED 3 --> 
+</p>
+<pre>&lt;action application="log" data="DEBUG KR2GotCategory [${KR2GotCategory}]"/&gt; 
+</pre>
+<a name="KR2GotCondition" id="KR2GotCondition"></a><h4> <span class="mw-headline"> KR2GotCondition </span></h4>
+<p>Variável ajustada pelo Endpoint, e disponível após o retorno de uma chamada realizada pelo FreeSWITCH. Contém a condição de B recebida ao realizar a chamada. Disponível apenas para sinalização R2/MFC. 
+</p><p>Exemplo:
+<!-- NEED 3 --> 
+</p>
+<pre>&lt;action application="log" data="DEBUG KR2GotCondition [${KR2GotCondition}]"/&gt;
+</pre>
+<a name="KUserInfoDescriptor" id="KUserInfoDescriptor"></a><h4> <span class="mw-headline"> KUserInfoDescriptor </span></h4>
+<p>Variável ajustada pelo Endpoint no contexto de entrada, a partir de informações recebidas pela rede RDSI através da funcionalidade User-to-User Information. Contém o número do descritor do protocolo utilizado pela outra ponta, e normalmente contém valor '0', mas este valor é dependente da aplicação utilizada. 
+</p><p>Maiores informações, consultar a especificação ITU-T Q931 (mais precisamente, a tabela 4-26 da especificação). 
+</p><p>Exemplo (trabalhando com o número do descritor do protocolo): <!-- NEED 3 --> 
+</p>
+<pre>&lt;action application="log" data="DEBUG KUserInfoDescriptor [${KUserInfoDescriptor}]"/&gt;
+</pre>
+<a name="KUserInfoData" id="KUserInfoData"></a><h4> <span class="mw-headline"> KUserInfoData </span></h4>
+<p>Variável ajustada pelo Endpoint no contexto de entrada, a partir de informações recebidas pela rede RDSI através da funcionalidade User-to-User Information. Contém os dados propriamente ditos, que foram recebidos, em forma de uma 'string' de texto. 
+</p><p>Maiores informações sobre este recurso, consultar a especificação ITU-T Q931. 
+</p><p>Exemplo (trabalhando com os dados recebidos): <!-- NEED 3 --> 
+</p>
+<pre>&lt;action application="log" data="DEBUG KUserInfoData [${KUserInfoData}]"/&gt;
+</pre>
+<p>É importante salientar que as variáveis são sensíveis à capitalização das letras (case sensitive).
+</p>
+<a name="KCallAnswerInfo" id="KCallAnswerInfo"></a><h4> <span class="mw-headline"> KCallAnswerInfo </span></h4>
+<p>Variável ajustada pelo Endpoint em ligações de saída, representando o tipo de atendimento realizado pela outra ponta. Pode conter os seguintes valores:
+</p>
+<dl><dd><ul><li> "MessageBox" (*): detectada caixa postal de um telefone celular;
+</li><li> "CarrierMessage": mensagem de operadora enviada antes do atendimento;
+</li><li> "AnsweringMachine" (**): atendimento por secretária eletrônica;
+</li><li> "HumanAnswer" (**): atendimento humano;
+</li><li> "Unknown": tipo de atendimento desconhecido;
+</li><li> "Fax": reportado quando um tom de fax for detectado.
+</li></ul>
+</dd></dl>
+<p><br />
+(*) Este tipo de atendimento é detectado por sinais em determinadas freqüências que são enviados antes da chamada entrar em uma caixa postal, e variam conforme a operadora. O algoritmo captura a maior parte das caixas postais, mas pode falhar se não existir um sinal claro, ou se o mesmo não estiver dentro dos padrões mais utilizados;
+</p><p>(**) A diferenciação entre estes dois tipos de atendimento depende de configuração específica utilizando o programa <b>k3lanswerinfoconfig</b>, sendo a detecção apenas baseada em heurísticas e <b>nunca</b> com precisão de 100%.
+<br />
+</p>
+<a name="Comandos_de_console" id="Comandos_de_console"></a><h1> <span class="mw-headline">Comandos de console </span></h1>
+<p>Lista de comandos disponíveis no console do FreeSWITCH para o Endpoint da Khomp:
+</p><p><br />
+</p>
+<ul><li> <b>khomp channels disconnect </b>: Desconecta um ou vários canais. Este comando envia uma mensagem diretamente para o canal físico da placa em questão, requisitando a desconexão. Use com cautela; 
+</li><li> <b>khomp channels unblock </b>: Desbloqueia canais bloqueados para entrada ou para saída. Somente disponível em sinalização digital via link E1; 
+</li><li> <b>khomp clear links</b>: Limpa os contadores de erros nos links;
+</li><li> <b>khomp clear statistics</b>: Limpa as estatísticas de ligações dos canais, ou as estatísticas de um canal específico; 
+</li><li> <b>khomp get </b>: Obtém as opções diversas do Endpoint da Khomp;
+</li><li> <b>khomp kommuter </b>: Ativa ou desativa os kommuters ligados via USB nesta máquina. Somente acessível quando a configuração "kommuter-activation" estiver setada como "manual";
+</li><li> <b>khomp kommuter count</b>: Obtém a quantidade de kommuters ligados via USB nesta máquina;
+</li><li> <b>khomp log console</b>: Ajusta opções de logs no console. 
+</li><li> <b>khomp log disk</b>:&nbsp;: Ajusta opções de log em disco. 
+<ul><li> <b>khomp log console</b> e <b>khomp log disk</b> dispõem de opções auxiliares <b>no</b>, que inverte a escolha de mensagens, e <b>just</b>, que generaliza a escolha. Exemplos:
+<ul><li> <b>khomp log disk just commands events</b> (Habilita <i>somente</i> o registro de comandos e eventos da API em disco).
+</li><li> <b>khomp log disk no commands</b> (Desabilita o registro em disco de comandos enviados à API).
+</li><li> <b>khomp log disk warnings</b> (Habilita <i>também</i> o registro em disco dos avisos do Endpoint).
+</li></ul>
+</li><li> Mais informações sobre as opções de <i>log</i> nos comando "<b>help khomp log disk</b>" ou "<b>help khomp log console</b>".
+</li></ul>
+</li><li> <b>khomp log rotate</b>: Rotaciona arquivos de log do Endpoint;
+</li><li> <b>khomp log status</b>: Mostra mensagens de log atualmente sendo escritas em disco e mostradas no console;
+</li><li> <b>khomp log trace isdn</b>: Ativa a depuração da sinalização RDSI (ISDN);
+</li><li> <b>khomp log trace k3l </b>: Ativa a depuração de baixo nível da API K3L;
+</li><li> <b>khomp log trace r2 </b>: Ativa a depuração de baixo nível da sinalização R2/MFC;
+</li><li> <b>khomp reset links</b>: Envia um comando de reset para um determinado link E1 de uma determinada placa; 
+</li><li> <b>khomp revision</b>: Mostra número da versão e revisão do Endpoint;
+</li><li> <b>khomp select sim</b>: Seleciona o SIM card, disponível nas placas KGSM;
+</li><li> <b>khomp send command </b>: Envia comando da API K3L diretamente para a placa. Apenas para depuração de problemas, pode compromenter a estabilidade do sistema se utilizado de maneira incorreta;
+</li><li> <b>khomp send raw command </b>: Envia um comando diretamente para o DSP da placa. Apenas para depuração de problemas, pode compromenter a estabilidade do sistema se utilizado de maneira incorreta;
+</li><li> <b>khomp set </b>: Ajusta opções diversas do Endpoint da Khomp;
+</li><li> <b>khomp show calls </b>: Mostra estados das chamadas Khomp, podendo listar também por placa ou canal específico;
+</li><li> <b>khomp show channels </b>: Mostra o estado dos canais Khomp, podendo listar também por placa específica; 
+</li><li> <b>khomp show links</b>: Mostra estados dos links E1 disponíveis. 
+</li><li> <b>khomp show statistics </b>: Mostra as estatísticas de ligações dos canais, ou as estatísticas de um canal específico; 
+</li><li> <b>khomp sms </b>: Envia uma mensagem SMS utilizando canais da placa KGSM para um determinado número;
+</li><li> <b>khomp summary </b>:Imprime um sumário das placas do sistema e de suas características;
+</li></ul>
+<p><br />
+</p>
+<a name="Recursos_adicionais" id="Recursos_adicionais"></a><h1> <span class="mw-headline">Recursos adicionais </span></h1>
+<p>Este capítulo trata de recursos adicionais do Endpoint, relacionados às funcionalidades especiais presentes em algumas sinalizações.
+<br />
+</p>
+<a name="Aplica.C3.A7.C3.B5es_.28applications.29_e_canais" id="Aplica.C3.A7.C3.B5es_.28applications.29_e_canais"></a><h2> <span class="mw-headline">Aplicações (applications) e canais  </span></h2>
+<p>O Endpoint da Khomp, além de registrar um tipo de canal de comunicação "Khomp", registra também os seguintes itens: 
+<br />
+</p>
+<a name="Aplica.C3.A7.C3.A3o_.22KUserTransfer.22" id="Aplica.C3.A7.C3.A3o_.22KUserTransfer.22"></a><h3> <span class="mw-headline">Aplicação "KUserTransfer"  </span></h3>
+<p>Realiza o processo de transferência do canal atual para o ramal <i>número'</i> utilizando o protocolo de sinalização QSig (Single Step Call Transfer) para placas E1 configuradas com sinalização RDSI (ISDN), ou utiliza comando de FLASH para linhas FXO, LineSide, CAS_EL7 e E1LC.
+</p><p>A sintaxe segue: 
+</p>
+<pre>&lt;action application="KUserTransfer" data="<b>número</b>[,opções])"/&gt;
+</pre>
+<p>Exemplo: 
+</p>
+<pre>&lt;action application="answer"/&gt;
+&lt;action application="KUserTransfer" data="2345"/&gt;
+</pre>
+<p>Os campos têm o seguinte significado:
+</p>
+<ul><li><b>número</b>: Número para onde a ligação deve ser transferida.
+</li><li><b>opções</b>: Define as opções de transferência a utilizar, que são: 
+<ul><li><b>n</b>: Aguarda até o canal ser desconectado.
+</li></ul>
+</li></ul>
+<p><br />
+</p><p><br />
+</p>
+<a name="Aplica.C3.A7.C3.A3o_.22KSendSMS.22" id="Aplica.C3.A7.C3.A3o_.22KSendSMS.22"></a><h3> <span class="mw-headline">Aplicação "KSendSMS"  </span></h3>
+<p>Esta aplicação tem a função de enviar mensagens SMS através das placas KGSM da Khomp, utilizando os módulos e SIM cards presentes na placa para tal. A sintaxe da aplicação é a seguinte: 
+</p>
+<pre>&lt;action application="KSendSMS" data="recurso|destino|mensagem" /&gt;
+</pre>
+<p>Podendo cada campo ser resumido em: 
+</p>
+<ul><li><b>recurso</b>: Segue uma sintaxe idêntica à alocação de canais do application Bridge, e define qual modem utilizar; 
+</li><li><b>destino</b>: Número para onde enviar a mensagem, podendo ser precedido ou sucedido por <b>!</b> para requisitar uma mensagem de confirmação de envio; 
+</li><li><b>mensagem</b>: Texto (sem aspas) que deve ser enviado para <b>destino</b>.
+</li></ul>
+<p>Após o envio da mensagem, as variáveis <b>KSmsDelivered</b> e <b>KSmsErrorCode</b> conterão o resultado do envio da mensagem. Para maiores informações sobre estas, favor consultar a seção sobre as variáveis utilizadas no Endpoint.
+</p><p>Exemplos de uso desta aplicação seguem abaixo: 
+</p>
+<ul><li>Envia "Mensagem de teste." para telefone "99887766" utilizando o modem "1" (segundo modem) da placa "0":
+</li></ul>
+<pre>&lt;action application="log" data="DEBUG Enviando SMS..." /&gt;
+&lt;action application="KSendSMS" data="b0c1|99887766|Mensagem de teste" /&gt;
+</pre>
+<ul><li>Envia "Mensagem de teste." para telefone "99887766" utilizando o primeiro modem livre da placa "0", e verifica retorno do envio:
+</li></ul>
+<pre>&lt;action application="log" data="DEBUG Enviando SMS..." /&gt;
+&lt;action application="KSendSMS" data="b0|99887766|Mensagem de teste" /&gt;
+&lt;action application="log" data="DEBUG Enviou? ${KSmsDelivered}" /&gt;
+&lt;action application="log" data="DEBUG Codigo: ${KSmsErrorCode}" /&gt;
+&lt;action application="log" data="DEBUG Descr.: ${KSmsErrorName}" /&gt;
+</pre>
+<ul><li>Envia "Mensagem de teste." para telefone "99887766" utilizando o primeiro modem livre da placa "0", ou para o primeiro canal livre da placa "1" (se não houver canal livre na primeira placa):
+</li></ul>
+<pre>&lt;action application="log" data="DEBUG Enviando SMS..." /&gt;
+&lt;action application="KSendSMS" data="b0+b1|99887766|Mensagem de teste" /&gt;
+</pre>
+<ul><li>Envia "Mensagem de teste." para telefone "99887766" utilizando o primeiro modem livre da placa "0", requisitando confirmação:
+</li></ul>
+<pre>&lt;action application="log" data="DEBUG Enviando SMS..." /&gt;
+&lt;action application="KSendSMS" data="b0|99887766!|Mensagem de teste" /&gt;
+</pre>
+<p><br />
+</p>
+<a name="Aplica.C3.A7.C3.A3o_.22KEchoCanceller.22" id="Aplica.C3.A7.C3.A3o_.22KEchoCanceller.22"></a><h3> <span class="mw-headline"> Aplicação "KEchoCanceller"  </span></h3>
+<p>Esta aplicação tem a função de habilitar ou desabilitar o cancelador de eco do canal.
+</p>
+<pre>&lt;action application="KEchoCanceller" data="<b>ação</b>[,opções])"/&gt;
+</pre>
+<p>Onde:
+</p>
+<ul><li><b>ação</b>: Pode ser <b>on</b> para habilitar o cancelador de eco, e <b>off</b> para desabilitar;
+</li></ul>
+<p>Exemplo de uso desta aplicação:
+</p>
+<pre>&lt;action application="KEchoCanceller" data="off"/&gt;
+</pre>
+<p><br />
+</p>
+<a name="Aplica.C3.A7.C3.A3o_.22KAutoGainControl.22" id="Aplica.C3.A7.C3.A3o_.22KAutoGainControl.22"></a><h3> <span class="mw-headline"> Aplicação "KAutoGainControl"  </span></h3>
+<p>Esta aplicação tem a função de habilitar ou desabilitar o controle automático de ganho no canal.
+</p>
+<pre>&lt;action application="KAutoGainControl" data="<b>ação</b>[,opções])"/&gt;
+</pre>
+<p>Onde: 
+</p>
+<ul><li><b>ação</b>: Pode ser <b>on</b> para habilitar o controle automático de ganho, e <b>off</b> para desabilitar;
+</li></ul>
+<p>Exemplo de uso desta aplicação: 
+</p>
+<pre>&lt;action application="KAutoGainControl" data="on"/&gt;
+</pre>
+<p><br />
+</p>
+<a name="Aplica.C3.A7.C3.A3o_.22KDTMFSuppression.22" id="Aplica.C3.A7.C3.A3o_.22KDTMFSuppression.22"></a><h3> <span class="mw-headline"> Aplicação "KDTMFSuppression"  </span></h3>
+<p>Esta aplicação tem a função de habilitar ou desabilitar a supressão de DTMF do canal. A sintaxe da aplicação é a seguinte: 
+</p>
+<pre>&lt;action applicatin="KDTMFSuppression" value="<b>ação</b>[,opções])"/&gt;
+</pre>
+<p>Onde: 
+</p>
+<ul><li><b>ação</b>: Pode ser <b>on</b> para habilitar a supressão DTMF, e <b>off</b> para desabilitar;
+</li></ul>
+<p>É importante notar que quando desabilitada a supressão de DTMF, os DTMFs serão passados <i>inband</i> e não serão mais reportados ao FreeSWITCH. Dessa forma o FreeSWITCH não reconhecerá os DTMFs, o que pode ocasionar em mau funcionamento de aplicações como por exemplo, URAs. 
+</p><p>Exemplo de uso desta aplicação: 
+</p>
+<pre>&lt;action applicatin="KDTMFSuppression" value="off"/&gt;
+</pre>
+<p><br />
+</p>
+<a name="Aplica.C3.A7.C3.A3o_.22KSetVolume.22" id="Aplica.C3.A7.C3.A3o_.22KSetVolume.22"></a><h3> <span class="mw-headline"> Aplicação "KSetVolume"  </span></h3>
+<p>Esta aplicação tem a função de ajustar o volume de entrade e saída de canais da Khomp, sendo a sua sintaxe a seguinte:
+</p>
+<pre>&lt;action application="KSetVolume" data="&lt;volume&gt;"/&gt;
+&lt;action application="KSetVolume" data="&lt;output-volume&gt;|&lt;input-volume&gt;"/&gt;
+</pre>
+<p>Onde os campos possuem o seguinte significado: 
+</p>
+<ul><li><b>volume</b>: Ajusta o volume de entrada e saída (-10 a +10);
+</li><li><b>output-volume</b>: Ajusta o volume de saída (-10 a +10, "none" para não alterar);
+</li><li><b>input-volume</b>: Ajusta o volume de entrada (-10 a +10, "none" para não alterar).
+</li></ul>
+<p><br />
+</p>
+<a name="Aplica.C3.A7.C3.A3o_.22KAdjustForFax.22" id="Aplica.C3.A7.C3.A3o_.22KAdjustForFax.22"></a><h3> <span class="mw-headline"> Aplicação "KAdjustForFax"  </span></h3>
+<p>Esta aplicação tem a função de ajustar um canal da Khomp para o recebimento de sinal de FAX/modem, otimizando o canal de comunicação para o tráfego de dados. Sintaxe:
+</p>
+<pre>&lt;action application="KAdjustForFax" data=""/&gt;
+</pre>
+<p>Esta aplicação não recebe parâmetros. Exemplo de utilização:
+</p>
+<pre>&lt;action application="KAdjustForFax" data=""/&gt;
+</pre>
+<p><br />
+</p>
+<a name="Aplica.C3.A7.C3.A3o_.22KSendFax.22" id="Aplica.C3.A7.C3.A3o_.22KSendFax.22"></a><h3> <span class="mw-headline"> Aplicação "KSendFax"  </span></h3>
+<p>Esta aplicação tem a função de enviar fax utilizando canais digitais ou FXO da Khomp em ligações pré-estabelecidas, sendo a sua sintaxe a seguinte:
+</p>
+<pre>&lt;action application="KSendFax" data="&lt;arquivo&gt;[:&lt;arquivo2&gt;[:...]][|&lt;faxid&gt;]"/&gt;
+</pre>
+<p><strong>Esta aplicação necessita de uma licença adquirida à parte para ser utilizada em canais digitais</strong>. Os campos possuem os seguintes significados: 
+</p>
+<ul><li><b>arquivos</b>: Arquivos a serem enviados para o fax devem estar encapsulados no formato TIFF e possuírem resolução de 98, 196 ou 392 dpi;
+</li><li><b>faxid</b>: Número do fax. Caso não seja especificado, o valor será obtido pela id da ligação, e caso esta, também não seja válida, o número do fax será o configurado como padrão na K3L.
+</li></ul>
+<p>Exemplo de uso desta aplicação: 
+</p>
+<pre>&lt;action application="KSendFax" data="/tmp/fax.tif:/home/root/fax2.tif,1234"/&gt;
+</pre>
+<p><br />
+</p>
+<a name="Aplica.C3.A7.C3.A3o_.22KReceiveFax.22" id="Aplica.C3.A7.C3.A3o_.22KReceiveFax.22"></a><h3> <span class="mw-headline"> Aplicação "KReceiveFax"  </span></h3>
+<p>Esta aplicação tem a função de receber fax utilizando canais digitais ou FXO da Khomp, sendo a sua sintaxe a seguinte:
+</p>
+<pre>&lt;action application="KReceiveFax" data="&lt;arquivo&gt;[|&lt;faxid&gt;]/&gt;
+</pre>
+<p><strong>Esta aplicação necessita de uma licença adquirida à parte para ser utilizada em canais digitais</strong>. Os campos possuem os seguintes significados:
+</p>
+<ul><li><b>arquivo</b>: Nome que será atribuído ao arquivo de fax recebido.
+</li><li><b>faxid</b>: Número do fax. Caso não seja especificado, o valor será obtido pela id da ligação, e caso esta, também não seja válida, o número do fax será o configurado como padrão na K3L.
+</li></ul>
+<p>Exemplo de uso desta aplicação: 
+</p>
+<pre>&lt;action application="answer" /&gt;
+&lt;action application="KReceiveFax" data="/tmp/fax.tif"/&gt;
+</pre>
+<p><br />
+</p>
+<a name="Canal_.22Khomp_SMS.22" id="Canal_.22Khomp_SMS.22"></a><h3> <span class="mw-headline"> Canal "Khomp_SMS"  </span></h3>
+<p>Este canal de comunicação é utilizado para receber mensagens SMS e criar ligações entrantes no FreeSWITCH para cada mensagem recebida. Este canal não possui qualquer tipo de tratamento ou processamento de áudio, e é chamado com cinco variáveis ajustadas: 
+</p>
+<ul><li><b>KSmsFrom</b>, contendo o número de origem de quem enviou a mensagem; 
+</li><li><b>KSmsDate</b>, que define a data/hora do recebimento da mensagem; 
+</li><li><b>KSmsSize</b>, representando o tamanho da mensagem (em bytes); 
+</li><li><b>KSmsMode</b>, contendo a codificação utilizada para transmitir a mensagem; 
+</li><li><b>KSmsBody</b>, que é a mensagem em si.
+</li></ul>
+<p>O processamento do dialplan do FreeSWITCH pode ser utilizado para guardar esta mensagem em um banco de dados, executar alguma aplicação, entre outros. Entretanto, a única ação aceita por este channel é desligamento (hangup) - ou seja, esta ligação entrante não pode ser considerada uma ligação comum.
+<br />
+</p>
+<a name="Canal_.22Khomp_PR.22" id="Canal_.22Khomp_PR.22"></a><h3> <span class="mw-headline"> Canal "Khomp_PR"  </span></h3>
+<p>Este canal de comunicação é utilizado para receber ligações em placas de gravação passiva (família <b>KPR</b> e <b>KFXO-HI</b>), criando ligações entrantes no FreeSWITCH para cada chamada recebida. Este canal permite apenas o recebimento de áudio capturado do <i>link</i>, não permitindo tanto o envio de mensagens de áudio quanto o de sinalizações de controle.
+</p><p>O processamento do dialplan do FreeSWITCH pode ser utilizado para gravar dados sobre esta ligação em um banco de dados, executar alguma aplicação especial e/ou algum <i>application</i> de gravação (como o <b>record</b>), entre outros. Entretanto, a única ação aceita por este channel é desligamento (hangup) - ou seja, esta ligação entrante não pode ser considerada uma ligação comum.
+<br />
+</p><p><br />
+</p>
+<a name="C.C3.B3digos_e_significados" id="C.C3.B3digos_e_significados"></a><h1> <span class="mw-headline">Códigos e significados </span></h1>
+<p>Este capítulo apresenta os códigos presentes no Endpoint da Khomp e seus significados, utilizados nos comandos de console:
+<br />
+</p>
+<a name="Estados_de_canais" id="Estados_de_canais"></a><h2> <span class="mw-headline">Estados de canais </span></h2>
+<p>Refletem o estado do canal relativo à placa. No caso de links E1, o estado pode ter uma ou mais das seguintes opções:
+</p>
+<ul><li> <b>Free</b>: o canal está livre;
+</li><li> <b>Busy</b>: o canal não está livre (ou ocupado, ou em falha);
+</li><li> <b>Outgoing</b>: o canal possui uma ligação de saída;
+</li><li> <b>Incoming</b>: o canal possui uma ligação de entrada;
+</li><li> <b>Locked</b>: o canal está bloqueado;
+</li><li> <b>Outgoing Lock</b>: o canal está bloqueado para chamadas saintes;
+</li><li> <b>Local Fail</b>: o canal possui uma falha local (nesta ponta);
+</li><li> <b>Incoming Lock</b>: o canal está bloqueado para chamadas entrantes;
+</li><li> <b>Remote Lock</b>: há um bloqueio remoto (na outra ponta) neste canal.
+</li></ul>
+<p>No caso de um canal FXS, o estado é definido por um destes valores:
+</p>
+<ul><li> <b>On Hook</b>: o telefone conectado neste canal está no gancho ou desconectado;
+</li><li> <b>Off Hook</b>: o telefone conectado neste canal está fora do gancho;
+</li><li> <b>Ringing</b>: o canal está sendo chamado;
+</li><li> <b>Failure</b>: o canal está em falha devido a problemas de comunicação entre a central e a placa.
+</li></ul>
+<p>No caso de um canal GSM, o estado também é definido por um dos valores a seguir:
+</p>
+<ul><li> <b>Idle</b>: o canal está livre e disponível para realizar chamadas;
+</li><li> <b>Call In Progress</b>: o canal está ocupado em uma ligação;
+</li><li> <b>Modem Error</b>: ocorreu um erro na comunicação com o modem do canal;
+</li><li> <b>SIM Card Error</b>: o SIM card não está presente ou não foi inserido/detectado corretamente;
+</li><li> <b>Network Error</b>: ocorreu um erro ao comunicar-se com a rede;
+</li><li> <b>Not Ready</b>: o modem está sendo inicializado no canal.
+</li></ul>
+<p>E no caso de um canal FXO, os estados serão os seguintes:
+</p>
+<ul><li> <b>Disabled</b>: o canal está desabilitado;
+</li><li> <b>Enabled</b>: o canal está habilitado.
+</li></ul>
+<p><br />
+</p>
+<a name="Estados_de_chamada" id="Estados_de_chamada"></a><h2> <span class="mw-headline"> Estados de chamada </span></h2>
+<p>Define o estado de cada canal relativo ao software, que pode ser::
+</p>
+<ul><li><b>Free</b>: o canal está livre;
+</li><li><b>Incoming</b>: o canal está recebendo uma chamada;
+</li><li><b>Outgoing</b>: o canal está realizando uma chamada;
+</li><li><b>Failure</b>: o canal está em falha.
+</li></ul>
+<p><br />
+</p>
+<a name="Estados_da_chamada_FreeSWITCH" id="Estados_da_chamada_FreeSWITCH"></a><h2> <span class="mw-headline"> Estados da chamada FreeSWITCH </span></h2>
+<p>Reflete diretamente o estado de chamada controlado pelo FreeSWITCH, que pode se
+</p>
+<ul><li> <b>new</b>: Canal é recém criado;
+</li><li> <b>init</b>: Canal foi inicializado;
+</li><li> <b>routing</b>: Canal está procurando uma extensão para executar;
+</li><li> <b>execute</b>: Canal está executando seu dialplan;
+</li><li> <b>ex_media</b>: Canal está trocando media com outro canal;
+</li><li> <b>cs_media</b>: Canal está consumindo toda media;
+</li><li> <b>hangup</b>: O canal está marcada para hangup e pronto para terminar.
+</li></ul>
+<p><br />
+</p>
+<a name="C.C3.B3digos_GSM" id="C.C3.B3digos_GSM"></a><h2> <span class="mw-headline"> Códigos GSM </span></h2>
+<p>Os seguintes códigos numéricos são reportados:
+</p>
+<a name="C.C3.B3digos_de_SMS_.28SMS_cause.29" id="C.C3.B3digos_de_SMS_.28SMS_cause.29"></a><h3> <span class="mw-headline"> Códigos de SMS (<i>SMS cause</i>) </span></h3>
+<pre>1	Unassigned number
+8	Operator determined barring
+10	Call barred
+21	SMS transfer rejected
+27	Destination out of service
+28	Unidentified subscriber
+29	Facility rejected
+30	Unknown subscriber
+38	Network out of order
+41	Temporary failure
+42	Congestion
+47	Resources unavailable
+50	Facility not subscribed
+69	Facility not implemented
+81	Invalid SMS transfer reference value
+95	Invalid message
+96	Invalid mandatory information
+97	Message type non existent
+98	Message not compatible with SMS protection state
+99	Information element non existent
+111	Protocol error
+127	Interworking
+128	Telematic interworking not supported
+129	SMS type zero not supported
+130	Cannot replace SMS
+143	Unspecified TPPID error
+144	Alphabet not supported
+145	Message class not supported
+159	Unspecified TPDCS error
+160	Command cannot be actioned
+161	Command unsupported
+175	Unspecified TP command error
+176	TPDU not supported
+192	SC busy
+193	No SC subscription
+194	SC system failure
+195	Invalid SME address
+196	Destination SME barred
+197	SM rejected duplicate SM
+198	TPVPF not supported
+199	TPVP not supported
+208	SIM SMS storage full
+209	No SMS storage capability in SIM
+210	Error in SMS
+211	Memory capatity exceeded
+213	SIM data download error
+255	Unspecified error
+300	Phone failure
+301	SMS service reserved
+302	Operation not allowed
+303	Operation not supported
+304	Invalid PDU mode parameter
+305	Invalid text mode parameter
+310	SIM not inserted
+311	SIM PIN necessary
+312	Phone SIM PIN necessary
+313	SIM failure
+314	SIM busy
+315	SIM wrong
+320	Memory failure
+321	Invalid memory index
+322	Memory full
+330	SMSC address unknown
+331	No network service
+332	Network timeout
+500	Unknown error
+512	Network busy
+513	Invalid destination address
+514	Invalid message body length
+515	Phone is not in service
+516	Invalid preferred memory storage
+517	User terminated
+</pre>
+<a name="C.C3.B3digos_de_chamada_.28call_cause.29" id="C.C3.B3digos_de_chamada_.28call_cause.29"></a><h3> <span class="mw-headline"> Códigos de chamada (<i>call cause</i>) </span></h3>
+<pre>1	Unallocated number
+3	No route to destination
+6	Channel unacceptable
+8	Operator determined barring
+16	Normal call clear
+17	User busy
+18	No user responding
+19	No answer from user
+21	Call rejected
+22	Number changed
+26	Non Selected user clear
+27	Destination out of order
+28	Invalid number format
+29	Facility rejected
+30	Response status enquiry
+31	Normal, unspecified
+34	No circuit channel available
+38	Network out of order
+41	Temporary failure
+42	Switch congestion
+43	Access information discarded
+44	Requested channel unavailable
+47	Resource unavailable
+49	QoS unavailable
+50	Request facility not subscribed
+55	Call barred with UG
+57	Bearer capability not authorized
+58	Bearer capability not available
+63	Service not available
+65	Bearer capability not implemented
+69	Request facility not implemented
+70	Only restricted bearer capability available
+79	Service not implemented
+81	Invalid call reference value
+82	User not member of UG
+88	Incompatible destination
+91	Invalid transit network selected
+95	Invalid message
+96	Missing mandatory information element
+97	Message type not implemented
+98	Message incompatible with state
+99	Information element not implemented
+100	Invalid information element
+101	Message incompatible with state (2)
+102	Recovery on timer expiry
+111	Protocol error
+127	Interworking
+</pre>
+<a name="C.C3.B3digos_gerais_.28mobile_cause.29" id="C.C3.B3digos_gerais_.28mobile_cause.29"></a><h3> <span class="mw-headline"> Códigos gerais (<i>mobile cause</i>) </span></h3>
+<pre>0	Phone failure
+1	No connection to phone
+2	Phone adaptor link reserved
+3	Operation not allowed
+4	Operation not supported
+5	Phone SIM PIN required
+6	Phone FSIM PIN required
+7	Phone FSIM PUK required
+10	SIM not inserted
+11	SIM PIN required
+12	SIM PUK required
+13	SIM failure
+14	SIM busy
+15	SIM wrong
+16	Incorrect password
+17	SIM PIN2 required
+18	SIM PUK2 required
+20	Memory full
+21	Invalid index
+22	Not found
+23	Memory failure
+24	Text string too long
+25	Invalid character in text string
+26	Dial string too long
+27	Invalid character in dial string
+30	No network service
+31	Network timeout
+32	Network not allowed
+33	Command aborted
+34	Number parameter instead of text parameter
+35	Text parameter instead of number parameter
+36	Numeric parameter out of bounds
+37	Text string too short
+40	Network PIN required
+41	Network PUK required
+42	Network subset PIN required
+43	Network subset PUK required
+44	Network service provider PIN required
+45	Network service provider PUK required
+46	Corporate PIN required
+47	Corporate PUK required
+60	SIM Service option not supported
+100	Unknown
+103	Illegal MS #3
+106	Illegal MS #6
+107	GPRS service not allowed #7
+111	PLMN not allowed #11
+112	Location area not allowed #12
+113	Roaming not allowed #13
+132	Service option not supported #32
+133	Registration service option not subscribed #33
+134	Service option temporary out of order #34
+147	Long context activation
+148	Unspecified GPRS error
+149	PDP authentication failure
+150	Invalid mobile class
+151	GPRS disconnection TMR active
+256	Too many active calls
+257	Call rejected
+258	Unanswered call pending
+259	Unknown calling error
+260	No phone number recognized
+261	Call state not idle
+262	Call in progress
+263	Dial state error
+264	Unlock code required
+265	Network busy
+266	Invalid phone number
+267	Number entry already started
+268	Cancelled by user
+269	Number entry could not be started
+280	Data lost
+281	Invalid message body length
+282	Inactive socket
+283	Socket already open
+</pre>
+<p><br />
+</p>
+<a name="Solu.C3.A7.C3.A3o_de_problemas" id="Solu.C3.A7.C3.A3o_de_problemas"></a><h1> <span class="mw-headline"> Solução de problemas </span></h1>
+<p>Nesta seção, erros e suas soluções mais comuns são apresentados.
+</p>
+<a name="Erro_durante_a_instala.C3.A7.C3.A3o_do_m.C3.B3dulo_de_kernel" id="Erro_durante_a_instala.C3.A7.C3.A3o_do_m.C3.B3dulo_de_kernel"></a><h2> <span class="mw-headline"> Erro durante a instalação do módulo de kernel </span></h2>
+<p>Durante a instalação do <i>Endpoint</i> da Khomp, podem ocorrer as seguintes mensagens:
+<!-- NEED 3 --> 
+</p>
+<pre>K3L: WARNING: Unable to find a module for [...]
+</pre>
+<p>ou
+<!-- NEED 8 --> 
+</p>
+<pre>install: ******  THE KERNEL MODULE HAS NOT BEEN INSTALLED: *******
+install: 
+install: ** Please, untar the file kpdriver*.tar.gz located in: **
+install: **                 '/usr/src/khomp/'                   **
+install: **             then check the README.txt               **
+install: **  for knowing how to proceed with the installation.  **
+</pre>
+<p>Neste caso, será necessário compilar os <i>drivers</i> manualmente para o seu sistema. Prossiga para o item abaixo para maiores informações.
+<br />
+</p>
+<a name="Compilandos_os_drivers_e_iniciando_os_servi.C3.A7os" id="Compilandos_os_drivers_e_iniciando_os_servi.C3.A7os"></a><h3> <span class="mw-headline">Compilandos os <i>drivers</i> e iniciando os serviços </span></h3>
+<p>Basta seguir ao diretório <b>/usr/src/khomp</b>, descompactar o arquivo "kpdriver_2.0.0<b>XX</b>.tar.gz", e acompanhar procedimentos descritos no arquivo <b>README.txt</b>.
+</p><p>Após realizar a compilação e a instalação do módulo, basta carregá-lo no sistema, configurar as placas, e iniciar o servidor de processos da Khomp. 
+</p><p>Para carregar o driver de kernel, é necessário executar o seguinte comando:
+<!-- NEED 3 --> 
+</p>
+<pre># /etc/init.d/khompdrv start
+</pre>
+<p>Para configurar as placas, por sua vez,  necessário executar o comando:
+<!-- NEED 3 --> 
+</p>
+<pre># khompwizard
+</pre>
+<p>Isto executará um assistente de configuração, que irá perguntar a sinalização utilizada no sistema, bem como outros parâmetros de utilização das placas.
+</p><p>Caso seja necessário configurar outros parâmetros adicionais, pode-se utilizar o seguinte comando:
+<!-- NEED 3 --> 
+</p>
+<pre># k3lconfig
+</pre>
+<p>Este configurador, por sua vez, mostra todas as opções possíveis de configuração da placa. Os parâmetros que não forem configurados assumem os valores padrão automaticamente, e são compatíveis com a maior parte dos sistemas. Maiores detalhes sobre este programa podem ser obtidos na seção de número '2'. 
+</p><p><br />
+</p>
+<ul><li> <b>IMPORTANTE</b>: Para o FreeSWITCH iniciar, é preciso que a placa da khomp esteja configurada e todos módulos estejam rodando (conforme mostrado acima). <br /><br />Se você deseja rodar o sistema sem a placa da Khomp, é preciso configurar o FreeSWITCH para ele não carregar o módulo da Khomp. Para isso, abra o arquivo <b>/usr/local/freeswitch/conf/autoload_configs/modules.conf.xml</b>, e comente a linha que carrega o módulo:<br />
+</li></ul>
+<pre>
+  &lt;!-- &lt;load module=&quot;mod_khomp&quot; /&gt; --&gt;
+</pre><br />
+<p>Quando a placa da Khomp estiver devidamente configurada e os módulos da khomp carregados (explicado acima), lembre-se de descomentar esta linha no arquivo.
+</p><p><br />
+Por fim, para carregar o servidor de processos, basta executar o seguinte comando:
+<!-- NEED 3 --> 
+</p>
+<pre># kserver start
+</pre>
+<p>Após realizar estes procedimentos, o Endpoint já estará operacional, e o FreeSWITCH já pode ser carregado.
+<br />
+</p>
+<a name="Configurando_par.C3.A2metros_especiais_de_sinaliza.C3.A7.C3.A3o_ou_.C3.A1udio" id="Configurando_par.C3.A2metros_especiais_de_sinaliza.C3.A7.C3.A3o_ou_.C3.A1udio"></a><h2> <span class="mw-headline">Configurando parâmetros especiais de sinalização ou áudio </span></h2>
+<p>Para configurar parâmetros especiais de sincronismo e/ou sinalização, é possível utilizar o programa "k3lconfig": basta selecionar a placa desejada, e as opções das placas serão apresentadas, divididas em seções e subseções para facilitar o acesso. Não é necessário efetuar a configuração de todos os parâmetros: os valores padrão são assumidos, caso não sejam configurados.
+</p><p>Para ajustar a sinalização do link, basta - depois de selecionar a placa - entrar na seção "Opções de sinalização", e em seguida, em "Sinalização da linha". Para escolher uma sinalização específica, basta utilizar as teclas de direcionamento (setas) até selecioná-la, pressionar 'espaço', e confirmar a opção pressionando 'Enter' sobre o botão "Confirmar".
+</p><p>Por fim, para salvar as configurações modificadas, basta sair do programa: ele irá mostrar uma janela, com opções para salvar ou não as alterações realizadas.
+</p><p>É importante notar que <b>não é necessário alterar/ativar as seguintes opções</b>:
+</p>
+<ul><li> Cancelamento de eco automático;
+</li><li> Supressão de DTMFs automática;
+</li><li> Controle de ganho (AGC) automático.
+</li></ul>
+<p>Estas opções <b>são controladas pelo Endpoint</b>, e devem estar <b>desabilitadas</b> no 'k3lconfig'.
+<br />
+</p>
+<a name="Inicializa.C3.A7.C3.A3o_autom.C3.A1tica_dos_servi.C3.A7os_e_m.C3.B3dulos_de_kernel" id="Inicializa.C3.A7.C3.A3o_autom.C3.A1tica_dos_servi.C3.A7os_e_m.C3.B3dulos_de_kernel"></a><h2> <span class="mw-headline">Inicialização automática dos serviços e módulos de <i>kernel</i> </span></h2>
+<p>Se a carga dos módulos de <i>kernel</i> ou a inicialização dos serviços da Khomp não for realizada automaticamente na inicialização do sistema, é possível realizar esta instalação manualmente, criando um <i>link</i> para os <i>scripts</i> <b>/etc/init.d/khompdrv</b> e <b>/etc/init.d/kserver</b> no diretório de inicialização do sistema.
+</p><p>Na caso da distribuição <b>Debian</b>, o <i>script</i> de carga dos módulos de <i>kernel</i> seria <i>linkado</i> dentro do diretório <i>/etc/rcS.d/</i>, enquanto o <i>script</i> de inicialização dos serviços seria <i>linkado</i> dentro dos diretórios <i>/etc/rc2.d</i>, <i>/etc/rc3.d</i>, <i>/etc/rc4.d</i>, <i>/etc/rc5.d</i>, da seguinte forma:
+</p><p><!-- NEED 6 -->
+</p>
+<pre># ln -s /etc/init.d/khompdrv  /etc/rcS.d/S19khompdrv
+# ln -s /etc/init.d/kserver   /etc/rc2.d/S20kserver
+# ln -s /etc/init.d/kserver   /etc/rc3.d/S20kserver
+# ln -s /etc/init.d/kserver   /etc/rc4.d/S20kserver
+# ln -s /etc/init.d/kserver   /etc/rc5.d/S20kserver
+</pre>
+<p>É interessante verificar as normas da sua distribuição para inicializar os serviços de acordo com o que é esperado pela inicialização da mesma.
+<br />
+</p>
+<a name="Ap.C3.AAndice" id="Ap.C3.AAndice"></a><h1> <span class="mw-headline"> Apêndice </span></h1>
+<p>Nesta seção, encontram-se informações úteis sobre o Endpoint e componentes relacionados.
+</p>
+<a name="Disposi.C3.A7.C3.A3o_dos_arquivos" id="Disposi.C3.A7.C3.A3o_dos_arquivos"></a><h2> <span class="mw-headline"> Disposição dos arquivos </span></h2>
+<p>Os diretórios criados/modificados nesta instalação são:
+<!-- NEED 20 -->
+</p>
+<pre>/etc/init.d/                -- Scripts de inicialização;
+
+/etc/khomp/                 -- Arquivos de firmware e configurações;
+
+/usr/local/freeswitch/conf/ -- Configurações do FreeSWITCH e Endpoint;
+
+/usr/doc/khomp/             -- Documentação das placas, do mod_khomp e dos utilitários;
+
+/usr/sbin/                  -- Utilitários e servidor de processos;
+
+/usr/lib/                   -- Bibliotecas compartilhadas da K3L;
+
+/usr/local/freeswitch/mod/  -- Módulo 'mod_khomp.so';
+ 
+/var/log/khomp2.1/          -- Diretório de logs da K3L e Endpoint
+</pre>
+<p><br />
+O <i>script</i> <b>/etc/init.d/khompdrv</b> é responsável por carregar os módulos <i>kpci9030.ko</i> e <i>kpex8311.ko</i> no <i>kernel</i>, que deve ser realizada automaticamente na inicialização do sistema. Em caso de problemas, verifique a seção <a href="#Solu.C3.A7.C3.A3o_de_problemas" title="">Solução de problemas</a>.
+<br />
+</p><p><br />
+Para mais detalhes: <a href="http://www.khomp.com.br" class="external free" title="http://www.khomp.com.br" rel="nofollow">http://www.khomp.com.br</a>
+</p><p><br />
+</p></body></html>

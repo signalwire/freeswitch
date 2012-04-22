@@ -1,0 +1,54 @@
+// part of Symbian build files for sofia-sip package
+//
+// Copyright (C) 2005,2006,2007 Nokia Corporation
+// Contact: Pekka Pessi <pekka.pessi@nokia.com>
+// Licensed under LGPL. See file COPYING.
+
+// General properties
+TARGET          libsofia-sip-ua-glib.dll
+TARGETTYPE      dll
+CAPABILITY      All -Tcb //NetworkServices
+UID             0x1000008D 0xA000017F
+VENDORID        0
+OPTION CW       -dialect c99 -inline on -warn nounusedarg,nounusedvar
+//CAPABILITY      NetworkServices
+
+//EPOCHEAPSIZE 4 4194304
+
+// Allow global writeable static data
+EPOCALLOWDLLDATA
+
+MACRO           SYMBIAN
+MACRO           IN_LIBSOFIA_SIP_UA
+MACRO           IN_LIBSOFIA_SRES
+
+SOURCEPATH      ..\..\libsofia-sip-ua-glib\su-glib
+
+SOURCE          su_source.c
+
+USERINCLUDE		..
+USERINCLUDE		..\..\libsofia-sip-ua\su
+USERINCLUDE		..\..\libsofia-sip-ua-glib\su-glib
+
+SYSTEMINCLUDE   \epoc32\include
+SYSTEMINCLUDE   \epoc32\include\osextensions
+SYSTEMINCLUDE   \epoc32\include\stdapis
+SYSTEMINCLUDE   \epoc32\include\stdapis\openssl
+SYSTEMINCLUDE   \epoc32\include\stdapis\glib-2.0
+
+// Library dependencies
+
+LIBRARY         commdb.lib
+STATICLIBRARY   libcrt0.lib
+LIBRARY         libc.lib
+LIBRARY         libm.lib
+LIBRARY         libpthread.lib
+LIBRARY         libcrypto.lib
+LIBRARY         libssl.lib
+LIBRARY         euser.lib
+LIBRARY         insock.lib
+LIBRARY         esock.lib
+LIBRARY         libglib.lib
+LIBRARY         libgthread.lib
+LIBRARY         libgobject.lib
+LIBRARY         libsofia-sip-ua.lib

@@ -1,0 +1,13 @@
+#include <appinfo.rh>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0x1F001AF1
+
+RESOURCE APP_REGISTRATION_INFO
+  {
+  app_file="torture_su_port";
+
+  embeddability=KAppNotEmbeddable;
+  newfile=KAppDoesNotSupportNewFile;
+  }
+

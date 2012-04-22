@@ -1,0 +1,19 @@
+/* -*- C -*- */
+
+/**@MODULEPAGE "bnf" - String Parser Module
+ *
+ * @section bnf_meta Module Meta Information
+ *
+ * The Sofia @b bnf module contains macros and functions for parsing
+ * text-based formats, for example, for SIP. The interface is described in
+ * <sofia-sip/bnf.h>.
+ *
+ * The interface used for validating hostnames and IP addresses is in
+ * <sofia-sip/hostdomain.h>.
+ *
+ * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @STATUS @SofiaSIP Core library
+ *
+ * @LICENSE LGPL
+ */

@@ -1,0 +1,7 @@
+<include>
+  <extension name="sipphone.com">
+    <condition field="destination_number" expression="^((1222.*)$|^(1747.*))$">
+      <action application="bridge" data="sofia/gateway/proxy01.sipphone.com/$1"/>
+    </condition>
+  </extension>
+</include>

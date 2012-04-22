@@ -1,0 +1,35 @@
+Source: g722_1
+Section: libs
+Priority: optional
+Maintainer: Debian VoIP Team <pkg-voip-maintainers@lists.alioth.debian.org>
+Uploaders: Jose Carlos Garcia Sogo <jsogo@debian.org>, Kilian Krause <kilian@debian.org>, Santiago Garcia Mantinan <manty@debian.org>, Mark Purcell <msp@debian.org>, Tzafrir Cohen <tzafrir.cohen@xorcom.com>, Santiago Ruano Rincón <santiago@debian.org>
+Build-Depends: debhelper (>= 4.0.0), dpatch, doxygen, autotools-dev
+Standards-Version: 3.7.2
+XS-Vcs-Svn: svn://svn.debian.org/pkg-voip/
+XS-Vcs-Browser: http://svn.debian.org/wsvn/pkg-voip/
+
+Package: libg722_1
+Architecture: any
+Depends: ${shlibs:Depends}
+Conflicts: libg722_10, libg722_11, libg722_12
+Description: Telephony signal processing library
+ This package contains the g722_1 low bit rate speech codec.
+ .
+ This package contains the shared library.
+
+Package: libg722_1-dev
+Section: libdevel
+Architecture: any
+Depends: libg722_13 (= ${Source-Version})
+Description: Telephony signal processing library
+ This package contains the g722_1 low bit rate speech codec.
+ .
+ This package contains the static library and development headers.
+ .
+ Homepage: http://www.soft-switch.org/
+
+Package: libg722_1-doc
+Section: doc
+Architecture: all
+Description: Documentation for the g722_1 signal processing library
+ This package contains the g722_1 low bit rate speech codec.

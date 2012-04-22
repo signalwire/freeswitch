@@ -1,0 +1,54 @@
+fix stale calls then fax send/recv in some circumstance 
+remove SWITCH_RTP_FLAG_AUTO_CNG - works incorrectly.
+moves the switch_rtp_request_port() call from the contructor to FSH323Connection::CreateRealTimeLogicalChannel() - fix 
+    rtp port leak. tnx to Peter Olsson.
+fix log printing
+fix small interoperability issues if remote endpoint send progress twice
+make sure dtmfinband gets initialized
+make gk-identifier and gk-interface settings optional (documentation sayed that about gk-identifier already)
+fix race condition on destroying signaling thread in h323 library
+Adds an extra switch_rtp_destroy or switch_rtp_release_port when a session ends 
+    - to make sure the port is returned to FS. thx to Peter Olsson.
+fix issues with Progress message type if pre_answer enabled
+fix crashes on FSH323Connection calls in on_hangup routine in different threads.
+move PTrace level set to FSH323EndPoint::Initialise
+partially apply patch from from Peter Olsson, Remove UnLock() when TryLock() failed and DEBUG_RTP_PACKETS directive.
+apply changes from mod_h323-patch.diff by Peter Olsson.
+some t.38 and lockinng improvements.
+replace ptrace with switch_log_printf.
+initial t.38 support.
+remake logical channel opening.
+add missing param name in example config.
+add dtmfinband conf parameter.
+add endpoint-name conf parameter represents endpoint name.
+fix GK registration retrying in case of registration reject.
+fix double DTMF hadling for examle in case dtmf-relay h245-signal h245-alphanumeric on cisco dial-peer.
+fix crash on module unloading.
+add PI handling in Call Proceeding.
+add PI handling in alerting.
+fix slow start handling
+move faststart to callproceeding due to some broken hardware not anderstand 
+    correclty faststart in progress.
+fix rtp timer initialisation.
+implement alerting-indication option and channel variable.
+implement progress-indication option and channel variable.
+fix short DTMF warnings.
+remove SWITCH_RTP_FLAG_AUTOADJ because its not work correctly and not do anything reliable in our cases.
+fix faststart in progress handling
+fixxxxes
+remove trys to implement non standard codecs.
+implement jitter-size value option.
+implement gk register retry timer.
+implement h245insetup enable/disable option.
+implement h245tunneling enable/disable option.
+implement faststart enable/disable option.
+fix release handling from h323 leg.
+fix misstype in codec conversion.
+fix rtp issue causes choppy sound.
+fix progress ind handling on outbound calls.
+fix crash on log line, btw not understand why.
+implement dtmf transfer.
+fix codec name conversion a bit.
+fix crash on inbound fast start connection.
+
+initial release.

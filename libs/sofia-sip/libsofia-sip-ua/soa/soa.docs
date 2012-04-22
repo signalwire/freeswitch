@@ -1,0 +1,887 @@
+/**@MODULEPAGE "soa" - SDP Offer/Answer Engine Module
+
+@section soa_meta Module Information
+
+The Sofia SIP @b soa module consists of an asynchronous SDP Offer/Answer engine
+library. The interface to library is defined in <sofia-sip/soa.h>.
+
+@CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@STATUS @SofiaSIP Core library
+
+@LICENSE LGPL
+
+@section soa_oveview Using soa engine
+
+SIP uses SDP and a negotiation procedure known as "SDP
+Offer-Answer Model" to establish the multimedia sessions. The
+SDP Offer-Answer negotiation is specified in
+<a href="http://ietf.org/rfc/rfc3264.txt">RFC 3264</a>.
+
+The soa engine is implemented in object-oriented manner. The default soa
+object just implements the basic SDP negotiation and basic SIP call model. A
+more complex soa object implementation can manipulate the call model and
+initiate actions on behalf of application.
+
+@section soa_model SDP Offer/Answer Model
+
+The basic capabilities provided by Offer/Answer mechanism include
+-# generating SDP offer (section 5)
+-# processing SDP offer, generating SDP answer (section 6)
+-# processing SDP answer (section 7)
+-# modifying session (section 8)
+-# indicating capabilities (section 9)
+
+The offerer indicates its capabilities in the offer:
+- the media streams it wants to establish
+- transport addresses it uses to receive by media streams
+  (IP addresses, port numbers, transport protocols)
+- the codecs used by particular streams
+- codec parameters (for instance, codec profile used by H.263)
+
+The answerer indicates which parts of the offer are acceptable to
+it in the answer:
+- the media streams it agrees to establish
+- transport addresses answerer uses to receive by media streams
+- the codecs and codec parameters used by particular streams
+
+Note that the capabilites indicate what the party generating the
+SDP is prepared to receive. They can send anything the other end
+accepts.
+
+There may be other things, like encryption keys included in the
+session description.
+
+The advanced capabilities are required by more complicated negotiation
+involving two or more offer-answer rounds. For instance, an extension known
+as session <i>preconditions</i> is defined
+<a href="http://ietf.org/rfc/rfc3312.txt">RFC 3312</a>.
+Another example of two-phase negotiation is presented in RFC
+3264 section 10.2, showing how a single codec can be selected.
+
+@section soa_motivation SOA Design
+
+Why to have simple interface? Is it not simple enough to include SDP offer
+with your INVITE, and act on SDP answer in 200 OK?
+
+Our design goal is to allow application to follow the simple call
+model, regardless of the underlying complications - early
+sessions, preconditions, session timers, 3rd party call control.
+In other words, we would like a have a simple "cooked" interface
+toward naive applications even if the underlying call follows the
+byzantine call model chosen by 3GPP.
+
+@section soa_with_sip Using SDP Offer/Answer with SIP
+
+Using SDP Offer/Answer with SIP is specified in
+<a href="http://ietf.org/rfc/rfc3261.txt">RFC 3261</a>,
+<a href="http://ietf.org/rfc/rfc3262.txt">RFC 3262 (100rel and PRACK)</a>, and
+<a href="http://ietf.org/rfc/rfc3211.txt">RFC 3311 (UPDATE)</a>.
+
+There is a @ref soa_sdp_oa_use_cases "separate page listing scenarios".
+
+The rules for sending offers:
+- offer may be sent in INVITE
+- if there was no offer in INVITE, offer MUST be sent in first
+  reliable response to INVITE
+- offer may be sent in 100rel (reliable 1XX series response)
+- offer may be sent in PRACK
+- offer may be sent in UPDATE
+
+PRACK may only be sent when an unacknowledged 100rel (reliable 1XX
+series response) is received. UPDATE may be sent during early or
+established dialog.
+
+Only one INVITE request may be pending within a dialog. Only one
+non-INVITE request may be pending within a dialog (in one
+direction): it is not possible to send UPDATE if no final response
+has been received to PRACK.
+
+If there is already an offer/answer exchange in progress, no offer
+MUST be sent. Offer/answer exchange is in progress if offer has
+been sent but no answer has been received, or if an offer has been
+received but no answer has been generated.
+
+The rules for sending answer:
+- when offer is received with INVITE
+  - answer MAY be sent with next end-to-end 1XX or 2XX response
+  - answer MUST be sent in a reliable response (100rel or 2XX)
+- when offer is received in 2XX response
+  - answer MUST be sent in ACK
+- when offer is received with 100rel response
+  - answer MUST be sent with PRACK
+- when offer is received with PRACK or UPDATE
+  - answer MUST be sent with 2XX response to PRACK or UPDATE
+
+Offer or answer in PRACK MUST be processed even if we have already
+sent 2XX to INVITE.
+
+The rules for receiving answer:
+- if offer was sent in INVITE, first session description in any
+  non-error response to INVITE is treated as the answer
+- if offer was sent in 2XX response, session description in
+  ACK is answer
+- if offer was sent in 100rel response, session description in
+  PRACK is answer
+- if offer was sent in PRACK or UPDATE, session description in
+  2XX response is answer
+
+Rules for situations when endpoint MUST ignore the SDP:
+- If offer was sent in INVITE, only the first session description in
+  any non-error (1XX or 2XX) response to INVITE is processed, rest
+  are ignored
+- If no offer was sent in 2XX response to INVITE, SDP in ACK is ignored
+- If no offer was sent in PRACK, SDP in response to it is ignored
+- If no offer was sent in UPDATE, SDP in response to it is ignored
+
+The re-INVITEs and UPDATEs are sent for two different purposes:
+updating or modifying SIP state, or updating or modifying the
+associated session. Session timer extension (not yet an rfc) is an
+example of the first. Putting a call on hold, or adding video to
+audio-only call is an example of the second. So, upon receiving
+re-INVITE, there might be quite different things happening. The
+application can just return a 200 OK with previous SDP, sometimes
+it must indicate call being on hold and sometimes ask user for
+permission (for adding video).
+
+Rules for resolving glare (both endpoints trying to send offer at the same
+time):
+- if a offer is received while UAS has generated an offer,
+  it must be rejected (with SIP 491 response).
+
+@section soa_use_cases SOA and SDP Offer/Answer Scenarios
+
+Note that due to limitations in space
+- soa_set_params() is referred as @c set_params
+- soa_set_remote_sdp() is referred as @c set_remote
+- soa_generate_offer() followed by soa_get_session_sdp()
+  is referred as @c gen_offer
+- soa_generate_answer() followed by soa_get_session_sdp()
+  is referred as @c gen_answer
+- soa_process_answer() is referred as @c proc_answer
+
+@subsection soa_uc_basic_out Basic Call Out
+
+This is the "basic" outbound call model.
+
+<pre>
+       APPL	       NUA	       SOA		      REMOTE
+	|		|		|			|
+ 0      |		|		|			|
+ 1	|----INVITE---->|		|			|
+ 2	|		|--set_params-->|			|
+ 3      |		|---gen_offer-->|			|
+ 4	|		|		|			|
+ 5	|		|-------------------INVITE(sdp offer)-->|
+ 6      |		|		|			|
+ 7	|		|		|			|
+ 8      |		|		|     			|
+ 9      |		|< - - - - - - - - - - 180 Ringing - - -|
+10      |< - - 180 - - -|		|			|
+11      |		|		|			|
+12      |		|<-------------------200(sdp answer)----|
+13	|		|--set_remote-->|			|
+14	|		|--proc_answer->|			|
+15	|<-----200------|		|			|
+16      |		|               | 			|
+17      |		|----activate-->|			|
+18	|<----active----|		|			|
+19	|		|-------------------------ACK---------->|
+20	|		|		|			|
+21	|		|		|			|
+22	|		|		|			|
+        |		|		|			|
+</pre>
+
+@subsection soa_uc_basic_in Basic Call In
+
+This is the "basic" inbound call model.
+
+<pre>
+       APPL	       NUA	       SOA		      REMOTE
+	|		|		|			|
+ 0      |		|		|			|
+ 1	|		|<------------------INVITE(sdp offer)---|
+ 2      |		|		|			|
+ 3	|		|--set_remote-->|			|
+ 4      |		|		|			|
+ 5	|<---INVITE-----|		|			|
+ 6      |		|		|			|
+ 7      |		|		|			|
+ 8	|- - -180- - - >|		|			|
+ 9	|		|- - - - - - - - - - 180 Ringing - - - >|
+10      |		|		|			|
+11      |		|		|			|
+12	|-----200------>|		|			|
+13	|		|--set_params-->|			|
+14      |		|		|			|
+15	|		|--gen_answer-->|			|
+16	|		|               |			|
+17	|<----active----|		|			|
+18	|		|----activate-->|			|
+19	|		|--------------------200 (sdp answer)-->|
+20	|		|		|			|
+21	|		|		|	 		|
+22	|		|<------------------------ACK-----------|
+23	|<-----ACK------|		|			|
+24	|		|		|			|
+	|		|		|			|
+</pre>
+
+@subsection soa_uc_basic_3p 3rd Party Call In
+
+The 3rd-party call model just reverses the O/A roles of callee and caller.
+
+<pre>
+ t     APPL	       NUA	       SOA		      REMOTE
+	|		|		|			|
+ 0      |		|		|			|
+ 1	|		|<----------------------INVITE----------|
+ 2	|    		|		|			|
+ 3      |<---INVITE-----|		|			|
+ 4	|		|		|			|
+ 5	|		|		|			|
+ 6      |    		|		|			|
+ 7	|----200 OK---->|   		|			|
+ 8      |		|--set_params-->|			|
+ 9      |		| 		|			|
+10      |		|--gen_offer--->|			|
+11	|		|		|			|
+12      |		|		|			|
+13      |		|----------------------200 (off) ------>|
+14	|		|		|			|
+15	|		|		|	 		|
+16	|     		|<---------------------ACK (ans)--------|
+17      |		|--set_remote-->|			|
+18	|		|--proc_answer->|			|
+19	|<----ACK-------|		|			|
+20	|<----active----|		|			|
+21	|		|----activate-->|			|
+22      |		|		|			|
+        |		|		|			|
+</pre>
+
+@subsection soa_uc_early_out Callout with Early Media
+
+It is possible to establish media session before call is completed. In this
+case, the 180 Ringing contains the SDP answer. A copy of SDP answer is
+included in the 200 OK response, too, because the 180 Ringing is not
+acknowledged and it may be lost.
+
+This is preferred to the basic call model above, as the endpoints has more
+time to establish the media session.
+
+<pre>
+ t     APPL	       NUA	       SOA		      REMOTE
+	|		|		|			|
+ 0      |		|		|			|
+ 1	|----INVITE---->|		|			|
+ 2      |		|--set_params-->|			|
+ 3	|		|               |			|
+ 4      |		|--gen_offer--->|			|
+ 5	|		|               |			|
+ 6      |		|		|			|
+ 7      |		|-------------------INVITE(sdp offer)-->|
+ 8	|		|		|			|
+ 9	|		|		|			|
+10      |		|		|			|
+11      |		|<-------------------180(sdp answer)----|
+12      |		|--set_remote-->|			|
+13	|<-----180------|--proc_answer->|	    		|
+14	|   		|		|			|
+15      |		|		|			|
+16	|		|		|			|
+17	|		|<-----------------200(copy of answer)--|
+18	|	(copy is ignored)	|			|
+19	|		|		|			|
+20	|<-----200------|		|			|
+21	|		|----activate-->|			|
+22	|<----active----|		|			|
+23	|		|-------------------------ACK---------->|
+24	|		|		|			|
+	|		|		|			|
+</pre>
+
+@subsection soa_uc_early_in Call In Establishing Early Media
+
+The mirror of the previous scenario:
+
+<pre>
+ t     APPL	       NUA	       SOA		      REMOTE
+	|		|		|			|
+ 0      |		|		|			|
+ 1	|		|<------------------INVITE(sdp offer)---|
+ 2      |		|--set_remote-->|			|
+ 3	|<---INVITE-----|		|			|
+ 4      |		|		|			|
+ 5      |   		|		|			|
+ 6	|---180 Ring--->|   		|			|
+ 7      |		|--set_params-->|			|
+ 8      |		|--gen_offer--->| 			|
+ 9      |		|	     (Note 1)			|
+10      |		|		|			|
+11      |		|-------------------180 (sdp answer)--->|
+12	|		|		|			|
+13	|		|		|			|
+14	|		|		|			|
+15	|----200 OK---->|		|			|
+16	|		|--set_params-->|			|
+17	|		|		|			|
+18	|		|		|			|
+19	|		|-----------------200 (copy of answer)->|
+20	|		|----activate-->|			|
+21	|<----active----|		|			|
+22	|		|<------------------------ACK-----------|
+23	|<-----ACK------|		|			|
+24      |		|		|			|
+	|		|		|			|
+</pre>
+<b>Note 1:</b> the user expectation (set by ordinary telephone) here is
+that callee sends a ringing tone towards caller and discards any media sent
+by caller until the call is accepted (200 OK is sent towards caller).
+
+@subsection soa_uc_100rel_out Call Out with PRACK
+
+Here is second alternative establishing media session before call is
+completed. In this case, the 180 Ringing contains the SDP answer. The 180
+Ringing is now sent reliably. In other words, it is acknowledged by a PRACK
+request.
+
+<pre>
+ t     APPL	       NUA	       SOA		      REMOTE
+	|		|		|			|
+ 0      |		|		|			|
+ 1	|----INVITE---->|		|			|
+ 2      |		|--set_params-->|			|
+ 3	|		|               |			|
+ 4      |		|--gen_offer--->|			|
+ 5	|		|		|			|
+ 6      |		|		|			|
+ 7      |		|-------------------INVITE(sdp offer)-->|
+ 8	|		|		|			|
+ 9	|		|		|			|
+10      |		|<-------------------183(sdp answer)----|
+11      |		|--set_remote-->|			|
+12      |		|--proc_answer->|			|
+13	|<-----183------|		|	    		|
+14	|   		|		|			|
+15      |		|-----------------------PRACK---------->|
+16	|		|<--------------------200/PRACK---------|
+17	|<--200/PRACK---|		|			|
+18	|		|		|			|
+19	|		|		|			|
+20	|		|<--------------------180 Ringing-------|
+21	|<-----180------|		|			|
+22	|		|-----------------------PRACK---------->|
+23	|		|<--------------------200/PRACK---------|
+24	|<--200/PRACK---|		|			|
+25	|		|		|			|
+26	|		|		|			|
+27	|		|<----------------------200 OK----------|
+28      |<--200/INVITE--|		|			|
+29	|		|----activate-->|			|
+30	|<----active----|		|			|
+31	|		|-----------------------ACK------------>|
+32	|		|		|			|
+	|		|		|			|
+</pre>
+
+@subsection soa_uc_100rel_in Call In with PRACK
+
+The mirror of the previous scenario:
+
+<pre>
+ t     APPL	       NUA	       SOA		      REMOTE
+	|		|		|			|
+ 0      |		|		|			|
+ 1	|		|<------------------INVITE(sdp offer)---|
+ 2      |		|--set_remote-->|			|
+ 3	|<---INVITE-----|		|			|
+ 4      |		|		|			|
+ 5      |   		|		|			|
+ 6	|-183 Progress->|   		|			|
+ 7      |		|--set_params-->|			|
+ 8      |		|--gen_answer-->|			|
+ 9	|		|		|			|
+10      |		|-------------------183 (sdp answer)--->|
+11      |		|		|			|
+12      |		|<----------------------PRACK-----------|
+13      |<----PRACK-----|		|			|
+14	|		|---------------------200/PRACK-------->|
+15	|		|		|			|
+16      |--180 Ringing->|   		|			|
+17      |		|---------------------180 Ringing------>|
+18	|		|		|			|
+19      |		|<----------------------PRACK-----------|
+20      |<----PRACK-----|		|			|
+21	|		|---------------------200/PRACK-------->|
+22      |		|		|			|
+23      |		|		|			|
+24      |		|		|			|
+25      |----200 OK---->|		|			|
+26      |		|----activate-->|			|
+27      |<----active----|		|			|
+28      |		|---------------------200/INVITE------->|
+29      |		|		|			|
+30      |		|<-----------------------ACK------------|
+31      |<-----ACK------|		|			|
+32      |		|		|			|
+        |		|		|			|
+</pre>
+
+<b>Note 1:</b> the user expectation (set by ordinary telephone) here is that
+callee sends a ringing tone towards caller and discards any media sent by
+callee until the call is accepted at t=26 (200 OK is sent towards caller).
+
+The application starts to alert user at t=13 when it knows that the
+media session has been successfully established.
+
+*/
+
+/**
+@page soa_sdp_oa_use_cases Use Cases for SIP and SDP Offer/Answer
+
+This page contains a list of use cases or call scenarios for SIP and SDP
+Offer/Answer.
+
+There are a few call scenarios that we expect to see when dealing with more
+telephone-like side of SIP:
+- calling to existing PSTN networks (early session)
+- doing resource reservations
+- calling to 3G IMS
+- call hunting
+- having external party setting up your call, etc.
+
+@section soa_use_case_1 Case #1: Basic Call
+
+This is the basic SIP call model with the most simple offer-answer exchange.
+
+<pre>
+	A		        B
+	|			|
+	|----INVITE (offer)---->|
+	|			|
+	|			|
+	|< - - 180 Ringing - - -|
+	|			|
+	|			|
+	|<----200 (answer)------|
+	|----------ACK--------->|
+	|			|
+	|			|
+</pre>
+
+@section soa_use_case_2 Case #2: Early Media
+
+Another case, slightly more complex. The SDP answer is sent with
+180 Ringing in order to establish an "early session". B might
+not be a SIP phone, but a gateway to PSTN, for instance. Using this
+"early session" B can play tones like "burr-burr" or "the
+subscriber you tried to reach is not in the coverage...":
+
+<pre>
+	A		        B
+	|			|
+	|----INVITE (offer)---->|
+	|			|
+	|			|
+	|<----180 (answer)------|
+	|			|
+	|			|
+	|<----200 (answer')-----|
+	|----------ACK--------->|
+	|			|
+	|			|
+</pre>
+
+After receiving answer in 180 Ringing, A simply ignores SDP in
+subsequent responses.
+
+Nothing special here, right? But SIP is not so simple,
+unfortunately. There are hairy cases because of "early sessions",
+"forking", "preconditions" and other reasons.
+
+Now lets go through some hairy cases.
+
+@section soa_use_case_3 Case #3: Early Dialog, Early Media
+
+This case is a call using 100rel, early dialog and early media. It
+is used when the session should be established before call alerts.
+
+<pre>
+	A		        B
+	|			|
+	|----INVITE (offer)---->|
+	|			|
+	|<----183 (answer)------|
+	|--------PRACK--------->|
+	|<-----200/PRACK------->|
+	|			|
+	|<---------180----------|
+	|--------PRACK--------->|
+	|<-----200/PRACK------->|
+	|			|
+	|			|
+	|			|
+	|<---------200----------|
+	|----------ACK--------->|
+	|			|
+	|			|
+</pre>
+
+@section soa_use_case_4 Case #4: UPDATE with Offer
+
+This is a call model with two rounds of offer/answer and 100rel.
+It can be used, for instance, when the endpoints have to make sure
+that there are enough network capacity for the call to succeed.
+They can establish a new radio bearer, for instance, before
+progressing with the call. The initial offer would contain SDP
+attribute "inactive", the second "sendrev":
+
+<pre>
+	A		        B
+	|			|
+	|----INVITE (offer)---->|
+	|			|
+	|			|
+	|<----183 (answer)------|
+	|--------PRACK--------->|
+	|<-----200/PRACK--------|
+	|			|
+	|			|
+	|----UPDATE (offer2)--->|
+	|<-200/UPDATE (answer2)-|
+	|			|
+	|<---------180----------|
+	|--------PRACK--------->|
+	|<-----200/PRACK------->|
+	|			|
+	|			|
+	|<---------200----------|
+	|----------ACK--------->|
+	|			|
+	|			|
+</pre>
+
+
+@section soa_use_case_5 Case #5: 2nd Offer in PRACK
+
+Alternative 1 to above, two rounds of offer/answer and 100rel, no
+UPDATE. It can used, for instance, when caller wants to make sure
+there is only one audio or video codec that is used during the
+call. The initial offer would contain SDP attribute "inactive";
+the second "sendrev":
+
+<pre>
+	A		        B
+	|			|
+	|----INVITE (offer)---->|
+	|			|
+	|<----183 (answer)------|
+	|-----PRACK(offer2)---->|
+	|<--200/PRACK(answer2)--|
+	|			|
+	|			|
+	|<---------180----------|
+	|--------PRACK--------->|
+	|<-----200/PRACK------->|
+	|			|
+	|			|
+	|<---------200----------|
+	|----------ACK--------->|
+	|			|
+	|			|
+</pre>
+
+
+@section soa_use_case_6 Case #6: Callee Making 2nd Offer
+
+Alternative 2 to above: two rounds of offer/answer and 100rel, but
+now it is B who wants to do two rounds and initiates second
+Offer-Answer exchange:
+
+<pre>
+	A		        B
+	|			|
+	|----INVITE (offer)---->|
+	|			|
+	|<----183 (answer)------|
+	|--------PRACK--------->|
+	|<-----200/PRACK------->|
+	|			|
+	|			|
+	|<---UPDATE (offer2)----|
+	|-200/UPDATE (answer2)->|
+	|			|
+	|<---------180----------|
+	|--------PRACK--------->|
+	|<-----200/PRACK------->|
+	|			|
+	|			|
+	|<---------200----------|
+	|----------ACK--------->|
+	|			|
+	|			|
+</pre>
+
+
+@section soa_use_case_7 Case #7: 3GPP Call Model
+
+Here is a third alternative, know as "3GPP call model", where
+there is not 2 but 3 offer-answer rounds, allowing A and B to do
+precise resource reservations after they have agreed on media,
+codecs and transport addresses used during the call:
+
+<pre>
+        	A		        B
+        	|			|
+        	|----INVITE (offer)---->|
+        	|			|
+        	|			|
+        	|<----183 (answer)------|
+        	|-----PRACK(offer2)---->|
+        	|<--200/PRACK(answer2)--|
+        	|			|
+        << resource reservations are done now >>
+        	|			|
+        	|----UPDATE (offer3)--->|
+        	|<-200/UPDATE (answer3)-|
+        	|			|
+        	|<---------180----------|
+        	|--------PRACK--------->|
+        	|<-----200/PRACK------->|
+        	|			|
+        	|			|
+        	|<---------200----------|
+        	|----------ACK--------->|
+        	|			|
+        	|			|
+</pre>
+
+
+@section soa_use_case_8 Case #8: Forking
+
+Now, another complication. Here B has two terminals, let say,
+fixed (B1) and mobile (B2) phone, both alert when B receives a
+call using procedure known as forking:
+
+<pre>
+	A		   B's proxy		B1		B2
+	|			|		|		|
+	|----INVITE (offer)---->|		|		|
+	|			|-INVITE (off)->|		|
+	|			|-----------INVITE (off)------->|
+	|			|		|		|
+	|			|<--180 (ans1)--|		|
+	|<------180 (ans1)------|		|		|
+	|			|		|		|
+	|			|<----------180 (ans2)----------|
+	|<------180 (ans2)------|		|		|
+	|			|		|		|
+	|			|		|		|
+	|			|<----------200 (ans2')---------|
+	|<------200 (ans2')-----|		|		|
+	|			|----CANCEL---->|		|
+	|			|<--200/CANCEL--|		|
+	|			|<-----487------|		|
+	|			|		|		|
+	|----------ACK----------------------------------------->|
+	|			|		|		|
+	|			|		|		|
+</pre>
+
+Here we have two calls initially established, but the call to B1
+along with "early session" is should be dropped when B2 picks up
+the call (and 200 OK is returned).
+
+@section soa_use_case_9 Case #9: 3rd Party Call Control
+
+Now something different: 3rd party call model, where "C"
+establishes the call:
+
+<pre>
+	A		        C		        B
+	|			|			|
+	|<-------INVITE---------|			|
+	|			|			|
+	|			|			|
+	|------200 (offer)----->|  	  		|
+	|			|----INVITE (offer)---->|
+	|			|			|
+	|			|			|
+	|			|<-----200 (answer)-----|
+	|<-----ACK (answer)-----|			|
+	|			|     			|
+	|			|----------ACK--------->|
+	|			|			|
+</pre>
+
+@section soa_use_case_10 Case #10: Upgrade Session with Re-INVITE
+
+The session is upgraded: a new media is added to the session.
+
+<pre>
+	A		        B
+	|			|
+	|----INVITE (offer1)--->|
+	|			|
+	|			|
+	|< - - 180 Ringing - - -|
+	|			|
+	|			|
+	|<----200 (answer2)-----|
+	|----------ACK--------->|
+	|			|
+	|			|
+	|			|
+	|			|
+	|----INVITE (offer2)--->|
+	|			|
+	|<----200 (answer2)-----|
+	|----------ACK--------->|
+	|			|
+	|			|
+</pre>
+
+@section soa_use_case_10 Case #10: Upgrade Session with Re-INVITE
+
+The session upgraded is rejected.
+
+<pre>
+	A		        B
+	|			|
+	|----INVITE (offer1)--->|
+	|			|
+	|			|
+	|< - - 180 Ringing - - -|
+	|			|
+	|			|
+	|<----200 (answer2)-----|
+	|----------ACK--------->|
+	|			|
+	|			|
+	|			|
+	|			|
+	|----INVITE (offer2)--->|
+	|			|
+	|<---------488----------|
+	|----------ACK--------->|
+	|			|
+	|			|
+</pre>
+
+
+*/
+
+/** @typedef struct soa_session soa_session_t;
+
+@brief "soa" session object.
+
+The @soa session object is responsible for
+@ref soa_with_sip "SDP offer/answer negotiation"
+defined in @RFC3264. The session object is used to
+store the SDP template from user, remote SDP received from the network and
+the negotiation result, local SDP.
+
+@par Functions used to create, copy and destroy "soa" session objects:
+@code
+soa_session_t *soa_create(char const *name, su_root_t *, soa_magic_t *);
+
+soa_session_t *soa_clone(soa_session_t *, su_root_t *, soa_magic_t *);
+
+void soa_destroy(soa_session_t *);
+@endcode
+
+@par Functions used to set and get parameters for "soa" session objects:
+@code
+int soa_set_params(soa_session_t *ss,
+                   tag_type_t tag, tag_value_t value, ...);
+int soa_get_params(soa_session_t const *ss,
+                   tag_type_t tag, tag_value_t value, ...);
+
+tagi_t *soa_get_paramlist(soa_session_t const *ss,
+                          tag_type_t tag, tag_value_t value, ...);
+@endcode
+
+@par Functions used to obtain status information from "soa" session objects:
+@code
+int soa_error_as_sip_response(soa_session_t *soa,
+                              char const **return_phrase);
+
+char const *soa_error_as_sip_reason(soa_session_t *soa);
+
+int soa_get_warning(soa_session_t *ss, char const **return_phrase);
+@endcode
+
+
+@par Functions used to store and retrieve SDP descriptions:
+@code
+int soa_set_capability_sdp(soa_session_t *ss,
+                           struct sdp_session_s const *sdp,
+                           char const *str, issize_t len);
+
+int soa_get_capability_sdp(soa_session_t const *ss,
+                           struct sdp_session_s const **return_sdp,
+                           char const **return_sdp_str,
+                           isize_t *return_len);
+
+int soa_set_remote_sdp(soa_session_t *ss,
+                       struct sdp_session_s const *sdp,
+                       char const *str, issize_t len);
+
+int soa_get_remote_sdp(soa_session_t const *ss,
+                       struct sdp_session_s const **return_sdp,
+                       char const **return_sdp_str,
+                       isize_t *return_len);
+
+int soa_clear_remote_sdp(soa_session_t *ss);
+
+int soa_get_remote_version(soa_session_t const *ss);
+
+int soa_set_user_sdp(soa_session_t *ss,
+                     struct sdp_session_s const *sdp,
+                     char const *str, issize_t len);
+
+int soa_get_user_sdp(soa_session_t const *ss,
+                     struct sdp_session_s const **return_sdp,
+                     char const **return_sdp_str,
+                     isize_t *return_len);
+
+int soa_get_user_version(soa_session_t const *ss);
+
+int soa_get_local_sdp(soa_session_t const *ss,
+                      struct sdp_session_s const **return_sdp,
+                      char const **return_sdp_str,
+                      isize_t *return_len);
+@endcode
+
+
+@par Functions for executing Offer/Answer negotiation steps:
+@code
+int soa_init_offer_answer(soa_session_t *ss);
+int soa_generate_offer(soa_session_t *, int always, soa_callback_f *);
+int soa_generate_answer(soa_session_t *, soa_callback_f *);
+int soa_process_answer(soa_session_t *, soa_callback_f *);
+int soa_process_reject(soa_session_t *, soa_callback_f *);
+int soa_is_complete(soa_session_t const *ss);
+@endcode
+
+@par Functions for signaling events of session signaling:
+@code
+int soa_activate(soa_session_t *, char const *option);
+int soa_deactivate(soa_session_t *, char const *option);
+void soa_terminate(soa_session_t *, char const *option);
+@endcode
+These functions are used to activate actions taken by @soa, for instance,
+a COMEDIA connection is established with soa_activate().
+
+@par Functions for Checking Activated Media:
+@code
+int soa_is_audio_active(soa_session_t const *ss);
+int soa_is_video_active(soa_session_t const *ss);
+
+int soa_is_remote_audio_active(soa_session_t const *ss);
+int soa_is_remote_video_active(soa_session_t const *ss);
+@endcode
+
+*/

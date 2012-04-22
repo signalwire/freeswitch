@@ -1,0 +1,3 @@
+#! /bin/sh
+# Test addrinfo with -n and echo port on 127.0.0.1
+./addrinfo -n echo 127.0.0.1

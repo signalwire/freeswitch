@@ -1,0 +1,34 @@
+v=0
+o=- 3250588766 0 IN IP4 77.75.1.10
+s=-
+c=IN IP4 77.75.1.10
+t=0 0
+m=audio 54424 RTP/AVP 18 99 101 102 103 15 104 4 105 106 107 108 125 109 100 8 0
+a=rtpmap:18 G729/8000
+a=fmtp:18 annexb=no
+a=rtpmap:99 G.729a/8000
+a=rtpmap:101 G.726-16/8000
+a=rtpmap:102 G.726-24/8000
+a=rtpmap:103 G.726-32/8000
+a=rtpmap:15 G728/8000
+a=rtpmap:104 G.723.1-H/8000
+a=rtpmap:4 G723/8000
+a=rtpmap:105 G.723.1-L/8000
+a=rtpmap:106 G.729b/8000
+a=rtpmap:107 G.723.1a-H/8000
+a=rtpmap:108 G.723.1a-L/8000
+a=rtpmap:125 G.nX64/8000
+a=rtpmap:109 AMR/8000
+a=rtpmap:100 X-NSE/8000
+a=fmtp:100 192-194,200-202
+a=rtpmap:8 PCMA/8000
+a=rtpmap:0 PCMU/8000
+a=maxptime:20
+a=maxptime:30
+a=ptime:20
+a=ptime:30
+a=X-cap: 1 audio RTP/AVP 100
+a=X-cap: 2 image udptl t38
+a=X-sqn:0
+a=X-cpar: a=rtpmap:100 X-NSE/8000
+a=X-cpar: a=fmtp:100 192-194,200-202

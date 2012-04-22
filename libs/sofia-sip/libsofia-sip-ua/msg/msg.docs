@@ -1,0 +1,506 @@
+/* -*- text -*- */
+
+/**@MODULEPAGE "msg" - Message Parser Module
+
+@section msg_meta Module Meta Information
+
+This module contains parser and functions for manipulating messages and
+headers for text-based protocols like SIP, HTTP or RTSP. It also
+provides parsing of MIME headers and MIME multipart messages common to
+these protocols.
+
+@CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@STATUS @SofiaSIP Core library
+
+@LICENSE LGPL
+
+@par Contributor(s):
+- Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@section msg_contents Contents of msg Module
+
+The msg module contains the public header files as follows:
+- <sofia-sip/msg.h>         base message interfaces
+- <sofia-sip/msg_types.h>   message and header struct definitions and typedefs
+- <sofia-sip/msg_protos.h>  prototypes of header-specific functions for generic headers
+- <sofia-sip/msg_header.h>  function prototypes and macros for manipulating message
+                            headers
+- <sofia-sip/msg_addr.h>    functions for accessing network addresses and I/O vectors
+                            associated with the message
+- <sofia-sip/msg_date.h>    types and functions for handling dates and times
+- <sofia-sip/msg_mime.h>    types, function prototypes and macros for MIME headers
+                            and @ref msg_multipart "multipart messages"
+- <sofia-sip/msg_mime_protos.h> prototypes of MIME-header-specific functions
+
+In addition to this interface, the @ref msg_parser "parser documentation"
+contains description of the functionality required when an existing parser
+is extended by a new header or a parser is created for a completely new
+protocol. It is possible to add new headers to the parser or extend the
+definition of existing ones. The header files used for constructing these
+parsers are as follows:
+- <sofia-sip/msg_parser.h> parsing functions, macros
+- <sofia-sip/msg_mclass.h> message factory object definition
+- <sofia-sip/msg_mclass_hash.h> hashing of header names
+
+@section msg_overview Parsers, Messages and Headers
+
+The Sofia @b msg module contains interface to the text-based parsers for
+RFC822-like message, the header and message objects. Currently, there
+are three parsers defined: SIP, HTTP, and MIME.
+
+The C structure corresponding to each header is defined either in a
+<sofia-sip/msg_types.h> or in a protocol-specific header file. These
+protocol-specific header files include <sofia-sip/sip.h>, <sofia-sip/http.h>, and
+<sofia-sip/msg_mime.h>. For each header, there is defined a @em header @em class
+structure, some standard functions, and tags for including them in tag
+lists.
+
+As a convention, all the identifiers for SIP headers start with prefix @c
+sip and all the macros with @c SIP. Same thing holds for HTTP, too: it
+uses prefix @c http. However, the MIME headers
+and the functions related to them are defined within the @b msg module and
+they use prefix @c msg. If a SIP or HTTP header uses a structure
+defined in <sofia-sip/msg_types.h>, there is a typedef suitable for the particular
+protocol, for example @b Accept header is defined multiple times:
+
+@code
+typedef struct msg_accept_s sip_accept_t;
+typedef struct msg_accept_s http_accept_t;
+@endcode
+
+For header @e X of protocol @e NS, there are types, functions, macros and
+header class as follows:
+
+ - @c ns_X_t is the structure used to store parsed header,
+ - @c ns_hclass_t @c ns_X_class[] contains the @em header @em class
+   for header X,
+ - @c NS_X_INIT() initializes a static instance of @c ns_X_t,
+ - @c ns_X_init() initializes a dynamic instance of @c ns_X_t,
+ - @c ns_is_X() tests if header object is instance of header X,
+ - @c ns_X_make() creates a header X object by decoding given string,
+ - @c ns_X_format() creates a header X object by decoding given
+   @c printf() list,
+ - @c ns_X_dup() duplicates (deeply copies) the header X,
+ - @c ns_X_copy() copies the header X,
+ - @c NSTAG_X() is used include instance of @c ns_X_t in a tag list, and
+ - @c NSTAG_X_STR() is used to include string containing value header
+      in a tag list.
+
+The declarations of header tags and the prototypes for these functions can
+be imported separately from the type definitions, for instance, the tags
+related to SIP headers are declared in the include file
+<sofia-sip/sip_tag.h>, and the header-specific functions in
+<sofia-sip/sip_header.h>.
+
+@section parser_intro Parsing Text Messages
+
+Sofia text parser follows @em recursive-descent principle.  In other words,
+it is a program that descends the syntax tree top-down recursively.
+(All syntax trees have root at top and they grow downwards.)
+
+In the case of SIP, HTTP and other similar protocols, such a parser is very
+efficient. The parser can choose between different forms based on each
+token, as the protocol syntax is carefully designed so that it requires only
+minimal scan-ahead. It is also easy to extend a recursive-descent parser via
+a standard API, unlike, for instance, a LALR parser generated by @em Bison.
+
+The abstract message module @b msg contains a high-level parser engine that
+drives the parsing process and invokes the protocol-specific parser for each
+header. As there is no low-layer framing between the RFC822-style messages,
+the parser considers any received data, be it a UDP datagram or a TCP
+stream, as a @em byte @em stream. The protocol-specific parsers controls how
+a byte stream is split into separate messages or if it consists of a single
+message only.
+
+The parser engine works by separating stream into fragments, then passing
+the fragment to a suitable parser. A fragment is a piece of message that is
+parsed during a single step: the first line, each header, the empty line
+between headers and message body, the message body. (In case of HTTP, the
+message body can consists of multiple fragments known as chunks.)
+
+The parser starts by separating the first line (e.g., request or status
+line) from the byte stream, then passing the line to the suitable parser.
+After first line comes the message headers. The parser continues parsing
+process by extracting headers, each on their own line, from the stream and
+passing contents of each header to its parser. The message structure is
+populated based on the parsing results. When an empty line - indicating end
+of headers - is encountered, the control is passed to the protocol-specific
+parser. Protocol-specific functions take care of extracting the possible
+message body from the byte stream.
+
+After parsing process is completed, it can be given to the upper layers
+(typically a protocol state machine). The parser continues processing the
+stream and feeding the messages to protocol engine until the end of the
+stream is reached.
+
+@image html sip-parser.gif Separating byte stream to messages
+@image latex sip-parser.eps Separating byte stream to messages
+
+When the parsing process has completed, the first line, each header,
+separator and the message body are all in their own fragment structure. The
+fragments form a dual-linked list known as @e fragment @e chain as shown in
+the above figure. The memory buffers for the message, the fragment chain,
+and a whole lot of other stuff is held by the generic message type, #msg_t,
+defined in <sofia-sip/msg.h>. The internal structure of #msg_t is known only within @b
+msg module and it is opaque to other modules.
+
+The @b msg parser engine also drives the reverse process, invoking the
+encoding method of each fragment so that the whole outgoing message can be
+encoded properly.
+
+@section msg_header_struct Message Header as a C struct
+
+Just separating headers from each other and from the message body is not
+usually enough. When a header contains structured data, the header contents
+should be converted to a form that is convenient to use from C programs. For
+that purpose, the message parser needs a parsing function specific to each
+individual header. This parsing function divides the contents of the header
+into semantically meaningful segments and stores the result in the structure
+specific to each header.
+
+The parser engine passes the fragment contents to the parsing function after
+it has separated the fragment from the rest of the message. The parser
+engine selects correct @e header @e class either by implication (in case of
+first line), or it searches for the header class from the hash table using
+the header name as the hash key. The @e header @e class contains a pointer
+to the parsing function. The parser has also special header classes for
+headers with errors and @e unknown headers, header with a name that is not
+regocnized by the parser.
+
+For instance, the Accept header has following syntax:
+@code
+   Accept         = "Accept" ":" #( media-range [ accept-params ] )
+
+   media-range    = ( "*" "/" "*"
+                    | ( type "/" "*" )
+                    | ( type "/" subtype ) ) *( ";" parameter )
+
+   accept-params  = ";" "q" "=" qvalue *( accept-extension )
+
+   accept-extension = ";" token [ "=" ( token | quoted-string ) ]
+@endcode
+
+When an Accept header is parsed, the header parser function (msg_accept_d())
+separates the @e type, @e subtype, and each parameter in the list to
+strings. The parsing result is assigned to a #msg_accept_t structure, which is
+defined as follows:
+
+@code
+typedef struct msg_accept_s
+{
+  msg_common_t        ac_common[1]; //< Common fragment info
+  msg_accept_t       *ac_next;	    //< Pointer to next Accept header
+  char const         *ac_type;	    //< Pointer to type/subtype
+  char const         *ac_subtype;   //< Points after first slash in type
+  msg_param_t const  *ac_params;    //< List of parameters
+  msg_param_t         ac_q;	    //< Value of q parameter
+}
+msg_accept_t;
+@endcode
+
+The string containing the @e type is put into the @c ac_type field, the @e
+subtype after slash in the can be found in the @c ac_subtype field, and the
+list of @e accept-params (together with media-specific-parameters) is put in
+the @c ac_params array. If there is a @e q parameter present, a pointer to
+the @c qvalue is assigned to @c ac_q field.
+
+In the beginning of the header structure there are two boilerplate members.
+The @c ac_common[1] contains information common to all message fragments.
+The @c ac_next is a pointer to next header field with the same name, in case
+a message contains multiple @b Accept headers or multiple comma-separated
+header fields are located in a single line.
+
+@section msg_object_example Representing a Message as a C struct
+
+It is not enough to represent a message as a list of headers following each
+other. The programmer also needs a convenient way to access certain headers
+at the message level, for example, accessing directly the @b Accept header
+instead of going through all headers and examining their name. The
+structured view to the message is provided via a message-specific C struct.
+In general, its type is msg_pub_t (it provides public view to message). The
+protocol-specific type is #sip_t, #http_t or #msg_multipart_t for
+SIP, HTTP and MIME, respectively.
+
+So, a single message is represented by two objects, first object (#msg_t) is
+private to the @b msg module and opaque by an application programmer, second
+(#sip_t, #http_t or #msg_multipart_t) is a public protocol-specific
+structure accessible by all.
+
+@note The application programmer can obtain a pointer to the
+protocol-specific structure from an #msg_t object using msg_public()
+function. The msg_public() takes a protocol tag, a well-known identifier, as
+its argument. The SIP, HTTP and MIME already define a wrapper around
+msg_public(), for example, a #sip_t structure can be obtained with
+sip_object() function (or macro).
+
+As an example, the #sip_t structure is defined as follows:
+@code
+typedef struct sip_s {
+  msg_common_t        sip_common[1];    // Used with recursive inclusion
+  msg_pub_t          *sip_next;         // Ditto
+  void               *sip_user;	        // Application data
+  unsigned            sip_size;         // Size of the structure with
+                                        // extension headers
+  int                 sip_flags;        // Parser flags
+
+  sip_error_t        *sip_error;	// Erroneous headers
+
+  sip_request_t      *sip_request;      // Request line
+  sip_status_t       *sip_status;       // Status line
+
+  sip_via_t          *sip_via;          // Via (v)
+  sip_route_t        *sip_route;        // Route
+  sip_record_route_t *sip_record_route; // Record-Route
+  sip_max_forwards_t *sip_max_forwards; // Max-Forwards
+  ...
+} sip_t;
+@endcode
+
+As you can see above, the public #sip_t structure contains the common
+header members that are also found in the beginning of a header
+structure. The @e sip_size indicates the size of the structure - the
+application can extend the parser and #sip_t structure beyond the
+original size. The @e sip_flags contains various flags used during the
+parsing and printing process. They are documented in the <sofia-sip/msg.h>. These
+boilerplate members are followed by the pointers to various message
+elements and headers.
+
+@section msg_parsing_example Result of Parsing Process
+
+Let us now show how a simple message is parsed and presented to the
+applications. As an exampe, we choose a SIP request message with method BYE,
+including only the mandatory fields:
+@code
+BYE sip:joe@example.com SIP/2.0
+Via: SIP/2.0/UDP sip.example.edu;branch=d7f2e89c.74a72681
+Via: SIP/2.0/UDP pc104.example.edu:1030;maddr=110.213.33.19
+From: Bobby Brown <sip:bb@example.edu>;tag=77241a86
+To: Joe User <sip:joe@example.com>;tag=7c6276c1
+Call-ID: 4c4e911b@pc104.example.edu
+CSeq: 2
+@endcode
+
+The figure below shows the layout of the BYE message above after parsing:
+
+@image html sip-parser2.gif BYE message and its representation in C
+@image latex sip-parser2.eps BYE message and its representation in C
+
+The leftmost box represents the message of type #msg_t.  Next box from
+the left reprents the #sip_t structure, which contains pointers to a
+header objects.  The next column contains the header objects.  There is
+one header object for each message fragment. The rightmost box represents
+the I/O buffer used when the message was received.  Note that the I/O
+buffer may be non-continous and composed of many separate memory areas.
+
+The message object has link to the public message structure (@a
+m_object), to the dual-linked fragment chain (@a m_frags) and to the I/O
+buffer (@a m_buffer).  The public message structure contains pointers to
+the headers according to their type.  If there are multiple headers of
+the same type (like there are two Via headers in the above message), the
+headers are put into a single-linked list.
+
+Each fragment has pointers to successing and preceding fragment. It also
+contains pointer to the corresponding data within the I/O buffer and its
+length.
+
+The main purpose of the fragment chain is to preserve the original order
+of the headers.  If there were an third Via header after CSeq in the
+message, the fragment representing it would be after the CSeq header in
+the fragment chain but after second Via in the header list.
+
+@section msg_parsing_memory Example: Parsing a Complete Message
+
+The following code fragment is an example of parsing a complete message. The
+parsing process is more hairy when there is stream to be parsed.
+
+@code
+msg_t *parse_memory(msg_mclass_t const *mclass, char const data[], int len)
+{
+  msg_t *msg;
+  int m;
+  msg_iovec_t iovec[2] = {{ 0 }};
+
+  msg  = msg_create(mclass, 0);
+  if (!msg)
+    return NULL;
+
+  m = msg_recv_iovec(msg, iovec, 2, n, 1);
+  if (m < 0) {
+    msg_destroy(msg);
+    return NULL;
+  }
+  assert(m <= 2);
+  assert(iovec[0].mv_len + iovec[1].mv_len == n);
+
+  memcpy(iovec[0].mv_base, data, n = iovec[0].mv_len);
+  if (m == 2)
+    memcpy(iovec[1].mv_base + n, data + n, iovec[1].mv_len);
+
+  msg_recv_commit(msg, iovec[0].mv_len + iovec[1].mv_len, 1);
+
+  m = msg_extract(msg);
+  assert(m != 0);
+  if (m < 0) {
+     msg_destroy(msg);
+     return NULL;
+  }
+  return msg;
+}
+@endcode
+
+Let's go through this simple function, step by step. First, we get the @a
+data pointer and its size in bytes, @a len. We first initialize an I/O
+vector used to represent message with the parser.
+
+@code
+msg_t *parse_memory(msg_mclass_t const *mclass, char const data[], int len)
+{
+  msg_t *msg;
+  int m;
+  msg_iovec_t iovec[2] = {{ 0 }};
+@endcode
+
+The message class @a mclass (a parser driver object, #msg_mclass_t) is used
+to represent a particular protocol-specific parser instance. When a message
+object is created, it is given as an argument to msg_create() function:
+
+@code
+  msg  = msg_create(mclass, 0);
+  if (!msg)
+    return NULL;
+@endcode
+
+Next we obtain a memory buffer for data with msg_recv_iovec(). The memory
+buffer is usually a single continous memory area, but in some cases it may
+consist of two distinct areas. Therefore the @a iovec is used here to pass
+the buffers around. The @a iovec is also very handly as it can be directly
+passed to various system I/O calls.
+
+@code
+  m = msg_recv_iovec(msg, iovec, 2, n, 1);
+  if (m < 0) {
+    msg_destroy(msg);
+    return NULL;
+  }
+@endcode
+
+These assumptions hold always true when you call msg_recv_iovec() first
+time with a complete message:
+
+@code
+  assert(m >= 1 && m <= 2);
+  assert(iovec[0].mv_len + iovec[1].mv_len == n);
+@endcode
+
+Next, we copy the data to the I/O vector and commit the copied data to the
+message. Earlier with msg_recv_iovec() we allocated buffer space for data,
+now calling msg_recv_commit() indicates that valid data has been copied to
+the buffer. The last parameter to msg_recv_commit() indicates that the end
+of stream is encountered and no more data is to be expected.
+
+@code
+  memcpy(iovec[0].mv_base, data, n = iovec[0].mv_len);
+  if (m == 2)
+    memcpy(iovec[1].mv_base + n, data + n, iovec[1].mv_len);
+
+  msg_recv_commit(msg, iovec[0].mv_len + iovec[1].mv_len, 1);
+@endcode
+
+We call msg_extract() next; it takes care of parsing the message. A fatal
+parsing error is indicated by returning -1. If the message is incomplete,
+msg_extract() returns 0. When a complete message has been parsed, a positive
+value is returned. We know that a message cannot be incomplete, as a call to
+msg_recv_commit() indicated to the parser that the end-of-stream has been
+encountered.
+
+@code
+  m = msg_extract(msg);
+  assert(m != 0);
+  if (m < 0) {
+     msg_destroy(msg);
+     return NULL;
+  }
+  return msg;
+}
+@endcode
+
+ */
+
+/**@class msg_s msg.h
+ *
+ * @brief Message object.
+ *
+ * The message object is used by Sofia parsers for SIP and HTTP
+ * protocols. The message object has an abstract, protocol-independent
+ * inteface type #msg_t, and a separate public protocol-specific interface
+ * #msg_pub_t (which is typedef'ed to #sip_t or #http_t depending
+ * on the protocol).
+ *
+ * The main interface to abstract messages is defined in <sofia-sip/msg.h>. The
+ * network I/O interface used by transport protocols is defined in
+ * <sofia-sip/msg_addr.h>. The protocol-specific parser table, also known as message
+ * class, is defined in <sofia-sip/msg_mclass.h>. (The message class is used as a
+ * factory object when a message object is created with msg_create()).
+ */
+
+/**@typedef typedef struct msg_s msg_t;
+ *
+ * Message object.
+ *
+ * The @a msg_t is the type of a message object used by Sofia signaling
+ * protocols and parsers. Its contents are not directly accessible.
+ */
+
+/**@typedef typedef struct msg_common_s msg_common_t;
+ *
+ * Common part of header.
+ *
+ * The @a msg_common_t is the base type of a message headers used by
+ * protocol parsers. Instead of #msg_common_t, most interfaces use
+ * #msg_header_t, which is supposed to be a union of all possible headers.
+ */
+
+
+/**
+ * @defgroup msg_parser Parser Building Blocks
+ *
+ * This submodule contains the functions and types for building a
+ * protocol-specific parser.
+ */
+
+/**
+ * @defgroup msg_headers Headers
+ *
+ * This submodule contains the functions and types for handling message
+ * headers and other elements.
+ */
+
+
+/**
+ * @defgroup msg_mime MIME Headers
+ *
+ * This submodule contains the header classes, functions and types for
+ * handling MIME headers (@RFC2045) and MIME multipart (@RFC2046) processing.
+ *
+ * The MIME headers implemented are as follows:
+ * - @ref msg_accept "@b Accept header"
+ * - @ref msg_accept_charset "@b Accept-Charser header"
+ * - @ref msg_accept_encoding "@b Accept-Encoding header"
+ * - @ref msg_accept_language "@b Accept-Language header"
+ * - @ref msg_content_disposition "@b Content-Disposition header"
+ * - @ref msg_content_encoding "@b Content-Encoding header"
+ * - @ref msg_content_id "@b Content-ID header"
+ * - @ref msg_content_location "@b Content-Location header"
+ * - @ref msg_content_language "@b Content-Language header"
+ * - @ref msg_content_md5 "@b Content-MD5 header"
+ * - @ref msg_content_transfer_encoding "@b Content-Transfer-Encoding header"
+ * - @ref msg_mime_version "@b MIME-Version header"
+ */
+
+/**
+ * @defgroup test_msg Testing Parser
+ *
+ * This submodule contains the functions and types for building a
+ * parser objects for testing purposes.
+ */

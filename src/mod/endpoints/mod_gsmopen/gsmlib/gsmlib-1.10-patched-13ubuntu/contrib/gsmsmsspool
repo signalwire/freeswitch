@@ -1,0 +1,34 @@
+#! /bin/bash
+#
+# /usr/bin/gsmsmsspool: Queues SMS for sending
+#
+# written by Matthias Goebl <matthias@goebl.net>
+
+SPOOLDIR=/var/spool/sms
+PRIORITIES=3
+test -r /etc/default/gsm-utils && . /etc/default/gsm-utils
+
+if [ -z "$1" ]; then
+  echo "Usage: gsmsmsspool NUMBER [MESSAGE]"
+  exit 1
+fi
+
+priority=$PRIORITIES  # default priority
+test -n "$GSMSMS_PRIORITY" && priority="$GSMSMS_PRIORITY"
+mailto=`id -un`
+test -n "$GSMSMS_NOTIFY" && mailto="$GSMSMS_NOTIFY"
+
+tmpfile="$SPOOLDIR/tmp/`date +%s`.$$"
+umask 022
+echo "$1	$mailto" > "$tmpfile"
+if [ -n "$2" ]; then
+  echo "$2" | head -c 160 >> "$tmpfile"
+else
+  head -c 160 >> "$tmpfile"
+fi
+
+if [ "`id -un`" = "root" ]; then
+  chown gsmsms:gsmsms "$tmpfile"
+fi
+
+mv "$tmpfile" "$SPOOLDIR/queue$priority/"

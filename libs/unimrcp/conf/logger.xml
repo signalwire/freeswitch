@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Logger Document -->
+<aptlogger>
+  <!--  Set the log priority to one of
+    EMERGENCY     system is unusable
+    ALERT         action must be taken immediately
+    CRITICAL      critical condition
+    ERROR         error condition
+    WARNING       warning condition
+    NOTICE        normal, but significant condition
+    INFO          informational message
+    DEBUG         debug-level message
+  -->
+  <priority>INFO</priority>
+
+  <!--  Set the log output mode
+    CONSOLE       console output
+    FILE          log file output
+    CONSOLE,FILE  both console and the log file output
+  -->
+  <output>CONSOLE</output>
+
+  <!--  Set the format of the log messages
+    DATE          date output
+    TIME          time output
+    PRIORITY      priority output
+    MARK          file:line marker output
+    THREAD        calling thread identifier output
+  -->
+  <headers>DATE,TIME,PRIORITY</headers>
+
+  <!--  Set the log masking mode
+    NONE          log everything as is
+    COMPLETE      mask private data completely
+    ENCRYPTED     enrcypt private data
+  -->
+  <masking>NONE</masking>
+</aptlogger>

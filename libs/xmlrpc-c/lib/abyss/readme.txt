@@ -1,0 +1,160 @@
+
+
+                              ABYSS Web Server
+                             ------------------
+
+
+About:
+------
+
+ABYSS aims to be a fully HTTP/1.1 compliant web server. Its main design
+goals are speed, low resource usage and portability. ABYSS works on most
+UNIX based systems and on Win32 systems (Win95/98/2000/NT).
+
+Copyright:
+----------
+
+Copyright (C) 2000 Moez Mahfoudh. All rights reserved.
+
+Status:
+-------
+
+ABYSS is still in development stage. Actual version is 0.3. Many features
+are not implemented yet but the server core works well and seems to be
+stable. It is fully reliable for serving static files on medium load sites.
+In fact, primary benchmarks show that ABYSS is 70% as fast as Apache when
+using the fork system. This rate jumps to 130% when using threads.
+On UNIX platforms, some problems occurred because of the use of the Pthreads
+library. This will be corrected in the future versions. That's why only the
+fork system is usable under UNIX. This lowers performances but guarantees
+stability.
+CGI/1.1 support is still absent from the current version but will be
+included in the near future.
+
+Change Log:
+-----------
+
+   * Version 0.3 (March 23,2000):
+        o Handles conditional GET requests (by date)
+        o Conforms to all the MUSTs of the RFC2616 (newer version of the
+          HTTP/1.1 protocol draft)
+        o New configuration options (such as pidfile for UNIX systems...)
+        o Handles HEAD and OPTIONS methods
+        o Many bug fixes
+        o Tested on Sun-OS 5.7
+        o Second public release
+
+   * Version 0.2 beta (February 7,2000):
+        o Handles GET on static files
+        o Handles correctly range requests
+        o Conforms to 80% of the MUSTs of the RFC2068 (HTTP/1.1 protocol
+          draft)
+        o Improved code portability (Win32 and UNIX platforms)
+        o Tested on Linux 2.2 and Win95/98
+        o First public release
+
+   * Version 0.1 (January 2000):
+        o Completely rewritten in C
+        o Speed improvement
+        o New memory allocation scheme (using pools)
+        o Never released
+
+   * Version 0.0 (January 2000):
+        o Initial version
+        o Written in C++
+        o Never released
+
+Downloading:
+------------
+
+   * Version 0.3 (current version):
+        o UNIX package (source) abyss-0.3.tar.gz.
+        o Win32 package is not available but you can extract source files
+          from the UNIX package and compile them on Windows without any
+          modification. (Sorry for this inconvenience: I have no Windows
+          machine now to compile the program and to test it. If someone can
+          do that, please email me the zipped package and I'll add it here).
+
+   * Version 0.2 beta:
+        o UNIX package (source) abyss-0.2b.tar.gz.
+        o Win32 package (source+binary) abyss-0.2b.zip.
+
+Installation:
+-------------
+
+   * For UNIX systems:
+        o Untar/Ungzip the distribution package with a command like tar xvfz
+          abyss-x.y.tar.gz
+        o Edit the Makefile src/Makefile to meet your system requirements.
+        o Go to directory src and execute make.
+        o The server binary is generated and stored in the bin directory.
+        o Edit the conf/abyss.conf to reflect your system configuration (At
+          least change the paths).
+        o Goto to the bin directory and start the server by typing ./abyss
+          -c ../conf/abyss.conf
+
+   * For Win32 systems:
+        o Unzip the distribution package.
+        o An executable file is already present in the bin directory.
+        o If you wish to recompile the server, open the src/abyss.dsw file
+          with Microsoft Visual C++ 5.0 or higher and rebuild the project.
+        o Edit the conf/abyss.conf to reflect your system configuration (At
+          least change the paths).
+        o Goto to the bin directory and start the server by typing ./abyss
+          -c ../conf/abyss.conf
+
+Configuration:
+--------------
+
+Edit the conf/abyss.conf file and change the values of the available
+options.
+
+Bugs:
+-----
+
+Please email bug reports to mmoez@bigfoot.com
+
+To do:
+------
+
+   * CGI/1.1 support
+   * Web based configuration/administration
+   * Speed improvement
+   * File caching system
+   * Throttling
+   * PUT method handling
+   * ...
+
+License:
+--------
+
+ABYSS Web Server is licensed under a modified BSD type license:
+
+     Copyright (C) 2000 Moez Mahfoudh. All rights reserved.
+
+     Redistribution and use in source and binary forms, with or without
+     modification, are permitted provided that the following conditions
+     are met:
+
+        * Redistributions of source code must retain the above
+          copyright notice, this list of conditions and the following
+          disclaimer.
+        * Redistributions in binary form must reproduce the above
+          copyright notice, this list of conditions and the following
+          disclaimer in the documentation and/or other materials
+          provided with the distribution.
+        * The name of the author may not be used to endorse or promote
+          products derived from this software without specific prior
+          written permission.
+
+     THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+     OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+     WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+     ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+     DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+     DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+     GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+     INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+     WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+     NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

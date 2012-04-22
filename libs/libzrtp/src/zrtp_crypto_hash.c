@@ -1,0 +1,1638 @@
+/*
+ * libZRTP SDK library, implements the ZRTP secure VoIP protocol.
+ * Copyright (c) 2006-2009 Philip R. Zimmermann.  All rights reserved.
+ * Contact: http://philzimmermann.com
+ * For licensing and other legal details, see the file zrtp_legal.c.
+ * 
+ * Viktor Krykun <v.krikun at zfoneproject.com> 
+ * Vitaly Rozhkov <v.rozhkov at soft-industry.com>
+ */
+
+#include "sha2.h"
+#include "sha1.h"
+
+#include "zrtp.h"
+
+#define _ZTU_ "zrtp hash"
+
+
+/*============================================================================*/
+/*   HASH function															  */
+/*============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+static zrtp_status_t zrtp_sha_c(zrtp_hash_t *self, const char* msg, uint32_t len, zrtp_stringn_t *dst)
+{	
+	if (!self || !msg || !dst || !len) {
+		return zrtp_status_bad_param;
+	}
+	
+	switch (self->base.id)
+	{
+		case ZRTP_SRTP_HASH_HMAC_SHA1: {
+			sha1_ctx ctx;
+			if (dst->max_length < SHA1_DIGEST_SIZE) {
+				return zrtp_status_buffer_size;
+			}			
+			sha1_begin(&ctx);
+			sha1_hash((const unsigned char*)msg, len, &ctx);			
+			sha1_end((unsigned char*)dst->buffer, &ctx);
+			dst->length = SHA1_DIGEST_SIZE;
+		} break;
+			
+		case ZRTP_HASH_SHA256: {
+			sha256_ctx ctx;
+			if (dst->max_length < SHA256_DIGEST_SIZE) {
+				return zrtp_status_buffer_size;
+			}			
+			sha256_begin(&ctx);
+			sha256_hash((const unsigned char*)msg, len, &ctx);			
+			sha256_end((unsigned char*)dst->buffer, &ctx);
+			dst->length = SHA256_DIGEST_SIZE;
+		} break;
+			
+		case ZRTP_HASH_SHA384: {
+			sha384_ctx ctx;
+			if (dst->max_length < SHA384_DIGEST_SIZE) {
+				return zrtp_status_buffer_size;
+			}			
+			sha384_begin(&ctx);
+			sha384_hash((const unsigned char*)msg, len, &ctx);			
+			sha384_end((unsigned char*)dst->buffer, &ctx);
+			dst->length = SHA384_DIGEST_SIZE;
+		} break;
+	}
+	
+    return zrtp_status_ok;
+}
+
+static zrtp_status_t zrtp_sha(zrtp_hash_t *self, const zrtp_stringn_t *msg, zrtp_stringn_t *dst) {
+	if (!self || !msg || !dst) {
+		return zrtp_status_bad_param;
+	}
+	return zrtp_sha_c(self, msg->buffer, msg->length, dst);
+}
+
+/*----------------------------------------------------------------------------*/
+static void* zrtp_sha_begin(zrtp_hash_t *self)
+{
+	void *ctx = NULL;
+	
+	switch (self->base.id) {
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
+			ctx = zrtp_sys_alloc(sizeof(sha1_ctx));
+			if (ctx) {
+				sha1_begin(ctx);
+			}
+			break;
+		case ZRTP_HASH_SHA256:
+			ctx = zrtp_sys_alloc(sizeof(sha256_ctx));
+			if (ctx) {
+				sha256_begin(ctx);
+			}			
+			break;
+		case ZRTP_HASH_SHA384:
+			ctx = zrtp_sys_alloc(sizeof(sha384_ctx));
+			if (ctx) {
+				sha384_begin(ctx);
+			}
+			break;
+	}
+	
+    return ctx;
+}
+
+/*----------------------------------------------------------------------------*/
+static zrtp_status_t zrtp_sha_update( zrtp_hash_t *self,
+									  void *ctx,
+									  const int8_t *msg,
+									  uint32_t length)
+{
+    if (!ctx || !msg || !length) {
+		return zrtp_status_bad_param;
+	}
+    
+	switch (self->base.id) {
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
+			sha1_hash((const unsigned char*)msg, length, (sha1_ctx*)ctx);
+			break;
+		case ZRTP_HASH_SHA256:		
+			sha256_hash((const unsigned char*)msg, length, (sha256_ctx*)ctx);
+			break;
+		case ZRTP_HASH_SHA384:
+			sha384_hash((const unsigned char*)msg, length, (sha384_ctx*)ctx);
+			break;
+	}
+    
+    return zrtp_status_ok;
+}
+
+/*----------------------------------------------------------------------------*/
+static zrtp_status_t zrtp_sha_end( zrtp_hash_t *self,
+							 	   void *ctx,
+								   zrtp_stringn_t *digest)
+{
+    if (!ctx || !digest) {
+    	return zrtp_status_bad_param;
+	}
+	
+	switch (self->base.id) {
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
+			if (digest->max_length < SHA1_DIGEST_SIZE) {
+				return zrtp_status_buffer_size;
+			}
+			sha1_end((unsigned char*)digest->buffer,(sha1_ctx*)ctx);
+			digest->length = SHA1_DIGEST_SIZE;
+			break;
+		case ZRTP_HASH_SHA256:
+			if (digest->max_length < SHA256_DIGEST_SIZE) {
+				return zrtp_status_buffer_size;
+			}	
+			sha256_end((unsigned char*)digest->buffer,(sha256_ctx*)ctx);
+			digest->length = SHA256_DIGEST_SIZE;
+			break;
+		case ZRTP_HASH_SHA384:
+			if (digest->max_length < SHA384_DIGEST_SIZE) {
+				return zrtp_status_buffer_size;
+			}	
+			sha384_end((unsigned char*)digest->buffer,(sha384_ctx*)ctx);
+			digest->length = SHA384_DIGEST_SIZE;
+			break;
+	}
+    
+	zrtp_sys_free(ctx);
+	ctx = 0;
+    
+    return zrtp_status_ok;
+}
+
+
+/*============================================================================*/
+/*    HMAC functions														  */
+/*============================================================================*/
+
+typedef struct
+{
+	sha384_ctx		context;
+	unsigned char	k_ipad[128];    /* inner padding - key XORd with ipad */
+	unsigned char	k_opad[128];    /* outer padding - key XORd with opad */
+} hmac_sha384_context_t;
+
+
+typedef struct
+{
+	sha256_ctx		context;
+	unsigned char	k_ipad[64];
+	unsigned char	k_opad[64];
+} hmac_sha256_context_t;
+
+typedef struct
+{
+	sha1_ctx		context;
+	unsigned char	k_ipad[64];
+	unsigned char	k_opad[64];
+} hmac_sha1_context_t;
+
+
+/*----------------------------------------------------------------------------*/
+static void* zrtp_hmac_sha256_begin_c(zrtp_hash_t *self, const char *key, uint32_t length)
+{
+	const char *p_key;
+	uint32_t key_length;
+	char local_key[SHA256_BLOCK_SIZE];
+    int i = 0;
+    hmac_sha256_context_t *ctx = zrtp_sys_alloc(sizeof(hmac_sha256_context_t));
+    if (!ctx) {
+		return NULL;
+    }
+	zrtp_memset(ctx, 0, sizeof(hmac_sha256_context_t));
+
+	if (length > SHA256_BLOCK_SIZE) {
+		sha256_begin(&ctx->context);
+		sha256_hash((const unsigned char*)key, length, &ctx->context);
+		sha256_end((unsigned char*)local_key, &ctx->context);
+		
+		p_key = local_key;
+		key_length = SHA256_BLOCK_SIZE;
+	} else {
+		p_key = key;
+		key_length = length;
+	}
+
+    /*
+     * the HMAC transform looks like:
+     *	
+     * HASH(K XOR opad, HASH(K XOR ipad, text))
+     *	
+     * where K is an n byte key
+     * ipad is the byte 0x36 repeated 64 times
+     * opad is the byte 0x5c repeated 64 times
+     * and text is the data being protected
+     */
+
+    /* start out by storing key in pads */
+    zrtp_memcpy(ctx->k_ipad, p_key, ZRTP_MIN(key_length, 64));
+    zrtp_memcpy(ctx->k_opad, p_key, ZRTP_MIN(key_length, 64));
+
+    /* XOR key with ipad and opad values */
+    for (i=0; i<64; i++) {
+		ctx->k_ipad[i] ^= (uint8_t)0x36;
+		ctx->k_opad[i] ^= (uint8_t)0x5c;
+    }
+
+    /* perform inner hash */
+    sha256_begin(&ctx->context);					/* init context for 1st pass */
+    sha256_hash(ctx->k_ipad, 64, &ctx->context);	/* start with inner pad */
+
+	zrtp_memset(&local_key, 0, sizeof(local_key));
+    return ctx;
+}
+static void* zrtp_hmac_sha384_begin_c(zrtp_hash_t *self, const char *key, uint32_t length)
+{
+	const char *p_key;
+	uint32_t key_length;
+	char local_key[SHA384_BLOCK_SIZE];
+    int i = 0;
+    hmac_sha384_context_t *ctx = zrtp_sys_alloc(sizeof(hmac_sha384_context_t));
+    if (!ctx) {
+		return NULL;
+    }
+	zrtp_memset(ctx, 0, sizeof(hmac_sha384_context_t));
+	
+	if (length > SHA384_BLOCK_SIZE) {
+		sha384_begin(&ctx->context);
+		sha384_hash((const unsigned char*)key, length, &ctx->context);
+		sha384_end((unsigned char*)local_key, &ctx->context);
+		
+		p_key = local_key;
+		key_length = SHA384_BLOCK_SIZE;
+	} else {
+		p_key = key;
+		key_length = length;
+	}
+	
+    zrtp_memcpy(ctx->k_ipad, p_key, ZRTP_MIN(key_length, 128));
+    zrtp_memcpy(ctx->k_opad, p_key, ZRTP_MIN(key_length, 128));
+	
+    for (i=0; i<128; i++) {
+		ctx->k_ipad[i] ^= (uint8_t)0x36;
+		ctx->k_opad[i] ^= (uint8_t)0x5c;
+    }
+	
+    sha384_begin(&ctx->context);
+    sha384_hash(ctx->k_ipad, 128, &ctx->context);
+	
+	zrtp_memset(&local_key, 0, sizeof(local_key));
+    return ctx;
+}
+
+static void* zrtp_hmac_sha1_begin_c( zrtp_hash_t *self,
+									 const char *key,
+									 uint32_t length)
+{
+	const char *p_key;
+	uint32_t key_length;
+	char local_key[SHA1_BLOCK_SIZE];
+    int i = 0;
+    hmac_sha1_context_t *ctx = zrtp_sys_alloc(sizeof(hmac_sha1_context_t));
+    if (!ctx) {
+		return NULL;
+    }
+	zrtp_memset(ctx, 0, sizeof(hmac_sha1_context_t));
+	
+	if (length > SHA1_BLOCK_SIZE) {		
+		sha1_begin(&ctx->context);
+		sha1_hash((const unsigned char*)key, length, &ctx->context);
+		sha1_end((unsigned char*)local_key, &ctx->context);
+		
+		p_key = local_key;
+		key_length = SHA1_BLOCK_SIZE;
+	} else {
+		p_key = key;
+		key_length = length;
+	}
+	
+    zrtp_memcpy(ctx->k_ipad, p_key, ZRTP_MIN(key_length, 64));
+    zrtp_memcpy(ctx->k_opad, p_key, ZRTP_MIN(key_length, 64));
+	
+    for (i=0; i<64; i++) {
+		ctx->k_ipad[i] ^= (uint8_t)0x36;
+		ctx->k_opad[i] ^= (uint8_t)0x5c;
+    }
+	
+    sha1_begin(&ctx->context);
+    sha1_hash(ctx->k_ipad, 64, &ctx->context);
+	
+	zrtp_memset(&local_key, 0, sizeof(local_key));
+    return ctx;
+}
+
+static void* zrtp_hmac_begin(zrtp_hash_t *self, const zrtp_stringn_t *key) {
+	switch (self->base.id)
+	{
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
+			return zrtp_hmac_sha1_begin_c(self, key->buffer, key->length);
+		case ZRTP_HASH_SHA256:
+			return zrtp_hmac_sha256_begin_c(self, key->buffer, key->length);
+		case ZRTP_HASH_SHA384:
+			return zrtp_hmac_sha384_begin_c(self, key->buffer, key->length);
+		default:
+			return NULL;
+	}		
+}
+
+/*----------------------------------------------------------------------------*/
+static zrtp_status_t zrtp_hmac_update(zrtp_hash_t *self, void *ctx, const char *msg, uint32_t length)
+{
+    if (!ctx || !msg) {
+    	return zrtp_status_fail;
+    }
+	
+    if (0 != length) {
+		switch (self->base.id) {
+			case ZRTP_SRTP_HASH_HMAC_SHA1:
+				sha1_hash((const unsigned char*)msg, length, &((hmac_sha1_context_t*)ctx)->context);
+				break;
+			case ZRTP_HASH_SHA256:
+				sha256_hash((const unsigned char*)msg, length, &((hmac_sha256_context_t*)ctx)->context);
+				break;
+			case ZRTP_HASH_SHA384:
+				sha384_hash((const unsigned char*)msg, length, &((hmac_sha384_context_t*)ctx)->context);
+				break;
+			default:
+				return zrtp_status_bad_param;
+		}
+    }
+    
+    return zrtp_status_ok;
+}
+
+/*----------------------------------------------------------------------------*/
+static zrtp_status_t zrtp_hmac_end( zrtp_hash_t *self,
+									void *ctx,
+									zrtp_stringn_t *digest,
+									uint32_t len)
+{
+    zrtp_string128_t dst = ZSTR_INIT_EMPTY(dst);
+	
+	if (!ctx || !digest) {
+		return zrtp_status_fail;
+    }
+	
+	switch (self->base.id)
+	{
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
+			/* finish up 1st pass */
+			sha1_end((unsigned char*)dst.buffer, &((hmac_sha1_context_t*)ctx)->context);
+			
+			/* perform outer hash  and init context for 2nd pass */
+			sha1_begin(&((hmac_sha1_context_t*)ctx)->context);
+			/* start with outer pad */
+			sha1_hash(((hmac_sha1_context_t*)ctx)->k_opad, 64, &((hmac_sha1_context_t*)ctx)->context);
+			/* then results of 1st hash */
+			sha1_hash((const unsigned char*)dst.buffer, SHA1_DIGEST_SIZE, &((hmac_sha1_context_t*)ctx)->context);
+			/* finish up 2nd pass */
+			sha1_end((unsigned char*)dst.buffer, &((hmac_sha1_context_t*)ctx)->context);
+			
+			len = (0 == len) ? SHA1_DIGEST_SIZE : ZRTP_MIN(len, SHA1_DIGEST_SIZE);
+			break;
+		case ZRTP_HASH_SHA256:
+			sha256_end((unsigned char*)dst.buffer, &((hmac_sha256_context_t*)ctx)->context);		
+			sha256_begin(&((hmac_sha256_context_t*)ctx)->context);		
+			sha256_hash(((hmac_sha256_context_t*)ctx)->k_opad, 64, &((hmac_sha256_context_t*)ctx)->context);
+			sha256_hash((const unsigned char*)dst.buffer, SHA256_DIGEST_SIZE, &((hmac_sha256_context_t*)ctx)->context);
+			sha256_end((unsigned char*)dst.buffer, &((hmac_sha256_context_t*)ctx)->context);
+			
+			len = (0 == len) ? SHA256_DIGEST_SIZE : ZRTP_MIN(len, SHA256_DIGEST_SIZE);
+			break;
+		case ZRTP_HASH_SHA384:
+			sha384_end((unsigned char*)dst.buffer, &((hmac_sha384_context_t*)ctx)->context);		
+			sha384_begin(&((hmac_sha384_context_t*)ctx)->context);		
+			sha384_hash(((hmac_sha384_context_t*)ctx)->k_opad, 128, &((hmac_sha384_context_t*)ctx)->context);
+			sha384_hash((const unsigned char*)dst.buffer, SHA384_DIGEST_SIZE, &((hmac_sha384_context_t*)ctx)->context);
+			sha384_end((unsigned char*)dst.buffer, &((hmac_sha384_context_t*)ctx)->context);
+			
+			len = (0 == len) ? SHA384_DIGEST_SIZE : ZRTP_MIN(len, SHA384_DIGEST_SIZE);
+			break;
+		default:
+			return zrtp_status_bad_param;
+	}
+		
+    digest->length = ZRTP_MIN(len, digest->max_length);
+    zrtp_memcpy(digest->buffer, dst.buffer, digest->length);
+	
+    zrtp_sys_free(ctx);
+	
+    return zrtp_status_ok;
+}
+
+/*----------------------------------------------------------------------------*/
+static zrtp_status_t zrtp_hmac_c( zrtp_hash_t *self,
+								  const char *key,
+								  const uint32_t key_len,
+								  const char *msg,
+								  const uint32_t msg_len,
+								  zrtp_stringn_t *digest)
+{
+	unsigned char *p_key;
+	uint32_t l_key_len;
+    sha1_ctx context1;
+	sha256_ctx context2;
+	sha384_ctx context3;
+    unsigned char k_ipad[128];    /* inner padding - key XORd with ipad */
+    unsigned char k_opad[128];    /* outer padding - key XORd with opad */
+    unsigned i;	
+	unsigned char local_key[SHA384_BLOCK_SIZE];
+	uint32_t local_key_len = 0;
+	
+	
+	if (!self || !digest || !key || !msg) {
+    	return zrtp_status_buffer_size;
+	}
+	
+	switch (self->base.id) {
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
+			local_key_len = SHA1_BLOCK_SIZE;
+			break;
+		case ZRTP_HASH_SHA256:
+			local_key_len = SHA256_BLOCK_SIZE;
+			break;
+		case ZRTP_HASH_SHA384:
+			local_key_len = SHA384_BLOCK_SIZE;
+			break;
+		default:
+			return zrtp_status_bad_param;
+	}
+	
+	if (digest->max_length < local_key_len) {
+		return zrtp_status_buffer_size;
+	}
+	
+	if (key_len > local_key_len) {		
+		switch (self->base.id)
+		{
+			case ZRTP_SRTP_HASH_HMAC_SHA1:
+				sha1_begin(&context1);
+				sha1_hash((const unsigned char*)key, key_len, &context1);
+				sha1_end(local_key, &context1);
+				break;
+			case ZRTP_HASH_SHA256:
+				sha256_begin(&context2);
+				sha256_hash((const unsigned char*)key, key_len, &context2);
+				sha256_end(local_key, &context2);
+				break;
+			case ZRTP_HASH_SHA384:
+				sha384_begin(&context3);
+				sha384_hash((const unsigned char*)key, key_len, &context3);
+				sha384_end(local_key, &context3);
+				break;
+		}
+		
+		p_key = local_key;
+		l_key_len = local_key_len;
+	} else {
+		p_key = (unsigned char*)key;
+		l_key_len = key_len;
+	}
+	
+    /*
+     * the HMAC transform looks like:
+     *
+     * HASH(K XOR opad, HASH(K XOR ipad, text))
+     *	
+     *	where K is an n byte key
+     *	ipad is the byte 0x36 repeated 64 times
+     *	opad is the byte 0x5c repeated 64 times
+     *	and text is the data being protected
+     */
+	
+    /* start out by storing key in pads */
+	zrtp_memset(k_ipad, 0, sizeof(k_ipad));	
+	zrtp_memset(k_opad, 0, sizeof(k_opad));	
+    zrtp_memcpy(k_ipad, p_key, ZRTP_MIN(l_key_len, local_key_len));
+    zrtp_memcpy(k_opad, p_key, ZRTP_MIN(l_key_len, local_key_len));
+	
+    /* XOR key with ipad and opad values */
+    for (i=0; i<local_key_len; i++) {
+		k_ipad[i] ^= 0x36;
+		k_opad[i] ^= 0x5c;
+    }
+	
+	switch (self->base.id) {
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
+			/* perform inner hash */
+			sha1_begin(&context1);			/* init context for 1st pass */
+			sha1_hash(k_ipad, local_key_len, &context1);/* start with inner pad */
+			sha1_hash((const unsigned char*)msg, msg_len, &context1); 	/* then text of datagram */
+			sha1_end((unsigned char*)digest->buffer, &context1);		/* finish up 1st pass */
+			
+			/* perform outer hash */
+			sha1_begin(&context1);			/* init context for 2nd pass */
+			sha1_hash(k_opad, local_key_len, &context1);/* start with outer pad */
+			sha1_hash((const unsigned char*)digest->buffer, SHA1_DIGEST_SIZE, &context1); /* then results of 1st hash */
+			sha1_end((unsigned char*)digest->buffer, &context1);	/* finish up 2nd pass */
+			
+			digest->length = SHA1_DIGEST_SIZE;
+			break;
+		case ZRTP_HASH_SHA256:
+			sha256_begin(&context2);
+			sha256_hash(k_ipad, local_key_len, &context2);
+			sha256_hash((const unsigned char*)msg, msg_len, &context2);
+			sha256_end((unsigned char*)digest->buffer, &context2);
+			
+			sha256_begin(&context2);
+			sha256_hash(k_opad, local_key_len, &context2);
+			sha256_hash((const unsigned char*)digest->buffer, SHA256_DIGEST_SIZE, &context2);
+			sha256_end((unsigned char*)digest->buffer, &context2);
+			
+			digest->length = SHA256_DIGEST_SIZE;
+			break;
+		case ZRTP_HASH_SHA384:
+			sha384_begin(&context3);
+			sha384_hash(k_ipad, local_key_len, &context3);
+			sha384_hash((const unsigned char*)msg, msg_len, &context3);
+			sha384_end((unsigned char*)digest->buffer, &context3);
+			
+			sha384_begin(&context3);
+			sha384_hash(k_opad, local_key_len, &context3);
+			sha384_hash((const unsigned char*)digest->buffer, SHA384_DIGEST_SIZE, &context3);
+			sha384_end((unsigned char*)digest->buffer, &context3);
+			
+			digest->length = SHA384_DIGEST_SIZE;
+			break;
+	}
+	
+    return zrtp_status_ok;
+}
+
+static zrtp_status_t zrtp_hmac( zrtp_hash_t *self,
+							    const zrtp_stringn_t *key,
+							    const zrtp_stringn_t *msg,
+							    zrtp_stringn_t *digest) {
+	return zrtp_hmac_c(self, key->buffer, key->length, msg->buffer, msg->length, digest);
+}
+
+/*----------------------------------------------------------------------------*/
+static zrtp_status_t zrtp_hmac_truncated_c( zrtp_hash_t *self,
+											const char *key,
+											const uint32_t key_len,
+											const char *msg,
+											const uint32_t msg_len,
+											uint32_t necessary_len,
+											zrtp_stringn_t *digest)
+{
+    uint32_t necessary_len_max = 0;
+	switch (self->base.id) {
+		case ZRTP_SRTP_HASH_HMAC_SHA1:
+			necessary_len_max = SHA1_DIGEST_SIZE;
+			break;
+		case ZRTP_HASH_SHA256:
+			necessary_len_max = SHA256_DIGEST_SIZE;
+			break;
+		case ZRTP_HASH_SHA384:
+			necessary_len_max = SHA384_DIGEST_SIZE;
+			break;
+	}
+	if (necessary_len > necessary_len_max) {
+		return zrtp_status_buffer_size;
+    }
+	
+    if (0 == necessary_len) {
+		zrtp_hmac_c(self, key, key_len, msg, msg_len, digest);
+    } else {
+		zrtp_string128_t dst = ZSTR_INIT_EMPTY(dst);
+		
+		zrtp_hmac_c(self, key, key_len, msg, msg_len, (zrtp_stringn_t *)&dst);
+		switch (self->base.id) {
+			case ZRTP_SRTP_HASH_HMAC_SHA1:
+				necessary_len = ZRTP_MIN(necessary_len, SHA1_DIGEST_SIZE);
+				break;
+			case ZRTP_HASH_SHA256:
+				necessary_len = ZRTP_MIN(necessary_len, SHA256_DIGEST_SIZE);
+				break;
+			case ZRTP_HASH_SHA384:
+				necessary_len = ZRTP_MIN(necessary_len, SHA384_DIGEST_SIZE);
+				break;
+		}
+		digest->length = ZRTP_MIN(necessary_len, digest->max_length);
+		zrtp_memcpy(digest->buffer, dst.buffer, digest->length);
+    }
+    
+    return zrtp_status_ok;
+}
+
+static zrtp_status_t zrtp_hmac_truncated( zrtp_hash_t *self,
+										  const zrtp_stringn_t *key,
+										  const zrtp_stringn_t *msg,
+										  uint32_t len,
+										  zrtp_stringn_t *digest) {
+	return zrtp_hmac_truncated_c(self, key->buffer, key->length, msg->buffer, msg->length, len, digest);
+	
+}
+
+
+/*============================================================================*/
+/*    SHA and SHMAC test cases						      					  */
+/*============================================================================*/
+
+
+/*
+ * SHA1 Test Vectors
+ */
+
+static uint8_t sha1_msg_8[1] = {
+	0xa8 
+};
+
+static uint8_t sha1_MD_8[20] = {
+	0x99, 0xf2, 0xaa, 0x95, 0xe3, 0x6f, 0x95, 0xc2,
+	0xac, 0xb0, 0xea, 0xf2, 0x39, 0x98, 0xf0, 0x30,
+	0x63, 0x8f, 0x3f, 0x15 
+};
+
+static uint8_t sha1_msg_128[16] = {
+	0xc5, 0xa2, 0x2d, 0xd6, 0xed, 0xa3, 0xfe, 0x2b,
+	0xdc, 0x4d, 0xdb, 0x3c, 0xe6, 0xb3, 0x5f, 0xd1 
+};
+
+static uint8_t sha1_MD_128[20] = {
+	0xfa, 0xc8, 0xab, 0x93, 0xc1, 0xae, 0x6c, 0x16,
+	0xf0, 0x31, 0x18, 0x72, 0xb9, 0x84, 0xf7, 0x29,
+	0xdc, 0x92, 0x8c, 0xcd 
+};
+
+static uint8_t sha1_msg_512[64] = {
+	0x7e, 0x3a, 0x4c, 0x32, 0x5c, 0xb9, 0xc5, 0x2b,
+	0x88, 0x38, 0x7f, 0x93, 0xd0, 0x1a, 0xe8, 0x6d,
+	0x42, 0x09, 0x8f, 0x5e, 0xfa, 0x7f, 0x94, 0x57,
+	0x38, 0x8b, 0x5e, 0x74, 0xb6, 0xd2, 0x8b, 0x24,
+	0x38, 0xd4, 0x2d, 0x8b, 0x64, 0x70, 0x33, 0x24,
+	0xd4, 0xaa, 0x25, 0xab, 0x6a, 0xad, 0x15, 0x3a,
+	0xe3, 0x0c, 0xd2, 0xb2, 0xaf, 0x4d, 0x5e, 0x5c,
+	0x00, 0xa8, 0xa2, 0xd0, 0x22, 0x0c, 0x61, 0x16 
+};
+
+static uint8_t sha1_MD_512[20] = {
+	0xa3, 0x05, 0x44, 0x27, 0xcd, 0xb1, 0x3f, 0x16,
+	0x4a, 0x61, 0x0b, 0x34, 0x87, 0x02, 0x72, 0x4c,
+	0x80, 0x8a, 0x0d, 0xcc 
+};
+
+static uint8_t sha1_msg_2096[262] = {
+	0x5f, 0xc2, 0xc3, 0xf6, 0xa7, 0xe7, 0x9d, 0xc9,
+	0x4b, 0xe5, 0x26, 0xe5, 0x16, 0x6a, 0x23, 0x88,
+	0x99, 0xd5, 0x49, 0x27, 0xce, 0x47, 0x00, 0x18,
+	0xfb, 0xfd, 0x66, 0x8f, 0xd9, 0xdd, 0x97, 0xcb,
+	0xf6, 0x4e, 0x2c, 0x91, 0x58, 0x4d, 0x01, 0xda,
+	0x63, 0xbe, 0x3c, 0xc9, 0xfd, 0xff, 0x8a, 0xdf,
+	0xef, 0xc3, 0xac, 0x72, 0x8e, 0x1e, 0x33, 0x5b,
+	0x9c, 0xdc, 0x87, 0xf0, 0x69, 0x17, 0x2e, 0x32,
+	0x3d, 0x09, 0x4b, 0x47, 0xfa, 0x1e, 0x65, 0x2a,
+	0xfe, 0x4d, 0x6a, 0xa1, 0x47, 0xa9, 0xf4, 0x6f,
+	0xda, 0x33, 0xca, 0xcb, 0x65, 0xf3, 0xaa, 0x12,
+	0x23, 0x47, 0x46, 0xb9, 0x00, 0x7a, 0x8c, 0x85,
+	0xfe, 0x98, 0x2a, 0xfe, 0xd7, 0x81, 0x52, 0x21,
+	0xe4, 0x3d, 0xba, 0x55, 0x3d, 0x8f, 0xe8, 0xa0,
+	0x22, 0xcd, 0xac, 0x1b, 0x99, 0xee, 0xee, 0xa3,
+	0x59, 0xe5, 0xa9, 0xd2, 0xe7, 0x2e, 0x38, 0x2d,
+	0xff, 0xa6, 0xd1, 0x9f, 0x35, 0x9f, 0x4f, 0x27,
+	0xdc, 0x34, 0x34, 0xcd, 0x27, 0xda, 0xee, 0xda,
+	0x8e, 0x38, 0x59, 0x48, 0x73, 0x39, 0x86, 0x78,
+	0x06, 0x5f, 0xbb, 0x23, 0x66, 0x5a, 0xba, 0x93,
+	0x09, 0xd9, 0x46, 0x13, 0x5d, 0xa0, 0xe4, 0xa4,
+	0xaf, 0xda, 0xdf, 0xf1, 0x4d, 0xb1, 0x8e, 0x85,
+	0xe7, 0x1d, 0xd9, 0x3c, 0x3b, 0xf9, 0xfa, 0xf7,
+	0xf2, 0x5c, 0x81, 0x94, 0xc4, 0x26, 0x9b, 0x1e,
+	0xe3, 0xd9, 0x93, 0x40, 0x97, 0xab, 0x99, 0x00,
+	0x25, 0xd9, 0xc3, 0xaa, 0xf6, 0x3d, 0x51, 0x09,
+	0xf5, 0x23, 0x35, 0xdd, 0x39, 0x59, 0xd3, 0x8a,
+	0xe4, 0x85, 0x05, 0x0e, 0x4b, 0xbb, 0x62, 0x35,
+	0x57, 0x4f, 0xc0, 0x10, 0x2b, 0xe8, 0xf7, 0xa3,
+	0x06, 0xd6, 0xe8, 0xde, 0x6b, 0xa6, 0xbe, 0xcf,
+	0x80, 0xf3, 0x74, 0x15, 0xb5, 0x7f, 0x98, 0x98,
+	0xa5, 0x82, 0x4e, 0x77, 0x41, 0x41, 0x97, 0x42,
+	0x2b, 0xe3, 0xd3, 0x6a, 0x60, 0x80 
+};
+
+static uint8_t sha1_MD_2096[20] = {
+	0x04, 0x23, 0xdc, 0x76, 0xa8, 0x79, 0x11, 0x07,
+	0xd1, 0x4e, 0x13, 0xf5, 0x26, 0x5b, 0x34, 0x3f,
+	0x24, 0xcc, 0x0f, 0x19 
+};
+
+
+
+/*
+ * HMAC SHA1 Test Vectors from RFC 2202
+ */
+
+static uint8_t test_case1_hmac_sha1_key[20] = {
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+	0x0b, 0x0b, 0x0b, 0x0b
+};
+static uint8_t test_case1_hmac_sha1_data[8] = {
+	0x48, 0x69, 0x20, 0x54, 0x68, 0x65, 0x72, 0x65
+};
+static uint8_t test_case1_hmac_sha1_result[20] = {
+	0xb6, 0x17, 0x31, 0x86, 0x55, 0x05, 0x72, 0x64, 
+	0xe2, 0x8b, 0xc0, 0xb6, 0xfb, 0x37, 0x8c, 0x8e,
+	0xf1, 0x46, 0xbe, 0x00
+};
+
+
+static uint8_t test_case2_hmac_sha1_key[4] = {
+	0x4a, 0x65, 0x66, 0x65
+};
+static uint8_t test_case2_hmac_sha1_data[28] = {
+	0x77, 0x68, 0x61, 0x74, 0x20, 0x64, 0x6f, 0x20,
+	0x79, 0x61, 0x20, 0x77, 0x61, 0x6e, 0x74, 0x20,
+	0x66, 0x6f, 0x72, 0x20, 0x6e, 0x6f, 0x74, 0x68,
+	0x69, 0x6e, 0x67, 0x3f
+};
+static uint8_t test_case2_hmac_sha1_result[20] = {
+	0xef, 0xfc, 0xdf, 0x6a, 0xe5, 0xeb, 0x2f, 0xa2,
+	0xd2, 0x74, 0x16, 0xd5, 0xf1, 0x84, 0xdf, 0x9c,
+	0x25, 0x9a, 0x7c, 0x79
+};
+
+
+static uint8_t test_case3_hmac_sha1_key[20] = {
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa
+};
+static uint8_t test_case3_hmac_sha1_data[50] = {
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd
+};
+static uint8_t test_case3_hmac_sha1_result[20] = {
+	0x12, 0x5d, 0x73, 0x42, 0xb9, 0xac, 0x11, 0xcd,
+	0x91, 0xa3, 0x9a, 0xf4, 0x8a, 0xa1, 0x7b, 0x4f,
+	0x63, 0xf1, 0x75, 0xd3
+};
+
+
+static uint8_t test_case4_hmac_sha1_key[25] = {
+	0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 
+	0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,	0x0f, 0x10,
+	0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 
+	0x19
+};
+static uint8_t test_case4_hmac_sha1_data[50] = {
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd
+};
+static uint8_t test_case4_hmac_sha1_result[20] = {
+	0x4c, 0x90, 0x07, 0xf4, 0x02, 0x62, 0x50, 0xc6,
+	0xbc, 0x84, 0x14, 0xf9, 0xbf, 0x50, 0xc8, 0x6c,
+	0x2d, 0x72, 0x35, 0xda
+};
+
+
+static uint8_t test_case5_hmac_sha1_key[20] = {
+	0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
+	0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
+	0x0c, 0x0c, 0x0c, 0x0c
+};
+static uint8_t test_case5_hmac_sha1_data[20] = {
+	0x54, 0x65, 0x73, 0x74, 0x20, 0x57, 0x69, 0x74,
+	0x68, 0x20, 0x54, 0x72, 0x75, 0x6e, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e
+};
+static uint8_t test_case5_hmac_sha1_result[20] = {
+	0x4c, 0x1a, 0x03, 0x42, 0x4b, 0x55, 0xe0, 0x7f,
+	0xe7, 0xf2, 0x7b, 0xe1, 0xd5, 0x8b, 0xb9, 0x32,
+	0x4a, 0x9a, 0x5a, 0x04
+};
+
+
+static uint8_t test_case6_hmac_sha1_key[80] = {
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa
+};
+static uint8_t test_case6_hmac_sha1_data[54] = {
+	0x54, 0x65, 0x73, 0x74, 0x20, 0x55, 0x73, 0x69,
+	0x6e, 0x67, 0x20, 0x4c, 0x61, 0x72, 0x67, 0x65,
+	0x72, 0x20, 0x54, 0x68, 0x61, 0x6e, 0x20, 0x42,
+	0x6c, 0x6f, 0x63, 0x6b, 0x2d, 0x53, 0x69, 0x7a,
+	0x65, 0x20, 0x4b, 0x65, 0x79, 0x20, 0x2d, 0x20,
+	0x48, 0x61, 0x73, 0x68, 0x20, 0x4b, 0x65, 0x79,
+	0x20, 0x46, 0x69, 0x72, 0x73, 0x74
+};
+static uint8_t test_case6_hmac_sha1_result[20] = {
+	0xaa, 0x4a, 0xe5, 0xe1, 0x52, 0x72, 0xd0, 0x0e,
+	0x95, 0x70, 0x56, 0x37, 0xce, 0x8a, 0x3b, 0x55,
+	0xed, 0x40, 0x21, 0x12
+};
+
+
+static uint8_t test_case7_hmac_sha1_key[80] = {
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa
+};
+static uint8_t test_case7_hmac_sha1_data[73] = {
+	0x54, 0x65, 0x73, 0x74, 0x20, 0x55, 0x73, 0x69,
+	0x6e, 0x67, 0x20, 0x4c, 0x61, 0x72, 0x67, 0x65,
+	0x72, 0x20, 0x54, 0x68, 0x61, 0x6e, 0x20, 0x42,
+	0x6c, 0x6f, 0x63, 0x6b, 0x2d, 0x53, 0x69, 0x7a,
+	0x65, 0x20, 0x4b, 0x65, 0x79, 0x20, 0x61, 0x6e,
+	0x64, 0x20, 0x4c, 0x61, 0x72, 0x67, 0x65, 0x72,
+	0x20, 0x54, 0x68, 0x61, 0x6e, 0x20, 0x4f, 0x6e,
+	0x65, 0x20, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x2d,
+	0x53, 0x69, 0x7a, 0x65, 0x20, 0x44, 0x61, 0x74,
+	0x61
+};
+static uint8_t test_case7_hmac_sha1_result[20] = {
+	0xe8, 0xe9, 0x9d, 0x0f, 0x45, 0x23, 0x7d, 0x78,
+	0x6d, 0x6b, 0xba, 0xa7, 0x96, 0x5c, 0x78, 0x08,
+	0xbb, 0xff, 0x1a, 0x91
+};
+
+
+
+/*
+ * SHA256 Test Vectors
+ */
+
+static uint8_t sha256_msg_8[1] = {
+	0xbd 
+};
+
+static uint8_t sha256_MD_8[32] = {
+	0x68, 0x32, 0x57, 0x20, 0xaa, 0xbd, 0x7c, 0x82,
+	0xf3, 0x0f, 0x55, 0x4b, 0x31, 0x3d, 0x05, 0x70,
+	0xc9, 0x5a, 0xcc, 0xbb, 0x7d, 0xc4, 0xb5, 0xaa,
+	0xe1, 0x12, 0x04, 0xc0, 0x8f, 0xfe, 0x73, 0x2b 
+};
+
+static uint8_t sha256_msg_128[16] = {
+	0xfd, 0xf4, 0x70, 0x09, 0x84, 0xee, 0x11, 0xb7,
+	0x0a, 0xf1, 0x88, 0x0d, 0x0e, 0x0f, 0xef, 0xd4 
+};
+
+static uint8_t sha256_MD_128[32] = {
+	0xb0, 0x1a, 0xe1, 0x6e, 0xed, 0x3b, 0x4a, 0x77,
+	0x0f, 0x12, 0x7b, 0x98, 0x46, 0x9b, 0xa2, 0x6f,
+	0xe3, 0xd8, 0xe9, 0xf5, 0x9d, 0x8a, 0x29, 0x83,
+	0x21, 0x4a, 0xfe, 0x6c, 0xff, 0x0e, 0x6b, 0x6c 
+};
+
+
+static uint8_t sha256_msg_512[64] = {
+	0x35, 0x92, 0xec, 0xfd, 0x1e, 0xac, 0x61, 0x8f,
+	0xd3, 0x90, 0xe7, 0xa9, 0xc2, 0x4b, 0x65, 0x65,
+	0x32, 0x50, 0x93, 0x67, 0xc2, 0x1a, 0x0e, 0xac,
+	0x12, 0x12, 0xac, 0x83, 0xc0, 0xb2, 0x0c, 0xd8,
+	0x96, 0xeb, 0x72, 0xb8, 0x01, 0xc4, 0xd2, 0x12,
+	0xc5, 0x45, 0x2b, 0xbb, 0xf0, 0x93, 0x17, 0xb5,
+	0x0c, 0x5c, 0x9f, 0xb1, 0x99, 0x75, 0x53, 0xd2,
+	0xbb, 0xc2, 0x9b, 0xb4, 0x2f, 0x57, 0x48, 0xad 
+};
+
+static uint8_t sha256_MD_512[32] = {
+	0x10, 0x5a, 0x60, 0x86, 0x58, 0x30, 0xac, 0x3a,
+	0x37, 0x1d, 0x38, 0x43, 0x32, 0x4d, 0x4b, 0xb5,
+	0xfa, 0x8e, 0xc0, 0xe0, 0x2d, 0xda, 0xa3, 0x89,
+	0xad, 0x8d, 0xa4, 0xf1, 0x02, 0x15, 0xc4, 0x54 
+};
+
+static uint8_t sha256_msg_2096[262] = {
+	0xf6, 0xce, 0x82, 0x21, 0xbf, 0x64, 0x27, 0x3c,
+	0x91, 0xc4, 0xcb, 0x41, 0xeb, 0xba, 0x1b, 0xfc,
+	0xfa, 0x12, 0xc0, 0x43, 0xc7, 0x01, 0x31, 0x7e,
+	0xb0, 0xc0, 0xcb, 0x66, 0x15, 0x7a, 0x23, 0x0c,
+	0x53, 0x68, 0x9b, 0x1d, 0xf6, 0x3b, 0x33, 0x65,
+	0x2a, 0xba, 0xa2, 0x93, 0x73, 0xac, 0xa6, 0x3c,
+	0x9e, 0xf8, 0x98, 0x22, 0xf8, 0x0b, 0x43, 0xb5,
+	0xbd, 0x7a, 0xf6, 0xda, 0xd3, 0xe8, 0xd8, 0xec,
+	0xb8, 0x2b, 0x7c, 0x00, 0xba, 0xaa, 0xb5, 0x6e,
+	0x66, 0x09, 0xac, 0x8d, 0x42, 0x09, 0x2f, 0xbd,
+	0xbf, 0xa9, 0x4c, 0xab, 0x69, 0x92, 0x1f, 0xd0,
+	0x61, 0xb1, 0xe8, 0x3b, 0x0d, 0x26, 0x60, 0x91,
+	0x0e, 0x5d, 0x4e, 0x52, 0x72, 0x7a, 0x55, 0x5d,
+	0x2b, 0xfb, 0x10, 0xb7, 0xc0, 0x98, 0x61, 0x88,
+	0x43, 0x6e, 0x05, 0x66, 0x83, 0x5d, 0x6c, 0xd6,
+	0x82, 0xaf, 0xc8, 0x10, 0x2a, 0xfa, 0x65, 0x03,
+	0x3b, 0x47, 0x38, 0x99, 0x88, 0x73, 0xba, 0x3c,
+	0x63, 0xd6, 0xf7, 0x99, 0x56, 0x23, 0xe1, 0xa4,
+	0x14, 0x8f, 0xeb, 0xdc, 0xae, 0x36, 0xd3, 0xd0,
+	0x0a, 0xba, 0xbf, 0xe2, 0x92, 0x2d, 0x8c, 0x4b,
+	0x29, 0x31, 0x63, 0x5f, 0x63, 0x5d, 0x8d, 0x12,
+	0xf5, 0xe3, 0x88, 0xbc, 0x6a, 0x70, 0x5a, 0x19,
+	0x18, 0x54, 0x25, 0x94, 0x53, 0xe3, 0xfc, 0xc5,
+	0xe0, 0x1b, 0xf5, 0x38, 0xac, 0x87, 0x7f, 0x70,
+	0xbe, 0x62, 0xf6, 0x2b, 0x6b, 0x00, 0x75, 0xe8,
+	0xc9, 0x6a, 0xec, 0xa7, 0x66, 0x49, 0x72, 0xf0,
+	0x39, 0x05, 0xdc, 0x16, 0xd8, 0x2d, 0x8e, 0xbd,
+	0xec, 0x1a, 0x91, 0x9a, 0xe2, 0xcf, 0xe6, 0x7a,
+	0xe4, 0x24, 0x1a, 0x86, 0x08, 0x24, 0x1b, 0xc5,
+	0xc7, 0xb3, 0x4a, 0xe2, 0xb0, 0x74, 0xd1, 0x30,
+	0x5d, 0xe9, 0x37, 0xeb, 0xa7, 0xdc, 0x32, 0xc1,
+	0x16, 0xfe, 0xbc, 0x90, 0x9b, 0xcf, 0x68, 0x72,
+	0x82, 0xbd, 0xf7, 0xf7, 0xa2, 0x90 
+};
+
+static uint8_t sha256_MD_2096[32] = {
+	0xef, 0xd3, 0x5c, 0x0d, 0x49, 0xe6, 0xa2, 0x2c,
+	0x2b, 0x54, 0x59, 0x9a, 0xbb, 0x0d, 0xfa, 0x41,
+	0x94, 0x35, 0xa5, 0xb7, 0x49, 0xef, 0x1c, 0x71,
+	0x23, 0xd5, 0x9a, 0x2f, 0xb5, 0xdb, 0x8f, 0x75 
+};
+
+
+/*
+ *	HMAC SHA256 Test Vectors from RFC 4231									
+ */
+
+static uint8_t test_case1_hmac_sha2_key[20] = {
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+	0x0b, 0x0b, 0x0b, 0x0b
+};
+
+static uint8_t test_case1_hmac_sha2_data[8] = {
+	0x48, 0x69, 0x20, 0x54, 0x68, 0x65, 0x72, 0x65
+};
+static uint8_t test_case1_hmac_sha256_result[32] = {
+	0xb0, 0x34, 0x4c, 0x61, 0xd8, 0xdb, 0x38, 0x53,
+	0x5c, 0xa8, 0xaf, 0xce, 0xaf, 0x0b, 0xf1, 0x2b,
+	0x88, 0x1d, 0xc2, 0x00, 0xc9, 0x83, 0x3d, 0xa7,
+	0x26, 0xe9, 0x37, 0x6c, 0x2e, 0x32, 0xcf, 0xf7
+};
+static uint8_t test_case1_hmac_sha384_result[48] = {
+	0xaf, 0xd0, 0x39, 0x44, 0xd8, 0x48, 0x95, 0x62,
+	0x6b, 0x08, 0x25, 0xf4, 0xab, 0x46, 0x90, 0x7f,
+	0x15, 0xf9, 0xda, 0xdb, 0xe4, 0x10, 0x1e, 0xc6,
+	0x82, 0xaa, 0x03, 0x4c, 0x7c, 0xeb, 0xc5, 0x9c,
+	0xfa, 0xea, 0x9e, 0xa9, 0x07, 0x6e, 0xde, 0x7f,
+	0x4a, 0xf1, 0x52, 0xe8, 0xb2, 0xfa, 0x9c, 0xb6
+};
+
+
+static uint8_t test_case2_hmac_sha2_key[4] = {
+	0x4a, 0x65, 0x66, 0x65
+};
+static uint8_t test_case2_hmac_sha2_data[28] = {
+	0x77, 0x68, 0x61, 0x74, 0x20, 0x64, 0x6f, 0x20,
+	0x79, 0x61, 0x20, 0x77, 0x61, 0x6e, 0x74, 0x20,
+	0x66, 0x6f, 0x72, 0x20, 0x6e, 0x6f, 0x74, 0x68,
+	0x69, 0x6e, 0x67, 0x3f
+};
+static uint8_t test_case2_hmac_sha256_result[32] = {
+	0x5b, 0xdc, 0xc1, 0x46, 0xbf, 0x60, 0x75, 0x4e,
+	0x6a, 0x04, 0x24, 0x26, 0x08, 0x95, 0x75, 0xc7,
+	0x5a, 0x00, 0x3f, 0x08, 0x9d, 0x27, 0x39, 0x83,
+	0x9d, 0xec, 0x58, 0xb9, 0x64, 0xec, 0x38, 0x43
+};
+static uint8_t test_case2_hmac_sha384_result[48] = {
+	0xaf, 0x45, 0xd2, 0xe3, 0x76, 0x48, 0x40, 0x31,
+	0x61, 0x7f, 0x78, 0xd2, 0xb5, 0x8a, 0x6b, 0x1b,
+	0x9c, 0x7e, 0xf4, 0x64, 0xf5, 0xa0, 0x1b, 0x47,
+	0xe4, 0x2e, 0xc3, 0x73, 0x63, 0x22, 0x44, 0x5e,
+	0x8e, 0x22, 0x40, 0xca, 0x5e, 0x69, 0xe2, 0xc7,
+	0x8b, 0x32, 0x39, 0xec, 0xfa, 0xb2, 0x16, 0x49
+};
+
+
+static uint8_t test_case3_hmac_sha2_key[20] = {
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa
+};
+static uint8_t test_case3_hmac_sha2_data[50] = {
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
+	0xdd, 0xdd
+};
+static uint8_t test_case3_hmac_sha256_result[32] = {
+	0x77, 0x3e, 0xa9, 0x1e, 0x36, 0x80, 0x0e, 0x46,
+	0x85, 0x4d, 0xb8, 0xeb, 0xd0, 0x91, 0x81, 0xa7,
+	0x29, 0x59, 0x09, 0x8b, 0x3e, 0xf8, 0xc1, 0x22,
+	0xd9, 0x63, 0x55, 0x14, 0xce, 0xd5, 0x65, 0xfe
+};
+static uint8_t test_case3_hmac_sha384_result[48] = {
+	0x88, 0x06, 0x26, 0x08, 0xd3, 0xe6, 0xad, 0x8a,
+	0x0a, 0xa2, 0xac, 0xe0, 0x14, 0xc8, 0xa8, 0x6f,
+	0x0a, 0xa6, 0x35, 0xd9, 0x47, 0xac, 0x9f, 0xeb,
+	0xe8, 0x3e, 0xf4, 0xe5, 0x59, 0x66, 0x14, 0x4b,
+	0x2a, 0x5a, 0xb3, 0x9d, 0xc1, 0x38, 0x14, 0xb9,
+	0x4e, 0x3a, 0xb6, 0xe1, 0x01, 0xa3, 0x4f, 0x27
+};
+
+
+static uint8_t test_case4_hmac_sha2_key[25] = {
+	0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+	0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
+	0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+	0x19
+};
+static uint8_t test_case4_hmac_sha2_data[50] = {
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd, 0xcd,
+	0xcd, 0xcd
+};
+static uint8_t test_case4_hmac_sha256_result[32] = {
+	0x82, 0x55, 0x8a, 0x38, 0x9a, 0x44, 0x3c, 0x0e,
+	0xa4, 0xcc, 0x81, 0x98, 0x99, 0xf2, 0x08, 0x3a,
+	0x85, 0xf0, 0xfa, 0xa3, 0xe5, 0x78, 0xf8, 0x07,
+	0x7a, 0x2e, 0x3f, 0xf4, 0x67, 0x29, 0x66, 0x5b
+};
+static uint8_t test_case4_hmac_sha384_result[48] = {
+	0x3e, 0x8a, 0x69, 0xb7, 0x78, 0x3c, 0x25, 0x85,
+	0x19, 0x33, 0xab, 0x62, 0x90, 0xaf, 0x6c, 0xa7,
+	0x7a, 0x99, 0x81, 0x48, 0x08, 0x50, 0x00, 0x9c,
+	0xc5, 0x57, 0x7c, 0x6e, 0x1f, 0x57, 0x3b, 0x4e,
+	0x68, 0x01, 0xdd, 0x23, 0xc4, 0xa7, 0xd6, 0x79,
+	0xcc, 0xf8, 0xa3, 0x86, 0xc6, 0x74, 0xcf, 0xfb
+};
+
+
+static uint8_t test_case5_hmac_sha2_key[20] = {
+	0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
+	0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
+	0x0c, 0x0c, 0x0c, 0x0c
+};
+static uint8_t test_case5_hmac_sha2_data[20] = {
+	0x54, 0x65, 0x73, 0x74, 0x20, 0x57, 0x69, 0x74,
+	0x68, 0x20, 0x54, 0x72, 0x75, 0x6e, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e
+};
+static uint8_t test_case5_hmac_sha256_result[16] = {
+	0xa3, 0xb6, 0x16, 0x74, 0x73, 0x10, 0x0e, 0xe0,
+	0x6e, 0x0c, 0x79, 0x6c, 0x29, 0x55, 0x55, 0x2b
+};
+static uint8_t test_case5_hmac_sha384_result[16] = {
+	0x3a, 0xbf, 0x34, 0xc3, 0x50, 0x3b, 0x2a, 0x23,
+	0xa4, 0x6e, 0xfc, 0x61, 0x9b, 0xae, 0xf8, 0x97
+};
+
+
+static uint8_t test_case6_hmac_sha2_key[131] = {
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa
+};
+static uint8_t test_case6_hmac_sha2_data[54] = {
+	0x54, 0x65, 0x73, 0x74, 0x20, 0x55, 0x73, 0x69,
+	0x6e, 0x67, 0x20, 0x4c, 0x61, 0x72, 0x67, 0x65,
+	0x72, 0x20, 0x54, 0x68, 0x61, 0x6e, 0x20, 0x42,
+	0x6c, 0x6f, 0x63, 0x6b, 0x2d, 0x53, 0x69, 0x7a,
+	0x65, 0x20, 0x4b, 0x65, 0x79, 0x20, 0x2d, 0x20,
+	0x48, 0x61, 0x73, 0x68, 0x20, 0x4b, 0x65, 0x79,
+	0x20, 0x46, 0x69, 0x72, 0x73, 0x74
+};
+static uint8_t test_case6_hmac_sha256_result[32] = {
+	0x60, 0xe4, 0x31, 0x59, 0x1e, 0xe0, 0xb6, 0x7f,
+	0x0d, 0x8a, 0x26, 0xaa, 0xcb, 0xf5, 0xb7, 0x7f,
+	0x8e, 0x0b, 0xc6, 0x21, 0x37, 0x28, 0xc5, 0x14,
+	0x05, 0x46, 0x04, 0x0f, 0x0e, 0xe3, 0x7f, 0x54
+};
+static uint8_t test_case6_hmac_sha384_result[48] = {
+	0x4e, 0xce, 0x08, 0x44, 0x85, 0x81, 0x3e, 0x90,
+	0x88, 0xd2, 0xc6, 0x3a, 0x04, 0x1b, 0xc5, 0xb4,
+	0x4f, 0x9e, 0xf1, 0x01, 0x2a, 0x2b, 0x58, 0x8f,
+	0x3c, 0xd1, 0x1f, 0x05, 0x03, 0x3a, 0xc4, 0xc6,
+	0x0c, 0x2e, 0xf6, 0xab, 0x40, 0x30, 0xfe, 0x82,
+	0x96, 0x24, 0x8d, 0xf1, 0x63, 0xf4, 0x49, 0x52
+};
+
+
+static uint8_t test_case7_hmac_sha2_key[131] = {
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+	0xaa, 0xaa, 0xaa
+};
+
+static uint8_t test_case7_hmac_sha2_data[152] = {
+	0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20,
+	0x61, 0x20, 0x74, 0x65, 0x73, 0x74, 0x20, 0x75,
+	0x73, 0x69, 0x6e, 0x67, 0x20, 0x61, 0x20, 0x6c,
+	0x61, 0x72, 0x67, 0x65, 0x72, 0x20, 0x74, 0x68,
+	0x61, 0x6e, 0x20, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
+	0x2d, 0x73, 0x69, 0x7a, 0x65, 0x20, 0x6b, 0x65,
+	0x79, 0x20, 0x61, 0x6e, 0x64, 0x20, 0x61, 0x20,
+	0x6c, 0x61, 0x72, 0x67, 0x65, 0x72, 0x20, 0x74,
+	0x68, 0x61, 0x6e, 0x20, 0x62, 0x6c, 0x6f, 0x63,
+	0x6b, 0x2d, 0x73, 0x69, 0x7a, 0x65, 0x20, 0x64,
+	0x61, 0x74, 0x61, 0x2e, 0x20, 0x54, 0x68, 0x65,
+	0x20, 0x6b, 0x65, 0x79, 0x20, 0x6e, 0x65, 0x65,
+	0x64, 0x73, 0x20, 0x74, 0x6f, 0x20, 0x62, 0x65,
+	0x20, 0x68, 0x61, 0x73, 0x68, 0x65, 0x64, 0x20,
+	0x62, 0x65, 0x66, 0x6f, 0x72, 0x65, 0x20, 0x62,
+	0x65, 0x69, 0x6e, 0x67, 0x20, 0x75, 0x73, 0x65,
+	0x64, 0x20, 0x62, 0x79, 0x20, 0x74, 0x68, 0x65,
+	0x20, 0x48, 0x4d, 0x41, 0x43, 0x20, 0x61, 0x6c,
+	0x67, 0x6f, 0x72, 0x69, 0x74, 0x68, 0x6d, 0x2e
+};
+static uint8_t test_case7_hmac_sha256_result[32] = {
+	0x9b, 0x09, 0xff, 0xa7, 0x1b, 0x94, 0x2f, 0xcb,
+	0x27, 0x63, 0x5f, 0xbc, 0xd5, 0xb0, 0xe9, 0x44,
+	0xbf, 0xdc, 0x63, 0x64, 0x4f, 0x07, 0x13, 0x93,
+	0x8a, 0x7f, 0x51, 0x53, 0x5c, 0x3a, 0x35, 0xe2
+};
+static uint8_t test_case7_hmac_sha384_result[48] = {
+	0x66, 0x17, 0x17, 0x8e, 0x94, 0x1f, 0x02, 0x0d,
+	0x35, 0x1e, 0x2f, 0x25, 0x4e, 0x8f, 0xd3, 0x2c,
+	0x60, 0x24, 0x20, 0xfe, 0xb0, 0xb8, 0xfb, 0x9a,
+	0xdc, 0xce, 0xbb, 0x82, 0x46, 0x1e, 0x99, 0xc5,
+	0xa6, 0x78, 0xcc, 0x31, 0xe7, 0x99, 0x17, 0x6d,
+	0x38, 0x60, 0xe6, 0x11, 0x0c, 0x46, 0x52, 0x3e
+};
+
+
+/*----------------------------------------------------------------------------*/
+zrtp_status_t zrtp_sha_test( zrtp_hash_t *self,
+							 const uint8_t *test_vector,
+							 int vector_length,
+							 const uint8_t *test_result,
+							 int test_length)
+{
+	zrtp_status_t 	res;
+	zrtp_string256_t hval = ZSTR_INIT_EMPTY(hval);
+
+	res = self->hash_c(self, (const char*)test_vector, vector_length, (zrtp_stringn_t*)&hval);
+	if (zrtp_status_ok != res) {
+		return res;
+	}
+	
+	return (0 == zrtp_memcmp(hval.buffer, test_result, test_length)) ? zrtp_status_ok : zrtp_status_fail;
+}
+
+/*----------------------------------------------------------------------------*/
+zrtp_status_t zrtp_hmac_test( zrtp_hash_t *self,
+							  const uint8_t *key,
+							  uint16_t key_length,
+							  const uint8_t *test_vector,
+							  uint16_t vector_length,
+							  const uint8_t *test_result,
+							  int test_length)
+{
+	zrtp_status_t 	res;
+	zrtp_string256_t hval = ZSTR_INIT_EMPTY(hval);
+	zrtp_string256_t zrtp_key = ZSTR_INIT_EMPTY(zrtp_key);
+	zrtp_string256_t zrtp_test_vector = ZSTR_INIT_EMPTY(zrtp_test_vector);
+
+	zrtp_zstrncpyc(ZSTR_GV(zrtp_key), (const char*)key, key_length);	
+	zrtp_zstrncpyc(ZSTR_GV(zrtp_test_vector), (const char*)test_vector, vector_length);
+	
+	res = self->hmac(self, ZSTR_GV(zrtp_key), ZSTR_GV(zrtp_test_vector), ZSTR_GV(hval));	
+	if (zrtp_status_ok != res) {
+		return res;
+	}
+
+	return (0 == zrtp_memcmp(hval.buffer, test_result, test_length)) ? zrtp_status_ok : zrtp_status_fail;
+}
+
+/*----------------------------------------------------------------------------*/
+zrtp_status_t zrtp_sha256_self_test(zrtp_hash_t *self)
+{
+	zrtp_status_t res;
+	ZRTP_LOG(3, (_ZTU_,"SHA256 Testing\n"));	
+
+	ZRTP_LOG(3, (_ZTU_, "\t8-bit test... "));
+	res = zrtp_sha_test(self, sha256_msg_8, sizeof(sha256_msg_8), sha256_MD_8, sizeof(sha256_MD_8));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t128-bit test... "));
+	res = zrtp_sha_test(self, sha256_msg_128, sizeof(sha256_msg_128), sha256_MD_128, sizeof(sha256_MD_128));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t512-bit test... "));
+	res = zrtp_sha_test(self, sha256_msg_512, sizeof(sha256_msg_512), sha256_MD_512, sizeof(sha256_MD_512));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t2096-bit test... "));
+	res = zrtp_sha_test(self, sha256_msg_2096, sizeof(sha256_msg_2096), sha256_MD_2096, sizeof(sha256_MD_2096));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	return res;
+}
+
+zrtp_status_t zrtp_sha384_self_test(zrtp_hash_t *self)
+{
+	return zrtp_status_ok;
+}
+
+/*----------------------------------------------------------------------------*/
+zrtp_status_t zrtp_hmac_sha256_self_test(zrtp_hash_t *self)
+{
+	zrtp_status_t res;
+	ZRTP_LOG(3, (_ZTU_,"HMAC SHA256 Testing\n"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t1 case test... "));
+	res = zrtp_hmac_test( self, 
+						  test_case1_hmac_sha2_key, 
+						  sizeof(test_case1_hmac_sha2_key), 
+						  test_case1_hmac_sha2_data, 
+						  sizeof(test_case1_hmac_sha2_data),
+						  test_case1_hmac_sha256_result,
+						  sizeof(test_case1_hmac_sha256_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t2 case test... "));
+	res = zrtp_hmac_test( self, 
+						  test_case2_hmac_sha2_key, 
+						  sizeof(test_case2_hmac_sha2_key), 
+						  test_case2_hmac_sha2_data, 
+					 	  sizeof(test_case2_hmac_sha2_data),
+						  test_case2_hmac_sha256_result,
+						  sizeof(test_case2_hmac_sha256_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t3 case test... "));
+	res = zrtp_hmac_test( self, 
+						  test_case3_hmac_sha2_key, 
+						  sizeof(test_case3_hmac_sha2_key), 
+						  test_case3_hmac_sha2_data, 
+						  sizeof(test_case3_hmac_sha2_data),
+						  test_case3_hmac_sha256_result,
+						  sizeof(test_case3_hmac_sha256_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t4 case test... "));
+	res = zrtp_hmac_test(self, 
+						test_case4_hmac_sha2_key, 
+						sizeof(test_case4_hmac_sha2_key), 
+						test_case4_hmac_sha2_data, 
+						sizeof(test_case4_hmac_sha2_data),
+						test_case4_hmac_sha256_result,
+						sizeof(test_case4_hmac_sha256_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t5 case test..."));
+	res = zrtp_hmac_test(self, 
+						test_case5_hmac_sha2_key, 
+						sizeof(test_case5_hmac_sha2_key), 
+						test_case5_hmac_sha2_data, 
+						sizeof(test_case5_hmac_sha2_data),
+						test_case5_hmac_sha256_result,
+						sizeof(test_case5_hmac_sha256_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t6 case test... "));
+	res = zrtp_hmac_test(self, 
+						test_case6_hmac_sha2_key, 
+						sizeof(test_case6_hmac_sha2_key), 
+						test_case6_hmac_sha2_data, 
+						sizeof(test_case6_hmac_sha2_data),
+						test_case6_hmac_sha256_result,
+						sizeof(test_case6_hmac_sha256_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t7 case test..."));
+	res = zrtp_hmac_test(self, 
+						test_case7_hmac_sha2_key, 
+						sizeof(test_case7_hmac_sha2_key), 
+						test_case7_hmac_sha2_data, 
+						sizeof(test_case7_hmac_sha2_data),
+						test_case7_hmac_sha256_result,
+						sizeof(test_case7_hmac_sha256_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	return res;
+}
+
+zrtp_status_t zrtp_hmac_sha384_self_test(zrtp_hash_t *self)
+{
+	zrtp_status_t res;
+	ZRTP_LOG(3, (_ZTU_,"HMAC SHA384 Testing\n"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t1 case test... "));
+	res = zrtp_hmac_test( self, 
+						 test_case1_hmac_sha2_key, 
+						 sizeof(test_case1_hmac_sha2_key), 
+						 test_case1_hmac_sha2_data, 
+						 sizeof(test_case1_hmac_sha2_data),
+						 test_case1_hmac_sha384_result,
+						 sizeof(test_case1_hmac_sha384_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t2 case test... "));
+	res = zrtp_hmac_test( self, 
+						 test_case2_hmac_sha2_key, 
+						 sizeof(test_case2_hmac_sha2_key), 
+						 test_case2_hmac_sha2_data, 
+						 sizeof(test_case2_hmac_sha2_data),
+						 test_case2_hmac_sha384_result,
+						 sizeof(test_case2_hmac_sha384_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t3 case test... "));
+	res = zrtp_hmac_test( self, 
+						 test_case3_hmac_sha2_key, 
+						 sizeof(test_case3_hmac_sha2_key), 
+						 test_case3_hmac_sha2_data, 
+						 sizeof(test_case3_hmac_sha2_data),
+						 test_case3_hmac_sha384_result,
+						 sizeof(test_case3_hmac_sha384_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t4 case test... "));
+	res = zrtp_hmac_test(self, 
+						 test_case4_hmac_sha2_key, 
+						 sizeof(test_case4_hmac_sha2_key), 
+						 test_case4_hmac_sha2_data, 
+						 sizeof(test_case4_hmac_sha2_data),
+						 test_case4_hmac_sha384_result,
+						 sizeof(test_case4_hmac_sha384_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t5 case test..."));
+	res = zrtp_hmac_test(self, 
+						 test_case5_hmac_sha2_key, 
+						 sizeof(test_case5_hmac_sha2_key), 
+						 test_case5_hmac_sha2_data, 
+						 sizeof(test_case5_hmac_sha2_data),
+						 test_case5_hmac_sha384_result,
+						 sizeof(test_case5_hmac_sha384_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t6 case test... "));
+	res = zrtp_hmac_test(self, 
+						 test_case6_hmac_sha2_key, 
+						 sizeof(test_case6_hmac_sha2_key), 
+						 test_case6_hmac_sha2_data, 
+						 sizeof(test_case6_hmac_sha2_data),
+						 test_case6_hmac_sha384_result,
+						 sizeof(test_case6_hmac_sha384_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t7 case test..."));
+	res = zrtp_hmac_test(self, 
+						 test_case7_hmac_sha2_key, 
+						 sizeof(test_case7_hmac_sha2_key), 
+						 test_case7_hmac_sha2_data, 
+						 sizeof(test_case7_hmac_sha2_data),
+						 test_case7_hmac_sha384_result,
+						 sizeof(test_case7_hmac_sha384_result));
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	return res;
+}
+
+/*----------------------------------------------------------------------------*/
+zrtp_status_t zrtp_sha1_self_test(zrtp_hash_t *self)
+{
+	zrtp_status_t res;	
+	ZRTP_LOG(3, (_ZTU_,"SHA1 Testing\n"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t8-bit test... "));
+	res = zrtp_sha_test(self, sha1_msg_8, sizeof(sha1_msg_8), sha1_MD_8, ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t128-bit test... "));
+	res = zrtp_sha_test(self, sha1_msg_128, sizeof(sha1_msg_128), sha1_MD_128, ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t512-bit test... "));
+	res = zrtp_sha_test(self, sha1_msg_512, sizeof(sha1_msg_512), sha1_MD_512, ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	ZRTP_LOG(3, (_ZTU_, "\t2096-bit test... "));
+	res = zrtp_sha_test(self, sha1_msg_2096, sizeof(sha1_msg_2096), sha1_MD_2096, ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+
+	return res;
+}
+
+/*----------------------------------------------------------------------------*/
+zrtp_status_t zrtp_hmac_sha1_self_test(zrtp_hash_t *self)
+{
+	zrtp_status_t res;	
+	ZRTP_LOG(3, (_ZTU_,"HMAC SHA1 Testing\n"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t1 case test... "));
+	res = zrtp_hmac_test(self, 
+						 test_case1_hmac_sha1_key, 
+						 sizeof(test_case1_hmac_sha1_key), 
+						 test_case1_hmac_sha1_data, 
+						 sizeof(test_case1_hmac_sha1_data),
+						 test_case1_hmac_sha1_result,
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t2 case test... "));
+	res = zrtp_hmac_test(self, 
+						 test_case2_hmac_sha1_key, 
+						 sizeof(test_case2_hmac_sha1_key), 
+						 test_case2_hmac_sha1_data, 
+						 sizeof(test_case2_hmac_sha1_data),
+						 test_case2_hmac_sha1_result,
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t3 case test... "));
+	res = zrtp_hmac_test(self, 
+						 test_case3_hmac_sha1_key, 
+						 sizeof(test_case3_hmac_sha1_key), 
+						 test_case3_hmac_sha1_data, 
+						 sizeof(test_case3_hmac_sha1_data),
+						 test_case3_hmac_sha1_result,
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t4 case test... "));
+	res = zrtp_hmac_test(self, 
+						 test_case4_hmac_sha1_key, 
+						 sizeof(test_case4_hmac_sha1_key), 
+						 test_case4_hmac_sha1_data, 
+						 sizeof(test_case4_hmac_sha1_data),
+						 test_case4_hmac_sha1_result,
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t5 case test... "));
+	res = zrtp_hmac_test(self, 
+						 test_case5_hmac_sha1_key, 
+						 sizeof(test_case5_hmac_sha1_key), 
+						 test_case5_hmac_sha1_data, 
+						 sizeof(test_case5_hmac_sha1_data),
+						 test_case5_hmac_sha1_result,
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t6 case test... "));
+	res = zrtp_hmac_test(self, 
+						 test_case6_hmac_sha1_key, 
+						 sizeof(test_case6_hmac_sha1_key), 
+						 test_case6_hmac_sha1_data, 
+						 sizeof(test_case6_hmac_sha1_data),
+						 test_case6_hmac_sha1_result,
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	ZRTP_LOG(3, (_ZTU_, "\t7 case test... "));
+	res = zrtp_hmac_test(self, 
+						 test_case7_hmac_sha1_key, 
+						 sizeof(test_case7_hmac_sha1_key), 
+						 test_case7_hmac_sha1_data, 
+						 sizeof(test_case7_hmac_sha1_data),
+						 test_case7_hmac_sha1_result,
+						 ZRTP_SRTP_HASH_HMAC_SHA1);
+	ZRTP_LOGC(3, ("%s\n", zrtp_status_ok == res?"OK":"FALSE"));
+	
+	return res;
+}
+
+/*----------------------------------------------------------------------------*/
+zrtp_status_t zrtp_defaults_hash(zrtp_global_t* global_ctx)
+{
+	zrtp_hash_t* hash_sha384 = zrtp_sys_alloc(sizeof(zrtp_hash_t));
+    zrtp_hash_t* hash_sha256 = zrtp_sys_alloc(sizeof(zrtp_hash_t));
+	zrtp_hash_t* hash_sha1 = zrtp_sys_alloc(sizeof(zrtp_hash_t));
+    if (!hash_sha256 || !hash_sha1 || !hash_sha384) {
+		if (hash_sha384) {
+			zrtp_sys_free(hash_sha384);
+		}
+		if (hash_sha256) {
+			zrtp_sys_free(hash_sha256);
+		}
+		if (hash_sha1) {
+			zrtp_sys_free(hash_sha1);
+		}
+		return zrtp_status_alloc_fail;
+    }
+    
+	zrtp_memset(hash_sha384, 0, sizeof(zrtp_hash_t));
+    zrtp_memset(hash_sha256, 0, sizeof(zrtp_hash_t));
+	zrtp_memset(hash_sha1, 0, sizeof(zrtp_hash_t));
+
+	zrtp_memcpy(hash_sha384->base.type, ZRTP_S384, ZRTP_COMP_TYPE_SIZE);
+	hash_sha384->base.id			= ZRTP_HASH_SHA384;
+    hash_sha384->base.zrtp			= global_ctx;
+	hash_sha384->block_length		= SHA384_BLOCK_SIZE;
+	hash_sha384->digest_length		= SHA384_DIGEST_SIZE;
+	
+    hash_sha384->hash_begin			= zrtp_sha_begin;
+    hash_sha384->hash_update		= zrtp_sha_update;
+    hash_sha384->hash_end			= zrtp_sha_end;
+    hash_sha384->hash				= zrtp_sha;
+	hash_sha384->hash_c				= zrtp_sha_c;
+	hash_sha384->hash_self_test		= zrtp_sha384_self_test;
+    
+	hash_sha384->hmac_begin_c		= zrtp_hmac_sha384_begin_c;
+	hash_sha384->hmac_begin			= zrtp_hmac_begin;
+    hash_sha384->hmac_update		= zrtp_hmac_update;
+    hash_sha384->hmac_end			= zrtp_hmac_end;
+    hash_sha384->hmac				= zrtp_hmac;
+	hash_sha384->hmac_c				= zrtp_hmac_c;
+    hash_sha384->hmac_truncated		= zrtp_hmac_truncated;
+	hash_sha384->hmac_truncated_c	= zrtp_hmac_truncated_c;
+	hash_sha384->hmac_self_test		= zrtp_hmac_sha384_self_test;
+	
+	zrtp_memcpy(hash_sha256->base.type, ZRTP_S256, ZRTP_COMP_TYPE_SIZE);
+	hash_sha256->base.id			= ZRTP_HASH_SHA256;
+    hash_sha256->base.zrtp			= global_ctx;
+	hash_sha256->block_length		= SHA256_BLOCK_SIZE;
+	hash_sha256->digest_length		= SHA256_DIGEST_SIZE;
+	
+    hash_sha256->hash_begin			= zrtp_sha_begin;
+    hash_sha256->hash_update		= zrtp_sha_update;
+    hash_sha256->hash_end			= zrtp_sha_end;
+    hash_sha256->hash				= zrtp_sha;
+	hash_sha256->hash_c				= zrtp_sha_c;
+	hash_sha256->hash_self_test		= zrtp_sha256_self_test;
+    
+	hash_sha256->hmac_begin_c		= zrtp_hmac_sha256_begin_c;
+	hash_sha256->hmac_begin			= zrtp_hmac_begin;
+    hash_sha256->hmac_update		= zrtp_hmac_update;
+    hash_sha256->hmac_end			= zrtp_hmac_end;
+    hash_sha256->hmac				= zrtp_hmac;
+	hash_sha256->hmac_c				= zrtp_hmac_c;
+    hash_sha256->hmac_truncated		= zrtp_hmac_truncated;
+	hash_sha256->hmac_truncated_c	= zrtp_hmac_truncated_c;
+	hash_sha256->hmac_self_test		= zrtp_hmac_sha256_self_test;
+	
+
+    zrtp_memcpy(hash_sha1->base.type, ZRTP_S160, ZRTP_COMP_TYPE_SIZE);
+	hash_sha1->base.id				= ZRTP_SRTP_HASH_HMAC_SHA1;
+    hash_sha1->base.zrtp			= global_ctx;
+	hash_sha1->block_length			= SHA1_BLOCK_SIZE;
+	hash_sha1->digest_length		= SHA1_DIGEST_SIZE;
+	
+    hash_sha1->hash_begin			= zrtp_sha_begin;
+    hash_sha1->hash_update			= zrtp_sha_update;
+    hash_sha1->hash_end				= zrtp_sha_end;
+    hash_sha1->hash					= zrtp_sha;
+	hash_sha1->hash_c				= zrtp_sha_c;
+	hash_sha1->hash_self_test		= zrtp_sha1_self_test;
+    
+	hash_sha1->hmac_begin_c			= zrtp_hmac_sha1_begin_c;
+	hash_sha1->hmac_begin			= zrtp_hmac_begin;	
+	hash_sha1->hmac_update			= zrtp_hmac_update;
+	hash_sha1->hmac_end				= zrtp_hmac_end;
+    hash_sha1->hmac					= zrtp_hmac;
+	hash_sha1->hmac_c				= zrtp_hmac_c;
+    hash_sha1->hmac_truncated 		= zrtp_hmac_truncated;
+	hash_sha1->hmac_truncated_c		= zrtp_hmac_truncated_c;
+	hash_sha1->hmac_self_test		= zrtp_hmac_sha1_self_test;
+
+	zrtp_comp_register(ZRTP_CC_HASH, hash_sha384, global_ctx);
+	zrtp_comp_register(ZRTP_CC_HASH, hash_sha256, global_ctx);
+    zrtp_comp_register(ZRTP_CC_HASH, hash_sha1, global_ctx);
+
+    return zrtp_status_ok;
+}

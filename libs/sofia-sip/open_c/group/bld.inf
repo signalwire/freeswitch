@@ -1,0 +1,146 @@
+//
+// bld.inf for sofia-sip package
+//
+// Copyright (C) 2005,2006,2007 Nokia Corporation
+// Contact: Pekka Pessi <pekka.pessi@nokia.com>
+// Licensed under LGPL. See file COPYING.
+
+PRJ_PLATFORMS
+DEFAULT
+
+PRJ_EXPORTS
+
+../../libsofia-sip-ua/bnf/sofia-sip/bnf.h \epoc32\include\osextensions\sofia-sip\bnf.h
+../../libsofia-sip-ua/bnf/sofia-sip/hostdomain.h \epoc32\include\osextensions\sofia-sip\hostdomain.h
+../../libsofia-sip-ua/features/sofia-sip/sofia_features.h \epoc32\include\osextensions\sofia-sip\sofia_features.h
+../../libsofia-sip-ua/http/sofia-sip/http.h \epoc32\include\osextensions\sofia-sip\http.h
+../../libsofia-sip-ua/http/sofia-sip/http_hclasses.h \epoc32\include\osextensions\sofia-sip\http_hclasses.h
+../../libsofia-sip-ua/http/sofia-sip/http_header.h \epoc32\include\osextensions\sofia-sip\http_header.h
+../../libsofia-sip-ua/http/sofia-sip/http_parser.h \epoc32\include\osextensions\sofia-sip\http_parser.h
+../../libsofia-sip-ua/http/sofia-sip/http_protos.h \epoc32\include\osextensions\sofia-sip\http_protos.h
+../../libsofia-sip-ua/http/sofia-sip/http_status.h \epoc32\include\osextensions\sofia-sip\http_status.h
+../../libsofia-sip-ua/http/sofia-sip/http_tag.h \epoc32\include\osextensions\sofia-sip\http_tag.h
+../../libsofia-sip-ua/http/sofia-sip/http_tag_class.h \epoc32\include\osextensions\sofia-sip\http_tag_class.h
+../../libsofia-sip-ua/ipt/sofia-sip/base64.h \epoc32\include\osextensions\sofia-sip\base64.h
+../../libsofia-sip-ua/ipt/sofia-sip/rc4.h \epoc32\include\osextensions\sofia-sip\rc4.h
+../../libsofia-sip-ua/ipt/sofia-sip/token64.h \epoc32\include\osextensions\sofia-sip\token64.h
+../../libsofia-sip-ua/ipt/sofia-sip/uniqueid.h \epoc32\include\osextensions\sofia-sip\uniqueid.h
+../../libsofia-sip-ua/ipt/sofia-sip/utf8.h \epoc32\include\osextensions\sofia-sip\utf8.h
+../../libsofia-sip-ua/iptsec/sofia-sip/auth_client.h \epoc32\include\osextensions\sofia-sip\auth_client.h
+../../libsofia-sip-ua/iptsec/sofia-sip/auth_client_plugin.h \epoc32\include\osextensions\sofia-sip\auth_client_plugin.h
+../../libsofia-sip-ua/iptsec/sofia-sip/auth_common.h \epoc32\include\osextensions\sofia-sip\auth_common.h
+../../libsofia-sip-ua/iptsec/sofia-sip/auth_digest.h \epoc32\include\osextensions\sofia-sip\auth_digest.h
+../../libsofia-sip-ua/iptsec/sofia-sip/auth_module.h \epoc32\include\osextensions\sofia-sip\auth_module.h
+../../libsofia-sip-ua/iptsec/sofia-sip/auth_ntlm.h \epoc32\include\osextensions\sofia-sip\auth_ntlm.h
+../../libsofia-sip-ua/iptsec/sofia-sip/auth_plugin.h \epoc32\include\osextensions\sofia-sip\auth_plugin.h
+../../libsofia-sip-ua/msg/sofia-sip/msg.h \epoc32\include\osextensions\sofia-sip\msg.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_addr.h \epoc32\include\osextensions\sofia-sip\msg_addr.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_buffer.h \epoc32\include\osextensions\sofia-sip\msg_buffer.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_date.h \epoc32\include\osextensions\sofia-sip\msg_date.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_header.h \epoc32\include\osextensions\sofia-sip\msg_header.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_mclass.h \epoc32\include\osextensions\sofia-sip\msg_mclass.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_mclass_hash.h \epoc32\include\osextensions\sofia-sip\msg_mclass_hash.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_mime.h \epoc32\include\osextensions\sofia-sip\msg_mime.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_mime_protos.h \epoc32\include\osextensions\sofia-sip\msg_mime_protos.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_parser.h \epoc32\include\osextensions\sofia-sip\msg_parser.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_protos.h \epoc32\include\osextensions\sofia-sip\msg_protos.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_tag_class.h \epoc32\include\osextensions\sofia-sip\msg_tag_class.h
+../../libsofia-sip-ua/msg/sofia-sip/msg_types.h \epoc32\include\osextensions\sofia-sip\msg_types.h
+../../libsofia-sip-ua/nea/sofia-sip/nea.h \epoc32\include\osextensions\sofia-sip\nea.h
+../../libsofia-sip-ua/nea/sofia-sip/nea_tag.h \epoc32\include\osextensions\sofia-sip\nea_tag.h
+../../libsofia-sip-ua/nta/sofia-sip/nta.h \epoc32\include\osextensions\sofia-sip\nta.h
+../../libsofia-sip-ua/nta/sofia-sip/nta_stateless.h \epoc32\include\osextensions\sofia-sip\nta_stateless.h
+../../libsofia-sip-ua/nta/sofia-sip/nta_tag.h \epoc32\include\osextensions\sofia-sip\nta_tag.h
+../../libsofia-sip-ua/nta/sofia-sip/nta_tport.h \epoc32\include\osextensions\sofia-sip\nta_tport.h
+../../libsofia-sip-ua/nta/sofia-sip/sl_utils.h \epoc32\include\osextensions\sofia-sip\sl_utils.h
+../../libsofia-sip-ua/nth/sofia-sip/nth.h \epoc32\include\osextensions\sofia-sip\nth.h
+../../libsofia-sip-ua/nth/sofia-sip/nth_tag.h \epoc32\include\osextensions\sofia-sip\nth_tag.h
+../../libsofia-sip-ua/nua/sofia-sip/nua.h \epoc32\include\osextensions\sofia-sip\nua.h
+../../libsofia-sip-ua/nua/sofia-sip/nua_tag.h \epoc32\include\osextensions\sofia-sip\nua_tag.h
+../../libsofia-sip-ua/nua/nua_types.h \epoc32\include\osextensions\sofia-sip\nua_types.h
+../../libsofia-sip-ua/sdp/sofia-sip/sdp.h \epoc32\include\osextensions\sofia-sip\sdp.h
+../../libsofia-sip-ua/sdp/sofia-sip/sdp_tag.h \epoc32\include\osextensions\sofia-sip\sdp_tag.h
+../../libsofia-sip-ua/sip/sofia-sip/sip.h \epoc32\include\osextensions\sofia-sip\sip.h
+../../libsofia-sip-ua/sip/sofia-sip/sip_extra.h \epoc32\include\osextensions\sofia-sip\sip_extra.h
+../../libsofia-sip-ua/sip/sofia-sip/sip_hclasses.h \epoc32\include\osextensions\sofia-sip\sip_hclasses.h
+../../libsofia-sip-ua/sip/sofia-sip/sip_header.h \epoc32\include\osextensions\sofia-sip\sip_header.h
+../../libsofia-sip-ua/sip/sofia-sip/sip_parser.h \epoc32\include\osextensions\sofia-sip\sip_parser.h
+../../libsofia-sip-ua/sip/sofia-sip/sip_protos.h \epoc32\include\osextensions\sofia-sip\sip_protos.h
+../../libsofia-sip-ua/sip/sofia-sip/sip_status.h \epoc32\include\osextensions\sofia-sip\sip_status.h
+../../libsofia-sip-ua/sip/sofia-sip/sip_tag.h \epoc32\include\osextensions\sofia-sip\sip_tag.h
+../../libsofia-sip-ua/sip/sofia-sip/sip_tag_class.h \epoc32\include\osextensions\sofia-sip\sip_tag_class.h
+../../libsofia-sip-ua/sip/sofia-sip/sip_util.h \epoc32\include\osextensions\sofia-sip\sip_util.h
+../../libsofia-sip-ua/soa/sofia-sip/soa.h \epoc32\include\osextensions\sofia-sip\soa.h
+../../libsofia-sip-ua/soa/sofia-sip/soa_add.h \epoc32\include\osextensions\sofia-sip\soa_add.h
+../../libsofia-sip-ua/soa/sofia-sip/soa_session.h \epoc32\include\osextensions\sofia-sip\soa_session.h
+../../libsofia-sip-ua/soa/sofia-sip/soa_tag.h \epoc32\include\osextensions\sofia-sip\soa_tag.h
+../../libsofia-sip-ua/sresolv/sofia-sip/sresolv.h \epoc32\include\osextensions\sofia-sip\sresolv.h
+../../libsofia-sip-ua/sresolv/sofia-sip/sres_sip.h \epoc32\include\osextensions\sofia-sip\sres_sip.h
+../../libsofia-sip-ua/sresolv/sofia-resolv/sres.h \epoc32\include\osextensions\sofia-resolv/sres.h
+../../libsofia-sip-ua/sresolv/sofia-resolv/sres_async.h \epoc32\include\osextensions\sofia-resolv/sres_async.h
+../../libsofia-sip-ua/sresolv/sofia-resolv/sres_cache.h \epoc32\include\osextensions\sofia-resolv/sres_cache.h
+../../libsofia-sip-ua/sresolv/sofia-resolv/sres_config.h \epoc32\include\osextensions\sofia-resolv/sres_config.h
+../../libsofia-sip-ua/sresolv/sofia-resolv/sres_record.h \epoc32\include\osextensions\sofia-resolv/sres_record.h
+../../libsofia-sip-ua/stun/sofia-sip/stun.h \epoc32\include\osextensions\sofia-sip\stun.h
+../../libsofia-sip-ua/stun/sofia-sip/stun_common.h \epoc32\include\osextensions\sofia-sip\stun_common.h
+../../libsofia-sip-ua/stun/sofia-sip/stun_tag.h \epoc32\include\osextensions\sofia-sip\stun_tag.h
+../../libsofia-sip-ua/su/sofia-sip/heap.h \epoc32\include\osextensions\sofia-sip\heap.h
+../../libsofia-sip-ua/su/sofia-sip/htable.h \epoc32\include\osextensions\sofia-sip\htable.h
+../../libsofia-sip-ua/su/sofia-sip/htable2.h \epoc32\include\osextensions\sofia-sip\htable2.h
+../../libsofia-sip-ua/su/sofia-sip/rbtree.h \epoc32\include\osextensions\sofia-sip\rbtree.h
+../../libsofia-sip-ua/su/sofia-sip/string0.h \epoc32\include\osextensions\sofia-sip\string0.h
+../../libsofia-sip-ua/su/sofia-sip/su_string.h \epoc32\include\osextensions\sofia-sip\su_string.h
+../../libsofia-sip-ua/su/sofia-sip/su.h \epoc32\include\osextensions\sofia-sip\su.h
+../../libsofia-sip-ua/su/sofia-sip/su_addrinfo.h \epoc32\include\osextensions\sofia-sip\su_addrinfo.h
+../../libsofia-sip-ua/su/sofia-sip/su_alloc.h \epoc32\include\osextensions\sofia-sip\su_alloc.h
+../../libsofia-sip-ua/su/sofia-sip/su_alloc_stat.h \epoc32\include\osextensions\sofia-sip\su_alloc_stat.h
+../../libsofia-sip-ua/su/sofia-sip/su_bm.h \epoc32\include\osextensions\sofia-sip\su_bm.h
+../../libsofia-sip-ua/su/sofia-sip/su_config.h \epoc32\include\osextensions\sofia-sip\su_config.h
+../../libsofia-sip-ua/su/sofia-sip/su_debug.h \epoc32\include\osextensions\sofia-sip\su_debug.h
+../../libsofia-sip-ua/su/sofia-sip/su_errno.h \epoc32\include\osextensions\sofia-sip\su_errno.h
+../../libsofia-sip-ua/su/sofia-sip/su_localinfo.h \epoc32\include\osextensions\sofia-sip\su_localinfo.h
+../../libsofia-sip-ua/su/sofia-sip/su_log.h \epoc32\include\osextensions\sofia-sip\su_log.h
+../../libsofia-sip-ua/su/sofia-sip/su_md5.h \epoc32\include\osextensions\sofia-sip\su_md5.h
+../../libsofia-sip-ua/su/sofia-sip/su_os_nw.h \epoc32\include\osextensions\sofia-sip\su_os_nw.h
+../../libsofia-sip-ua/su/sofia-sip/su_strlst.h \epoc32\include\osextensions\sofia-sip\su_strlst.h
+../../libsofia-sip-ua/su/sofia-sip/su_tag.h \epoc32\include\osextensions\sofia-sip\su_tag.h
+../../libsofia-sip-ua/su/sofia-sip/su_tag_class.h \epoc32\include\osextensions\sofia-sip\su_tag_class.h
+../../libsofia-sip-ua/su/sofia-sip/su_tag_inline.h \epoc32\include\osextensions\sofia-sip\su_tag_inline.h
+../../libsofia-sip-ua/su/sofia-sip/su_tag_io.h \epoc32\include\osextensions\sofia-sip\su_tag_io.h
+../../libsofia-sip-ua/su/sofia-sip/su_tagarg.h \epoc32\include\osextensions\sofia-sip\su_tagarg.h
+../../libsofia-sip-ua/su/sofia-sip/su_time.h \epoc32\include\osextensions\sofia-sip\su_time.h
+../../libsofia-sip-ua/su/sofia-sip/su_types.h \epoc32\include\osextensions\sofia-sip\su_types.h
+../../libsofia-sip-ua/su/sofia-sip/su_uniqueid.h \epoc32\include\osextensions\sofia-sip\su_uniqueid.h
+../../libsofia-sip-ua/su/sofia-sip/su_vector.h \epoc32\include\osextensions\sofia-sip\su_vector.h
+../../libsofia-sip-ua/su/sofia-sip/su_wait.h \epoc32\include\osextensions\sofia-sip\su_wait.h
+../../libsofia-sip-ua/su/sofia-sip/tstdef.h \epoc32\include\osextensions\sofia-sip\tstdef.h
+../../libsofia-sip-ua/tport/sofia-sip/tport.h \epoc32\include\osextensions\sofia-sip\tport.h
+../../libsofia-sip-ua/tport/sofia-sip/tport_plugins.h \epoc32\include\osextensions\sofia-sip\tport_plugins.h
+../../libsofia-sip-ua/tport/sofia-sip/tport_tag.h \epoc32\include\osextensions\sofia-sip\tport_tag.h
+../../libsofia-sip-ua/url/sofia-sip/url.h \epoc32\include\osextensions\sofia-sip\url.h
+../../libsofia-sip-ua/url/sofia-sip/url_tag.h \epoc32\include\osextensions\sofia-sip\url_tag.h
+../../libsofia-sip-ua/url/sofia-sip/url_tag_class.h \epoc32\include\osextensions\sofia-sip\url_tag_class.h
+../../libsofia-sip-ua-glib/su-glib/sofia-sip/su_glib.h \epoc32\include\osextensions\sofia-sip\su_glib.h
+../../libsofia-sip-ua-glib/su-glib/sofia-sip/su_source.h \epoc32\include\osextensions\sofia-sip\su_source.h
+../sofia-sip/su_configure.h \epoc32\include\osextensions\sofia-sip\su_configure.h
+
+PRJ_MMPFILES
+
+libsofia-sip-ua.mmp
+libsofia-sip-ua-glib.mmp
+
+//torture_su_root.mmp
+//torture_su_port.mmp
+//torture_su_tag.mmp
+//torture_su_alloc.mmp
+//torture_url.mmp
+//test_msg.mmp
+//torture_sip.mmp
+//test_http.mmp
+//test_soa.mmp
+//test_tport.mmp
+//test_nua.mmp
+//test_nta.mmp
+//su_source_test.mmp
+
+//  End of File  

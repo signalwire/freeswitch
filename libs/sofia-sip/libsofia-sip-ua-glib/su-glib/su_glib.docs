@@ -1,0 +1,59 @@
+/**
+
+@mainpage Sofia-SIP su-glib Module
+
+@section su_glib_meta Module Meta Information
+
+The su-glib module provides an interface to connect Sofia-SIP event loop
+to an existing glib main loop. Without this interface, a glib based
+application would have to create a separate thread for running
+the Sofia-SIP event loop.
+
+@CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@STATUS Core library
+
+@LICENSE LGPL
+
+@section su_glib_contents Contents of su-glib Module
+
+The su-glib module contains the public header files as follows:
+- <su_glib.h>    the public API of the module
+- <su_source.h>  deprecated API (1.12.1 and earlier)
+
+@section su_glib_examples Examples of use
+
+Below is a simple example of how to use su-glib:
+@code
+  #include <glib.h>
+  #include <sofia-sip/su_glib.h>
+
+  /* ... */
+
+  GMainLoop *ptr = g_main_loop_new(NULL, FALSE);
+  GSource *gsource;
+  su_root_t *sofia_event_loop;
+  su_timer_t *timer;
+
+  /* create a sofia event loop using su-glib function su_glib_root_source_create() */
+  sofia_event_loop = su_glib_root_create(NULL);
+
+  /* attach the created GSource to glib event loop */
+  gsource = su_glib_root_gsource(sofia_event_loop);
+  g_source_attach(gsource, g_main_loop_get_context(ptr));
+
+  /* use the sofia event loop with libsofia-sip-ua modules */
+  timer = su_timer_create(su_root_task(sofia_event_loop), 200L);
+
+  /* ... initialize other Sofia-SIP modules/functrions */
+
+  /* run the glib mainloop */
+  g_main_loop_run(ptr);
+@endcode
+
+@section su_glib_todo Todo
+
+- see sourceforge.net issue tracker for sofia-sip
+  (-> http://sofia-sip.sourceforge.net/development.html )
+
+*/

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<methodResponse>
+  <params>
+    <param>
+      <value>
+        <array>
+          <data>
+            <value><string>foo</string></value>
+            <value><string>bar</string></value>
+            <value><string>foo</string></value>
+            <value><string>baz</string></value>
+            <value><string>baz</string></value>
+            <value><string>bar</string></value>
+          </data>
+        </array>
+      </value>
+    </param>
+  </params>
+</methodResponse>
