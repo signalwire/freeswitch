@@ -724,11 +724,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		}
 	}
 
+
 	message->_file = NULL;
 	message->_func = NULL;
 	message->_line = 0;
 
 	if (switch_channel_up_nosig(session->channel)) {
+		if (message->message_id == SWITCH_MESSAGE_INDICATE_BRIDGE || message->message_id == SWITCH_MESSAGE_INDICATE_UNBRIDGE) {
+			switch_core_media_bug_flush_all(session);
+		}
+
 		switch (message->message_id) {
 		case SWITCH_MESSAGE_REDIRECT_AUDIO:
 		case SWITCH_MESSAGE_INDICATE_ANSWER:
