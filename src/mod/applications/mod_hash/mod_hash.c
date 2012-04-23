@@ -451,8 +451,6 @@ SWITCH_STANDARD_APP(hash_function)
 			value = strdup(argv[3]);
 			switch_assert(value);
 			switch_core_hash_insert(globals.db_hash, hash_key, value);
-		} else {
-			switch_safe_free(value);
 		}
 
 	} else if (!strcasecmp(argv[0], "delete")) {
@@ -466,9 +464,9 @@ SWITCH_STANDARD_APP(hash_function)
 		}
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
 			if(!strcmp(argv[3], value)) {
+				switch_safe_free(value);
 				switch_core_hash_delete(globals.db_hash, hash_key);
 			}
-			switch_safe_free(value);
 		}
 	} else {
 		goto usage;
@@ -527,7 +525,6 @@ SWITCH_STANDARD_API(hash_api_function)
 		switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
 			stream->write_function(stream, "-ERR key already exists\n");
-			switch_safe_free(value);
 		} else {
 			value = strdup(argv[3]);
 			switch_assert(value);
@@ -552,12 +549,12 @@ SWITCH_STANDARD_API(hash_api_function)
 		switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
 			if(!strcmp(argv[3],value)) {
+				switch_safe_free(value);
 				switch_core_hash_delete(globals.db_hash, hash_key);
 				stream->write_function(stream, "+OK\n");
 			} else {
 				stream->write_function(stream, "-ERR Doesn't match\n");
 			}
-			switch_safe_free(value);
 		} else {
 			stream->write_function(stream, "-ERR Not found\n");
 		}
