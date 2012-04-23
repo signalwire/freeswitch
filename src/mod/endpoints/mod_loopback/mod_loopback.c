@@ -122,8 +122,8 @@ static void clear_queue(private_t *tech_pvt)
 static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, switch_codec_t *codec)
 {
 	const char *iananame = "L16";
-	int rate = 8000;
-	int interval = 20;
+	uint32_t rate = 8000;
+	uint32_t interval = 20;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const switch_codec_implementation_t *read_impl;
@@ -132,6 +132,15 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		iananame = codec->implementation->iananame;
 		rate = codec->implementation->samples_per_second;
 		interval = codec->implementation->microseconds_per_packet / 1000;
+	} else {
+		const char *var;
+
+		if ((var = switch_channel_get_variable(channel, "loopback_initial_codec"))) {
+			char *dup = switch_core_session_strdup(session, var);
+			uint32_t bit;
+			iananame = switch_parse_codec_buf(dup, &interval, &rate, &bit);
+		}
+		
 	}
 
 	if (switch_core_codec_ready(&tech_pvt->read_codec)) {

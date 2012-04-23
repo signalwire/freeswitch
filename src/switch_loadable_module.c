@@ -2075,7 +2075,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 }
 
-char *parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit)
+SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit)
 {
 	char *cur, *next = NULL, *name, *p;
 
@@ -2119,7 +2119,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 		uint32_t interval = 0, rate = 0, bit = 0;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
-		name = parse_codec_buf(buf, &interval, &rate, &bit);
+		name = switch_parse_codec_buf(buf, &interval, &rate, &bit);
 
 		for(j = 0; j < x; j++) {
 			char *jname;
@@ -2135,7 +2135,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			}
 
 			switch_copy_string(jbuf, prefs[j], sizeof(jbuf));
-			jname = parse_codec_buf(jbuf, &jinterval, &jrate, &jbit);
+			jname = switch_parse_codec_buf(jbuf, &jinterval, &jrate, &jbit);
 
 			if (jinterval == 0) {
 				jinterval = switch_default_ptime(jname, 0);
