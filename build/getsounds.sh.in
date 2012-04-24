@@ -23,10 +23,15 @@ pwd
 echo "# $0 $1 $2"
 
 if [ ! -f $tarfile ] ; then
-    $DOWNLOAD_CMD $base$tarfile
-    if [ ! -f $tarfile ] ; then
-        echo cannot find $tarfile
-	exit 1
+    if [ -f $FS_SOUNDS_DIR/$tarfile ]; then
+        test ! cp -l $FS_SOUNDS_DIR/$tarfile . \
+            || cp $FS_SOUNDS_DIR/$tarfile .
+    else
+        $DOWNLOAD_CMD $base$tarfile
+        if [ ! -f $tarfile ] ; then
+            echo cannot find $tarfile
+	    exit 1
+        fi
     fi
 fi
 
