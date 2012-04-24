@@ -2161,6 +2161,7 @@ SWITCH_STANDARD_APP(httapi_function)
 		if (!zstr(url) && switch_stristr("://", url)) {
 			if (!params) {
 				switch_event_create(&params, SWITCH_EVENT_CLONE);
+				params->flags |= EF_UNIQ_HEADERS;
 			}
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "url", url);
 		}
