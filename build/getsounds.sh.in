@@ -24,7 +24,7 @@ echo "# $0 $1 $2"
 
 if [ ! -f $tarfile ] ; then
     if [ -f $FS_SOUNDS_DIR/$tarfile ]; then
-        test ! cp -l $FS_SOUNDS_DIR/$tarfile . \
+        cp -l $FS_SOUNDS_DIR/$tarfile . \
             || cp $FS_SOUNDS_DIR/$tarfile .
     else
         $DOWNLOAD_CMD $base$tarfile
