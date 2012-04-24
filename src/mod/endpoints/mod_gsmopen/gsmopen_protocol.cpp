@@ -2218,7 +2218,7 @@ int gsmopen_serial_hangup_AT(private_t *tech_pvt)
 
 		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CHUP");
 		if (res) {
-			ERRORA("at_hangup command failed, command used: 'AT+CHUP'\n", GSMOPEN_P_LOG);
+			DEBUGA_GSMOPEN("at_hangup command timeout, command used: 'AT+CHUP'\n", GSMOPEN_P_LOG);
 			//return -1;
 		}
 
@@ -2663,7 +2663,7 @@ int gsmopen_senddigit(private_t *tech_pvt, char digit)
 		sprintf(at_command, "%s=1,%c", tech_pvt->at_send_dtmf, digit);
 		res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
 		if (res) {
-			ERRORA("senddigit command failed, command used: '%s=\"%c\"', giving up\n", GSMOPEN_P_LOG, tech_pvt->at_send_dtmf, digit);
+			DEBUGA_GSMOPEN("XXX answer (OK) takes long to come, goes into timeout. command used: '%s=1,%c'\n", GSMOPEN_P_LOG, tech_pvt->at_send_dtmf, digit);
 		}
 	}
 
