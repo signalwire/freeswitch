@@ -1190,7 +1190,7 @@ static switch_status_t load_config(int reload_type)
 			const char *at_hangup_expect = "OK";
 			const char *at_answer = "ATA";
 			const char *at_answer_expect = "OK";
-			const char *at_send_dtmf = "AT+VTS";
+			const char *at_send_dtmf = "AT^DTMF";
 			const char *at_preinit_1 = "";
 			const char *at_preinit_1_expect = "";
 			const char *at_preinit_2 = "";

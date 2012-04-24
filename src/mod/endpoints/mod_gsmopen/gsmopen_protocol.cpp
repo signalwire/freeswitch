@@ -2660,7 +2660,7 @@ int gsmopen_senddigit(private_t *tech_pvt, char digit)
 		char at_command[256];
 
 		memset(at_command, '\0', 256);
-		sprintf(at_command, "%s=\"%c\"", tech_pvt->at_send_dtmf, digit);
+		sprintf(at_command, "%s=1,%c", tech_pvt->at_send_dtmf, digit);
 		res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
 		if (res) {
 			ERRORA("senddigit command failed, command used: '%s=\"%c\"', giving up\n", GSMOPEN_P_LOG, tech_pvt->at_send_dtmf, digit);
