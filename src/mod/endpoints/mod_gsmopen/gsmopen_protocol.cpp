@@ -949,28 +949,29 @@ read:
 				if (option_debug > 1)
 					DEBUGA_GSMOPEN("|%s| +CREG: Display: %d, Registration=%d\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i], n, stat);
 				if (err < 2) {
-					WARNINGA("|%s| is not formatted as: |+CREG: xx,yy|\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
-				}
-				if (stat == 0) {
-					ERRORA
-						("|%s| CELLPHONE is not registered to network, consider to move it or additional antenna\n",
-						 GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
-					tech_pvt->not_registered = 1;
-					tech_pvt->home_network_registered = 0;
-					tech_pvt->roaming_registered = 0;
-					alarm_event(tech_pvt, ALARM_NO_NETWORK_REGISTRATION,
+					DEBUGA_GSMOPEN("|%s| is not formatted as: |+CREG: xx,yy|\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+				}else{
+					if (stat == 0) {
+						ERRORA
+							("|%s| CELLPHONE is not registered to network, consider to move it or additional antenna\n",
+							 GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+						tech_pvt->not_registered = 1;
+						tech_pvt->home_network_registered = 0;
+						tech_pvt->roaming_registered = 0;
+						alarm_event(tech_pvt, ALARM_NO_NETWORK_REGISTRATION,
 								"CELLPHONE is not registered to network, consider to move it or additional antenna");
-				} else if (stat == 1) {
-					DEBUGA_GSMOPEN("|%s| CELLPHONE is registered to the HOME network\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
-					tech_pvt->not_registered = 0;
-					tech_pvt->home_network_registered = 1;
-					tech_pvt->roaming_registered = 0;
-				} else {
-					ERRORA("|%s| CELLPHONE is registered to a ROAMING network\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
-					tech_pvt->not_registered = 0;
-					tech_pvt->home_network_registered = 0;
-					tech_pvt->roaming_registered = 1;
-					alarm_event(tech_pvt, ALARM_ROAMING_NETWORK_REGISTRATION, "CELLPHONE is registered to a ROAMING network");
+					} else if (stat == 1) {
+						DEBUGA_GSMOPEN("|%s| CELLPHONE is registered to the HOME network\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+						tech_pvt->not_registered = 0;
+						tech_pvt->home_network_registered = 1;
+						tech_pvt->roaming_registered = 0;
+					} else {
+						ERRORA("|%s| CELLPHONE is registered to a ROAMING network\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+						tech_pvt->not_registered = 0;
+						tech_pvt->home_network_registered = 0;
+						tech_pvt->roaming_registered = 1;
+						alarm_event(tech_pvt, ALARM_ROAMING_NETWORK_REGISTRATION, "CELLPHONE is registered to a ROAMING network");
+					}
 				}
 
 			}
