@@ -4,7 +4,7 @@
  * Author(s):   Anthony Minessale II <anthm@freeswitch.org>
  *              Nenad Corbic <ncorbic@sangoma.com>
  *
- * Copyright:   (c) 2005 Anthony Minessale II
+ * Copyright:   (c) 2005-2012 Anthony Minessale II
  *
  *      This program is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU General Public License

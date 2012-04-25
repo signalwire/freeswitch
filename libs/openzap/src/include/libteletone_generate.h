@@ -1,8 +1,6 @@
 /* 
  * libteletone
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
- *
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
