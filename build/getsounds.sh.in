@@ -22,17 +22,17 @@ echo -n "#"
 pwd
 echo "# $0 $1 $2"
 
-if [ ! -f $tarfile ] ; then
-    if [ -f $FS_SOUNDS_DIR/$tarfile ]; then
-        cp -l $FS_SOUNDS_DIR/$tarfile . \
-            || cp $FS_SOUNDS_DIR/$tarfile .
-    else
-        $DOWNLOAD_CMD $base$tarfile
-        if [ ! -f $tarfile ] ; then
-            echo cannot find $tarfile
-	    exit 1
-        fi
-    fi
+if [ -n "$FS_SOUNDS_DIR" ] ; then
+    [ -d $FS_SOUNDS_DIR ] || mkdir -p $FS_SOUNDS_DIR
+    DIR=$FS_SOUNDS_DIR
+fi
+
+if [ ! -f $DIR/$tarfile ] ; then
+  (cd $DIR && $DOWNLOAD_CMD $base$tarfile)
+  if [ ! -f $DIR/$tarfile ] ; then
+    echo cannot find $tarfile
+    exit 1
+  fi
 fi
 
 if [ ! -z $install ] ; then
