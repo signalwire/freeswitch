@@ -464,6 +464,7 @@ SWITCH_STANDARD_APP(play_and_detect_speech_function)
 	char *lbuf = NULL;
 	const char *response = "DONE";
 	char *detect = NULL;
+	char *s;
 
 	switch_channel_set_variable(channel, "detect_speech_result", "");
 
@@ -472,6 +473,12 @@ SWITCH_STANDARD_APP(play_and_detect_speech_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", PLAY_AND_DETECT_SPEECH_SYNTAX);
 		response = "USAGE ERROR";
 		goto done;
+	}
+
+	/* trim any trailing space */
+	s = detect;
+	while (--s >= lbuf && switch_isspace(*s)) {
+		*s = '\0';
 	}
 
 	/* split input at "detect:" */
