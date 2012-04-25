@@ -365,7 +365,7 @@ static void process_cache_control_header(cached_url_t *url, char *data)
 		return;
 	}
 
-	url->max_age = switch_time_now() + (max_age * 1000 * 1000);
+	url->max_age = max_age * 1000 * 1000;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting max age to %u seconds from now\n", (int)max_age);
 }
 
