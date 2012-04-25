@@ -988,16 +988,6 @@ read:
 			}
 
 			if ((strncmp(tech_pvt->line_array.result[i], "^CEND:1", 7) == 0)) {
-				tech_pvt->phone_callflow = CALLFLOW_CALL_IDLE;
-				if (option_debug > 1)
-					DEBUGA_GSMOPEN("|%s| CALLFLOW_CALL_IDLE\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
-				if (tech_pvt->interface_state != GSMOPEN_STATE_DOWN && tech_pvt->owner) {
-					DEBUGA_GSMOPEN("just received a remote HANGUP\n", GSMOPEN_P_LOG);
-					tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_NORMAL;
-					gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
-					DEBUGA_GSMOPEN("just sent GSMOPEN_CONTROL_HANGUP\n", GSMOPEN_P_LOG);
-				}
-
 				tech_pvt->phone_callflow = CALLFLOW_CALL_NOCARRIER;
 				if (option_debug > 1)
 					DEBUGA_GSMOPEN("|%s| CALLFLOW_CALL_NOCARRIER\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
@@ -1015,6 +1005,17 @@ read:
 						switch_core_session_rwunlock(session);
 						switch_channel_hangup(channel, SWITCH_CAUSE_NONE);
 					}
+					tech_pvt->phone_callflow = CALLFLOW_CALL_IDLE;
+					if (option_debug > 1)
+						DEBUGA_GSMOPEN("|%s| CALLFLOW_CALL_IDLE\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+					if (tech_pvt->interface_state != GSMOPEN_STATE_DOWN && tech_pvt->owner) {
+						DEBUGA_GSMOPEN("just received a remote HANGUP\n", GSMOPEN_P_LOG);
+						tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_NORMAL;
+						gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
+						DEBUGA_GSMOPEN("just sent GSMOPEN_CONTROL_HANGUP\n", GSMOPEN_P_LOG);
+					}
+
+
 					//
 					//tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
 					//gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
