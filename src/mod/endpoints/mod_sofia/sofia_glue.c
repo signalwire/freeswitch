@@ -3139,10 +3139,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		sofia_set_flag_locked(tech_pvt, TFLAG_SECURE);
 	}
 
-	if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_liberal_dtmf")) && switch_true(var)) {
-		sofia_set_flag_locked(tech_pvt, TFLAG_LIBERAL_DTMF);
-	}
-
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
 		status = SWITCH_STATUS_SUCCESS;
 		goto end;
@@ -4484,6 +4480,10 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 								  "Don't worry, DTMF will work but you may want to ask them to fix it......\n");
 			}
 		}
+	}
+
+	if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_liberal_dtmf")) && switch_true(val)) {
+		sofia_set_flag_locked(tech_pvt, TFLAG_LIBERAL_DTMF);
 	}
 
 	if ((m = sdp->sdp_media) && 
