@@ -1727,6 +1727,10 @@ static void switch_load_core_config(const char *file)
 					runtime.core_db_pre_trans_execute = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "core-db-post-trans-execute") && !zstr(val)) {
 					runtime.core_db_post_trans_execute = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "core-db-inner-pre-trans-execute") && !zstr(val)) {
+					runtime.core_db_inner_pre_trans_execute = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "core-db-inner-post-trans-execute") && !zstr(val)) {
+					runtime.core_db_inner_post_trans_execute = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app") && !zstr(val)) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app-args") && val) {

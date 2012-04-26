@@ -734,7 +734,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 	if (!zstr(runtime.core_db_pre_trans_execute)) {
 		switch_cache_db_execute_sql_real(dbh, runtime.core_db_pre_trans_execute, &errmsg);
 		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL PRE TRANS EXEC [%s]\n", errmsg);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL PRE TRANS EXEC %s [%s]\n", runtime.core_db_pre_trans_execute, errmsg);
 			free(errmsg);
 		}
 	}
@@ -789,6 +789,15 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 		break;
 	}
 
+
+	if (!zstr(runtime.core_db_inner_pre_trans_execute)) {
+		switch_cache_db_execute_sql_real(dbh, runtime.core_db_inner_pre_trans_execute, &errmsg);
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL PRE TRANS EXEC %s [%s]\n", runtime.core_db_inner_pre_trans_execute, errmsg);
+			free(errmsg);
+		}
+	}
+
 	while (retries > 0) {
 
 		switch_cache_db_execute_sql(dbh, sql, &errmsg);
@@ -809,6 +818,14 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 		}
 	}
 
+	if (!zstr(runtime.core_db_inner_post_trans_execute)) {
+		switch_cache_db_execute_sql_real(dbh, runtime.core_db_inner_post_trans_execute, &errmsg);
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL POST TRANS EXEC %s [%s]\n", runtime.core_db_inner_post_trans_execute, errmsg);
+			free(errmsg);
+		}
+	}
+
  done:
 
 	if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
@@ -821,7 +838,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 	if (!zstr(runtime.core_db_post_trans_execute)) {
 		switch_cache_db_execute_sql_real(dbh, runtime.core_db_post_trans_execute, &errmsg);
 		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL POST TRANS EXEC [%s]\n", errmsg);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL POST TRANS EXEC %s [%s]\n", runtime.core_db_post_trans_execute, errmsg);
 			free(errmsg);
 		}
 	}

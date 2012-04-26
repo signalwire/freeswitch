@@ -263,6 +263,8 @@ struct switch_runtime {
 	uint32_t time_sync;
 	char *core_db_pre_trans_execute;
 	char *core_db_post_trans_execute;
+	char *core_db_inner_pre_trans_execute;
+	char *core_db_inner_post_trans_execute;
 };
 
 extern struct switch_runtime runtime;
