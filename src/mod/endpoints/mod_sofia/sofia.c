@@ -5521,7 +5521,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
 	const char *replaces_str = NULL;
-	const char *uuid;
 	switch_core_session_t *other_session = NULL;
 	switch_channel_t *other_channel = NULL;
 	//private_object_t *other_tech_pvt = NULL;
@@ -5713,8 +5712,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						goto done;
 					}
 				}
-				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
-					&& (other_session = switch_core_session_locate(uuid))) {
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 					other_channel = switch_core_session_get_channel(other_session);
 					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
@@ -5745,9 +5743,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 			if (r_sdp && sofia_test_flag(tech_pvt, TFLAG_3PCC_INVITE) && !sofia_test_flag(tech_pvt, TFLAG_SDP)) {
 				sofia_set_flag(tech_pvt, TFLAG_SDP);
-
-				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
-					&& (other_session = switch_core_session_locate(uuid))) {
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 					other_channel = switch_core_session_get_channel(other_session);
 					//other_tech_pvt = switch_core_session_get_private(other_session);
 
@@ -5785,6 +5781,23 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		goto done;
 	case nua_callstate_received:
 		if (!sofia_test_flag(tech_pvt, TFLAG_SDP)) {
+			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+
+				if(sofia_test_flag(other_tech_pvt, TFLAG_REINVITED)) {
+
+					/* Due to a race between simultaneous reinvites to both legs of a bridge,
+					  an earlier call to nua_invite silently failed.
+					  So we reject the incoming invite with a 491 and redo the failed outgoing invite. */
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg already handling a reinvite, so responding with 491\n");
+					nua_respond(tech_pvt->nh, SIP_491_REQUEST_PENDING, TAG_END());
+					switch_core_session_rwunlock(other_session);
+					sofia_glue_do_invite(session);
+					goto done;
+				}
+			}
+
 			if (r_sdp && !sofia_test_flag(tech_pvt, TFLAG_SDP)) {
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOMEDIA");
@@ -5930,8 +5943,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			sofia_set_flag_locked(tech_pvt, TFLAG_NOSDP_REINVITE);
 			if ((switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) && sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_3PCC);
-				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
-					&& (other_session = switch_core_session_locate(uuid))) {
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 					switch_core_session_message_t *msg;
 					msg = switch_core_session_alloc(other_session, sizeof(*msg));
 					msg->message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
@@ -5972,11 +5984,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (switch_stristr("m=image", r_sdp)) {
 					is_t38 = 1;
 				}
-
+				
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
-						&& (other_session = switch_core_session_locate(uuid))) {
+					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 						switch_core_session_message_t *msg;
+						private_object_t *other_tech_pvt;
 
 						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
 							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) {
@@ -6039,6 +6051,16 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								goto done;
 							}
 						}
+
+					        other_tech_pvt = switch_core_session_get_private(other_session);
+						if(sofia_test_flag(other_tech_pvt, TFLAG_REINVITED)) {
+							/* The other leg won the reinvite race */
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg already handling reinvite, so responding with 491\n");
+							nua_respond(tech_pvt->nh, SIP_491_REQUEST_PENDING, TAG_END());
+						        switch_core_session_rwunlock(other_session);
+							goto done;
+						}
+						sofia_set_flag(tech_pvt, TFLAG_REINVITED);
 
 						msg = switch_core_session_alloc(other_session, sizeof(*msg));
 						msg->message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
@@ -6185,8 +6207,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					}
 				}
 
-				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
-					&& (other_session = switch_core_session_locate(uuid))) {
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 					other_channel = switch_core_session_get_channel(other_session);
 					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
@@ -6255,8 +6276,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				switch_channel_mark_answered(channel);
 
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
-						&& (other_session = switch_core_session_locate(uuid))) {
+					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 						//other_channel = switch_core_session_get_channel(other_session);
 						//switch_channel_answer(other_channel);
 						switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
@@ -6282,8 +6302,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						}
 					}
 
-					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
-						&& (other_session = switch_core_session_locate(uuid))) {
+					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 						other_channel = switch_core_session_get_channel(other_session);
 						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);

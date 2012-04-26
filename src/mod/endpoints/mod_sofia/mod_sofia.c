@@ -2399,6 +2399,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					char *sdp = (char *) msg->pointer_arg;
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Responding with %d [%s]\n", code, reason);
+					sofia_clear_flag(tech_pvt, TFLAG_REINVITED);
 
 					if (!zstr((sdp))) {
 						if (!strcasecmp(sdp, "t38")) {
