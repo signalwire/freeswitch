@@ -1723,6 +1723,10 @@ static void switch_load_core_config(const char *file)
 					switch_set_flag((&runtime), SCF_EARLY_HANGUP);
 				} else if (!strcasecmp(var, "colorize-console") && switch_true(val)) {
 					runtime.colorize_console = SWITCH_TRUE;
+				} else if (!strcasecmp(var, "core-db-pre-trans-execute") && !zstr(val)) {
+					runtime.core_db_pre_trans_execute = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "core-db-post-trans-execute") && !zstr(val)) {
+					runtime.core_db_post_trans_execute = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app") && !zstr(val)) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app-args") && val) {
