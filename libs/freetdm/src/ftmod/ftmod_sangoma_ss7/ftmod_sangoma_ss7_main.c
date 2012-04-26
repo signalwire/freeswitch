@@ -340,10 +340,9 @@ static void handle_hw_alarm(ftdm_event_t *e)
 /* MONITIOR THREADS ***********************************************************/
 static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 {
-	ftdm_interrupt_t	*ftdm_sangoma_ss7_int[3];
+	ftdm_interrupt_t	*ftdm_sangoma_ss7_int[2];
 	ftdm_span_t 		*ftdmspan = (ftdm_span_t *) obj;
 	ftdm_channel_t 		*ftdmchan = NULL;
-	ftdm_channel_t 		*peerchan = NULL;
 	ftdm_event_t 		*event = NULL;
 	sngss7_event_data_t	*sngss7_event = NULL;
 	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
@@ -365,12 +364,6 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 	/* get an interrupt queue for this span for Trillium events */
 	if (ftdm_queue_get_interrupt (sngss7_span->event_queue, &ftdm_sangoma_ss7_int[1]) != FTDM_SUCCESS) {
 		SS7_CRITICAL ("Failed to get a ftdm_interrupt for span = %d for Trillium event queue!\n", ftdmspan->span_id);
-		goto ftdm_sangoma_ss7_run_exit;
-	}
-
-	/* get an interrupt queue for this span for peer channel events */
-	if (ftdm_queue_get_interrupt (sngss7_span->peer_chans, &ftdm_sangoma_ss7_int[2]) != FTDM_SUCCESS) {
-		SS7_CRITICAL ("Failed to get a ftdm_interrupt for span = %d for peer channel events queue!\n", ftdmspan->span_id);
 		goto ftdm_sangoma_ss7_run_exit;
 	}
 
@@ -410,40 +403,24 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 
 			/* clean out all pending channel state changes */
 			while ((ftdmchan = ftdm_queue_dequeue (ftdmspan->pendingchans))) {
+				sngss7_chan_data_t *chan_info = ftdmchan->call_data;
 				
 				/*first lock the channel */
 				ftdm_mutex_lock(ftdmchan->mutex);
 
 				/* process state changes for this channel until they are all done */
 				ftdm_channel_advance_states(ftdmchan);
+
+				if (chan_info->peer_data) {
+					/* clean out all pending stack events in the peer channel */
+					while ((sngss7_event = ftdm_queue_dequeue(chan_info->event_queue))) {
+						ftdm_sangoma_ss7_process_peer_stack_event(ftdmchan, sngss7_event);
+					       	ftdm_safe_free(sngss7_event);
+					}
+				}
  
 				/* unlock the channel */
 				ftdm_mutex_unlock (ftdmchan->mutex);				
-			}
-
-			/* clean out all peer pending channel events */
-			while ((peerchan = ftdm_queue_dequeue (sngss7_span->peer_chans))) {
-				/* note that the channels being dequeued here may not belong to this span
-				   they may belong to just about any other span that one of our channels
-				   happens to be bridged to */
-				sngss7_chan_data_t *peer_info = peerchan->call_data;
-				sngss7_chan_data_t *chan_info = peer_info->peer_data;
-				ftdmchan = chan_info->ftdmchan;
-
-				/* 
-				   if there is any state changes at all, those will be done in the opposite channel
-				   to peerchan (where the original event was received), therefore we must lock ftdmchan, 
-				   but do not need to lock peerchan as we only read its event queue, which is already 
-				   locked when dequeueing */
-				ftdm_channel_lock(ftdmchan);
-
-				/* clean out all pending stack events in the peer channel */
-				while ((sngss7_event = ftdm_queue_dequeue(peer_info->event_queue))) {
-					ftdm_sangoma_ss7_process_peer_stack_event(ftdmchan, sngss7_event);
-					ftdm_safe_free(sngss7_event);
-				}
-
-				ftdm_channel_unlock(ftdmchan);				
 			}
 
 			/* clean out all pending stack events */
@@ -561,16 +538,16 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 	ftdm_channel_advance_states(ftdmchan);
 
 	if (sngss7_event->event_id == SNGSS7_CON_IND_EVENT) {
-		/* this is the first event in a call, flush the event queue */
-		sngss7_flush_queue(sngss7_info->event_queue);
-		/* clear the peer if any */
-		sngss7_info->peer_data = NULL;
 		clone_event++;
 	}
 
-	/* if the call has already started and the event is not a release confirmation, clone the event */
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED) && 
-        sngss7_event->event_id != SNGSS7_REL_CFM_EVENT) {
+	/* If the call has already started (we only bridge events related to calls)
+	 * and the event is not a release confirmation, then clone the event.
+	 * We do not clone release cfm events because that is the only event (final event) that is not
+	 * bridged to the other leg, the first Spirou customer we had explicitly requested to send
+	 * release confirm as soon as the release is received and therefore not wait for the other leg
+	 * to send release confirm (hence, not need to clone and enqueue in the other leg) */
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED) && sngss7_event->event_id != SNGSS7_REL_CFM_EVENT) {
 		clone_event++;
 	}
 
@@ -597,11 +574,38 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 		event_clone = ftdm_calloc(1, sizeof(*sngss7_event));
 		if (event_clone) {
 			memcpy(event_clone, sngss7_event, sizeof(*sngss7_event));
-			ftdm_queue_enqueue(sngss7_info->event_queue, event_clone);
+			/* if we have already a peer channel then enqueue the event in their queue */
 			if (sngss7_info->peer_data) {
-				sngss7_span_data_t *sngss7_peer_span = (sngss7_span_data_t *)sngss7_info->peer_data->ftdmchan->span->signal_data;
+				ftdm_span_t *peer_span = sngss7_info->peer_data->ftdmchan->span;
+				if (sngss7_info->peer_event_transfer_cnt) {
+					sngss7_event_data_t *peer_event = NULL;
+					int qi = 0;
+					/* looks like for the first time we found our peer, transfer any messages we enqueued */
+					for (qi = 0; qi < sngss7_info->peer_event_transfer_cnt; qi++) {
+						peer_event = ftdm_queue_dequeue(sngss7_info->event_queue);
+						if (peer_event) {
+							ftdm_queue_enqueue(sngss7_info->peer_data->event_queue, peer_event);
+						} else {
+							/* This should never happen! */
+							SS7_CRIT_CHAN(ftdmchan,"[CIC:%d]What!? someone stole my messages!\n", sngss7_info->circuit->cic);
+						}
+					}
+					SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Transferred %d messages into my peer's queue\n", 
+							sngss7_info->circuit->cic, sngss7_info->peer_event_transfer_cnt);
+					sngss7_info->peer_event_transfer_cnt = 0;
+				}
 				/* we already have a peer attached, wake him up */
-				ftdm_queue_enqueue(sngss7_peer_span->peer_chans, sngss7_info->ftdmchan);
+				ftdm_queue_enqueue(sngss7_info->peer_data->event_queue, event_clone);
+				ftdm_queue_enqueue(peer_span->pendingchans, sngss7_info->peer_data->ftdmchan);
+			} else {
+				/* we don't have a peer yet, save the event on our own queue for later
+				 * only the first event in this queue is directly consumed by our peer (IAM), subsequent events
+				 * must be transferred by us to their queue as soon as we find our peer */
+				ftdm_queue_enqueue(sngss7_info->event_queue, event_clone);
+				if (sngss7_event->event_id != SNGSS7_CON_IND_EVENT) {
+					/* This could be an SAM, save it for transfer once we know who our peer is (if we ever find that) */
+					sngss7_info->peer_event_transfer_cnt++;
+				}
 			}
 		}
 	}
@@ -614,25 +618,7 @@ static void ftdm_sangoma_ss7_process_stack_event (sngss7_event_data_t *sngss7_ev
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_TERMINATING);
 			break;
 		case SNGSS7_REL_CFM_EVENT:
-			{
-				if (sngss7_info->peer_data) {
-					ftdm_channel_t *peer_chan = sngss7_info->peer_data->ftdmchan;
-					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-					if (peer_chan) {
-						/* we need to unlock our chan or we risk deadlock */
-						ftdm_channel_advance_states(ftdmchan);
-						ftdm_channel_unlock(ftdmchan);
-
-						ftdm_channel_lock(peer_chan);
-						if (peer_chan->state != FTDM_CHANNEL_STATE_DOWN) {
-							ftdm_set_state(peer_chan, FTDM_CHANNEL_STATE_DOWN);
-						}
-						ftdm_channel_unlock(peer_chan);
-
-						ftdm_channel_lock(ftdmchan);
-					}
-				}
-			}
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 			break;
 		default:
 			break;
@@ -1011,7 +997,11 @@ static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t 
 			ftdm_channel_t *close_chan = ftdmchan;
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_SUS_RECVD);
 			sngss7_clear_ckt_flag(sngss7_info, FLAG_T6_CANCELED);
+			sngss7_clear_ckt_flag (sngss7_info, FLAG_SENT_ACM);
+			sngss7_clear_ckt_flag (sngss7_info, FLAG_SENT_CPG);
+
 			sngss7_flush_queue(sngss7_info->event_queue);
+			sngss7_info->peer_data = NULL;
 			ftdm_channel_close (&close_chan);
 		}
 		break;
@@ -1026,9 +1016,22 @@ static ftdm_status_t ftdm_sangoma_ss7_native_bridge_state_change(ftdm_channel_t 
 
 	case FTDM_CHANNEL_STATE_TERMINATING:
 		{
-			ft_to_sngss7_rlc(ftdmchan);
+			/* Release confirm is sent immediately, since Spirou customer asked us not to wait for the second call leg
+			 * to come back with a release confirm ... */
 			/* when receiving REL we move to TERMINATING and notify the user that the bridge is ending */
-			sngss7_send_signal(sngss7_info, FTDM_SIGEVENT_STOP);
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_USER_HANGUP)) {
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+			} else {
+				/* Notify the user and wait for their ack before sending RLC */
+				sngss7_send_signal(sngss7_info, FTDM_SIGEVENT_STOP);
+			}
+		}
+		break;
+
+	case FTDM_CHANNEL_STATE_HANGUP:
+		{
+			ft_to_sngss7_rlc(ftdmchan);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
 
@@ -1053,11 +1056,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 									sngss7_info->blk_flags);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
-		/* DIALING is the only state we process normally when doing an outgoing call that is natively bridged */
+		/* DIALING is the only state we process normally when doing an outgoing call that is natively bridged, 
+		 * all other states are run by a different state machine (and the freetdm core does not do any checking) */
 		if (ftdmchan->state != FTDM_CHANNEL_STATE_DIALING) {
 			return ftdm_sangoma_ss7_native_bridge_state_change(ftdmchan);
 		}
-		sngss7_info->peer_data = NULL;
 	}
 
 	/*check what state we are supposed to be in */
@@ -1080,23 +1083,91 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 		}
 
 		/* check if the end of pulsing (ST) character has arrived or the right number of digits */
-		if (ftdmchan->caller_data.dnis.digits[i-1] == 'F') {
+		if (ftdmchan->caller_data.dnis.digits[i-1] == 'F'
+		    || sngss7_test_ckt_flag(sngss7_info, FLAG_FULL_NUMBER) ) 
+		{
 			SS7_DEBUG_CHAN(ftdmchan, "Received the end of pulsing character %s\n", "");
 
-			/* remove the ST */
-			ftdmchan->caller_data.dnis.digits[i-1] = '\0';
+			if (!sngss7_test_ckt_flag(sngss7_info, FLAG_FULL_NUMBER)) {
+				/* remove the ST */
+				ftdmchan->caller_data.dnis.digits[i-1] = '\0';
+				sngss7_set_ckt_flag(sngss7_info, FLAG_FULL_NUMBER);
+			}
 			
-			/*now go to the RING state */
-			state_flag = 0;
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
-			
+			if (sngss7_test_ckt_flag(sngss7_info, FLAG_INR_TX)) {
+				if (!sngss7_test_ckt_flag(sngss7_info, FLAG_INR_SENT) ) {
+					ft_to_sngss7_inr(ftdmchan);
+					sngss7_set_ckt_flag(sngss7_info, FLAG_INR_SENT);
+					
+					SS7_DEBUG_CHAN (ftdmchan, "Scheduling T.39 timer %s \n", " ");
+					
+					/* start ISUP t39 */
+					if (ftdm_sched_timer (sngss7_info->t39.sched,
+										"t39",
+										sngss7_info->t39.beat,
+										sngss7_info->t39.callback,
+										&sngss7_info->t39,
+										&sngss7_info->t39.hb_timer_id)) 
+					{
+				
+						SS7_ERROR ("Unable to schedule timer T39, hanging up call!\n");
+
+						ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE;
+						sngss7_set_ckt_flag (sngss7_info, FLAG_LOCAL_REL);
+				
+						/* end the call */
+						state_flag = 0;
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
+					}
+				}else {
+					state_flag = 0;
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+				}
+			} else {
+				state_flag = 0;
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+			}
 		} else if (i >= sngss7_info->circuit->min_digits) {
 			SS7_DEBUG_CHAN(ftdmchan, "Received %d digits (min digits = %d)\n", i, sngss7_info->circuit->min_digits);
 
-			/*now go to the RING state */
-			state_flag = 0;
-			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
-			
+			if (sngss7_test_ckt_flag(sngss7_info, FLAG_INR_TX)) {
+				if (!sngss7_test_ckt_flag(sngss7_info, FLAG_INR_SENT) ) {
+					ft_to_sngss7_inr(ftdmchan);
+					sngss7_set_ckt_flag(sngss7_info, FLAG_INR_SENT);
+					
+					SS7_DEBUG_CHAN (ftdmchan, "Scheduling T.39 timer %s\n", " " );
+					
+					/* start ISUP t39 */
+					if (ftdm_sched_timer (sngss7_info->t39.sched,
+										"t39",
+										sngss7_info->t39.beat,
+										sngss7_info->t39.callback,
+										&sngss7_info->t39,
+										&sngss7_info->t39.hb_timer_id)) 
+					{
+				
+						SS7_ERROR ("Unable to schedule timer T39, hanging up call!\n");
+
+						ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_TEMPORARY_FAILURE;
+						sngss7_set_ckt_flag (sngss7_info, FLAG_LOCAL_REL);
+				
+						/* end the call */
+						state_flag = 0;
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
+					}
+					
+					state_flag = 0;
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_IDLE);
+				}else {
+					if (sngss7_test_ckt_flag(sngss7_info, FLAG_INF_RX_DN) ) {
+						state_flag = 0;
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+					}
+				}
+			} else {
+				state_flag = 0;
+				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+			}
 		} else {
 			/* if we are coming from idle state then we have already been here once before */
 			if (ftdmchan->last_state != FTDM_CHANNEL_STATE_IDLE) {
@@ -1152,6 +1223,15 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 	/**************************************************************************/
 	case FTDM_CHANNEL_STATE_RING:	/*incoming call request */
 
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_TX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_SENT);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_RX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INR_RX_DN);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_TX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_SENT);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_RX);
+		sngss7_clear_ckt_flag(sngss7_info, FLAG_INF_RX_DN);
+		
 		if (ftdmchan->last_state == FTDM_CHANNEL_STATE_SUSPENDED) {
 			SS7_DEBUG("re-entering state from processing block/unblock request ... do nothing\n");
 			break;
@@ -1160,6 +1240,11 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 		/* kill t35 if active */
 		if (sngss7_info->t35.hb_timer_id) {
 			ftdm_sched_cancel_timer (sngss7_info->t35.sched, sngss7_info->t35.hb_timer_id);
+		}
+
+		/* cancel t39 timer */
+		if (sngss7_info->t39.hb_timer_id) {
+			ftdm_sched_cancel_timer (sngss7_info->t39.sched, sngss7_info->t39.hb_timer_id);
 		}
 
 		SS7_DEBUG_CHAN(ftdmchan, "Sending incoming call from %s to %s to FTDM core\n",
@@ -1512,19 +1597,6 @@ ftdm_status_t ftdm_sangoma_ss7_process_state_change (ftdm_channel_t *ftdmchan)
 
 		if (ftdm_test_flag (ftdmchan, FTDM_CHANNEL_OPEN)) {
 			ftdm_channel_t *close_chan = ftdmchan;
-
-			/* detach native bridging if needed (only the outbound leg is responsible for that)
-			   Inbound leg was responsible of flushing its queue of events, but peer attach/detach
-			   is left as an outbound leg responsibility
-			 */
-			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-				sngss7_chan_data_t *peer_info = sngss7_info->peer_data;
-				sngss7_info->peer_data = NULL;
-				if (peer_info) {
-					peer_info->peer_data = NULL;
-				}
-			}
-
 			/* close the channel */
 			SS7_DEBUG_CHAN(ftdmchan,"FTDM Channel Close %s\n", "");
 			sngss7_flush_queue(sngss7_info->event_queue);
@@ -2401,12 +2473,6 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	/* create an event queue for this span */
 	if ((ftdm_queue_create(&(ss7_span_info)->event_queue, SNGSS7_EVENT_QUEUE_SIZE)) != FTDM_SUCCESS) {
 		SS7_CRITICAL("Unable to create event queue!\n");
-		return FTDM_FAIL;
-	}
-
-	/* create an peer channel queue for this span */
-	if ((ftdm_queue_create(&(ss7_span_info)->peer_chans, SNGSS7_PEER_CHANS_QUEUE_SIZE)) != FTDM_SUCCESS) {
-		SS7_CRITICAL("Unable to create peer chans queue!\n");
 		return FTDM_FAIL;
 	}
 

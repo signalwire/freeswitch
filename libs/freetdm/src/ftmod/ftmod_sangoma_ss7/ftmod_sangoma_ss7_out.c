@@ -48,6 +48,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	SiConEvnt 			iam;
 	ftdm_bool_t         native_going_up = FTDM_FALSE;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
+	sngss7_event_data_t *event_clone = NULL;
 	
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
@@ -75,28 +76,25 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Starting native bridge with peer CIC %d\n", 
 						sngss7_info->circuit->cic, peer_info->circuit->cic);
 
+				/* retrieve only first message from the others guys queue (must be IAM) */
+				event_clone = ftdm_queue_dequeue(peer_info->event_queue);
+
 				/* make each one of us aware of the native bridge */
 				peer_info->peer_data = sngss7_info;
 				sngss7_info->peer_data = peer_info;
 
-				/* flush our own queue */
-				sngss7_flush_queue(sngss7_info->event_queue);
-
 				/* Go to up until release comes, note that state processing is done different and much simpler when there is a peer,
 				   We can't go to UP state right away yet though, so do not set the state to UP here, wait until the end of this function
-                   because moving from one state to another causes the ftdmchan->usrmsg structure to be wiped 
+				   because moving from one state to another causes the ftdmchan->usrmsg structure to be wiped 
 				   and we still need those variables for further IAM processing */
 				native_going_up = FTDM_TRUE;
 			}
 		}
 	}
 
-	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE) && sngss7_info->peer_data) {
-		sngss7_span_data_t *span_data = ftdmchan->span->signal_data;
-		sngss7_event_data_t *event_clone = ftdm_queue_dequeue(sngss7_info->peer_data->event_queue);
-		/* Retrieve IAM from our peer */
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
 		if (!event_clone) {
-			SS7_ERROR_CHAN(ftdmchan, "No event clone in peer queue!%s\n", "");
+			SS7_ERROR_CHAN(ftdmchan, "No IAM event clone in peer queue!%s\n", "");
 		} else if (event_clone->event_id != SNGSS7_CON_IND_EVENT) {
 			/* first message in the queue should ALWAYS be an IAM */
 			SS7_ERROR_CHAN(ftdmchan, "Invalid initial peer message type '%d'\n", event_clone->event_id);
@@ -141,9 +139,6 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 				copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
 			}
 		}
-		/* since this is the first time we dequeue an event from the peer, make sure our main thread process any other events,
-		   this will trigger the interrupt in our span peer_chans queue which will wake up our main thread if it is sleeping */
-		ftdm_queue_enqueue(span_data->peer_chans, sngss7_info->peer_data->ftdmchan);
 	} else if (sngss7_info->circuit->transparent_iam &&
 		sngss7_retrieve_iam(ftdmchan, &iam) == FTDM_SUCCESS) {
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Transparent)\n", sngss7_info->circuit->cic);
@@ -234,10 +229,105 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		  the user sending FTDM_SIGEVENT_UP which can cause the application to misbehave (ie, no audio) */
 		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
 		ftdm_channel_advance_states(ftdmchan);
-    }
+	}
+	
+	ftdm_safe_free(event_clone);
 
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
+}
+
+void ft_to_sngss7_inf(ftdm_channel_t *ftdmchan, SiCnStEvnt *inr)
+{
+	SiCnStEvnt evnt;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	
+	memset (&evnt, 0x0, sizeof (evnt));
+	
+	evnt.infoInd.eh.pres	   = PRSNT_NODEF;
+	evnt.infoInd.cgPtyAddrRespInd.pres = PRSNT_NODEF;
+	evnt.infoInd.cgPtyCatRespInd.pres = PRSNT_NODEF;
+
+	evnt.infoInd.chrgInfoRespInd.pres =  PRSNT_NODEF;
+	evnt.infoInd.chrgInfoRespInd.val = 0;
+	evnt.infoInd.solInfoInd.pres = PRSNT_NODEF;
+	evnt.infoInd.solInfoInd.val = 0;
+	evnt.infoInd.holdProvInd.pres =  PRSNT_NODEF;
+	evnt.infoInd.holdProvInd.val = 0;	
+	evnt.infoInd.spare.pres =  PRSNT_NODEF;
+	evnt.infoInd.spare.val = 0;
+
+	if (inr->infoReqInd.eh.pres == PRSNT_NODEF) {
+		if ((inr->infoReqInd.holdingInd.pres ==  PRSNT_NODEF) && (inr->infoReqInd.holdingInd.val == HOLD_REQ)) {
+			SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Received INR requesting holding information. Holding is not supported in INF.\n", sngss7_info->circuit->cic);
+		}
+		if ((inr->infoReqInd.chrgInfoReqInd.pres ==  PRSNT_NODEF) && (inr->infoReqInd.chrgInfoReqInd.val == CHRGINFO_REQ)) {
+			SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Received INR requesting charging information. Charging is not supported in INF.\n", sngss7_info->circuit->cic);
+		}
+		if ((inr->infoReqInd.malCaIdReqInd.pres ==  PRSNT_NODEF) && (inr->infoReqInd.malCaIdReqInd.val == CHRGINFO_REQ)) {
+			SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Received INR requesting malicious call id. Malicious call id is not supported in INF.\n", sngss7_info->circuit->cic);
+		}
+		
+		if ((inr->infoReqInd.cgPtyAdReqInd.pres ==  PRSNT_NODEF) && (inr->infoReqInd.cgPtyAdReqInd.val == CGPRTYADDREQ_REQ)) {
+			evnt.infoInd.cgPtyAddrRespInd.val=CGPRTYADDRESP_INCL;
+			copy_cgPtyNum_to_sngss7 (ftdmchan, &evnt.cgPtyNum);
+		} else {
+			evnt.infoInd.cgPtyAddrRespInd.val=CGPRTYADDRESP_NOTINCL;
+		}
+		
+		if ((inr->infoReqInd.cgPtyCatReqInd.pres ==  PRSNT_NODEF) && (inr->infoReqInd.cgPtyCatReqInd.val == CGPRTYCATREQ_REQ)) {
+			evnt.infoInd.cgPtyCatRespInd.val = CGPRTYCATRESP_INCL;
+			copy_cgPtyCat_to_sngss7 (ftdmchan, &evnt.cgPtyCat);
+		} else {
+			evnt.infoInd.cgPtyCatRespInd.val = CGPRTYCATRESP_NOTINCL;
+		}
+	}
+	else {
+		SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Received INR with no information request. Sending back default INF.\n", sngss7_info->circuit->cic);
+	}
+		
+	sng_cc_inf(1, 
+			  sngss7_info->suInstId,
+			  sngss7_info->spInstId,
+			  sngss7_info->circuit->id, 
+			  &evnt, 
+			  INFORMATION);
+
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx INF\n", sngss7_info->circuit->cic);
+	
+}
+
+void ft_to_sngss7_inr(ftdm_channel_t *ftdmchan)
+{
+	SiCnStEvnt evnt;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+
+	memset (&evnt, 0x0, sizeof (evnt));
+
+	evnt.infoReqInd.eh.pres	   = PRSNT_NODEF;
+	evnt.infoReqInd.cgPtyAdReqInd.pres = PRSNT_NODEF;
+	evnt.infoReqInd.cgPtyAdReqInd.val=CGPRTYADDREQ_REQ;
+
+	evnt.infoReqInd.holdingInd.pres =  PRSNT_NODEF;
+	evnt.infoReqInd.holdingInd.val = HOLD_REQ;
+
+	evnt.infoReqInd.cgPtyCatReqInd.pres = PRSNT_NODEF;
+	evnt.infoReqInd.cgPtyCatReqInd.val = CGPRTYCATREQ_REQ;
+
+	evnt.infoReqInd.chrgInfoReqInd.pres =  PRSNT_NODEF;
+	evnt.infoReqInd.chrgInfoReqInd.val = CHRGINFO_REQ;
+
+	evnt.infoReqInd.malCaIdReqInd.pres =  PRSNT_NODEF;
+	evnt.infoReqInd.malCaIdReqInd.val = MLBG_INFOREQ;
+
+	sng_cc_inr(1, 
+			  sngss7_info->suInstId,
+			  sngss7_info->spInstId,
+			  sngss7_info->circuit->id, 
+			  &evnt, 
+			  INFORMATREQ);
+
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx INR\n", sngss7_info->circuit->cic);
 }
 
 void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)

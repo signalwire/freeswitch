@@ -395,6 +395,7 @@ typedef struct sng_isup_ckt {
 	uint16_t		t16;
 	uint16_t		t17;
 	uint32_t		t35;
+	uint32_t		t39;
 	uint16_t		tval;
 } sng_isup_ckt_t;
 
@@ -466,6 +467,7 @@ typedef struct sng_ss7_cfg {
 	sng_nsap_t			nsap[MAX_NSAPS+1];
 	sng_isap_t			isap[MAX_ISAPS+1];	
 	sng_glare_resolution	glareResolution;
+	uint32_t				force_inr;
 } sng_ss7_cfg_t;
 
 typedef struct ftdm_sngss7_data {
@@ -517,12 +519,14 @@ typedef struct sngss7_chan_data {
 	sngss7_glare_data_t		glare;
 	sngss7_timer_data_t		t35;
 	sngss7_timer_data_t		t10;
+	sngss7_timer_data_t		t39;
 	sngss7_group_data_t		rx_grs;
 	sngss7_group_data_t		rx_gra;
 	sngss7_group_data_t		tx_grs;
 	sngss7_group_data_t		ucic;
 	ftdm_queue_t 			*event_queue;
-	struct sngss7_chan_data *peer_data;
+	struct sngss7_chan_data         *peer_data;
+	uint8_t peer_event_transfer_cnt;
 } sngss7_chan_data_t;
 
 #define SNGSS7_RX_GRS_PENDING (1 << 0)
@@ -536,7 +540,6 @@ typedef struct sngss7_span_data {
 	sngss7_group_data_t		rx_cgu;
 	sngss7_group_data_t		tx_cgu;
 	ftdm_queue_t 			*event_queue;
-	ftdm_queue_t                    *peer_chans;
 } sngss7_span_data_t;
 
 typedef struct sngss7_event_data
@@ -584,6 +587,15 @@ typedef enum {
 	FLAG_SENT_CPG			= (1 << 17),
 	FLAG_SUS_RECVD		    = (1 << 18),
 	FLAG_T6_CANCELED 		= (1 << 19),
+	FLAG_INR_TX			= (1 << 20),
+	FLAG_INR_SENT			= (1 << 21),
+	FLAG_INR_RX			= (1 << 22),
+	FLAG_INR_RX_DN			= (1 << 23),
+	FLAG_INF_TX			= (1 << 24),
+	FLAG_INF_SENT			= (1 << 25),
+	FLAG_INF_RX			= (1 << 26),
+	FLAG_INF_RX_DN			= (1 << 27),
+	FLAG_FULL_NUMBER			= (1 << 28),
 	FLAG_RELAY_DOWN			= (1 << 30),
 	FLAG_CKT_RECONFIG		= (1 << 31)
 } sng_ckt_flag_t;
@@ -606,6 +618,14 @@ typedef enum {
 	"INF_RESUME", \
 	"INF_PAUSED", \
 	"TX_ACM_SENT" \
+	"TX_INR" \
+	"INR_SENT" \
+	"RX_INR" \
+	"RX_INR_DN" \
+	"TX_INF" \
+	"INF SENT" \
+	"RX_INF" \
+	"RX_INF_DN" \
 	"RELAY_DOWN", \
 	"CKT_RECONFIG"
 FTDM_STR2ENUM_P(ftmod_ss7_ckt_state2flag, ftmod_ss7_ckt_flag2str, sng_ckt_flag_t)
@@ -820,6 +840,9 @@ void ft_to_sngss7_cgb(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_cgu(ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_itx (ftdm_channel_t * ftdmchan);
 void ft_to_sngss7_txa (ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_inr(ftdm_channel_t * ftdmchan);
+void ft_to_sngss7_inf(ftdm_channel_t *ftdmchan, SiCnStEvnt *inr);
+
 
 
 /* in ftmod_sangoma_ss7_in.c */
@@ -949,6 +972,7 @@ ftdm_status_t sngss7_add_raw_data(sngss7_chan_data_t *sngss7_info, uint8_t* data
 /* in ftmod_sangoma_ss7_timers.c */
 void handle_isup_t35(void *userdata);
 void handle_isup_t10(void *userdata);
+void handle_isup_t39(void *userdata);
 
 /******************************************************************************/
 
@@ -970,7 +994,7 @@ if (ftdmchan->state == new_state) { \
 #define SS7_INFO_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_INFO, msg , ##args)
 #define SS7_WARN_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_WARNING, msg , ##args)
 #define SS7_ERROR_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_ERROR, msg , ##args)
-#define SS7_CTRIT_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_CRIT, msg , ##args)
+#define SS7_CRIT_CHAN(fchan, msg, args...)	ftdm_log_chan(fchan, FTDM_LOG_CRIT, msg , ##args)
 
 #ifdef SS7_CODE_DEVEL
 #define SS7_DEVEL_DEBUG(a,...)   ftdm_log(FTDM_LOG_DEBUG,a,##__VA_ARGS__ );

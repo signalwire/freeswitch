@@ -1409,7 +1409,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		chan_id = 0;
 	}
 
-	if (session && globals.sip_headers) {
+	if (session && globals.sip_headers && !switch_core_session_check_interface (session,freetdm_endpoint_interface) ) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *sipvar;
 
@@ -1474,7 +1474,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-LOC-NADI");
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_loc_nadi", sipvar);
-		}   
+		}
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS-TON");
 		if (sipvar) {
@@ -1726,7 +1726,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				ftdm_channel_get_span_id(peer_private->ftdmchan), ftdm_channel_get_id(peer_private->ftdmchan));
 				switch_core_session_rwunlock(network_peer);
 			}
-
 		/* Figure out if there is a native bridge requested through dial plan variable and the originating channel is also freetdm (not going through SIP) */
 		} else if (session
 		 && (var = channel_get_variable(session, var_event, FREETDM_VAR_PREFIX "native_sigbridge")) 
@@ -2043,6 +2042,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OCN", "%s", var_value);
 		}
+		
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_ocn_nadi");
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-OCN-NADI", "%s", var_value);

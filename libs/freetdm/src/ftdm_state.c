@@ -48,7 +48,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 	ftdm_time_t diff = 0;
 	ftdm_channel_state_t state = fchan->state;
 
-
 #if 0
 	/*  I could not perform this sanity check without more disruptive changes. Ideally we should check here if the signaling module completing the state
 		executed a state processor (called ftdm_channel_advance_states() which call fchan->span->state_processor(fchan)) for the state. That is just a 
@@ -59,6 +58,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 		ftdm_channel_advance_states() would set the state_status to PROCESSING and then the check below for STATUS_NEW would be valid. Currently is not
 		valid because the signaling module may be completing the state at the end of the state_processor callback and therefore the state will still be
 		in STATUS_NEW, and is perfectly valid ... */
+
 	if (fchan->state_status == FTDM_STATE_STATUS_NEW) {
 		ftdm_log_chan_ex(fchan, file, func, line, FTDM_LOG_LEVEL_CRIT, 
 						"Asking to complete state change from %s to %s in %llums, but the state is still unprocessed (this might be a bug!)\n", 

@@ -186,7 +186,7 @@ ftdm_status_t copy_cgPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *cgPt
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Calling NADI value \"%s\"\n", clg_nadi);
 		cgPtyNum->natAddrInd.val = atoi(clg_nadi);
 	}
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number Presentation Ind %d\n", cgPtyNum->presRest.val);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Calling Party Number NADI value %d\n", cgPtyNum->natAddrInd.val);
 
 	return copy_tknStr_to_sngss7(caller_data->cid_num.digits, &cgPtyNum->addrSig, &cgPtyNum->oddEven);
 }
@@ -257,7 +257,7 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
         locPtyNum->natAddrInd.val = g_ftdm_sngss7_data.cfg.isupCkt[sngss7_info->circuit->id].loc_nadi;
 
         locPtyNum->scrnInd.pres = pres_val;
-        val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_loc_screen_ind");
+		val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_loc_screen_ind");
         if (!ftdm_strlen_zero(val)) {
 			locPtyNum->scrnInd.val = atoi(val);
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied Location Screening Ind %d\n", locPtyNum->scrnInd.val);
