@@ -124,7 +124,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is unknown type %s\n", context->path);
 		}
 
-		if ( context-m == NULL ) {
+		if ( context->m == NULL ) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error opening %s for reading\n", path);
 			return SWITCH_STATUS_GENERR;
 		}
