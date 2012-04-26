@@ -3453,7 +3453,7 @@ Global
 		{7C22BDFF-CC09-400C-8A09-660733980028}.Release|x64.ActiveCfg = Release|x64
 		{7C22BDFF-CC09-400C-8A09-660733980028}.Release|x64.Build.0 = Release|x64
 		{7C22BDFF-CC09-400C-8A09-660733980028}.Release|x64 Setup.ActiveCfg = Release|x64
-		{7C22BDFF-CC09-400C-8A09-660733980028}.Release|x86 Setup.ActiveCfg = Release|x64
+		{7C22BDFF-CC09-400C-8A09-660733980028}.Release|x86 Setup.ActiveCfg = Release|Win32
 		{23B4D303-79FC-49E0-89E2-2280E7E28940}.All|Win32.ActiveCfg = Release|x64
 		{23B4D303-79FC-49E0-89E2-2280E7E28940}.All|x64.ActiveCfg = Release|x64
 		{23B4D303-79FC-49E0-89E2-2280E7E28940}.All|x64.Build.0 = Release|x64
@@ -3470,7 +3470,7 @@ Global
 		{23B4D303-79FC-49E0-89E2-2280E7E28940}.Release|x64.ActiveCfg = Release|x64
 		{23B4D303-79FC-49E0-89E2-2280E7E28940}.Release|x64.Build.0 = Release|x64
 		{23B4D303-79FC-49E0-89E2-2280E7E28940}.Release|x64 Setup.ActiveCfg = Release|x64
-		{23B4D303-79FC-49E0-89E2-2280E7E28940}.Release|x86 Setup.ActiveCfg = Release|x64
+		{23B4D303-79FC-49E0-89E2-2280E7E28940}.Release|x86 Setup.ActiveCfg = Release|Win32
 		{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}.All|Win32.ActiveCfg = Release|x64
 		{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}.All|x64.ActiveCfg = Release|x64
 		{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}.All|x64.Build.0 = Release|x64
@@ -3483,7 +3483,7 @@ Global
 		{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}.Release|Win32.ActiveCfg = Release|Win32
 		{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}.Release|x64.ActiveCfg = Release|x64
 		{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}.Release|x64 Setup.ActiveCfg = Release|x64
-		{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}.Release|x86 Setup.ActiveCfg = Release|x64
+		{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}.Release|x86 Setup.ActiveCfg = Release|Win32
 		{50AAC2CE-BFC9-4912-87CC-C6381850D735}.All|Win32.ActiveCfg = Release|x64
 		{50AAC2CE-BFC9-4912-87CC-C6381850D735}.All|x64.ActiveCfg = Release|x64
 		{50AAC2CE-BFC9-4912-87CC-C6381850D735}.All|x64.Build.0 = Release|x64
@@ -3496,7 +3496,7 @@ Global
 		{50AAC2CE-BFC9-4912-87CC-C6381850D735}.Release|Win32.ActiveCfg = Release|Win32
 		{50AAC2CE-BFC9-4912-87CC-C6381850D735}.Release|x64.ActiveCfg = Release|x64
 		{50AAC2CE-BFC9-4912-87CC-C6381850D735}.Release|x64 Setup.ActiveCfg = Release|x64
-		{50AAC2CE-BFC9-4912-87CC-C6381850D735}.Release|x86 Setup.ActiveCfg = Release|x64
+		{50AAC2CE-BFC9-4912-87CC-C6381850D735}.Release|x86 Setup.ActiveCfg = Release|Win32
 		{4748FF56-CA85-4809-97D6-A94C0FAC1D77}.All|Win32.ActiveCfg = Release|x64
 		{4748FF56-CA85-4809-97D6-A94C0FAC1D77}.All|x64.ActiveCfg = Release|x64
 		{4748FF56-CA85-4809-97D6-A94C0FAC1D77}.All|x64.Build.0 = Release|x64
@@ -3513,7 +3513,7 @@ Global
 		{4748FF56-CA85-4809-97D6-A94C0FAC1D77}.Release|x64.ActiveCfg = Release|x64
 		{4748FF56-CA85-4809-97D6-A94C0FAC1D77}.Release|x64.Build.0 = Release|x64
 		{4748FF56-CA85-4809-97D6-A94C0FAC1D77}.Release|x64 Setup.ActiveCfg = Release|x64
-		{4748FF56-CA85-4809-97D6-A94C0FAC1D77}.Release|x86 Setup.ActiveCfg = Release|x64
+		{4748FF56-CA85-4809-97D6-A94C0FAC1D77}.Release|x86 Setup.ActiveCfg = Release|Win32
 		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.All|Win32.ActiveCfg = Release|x64
 		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.All|x64.ActiveCfg = Release|x64
 		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.All|x64.Build.0 = Release|x64
@@ -3530,7 +3530,7 @@ Global
 		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.Release|x64.ActiveCfg = Release|x64
 		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.Release|x64.Build.0 = Release|x64
 		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.Release|x64 Setup.ActiveCfg = Release|x64
-		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.Release|x86 Setup.ActiveCfg = Release|x64
+		{60C542EE-6882-4EA2-8C21-5AB6DB1BA73F}.Release|x86 Setup.ActiveCfg = Release|Win32
 		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.All|Win32.ActiveCfg = Release|x64
 		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.All|x64.ActiveCfg = Release|x64
 		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.All|x64.Build.0 = Release|x64
@@ -3543,7 +3543,7 @@ Global
 		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Release|Win32.ActiveCfg = Release|Win32
 		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Release|x64.ActiveCfg = Release|x64
 		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Release|x64 Setup.ActiveCfg = Release|x64
-		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Release|x86 Setup.ActiveCfg = Release|x64
+		{2469B306-B027-4FF2-8815-C9C1EA2CAE79}.Release|x86 Setup.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
