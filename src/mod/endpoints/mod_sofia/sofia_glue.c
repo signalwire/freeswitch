@@ -2057,7 +2057,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	char *mp = NULL, *mp_type = NULL;
 	char *record_route = NULL;
 	const char *recover_via = NULL;
-	int require_timer = 0;
+	int require_timer = 1;
 
 
 	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
@@ -2089,8 +2089,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 
-	if ((val = switch_channel_get_variable(channel, "sip_require_timer")) && switch_true(val)) {
-		require_timer = 1;
+	if ((val = switch_channel_get_variable_dup(channel, "sip_require_timer", SWITCH_FALSE, -1)) && switch_false(val)) {
+		require_timer = 0;
 	}
 
 
