@@ -9,12 +9,15 @@
 #define SWITCH_STATUS_SUCCESS 0
 #define SWITCH_STATUS_GENERR 1
 #define SWITCH_STATUS_FALSE 2
+#define SWITCH_STATUS_TERM 3
 
 #define SWITCH_MUTEX_NESTED 1
 
 #define SWITCH_CHANNEL_LOG 0
 
+#define SWITCH_LOG_DEBUG 0
 #define SWITCH_LOG_INFO 0
+#define SWITCH_LOG_ERROR 1
 
 typedef int switch_status_t;
 typedef size_t switch_size_t;
@@ -113,7 +116,7 @@ switch_status_t switch_mutex_init(switch_mutex_t **mutex, int flags, switch_memo
 
 switch_status_t switch_thread_cond_create(switch_thread_cond_t **cond, switch_memory_pool_t *pool);
 
-switch_status_t switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_mutex_t *mutex, int wait);
+switch_status_t switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_mutex_t *mutex, long wait);
 
 switch_status_t switch_thread_cond_broadcast(switch_thread_cond_t *cond);
 
