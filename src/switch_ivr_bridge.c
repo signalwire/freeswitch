@@ -660,7 +660,9 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 		if (!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) &&
 			!switch_channel_test_flag(channel, CF_XFER_ZOMBIE) && bd && !bd->clean_exit
 			&& state != CS_PARK && state != CS_ROUTING && state == CS_EXCHANGE_MEDIA && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
-			if (!switch_channel_test_flag(channel, CF_INTERCEPTED)) {
+			if (switch_channel_test_flag(channel, CF_INTERCEPTED)) {
+				return SWITCH_STATUS_FALSE;
+			} else {
 				if (switch_channel_test_flag(channel, CF_INTERCEPT)) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_PICKED_OFF);
 				} else {
