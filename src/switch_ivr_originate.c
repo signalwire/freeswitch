@@ -3128,7 +3128,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(peer_session));
 						holding = NULL;
 						oglobals.idx = IDX_NADA;
-						if (caller_channel && switch_channel_up_nosig(caller_channel)) {
+						if (caller_channel && switch_channel_up_nosig(caller_channel) && !switch_channel_test_flag(caller_channel, CF_INTERCEPTED)) {
 							switch_channel_hangup(caller_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 						}
 						caller_channel = NULL;
