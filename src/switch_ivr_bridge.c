@@ -661,6 +661,8 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 			!switch_channel_test_flag(channel, CF_XFER_ZOMBIE) && bd && !bd->clean_exit
 			&& state != CS_PARK && state != CS_ROUTING && state == CS_EXCHANGE_MEDIA && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
 			if (switch_channel_test_flag(channel, CF_INTERCEPTED)) {
+				switch_channel_clear_flag(channel, CF_INTERCEPT);
+				switch_channel_clear_flag(channel, CF_INTERCEPTED);
 				return SWITCH_STATUS_FALSE;
 			} else {
 				if (switch_channel_test_flag(channel, CF_INTERCEPT)) {
@@ -1654,7 +1656,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, c
 		switch_channel_t *rchannel = switch_core_session_get_channel(rsession);
 		const char *brto;
 
-		if ((brto = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		if ((brto = switch_channel_get_variable(rchannel, "orignate_signal_bond")) || 
+			(brto = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			switch_copy_string(b_uuid, brto, blen);
 			status = SWITCH_STATUS_SUCCESS;
 		}
