@@ -1168,6 +1168,11 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				}
 #endif
 
+				if (hup && dh.hits > 0) {
+					goto done;
+				}
+
+
 				if (zstr(call_id) && (dh.hits && presence_source && (!strcasecmp(presence_source, "register") || switch_stristr("register", status)))) {
 					goto done;
 				}
@@ -1284,10 +1289,10 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			}
 
 
-			if (hup) { 
+			if (hup && dh.hits < 1) { 
 				/* so many phones get confused when whe hangup we have to reprobe to get them all to reset to absolute states so the lights stay correct */
 				switch_event_t *s_event;
-				
+
 				if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
@@ -1299,6 +1304,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				}
 			}
 			
+		
 			if (!zstr((char *) helper.stream.data)) {
 				char *this_sql = (char *) helper.stream.data;
 				char *next = NULL;
