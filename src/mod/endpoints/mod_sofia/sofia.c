@@ -6409,31 +6409,30 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					switch_core_session_rwunlock(other_session);
 				}
 			} else {
-			uint8_t match = 0;
-			int is_ok = 1;
+				uint8_t match = 0;
+				int is_ok = 1;
 
+				if (tech_pvt->num_codecs) {
+					match = sofia_glue_negotiate_sdp(session, r_sdp);
+				}
 
-			if (tech_pvt->num_codecs) {
-				match = sofia_glue_negotiate_sdp(session, r_sdp);
-			}
-
-			if (match) {
-				sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
-				if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
-					switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RTP ERROR");
+				if (match) {
+					sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
+						switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RTP ERROR");
+						is_ok = 0;
+					}
+					sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
+				} else {
+					switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 					is_ok = 0;
 				}
-				sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
-			} else {
-				switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
-				is_ok = 0;
-			}
 
-			if (!is_ok) {
-				nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
-			}
+				if (!is_ok) {
+					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+				}
 			}
 			goto done;
 		}
