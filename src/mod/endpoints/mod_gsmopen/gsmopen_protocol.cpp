@@ -587,7 +587,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 	PUSHA_UNLOCKA(tech_pvt->controldev_lock);
 	LOKKA(tech_pvt->controldev_lock);
 
-	while ((!tech_pvt->controldev_dead) && msecs_passed <= timeout_in_msec ) {
+	while ((!tech_pvt->controldev_dead) && msecs_passed <= timeout_in_msec) {
 		char *token_ptr;
 		timeout.tv_sec = timeout_sec;	//reset the timeout, linux modify it
 		timeout.tv_usec = timeout_usec;	//reset the timeout, linux modify it
@@ -658,7 +658,8 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 				la_counter++;
 
 				if (la_counter == AT_MESG_MAX_LINES) {
-					ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG, AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
+					ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG,
+						   AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
 					WARNINGA("read was %d bytes, tmp_answer3= --|%s|--\n", GSMOPEN_P_LOG, read_count, tmp_answer3);
 					at_ack = AT_ERROR;
 					break;
@@ -676,12 +677,13 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 		}
 
 		if (expected_string && !expect_crlf && !memcmp(last_line_ptr, expected_string, strlen(expected_string))
-		   ) {
+			) {
 			strncpy(tech_pvt->line_array.result[la_counter], last_line_ptr, AT_MESG_MAX_LENGTH);
 			// match expected string -> accept it withtout CRLF
 			la_counter++;
 			if (la_counter == AT_MESG_MAX_LINES) {
-				ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG, AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
+				ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG,
+					   AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
 				WARNINGA("read was %d bytes, tmp_answer3= --|%s|--\n", GSMOPEN_P_LOG, read_count, tmp_answer3);
 				at_ack = AT_ERROR;
 				break;
@@ -692,12 +694,13 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 			la_counter--;
 
 		/* let's list the complete lines read so far, without re-listing the lines that has yet been listed */
-		for (i = la_read; i < la_counter; i++){
+		for (i = la_read; i < la_counter; i++) {
 			DEBUGA_GSMOPEN("Read line %d: |%s| la_counter=%d\n", GSMOPEN_P_LOG, i, tech_pvt->line_array.result[i], la_counter);
 		}
 
 		if (la_counter == AT_MESG_MAX_LINES) {
-			ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG, AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
+			ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG,
+				   AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
 			WARNINGA("read was %d bytes, tmp_answer3= --|%s|--\n", GSMOPEN_P_LOG, read_count, tmp_answer3);
 			at_ack = AT_ERROR;
 			break;
@@ -1035,7 +1038,6 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
 						DEBUGA_GSMOPEN("just sent GSMOPEN_CONTROL_HANGUP\n", GSMOPEN_P_LOG);
 					}
-
 					//
 					//tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
 					//gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
@@ -1730,7 +1732,8 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 			break;
 
 		if (la_counter == AT_MESG_MAX_LINES) {
-			ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG, AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
+			ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG,
+				   AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
 			WARNINGA("read was %d bytes, tmp_answer3= --|%s|--\n", GSMOPEN_P_LOG, read_count, tmp_answer3);
 			at_ack = AT_ERROR;
 			break;
@@ -2766,9 +2769,9 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 			memset(wstr, 0, 2000);
 			mbstowcs(wstr, data.c_str(), data.length());
 
-			4. get unicode string length. int wcs_len = wcslen(wstr);
+			4. get unicode string length.int wcs_len = wcslen(wstr);
 
-			5. change unicode string to net order. for (int i = 0; i < wcs_len; i++)
+			5. change unicode string to net order.for (int i = 0; i < wcs_len; i++)
 				wstr[i] = htons(wstr[i]);
 
 			6. put unicode string into pdu.char content2[1000];
