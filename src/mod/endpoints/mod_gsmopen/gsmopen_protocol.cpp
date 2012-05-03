@@ -1093,9 +1093,9 @@ read:
 						DEBUGA_PBX("just sent GSMOPEN_CONTROL_ANSWER\n", GSMOPEN_P_LOG);
 					}
 				} else {
+					tech_pvt->interface_state = GSMOPEN_STATE_UP;
+					DEBUGA_PBX("just interface_state UP\n", GSMOPEN_P_LOG);
 				}
-				//tech_pvt->interface_state = GSMOPEN_STATE_UP;
-				//DEBUGA_PBX("just interface_state UP\n", GSMOPEN_P_LOG);
 			}
 
 			if ((strcmp(tech_pvt->line_array.result[i], tech_pvt->at_call_calling) == 0)) {
@@ -2528,7 +2528,6 @@ int gsmopen_answer(private_t *tech_pvt)
 			DEBUGA_PBX("call answered\n", GSMOPEN_P_LOG);
 		res = 0;
 
-		new_inbound_channel(tech_pvt);
 		if (tech_pvt->owner) {
 			DEBUGA_PBX("going to send GSMOPEN_STATE_UP\n", GSMOPEN_P_LOG);
 			ast_setstate(tech_pvt->owner, GSMOPEN_STATE_UP);
@@ -2549,13 +2548,10 @@ int gsmopen_ring(private_t *tech_pvt)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
-	if (option_debug) {
-		//DEBUGA_PBX("ENTERING FUNC\n", GSMOPEN_P_LOG);
-	}
-
 	session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	if (session) {
 		switch_core_session_rwunlock(session);
+		//DEBUGA_PBX("got session, let's exit\n", GSMOPEN_P_LOG);
 		return 0;
 	}
 
@@ -2570,8 +2566,9 @@ int gsmopen_ring(private_t *tech_pvt)
 		switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
 		if (channel) {
 			switch_channel_mark_ring_ready(channel);
+			DEBUGA_GSMOPEN("switch_channel_mark_ring_ready(channel);\n", GSMOPEN_P_LOG);
 		} else {
-			ERRORA("no session\n", GSMOPEN_P_LOG);
+			ERRORA("no channel\n", GSMOPEN_P_LOG);
 		}
 		switch_core_session_rwunlock(session);
 	} else {
@@ -2579,9 +2576,6 @@ int gsmopen_ring(private_t *tech_pvt)
 
 	}
 
-	if (option_debug) {
-		DEBUGA_PBX("EXITING FUNC\n", GSMOPEN_P_LOG);
-	}
 	return res;
 }
 
