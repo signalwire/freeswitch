@@ -1569,6 +1569,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 				}
 			}
 
+
 			/* if we are reading an sms message from memory, put the line into the sms buffer if the line is not "OK" or "ERROR" */
 			if (tech_pvt->reading_sms_msg > 1 && at_ack == -1) {
 				int c;
@@ -1667,6 +1668,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 
 
 #ifdef WANT_GSMLIB
+try{
 						char content2[1000];
 						SMSMessageRef sms;
 						//MessageType messagetype;
@@ -1712,6 +1714,10 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						//servicecentretimestamp = sms->serviceCentreTimestamp();
 						//sender_recipient_address = sms->address();
 
+}  catch (GsmException &ge)
+  {
+	ERRORA("GsmException= |||%s|||\n", GSMOPEN_P_LOG, ge.what());
+  }
 
 
 #endif // WANT_GSMLIB
@@ -2745,6 +2751,7 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 
 		if (tech_pvt->no_ucs2 || tech_pvt->sms_pdu_not_supported == 0) {
 #ifdef WANT_GSMLIB
+try{
 			SMSMessageRef smsMessage;
 
 			memset(mesg_test, '\0', sizeof(mesg_test));
@@ -2818,6 +2825,11 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 			//servicecentretimestamp = sms->serviceCentreTimestamp();
 			//sender_recipient_address = sms->address();
 #endif // NOTDEF
+} catch (GsmException &ge)
+  {
+	ERRORA("GsmException= |||%s|||\n", GSMOPEN_P_LOG, ge.what());
+  }
+
 
 #else // WANT_GSMLIB
 			ERRORA("tech_pvt->no_ucs2 || tech_pvt->sms_pdu_not_supported == 0 && no WANT_GSMLIB\n", GSMOPEN_P_LOG);
