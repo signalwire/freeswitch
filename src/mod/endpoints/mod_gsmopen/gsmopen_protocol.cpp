@@ -1,7 +1,7 @@
 #include "gsmopen.h"
 #ifdef WIN32
 #include "win_iconv.c"
-#endif// WIN32
+#endif // WIN32
 #define WANT_GSMLIB
 
 #ifdef WANT_GSMLIB
@@ -17,7 +17,7 @@
 
 using namespace std;
 using namespace gsmlib;
-#endif// WANT_GSMLIB
+#endif // WANT_GSMLIB
 
 
 extern int running;				//FIXME
@@ -154,7 +154,7 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 
 		char trash[4096];
 		res = tech_pvt->serialPort_serial_control->Read(trash, 4096);
-		if (res){
+		if (res) {
 			DEBUGA_GSMOPEN("READ %d on serialport init\n", GSMOPEN_P_LOG, res);
 		}
 
@@ -402,8 +402,7 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 			WARNINGA("AT+CSMP do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
 		}
 	}
-
-#else// WANT_GSMLIB
+#else // WANT_GSMLIB
 
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
 	if (res) {
@@ -422,11 +421,11 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 			WARNINGA("AT+CSMP do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
 		}
 	}
-#endif// WANT_GSMLIB
+#endif // WANT_GSMLIB
 
 #ifdef NOTDEF					//GSMLIB? XXX
 
- else {
+	else {
 		//res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,20"); //"flash", class 0 sms 16 bit unicode
 		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,8");	//unicode, 16 bit message
 		if (res) {
@@ -566,7 +565,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 	int at_ack = -1;
 	int la_read = 0;
 	int timeout_in_msec;
-	int msecs_passed=0;
+	int msecs_passed = 0;
 
 	timeout_in_msec = (timeout_sec * 1000) + (timeout_usec ? (timeout_usec / 1000) : 0);
 
@@ -585,16 +584,16 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 	PUSHA_UNLOCKA(tech_pvt->controldev_lock);
 	LOKKA(tech_pvt->controldev_lock);
 
-	while ((!tech_pvt->controldev_dead) && msecs_passed <= timeout_in_msec){
+	while ((!tech_pvt->controldev_dead) && msecs_passed <= timeout_in_msec) {
 		char *token_ptr;
 		timeout.tv_sec = timeout_sec;	//reset the timeout, linux modify it
 		timeout.tv_usec = timeout_usec;	//reset the timeout, linux modify it
 
-read:
+	  read:
 		switch_sleep(20000);
 		msecs_passed += 20;
 
-		if (timeout_in_msec != 100){
+		if (timeout_in_msec != 100) {
 			//ERRORA("TIMEOUT=%d, PASSED=%d\n", GSMOPEN_P_LOG, timeout_in_msec, msecs_passed);
 		}
 		//read_count = tech_pvt->serialPort_serial_control->Readv(tmp_answer_ptr, AT_BUFSIZ - (tmp_answer_ptr - tmp_answer), (timeout_sec * 1000) + (timeout_usec ? (timeout_usec / 1000) : 0));
@@ -603,8 +602,8 @@ read:
 		//cicopet read_count = read(tech_pvt->controldevfd, tmp_answer_ptr, AT_BUFSIZ - (tmp_answer_ptr - tmp_answer));
 
 		if (read_count == 0) {
-			if(msecs_passed <= timeout_in_msec){
-			goto read;
+			if (msecs_passed <= timeout_in_msec) {
+				goto read;
 			}
 		}
 		if (read_count == -1) {
@@ -950,7 +949,7 @@ read:
 					DEBUGA_GSMOPEN("|%s| +CREG: Display: %d, Registration=%d\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i], n, stat);
 				if (err < 2) {
 					DEBUGA_GSMOPEN("|%s| is not formatted as: |+CREG: xx,yy|\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
-				}else{
+				} else {
 					if (stat == 0) {
 						ERRORA
 							("|%s| CELLPHONE is not registered to network, consider to move it or additional antenna\n",
@@ -959,7 +958,7 @@ read:
 						tech_pvt->home_network_registered = 0;
 						tech_pvt->roaming_registered = 0;
 						alarm_event(tech_pvt, ALARM_NO_NETWORK_REGISTRATION,
-								"CELLPHONE is not registered to network, consider to move it or additional antenna");
+									"CELLPHONE is not registered to network, consider to move it or additional antenna");
 					} else if (stat == 1) {
 						DEBUGA_GSMOPEN("|%s| CELLPHONE is registered to the HOME network\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
 						tech_pvt->not_registered = 0;
@@ -1014,7 +1013,6 @@ read:
 						gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
 						DEBUGA_GSMOPEN("just sent GSMOPEN_CONTROL_HANGUP\n", GSMOPEN_P_LOG);
 					}
-
 
 					//
 					//tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
@@ -1660,7 +1658,7 @@ read:
 							iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
 						} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
 							ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
-									sizeof(content2));
+										 sizeof(content2));
 						} else {
 							ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
 
@@ -1691,7 +1689,7 @@ read:
 
 
 
-#endif// WANT_GSMLIB
+#endif // WANT_GSMLIB
 
 
 
@@ -1874,23 +1872,23 @@ int gsmopen_serial_write_AT(private_t *tech_pvt, const char *data)
 		if (res != 1) {
 			ERRORA("Error RE-sending (carriage return): %d %d (%s)\n", GSMOPEN_P_LOG, count, res, strerror(errno));
 
-				ERRORA
-					("wrote -1 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
-					 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
-				tech_pvt->controldev_dead = 1;
-				//cicopet close(tech_pvt->controldevfd);
-				ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
-				tech_pvt->running = 0;
-				alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
-				tech_pvt->active = 0;
-				tech_pvt->name[0] = '\0';
+			ERRORA
+				("wrote -1 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
+				 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+			tech_pvt->controldev_dead = 1;
+			//cicopet close(tech_pvt->controldevfd);
+			ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+			tech_pvt->running = 0;
+			alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
+			tech_pvt->active = 0;
+			tech_pvt->name[0] = '\0';
 
-				UNLOCKA(tech_pvt->controldev_lock);
-				if (tech_pvt->owner) {
-					tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
-					gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
-				}
-				switch_sleep(1000000);
+			UNLOCKA(tech_pvt->controldev_lock);
+			if (tech_pvt->owner) {
+				tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
+				gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
+			}
+			switch_sleep(1000000);
 
 
 			return -1;
@@ -1978,23 +1976,23 @@ int gsmopen_serial_write_AT_noack(private_t *tech_pvt, const char *data)
 		ERRORA("Error sending data... (%s)\n", GSMOPEN_P_LOG, strerror(errno));
 		UNLOCKA(tech_pvt->controldev_lock);
 
-				ERRORA
-					("wrote -1 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
-					 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
-				tech_pvt->controldev_dead = 1;
-				//cicopet close(tech_pvt->controldevfd);
-				ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
-				tech_pvt->running = 0;
-				alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
-				tech_pvt->active = 0;
-				tech_pvt->name[0] = '\0';
+		ERRORA
+			("wrote -1 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
+			 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+		tech_pvt->controldev_dead = 1;
+		//cicopet close(tech_pvt->controldevfd);
+		ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+		tech_pvt->running = 0;
+		alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
+		tech_pvt->active = 0;
+		tech_pvt->name[0] = '\0';
 
-				UNLOCKA(tech_pvt->controldev_lock);
-				if (tech_pvt->owner) {
-					tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
-					gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
-				}
-				switch_sleep(1000000);
+		UNLOCKA(tech_pvt->controldev_lock);
+		if (tech_pvt->owner) {
+			tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
+			gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
+		}
+		switch_sleep(1000000);
 
 
 		return -1;
@@ -2017,23 +2015,23 @@ int gsmopen_serial_write_AT_ack(private_t *tech_pvt, const char *data)
 		ERRORA("Error sending data... (%s) \n", GSMOPEN_P_LOG, strerror(errno));
 		UNLOCKA(tech_pvt->controldev_lock);
 
-				ERRORA
-					("wrote -1 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
-					 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
-				tech_pvt->controldev_dead = 1;
-				//cicopet close(tech_pvt->controldevfd);
-				ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
-				tech_pvt->running = 0;
-				alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
-				tech_pvt->active = 0;
-				tech_pvt->name[0] = '\0';
+		ERRORA
+			("wrote -1 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
+			 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+		tech_pvt->controldev_dead = 1;
+		//cicopet close(tech_pvt->controldevfd);
+		ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+		tech_pvt->running = 0;
+		alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
+		tech_pvt->active = 0;
+		tech_pvt->name[0] = '\0';
 
-				UNLOCKA(tech_pvt->controldev_lock);
-				if (tech_pvt->owner) {
-					tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
-					gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
-				}
-				switch_sleep(1000000);
+		UNLOCKA(tech_pvt->controldev_lock);
+		if (tech_pvt->owner) {
+			tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
+			gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
+		}
+		switch_sleep(1000000);
 
 
 		return -1;
@@ -2059,23 +2057,23 @@ int gsmopen_serial_write_AT_ack_nocr_longtime(private_t *tech_pvt, const char *d
 		ERRORA("Error sending data... (%s) \n", GSMOPEN_P_LOG, strerror(errno));
 		UNLOCKA(tech_pvt->controldev_lock);
 
-				ERRORA
-					("wrote -1 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
-					 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
-				tech_pvt->controldev_dead = 1;
-				//cicopet close(tech_pvt->controldevfd);
-				ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
-				tech_pvt->running = 0;
-				alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
-				tech_pvt->active = 0;
-				tech_pvt->name[0] = '\0';
+		ERRORA
+			("wrote -1 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
+			 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+		tech_pvt->controldev_dead = 1;
+		//cicopet close(tech_pvt->controldevfd);
+		ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+		tech_pvt->running = 0;
+		alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
+		tech_pvt->active = 0;
+		tech_pvt->name[0] = '\0';
 
-				UNLOCKA(tech_pvt->controldev_lock);
-				if (tech_pvt->owner) {
-					tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
-					gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
-				}
-				switch_sleep(1000000);
+		UNLOCKA(tech_pvt->controldev_lock);
+		if (tech_pvt->owner) {
+			tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
+			gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
+		}
+		switch_sleep(1000000);
 
 
 		return -1;
@@ -2101,23 +2099,23 @@ int gsmopen_serial_write_AT_expect1(private_t *tech_pvt, const char *data, const
 		ERRORA("Error sending data... (%s) \n", GSMOPEN_P_LOG, strerror(errno));
 		UNLOCKA(tech_pvt->controldev_lock);
 
-				ERRORA
-					("wrote -1 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
-					 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
-				tech_pvt->controldev_dead = 1;
-				//cicopet close(tech_pvt->controldevfd);
-				ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
-				tech_pvt->running = 0;
-				alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
-				tech_pvt->active = 0;
-				tech_pvt->name[0] = '\0';
+		ERRORA
+			("wrote -1 bytes!!! Nenormalno! Marking this gsmopen_serial_device %s as dead, andif it is owned by a channel, hanging up. Maybe the phone is stuck, switched off, power down or battery exhausted\n",
+			 GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+		tech_pvt->controldev_dead = 1;
+		//cicopet close(tech_pvt->controldevfd);
+		ERRORA("gsmopen_serial_monitor failed, declaring %s dead\n", GSMOPEN_P_LOG, tech_pvt->controldevice_name);
+		tech_pvt->running = 0;
+		alarm_event(tech_pvt, ALARM_FAILED_INTERFACE, "gsmopen_serial_monitor failed, declaring interface dead");
+		tech_pvt->active = 0;
+		tech_pvt->name[0] = '\0';
 
-				UNLOCKA(tech_pvt->controldev_lock);
-				if (tech_pvt->owner) {
-					tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
-					gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
-				}
-				switch_sleep(1000000);
+		UNLOCKA(tech_pvt->controldev_lock);
+		if (tech_pvt->owner) {
+			tech_pvt->owner->hangupcause = GSMOPEN_CAUSE_FAILURE;
+			gsmopen_queue_control(tech_pvt->owner, GSMOPEN_CONTROL_HANGUP);
+		}
+		switch_sleep(1000000);
 
 
 		return -1;
@@ -2324,10 +2322,10 @@ int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outb
 				   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, converted, utf8_out);
 
 #ifdef WIN32
-	iconv_res = iconv(iconv_format, (const char **)&inbuf, &inbytesleft, &outbuf, &outbytesleft);
-#else// WIN32
+	iconv_res = iconv(iconv_format, (const char **) &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+#else // WIN32
 	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
-#endif// WIN32
+#endif // WIN32
 	if (iconv_res == (size_t) -1) {
 		DEBUGA_GSMOPEN("2 ciao in=%s, inleft=%d, out=%s, outleft=%d, converted=%s, utf8_out=%s\n",
 					   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, converted, utf8_out);
@@ -2343,6 +2341,7 @@ int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outb
 //#endif //WIN32
 	return 0;
 }
+
 int utf8_to_iso_8859_1(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *iso_8859_1_out, size_t outbytesleft)
 {
 	/* cicopet */
@@ -2365,10 +2364,10 @@ int utf8_to_iso_8859_1(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, c
 	DEBUGA_GSMOPEN("in=%s, inleft=%d, out=%s, outleft=%d, utf8_in=%s, iso_8859_1_out=%s\n",
 				   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, utf8_in, iso_8859_1_out);
 #ifdef WIN32
-	iconv_res = iconv(iconv_format, (const char **)&inbuf, &inbytesleft, &outbuf, &outbytesleft);
-#else// WIN32
+	iconv_res = iconv(iconv_format, (const char **) &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+#else // WIN32
 	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
-#endif// WIN32
+#endif // WIN32
 	if (iconv_res == (size_t) -1) {
 		ERRORA("error: %s %d\n", GSMOPEN_P_LOG, strerror(errno), errno);
 		return -1;
@@ -2420,10 +2419,10 @@ int iso_8859_1_to_utf8(private_t *tech_pvt, char *iso_8859_1_in, char *utf8_out,
 
 	inbytesleft = strlen(iso_8859_1_in) * 2;
 #ifdef WIN32
-	iconv_res = iconv(iconv_format, (const char **)&inbuf, &inbytesleft, &outbuf, &outbytesleft);
-#else// WIN32
+	iconv_res = iconv(iconv_format, (const char **) &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+#else // WIN32
 	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
-#endif// WIN32
+#endif // WIN32
 	if (iconv_res == (size_t) -1) {
 		DEBUGA_GSMOPEN("ciao in=%s, inleft=%d, out=%s, outleft=%d, utf8_out=%s\n",
 					   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, utf8_out);
@@ -2468,10 +2467,10 @@ int utf8_to_ucs2(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *u
 	DEBUGA_GSMOPEN("in=%s, inleft=%d, out=%s, outleft=%d, utf8_in=%s, converted=%s\n",
 				   GSMOPEN_P_LOG, inbuf, (int) inbytesleft, outbuf, (int) outbytesleft, utf8_in, converted);
 #ifdef WIN32
-	iconv_res = iconv(iconv_format, (const char **)&inbuf, &inbytesleft, &outbuf, &outbytesleft);
-#else// WIN32
+	iconv_res = iconv(iconv_format, (const char **) &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+#else // WIN32
 	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
-#endif// WIN32
+#endif // WIN32
 	if (iconv_res == (size_t) -1) {
 		ERRORA("error: %s %d\n", GSMOPEN_P_LOG, strerror(errno), errno);
 		return -1;
@@ -2659,7 +2658,8 @@ int gsmopen_senddigit(private_t *tech_pvt, char digit)
 		sprintf(at_command, "%s=1,%c", tech_pvt->at_send_dtmf, digit);
 		res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
 		if (res) {
-			DEBUGA_GSMOPEN("XXX answer (OK) takes long to come, goes into timeout. command used: '%s=1,%c'\n", GSMOPEN_P_LOG, tech_pvt->at_send_dtmf, digit);
+			DEBUGA_GSMOPEN("XXX answer (OK) takes long to come, goes into timeout. command used: '%s=1,%c'\n", GSMOPEN_P_LOG, tech_pvt->at_send_dtmf,
+						   digit);
 		}
 	}
 
@@ -2707,12 +2707,12 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 		if (err) {
 			ERRORA("AT+CMGF=1 (set message sending to TEXT (as opposed to PDU)  do not got OK from the phone\n", GSMOPEN_P_LOG);
 		}
-#else// WANT_GSMLIB
+#else // WANT_GSMLIB
 		err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
 		if (err) {
 			ERRORA("AT+CMGF=0 (set message sending to TEXT (as opposed to PDU)  do not got OK from the phone\n", GSMOPEN_P_LOG);
 		}
-#endif// WANT_GSMLIB
+#endif // WANT_GSMLIB
 
 
 		if (tech_pvt->no_ucs2 || tech_pvt->sms_pdu_not_supported == 0) {
@@ -2720,94 +2720,81 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 			SMSMessageRef smsMessage;
 
 			memset(mesg_test, '\0', sizeof(mesg_test));
-			sprintf(mesg_test,":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù"); //let's test the beauty of utf8
+			sprintf(mesg_test, ":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù");	//let's test the beauty of utf8
 			//sprintf(mesg_test,":) ciao belè èéàòìù"); 
 			//text=mesg_test;
 
 			utf8_to_iso_8859_1(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
 			smsMessage = new SMSSubmitMessage(smscommand, dest);
 			string pdu = smsMessage->encode();
-			strncpy(pdu2, pdu.c_str(), sizeof(pdu2)-1);
+			strncpy(pdu2, pdu.c_str(), sizeof(pdu2) - 1);
 			memset(smscommand, '\0', sizeof(smscommand));
 			pdulenght = pdu.length() / 2 - 1;
-			sprintf(smscommand, "AT+CMGS=%d", pdulenght);	
+			sprintf(smscommand, "AT+CMGS=%d", pdulenght);
 
 #ifdef NOTDEF
 
-*** 9. How to support unicode?
+			***9. How to support unicode ? You need 6 steps : 1. set datacodingschema to DCS_SIXTEEN_BIT_ALPHABET 2. set your locale correctly, for example
+				, my locale, china.setlocale(LC_ALL, "chs");
 
-You need 6 steps:
+			3. translate MBCS(multiple byte character set) string to unicode string.wchar_t wstr[1000];
+			memset(wstr, 0, 2000);
+			mbstowcs(wstr, data.c_str(), data.length());
 
-1. set datacodingschema to DCS_SIXTEEN_BIT_ALPHABET
+			4. get unicode string length. int wcs_len = wcslen(wstr);
 
-2. set your locale correctly, for example, my locale, china.
-    setlocale(LC_ALL, "chs");
+			5. change unicode string to net order. for (int i = 0; i < wcs_len; i++)
+				wstr[i] = htons(wstr[i]);
 
-3. translate MBCS(multiple byte character set) string to unicode string.
-    wchar_t wstr[ 1000 ];
-    memset(wstr, 0, 2000);
-    mbstowcs(wstr, data.c_str(), data.length());
+			6. put unicode string into pdu.char content2[1000];
+			SMSMessageRef sms;
+			//MessageType messagetype;
+			//Address servicecentreaddress;
+			//Timestamp servicecentretimestamp;
+			//Address sender_recipient_address;
 
-4. get unicode string length.
-    int wcs_len = wcslen(wstr);
+			sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
 
-5. change unicode string to net order.
-    for (int i = 0; i < wcs_len; i++)
-        wstr[ i ] = htons(wstr[ i ]);
+			DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
 
-6. put unicode string into pdu.
-                                                       
+			memset(content2, '\0', sizeof(content2));
+			if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
+				iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
+			} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
+				ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
+							 sizeof(content2));
+			} else {
+				ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
 
-						char content2[1000];
-						SMSMessageRef sms;
-						//MessageType messagetype;
-						//Address servicecentreaddress;
-						//Timestamp servicecentretimestamp;
-						//Address sender_recipient_address;
-
-						sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
-
-						DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
-
-						memset(content2, '\0', sizeof(content2));
-						if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
-							iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
-						} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
-							ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
-									sizeof(content2));
-						} else {
-							ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-
-						}
-						DEBUGA_GSMOPEN("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-						DEBUGA_GSMOPEN("dataCodingScheme=%s\n", GSMOPEN_P_LOG, sms->dataCodingScheme().toString().c_str());
-						DEBUGA_GSMOPEN("address=%s\n", GSMOPEN_P_LOG, sms->address().toString().c_str());
-						DEBUGA_GSMOPEN("serviceCentreAddress=%s\n", GSMOPEN_P_LOG, sms->serviceCentreAddress().toString().c_str());
-						DEBUGA_GSMOPEN("serviceCentreTimestamp=%s\n", GSMOPEN_P_LOG, sms->serviceCentreTimestamp().toString().c_str());
-						DEBUGA_GSMOPEN("messageType=%d\n", GSMOPEN_P_LOG, sms->messageType());
-						DEBUGA_GSMOPEN("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
+			}
+			DEBUGA_GSMOPEN("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
+			DEBUGA_GSMOPEN("dataCodingScheme=%s\n", GSMOPEN_P_LOG, sms->dataCodingScheme().toString().c_str());
+			DEBUGA_GSMOPEN("address=%s\n", GSMOPEN_P_LOG, sms->address().toString().c_str());
+			DEBUGA_GSMOPEN("serviceCentreAddress=%s\n", GSMOPEN_P_LOG, sms->serviceCentreAddress().toString().c_str());
+			DEBUGA_GSMOPEN("serviceCentreTimestamp=%s\n", GSMOPEN_P_LOG, sms->serviceCentreTimestamp().toString().c_str());
+			DEBUGA_GSMOPEN("messageType=%d\n", GSMOPEN_P_LOG, sms->messageType());
+			DEBUGA_GSMOPEN("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
 
 
-						memset(sms_body, '\0', sizeof(sms_body));
-						strncpy(sms_body, content2, sizeof(sms_body));
-						DEBUGA_GSMOPEN("body=%s\n", GSMOPEN_P_LOG, sms_body);
-						strncpy(tech_pvt->sms_body, sms_body, sizeof(tech_pvt->sms_body));
-						strncpy(tech_pvt->sms_sender, sms->address().toString().c_str(), sizeof(tech_pvt->sms_sender));
-						strncpy(tech_pvt->sms_date, sms->serviceCentreTimestamp().toString().c_str(), sizeof(tech_pvt->sms_date));
-						strncpy(tech_pvt->sms_datacodingscheme, sms->dataCodingScheme().toString().c_str(), sizeof(tech_pvt->sms_datacodingscheme));
-						strncpy(tech_pvt->sms_servicecentreaddress, sms->serviceCentreAddress().toString().c_str(),
-								sizeof(tech_pvt->sms_servicecentreaddress));
-						tech_pvt->sms_messagetype = sms->messageType();
-						//messagetype = sms->messageType();
-						//servicecentreaddress = sms->serviceCentreAddress();
-						//servicecentretimestamp = sms->serviceCentreTimestamp();
-						//sender_recipient_address = sms->address();
-#endif// NOTDEF
+			memset(sms_body, '\0', sizeof(sms_body));
+			strncpy(sms_body, content2, sizeof(sms_body));
+			DEBUGA_GSMOPEN("body=%s\n", GSMOPEN_P_LOG, sms_body);
+			strncpy(tech_pvt->sms_body, sms_body, sizeof(tech_pvt->sms_body));
+			strncpy(tech_pvt->sms_sender, sms->address().toString().c_str(), sizeof(tech_pvt->sms_sender));
+			strncpy(tech_pvt->sms_date, sms->serviceCentreTimestamp().toString().c_str(), sizeof(tech_pvt->sms_date));
+			strncpy(tech_pvt->sms_datacodingscheme, sms->dataCodingScheme().toString().c_str(), sizeof(tech_pvt->sms_datacodingscheme));
+			strncpy(tech_pvt->sms_servicecentreaddress, sms->serviceCentreAddress().toString().c_str(), sizeof(tech_pvt->sms_servicecentreaddress));
+			tech_pvt->sms_messagetype = sms->messageType();
+			//messagetype = sms->messageType();
+			//servicecentreaddress = sms->serviceCentreAddress();
+			//servicecentretimestamp = sms->serviceCentreTimestamp();
+			//sender_recipient_address = sms->address();
+#endif // NOTDEF
 
-#else// WANT_GSMLIB
+#else // WANT_GSMLIB
 			ERRORA("tech_pvt->no_ucs2 || tech_pvt->sms_pdu_not_supported == 0 && no WANT_GSMLIB\n", GSMOPEN_P_LOG);
 			return RESULT_FAILURE;
-#endif// WANT_GSMLIB
+#endif // WANT_GSMLIB
 
 		} else {
 			char dest2[1048];
@@ -2857,9 +2844,9 @@ You need 6 steps:
 
 #ifndef WANT_GSMLIB
 		memset(mesg_test, '\0', sizeof(mesg_test));
-		sprintf(mesg_test,":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù"); //let's test the beauty of utf8
+		sprintf(mesg_test, ":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù");	//let's test the beauty of utf8
 		//text=mesg_test;
-		
+
 		memset(smscommand, '\0', sizeof(smscommand));
 		if (tech_pvt->no_ucs2) {
 			sprintf(smscommand, "%s", text);
@@ -2869,7 +2856,7 @@ You need 6 steps:
 #else // WANT_GSMLIB
 
 		memset(smscommand, '\0', sizeof(smscommand));
-			sprintf(smscommand, "%s", pdu2);
+		sprintf(smscommand, "%s", pdu2);
 #endif // WANT_GSMLIB
 		smscommand[strlen(smscommand)] = 0x1A;
 		DEBUGA_GSMOPEN("smscommand len is: %d, text is:|||%s|||\n", GSMOPEN_P_LOG, (int) strlen(smscommand), smscommand);
@@ -2922,13 +2909,12 @@ You need 6 steps:
 		UNLOCKA(tech_pvt->controldev_lock);
 		POPPA_UNLOCKA(&tech_pvt->controldev_lock);
 	}
-
 #ifdef NOTDEF
 	err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
 	if (err) {
 		DEBUGA_GSMOPEN("AT+CMGF=0 (set message sending to PDU (as opposed to TEXT)  do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
 	}
-#endif// NOTDEF
+#endif // NOTDEF
 
 	DEBUGA_GSMOPEN("FINISH\n", GSMOPEN_P_LOG);
 	if (failed)
