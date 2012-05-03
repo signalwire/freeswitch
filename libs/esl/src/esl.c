@@ -649,7 +649,64 @@ static void *client_thread(esl_thread_t *me, void *obj)
 
 }
 
-ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback, int max)
+ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback)
+{
+	esl_socket_t server_sock = ESL_SOCK_INVALID;
+	struct sockaddr_in addr;
+	esl_status_t status = ESL_SUCCESS;
+	
+	if ((server_sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+		return ESL_FAIL;
+	}
+
+	esl_socket_reuseaddr(server_sock);
+		   
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(port);
+	
+    if (bind(server_sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+		status = ESL_FAIL;
+		goto end;
+	}
+
+    if (listen(server_sock, 10000) < 0) {
+		status = ESL_FAIL;
+		goto end;
+	}
+
+	for (;;) {
+		int client_sock;                    
+		struct sockaddr_in echoClntAddr;
+#ifdef WIN32
+		int clntLen;
+#else
+		unsigned int clntLen;
+#endif
+
+		clntLen = sizeof(echoClntAddr);
+    
+		if ((client_sock = accept(server_sock, (struct sockaddr *) &echoClntAddr, &clntLen)) == ESL_SOCK_INVALID) {
+			status = ESL_FAIL;
+			goto end;
+		}
+		
+		callback(server_sock, client_sock, &echoClntAddr);
+	}
+
+ end:
+
+	if (server_sock != ESL_SOCK_INVALID) {
+		closesocket(server_sock);
+		server_sock = ESL_SOCK_INVALID;
+	}
+
+	return status;
+
+}
+
+ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port, esl_listen_callback_t callback, int max)
 {
 	esl_socket_t server_sock = ESL_SOCK_INVALID;
 	struct sockaddr_in addr;
