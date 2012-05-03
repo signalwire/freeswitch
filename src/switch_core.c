@@ -1684,7 +1684,7 @@ static void switch_load_core_config(const char *file)
 					} else if (end_of(val) == 'm') {
 						tmp *= (1024 * 1024);
 					}
-					
+
 					if (tmp >= 32000 && tmp < 10500000) {
 						runtime.sql_buffer_len = tmp;
 					} else {

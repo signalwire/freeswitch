@@ -1236,8 +1236,25 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 {
 	void *pop;
 	switch_queue_t *q = (switch_queue_t *) obj;
+	int my_id;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MSG Thread Started\n");
+	for (my_id = 0; my_id < mod_sofia_globals.msg_queue_len; my_id++) {
+		if (mod_sofia_globals.msg_queue[my_id] == q) {
+			break;
+		}
+	}
+
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MSG Thread %d Started\n", my_id);
+
+#ifdef HAVE_CPU_SET_MACROS
+	{
+		cpu_set_t set;
+		CPU_ZERO(&set);
+		CPU_SET(my_id, &set);
+		sched_setaffinity(0, sizeof(set), &set);		
+	}
+#endif
 
 
 	while(switch_queue_pop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
@@ -1251,12 +1268,11 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 	return NULL;	
 }
 
-static int IDX = 0;
-
 void sofia_msg_thread_start(int idx)
 {
 
-	if (idx >= SOFIA_MAX_MSG_QUEUE || (idx < mod_sofia_globals.msg_queue_len && mod_sofia_globals.msg_queue_thread[idx])) {
+	if (idx >= mod_sofia_globals.max_msg_queues || 
+		idx >= SOFIA_MAX_MSG_QUEUE || (idx < mod_sofia_globals.msg_queue_len && mod_sofia_globals.msg_queue_thread[idx])) {
 		return;
 	}
 
@@ -1274,7 +1290,7 @@ void sofia_msg_thread_start(int idx)
 
 				switch_threadattr_create(&thd_attr, mod_sofia_globals.pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				//switch_threadattr_priority_increase(thd_attr);
+				switch_threadattr_priority_increase(thd_attr);
 				switch_thread_create(&mod_sofia_globals.msg_queue_thread[i], 
 									 thd_attr, 
 									 sofia_msg_thread_run, 
@@ -1290,31 +1306,32 @@ void sofia_msg_thread_start(int idx)
 
 static void sofia_queue_message(sofia_dispatch_event_t *de)
 {
-	int idx = 0;
+	int idx = 0, queued = 0;
 
-	if (mod_sofia_globals.running == 0) {
+	if (mod_sofia_globals.running == 0 || !mod_sofia_globals.msg_queue[0]) {
 		sofia_process_dispatch_event(&de);
 		return;
 	}
 
  again:
 
-	switch_mutex_lock(mod_sofia_globals.mutex);
-	idx = IDX;
-	IDX++; 
-	if (IDX >= mod_sofia_globals.msg_queue_len) IDX = 0;
-	switch_mutex_unlock(mod_sofia_globals.mutex);
-	
-	sofia_msg_thread_start(idx);
-
-	if (switch_queue_trypush(mod_sofia_globals.msg_queue[idx], de) != SWITCH_STATUS_SUCCESS) {
-		if (mod_sofia_globals.msg_queue_len < SOFIA_MAX_MSG_QUEUE) {
-			sofia_msg_thread_start(idx + 1);
-			goto again;
-		} else {
-			switch_queue_push(mod_sofia_globals.msg_queue[idx], de);
+	for (idx = 0; idx < mod_sofia_globals.msg_queue_len; idx++) {
+		if (switch_queue_trypush(mod_sofia_globals.msg_queue[idx], de) == SWITCH_STATUS_SUCCESS) {
+			queued++;
+			break;
 		}
 	}
+
+	if (!queued) {
+
+		if (mod_sofia_globals.msg_queue_len < mod_sofia_globals.max_msg_queues) {
+			sofia_msg_thread_start(mod_sofia_globals.msg_queue_len + 1);
+			goto again;
+		}
+		
+		switch_queue_push(mod_sofia_globals.msg_queue[0], de);
+	}
+	
 }
 
 
@@ -1959,6 +1976,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_AUTOACK(0),
 				   NUTAG_AUTOALERT(0),
 				   NUTAG_ENABLEMESSENGER(1),
+				   NTATAG_EXTRA_100(0),
 				   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 				   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
 				   TAG_IF(!sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_ALLOW("PRACK")),
@@ -3652,18 +3670,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				mod_sofia_globals.debug_sla = atoi(val);
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
-			} else if (!strcasecmp(var, "message-threads")) {
-				int num = atoi(val);
-				
-				if (num < 1 || num > SOFIA_MAX_MSG_QUEUE - 1) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "message-threads must be between 1 and %d", SOFIA_MAX_MSG_QUEUE -1);
-				} 
-				
-				if (num < 1) num = 1;
-				if (num > SOFIA_MAX_MSG_QUEUE - 1) num = SOFIA_MAX_MSG_QUEUE -1;
-				
-				sofia_msg_thread_start(num);
-				
 			} else if (!strcasecmp(var, "reg-deny-binding-fetch-and-no-lookup")) {          /* backwards compatibility */
 				mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = switch_true(val);  /* remove when noone complains about the extra lookup */
 				if (switch_true(val)) {
@@ -7521,7 +7527,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
 		goto fail;
 	}
-
+	
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
 	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION)) {

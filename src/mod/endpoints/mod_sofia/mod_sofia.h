@@ -336,8 +336,8 @@ typedef enum {
 	TFLAG_MAX
 } TFLAGS;
 
-#define SOFIA_MAX_MSG_QUEUE 101
-#define SOFIA_MSG_QUEUE_SIZE 5000
+#define SOFIA_MAX_MSG_QUEUE 64
+#define SOFIA_MSG_QUEUE_SIZE 100
 
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
@@ -347,6 +347,8 @@ struct mod_sofia_globals {
 	uint32_t callid;
 	int32_t running;
 	int32_t threads;
+	int cpu_count;
+	int max_msg_queues;
 	switch_mutex_t *mutex;
 	char guess_ip[80];
 	char hostname[512];

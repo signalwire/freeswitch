@@ -799,8 +799,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	if (runtime.timer_affinity > -1) {
 		cpu_set_t set;
 		CPU_ZERO(&set);
-		CPU_SET(0, &set);
-		sched_setaffinity(runtime.timer_affinity, sizeof(set), &set);
+		CPU_SET(runtime.timer_affinity, &set);
+		sched_setaffinity(0, sizeof(set), &set);
 	}
 #endif
 
