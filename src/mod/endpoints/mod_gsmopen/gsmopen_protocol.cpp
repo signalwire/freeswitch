@@ -557,6 +557,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 	struct timeval timeout;
 	char tmp_answer[AT_BUFSIZ];
 	char tmp_answer2[AT_BUFSIZ];
+	char tmp_answer3[AT_BUFSIZ];
 	char *tmp_answer_ptr;
 	char *last_line_ptr;
 	int i = 0;
@@ -578,13 +579,15 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 
 	tmp_answer_ptr = tmp_answer;
 	memset(tmp_answer, 0, sizeof(char) * AT_BUFSIZ);
+	memset(tmp_answer2, 0, sizeof(char) * AT_BUFSIZ);
+	memset(tmp_answer3, 0, sizeof(char) * AT_BUFSIZ);
 
 	timeout.tv_sec = timeout_sec;
 	timeout.tv_usec = timeout_usec;
 	PUSHA_UNLOCKA(tech_pvt->controldev_lock);
 	LOKKA(tech_pvt->controldev_lock);
 
-	while ((!tech_pvt->controldev_dead) && msecs_passed <= timeout_in_msec) {
+	while ((!tech_pvt->controldev_dead) && msecs_passed <= timeout_in_msec ) {
 		char *token_ptr;
 		timeout.tv_sec = timeout_sec;	//reset the timeout, linux modify it
 		timeout.tv_usec = timeout_usec;	//reset the timeout, linux modify it
@@ -598,6 +601,8 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 		}
 		//read_count = tech_pvt->serialPort_serial_control->Readv(tmp_answer_ptr, AT_BUFSIZ - (tmp_answer_ptr - tmp_answer), (timeout_sec * 1000) + (timeout_usec ? (timeout_usec / 1000) : 0));
 		read_count = tech_pvt->serialPort_serial_control->Read(tmp_answer_ptr, AT_BUFSIZ - (tmp_answer_ptr - tmp_answer));
+		memset(tmp_answer3, 0, sizeof(char) * AT_BUFSIZ);
+		strcpy(tmp_answer3, tmp_answer_ptr);
 
 		//cicopet read_count = read(tech_pvt->controldevfd, tmp_answer_ptr, AT_BUFSIZ - (tmp_answer_ptr - tmp_answer));
 
@@ -627,10 +632,6 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 			return -1;
 		}
 
-		if (option_debug > 90) {
-			//DEBUGA_GSMOPEN("1 read %d bytes, --|%s|--\n", GSMOPEN_P_LOG, read_count, tmp_answer_ptr);
-			//DEBUGA_GSMOPEN("2 read %d bytes, --|%s|--\n", GSMOPEN_P_LOG, read_count, tmp_answer);
-		}
 		tmp_answer_ptr = tmp_answer_ptr + read_count;
 
 		la_counter = 0;
@@ -645,6 +646,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 					 GSMOPEN_P_LOG, token_ptr, tech_pvt->line_array.result[la_counter]);
 			}
 			la_counter++;
+
 			while ((token_ptr = strtok(NULL, "\n\r"))) {
 				last_line_ptr = token_ptr;
 				strncpy(tech_pvt->line_array.result[la_counter], token_ptr, AT_MESG_MAX_LENGTH);
@@ -654,6 +656,14 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						 GSMOPEN_P_LOG, token_ptr, tech_pvt->line_array.result[la_counter]);
 				}
 				la_counter++;
+
+				if (la_counter == AT_MESG_MAX_LINES) {
+					ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG, AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
+					WARNINGA("read was %d bytes, tmp_answer3= --|%s|--\n", GSMOPEN_P_LOG, read_count, tmp_answer3);
+					at_ack = AT_ERROR;
+					break;
+				}
+
 			}
 		} else {
 			last_line_ptr = tmp_answer;
@@ -666,21 +676,33 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 		}
 
 		if (expected_string && !expect_crlf && !memcmp(last_line_ptr, expected_string, strlen(expected_string))
-			) {
+		   ) {
 			strncpy(tech_pvt->line_array.result[la_counter], last_line_ptr, AT_MESG_MAX_LENGTH);
 			// match expected string -> accept it withtout CRLF
 			la_counter++;
-
+			if (la_counter == AT_MESG_MAX_LINES) {
+				ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG, AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
+				WARNINGA("read was %d bytes, tmp_answer3= --|%s|--\n", GSMOPEN_P_LOG, read_count, tmp_answer3);
+				at_ack = AT_ERROR;
+				break;
+			}
 		}
 		/* if the last line read was not a complete line, we'll read the rest in the future */
 		else if (tmp_answer[strlen(tmp_answer) - 1] != '\r' && tmp_answer[strlen(tmp_answer) - 1] != '\n')
 			la_counter--;
 
 		/* let's list the complete lines read so far, without re-listing the lines that has yet been listed */
-		if (option_debug > 1) {
-			for (i = la_read; i < la_counter; i++)
-				DEBUGA_GSMOPEN("Read line %d: |%s|\n", GSMOPEN_P_LOG, i, tech_pvt->line_array.result[i]);
+		for (i = la_read; i < la_counter; i++){
+			DEBUGA_GSMOPEN("Read line %d: |%s| la_counter=%d\n", GSMOPEN_P_LOG, i, tech_pvt->line_array.result[i], la_counter);
 		}
+
+		if (la_counter == AT_MESG_MAX_LINES) {
+			ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG, AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
+			WARNINGA("read was %d bytes, tmp_answer3= --|%s|--\n", GSMOPEN_P_LOG, read_count, tmp_answer3);
+			at_ack = AT_ERROR;
+			break;
+		}
+
 
 		/* let's interpret the complete lines read so far (WITHOUT looking for OK, ERROR, and EXPECTED_STRING), without re-interpreting the lines that has been yet interpreted, so we're sure we don't miss anything */
 		for (i = la_read; i < la_counter; i++) {
@@ -1544,6 +1566,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 					strncpy(tech_pvt->imsi, tech_pvt->line_array.result[i], sizeof(tech_pvt->imsi));
 				}
 			}
+
 			/* if we are reading an sms message from memory, put the line into the sms buffer if the line is not "OK" or "ERROR" */
 			if (tech_pvt->reading_sms_msg > 1 && at_ack == -1) {
 				int c;
@@ -1706,11 +1729,13 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 		if (look_for_ack && at_ack > -1)
 			break;
 
-		if (la_counter > AT_MESG_MAX_LINES) {
-			ERRORA("Too many lines in result (>%d). Stopping reader.\n", GSMOPEN_P_LOG, AT_MESG_MAX_LINES);
+		if (la_counter == AT_MESG_MAX_LINES) {
+			ERRORA("Too many lines in result (>%d). la_counter=%d. tech_pvt->reading_sms_msg=%d. Stop accumulating lines.\n", GSMOPEN_P_LOG, AT_MESG_MAX_LINES, la_counter, tech_pvt->reading_sms_msg);
+			WARNINGA("read was %d bytes, tmp_answer3= --|%s|--\n", GSMOPEN_P_LOG, read_count, tmp_answer3);
 			at_ack = AT_ERROR;
 			break;
 		}
+
 	}
 
 	UNLOCKA(tech_pvt->controldev_lock);

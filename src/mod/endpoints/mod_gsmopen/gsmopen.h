@@ -99,9 +99,9 @@
 #define 	PROTOCOL_FBUS2   1
 #define 	PROTOCOL_NO_SERIAL   3
 
-#define		AT_BUFSIZ 8192
 //FIXME FIXME FIXME #define AT_MESG_MAX_LENGTH 2048 /* much more than 10 SMSs */
 #define AT_MESG_MAX_LENGTH 2048	/* much more than 10 SMSs */
+#define		AT_BUFSIZ AT_MESG_MAX_LENGTH
 //FIXME FIXME FIXME #define AT_MESG_MAX_LINES 256   /* 256 lines, so it can contains the results of AT+CLAC, that gives all the AT commands the phone supports */
 #define AT_MESG_MAX_LINES 20	/* 256 lines, so it can contains the results of AT+CLAC, that gives all the AT commands the phone supports */
 
