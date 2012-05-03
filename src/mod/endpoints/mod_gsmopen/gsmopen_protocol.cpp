@@ -1668,56 +1668,56 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 
 
 #ifdef WANT_GSMLIB
-try{
-						char content2[1000];
-						SMSMessageRef sms;
-						//MessageType messagetype;
-						//Address servicecentreaddress;
-						//Timestamp servicecentretimestamp;
-						//Address sender_recipient_address;
+						try {
+							char content2[1000];
+							SMSMessageRef sms;
+							//MessageType messagetype;
+							//Address servicecentreaddress;
+							//Timestamp servicecentretimestamp;
+							//Address sender_recipient_address;
 
-						sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
+							sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
 
-						DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
+							DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
 
-						memset(content2, '\0', sizeof(content2));
-						if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
-							iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
-						} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
-							ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
-										 sizeof(content2));
-						} else {
-							ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
+							memset(content2, '\0', sizeof(content2));
+							if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
+								iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
+							} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
+								ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(),
+											 content2, sizeof(content2));
+							} else {
+								ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
+
+							}
+							DEBUGA_GSMOPEN("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
+							DEBUGA_GSMOPEN("dataCodingScheme=%s\n", GSMOPEN_P_LOG, sms->dataCodingScheme().toString().c_str());
+							DEBUGA_GSMOPEN("address=%s\n", GSMOPEN_P_LOG, sms->address().toString().c_str());
+							DEBUGA_GSMOPEN("serviceCentreAddress=%s\n", GSMOPEN_P_LOG, sms->serviceCentreAddress().toString().c_str());
+							DEBUGA_GSMOPEN("serviceCentreTimestamp=%s\n", GSMOPEN_P_LOG, sms->serviceCentreTimestamp().toString().c_str());
+							DEBUGA_GSMOPEN("messageType=%d\n", GSMOPEN_P_LOG, sms->messageType());
+							DEBUGA_GSMOPEN("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
+
+
+							memset(sms_body, '\0', sizeof(sms_body));
+							strncpy(sms_body, content2, sizeof(sms_body));
+							DEBUGA_GSMOPEN("body=%s\n", GSMOPEN_P_LOG, sms_body);
+							strncpy(tech_pvt->sms_body, sms_body, sizeof(tech_pvt->sms_body));
+							strncpy(tech_pvt->sms_sender, sms->address().toString().c_str(), sizeof(tech_pvt->sms_sender));
+							strncpy(tech_pvt->sms_date, sms->serviceCentreTimestamp().toString().c_str(), sizeof(tech_pvt->sms_date));
+							strncpy(tech_pvt->sms_datacodingscheme, sms->dataCodingScheme().toString().c_str(), sizeof(tech_pvt->sms_datacodingscheme));
+							strncpy(tech_pvt->sms_servicecentreaddress, sms->serviceCentreAddress().toString().c_str(),
+									sizeof(tech_pvt->sms_servicecentreaddress));
+							tech_pvt->sms_messagetype = sms->messageType();
+							//messagetype = sms->messageType();
+							//servicecentreaddress = sms->serviceCentreAddress();
+							//servicecentretimestamp = sms->serviceCentreTimestamp();
+							//sender_recipient_address = sms->address();
 
 						}
-						DEBUGA_GSMOPEN("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-						DEBUGA_GSMOPEN("dataCodingScheme=%s\n", GSMOPEN_P_LOG, sms->dataCodingScheme().toString().c_str());
-						DEBUGA_GSMOPEN("address=%s\n", GSMOPEN_P_LOG, sms->address().toString().c_str());
-						DEBUGA_GSMOPEN("serviceCentreAddress=%s\n", GSMOPEN_P_LOG, sms->serviceCentreAddress().toString().c_str());
-						DEBUGA_GSMOPEN("serviceCentreTimestamp=%s\n", GSMOPEN_P_LOG, sms->serviceCentreTimestamp().toString().c_str());
-						DEBUGA_GSMOPEN("messageType=%d\n", GSMOPEN_P_LOG, sms->messageType());
-						DEBUGA_GSMOPEN("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
-
-
-						memset(sms_body, '\0', sizeof(sms_body));
-						strncpy(sms_body, content2, sizeof(sms_body));
-						DEBUGA_GSMOPEN("body=%s\n", GSMOPEN_P_LOG, sms_body);
-						strncpy(tech_pvt->sms_body, sms_body, sizeof(tech_pvt->sms_body));
-						strncpy(tech_pvt->sms_sender, sms->address().toString().c_str(), sizeof(tech_pvt->sms_sender));
-						strncpy(tech_pvt->sms_date, sms->serviceCentreTimestamp().toString().c_str(), sizeof(tech_pvt->sms_date));
-						strncpy(tech_pvt->sms_datacodingscheme, sms->dataCodingScheme().toString().c_str(), sizeof(tech_pvt->sms_datacodingscheme));
-						strncpy(tech_pvt->sms_servicecentreaddress, sms->serviceCentreAddress().toString().c_str(),
-								sizeof(tech_pvt->sms_servicecentreaddress));
-						tech_pvt->sms_messagetype = sms->messageType();
-						//messagetype = sms->messageType();
-						//servicecentreaddress = sms->serviceCentreAddress();
-						//servicecentretimestamp = sms->serviceCentreTimestamp();
-						//sender_recipient_address = sms->address();
-
-}  catch (GsmException &ge)
-  {
-	ERRORA("GsmException= |||%s|||\n", GSMOPEN_P_LOG, ge.what());
-  }
+						catch(GsmException & ge) {
+							ERRORA("GsmException= |||%s|||\n", GSMOPEN_P_LOG, ge.what());
+						}
 
 
 #endif // WANT_GSMLIB
@@ -2751,84 +2751,84 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 
 		if (tech_pvt->no_ucs2 || tech_pvt->sms_pdu_not_supported == 0) {
 #ifdef WANT_GSMLIB
-try{
-			SMSMessageRef smsMessage;
+			try {
+				SMSMessageRef smsMessage;
 
-			memset(mesg_test, '\0', sizeof(mesg_test));
-			sprintf(mesg_test, ":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù");	//let's test the beauty of utf8
-			//sprintf(mesg_test,":) ciao belè èéàòìù"); 
-			//text=mesg_test;
+				memset(mesg_test, '\0', sizeof(mesg_test));
+				sprintf(mesg_test, ":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù");	//let's test the beauty of utf8
+				//sprintf(mesg_test,":) ciao belè èéàòìù"); 
+				//text=mesg_test;
 
-			utf8_to_iso_8859_1(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
-			smsMessage = new SMSSubmitMessage(smscommand, dest);
-			string pdu = smsMessage->encode();
-			strncpy(pdu2, pdu.c_str(), sizeof(pdu2) - 1);
-			memset(smscommand, '\0', sizeof(smscommand));
-			pdulenght = pdu.length() / 2 - 1;
-			sprintf(smscommand, "AT+CMGS=%d", pdulenght);
+				utf8_to_iso_8859_1(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
+				smsMessage = new SMSSubmitMessage(smscommand, dest);
+				string pdu = smsMessage->encode();
+				strncpy(pdu2, pdu.c_str(), sizeof(pdu2) - 1);
+				memset(smscommand, '\0', sizeof(smscommand));
+				pdulenght = pdu.length() / 2 - 1;
+				sprintf(smscommand, "AT+CMGS=%d", pdulenght);
 
 #ifdef NOTDEF
 
-			***9. How to support unicode ? You need 6 steps : 1. set datacodingschema to DCS_SIXTEEN_BIT_ALPHABET 2. set your locale correctly, for example
-				, my locale, china.setlocale(LC_ALL, "chs");
+				***9. How to support unicode ? You need 6 steps : 1. set datacodingschema to DCS_SIXTEEN_BIT_ALPHABET 2. set your locale correctly, for example
+					, my locale, china.setlocale(LC_ALL, "chs");
 
-			3. translate MBCS(multiple byte character set) string to unicode string.wchar_t wstr[1000];
-			memset(wstr, 0, 2000);
-			mbstowcs(wstr, data.c_str(), data.length());
+				3. translate MBCS(multiple byte character set) string to unicode string.wchar_t wstr[1000];
+				memset(wstr, 0, 2000);
+				mbstowcs(wstr, data.c_str(), data.length());
 
-			4. get unicode string length.int wcs_len = wcslen(wstr);
+				4. get unicode string length.int wcs_len = wcslen(wstr);
 
-			5. change unicode string to net order.for (int i = 0; i < wcs_len; i++)
-				wstr[i] = htons(wstr[i]);
+				5. change unicode string to net order.for (int i = 0; i < wcs_len; i++)
+					wstr[i] = htons(wstr[i]);
 
-			6. put unicode string into pdu.char content2[1000];
-			SMSMessageRef sms;
-			//MessageType messagetype;
-			//Address servicecentreaddress;
-			//Timestamp servicecentretimestamp;
-			//Address sender_recipient_address;
+				6. put unicode string into pdu.char content2[1000];
+				SMSMessageRef sms;
+				//MessageType messagetype;
+				//Address servicecentreaddress;
+				//Timestamp servicecentretimestamp;
+				//Address sender_recipient_address;
 
-			sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
+				sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
 
-			DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
+				DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
 
-			memset(content2, '\0', sizeof(content2));
-			if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
-				iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
-			} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
-				ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
-							 sizeof(content2));
-			} else {
-				ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
+				memset(content2, '\0', sizeof(content2));
+				if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
+					iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
+				} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
+					ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
+								 sizeof(content2));
+				} else {
+					ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
 
-			}
-			DEBUGA_GSMOPEN("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-			DEBUGA_GSMOPEN("dataCodingScheme=%s\n", GSMOPEN_P_LOG, sms->dataCodingScheme().toString().c_str());
-			DEBUGA_GSMOPEN("address=%s\n", GSMOPEN_P_LOG, sms->address().toString().c_str());
-			DEBUGA_GSMOPEN("serviceCentreAddress=%s\n", GSMOPEN_P_LOG, sms->serviceCentreAddress().toString().c_str());
-			DEBUGA_GSMOPEN("serviceCentreTimestamp=%s\n", GSMOPEN_P_LOG, sms->serviceCentreTimestamp().toString().c_str());
-			DEBUGA_GSMOPEN("messageType=%d\n", GSMOPEN_P_LOG, sms->messageType());
-			DEBUGA_GSMOPEN("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
+				}
+				DEBUGA_GSMOPEN("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
+				DEBUGA_GSMOPEN("dataCodingScheme=%s\n", GSMOPEN_P_LOG, sms->dataCodingScheme().toString().c_str());
+				DEBUGA_GSMOPEN("address=%s\n", GSMOPEN_P_LOG, sms->address().toString().c_str());
+				DEBUGA_GSMOPEN("serviceCentreAddress=%s\n", GSMOPEN_P_LOG, sms->serviceCentreAddress().toString().c_str());
+				DEBUGA_GSMOPEN("serviceCentreTimestamp=%s\n", GSMOPEN_P_LOG, sms->serviceCentreTimestamp().toString().c_str());
+				DEBUGA_GSMOPEN("messageType=%d\n", GSMOPEN_P_LOG, sms->messageType());
+				DEBUGA_GSMOPEN("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
 
 
-			memset(sms_body, '\0', sizeof(sms_body));
-			strncpy(sms_body, content2, sizeof(sms_body));
-			DEBUGA_GSMOPEN("body=%s\n", GSMOPEN_P_LOG, sms_body);
-			strncpy(tech_pvt->sms_body, sms_body, sizeof(tech_pvt->sms_body));
-			strncpy(tech_pvt->sms_sender, sms->address().toString().c_str(), sizeof(tech_pvt->sms_sender));
-			strncpy(tech_pvt->sms_date, sms->serviceCentreTimestamp().toString().c_str(), sizeof(tech_pvt->sms_date));
-			strncpy(tech_pvt->sms_datacodingscheme, sms->dataCodingScheme().toString().c_str(), sizeof(tech_pvt->sms_datacodingscheme));
-			strncpy(tech_pvt->sms_servicecentreaddress, sms->serviceCentreAddress().toString().c_str(), sizeof(tech_pvt->sms_servicecentreaddress));
-			tech_pvt->sms_messagetype = sms->messageType();
-			//messagetype = sms->messageType();
-			//servicecentreaddress = sms->serviceCentreAddress();
-			//servicecentretimestamp = sms->serviceCentreTimestamp();
-			//sender_recipient_address = sms->address();
+				memset(sms_body, '\0', sizeof(sms_body));
+				strncpy(sms_body, content2, sizeof(sms_body));
+				DEBUGA_GSMOPEN("body=%s\n", GSMOPEN_P_LOG, sms_body);
+				strncpy(tech_pvt->sms_body, sms_body, sizeof(tech_pvt->sms_body));
+				strncpy(tech_pvt->sms_sender, sms->address().toString().c_str(), sizeof(tech_pvt->sms_sender));
+				strncpy(tech_pvt->sms_date, sms->serviceCentreTimestamp().toString().c_str(), sizeof(tech_pvt->sms_date));
+				strncpy(tech_pvt->sms_datacodingscheme, sms->dataCodingScheme().toString().c_str(), sizeof(tech_pvt->sms_datacodingscheme));
+				strncpy(tech_pvt->sms_servicecentreaddress, sms->serviceCentreAddress().toString().c_str(), sizeof(tech_pvt->sms_servicecentreaddress));
+				tech_pvt->sms_messagetype = sms->messageType();
+				//messagetype = sms->messageType();
+				//servicecentreaddress = sms->serviceCentreAddress();
+				//servicecentretimestamp = sms->serviceCentreTimestamp();
+				//sender_recipient_address = sms->address();
 #endif // NOTDEF
-} catch (GsmException &ge)
-  {
-	ERRORA("GsmException= |||%s|||\n", GSMOPEN_P_LOG, ge.what());
-  }
+			}
+			catch(GsmException & ge) {
+				ERRORA("GsmException= |||%s|||\n", GSMOPEN_P_LOG, ge.what());
+			}
 
 
 #else // WANT_GSMLIB
