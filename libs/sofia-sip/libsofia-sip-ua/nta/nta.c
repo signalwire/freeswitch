@@ -6911,7 +6911,6 @@ _nta_incoming_timer(nta_agent_t *sa)
       incoming_reset_timer(irq);
 
       if(irq->irq_extra_100) {
-		  printf("COCK FACE\n");
         SU_DEBUG_5(("nta: timer N1 fired, sending %u %s\n", SIP_100_TRYING));
         nta_incoming_treply(irq, SIP_100_TRYING, TAG_END());
       }
