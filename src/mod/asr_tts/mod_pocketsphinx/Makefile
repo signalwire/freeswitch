@@ -12,7 +12,7 @@ POCKETSPHINX_LA=$(POCKETSPHINX_BUILDDIR)/src/libpocketsphinx/libpocketsphinx.la
 SPHINXMODEL=communicator_semi_6000_20080321
 
 LOCAL_CFLAGS=-I$(SPHINXBASE_DIR)/include -I$(POCKETSPHINX_DIR)/include
-LOCAL_LIBADD=$(POCKETSPHINX_LA) $(SPHINXBASE_LA) $(SPHINXBASE_LA2) 
+LOCAL_LIBADD=$(POCKETSPHINX_LA) $(SPHINXBASE_LA) $(SPHINXBASE_LA2)
 BASE=../../../..
 include $(BASE)/build/modmake.rules
 
@@ -55,3 +55,4 @@ dictionary:
 	@cp -f $(POCKETSPHINX_DIR)/model/lm/en_US/cmu07a.dic $(DESTDIR)$(grammardir)/default.dic
 
 local_install: $(DESTDIR)$(grammardir)/model $(DESTDIR)$(grammardir)/model/communicator dictionary
+
