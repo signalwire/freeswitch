@@ -35,7 +35,7 @@
 #include <switch.h>
 #include <switch_event.h>
 //#define SWITCH_EVENT_RECYCLE
-#define DISPATCH_QUEUE_LEN 10000
+#define DISPATCH_QUEUE_LEN 1000
 //#define DEBUG_DISPATCH_QUEUES
 
 /*! \brief A node to store binded events */
@@ -345,8 +345,9 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 					launch_dispatch_threads(SOFT_MAX_DISPATCH + 1, DISPATCH_QUEUE_LEN, RUNTIME_POOL);
 					switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Out of event dispatch threads! Resorting to a blocking push.... Look for laggy event consumers or event_socket connections!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Event Thread %d is blocking\n", my_id);
 					switch_queue_push(EVENT_DISPATCH_QUEUE[0], event);
+					event = NULL;
 				}
 			}
 		}
@@ -623,7 +624,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	 */
 	
 	/* don't need any more dispatch threads than we have CPU's*/
-	MAX_DISPATCH = switch_core_cpu_count();
+	MAX_DISPATCH = switch_core_cpu_count() + 1;
 
 
 	switch_assert(pool != NULL);

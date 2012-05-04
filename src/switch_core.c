@@ -744,6 +744,8 @@ SWITCH_DECLARE(int32_t) set_auto_priority(void)
 	runtime.cpu_count = sysinfo.dwNumberOfProcessors;
 #endif
 
+	if (!runtime.cpu_count) runtime.cpu_count = 1;
+
 	/* If we have more than 1 cpu, we should use realtime priority so we can have priority threads */
 	if (runtime.cpu_count > 1) {
 		return set_realtime_priority();
@@ -1420,6 +1422,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		runtime.cpu_count = sysinfo.dwNumberOfProcessors;
 	}
 #endif	
+
+	if (!runtime.cpu_count) runtime.cpu_count = 1;
+
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
