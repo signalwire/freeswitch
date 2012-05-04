@@ -2946,6 +2946,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 			}
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "stop")) {
+			switch_set_flag(fhp, SWITCH_FILE_DONE);
 			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(cmd, "truncate")) {
 			switch_core_file_truncate(fhp, 0);
