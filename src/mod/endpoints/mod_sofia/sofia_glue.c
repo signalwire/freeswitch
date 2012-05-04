@@ -3131,6 +3131,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	uint32_t rtp_hold_timeout_sec = tech_pvt->profile->rtp_hold_timeout_sec;
 	char *timer_name = NULL;
 	const char *var;
+	uint32_t delay = tech_pvt->profile->rtp_digit_delay;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -3528,15 +3529,14 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			tech_pvt->cng_pt = 0;
 		}
 
-		if (tech_pvt->profile->rtp_digit_delay || ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_digit_delay")))) {
-			uint32_t delay = tech_pvt->profile->rtp_digit_delay;
+		if (((val = switch_channel_get_variable(tech_pvt->channel, "rtp_digit_delay")))) {
+			int delayi = atoi(val);
+			if (delayi < 0) delayi = 0;
+			delay = (uint32_t) delay;
+		}
 
-			if (!delay) {
-				int delayi = atoi(val);
-				if (delayi < 0) delayi = 0;
-				delay = (uint32_t) delay;
-			}
 
+		if (delay) {
 			switch_rtp_set_interdigit_delay(tech_pvt->rtp_session, delay);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
 							  "%s Set rtp dtmf delay to %u\n", switch_channel_get_name(tech_pvt->channel), delay);
