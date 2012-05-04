@@ -471,7 +471,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 
 SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void)
 {
-	int index;
+	unsigned int index;
 
 	for (index = 0; index < SOFT_MAX_DISPATCH; index++) {
 		if (EVENT_DISPATCH_QUEUE[index]) {
