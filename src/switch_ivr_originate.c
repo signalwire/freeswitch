@@ -3541,6 +3541,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (*bleg) {
 		switch_channel_t *bchan = switch_core_session_get_channel(*bleg);
 
+
+		if (switch_channel_test_flag(bchan, CF_CHANNEL_SWAP)) {
+			const char *key = switch_channel_get_variable(bchan, "channel_swap_uuid");
+			switch_core_session_t *swap_session, *old_session;
+			
+			if ((swap_session = switch_core_session_locate(key))) {
+				switch_channel_clear_flag(bchan, CF_CHANNEL_SWAP);
+				switch_channel_hangup(bchan, SWITCH_CAUSE_PICKED_OFF);
+
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(bchan), SWITCH_LOG_DEBUG, "Swapping %s for %s\n",
+								  switch_core_session_get_name(swap_session), switch_channel_get_name(bchan));
+				
+				old_session = *bleg;
+				*bleg = swap_session;
+				bchan = switch_core_session_get_channel(*bleg);
+				switch_channel_answer(bchan);
+				switch_core_session_rwunlock(old_session);
+			}
+		}
 		
 
 		if (session && caller_channel) {

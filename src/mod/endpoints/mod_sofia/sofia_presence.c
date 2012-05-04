@@ -1761,6 +1761,20 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 		remote_user = to_user;
 		remote_host = local_host;
 	}
+	else if (proto && !strcasecmp(proto, "pickup")) {
+		local_user = to_user;
+		local_user_param = switch_mprintf(";proto=%s", proto);
+		event_status = "hold";
+		if (skip_proto) {
+			buf_to_free = switch_mprintf("sip:%s", to_user);
+		} else {
+			buf_to_free = switch_mprintf("sip:pickup+%s", to_user);
+		}
+		remote_uri = buf_to_free;
+		strcpy(remote_display_buf, "pickup");
+		remote_user = to_user;
+		remote_host = local_host;
+	}
 	else if (proto && !strcasecmp(proto, "conf")) {
 		local_user = to_user;
 		local_user_param = switch_mprintf(";proto=%s", proto);
@@ -2624,6 +2638,18 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 							stream.write_function(&stream, "<target uri=\"sip:%s\"/>\n", uuid);
 						} else {
 							stream.write_function(&stream, "<target uri=\"sip:park+%s\"/>\n", uuid);
+						}
+						stream.write_function(&stream, "</remote>\n");
+					} else if (!strcasecmp(proto, "pickup")) {
+						stream.write_function(&stream, "<local>\n<identity display=\"pickup\">sip:%s@%s;proto=pickup</identity>\n",
+											  !zstr(clean_to_user) ? clean_to_user : "unknown", host);
+						stream.write_function(&stream, "<target uri=\"sip:%s@%s;proto=pickup\">\n", !zstr(clean_to_user) ? clean_to_user : "unknown", host);
+						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");
+						stream.write_function(&stream, "<remote>\n<identity display=\"pickup\">sip:%s</identity>\n", uuid);
+						if (skip_proto) {
+							stream.write_function(&stream, "<target uri=\"sip:%s\"/>\n", uuid);
+						} else {
+							stream.write_function(&stream, "<target uri=\"sip:pickup+%s\"/>\n", uuid);
 						}
 						stream.write_function(&stream, "</remote>\n");
 					} else if (!strcasecmp(proto, "conf")) {
