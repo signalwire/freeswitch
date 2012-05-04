@@ -660,9 +660,10 @@ static void conference_cdr_render(conference_obj_t *conference)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n", path, ebuf);
 	}
 
-
+	
    	switch_safe_free(path);
 	switch_safe_free(xml_text);
+	switch_xml_free(cdr);
 }
 	
 
