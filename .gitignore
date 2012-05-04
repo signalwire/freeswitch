@@ -71,6 +71,7 @@ core.*
 /Makefile.in
 /modules.conf
 /NEWS
+/noreg
 /Path
 /quiet_libtool
 /README
