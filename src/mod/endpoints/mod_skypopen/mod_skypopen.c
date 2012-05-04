@@ -1957,6 +1957,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 		while (!found) {
 			for (i = 0; i < MAX_CHATS; i++) {
+				//DEBUGA_SKYPE("tech_pvt->chats[i].dialog_partner='%s' to='%s'\n", SKYPOPEN_P_LOG, tech_pvt->chats[i].dialog_partner, to);
 				if (!strcmp(tech_pvt->chats[i].dialog_partner, to)) {
 					snprintf(skype_msg, sizeof(skype_msg), "CHATMESSAGE %s %s", tech_pvt->chats[i].chatname, body);
 					skypopen_signaling_write(tech_pvt, skype_msg);
@@ -1969,7 +1970,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 			}
 			tried++;
 			if (tried > 20) {
-				ERRORA("No chat with dialog_partner='%s' was found\n", SKYPOPEN_P_LOG, to);
+				ERRORA("No chat with dialog_partner='%s' was found. (If you're using mod_sms this is a bug of mod_skypopen when using mod_sms, from next incoming message it will probably work...)\n", SKYPOPEN_P_LOG, to);
 				break;
 			}
 			switch_sleep(50000);
@@ -2966,12 +2967,24 @@ int incoming_chatmessage(private_t *tech_pvt, int which)
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SKYPE_CHAT_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
+/* mod_sms begin */
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->skype_user);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", SKYPE_CHAT_PROTO);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->chatmessages[which].from_handle);
+                //switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
+                //switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
+                //switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
+/* mod_sms end */
+
 		switch_event_add_body(event, "%s", tech_pvt->chatmessages[which].body);
+                switch_core_chat_send("GLOBAL", event); /* mod_sms */
 		if (session) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
 			if (switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {
