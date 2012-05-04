@@ -40,7 +40,6 @@
 #ifndef FREETDM_H
 #define FREETDM_H
 
-
 #include "ftdm_declare.h"
 #include "ftdm_call_utils.h"
 
