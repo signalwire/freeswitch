@@ -213,6 +213,7 @@ check_awk() {
   # work, but mawk is believed to fail on some systems.  If we can
   # replicate this, we need a particular behavior that we can test
   # here to verify whether we have an acceptable awk.
+  :
 }
 
 
