@@ -2984,7 +2984,7 @@ int incoming_chatmessage(private_t *tech_pvt, int which)
 /* mod_sms end */
 
 		switch_event_add_body(event, "%s", tech_pvt->chatmessages[which].body);
-                switch_core_chat_send("GLOBAL", event); /* mod_sms */
+                //switch_core_chat_send("GLOBAL", event); /* mod_sms */
 		if (session) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
 			if (switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {
