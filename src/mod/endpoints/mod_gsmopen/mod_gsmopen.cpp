@@ -1795,6 +1795,9 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	if (hint == NULL || !strlen(hint)) {	//FIXME FIXME FIXME
 		hint = from;
 	}
+	if (subject == NULL || !strlen(subject)) {	//FIXME FIXME FIXME
+		subject = "SIMPLE MESSAGE";
+	}
 	if (to && (user = strdup(to))) {
 		if ((host = strchr(user, '@'))) {
 			*host++ = '\0';
@@ -2981,7 +2984,19 @@ int sms_incoming(private_t *tech_pvt)
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
+/* mod_sms begin */
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->sms_sender);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
+/* mod_sms end */
 		switch_event_add_body(event, "%s\n", tech_pvt->sms_body);
+                //switch_core_chat_send(GSMOPEN_CHAT_PROTO, event); /* mod_sms */
+                switch_core_chat_send("GLOBAL", event); /* mod_sms */
 		if (session) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
 			if (switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {

@@ -571,7 +571,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 	timeout_in_msec = (timeout_sec * 1000) + (timeout_usec ? (timeout_usec / 1000) : 0);
 
 	if (timeout_in_msec != 100)
-		ERRORA("TIMEOUT=%d\n", GSMOPEN_P_LOG, timeout_in_msec);
+		DEBUGA_GSMOPEN("TIMEOUT=%d\n", GSMOPEN_P_LOG, timeout_in_msec);
 
 	if (!running || !tech_pvt->running) {
 		return -1;
@@ -828,11 +828,10 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 							   tech_pvt->line_array.result[i], tech_pvt->callid_name, tech_pvt->callid_number);
 			}
 
-			if ((strncmp(tech_pvt->line_array.result[i], "+CMS ERROR:", 11) == 0)) {
-				ERRORA("Received: \"%s\", what was this error about?\n", GSMOPEN_P_LOG);
-			}
 			if ((strcmp(tech_pvt->line_array.result[i], "+CMS ERROR: 500") == 0)) {
-				ERRORA("Received: \"%s\", maybe this account ran OUT OF CREDIT?\n", GSMOPEN_P_LOG);
+				ERRORA("Received: \"%s\", generic error, maybe this account ran OUT OF CREDIT?\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+			} else if ((strncmp(tech_pvt->line_array.result[i], "+CMS ERROR:", 11) == 0)) {
+				ERRORA("Received: \"%s\", what was this error about?\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
 			}
 			if ((strcmp(tech_pvt->line_array.result[i], "BUSY") == 0)) {
 				tech_pvt->phone_callflow = CALLFLOW_CALL_LINEBUSY;
@@ -2113,7 +2112,7 @@ int gsmopen_serial_write_AT_ack_nocr_longtime(private_t *tech_pvt, const char *d
 		return -1;
 	}
 
-	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, 5, NULL, 1);	// 5.5 sec timeout
+	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, 20, NULL, 1);	// 20.5 sec timeout
 	UNLOCKA(tech_pvt->controldev_lock);
 	POPPA_UNLOCKA(tech_pvt->controldev_lock);
 
