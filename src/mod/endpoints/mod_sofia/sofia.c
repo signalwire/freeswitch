@@ -476,6 +476,26 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_name", sofia_private->gateway->profile->name);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_uri", sofia_private->gateway->profile->url);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "gateway_name", sofia_private->gateway->name);
+		if ( sip->sip_call_info != NULL ) {
+			sip_call_info_t *call_info = sip->sip_call_info;
+			int cur_len = 0;
+			char *tmp = NULL;
+			char *hold = strdup(sip_header_as_string(nua_handle_home(nh), (void *) call_info));
+			cur_len = strlen(hold);
+
+			while ( call_info->ci_next != NULL) {
+				call_info = call_info->ci_next;
+				tmp = strdup(sip_header_as_string(nua_handle_home(nh), (void *) call_info));
+				cur_len = cur_len + strlen(tmp) +2;
+				hold = realloc(hold, cur_len);
+				switch_assert(hold);
+				strcat(hold,",");
+				strcat(hold, tmp);
+				free(tmp);
+			}
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Call-Info", hold);
+			free(hold);
+		}
 		switch_event_fire(&s_event);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "dispatched freeswitch event for message-summary NOTIFY\n");
 	} else {
