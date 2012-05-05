@@ -1029,9 +1029,10 @@ SWITCH_STANDARD_APP(sched_hangup_function)
 			time_t when;
 			switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
 			switch_bool_t bleg = SWITCH_FALSE;
+			int sec = atol(argv[0] + 1);
 
 			if (*argv[0] == '+') {
-				when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
+				when = switch_epoch_time_now(NULL) + sec;
 			} else {
 				when = atol(argv[0]);
 			}
@@ -1044,7 +1045,11 @@ SWITCH_STANDARD_APP(sched_hangup_function)
 				bleg = SWITCH_TRUE;
 			}
 
-			switch_ivr_schedule_hangup(when, switch_core_session_get_uuid(session), cause, bleg);
+			if (sec == 0) {
+				switch_channel_hangup(switch_core_session_get_channel(session), cause);
+			} else {
+				switch_ivr_schedule_hangup(when, switch_core_session_get_uuid(session), cause, bleg);
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No time specified.\n");
 		}
