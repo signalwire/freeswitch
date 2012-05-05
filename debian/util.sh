@@ -67,6 +67,7 @@ install_build_depends () {
     err "Can't find apt-get or aptitude; are you running on debian?"
   fi
   $apt install -y $(list_build_depends)
+  touch $ddir/.stamp-build-depends
 }
 
 cmd="$1"

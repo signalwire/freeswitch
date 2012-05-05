@@ -94,6 +94,11 @@ debian/.stamp-bootstrap:
 	(cd debian && ./bootstrap.sh)
 	touch $@
 
+build-depends: debian/.stamp-build-depends
+debian/.stamp-build-depends:
+	./debian/util.sh install-build-depends
+	touch $@
+
 binary-basetest:
 	@$(call show_vars)
 	echo "applications/mod_commands" > debian/modules.conf
