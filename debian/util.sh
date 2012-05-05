@@ -2,9 +2,8 @@
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 ##### Author: Travis Cross <tc@traviscross.com>
 
-pwd="$(pwd)"
-ddir="debian"
-[ "${pwd##*/}" = "debian" ] && ddir="."
+ddir="."
+[ -n "${0%/*}" ] && ddir="${0%/*}"
 
 err () {
   echo "$0 error: $1" >&2
