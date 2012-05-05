@@ -66,7 +66,7 @@ install_build_depends () {
   else
     err "Can't find apt-get or aptitude; are you running on debian?"
   fi
-  $apt install $(list_build_depends)
+  $apt install -y $(list_build_depends)
 }
 
 cmd="$1"
