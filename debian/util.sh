@@ -2,6 +2,10 @@
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 ##### Author: Travis Cross <tc@traviscross.com>
 
+pwd="$(pwd)"
+ddir="debian"
+[ "${pwd##*/}" = "debian" ] && ddir="."
+
 err () {
   echo "$0 error: $1" >&2
   exit 1
@@ -17,7 +21,7 @@ xread () {
 }
 
 create_dbg_pkgs () {
-  for x in debian/*; do
+  for x in $ddir/*; do
     test ! -d $x && continue
     test "$x" = "tmp" -o "$x" = "source" && continue
     test ! "$x" = "${x%-dbg}" && continue
@@ -28,7 +32,7 @@ create_dbg_pkgs () {
 }
 
 list_build_depends () {
-  test -f debian/.stamp-bootstrap || (cd debian && ./bootstrap.sh)
+  test -f $ddir/.stamp-bootstrap || (cd $ddir && ./bootstrap.sh)
   local deps="" found=false
   while xread l; do
     if [ "${l%%:*}" = "Build-Depends" ]; then
@@ -50,7 +54,7 @@ list_build_depends () {
         break
       fi
     fi
-  done < debian/control
+  done < $ddir/control
   echo "${deps# }"
 }
 
