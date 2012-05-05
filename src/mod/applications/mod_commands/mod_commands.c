@@ -2644,9 +2644,10 @@ SWITCH_STANDARD_API(sched_hangup_function)
 		char *cause_str = argv[2];
 		time_t when;
 		switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
+		int sec = atol(argv[0] + 1);
 
 		if (*argv[0] == '+') {
-			when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
+			when = switch_epoch_time_now(NULL) + sec;
 		} else {
 			when = atol(argv[0]);
 		}
@@ -2656,7 +2657,13 @@ SWITCH_STANDARD_API(sched_hangup_function)
 		}
 
 		if ((hsession = switch_core_session_locate(uuid))) {
-			switch_ivr_schedule_hangup(when, uuid, cause, SWITCH_FALSE);
+			if (sec == 0) {
+				switch_channel_t *hchannel = switch_core_session_get_channel(hsession);
+				switch_channel_hangup(hchannel, cause);
+			} else {
+				switch_ivr_schedule_hangup(when, uuid, cause, SWITCH_FALSE);
+			}
+
 			stream->write_function(stream, "+OK\n");
 			switch_core_session_rwunlock(hsession);
 		} else {
