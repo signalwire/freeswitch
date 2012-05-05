@@ -57,10 +57,23 @@ list_build_depends () {
   echo "${deps# }"
 }
 
+install_build_depends () {
+  local apt=""
+  if [ -n "$(which aptitude)" ]; then
+    apt=$(which aptitude)
+  elif [ -n "$(which apt-get)" ]; then
+    apt=$(which apt-get)
+  else
+    err "Can't find apt-get or aptitude; are you running on debian?"
+  fi
+  $apt install $(list_build_depends)
+}
+
 cmd="$1"
 shift
 case "$cmd" in
   create-dbg-pkgs) create_dbg_pkgs ;;
   list-build-depends) list_build_depends ;;
+  install-build-depends) install_build_depends ;;
 esac
 
