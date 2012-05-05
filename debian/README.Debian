@@ -15,4 +15,12 @@ packages, it will install the corresponding sample configuration to
 /usr/share/freeswitch/conf and you'll need to copy the bits you need
 to /etc/freeswitch.
 
- -- Travis Cross <tc@traviscross.com>, Sat,  5 May 2012 06:31:24 +0000
+If you just want to get a working demo system up quickly, I'd
+recommend doing the following:
+
+  aptitude install -y -r -o APT::Install-Suggests=true freeswitch-meta-vanilla
+  cp -a /usr/share/freeswitch/conf/vanilla /etc/freeswitch
+  /etc/init.d/freeswitch start
+  fs_cli
+
+ -- Travis Cross <tc@traviscross.com>, Sat,  5 May 2012 23:41:29 +0000
