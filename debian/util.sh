@@ -13,5 +13,9 @@ create_dbg_pkgs () {
   done
 }
 
-create_dbg_pkgs
+cmd="$1"
+shift
+case "$cmd" in
+  create-dbg-pkgs) create_dbg_pkgs ;;
+esac
 

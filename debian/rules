@@ -78,7 +78,7 @@ override_dh_auto_test:
 
 override_dh_strip:
 	dh_strip -a -k
-	./debian/create-dbg-pkgs.sh
+	./debian/util.sh create-dbg-pkgs
 
 override_dh_auto_install:
 	dh_auto_install
