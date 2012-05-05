@@ -42,7 +42,7 @@ err () {
   exit 1
 }
 
-xread() {
+xread () {
   local xIFS="$IFS"
   IFS=''
   read $@
@@ -93,7 +93,7 @@ map_fs_modules () {
   done
 }
 
-map_modules() {
+map_modules () {
   local filterfn="$1" percatfns="$2" permodfns="$3"
   for x in $parse_dir/*; do
     test -d $x || continue
@@ -592,7 +592,7 @@ accumulate_build_depends () {
   fi
 }
 
-genmodctl_new_mod() {
+genmodctl_new_mod () {
   grep -e "^Module: ${module}$" control-modules >/dev/null && return 0
   cat <<EOF
 Module: $module
@@ -602,7 +602,7 @@ EOF
   echo
 }
 
-genmodctl_new_cat() {
+genmodctl_new_cat () {
   grep -e "^## mod/${category}$" control-modules >/dev/null && return 0
   cat <<EOF
 ## mod/$category
@@ -610,7 +610,7 @@ genmodctl_new_cat() {
 EOF
 }
 
-pre_parse_mod_control() {
+pre_parse_mod_control () {
   local fl=true ll_nl=false ll_descr=false
   while xread l; do
     if [ -z "$l" ]; then
@@ -645,11 +645,11 @@ pre_parse_mod_control() {
   done < control-modules
 }
 
-var_escape() {
+var_escape () {
   (echo -n \'; echo -n "$1" | sed -e "s/'/'\\\\''/g"; echo -n \')
 }
 
-parse_mod_control() {
+parse_mod_control () {
   pre_parse_mod_control > control-modules.preparse
   local category=""
   local module_name=""
@@ -678,7 +678,7 @@ parse_mod_control() {
   done < control-modules.preparse
 }
 
-debian_wrap() {
+debian_wrap () {
   local fl=true
   echo "$1" | fold -s -w 69 | while xread l; do
     local v="$(echo "$l" | sed -e 's/ *$//g')"
@@ -691,11 +691,11 @@ debian_wrap() {
   done
 }
 
-genmodctl_cat() {
+genmodctl_cat () {
   (echo "## mod/$category"; echo)
 }
 
-genmodctl_mod() {
+genmodctl_mod () {
   echo "Module: $module"
   echo "Description: $description"
   echo "$long_description" | fold -s -w 69 | while xread l; do
