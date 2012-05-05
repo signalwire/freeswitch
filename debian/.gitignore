@@ -15,8 +15,15 @@
 /*.debhelper
 /tmp
 /freeswitch/
+/freeswitch-conf*/
 /freeswitch-dbg/
 /freeswitch-dev/
 /freeswitch-doc/
+/freeswitch-htdocs-slim*/
+/freeswitch-init*/
+/freeswitch-meta*/
 /freeswitch-mod-*/
-/freeswitch-sounds-*/
+/freeswitch-music*/
+/freeswitch-sounds*/
+/freeswitch-systemd/
+/freeswitch-sysvinit/
