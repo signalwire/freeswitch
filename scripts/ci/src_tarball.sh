@@ -61,20 +61,20 @@ cd $dst_parent
 
 ls
 
-tar -cvf $dst_name.tar $dst_name
+tar -cvf ${dst_name}.tar $dst_name
 
-# gzip -9 -c $dst_name.tar > $dst_name.tar.gz || echo "gzip not available"
-bzip2 -z -k $dst_name.tar || echo "bzip2 not available"
-# xz -z -9 -k $dst_name.tar || echo "xz / xz-utils not available"
+# gzip -9 -c ${dst_name}.tar > $dst_name.tar.gz || echo "gzip not available"
+bzip2 -z -k ${dst_name}.tar || echo "bzip2 not available"
+# xz -z -9 -k ${dst_name}.tar || echo "xz / xz-utils not available"
 
-rm -rf $dst_name.tar $dst_dir
+rm -rf ${dst_name}.tar $dst_dir
 
-mkdir -p $src_repo/src_dist
-mv -f $dst_name.tar.* $src_repo/src_dist
+mkdir -p ${src_repo}/src_dist
+mv -f ${dst_name}.tar.* ${src_repo}/src_dist
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------
-The v$ver-$build tarballs have been rolled,
+The freeswitch-${ver}.${build} tarballs have been rolled,
 now we just need to roll packages with them
 ----------------------------------------------------------------------
 EOF
