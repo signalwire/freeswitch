@@ -64,7 +64,7 @@ cp -r . $dst_dir
 
 cd $dst_dir
 
-./bootstrap.sh
+./bootstrap.sh -j
 mv bootstrap.sh rebootstrap.sh
 rm -f docs/AUTHORS
 rm -f docs/COPYING
