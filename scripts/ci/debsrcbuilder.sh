@@ -36,7 +36,7 @@ cd ${src_repo}/debbuild/${dst_full_name}
   mv control control.orig; \
   grep -e '^#' -v control.orig > control)
 # dependency: libparse-debcontrol-perl
-dch -v "${dst_full_version}-1" \
+dch -b -v "${dst_full_version}-1" \
   -M --force-distribution -D "$distro" \
   "Nightly build at ${datestamp}."
 # dependency: fakeroot
