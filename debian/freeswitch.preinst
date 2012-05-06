@@ -7,10 +7,8 @@ case "$1" in
       echo "It looks like you have FreeSWITCH installed manually." >&2
     fi
     ;;
-
   abort-upgrade)
     ;;
-
   *)
     echo "preinst called with unknown argument \`$1'" >&2
     exit 1

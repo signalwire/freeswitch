@@ -27,10 +27,8 @@ case "$1" in
       chmod -R o-rwx,g+u $x
     done
     ;;
-
   abort-upgrade|abort-remove|abort-deconfigure)
     ;;
-
   *)
     echo "postinst called with unknown argument \`$1'" >&2
     exit 1

@@ -19,7 +19,6 @@ case "$1" in
       done
     fi
     ;;
-
   *)
     echo "postrm called with unknown argument \`$1'" >&2
     exit 1
