@@ -10,6 +10,7 @@ avoid_mods=(
   applications/mod_fax
   applications/mod_ladspa
   applications/mod_limit
+  applications/mod_mongo
   applications/mod_mp4
   applications/mod_osp
   applications/mod_rad_auth
