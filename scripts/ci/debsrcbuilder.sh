@@ -30,7 +30,7 @@ mv src_dist/${dst_name}.tar.bz2 \
 echo "changing directory to ${src_repo}/debbuild/${dst_full_name}"
 
 cd ${src_repo}/debbuild/${dst_full_name}
-
+(cd debian && ./bootstrap.sh)
 dch -v "${dst_full_version}-1" \
   -M --force-distribution -D "$distro" \
   "Nightly build at ${datestamp}."
