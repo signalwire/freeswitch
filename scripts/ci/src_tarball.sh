@@ -50,14 +50,14 @@ tar -cvf ${dst_name}.tar $dst_name
 
 # gzip -9 -c ${dst_name}.tar > $dst_name.tar.gz || echo "gzip not available"
 bzip2 -z -k ${dst_name}.tar || echo "bzip2 not available"
-cp -al ${dst_name}.tar.bz2 ${dst_cname}.tar.bz2
+[ "$dst_name" = "$dst_cname" ] || cp -al ${dst_name}.tar.bz2 ${dst_cname}.tar.bz2
 # xz -z -9 -k ${dst_name}.tar || echo "xz / xz-utils not available"
 
 rm -rf ${dst_name}.tar $dst_dir
 
 mkdir -p ${src_repo}/src_dist
 mv -f ${dst_name}.tar.* ${src_repo}/src_dist
-mv -f ${dst_cname}.tar.* ${src_repo}/src_dist
+[ "$dst_name" = "$dst_cname" ] || mv -f ${dst_cname}.tar.* ${src_repo}/src_dist
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------
