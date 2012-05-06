@@ -23,7 +23,7 @@ mkdir -p $src_repo/debbuild/
 
 tar xjf src_dist/${dst_name}.tar.bz2 -C ${src_repo}/debbuild/
 mv ${src_repo}/debbuild/${dst_name} ${src_repo}/debbuild/${dst_full_name}
-mv src_dist/${dst_name}.tar.bz2 \
+cp -al src_dist/${dst_name}.tar.bz2 \
   ${src_repo}/debbuild/freeswitch_${dst_full_version}.orig.tar.bz2
 
 # Build the debian source package first, from the source tar file.
