@@ -5,16 +5,44 @@ src_repo="$(pwd)"
 tmp_dir=${TMP_DIR:="/tmp"}
 
 parse_version () {
-  local ver="$1"
-  local major=$(echo "$ver" | cut -d. -f1)
-  local minor=$(echo "$ver" | cut -d. -f2)
-  local micro=$(echo "$ver" | cut -d. -f3)
-  local rev=$(echo "$ver" | cut -d. -f4)
+  local ver="$1" major="" minor="" micro="" rev=""
+  local next=major
+  for x in $(echo "$1" | sed -e 's/\([._~-]\)/ \1 /g'); do
+    if [ $next = rev ]; then
+      rev="${rev}${x}"
+    elif [ "$x" = "." ] || [ "$x" = "_" ] || [ "$x" = "~" ] || [ "$x" = "-" ]; then
+      if [ "$x" = "_" ] || [ "$x" = "~" ] || [ "$x" = "-" ]; then
+        next=rev
+        eval $next='$x'
+      else
+        case $next in
+          major) next=minor;;
+          minor) next=micro;;
+          micro) next=rev;;
+        esac
+      fi
+    else
+      local tmp="$(eval echo \$$next)"
+      eval $next='${tmp}${x}'
+    fi
+  done
+  local cmajor cminor cmicro crev cver
+  cmajor=${major:="0"}
+  cminor=${minor:="0"}
+  cmicro=${micro:="0"}
+  crev="$(echo "$rev" | sed -e 's/[._~-]//')"
+  cver="${cmajor}.${cminor}.${cmicro}"
+  [ -n "$crev" ] && cver="${cver}.${crev}"
   echo "ver='$ver'"
   echo "major='$major'"
   echo "minor='$minor'"
   echo "micro='$micro'"
   echo "rev='$rev'"
+  echo "cver='$cver'"
+  echo "cmajor='$cmajor'"
+  echo "cminor='$cminor'"
+  echo "cmicro='$cmicro'"
+  echo "crev='$crev'"
 }
 
 if [ ! -d .git ]; then
@@ -23,7 +51,7 @@ if [ ! -d .git ]; then
 fi
 
 if [ -z "$1" ]; then
-  echo "usage: $0 MAJOR.MINOR.MICRO[.REVISION] BUILD_NUMBER" 1>&2
+  echo "usage: $0 <version> <build-number>" 1>&2
   exit 1;
 fi
 

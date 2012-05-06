@@ -12,7 +12,7 @@ build="b$2"
 input_distro=$3
 distro=${input_distro:="unstable"}
 
-dst_version="$major.$minor.$micro"
+dst_version="$ver"
 dst_name="freeswitch-${dst_version}"
 dst_parent="/tmp/"
 dst_dir="/tmp/${dst_name}"

@@ -8,7 +8,7 @@ sdir="."
 eval $(parse_version "$1")
 build="$2"
 
-dst_name="freeswitch-$major.$minor.$micro"
+dst_name="freeswitch-$cmajor.$cminor.$cmicro"
 dst_parent="/tmp/"
 dst_dir="/tmp/$dst_name"
 
@@ -16,7 +16,7 @@ mkdir -p $src_repo/rpmbuild/{SOURCES,BUILD,BUILDROOT,i386,x86_64,SPECS}
 
 cd $src_repo
 
-rpmbuild --define "VERSION_NUMBER $ver" \
+rpmbuild --define "VERSION_NUMBER $cver" \
   --define "BUILD_NUMBER $build" \
   --define "_topdir %(pwd)/rpmbuild" \
   --define "_rpmdir %{_topdir}" \
@@ -33,7 +33,7 @@ mv $src_repo/rpmbuild/*/*.rpm $src_repo/RPMS/.
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------
-The v$ver-$build RPMs have been rolled, now we
+The v$cver-$build RPMs have been rolled, now we
 just need to push them to the YUM Repo
 ----------------------------------------------------------------------
 EOF
