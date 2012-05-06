@@ -194,7 +194,8 @@ Suggests:
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
- This is a meta package containing a very bare FreeSWITCH install.
+ This is a metapackage which depends on the packages needed for a very
+ bare FreeSWITCH install.
 
 Package: freeswitch-meta-default
 Architecture: any
@@ -231,8 +232,8 @@ Suggests:
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
- This is a meta package containing a reasonable basic FreeSWITCH
- install.
+ This is a metapackage which depends on the packages needed for a
+ reasonably basic FreeSWITCH install.
 
 Package: freeswitch-meta-vanilla
 Architecture: any
@@ -283,8 +284,8 @@ Suggests:
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
- This is a meta package containing the FreeSWITCH modules required to
- run the vanilla example configuration.
+ This is a metapackage which depends on the packages needed for
+ running the FreeSWITCH vanilla example configuration.
 
 Package: freeswitch-meta-codecs
 Architecture: any
@@ -307,7 +308,8 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
- This is a meta package containing most FreeSWITCH codecs.
+ This is a metapackage which depends on the packages needed to install
+ most FreeSWITCH codecs.
 
 Package: freeswitch-dbg
 Section: debug
@@ -334,6 +336,7 @@ Description: documentation for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
  This package contains Doxygen-produce documentation for FreeSWITCH.
+ It may be an empty package at the moment.
 
 Package: freeswitch-init
 Architecture: all
@@ -343,8 +346,8 @@ Depends: \${misc:Depends},
 Description: FreeSWITCH startup configuration
  $(debian_wrap "${fs_description}")
  .
- This package contains the system startup configuration for
- FreeSWITCH.
+ This is a metapackage which depends on the default system startup
+ packages for FreeSWITCH.
 
 Package: freeswitch-sysvinit
 Architecture: all
@@ -381,7 +384,8 @@ Depends: \${misc:Depends},
 Description: Music on hold audio for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
- This package contains music on hold audio for FreeSWITCH.
+ This is a metapackage which depends on the default music on hold
+ packages for FreeSWITCH.
 
 Package: freeswitch-music-default
 Architecture: all
@@ -394,7 +398,8 @@ Recommends:
 Description: Music on hold audio for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
- This package contains the default music on hold audio for FreeSWITCH.
+ This is a metapackage which depends on the default music on hold
+ packages for FreeSWITCH at various sampling rates.
 
 Package: freeswitch-sounds
 Architecture: all
@@ -403,7 +408,8 @@ Depends: \${misc:Depends},
 Description: Sounds for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
- This package contains sounds for FreeSWITCH.
+ This is a metapackage which depends on the default sound packages for
+ FreeSWITCH.
 
 Package: freeswitch-sounds-en
 Architecture: all
@@ -412,7 +418,8 @@ Depends: \${misc:Depends},
 Description: English sounds for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
- This package contains the English sounds for FreeSWITCH.
+ This is a metapackage which depends on the default English sound
+ packages for FreeSWITCH.
 
 Package: freeswitch-sounds-en-us
 Architecture: all
@@ -421,7 +428,8 @@ Depends: \${misc:Depends},
 Description: US English sounds for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
- This package contains the US/English sounds for FreeSWITCH.
+ This is a metapackage which depends on the default US/English sound
+ packages for FreeSWITCH.
 
 Package: freeswitch-sounds-en-us-callie
 Architecture: all
