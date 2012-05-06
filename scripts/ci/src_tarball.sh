@@ -21,8 +21,6 @@ rev=$(echo "$ver" | cut -d. -f4)
 
 tmp_dir=${TMP_DIR:="/tmp"}
 
-build="$2"
-
 dst_name="freeswitch-$major.$minor.$micro"
 dst_parent="${tmp_dir}/jenkis.$$/"
 dst_dir="${tmp_dir}/jenkins.$$/$dst_name"
@@ -74,7 +72,7 @@ mv -f ${dst_name}.tar.* ${src_repo}/src_dist
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------
-The freeswitch-${ver}.${build} tarballs have been rolled,
+The freeswitch-${ver} tarballs have been rolled,
 now we just need to roll packages with them
 ----------------------------------------------------------------------
 EOF
