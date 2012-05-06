@@ -32,6 +32,11 @@ parse_version () {
   cmicro=${micro:="0"}
   crev="$(echo "$rev" | sed -e 's/[._~-]//')"
   cver="${cmajor}.${cminor}.${cmicro}"
+  if [ -n "${micro}" ] && echo "$micro" | grep '^\(alpha\|beta\|rc\)' >/dev/null; then
+    rev="~${micro}"
+    micro="0"
+    ver="${major}.${minor}${rev}"
+  fi
   [ -n "$crev" ] && cver="${cver}.${crev}"
   echo "ver='$ver'"
   echo "major='$major'"
