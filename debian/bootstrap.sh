@@ -487,6 +487,39 @@ print_mod_install () {
 EOF
 }
 
+print_common_overrides () {
+  m="$1"
+  cat <<EOF
+# The long file names are caused by appending the nightly information.
+# Since one of these packages will never end up on a Debian CD, the
+# related problems with long file names will never come up here.
+${m}: package-has-long-file-name
+
+EOF
+}
+
+print_mod_overrides () {
+  print_common_overrides "$1"
+  cat <<EOF
+# We're definitely not doing this.  Nothing in FreeSWITCH has a more
+# restrictive license than LGPL or MPL.
+${m}: possible-gpl-code-linked-with-openssl
+
+EOF
+}
+
+print_conf_overrides () {
+  print_common_overrides "$1"
+}
+
+print_sound_overrides () {
+  print_common_overrides "$1"
+}
+
+print_music_overrides () {
+  print_common_overrides "$1"
+}
+
 print_conf_control () {
   cat <<EOF
 Package: freeswitch-conf-${conf//_/-}
@@ -564,6 +597,12 @@ geninstall_per_mod () {
   test -f $f.tmpl && cat $f.tmpl >> $f
 }
 
+genoverrides_per_mod () {
+  local f=freeswitch-${module_name//_/-}.lintian-overrides
+  (print_edit_warning; print_mod_overrides freeswitch-${module_name//_/-}) > $f
+  test -f $f.tmpl && cat $f.tmpl >> $f
+}
+
 genmodules_per_cat () {
   echo "## $category" >> modules_.conf
 }
@@ -574,16 +613,24 @@ genmodules_per_mod () {
 
 genconf () {
   print_conf_control >> control
-  local f=freeswitch-conf-${conf//_/-}.install
+  local p=freeswitch-conf-${conf//_/-}
+  local f=$p.install
   (print_edit_warning; print_conf_install) > $f
+  test -f $f.tmpl && cat $f.tmpl >> $f
+  local f=$p.lintian-overrides
+  (print_edit_warning; print_conf_overrides "$p") > $f
   test -f $f.tmpl && cat $f.tmpl >> $f
 }
 
 genmusic () {
   rate="$1" rate_k="${rate%%000}k"
   print_music_control >> control
-  local f=freeswitch-music-default-${rate_k}.install
+  local p=freeswitch-music-default-${rate_k}
+  local f=$p.install
   (print_edit_warning; print_music_install) > $f
+  test -f $f.tmpl && cat $f.tmpl >> $f
+  local f=$p.lintian-overrides
+  (print_edit_warning; print_music_overrides "$p") > $f
   test -f $f.tmpl && cat $f.tmpl >> $f
   unset rate rate_k
 }
@@ -594,8 +641,12 @@ gensound () {
   country=$(echo $sound | cut -d/ -f2)
   speaker=$(echo $sound | cut -d/ -f3)
   print_sound_control >> control
-  local f=freeswitch-sounds-${sound//\//-}-${rate_k}.install
+  local p=freeswitch-sounds-${sound//\//-}-${rate_k}
+  local f=$p.install
   (print_edit_warning; print_sound_install) > $f
+  test -f $f.tmpl && cat $f.tmpl >> $f
+  local f=$p.lintian-overrides
+  (print_edit_warning; print_sound_overrides "$p") > $f
   test -f $f.tmpl && cat $f.tmpl >> $f
   unset rate rate_k sound sound_path language country speaker
 }
@@ -752,6 +803,14 @@ map_confs 'genconf'
 (echo "### modules"; echo) >> control
 map_modules "mod_filter" \
   "gencontrol_per_cat genmodules_per_cat" \
-  "gencontrol_per_mod geninstall_per_mod genmodules_per_mod"
+  "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod genmodules_per_mod"
+
+grep -e '^Package:' control | while xread l; do
+  m="${l#*: }"
+  f=$m.lintian-overrides
+  if [ ! -s $f ] || ! grep -e 'package-has-long-file-name' $f >/dev/null; then
+    (print_edit_warning; print_common_overrides "$m") >> $f
+  fi
+done
 
 touch .stamp-bootstrap

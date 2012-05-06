@@ -10,6 +10,7 @@
 /freeswitch-conf-*.install
 /freeswitch-music-*.install
 /freeswitch-sounds-*.install
+/*.lintian-overrides
 /*.log
 /*.substvars
 /*.debhelper
