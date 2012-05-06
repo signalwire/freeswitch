@@ -19,7 +19,9 @@ minor=$(echo "$ver" | cut -d. -f2)
 micro=$(echo "$ver" | cut -d. -f3)
 rev=$(echo "$ver" | cut -d. -f4)
 
-build="$2"
+datestamp="$(date +%Y%m%dT%H%M%SZ)"
+nightly="n${datestamp}"
+build="b$2"
 input_distro=$3
 distro=${input_distro:="unstable"}
 
@@ -27,7 +29,7 @@ dst_version="$major.$minor.$micro"
 dst_name="freeswitch-${dst_version}"
 dst_parent="/tmp/"
 dst_dir="/tmp/${dst_name}"
-dst_full_version="${dst_version}.${build}"
+dst_full_version="${dst_version}.${nightly}.${build}"
 dst_full_name="freeswitch-${dst_full_version}"
 
 mkdir -p $src_repo/debbuild/
@@ -42,7 +44,9 @@ echo "changing directory to ${src_repo}/debbuild/${dst_full_name}"
 
 cd ${src_repo}/debbuild/${dst_full_name}
 
-dch -v "${dst_full_version}-1" -M --force-distribution -D "$distro" "Nightly Build"
+dch -v "${dst_full_version}-1" \
+  -M --force-distribution -D "$distro" \
+  "Nightly build at ${datestamp}."
 
 dpkg-buildpackage -rfakeroot -S -us -uc
 
