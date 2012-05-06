@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
 sdir="."
@@ -12,7 +12,7 @@ dst_name="freeswitch-$cmajor.$cminor.$cmicro"
 dst_parent="/tmp/"
 dst_dir="/tmp/$dst_name"
 
-mkdir -p $src_repo/rpmbuild/{SOURCES,BUILD,BUILDROOT,i386,x86_64,SPECS}
+(mkdir -p rpmbuild && cd $_ && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SPECS)
 
 cd $src_repo
 
