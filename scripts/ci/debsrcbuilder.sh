@@ -16,7 +16,7 @@ dst_version="$ver"
 dst_name="freeswitch-${dst_version}"
 dst_parent="/tmp/"
 dst_dir="/tmp/${dst_name}"
-dst_full_version="${dst_version}.${nightly}.${build}"
+dst_full_version="${dst_version}~${nightly}~${build}"
 dst_full_name="freeswitch-${dst_full_version}"
 
 mkdir -p $src_repo/debbuild/
