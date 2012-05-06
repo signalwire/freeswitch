@@ -444,7 +444,8 @@ Recommends:
 Description: US English sounds for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
- This package contains the Callie English sounds for FreeSWITCH.
+ This is a metapackage which depends on the US/English Callie sound
+ packages for FreeSWITCH at various sampling rates.
 
 EOF
 }
