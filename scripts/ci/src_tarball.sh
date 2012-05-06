@@ -32,21 +32,6 @@ if [ -d "$dst_dir" ]; then
   exit 1;
 fi
 
-# save local changes
-#ret=$(git stash save "Save uncommitted changes before tagging.")
-#if echo $ret | grep "^Saved"; then
-    #stash_saved=1
-#fi
-
-#git add configure.in
-#git commit -m "Release freeswitch-$ver"
-#git tag -a -m "freeswitch-$ver release" v$ver
-
-#git clone $src_repo $dst_dir
-#if [ -n "$stash_saved" ]; then
-#    git stash pop
-#fi
-
 mkdir -p $dst_dir
 cp -r . $dst_dir
 
