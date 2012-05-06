@@ -47,6 +47,9 @@ getlib http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.6.tar.gz
 getlib http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
 getlib http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
 getlib http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
+cd mongo-cxx-driver-v1.8
+rm -rf config.log .sconf_temp *Test *Example
+find . -name "*.o" -exec rm -f {} \;
 cd $ddir
 tar -c --exclude=.git -vf $orig.tar $fname
 echo "Compressing $orig.tar with xz -6..." >&2
