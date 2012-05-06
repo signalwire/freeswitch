@@ -21,7 +21,6 @@ mkdir -p $ddir
 git clone . $bdir
 cd $bdir
 set_fs_ver "$ver" "$major" "$minor" "$micro" "$rev"
-sleep 2
 cd $ddir
 tar -c --exclude=.git -vf $orig.tar $fname
 echo "Compressing $orig.tar with xz -6..." >&2
