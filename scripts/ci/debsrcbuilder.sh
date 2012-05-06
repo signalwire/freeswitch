@@ -9,49 +9,42 @@ eval $(parse_version "$1")
 datestamp="$(date +%Y%m%dT%H%M%SZ)"
 nightly="n${datestamp}"
 build="b$2"
-input_distro=$3
-distro=${input_distro:="unstable"}
+distro=${3:="unstable"}
 
-dst_version="$ver"
-dst_name="freeswitch-${dst_version}"
-dst_parent="/tmp/"
-dst_dir="/tmp/${dst_name}"
-dst_full_version="${dst_version}~${nightly}~${build}"
-dst_full_name="freeswitch-${dst_full_version}"
+fver="${ver}~${nightly}~${build}"
+fname="freeswitch-$fver"
+orig="freeswitch_$fver.orig"
+ddir=$src_repo/debbuild
+bdir=$src_repo/debbuild/$fname
 
-mkdir -p $src_repo/debbuild/
+mkdir -p $ddir
+git clone . $bdir
+cd $bdir
+set_fs_ver "$ver" "$major" "$minor" "$micro" "$rev"
+gnuize
+sleep 2
+cd $ddir
+tar -c --exclude=.git -vf $orig.tar $fname
+bzip2 -z -k $orig.tar
+rm $orig.tar
 
-tar xjf src_dist/${dst_name}.tar.bz2 -C ${src_repo}/debbuild/
-mv ${src_repo}/debbuild/${dst_name} ${src_repo}/debbuild/${dst_full_name}
-cp -al src_dist/${dst_name}.tar.bz2 \
-  ${src_repo}/debbuild/freeswitch_${dst_full_version}.orig.tar.bz2
-
-# Build the debian source package first, from the source tar file.
-echo "changing directory to ${src_repo}/debbuild/${dst_full_name}"
-
-cd ${src_repo}/debbuild/${dst_full_name}
+cd $bdir
 (cd debian && ./bootstrap.sh)
 # dch can't handle comments in control file
 (cd debian; \
   mv control control.orig; \
   grep -e '^#' -v control.orig > control)
 # dependency: libparse-debcontrol-perl
-dch -b -v "${dst_full_version}-1" \
+dch -b -v "${fver}-1" \
   -M --force-distribution -D "$distro" \
   "Nightly build at ${datestamp}."
 # dependency: fakeroot
-dpkg-buildpackage -rfakeroot -S -us -uc
+dpkg-buildpackage -rfakeroot -S -us -uc || exit $?
 
-status=$?
-
-if [ $status -gt 0 ]; then
-  exit $status
-else
-  cat 1>&2 <<EOF
+cat 1>&2 <<EOF
 ----------------------------------------------------------------------
-The ${dst_full_name} DEB-SRCs have been rolled, now we
+The ${fname} DEB-SRCs have been rolled, now we
 just need to push them to the Debian repo
 ----------------------------------------------------------------------
 EOF
-fi
 
