@@ -143,7 +143,7 @@ Build-Depends:
 # bootstrapping
  automake (>= 1.9), autoconf, libtool,
 # core build
- build-essential, wget, pkg-config,
+ dpkg-dev, gcc, g++, libc6-dev, make, wget, pkg-config,
 # configure options
  libssl-dev, unixodbc-dev,
  libncurses5-dev, libjpeg8-dev,
@@ -156,7 +156,7 @@ Build-Depends:
  bison, zlib1g-dev,
 # module build-depends
  $(debian_wrap "${mod_build_depends}")
-Standards-Version: 3.9.2
+Standards-Version: 3.9.3
 Homepage: http://freeswitch.org/
 Vcs-Git: git://git.freeswitch.org/freeswitch
 Vcs-Browser: http://git.freeswitch.org/git/freeswitch/
@@ -325,6 +325,7 @@ Description: development libraries and header files for FreeSWITCH
 
 Package: freeswitch-doc
 Architecture: all
+Depends: \${misc:Depends}
 Description: documentation for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
@@ -465,7 +466,8 @@ EOF
 
 print_mod_install () {
   cat <<EOF
-/usr/lib/freeswitch/mod/${1}.{la,so}
+/usr/lib/freeswitch/mod/${1}.la
+/usr/lib/freeswitch/mod/${1}.so
 EOF
 }
 

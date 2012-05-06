@@ -30,6 +30,12 @@ binary-arch:
 binary-indep:
 	@$(call show_vars)
 	dh $@
+build-arch:
+	@$(call show_vars)
+	dh $@
+build-indep:
+	@$(call show_vars)
+	dh $@
 build: debian/.stamp-bootstrap
 	@$(call show_vars)
 	dh $@

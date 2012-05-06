@@ -1,8 +1,25 @@
-Format: http://dep.debian.net/deps/dep5
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: freeswitch
 Source: http://freeswitch.org/
 
 Files: debian/*
-Copyright: 2012 Travis Cross <tc@traviscross.com>
+Copyright: 2012, Travis Cross <tc@traviscross.com>
 License: MPL or GPL2+ (at your option)
+ This packaging may be distributed under either (at your option) the
+ terms of the MPLv1.1 as described in docs/COPYING in the FreeSWITCH
+ source tree, or under the terms of the GNU GPL, version 2 or later,
+ as found on Debian systems in /usr/share/common-licenses/GPL-2.
+
+Files: *
+Copyright: 2012, Anthony Minessale II <anthm@freeswitch.org> and many other contributors
+License: MPL
+ The contents of these files are subject to the Mozilla Public License
+ Version 1.1 (the "License"); you may not use these files except in
+ compliance with the License. You may obtain a copy of the License at
+ http://www.mozilla.org/MPL/
+ .
+ Software distributed under the License is distributed on an "AS IS" basis,
+ WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ for the specific language governing rights and limitations under the
+ License.
 
