@@ -8,7 +8,6 @@ sdir="."
 eval $(parse_version "$1")
 
 dst_name="freeswitch-$cmajor.$cminor.$cmicro"
-dst_parent="${tmp_dir}/jenkis.$$/"
 dst_dir="${tmp_dir}/jenkins.$$/$dst_name"
 
 if [ -d "$dst_dir" ]; then
@@ -23,11 +22,7 @@ cd $dst_dir
 set_fs_ver "$cver" "$cmajor" "$cminor" "$cmicro" "$crev"
 gnuize
 cd ..
-
-cd $dst_parent
-
 ls
-
 tar -cvf ${dst_name}.tar $dst_name
 
 # gzip -9 -c ${dst_name}.tar > $dst_name.tar.gz || echo "gzip not available"
