@@ -331,6 +331,7 @@ Description: development libraries and header files for FreeSWITCH
  This package contains include files for FreeSWITCH.
 
 Package: freeswitch-doc
+Section: doc
 Architecture: all
 Depends: \${misc:Depends}
 Description: documentation for FreeSWITCH
