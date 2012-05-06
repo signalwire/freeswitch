@@ -313,6 +313,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: freeswitch-dbg
 Section: debug
+Priority: extra
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
@@ -463,6 +464,7 @@ Description: ${description} for FreeSWITCH
 
 Package: freeswitch-${module_name//_/-}-dbg
 Section: debug
+Priority: extra
 Architecture: any
 Depends: \${misc:Depends},
  freeswitch-${module_name//_/-} (= \${binary:Version})
