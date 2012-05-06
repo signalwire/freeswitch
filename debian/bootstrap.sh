@@ -493,7 +493,7 @@ print_common_overrides () {
 # The long file names are caused by appending the nightly information.
 # Since one of these packages will never end up on a Debian CD, the
 # related problems with long file names will never come up here.
-${m}: package-has-long-file-name
+${m}: package-has-long-file-name *
 
 EOF
 }
