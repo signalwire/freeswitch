@@ -3,6 +3,7 @@ set -e
 
 case "$1" in
   remove|upgrade|deconfigure)
+    echo "We're about to remove FreeSWITCH..." >&2
     ;;
 
   failed-upgrade)

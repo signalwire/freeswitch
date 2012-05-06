@@ -3,6 +3,9 @@ set -e
 
 case "$1" in
   install|upgrade)
+    if [ -d /opt/freeswitch ]; then
+      echo "It looks like you have FreeSWITCH installed manually." >&2
+    fi
     ;;
 
   abort-upgrade)
