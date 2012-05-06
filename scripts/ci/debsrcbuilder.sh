@@ -24,8 +24,8 @@ set_fs_ver "$ver" "$major" "$minor" "$micro" "$rev"
 sleep 2
 cd $ddir
 tar -c --exclude=.git -vf $orig.tar $fname
-bzip2 -z -k $orig.tar
-rm $orig.tar
+echo "Compressing $orig.tar with xz -9e..." >&2
+xz -9e $orig.tar
 
 cd $bdir
 (cd debian && ./bootstrap.sh)
@@ -38,7 +38,7 @@ dch -b -v "${fver}-1" \
   -M --force-distribution -D "$distro" \
   "Nightly build at ${datestamp}."
 # dependency: fakeroot
-dpkg-buildpackage -rfakeroot -S -us -uc || exit $?
+dpkg-buildpackage -S -rfakeroot -uc -us -i\.git -I.git -Zxz -z9 || exit ?
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------
