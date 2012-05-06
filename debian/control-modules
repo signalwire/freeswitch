@@ -199,7 +199,7 @@ Description: UserSpy
 
 Module: applications/mod_stress
 Description: Voice stress detection
- This module attemps to detect voice stress on an audio channel.
+ This module attempts to detect voice stress on an audio channel.
 
 Module: applications/mod_valet_parking
 Description: Valet parking
