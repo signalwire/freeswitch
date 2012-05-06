@@ -482,6 +482,9 @@ Description: mod_shell_stream
 Module: formats/mod_shout
 Description: mod_shout
  Adds mod_shout.
+Build-Depends: libogg-dev, libvorbis-dev
+Depends: libogg0, libvorbis0a, libvorbisenc2, libvorbisfile3,
+ libvorbisidec1
 
 Module: formats/mod_sndfile
 Description: mod_sndfile

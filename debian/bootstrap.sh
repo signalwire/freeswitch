@@ -29,6 +29,7 @@ avoid_mods=(
   endpoints/mod_unicall
   event_handlers/mod_snmp
   formats/mod_portaudio_stream
+  formats/mod_shout
   formats/mod_vlc
   languages/mod_java
   languages/mod_managed
