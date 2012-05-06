@@ -21,6 +21,32 @@ mkdir -p $ddir
 git clone . $bdir
 cd $bdir
 set_fs_ver "$ver" "$major" "$minor" "$micro" "$rev"
+cd libs
+getlib () {
+  f="${1##*/}"
+  echo "fetching: $1 to $f" >&2
+  wget -N "$1" \
+    && tar -xv --no-same-owner --no-same-permissions -f "$f" \
+    && rm -f "$f" \
+    && mkdir -p $f
+}
+getlib http://downloads.mongodb.org/cxx-driver/mongodb-linux-x86_64-v1.8-latest.tgz
+getlib http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/soundtouch-1.6.0.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/flite-1.5.4-current.tar.bz2
+getlib http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/opus-0.9.0.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/openldap-2.4.19.tar.gz
+getlib http://download.zeromq.org/zeromq-2.1.9.tar.gz \
+  || getlib http://download.zeromq.org/historic/zeromq-2.1.9.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.6.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
 cd $ddir
 tar -c --exclude=.git -vf $orig.tar $fname
 echo "Compressing $orig.tar with xz -6..." >&2
