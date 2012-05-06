@@ -38,18 +38,6 @@ fi
     #stash_saved=1
 #fi
 
-sed -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
-  -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
-  -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
-  -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], BUG-REPORT-ADDRESS)\)|\1$major.$minor.$micro\2|" \
-  -i configure.in
-
-if [ -n "$rev" ]; then
-  sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
-    -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
-    -i configure.in
-fi
-
 #git add configure.in
 #git commit -m "Release freeswitch-$ver"
 #git tag -a -m "freeswitch-$ver release" v$ver
@@ -63,6 +51,18 @@ mkdir -p $dst_dir
 cp -r . $dst_dir
 
 cd $dst_dir
+
+sed -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
+  -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
+  -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
+  -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], BUG-REPORT-ADDRESS)\)|\1$major.$minor.$micro\2|" \
+  -i configure.in
+
+if [ -n "$rev" ]; then
+  sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
+    -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
+    -i configure.in
+fi
 
 ./bootstrap.sh -j
 mv bootstrap.sh rebootstrap.sh
