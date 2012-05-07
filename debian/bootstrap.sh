@@ -30,13 +30,15 @@ avoid_mods=(
   event_handlers/mod_snmp
   formats/mod_portaudio_stream
   formats/mod_shout
-  formats/mod_vlc
   languages/mod_java
   languages/mod_managed
-  languages/mod_spidermonkey
   languages/mod_yaml
   sdk/autotools
   xml_int/mod_xml_ldap
+)
+avoid_mods_squeeze=(
+  formats/mod_vlc
+  languages/mod_spidermonkey
 )
 
 err () {
@@ -54,7 +56,8 @@ xread () {
 }
 
 avoid_mod_filter () {
-  for x in "${avoid_mods[@]}"; do
+  local mods=("$(eval echo \${avoid_mods_$codename[@]})" "${avoid_mods[@]}")
+  for x in "${mods[@]}"; do
     [ "$1" = "$x" ] && return 1
   done
   return 0
