@@ -2201,6 +2201,44 @@ int dtmf_received(private_t *tech_pvt, char *value)
 	return 0;
 }
 
+void *SWITCH_THREAD_FUNC skypopen_do_mod_sms_thread(switch_thread_t *thread, void *obj)
+{
+        switch_event_t *event;
+
+
+	event = obj;
+        switch_core_chat_send("GLOBAL", event); /* mod_sms */
+	
+	return event;
+	
+}
+
+
+
+int start_mod_sms_thread(private_t *tech_pvt, switch_event_t *event)
+{
+	switch_threadattr_t *mod_sms_thread_thd_attr = NULL;
+        switch_thread_t *mod_sms_thread;
+
+
+	switch_threadattr_create(&mod_sms_thread_thd_attr, skypopen_module_pool);
+	switch_threadattr_detach_set(mod_sms_thread_thd_attr, 0);
+	switch_threadattr_stacksize_set(mod_sms_thread_thd_attr, SWITCH_THREAD_STACKSIZE);
+	if (switch_thread_create(&mod_sms_thread, mod_sms_thread_thd_attr, skypopen_do_mod_sms_thread, event, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
+		DEBUGA_SKYPE("started mod_sms_thread thread.\n", SKYPOPEN_P_LOG);
+	} else {
+		ERRORA("failed to start mod_sms_thread thread.\n", SKYPOPEN_P_LOG);
+		return -1;
+	}
+	if (mod_sms_thread == NULL) {
+		WARNINGA("mod_sms_thread exited\n", SKYPOPEN_P_LOG);
+		return -1;
+	}
+
+	return 0;
+}
+
+
 int start_audio_threads(private_t *tech_pvt)
 {
 	switch_threadattr_t *tcp_srv_thread_thd_attr = NULL;
@@ -2984,7 +3022,7 @@ int incoming_chatmessage(private_t *tech_pvt, int which)
 /* mod_sms end */
 
 		switch_event_add_body(event, "%s", tech_pvt->chatmessages[which].body);
-                //switch_core_chat_send("GLOBAL", event); /* mod_sms */
+
 		if (session) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
 			if (switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {
@@ -3026,7 +3064,36 @@ int incoming_chatmessage(private_t *tech_pvt, int which)
 	if (session) {
 		switch_core_session_rwunlock(session);
 	}
-	memset(&tech_pvt->chatmessages[which], '\0', sizeof(&tech_pvt->chatmessages[which]));
+
+
+	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SKYPE_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
+/* mod_sms begin */
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->skype_user);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", SKYPE_CHAT_PROTO);
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->chatmessages[which].from_handle);
+                //switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
+                //switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
+                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
+                //switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
+/* mod_sms end */
+
+		switch_event_add_body(event, "%s", tech_pvt->chatmessages[which].body);
+                //switch_core_chat_send("GLOBAL", event); /* mod_sms */
+		start_mod_sms_thread(tech_pvt, event);
+		//usleep(20000);
+
+	} else {
+		ERRORA("cannot create event on interface %s. WHY?????\n", SKYPOPEN_P_LOG, tech_pvt->name);
+	}
+
 	return 0;
 }
 

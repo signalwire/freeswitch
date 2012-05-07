@@ -478,6 +478,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 							 tech_pvt->chatmessages[i].from_handle, tech_pvt->chatmessages[i].from_dispname, tech_pvt->chatmessages[i].body);
 						if (strcmp(tech_pvt->chatmessages[i].from_handle, tech_pvt->skype_user)) {	//if the message was not sent by myself
 							incoming_chatmessage(tech_pvt, i);
+							memset(&tech_pvt->chatmessages[i], '\0', sizeof(&tech_pvt->chatmessages[i]));
 						}
 					}
 
