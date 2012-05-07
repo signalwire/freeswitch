@@ -444,7 +444,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
 
 	for (i = 0; i < len; i++) {
-		if (switch_channel_test_flag(originate_status[i].peer_channel, CF_CHANNEL_SWAP)) {
+		if (originate_status[i].peer_channel && switch_channel_test_flag(originate_status[i].peer_channel, CF_CHANNEL_SWAP)) {
 			const char *key = switch_channel_get_variable(originate_status[i].peer_channel, "channel_swap_uuid");
 			switch_core_session_t *swap_session, *old_session;
 			
