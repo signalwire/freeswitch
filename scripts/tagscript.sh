@@ -2,20 +2,38 @@
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 ##### release a version of FreeSWITCH
 
-src_repo="$(pwd)"
+sdir="."
+[ -n "${0%/*}" ] && sdir="${0%/*}"
+. $sdir/ci/common.sh
 
-if [ ! -d .git ]; then
-  echo "error: must be run from within the top level of a FreeSWITCH git tree." 1>&2
-  exit 1;
-fi
+check_pwd
 
 showusage() {
-  echo "usage: ./scripts/tagscript.sh [-s] MAJOR.MINOR.MICRO[.REVISION]" 1>&2
+  cat >&2 <<EOF
+usage: $0 [-s] <version>
+
+where <version> follows the format:
+
+1.2-alpha3
+1.2-beta3
+1.2-rc3
+1.2
+1.2.13-rc4
+1.2.13
+etc.
+
+I'll take care of correctly naming the tag to be consistent with
+FreeSWITCH git policy from there.
+
+EOF
   exit 1;
 }
 
-while getopts "s" o; do
+opts=""
+debug=false
+while getopts "ds" o; do
   case "$o" in
+    d) debug=true ;;
     s) opts="-s" ;;
   esac
 done
@@ -25,67 +43,74 @@ if [ -z "$1" ]; then
   showusage
 fi
 
-ver="$1"
-major=$(echo "$ver" | cut -d. -f1)
-minor=$(echo "$ver" | cut -d. -f2)
-micro=$(echo "$ver" | cut -d. -f3)
-rev=$(echo "$ver" | cut -d. -f4)
+eval $(parse_version "$1")
 
-dst_name="freeswitch-$major.$minor.$micro"
-dst_dir="$src_repo/../$dst_name"
+ngrep () { grep -e "$1" >/dev/null; }
 
-if [ -d "$dst_dir" ]; then
-  echo "error: destination directory $dst_dir already exists." 1>&2
-  exit 1;
+if ! $debug && ! (echo "$opts" | ngrep '-s'); then
+  cat >&2 <<EOF
+You've asked me to tag a release but haven't asked to me sign it by
+passing -s.  I'll do this if you really want, but it's a bad idea if
+you're making an actual release of FreeSWITCH that'll be seen
+publicly.
+
+EOF
+  while true; do
+    echo -n "Is this just a test tag? (yes/no): " >&2
+    read r
+    [ -z "$r" ] && continue
+    if [ "$r" = yes ] || [ "$r" = y ]; then
+      (echo; echo "OK, I believe you."; echo) >&2
+      break
+    else
+      (echo; echo "This is a bad idea then."; echo) >&2
+    fi
+    while true; do
+      echo -n "Are you really really sure? (yes/no): "  >&2
+      read r
+      [ -z "$r" ] && continue
+      if [ "$r" = yes ] || [ "$r" = y ]; then
+        (echo; echo "As you wish, you've been warned."; echo) >&2
+        break
+      else
+        (echo; echo "Great; go setup a GPG key and try again with -s"; echo) >&2
+        exit 1
+      fi
+      break
+    done
+    break
+  done
 fi
 
-# save local changes
+echo "Saving uncommitted changes before tagging..." >&2
 ret=$(git stash save "Save uncommitted changes before tagging.")
-if echo $ret | grep "^Saved"; then
+if (echo "$ret" | ngrep '^Saved'); then
   stash_saved=1
 fi
 
-sed -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
-  -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
-  -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
-  -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], BUG-REPORT-ADDRESS)\)|\1$major.$minor.$micro\2|" \
-  -i configure.in
+echo "Changing the version of configure.in..." >&2
+set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
 
-if [ -n "$rev" ]; then
-  sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
-    -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
-    -i configure.in
-fi
-
+echo "Committing the new version..." >&2
 git add configure.in
-git commit -m "Release freeswitch-$ver"
-git tag -a ${opts} -m "freeswitch-$ver release" v$ver
+git commit -m "Release freeswitch-$gver"
+echo "Tagging freeswitch v$gver..." >&2
+git tag -a ${opts} -m "freeswitch-$gver release" "v$gver"
 
-git clone $src_repo $dst_dir
 if [ -n "$stash_saved" ]; then
-  git stash pop
+  echo "Restoring your uncommitted changes to your working directory..." >&2
+  git stash pop >/dev/null
 fi
-
-cd $dst_dir
-
-./bootstrap.sh
-mv bootstrap.sh rebootstrap.sh
-rm -f docs/AUTHORS
-rm -f docs/COPYING
-rm -f docs/ChangeLog
-rm -rf .git
-cd ..
-tar -cvf $dst_name.tar $dst_dir
-gzip -9 -c $dst_name.tar > $dst_name.tar.gz || echo "gzip not available"
-bzip2 -z -k $dst_name.tar || echo "bzip2 not available"
-xz -z -9 -k $dst_name.tar || echo "xz / xz-utils not available"
-rm -rf $dst_name.tar $dst_dir
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------
-The v$ver tag has been committed locally, but it will not be
+The v$gver tag has been committed locally, but it will not be
 globally visible until you 'git push --tags' this repository up to the
 server (I didn't do that for you, as you might want to review first).
+
+  Next step:
+
+    git push --tags
 ----------------------------------------------------------------------
 EOF
 

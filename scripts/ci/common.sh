@@ -37,6 +37,11 @@ parse_version () {
     micro="0"
     ver="${major}.${minor}${rev}"
   fi
+  gver="$(echo "$ver" | sed -e 's/[~_]/-/')"
+  grev="$(echo "$rev" | sed -e 's/[~_]/-/')"
+  gmajor="$major"
+  gminor="$minor"
+  gmicro="$micro"
   [ -n "$crev" ] && cver="${cver}.${crev}"
   echo "ver='$ver'"
   echo "major='$major'"
@@ -48,6 +53,11 @@ parse_version () {
   echo "cminor='$cminor'"
   echo "cmicro='$cmicro'"
   echo "crev='$crev'"
+  echo "gver='$gver'"
+  echo "gmajor='$gmajor'"
+  echo "gminor='$gminor'"
+  echo "gmicro='$gmicro'"
+  echo "grev='$grev'"
 }
 
 set_fs_ver () {
