@@ -314,8 +314,6 @@ static void destroy_session_elem(session_elem_t *session_element)
 		switch_channel_clear_flag(switch_core_session_get_channel(session), CF_CONTROLLED);
 		switch_core_session_rwunlock(session);
 	}
-	/* this allows the application threads to exit */
-	switch_clear_flag_locked(session_element, LFLAG_SESSION_ALIVE);
 	switch_core_destroy_memory_pool(&session_element->pool);
 	/*switch_safe_free(s); */
 }
@@ -1285,7 +1283,6 @@ session_elem_t *attach_call_to_registered_process(listener_t *listener, char *re
 
 	session_element->process.type = ERLANG_REG_PROCESS;
 	session_element->process.reg_name = switch_core_session_strdup(session, reg_name);
-	switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 	/* attach the session to the listener */
 	add_session_elem_to_listener(listener, session_element);
 
@@ -1299,7 +1296,6 @@ session_elem_t *attach_call_to_pid(listener_t *listener, erlang_pid * pid, switc
 
 	session_element->process.type = ERLANG_PID;
 	memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
-	switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 	/* attach the session to the listener */
 	add_session_elem_to_listener(listener, session_element);
 	ei_link(listener, ei_self(listener->ec), pid);
@@ -1381,7 +1377,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	memcpy(&session_element->process.pid, p->pid, sizeof(erlang_pid));
 	session_element->spawn_reply = NULL;
 
-	switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 	switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
 	switch_clear_flag(session_element, LFLAG_WAITING_FOR_PID);
 
@@ -1487,19 +1482,9 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		}
 
 		if (session_element) {
-
 			switch_ivr_park(session, NULL);
-
-			/* keep app thread running for lifetime of session */
-			if (switch_channel_down(switch_core_session_get_channel(session))) {
-				if ((session_element = switch_channel_get_private(switch_core_session_get_channel(session), "_erlang_session_"))) {
-					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "outbound session all done\n");
-					switch_clear_flag_locked(session_element, LFLAG_SESSION_ALIVE);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "outbound session already done\n");
-				}
-			}
 		}
+
 	}
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "exit erlang_outbound_function\n");
 }
