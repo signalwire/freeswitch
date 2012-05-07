@@ -12,6 +12,7 @@ datestamp="$(date +%Y%m%dT%H%M%SZ)"
 nightly="n${datestamp}"
 build="b$2"
 distro=${3:="unstable"}
+codename=${4:="sid"}
 
 fver="${ver}~${nightly}~${build}"
 fname="freeswitch-$fver"
@@ -58,13 +59,13 @@ echo "Compressing $orig.tar with xz -6..." >&2
 xz -6 $orig.tar
 
 cd $bdir
-(cd debian && ./bootstrap.sh)
+(cd debian && ./bootstrap.sh -c "$codename")
 # dch can't handle comments in control file
 (cd debian; \
   mv control control.orig; \
   grep -e '^#' -v control.orig > control)
 # dependency: libparse-debcontrol-perl
-dch -b -v "${fver}-1" \
+dch -b -v "${fver}-1~${codename}+1" \
   -M --force-distribution -D "$distro" \
   "Nightly build at ${datestamp}."
 # dependency: fakeroot

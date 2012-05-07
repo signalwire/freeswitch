@@ -788,6 +788,16 @@ genmodctl_mod () {
   echo
 }
 
+codename="sid"
+while getopts "r:" o; do
+  case "$o" in
+    r) codename="$OPTARG" ;;
+  esac
+done
+shift $(($OPTIND-1))
+
+echo "Bootstrapping debian/ for ${codename}" >&2
+echo >&2
 echo "Please wait, this takes a few seconds..." >&2
 
 parse_dir=control-modules.parse
