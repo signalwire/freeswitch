@@ -73,13 +73,17 @@ gnuize () {
   rm -rf .git
 }
 
-if [ ! -d .git ]; then
-  echo "error: must be run from within the top level of a FreeSWITCH git tree." 1>&2
-  exit 1;
-fi
+check_pwd () {
+  if [ ! -d .git ]; then
+    echo "error: must be run from within the top level of a FreeSWITCH git tree." 1>&2
+    exit 1;
+  fi
+}
 
-if [ -z "$1" ]; then
-  echo "usage: $0 <version> <build-number>" 1>&2
-  exit 1;
-fi
+check_input_ver_build () {
+  if [ -z "$1" ]; then
+    echo "usage: $0 <version> <build-number>" 1>&2
+    exit 1;
+  fi
+}
 
