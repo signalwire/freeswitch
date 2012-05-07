@@ -44,10 +44,9 @@ if [ -z "$1" ]; then
 fi
 
 eval $(parse_version "$1")
+ngrep () { (echo "$2" | grep -e "$1" >/dev/null); }
 
-ngrep () { grep -e "$1" >/dev/null; }
-
-if ! $debug && ! (echo "$opts" | ngrep '-s'); then
+if ! ($debug || ngrep '-s' "$opts"); then
   cat >&2 <<EOF
 You've asked me to tag a release but haven't asked to me sign it by
 passing -s.  I'll do this if you really want, but it's a bad idea if
@@ -84,7 +83,7 @@ fi
 
 echo "Saving uncommitted changes before tagging..." >&2
 ret=$(git stash save "Save uncommitted changes before tagging.")
-if (echo "$ret" | ngrep '^Saved'); then
+if (ngrep '^Saved' "$ret"); then
   stash_saved=1
 fi
 
