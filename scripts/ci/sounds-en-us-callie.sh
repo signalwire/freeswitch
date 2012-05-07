@@ -6,7 +6,7 @@ sdir="."
 . $sdir/common.sh
 
 check_pwd
-check_input_ver_build
+check_input_ver_build $@
 eval $(parse_version "$1")
 build="$2"
 
