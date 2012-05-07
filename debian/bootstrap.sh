@@ -487,25 +487,34 @@ print_mod_install () {
 EOF
 }
 
-print_common_overrides () {
-  m="$1"
+print_long_filename_override () {
+  local p="$1"
   cat <<EOF
 # The long file names are caused by appending the nightly information.
 # Since one of these packages will never end up on a Debian CD, the
 # related problems with long file names will never come up here.
-${m}: package-has-long-file-name *
+${p}: package-has-long-file-name *
 
 EOF
 }
 
-print_mod_overrides () {
-  print_common_overrides "$1"
+print_gpl_openssl_override () {
+  local p="$1"
   cat <<EOF
 # We're definitely not doing this.  Nothing in FreeSWITCH has a more
 # restrictive license than LGPL or MPL.
-${m}: possible-gpl-code-linked-with-openssl
+${p}: possible-gpl-code-linked-with-openssl
 
 EOF
+}
+
+print_common_overrides () {
+  print_long_filename_override "$1"
+}
+
+print_mod_overrides () {
+  print_common_overrides "$1"
+  print_gpl_openssl_override "$1"
 }
 
 print_conf_overrides () {
@@ -809,8 +818,12 @@ grep -e '^Package:' control | while xread l; do
   m="${l#*: }"
   f=$m.lintian-overrides
   if [ ! -s $f ] || ! grep -e 'package-has-long-file-name' $f >/dev/null; then
-    (print_edit_warning; print_common_overrides "$m") >> $f
+    [ -s $f ] || print_edit_warning >> $f
+    print_long_filename_override "$m" >> $f
   fi
 done
+f=freeswitch.lintian-overrides
+[ -s $f ] || print_edit_warning >> $f
+print_gpl_openssl_override "freeswitch" >> $f
 
 touch .stamp-bootstrap
