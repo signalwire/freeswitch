@@ -183,6 +183,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 	bytes = read_impl.decoded_bytes_per_packet;
 
+#ifdef TESTINGONLY
 	if (0 && bug->session->recur_buffer_len) {
 		frame->datalen = bug->session->recur_buffer_len;
 		frame->samples = bug->session->recur_buffer_len / sizeof(int16_t);
@@ -191,6 +192,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		memcpy(frame->data, bug->session->recur_buffer, bug->session->recur_buffer_len);
 		return SWITCH_STATUS_SUCCESS;
 	}
+#endif
 
 
 	if (frame->buflen < bytes) {
