@@ -5678,6 +5678,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	char appdata[512];
 	int rdlock = 0;
 	switch_bool_t have_flags = SWITCH_FALSE;
+	const char *outcall_flags;
 
 	*cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
@@ -5761,6 +5762,12 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
 			status = SWITCH_STATUS_MEMERR;
 			goto done;
+		}
+
+		if ((outcall_flags = switch_channel_get_variable(peer_channel, "outcall_flags"))) {
+			if (!zstr(outcall_flags)) {
+				flags = (char *)outcall_flags;
+			}
 		}
 
 		if (flags && strcasecmp(flags, "none")) {
