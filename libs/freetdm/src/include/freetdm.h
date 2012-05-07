@@ -472,9 +472,10 @@ typedef enum {
 	FTDM_TRUNK_FXO,
 	FTDM_TRUNK_FXS,
 	FTDM_TRUNK_EM,
+	FTDM_TRUNK_GSM,
 	FTDM_TRUNK_NONE
 } ftdm_trunk_type_t;
-#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "EM", "NONE"
+#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "EM", "GSM", "NONE"
 
 /*! \brief Move from string to ftdm_trunk_type_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_trunk_type, ftdm_trunk_type2str, ftdm_trunk_type_t)

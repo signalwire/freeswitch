@@ -190,6 +190,14 @@ AC_MSG_RESULT([checking whether to build ftmod_r2... ${HAVE_OPENR2}])
 AM_CONDITIONAL([HAVE_OPENR2], [test "${HAVE_OPENR2}" = "yes"])
 
 ##
+# WAT GSM stack
+#
+HAVE_WAT="no"
+AC_CHECK_LIB([wat], [wat_version], [HAVE_WAT="yes"])
+AC_MSG_RESULT([checking whether to build ftmod_wat... ${HAVE_WAT}])
+AM_CONDITIONAL([HAVE_WAT], [test "${HAVE_WAT}" = "yes"])
+
+##
 # Digium libpri (TODO: add checks)
 #
 HAVE_LIBPRI="no"
@@ -450,6 +458,7 @@ AC_MSG_RESULT([
 	ftmod_sangoma_isdn................. ${HAVE_SNG_ISDN}
 	ftmod_sangoma_ss7.................. ${HAVE_SNG_SS7}
 	ftmod_r2........................... ${HAVE_OPENR2}
+	ftmod_gsm.......................... ${HAVE_WAT}
 	ftmod_pritap....................... ${HAVE_PRITAP}
   I/O:
 	ftmod_wanpipe...................... ${HAVE_LIBSANGOMA}

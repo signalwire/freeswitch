@@ -163,7 +163,8 @@ typedef enum {
 	FTDM_SIGTYPE_SANGOMABOOST,
 	FTDM_SIGTYPE_M3UA,
 	FTDM_SIGTYPE_R2,
-	FTDM_SIGTYPE_SS7
+	FTDM_SIGTYPE_SS7,
+	FTDM_SIGTYPE_GSM
 } ftdm_signal_type_t;
 
 typedef enum {
