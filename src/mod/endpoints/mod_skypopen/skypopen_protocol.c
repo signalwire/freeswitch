@@ -356,7 +356,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						}
 					}
 					if (!found) {
-						DEBUGA_SKYPE("why we do not have a chats slot free? we have more than %d chats in parallel?\n", SKYPOPEN_P_LOG, MAX_CHATS);
+						ERRORA("why we do not have a chats slot free? we have more than %d chats in parallel?\n", SKYPOPEN_P_LOG, MAX_CHATS);
 					}
 
 					DEBUGA_SKYPE("CHAT %s is in position %d in the chats array, chatname=%s, dialog_partner=%s\n", SKYPOPEN_P_LOG, id, i,
@@ -378,6 +378,12 @@ int skypopen_signaling_read(private_t *tech_pvt)
 				skypopen_strncpy(prop, where, sizeof(prop) - 1);
 				skypopen_strncpy(value, *stringp, sizeof(value) - 1);
 
+ if (!tech_pvt->report_incoming_chatmessages) {
+				if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "RECEIVED")) {
+					sprintf(msg_to_skype, "SET CHATMESSAGE %s SEEN", id);
+					skypopen_signaling_write(tech_pvt, msg_to_skype);
+				}
+} else {
 				if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "RECEIVED")) {
 					DEBUGA_SKYPE("RECEIVED CHATMESSAGE %s, let's see which type it is\n", SKYPOPEN_P_LOG, id);
 					sprintf(msg_to_skype, "GET CHATMESSAGE %s TYPE", id);
@@ -396,7 +402,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						}
 					}
 					if (!found) {
-						DEBUGA_SKYPE("why we do not have a chatmessages slot free? we have more than %d chatmessages in parallel?\n", SKYPOPEN_P_LOG,
+						ERRORA("why we do not have a chatmessages slot free? we have more than %d chatmessages in parallel?\n", SKYPOPEN_P_LOG,
 									 MAX_CHATMESSAGES);
 					} else {
 						DEBUGA_SKYPE("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s\n", SKYPOPEN_P_LOG, id, i,
@@ -479,10 +485,14 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						if (strcmp(tech_pvt->chatmessages[i].from_handle, tech_pvt->skype_user)) {	//if the message was not sent by myself
 							incoming_chatmessage(tech_pvt, i);
 							memset(&tech_pvt->chatmessages[i], '\0', sizeof(&tech_pvt->chatmessages[i]));
+
+					sprintf(msg_to_skype, "SET CHATMESSAGE %s SEEN", id);
+					skypopen_signaling_write(tech_pvt, msg_to_skype);
 						}
 					}
 
 				}
+}
 
 			}
 
