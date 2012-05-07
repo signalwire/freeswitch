@@ -3490,6 +3490,7 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 	switch_channel_set_name(nchannel, name);
 	switch_channel_set_variable(nchannel, "process_cdr", "false");
 	pickup_add_session(nsession, pickup);
+	switch_channel_set_flag(nchannel, CF_PICKUP);
 	
 	goto done;
 

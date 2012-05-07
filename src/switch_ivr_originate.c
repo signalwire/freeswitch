@@ -429,6 +429,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 	char bug_key[256] = "";
 	int send_ringback = 0;
 	uint8_t ring_ready_val = 0;
+	int pickups = 0;
 
 	oglobals->hups = 0;
 	oglobals->idx = IDX_NADA;
@@ -460,6 +461,11 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				rval = 0;
 				goto end;
 			}
+		}
+
+
+		if (originate_status[i].peer_channel && switch_channel_test_flag(originate_status[i].peer_channel, CF_PICKUP)) {
+			pickups++;
 		}
 
 		if (!(originate_status[i].peer_channel && originate_status[i].peer_session)) {
@@ -719,7 +725,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 		}
 	}
 
-	if (oglobals->hups == len) {
+	if (oglobals->hups + pickups == len) {
 		rval = 0;
 	} else {
 		rval = 1;
