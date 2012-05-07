@@ -1,26 +1,28 @@
 #!/bin/bash
+##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
+##### release a version of FreeSWITCH
 
 src_repo="$(pwd)"
 
 if [ ! -d .git ]; then
-    echo "error: must be run from within the top level of a FreeSWITCH git tree." 1>&2
-    exit 1;
+  echo "error: must be run from within the top level of a FreeSWITCH git tree." 1>&2
+  exit 1;
 fi
 
 showusage() {
-    echo "usage: ./scripts/tagscript.sh [-s] MAJOR.MINOR.MICRO[.REVISION]" 1>&2
-    exit 1;
+  echo "usage: ./scripts/tagscript.sh [-s] MAJOR.MINOR.MICRO[.REVISION]" 1>&2
+  exit 1;
 }
 
 while getopts "s" o; do
-    case "$o" in
-        s) opts="-s" ;;
-    esac
+  case "$o" in
+    s) opts="-s" ;;
+  esac
 done
 shift $(($OPTIND-1))
 
 if [ -z "$1" ]; then
-    showusage
+  showusage
 fi
 
 ver="$1"
@@ -33,26 +35,26 @@ dst_name="freeswitch-$major.$minor.$micro"
 dst_dir="$src_repo/../$dst_name"
 
 if [ -d "$dst_dir" ]; then
-    echo "error: destination directory $dst_dir already exists." 1>&2
-    exit 1;
+  echo "error: destination directory $dst_dir already exists." 1>&2
+  exit 1;
 fi
 
 # save local changes
 ret=$(git stash save "Save uncommitted changes before tagging.")
 if echo $ret | grep "^Saved"; then
-    stash_saved=1
+  stash_saved=1
 fi
 
 sed -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
-    -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
-    -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
-    -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], BUG-REPORT-ADDRESS)\)|\1$major.$minor.$micro\2|" \
-    -i configure.in
+  -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
+  -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
+  -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], BUG-REPORT-ADDRESS)\)|\1$major.$minor.$micro\2|" \
+  -i configure.in
 
 if [ -n "$rev" ]; then
-    sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
-        -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
-        -i configure.in
+  sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
+    -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
+    -i configure.in
 fi
 
 git add configure.in
@@ -61,7 +63,7 @@ git tag -a ${opts} -m "freeswitch-$ver release" v$ver
 
 git clone $src_repo $dst_dir
 if [ -n "$stash_saved" ]; then
-    git stash pop
+  git stash pop
 fi
 
 cd $dst_dir
@@ -87,3 +89,4 @@ server (I didn't do that for you, as you might want to review first).
 ----------------------------------------------------------------------
 EOF
 
+exit 0
