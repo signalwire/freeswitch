@@ -112,7 +112,7 @@ typedef enum {
 #define WARNINGA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 		"%-*s["SKYPOPEN_SVN_VERSION "] [WARNINGA     %-5d][%-15s][%s,%s] " __VA_ARGS__ );
 #define NOTICA(...)  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 		"%-*s ["SKYPOPEN_SVN_VERSION "] [NOTICA       %-5d][%-15s][%s,%s] " __VA_ARGS__ );
 
-#define SKYPOPEN_P_LOG (int)((20 - (strlen(__FILE__))) + ((__LINE__ - 1000) < 0) + ((__LINE__ - 100) < 0)), " ", __LINE__, tech_pvt ? tech_pvt->name ? tech_pvt->name : "none" : "none", tech_pvt ? interface_status[tech_pvt->interface_state] : "N/A", tech_pvt ? skype_callflow[tech_pvt->skype_callflow] : "N/A" 
+#define SKYPOPEN_P_LOG (int)((20 - (strlen(__FILE__))) + ((__LINE__ - 1000) < 0) + ((__LINE__ - 100) < 0)), " ", __LINE__, tech_pvt ? tech_pvt->name ? tech_pvt->name : "none" : "none", tech_pvt ? interface_status[tech_pvt->interface_state] : "N/A", tech_pvt ? skype_callflow[tech_pvt->skype_callflow] : "N/A"
 
 /*********************************/
 #define SKYPOPEN_CAUSE_NORMAL		1
