@@ -10,9 +10,9 @@ check_input_ver_build $@
 eval $(parse_version "$1")
 datestamp="$(date +%Y%m%dT%H%M%SZ)"
 nightly="n${datestamp}"
-build="b$2"
-distro=${3:="unstable"}
-codename=${4:="sid"}
+build="b${2-0}"
+distro="${3-unstable}"
+codename="${4-sid}"
 
 fver="${ver}~${nightly}~${build}"
 fname="freeswitch-$fver"
