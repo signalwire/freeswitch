@@ -92,7 +92,7 @@ set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
 
 echo "Committing the new version..." >&2
 git add configure.in
-git commit -m "Release freeswitch-$gver"
+git commit -m "release freeswitch-$gver"
 echo "Tagging freeswitch v$gver..." >&2
 git tag -a ${opts} -m "freeswitch-$gver release" "v$gver"
 
