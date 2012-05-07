@@ -217,7 +217,8 @@ typedef enum {
 	EFLAG_FLOOR_CHANGE = (1 << 25),
 	EFLAG_MUTE_DETECT = (1 << 26),
 	EFLAG_RECORD = (1 << 27),
-	EFLAG_HUP_MEMBER = (1 << 28)
+	EFLAG_HUP_MEMBER = (1 << 28),
+	EFLAG_PLAY_FILE_DONE = (1 << 29),
 } event_type_t;
 
 typedef struct conference_file_node {
@@ -1621,7 +1622,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 
 				if (file_sample_len <= 0) {
-					if (test_eflag(conference, EFLAG_PLAY_FILE) &&
+					if (test_eflag(conference, EFLAG_PLAY_FILE_DONE) &&
 						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 						conference_add_event_data(conference, event);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-done");
@@ -6106,6 +6107,8 @@ static void clear_eflags(char *events, uint32_t *f)
 			} else if (!strcmp(event, "volume-out-member")) {
 				*f &= ~EFLAG_VOLUME_OUT_MEMBER;
 			} else if (!strcmp(event, "play-file")) {
+				*f &= ~EFLAG_PLAY_FILE;
+			} else if (!strcmp(event, "play-file-done")) {
 				*f &= ~EFLAG_PLAY_FILE;
 			} else if (!strcmp(event, "play-file-member")) {
 				*f &= ~EFLAG_PLAY_FILE_MEMBER;
