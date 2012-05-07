@@ -345,7 +345,12 @@ static switch_status_t interface_exists(char *the_interface)
 static switch_status_t remove_interface(char *the_interface)
 {
 	int x = 10;
+#ifdef WIN32
+	switch_size_t howmany = 8;
+#else
 	unsigned int howmany = 8;
+#endif
+
 	int interface_id = -1;
 	private_t *tech_pvt = NULL;
 	switch_status_t status;
@@ -1922,7 +1927,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_gsmopen_shutdown)
 	int x;
 	private_t *tech_pvt = NULL;
 	switch_status_t status;
+#ifdef WIN32
+	switch_size_t howmany = 8;
+#else
 	unsigned int howmany = 8;
+#endif
 	int interface_id;
 	int fd;
 
