@@ -119,7 +119,7 @@ set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
 
 echo "Committing the new version..." >&2
 git add configure.in
-if ! (git commit --allow-empty -m "release freeswitch-$gver"); then
+if ! (git commit --allow-empty -m "release FreeSWITCH $gver"); then
   cat >&2 <<EOF
 Committing the new version failed for some reason.  Definitely look
 into this before proceeding.
@@ -129,7 +129,7 @@ EOF
 fi
 
 echo "Tagging freeswitch v$gver..." >&2
-if ! (git tag -a ${opts} -m "freeswitch-$gver release" "v$gver"); then
+if ! (git tag -a ${opts} -m "FreeSWITCH $gver" "v$gver"); then
   cat >&2 <<EOF
 Committing the new tag failed for some reason.  Maybe you didn't
 delete an old tag with this name?  Definitely figure out what's wrong
