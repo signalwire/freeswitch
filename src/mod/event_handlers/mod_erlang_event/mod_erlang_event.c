@@ -1807,6 +1807,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 		if ((clientfd = ei_accept_tmo(&ec, (int) listen_list.sockfd, &conn, 500)) == ERL_ERROR) {
 			if (prefs.done) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
+				break;
 			} else if (erl_errno == ETIMEDOUT) {
 				continue;
 #ifdef WIN32
@@ -1820,9 +1821,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 				/* if errno didn't get set, assume nothing *too* horrible occured */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 								  "Ignorable error in ei_accept - probable bad client version, bad cookie or bad nodename\n");
-				continue;
 			}
-			break;
+			continue;
 		}
 
 		listener = new_listener(&ec, clientfd);
