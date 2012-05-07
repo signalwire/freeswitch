@@ -954,6 +954,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_abstraction", "src\mod\
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_gsmopen", "src\mod\endpoints\mod_gsmopen\mod_gsmopen.2008.vcproj", "{74B120FF-6935-4DFE-A142-CDB6BEA99C90}"
+	ProjectSection(ProjectDependencies) = postProject
+		{26C82FCE-E0CF-4D10-A00C-D8E582FFEB53} = {26C82FCE-E0CF-4D10-A00C-D8E582FFEB53}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gsmlib", "src\mod\endpoints\mod_gsmopen\gsmlib\gsmlib-1.10-patched-13ubuntu\win32\gsmlib.vcproj", "{26C82FCE-E0CF-4D10-A00C-D8E582FFEB53}"
 EndProject
