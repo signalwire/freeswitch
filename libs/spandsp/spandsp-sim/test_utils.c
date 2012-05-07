@@ -121,7 +121,7 @@ SPAN_DECLARE(complexf_t) complexify(complexify_state_t *s, int16_t amp)
         +0.0584802574f, +0.0697446887f,
         +0.0847739823f, +0.1060495199f,
         +0.1388940865f, +0.1971551103f,
-        +0.3316207267f, +0.9994281838f,
+        +0.3316207267f, +0.9994281838f
     };
     float famp;
     int i;

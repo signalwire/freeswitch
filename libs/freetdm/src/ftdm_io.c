@@ -149,7 +149,7 @@ static void dump_chan_io_to_file(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, FI
 	if (dump->wrapped) {
 		rc = fwrite(&dump->buffer[dump->windex], 1, towrite, file);
 		if (rc != towrite) {
-			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "only wrote %d out of %d bytes in io dump buffer\n", 
+			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "only wrote %"FTDM_SIZE_FMT" out of %"FTDM_SIZE_FMT" bytes in io dump buffer: %s\n",
 					rc, towrite, strerror(errno));
 		}
 	}
@@ -157,7 +157,7 @@ static void dump_chan_io_to_file(ftdm_channel_t *fchan, ftdm_io_dump_t *dump, FI
 		towrite = dump->windex;
 		rc = fwrite(&dump->buffer[0], 1, towrite, file);
 		if (rc != towrite) {
-			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "only wrote %d out of %d bytes in io dump buffer: %s\n", 
+			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "only wrote %"FTDM_SIZE_FMT" out of %"FTDM_SIZE_FMT" bytes in io dump buffer: %s\n",
 					rc, towrite, strerror(errno));
 		}
 	}
@@ -1174,7 +1174,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_next_event(ftdm_span_t *span, ftdm_event_t *
 
 	status = ftdm_event_handle_oob(*event);
 	if (status != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "failed to handle event %d\n", **event);
+		ftdm_log(FTDM_LOG_ERROR, "failed to handle event %d\n", (*event)->e_type);
 	}
 	return status;
 }
@@ -1188,7 +1188,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm
 	ftdm_channel_lock(ftdmchan);
 
 	if (!span->fio->channel_next_event) {
-		ftdm_log(FTDM_LOG_ERROR, "channel_next_event method not implemented in module %s!", span->fio->name);
+		ftdm_log(FTDM_LOG_ERROR, "channel_next_event method not implemented in module %s!\n", span->fio->name);
 		status = FTDM_NOTIMPL;
 		goto done;
 	}
@@ -1204,7 +1204,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_read_event(ftdm_channel_t *ftdmchan, ftdm
 
 	status = ftdm_event_handle_oob(*event);
 	if (status != FTDM_SUCCESS) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "failed to handle event %d\n", **event);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "failed to handle event %d\n", (*event)->e_type);
 	}
 
 done:
@@ -2548,7 +2548,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, i
 		goto done;
 	}
 
+	/* let the user know which channel was picked and which call id was generated */
 	caller_data->fchan = fchan;
+	caller_data->call_id = fchan->caller_data.call_id;
 done:
 	ftdm_channel_unlock(fchan);
 
@@ -2978,7 +2980,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			if (start_chan_io_dump(ftdmchan, &ftdmchan->txdump, size) != FTDM_SUCCESS) {
-				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to enable output dump of size %d\n", size);	
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to enable output dump of size %"FTDM_SIZE_FMT"\n", size);
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Enabled output dump with size %"FTDM_SIZE_FMT"\n", size);
@@ -3010,7 +3012,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			dump_chan_io_to_file(ftdmchan, &ftdmchan->rxdump, obj);
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped input of size %d to file %p\n", ftdmchan->rxdump.size, obj);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Dumped input of size %"FTDM_SIZE_FMT" to file %p\n", ftdmchan->rxdump.size, obj);
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
@@ -3633,7 +3635,7 @@ FT_DECLARE(ftdm_status_t) ftdm_raw_write (ftdm_channel_t *ftdmchan, void *data, 
 	}
 	if (ftdmchan->fds[FTDM_WRITE_TRACE_INDEX] > -1) {
 		if ((write(ftdmchan->fds[FTDM_WRITE_TRACE_INDEX], data, dlen)) != dlen) {
-			ftdm_log(FTDM_LOG_WARNING, "Raw output trace failed to write all of the %"FTDM_SIZE_FMT" bytes\n", dlen);
+			ftdm_log(FTDM_LOG_WARNING, "Raw output trace failed to write all of the %d bytes\n", dlen);
 		}
 	}
 	write_chan_io_dump(&ftdmchan->txdump, data, dlen);
@@ -3679,7 +3681,8 @@ FT_DECLARE(ftdm_status_t) ftdm_raw_read (ftdm_channel_t *ftdmchan, void *data, f
 		if (ftdmchan->dtmfdbg.file) {
 			rc = fwrite(data, 1, dlen, ftdmchan->dtmfdbg.file);
 			if (rc != dlen) {
-				ftdm_log(FTDM_LOG_WARNING, "DTMF debugger wrote only %d out of %d bytes: %s\n", rc, datalen, strerror(errno));
+				ftdm_log(FTDM_LOG_WARNING, "DTMF debugger wrote only %"FTDM_SIZE_FMT" out of %"FTDM_SIZE_FMT" bytes: %s\n",
+					rc, *datalen, strerror(errno));
 			}
 			ftdmchan->dtmfdbg.closetimeout--;
 			if (!ftdmchan->dtmfdbg.closetimeout) {
@@ -3898,7 +3901,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 					*(str+mlen) = '\0';
 					ftdm_copy_string(str, sp, ++mlen);
 					ftdm_clean_string(str);
-					ftdm_log(FTDM_LOG_DEBUG, "FSK: TYPE %s LEN %d VAL [%s]\n", ftdm_mdmf_type2str(type), mlen-1, str);
+
+					ftdm_log(FTDM_LOG_DEBUG, "FSK: TYPE %s LEN %"FTDM_SIZE_FMT" VAL [%s]\n",
+						ftdm_mdmf_type2str(type), mlen-1, str);
 					
 					switch(type) {
 					case MDMF_DDN:
@@ -4574,7 +4579,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 	ftdm_assert_return(span->fio != NULL, FTDM_EINVAL, "span with no I/O configured\n");
 	ftdm_assert_return(span->fio->configure_span != NULL, FTDM_NOTIMPL, "span I/O with no channel configuration implemented\n");
 
-       	currindex = span->chan_count;
+	currindex = span->chan_count;
 	*configured = 0;
 	*configured = span->fio->configure_span(span, str, chan_config->type, chan_config->name, chan_config->number);
 	if (!*configured) {
@@ -4604,7 +4609,12 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 		}
 
 		if (chan_config->debugdtmf) {
-				span->channels[chan_index]->dtmfdbg.requested = 1;
+			span->channels[chan_index]->dtmfdbg.requested = 1;
+		}
+
+		span->channels[chan_index]->dtmfdetect.duration_ms = chan_config->dtmfdetect_ms;
+		if (chan_config->dtmf_on_start) {
+			span->channels[chan_index]->dtmfdetect.trigger_on_start = 1;
 		}
 	}
 
@@ -4802,6 +4812,24 @@ static ftdm_status_t load_config(void)
 			} else if (!strcasecmp(var, "debugdtmf")) {
 				chan_config.debugdtmf = ftdm_true(val);
 				ftdm_log(FTDM_LOG_DEBUG, "Setting debugdtmf to '%s'\n", chan_config.debugdtmf ? "yes" : "no");
+			} else if (!strncasecmp(var, "dtmfdetect_ms", sizeof("dtmfdetect_ms")-1)) {
+				if (chan_config.dtmf_on_start == FTDM_TRUE) {
+					chan_config.dtmf_on_start = FTDM_FALSE;
+					ftdm_log(FTDM_LOG_WARNING, "dtmf_on_start parameter disabled because dtmfdetect_ms specified\n");
+				}
+				if (sscanf(val, "%d", &(chan_config.dtmfdetect_ms)) != 1) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid dtmfdetect_ms: '%s'\n", val);
+				}
+			} else if (!strncasecmp(var, "dtmf_on_start", sizeof("dtmf_on_start")-1)) {
+				if (chan_config.dtmfdetect_ms) {
+					ftdm_log(FTDM_LOG_WARNING, "dtmf_on_start parameter ignored because dtmf_detect_ms specified\n");
+				} else {
+					if (ftdm_true(val)) {
+						chan_config.dtmf_on_start = FTDM_TRUE;
+					} else {
+						chan_config.dtmf_on_start = FTDM_FALSE;
+					}
+				}
 			} else if (!strncasecmp(var, "iostats", sizeof("iostats")-1)) {
 				if (ftdm_true(val)) {
 					chan_config.iostats = FTDM_TRUE;
@@ -5800,6 +5828,8 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 
 	/* destroy signaling and io modules */
 	ftdm_unload_modules();
+
+	ftdm_global_set_logger( NULL );
 
 	/* finally destroy the globals */
 	ftdm_mutex_lock(globals.mutex);

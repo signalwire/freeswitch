@@ -112,7 +112,7 @@ uint8_t get_bits(uint8_t octet, uint8_t bitLo, uint8_t bitHi)
 
 void sngisdn_trace_interpreted_q921(sngisdn_span_data_t *signal_data, ftdm_trace_dir_t dir, uint8_t *data, uint32_t data_len)
 {
-	char *data_str = ftdm_calloc(1,200); /* TODO Find a proper size */
+	char *data_str = ftdm_calloc(1,500); /* TODO Find a proper size */
  	sngisdn_decode_q921(data_str, data, data_len);
 	ftdm_log(FTDM_LOG_DEBUG, "[SNGISDN Q921] %s FRAME %s:\n%s\n", signal_data->ftdm_span->name, ftdm_trace_dir2str(dir), data_str);
 	ftdm_safe_free(data_str);
@@ -771,7 +771,7 @@ uint32_t sngisdn_decode_ie(char *str, uint32_t *str_len, uint8_t current_codeset
 		default:
 			{
 				*str_len += sprintf(&str[*str_len], "Undecoded");
-				print_hex_dump((char*)str, str_len, data, index_start, index_end);
+				print_hex_dump((char*)str, str_len, data, index_start, index_end + 1);
 			}
 			break;
 	}

@@ -1,0 +1,15 @@
+<configuration name="syslog.conf" description="Syslog Logger">
+  <!-- SYSLOG -->
+  <!-- emerg   - system is unusable  -->
+  <!-- alert   - action must be taken immediately  -->
+  <!-- crit    - critical conditions  -->
+  <!-- err     - error conditions  -->
+  <!-- warning - warning conditions  -->
+  <!-- notice  - normal, but significant, condition  -->
+  <!-- info    - informational message  -->
+  <!-- debug   - debug-level message -->
+  <settings>
+    <param name="ident" value="freeswitch"/>
+    <param name="loglevel" value="warning"/>
+  </settings>
+</configuration>

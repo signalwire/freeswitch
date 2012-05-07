@@ -73,6 +73,9 @@ static struct {
 	char *dbname;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
+	char odbc_dsn[1024];
+	char *odbc_user;
+	char *odbc_pass;
 } globals;
 
 #define DIR_PROFILE_CONFIGITEM_COUNT 100
@@ -187,24 +190,51 @@ char *string_to_keypad_digit(const char *in)
 	return dst;
 }
 
+switch_cache_db_handle_t *directory_get_db_handle(void)
+{
+	switch_cache_db_connection_options_t options = { {0} };
+	switch_cache_db_handle_t *dbh = NULL;
+
+	if (!zstr(globals.odbc_dsn)) {
+		options.odbc_options.dsn = globals.odbc_dsn;
+		options.odbc_options.user = globals.odbc_user;
+		options.odbc_options.pass = globals.odbc_pass;
+
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) {
+			dbh = NULL;
+		}
+		return dbh;
+	} else {
+		options.core_db_options.db_path = globals.dbname;
+		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS) {
+			dbh = NULL;
+		}
+		return dbh;
+	}
+}
+
 static switch_status_t directory_execute_sql(char *sql, switch_mutex_t *mutex)
 {
-	switch_core_db_t *db;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_cache_db_handle_t *dbh = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (!(db = switch_core_db_open_file(globals.dbname))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
-		status = SWITCH_STATUS_FALSE;
+	if (!(dbh = directory_get_db_handle())) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		goto end;
 	}
-	status = switch_core_db_persistant_execute(db, sql, 1);
-	switch_core_db_close(db);
 
-  end:
+	if (globals.debug > 1) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "sql: %s\n", sql);
+
+	status = switch_cache_db_execute_sql(dbh, sql, NULL);
+
+end:
+
+	switch_cache_db_release_db_handle(&dbh);
+
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
@@ -417,7 +447,9 @@ static dir_profile_t *load_profile(const char *profile_name)
 
 static switch_status_t load_config(switch_bool_t reload)
 {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_xml_t cfg, xml = NULL, settings, param, x_profiles, x_profile;
+	switch_cache_db_handle_t *dbh = NULL;
 
 	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
@@ -430,6 +462,22 @@ static switch_status_t load_config(switch_bool_t reload)
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
+			if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
+				if (switch_odbc_available()) {
+					switch_set_string(globals.odbc_dsn, val);
+					if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
+						*globals.odbc_user++ = '\0';
+						if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
+							*globals.odbc_pass++ = '\0';
+						}
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+				}
+			} else if (!strcasecmp(var, "dbname") && !zstr(val)) {
+				globals.dbname = switch_core_strdup(globals.pool, val);
+			}
+
 			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
 			}
@@ -441,10 +489,27 @@ static switch_status_t load_config(switch_bool_t reload)
 			load_profile(switch_xml_attr_soft(x_profile, "name"));
 		}
 	}
+
+	if (zstr(globals.odbc_dsn) && zstr(globals.dbname)) {
+		globals.dbname = switch_core_sprintf(globals.pool, "directory");
+	}
+
+	dbh = directory_get_db_handle();
+	if (dbh) {
+		if (!reload) {
+			switch_cache_db_test_reactive(dbh, "delete from directory_search where uuid != '' and name_visible != '' ", "drop table directory_search", dir_sql);
+		}
+		switch_cache_db_release_db_handle(&dbh);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!2\n");
+		status = SWITCH_STATUS_TERM;
+		goto end;
+	}
+end:
 	switch_mutex_unlock(globals.mutex);
 
 	switch_xml_free(xml);
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 static dir_profile_t *get_profile(const char *profile_name)
@@ -579,7 +644,7 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 		}
 	}
 	sql = switch_mprintf("BEGIN;%s;COMMIT;", sqlvalues);
-	directory_execute_sql(sql, profile->mutex);
+	directory_execute_sql(sql, globals.mutex);
 
   end:
 	switch_safe_free(sql);
@@ -755,7 +820,7 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 					   globals.hostname, switch_core_session_get_uuid(session), (params->search_by_last_name ? "last_name_digit" : "first_name_digit"),
 					   params->digits);
 
-	directory_execute_sql_callback(profile->mutex, sql, sql2str_callback, &cbt);
+	directory_execute_sql_callback(globals.mutex, sql, sql2str_callback, &cbt);
 	switch_safe_free(sql);
 
 	result_count = atoi(entry_count);
@@ -786,7 +851,7 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 		listing_cbt.index = 0;
 		listing_cbt.want = cur_entry;
 		listing_cbt.move = ENTRY_MOVE_NEXT;
-		directory_execute_sql_callback(profile->mutex, sql, listing_callback, &listing_cbt);
+		directory_execute_sql_callback(globals.mutex, sql, listing_callback, &listing_cbt);
 		status = listen_entry(session, profile, &listing_cbt);
 		if (!zstr(listing_cbt.transfer_to)) {
 			switch_copy_string(params->transfer_to, listing_cbt.transfer_to, 255);
@@ -937,7 +1002,7 @@ SWITCH_STANDARD_APP(directory_function)
 
 	/* Delete all sql entry for this call */
 	sql = switch_mprintf("delete from directory_search where hostname = '%q' and uuid = '%q'", globals.hostname, switch_core_session_get_uuid(session));
-	directory_execute_sql(sql, profile->mutex);
+	directory_execute_sql(sql, globals.mutex);
 	switch_safe_free(sql);
 	profile_rwunlock(profile);
 }
@@ -946,8 +1011,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_directory_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_status_t status;
-	switch_core_db_t *db = NULL;
-	char *sql = NULL;
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
@@ -963,20 +1026,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_directory_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	globals.hostname = switch_core_get_switchname();
-
-	globals.dbname = switch_core_sprintf(pool, "directory");
-
-	if ((db = switch_core_db_open_file(globals.dbname))) {
-		switch_core_db_test_reactive(db, "select count(uuid),name_visible from directory_search", "drop table directory_search", dir_sql);
-		switch_core_db_close(db);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open db name : %s\n", globals.dbname);
-		return SWITCH_STATUS_FALSE;
-	}
-
-	sql = switch_mprintf("delete from directory_search where hostname = '%q'", globals.hostname);
-	directory_execute_sql(sql, globals.mutex);
-	switch_safe_free(sql);
 
 	SWITCH_ADD_APP(app_interface, "directory", "directory", DIR_DESC, directory_function, DIR_USAGE, SAF_NONE);
 

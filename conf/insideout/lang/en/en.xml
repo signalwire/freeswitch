@@ -1,0 +1,7 @@
+<include>
+  <language name="en" sound-path="$${base_dir}/sounds/en/us/callie" tts-engine="cepstral" tts-voice="callie">
+    <X-PRE-PROCESS cmd="include" data="demo/*.xml"/> <!-- Note: this now grabs whole subdir, previously grabbed only demo.xml -->
+    <!--voicemail_en_tts is purely implemented with tts, we have the files based one that is the default. -->
+    <X-PRE-PROCESS cmd="include" data="vm/sounds.xml"/>  <!-- vm/tts.xml if you want to use tts and have cepstral -->
+  </language>
+</include>

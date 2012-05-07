@@ -96,7 +96,7 @@ struct dtmf_rx_state_s
     uint8_t in_digit;
     /*! The current sample number within a processing block. */
     int current_sample;
-    
+
     /*! Tone state duration */
     int duration;
 

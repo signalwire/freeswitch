@@ -133,8 +133,9 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			get_redir_num(ftdmchan, &conEvnt->redirNmb);
 			get_calling_subaddr(ftdmchan, &conEvnt->cgPtySad);
 			get_prog_ind_ie(ftdmchan, &conEvnt->progInd);
-			get_facility_ie(ftdmchan, &conEvnt->facilityStr);			
+			get_facility_ie(ftdmchan, &conEvnt->facilityStr);
 			get_calling_name(ftdmchan, conEvnt);
+			get_network_specific_fac(ftdmchan, &conEvnt->netFac[0]);
 			
 			ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Incoming call: Called No:[%s] Calling No:[%s]\n", ftdmchan->caller_data.dnis.digits, ftdmchan->caller_data.cid_num.digits);
 
@@ -445,7 +446,12 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 					/* Do nothing */
 					break;
 				case FTDM_CHANNEL_STATE_RESET:
-					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Processing SETUP but channel in RESET state, ignoring\n");
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring ALERT/PROCEED/PROGRESS because channel is in RESET state\n");
+					break;
+				case FTDM_CHANNEL_STATE_HANGUP:
+				case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+					/* Ignore this message as we already started the hangup process */
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring ALERT/PROCEED/PROGRESS because we are already hanging up\n");
 					break;
 				default:
 					ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Processing ALERT/PROCEED/PROGRESS in an invalid state (%s)\n", ftdm_channel_state2str(ftdmchan->state));
@@ -945,14 +951,8 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 						break;
 				}
 				break;
-				case 2: /* overlap sending/receiving */
+				case 2: /* overlap sending */
 					switch (ftdmchan->state) {
-						case FTDM_CHANNEL_STATE_COLLECT:
-							/* T302 Timeout reached */
-							/* Send the call to user, and see if they accept it */
-							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "T302 Timer expired, proceeding with call\n");
-							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
-							break;
 						case FTDM_CHANNEL_STATE_PROCEED:
 						case FTDM_CHANNEL_STATE_PROGRESS:
 						case FTDM_CHANNEL_STATE_RINGING:
@@ -1069,7 +1069,10 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 			case 25: /* Overlap receiving */
 				switch (ftdmchan->state) {
 					case FTDM_CHANNEL_STATE_COLLECT:
-						/* do nothing */
+						/* T302 Timeout reached */
+						/* Send the call to user, and see if they accept it */
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "T302 Timer expired, proceeding with call\n");
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 						break;
 					default:
 						ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Don't know how to handle incompatible state. remote call state:%d our state:%s\n", call_state, ftdm_channel_state2str(ftdmchan->state));
@@ -1166,12 +1169,13 @@ static ftdm_status_t sngisdn_bring_down(ftdm_channel_t *ftdmchan)
 
 void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 {
+	ftdm_signaling_status_t sigstatus;
 	int16_t suId = sngisdn_event->suId;
 	int16_t dChan = sngisdn_event->dChan;
 	uint8_t ces = sngisdn_event->ces;
 	uint8_t evntType = sngisdn_event->evntType;
 	uint8_t chan_no = 0;
-	Rst *rstEvnt = &sngisdn_event->event.rstEvnt;
+	Rst *rstEvnt = &sngisdn_event->event.rstEvnt;	
 	
 	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[dChan].spans[1];
 	if (!signal_data) {
@@ -1219,33 +1223,26 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 				return;
 		}
 	}
-
-	if (chan_no) { /* For a single channel */
-		ftdm_iterator_t *chaniter = NULL;
-		ftdm_iterator_t *curr = NULL;
-
-		chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
-		for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
-			ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
-			sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
-			if (sngisdn_info->ces == ces && ftdmchan->physical_chan_id == chan_no) {
+	
+	ftdm_span_get_sig_status(signal_data->ftdm_span, &sigstatus);
+	if (sigstatus == FTDM_SIG_STATE_DOWN) {
+		if (chan_no) { /* For a single channel */
+			if (chan_no > ftdm_span_get_chan_count(signal_data->ftdm_span)) {
+				ftdm_log(FTDM_LOG_CRIT, "Received RESTART on invalid channel:%d\n", chan_no);
+			} else {
+				ftdm_channel_t *ftdmchan = ftdm_span_get_channel(signal_data->ftdm_span, chan_no);
 				sngisdn_bring_down(ftdmchan);
 			}
-		}
-		ftdm_iterator_free(chaniter);
-	} else { /* for all channels */
-		ftdm_iterator_t *chaniter = NULL;
-		ftdm_iterator_t *curr = NULL;
+		} else { /* for all channels */
+			ftdm_iterator_t *chaniter = NULL;
+			ftdm_iterator_t *curr = NULL;
 
-		chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
-		for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
-			ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
-			sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
-			if (sngisdn_info->ces == ces) {
-				sngisdn_bring_down(ftdmchan);
+			chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
+			for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+				sngisdn_bring_down((ftdm_channel_t*)ftdm_iterator_current(curr));
 			}
+			ftdm_iterator_free(chaniter);
 		}
-		ftdm_iterator_free(chaniter);
 	}
 
 	ftdm_log(FTDM_LOG_DEBUG, "Processing RESTART CFM (suId:%u dChan:%d ces:%d type:%d)\n", suId, dChan, ces, evntType);

@@ -171,9 +171,9 @@ int sendnewportmappingrequest(natpmp_t * p, int protocol,
 	p->pending_request[1] = (char)protocol;
 	p->pending_request[2] = 0;
 	p->pending_request[3] = 0;
-	*((uint16_t *)(p->pending_request + 4)) = htons(privateport);
-	*((uint16_t *)(p->pending_request + 6)) = htons(publicport);
-	*((uint32_t *)(p->pending_request + 8)) = htonl(lifetime);
+	*((uint16_t *)(intptr_t)(p->pending_request + 4)) = htons(privateport);
+	*((uint16_t *)(intptr_t)(p->pending_request + 6)) = htons(publicport);
+	*((uint32_t *)(intptr_t)(p->pending_request + 8)) = htonl(lifetime);
 	p->pending_request_len = 12;
 	return sendnatpmprequest(p);
 }

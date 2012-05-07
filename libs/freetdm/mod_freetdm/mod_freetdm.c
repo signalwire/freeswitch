@@ -586,6 +586,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		break;
 	case FTDM_CHAN_TYPE_FXS:
 		{
+			tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
 			if (!ftdm_channel_call_check_busy(tech_pvt->ftdmchan) && !ftdm_channel_call_check_done(tech_pvt->ftdmchan)) {
 				if (tokencnt) {
 					cycle_foreground(tech_pvt->ftdmchan, 0, NULL);
@@ -4344,6 +4345,42 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+FTDM_CLI_DECLARE(ftdm_cmd_alarms)
+{
+        ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
+        uint32_t chan_id = 0;
+        ftdm_span_t *span;
+
+        if (argc < 3) {
+                print_usage(stream, cli);
+                goto end;
+        }
+
+        ftdm_span_find_by_name(argv[1], &span);
+        chan_id = atoi(argv[2]);
+        if (!span) {
+                stream->write_function(stream, "-ERR invalid span\n");
+        } else if (chan_id) {
+                if(chan_id > ftdm_span_get_chan_count(span)) {
+                        stream->write_function(stream, "-ERR invalid channel\n");
+                } else {
+                        ftdm_channel_t *chan = ftdm_span_get_channel(span, chan_id);
+                        if (!chan) {
+                                stream->write_function(stream, "-ERR channel not configured\n");
+                        } else {
+                                ftdm_channel_get_alarms(chan, &alarmbits);
+                                if (!strlen(ftdm_channel_get_last_error(chan))) {
+                                        stream->write_function(stream, "+OK No alarms\n");
+                                } else {
+                                        stream->write_function(stream, "-ERR %s on %s:%d\n", ftdm_channel_get_last_error(chan), argv[1], chan);
+                                }
+                        }
+                }
+        }
+end:
+        return SWITCH_STATUS_SUCCESS;
+}
+
 FTDM_CLI_DECLARE(ftdm_cmd_sigstatus)
 {
 	ftdm_span_t *span = NULL;
@@ -4750,6 +4787,7 @@ static ftdm_cli_entry_t ftdm_cli_options[] =
 	{ "start", "<span_id|span_name>", "", ftdm_cmd_start_stop },
 	{ "stop", "<span_id|span_name>", "", ftdm_cmd_start_stop },
 	{ "reset", "<span_id|span_name> [<chan_id>]", "", ftdm_cmd_reset },
+	{ "alarms", "<span_id> <chan_id>", "", ftdm_cmd_alarms },
 	{ "dump", "<span_id|span_name> [<chan_id>]", "", ftdm_cmd_dump },
 	{ "sigstatus", "get|set <span_id|span_name> [<chan_id>] [<sigstatus>]", "::[set:get", ftdm_cmd_sigstatus },
 	{ "trace", "<path> <span_id|span_name> [<chan_id>]", "", ftdm_cmd_trace },
@@ -4904,11 +4942,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	ftdm_global_set_config_directory(SWITCH_GLOBAL_dirs.conf_dir);
 
 	if (ftdm_global_init() != FTDM_SUCCESS) {
+		ftdm_global_destroy();
 		ftdm_log(FTDM_LOG_ERROR, "Error loading FreeTDM\n");
 		return SWITCH_STATUS_TERM;
 	}
 
 	if (ftdm_global_configuration() != FTDM_SUCCESS) {
+		ftdm_global_destroy();
 		ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM\n");
 		return SWITCH_STATUS_TERM;
 	}

@@ -16,6 +16,15 @@ fi
 if [ -z "$prefix" -a -d "/opt/freeswitch" ] ; then
     prefix="/opt/freeswitch"
 fi
+
+if [ -z "$prefix" ] ; then
+    prefix=$FS_PREFIX
+fi
+
+if [ -z "$prefix" -a -f "./bin/freeswitch" ] ; then
+    prefix=`pwd`
+fi
+
 if [ -z "$prefix" ] ; then
     echo "Unable to locate freeswitch prefix directory."
     exit 255

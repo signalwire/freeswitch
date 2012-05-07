@@ -23,7 +23,7 @@ fi
 
 uncompressed=`echo $tarfile | sed 's/\(\(\.tar\.gz\|\.tar\.bz2\|\.tar\.xz\)\|\(\.tgz\|\.tbz2\)\)$//'`
 
-case `echo $tarfile | sed 's/.*\.\([^.]\+\)$/\1/'` in
+case `echo $tarfile | sed 's/^.*\.//'` in
     bz2|tbz2) UNZIPPER=$BZIP ;;
     xz) UNZIPPER=$XZ ;;
     gz|tgz|*) UNZIPPER=$ZCAT ;;

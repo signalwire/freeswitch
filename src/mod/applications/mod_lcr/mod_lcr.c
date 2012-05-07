@@ -1535,7 +1535,14 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LCR Lookup on %s using profile %s\n", caller_profile->destination_number, caller_profile->context);
 	routes.lookup_number = caller_profile->destination_number;
-	routes.cid = (char *) caller_profile->caller_id_number;
+
+	if (caller_profile) {
+		routes.cid = (char *) switch_channel_get_variable(channel, "effective_caller_id_number");
+		if (!routes.cid) {
+			routes.cid = (char *) caller_profile->caller_id_number;
+		}
+	}
+
 	if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
 		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "memory error!\n");

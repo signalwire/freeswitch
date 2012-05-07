@@ -30,6 +30,7 @@
  *
  */
 #include "mod_spidermonkey.h"
+#include <switch_curl.h>
 
 
 static const char modname[] = "CURL";

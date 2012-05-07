@@ -46,10 +46,10 @@
 
 #include "spandsp/private/logging.h"
 
-static void default_message_handler(int level, const char *text);
+static void default_message_handler(void *user_data, int level, const char *text);
 
 static message_handler_func_t __span_message = &default_message_handler;
-static error_handler_func_t __span_error = NULL;
+static void *__user_data = NULL;
 
 /* Note that this list *must* match the enum definition in logging.h */
 static const char *severities[] =
@@ -67,7 +67,7 @@ static const char *severities[] =
     "DEBUG 3"
 };
 
-static void default_message_handler(int level, const char *text)
+static void default_message_handler(void *user_data, int level, const char *text)
 {
     fprintf(stderr, "%s", text);
 }
@@ -138,14 +138,10 @@ SPAN_DECLARE(int) span_log(logging_state_t *s, int level, const char *format, ..
         }
         /*endif*/
         len += vsnprintf(msg + len, 1024 - len, format, arg_ptr);
-        if (s->span_error  &&  level == SPAN_LOG_ERROR)
-            s->span_error(msg);
-        else if (__span_error  &&  level == SPAN_LOG_ERROR)
-            __span_error(msg);
-        else if (s->span_message)
-            s->span_message(level, msg);
+        if (s->span_message)
+            s->span_message(s->user_data, level, msg);
         else if (__span_message)
-            __span_message(level, msg);
+            __span_message(s->user_data, level, msg);
         /*endif*/
         va_end(arg_ptr);
         return  1;
@@ -215,27 +211,17 @@ SPAN_DECLARE(int) span_log_bump_samples(logging_state_t *s, int samples)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) span_log_set_message_handler(logging_state_t *s, message_handler_func_t func)
+SPAN_DECLARE(void) span_log_set_message_handler(logging_state_t *s, message_handler_func_t func, void *user_data)
 {
     s->span_message = func;
+    s->user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) span_log_set_error_handler(logging_state_t *s, error_handler_func_t func)
-{
-    s->span_error = func;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(void) span_set_message_handler(message_handler_func_t func)
+SPAN_DECLARE(void) span_set_message_handler(message_handler_func_t func, void *user_data)
 {
     __span_message = func;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(void) span_set_error_handler(error_handler_func_t func)
-{
-    __span_error = func;
+    __user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -246,7 +232,6 @@ SPAN_DECLARE(logging_state_t *) span_log_init(logging_state_t *s, int level, con
         if ((s = (logging_state_t *) malloc(sizeof(*s))) == NULL)
             return NULL;
     }
-    s->span_error = __span_error;
     s->span_message = __span_message;
     s->level = level;
     s->tag = tag;

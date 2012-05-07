@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
         time(&now);
         v42bis_init(&state_a, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, NULL, 512);
         span_log_set_level(&state_a.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-        span_log_set_tag(&state_a.logging, "XXX");
+        span_log_set_tag(&state_a.logging, "V.42bis");
         //v42bis_compression_control(&state_a, V42BIS_COMPRESSION_MODE_ALWAYS);
         in_octets_to_date = 0;
         out_octets_to_date = 0;
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
         time(&now);
         v42bis_init(&state_b, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, (void *) (intptr_t) out_fd, 512);
         span_log_set_level(&state_b.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-        span_log_set_tag(&state_b.logging, "XXX");
+        span_log_set_tag(&state_b.logging, "V.42bis");
         in_octets_to_date = 0;
         out_octets_to_date = 0;
         while ((len = read(v42bis_fd, buf, 1024)) > 0)

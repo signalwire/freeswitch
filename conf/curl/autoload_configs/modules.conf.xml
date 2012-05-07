@@ -1,0 +1,6 @@
+<configuration name="modules.conf" description="Modules">
+  <modules>
+    <load module="mod_console"/>
+    <load module="mod_xml_curl"/>
+  </modules>
+</configuration>

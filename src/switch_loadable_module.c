@@ -579,13 +579,22 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	}
 	
 	if (!do_skip && !switch_stristr("GLOBAL", dest_proto)) {
-		if (!(ci = switch_loadable_module_get_chat_interface(dest_proto)) || !ci->chat_send) {
+		if ((ci = switch_loadable_module_get_chat_interface(dest_proto)) && ci->chat_send) {
+			status = ci->chat_send(message_event);
+			UNPROTECT_INTERFACE(ci);
+		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid chat interface [%s]!\n", dest_proto);
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
 		}
-		status = ci->chat_send(message_event);
-		UNPROTECT_INTERFACE(ci);
 	}
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_event_t *dup;
+		switch_event_dup(&dup, message_event);
+		switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "true");
+		switch_event_fire(&dup);
+	}
+
 
 	return status;
 }
@@ -1261,6 +1270,11 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 			break;
 		}
 
+		if (!module_interface) {
+			err = "Module failed to initialize its module_interface. Is this a valid module?";
+			break;
+		}
+
 		if ((module = switch_core_alloc(pool, sizeof(switch_loadable_module_t))) == 0) {
 			err = "Could not allocate memory\n";
 			abort();
@@ -1275,6 +1289,11 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 
 
 	if (err) {
+
+		if (dso) {
+			switch_dso_destroy(&dso);
+		}
+
 		if (pool) {
 			switch_core_destroy_memory_pool(&pool);
 		}

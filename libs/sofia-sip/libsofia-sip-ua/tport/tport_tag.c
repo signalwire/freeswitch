@@ -288,6 +288,16 @@ tag_typedef_t tptag_tls_version = UINTTAG_TYPEDEF(tls_version);
  */
 tag_typedef_t tptag_tls_verify_peer = UINTTAG_TYPEDEF(tls_verify_peer);
 
+/**@def TPTAG_TLS_PASSPHRASE(x)
+ *
+ * Sets the passphrase password to be used by openSSL to encrypt/decrypt
+ * private key files.
+ *
+ * @NEW_1_12_11.
+ */
+tag_typedef_t tptag_tls_passphrase = STRTAG_TYPEDEF(tls_passphrase);
+
+
 /**@def TPTAG_TLS_VERIFY_POLICY(x)
  *
  * The verification of certificates can be controlled:

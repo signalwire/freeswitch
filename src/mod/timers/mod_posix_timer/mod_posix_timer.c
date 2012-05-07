@@ -28,8 +28,8 @@
  *
  */
 #include <switch.h>
-#include <sys/signal.h>
-#include <sys/time.h>
+#include <time.h>
+#include <signal.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_posix_timer_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_posix_timer_shutdown);
@@ -44,6 +44,8 @@ typedef struct {
 	switch_size_t tick;
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
+	int interval;
+	int id;
 } interval_timer_t;
 
 static struct {
@@ -57,7 +59,7 @@ static struct {
 /**
  * Notified by POSIX timer of a tick
  */
-static void posix_timer_notify(sigval_t data)
+static void posix_timer_notify(union sigval data)
 {
 	interval_timer_t *it = (interval_timer_t *)data.sival_ptr;
 	switch_mutex_lock(it->mutex);
@@ -91,6 +93,7 @@ static switch_status_t posix_timer_start_interval(interval_timer_t *it, int inte
 	}
 
 	if (it->users <= 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "starting %d ms timer #%d\n", it->interval, it->id + 1);
 		/* reset */
 		it->tick = 0;
 		it->users = 0;
@@ -133,6 +136,7 @@ static switch_status_t posix_timer_stop_interval(interval_timer_t *it)
 	if (it->users > 0) {
 		it->users--;
 		if (it->users == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "stopping %d ms timer #%d\n", it->interval, it->id + 1);
 			switch_mutex_lock(it->mutex);
 			timer_delete(it->timer);
 			memset(&it->timer, 0, sizeof(it->timer));
@@ -164,6 +168,8 @@ static switch_status_t posix_timer_init(switch_timer_t *timer)
 	}
 
 	it = &globals.interval_timers[timer->interval][interval_timer_id];
+	it->id = interval_timer_id;
+	it->interval = timer->interval;
 	status = posix_timer_start_interval(it, timer->interval);
 	timer->private_info = it;
 	switch_mutex_unlock(globals.interval_timers_mutex);

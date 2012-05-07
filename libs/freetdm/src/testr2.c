@@ -10,7 +10,7 @@ static ftdm_channel_indication_t indication = FTDM_CHANNEL_INDICATE_NONE;
 static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 {
 	int chanid = ftdm_channel_get_ph_id(sigmsg->channel);
-	ftdm_log(FTDM_LOG_DEBUG, "Got R2 channel sig [%s] in channel\n", ftdm_signal_event2str(sigmsg->event_id), chanid);
+	ftdm_log(FTDM_LOG_DEBUG, "Got R2 channel sig [%s] in channel %d\n", ftdm_signal_event2str(sigmsg->event_id), chanid);
 	switch (sigmsg->event_id) {
 	case FTDM_SIGEVENT_START:
 		{

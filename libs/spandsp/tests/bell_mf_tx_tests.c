@@ -59,7 +59,6 @@ int main(int argc, char *argv[])
     int16_t amp[16384];
     int len;
     SNDFILE *outhandle;
-    int outframes;
     int add_digits;
 
     if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
@@ -71,36 +70,34 @@ int main(int argc, char *argv[])
     gen = bell_mf_tx_init(NULL);
     len = bell_mf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "123", -1))
         printf("Ooops\n");
     len = bell_mf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "456", -1))
         printf("Ooops\n");
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "789", -1))
         printf("Ooops\n");
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "*#", -1))
         printf("Ooops\n");
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     add_digits = 1;
     do
     {
         len = bell_mf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
-        {
-            outframes = sf_writef_short(outhandle, amp, len);
-        }
+            sf_writef_short(outhandle, amp, len);
         if (add_digits)
         {
             if (bell_mf_tx_put(gen, "1234567890", -1))
@@ -115,41 +112,39 @@ int main(int argc, char *argv[])
     bell_mf_tx_init(gen);
     len = bell_mf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "123", -1))
         printf("Ooops\n");
     len = bell_mf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "456", -1))
         printf("Ooops\n");
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "789", -1))
         printf("Ooops\n");
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "0*#", -1))
         printf("Ooops\n");
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     if (bell_mf_tx_put(gen, "ABC", -1))
         printf("Ooops\n");
     len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
-    outframes = sf_writef_short(outhandle, amp, len);
+    sf_writef_short(outhandle, amp, len);
     add_digits = 1;
     do
     {
         len = bell_mf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
-        {
-            outframes = sf_writef_short(outhandle, amp, len);
-        }
+            sf_writef_short(outhandle, amp, len);
         if (add_digits)
         {
             if (bell_mf_tx_put(gen, "1234567890", -1))

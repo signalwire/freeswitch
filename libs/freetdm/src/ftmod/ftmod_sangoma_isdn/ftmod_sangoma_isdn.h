@@ -49,7 +49,11 @@
 #include "private/ftdm_core.h"
 #include "ftmod_sangoma_isdn_user.h"
 
+#ifdef WIN32
+#include <sng_isdn.h>
+#else
 #include <sng_isdn/sng_isdn.h>
+#endif
 
 /* Theoretical limit for MAX_SPANS_PER_NFAS_LINK is 31,
    but set to 8 for now to save some memory */
@@ -66,8 +70,6 @@
 #ifndef MI_NOTIFY
 #define MI_NOTIFY 0x14
 #endif
-
-/* TODO: rename all *_cc_* to *_an_*  */
 
 typedef enum {
 	FLAG_RESET_RX           = (1 << 0),
@@ -258,7 +260,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			setup_arb;
 	uint8_t			facility_ie_decode;
 	uint8_t			facility;
-	int8_t			facility_timeout;
+	int32_t			facility_timeout;
 	uint8_t			att_remove_dtmf;
 	int32_t			transfer_timeout;
 	uint8_t			num_local_numbers;
@@ -273,6 +275,24 @@ typedef struct sngisdn_span_data {
 	uint8_t			force_sending_complete;
 	uint8_t			cid_name_method;
 	uint8_t			send_cid_name;
+
+	int32_t			timer_t301;
+	int32_t			timer_t302;
+	int32_t			timer_t303;
+	int32_t			timer_t304;
+	int32_t			timer_t305;
+	int32_t			timer_t306;
+	int32_t			timer_t307;
+	int32_t			timer_t308;
+	int32_t			timer_t310;
+	int32_t			timer_t312;
+	int32_t			timer_t313;
+	int32_t			timer_t314;
+	int32_t			timer_t316;
+	int32_t			timer_t318;
+	int32_t			timer_t319;
+	int32_t			timer_t322;
+	
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_timer_id_t timers[SNGISDN_NUM_SPAN_TIMERS];
 	ftdm_sched_t 	*sched;
@@ -479,6 +499,7 @@ ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
 ftdm_status_t get_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd);
 ftdm_status_t get_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);
 ftdm_status_t get_facility_ie_str(ftdm_channel_t *ftdmchan, uint8_t *data, uint8_t data_len);
+ftdm_status_t get_network_specific_fac(ftdm_channel_t *ftdmchan, NetFac *netFac);
 
 ftdm_status_t set_calling_num(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
 ftdm_status_t set_calling_num2(ftdm_channel_t *ftdmchan, CgPtyNmb *cgPtyNmb);
@@ -488,6 +509,7 @@ ftdm_status_t set_calling_name(ftdm_channel_t *ftdmchan, ConEvnt *conEvnt);
 ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad);
 ftdm_status_t set_prog_ind_ie(ftdm_channel_t *ftdmchan, ProgInd *progInd, ftdm_sngisdn_progind_t prog_ind);
 ftdm_status_t set_bear_cap_ie(ftdm_channel_t *ftdmchan, BearCap *bearCap);
+ftdm_status_t set_network_specific_fac(ftdm_channel_t *ftdmchan, NetFac *netFac);
 ftdm_status_t set_chan_id_ie(ftdm_channel_t *ftdmchan, ChanId *chanId);
 ftdm_status_t set_restart_ind_ie(ftdm_channel_t *ftdmchan, RstInd *rstInd);
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr);

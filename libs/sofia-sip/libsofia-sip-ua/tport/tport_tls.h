@@ -56,6 +56,7 @@ typedef struct tls_issues_s {
   int   configured;	/* If non-zero, complain about certificate errors */
   char *cert;		/* CERT file name. File format is PEM         */
   char *key;		/* Private key file. PEM format               */
+  char *passphrase;     /* Passphrase for password protected private key */
   char *randFile;       /* Seed file for the PRNG (default: tls_seed.dat) */
   char *CAfile;		/* PEM file of CA's                           */
   char *CApath;		/* PEM file path of CA's		      */

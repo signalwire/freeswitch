@@ -44,6 +44,7 @@ struct xml_binding {
 	char *url;
 	char *bindings;
 	char *cred;
+	char *bind_local;
 	int disable100continue;
 	int use_get_style;
 	uint32_t enable_cacert_check;
@@ -204,7 +205,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
 
-	switch_snprintf(filename, sizeof(filename), "%s%s.tmp.xml", SWITCH_GLOBAL_dirs.temp_dir, uuid_str);
+	switch_snprintf(filename, sizeof(filename), "%s%s%s.tmp.xml", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str);
 	curl_handle = switch_curl_easy_init();
 	headers = switch_curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
 
@@ -283,6 +284,10 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, binding->cookie_file);
 		}
 
+		if (binding->bind_local) {
+			curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, binding->bind_local);
+		}
+
 		switch_curl_easy_perform(curl_handle);
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 		switch_curl_easy_cleanup(curl_handle);
@@ -348,6 +353,7 @@ static switch_status_t do_config(void)
 	for (binding_tag = switch_xml_child(bindings_tag, "binding"); binding_tag; binding_tag = binding_tag->next) {
 		char *bname = (char *) switch_xml_attr_soft(binding_tag, "name");
 		char *url = NULL;
+		char *bind_local = NULL;
 		char *bind_cred = NULL;
 		char *bind_mask = NULL;
 		char *method = NULL;
@@ -434,10 +440,13 @@ static switch_status_t do_config(void)
 					need_vars_map = 1;
 				}
 
-				if (vars_map && val)
+				if (vars_map && val) {
 					if (switch_core_hash_insert(vars_map, val, ENABLE_PARAM_VALUE) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't add %s to params hash!\n", val);
 					}
+				}
+			} else if (!strcasecmp(var, "bind-local")) {
+				bind_local = val;
 			}
 		}
 
@@ -460,6 +469,9 @@ static switch_status_t do_config(void)
 		binding->url = strdup(url);
 		switch_assert(binding->url);
 
+		if (bind_local != NULL) {
+			binding->bind_local = strdup(bind_local);
+		}
 		if (method != NULL) {
 			binding->method = strdup(method);
 		} else {

@@ -337,7 +337,7 @@ switch_status_t load_configuration(switch_bool_t reload)
     spandsp_globals.timezone = "";
 
 	/* TODO make configuration param */
-	spandsp_globals.tonedebug = 1;
+	spandsp_globals.tonedebug = 0;
 
 	if ((xml = switch_xml_open_cfg("spandsp.conf", &cfg, NULL)) || (xml = switch_xml_open_cfg("fax.conf", &cfg, NULL))) {
         status = SWITCH_STATUS_SUCCESS;
@@ -446,7 +446,7 @@ switch_status_t load_configuration(switch_bool_t reload)
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing <descriptor> name\n");
                     switch_goto_status(SWITCH_STATUS_FALSE, done);
                 }
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding tone_descriptor: %s\n", name);
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding tone_descriptor: %s\n", name);
                 if (tone_descriptor_create(&descriptor, name, spandsp_globals.config_pool) != SWITCH_STATUS_SUCCESS) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to allocate tone_descriptor: %s\n", name);
                     switch_goto_status(SWITCH_STATUS_FALSE, done);
@@ -467,7 +467,7 @@ switch_status_t load_configuration(switch_bool_t reload)
                                           "Unable to add tone_descriptor: %s, tone: %s.  (too many tones)\n", name, tone_name);
                         switch_goto_status(SWITCH_STATUS_FALSE, done);
                     }
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
                                       "Adding tone_descriptor: %s, tone: %s(%d)\n", name, tone_name, id);
                     /* add elements to tone */
                     for (element = switch_xml_child(tone, "element"); element; element = switch_xml_next(element)) {
@@ -502,7 +502,7 @@ switch_status_t load_configuration(switch_bool_t reload)
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid element param.\n");
                             switch_goto_status(SWITCH_STATUS_FALSE, done);
                         }
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
                                           "Adding tone_descriptor: %s, tone: %s(%d), element (%d, %d, %d, %d)\n", name, tone_name, id, freq1, freq2, min, max);
                         tone_descriptor_add_tone_element(descriptor, id, freq1, freq2, min, max);
                     }

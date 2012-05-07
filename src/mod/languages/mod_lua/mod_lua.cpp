@@ -80,7 +80,7 @@ static int traceback(lua_State * L)
 	return 1;
 }
 
-int docall(lua_State * L, int narg, int clear, int perror)
+int docall(lua_State * L, int narg, int nresults, int perror)
 {
 	int status;
 	int base = lua_gettop(L) - narg;	/* function index */
@@ -88,7 +88,7 @@ int docall(lua_State * L, int narg, int clear, int perror)
 	lua_pushcfunction(L, traceback);	/* push traceback function */
 	lua_insert(L, base);		/* put it under chunk and args */
 
-	status = lua_pcall(L, narg, (clear ? 0 : LUA_MULTRET), base);
+	status = lua_pcall(L, narg, nresults, base);
 
 	lua_remove(L, base);		/* remove traceback function */
 	/* force a complete garbage collection in case of errors */
@@ -101,7 +101,9 @@ int docall(lua_State * L, int narg, int clear, int perror)
 		if (!zstr(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
-		lua_pop(L, 1); /* pop error message from the stack */
+		//lua_pop(L, 1); /* pop error message from the stack */
+		// pass error up to top
+		lua_error(L);
 	}
 
 	return status;
@@ -369,6 +371,8 @@ static switch_status_t do_config(void)
 			if (!strcmp(var, "startup-script")) {
 				if (val) {
 					lua_thread(val);
+					/* wait 10ms to avoid lua init issues */
+					switch_yield(10000);
 				}
 			}
 		}
@@ -621,7 +625,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 
 	SWITCH_ADD_API(api_interface, "luarun", "run a script", luarun_api_function, "<script>");
 	SWITCH_ADD_API(api_interface, "lua", "run a script as an api function", lua_api_function, "<script>");
-	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
+	SWITCH_ADD_APP(app_interface, "lua", "Launch LUA ivr", "Run a lua ivr on a channel", lua_function, "<script>", 
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_DIALPLAN(dp_interface, "LUA", lua_dialplan_hunt);
 
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "lua", "execute a lua script", "execute a lua script", lua_chat_function, "<script>", SCAF_NONE);

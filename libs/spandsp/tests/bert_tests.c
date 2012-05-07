@@ -60,7 +60,7 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
     int channel;
 
     channel = (int) (intptr_t) user_data;
-    printf("BERT report '%s' ", bert_event_to_str(reason));
+    printf("%d: BERT report '%s' ", channel, bert_event_to_str(reason));
     switch (reason)
     {
     case BERT_REPORT_REGULAR:

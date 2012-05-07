@@ -1,0 +1,34 @@
+<configuration name="local_stream.conf" description="stream files from local dir">
+  <directory name="moh/8000" path="$${base_dir}/sounds/music/8000">
+    <param name="rate" value="8000"/>
+    <param name="shuffle" value="true"/>
+    <param name="channels" value="1"/>
+    <param name="interval" value="20"/>
+    <param name="timer-name" value="soft"/>
+  </directory>
+
+  <directory name="moh/16000" path="$${base_dir}/sounds/music/16000">
+    <param name="rate" value="16000"/>
+    <param name="shuffle" value="true"/>
+    <param name="channels" value="1"/>
+    <param name="interval" value="20"/>
+    <param name="timer-name" value="soft"/>
+  </directory>
+
+  <directory name="moh/32000" path="$${base_dir}/sounds/music/32000">
+    <param name="rate" value="32000"/>
+    <param name="shuffle" value="true"/>
+    <param name="channels" value="1"/>
+    <param name="interval" value="20"/>
+    <param name="timer-name" value="soft"/>
+  </directory>
+  <!--
+  <directory name="moh/48000" path="$${base_dir}/sounds/music/48000">
+    <param name="rate" value="48000"/>
+    <param name="shuffle" value="true"/>
+    <param name="channels" value="1"/>
+    <param name="interval" value="10"/>
+    <param name="timer-name" value="soft"/>
+  </directory>
+  -->
+</configuration>

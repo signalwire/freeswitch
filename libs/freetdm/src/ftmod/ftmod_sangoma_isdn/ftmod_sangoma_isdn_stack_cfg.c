@@ -750,10 +750,12 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	cfg.t.cfg.s.inDLSAP.redirAdr.eh.pres = NOTPRSNT; /* redirAdr Numbering Plan */
 	cfg.t.cfg.s.inDLSAP.forwSubsc = FALSE;        /* programmed forwarding subscription */
 	cfg.t.cfg.s.inDLSAP.cndSubsc = TRUE;         /* calling adddress delivery service subscription */
-
-	/* TODO: Fill in these timers with proper values - eventually pass them */
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t301.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t301.val = 180;
+	if (signal_data->timer_t301 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t301.val = signal_data->timer_t301;
+	}
 
 	/* It looks like ETSI is the only variant that supports Overlap */
 	if (signal_data->switchtype == SNGISDN_SWITCH_EUROISDN) {
@@ -764,20 +766,53 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 		cfg.t.cfg.s.inDLSAP.tmr.t302.val = 0;
 	}
 
+	if (signal_data->timer_t302 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t302.val = signal_data->timer_t302;
+	}
+
 	cfg.t.cfg.s.inDLSAP.tmr.t303.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t303.val = 4;
+
+	if (signal_data->timer_t303 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t303.val = signal_data->timer_t303;
+	}
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t304.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t304.val = 30;
+
+	if (signal_data->timer_t304 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t304.val = signal_data->timer_t304;
+	}
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t305.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t305.val = 30;
+
+	if (signal_data->timer_t305 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t305.val = signal_data->timer_t305;
+	}
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t306.enb = FALSE;
 	cfg.t.cfg.s.inDLSAP.tmr.t306.val = 35;
+
+	if (signal_data->timer_t306 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t306.val = signal_data->timer_t306;
+	}
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t307.enb = FALSE;
 	cfg.t.cfg.s.inDLSAP.tmr.t307.val = 35;
+
+	if (signal_data->timer_t307 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t307.val = signal_data->timer_t307;
+	}
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t308.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t308.val = 4;
 	cfg.t.cfg.s.inDLSAP.tmr.t310.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t310.val = 120;
+
+	if (signal_data->timer_t308 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t308.val = signal_data->timer_t308;
+	}
 
 	if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
 		cfg.t.cfg.s.inDLSAP.tmr.t312.enb = TRUE;
@@ -786,18 +821,52 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 		cfg.t.cfg.s.inDLSAP.tmr.t312.enb = FALSE;
 	}
 
+	if (signal_data->timer_t310 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t310.val = signal_data->timer_t310;
+	}
+
+	if (signal_data->timer_t312 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t312.val = signal_data->timer_t312;
+	}
+
 	cfg.t.cfg.s.inDLSAP.tmr.t313.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t313.val = 4;
+
+	if (signal_data->timer_t313 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t313.val = signal_data->timer_t313;
+	}
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t316.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t316.val = 120;
+
+	if (signal_data->timer_t316 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t316.val = signal_data->timer_t316;
+	}
+
 	cfg.t.cfg.s.inDLSAP.tmr.t316c.enb = FALSE;
 	cfg.t.cfg.s.inDLSAP.tmr.t316c.val = 35;
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t318.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t318.val = 4;
+
+	if (signal_data->timer_t318 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t318.val = signal_data->timer_t318;
+	}
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t319.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t319.val = 4;
+
+	if (signal_data->timer_t319 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t319.val = signal_data->timer_t319;
+	}
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t322.enb = TRUE;
 	cfg.t.cfg.s.inDLSAP.tmr.t322.val = 4;
+
+	if (signal_data->timer_t322 > 0) {
+		cfg.t.cfg.s.inDLSAP.tmr.t322.val = signal_data->timer_t322;
+	}
+	
 	cfg.t.cfg.s.inDLSAP.tmr.t332.enb = FALSE;
 	cfg.t.cfg.s.inDLSAP.tmr.t332.val = 35;
 
@@ -912,8 +981,18 @@ ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span)
 		cfg.t.cfg.s.inLCe.lnkUpDwnInd = TRUE;
 	}
 
-	cfg.t.cfg.s.inLCe.tCon.enb = TRUE;
-	cfg.t.cfg.s.inLCe.tCon.val = 35;
+	if (FTDM_SPAN_IS_BRI(span)) {
+		/* tCon Timer causes unwanted hangup on BRI links
+			where the Q.921 link goes into disconnected
+			state when idle. */
+
+		cfg.t.cfg.s.inLCe.tCon.enb = FALSE;
+		cfg.t.cfg.s.inLCe.tCon.val = 0;
+	} else {
+		cfg.t.cfg.s.inLCe.tCon.enb = TRUE;
+		cfg.t.cfg.s.inLCe.tCon.val = 35;
+	}
+	
 	cfg.t.cfg.s.inLCe.tDisc.enb = TRUE;
 	cfg.t.cfg.s.inLCe.tDisc.val = 35;
 	cfg.t.cfg.s.inLCe.t314.enb = FALSE; /* if segmentation enabled, set to TRUE */

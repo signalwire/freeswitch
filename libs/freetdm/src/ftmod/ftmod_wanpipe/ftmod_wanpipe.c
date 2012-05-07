@@ -471,6 +471,7 @@ static FIO_CONFIGURE_FUNCTION(wanpipe_configure)
 				wp_globals.ring_off_ms = num;
 			}
 		}
+		
 	}
 
 	return FTDM_SUCCESS;
@@ -1010,7 +1011,7 @@ static FIO_READ_FUNCTION(wanpipe_read)
 
 	memset(&hdrframe, 0, sizeof(hdrframe));
 	rx_len = sangoma_readmsg_tdm(ftdmchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (int)*datalen, 0);
-	*datalen = rx_len;
+	*datalen = 0;
 
 	if (rx_len == 0) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Read 0 bytes\n");
@@ -1027,6 +1028,7 @@ static FIO_READ_FUNCTION(wanpipe_read)
 #endif
 		return FTDM_FAIL;
 	}
+	*datalen = rx_len;
 
 	if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_IO_STATS)) {
 		wanpipe_read_stats(ftdmchan, &hdrframe);
@@ -1468,13 +1470,29 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 
 			if (tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_PRESENT) {
 				ftdm_set_flag(fchan, FTDM_CHANNEL_MUTE);
+				if (fchan->dtmfdetect.duration_ms) {
+					fchan->dtmfdetect.start_time = ftdm_current_time_in_ms();
+				} else if (fchan->dtmfdetect.trigger_on_start) {
+					ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c\n", tmp_dtmf[0]);
+					ftdm_channel_queue_dtmf(fchan, tmp_dtmf);
+				}
 			}
 
 			if (tdm_api->wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
 				ftdm_clear_flag(fchan, FTDM_CHANNEL_MUTE);
 				if (ftdm_test_flag(fchan, FTDM_CHANNEL_INUSE)) {
-					ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c\n", tmp_dtmf[0]);
-					ftdm_channel_queue_dtmf(fchan, tmp_dtmf);
+					if (fchan->dtmfdetect.duration_ms) {
+						ftdm_time_t diff = ftdm_current_time_in_ms() - fchan->dtmfdetect.start_time;
+						if (diff > fchan->dtmfdetect.duration_ms) {
+							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c (duration:%d min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
+							ftdm_channel_queue_dtmf(fchan, tmp_dtmf);
+						} else {
+							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c (duration:%d min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
+						}
+					} else if (!fchan->dtmfdetect.trigger_on_start) {
+						ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c\n", tmp_dtmf[0]);
+						ftdm_channel_queue_dtmf(fchan, tmp_dtmf);
+					}
 				}
 			} 
 		}

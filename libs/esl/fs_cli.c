@@ -614,8 +614,7 @@ static void clear_line(void)
 
 static void redisplay(void)
 {
-#ifdef WIN32
-#else
+#ifndef WIN32
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
 	if (!(write_str(prompt_str))) goto done;
@@ -748,6 +747,8 @@ static const char *cli_usage =
 static int process_command(esl_handle_t *handle, const char *cmd)
 {
 	while (*cmd == ' ') cmd++;
+
+
 	if ((*cmd == '/' && cmd++) || !strncasecmp(cmd, "...", 3)) {
 		if (!strcasecmp(cmd, "help")) {
 			output_printf("%s", cli_usage);
@@ -794,6 +795,13 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 	} else {
 		char cmd_str[1024] = "";
 		const char *err = NULL;
+
+		if (!strncasecmp(cmd, "console loglevel ", 17)) { 
+			snprintf(cmd_str, sizeof(cmd_str), "log %s", cmd + 17);
+			esl_send_recv(handle, cmd_str);
+			printf("%s\n", handle->last_sr_reply);
+		}
+
 		snprintf(cmd_str, sizeof(cmd_str), "api %s\nconsole_execute: true\n\n", cmd);
 		if (esl_send_recv(handle, cmd_str)) {
 			output_printf("Socket interrupted, bye!\n");
@@ -1124,7 +1132,6 @@ int main(int argc, char *argv[])
 	char dft_cfile[512] = "fs_cli.conf";
 #endif
 	char *home = getenv("HOME");
-	char *term = getenv("TERM");
 	/* Vars for optargs */
 	int opt;
 	static struct option options[] = {
@@ -1159,15 +1166,11 @@ int main(int argc, char *argv[])
 	int argv_quiet = 0;
 	int loops = 2, reconnect = 0, timeout = 0;
 
-	if (term && (!strncasecmp("screen", term, 6) ||
-		!strncasecmp("vt100", term, 5))) {
-		feature_level = 1;
-	} else {
-		feature_level = 0;
-	}
 
 #ifdef WIN32
 	feature_level = 0;
+#else
+	feature_level = 1;
 #endif
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
@@ -1357,7 +1360,12 @@ int main(int argc, char *argv[])
 	}
 	global_handle = &handle;
 	global_profile = profile;
-	esl_thread_create_detached(msg_thread_run, &handle);
+
+	if (esl_thread_create_detached(msg_thread_run, &handle) != ESL_SUCCESS) {
+		printf("Error starting thread!\n");
+		esl_disconnect(&handle);
+		return 0;
+	}
 
 #ifdef HAVE_EDITLINE
 	el = el_init(__FILE__, stdin, stdout, stderr);

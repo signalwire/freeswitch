@@ -61,6 +61,8 @@ enum
 */
 typedef struct v22bis_state_s v22bis_state_t;
 
+extern const complexf_t v22bis_constellation[16];
+
 #if defined(__cplusplus)
 extern "C"
 {
@@ -86,11 +88,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx_fillin(v22bis_state_t *s, int len);
     \brief Get a snapshot of the current equalizer coefficients.
     \param coeffs The vector of complex coefficients.
     \return The number of coefficients in the vector. */
-#if defined(SPANDSP_USE_FIXED_POINT)
-SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexi16_t **coeffs);
-#else
 SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexf_t **coeffs);
-#endif
 
 /*! Get the current received carrier frequency.
     \param s The modem context.

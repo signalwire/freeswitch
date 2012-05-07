@@ -50,7 +50,7 @@ struct t4_state_s
                in no header line. */
     const char *header_info;
     /*! \brief Optional per instance time zone for the FAX page header timestamp. */
-    tz_t *tz;
+    struct tz_s *tz;
 
     /*! \brief The size of the compressed image on the line side, in bits. */
     int line_image_size;

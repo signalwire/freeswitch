@@ -143,6 +143,13 @@ static int set_tiff_directory_info(t4_state_t *s)
     t = &s->tiff;
     /* Prepare the directory entry fully before writing the image, or libtiff complains */
     TIFFSetField(t->tiff_file, TIFFTAG_COMPRESSION, t->output_compression);
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+    TIFFSetField(t->tiff_file, TIFFTAG_PROFILETYPE, PROFILETYPE_G3_FAX);
+    TIFFSetField(t->tiff_file, TIFFTAG_FAXPROFILE, FAXPROFILE_S);
+    TIFFSetField(t->tiff_file, TIFFTAG_CODINGMETHODS, CODINGMETHODS_T4_1D | CODINGMETHODS_T4_2D | CODINGMETHODS_T6);
+    TIFFSetField(t->tiff_file, TIFFTAG_VERSIONYEAR, "1998");
+    /* TIFFSetField(t->tiff_file, TIFFTAG_MODENUMBER, 0); */
+#endif
     if (t->output_compression == COMPRESSION_CCITT_T4)
     {
         TIFFSetField(t->tiff_file, TIFFTAG_T4OPTIONS, t->output_t4_options);
@@ -1015,6 +1022,9 @@ SPAN_DECLARE(t4_state_t *) t4_rx_init(t4_state_t *s, const char *file, int outpu
             return NULL;
     }
     memset(s, 0, sizeof(*s));
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+    TIFF_FX_init();
+#endif
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.4");
     s->rx = TRUE;
@@ -1239,18 +1249,18 @@ SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding)
         return "T.4 2-D";
     case T4_COMPRESSION_ITU_T6:
         return "T.6";
-    case T4_COMPRESSION_ITU_T85:
-        return "T.85";
-    case T4_COMPRESSION_ITU_T85_L0:
-        return "T.85(L0)";
+    case T4_COMPRESSION_ITU_T42:
+        return "T.42";
+    case T4_COMPRESSION_ITU_SYCC_T42:
+        return "sYCC T.42";
     case T4_COMPRESSION_ITU_T43:
         return "T.43";
     case T4_COMPRESSION_ITU_T45:
         return "T.45";
-    case T4_COMPRESSION_ITU_T81:
-        return "T.81";
-    case T4_COMPRESSION_ITU_SYCC_T81:
-        return "sYCC T.81";
+    case T4_COMPRESSION_ITU_T85:
+        return "T.85";
+    case T4_COMPRESSION_ITU_T85_L0:
+        return "T.85(L0)";
     }
     return "???";
 }

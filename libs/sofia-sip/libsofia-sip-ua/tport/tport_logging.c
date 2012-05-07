@@ -180,7 +180,7 @@ int tport_open_log(tport_master_t *mr, tagi_t *tags)
                 return n;
         }
 
-        memcpy(port, p, sizeof(p));
+        strncpy(port, p, sizeof(port));
                         
         *p = '\0'; 
         
@@ -359,7 +359,7 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
    assert(self); assert(msg);
 
    su = msg_addr(msg);
-   su_self = self->tp_addr;
+   su_self = self->tp_pri->pri_primary->tp_addr;
 
    mr = self->tp_master;
 
@@ -402,8 +402,8 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
    }
 #endif     
 
-   hep_header.hp_dport = dst ? su->su_port : htons(atoi(self->tp_port));   
-   hep_header.hp_sport = dst ? htons(atoi(self->tp_port)) : su->su_port;
+   hep_header.hp_dport = dst ? su->su_port : su_self->su_port;
+   hep_header.hp_sport = dst ? su_self->su_port : su->su_port;
 
       
    /* Copy hepheader */

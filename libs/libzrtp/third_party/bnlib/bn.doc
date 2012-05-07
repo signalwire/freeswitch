@@ -1,0 +1,541 @@
+* The BigNum multi-precision integer math library
+
+This is a multi-precision math library designed to be very portable,
+reasonably clean and easy to use, have very liberal bounds on the sizes
+of numbers that can be represented, but above all to perform extremely
+fast modular exponentiation.  It has some limitations, such as
+representing positive numbers only, and supporting only odd moduli,
+which simplify it without impairing this ability.
+
+A second speed goal which has had considerable effort applied to it is
+prime number generation.
+
+Finally, while there is probably a long way to go in this direction,
+some effort has gone into commenting the code a lot more than seems to
+be fashionable among mathematicians.
+
+It is written in C, and should compile on any platform with an ANSI C
+compiler and 16 and 32-bit unsigned data types, but various primitives
+can be replaced with assembly versions in a great variety of ways for
+greater speedup.  See "bnintern.doc" for a description.
+
+In case you're wondering, yes C++ would produce a much nicer syntax
+for working with these numbers, but there are a lot of compilers out
+there that actually implement ANSI C, and get it almost right.  I have
+a few kludges to deal with some that get little things wrong, but
+overall it's not too difficult to write code that I can be sure
+will work on lots of machines.  And porting it to a K&R C compiler,
+if it ever becomes necessary, shouldn't be all *that* difficult.
+
+The C++ compiler world is a less friendly place.  First of all, C++
+compilers are still not as common as C compilers, so that hurts
+portability right there, and I don't need the extra power to write my
+code.  C++ compilers all seem to have important bugs, and different
+bugs for each compiler.  First I have to learn all the foibles of a
+whole lot of C++ compilers, and then I have write code that uses only
+the features that work in all of them.  This is a language not a whole
+heck of a lot bigger than C.
+
+(The fact that it drives me *batty* the way that C++ drags *everything*
+into the same name space is also a contributing factor.  I *like*
+writing "struct" (or "class") before structure names.  I *like* putting
+"this->" in front of member references.  It makes it clear to me, when
+reading a single line of code, roughly what is being affected by it and
+where I can find the relevant source code to find out more.  I've seen
+people develop complicated naming conventions to make all this clear,
+but the conventions are still very much in flux.)
+
+Anyway...
+
+The main public interface is contained in the file bn.h.  This is
+mostly a bunch of pointers to functions which start out uninitialized,
+but are set by bnInit() (which is called by bnBegin()).
+
+All of the public routines have names of the bnFunction variety.
+Some internal routines are lbnFunction, but you should never have to
+worry about those unless you're hacking with the code.
+
+The code uses the assert() macro a lot internally.  If you do something
+you're not supposed to, you'll generally notice because an assert()
+will fail.  The library does not have special error codes for division
+by zero or the like - it assert fails instead.  Just don't do that.
+
+A BigNum is represented by a struct BigNum, which really doesn't
+need to be understood, but it often makes me feel better to understand
+what's going on, so here it is:
+
+#> struct BigNum {
+#>	void *ptr;
+#>	unsigned size;	/* Note: in (variable-sized) words */
+#>	unsigned allocated;
+#> };
+
+The pointer points to the least-significant end of an array of words which
+hold the number.  The array contains "allocated" words, but only "size"
+of them are actually meaningful.  The others may have any value.
+This is all of limited use because the size of a word is not specified.
+In fact, it can change at run time - if you run on an 8086 one day and an
+80386 the next, you may find the word size different.
+
+* Initialization
+
+The user of the library is responsible for allocating and freeing each
+struct BigNum.  Usually they're just local variables.  All the library
+functions take pointers to them.  The first thing you need to do is
+initialize all the fields to empty, a zero-valued BigNum.  This is done
+with the function bnBegin:
+#> void bnBegin(struct BigNum *bn);
+
+When you're done with a BigNum, call bnEnd to deallocate the data storage
+in preparation for deallocating the structure:
+#> void bnEnd(struct BigNum *bn);
+
+This resets the number to the 0 state.  You can actually start using the
+number right away again, or call bnEnd again, so if you're really
+memory-conscious you might want to use this to free a large
+number you're done with this way before going on to use the buffer
+for smaller things.
+
+A simple assignment can be done with bnCopy.  
+#> int bnCopy(struct BigNum *dest, struct BigNum const *src);
+
+This sets dest = src, and returns an error code.  Most functions in the
+library do this, and return 0 on success and -1 if they were unable to
+allocate needed memory.  If you're lazy and sure you'll never run out
+of memory, you can avoid checking this, but it's better to be
+paranoid.  If a function returns -1, the what has happened to the
+destination values is undefined.  They're usually unmodified, and
+they're always still valid BigNum numbers, but their values might be
+strange.
+
+In general, anywhere that follows, unless otherwise documented, assume
+that an "int" return value is 0 for success or -1 for error.
+
+A trivial little function which is sometimes handy, and quite cheap to
+execute (it just swaps the pointers) is:
+#> void bnSwap(struct BigNum *a, struct BigNum *b);
+
+* Input and output
+
+For now, the library only works with numbers in binary form - there's
+no way to get decimal numbers into or out of it.  But it's pretty
+flexible on how it does that.
+
+The first function just sets a BigNum to have a small value.  There are
+several such "quick" forms which work with "small" second operads.
+"Small" is defined as less than 65536, the minimum 16-bit word size
+supported by the library.  The limit applies even if unsigned is larger
+or the library is compiled for a larger word size.
+#> int bnSetQ(struct BigNum *dest, unsigned src);
+
+This returns the usual -1 error if it couldn't allocate memory.
+
+There's also a function to determine the size of a BigNum, in bits.
+The size is the number of bits required to represent the number,
+0 if the number is 0, and floor(log2(src)) + 1 otherwise.  E.g. 1 is
+the only 1-bit number, 2 and 3 are 2-bit numbers, etc.
+#> unsigned bnBits(struct BigNum const *src);
+
+If bnBits(src) <= 16, you can get the whole number with this function.
+If it's larger, you get the low k bits, where k is at least 16.
+(This doesn't bother masking if it's easy to return more, but you
+shouldn't rely on it.)  Even that is useful for many things, like
+deciding if a number is even or odd.
+#> unsigned bnLSWord(struct BigNum const *src);
+
+For larger numbers, the format used by the library is an array of
+unsigned 8-bit bytes.  These bytes may be in big-endian or little-endian
+order, and it's possible to examine or change just part of a number.
+The functions are:
+#> void bnExtractBigBytes(struct BigNum const *bn, unsigned char *dest,
+#> 	unsigned lsbyte, unsigned len);
+#> int bnInsertBigBytes(struct BigNum *bn, unsigned char const *src,
+#> 	unsigned lsbyte, unsigned len);
+#> void bnExtractLittleBytes(struct BigNum const *bn, unsigned char *dest,
+#> 	unsigned lsbyte, unsigned len);
+#> int bnInsertLittleBytes(struct BigNum *bn, unsigned char const *src,
+#> 	unsigned lsbyte, unsigned len);
+
+These move bytes between the BigNum and the buffer of 8-bit bytes.  The
+Insert functions can allocate memory, so return an error code.  The
+Extract functions always succeed.
+
+The buffer is encoded in base 256, with either the most significant
+byte (the Big functions) or the least significant byte (the Little
+functions) coming first.  "len" is the length of the buffer, so the
+buffer always encodes a value between 0 and 256^len.  (That's
+"to the power of", not "xor".)
+
+"lsbyte" gives the offset into the BigNum which is being worked with.
+This is usually zero, but you can, for example, read out a large
+BigNum in 32-byte chunks, using a len of 32 and an lsbyte of 0, 32,
+64, 96, etc.
+
+After these complete, the number encoded in the buffer will be
+equal to (bn / 256^lsbyte) % 256^len.  The only difference between
+Insert and Extract is which is changed to match the other.
+
+* Simple math
+
+#> int bnAdd(struct BigNum *dest, struct BigNum const *src);
+#> int bnAddQ(struct BigNum *dest, unsigned src);
+
+These add dest += src.  In the Q form, as mentioned above with bnSetQ,
+src must be < 65536.  In either case, the functions can fail and return
+-1, as usual.
+
+#> int bnSub(struct BigNum *dest, struct BigNum const *src);
+#> int bnSubQ(struct BigNum *dest, unsigned src);
+
+These subtract dest -= src.  If this would make the result negative,
+dest is set to (src-dest) and a value of 1 is returned, so you can
+keep track of a separate sign if you need to.  Otherwise, they return
+0 on success and -1 if they were unable to allocate needed memory.
+
+To make your life simpler if you are error checking, these four functions
+are guaranteed not to allocate memory unnecessarily.  So if you know
+that the addition or subtraction you're doing won't produce a result
+larger than the input, and won't underflow either (like subtracting 1
+from an odd number or adding 1 to an even number), you can skip checking
+the error code.
+
+#> extern int (*bnCmp)(struct BigNum const *a, struct BigNum const *b);
+#> extern int (*bnCmpQ)(struct BigNum const *a, unsigned b);
+
+This returns the sign (-1, 0 or +1) of a-b.  Another way of saying
+this is that a <=> b is the same as bnCmp(a, b) <=> 0, where "<=>"
+stands for one of <, <=, =, !=, >= or >.  The bnCmpQ form is the same,
+but (as in all the Q functions) the second argument is a number < 65536.
+
+#> int bnSquare(struct BigNum *dest, struct BigNum const *src);
+
+This computes dest = src^2, returning an error if it ran out of memory.
+If you care about performance tuning, this slows down when dest and
+src are the same BigNum, since it needs to allocate a temporary buffer
+to do the work in.  It does work, however.
+
+#> int bnMul(struct BigNum *dest, struct BigNum const *a,
+#>	struct BigNum const *b);
+#> int bnMulQ(struct BigNum *dest, struct BigNum const *a, unsigned b);
+
+These compute dest = a * b, and work in the same way as bnSquare.
+(Including the fact that it's faster if dest is not the same as any of
+the inputs.)  bnSquare is faster if a and b are the same.  The second
+input operand to bnMulQ must be < 65536, like all the "Q" functions.
+
+#> int bnDivMod(struct BigNum *q, struct BigNum *r,
+#>	struct BigNum const *n, struct BigNum const *d);
+
+This computes division with remainder, q = n/d and r = n%d.  Don't
+pass in a zero d; it will blow up.  In general, all of the values
+must be different (it will blow up if you try), but r and n may be the
+same.
+
+RE-ENTRANCY NOTE: This temporarily modifies the BigNum "d" internally,
+although it restores it before returning.  If you're doing something
+multi-threaded, you can't share the d value between threads, even though
+it says "const".  That's a safe assumption elsewhere, but this is an
+exception.
+
+That note also means that it's not safe to let n be the same as d,
+although that's such a stupid way to set q to 1 and r to 0 that
+I don't think it's worth worrying about.  (I hope you understand that
+this doesn't mean that n and d can't have the same numerical value,
+just that they can't both point to the same struct BigNum.)
+
+#> int bnMod(struct BigNum *dest, struct BigNum const *src,
+#> 	struct BigNum const *d);
+
+This works just the same as the above, but doesn't bother you with the
+quotient.  (No, there's no function that doesn't bother you with the
+remainder.)  Again, dest and src may be the same (it's actually
+more efficient if they are), but d may not be the same as either.
+
+#> unsigned int bnModQ(struct BigNum const *src, unsigned d);
+
+This also computes src % d, but does so for small (up to 65535,
+the usual limit on "Q" functions) values of d.  It returns the
+remainder.  (No error is possible.)
+
+* Advanced math
+
+#> int bnLShift(struct BigNum *dest, unsigned amt);
+#> void bnRShift(struct BigNum *dest, unsigned amt);
+
+These shift the given bignum left or right by "amt" bit positions.
+Left shifts multiply by 2^amt, and may have to allocate memory
+(and thus fail).  Right shifts divide by 2^amt, throwing away the
+remainder, and can never fail.
+
+#> unsigned bnMakeOdd(struct BigNum *n);
+
+This right shifts the input number as many places as possible without
+throwing anything away, and returns the number of bits shifted.
+If you see "let n = s * 2^t, where s is odd" in an algorithm,
+this is the function to call.  It modifies n in place to produce s
+and returns t.
+
+This returns 0 if you pass it 0.
+
+#> int bnExpMod(struct BigNum *result, struct BigNum const *n,
+#> 	struct BigNum const *exp, struct BigNum const *mod);
+
+Ah, now we get to the heart of the library - probably the most heavily
+optimized function in it.  This computes result = n^exp, modulo "mod".
+result may be the same as n, but not the same as exp or mod.  For large
+exponents and moduli, it can try to allocate quite a bit of working
+storage, although it will manage to finish its work (just slower)
+if some of those allocations fail.  (Not all, though - the first few
+are essential.)
+
+"mod" must be odd.  It will blow up if not.  Also, n must be less than
+mod.  If you're not sure if it is, use bnMod first.  The return value
+is always between 0 and mod-1.
+
+#> int bnTwoExpMod(struct BigNum *result, struct BigNum const *exp,
+#>	struct BigNum const *mod);
+
+This computes result = 2^exp, modulo "mod".  It's faster than the general
+bnExpMod function, although that function checks to see if n = 2 and calls
+this one internally, so you don't need to check yourself if you're not
+sure.  The main reason to mention this is that if you're doing something
+like a pseudoprimality test, using a base of 2 first can save some time.
+
+#> int bnDoubleExpMod(struct BigNum *result,
+#> 	struct BigNum const *n1, struct BigNum const *e1,
+#> 	struct BigNum const *n2, struct BigNum const *e2,
+#> 	struct BigNum const *mod);
+
+This computes dest = n1^e1 * n2^e2, modulo "mod".  It does it quite
+a bit faster than doing two separate bnExpMod operations; in fact,
+it's not that much more expensive than one.  "result" may be the
+same BigNum as n1 or n2, but it may not be the same as the exponents
+or the modulus.  All of the other caveats about bnExpMod apply.
+
+#> int bnGcd(struct BigNum *dest, struct BigNum const *a,
+#>	struct BigNum const *b);
+
+This returns dest = gcd(a,b).  dest may be the same as either input.
+
+/* dest = src^-1, modulo "mod".  dest may be the same as src. */
+#> int bnInv(struct BigNum *dest, struct BigNum const *src,
+#>	struct BigNum const *mod);
+
+This requires that gcd(src, mod) = 1, and returns dest = src^-1, modulo
+"mod".  That is, 0 < dest < mod and dest*src = 1, modulo "mod".
+dest and src may be the same, but mod must be different.
+
+This will probably get extended at some point to find dest such that
+dest * src = gcd(src, mod), modulo "mod", but that isn't implemented
+yet.
+
+* Auxiliary functions
+
+These mostly-internal functions aren't very useful to call directly,
+and might even get removed, but for now they're there in the unusual
+case where you might want them.
+
+#> void bnInit(void);
+
+This does global library initialization.  It is called by the first
+call to bnBegin(), so you shouldn't need to call it explicitly.  It is
+idempotent, so you can call it multiple times if you like.  The only
+thing it does right now is set up the function pointers to the rest of
+the library.  If a program crashes and the debugger tells you that
+it's trying to execute at address 0, bnInit never got called.
+
+#> int bnPrealloc(struct BigNum *bn, unsigned bits);
+
+This preallocates space in bn to make sure that it can hold "bits" bits.
+If the overflow characteristics of various algorithms get documented
+better, this might allow even more error-checking to be avoided, but
+for now it's only to reduce memory fragmentation.
+
+#> void bnNorm(struct BigNum *bn);
+
+This decreases the "size" field of the given bignum until it has no leading
+zero words in its internal representation.  Given that almost everything
+in the library does the equivalent of this on input and output, the utility
+of this function is a bit dubious.  It's kind of a legacy.
+
+* Extra libraries
+
+There are a number of utilities built on top of the basic library.
+They are built on top of the interfaces just described, and can be used
+if you like.
+
+* jacobi.h
+
+#> int bnJacobiQ(unsigned p, struct BigNum const *bn);
+
+This returns the Jacobi symbol J(p,bn), where p is a small number.
+The Jacobi symbol is always -1, 0, or +1.  You'll note that p may
+only be positive, even though the Jacobi symbol is defined for
+negative p.  If you want to worry about negative p, do it yourself.
+J(-p,bn) = (bnLSWord(bn) & 2 ? -1 : +1) * bnJacobiQ(p, bn).
+
+A function to compute the Jacobi symbol for large p would be nice.
+
+* prime.h
+
+#> int primeGen(struct BigNum *bn, unsigned (*rand)(unsigned),
+#> 	int (*f)(void *arg, int c), void *arg, unsigned exponent, ...);
+
+This finds the next prime p >= bn, and sets bn to equal it.
+Well, sort of.
+
+It always leaves bn at least as large as when it started (unless it
+runs out of memory and returns -1), and if you pass a 0 for the rand
+function, it will be the next prime >= bn.
+
+Except:
+- It doesn't bother coping with small primes.  If it's divisible by any
+prime up to 65521, it's considered non-prime.  Even if the quotient is 0.
+If you pass in "1", expecting to get "2" back, you'll get 65537.  Maybe
+it would be nice to fix that.
+- It actually only does a few strong pseudoprimality tests to fixed
+bases to determine if the candidate number is prime.  For random input,
+this is fine; the chance of error is so infinitesimal that it is
+absolutely not worth worrying about.  But if you give it numbers carefully
+chosen to be strong pseudoprimes, it will think they're primes and not
+complain.  For example, 341550071728321 = 10670053 * 32010157 will
+pass the primality test quite handily.  So will
+68528663395046912244223605902738356719751082784386681071.
+- If you supply a rand() function, which returns 0 <= rand(n) < n
+(n never gets very large - currently, at most 256), this shuffles the
+candidates before testing and accepting one.  If you want a "random"
+prime, this produces a more uniformly distributed prime, while
+retaining all of the speed advantages of a sequential search from a
+random starting point, which would otherwise produce a bias towards
+primes which were not closely preceded by other primes.  So, for
+example, the second of a pair of twin primes would be very unlikely to
+be chosen.  rand() doesn't totally flatten the distribution, but it
+comes very close.
+
+The "f" function is called periodically during the progress of the
+search (which can take a while) with the supplied argument (for private
+context) and a character c, which sort of tells you what it's doing.
+c is either '.' or '*' (if it's found something and is confirming that
+it's really prime) or '/' (if it's having a really hard time finding
+something).  Also, if f returns < 0, primeGen immediately returns that
+value.  This can form the basis for a user interface which can show some
+life occasionally and abort the computation if desired.
+
+If you just print these characters to the screen, don't forget to
+fflush() after printing them.
+
+Finally, "exponent, ..." is a zero-terminated list of small numbers
+which must not divide p-1 when the function returns.  If the numbers
+are chosen to be the prime factors of n, then gcd(n, p-1) will be
+1, so the map f(x) -> x^n is invertible modulo p.
+
+#> int primeGenStrong(struct BigNum *bn, struct BigNum const *step,
+#>	int (*f)(void *arg, int c), void *arg);
+
+This is similar, but searches in steps of "step", rather than 1, from the
+given starting value.  The starting value must be odd and the step
+size must be even!  If you start with bn == 1 (mod step), and step
+is 2*q, where q is a large prime, then this generates "strong" primes,
+p-1 having a large prime factor q.  There are other uses, too.
+
+#ifdef __cplusplus
+}
+#endif
+
+* germain.h
+
+#> int germainPrimeGen(struct BigNum *bn, int (*f)(void *arg, int c),
+#>	void *arg);
+
+This increases bn until it is a Sophie Germain prime, that is, a number p
+such that p and (p-1)/2 are both prime.  These numbers are rarer than
+ordinary primes and the search takes correspondingly longer.
+
+It omits the randomization portion of primeGen, and the exponent list,
+since the factors of bn-1 are known already.  The f function for
+progress is the same, but it is also sometimes passed a '+' or '-'
+character when it's found a (p-1)/2 that's prime.  This is just to lend
+some interest to an otherwise very boring row of dots.  Finding large
+primes with this function, even though it's pretty optimized, takes a
+*while*, and otherwise once the screen filled with dots (one every few
+seconds) it would be hard to keep track of the scroll.
+
+It varies a lot, depending on luck of the starting value and the speed
+of your machine, but if your starting number is over 1024 bits, plan on
+over an hour of run time, and if it's over 2048 bits, plan on a day.
+At 4096 bits, start thinking about a week.
+
+Past that, supporting checkpoint/restart is a good idea.  Every time
+the progress function gets a '/' is probably a good interval, and when
+it happens have f return a distinct error value like -2.  When
+germainPrimeGen returns with that value, save the value in bn to a file
+somewhere and call it again with the same bn to continue searching.
+
+* sieve.h
+
+This is the sieving code that the other prime-finding functions call
+to do trial division.  You might use it if you are doing some magic
+prime-finding of your own.  A sieve is an array of bits, stored
+little-endian in an array of bytes (i.e. the lsb of byte 0 is bit 0).
+Sieves are indexed with the "unsigned" data type, so should not, for
+portability, be larger than 65536/8 = 8192 bytes long.
+
+A 1 bit is considered "in" the sieve, it has passed all the sieving.
+A 0 bit has been removed by some step.
+
+The functions are:
+
+#> void sieveSingle(unsigned char *array, unsigned size, unsigned start,
+#>	unsigned step);
+
+This (efficiently) clears the bits at positions start, start+step,
+start+2*step, etc. in the sieve given by array and size.  This is the
+elementary sieve-building step.  Start with a sieve of all 1s, and
+apply this as required.
+
+#> unsigned sieveSearch(unsigned char const *array, unsigned size,
+#>	unsigned start);
+
+This returns the next bit position *greater than* start which is set
+in the indicated sieve, or 0 on failure.  NOTE that this means that
+you have to look at the bit at position 0 (array[0] & 1) by yourself
+if you want to pay attention to it, because there's no way to tell
+sieveSearch to start searching at 0 - it starts at start+1.
+
+#> int sieveBuild(unsigned char *array, unsigned size, struct BigNum const *bn,
+#>	unsigned step, unsigned dbl);
+
+This initializes a sieve where, if bit i is set, then bn+step*i is not
+divisible by any small primes.  (Small is from 2 through 65521, the
+largest prime less that 65536.)  If "dbl" is > 0, then bits are also
+cleared if 2*(bn+step*i)+1 is divisible.  If dbl > 1, then
+4*(bn+step*i)+3 is also checked, and so on.  This feature is used when
+generating Sohpie Germain primes.
+
+Usually, you use a step of 2.
+
+#> int sieveBuildBig(unsigned char *array, unsigned size,
+#>	struct BigNum const *bn, struct BigNum const *step, unsigned dbl);
+
+This is just the same, but accepts a BigNum step size, and is correspondingly
+slower.
+
+* bnprint.h
+
+#> int bnPrint(FILE *f, char const *prefix, struct BigNum const *bn,
+#>	char const *suffix);
+
+This prints a nicely-formatted BigNum in hexadecimal form to the given
+FILE *.  The "prefix" is printed before it, as a prompt, and the
+"suffix" is printed afterwards.  The BigNum itself is printed in
+64-character lines, broken with a trailing backslash if necessary.
+Continuation lines are indented by the length of the prefix.
+
+E.g. a 2^512-1, printed with the call bnPrint(stdout, "a = (", bn, ")\n")
+would result in:
+
+a = (FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\
+     FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+
+Hex digits are printed in upper case to facilitate cutting and pasting into
+the Unix "dc" utility.

@@ -25,6 +25,15 @@
  * NOTE: This is intended as a Layer 1 interface only, signaling
  *       is handled by other modules (e.g. ftmod_libpri or ftmod_isdn).
  */
+/*
+ * TODO:
+ *	- Use a fifo and PH_DATA_CNF for b-channel write polling (drop timerfd)
+ *
+ *	- Disable L1 idle deactivation on BRI PTMP with IMGL1HOLD ioctl(? optional)
+ *
+ *	- Add hfcsusb specific state + flag defines and try to do something useful with
+ *	  it in misdn_handle_mph_information_ind().
+ */
 
 #include <errno.h>
 #include <stdlib.h>
@@ -67,6 +76,15 @@
 #define MIN(x,y)	(((x) < (y)) ? (x) : (y))
 #endif
 
+#ifndef MAX
+#define MAX(x,y)	(((x) > (y)) ? (x) : (y))
+#endif
+
+#ifndef CLAMP
+#define CLAMP(val,min,max)	(MIN(max,MAX(min,val)))
+#endif
+
+
 typedef enum {
 	MISDN_CAPS_NONE = 0,
 
@@ -91,23 +109,33 @@ typedef enum {
 #define MISDN_IS_RAW(x)  (x & MISDN_CAPS_RAW)
 #define MISDN_IS_HDLC(x) (x & MISDN_CAPS_HDLC)
 
+#define MISDN_MSG_DATA(x) ((void *)((unsigned char *)(x) + MISDN_HEADER_LEN))
 
 const static struct {
 	const int	id;
 	const char	*name;
 } misdn_event_types[] = {
-	{ PH_DATA_REQ,       "PH_DATA_REQ"       },
-	{ PH_DATA_IND,       "PH_DATA_IND"       },
-	{ PH_DATA_CNF,       "PH_DATA_CNF"       },
-	{ PH_CONTROL_REQ,    "PH_CONTROL_REQ"    },
-	{ PH_CONTROL_IND,    "PH_CONTROL_IND"    },
-	{ PH_CONTROL_CNF,    "PH_CONTROL_CNF"    },
-	{ PH_ACTIVATE_REQ,   "PH_ACTIVATE_REQ"   },
-	{ PH_ACTIVATE_IND,   "PH_ACTIVATE_IND"   },
-	{ PH_ACTIVATE_CNF,   "PH_ACTIVATE_CNF"   },
-	{ PH_DEACTIVATE_REQ, "PH_DEACTIVATE_REQ" },
-	{ PH_DEACTIVATE_IND, "PH_DEACTIVATE_IND" },
-	{ PH_DEACTIVATE_CNF, "PH_DEACTIVATE_CNF" },
+#define MISDN_EVENT_TYPE(x)	{ x, #x }
+	MISDN_EVENT_TYPE(PH_DATA_REQ),
+	MISDN_EVENT_TYPE(PH_DATA_IND),
+	MISDN_EVENT_TYPE(PH_DATA_CNF),
+	MISDN_EVENT_TYPE(PH_DATA_E_IND),
+	MISDN_EVENT_TYPE(PH_CONTROL_REQ),
+	MISDN_EVENT_TYPE(PH_CONTROL_IND),
+	MISDN_EVENT_TYPE(PH_CONTROL_CNF),
+	MISDN_EVENT_TYPE(PH_ACTIVATE_REQ),
+	MISDN_EVENT_TYPE(PH_ACTIVATE_IND),
+	MISDN_EVENT_TYPE(PH_ACTIVATE_CNF),
+	MISDN_EVENT_TYPE(PH_DEACTIVATE_REQ),
+	MISDN_EVENT_TYPE(PH_DEACTIVATE_IND),
+	MISDN_EVENT_TYPE(PH_DEACTIVATE_CNF),
+	MISDN_EVENT_TYPE(MPH_ACTIVATE_REQ),
+	MISDN_EVENT_TYPE(MPH_ACTIVATE_IND),
+	MISDN_EVENT_TYPE(MPH_DEACTIVATE_REQ),
+	MISDN_EVENT_TYPE(MPH_DEACTIVATE_IND),
+	MISDN_EVENT_TYPE(MPH_INFORMATION_REQ),
+	MISDN_EVENT_TYPE(MPH_INFORMATION_IND),
+#undef MISDN_EVENT_TYPE
 };
 
 static const char *misdn_event2str(const int event)
@@ -128,6 +156,7 @@ const static struct {
 } misdn_control_types[] = {
 #define MISDN_CONTROL_TYPE(x)	{ x, #x }
 	MISDN_CONTROL_TYPE(DTMF_HFC_COEF),
+#undef MISDN_CONTROL_TYPE
 };
 
 #if 0 /* unused for now */
@@ -142,6 +171,63 @@ static const char *misdn_control2str(const int ctrl)
 	return "unknown";
 }
 #endif
+
+
+/***********************************************************************************
+ * mISDN <-> FreeTDM audio conversion
+ ***********************************************************************************/
+
+/*
+ * Code used to generate table values taken from
+ * Linux Call Router (LCR) http://www.linux-call-router.de/
+ *
+ * chan_lcr.c:3488 ff., load_module()
+ */
+static const unsigned char conv_audio_tbl[256] = {
+	0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
+	0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0,
+	0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8,
+	0x18, 0x98, 0x58, 0xd8, 0x38, 0xb8, 0x78, 0xf8,
+	0x04, 0x84, 0x44, 0xc4, 0x24, 0xa4, 0x64, 0xe4,
+	0x14, 0x94, 0x54, 0xd4, 0x34, 0xb4, 0x74, 0xf4,
+	0x0c, 0x8c, 0x4c, 0xcc, 0x2c, 0xac, 0x6c, 0xec,
+	0x1c, 0x9c, 0x5c, 0xdc, 0x3c, 0xbc, 0x7c, 0xfc,
+	0x02, 0x82, 0x42, 0xc2, 0x22, 0xa2, 0x62, 0xe2,
+	0x12, 0x92, 0x52, 0xd2, 0x32, 0xb2, 0x72, 0xf2,
+	0x0a, 0x8a, 0x4a, 0xca, 0x2a, 0xaa, 0x6a, 0xea,
+	0x1a, 0x9a, 0x5a, 0xda, 0x3a, 0xba, 0x7a, 0xfa,
+	0x06, 0x86, 0x46, 0xc6, 0x26, 0xa6, 0x66, 0xe6,
+	0x16, 0x96, 0x56, 0xd6, 0x36, 0xb6, 0x76, 0xf6,
+	0x0e, 0x8e, 0x4e, 0xce, 0x2e, 0xae, 0x6e, 0xee,
+	0x1e, 0x9e, 0x5e, 0xde, 0x3e, 0xbe, 0x7e, 0xfe,
+	0x01, 0x81, 0x41, 0xc1, 0x21, 0xa1, 0x61, 0xe1,
+	0x11, 0x91, 0x51, 0xd1, 0x31, 0xb1, 0x71, 0xf1,
+	0x09, 0x89, 0x49, 0xc9, 0x29, 0xa9, 0x69, 0xe9,
+	0x19, 0x99, 0x59, 0xd9, 0x39, 0xb9, 0x79, 0xf9,
+	0x05, 0x85, 0x45, 0xc5, 0x25, 0xa5, 0x65, 0xe5,
+	0x15, 0x95, 0x55, 0xd5, 0x35, 0xb5, 0x75, 0xf5,
+	0x0d, 0x8d, 0x4d, 0xcd, 0x2d, 0xad, 0x6d, 0xed,
+	0x1d, 0x9d, 0x5d, 0xdd, 0x3d, 0xbd, 0x7d, 0xfd,
+	0x03, 0x83, 0x43, 0xc3, 0x23, 0xa3, 0x63, 0xe3,
+	0x13, 0x93, 0x53, 0xd3, 0x33, 0xb3, 0x73, 0xf3,
+	0x0b, 0x8b, 0x4b, 0xcb, 0x2b, 0xab, 0x6b, 0xeb,
+	0x1b, 0x9b, 0x5b, 0xdb, 0x3b, 0xbb, 0x7b, 0xfb,
+	0x07, 0x87, 0x47, 0xc7, 0x27, 0xa7, 0x67, 0xe7,
+	0x17, 0x97, 0x57, 0xd7, 0x37, 0xb7, 0x77, 0xf7,
+	0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef,
+	0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff,
+};
+
+/* Convert ISDN_P_B_RAW audio data to/from a-/u-law */
+static inline void misdn_convert_audio_bits(char *buf, int buflen)
+{
+	int i;
+
+	for (i = 0; i < buflen; i++) {
+		 buf[i] = conv_audio_tbl[(unsigned char)buf[i]];
+	}
+}
+
 
 /***********************************************************************************
  * mISDN <-> FreeTDM data structures
@@ -171,9 +257,14 @@ struct misdn_chan_private {
 	int state;
 	int debugfd;
 	int timerfd;
+	int active;
 
 	/* hw addr of channel */
 	struct sockaddr_mISDN addr;
+
+	/* audio tx pipe */
+	int audio_pipe_in;
+	int audio_pipe_out;
 
 	/* counters */
 	unsigned long tx_cnt;
@@ -189,6 +280,12 @@ struct misdn_chan_private {
 #define ftdm_span_io_private(x) ((x)->io_data)
 
 static ftdm_status_t misdn_handle_incoming(ftdm_channel_t *ftdmchan, const char *rbuf, const int size);
+static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len);
+
+static const char *ftdm_channel_get_type_str(const ftdm_channel_t *chan)
+{
+	return ftdm_chan_type2str(ftdm_channel_get_type(chan));
+}
 
 /***********************************************************************************
  * mISDN interface functions
@@ -378,11 +475,16 @@ static inline int ts_before(struct timespec *a, struct timespec *b)
 
 static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 {
+	struct misdn_chan_private *priv = ftdm_chan_io_private(chan);
 	char buf[MAX_DATA_MEM] = { 0 };
 	struct mISDNhead *hh = (struct mISDNhead *) buf;
 	struct timespec abstimeout;
 	int req = 0, resp = 0, ms_left = MISDN_PH_ACTIVATE_TIMEOUT_MS;
 	int retval;
+
+	/* NOTE: sending PH_DEACTIVATE_REQ to closed b-channels kills the d-channel (hfcsusb)... */
+	if ((activate && priv->active) || (!activate && !priv->active))
+		return FTDM_SUCCESS;
 
 	ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN sending %s request\n",
 		(activate) ? "activation" : "deactivation");
@@ -407,7 +509,7 @@ static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 		struct pollfd pfd;
 
 		pfd.fd = chan->sockfd;
-		pfd.events  = POLLIN /* | POLLPRI */;
+		pfd.events  = POLLIN | POLLPRI;
 		pfd.revents = 0;
 
 		switch ((retval = poll(&pfd, 1, ms_left))) {
@@ -432,28 +534,37 @@ static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
 				return FTDM_FAIL;
 			}
 //#ifdef MISDN_DEBUG_EVENTS
-			ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN got event '%s' while waiting for %s confirmation\n",
-				misdn_event2str(hh->prim), (activate) ? "activation" : "deactivation");
+			ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN got event '%s (%#x)', id %#x, while waiting for %s confirmation on %c-channel\n",
+				misdn_event2str(hh->prim), hh->prim, hh->id, (activate) ? "activation" : "deactivation",
+				ftdm_channel_get_type(chan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
 //#endif
 			switch (hh->prim) {
-			case PH_ACTIVATE_IND:	/* success (or not): save last response, */
-			case PH_DEACTIVATE_IND:	/* stop looping if it's the one we've been waiting for */
-				resp = hh->prim;
-				if (hh->prim == (activate) ? PH_ACTIVATE_IND : PH_DEACTIVATE_IND) goto out;
-				break;
+			case PH_ACTIVATE_IND:
 			case PH_ACTIVATE_CNF:
-			case PH_DEACTIVATE_CNF:
 				resp = hh->prim;
-				if (hh->prim == (activate) ? PH_ACTIVATE_CNF : PH_DEACTIVATE_CNF) goto out;
+				priv->active = 1;
+				if (activate) goto out;
+				break;
+			case PH_DEACTIVATE_CNF:
+			case PH_DEACTIVATE_IND:
+				resp = hh->prim;
+				priv->active = 0;
+				if (!activate) goto out;
 				break;
 			case PH_ACTIVATE_REQ:	/* REQ echo, ignore */
 			case PH_DEACTIVATE_REQ:
 				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN got '%s' echo while waiting for %s confirmation (id: %#x)\n",
 					misdn_event2str(hh->prim), (activate) ? "activation" : "deactivation", hh->id);
 				break;
+			case MPH_INFORMATION_IND:
+				misdn_handle_mph_information_ind(chan, hh, MISDN_MSG_DATA(buf), retval - MISDN_HEADER_LEN);
+				break;
+			case PH_DATA_IND:	/* ignore */
+			case PH_DATA_CNF:	/* ignore */
+				break;
 			default:		/* other messages, ignore */
-				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s' while waiting for %s confirmation\n",
-					misdn_event2str(hh->prim), (activate) ? "activation" : "deactivation");
+				ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN ignoring event '%s (%#x)', id %#x, while waiting for %s confirmation\n",
+					misdn_event2str(hh->prim), hh->prim, hh->id, (activate) ? "activation" : "deactivation");
 				break;
 			}
 		}
@@ -470,8 +581,8 @@ out:
 			(activate) ? "activation" : "deactivation");
 		return FTDM_TIMEOUT;
 	}
-	if ((req == PH_ACTIVATE_IND   && !(resp == PH_ACTIVATE_CNF   || resp == PH_ACTIVATE_IND)) ||
-	    (req == PH_DEACTIVATE_IND && !(resp == PH_DEACTIVATE_CNF || resp == PH_DEACTIVATE_CNF))) {
+	if ((req == PH_ACTIVATE_REQ   && !(resp == PH_ACTIVATE_CNF   || resp == PH_ACTIVATE_IND)) ||
+	    (req == PH_DEACTIVATE_REQ && !(resp == PH_DEACTIVATE_CNF || resp == PH_DEACTIVATE_IND))) {
 		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN received '%s' while waiting for %s\n",
 			misdn_event2str(resp), (activate) ? "activation" : "deactivation");
 		return FTDM_FAIL;
@@ -602,53 +713,188 @@ static int misdn_handle_ph_control_ind(ftdm_channel_t *chan, const struct mISDNh
 	return FTDM_SUCCESS;
 }
 
+/*
+ * TE/NT state names
+ * taken from linux-3.2.1/drivers/isdn/hardware/mISDN/hfcsusb.h
+ */
+static const char *misdn_layer1_te_states[] = {
+        "TE F0 - Reset",
+        "TE F1 - Reset",
+        "TE F2 - Sensing",
+        "TE F3 - Deactivated",
+        "TE F4 - Awaiting signal",
+        "TE F5 - Identifying input",
+        "TE F6 - Synchronized",
+        "TE F7 - Activated",
+        "TE F8 - Lost framing",
+};
+
+static const char *misdn_layer1_nt_states[] = {
+        "NT G0 - Reset",
+        "NT G1 - Deactive",
+        "NT G2 - Pending activation",
+        "NT G3 - Active",
+        "NT G4 - Pending deactivation",
+};
+
+static const char *misdn_hw_state_name(const int proto, const int id)
+{
+	if (IS_ISDN_P_TE(proto)) {
+		if (id < 0 || id >= ftdm_array_len(misdn_layer1_te_states))
+			return NULL;
+		return misdn_layer1_te_states[id];
+	}
+	else if (IS_ISDN_P_NT(proto)) {
+		if (id < 0 || id >= ftdm_array_len(misdn_layer1_nt_states))
+			return NULL;
+		return misdn_layer1_nt_states[id];
+	}
+	return NULL;
+}
+
+
+static const struct misdn_hw_flag {
+	const unsigned int flag;
+	const char *name;
+} misdn_hw_flags[] = {
+#define MISDN_HW_FLAG(v,n)	{ v, #n }
+	MISDN_HW_FLAG(0, FLG_TX_BUSY),
+	MISDN_HW_FLAG(1, FLG_TX_NEXT),
+	MISDN_HW_FLAG(2, FLG_L1_BUSY),
+	MISDN_HW_FLAG(3, FLG_L2_ACTIVATED),
+	MISDN_HW_FLAG(5, FLG_OPEN),
+	MISDN_HW_FLAG(6, FLG_ACTIVE),
+	MISDN_HW_FLAG(7, FLG_BUSY_TIMER),
+	MISDN_HW_FLAG(8, FLG_DCHANNEL),
+	MISDN_HW_FLAG(9, FLG_BCHANNEL),
+	MISDN_HW_FLAG(10, FLG_ECHANNEL),
+	MISDN_HW_FLAG(12, FLG_TRANSPARENT),
+	MISDN_HW_FLAG(13, FLG_HDLC),
+	MISDN_HW_FLAG(14, FLG_L2DATA),
+	MISDN_HW_FLAG(15, FLG_ORIGIN),
+	MISDN_HW_FLAG(16, FLG_FILLEMPTY),
+	MISDN_HW_FLAG(17, FLG_ARCOFI_TIMER),
+	MISDN_HW_FLAG(18, FLG_ARCOFI_ERROR),
+	MISDN_HW_FLAG(17, FLG_INITIALIZED),
+	MISDN_HW_FLAG(18, FLG_DLEETX),
+	MISDN_HW_FLAG(19, FLG_LASTDLE),
+	MISDN_HW_FLAG(20, FLG_FIRST),
+	MISDN_HW_FLAG(21, FLG_LASTDATA),
+	MISDN_HW_FLAG(22, FLG_NMD_DATA),
+	MISDN_HW_FLAG(23, FLG_FTI_RUN),
+	MISDN_HW_FLAG(24, FLG_LL_OK),
+	MISDN_HW_FLAG(25, FLG_LL_CONN),
+	MISDN_HW_FLAG(26, FLG_DTMFSEND),
+	MISDN_HW_FLAG(30, FLG_RECVQUEUE),
+	MISDN_HW_FLAG(31, FLG_PHCHANGE),
+#undef MISDN_HW_FLAG
+};
+
+static const char *misdn_hw_print_flags(unsigned int flags, char *buf, int buflen)
+{
+	int i;
+
+	buf[0] = '\0';
+	for (i = 0; i < ftdm_array_len(misdn_hw_flags); i++) {
+		if ((1 << misdn_hw_flags[i].flag) & flags) {
+			strncat(buf, misdn_hw_flags[i].name, buflen);
+			flags &= ~(1 << misdn_hw_flags[i].flag);
+			if (!flags) break;
+			strncat(buf, ",", buflen);
+		}
+	}
+	return buf;
+}
+
 static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len)
 {
 	struct misdn_chan_private *priv = ftdm_chan_io_private(chan);
-	int alarm_flags, value;
 
-	if (data_len < sizeof(value)) {
-		ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "mISDN MPH_INFORMATION_IND message is too short\n");
+	/*
+	 * mISDN has some inconsistency issues here.
+	 *
+	 * There are only two drivers that emit MPH_INFORMATION_IND messages,
+	 * hfcsusb and hfcmulti. The former sends a set of ph_info and ph_info_ch structures,
+	 * while the latter just sends an int containing the current L1_SIGNAL_* event id.
+	 *
+	 * The flags and state information in the ph_info and ph_info_ch structures
+	 * are defined in kernel internal hw-specific headers (mISDNhw.h).
+	 *
+	 * Use the payload size to guess the type of message.
+	 */
+	if (data_len >= sizeof(struct ph_info)) {
+		/* complete port status, hfcsusb sends this */
+		struct ph_info *info = (struct ph_info *)data;
+		struct ph_info_ch *bch_info = NULL;
+		char tmp[1024] = { 0 };
+
+		if (data_len < (sizeof(*info) + info->dch.num_bch * sizeof(*bch_info))) {
+			ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "mISDN MPH_INFORMATION_IND message is too short\n");
+			return FTDM_FAIL;
+		}
+		bch_info = &info->bch[0];
+
+		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN port state:\n\tD-Chan proto:\t%hu\n\tD-Chan state:\t%s (%hu)\n\tD-Chan flags:\t%#lx\n\t\t\t%-70s\n",
+			info->dch.ch.protocol,
+			misdn_hw_state_name(info->dch.ch.protocol, info->dch.state), info->dch.state,
+			info->dch.ch.Flags,
+			misdn_hw_print_flags(info->dch.ch.Flags, tmp, sizeof(tmp) - 1));
+
+		/* TODO: try to translate this to a usable set of alarm flags */
+
+	} else if (data_len == sizeof(int)) {
+		/* alarm info, sent by hfcmulti */
+		int value = *(int *)data;
+		int alarm_flags = chan->alarm_flags;
+
+		if (data_len < sizeof(value)) {
+			ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "mISDN MPH_INFORMATION_IND message is too short\n");
+			return FTDM_FAIL;
+		}
+
+		switch (value) {
+		case L1_SIGNAL_LOS_ON:
+			alarm_flags |= FTDM_ALARM_RED;
+			break;
+		case L1_SIGNAL_LOS_OFF:
+			alarm_flags &= ~FTDM_ALARM_RED;
+			break;
+		case L1_SIGNAL_AIS_ON:
+			alarm_flags |= FTDM_ALARM_AIS;
+			break;
+		case L1_SIGNAL_AIS_OFF:
+			alarm_flags &= ~FTDM_ALARM_AIS;
+			break;
+		case L1_SIGNAL_RDI_ON:
+			alarm_flags |= FTDM_ALARM_YELLOW;
+			break;
+		case L1_SIGNAL_RDI_OFF:
+			alarm_flags &= ~FTDM_ALARM_YELLOW;
+			break;
+		case L1_SIGNAL_SLIP_RX:
+			priv->slip_rx_cnt++;
+			break;
+		case L1_SIGNAL_SLIP_TX:
+			priv->slip_tx_cnt++;
+			break;
+		default:
+			ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN unknown MPH_INFORMATION_IND signal: %#04x\n",
+				value);
+			return FTDM_FAIL;
+		}
+
+		/* check whether alarm status has changed, update channel flags if it has */
+		if ((value = (alarm_flags ^ chan->alarm_flags))) {
+			ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN alarm flags have changed %#x -> %#x\n",
+				chan->alarm_flags, alarm_flags);
+			chan->alarm_flags ^= value;
+		}
+	} else {
+		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN sent MPH_INFORMATION_IND message with unknown size %d\n",
+			data_len);
 		return FTDM_FAIL;
 	}
-	value = *(int *)data;
-	alarm_flags = chan->alarm_flags;
 
-	switch (value) {
-	case L1_SIGNAL_LOS_ON:
-		alarm_flags |= FTDM_ALARM_RED;
-		break;
-	case L1_SIGNAL_LOS_OFF:
-		alarm_flags &= ~FTDM_ALARM_RED;
-		break;
-	case L1_SIGNAL_AIS_ON:
-		alarm_flags |= FTDM_ALARM_AIS;
-		break;
-	case L1_SIGNAL_AIS_OFF:
-		alarm_flags &= ~FTDM_ALARM_AIS;
-		break;
-	case L1_SIGNAL_RDI_ON:
-		alarm_flags |= FTDM_ALARM_YELLOW;
-		break;
-	case L1_SIGNAL_RDI_OFF:
-		alarm_flags &= ~FTDM_ALARM_YELLOW;
-		break;
-	case L1_SIGNAL_SLIP_RX:
-		priv->slip_rx_cnt++;
-		break;
-	case L1_SIGNAL_SLIP_TX:
-		priv->slip_tx_cnt++;
-		break;
-	default:
-		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN unknown MPH_INFORMATION_IND message: %d\n",
-			value);
-		return FTDM_FAIL;
-	}
-	if ((value = (alarm_flags ^ chan->alarm_flags))) {
-		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN alarm flags have changed %#x -> %#x\n",
-			chan->alarm_flags, alarm_flags);
-		chan->alarm_flags ^= value;
-	}
 	return FTDM_SUCCESS;
 }
 
@@ -696,6 +942,7 @@ static FIO_OPEN_FUNCTION(misdn_open)
 
 	switch (ftdmchan->type) {
 	case FTDM_CHAN_TYPE_B: {
+#if 0
 			struct itimerspec its = {
 				.it_interval = { 0, 0 },
 				.it_value    = { 0, 0 },
@@ -722,13 +969,14 @@ static FIO_OPEN_FUNCTION(misdn_open)
 
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN created tx interval (%d ms) timer\n",
 				ftdmchan->effective_interval);
+#endif
 		}
 	case FTDM_CHAN_TYPE_DQ921:
 		chan_priv->state = MISDN_CHAN_STATE_OPEN;
 		break;
 	default:
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN invalid channel type '%s'\n",
-			ftdm_channel_get_type(ftdmchan));
+			ftdm_channel_get_type_str(ftdmchan));
 		break;
 	}
 	return FTDM_SUCCESS;
@@ -745,8 +993,12 @@ static FIO_CLOSE_FUNCTION(misdn_close)
 
 	assert(chan_priv);
 
+	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "mISDN trying to close %c-channel\n",
+		ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
+
 	/* deactivate b-channels on close */
 	if (ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B) {
+#if 0
 		/*
 		 * Stop tx timerfd
 		 */
@@ -754,17 +1006,19 @@ static FIO_CLOSE_FUNCTION(misdn_close)
 			close(chan_priv->timerfd);
 			chan_priv->timerfd = -1;
 		}
-
+#endif
 		/*
 		 * Send deactivation request (don't wait for answer)
 		 */
 		ret = misdn_activate_channel(ftdmchan, 0);
 		if (ret != FTDM_SUCCESS) {
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to deactivate channel\n");
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to deactivate %c-channel\n",
+				ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
 			return FTDM_FAIL;
 		}
 
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "mISDN channel deactivated\n");
+		ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "mISDN %c-channel deactivated\n",
+			ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
 		chan_priv->state = MISDN_CHAN_STATE_CLOSED;
 	}
 
@@ -823,8 +1077,8 @@ static FIO_COMMAND_FUNCTION(misdn_command)
 
 	case FTDM_COMMAND_GET_INTERVAL:
 		FTDM_COMMAND_OBJ_INT = ftdm_channel_get_io_interval(ftdmchan);
-		ftdm_log(FTDM_LOG_NOTICE, "Interval %d ms [%d:%d]\n",
-			ftdm_channel_get_io_interval(ftdmchan), ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan));
+		ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "Interval %d ms\n",
+			ftdm_channel_get_io_interval(ftdmchan));
 		break;
 
 	default:
@@ -852,8 +1106,8 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 	switch (ftdm_channel_get_type(ftdmchan)) {
 	case FTDM_CHAN_TYPE_B:
 		if (*flags & FTDM_WRITE) {
-			pfds[nr_fds].fd = chan_priv->timerfd;
-			pfds[nr_fds].events = POLLIN;
+			pfds[nr_fds].fd = chan_priv->audio_pipe_in;
+			pfds[nr_fds].events = POLLOUT;
 			nr_fds++;
 		}
 		if (*flags & (FTDM_READ | FTDM_EVENTS)) {
@@ -877,8 +1131,11 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 
 	*flags = FTDM_NO_FLAGS;
 
-	if (!(pfds[0].events || pfds[1].events))
+	if (!(pfds[0].events || pfds[1].events)) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_NOTICE, "mISDN poll(): no flags set!\n");
 		return FTDM_SUCCESS;
+	}
+
 	if ((retval = poll(pfds, nr_fds, to)) < 0) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN poll() failed: %s\n",
 			strerror(errno));
@@ -889,18 +1146,13 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 
 	switch (ftdm_channel_get_type(ftdmchan)) {
 	case FTDM_CHAN_TYPE_B:
-		if (pfds[0].fd == chan_priv->timerfd) {
-			if (pfds[0].revents & POLLIN) {
-				uint64_t tmp = 0;	/* clear pending events on timerfd */
-				retval = read(pfds[0].fd, &tmp, sizeof(tmp));
-				*flags |= FTDM_WRITE;
-			}
-			if (pfds[1].revents & POLLIN)
-				*flags |= FTDM_READ;
-			if (pfds[1].revents & POLLPRI)
-				*flags |= FTDM_EVENTS;
-			break;
-		}
+		if (pfds[0].revents & POLLOUT)
+			*flags |= FTDM_WRITE;
+		if ((pfds[0].revents & POLLIN)  || (pfds[1].revents & POLLIN))
+			*flags |= FTDM_READ;
+		if ((pfds[0].revents & POLLPRI) || (pfds[1].revents & POLLPRI))
+			*flags |= FTDM_EVENTS;
+		break;
 	default:
 		if (pfds[0].revents & POLLIN)
 			*flags |= FTDM_READ;
@@ -908,6 +1160,81 @@ static FIO_WAIT_FUNCTION(misdn_wait)
 			*flags |= FTDM_WRITE;
 		if (pfds[0].revents & POLLPRI)
 			*flags |= FTDM_EVENTS;
+		break;
+	}
+	return FTDM_SUCCESS;
+}
+
+
+/**
+ * Handle incoming mISDN message on d-channel
+ * @param[in]	ftdmchan
+ * @param[in]	msg_buf
+ * @param[in]	msg_len
+ * @internal
+ */
+static ftdm_status_t misdn_handle_incoming(ftdm_channel_t *ftdmchan, const char *msg_buf, const int msg_len)
+{
+	struct misdn_chan_private *priv = ftdm_chan_io_private(ftdmchan);
+	struct mISDNhead *hh = (struct mISDNhead *)msg_buf;
+	const char *data = msg_buf + sizeof(*hh);
+	int data_len = msg_len - sizeof(*hh);
+
+	assert(msg_buf);
+	assert(priv);
+
+	if (msg_len < sizeof(*hh)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN message to small (%d < %d bytes)\n",
+			msg_len, sizeof(*hh));
+		return FTDM_FAIL;
+	}
+
+#ifdef MISDN_DEBUG_EVENTS
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN %c-channel received '%s' message (id: 0x%x, additional data: %d bytes)\n",
+		ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D', misdn_event2str(hh->prim), hh->id, data_len);
+#endif
+
+	switch (hh->prim) {
+	/* data events */
+	case PH_DATA_CNF:	/* TX: ack */
+		priv->tx_ack_cnt++;
+		break;
+	case PH_DATA_REQ:	/* TX: request echo (ignore) */
+		break;
+	case PH_DATA_E_IND:	/* RX: e-channel data received (monitoring?) */
+		break;
+
+	/* control requests */
+	case PH_CONTROL_IND:
+		return misdn_handle_ph_control_ind(ftdmchan, hh, data, data_len);
+	case PH_CONTROL_REQ:
+	case PH_CONTROL_CNF:
+		break;
+
+	/* information */
+	case MPH_INFORMATION_IND:
+		return misdn_handle_mph_information_ind(ftdmchan, hh, data, data_len);
+
+	/* channel de-/activation */
+	case PH_ACTIVATE_REQ:	/* Echoed requests, ignore */
+	case PH_DEACTIVATE_REQ:
+		break;
+	case PH_ACTIVATE_IND:
+	case PH_DEACTIVATE_IND: {
+		/* other events, enqueue and let misdn_event_next handle it */
+		struct misdn_span_private *span_priv = ftdm_span_io_private(ftdmchan->span);
+		struct misdn_event evt = { 0 };
+		evt.id = hh->prim;
+
+		misdn_event_queue_push(priv->events, &evt);
+
+		/* wake possible readers */
+		pthread_cond_signal(&span_priv->event_cond);
+		break;
+	}
+	default:	/* error? */
+		ftdm_log(FTDM_LOG_DEBUG, "mISDN channel %d:%d received unknown event %d\n",
+			ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan), hh->prim);
 		break;
 	}
 	return FTDM_SUCCESS;
@@ -926,22 +1253,29 @@ static FIO_READ_FUNCTION(misdn_read)
 	struct mISDNhead *hh = (struct mISDNhead *)rbuf;
 	int bytes = *datalen;
 	int retval;
+	int maxretry = 10;
 
 	if (priv->state == MISDN_CHAN_STATE_CLOSED) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "mISDN ignoring read on closed channel\n");
 		/* ignore */
 		*datalen = 0;
 		return FTDM_SUCCESS;
 	}
+
+	/* nothing read yet */
+	*datalen = 0;
 
 	/*
 	 * try to read all messages, as long as we haven't received a PH_DATA_IND one
 	 * we'll get a lot of "mISDN_send: error -12" message in dmesg otherwise
 	 * (= b-channel receive queue overflowing)
 	 */
-	while (1) {
-		if ((retval = recvfrom(ftdmchan->sockfd, rbuf, sizeof(rbuf), 0, NULL, NULL)) < 0) {
-			if (errno == EWOULDBLOCK) break;
-			if (errno == EAGAIN) continue;
+	while (maxretry--) {
+		struct sockaddr_mISDN addr;
+		socklen_t addrlen = sizeof(addr);
+
+		if ((retval = recvfrom(ftdmchan->sockfd, rbuf, sizeof(rbuf), 0, (struct sockaddr *)&addr, &addrlen)) < 0) {
+			if (errno == EWOULDBLOCK || errno == EAGAIN) break;
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN failed to receive incoming message: %s\n",
 				strerror(errno));
 			return FTDM_FAIL;
@@ -953,22 +1287,94 @@ static FIO_READ_FUNCTION(misdn_read)
 		}
 
 		if (hh->prim == PH_DATA_IND) {
-			*datalen = MIN(bytes, retval - MISDN_HEADER_LEN);
-			memcpy(data, rbuf + MISDN_HEADER_LEN, *datalen);
+			*datalen = CLAMP(retval - MISDN_HEADER_LEN, 0, bytes);
 #ifdef MISDN_DEBUG_IO
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "misdn_read() received '%s', id: %#x, with %d bytes from channel socket %d [dev.ch: %d.%d]\n",
+				misdn_event2str(hh->prim), hh->id, retval - MISDN_HEADER_LEN, ftdmchan->sockfd, addr.dev, addr.channel);
+
 			if (*datalen > 0) {
 				char hbuf[MAX_DATA_MEM] = { 0 };
 				print_hex_bytes(data, *datalen, hbuf, sizeof(hbuf));
-				ftdm_log(FTDM_LOG_DEBUG, "mISDN read data: %s\n", hbuf);
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN read data: %s\n", hbuf);
 			}
 #endif
+			if (*datalen <= 0)
+				continue;
+
+			/*
+			 * Copy data into ouput buffer (excluding the mISDN message header)
+			 * NOTE: audio data needs to be converted to a-law / u-law!
+			 */
+			memcpy(data, rbuf + MISDN_HEADER_LEN, *datalen);
+
+			switch (ftdm_channel_get_type(ftdmchan)) {
+			case FTDM_CHAN_TYPE_B:
+				hh->prim = PH_DATA_REQ;
+				hh->id   = MISDN_ID_ANY;
+				bytes    = *datalen;
+
+				/* Convert incoming audio data to *-law */
+				misdn_convert_audio_bits(data, *datalen);
+
+				/*
+				 * Fetch required amount of audio from tx pipe, using the amount
+				 * of received bytes as an indicator for how much free space the
+				 * b-channel tx buffer has available.
+				 *
+				 * (see misdn_write() for the part that fills the tx pipe)
+				 *
+				 * NOTE: can't use blocking I/O here since both parts are serviced
+				 *       from the same thread
+				 */
+				if ((retval = read(priv->audio_pipe_out, rbuf + MISDN_HEADER_LEN, bytes)) < 0) {
+					if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
+						ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN failed to read %d bytes of audio data: %s\n",
+							bytes, strerror(errno));
+						break;
+					}
+					/* Tx pipe is empty, completely fill buffer up to "bytes" with silence value */
+					retval = 0;
+				}
+
+				/*
+				 * Use a-law / u-law silence to fill missing bytes,
+				 * in case there was not enough audio data available in the
+				 * tx pipe to satisfy the request.
+				 */
+				if (retval < bytes) {
+					memset(&rbuf[MISDN_HEADER_LEN + retval],
+						(ftdm_channel_get_codec(ftdmchan) == FTDM_CODEC_ALAW) ? 0x2a : 0xff,
+						bytes - retval);
+				}
+
+				/* Convert outgoing audio data to wire format */
+				misdn_convert_audio_bits(rbuf + MISDN_HEADER_LEN, bytes);
+				bytes += MISDN_HEADER_LEN;
+
+				/* Send converted audio to b-channel */
+				if ((retval = sendto(ftdmchan->sockfd, rbuf, bytes, 0, (struct sockaddr *)&priv->addr, sizeof(priv->addr))) < bytes) {
+					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN failed to send %d bytes of audio data: (%d) %s\n",
+						bytes, retval, strerror(errno));
+				}
+				break;
+			default:
+				break;
+			}
 			return FTDM_SUCCESS;
 		} else {
 			*datalen = 0;
+#ifdef MISDN_DEBUG_IO
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "misdn_read() received '%s', id: %#x, with %d bytes from channel socket %d [dev.ch: %d.%d]\n",
+				misdn_event2str(hh->prim), hh->id, retval - MISDN_HEADER_LEN, ftdmchan->sockfd, addr.dev, addr.channel);
+#endif
 			/* event */
 			misdn_handle_incoming(ftdmchan, rbuf, retval);
 		}
 	}
+#ifdef MISDN_DEBUG_IO
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN nothing received on %c-channel\n",
+		ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
+#endif
 	return FTDM_SUCCESS;
 }
 
@@ -985,6 +1391,7 @@ static FIO_WRITE_FUNCTION(misdn_write)
 	struct mISDNhead *hh = (struct mISDNhead *)wbuf;
 	int size = *datalen;
 	int retval = 0;
+	ftdm_wait_flag_t wflags;
 
 	assert(priv);
 
@@ -999,30 +1406,56 @@ static FIO_WRITE_FUNCTION(misdn_write)
 		ftdm_log(FTDM_LOG_DEBUG, "mISDN write data: %s\n", hbuf);
 	}
 #endif
-	hh->prim = PH_DATA_REQ;
-	hh->id   = MISDN_ID_ANY;
+	*datalen = 0;
 
-	/* avoid buffer overflow */
-	size = MIN(size, MAX_DATA_MEM);
+	switch (ftdm_channel_get_type(ftdmchan)) {
+	case FTDM_CHAN_TYPE_B:
+		/*
+		 * Write to audio pipe, misdn_read() will pull
+		 * from there as needed and send it to the b-channel
+		 *
+		 * NOTE: can't use blocking I/O here since both parts are serviced
+		 *       from the same thread
+		 */
+		if ((retval = write(priv->audio_pipe_in, data, size)) < size) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN channel audio pipe write error: %s\n",
+				strerror(errno));
+			return FTDM_FAIL;
+		}
+		*datalen = retval;
+		break;
+	default:
+		hh->prim = PH_DATA_REQ;
+		hh->id   = MISDN_ID_ANY;
 
-	memcpy(wbuf + MISDN_HEADER_LEN, data, size);
-	size += MISDN_HEADER_LEN;
+		/* Avoid buffer overflow */
+		size = MIN(size, MAX_DATA_MEM - MISDN_HEADER_LEN);
+
+		memcpy(wbuf + MISDN_HEADER_LEN, data, size);
+		size += MISDN_HEADER_LEN;
+
+		/* wait for channel to get ready */
+		wflags = FTDM_WRITE;
+		retval = misdn_wait(ftdmchan, &wflags, 20);
+		if (retval) {
+			/* timeout, io error */
+			*datalen = 0;
+			return FTDM_FAIL;
+		}
 
 #ifdef MISDN_DEBUG_IO
-	ftdm_log(FTDM_LOG_DEBUG, "mISDN writing %d bytes to channel %d:%d socket %d\n",
-		size, ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan), ftdmchan->sockfd);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN writing %d bytes to channel socket %d [dev.ch: %d.%d]\n",
+			size, ftdmchan->sockfd, priv->addr.dev, priv->addr.channel);
 #endif
-	if ((retval = sendto(ftdmchan->sockfd, wbuf, size, 0, NULL, 0)) != size) {
-		ftdm_log(FTDM_LOG_ERROR, "mISDN channel %d:%d socket write error: %s\n",
-			ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan),
-			strerror(errno));
-		return FTDM_FAIL;
-	}
-	*datalen = retval;
 
-//	if (priv->debugfd >= 0) {
-//		write(priv->debugfd, wbuf + MISDN_HEADER_LEN, size  - MISDN_HEADER_LEN);
-//	}
+		if ((retval = sendto(ftdmchan->sockfd, wbuf, size, 0, NULL, 0)) < size) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN channel socket write error: %s\n",
+				strerror(errno));
+			return FTDM_FAIL;
+		}
+		*datalen = retval;
+		break;
+	}
 
 	priv->tx_cnt++;
 	return FTDM_SUCCESS;
@@ -1149,12 +1582,30 @@ static ftdm_status_t misdn_open_range(ftdm_span_t *span, ftdm_chan_type_t type, 
 		ftdmchan->physical_chan_id = x;
 
 		if (ftdmchan->type == FTDM_CHAN_TYPE_B) {
+			int pipefd[2] = { -1, -1 };
+
 			ftdmchan->packet_len         = 10 /* ms */ * (ftdmchan->rate / 1000);
 			ftdmchan->effective_interval = ftdmchan->native_interval = ftdmchan->packet_len / 8;
 			ftdmchan->native_codec       = ftdmchan->effective_codec = FTDM_CODEC_ALAW;
 
 			ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_INTERVAL);
+
+			/*
+			 * Create audio tx pipe, use non-blocking I/O to avoid deadlock since both ends
+			 * are used from the same thread
+			 */
+			if (pipe2(pipefd, O_NONBLOCK) < 0) {
+				ftdm_log(FTDM_LOG_ERROR, "Failed to create mISDN audio write pipe [%d:%d]: %s\n",
+					addr.dev, x, strerror(errno));
+				close(sockfd);
+				return FTDM_FAIL;
+			}
+			priv->audio_pipe_in  = pipefd[1];
+			priv->audio_pipe_out = pipefd[0];
+
 		} else {
+			/* early activate D-Channel */
+			misdn_activate_channel(ftdmchan, 1);
 			ftdmchan->native_codec = ftdmchan->effective_codec = FTDM_CODEC_NONE;
 		}
 		num_configured++;
@@ -1585,71 +2036,6 @@ static FIO_SPAN_DESTROY_FUNCTION(misdn_span_destroy)
 
 	ftdm_log(FTDM_LOG_DEBUG, "mISDN span %d (%s) destroyed\n",
 		ftdm_span_get_id(span), ftdm_span_get_name(span));
-	return FTDM_SUCCESS;
-}
-
-
-static ftdm_status_t misdn_handle_incoming(ftdm_channel_t *ftdmchan, const char *rbuf, const int size)
-{
-	struct mISDNhead *hh = (struct mISDNhead *)rbuf;
-	struct misdn_chan_private *priv = ftdm_chan_io_private(ftdmchan);
-	const char *data = rbuf + sizeof(*hh);
-	int data_len = size - sizeof(*hh);
-
-	assert(priv);
-
-#ifdef MISDN_DEBUG_EVENTS
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN channel received '%s' message (additional data: %d bytes)\n",
-		misdn_event2str(hh->prim), data_len);
-#endif
-
-	switch (hh->prim) {
-	/* data events */
-	case PH_DATA_CNF:	/* TX ack */
-		priv->tx_ack_cnt++;
-		break;
-	case PH_DATA_REQ:	/* request echo? */
-		break;
-	case PH_DATA_E_IND:	/* TX/RX ERR(?) */
-		break;
-
-	/* control events */
-	case PH_ACTIVATE_REQ:
-	case PH_DEACTIVATE_REQ:
-		/*
-		 * Echoed(?) L2->L1 requests, ignore...
-		 * (something broken in mISDN or the way we setup the channel?)
-		 */
-		break;
-	case PH_CONTROL_IND:
-		return misdn_handle_ph_control_ind(ftdmchan, hh, data, data_len);
-	case PH_CONTROL_REQ:
-	case PH_CONTROL_CNF:
-		break;
-
-	case MPH_INFORMATION_IND:
-		return misdn_handle_mph_information_ind(ftdmchan, hh, data, data_len);
-
-	case PH_ACTIVATE_IND:
-	case PH_DEACTIVATE_IND:
-		{
-			/* other events, enqueue and let misdn_event_next handle it */
-			struct misdn_span_private *span_priv = ftdm_span_io_private(ftdmchan->span);
-			struct misdn_event evt = { 0 };
-			evt.id = hh->prim;
-
-			misdn_event_queue_push(priv->events, &evt);
-
-			/* wake possible readers */
-			pthread_cond_signal(&span_priv->event_cond);
-		}
-		break;
-
-	default:	/* error? */
-		ftdm_log(FTDM_LOG_DEBUG, "mISDN channel %d:%d received unknown event %d\n",
-			ftdm_channel_get_span_id(ftdmchan), ftdm_channel_get_id(ftdmchan), hh->prim);
-		break;
-	}
 	return FTDM_SUCCESS;
 }
 

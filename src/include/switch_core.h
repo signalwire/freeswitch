@@ -217,6 +217,8 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_clear_flag(_In_ switch_media_bug_
 */
 SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame);
 
+SWITCH_DECLARE(uint32_t) switch_core_cpu_count(void);
+
 /*!
   \brief Remove a media bug from the session
   \param session the session to remove the bug from
@@ -269,6 +271,8 @@ SWITCH_DECLARE(void) switch_core_media_bug_flush(_In_ switch_media_bug_t *bug);
   \param session the session to flush the read/write buffers for all media bugs on the session
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_flush_all(_In_ switch_core_session_t *session);
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_set_pre_buffer_framecount(switch_media_bug_t *bug, uint32_t framecount);
 
 ///\}
 
@@ -995,7 +999,9 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(_In_ switch_core_session_t *
   \brief Launch a service thread on a session to drop inbound data
   \param session the session the launch thread on
 */
-SWITCH_DECLARE(void) switch_core_service_session(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_service_session_av(_In_ switch_core_session_t *session, switch_bool_t audio, switch_bool_t video);
+#define switch_core_service_session(_s) switch_core_service_session_av(_s, SWITCH_TRUE, SWITCH_FALSE)
+
 
 /*! 
   \brief Request an outgoing session spawned from an existing session using a desired endpoing module
@@ -1466,6 +1472,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
   \return SWITCH_STATUS_SUCCESS if successful
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(_In_ switch_core_session_t *session, switch_codec_t *codec);
+
+/*! 
+  \brief Assign the original read codec to a given session.  This is the read codec used by an endpoint.
+  \param session session to add the codec to
+  \param codec the codec to add
+  \return SWITCH_STATUS_SUCCESS if successful
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(_In_ switch_core_session_t *session, switch_codec_t *codec);
 
 SWITCH_DECLARE(void) switch_core_session_unset_read_codec(_In_ switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_unset_write_codec(_In_ switch_core_session_t *session);
@@ -2115,6 +2129,7 @@ SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration);
 SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string);
 SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string);
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
+SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
 SWITCH_DECLARE(void) switch_cond_yield(switch_interval_time_t t);
 SWITCH_DECLARE(void) switch_cond_next(void);
 SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_proto, const char *proto, const char *from, const char *to,
@@ -2302,7 +2317,8 @@ SWITCH_DECLARE(char *) switch_say_file_handle_detach_path(switch_say_file_handle
 SWITCH_DECLARE(void) switch_say_file_handle_destroy(switch_say_file_handle_t **sh);
 SWITCH_DECLARE(switch_status_t) switch_say_file_handle_create(switch_say_file_handle_t **sh, const char *ext, switch_event_t **var_event);
 SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *fmt, ...);
-
+SWITCH_DECLARE(int) switch_max_file_desc(void);
+SWITCH_DECLARE(void) switch_close_extra_files(int *keep, int keep_ttl);
 
 SWITCH_END_EXTERN_C
 #endif

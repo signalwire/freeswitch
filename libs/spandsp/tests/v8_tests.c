@@ -90,7 +90,6 @@ static void handler(void *user_data, v8_parms_t *result)
     case V8_STATUS_IN_PROGRESS:
         printf("V.8 negotiation in progress\n");
         return;
-        break;
     case V8_STATUS_V8_OFFERED:
         printf("V.8 offered by the other party\n");
         break;

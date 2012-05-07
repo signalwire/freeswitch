@@ -1,0 +1,26 @@
+    <extension name="fax_receive">
+      <condition field="destination_number" expression="^9178$">
+        <action application="answer" />
+        <action application="playback" data="silence_stream://2000"/>
+        <action application="rxfax" data="/tmp/rxfax.tif"/>
+        <action application="hangup"/>
+      </condition>
+    </extension>
+
+    <extension name="fax_transmit">
+      <condition field="destination_number" expression="^9179$">
+        <action application="txfax" data="/tmp/txfax.tif"/>
+        <action application="hangup"/>
+      </condition>
+    </extension>
+
+    <extension name="fax_receive">
+      <condition field="destination_number" expression="^9978$">
+        <action application="answer" />
+        <action application="playback" data="silence_stream://2000"/>
+        <action application="set" data="fax_enable_t38_request=true"/>
+        <action application="set" data="fax_enable_t38=true"/>
+        <action application="rxfax" data="/tmp/FAX-${uuid}.tif"/>
+        <action application="hangup"/>
+      </condition>
+    </extension>

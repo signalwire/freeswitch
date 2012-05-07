@@ -1,0 +1,19 @@
+	<!-- 
+		Parking extensions... transferring calls to 5900 will park them in a queue.
+	-->
+	<extension name="park">
+		<condition field="destination_number" expression="^5900$">
+			<action application="set" data="fifo_music=$${hold_music}"/>
+			<action application="fifo" data="5900@${domain_name} in"/>
+		</condition>
+	</extension>
+
+	<!-- 
+		Parking pickup extension.  Calling 5901 will pickup the call.
+	-->
+	<extension name="unpark">
+		<condition field="destination_number" expression="^5901$">
+			<action application="answer"/>
+			<action application="fifo" data="5900@${domain_name} out nowait"/>
+		</condition>
+	</extension>

@@ -12,26 +12,26 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\x86\Debug\</OutputPath>
     <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\debug\sounds;</DefineConstants>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\debug\sounds;</DefineConstants>
     <WixVariables>
     </WixVariables>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\x86\release\</OutputPath>
     <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\release\sounds;</DefineConstants>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\release\sounds;</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\x64\Debug\</OutputPath>
     <IntermediateOutputPath>obj\X64\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\debug\sounds;</DefineConstants>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\debug\sounds;</DefineConstants>
     <WixVariables>
     </WixVariables>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\x64\Release\</OutputPath>
     <IntermediateOutputPath>obj\X64\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\release\sounds;</DefineConstants>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\release\sounds;</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Fragments\FreeSWITCHConfFiles.wxs" />
@@ -156,6 +156,15 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLLOCATION</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_abstraction\mod_abstraction.2010.vcxproj">
+      <Name>mod_abstraction</Name>
+      <Project>{60c542ee-6882-4ea2-8c21-5ab6db1ba73f}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_avmd\mod_avmd.2010.vcxproj">
       <Name>mod_avmd</Name>
       <Project>{990baa76-89d3-4e38-8479-c7b28784efc8}</Project>
@@ -258,6 +267,15 @@
     <ProjectReference Include="..\..\src\mod\applications\mod_hash\mod_hash.2010.vcxproj">
       <Name>mod_hash</Name>
       <Project>{2e250296-0c08-4342-9c8a-bcbdd0e7df65}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_httapi\mod_httapi.2010.vcxproj">
+      <Name>mod_httapi</Name>
+      <Project>{4748ff56-ca85-4809-97d6-a94c0fac1d77}</Project>
       <Private>True</Private>
       <DoNotHarvest>
       </DoNotHarvest>
@@ -798,7 +816,7 @@
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
   <PropertyGroup>
-    <PreBuildEvent>"$(WIX)bin\heat.exe" dir "$(ProjectDir)..\..\conf" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
+    <PreBuildEvent>"$(WIX)bin\heat.exe" dir "$(ProjectDir)..\..\conf\vanilla" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
 "$(WIX)bin\heat.exe" dir "$(ProjectDir)..\..\Win32\Release\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"</PreBuildEvent>
   </PropertyGroup>
   <!--

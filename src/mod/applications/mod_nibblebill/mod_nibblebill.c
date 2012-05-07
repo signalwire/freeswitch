@@ -52,19 +52,20 @@
 
 typedef struct {
 	switch_time_t lastts;		/* Last time we did any billing */
-	float total;				/* Total amount billed so far */
+	double total;				/* Total amount billed so far */
 
 	switch_time_t pausets;		/* Timestamp of when a pause action started. 0 if not paused */
-	float bill_adjustments;		/* Adjustments to make to the next billing, based on pause/resume events */
+	double bill_adjustments;	/* Adjustments to make to the next billing, based on pause/resume events */
 
+	int lowbal_action_executed;	/* Set to 1 once lowbal_action has been executed */
 } nibble_data_t;
 
 
 typedef struct nibblebill_results {
-	float balance;
+	double balance;
 
-	float percall_max;			/* Overrides global on a per-user level */
-	float lowbal_amt;			/*  ditto */
+	double percall_max;			/* Overrides global on a per-user level */
+	double lowbal_amt;			/*  ditto */
 } nibblebill_results_t;
 
 
@@ -80,11 +81,11 @@ static struct {
 	switch_mutex_t *mutex;
 
 	/* Global billing config options */
-	float percall_max_amt;		/* Per-call billing limit (safety check, for fraud) */
+	double percall_max_amt;		/* Per-call billing limit (safety check, for fraud) */
 	char *percall_action;		/* Exceeded length of per-call action */
-	float lowbal_amt;			/* When we warn them they are near depletion */
+	double lowbal_amt;			/* When we warn them they are near depletion */
 	char *lowbal_action;		/* Low balance action */
-	float nobal_amt;			/* Minimum amount that must remain in the account */
+	double nobal_amt;			/* Minimum amount that must remain in the account */
 	char *nobal_action;			/* Drop action */
 
 	/* Other options */
@@ -136,7 +137,7 @@ static int nibblebill_callback(void *pArg, int argc, char **argv, char **columnN
 
 	for (i = 0; i < argc; i++) {
 		if (!strcasecmp(columnNames[i], "nibble_balance")) {
-			cbt->balance = (float) atof(argv[0]);
+			cbt->balance = atof(argv[0]);
 		}
 	}
 	
@@ -179,15 +180,15 @@ static switch_status_t load_config(void)
 			} else if (!strcasecmp(var, "percall_action")) {
 				set_global_percall_action(val);
 			} else if (!strcasecmp(var, "percall_max_amt")) {
-				globals.percall_max_amt = (float) atof(val);
+				globals.percall_max_amt = atof(val);
 			} else if (!strcasecmp(var, "lowbal_action")) {
 				set_global_lowbal_action(val);
 			} else if (!strcasecmp(var, "lowbal_amt")) {
-				globals.lowbal_amt = (float) atof(val);
+				globals.lowbal_amt = atof(val);
 			} else if (!strcasecmp(var, "nobal_action")) {
 				set_global_nobal_action(val);
 			} else if (!strcasecmp(var, "nobal_amt")) {
-				globals.nobal_amt = (float) atof(val);
+				globals.nobal_amt = atof(val);
 			} else if (!strcasecmp(var, "global_heartbeat")) {
 				globals.global_heartbeat = atoi(val);
 			}
@@ -252,6 +253,23 @@ void debug_event_handler(switch_event_t *event)
 	}
 }
 
+static switch_status_t exec_app(switch_core_session_t *session, const char *app_string)
+{
+	switch_status_t status;
+	char *strings[2] = { 0 };
+	char *dup;
+
+	if (!app_string) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	dup = strdup(app_string);
+	switch_assert(dup);
+	switch_separate_string(dup, ' ', strings, sizeof(strings) / sizeof(strings[0]));
+	status = switch_core_session_execute_application(session, strings[0], strings[1]);
+	free(dup);
+	return status;
+}
 
 static void transfer_call(switch_core_session_t *session, char *destination)
 {
@@ -292,9 +310,8 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 	free(mydup);
 }
 
-
 /* At this time, billing never succeeds if you don't have a database. */
-static switch_status_t bill_event(float billamount, const char *billaccount, switch_channel_t *channel)
+static switch_status_t bill_event(double billamount, const char *billaccount, switch_channel_t *channel)
 {
 	char *sql = NULL, *dsql = NULL;
 	switch_odbc_statement_handle_t stmt = NULL;
@@ -306,7 +323,7 @@ static switch_status_t bill_event(float billamount, const char *billaccount, swi
 
 	if (globals.custom_sql_save) {
 		if (switch_string_var_check_const(globals.custom_sql_save) || switch_string_has_escaped_data(globals.custom_sql_save)) {
-			switch_channel_set_variable_printf(channel, "nibble_increment", "%f", billamount, SWITCH_FALSE);
+			switch_channel_set_variable_printf(channel, "nibble_bill", "%f", billamount, SWITCH_FALSE);
 			sql = switch_channel_expand_variables(channel, globals.custom_sql_save);
 			if (sql != globals.custom_sql_save) dsql = sql;
 		} else {
@@ -339,14 +356,14 @@ static switch_status_t bill_event(float billamount, const char *billaccount, swi
 }
 
 
-static float get_balance(const char *billaccount, switch_channel_t *channel)
+static double get_balance(const char *billaccount, switch_channel_t *channel)
 {
 	char *dsql = NULL, *sql = NULL;
 	nibblebill_results_t pdata;
-	float balance = 0.00f;
+	double balance = 0.0;
 
 	if (!switch_odbc_available()) {
-		return -1.00f;
+		return -1.0;
 	}
 
 	memset(&pdata, 0, sizeof(pdata));
@@ -369,7 +386,7 @@ static float get_balance(const char *billaccount, switch_channel_t *channel)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error running this query: [%s]\n", sql);
 		/* Return -1 for safety */
 
-		balance = -1.00f;
+		balance = -1.0;
 	} else {
 		/* Successfully retrieved! */
 		balance = pdata.balance;
@@ -391,16 +408,17 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	/* Local vars */
 	nibble_data_t *nibble_data;
 	switch_time_t ts = switch_micro_time_now();
-	float billamount;
+	double billamount;
 	char date[80] = "";
 	char *uuid;
 	switch_size_t retsize;
 	switch_time_exp_t tm;
 	const char *billrate;
+	const char *billincrement;
 	const char *billaccount;
-	float nobal_amt = globals.nobal_amt;
-	//float lowbal_amt = globals.lowbal_amt;
-	float balance;
+	double nobal_amt = globals.nobal_amt;
+	double lowbal_amt = globals.lowbal_amt;
+	double balance;
 
 	if (!session) {
 		/* Why are we here? */
@@ -416,16 +434,17 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 	/* Variables kept in FS but relevant only to this module */
 	billrate = switch_channel_get_variable(channel, "nibble_rate");
+	billincrement = switch_channel_get_variable(channel, "nibble_increment");
 	billaccount = switch_channel_get_variable(channel, "nibble_account");
 	
 	if (!zstr(switch_channel_get_variable(channel, "nobal_amt"))) {
-		nobal_amt = (float)atof(switch_channel_get_variable(channel, "nobal_amt"));
+		nobal_amt = atof(switch_channel_get_variable(channel, "nobal_amt"));
 	}
-	/*
+	
 	if (!zstr(switch_channel_get_variable(channel, "lowbal_amt"))) {
-		lowbal_amt = (float)atof(switch_channel_get_variable(channel, "lowbal_amt"));
+		lowbal_amt = atof(switch_channel_get_variable(channel, "lowbal_amt"));
 	}
-	*/
+	
 	/* Return if there's no billing information on this session */
 	if (!billrate || !billaccount) {
 		return SWITCH_STATUS_SUCCESS;
@@ -493,8 +512,18 @@ static switch_status_t do_billing(switch_core_session_t *session)
 					  (int) ((ts - nibble_data->lastts) / 1000000), date);
 
 	if ((ts - nibble_data->lastts) >= 0) {
-		/* Convert billrate into microseconds and multiply by # of microseconds that have passed since last *successful* bill */
-		billamount = ((float) atof(billrate) / 1000000 / 60) * ((ts - nibble_data->lastts)) - nibble_data->bill_adjustments;
+		/* If billincrement is set we bill by it and not by time elapsed */
+		if (!(switch_strlen_zero(billincrement))) {
+			switch_time_t chargedunits = (ts - nibble_data->lastts) / 1000000 <= atol(billincrement) ? atol(billincrement) * 1000000 : (switch_time_t)(ceil((ts - nibble_data->lastts) / (atol(billincrement) * 1000000.0))) * atol(billincrement) * 1000000;
+			billamount = (atof(billrate) / 1000000 / 60) * chargedunits - nibble_data->bill_adjustments;
+			/* Account for the prepaid amount */
+			nibble_data->lastts += chargedunits;
+		} else {		
+			/* Convert billrate into microseconds and multiply by # of microseconds that have passed since last *successful* bill */
+			billamount = (atof(billrate) / 1000000 / 60) * ((ts - nibble_data->lastts)) - nibble_data->bill_adjustments;
+			/* Update the last time we billed */
+			nibble_data->lastts = ts;
+		}
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Billing $%f to %s (Call: %s / %f so far)\n", billamount, billaccount,
 						  uuid, nibble_data->total);
@@ -513,12 +542,9 @@ static switch_status_t do_billing(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Failed to log to database!\n");
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Just tried to bill %s negative minutes! That should be impossible.\n",
-						  uuid);
+		if (switch_strlen_zero(billincrement))
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Just tried to bill %s negative minutes! That should be impossible.\n", uuid);
 	}
-
-	/* Update the last time we billed */
-	nibble_data->lastts = ts;
 
 	/* Save this location */
 	if (channel) {
@@ -526,8 +552,21 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 		/* don't verify balance and transfer to nobal if we're done with call */
 		if (switch_channel_get_state(channel) != CS_REPORTING && switch_channel_get_state(channel) != CS_HANGUP) {
-			/* See if this person has enough money left to continue the call */
+			
 			balance = get_balance(billaccount, channel);
+			
+			/* See if we've achieved low balance */
+			if (!nibble_data->lowbal_action_executed && balance <= lowbal_amt) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Balance of %f fell below low balance amount of %f! (Account %s)\n",
+								  balance, lowbal_amt, billaccount);
+
+				if (exec_app(session, globals.lowbal_action) != SWITCH_STATUS_SUCCESS)
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Low balance action didn't execute\n");
+				else
+					nibble_data->lowbal_action_executed = 1;
+			}
+
+			/* See if this person has enough money left to continue the call */
 			if (balance <= nobal_amt) {
 				/* Not enough money - reroute call to nobal location */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Balance of %f fell below allowed amount of %f! (Account %s)\n",
@@ -657,7 +696,7 @@ static void nibblebill_resume(switch_core_session_t *session)
 	billrate = switch_channel_get_variable(channel, "nibble_rate");
 
 	/* Calculate how much was "lost" to billings during pause - we do this here because you never know when the billrate may change during a call */
-	nibble_data->bill_adjustments += ((float) atof(billrate) / 1000000 / 60) * ((ts - nibble_data->pausets));
+	nibble_data->bill_adjustments += (atof(billrate) / 1000000 / 60) * ((ts - nibble_data->pausets));
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Resumed billing! Subtracted %f from this billing cycle.\n",
 					  (atof(billrate) / 1000000 / 60) * ((ts - nibble_data->pausets)));
 
@@ -703,11 +742,11 @@ static void nibblebill_reset(switch_core_session_t *session)
 	}
 }
 
-static float nibblebill_check(switch_core_session_t *session)
+static double nibblebill_check(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	nibble_data_t *nibble_data;
-	float amount = 0;
+	double amount = 0;
 
 	if (!channel) {
 		return -99999;
@@ -736,7 +775,7 @@ static float nibblebill_check(switch_core_session_t *session)
 	return amount;
 }
 
-static void nibblebill_adjust(switch_core_session_t *session, float amount)
+static void nibblebill_adjust(switch_core_session_t *session, double amount)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *billaccount;
@@ -772,7 +811,7 @@ SWITCH_STANDARD_APP(nibblebill_app_function)
 	if (!zstr(data) && (lbuf = strdup(data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (!strcasecmp(argv[0], "adjust") && argc == 2) {
-			nibblebill_adjust(session, (float) atof(argv[1]));
+			nibblebill_adjust(session, atof(argv[1]));
 		} else if (!strcasecmp(argv[0], "flush")) {
 			do_billing(session);
 		} else if (!strcasecmp(argv[0], "pause")) {
@@ -804,7 +843,7 @@ SWITCH_STANDARD_API(nibblebill_api_function)
 			char *uuid = argv[0];
 			if ((psession = switch_core_session_locate(uuid))) {
 				if (!strcasecmp(argv[1], "adjust") && argc == 3) {
-					nibblebill_adjust(psession, (float) atof(argv[2]));
+					nibblebill_adjust(psession, atof(argv[2]));
 				} else if (!strcasecmp(argv[1], "flush")) {
 					do_billing(psession);
 				} else if (!strcasecmp(argv[1], "pause")) {

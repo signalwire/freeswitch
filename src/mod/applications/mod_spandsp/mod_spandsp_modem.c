@@ -346,15 +346,15 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 	}
 
 	if (spandsp_globals.modem_verbose) {
-		span_log_set_message_handler(&modem->t31_state->logging, spanfax_log_message);
-		span_log_set_message_handler(&modem->t31_state->audio.modems.v17_rx.logging, spanfax_log_message);
-		span_log_set_message_handler(&modem->t31_state->audio.modems.v29_rx.logging, spanfax_log_message);
-		span_log_set_message_handler(&modem->t31_state->audio.modems.v27ter_rx.logging, spanfax_log_message);
+		span_log_set_message_handler(&modem->t31_state->logging, spanfax_log_message, NULL);
+		span_log_set_message_handler(&modem->t31_state->audio.modems.fast_modems.v17_rx.logging, spanfax_log_message, NULL);
+		span_log_set_message_handler(&modem->t31_state->audio.modems.fast_modems.v29_rx.logging, spanfax_log_message, NULL);
+		span_log_set_message_handler(&modem->t31_state->audio.modems.fast_modems.v27ter_rx.logging, spanfax_log_message, NULL);
 
 		modem->t31_state->logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
-		modem->t31_state->audio.modems.v17_rx.logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
-		modem->t31_state->audio.modems.v29_rx.logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
-		modem->t31_state->audio.modems.v27ter_rx.logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
+		modem->t31_state->audio.modems.fast_modems.v17_rx.logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
+		modem->t31_state->audio.modems.fast_modems.v29_rx.logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
+		modem->t31_state->audio.modems.fast_modems.v27ter_rx.logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
 	}
 
 	modem->control_handler = control_handler;

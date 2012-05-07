@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<include>
+	<!-- This example will test the limit value for the DID number being checked -->
+	<!-- If over limit, send 503 -->
+	<extension name="easyroute">
+		<condition field="destination_number" expression="^1?(\d{10})$" break="on-true">
+			<action application="easyroute" data="$1"/>
+			<action application="limit" data="db easyroute ${easy_group} ${easy_limit} LE-$1"/>
+			<action application="bridge" data="${easy_dialstring}"/>
+		</condition>
+	</extension>
+
+	<extension name="easyroute_limit_exceeded">
+		<condition field="destination_number" expression="^LE-(\d{10})$" break="on-true">
+			<action application="respond" data="503 Buzz Off You Ran Out of Channels"/>
+		</condition>
+	</extension>
+
+	<!-- Simple example - just grab the dialstring and send the call -->
+	<extension name="easyroute">
+		<condition field="destination_number" expression="^1?(\d{10})$" break="on-true">
+			<action application="set" data="dialstring={easyroute($1 dialstring)"/>
+			<action application="bridge" data="${easy_dialstring}"/>
+		</condition>
+	</extension>
+
+<include>

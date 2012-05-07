@@ -69,6 +69,7 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	set_calling_subaddr(ftdmchan, &conEvnt.cgPtySad);
 	set_redir_num(ftdmchan, &conEvnt.redirNmb);
 	set_calling_name(ftdmchan, &conEvnt);
+	set_network_specific_fac(ftdmchan, &conEvnt.netFac[0]);
 
 	/* set_facility_ie will overwrite Calling Name for NI-2 if user specifies custom Facility IE */
 	set_facility_ie(ftdmchan, &conEvnt.facilityStr);
@@ -304,6 +305,7 @@ void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan)
 	return;
 }
 
+/* This is used to request Q.921 to initiate link establishment */
 void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan)
 {
 	CnStEvnt cnStEvnt;
@@ -480,6 +482,12 @@ void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
 {
 	sng_l1_frame_t l1_frame;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) dchan->span->signal_data;
+
+	if (len > sizeof(l1_frame.data)) {
+		ftdm_log_chan(dchan, FTDM_LOG_ERROR, "Received frame of %"FTDM_SIZE_FMT" bytes, exceeding max size of %"FTDM_SIZE_FMT" bytes\n", 
+				len, sizeof(l1_frame.data));
+		return;
+	}
 
 	memset(&l1_frame, 0, sizeof(l1_frame));
 	l1_frame.len = len;
