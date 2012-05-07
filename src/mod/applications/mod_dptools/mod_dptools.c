@@ -2122,6 +2122,12 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static void att_xfer_set_result(switch_channel_t *channel, switch_status_t status)
+{
+	switch_channel_set_variable(channel, SWITCH_ATT_XFER_RESULT_VARIABLE, status == SWITCH_STATUS_SUCCESS ? "success" : "failure");
+}
+
 SWITCH_STANDARD_APP(att_xfer_function)
 {
 	switch_core_session_t *peer_session = NULL;
@@ -2167,7 +2173,8 @@ SWITCH_STANDARD_APP(att_xfer_function)
 
 		if (!switch_channel_down(peer_channel)) {
 			if (!switch_channel_ready(channel)) {
-				switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
+				switch_status_t status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
+				att_xfer_set_result(peer_channel, status);
 				br++;
 			} else if ((b_session = switch_core_session_locate(bond))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
@@ -2185,7 +2192,8 @@ SWITCH_STANDARD_APP(att_xfer_function)
 		}
 
 		if (!br) {
-			switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), bond);
+			switch_status_t status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), bond);
+			att_xfer_set_result(channel, status);
 		}
 
 	}

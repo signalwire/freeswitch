@@ -129,6 +129,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE "enable_heartbeat_events"
 #define SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE "bypass_media_after_bridge"
 #define SWITCH_READ_RESULT_VARIABLE "read_result"
+#define SWITCH_ATT_XFER_RESULT_VARIABLE "att_xfer_result"
 #define SWITCH_COPY_XML_CDR_VARIABLE "copy_xml_cdr"
 #define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"
 #define SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE "proto_specific_hangup_cause"
