@@ -2859,7 +2859,7 @@ static void parse_gsm_spans(switch_xml_t cfg, switch_xml_t spans)
 		unsigned paramindex = 0;
 
 		if (!name && !id) {
-			CONFIG_ERROR("sangoma isdn span missing required attribute 'id' or 'name', skipping ...\n");
+			CONFIG_ERROR("GSM span missing required attribute 'id' or 'name', skipping ...\n");
 			continue;
 		}
 
