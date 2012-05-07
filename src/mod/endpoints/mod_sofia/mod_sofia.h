@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
- * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Ken Rice <krice@freeswitch.org>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
@@ -78,6 +78,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_REGISTER "sofia::register"
 #define MY_EVENT_PRE_REGISTER "sofia::pre_register"
 #define MY_EVENT_REGISTER_ATTEMPT "sofia::register_attempt"
+#define MY_EVENT_REGISTER_FAILURE "sofia::register_failure"
 #define MY_EVENT_UNREGISTER "sofia::unregister"
 #define MY_EVENT_EXPIRE "sofia::expire"
 #define MY_EVENT_GATEWAY_STATE "sofia::gateway_state"
@@ -330,12 +331,13 @@ typedef enum {
 	TFLAG_LIBERAL_DTMF,
 	TFLAG_GOT_ACK,
 	TFLAG_CAPTURE,
+	TFLAG_REINVITED,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
 
-#define SOFIA_MAX_MSG_QUEUE 101
-#define SOFIA_MSG_QUEUE_SIZE 5000
+#define SOFIA_MAX_MSG_QUEUE 64
+#define SOFIA_MSG_QUEUE_SIZE 250
 
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
@@ -345,6 +347,8 @@ struct mod_sofia_globals {
 	uint32_t callid;
 	int32_t running;
 	int32_t threads;
+	int cpu_count;
+	int max_msg_queues;
 	switch_mutex_t *mutex;
 	char guess_ip[80];
 	char hostname[512];
@@ -510,10 +514,23 @@ typedef enum {
 } sofia_presence_type_t;
 
 typedef enum {
+	PRES_HELD_EARLY = 0,
+	PRES_HELD_CONFIRMED = 1,
+	PRES_HELD_TERMINATED = 2
+} sofia_presence_held_calls_type_t;
+
+typedef enum {
 	MEDIA_OPT_NONE = 0,
 	MEDIA_OPT_MEDIA_ON_HOLD = (1 << 0),
 	MEDIA_OPT_BYPASS_AFTER_ATT_XFER = (1 << 1)
 } sofia_media_options_t;
+
+typedef enum {
+       PAID_DEFAULT = 0,
+       PAID_USER,
+       PAID_USER_DOMAIN,
+       PAID_VERBATIM
+} sofia_paid_type_t;
 
 #define MAX_RTPIP 50
 
@@ -616,6 +633,7 @@ struct sofia_profile {
 	int server_rport_level;
 	int client_rport_level;
 	sofia_presence_type_t pres_type;
+	sofia_presence_held_calls_type_t pres_held_type;
 	sofia_media_options_t media_options;
 	uint32_t force_subscription_expires;
 	uint32_t force_publish_expires;
@@ -652,6 +670,8 @@ struct sofia_profile {
 	uint32_t sip_force_expires;
 	uint32_t sip_expires_max_deviation;
 	int ireg_seconds;
+	sofia_paid_type_t paid_type;
+	uint32_t rtp_digit_delay;
 };
 
 struct private_object {

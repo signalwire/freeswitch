@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -629,6 +629,7 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "email_date-fmt", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->date_fmt, "%A, %B %d %Y, %I:%M %p", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "odbc-dsn", SWITCH_CONFIG_STRING, 0, &profile->odbc_dsn, NULL, &profile->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "dbname", SWITCH_CONFIG_STRING, 0, &profile->dbname, NULL, &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM_CALLBACK(profile->config[i++], "email_template-file", SWITCH_CONFIG_CUSTOM, CONFIG_RELOADABLE,
 									NULL, NULL, profile, vm_config_email_callback, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM_CALLBACK(profile->config[i++], "email_notify-template-file", SWITCH_CONFIG_CUSTOM, CONFIG_RELOADABLE,
@@ -722,7 +723,9 @@ static vm_profile_t *load_profile(const char *profile_name)
 			}
 		}
 
-		profile->dbname = switch_core_sprintf(profile->pool, "voicemail_%s", profile_name);
+		if (zstr(profile->dbname)) {
+			profile->dbname = switch_core_sprintf(profile->pool, "voicemail_%s", profile_name);
+		}
 
 		if (!(dbh = vm_get_db_handle(profile))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
@@ -1544,7 +1547,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	char cid_buf[1024] = "";
 
 	if (switch_channel_ready(channel)) {
-		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_number, cbt->cid_name);
+		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_name, cbt->cid_number);
 
 		msg.from = __FILE__;
 		msg.string_arg = cid_buf;
@@ -2583,8 +2586,6 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 	char *convert_cmd = profile->convert_cmd;
 	char *convert_ext = profile->convert_ext;
-	int del_file = 0;
-
 	
 	if (!params) {
 		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
@@ -2901,10 +2902,6 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 				switch_safe_free(headers);
 			}
 		}
-
-		if (!insert_db) {
-			del_file = 1;
-		}
 	}
 
 	if (session) {
@@ -2926,7 +2923,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
   failed:
 
-	if (del_file && file_path && switch_file_exists(file_path, pool)) {
+	if (!insert_db && file_path && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		if (unlink(file_path) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 		}

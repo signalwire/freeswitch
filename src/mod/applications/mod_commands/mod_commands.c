@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1559,27 +1559,22 @@ SWITCH_STANDARD_API(regex_function)
 		goto error;
 	}
 
-	if ((proceed = switch_regex_perform(argv[0], argv[1], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-		if (argc > 2) {
-			len = (strlen(argv[0]) + strlen(argv[2]) + 10) * proceed;
-			substituted = malloc(len);
-			switch_assert(substituted);
-			memset(substituted, 0, len);
-			switch_replace_char(argv[2], '%', '$', SWITCH_FALSE);
-			switch_perform_substitution(re, proceed, argv[2], argv[0], substituted, len, ovector);
+	proceed = switch_regex_perform(argv[0], argv[1], &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
 
-			stream->write_function(stream, "%s", substituted);
-			free(substituted);
-		} else {
-			stream->write_function(stream, "true");
-		}
+	if (argc > 2) {
+		len = (strlen(argv[0]) + strlen(argv[2]) + 10) * proceed;
+		substituted = malloc(len);
+		switch_assert(substituted);
+		memset(substituted, 0, len);
+		switch_replace_char(argv[2], '%', '$', SWITCH_FALSE);
+		switch_perform_substitution(re, proceed, argv[2], argv[0], substituted, len, ovector);
+
+		stream->write_function(stream, "%s", substituted);
+		free(substituted);
 	} else {
-		if (argc > 2) {
-			stream->write_function(stream, "%s", argv[0]);
-		} else {
-			stream->write_function(stream, "false");
-		}
+		stream->write_function(stream, proceed ? "true" : "false");
 	}
+
 	goto ok;
 
   error:
@@ -2649,9 +2644,10 @@ SWITCH_STANDARD_API(sched_hangup_function)
 		char *cause_str = argv[2];
 		time_t when;
 		switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
+		int sec = atol(argv[0] + 1);
 
 		if (*argv[0] == '+') {
-			when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
+			when = switch_epoch_time_now(NULL) + sec;
 		} else {
 			when = atol(argv[0]);
 		}
@@ -2661,7 +2657,13 @@ SWITCH_STANDARD_API(sched_hangup_function)
 		}
 
 		if ((hsession = switch_core_session_locate(uuid))) {
-			switch_ivr_schedule_hangup(when, uuid, cause, SWITCH_FALSE);
+			if (sec == 0) {
+				switch_channel_t *hchannel = switch_core_session_get_channel(hsession);
+				switch_channel_hangup(hchannel, cause);
+			} else {
+				switch_ivr_schedule_hangup(when, uuid, cause, SWITCH_FALSE);
+			}
+
 			stream->write_function(stream, "+OK\n");
 			switch_core_session_rwunlock(hsession);
 		} else {

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -543,7 +543,7 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void)
 #ifdef SWITCH_LOG_RECYCLE
 	void *pop;
 	int size = switch_queue_size(LOG_RECYCLE_QUEUE);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s) %d bytes\n", size,
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s) %d bytes\n", size,
 					  (int) sizeof(switch_log_node_t) * size);
 	while (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
 		switch_log_node_free(&pop);

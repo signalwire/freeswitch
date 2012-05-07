@@ -1,5 +1,4 @@
 ######################################################################################################################
-######################################################################################################################
 #
 # spec file for package freeswitch
 #
@@ -11,7 +10,7 @@
 #
 # This file is part of:
 # FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
-# Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+# Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
 #
 # This file and all modifications and additions to the pristine package are under the same license as the package itself.
 #
@@ -24,7 +23,7 @@
 #				  Anthony Minessale II <anthm@freeswitch.org>
 #
 #
-# Maintainer(s): Michal Bielicki <michal.bielicki (at) ++nospam_please++ seventhsignal.de
+# Maintainer(s): Ken Rice <krice@freeswitch.org>
 #
 ######################################################################################################################
 # Module build settings

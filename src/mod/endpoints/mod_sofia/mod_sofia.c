@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -89,6 +89,10 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 
 	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE)) {
 		sofia_set_flag(tech_pvt, TFLAG_RECOVERED);
+	}
+
+	if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		nua_respond(tech_pvt->nh, 101, "Dialing", TAG_END());
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_OUTBOUND) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
@@ -495,7 +499,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
 
 		if (!val || switch_false(val)) {
-			if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_reason_str"))) {
+			if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_reason"))) {
 				switch_snprintf(reason, sizeof(reason), "%s", val);
 			} else {
 				if (switch_channel_test_flag(channel, CF_INTERCEPT) || cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE) {
@@ -1929,6 +1933,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					switch_channel_set_flag(channel, CF_REQ_MEDIA);
 				}
 				sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
+				switch_channel_set_variable(channel, "sip_require_timer", "false");
 				sofia_glue_do_invite(session);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Request to send IMAGE on channel with not t38 options.\n", 
@@ -2087,20 +2092,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
 		{
 			const char *name = msg->string_array_arg[0], *number = msg->string_array_arg[1];
-			char *arg = NULL;
-			char *argv[2] = { 0 };
-			//int argc;
-
-			if (zstr(name) && !zstr(msg->string_arg)) {
-				arg = strdup(msg->string_arg);
-				switch_assert(arg);
-
-				switch_separate_string(arg, '|', argv, (sizeof(argv) / sizeof(argv[0])));
-				name = argv[0];
-				number = argv[1];
-
-			}
-
+			
 			if (!zstr(name)) {
 				char message[256] = "";
 				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
@@ -2181,9 +2173,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 						tech_pvt->last_sent_callee_id_name = switch_core_session_strdup(tech_pvt->session, name);
 						tech_pvt->last_sent_callee_id_number = switch_core_session_strdup(tech_pvt->session, number);
-
-						switch_channel_set_variable(channel, "last_sent_callee_id_name", name);
-						switch_channel_set_variable(channel, "last_sent_callee_id_number", number);
 						
 
 						if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
@@ -2208,8 +2197,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					}
 				}
 			}
-
-			switch_safe_free(arg);
 		}
 		break;
 
@@ -2422,6 +2409,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					char *sdp = (char *) msg->pointer_arg;
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Responding with %d [%s]\n", code, reason);
+					sofia_clear_flag(tech_pvt, TFLAG_REINVITED);
 
 					if (!zstr((sdp))) {
 						if (!strcasecmp(sdp, "t38")) {
@@ -5364,7 +5352,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_chat_interface_t *chat_interface;
 	switch_api_interface_t *api_interface;
 	switch_management_interface_t *management_interface;
-	uint32_t cpus = switch_core_cpu_count();
 	struct in_addr in;
 
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
@@ -5402,9 +5389,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for profiles to start\n");
 	switch_yield(1500000);
 
-	/* start one message thread per cpu */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Starting %u message threads.\n", cpus);
-	sofia_msg_thread_start(cpus);
+	mod_sofia_globals.cpu_count = switch_core_cpu_count();
+	mod_sofia_globals.max_msg_queues = mod_sofia_globals.cpu_count + 1;
+
+	if (mod_sofia_globals.max_msg_queues > SOFIA_MAX_MSG_QUEUE) {
+		mod_sofia_globals.max_msg_queues = SOFIA_MAX_MSG_QUEUE;
+	}
+
+	/* start one message thread */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Starting initial message thread.\n");
+	sofia_msg_thread_start(0);
 
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL,
 									&mod_sofia_globals.custom_node) != SWITCH_STATUS_SUCCESS) {

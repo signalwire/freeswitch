@@ -24,6 +24,9 @@ $(MONGO_CXX_DRIVER_SRC):
 
 
 $(LIBMONGOCLIENT_A): $(MONGO_CXX_DRIVER_SRC)
-	cd $(MONGO_CXX_DRIVER_SRC) && scons
+	(cd $(MONGO_CXX_DRIVER_SRC) && \
+		sed -i SConstruct -e "s/Environment()/Environment(ENV = {'PATH' : os.environ['PATH'],'CFLAGS' : os.environ['CFLAGS'],'CXXFLAGS' : os.environ['CXXFLAGS']})/" && \
+		echo "env.Append(PATH=os.environ['PATH'])" >> SConstruct && \
+		scons)
 	$(TOUCH_TARGET)
 

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -479,7 +479,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application_printf(switch_core_
 		char *p;
 
 		if ((p = strstr(data, "\\'"))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "App not added, Invalid character sequence in data string [%s]\n", data);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "App not added, Invalid character sequence in data string [%s]\n", data);
 			free(data);
 			return;
 		}
@@ -505,7 +505,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 
 
 		if (caller_application->application_data && (p = strstr(caller_application->application_data, "\\'"))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "App not added, Invalid character sequence in data string [%s]\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "App not added, Invalid character sequence in data string [%s]\n", 
 							  caller_application->application_data);
 			return;
 		}

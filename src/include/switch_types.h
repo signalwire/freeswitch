@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -129,6 +129,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE "enable_heartbeat_events"
 #define SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE "bypass_media_after_bridge"
 #define SWITCH_READ_RESULT_VARIABLE "read_result"
+#define SWITCH_ATT_XFER_RESULT_VARIABLE "att_xfer_result"
 #define SWITCH_COPY_XML_CDR_VARIABLE "copy_xml_cdr"
 #define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"
 #define SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE "proto_specific_hangup_cause"
@@ -1211,6 +1212,8 @@ typedef enum {
 	CF_SERVICE_VIDEO,
 	CF_ZRTP_HASH,
 	CF_ZRTP_PASS,
+	CF_CHANNEL_SWAP,
+	CF_PICKUP,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX

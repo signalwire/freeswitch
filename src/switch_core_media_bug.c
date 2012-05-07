@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -126,6 +126,9 @@ SWITCH_DECLARE(void) switch_core_media_bug_flush(switch_media_bug_t *bug)
 		switch_buffer_zero(bug->raw_write_buffer);
 		switch_mutex_unlock(bug->write_mutex);
 	}
+
+	bug->record_frame_size = 0;
+	bug->record_pre_buffer_count = 0;
 }
 
 SWITCH_DECLARE(void) switch_core_media_bug_inuse(switch_media_bug_t *bug, switch_size_t *readp, switch_size_t *writep)
@@ -203,7 +206,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		bug->record_pre_buffer_count++;
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
+	if (!bug->record_frame_size) {
+		if (do_read && do_write) {
+			switch_size_t frame_size;
+			switch_codec_implementation_t read_impl = { 0 };
+			switch_codec_implementation_t other_read_impl = { 0 };
+			switch_core_session_t *other_session;
+			
+			switch_core_session_get_read_impl(bug->session, &read_impl);
+			frame_size = read_impl.decoded_bytes_per_packet;
+			
+			if (switch_core_session_get_partner(bug->session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				switch_core_session_get_read_impl(other_session, &other_read_impl);
+				switch_core_session_rwunlock(other_session);
+				
+				if (read_impl.decoded_bytes_per_packet < other_read_impl.decoded_bytes_per_packet) {
+					frame_size = other_read_impl.decoded_bytes_per_packet;
+				}
+			}
+			
+			bug->record_frame_size = frame_size;
+		}
+	}
+
+
 	if (bug->record_frame_size) {
 		if ((do_read && do_read < bug->record_frame_size) || (do_write && do_write < bug->record_frame_size)) {
 			return SWITCH_STATUS_FALSE;
@@ -215,16 +242,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 		if (do_write && do_write > bug->record_frame_size) {
 			do_write = bug->record_frame_size;
-		}
-	} else {
-		if (do_read && do_write) {
-			if (do_read > do_write) {
-				do_read = do_write;
-			} else if (do_write > do_read) {
-				do_write = do_read;
-			}
-
-			bug->record_frame_size = do_read;
 		}
 	}
 

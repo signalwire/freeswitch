@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1981,6 +1981,10 @@ static void switch_loadable_module_sort_codecs(const switch_codec_implementation
 
 	for (i = 0; i < arraylen; i++) {
 		int this_ptime = array[i]->microseconds_per_packet / 1000;
+		
+		if (!strcasecmp(array[i]->iananame, "ilbc")) {
+			this_ptime = 20;
+		}
 
 		if (!sorted_ptime) {
 			sorted_ptime = this_ptime;
@@ -1998,6 +2002,10 @@ static void switch_loadable_module_sort_codecs(const switch_codec_implementation
 #endif
 			for(j = i; j < arraylen; j++) {
 				int check_ptime = array[j]->microseconds_per_packet / 1000;
+
+				if (!strcasecmp(array[i]->iananame, "ilbc")) {
+					check_ptime = 20;
+				}
 
 				if (check_ptime == sorted_ptime) {
 #ifdef DEBUG_CODEC_SORTING
@@ -2067,41 +2075,79 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 }
 
+SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit)
+{
+	char *cur, *next = NULL, *name, *p;
+
+	name = next = cur = buf;
+
+	for (;;) {
+		if (!next) {
+			break;
+		}
+
+		if ((p = strchr(next, '@'))) {
+			*p++ = '\0';
+		}
+		next = p;
+
+		if (cur != name) {
+			if (strchr(cur, 'i')) {
+				*interval = atoi(cur);
+			} else if ((strchr(cur, 'k') || strchr(cur, 'h'))) {
+				*rate = atoi(cur);
+			} else if (strchr(cur, 'b')) {
+				*bit = atoi(cur);
+			}
+		}
+		cur = next;
+	}
+	
+	return name;
+}
+
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array, int arraylen, char **prefs, int preflen)
 {
-	int x, i = 0;
+	int x, i = 0, j = 0;
 	switch_codec_interface_t *codec_interface;
 	const switch_codec_implementation_t *imp;
 
 	switch_mutex_lock(loadable_modules.mutex);
 
 	for (x = 0; x < preflen; x++) {
-		char *cur, *next = NULL, *name, *p, buf[256];
+		char *name, buf[256], jbuf[256];
 		uint32_t interval = 0, rate = 0, bit = 0;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
-		name = next = cur = buf;
+		name = switch_parse_codec_buf(buf, &interval, &rate, &bit);
 
-		for (;;) {
-			if (!next) {
-				break;
+		for(j = 0; j < x; j++) {
+			char *jname;
+			uint32_t jinterval = 0, jrate = 0, jbit = 0;
+			uint32_t ointerval = interval, orate = rate;
+
+			if (ointerval == 0) {
+				ointerval = switch_default_ptime(name, 0);
+			}
+			
+			if (orate == 0) {
+				orate = 8000;
 			}
 
-			if ((p = strchr(next, '@'))) {
-				*p++ = '\0';
-			}
-			next = p;
+			switch_copy_string(jbuf, prefs[j], sizeof(jbuf));
+			jname = switch_parse_codec_buf(jbuf, &jinterval, &jrate, &jbit);
 
-			if (cur != name) {
-				if (strchr(cur, 'i')) {
-					interval = atoi(cur);
-				} else if ((strchr(cur, 'k') || strchr(cur, 'h'))) {
-					rate = atoi(cur);
-				} else if (strchr(cur, 'b')) {
-					bit = atoi(cur);
-				}
+			if (jinterval == 0) {
+				jinterval = switch_default_ptime(jname, 0);
 			}
-			cur = next;
+
+			if (jrate == 0) {
+				jrate = 8000;
+			}
+
+			if (!strcasecmp(name, jname) && ointerval == jinterval && orate == jrate) {
+				goto next_x;
+			}
 		}
 
 		if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0) {
@@ -2164,6 +2210,10 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			}
 
 		}
+
+	next_x:
+
+		continue;
 	}
 
 	switch_mutex_unlock(loadable_modules.mutex);

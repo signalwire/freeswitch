@@ -109,6 +109,8 @@ struct nua_handle_preferences
 
   /** Always include id with Event: refer */
   unsigned         nhp_refer_with_id:1;
+
+  unsigned         nhp_timer_autorequire:1;
   unsigned:0;
 
   /* Default lifetime for implicit subscriptions created by REFER */
@@ -207,6 +209,7 @@ struct nua_handle_preferences
     unsigned nhb_appl_method:1;
     unsigned nhb_initial_route:1;
     unsigned nhb_proxy:1;
+    unsigned nhb_timer_autorequire:1;
     unsigned :0;
   } set_bits;
     unsigned set_unsigned[2];

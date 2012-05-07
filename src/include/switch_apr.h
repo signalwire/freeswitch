@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1483,8 +1483,14 @@ SWITCH_DECLARE(switch_status_t) switch_thread_exit(switch_thread_t *thd, switch_
  */
 SWITCH_DECLARE(switch_status_t) switch_thread_join(switch_status_t *retval, switch_thread_t *thd);
 
- /** @} */
+/**
+ * Return a human readable string describing the specified error.
+ * @param statcode The error code the get a string for.
+ * @param buf A buffer to hold the error string.
+ * @bufsize Size of the buffer to hold the string.
+ */
 
+SWITCH_DECLARE(char *) switch_strerror(switch_status_t statcode, char *buf, switch_size_t bufsize);
 
 
 

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1113,7 +1113,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		if (cur) {
 			fh->samples = sample_start = 0;
 			if (sleep_val_i) {
-				switch_ivr_sleep(session, sleep_val_i, SWITCH_FALSE, args);
+				status = switch_ivr_sleep(session, sleep_val_i, SWITCH_FALSE, args);
+                                if(status != SWITCH_STATUS_SUCCESS) {
+                                        break;
+                                }
 			}
 		}
 
@@ -1594,6 +1597,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					switch_status_t tstatus;
 					
 					while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
+						switch_ivr_parse_all_messages(session);
 						switch_yield(10000);
 					}
 
@@ -2181,6 +2185,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		}
 	}
 
+	switch_channel_audio_sync(channel);
+
 	ilen = len;
 	for (;;) {
 		switch_event_t *event;
@@ -2255,6 +2261,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 				switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 				while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
+					switch_ivr_parse_all_messages(session);
 					switch_yield(10000);
 				}
 
@@ -2327,6 +2334,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			switch_status_t tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 			while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
+				switch_ivr_parse_all_messages(session);
 				switch_yield(10000);
 			}
 
@@ -2346,7 +2354,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 				}
 			}
 		}
-
 	}
 
  done:
@@ -2377,8 +2384,12 @@ SWITCH_DECLARE(void) switch_ivr_clear_speech_cache(switch_core_session_t *sessio
 		if (cache_obj->timer.interval) {
 			switch_core_timer_destroy(&cache_obj->timer);
 		}
-		switch_core_speech_close(&cache_obj->sh, &flags);
-		switch_core_codec_destroy(&cache_obj->codec);
+		if (&cache_obj->sh && cache_obj->sh.speech_interface) {
+			switch_core_speech_close(&cache_obj->sh, &flags);
+		}
+		if (&cache_obj->codec) {
+			switch_core_codec_destroy(&cache_obj->codec);
+		}
 		switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
 	}
 }
@@ -2412,7 +2423,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	timer = &ltimer;
 
 	if ((var = switch_channel_get_variable(channel, SWITCH_CACHE_SPEECH_HANDLES_VARIABLE)) && switch_true(var)) {
-		if ((cache_obj = switch_channel_get_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME))) {
+		if ((cache_obj = (cached_speech_handle_t *) switch_channel_get_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME))) {
 			need_create = 0;
 			if (!strcasecmp(cache_obj->tts_name, tts_name)) {
 				need_alloc = 0;
@@ -2422,7 +2433,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 		}
 
 		if (!cache_obj) {
-			cache_obj = switch_core_session_alloc(session, sizeof(*cache_obj));
+			cache_obj = (cached_speech_handle_t *) switch_core_session_alloc(session, sizeof(*cache_obj));
 		}
 		if (need_alloc) {
 			switch_copy_string(cache_obj->tts_name, tts_name, sizeof(cache_obj->tts_name));

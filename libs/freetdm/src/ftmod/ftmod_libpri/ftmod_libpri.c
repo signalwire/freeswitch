@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2012, Anthony Minessale II
  * Copyright (c) 2010, Stefan Knoblich <s.knoblich@axsentis.de>
  * All rights reserved.
  *
@@ -114,41 +114,39 @@ static FIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 	return FTDM_FAIL;
 }
 
-#ifdef WIN32
-/**
- * \brief Logs a libpri error
- * \param s Error string
- */
-static void s_pri_error(char *s)
-#else
-/**
- * \brief Logs a libpri error
- * \param pri libpri structure (unused)
- * \param s Error string
- */
-static void s_pri_error(struct pri *pri, char *s)
-#endif
-{
-	ftdm_log(FTDM_LOG_ERROR, "%s", s);
-}
 
-#ifdef WIN32
 /**
  * \brief Logs a libpri message
- * \param s Message string
- */
-static void s_pri_message(char *s)
-#else
-/**
- * \brief Logs a libpri message
- * \param pri libpri structure (unused)
- * \param s Message string
+ * \param pri	libpri structure
+ * \param s	Message string
  */
 static void s_pri_message(struct pri *pri, char *s)
-#endif
 {
-	ftdm_log(FTDM_LOG_DEBUG, "%s", s);
+	struct lpwrap_pri *spri = pri_get_userdata(pri);
+
+	if (spri && spri->dchan) {
+		ftdm_log_chan(spri->dchan, FTDM_LOG_DEBUG, "%s", s);
+	} else {
+		ftdm_log(FTDM_LOG_DEBUG, "%s", s);
+	}
 }
+
+/**
+ * \brief Logs a libpri error
+ * \param pri	libpri structure
+ * \param s	Error string
+ */
+static void s_pri_error(struct pri *pri, char *s)
+{
+	struct lpwrap_pri *spri = pri_get_userdata(pri);
+
+	if (spri && spri->dchan) {
+		ftdm_log_chan(spri->dchan, FTDM_LOG_ERROR, "%s", s);
+	} else {
+		ftdm_log(FTDM_LOG_ERROR, "%s", s);
+	}
+}
+
 
 #define PRI_DEBUG_Q921_ALL	(PRI_DEBUG_Q921_RAW | PRI_DEBUG_Q921_DUMP | PRI_DEBUG_Q921_STATE)
 #define PRI_DEBUG_Q931_ALL	(PRI_DEBUG_Q931_DUMP | PRI_DEBUG_Q931_STATE | PRI_DEBUG_Q931_ANOMALY)

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -744,6 +744,8 @@ SWITCH_DECLARE(int32_t) set_auto_priority(void)
 	runtime.cpu_count = sysinfo.dwNumberOfProcessors;
 #endif
 
+	if (!runtime.cpu_count) runtime.cpu_count = 1;
+
 	/* If we have more than 1 cpu, we should use realtime priority so we can have priority threads */
 	if (runtime.cpu_count > 1) {
 		return set_realtime_priority();
@@ -1421,6 +1423,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	}
 #endif	
 
+	if (!runtime.cpu_count) runtime.cpu_count = 1;
+
+
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
 		*err = "FATAL ERROR! Could not initialize APR\n";
@@ -1684,7 +1689,7 @@ static void switch_load_core_config(const char *file)
 					} else if (end_of(val) == 'm') {
 						tmp *= (1024 * 1024);
 					}
-					
+
 					if (tmp >= 32000 && tmp < 10500000) {
 						runtime.sql_buffer_len = tmp;
 					} else {
@@ -1723,6 +1728,14 @@ static void switch_load_core_config(const char *file)
 					switch_set_flag((&runtime), SCF_EARLY_HANGUP);
 				} else if (!strcasecmp(var, "colorize-console") && switch_true(val)) {
 					runtime.colorize_console = SWITCH_TRUE;
+				} else if (!strcasecmp(var, "core-db-pre-trans-execute") && !zstr(val)) {
+					runtime.core_db_pre_trans_execute = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "core-db-post-trans-execute") && !zstr(val)) {
+					runtime.core_db_post_trans_execute = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "core-db-inner-pre-trans-execute") && !zstr(val)) {
+					runtime.core_db_inner_pre_trans_execute = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "core-db-inner-post-trans-execute") && !zstr(val)) {
+					runtime.core_db_inner_post_trans_execute = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app") && !zstr(val)) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app-args") && val) {
@@ -1885,7 +1898,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		return SWITCH_STATUS_GENERR;
 	}
 
-
+	switch_load_network_lists(SWITCH_FALSE);
 
 	switch_load_core_config("post_load_switch.conf");
 

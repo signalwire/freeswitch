@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -264,7 +264,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else if (args->buf) {
-					switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
+					*((char *) args->buf) = dtmf.digit;
 					status = SWITCH_STATUS_BREAK;
 				}
 			}
@@ -535,6 +535,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		char *loop_h = switch_event_get_header(event, "loops");
 		char *hold_bleg = switch_event_get_header(event, "hold-bleg");
 		int loops = 1;
+		int inner = 0;
 
 		if (zstr(app_arg) && !zstr(content_type) && !strcasecmp(content_type, "text/plain")) {
 			app_arg = switch_event_get_body(event);
@@ -550,7 +551,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			switch_core_session_t *b_session = NULL;
 
 			switch_channel_clear_flag(channel, CF_STOP_BROADCAST);
-			switch_channel_set_flag(channel, CF_BROADCAST);
+
+			if (switch_channel_test_flag(channel, CF_BROADCAST)) {
+				inner++;
+				hold_bleg = NULL;
+			} else {
+				switch_channel_set_flag(channel, CF_BROADCAST);
+			}
 			if (hold_bleg && switch_true(hold_bleg)) {
 				if ((b_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 					const char *stream;
@@ -592,6 +599,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 								  switch_channel_get_name(channel), app_name, switch_str_nil(app_arg));
 				b4 = switch_micro_time_now();
 				if (switch_core_session_execute_application(session, app_name, app_arg) != SWITCH_STATUS_SUCCESS) {
+					if (!inner || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) switch_channel_clear_flag(channel, CF_BROADCAST);
 					goto done;
 				}
 
@@ -610,7 +618,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 				}
 			}
 
-			switch_channel_clear_flag(channel, CF_BROADCAST);
+			if (!inner || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) {
+				switch_channel_clear_flag(channel, CF_BROADCAST); 
+				switch_channel_set_flag(channel, CF_BREAK); 
+			}
+			
 		}
 	} else if (cmd_hash == CMD_UNICAST) {
 		char *local_ip = switch_event_get_header(event, "local-ip");
@@ -1556,7 +1568,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 				}
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
-				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+				//switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 				switch_channel_wait_for_flag(other_channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
 			}
 
@@ -2934,6 +2946,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 			}
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(cmd, "stop")) {
+			switch_set_flag(fhp, SWITCH_FILE_DONE);
 			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(cmd, "truncate")) {
 			switch_core_file_truncate(fhp, 0);

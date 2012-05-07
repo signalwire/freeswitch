@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -644,7 +644,7 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, swi
 				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
-					switch_copy_string((char *) args->buf, (void *) &dtmf, args->buflen);
+					*((char *) args->buf) = dtmf.digit;
 					status = SWITCH_STATUS_BREAK;
 				}
 			}

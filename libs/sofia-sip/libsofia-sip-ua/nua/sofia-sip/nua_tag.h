@@ -199,6 +199,11 @@ SOFIAPUBVAR tag_typedef_t nutag_autoack;
 #define NUTAG_AUTOACK_REF(x)    nutag_autoack_ref, tag_bool_vr(&(x))
 SOFIAPUBVAR tag_typedef_t nutag_autoack_ref;
 
+#define NUTAG_TIMER_AUTOREQUIRE(x)        nutag_timer_autorequire, tag_bool_v(x)
+SOFIAPUBVAR tag_typedef_t nutag_timer_autorequire;
+#define NUTAG_TIMER_AUTOREQUIRE_REF(x)    nutag_timer_autorequire_ref, tag_bool_vr(&(x))
+SOFIAPUBVAR tag_typedef_t nutag_timer_autorequire_ref;
+
 #define NUTAG_AUTOANSWER(x)     nutag_autoanswer, tag_bool_v(x)
 SOFIAPUBVAR tag_typedef_t nutag_autoanswer;
 #define NUTAG_AUTOANSWER_REF(x) nutag_autoanswer_ref, tag_bool_vr(&(x))

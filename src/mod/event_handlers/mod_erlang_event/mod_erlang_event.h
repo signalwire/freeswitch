@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -35,8 +35,7 @@
 typedef enum {
 	LFLAG_WAITING_FOR_PID = (1 << 0),	/* waiting for a node to return a pid */
 	LFLAG_OUTBOUND_INIT = (1 << 1),	/* Erlang peer has been notified of this session */
-	LFLAG_SESSION_ALIVE = (1 << 2),
-	LFLAG_SESSION_COMPLETE = (1 << 3),
+	LFLAG_SESSION_COMPLETE = (1 << 2),
 } session_flag_t;
 
 typedef enum {

@@ -244,6 +244,21 @@ then
 		 AC_MSG_ERROR([libpri not found or unusable (see config.log for details)])]
 	)
 
+	AC_MSG_CHECKING([whether libpri is too old])
+	AC_PREPROC_IFELSE(
+		[AC_LANG_PROGRAM(
+			[#include <libpri.h>],
+			[#if !defined(PRI_IO_FUNCS)
+			 #error "libpri is lacking PRI_IO_FUNCS"
+			 #elif !defined(PRI_NEW_SET_API)
+			 #error "libpri is lacking PRI_NEW_SET_API"
+			 #endif]
+		 )],
+		[AC_MSG_RESULT([no])],
+		[AC_MSG_RESULT([yes])
+		 AC_MSG_ERROR([Your version of libpri is too old (pre 1.2), please update!])]
+	)
+
 	AC_MSG_CHECKING([whether libpri has BRI support])
 	AC_LINK_IFELSE(
 		[AC_LANG_PROGRAM(
@@ -415,22 +430,13 @@ AC_ARG_WITH([misdn],
 )
 AS_IF([test "${with_misdn}" != "no"],
 	[AC_MSG_RESULT([${as_nl}<<>> ftmod_misdn (Linux mISDN I/O plugin)])
-	 AC_CHECK_FUNCS([timerfd_create],,
-		[AS_IF([test "${with_misdn}" = "yes"],
-			[AC_MSG_ERROR([no timerfd support in libc])],
-			[AC_MSG_NOTICE([no timerfd support in libc])]
-		 )]
-	 )
-	 AC_CHECK_HEADER([mISDN/mISDNif.h],,
+	 AC_CHECK_HEADER([mISDN/mISDNif.h],
+		[HAVE_MISDN="yes"],
 		[AS_IF([test "${with_misdn}" = "yes"],
 			[AC_MSG_ERROR([mISDN/mISDNif.h not found])],
 			[AC_MSG_NOTICE([mISDN/mISDNif.h not found])]
 		)],
 		[#include <sys/socket.h>]
-	 )
-	 AS_IF([test "${ac_cv_func_timerfd_create}" = "yes" -a "${ac_cv_header_mISDN_mISDNif_h}" = "yes"],
-		[HAVE_MISDN="yes"],
-		[AC_MSG_NOTICE([Some required dependencies are missing, module disabled])]
 	 )]
 )
 AM_CONDITIONAL([HAVE_MISDN], [test "${HAVE_MISDN}" = "yes"])

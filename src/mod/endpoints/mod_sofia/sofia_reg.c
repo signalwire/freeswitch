@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -127,22 +127,20 @@ static void sofia_reg_kill_sub(sofia_gateway_t *gateway_ptr)
 static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 {
 
-	if (gateway_ptr->nh) {
-		nua_handle_bind(gateway_ptr->nh, NULL);
-	}
-
-	if (gateway_ptr->state != REG_STATE_REGED && gateway_ptr->state != REG_STATE_UNREGISTER) {
-		if (gateway_ptr->nh) {
-			nua_handle_destroy(gateway_ptr->nh);
-			gateway_ptr->nh = NULL;
-		}
+	if (!gateway_ptr->nh) {
 		return;
 	}
 
-	if (gateway_ptr->nh) {
+	if (gateway_ptr->state == REG_STATE_REGED || gateway_ptr->state == REG_STATE_UNREGISTER) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UN-Registering %s\n", gateway_ptr->name);
 		nua_unregister(gateway_ptr->nh, NUTAG_URL(gateway_ptr->register_url), NUTAG_REGISTRAR(gateway_ptr->register_proxy), TAG_END());
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Destroying registration handle for %s\n", gateway_ptr->name);
 	}
+
+	nua_handle_bind(gateway_ptr->nh, NULL);
+	nua_handle_destroy(gateway_ptr->nh);
+	gateway_ptr->nh = NULL;
 }
 
 void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int status, const char *phrase)
@@ -1243,6 +1241,20 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "username", username);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
+            switch (auth_res) {
+            case AUTH_OK:
+                switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "auth-result", "SUCCESS");
+                break;
+            case AUTH_RENEWED:
+                switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "auth-result", "RENEWED");
+                break;
+            case AUTH_STALE:
+                switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "auth-result", "STALE");
+                break;
+            case AUTH_FORBIDDEN:
+                switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "auth-result", "FORBIDDEN");
+                break;
+            }
 			switch_event_fire(&s_event);
 		}
 
@@ -1380,6 +1392,17 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 								  (regtype == REG_INVITE) ? "INVITE" : "REGISTER", profile->name, to_user, to_host, network_ip);
 			}
 
+			if (forbidden && switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER_FAILURE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", to_user);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", to_host);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", network_port_c);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "registration-type", (regtype == REG_INVITE) ? "INVITE" : "REGISTER");
+				switch_event_fire(&s_event);
+			}
 			switch_goto_int(r, 1, end);
 		}
 	}

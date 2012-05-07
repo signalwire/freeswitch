@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -41,7 +41,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_io_event_hook_video_write_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (switch_channel_down_nosig(session->channel)) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -65,7 +65,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 	switch_assert(session != NULL);
 
-	if (switch_channel_down_nosig(session->channel)) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -153,7 +153,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		}
 	}
 	
-	if (switch_channel_down_nosig(session->channel) || !switch_core_codec_ready(session->read_codec)) {
+	if (switch_channel_down(session->channel) || !switch_core_codec_ready(session->read_codec)) {
 		*frame = NULL;
 		status = SWITCH_STATUS_FALSE;
 		goto even_more_done;
@@ -236,14 +236,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
-	if (switch_test_flag(*frame, SFF_CNG)) {
-		status = SWITCH_STATUS_SUCCESS;
-		if (!session->bugs && !session->plc) {
-			goto done;
-		}
-		is_cng = 1;
-	}
-
 	switch_assert((*frame)->codec != NULL);
 
 	if (!(session->read_codec && (*frame)->codec && (*frame)->codec->implementation) && switch_core_codec_ready((*frame)->codec)) {
@@ -265,8 +257,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		do_bugs = 1;
 		need_codec = 1;
 	}
-	
-	if (((*frame)->flags & SFF_NOT_AUDIO)) {
+
+	if (switch_test_flag(*frame, SFF_CNG)) {
+		if (!session->bugs && !session->plc) {
+			/* Check if other session has bugs */
+			unsigned int other_session_bugs = 0;
+			switch_core_session_t *other_session = NULL;
+			if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_BRIDGED) &&
+				switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				if (other_session->bugs) {
+					other_session_bugs = 1;
+				}
+				switch_core_session_rwunlock(other_session);
+			}
+
+			/* Don't process CNG frame */
+			if (!other_session_bugs) {
+				status = SWITCH_STATUS_SUCCESS;
+				goto done;
+			}
+		}
+		is_cng = 1;
+		need_codec = 1;
+	} else if (switch_test_flag(*frame, SFF_NOT_AUDIO)) {
 		do_resample = 0;
 		do_bugs = 0;
 		need_codec = 0;
@@ -1101,6 +1114,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Write Buffer Failed!\n");
 					goto error;
 				}
+
+				/* Need to retrain the recording data */
+				switch_core_media_bug_flush_all(session);
 			}
 
 			if (!(switch_buffer_write(session->raw_write_buffer, write_frame->data, write_frame->datalen))) {
@@ -1114,7 +1130,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			while (switch_buffer_inuse(session->raw_write_buffer) >= session->write_impl.decoded_bytes_per_packet) {
 				int rate;
 
-				if (switch_channel_down_nosig(session->channel) || !session->raw_write_buffer) {
+				if (switch_channel_down(session->channel) || !session->raw_write_buffer) {
 					goto error;
 				}
 				if ((session->raw_write_frame.datalen = (uint32_t)
@@ -1296,7 +1312,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	switch_dtmf_t new_dtmf;
 	int fed = 0;
 	
-	if (switch_channel_down_nosig(session->channel)) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1339,7 +1355,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_dtmf_t new_dtmf;
 
-	if (switch_channel_down_nosig(session->channel)) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1418,7 +1434,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 		dtmf.flags = 0;
 	}
 
-	if (switch_channel_down_nosig(session->channel)) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 

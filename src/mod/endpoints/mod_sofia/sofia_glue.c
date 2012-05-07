@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
- * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Ken Rice <krice@freeswitch.org>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Eliot Gable <egable AT.AT broadvox.com>
@@ -1614,7 +1614,6 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 	char vport_buf[25] = "";
 	char *new_sdp;
 	int bad = 0;
-	int skip_video = 0, skip_audio = 0, skip_image = 0;
 
 	if (zstr(tech_pvt->local_sdp_str)) {
 		return;
@@ -1648,14 +1647,6 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 	pe = p + strlen(p);
 	qe = q + len - 1;
 
-
-	if (switch_stristr("m=video 0", p)) {
-		skip_video = 1;
-	} else if (switch_stristr("m=audio 0", p)) {
-		skip_audio = 1;
-	} else if (switch_stristr("m=image 0", p)) {
-		skip_image = 1;
-	}
 
 	while (p && *p) {
 		if (p >= pe) {
@@ -1748,7 +1739,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 			}
 
-		} else if ((!skip_audio && !strncmp("m=audio ", p, 8)) || (!skip_image && !strncmp("m=image ", p, 8))) {
+		} else if ((!strncmp("m=audio ", p, 8) && *(p + 9) != '0') || (!strncmp("m=image ", p, 8) && *(p + 9) != '0')) {
 			strncpy(q, p, 8);
 			p += 8;
 
@@ -1784,7 +1775,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 			has_audio++;
 
-		} else if (!skip_video && !strncmp("m=video ", p, 8)) {
+		} else if (!strncmp("m=video ", p, 8) && *(p + 9) != '0') {
 			if (!has_video) {
 				sofia_glue_tech_choose_video_port(tech_pvt, 1);
 				tech_pvt->video_rm_encoding = "PROXY-VID";
@@ -2066,6 +2057,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	char *mp = NULL, *mp_type = NULL;
 	char *record_route = NULL;
 	const char *recover_via = NULL;
+	int require_timer = 1;
+
 
 	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
 		const char *recover_contact = switch_channel_get_variable(tech_pvt->channel, "sip_recover_contact");
@@ -2093,6 +2086,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (!caller_profile) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
+	}
+
+
+	if ((val = switch_channel_get_variable_dup(channel, "sip_require_timer", SWITCH_FALSE, -1)) && switch_false(val)) {
+		require_timer = 0;
 	}
 
 
@@ -2355,28 +2353,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch_channel_set_variable(channel, "sip_to_host", sofia_glue_get_host(to_str, switch_core_session_get_pool(session)));
 		switch_channel_set_variable(channel, "sip_from_host", sofia_glue_get_host(from_str, switch_core_session_get_pool(session)));
 
-		if (!switch_channel_get_variable(channel, "presence_id")) {
-			char *from = switch_core_session_strdup(session, from_str);
-			const char *s;
-
-			if ((s = switch_stristr("<", from))) {
-				from = (char *)s + 1;
-			}
-
-			if (!strncasecmp(from, "sip:", 4)) {
-				from += 4;
-			}
-
-			if (!strncasecmp(from, "sips:", 5)) {
-				from += 5;
-			}
-
-			if ((p = strchr(from, ':')) || (p = strchr(from, ';')) || (p = strchr(from, '>'))) {
-				*p++ = '\0';
-			}
-			
-			switch_channel_set_variable(channel, "presence_id", from);
-		}
 
 		if (!(tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 										NUTAG_URL(url_str),
@@ -2638,6 +2614,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE)),
 				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL)),
 				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)),
+				   TAG_IF(!require_timer, NUTAG_TIMER_AUTOREQUIRE(0)),
 				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_HOLD(holdstr)), TAG_END());
 	} else {
 		nua_invite(tech_pvt->nh,
@@ -2663,6 +2640,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(route), SIPTAG_ROUTE_STR(route)),
 				   TAG_IF(!zstr(invite_route_uri), NUTAG_INITIAL_ROUTE_STR(invite_route_uri)),
 				   TAG_IF(tech_pvt->profile->minimum_session_expires, NUTAG_MIN_SE(tech_pvt->profile->minimum_session_expires)),
+				   TAG_IF(!require_timer, NUTAG_TIMER_AUTOREQUIRE(0)),
 				   TAG_IF(cseq, SIPTAG_CSEQ(cseq)),
 				   NUTAG_MEDIA_ENABLE(0),
 				   SIPTAG_CONTENT_TYPE_STR(mp_type ? mp_type : "application/sdp"),
@@ -3153,6 +3131,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	uint32_t rtp_hold_timeout_sec = tech_pvt->profile->rtp_hold_timeout_sec;
 	char *timer_name = NULL;
 	const char *var;
+	uint32_t delay = tech_pvt->profile->rtp_digit_delay;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -3168,10 +3147,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	if ((var = switch_channel_get_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
 		sofia_set_flag_locked(tech_pvt, TFLAG_SECURE);
-	}
-
-	if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_liberal_dtmf")) && switch_true(var)) {
-		sofia_set_flag_locked(tech_pvt, TFLAG_LIBERAL_DTMF);
 	}
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
@@ -3554,6 +3529,20 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			tech_pvt->cng_pt = 0;
 		}
 
+		if (((val = switch_channel_get_variable(tech_pvt->channel, "rtp_digit_delay")))) {
+			int delayi = atoi(val);
+			if (delayi < 0) delayi = 0;
+			delay = (uint32_t) delay;
+		}
+
+
+		if (delay) {
+			switch_rtp_set_interdigit_delay(tech_pvt->rtp_session, delay);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+							  "%s Set rtp dtmf delay to %u\n", switch_channel_get_name(tech_pvt->channel), delay);
+			
+		}
+
 		if (tech_pvt->cng_pt && !sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", tech_pvt->cng_pt);
 			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
@@ -3892,10 +3881,22 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 		if (zstr(attr->a_name)) {
 			continue;
 		}
-
 		if (!strcasecmp(attr->a_name, "ptime")) {
 			dptime = atoi(attr->a_value);
 			break;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Looking for zrtp-hash to set sdp_zrtp_hash_string\n");
+	for (m = sdp->sdp_media; m; m = m->m_next) {
+		for (attr = m->m_attributes; attr; attr = attr->a_next) {
+			if (zstr(attr->a_name)) continue;
+			if (!strcasecmp(attr->a_name, "zrtp-hash") && attr->a_value) {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Found zrtp-hash, setting sdp_zrtp_hash_string=%s\n", attr->a_value);
+				switch_channel_set_variable(channel, "sdp_zrtp_hash_string", attr->a_value);
+				switch_channel_set_flag(channel, CF_ZRTP_HASH);
+				break;
+			}
 		}
 	}
 
@@ -4490,6 +4491,10 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		}
 	}
 
+	if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_liberal_dtmf")) && switch_true(val)) {
+		sofia_set_flag_locked(tech_pvt, TFLAG_LIBERAL_DTMF);
+	}
+
 	if ((m = sdp->sdp_media) && 
 		(m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive || 
 		 (m->m_connections && m->m_connections->c_address && !strcmp(m->m_connections->c_address, "0.0.0.0")))) {
@@ -4875,12 +4880,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				map_bit_rate = switch_known_bitrate((switch_payload_t)map->rm_pt);
 				
 				if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
-					ptime = codec_ms = 30;
+					codec_ms = 30;
 				}
 				
 				if (zstr(map->rm_fmtp)) {
 					if (!strcasecmp(map->rm_encoding, "ilbc")) {
-						ptime = codec_ms = 30;
+						codec_ms = 30;
 						map_bit_rate = 13330;
 					}
 				} else {
@@ -5959,7 +5964,7 @@ void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *sess
 	}
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
-		xml_cdr_text = switch_xml_toxml(cdr, SWITCH_FALSE);
+		xml_cdr_text = switch_xml_toxml_nolock(cdr, SWITCH_FALSE);
 		switch_xml_free(cdr);
 	}
 
@@ -7030,14 +7035,17 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 		
 
 		if (contact->m_url->url_params) {
-			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s;%s>%s",
+			contact_str = switch_mprintf("%s <sip:%s%s%s%s%s%s;%s>%s",
 										 display, contact->m_url->url_user,
+										 contact->m_url->url_user ? "@" : "",
 										 ipv6 ? "[" : "",
 										 contact_host, ipv6 ? "]" : "", new_port, contact->m_url->url_params, np->is_nat ? ";fs_nat=yes" : "");
 		} else {
-			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s>%s",
+			contact_str = switch_mprintf("%s <sip:%s%s%s%s%s%s>%s",
 										 display,
-										 contact->m_url->url_user, ipv6 ? "[" : "", contact_host, ipv6 ? "]" : "", new_port, np->is_nat ? ";fs_nat=yes" : "");
+										 contact->m_url->url_user,
+										 contact->m_url->url_user ? "@" : "",
+										 ipv6 ? "[" : "", contact_host, ipv6 ? "]" : "", new_port, np->is_nat ? ";fs_nat=yes" : "");
 		}
 	}
 		

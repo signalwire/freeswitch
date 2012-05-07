@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1868,11 +1868,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 	switch_channel_clear_flag(channel, CF_TAGGED);
 	
 
-
-	switch_mutex_lock(channel->state_mutex);
-
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_DEBUG, "(%s) Running State Change %s\n",
 					  channel->name, state_names[state]);
+
+	switch_mutex_lock(channel->state_mutex);
 
 	channel->running_state = state;
 
@@ -3346,14 +3345,18 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	memset(c, 0, olen - cpos);\
 	}}                           \
 
-SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *channel, const char *in, switch_event_t *var_list, switch_event_t *api_list)
+SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *channel, const char *in, switch_event_t *var_list, switch_event_t *api_list, uint32_t recur)
 {
 	char *p, *c = NULL;
 	char *data, *indup, *endof_indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
-	char *cloned_sub_val = NULL, *sub_val = NULL;
+	char *cloned_sub_val = NULL, *sub_val = NULL, *expanded_sub_val = NULL;
 	char *func_val = NULL, *sb = NULL;
 	int nv = 0;
+
+	if (recur > 100) {
+		return (char *) in;
+	}
 
 	if (zstr(in)) {
 		return (char *) in;
@@ -3483,8 +3486,8 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 					int ooffset = 0;
 					char *ptr;
 					int idx = -1;
-
-					if ((expanded = switch_channel_expand_variables_check(channel, (char *) vname, var_list, api_list)) == vname) {
+					
+					if ((expanded = switch_channel_expand_variables_check(channel, (char *) vname, var_list, api_list, recur+1)) == vname) {
 						expanded = NULL;
 					} else {
 						vname = expanded;
@@ -3509,6 +3512,12 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 							sub_val = "INVALID";
 						}
 
+						if ((expanded_sub_val = switch_channel_expand_variables_check(channel, sub_val, var_list, api_list, recur+1)) == sub_val) {
+							expanded_sub_val = NULL;
+						} else {
+							sub_val = expanded_sub_val;
+						}
+						
 						if (offset || ooffset) {
 							cloned_sub_val = strdup(sub_val);
 							switch_assert(cloned_sub_val);
@@ -3542,13 +3551,13 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 					if (stream.data) {
 						char *expanded_vname = NULL;
 						
-						if ((expanded_vname = switch_channel_expand_variables_check(channel, (char *) vname, var_list, api_list)) == vname) {
+						if ((expanded_vname = switch_channel_expand_variables_check(channel, (char *) vname, var_list, api_list, recur+1)) == vname) {
 							expanded_vname = NULL;
 						} else {
 							vname = expanded_vname;
 						}
 
-						if ((expanded = switch_channel_expand_variables_check(channel, vval, var_list, api_list)) == vval) {
+						if ((expanded = switch_channel_expand_variables_check(channel, vval, var_list, api_list, recur+1)) == vval) {
 							expanded = NULL;
 						} else {
 							vval = expanded;
@@ -3588,6 +3597,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 
 				switch_safe_free(func_val);
 				switch_safe_free(cloned_sub_val);
+				switch_safe_free(expanded_sub_val);
 				sub_val = NULL;
 				vname = NULL;
 				vtype = 0;

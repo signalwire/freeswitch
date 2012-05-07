@@ -1329,6 +1329,8 @@ tag_typedef_t nutag_autoanswer = BOOLTAG_TYPEDEF(autoAnswer);
  */
 tag_typedef_t nutag_autoack = BOOLTAG_TYPEDEF(autoACK);
 
+tag_typedef_t nutag_timer_autorequire = BOOLTAG_TYPEDEF(timerAutorequire);
+
 /**@def NUTAG_AUTOACK_REF(x)
  * Reference tag for NUTAG_AUTOACK().
  */

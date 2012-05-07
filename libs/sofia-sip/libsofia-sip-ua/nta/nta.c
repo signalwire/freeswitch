@@ -4165,7 +4165,7 @@ nta_leg_t *nta_leg_tcreate(nta_agent_t *agent,
   if (i == NONE) /* Magic value, used for compatibility */
     no_dialog = 1;
 
-  if (!(leg = su_home_clone(agent->sa_home, sizeof(*leg))))
+  if (!(leg = su_home_clone(NULL, sizeof(*leg))))
     return NULL;
   home = leg->leg_home;
 
@@ -4394,7 +4394,8 @@ void nta_leg_destroy(nta_leg_t *leg)
 static
 void leg_free(nta_agent_t *sa, nta_leg_t *leg)
 {
-  su_free(sa->sa_home, leg);
+	//su_free(sa->sa_home, leg);
+	su_home_unref((su_home_t *)leg);
 }
 
 /** Return application context for the leg */
@@ -5327,7 +5328,7 @@ nta_incoming_t *incoming_create(nta_agent_t *agent,
     }
     irq->irq_branch  = sip->sip_via->v_branch;
     irq->irq_reliable_tp = tport_is_reliable(tport);
-    irq->irq_extra_100 = 1; /* Sending extra 100 trying true by default */
+    irq->irq_extra_100 = 0; /* Sending extra 100 trying false by default */
 
     if (sip->sip_timestamp)
       irq->irq_timestamp = sip_timestamp_copy(home, sip->sip_timestamp);
@@ -6068,7 +6069,7 @@ incoming_recv(nta_incoming_t *irq, msg_t *msg, sip_t *sip, tport_t *tport)
   if (irq->irq_status >= 100) {
     SU_DEBUG_5(("nta: re-received %s request, retransmitting %u reply\n",
 		sip->sip_request->rq_method_name, irq->irq_status));
-    incoming_retransmit_reply(irq, tport);
+	 incoming_retransmit_reply(irq, tport);
   }
   else if (irq->irq_agent->sa_extra_100 &&
            irq->irq_extra_100) {

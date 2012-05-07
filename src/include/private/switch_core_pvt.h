@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -261,6 +261,10 @@ struct switch_runtime {
 	uint32_t db_handle_timeout;
 	int cpu_count;
 	uint32_t time_sync;
+	char *core_db_pre_trans_execute;
+	char *core_db_post_trans_execute;
+	char *core_db_inner_pre_trans_execute;
+	char *core_db_inner_post_trans_execute;
 };
 
 extern struct switch_runtime runtime;

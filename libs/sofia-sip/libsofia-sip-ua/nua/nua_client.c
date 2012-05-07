@@ -1212,10 +1212,12 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
       return 1;
     }
   }
-
-  if (0 && 500 <= status && status < 600 &&
+  /* GriGiu : RFC-3261 status supported Retry-After */
+  if ( (status == 404 || status == 413 || status == 480 || status == 486 ||
+	   status == 500 || status == 503 ||
+	   status == 600 || status == 603) &&
       sip->sip_retry_after &&
-      sip->sip_retry_after->af_delta < 32) {
+      sip->sip_retry_after->af_delta < 3200) {
     su_timer_t *timer;
     char phrase[18];		/* Retry After XXXX\0 */
 

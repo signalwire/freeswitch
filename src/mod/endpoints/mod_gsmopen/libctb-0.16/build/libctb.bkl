@@ -1,0 +1,281 @@
+<?xml version="1.0" ?>
+<makefile>
+
+  <requires version="0.1.1"/>
+
+  <include file="presets/simple.bkl"/>
+  <using module="datafiles"/>
+
+  <!-- default is NO GPIB support, you can change this by -->
+  <!-- calling make with the Option GPIB=1                -->
+  <option name="GPIB">
+    <default-value>0</default-value>
+  </option>
+
+  <!-- the actual ctb library version -->
+  <set var="VERSION">0.16</set>
+  <set var="NAME">libctb</set>
+
+  <!-- The directory where wxWidgets is installed: -->
+  <set var="ENV_VAR">
+    <if cond="FORMAT=='watcom'">%</if>
+    <if cond="FORMAT!='watcom'"></if>
+  </set>
+
+  <option name="WXDIR">
+    <default-value>$(DOLLAR)($(ENV_VAR)WXWIN)</default-value>
+  </option>
+  <option name="INSTALLDIR">
+    <default-value>$(DOLLAR)($(ENV_VAR)WXWIN)</default-value>
+  </option>
+
+  <!-- the output of the compiler/linker will be put in a release  -->
+  <!-- or debug folder!                                            -->
+  <set var="OUTPUT">
+    <if cond="DEBUG=='1'">debug</if>
+    <if cond="DEBUG=='0'">release</if>
+  </set>
+  <set var="BUILDDIR">$(OUTPUT)</set>
+
+  <set var="INSTALLDIR">
+    <if cond="PLATFORM_WIN32=='1' and WXDIR==''">..$(DIRSEP)lib</if>
+  </set>
+
+  <!-- set the library name dependent on debug/gpib support -->
+  <set var="LIBFLAG">
+    <if cond="DEBUG=='1'">d</if>
+  </set>
+
+  <set var="SYSLIB1">
+    <if cond="PLATFORM_UNIX=='1'">pthread</if>
+    <if cond="PLATFORM_WIN32=='1'">winmm</if>
+  </set>
+
+  <set var="SYSLIB2">
+    <if cond="PLATFORM_UNIX=='1' and GPIB=='1'">gpib</if>
+    <if cond="PLATFORM_WIN32=='1' and GPIB=='1'">gpib32</if>
+  </set>
+
+  <set var="OS">
+    <if cond="PLATFORM_UNIX=='1'">linux</if>
+    <if cond="PLATFORM_WIN32=='1'">win32</if>
+  </set>
+
+  <set var="GPIBFLAG">
+    <if cond="GPIB=='1'">_gpib</if>
+  </set>
+
+  <set var="GPIBSRC">
+    <if cond="GPIB=='1'">
+	 ../src/gpib.cpp
+    </if>
+  </set>
+
+  <set var="GPIBINC">
+    <if cond="GPIB=='1'">
+	 gpib.h
+    </if>
+  </set>
+
+  <set var="OPTIMIZE_FLAG">
+    <if cond="DEBUG=='0'">off</if>
+    <if cond="DEBUG=='1'">speed</if>
+  </set>
+
+  <set var="FILES">
+    ../src/fifo.cpp
+    ../src/getopt.cpp
+    ../src/iobase.cpp
+    ../src/portscan.cpp
+    ../src/serportx.cpp
+    ../src/$(OS)/serport.cpp
+    ../src/$(OS)/timer.cpp
+  </set>
+
+  <define-tag name="run-htmldoc" rules="action">
+    <command>
+	 (cd ..; tar -cvzf manual/$(value) docs/html/ )
+    </command>
+  </define-tag>
+
+  <if cond="PLATFORM_UNIX=='1'">
+    <action id="htmldoc">
+	 <run-htmldoc>$(NAME)-$(VERSION)-htmldoc.tar.gz</run-htmldoc>
+    </action>
+  </if>
+
+  <define-tag name="run-tarball" rules="action">
+    <command>
+	 (cd ../..; tar -cvzf $(value) \
+	 $(NAME)-$(VERSION)/build/ \
+	 $(NAME)-$(VERSION)/manual/refman.pdf \
+	 $(NAME)-$(VERSION)/include \
+	 $(NAME)-$(VERSION)/python \
+	 $(NAME)-$(VERSION)/samples \
+	 $(NAME)-$(VERSION)/src \
+	 $(NAME)-$(VERSION)/lib/gpib32.lib \
+	 --exclude=release \
+	 --exclude=debug \
+	 --exclude=install \
+	 --exclude=output \
+	 --exclude=website \
+	 --exclude=*~ \
+	 --exclude=buildall.sh \
+	 --exclude=buildall.bat \
+	 --exclude=g++.sh \
+	 --exclude=version-update.sh \
+	 --exclude=$(value) \
+	 --exclude=*.ilk \
+	 --exclude=*.log \
+	 --exclude=*.o* \
+	 --exclude=*.pdb \
+	 --exclude=*.pyc \
+	 --exclude=.svn; mv $(value) $(NAME)-$(VERSION)/build )
+    </command>
+  </define-tag>
+
+  <if cond="PLATFORM_UNIX=='1'">
+    <action id="tarball">
+	 <run-tarball>$(NAME)-$(VERSION).tar.gz</run-tarball>
+    </action>
+  </if>
+
+  <!-- This is only for UNIX like OS -->
+  <data-files-tree id="install-headers">
+    <srcdir>..$(DIRSEP)include$(DIRSEP)ctb-$(VERSION)</srcdir>
+    <files>
+	 ctb.h
+	 fifo.h
+	 getopt.h
+	 $(GPIBINC)
+	 iobase.h
+	 linux/serport.h
+	 linux/timer.h
+	 portscan.h
+	 serport.h
+	 serportx.h
+	 timer.h
+    </files>
+    <install-to>$(INCLUDEDIR)$(DIRSEP)ctb-$(VERSION)</install-to>
+  </data-files-tree>
+
+  <lib id="ctb_lib" template="simple">
+    <dirname>../lib</dirname>
+    <libname>ctb$(LIBFLAG)$(GPIBFLAG)-$(VERSION)</libname>
+    <!-- for /MT -->
+    <threading>multi</threading>
+    <runtime-libs>static</runtime-libs>
+    <optimize>$(OPTIMIZE_FLAG)</optimize>
+    <sources>
+	 $(FILES)
+	 $(GPIBSRC)
+    </sources>
+    <lib-path>../lib</lib-path>
+    <sys-lib>$(SYSLIB1)</sys-lib>
+    <sys-lib>$(SYSLIB2)</sys-lib>
+    <include>../include</include>
+    <install-to>$(LIBDIR)</install-to>
+  </lib>	    
+  <dll id="ctb_dll" template="simple">
+    <dirname>../lib</dirname>
+    <threading>multi</threading>
+    <dllname>ctb$(LIBFLAG)$(GPIBFLAG)-$(VERSION)</dllname>
+    <runtime-libs>static</runtime-libs>
+    <optimize>$(OPTIMIZE_FLAG)</optimize>
+    <libname>ctb$(LIBFLAG)$(GPIBFLAG)-$(VERSION)</libname>
+    <sources>
+	 $(FILES)
+	 $(GPIBSRC)
+    </sources>
+    <lib-path>../lib</lib-path>
+    <sys-lib>$(SYSLIB1)</sys-lib>
+    <sys-lib>$(SYSLIB2)</sys-lib>
+    <include>../include</include>
+    <install-to>$(LIBDIR)</install-to>
+  </dll>
+
+  <!-- The sample of ctb -->
+  <!-- ==================== -->
+  <exe id="ctbtest" template="simple">
+    <define>GPIB=$(GPIB)</define>
+    <threading>multi</threading>
+    <runtime-libs>static</runtime-libs>
+    <optimize>$(OPTIMIZE_FLAG)</optimize>
+    <sources>
+	 ../samples/ctbtest.cpp
+    </sources>
+    <include>../include</include>
+    <lib-path>../lib</lib-path>
+    <library>ctb_lib</library>
+    <sys-lib>$(SYSLIB1)</sys-lib>
+    <sys-lib>$(SYSLIB2)</sys-lib>
+  </exe>
+
+  <set var="LIBNAME">
+    <if cond="FORMAT=='msvc'">vc</if>
+    <if cond="FORMAT!='msvc'">$(FORMAT)</if>
+  </set>
+  
+  <action id="wxinstall" cond="PLATFORM_WIN32=='1'">
+    <command>
+	 <!-- create the lib directory if it doesn't exist -->
+	 @if not exist $(INSTALLDIR)\lib\$(LIBNAME)_lib mkdir $(INSTALLDIR)\lib\$(LIBNAME)_lib 
+	 <!-- copy the libraries (lib,dll) -->
+	 @copy ..\lib\ctb$(LIBFLAG)$(GPIBFLAG)-$(VERSION).lib $(INSTALLDIR)\lib\$(LIBNAME)_lib
+	 @copy ..\lib\ctb$(LIBFLAG)$(GPIBFLAG)-$(VERSION).dll $(INSTALLDIR)\lib\$(LIBNAME)_lib
+	 <!-- copy the header files -->
+	 @if not exist $(INSTALLDIR)\include\ctb-$(VERSION)\win32 mkdir $(INSTALLDIR)\include\ctb-$(VERSION)\win32
+	 @copy ..\include\ctb-$(VERSION)\*.h $(INSTALLDIR)\include\ctb-$(VERSION)
+	 @copy ..\include\ctb-$(VERSION)\win32\*.h $(INSTALLDIR)\include\ctb-$(VERSION)\win32
+    </command>
+  </action>
+
+  <action id="tip-linux" cond="PLATFORM_UNIX=='1'">
+    <dependency-of>all</dependency-of>
+    <command>
+	 @echo " "
+	 @echo "================================================================"
+	 @echo " The building of ctb is finished. On Linux you'll now"
+	 @echo " have to run (as root):"
+	 @echo " "
+	 @echo " make DEBUG=$(DEBUG) GPIB=$(GPIB) install"
+	 @echo " "
+	 @echo " to install the libraries in $(LIBDIR)"
+	 @echo " and the header files in $(INCLUDEDIR)/ctb-$(VERSION)"
+	 @echo " "
+	 @echo " Don't forget to run ldconfig (also as root)"
+	 @echo " "
+	 @echo " ctb comes with no guarantees and doesn't claim"
+	 @echo " to be suitable for any purpose."
+	 @echo "================================================================"
+	 @echo " "
+    </command>
+  </action>
+
+  <action id="tip-win32" cond="PLATFORM_WIN32=='1'">
+    <dependency-of>all</dependency-of>
+    <command>
+	 @echo "                                                                "
+	 @echo "================================================================"
+	 @echo " The building of ctb is finished. If you have an installed    "
+	 @echo " wxWidget package (WXWIN must be defined in the enviroment),    "
+	 @echo " you'll now have to run:                                        "
+	 @echo "                                                                "
+	 @echo " make DEBUG=$(DEBUG) GPIB=$(GPIB) wxinstall                     "
+	 @echo "                                                                "
+	 @echo " to install the libraries in:                                   "
+	 @echo " $(INSTALLDIR)$(DIRSEP)lib$(DIRSEP)$(LIBNAME)_lib               "
+	 @echo " and the header files in"
+	 @echo " $(INSTALLDIR)$(DIRSEP)ctb-$(VERSION)"
+	 @echo "                                                                "
+	 @echo " If you are using another compiler (Borland, Watcom, mingw,...) "
+	 @echo " take a look in the README in this directory!                   "
+	 @echo "                                                                "
+	 @echo " ctb comes with no guarantees and doesn't claim               "
+	 @echo " to be suitable for any purpose.                                "
+	 @echo "================================================================"
+	 @echo "                                                                "
+    </command>
+  </action>
+
+</makefile>
