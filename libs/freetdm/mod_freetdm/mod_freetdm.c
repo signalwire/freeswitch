@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Moises Silva <moy@sangoma.com>
  * David Yat Sin <dyatsin@sangoma.com>
- *
+ * Gideon Sadan <gsadan@sangoma.com>
  *
  * mod_freetdm.c -- FreeTDM Endpoint Module
  *
@@ -1887,6 +1887,24 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 
 	switch (sigmsg->event_id) {
 
+		case FTDM_SIGEVENT_SMS:
+		{
+			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
+			ftdm_sms_data_t *sms = (ftdm_sms_data_t*) caller_data->priv;
+			
+
+			ftdm_log(FTDM_LOG_INFO,"FTDM_SIGEVENT_SMS from %s: %s", sms->from, sms->body);
+			if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "failed to create SMS event\n");
+				return FTDM_FAIL;
+			}
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", sms->from);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "body", sms->body);
+			alarmbits = 0;
+		}
+			//return FTDM_BREAK;
+		break;
+
 	case FTDM_SIGEVENT_ALARM_CLEAR:
 	case FTDM_SIGEVENT_ALARM_TRAP:
 		{
@@ -1936,6 +1954,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 			return FTDM_SUCCESS;
 		}
 		break;
+	
 	case FTDM_SIGEVENT_RELEASED:
 	case FTDM_SIGEVENT_INDICATION_COMPLETED:
 	case FTDM_SIGEVENT_DIALING:
@@ -1964,6 +1983,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 	}
 
 	if (event) {
+
+		
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", ftdm_channel_get_span_name(sigmsg->channel));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", ftdm_channel_get_span_id(sigmsg->channel));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", ftdm_channel_get_id(sigmsg->channel));
@@ -2898,7 +2919,7 @@ static void parse_gsm_spans(switch_xml_t cfg, switch_xml_t spans)
 						  "gsm", 
 						  on_clear_channel_signal,
 						  spanparameters) != FTDM_SUCCESS) {
-			CONFIG_ERROR("Error configuring Sangoma ISDN FreeTDM span %d\n", span_id);
+			CONFIG_ERROR("Error configuring Sangoma GSM FreeTDM span %d\n", span_id);
 			continue;
 		}
 		SPAN_CONFIG[span_id].span = span;

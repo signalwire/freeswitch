@@ -346,6 +346,11 @@ typedef struct {
 	uint8_t plan;
 } ftdm_number_t;
 
+typedef struct {
+	char from[FTDM_MAX_NUMBER_STR_SZ];  	
+	char body[FTDM_MAX_NAME_STR_SZ];
+} ftdm_sms_data_t;
+
 /*! \brief Caller information */
 typedef struct ftdm_caller_data {
 	char cid_date[8]; /*!< Caller ID date */
@@ -456,12 +461,13 @@ typedef enum {
 	FTDM_SIGEVENT_INDICATION_COMPLETED, /*!< Last requested indication was completed */
 	FTDM_SIGEVENT_DIALING, /*!< Outgoing call just started */
 	FTDM_SIGEVENT_TRANSFER_COMPLETED, /*!< Transfer request is completed */
+	FTDM_SIGEVENT_SMS,
 	FTDM_SIGEVENT_INVALID, /*!<Invalid */
 } ftdm_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "RINGING", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
 		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "FACILITY", \
-		"TRACE", "TRACE_RAW", "INDICATION_COMPLETED", "DIALING", "TRANSFER_COMPLETED", "INVALID"
+		"TRACE", "TRACE_RAW", "INDICATION_COMPLETED", "DIALING", "TRANSFER_COMPLETED", "SMS", "INVALID"
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
 
