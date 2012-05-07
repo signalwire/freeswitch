@@ -269,6 +269,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_start_input_timers(swit
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, uint32_t limit, switch_file_handle_t *fh);
 
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_pop_eavesdropper(switch_core_session_t *session, switch_core_session_t **sessionp);
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_exec_all(switch_core_session_t *session, const char *app, const char *arg);
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_update_display(switch_core_session_t *session, const char *name, const char *number);
+
 /*!
   \brief Eavesdrop on a another session
   \param session our session

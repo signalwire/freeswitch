@@ -288,7 +288,8 @@ typedef enum {
 	ED_NONE = 0,
 	ED_MUX_READ = (1 << 0),
 	ED_MUX_WRITE = (1 << 1),
-	ED_DTMF = (1 << 2)
+	ED_DTMF = (1 << 2),
+	ED_COPY_DISPLAY = (1 << 3)
 } switch_eavesdrop_flag_enum_t;
 typedef uint32_t switch_eavesdrop_flag_t;
 
@@ -1434,7 +1435,8 @@ typedef enum {
 	SMBF_THREAD_LOCK = (1 << 7),
 	SMBF_PRUNE = (1 << 8),
 	SMBF_NO_PAUSE = (1 << 9),
-	SMBF_STEREO_SWAP = (1 << 10)
+	SMBF_STEREO_SWAP = (1 << 10),
+	SMBF_LOCK = (1 << 11)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -1820,6 +1822,8 @@ struct switch_console_callback_match {
 	int dynamic;
 };
 typedef struct switch_console_callback_match switch_console_callback_match_t;
+
+typedef void (*switch_media_bug_exec_cb_t)(switch_media_bug_t *bug, void *user_data);
 
 typedef void (*switch_cap_callback_t) (const char *var, const char *val, void *user_data);
 typedef switch_status_t (*switch_console_complete_callback_t) (const char *, const char *, switch_console_callback_match_t **matches);

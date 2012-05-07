@@ -599,6 +599,43 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	status = 200;
 	phrase = "OK";
 
+	if (sofia_test_flag(tech_pvt, TFLAG_SLA_BARGE)) {
+		switch_core_session_t *new_session, *other_session;
+		const char *other_uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		char *cmd = NULL;
+
+		if (!zstr(other_uuid) && (other_session = switch_core_session_locate(other_uuid))) {
+			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+			
+			switch_mutex_lock(profile->ireg_mutex);
+			if (switch_ivr_eavesdrop_pop_eavesdropper(session, &new_session) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_t *new_channel = switch_core_session_get_channel(new_session);
+				const char *new_uuid = switch_core_session_get_uuid(new_session);
+				
+
+				switch_channel_set_variable(new_channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
+
+				switch_channel_set_flag(other_channel, CF_REDIRECT);
+				
+				switch_channel_set_state(new_channel, CS_RESET);
+					
+				switch_ivr_uuid_bridge(new_uuid, other_uuid);
+				cmd = switch_core_session_sprintf(session, "sleep:500,sofia_sla:%s inline", new_uuid);
+				
+				switch_channel_clear_flag(other_channel, CF_REDIRECT);				
+
+				switch_core_session_rwunlock(new_session);
+			}
+			switch_mutex_unlock(profile->ireg_mutex);
+			
+			switch_core_session_rwunlock(other_session);
+		}
+
+		if (!zstr(cmd)) {
+			switch_ivr_eavesdrop_exec_all(session, "transfer", cmd);
+		}
+	}
+
 	sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 	call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
@@ -8354,8 +8391,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			if ((b_session = switch_core_session_locate(b_private->uuid))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 				const char *uuid;
-				int one_leg = 1;
-				private_object_t *b_tech_pvt = NULL;
 				const char *app = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_VARIABLE);
 				const char *data = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE);
 				switch_caller_profile_t *orig_cp;
@@ -8387,68 +8422,15 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, "answer,conference:%s+flags{dist-dtmf}", data);
 					tech_pvt->caller_profile->dialplan = "inline";
 				} else {
-					if (switch_core_session_check_interface(b_session, sofia_endpoint_interface)) {
-						b_tech_pvt = switch_core_session_get_private(b_session);
-					}
-
-					if ((uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-						one_leg = 0;
-					} else {
+					if (!(uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 						uuid = switch_core_session_get_uuid(b_session);
 					}
 
 					if (uuid) {
-						switch_core_session_t *c_session = NULL;
-						int do_conf = 0;
-						const char *c_app = NULL;
-						const char *c_data = NULL;
-						
 						uuid = switch_core_session_strdup(b_session, uuid);
+						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
+																						   "answer,sofia_sla:%s", b_private->uuid);
 
-						if (call_info && (c_session = switch_core_session_locate(uuid))) {
-							switch_channel_t *c_channel = switch_core_session_get_channel(c_session);
-							private_object_t *c_tech_pvt = NULL;
-
-							c_app = switch_channel_get_variable(c_channel, SWITCH_CURRENT_APPLICATION_VARIABLE);
-							c_data = switch_channel_get_variable(c_channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE);
-
-							if (switch_core_session_check_interface(c_session, sofia_endpoint_interface)) {
-								c_tech_pvt = switch_core_session_get_private(c_session);
-							}
-							
-
-							if (!one_leg &&
-								(!b_tech_pvt || !sofia_test_flag(b_tech_pvt, TFLAG_SIP_HOLD)) &&
-								(!c_tech_pvt || !sofia_test_flag(c_tech_pvt, TFLAG_SIP_HOLD))) {
-								char *ext = switch_core_session_sprintf(session, "answer,conference:%s@sla+flags{mintwo|dist-dtmf}", uuid);
-
-								switch_channel_set_flag(c_channel, CF_REDIRECT);
-								switch_ivr_session_transfer(b_session, ext, "inline", NULL);
-								switch_ivr_session_transfer(c_session, ext, "inline", NULL);
-								switch_channel_clear_flag(c_channel, CF_REDIRECT);
-								do_conf = 1;
-							}
-							switch_core_session_rwunlock(c_session);
-						}
-
-						if (do_conf) {
-							tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
-																							   "answer,conference:%s@sla+flags{mintwo|dist-dtmf}", uuid);
-						} else {
-							if (one_leg && c_app) {
-								if (c_data) {
-									tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
-																									   "answer,%s:%s", c_app, c_data);
-								} else {
-									tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
-																									   "answer,%s", c_app);
-								}
-							} else {
-								switch_channel_mark_hold(b_channel, SWITCH_FALSE);
-								tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
-																								   "answer,intercept:%s", uuid);
-							}
-						}
 
 						tech_pvt->caller_profile->dialplan = "inline";
 					}

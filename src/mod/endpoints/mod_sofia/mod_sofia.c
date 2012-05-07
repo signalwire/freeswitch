@@ -2100,6 +2100,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					number = tech_pvt->caller_profile->destination_number;
 				}
 				
+				switch_ivr_eavesdrop_update_display(session, name, number);
+
 				if (!sofia_test_flag(tech_pvt, TFLAG_UPDATING_DISPLAY) && switch_channel_test_flag(channel, CF_ANSWERED)) {
 					if (zstr(tech_pvt->last_sent_callee_id_name) || strcmp(tech_pvt->last_sent_callee_id_name, name) ||
 						zstr(tech_pvt->last_sent_callee_id_number) || strcmp(tech_pvt->last_sent_callee_id_number, number)) {
@@ -5342,11 +5344,40 @@ static switch_status_t list_profile_gateway(const char *line, const char *cursor
 }
 
 
+SWITCH_STANDARD_APP(sofia_sla_function)
+{
+	private_object_t *tech_pvt;
+	switch_core_session_t *bargee_session;
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: <uuid>\n");
+		return;
+	}
+	
+	if ((bargee_session = switch_core_session_locate((char *)data))) {
+		if (bargee_session == session) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BARGE: %s (cannot barge on myself)\n", (char *) data);
+		} else {
+			if (switch_core_session_check_interface(bargee_session, sofia_endpoint_interface)) {
+				tech_pvt = switch_core_session_get_private(bargee_session);
+				sofia_set_flag(tech_pvt, TFLAG_SLA_BARGE);
+				switch_ivr_transfer_variable(bargee_session, session, SWITCH_SIGNAL_BOND_VARIABLE);
+			}
+		}
+
+		switch_core_session_rwunlock(bargee_session);
+	}
+	
+	switch_ivr_eavesdrop_session(session, data, NULL, ED_MUX_READ | ED_MUX_WRITE | ED_COPY_DISPLAY);
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 {
 	switch_chat_interface_t *chat_interface;
 	switch_api_interface_t *api_interface;
 	switch_management_interface_t *management_interface;
+	switch_application_interface_t *app_interface;
 	struct in_addr in;
 
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
@@ -5467,6 +5498,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	management_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_MANAGEMENT_INTERFACE);
 	management_interface->relative_oid = "1001";
 	management_interface->management_function = sofia_manage;
+
+	SWITCH_ADD_APP(app_interface, "sofia_sla", "private sofia sla function", 
+				   "private sofia sla function", sofia_sla_function, "<uuid>", SAF_NONE);
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
 	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function,

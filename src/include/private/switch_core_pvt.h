@@ -171,6 +171,8 @@ struct switch_core_session {
 	uint32_t soft_lock;
 	switch_ivr_dmachine_t *dmachine[2];
 	plc_state_t *plc;
+	uint8_t recur_buffer[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_size_t recur_buffer_len;
 };
 
 struct switch_media_bug {
@@ -199,6 +201,7 @@ struct switch_media_bug {
 	uint32_t record_pre_buffer_count;
 	uint32_t record_pre_buffer_max;
 	switch_frame_t *ping_frame;
+	switch_frame_t *read_demux_frame;
 	struct switch_media_bug *next;
 };
 

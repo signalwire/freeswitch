@@ -1167,6 +1167,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 					}
 				}
 #endif
+				
 
 				if (hup && dh.hits > 0) {
 					goto done;
