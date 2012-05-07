@@ -45,6 +45,19 @@ fi
 
 eval $(parse_version "$1")
 ngrep () { (echo "$2" | grep -e "$1" >/dev/null); }
+err () { echo "$1" >&2; exit 1; }
+
+ngrep '^[1-9]*$' "$gmajor" || \
+  err "The major version '$gmajor' appears invalid."
+ngrep '^[0-9]*$' "$gminor" || \
+  err "The minor version '$gminor' appears invalid."
+[ -z "$gmicro" ] || ngrep '^[0-9]*$' "$gmicro" || \
+  err "The micro version '$gmicro' appears invalid."
+[ -z "$grev" ] || ngrep '^[.-]' "$grev" || \
+  err "The revision '$grev' appears invalid."
+
+echo "We're going to release freeswitch v$gver" >&2
+echo >&2
 
 if ! ($debug || ngrep '-s' "$opts"); then
   cat >&2 <<EOF
