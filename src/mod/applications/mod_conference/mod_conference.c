@@ -1233,12 +1233,18 @@ static void *SWITCH_THREAD_FUNC conference_video_mirror_thread_run(switch_thread
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	conference_obj_t *conference = vh->member_a->conference;
+	switch_core_session_message_t msg = { 0 };
 	
 	switch_thread_rwlock_rdlock(conference->rwlock);
 	switch_thread_rwlock_rdlock(vh->member_a->rwlock);
 
 	/* Acquire locks for both sessions so the helper object and member structures don't get destroyed before we exit */
 	switch_core_session_read_lock(session_a);
+
+	/* Tell the channel to request a fresh vid frame */
+	msg.from = __FILE__;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+	switch_core_session_receive_message(session_a, &msg);
 	
 	vh->up = 1;
 	while (vh->up > 0 && switch_test_flag(vh->member_a, MFLAG_RUNNING) && 
