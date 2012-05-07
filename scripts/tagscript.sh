@@ -10,20 +10,34 @@ check_pwd
 
 showusage() {
   cat >&2 <<EOF
-usage: $0 [-s] <version>
+SYNOPSIS
+  $0 [-s] <version>
 
-where <version> follows the format:
+DESCRIPTION
+  Creates a new FreeSWITCH tag after performing some sanity checks.
+  The tag is optionally signed if '-s' is provided, but you should
+  really sign any public release tags, so pass '-s'.
 
-1.2-alpha3
-1.2-beta3
-1.2-rc3
-1.2
-1.2.13-rc4
-1.2.13
-etc.
+  <version> follows the format:
+  
+  1.2-alpha3
+  1.2-beta3
+  1.2-rc3
+  1.2
+  1.2.13-rc4
+  1.2.13
+  etc.
 
-I'll take care of correctly naming the tag to be consistent with
-FreeSWITCH git policy from there.
+  This tool will take care of correctly naming the tag to be
+  consistent with FreeSWITCH git policy from there.
+
+OPTIONS
+  -s
+    Signs the resulting tag.
+
+  -d
+    Debug mode.  Remove the tag after creating it and don't warn about
+    the lack of a signature.
 
 EOF
   exit 1;
@@ -105,9 +119,31 @@ set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
 
 echo "Committing the new version..." >&2
 git add configure.in
-git commit -m "release freeswitch-$gver"
+if ! (git commit --allow-empty -m "release freeswitch-$gver"); then
+  cat >&2 <<EOF
+Committing the new version failed for some reason.  Definitely look
+into this before proceeding.
+
+EOF
+  err "Stopping here."
+fi
+
 echo "Tagging freeswitch v$gver..." >&2
-git tag -a ${opts} -m "freeswitch-$gver release" "v$gver"
+if ! (git tag -a ${opts} -m "freeswitch-$gver release" "v$gver"); then
+  cat >&2 <<EOF
+Committing the new tag failed for some reason.  Maybe you didn't
+delete an old tag with this name?  Definitely figure out what's wrong
+before proceeding.
+
+EOF
+  err "Stopping here."
+fi
+
+if $debug; then
+  (echo; echo "We're in debug mode, so we're cleaning up...") >&2
+  git tag -d "v$gver" || true
+  git reset --hard HEAD^ || true
+fi
 
 if [ -n "$stash_saved" ]; then
   echo "Restoring your uncommitted changes to your working directory..." >&2
