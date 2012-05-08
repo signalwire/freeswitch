@@ -343,11 +343,7 @@ bootstrap_apr() {
 
   echo "Entering directory ${LIBDIR}/apr-util"
   cd ${LIBDIR}/apr-util
-  if ! ${BGJOB}; then
-    ./buildconf
-  else
-    ./buildconf &
-  fi
+  ./buildconf
 }
 
 bootstrap_libzrtp() {
