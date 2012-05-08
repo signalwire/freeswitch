@@ -792,9 +792,9 @@ genmodctl_mod () {
 }
 
 codename="sid"
-while getopts "r:" o; do
+while getopts "c:" o; do
   case "$o" in
-    r) codename="$OPTARG" ;;
+    c) codename="$OPTARG" ;;
   esac
 done
 shift $(($OPTIND-1))
