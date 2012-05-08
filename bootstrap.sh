@@ -457,6 +457,7 @@ bootstrap_libs() {
       ((libbootstrap ${i} ; bootstrap_libs_post ${i}) &)
     fi
   done
+  ${BGJOB} && wait
 }
 
 run() {
