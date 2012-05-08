@@ -411,7 +411,7 @@ $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 src/include/switch_version.h: src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@have_version=1 ; \
 	force=0 ; \
-	grep "@SWITCH_VERSION_REVISION@" src/include/switch_version.h.in > /dev/null  && have_version=0 ; \
+	grep -- "@SWITCH_VERSION_REVISION@" src/include/switch_version.h.in > /dev/null  && have_version=0 ; \
 	test ! -f src/include/switch_version.h || grep "@SWITCH_VERSION_REVISION@" src/include/switch_version.h > /dev/null && force=1 ; \
 	if test $$have_version = 1 ; then \
 	  cat src/include/switch_version.h.in > src/include/switch_version.h ; \
