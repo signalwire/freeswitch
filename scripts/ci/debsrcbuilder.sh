@@ -7,7 +7,11 @@ sdir="."
 
 check_pwd
 check_input_ver_build $@
-eval $(parse_version "$1")
+in_ver="$1"
+if [ "$in_ver" = "auto" ]; then
+  in_ver="$(cat build/next-release.txt)"
+fi
+eval $(parse_version "$in_ver")
 datestamp="$(date +%Y%m%dT%H%M%SZ)"
 nightly="n${datestamp}"
 build="b${2-0}"

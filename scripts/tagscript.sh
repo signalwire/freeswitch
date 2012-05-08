@@ -114,6 +114,22 @@ if (ngrep '^Saved' "$ret"); then
   stash_saved=1
 fi
 
+echo "Determining next-release (release+1) version..." >&2
+if [ -n "$grev" ] && ngrep '[0-9]*$' "$grev"; then
+  rev_ver="$(echo "$grev" | sed -e 's/^[^0-9]*\([0-9]*\)$/\1/')"
+  next_rev="$((rev_ver+1))"
+  next_ver="${gver%%$rev_ver}${next_rev}"
+elif [ -n "$grev" ]; then
+  next_ver="${gver}1"
+elif ! [ "$gmicro" = "0" ]; then
+  next_ver="${gver%%$micro}$((micro+1))"
+else
+  next_ver="${gmajor}.$((gminor+1))-rc1"
+fi
+echo "Setting next-release version ($next_ver)..." >&2
+echo "${next_ver}" > build/next-release.txt
+git add build/next-release.txt
+
 echo "Changing the version of configure.in..." >&2
 set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
 
