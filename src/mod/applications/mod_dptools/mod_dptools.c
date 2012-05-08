@@ -4462,6 +4462,34 @@ static char *file_string_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 /* /FILE STRING INTERFACE */
 
 
+SWITCH_STANDARD_APP(blind_transfer_ack_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_bool_t val = 0;
+
+	if (data) {
+		val = switch_true((char *) val);
+	}
+
+	if (switch_channel_test_flag(channel, CF_CONFIRM_BLIND_TRANSFER)) {
+		switch_core_session_t *other_session;
+		const char *uuid = switch_channel_get_variable(channel, "blind_transfer_uuid");
+
+		switch_channel_clear_flag(channel, CF_CONFIRM_BLIND_TRANSFER);
+
+		if (!zstr(uuid) && (other_session = switch_core_session_locate(uuid))) {
+			switch_core_session_message_t msg = { 0 };			
+			msg.message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
+			msg.from = __FILE__;
+			msg.numeric_arg = val;
+			switch_core_session_receive_message(other_session, &msg);
+			switch_core_session_rwunlock(other_session);
+		}
+	}
+}
+
+
+
 
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
@@ -4540,6 +4568,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>|[<content-type>]");
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, PRESENCE_USAGE);
+
+	SWITCH_ADD_APP(app_interface, "blind_transfer_ack", "", "", blind_transfer_ack_function, "[true|false]", SAF_NONE);
 
 	SWITCH_ADD_APP(app_interface, "bind_digit_action", "bind a key sequence or regex to an action", 
 				   "bind a key sequence or regex to an action", bind_digit_action_function, BIND_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);

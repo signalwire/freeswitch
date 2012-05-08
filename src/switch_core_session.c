@@ -640,6 +640,7 @@ static const char *message_names[] = {
 	"SIGNAL_DATA",
 	"INFO",
 	"AUDIO_DATA",
+	"BLIND_TRANSFER_RESPONSE",
 	"INVALID"
 };
 
@@ -720,6 +721,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		for (ptr = session->event_hooks.receive_message; ptr; ptr = ptr->next) {
 			if ((status = ptr->receive_message(session, message)) != SWITCH_STATUS_SUCCESS) {
 				break;
+			}
+		}
+
+
+		if (message->message_id == SWITCH_MESSAGE_INDICATE_BRIDGE &&
+			switch_channel_test_flag(session->channel, CF_CONFIRM_BLIND_TRANSFER)) {
+			switch_core_session_t *other_session;
+			const char *uuid = switch_channel_get_variable(session->channel, "blind_transfer_uuid");
+
+			switch_channel_clear_flag(session->channel, CF_CONFIRM_BLIND_TRANSFER);
+
+			if (!zstr(uuid) && (other_session = switch_core_session_locate(uuid))) {
+				switch_core_session_message_t msg = { 0 };			
+				msg.message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
+				msg.from = __FILE__;
+				msg.numeric_arg = 1;
+				switch_core_session_receive_message(other_session, &msg);
+				switch_core_session_rwunlock(other_session);
 			}
 		}
 	}

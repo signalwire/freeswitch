@@ -3105,6 +3105,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						}
+					} else if (!strcasecmp(var, "confirm-blind-transfer")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
+						}
 					} else if (!strcasecmp(var, "presence-proto-lookup")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PRESENCE_MAP);
@@ -3891,6 +3897,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_LOG_AUTH_FAIL);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
+						}
+					} else if (!strcasecmp(var, "confirm-blind-transfer")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
 						}
 					} else if (!strcasecmp(var, "presence-proto-lookup")) {
 						if (switch_true(val)) {
@@ -7093,37 +7105,54 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	if (exten) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *br;
+		switch_core_session_t *b_session;
 
-		if ((br = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-			switch_core_session_t *b_session;
+		if ((br = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(br))) {
 
-			if ((b_session = switch_core_session_locate(br))) {
-				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-				switch_channel_set_variable(channel, "transfer_fallback_extension", from->a_user);
-				if (!zstr(full_ref_by)) {
-					switch_channel_set_variable(b_channel, SOFIA_SIP_HEADER_PREFIX "Referred-By", full_ref_by);
-				}
-				if (!zstr(full_ref_to)) {
-					switch_channel_set_variable(b_channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
-				}
+			const char *var;
+			switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 
-				if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
-					switch_core_media_bug_transfer_recordings(session, b_session);
-				}
+			switch_channel_set_variable(channel, "transfer_fallback_extension", from->a_user);
+			if (!zstr(full_ref_by)) {
+				switch_channel_set_variable(b_channel, SOFIA_SIP_HEADER_PREFIX "Referred-By", full_ref_by);
+			}
 
-				switch_ivr_session_transfer(b_session, exten, NULL, NULL);
-				switch_core_session_rwunlock(b_session);
+			if (!zstr(full_ref_to)) {
+				switch_channel_set_variable(b_channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
+			}
+			
+			if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
+				switch_core_media_bug_transfer_recordings(session, b_session);
 			}
 
 			switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "BLIND_TRANSFER");
-			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
-					   NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
+			
+			if (((var = switch_channel_get_variable(channel, "confirm_blind_transfer")) && switch_true(var)) || 
+				sofia_test_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER)) {
 
+				switch_channel_set_state_flag(b_channel, CF_CONFIRM_BLIND_TRANSFER);
+				switch_channel_set_variable(channel, "sip_blind_transfer_event", etmp);
+				switch_channel_set_variable(b_channel, "blind_transfer_uuid", switch_core_session_get_uuid(session));
+				switch_channel_set_variable(channel, "blind_transfer_uuid", switch_core_session_get_uuid(b_session));
+
+				switch_channel_set_variable(channel, "park_timeout", "600:blind_transfer");
+				switch_channel_set_state(channel, CS_PARK);
+			} else {
+				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
+						   NUTAG_SUBSTATE(nua_substate_terminated),
+						   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), 
+						   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
+			}
+			
+			switch_ivr_session_transfer(b_session, exten, NULL, NULL);
+			switch_core_session_rwunlock(b_session);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot Blind Transfer 1 Legged calls\n");
 			switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
-					   NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
+					   NUTAG_SUBSTATE(nua_substate_terminated),
+					   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), 
+					   SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 		}
 	}
 

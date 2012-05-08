@@ -1653,6 +1653,28 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 		}
 		goto end;
+	case SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE:
+		{
+			const char *event = switch_channel_get_variable(channel, "sip_blind_transfer_event");
+			const char *uuid = switch_channel_get_variable(channel, "blind_transfer_uuid");
+			char *xdest;
+
+			if (event && uuid) {
+				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
+						   NUTAG_SUBSTATE(nua_substate_terminated),
+						   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), 
+						   SIPTAG_PAYLOAD_STR(msg->numeric_arg ? "SIP/2.0 200 OK\r\n" : "SIP/2.0 403 Forbidden\r\n"), 
+						   SIPTAG_EVENT_STR(event), TAG_END());				
+
+				
+				if (!msg->numeric_arg) {
+					xdest = switch_core_session_sprintf(session, "intercept:%s", uuid);
+					switch_ivr_session_transfer(session, xdest, "inline", NULL);
+				}
+			}
+
+		}
+		goto end;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
 			
@@ -5343,7 +5365,6 @@ static switch_status_t list_profile_gateway(const char *line, const char *cursor
 	return status;
 }
 
-
 SWITCH_STANDARD_APP(sofia_sla_function)
 {
 	private_object_t *tech_pvt;
@@ -5501,6 +5522,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	SWITCH_ADD_APP(app_interface, "sofia_sla", "private sofia sla function", 
 				   "private sofia sla function", sofia_sla_function, "<uuid>", SAF_NONE);
+
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
 	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function,
