@@ -112,7 +112,7 @@ set_fs_ver () {
 }
 
 gnuize () {
-  ./bootstrap.sh -j
+  ./bootstrap.sh
   mv bootstrap.sh rebootstrap.sh
   rm -f docs/AUTHORS
   rm -f docs/COPYING

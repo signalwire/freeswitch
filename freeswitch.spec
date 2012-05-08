@@ -1433,7 +1433,7 @@ export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
 if test ! -f Makefile.in 
 then 
-   ./bootstrap.sh -j
+   ./bootstrap.sh
 fi
 
 %configure -C \
