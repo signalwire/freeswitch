@@ -1491,21 +1491,26 @@ static void cleanup_proxy_mode_b(switch_core_session_t *session)
 static void cleanup_proxy_mode_a(switch_core_session_t *session)
 {
 	switch_core_session_t *sbsession;
-
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
+	int done = 0;
 
 	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-		const char *sbv = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
-		if (!zstr(sbv) && (sbsession = switch_core_session_locate(sbv))) {
+		if (switch_core_session_get_partner(session, &sbsession) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *sbchannel = switch_core_session_get_channel(sbsession);
-			/* Clear this now, otherwise will cause the one we're interested in to hang up too...*/
-			switch_channel_set_variable(sbchannel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
-			switch_channel_hangup(sbchannel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+
+			if (switch_channel_test_flag(sbchannel, CF_PROXY_MODE)) { 	
+				/* Clear this now, otherwise will cause the one we're interested in to hang up too...*/
+				switch_channel_set_variable(sbchannel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
+				switch_channel_hangup(sbchannel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+			} else {
+				done = 1;
+			}
 			switch_core_session_rwunlock(sbsession);
 		}
 	}
 
+	if (done) return;
+	
 	switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 	switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
 	switch_channel_set_variable(channel, SWITCH_BRIDGE_UUID_VARIABLE, NULL);
