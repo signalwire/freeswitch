@@ -56,16 +56,23 @@ xread () {
 }
 
 avoid_mod_filter () {
-  local mods=("$(eval echo \${avoid_mods_$codename[@]})" "${avoid_mods[@]}")
+  local x="avoid_mods_$codename[@]"
+  local -a mods=("${avoid_mods[@]}" "${!x}")
   for x in "${mods[@]}"; do
-    [ "$1" = "$x" ] && return 1
+    if [ "$1" = "$x" ]; then
+      [ "$2" = "show" ] && echo "excluding module $x" >&2
+      return 1
+    fi
   done
   return 0
 }
 
 modconf_filter () {
-  while xread line; do
-    [ "$1" = "$line" ] && return 0
+  while xread l; do
+    if [ "$1" = "$l" ]; then
+      [ "$2" = "show" ] && echo "including module $l" >&2
+      return 0
+    fi
   done < modules.conf
   return 1
 }
@@ -76,6 +83,10 @@ mod_filter () {
   else
     avoid_mod_filter $@
   fi
+}
+
+mod_filter_show () {
+  mod_filter "$1" show
 }
 
 map_fs_modules () {
@@ -806,6 +817,7 @@ echo "Please wait, this takes a few seconds..." >&2
 parse_dir=control-modules.parse
 map_fs_modules ':' 'genmodctl_new_cat' 'genmodctl_new_mod' >> control-modules
 parse_mod_control
+map_modules 'mod_filter_show' '' ''
 (echo "# -*- mode:debian-control -*-"; echo; \
   map_modules ':' 'genmodctl_cat' 'genmodctl_mod' \
   ) > control-modules.gen
