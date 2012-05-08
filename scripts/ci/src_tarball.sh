@@ -21,7 +21,7 @@ mkdir -p $dst_dir
 cp -r . $dst_dir
 
 cd $dst_dir
-set_fs_ver "$cver" "$cmajor" "$cminor" "$cmicro" "$crev"
+set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
 gnuize
 cd ..
 ls
