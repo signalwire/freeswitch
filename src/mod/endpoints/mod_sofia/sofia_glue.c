@@ -3532,7 +3532,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		if (((val = switch_channel_get_variable(tech_pvt->channel, "rtp_digit_delay")))) {
 			int delayi = atoi(val);
 			if (delayi < 0) delayi = 0;
-			delay = (uint32_t) delay;
+			delay = (uint32_t) delayi;
 		}
 
 

@@ -2300,6 +2300,7 @@ static void set_dtmf_delay(switch_rtp_t *rtp_session, uint32_t ms, uint32_t max_
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 		rtp_session->max_next_write_samplecount = rtp_session->timer.samplecount + max_upsamp;
 		rtp_session->next_write_samplecount = rtp_session->timer.samplecount + upsamp;
+		rtp_session->last_write_ts += upsamp;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Queue digit delay of %dms\n", ms);	
@@ -2349,7 +2350,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 				}
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%u dur=%d/%d/%d seq=%d lw=%d\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%u dur=%d/%d/%d seq=%d lw=%u\n",
 							  loops == 1 ? "middle" : "end", rtp_session->dtmf_data.out_digit,
 							  rtp_session->dtmf_data.timestamp_dtmf,
 							  rtp_session->dtmf_data.out_digit_sofar,
@@ -4378,7 +4379,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	rtp_session->write_msg.header.seq = htons(++rtp_session->seq);
 	rtp_session->write_msg.header.ts = htonl(ts);
 	rtp_session->write_msg.header.pt = payload;
-	rtp_session->write_msg.header.m = (m && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) ? 1 : 0;
+	rtp_session->write_msg.header.m = m;
 	memcpy(rtp_session->write_msg.body, data, datalen);
 
 	bytes = rtp_header_len + datalen;
