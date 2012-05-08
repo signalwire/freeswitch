@@ -814,31 +814,42 @@ echo "Bootstrapping debian/ for ${codename}" >&2
 echo >&2
 echo "Please wait, this takes a few seconds..." >&2
 
+echo "Adding any new modules to control-modules..." >&2
 parse_dir=control-modules.parse
 map_fs_modules ':' 'genmodctl_new_cat' 'genmodctl_new_mod' >> control-modules
+echo "Parsing control-modules..." >&2
 parse_mod_control
+echo "Displaying includes/excludes..." >&2
 map_modules 'mod_filter_show' '' ''
+echo "Generating control-modules.gen as sanity check..." >&2
 (echo "# -*- mode:debian-control -*-"; echo; \
   map_modules ':' 'genmodctl_cat' 'genmodctl_mod' \
   ) > control-modules.gen
 
-print_edit_warning > modules_.conf
+echo "Accumulating build dependencies from modules..." >&2
 map_modules 'mod_filter' '' 'accumulate_build_depends'
+echo "Generating debian/..." >&2
 > control
 (print_edit_warning; print_source_control; print_core_control) >> control
+echo "Generating debian/ (music)..." >&2
 for r in 8000 16000 32000 48000; do genmusic $r; done
+echo "Generating debian/ (sounds)..." >&2
 for x in 'en/us/callie'; do
   for r in 8000 16000 32000 48000; do
     gensound $r $x
   done
 done
+echo "Generating debian/ (conf)..." >&2
 (echo "### conf"; echo) >> control
 map_confs 'genconf'
+echo "Generating debian/ (modules)..." >&2
 (echo "### modules"; echo) >> control
+print_edit_warning > modules_.conf
 map_modules "mod_filter" \
   "gencontrol_per_cat genmodules_per_cat" \
   "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod genmodules_per_mod"
 
+echo "Generating additional lintian overrides..." >&2
 grep -e '^Package:' control | while xread l; do
   m="${l#*: }"
   f=$m.lintian-overrides
@@ -851,4 +862,5 @@ f=freeswitch.lintian-overrides
 [ -s $f ] || print_edit_warning >> $f
 print_gpl_openssl_override "freeswitch" >> $f
 
+echo "Done bootstrapping debian/" >&2
 touch .stamp-bootstrap
