@@ -438,10 +438,16 @@ bootstrap_libs_post() {
 }
 
 bootstrap_libs() {
+  local jobs=""
   for i in ${SUBDIRS}; do
     case "$i" in
       apr|fs|libzrtp)
-        ${BGJOB} && wait
+        if ${BGJOB}; then
+          for x in $jobs; do
+            wait $jobs
+          done
+        fi
+        jobs=""
         bootstrap_$i
         continue
         ;;
@@ -450,10 +456,16 @@ bootstrap_libs() {
     if ! ${BGJOB}; then
       libbootstrap ${i} ; bootstrap_libs_post ${i}
     else
-      ((libbootstrap ${i} ; bootstrap_libs_post ${i}) &)
+      (libbootstrap ${i} ; bootstrap_libs_post ${i}) &
+      local x=$!
+      jobs="$jobs $x"
     fi
   done
-  ${BGJOB} && wait
+  if ${BGJOB}; then
+    for x in $jobs; do
+      wait $x
+    done
+  fi
 }
 
 run() {
@@ -468,7 +480,6 @@ run() {
   check_libtoolize
   print_autotools_vers
   bootstrap_libs
-  ${BGJOB} && wait
   return 0
 }
 
