@@ -1366,21 +1366,41 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE, switch_channel_cause2str(cause));
 			}
 			
-			if (switch_channel_down_nosig(peer_channel) && switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
-				switch_xml_t cdr = NULL;
-				char *xml_text;
+			if (switch_channel_down_nosig(peer_channel)) {
+				switch_bool_t copy_xml_cdr = switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE));
+				switch_bool_t copy_json_cdr = switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_JSON_CDR_VARIABLE));
 
-				switch_channel_wait_for_state(peer_channel, caller_channel, CS_DESTROY);
+				if (copy_xml_cdr || copy_json_cdr) {
+					char *cdr_text = NULL;					
 
-				if (switch_ivr_generate_xml_cdr(peer_session, &cdr) == SWITCH_STATUS_SUCCESS) {
-					if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
-						switch_channel_set_variable(caller_channel, "b_leg_cdr", xml_text);
-						switch_safe_free(xml_text);
+					switch_channel_wait_for_state(peer_channel, caller_channel, CS_DESTROY);
+
+					if (copy_xml_cdr) {
+						switch_xml_t cdr = NULL;
+
+						if (switch_ivr_generate_xml_cdr(peer_session, &cdr) == SWITCH_STATUS_SUCCESS) {
+							cdr_text = switch_xml_toxml(cdr, SWITCH_FALSE);
+							switch_xml_free(cdr);
+						}
 					}
-					switch_xml_free(cdr);
-				}
-			}
+					if (copy_json_cdr) {
+						cJSON *cdr = NULL;
 
+						if (switch_ivr_generate_json_cdr(peer_session, &cdr, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+							cdr_text = cJSON_PrintUnformatted(cdr);
+							cJSON_Delete(cdr);
+						}
+					}
+
+					if (cdr_text) {
+						switch_channel_set_variable(caller_channel, "b_leg_cdr", cdr_text);
+						switch_channel_set_variable_name_printf(caller_channel, cdr_text, "b_leg_cdr_%s", switch_core_session_get_uuid(peer_session));
+						switch_safe_free(cdr_text);
+					}
+				}
+					
+			}
+			
 			switch_core_session_rwunlock(peer_session);
 
 		} else {
