@@ -41,6 +41,7 @@
 #define SWITCH_IVR_H
 
 #include <switch.h>
+#include "switch_json.h"
 
 SWITCH_BEGIN_EXTERN_C struct switch_unicast_conninfo {
 	switch_core_session_t *session;
@@ -82,6 +83,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 															char *local_ip,
 															switch_port_t local_port,
 															char *remote_ip, switch_port_t remote_port, char *transport, char *flags);
+/*!
+  \brief Generate an JSON CDR report.
+  \param session the session to get the data from.
+  \param json_cdr pointer to the json object
+  \return SWITCH_STATUS_SUCCESS if successful
+  \note on success the json object must be freed
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session_t *session, cJSON **json_cdr, switch_bool_t urlencode);
 
 /*!
   \brief Generate an XML CDR report.
