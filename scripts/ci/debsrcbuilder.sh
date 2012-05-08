@@ -14,7 +14,7 @@ build="b${2-0}"
 distro="${3-unstable}"
 codename="${4-sid}"
 
-fver="${ver}~${nightly}~${build}"
+fver="${dver}~${nightly}~${build}"
 fname="freeswitch-$fver"
 orig="freeswitch_$fver.orig"
 ddir=$src_repo/debbuild
@@ -23,7 +23,7 @@ bdir=$src_repo/debbuild/$fname
 mkdir -p $ddir
 git clone . $bdir
 cd $bdir
-set_fs_ver "$ver" "$major" "$minor" "$micro" "$rev"
+set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
 cd libs
 getlib () {
   f="${1##*/}"
