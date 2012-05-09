@@ -89,5 +89,5 @@ while (my $request = $scgi->accept) {
   #print $handle "Content-Type: text/xml\n\n";
 
   print $handle $xml;
-
+  exit;
 }
