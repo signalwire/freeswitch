@@ -355,7 +355,7 @@ Description: debugging symbols for FreeSWITCH
  .
  This package contains debugging symbols for libfreeswitch1.
 
-Package: freeswitch-dev
+Package: libfreeswitch-dev
 Section: libdevel
 Architecture: any
 Depends: \${misc:Depends}, freeswitch
