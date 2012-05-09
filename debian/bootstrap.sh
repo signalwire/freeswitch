@@ -878,9 +878,9 @@ grep -e '^Package:' control | while xread l; do
     print_long_filename_override "$m" >> $f
   fi
 done
-f=freeswitch.lintian-overrides
+f=libfreeswitch1.lintian-overrides
 [ -s $f ] || print_edit_warning >> $f
-print_gpl_openssl_override "freeswitch" >> $f
+print_gpl_openssl_override "libfreeswitch1" >> $f
 
 echo "Done bootstrapping debian/" >&2
 touch .stamp-bootstrap
