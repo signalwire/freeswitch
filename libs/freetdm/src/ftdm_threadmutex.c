@@ -401,7 +401,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_wait(ftdm_interrupt_t *interrupt, int m
 	if (interrupt->device != FTDM_INVALID_SOCKET) {
 		num++;
 		ints[1] = interrupt->device;
-		ftdm_log(FTDM_LOG_CRIT, "implement me! (Windows support for device_output_flags member!)\n", size);
+		ftdm_log(FTDM_LOG_CRIT, "implement me! (Windows support for device_output_flags member!)\n");
 	}
 	res = WaitForMultipleObjects(num, ints, FALSE, ms >= 0 ? ms : INFINITE);
 	switch (res) {
