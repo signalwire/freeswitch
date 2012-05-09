@@ -174,8 +174,11 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 	}
 
 	if (!extension) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No Route, Aborting\n");
-		switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
+
+		if (switch_ivr_blind_transfer_ack(session, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No Route, Aborting\n");
+			switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
+		}
 	}
 
   end:

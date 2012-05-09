@@ -4464,28 +4464,13 @@ static char *file_string_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 SWITCH_STANDARD_APP(blind_transfer_ack_function)
 {
-	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_bool_t val = 0;
 
 	if (data) {
 		val = switch_true((char *) val);
 	}
 
-	if (switch_channel_test_flag(channel, CF_CONFIRM_BLIND_TRANSFER)) {
-		switch_core_session_t *other_session;
-		const char *uuid = switch_channel_get_variable(channel, "blind_transfer_uuid");
-
-		switch_channel_clear_flag(channel, CF_CONFIRM_BLIND_TRANSFER);
-
-		if (!zstr(uuid) && (other_session = switch_core_session_locate(uuid))) {
-			switch_core_session_message_t msg = { 0 };			
-			msg.message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
-			msg.from = __FILE__;
-			msg.numeric_arg = val;
-			switch_core_session_receive_message(other_session, &msg);
-			switch_core_session_rwunlock(other_session);
-		}
-	}
+	switch_ivr_blind_transfer_ack(session, val);
 }
 
 
