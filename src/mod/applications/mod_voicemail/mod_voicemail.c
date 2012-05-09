@@ -2197,8 +2197,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						
 						if (fail) {
 							/* add feedback for user - let him/her know that the password they tried to change to is not allowed */
-							/* change the following macro to VM_CHANGE_PASS_FAIL_MACRO when new prompts have been recorded */
-							switch_ivr_phrase_macro(session, VM_FAIL_AUTH_MACRO, NULL, NULL, NULL);
+							switch_ivr_phrase_macro(session, VM_CHANGE_PASS_FAIL_MACRO, NULL, NULL, NULL);
 						} else {
 							sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
 							vm_execute_sql(profile, sql, profile->mutex);
