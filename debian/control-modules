@@ -641,3 +641,7 @@ Module: xml_int/mod_xml_rpc
 Description: mod_xml_rpc
  Adds mod_xml_rpc.
 
+Module: xml_int/mod_xml_scgi
+Description: mod_xml_scgi
+ Adds mod_xml_scgi.
+
