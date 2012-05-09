@@ -3058,7 +3058,8 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 				}
 			} 
 		}
-		if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && switch_channel_get_state(caller_channel) != CS_ROUTING) {
+		if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && !switch_channel_test_flag(caller_channel, CF_CONFIRM_BLIND_TRANSFER) && 
+			switch_channel_get_state(caller_channel) != CS_ROUTING) {
 			switch_channel_hangup(caller_channel, cause);
 		}
 		return;
