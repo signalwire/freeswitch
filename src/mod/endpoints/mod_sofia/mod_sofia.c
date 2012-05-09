@@ -91,10 +91,6 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 		sofia_set_flag(tech_pvt, TFLAG_RECOVERED);
 	}
 
-	if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
-		nua_respond(tech_pvt->nh, 101, "Dialing", TAG_END());
-	}
-
 	if (sofia_test_flag(tech_pvt, TFLAG_OUTBOUND) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
 		const char *var;
 
