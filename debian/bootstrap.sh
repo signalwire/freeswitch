@@ -32,13 +32,13 @@ avoid_mods=(
   formats/mod_shout
   languages/mod_java
   languages/mod_managed
+  languages/mod_spidermonkey
   languages/mod_yaml
   sdk/autotools
   xml_int/mod_xml_ldap
 )
 avoid_mods_squeeze=(
   formats/mod_vlc
-  languages/mod_spidermonkey
 )
 
 err () {
