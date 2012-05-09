@@ -5640,6 +5640,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_simplify ::console::list_uuid");
 	switch_console_set_complete("add uuid_transfer ::console::list_uuid");
 	switch_console_set_complete("add uuid_dual_transfer ::console::list_uuid");
+	switch_console_set_complete("add uuid_video_refresh ::console::list_uuid");
 	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
 	switch_console_set_complete("add ...");
