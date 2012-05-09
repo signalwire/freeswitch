@@ -2533,9 +2533,7 @@ SWITCH_STANDARD_API(sk_function)
 										   globals.SKYPOPEN_INTERFACES[tmp_i].message + 30);
 			}
 		}
-	}
-
-	if (!strcasecmp(argv[0], "list")) {
+	} else if (!strcasecmp(argv[0], "list")) {
 		int i;
 		unsigned int ib = 0;
 		unsigned int ib_failed = 0;
