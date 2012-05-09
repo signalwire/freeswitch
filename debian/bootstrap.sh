@@ -194,6 +194,16 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  .
  This package contains the FreeSWITCH core.
 
+Package: libfreeswitch1
+Architecture: any
+Depends: \${shlibs:Depends}, \${perl:Depends}, \${misc:Depends}
+Recommends:
+Suggests: libfreeswitch1-dbg
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ This package contains the FreeSWITCH core library.
+
 Package: freeswitch-meta-bare
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
@@ -334,6 +344,16 @@ Description: debugging symbols for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
  This package contains debugging symbols for FreeSWITCH.
+
+Package: libfreeswitch1-dbg
+Section: debug
+Priority: extra
+Architecture: any
+Depends: \${misc:Depends}, libfreeswitch1 (= \${binary:Version})
+Description: debugging symbols for FreeSWITCH
+ $(debian_wrap "${fs_description}")
+ .
+ This package contains debugging symbols for libfreeswitch1.
 
 Package: freeswitch-dev
 Section: libdevel
