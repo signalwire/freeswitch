@@ -14,7 +14,7 @@ dst_name="freeswitch-$cmajor.$cminor.$cmicro"
 dst_parent="/tmp/"
 dst_dir="/tmp/$dst_name"
 
-(mkdir -p rpmbuild && cd $_ && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SPECS)
+(mkdir -p rpmbuild && cd rpmbuild && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SPECS)
 
 cd $src_repo
 
