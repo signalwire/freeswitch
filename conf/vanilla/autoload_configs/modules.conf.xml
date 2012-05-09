@@ -16,6 +16,7 @@
     <!-- <load module="mod_xml_rpc"/> -->
     <!-- <load module="mod_xml_curl"/> -->
     <!-- <load module="mod_xml_cdr"/> -->
+    <!-- <load module="mod_xml_scgi"/> -->
 
     <!-- Event Handlers -->
     <load module="mod_cdr_csv"/>
