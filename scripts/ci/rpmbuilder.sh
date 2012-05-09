@@ -17,7 +17,7 @@ dst_dir="/tmp/$dst_name"
 (mkdir -p rpmbuild && cd rpmbuild && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SPECS)
 
 cd $src_repo
-cp -a src_dist/* rpmbuild/SOURCES/
+cp -a src_dist/* rpmbuild/SOURCES/ || true
 
 rpmbuild --define "VERSION_NUMBER $cver" \
   --define "BUILD_NUMBER $build" \
