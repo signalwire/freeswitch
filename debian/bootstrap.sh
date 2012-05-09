@@ -841,7 +841,8 @@ parse_mod_control
 echo "Displaying includes/excludes..." >&2
 map_modules 'mod_filter_show' '' ''
 echo "Generating control-modules.gen as sanity check..." >&2
-(echo "# -*- mode:debian-control -*-"; echo; \
+(echo "# -*- mode:debian-control -*-"; \
+  echo "##### Author: Travis Cross <tc@traviscross.com>"; echo; \
   map_modules ':' 'genmodctl_cat' 'genmodctl_mod' \
   ) > control-modules.gen
 
