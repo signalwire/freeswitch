@@ -186,7 +186,8 @@ print_core_control () {
 cat <<EOF
 Package: freeswitch
 Architecture: any
-Depends: \${shlibs:Depends}, \${perl:Depends}, \${misc:Depends}
+Depends: \${shlibs:Depends}, \${perl:Depends}, \${misc:Depends},
+ libfreeswitch1 (= \${binary:Version})
 Recommends:
 Suggests: freeswitch-dbg
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
