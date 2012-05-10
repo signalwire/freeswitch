@@ -226,7 +226,7 @@ static scgi_status_t scgi_push_param(scgi_handle_t *handle, const char *name, co
 
 SCGI_DECLARE(scgi_status_t) scgi_send_request(scgi_handle_t *handle)
 {
-	scgi_status_t status;
+	scgi_status_t status = SCGI_SUCCESS;
 	char *buffer = NULL;
 	size_t bytes = 0;
 	ssize_t sent = 0;
