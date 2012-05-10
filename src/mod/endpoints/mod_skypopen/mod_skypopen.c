@@ -879,7 +879,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			switch_sleep(1000);	//XXX don't like this
 			try++;
 			if (try < 5) {
-				DEBUGA_SKYPE("skypopen_audio_read going back to read\n", SKYPOPEN_P_LOG);
+				//DEBUGA_SKYPE("skypopen_audio_read going back to read\n", SKYPOPEN_P_LOG);
 				goto read;
 			}
 			DEBUGA_SKYPE("READ BUFFER EMPTY, skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
