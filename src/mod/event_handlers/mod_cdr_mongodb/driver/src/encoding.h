@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2011 10gen, Inc.
+ * Copyright 2009-2012 10gen, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _BSON_ENCODING_H_
-#define _BSON_ENCODING_H_
+#ifndef BSON_ENCODING_H_
+#define BSON_ENCODING_H_
 
 MONGO_EXTERN_C_START
 
