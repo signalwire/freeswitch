@@ -196,7 +196,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: libfreeswitch1
 Architecture: any
-Depends: \${shlibs:Depends}, \${perl:Depends}, \${misc:Depends}
+Depends: \${shlibs:Depends}, \${misc:Depends}
 Recommends:
 Suggests: libfreeswitch1-dbg
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
