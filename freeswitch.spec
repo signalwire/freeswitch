@@ -1593,6 +1593,7 @@ fi
 #################################### Basic Directory Structure #######################################################
 #
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}
+%dir %attr(0750, freeswitch, daemon) %{LOCALSTATEDIR}
 %dir %attr(0750, freeswitch, daemon) %{DBDIR}
 %dir %attr(0750, freeswitch, daemon) %{GRAMMARDIR}
 %dir %attr(0750, freeswitch, daemon) %{HTDOCSDIR}
