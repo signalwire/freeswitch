@@ -252,7 +252,7 @@ static switch_status_t do_config(void)
 		binding->host = switch_core_strdup(globals.pool, host);
 		binding->port = atoi(port);
 		binding->vars_map = vars_map;
-		binding->url = switch_mprintf("scgi://%s:%s", host, port);
+		binding->url = switch_mprintf("scgi://%s:%s/%s", host, port, bname);
 
         if (bind_mask) {
 			binding->bindings = switch_core_strdup(globals.pool, bind_mask);
