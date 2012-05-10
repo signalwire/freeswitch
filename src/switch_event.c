@@ -2399,7 +2399,34 @@ SWITCH_DECLARE(int) switch_event_check_permission_list(switch_event_t *list, con
 	return r;	
 }
 
+SWITCH_DECLARE(void) switch_event_add_presence_data_cols(switch_channel_t *channel, switch_event_t *event, const char *prefix)
+{
+	const char *data;
 
+	if (!prefix) prefix = "";
+	
+	if ((data = switch_channel_get_variable(channel, "presence_data_cols"))) {
+		char *cols[128] = { 0 };
+		char header_name[128] = "";
+		int col_count = 0, i = 0;
+		char *data_copy = NULL;
+
+		data_copy = strdup(data);
+	
+		col_count = switch_split(data_copy, ':', cols);
+	
+		for (i = 0; i < col_count; i++) {
+			const char *val = NULL;
+			switch_snprintf(header_name, sizeof(header_name), "%s%s", prefix, cols[i]);
+			
+			val = switch_channel_get_variable(channel, cols[i]);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, val);
+		}
+		
+		switch_safe_free(data_copy);
+	}
+
+}
 
 
 /* For Emacs:

@@ -1171,7 +1171,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 
 static char *parse_presence_data_cols(switch_event_t *event)
 {
-	char *cols[25] = { 0 };
+	char *cols[128] = { 0 };
 	int col_count = 0;
 	char *data_copy;
 	switch_stream_handle_t stream = { 0 };
