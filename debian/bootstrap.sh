@@ -210,7 +210,6 @@ Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
 Recommends:
  freeswitch-doc (= \${binary:Version}),
- freeswitch-htdocs-slim (= \${binary:Version}),
  freeswitch-mod-commands (= \${binary:Version}),
  freeswitch-init (= \${binary:Version}),
  freeswitch-music (= \${binary:Version}),
@@ -403,14 +402,6 @@ Description: FreeSWITCH systemd configuration
  This package contains the systemd configuration for FreeSWITCH.
 
 ## misc
-
-Package: freeswitch-htdocs-slim
-Architecture: all
-Depends: \${misc:Depends}
-Description: FreeSWITCH htdocs slim player
- $(debian_wrap "${fs_description}")
- .
- This package contains the slim SWF player for FreeSWITCH.
 
 ## sounds
 
