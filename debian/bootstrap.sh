@@ -541,6 +541,15 @@ ${p}: possible-gpl-code-linked-with-openssl
 EOF
 }
 
+print_itp_override () {
+  local p="$1"
+  cat <<EOF
+# We're not in Debian (yet) so we don't have an ITP bug to close.
+${p}: new-package-should-close-itp-bug
+
+EOF
+}
+
 print_common_overrides () {
   print_long_filename_override "$1"
 }
@@ -873,9 +882,12 @@ echo "Generating additional lintian overrides..." >&2
 grep -e '^Package:' control | while xread l; do
   m="${l#*: }"
   f=$m.lintian-overrides
-  if [ ! -s $f ] || ! grep -e 'package-has-long-file-name' $f >/dev/null; then
-    [ -s $f ] || print_edit_warning >> $f
+  [ -s $f ] || print_edit_warning >> $f
+  if ! grep -e 'package-has-long-file-name' $f >/dev/null; then
     print_long_filename_override "$m" >> $f
+  fi
+  if ! grep -e 'new-package-should-close-itp-bug' $f >/dev/null; then
+    print_itp_override "$m" >> $f
   fi
 done
 for p in freeswitch libfreeswitch1; do
