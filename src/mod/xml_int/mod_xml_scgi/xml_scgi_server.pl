@@ -65,7 +65,7 @@ my $xml = qq#
 while (my $request = $scgi->accept) {
 
   # fork every new req into its own process (optional)
-  next unless(fork());
+  next unless(my $pid = fork());
   my $handle = $request->connection;
 
   $request->read_env;
@@ -89,5 +89,5 @@ while (my $request = $scgi->accept) {
   #print $handle "Content-Type: text/xml\n\n";
 
   print $handle $xml;
-  exit;
+  exit if (!$pid);
 }
