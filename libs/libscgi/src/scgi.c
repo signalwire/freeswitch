@@ -165,6 +165,11 @@ SCGI_DECLARE(scgi_status_t) scgi_add_body(scgi_handle_t *handle, const char *val
 	return SCGI_SUCCESS;
 }
 
+SCGI_DECLARE(const char *) scgi_get_body(scgi_handle_t *handle)
+{
+	return handle->body;
+}
+
 SCGI_DECLARE(scgi_status_t) scgi_add_param(scgi_handle_t *handle, const char *name, const char *value)
 {
 	scgi_param_t *param, *pp;
@@ -188,6 +193,19 @@ SCGI_DECLARE(scgi_status_t) scgi_add_param(scgi_handle_t *handle, const char *na
 	}
 
 	return SCGI_SUCCESS;
+}
+
+SCGI_DECLARE(const char *) scgi_get_param(scgi_handle_t *handle, const char *name)
+{
+	scgi_param_t *pp;
+
+	for(pp = handle->params; pp; pp = pp->next) { 
+		if (!strcasecmp(pp->name, name)) {
+			return pp->value;
+		}
+	}
+
+	return NULL;
 }
 
 static scgi_status_t scgi_push_param(scgi_handle_t *handle, const char *name, const char *value)
@@ -518,3 +536,169 @@ SCGI_DECLARE(int) scgi_wait_sock(scgi_socket_t sock, uint32_t ms, scgi_poll_t fl
 
 }
 #endif
+
+static int scgi_socket_reuseaddr(scgi_socket_t socket) 
+{
+#ifdef WIN32
+	BOOL reuse_addr = TRUE;
+	return setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse_addr, sizeof(reuse_addr));
+#else
+	int reuse_addr = 1;
+	return setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+#endif
+}
+
+SCGI_DECLARE(scgi_status_t) scgi_listen(const char *host, scgi_port_t port, scgi_listen_callback_t callback)
+{
+	scgi_socket_t server_sock = SCGI_SOCK_INVALID;
+	struct sockaddr_in addr;
+	scgi_status_t status = SCGI_SUCCESS;
+	
+	if ((server_sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+		return SCGI_FAIL;
+	}
+
+	scgi_socket_reuseaddr(server_sock);
+		   
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(port);
+	
+    if (bind(server_sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+		status = SCGI_FAIL;
+		goto end;
+	}
+
+    if (listen(server_sock, 10000) < 0) {
+		status = SCGI_FAIL;
+		goto end;
+	}
+
+	for (;;) {
+		int client_sock;                    
+		struct sockaddr_in echoClntAddr;
+#ifdef WIN32
+		int clntLen;
+#else
+		unsigned int clntLen;
+#endif
+
+		clntLen = sizeof(echoClntAddr);
+    
+		if ((client_sock = accept(server_sock, (struct sockaddr *) &echoClntAddr, &clntLen)) == SCGI_SOCK_INVALID) {
+			status = SCGI_FAIL;
+			goto end;
+		}
+		
+		callback(server_sock, client_sock, &echoClntAddr);
+	}
+
+ end:
+
+	if (server_sock != SCGI_SOCK_INVALID) {
+		closesocket(server_sock);
+		server_sock = SCGI_SOCK_INVALID;
+	}
+
+	return status;
+
+}
+
+#define next_str(_e, _s) _s = _e; while(*_s) _s++; _s++
+
+SCGI_DECLARE(scgi_status_t) scgi_parse(scgi_socket_t sock, scgi_handle_t *handle)
+{
+	char sbuf[128] = "";
+	char *p = sbuf, *e, *end;
+	ssize_t r = 0;
+	scgi_status_t status = SCGI_FAIL;
+	ssize_t bytes = 0;
+	char *headers = NULL;
+	int loops = 0;
+	ssize_t clen = 0;
+	char *body = NULL;
+	char comma = 0;
+
+	handle->sock = sock;
+	handle->connected = 1;
+	sock_setup(handle);
+	
+
+	for(;;) {
+
+		if ((r = recv(sock, p, 1, 0)) < 1)  {
+			break;
+		}
+
+		if (*p == ':') {
+			*p = '\0';
+			break;
+		}
+		p++;
+	}
+
+	if (r <= 0) goto end;
+
+	bytes = atoi(sbuf);
+
+	if (bytes <= 0) goto end;
+
+	headers = malloc(bytes);
+	r = recv(sock, headers, bytes, 0);
+	if (r <= 0) goto end;
+
+	r = recv(sock, &comma, 1, 0);
+	if (r <= 0 || comma != ',') goto end;
+	
+
+	p = headers;
+	end = p + bytes;
+	e = NULL;
+
+	while(p < end) {
+		next_str(p, e);
+
+		if (!e) break;
+
+		if (!loops++) {
+			if (!strcasecmp(p, "CONTENT_LENGTH") && e) {
+				clen = atoi(e);
+				if (clen) {
+					body = malloc(clen+1);
+					r = recv(sock, body, clen, 0);
+					*(body + clen) = '\0';
+					if (r <= 0) goto end;
+					scgi_add_body(handle, body);
+					scgi_safe_free(body);
+				}
+
+				status = SCGI_SUCCESS;
+				
+			} else {
+				goto end;
+			}
+		}
+
+		scgi_add_param(handle, p, e);
+		next_str(e, p);
+	}
+
+ end:
+
+	scgi_safe_free(headers);
+
+	return status;
+}
+
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */

@@ -138,7 +138,7 @@ typedef int scgi_filehandle_t;
 #define scgi_strlen_zero(s) (!s || *(s) == '\0')
 #define scgi_strlen_zero_buf(s) (*(s) == '\0')
 #define end_of(_s) *(*_s == '\0' ? _s : _s + strlen(_s) - 1)
-
+#define end_of_p(_s) (*_s == '\0' ? _s : _s + strlen(_s) - 1)
 
 typedef enum {
 	SCGI_POLL_READ = (1 << 0),
@@ -179,7 +179,7 @@ typedef enum {
 	SCGI_GENERR
 } scgi_status_t;
 
-
+typedef void (*scgi_listen_callback_t)(scgi_socket_t server_sock, scgi_socket_t client_sock, struct sockaddr_in *addr);
 
 SCGI_DECLARE(scgi_status_t) scgi_connect(scgi_handle_t *handle, const char *host, scgi_port_t port, uint32_t timeout);
 SCGI_DECLARE(scgi_status_t) scgi_disconnect(scgi_handle_t *handle);
@@ -190,6 +190,9 @@ SCGI_DECLARE(scgi_status_t) scgi_add_param(scgi_handle_t *handle, const char *na
 SCGI_DECLARE(scgi_status_t) scgi_add_body(scgi_handle_t *handle, const char *value);
 SCGI_DECLARE(size_t) scgi_build_message(scgi_handle_t *handle, char **buffer);
 SCGI_DECLARE(scgi_status_t) scgi_destroy_params(scgi_handle_t *handle);
+SCGI_DECLARE(scgi_status_t) scgi_listen(const char *host, scgi_port_t port, scgi_listen_callback_t callback);
+SCGI_DECLARE(const char *) scgi_get_body(scgi_handle_t *handle);
+SCGI_DECLARE(const char *) scgi_get_param(scgi_handle_t *handle, const char *name);
 
 #ifdef __cplusplus
 }

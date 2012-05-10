@@ -10,7 +10,8 @@ int main(int argc, char *argv[])
 	int port = 0;
 
 	if (argc < 2) {
-		fprintf(stderr, "usage: testclient <ip> <port>");
+		fprintf(stderr, "usage: testclient <ip> <port>\n");
+		exit(-1);
 	}
 
 	ip = argv[1];
