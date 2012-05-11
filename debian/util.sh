@@ -167,10 +167,10 @@ _create_orig () {
 
 create_orig () {
   local xz_level="6"
-  while getopts 'dZ:' o; do
+  while getopts 'dz:' o; do
     case "$o" in
       d) set -vx;;
-      Z) xz_level="$OPTARG";;
+      z) xz_level="$OPTARG";;
     esac
   done
   shift $(($OPTIND-1))
@@ -180,10 +180,10 @@ create_orig () {
 create_dsc () {
   . $ddir/../scripts/ci/common.sh
   local xz_level="6"
-  while getopts 'dZ:' o; do
+  while getopts 'dz:' o; do
     case "$o" in
       d) set -vx;;
-      Z) xz_level="$OPTARG";;
+      z) xz_level="$OPTARG";;
     esac
   done
   shift $(($OPTIND-1))
