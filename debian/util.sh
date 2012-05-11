@@ -140,18 +140,10 @@ get_current_version () {
     | sed -e 's/[()]//g' -e 's/-.*//'
 }
 
-create_orig () {
+_create_orig () {
   . $ddir/../scripts/ci/common.sh
-  local xz_level="6"
-  while getopts 'dZ:' o; do
-    case "$o" in
-      d) set -vx;;
-      Z) xz_level="$OPTARG";;
-    esac
-  done
-  shift $(($OPTIND-1))
   eval $(parse_version "$(get_current_version)")
-  local destdir="$1" n=freeswitch
+  local destdir="$1" xz_level="$2" n=freeswitch
   local d=${n}-${dver} f=${n}_${dver}
   local sd=${ddir}/sdeb/$d
   [ -n "$destdir" ] || destdir=$ddir/../../
@@ -173,10 +165,48 @@ create_orig () {
   rm -rf $ddir/sdeb
 }
 
+create_orig () {
+  local xz_level="6"
+  while getopts 'dZ:' o; do
+    case "$o" in
+      d) set -vx;;
+      Z) xz_level="$OPTARG";;
+    esac
+  done
+  shift $(($OPTIND-1))
+  _create_orig "$1" "$xz_level"
+}
+
+create_dsc () {
+  . $ddir/../scripts/ci/common.sh
+  local xz_level="6"
+  while getopts 'dZ:' o; do
+    case "$o" in
+      d) set -vx;;
+      Z) xz_level="$OPTARG";;
+    esac
+  done
+  shift $(($OPTIND-1))
+  eval $(parse_version "$(get_current_version)")
+  local destdir="$1" n=freeswitch
+  local d=${n}-${dver} f=${n}_${dver}
+  [ -n "$destdir" ] || destdir=$ddir/../../
+  [ -f $destdir/$f.orig.tar.xz ] \
+    || _create_orig "$1" "${xz_level}"
+  (
+    ddir=$(pwd)/$ddir
+    cd $destdir
+    mkdir -p $f
+    cp -a $ddir $f
+    dpkg-source -b -i.* -Zxz -z9 $f
+  )
+}
+
 cmd="$1"
 shift
 case "$cmd" in
   create-dbg-pkgs) create_dbg_pkgs ;;
+  create-dsc) create_dsc "$@" ;;
   create-orig) create_orig "$@" ;;
   list-build-depends) list_build_depends ;;
   install-build-depends) install_build_depends ;;
