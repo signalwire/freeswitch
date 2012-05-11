@@ -143,30 +143,39 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		}
 
 		scgi_disconnect(&handle);
+
+		if (len < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG:\nURL: %s Connection Read Failed: [%s]\n", binding->url, handle.err);
+			goto end;
+		}
+
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG:\nURL: %s Connection Failed: [%s]\n", binding->url, handle.err);
-		switch_safe_free(data);
-		switch_safe_free(stream.data);
-		return NULL;
+		goto end;
 	}
 
 	if (GLOBAL_DEBUG) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG:\nURL: %s\nPOST_DATA:\n%s\n\nRESPONSE:\n%s\n\n", binding->url, data, txt);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG:\nURL: %s\nPOST_DATA:\n%s\n\nRESPONSE:-----\n%s\n-----\n", binding->url, data, txt);
 	}
 
-	if (!len) {
-		if (!(xml = switch_xml_parse_str(txt, strlen(txt)))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result! [%s]\ndata: [%s]\n", binding->url, data);
+	if (bytes) {
+		if ((xml = switch_xml_parse_str(txt, strlen(txt)))) {
+			txt = NULL;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result! [%s]\ndata: [%s] RESPONSE[%s]\n", 
+							  binding->url, data, switch_str_nil(txt));
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received error trying to fetch %s\ndata: [%s]\n", binding->url, data);
-		switch_safe_free(stream.data);
-		xml = NULL;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received error trying to fetch %s\ndata: [%s] RESPONSE [%s]\n", 
+						  binding->url, data, switch_str_nil(txt));
 	}
+
+
+ end:
 	
 	switch_safe_free(data);
-
-
+	switch_safe_free(txt);
+	
 	return xml;
 }
 
