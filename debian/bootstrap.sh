@@ -888,5 +888,10 @@ for p in freeswitch libfreeswitch1; do
   print_gpl_openssl_override "$p" >> $f
 done
 
+echo "Cleaning up..." >&2
+rm -f control-modules.preparse
+rm -rf control-modules.parse
+diff control-modules control-modules.gen >/dev/null && rm -f control-modules.gen
+
 echo "Done bootstrapping debian/" >&2
 touch .stamp-bootstrap
