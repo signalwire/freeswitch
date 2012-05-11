@@ -1711,11 +1711,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	/* While we're running, or there is a pending sql statment that we haven't appended to sqlbuf yet, because of a lack of buffer space */
 	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || sql) {
 
-		if (sofia_test_pflag(profile, PFLAG_STANDBY)) {
-			switch_yield(1000000);
-			continue;
-		}
-
 		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
 			/* Do we have enough statements or is the timeout expired */
 			while (sql || (sofia_test_pflag(profile, PFLAG_RUNNING) && mod_sofia_globals.running == 1 &&
@@ -1812,18 +1807,21 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				}
 			}
 
-			if (++ireg_loops >= IREG_SECONDS) {
-				time_t now = switch_epoch_time_now(NULL);
-				sofia_reg_check_expire(profile, now, 0);
-				ireg_loops = 0;
-			}
 
-			if (++gateway_loops >= GATEWAY_SECONDS) {
-				sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
-				gateway_loops = 0;
-			}
+			if (!sofia_test_pflag(profile, PFLAG_STANDBY)) {
+				if (++ireg_loops >= IREG_SECONDS) {
+					time_t now = switch_epoch_time_now(NULL);
+					sofia_reg_check_expire(profile, now, 0);
+					ireg_loops = 0;
+				}
+
+				if (++gateway_loops >= GATEWAY_SECONDS) {
+					sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
+					gateway_loops = 0;
+				}
 			
-			sofia_sub_check_gateway(profile, time(NULL));
+				sofia_sub_check_gateway(profile, time(NULL));
+			}
 			
 			last_check = switch_micro_time_now();
 		}
