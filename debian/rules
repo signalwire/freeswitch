@@ -1,5 +1,7 @@
 #!/usr/bin/make -f
 # -*- mode:makefile -*-
+##### Author: Travis Cross <tc@traviscross.com>
+
 #export DH_VERBOSE=1
 
 FS_CFLAGS?=-ggdb3 -O2
