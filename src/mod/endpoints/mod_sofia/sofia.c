@@ -599,6 +599,23 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	status = 200;
 	phrase = "OK";
 
+	if (sofia_test_flag(tech_pvt, TFLAG_SLA_BARGING)) {
+		const char *bargee_uuid = switch_channel_get_variable(channel, "sip_barging_uuid");
+		switch_core_session_t *bargee_session;
+		uint32_t ttl = 0;
+
+		if ((bargee_session = switch_core_session_locate(bargee_uuid))) {
+			//switch_channel_t *bargee_channel = switch_core_session_get_channel(bargee_session);
+			if ((ttl = switch_core_media_bug_count(bargee_session, "eavesdrop")) == 1) {
+				if (switch_core_session_check_interface(bargee_session, sofia_endpoint_interface)) {
+					private_object_t *bargee_tech_pvt = switch_core_session_get_private(bargee_session);
+					sofia_clear_flag(bargee_tech_pvt, TFLAG_SLA_BARGE);
+				}
+			}
+			switch_core_session_rwunlock(bargee_session);
+		}
+	}
+
 	if (sofia_test_flag(tech_pvt, TFLAG_SLA_BARGE)) {
 		switch_core_session_t *new_session, *other_session;
 		const char *other_uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE);
@@ -8419,9 +8436,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 			if ((b_session = switch_core_session_locate(b_private->uuid))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-				const char *uuid;
-				const char *app = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_VARIABLE);
-				const char *data = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE);
+				const char *bridge_uuid;
 				switch_caller_profile_t *orig_cp;
 				const char *sent_name, *sent_number;
 				orig_cp = switch_channel_get_caller_profile(b_channel);
@@ -8446,24 +8461,37 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Setting NAT mode based on %s\n", is_nat);
 				}
 
+				tech_pvt->caller_profile->dialplan = "inline";
 
-				if (app && data && !strcasecmp(app, "conference")) {
-					tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, "answer,conference:%s+flags{dist-dtmf}", data);
-					tech_pvt->caller_profile->dialplan = "inline";
-				} else {
-					if (!(uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-						uuid = switch_core_session_get_uuid(b_session);
-					}
+				bridge_uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE);
 
-					if (uuid) {
-						uuid = switch_core_session_strdup(b_session, uuid);
+				if (call_info) {
+					if (!zstr(bridge_uuid) && switch_channel_test_flag(b_channel, CF_LEG_HOLDING)) {
+						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
+																						   "answer,intercept:%s", bridge_uuid);
+					} else {
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
 																						   "answer,sofia_sla:%s", b_private->uuid);
+					}
+				} else {
+					if (!zstr(bridge_uuid)) {
+						switch_channel_mark_hold(b_channel, SWITCH_FALSE);
+						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, "answer,intercept:%s", bridge_uuid);
+					} else {
+						const char *b_app = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_VARIABLE);
+						const char *b_data = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE);
+						
+						if (b_data && b_app) {
+							tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, "answer,%s:%s", b_app, b_data);
+						} else if (b_app) {
+							tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, "answer,%s", b_app);
+						}
+							
 
-
-						tech_pvt->caller_profile->dialplan = "inline";
+						switch_channel_hangup(b_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 					}
 				}
+				
 				switch_core_session_rwunlock(b_session);
 			}
 		}

@@ -5375,11 +5375,23 @@ SWITCH_STANDARD_APP(sofia_sla_function)
 		if (bargee_session == session) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "BARGE: %s (cannot barge on myself)\n", (char *) data);
 		} else {
+			switch_channel_t *channel;
+			
 			if (switch_core_session_check_interface(bargee_session, sofia_endpoint_interface)) {
 				tech_pvt = switch_core_session_get_private(bargee_session);
+				sofia_clear_flag(tech_pvt, TFLAG_SLA_BARGING);
 				sofia_set_flag(tech_pvt, TFLAG_SLA_BARGE);
 				switch_ivr_transfer_variable(bargee_session, session, SWITCH_SIGNAL_BOND_VARIABLE);
 			}
+			
+			if (switch_core_session_check_interface(session, sofia_endpoint_interface)) {
+				tech_pvt = switch_core_session_get_private(session);
+				sofia_set_flag(tech_pvt, TFLAG_SLA_BARGING);
+			}
+			
+			channel = switch_core_session_get_channel(session);
+			switch_channel_set_variable(channel, "sip_barging_uuid", (char *)data);
+
 		}
 
 		switch_core_session_rwunlock(bargee_session);

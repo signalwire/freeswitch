@@ -228,6 +228,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 	}
 
+	switch_channel_clear_flag(chan_a, CF_INTERCEPT);
+	switch_channel_clear_flag(chan_a, CF_INTERCEPTED);
 
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
 

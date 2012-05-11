@@ -600,6 +600,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_pop(switch_core_session_t 
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_count(switch_core_session_t *orig_session, const char *function)
+{
+	switch_media_bug_t *bp;
+	uint32_t x = 0;
+
+	if (orig_session->bugs) {
+		switch_thread_rwlock_rdlock(orig_session->bug_rwlock);
+		for (bp = orig_session->bugs; bp; bp = bp->next) {
+			if (!switch_test_flag(bp, SMBF_PRUNE) && !switch_test_flag(bp, SMBF_LOCK) && !strcmp(bp->function, function)) {
+				x++;
+			}
+		}
+		switch_thread_rwlock_unlock(orig_session->bug_rwlock);
+	}
+
+	return x;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_exec_all(switch_core_session_t *orig_session, 
 															   const char *function, switch_media_bug_exec_cb_t cb, void *user_data)
 {
@@ -629,7 +647,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_sess
 	stream->write_function(stream, "<media-bugs>\n");
 
 	if (session->bugs) {
-        switch_thread_rwlock_wrlock(session->bug_rwlock);
+        switch_thread_rwlock_rdlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			int thread_locked = (bp->thread_id && bp->thread_id == switch_thread_self());
 			stream->write_function(stream, 
@@ -778,6 +796,8 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *sess
 	switch_thread_rwlock_unlock(session->bug_rwlock);
 
 	if (bp) {
+		switch_clear_flag(bp, SMBF_LOCK);
+		bp->thread_id = 0;
 		switch_core_media_bug_close(&bp);
 		ttl++;
 		goto top;

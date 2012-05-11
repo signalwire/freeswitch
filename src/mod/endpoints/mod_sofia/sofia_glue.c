@@ -4061,6 +4061,10 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 {
 	int changed = 0;
 
+	if (sofia_test_flag(tech_pvt, TFLAG_SLA_BARGE) || sofia_test_flag(tech_pvt, TFLAG_SLA_BARGING)) {
+		return 0;
+	}
+
 	if (sendonly && switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
 		if (!sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 			const char *stream;
