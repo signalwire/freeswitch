@@ -159,7 +159,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	}
 
 	if (bytes) {
-		if ((xml = switch_xml_parse_str(txt, strlen(txt)))) {
+		if ((xml = switch_xml_parse_str_dynamic(txt, FALSE))) {
 			txt = NULL;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result! [%s]\ndata: [%s] RESPONSE[%s]\n", 
