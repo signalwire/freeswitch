@@ -140,6 +140,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			}
 
 			stream.write_function(&stream, "%s", buf);
+			txt = (char *) stream.data;
 		}
 
 		scgi_disconnect(&handle);
@@ -154,17 +155,21 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		goto end;
 	}
 
+	
+
 	if (GLOBAL_DEBUG) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG:\nURL: %s\nPOST_DATA:\n%s\n\nRESPONSE:-----\n%s\n-----\n", binding->url, data, txt);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG:\nURL: %s\nPOST_DATA:\n%s\n\nRESPONSE:\n-----\n%s\n-----\n", 
+						  binding->url, data, switch_str_nil(txt));
 	}
 
-	if (bytes) {
-		if ((xml = switch_xml_parse_str_dynamic(txt, FALSE))) {
-			txt = NULL;
-		} else {
+	
+
+	if (bytes && txt) {
+		if (!(xml = switch_xml_parse_str_dynamic(txt, FALSE))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result! [%s]\ndata: [%s] RESPONSE[%s]\n", 
 							  binding->url, data, switch_str_nil(txt));
 		}
+		txt = NULL;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received error trying to fetch %s\ndata: [%s] RESPONSE [%s]\n", 
 						  binding->url, data, switch_str_nil(txt));
