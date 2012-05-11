@@ -143,6 +143,11 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		}
 
 		scgi_disconnect(&handle);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG:\nURL: %s Connection Failed: [%s]\n", binding->url, handle.err);
+		switch_safe_free(data);
+		switch_safe_free(stream.data);
+		return NULL;
 	}
 
 	if (GLOBAL_DEBUG) {
