@@ -1199,7 +1199,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 							/* we're not in a call, neither calling */
 							res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CKPD=\"EEE\"");
 							if (res) {
-								ERRORA("AT+CKPD=\"EEE\" (cellphone screen back to user) do not got OK from the phone\n", GSMOPEN_P_LOG);
+								DEBUGA_GSMOPEN("AT+CKPD=\"EEE\" (cellphone screen back to user) do not got OK from the phone\n", GSMOPEN_P_LOG);
 							}
 						}
 					}			//unread_msg_id
