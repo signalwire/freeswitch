@@ -364,6 +364,7 @@ Build-Depends: libx11-dev
 Module: endpoints/mod_h323
 Description: mod_h323
  Adds mod_h323.
+Build-Depends: libopenh323-dev, libpt-dev
 
 Module: endpoints/mod_khomp
 Description: mod_khomp
