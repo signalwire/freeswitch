@@ -310,6 +310,7 @@ Description: mod_silk
 Module: codecs/mod_siren
 Description: mod_siren
  Adds mod_siren.
+Section: non-free/comm
 
 Module: codecs/mod_skel_codec
 Description: mod_skel_codec
