@@ -30,7 +30,6 @@ avoid_mods=(
   endpoints/mod_unicall
   formats/mod_portaudio_stream
   formats/mod_shout
-  languages/mod_managed
   languages/mod_spidermonkey
   languages/mod_yaml
   sdk/autotools
@@ -38,6 +37,7 @@ avoid_mods=(
 )
 avoid_mods_squeeze=(
   formats/mod_vlc
+  languages/mod_managed
 )
 
 err () {
