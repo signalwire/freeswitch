@@ -137,10 +137,10 @@ Build-Depends: scons, libboost-dev, libboost-system-dev,
  libboost-date-time-dev, libboost-thread-dev, libboost-filesystem-dev
 
 Module: applications/mod_mp4
+Section: contrib/comm
 Description: MP4 video support
  This module adds support for MP4 video playback.
 Build-Depends: libmp4v2-dev
-Section: contrib/comm
 
 Module: applications/mod_nibblebill
 Description: Nibblebill
@@ -308,9 +308,9 @@ Description: mod_silk
  Adds mod_silk.
 
 Module: codecs/mod_siren
+Section: non-free/comm
 Description: mod_siren
  Adds mod_siren.
-Section: non-free/comm
 
 Module: codecs/mod_skel_codec
 Description: mod_skel_codec
