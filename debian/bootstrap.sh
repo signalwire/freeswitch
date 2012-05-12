@@ -30,7 +30,6 @@ avoid_mods=(
   formats/mod_portaudio_stream
   formats/mod_shout
   languages/mod_spidermonkey
-  languages/mod_yaml
   sdk/autotools
   xml_int/mod_xml_ldap
 )
