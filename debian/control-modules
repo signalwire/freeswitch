@@ -139,6 +139,8 @@ Build-Depends: scons, libboost-dev, libboost-system-dev,
 Module: applications/mod_mp4
 Description: MP4 video support
  This module adds support for MP4 video playback.
+Build-Depends: libmp4v2-dev
+Section: contrib/comm
 
 Module: applications/mod_nibblebill
 Description: Nibblebill
