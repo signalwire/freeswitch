@@ -284,6 +284,7 @@ Description: mod_h26x
  Adds mod_h26x.
 
 Module: codecs/mod_ilbc
+Section: non-free/comm
 Description: mod_ilbc
  Adds mod_ilbc.
 
