@@ -531,6 +531,7 @@ Build-Depends: unixodbc-dev
 Module: languages/mod_yaml
 Description: mod_yaml
  Adds mod_yaml.
+Build-Depends: libyaml-dev
 
 ## mod/loggers
 
