@@ -114,6 +114,8 @@ Description: HTTP GET with caching
 Module: applications/mod_ladspa
 Description: LADSPA
  This module provides an API for accessing LADSPA plugins.
+Build-Depends: ladspa-sdk
+Suggests: tap-plugins, swh-plugins, autotalent
 
 Module: applications/mod_lcr
 Description: LCR
