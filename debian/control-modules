@@ -357,6 +357,7 @@ Description: mod_dingaling
 Module: endpoints/mod_gsmopen
 Description: mod_gsmopen
  Adds mod_gsmopen.
+Build-Depends: libx11-dev
 
 Module: endpoints/mod_h323
 Description: mod_h323
@@ -425,10 +426,12 @@ Description: mod_cdr_sqlite
 Module: event_handlers/mod_erlang_event
 Description: mod_erlang_event
  Adds mod_erlang_event.
+Build-Depends: erlang-dev
 
 Module: event_handlers/mod_event_multicast
 Description: mod_event_multicast
  Adds mod_event_multicast.
+Build-Depends: libssl-dev
 
 Module: event_handlers/mod_event_socket
 Description: mod_event_socket
@@ -453,6 +456,7 @@ Description: mod_radius_cdr
 Module: event_handlers/mod_snmp
 Description: mod_snmp
  Adds mod_snmp.
+Build-Depends: libsnmp-dev
 
 ## mod/formats
 
@@ -496,6 +500,7 @@ Distro-Conflicts: squeeze
 Module: languages/mod_java
 Description: mod_java
  Adds mod_java.
+Build-Depends: default-jdk
 
 Module: languages/mod_lua
 Description: mod_lua
@@ -504,6 +509,7 @@ Description: mod_lua
 Module: languages/mod_managed
 Description: mod_managed
  Adds mod_managed.
+Build-Depends: libmono-2.0-dev
 
 Module: languages/mod_perl
 Description: mod_perl
@@ -513,10 +519,12 @@ Build-Depends: libperl-dev
 Module: languages/mod_python
 Description: mod_python
  Adds mod_python.
+Build-Depends: python-dev
 
 Module: languages/mod_spidermonkey
 Description: mod_spidermonkey
  Adds mod_spidermonkey.
+Build-Depends: unixodbc-dev
 
 Module: languages/mod_yaml
 Description: mod_yaml
