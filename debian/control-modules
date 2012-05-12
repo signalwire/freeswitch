@@ -133,9 +133,6 @@ Description: MongoDB
  This module provides an interface to MongoDB.
 Build-Depends: scons, libboost-dev, libboost-system-dev,
  libboost-date-time-dev, libboost-thread-dev, libboost-filesystem-dev
-Depends: libicu44, libboost-system1.42.0, libboost-date-time1.42.0,
- libboost-serialization1.42.0, libboost-thread1.42.0,
- libboost-filesystem1.42.0
 
 Module: applications/mod_mp4
 Description: MP4 video support
@@ -317,7 +314,6 @@ Module: codecs/mod_speex
 Description: mod_speex
  Adds mod_speex.
 Build-Depends: libogg-dev
-Depends: libogg0
 
 Module: codecs/mod_theora
 Description: mod_theora
@@ -353,7 +349,6 @@ Module: endpoints/mod_alsa
 Description: mod_alsa
  Adds mod_alsa.
 Build-Depends: libasound2-dev
-Depends: libasound2
 
 Module: endpoints/mod_dingaling
 Description: mod_dingaling
@@ -399,7 +394,6 @@ Module: endpoints/mod_skypopen
 Description: mod_skypopen
  Adds mod_skypopen.
 Build-Depends: libx11-dev
-Depends: libpthread-stubs0
 
 Module: endpoints/mod_sofia
 Description: mod_sofia
@@ -423,7 +417,6 @@ Module: event_handlers/mod_cdr_pg_csv
 Description: mod_cdr_pg_csv
  Adds mod_cdr_pg_csv.
 Build-Depends: libpq-dev
-Depends: libpq5
 
 Module: event_handlers/mod_cdr_sqlite
 Description: mod_cdr_sqlite
@@ -483,8 +476,6 @@ Module: formats/mod_shout
 Description: mod_shout
  Adds mod_shout.
 Build-Depends: libogg-dev, libvorbis-dev
-Depends: libogg0, libvorbis0a, libvorbisenc2, libvorbisfile3,
- libvorbisidec1
 
 Module: formats/mod_sndfile
 Description: mod_sndfile
@@ -498,7 +489,6 @@ Module: formats/mod_vlc
 Description: VLC streaming
  This module provides VLC streaming.
 Build-Depends: libvlc-dev (>= 2.0.0)
-Depends: libvlc5
 Distro-Conflicts: squeeze
 
 ## mod/languages
@@ -519,7 +509,6 @@ Module: languages/mod_perl
 Description: mod_perl
  Adds mod_perl.
 Build-Depends: libperl-dev
-Depends: libperl5.10
 
 Module: languages/mod_python
 Description: mod_python
@@ -635,7 +624,6 @@ Module: xml_int/mod_xml_ldap
 Description: mod_xml_ldap
  Adds mod_xml_ldap.
 Build-Depends: libsasl2-dev
-Depends: libsasl2-modules
 
 Module: xml_int/mod_xml_rpc
 Description: mod_xml_rpc
