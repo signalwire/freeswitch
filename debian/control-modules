@@ -500,7 +500,7 @@ Distro-Conflicts: squeeze
 Module: languages/mod_java
 Description: mod_java
  Adds mod_java.
-Build-Depends: default-jdk
+Build-Depends: default-jdk, gcj-jdk
 
 Module: languages/mod_lua
 Description: mod_lua
