@@ -517,7 +517,7 @@ Description: mod_lua
 Module: languages/mod_managed
 Description: mod_managed
  Adds mod_managed.
-Build-Depends: libmono-2.0-dev
+Build-Depends: libmono-2.0-dev, mono-gmcs
 
 Module: languages/mod_perl
 Description: mod_perl
