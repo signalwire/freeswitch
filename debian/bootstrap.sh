@@ -168,7 +168,7 @@ Build-Depends:
  wget, pkg-config,
 # configure options
  libssl-dev, unixodbc-dev,
- libncurses5-dev, libjpeg8-dev,
+ libncurses5-dev, libjpeg62-dev,
  python-dev, erlang-dev,
 # documentation
  doxygen,
