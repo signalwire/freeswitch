@@ -9,7 +9,6 @@ mod_build_depends="."
 supported_distros="squeeze wheezy sid"
 avoid_mods=(
   applications/mod_fax
-  applications/mod_ladspa
   applications/mod_limit
   applications/mod_mongo
   applications/mod_mp4
