@@ -115,7 +115,7 @@ map_modules () {
       module=${y##*/} module_path=$y
       $filterfn $category/$module || continue
       module="" category="" module_name=""
-      description="" long_description=""
+      section="" description="" long_description=""
       build_depends="" depends="" recommends="" suggests=""
       distro_conflicts=""
       distro_vars=""
@@ -129,7 +129,7 @@ map_modules () {
       for f in $permodfns; do $f; done
       unset \
         module module_name module_path \
-        description long_description \
+        section description long_description \
         build_depends depends recommends suggests \
         distro_conflicts $distro_vars
     done
@@ -477,8 +477,10 @@ EOF
 }
 
 print_mod_control () {
+  local m_section="${section-comm}"
   cat <<EOF
 Package: freeswitch-${module_name//_/-}
+Section: ${m_section}
 Architecture: any
 $(debian_wrap "Depends: \${shlibs:Depends}, \${misc:Depends}, freeswitch, ${depends}")
 $(debian_wrap "Recommends: ${recommends}")
@@ -815,6 +817,7 @@ genmodctl_cat () {
 
 genmodctl_mod () {
   echo "Module: $module"
+  [ -n "$section" ] && echo "Section: $section"
   echo "Description: $description"
   echo "$long_description" | fold -s -w 69 | while xread l; do
     local v="$(echo "$l" | sed -e 's/ *$//g')"
