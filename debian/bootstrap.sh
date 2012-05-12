@@ -6,6 +6,7 @@ mod_dir="../src/mod"
 conf_dir="../conf"
 fs_description="FreeSWITCH is a scalable open source cross-platform telephony platform designed to route and interconnect popular communication protocols using audio, video, text or any other form of media."
 mod_build_depends="."
+supported_distros="squeeze wheezy sid"
 avoid_mods=(
   applications/mod_fax
   applications/mod_ladspa
@@ -123,6 +124,11 @@ map_modules () {
       description="" long_description=""
       build_depends="" depends="" recommends="" suggests=""
       distro_conflicts=""
+      distro_vars=""
+      for x in $supported_distros; do
+        distro_vars="$distro_vars build_depends_$x"
+        eval build_depends_$x=""
+      done
       . $y
       [ -n "$description" ] || description="$module_name"
       [ -n "$long_description" ] || description="Adds ${module_name}."
@@ -131,7 +137,7 @@ map_modules () {
         module module_name module_path \
         description long_description \
         build_depends depends recommends suggests \
-        distro_conflicts
+        distro_conflicts $distro_vars
     done
     unset category category_path
   done
@@ -695,11 +701,17 @@ gensound () {
 }
 
 accumulate_build_depends () {
-  if [ -n "$build_depends" ]; then
+  local x=""
+  if [ -n "$(eval echo \$build_depends_$codename)" ]; then
+    x="$(eval echo \$build_depends_$codename)"
+  else
+    x="${build_depends}"
+  fi
+  if [ -n "$x" ]; then
     if [ ! "$mod_build_depends" = "." ]; then
-      mod_build_depends="${mod_build_depends}, ${build_depends}"
+      mod_build_depends="${mod_build_depends}, ${x}"
     else
-      mod_build_depends="${build_depends}"
+      mod_build_depends="${x}"
     fi
   fi
 }
@@ -815,6 +827,10 @@ genmodctl_mod () {
     echo " $v"
   done
   [ -n "$build_depends" ] && debian_wrap "Build-Depends: $build_depends"
+  for x in $supported_distros; do
+    [ -n "$(eval echo \$build_depends_$x)" ] \
+      && debian_wrap "Build-Depends-$x: $(eval echo \$build_depends_$x)"
+  done
   [ -n "$depends" ] && debian_wrap "Depends: $depends"
   [ -n "$reccomends" ] && debian_wrap "Recommends: $recommends"
   [ -n "$suggests" ] && debian_wrap "Suggests: $suggests"
