@@ -3073,7 +3073,7 @@ int sms_incoming(private_t *tech_pvt)
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
 		switch_event_add_body(event, "%s\n", tech_pvt->sms_body);
 		//switch_core_chat_send("GLOBAL", event); /* mod_sms */
-		switch_core_chat_send("GLOBAL", event); /* mod_sms */
+		switch_core_chat_send("GLOBAL", event);	/* mod_sms */
 	} else {
 
 		ERRORA("cannot create event on interface %s. WHY?????\n", GSMOPEN_P_LOG, tech_pvt->name);

@@ -420,7 +420,7 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 			WARNINGA("AT+CSMP do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
 		}
 	}
-#endif// NOTDEF					//GSMLIB? XXX
+#endif // NOTDEF                 //GSMLIB? XXX
 
 #ifdef NOTDEF					//GSMLIB? XXX
 
@@ -2737,7 +2737,7 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 
 		if (tech_pvt->no_ucs2 || tech_pvt->sms_pdu_not_supported == 0) {
 			try {
-int bad_8859=0;
+				int bad_8859 = 0;
 
 				memset(mesg_test, '\0', sizeof(mesg_test));
 				sprintf(mesg_test, ":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù");	//let's test the beauty of utf8
@@ -2745,7 +2745,7 @@ int bad_8859=0;
 				//text=mesg_test;
 
 				bad_8859 = utf8_to_iso_8859_1(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
-				if(!bad_8859){
+				if (!bad_8859) {
 					err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
 					if (err) {
 						ERRORA("AT+CMGF=0 (set message sending to PDU (as opposed to TEXT)  do not got OK from the phone\n", GSMOPEN_P_LOG);
@@ -2765,10 +2765,10 @@ int bad_8859=0;
 					POPPA_UNLOCKA(&tech_pvt->controldev_lock);
 
 					tech_pvt->no_ucs2 = 0;
-					tech_pvt->sms_pdu_not_supported =1;
-					ok= gsmopen_sendsms(tech_pvt, dest, text);
+					tech_pvt->sms_pdu_not_supported = 1;
+					ok = gsmopen_sendsms(tech_pvt, dest, text);
 					tech_pvt->no_ucs2 = 1;
-					tech_pvt->sms_pdu_not_supported =0;
+					tech_pvt->sms_pdu_not_supported = 0;
 
 					return ok;
 				}
@@ -2834,7 +2834,7 @@ int bad_8859=0;
 		if (tech_pvt->no_ucs2 || tech_pvt->sms_pdu_not_supported == 0) {
 			memset(smscommand, '\0', sizeof(smscommand));
 			sprintf(smscommand, "%s", pdu2);
-		}else{
+		} else {
 			memset(mesg_test, '\0', sizeof(mesg_test));
 			sprintf(mesg_test, ":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù");	//let's test the beauty of utf8
 			//text=mesg_test;
@@ -2873,7 +2873,7 @@ int bad_8859=0;
 				ERRORA("Error de-activating echo from modem\n", GSMOPEN_P_LOG);
 			}
 		}
-uscita:
+	  uscita:
 		gsmopen_sleep(1000);
 
 		if (tech_pvt->at_cmgw[0]) {
@@ -3040,9 +3040,9 @@ int gsmopen_serial_getstatus_AT(private_t *tech_pvt)
 				if (res) {
 					ERRORA("AT+CMGR (read SMS) do not got OK from the phone, message sent was:|||%s|||\n", GSMOPEN_P_LOG, at_command);
 				}
-				res = gsmopen_serial_write_AT_ack(p, "AT+CSCS=\"CIAPALO2\"");
+				res = gsmopen_serial_write_AT_ack(p, "AT+CSCS=\"GSM\"");
 				if (res) {
-					ERRORA("AT+CSCS=\"CIAPALO2\" (set TE messages to GSM) do not got OK from the phone\n", GSMOPEN_P_LOG);
+					ERRORA("AT+CSCS=\"GSM\" (set TE messages to GSM) do not got OK from the phone\n", GSMOPEN_P_LOG);
 				}
 				memset(at_command, 0, sizeof(at_command));
 				sprintf(at_command, "AT+CMGD=%d", p->unread_sms_msg_id);	/* delete the message */
