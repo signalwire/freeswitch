@@ -477,7 +477,7 @@ EOF
 }
 
 print_mod_control () {
-  local m_section="${section-comm}"
+  local m_section="${section:-comm}"
   cat <<EOF
 Package: freeswitch-${module_name//_/-}
 Section: ${m_section}
