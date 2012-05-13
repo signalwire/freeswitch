@@ -1180,10 +1180,12 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						if (res) {
 							ERRORA("AT+CMGR (read SMS) do not got OK from the phone, message sent was:|||%s|||\n", GSMOPEN_P_LOG, at_command);
 						}
-						res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"GSM\"");
+/*
+						res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"CIAPALO1\"");
 						if (res) {
-							ERRORA("AT+CSCS=\"GSM\" (set TE messages to GSM) do not got OK from the phone\n", GSMOPEN_P_LOG);
+							ERRORA("AT+CSCS=\"CIAPALO1\" (set TE messages to GSM) do not got OK from the phone\n", GSMOPEN_P_LOG);
 						}
+*/
 						memset(at_command, 0, sizeof(at_command));
 						sprintf(at_command, "AT+CMGD=%d", tech_pvt->unread_sms_msg_id);	/* delete the message */
 						tech_pvt->unread_sms_msg_id = 0;
@@ -2399,7 +2401,7 @@ int utf8_to_iso_8859_1(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, c
 	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 #endif // WIN32
 	if (iconv_res == (size_t) -1) {
-		ERRORA("error: %s %d\n", GSMOPEN_P_LOG, strerror(errno), errno);
+		DEBUGA_GSMOPEN("cannot translate in iso_8859_1 error: %s %d\n", GSMOPEN_P_LOG, strerror(errno), errno);
 		return -1;
 	}
 	DEBUGA_GSMOPEN
@@ -3038,9 +3040,9 @@ int gsmopen_serial_getstatus_AT(private_t *tech_pvt)
 				if (res) {
 					ERRORA("AT+CMGR (read SMS) do not got OK from the phone, message sent was:|||%s|||\n", GSMOPEN_P_LOG, at_command);
 				}
-				res = gsmopen_serial_write_AT_ack(p, "AT+CSCS=\"GSM\"");
+				res = gsmopen_serial_write_AT_ack(p, "AT+CSCS=\"CIAPALO2\"");
 				if (res) {
-					ERRORA("AT+CSCS=\"GSM\" (set TE messages to GSM) do not got OK from the phone\n", GSMOPEN_P_LOG);
+					ERRORA("AT+CSCS=\"CIAPALO2\" (set TE messages to GSM) do not got OK from the phone\n", GSMOPEN_P_LOG);
 				}
 				memset(at_command, 0, sizeof(at_command));
 				sprintf(at_command, "AT+CMGD=%d", p->unread_sms_msg_id);	/* delete the message */
