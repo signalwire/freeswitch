@@ -93,6 +93,7 @@ override_dh_auto_install:
 	-$(FS_INSTALL_SOUNDS) && DESTDIR=debian/tmp make cd-sounds-install cd-moh-install
 	mkdir -p debian/tmp/lib/systemd/system
 	install -m0644 debian/freeswitch-systemd.freeswitch.service debian/tmp/lib/systemd/system/freeswitch.service
+	rm -f debian/tmp/usr/share/freeswitch/grammar/model/communicator/COPYING
 
 override_dh_installinit:
 	dh_installinit -pfreeswitch-sysvinit --name=freeswitch
