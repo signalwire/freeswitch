@@ -151,6 +151,7 @@ typedef struct sofia_dispatch_event_s {
 	sofia_profile_t *profile;
 	int save;
 	switch_core_session_t *session;
+	switch_memory_pool_t *pool;
 } sofia_dispatch_event_t;
 
 struct sofia_private {
@@ -265,6 +266,7 @@ typedef enum {
 	PFLAG_OPTIONS_RESPOND_503_ON_BUSY,
 	PFLAG_PRESENCE_DISABLE_EARLY,
 	PFLAG_CONFIRM_BLIND_TRANSFER,
+	PFLAG_THREAD_PER_REG,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;

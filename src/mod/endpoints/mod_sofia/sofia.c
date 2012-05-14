@@ -1282,6 +1282,48 @@ static void our_sofia_event_callback(nua_event_t event,
 	}
 }
 
+void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void *obj)
+{
+	sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) obj;
+	switch_memory_pool_t *pool = NULL;
+
+	if (de) {
+		pool = de->pool;
+		de->pool = NULL;
+		sofia_process_dispatch_event(&de);
+	}
+
+	if (pool) {
+		switch_core_destroy_memory_pool(&pool);
+	}
+
+	return NULL;
+}
+
+void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
+{
+	sofia_dispatch_event_t *de = *dep; 
+	switch_threadattr_t *thd_attr = NULL;
+	switch_memory_pool_t *pool;
+	switch_thread_t *thread;
+
+	switch_core_new_memory_pool(&pool);
+
+
+	*dep = NULL;
+	de->pool = pool;
+
+	switch_threadattr_create(&thd_attr, de->pool);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_thread_create(&thread, 
+						 thd_attr, 
+						 sofia_msg_thread_run_once, 
+						 de,
+						 de->pool);
+	
+
+}
+
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 {
 	sofia_dispatch_event_t *de = *dep;
@@ -1386,6 +1428,13 @@ static void sofia_queue_message(sofia_dispatch_event_t *de)
 		sofia_process_dispatch_event(&de);
 		return;
 	}
+
+
+	if (de->profile && sofia_test_pflag(de->profile, PFLAG_THREAD_PER_REG) && de->data->e_event == nua_i_register) {
+		sofia_process_dispatch_event_in_thread(&de);
+		return;
+	}
+
 
  again:
 
@@ -3251,6 +3300,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_CALLID_AS_UUID);
 						}
+					} else if (!strcasecmp(var, "inbound-reg-in-new-thread")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_THREAD_PER_REG);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_THREAD_PER_REG);
+						}
 					} else if (!strcasecmp(var, "rtp-autoflush-during-bridge")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
@@ -4101,6 +4156,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
+						}
+					} else if (!strcasecmp(var, "inbound-reg-in-new-thread")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_THREAD_PER_REG);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_THREAD_PER_REG);
 						}
 					} else if (!strcasecmp(var, "inbound-use-callid-as-uuid")) {
 						if (switch_true(val)) {
