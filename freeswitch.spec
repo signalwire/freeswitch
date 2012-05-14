@@ -15,13 +15,13 @@
 # This file and all modifications and additions to the pristine package are under the same license as the package itself.
 #
 # Contributor(s): Mike Jerris
-#				  Brian West
-#				  Raul Fragoso
-#				  Rupa Shomaker
-#				  Marc Olivier Chouinard
-#				  Raymond Chandler
-#				  Anthony Minessale II <anthm@freeswitch.org>
-#
+#                 Brian West
+#                 Anthony Minessale II <anthm@freeswitch.org>
+#                 Raul Fragoso
+#                 Rupa Shomaker
+#                 Marc Olivier Chouinard
+#                 Raymond Chandler
+#                 Ken Rice <krice@freeswitch.org>
 #
 # Maintainer(s): Ken Rice <krice@freeswitch.org>
 #
