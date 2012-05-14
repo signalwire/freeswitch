@@ -91,7 +91,7 @@ SCGI_DECLARE(size_t) scgi_build_message(scgi_handle_t *handle, char **bufferp)
 		ctlen = strlen(handle->body);
 	}
 
-	snprintf(tmp, sizeof(tmp), "%ld", ctlen);
+	snprintf(tmp, sizeof(tmp), "%d", (int)ctlen);
 
 	scgi_push_param(handle, "CONTENT_LENGTH", tmp);
 	
@@ -100,14 +100,14 @@ SCGI_DECLARE(size_t) scgi_build_message(scgi_handle_t *handle, char **bufferp)
 		plen += (strlen(pp->name) + strlen(pp->value) + 2);
 	}
 
-	snprintf(tmp, sizeof(tmp), "%ld", plen + ctlen);
+	snprintf(tmp, sizeof(tmp), "%d", (int) (plen + ctlen));
 	
 	len = plen + ctlen + strlen(tmp) + 2;
 
 	buffer = malloc(len);
 	memset(buffer, 0, len);
 
-	snprintf(buffer, len, "%ld:", plen);
+	snprintf(buffer, len, "%d:", (int)plen);
 	bp = buffer + strlen(buffer);
 
 	for(pp = handle->params; pp; pp = pp->next) {
