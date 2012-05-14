@@ -206,6 +206,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 			session->read_codec = session->real_read_codec = codec;
 			if (codec->implementation) {
 				session->read_impl = *codec->implementation;
+				session->real_read_impl = *codec->implementation;
 			} else {
 				memset(&session->read_impl, 0, sizeof(session->read_impl));
 			}
@@ -313,6 +314,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_se
 {
 	if (session->read_impl.codec_id) {
 		*impp = session->read_impl;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_real_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp)
+{
+	if (session->real_read_impl.codec_id) {
+		*impp = session->real_read_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
 

@@ -8464,12 +8464,33 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				bridge_uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE);
 
 				if (call_info) {
+					const char *olu;
+					switch_core_session_t *os;
+					switch_codec_implementation_t read_impl = { 0 };
+					char *codec_str = "";
+
+					if (!zstr(bridge_uuid) && switch_channel_test_flag(b_channel, CF_LEG_HOLDING)) {
+						olu = bridge_uuid;
+					} else {
+						olu = b_private->uuid;
+					}
+					
+					if ((os = switch_core_session_locate(olu))) {
+						switch_core_session_get_real_read_impl(os, &read_impl);
+						switch_core_session_rwunlock(os);
+
+						codec_str = switch_core_session_sprintf(session, "set:absolute_codec_string=%s@%di,", read_impl.iananame, 
+															   read_impl.microseconds_per_packet / 1000);
+					}
+					
+
+
 					if (!zstr(bridge_uuid) && switch_channel_test_flag(b_channel, CF_LEG_HOLDING)) {
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
-																						   "answer,intercept:%s", bridge_uuid);
+																						   "%sanswer,intercept:%s", codec_str, bridge_uuid);
 					} else {
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
-																						   "answer,sofia_sla:%s", b_private->uuid);
+																						   "%sanswer,sofia_sla:%s", codec_str, b_private->uuid);
 					}
 				} else {
 					if (!zstr(bridge_uuid)) {
