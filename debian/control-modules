@@ -156,6 +156,11 @@ Module: applications/mod_rad_auth
 Description: RADIUS AA
  This module implements RADIUS Authentication and Authorization.
 
+Module: applications/mod_random
+Description: Entropy extraction
+ This module extracts entropy from FreeSWITCH and feeds it into
+ /dev/random.
+
 Module: applications/mod_redis
 Description: Redis limit backend
  This module provides a mechanism to use Redis as a backend data
