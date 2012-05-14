@@ -1112,6 +1112,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 										 "sip_user='%q' and sip_host='%q'",
 										 rpid, status, mod_sofia_globals.hostname, profile->name, euser, host);
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+					proto = SOFIA_CHAT_PROTO;
 				}
 
 				if (zstr(uuid)) {
