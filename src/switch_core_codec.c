@@ -114,6 +114,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 			changed_read_codec = 1;
 			if (codec->implementation) {
 				session->read_impl = *codec->implementation;
+				session->real_read_impl = *codec->implementation;
 			} else {
 				memset(&session->read_impl, 0, sizeof(session->read_impl));
 			}
@@ -136,7 +137,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 				session->read_codec = codec;
 				changed_read_codec = 1;
 				if (codec->implementation) {
-				session->read_impl = *codec->implementation;
+					session->read_impl = *codec->implementation;
+					session->real_read_impl = *codec->implementation;
 				} else {
 					memset(&session->read_impl, 0, sizeof(session->read_impl));
 				}
