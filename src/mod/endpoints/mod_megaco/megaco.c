@@ -56,7 +56,8 @@ static switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t r
 		count = switch_event_import_xml(switch_xml_child(x_settings, "param"), "name", "value", &event);
 		// status = switch_xml_config_parse_event(event, count, reload, instructions);
 		
-		/* TODO: Initialize stack configuration */
+		/* TODO: Kapil: Initialize stack configuration */
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
 done:
@@ -87,12 +88,17 @@ switch_status_t megaco_profile_start(const char *profilename)
 	switch_thread_rwlock_create(&profile->rwlock, pool);
 	
 	/* TODO: Kapil: Insert stack per-interface startup code here */
+	if (config_profile(profile, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error configuring profile %s\n", profile->name);
+		goto fail;
+	}
 	
 	switch_core_hash_insert_wrlock(megaco_globals.profile_hash, profile->name, profile, megaco_globals.profile_rwlock);
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started profile: %s\n", profile->name);
 	
 	return SWITCH_STATUS_SUCCESS;
+	
 fail:
 	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_FALSE;	

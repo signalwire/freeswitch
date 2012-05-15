@@ -1,0 +1,9 @@
+<configuration name="megaco.conf" description="Megaco Controllee">
+  <profiles>
+	<profile name="default">
+		<settings>
+			<param name="foo" value="bar" />
+		</settings>
+	</profile>
+  </profiles>
+</configuration>
