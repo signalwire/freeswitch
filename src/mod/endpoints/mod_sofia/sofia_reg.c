@@ -428,6 +428,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 				nua_unregister(gateway_ptr->nh,
 							   NUTAG_URL(gateway_ptr->register_url),
+							   TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
 							   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 							   SIPTAG_FROM_STR(gateway_ptr->register_from),
 							   SIPTAG_TO_STR(gateway_ptr->distinct_to ? gateway_ptr->register_to : gateway_ptr->register_from),
