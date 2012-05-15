@@ -795,14 +795,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	runtime.profile_timer = switch_new_profile_timer();
 	switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
 
-#ifdef HAVE_CPU_SET_MACROS
-	if (runtime.timer_affinity > -1) {
-		cpu_set_t set;
-		CPU_ZERO(&set);
-		CPU_SET(runtime.timer_affinity, &set);
-		sched_setaffinity(0, sizeof(set), &set);
+	if (runtime.timer_affinity > -1) { 
+		switch_core_thread_set_cpu_affinity(runtime.timer_affinity);
 	}
-#endif
 
 	switch_time_sync();
 	time_sync = runtime.time_sync;

@@ -1363,15 +1363,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MSG Thread %d Started\n", my_id);
 
-#ifdef HAVE_CPU_SET_MACROS
-	{
-		cpu_set_t set;
-		CPU_ZERO(&set);
-		CPU_SET(my_id, &set);
-		sched_setaffinity(0, sizeof(set), &set);		
-	}
-#endif
-
+	switch_core_thread_set_cpu_affinity(my_id);
 
 	while(switch_queue_pop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;

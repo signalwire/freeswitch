@@ -253,16 +253,8 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *th
 
 	EVENT_DISPATCH_QUEUE_RUNNING[my_id] = 1;
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
-
-#ifdef HAVE_CPU_SET_MACROS
-	{
-		cpu_set_t set;
-		CPU_ZERO(&set);
-		CPU_SET(my_id, &set);
-		sched_setaffinity(0, sizeof(set), &set);		
-	}
-#endif
-
+	
+	switch_core_thread_set_cpu_affinity(my_id);
 
 	for (;;) {
 		void *pop = NULL;

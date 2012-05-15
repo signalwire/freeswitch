@@ -1325,6 +1325,35 @@ SWITCH_DECLARE(uint32_t) switch_core_min_dtmf_duration(uint32_t duration)
 	return runtime.min_dtmf_duration;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (cpu > -1) {
+
+#ifdef HAVE_CPU_SET_MACROS
+		cpu_set_t set;
+
+		CPU_ZERO(&set);
+		CPU_SET(cpu, &set);
+
+		if (!sched_setaffinity(0, sizeof(set), &set)) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+		
+#else
+#if WIN32
+		if (SetThreadAffinityMask(GetCurrentThread(), (DWORD_PTR) cpu)) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+#endif
+#endif
+	}
+
+	return status;
+}
+
+
 static void switch_core_set_serial(void)
 {
 	char buf[13] = "";
