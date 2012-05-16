@@ -9,6 +9,7 @@
 #include "mod_megaco.h"
 
 struct megaco_globals megaco_globals;
+static sng_isup_event_interface_t sng_event;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_megaco_shutdown);
@@ -115,9 +116,25 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load)
 	switch_console_set_complete("add megaco profile ::megaco::list_profiles start");
 	switch_console_set_complete("add megaco profile ::megaco::list_profiles stop");
 	switch_console_add_complete_func("::megaco::list_profiles", list_profiles);
-	
-	/* TODO: Kapil: Insert stack global startup code here */
-	
+
+
+	/* Initialize MEGACO Stack */
+	sng_event.mg.sng_mgco_txn_ind  		= handle_mgco_txn_ind;
+	sng_event.mg.sng_mgco_cmd_ind  		= handle_mgco_cmd_ind;
+	sng_event.mg.sng_mgco_txn_sta_ind  	= handle_mgco_txn_sta_ind;
+	sng_event.mg.sng_mgco_sta_ind  		= handle_mgco_sta_ind;
+	sng_event.mg.sng_mgco_cntrl_cfm  		= handle_mgco_cntrl_cfm;
+	sng_event.mg.sng_mgco_audit_cfm  		= handle_mgco_audit_cfm;
+
+	/* Alarm CB */
+	sng_event.sm.sng_mg_alarm  		= handle_mg_alarm;
+	sng_event.sm.sng_tucl_alarm  		= handle_tucl_alarm;
+
+	/* Log */
+	sng_event.sm.sng_log  			= handle_sng_log;
+
+	/* initalize sng_mg library */
+	sng_isup_init_gen(&sng_event);
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -128,6 +145,85 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_megaco_shutdown)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/*****************************************************************************************************************************/
+void handle_sng_log(uint8_t level, char *fmt, ...)
+{
+	int log_level;
+	char print_buf[1024];
+	va_list ptr;
+
+	memset(&print_buf[0],0,sizeof(1024));
+
+	va_start(ptr, fmt);
+
+	switch(level)
+	{
+		case SNG_LOGLEVEL_DEBUG:    log_level = SWITCH_LOG_DEBUG;       break;
+		case SNG_LOGLEVEL_INFO:     log_level = SWITCH_LOG_INFO;        break;
+		case SNG_LOGLEVEL_WARN:     log_level = SWITCH_LOG_WARNING;     break;
+		case SNG_LOGLEVEL_ERROR:    log_level = SWITCH_LOG_ERROR;       break;
+		case SNG_LOGLEVEL_CRIT:     log_level = SWITCH_LOG_CRIT;        break;
+		default:                    log_level = SWITCH_LOG_DEBUG;       break;
+	};
+
+	vsprintf(&print_buf[0], fmt, ptr);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, log_level, " MOD_MEGACO: %s \n", &print_buf[0]); 
+
+	va_end(ptr);
+}
+
+/*****************************************************************************************************************************/
+
+void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
+{
+	/*TODO*/
+}
+
+/*****************************************************************************************************************************/
+void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
+{
+	/*TODO*/
+}
+
+/*****************************************************************************************************************************/
+void handle_mgco_sta_ind(Pst *pst, SuId suId, MgMgtSta* sta)
+{
+	/*TODO*/
+}
+
+/*****************************************************************************************************************************/
+
+void handle_mgco_txn_sta_ind(Pst *pst, SuId suId, MgMgcoInd* txn_sta_ind)
+{
+	/*TODO*/
+}
+
+/*****************************************************************************************************************************/
+void handle_mgco_cntrl_cfm(Pst *pst, SuId suId, MgMgtCntrl* cntrl, Reason reason) 
+{
+	/*TODO*/
+}
+
+/*****************************************************************************************************************************/
+void handle_mgco_audit_cfm(Pst *pst, SuId suId, MgMgtAudit* audit, Reason reason) 
+{
+	/*TODO*/
+}
+
+/*****************************************************************************************************************************/
+void handle_mg_alarm(Pst *pst, MgMngmt *sta)
+{
+	/*TODO*/
+}
+
+/*****************************************************************************************************************************/
+void handle_tucl_alarm(Pst *pst, HiMngmt *sta)
+{
+	/*TODO*/
+}
+
+/*****************************************************************************************************************************/
 
 /* For Emacs:
  * Local Variables:

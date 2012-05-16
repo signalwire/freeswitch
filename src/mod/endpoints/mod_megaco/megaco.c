@@ -29,34 +29,73 @@ void megaco_profile_release(megaco_profile_t *profile)
 
 static switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 {
-	switch_xml_t cfg, xml, x_profiles, x_profile, x_settings;
+	switch_xml_t cfg, xml, mg_interfaces, mg_interface, tpt_interfaces, tpt_interface, peer_interfaces, peer_interface;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event = NULL;
-	int count;
 	const char *file = "megaco.conf";
+	const char* mg_profile_tpt_id = NULL;
+	const char* mg_profile_peer_id = NULL;
 
 	if (!(xml = switch_xml_open_cfg(file, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open %s\n", file);
 		goto done;
 	}
 
-	if (!(x_profiles = switch_xml_child(cfg, "profiles"))) {
+	if (!(mg_interfaces = switch_xml_child(cfg, "sng_mg_interfaces"))) {
 		goto done;
 	}
 
-	for (x_profile = switch_xml_child(x_profiles, "profile"); x_profile; x_profile = x_profile->next) {
-		const char *name = switch_xml_attr_soft(x_profile, "name");
+	/* iterate through MG Interface list to build all MG profiles */
+	for (mg_interface = switch_xml_child(mg_interfaces, "sng_mg_interface"); mg_interface; mg_interface = mg_interface->next) {
+
+		const char *name = switch_xml_attr_soft(mg_interface, "name");
 		if (strcmp(name, profile->name)) {
 			continue;
 		}
 
-		if (!(x_settings = switch_xml_child(x_profile, "settings"))) {
+		/* parse MG profile */
+		if(SWITCH_STATUS_FALSE == sng_parse_mg_profile(mg_interface)) {
 			goto done;
 		}
-		count = switch_event_import_xml(switch_xml_child(x_settings, "param"), "name", "value", &event);
-		// status = switch_xml_config_parse_event(event, count, reload, instructions);
-		
-		/* TODO: Kapil: Initialize stack configuration */
+
+		mg_profile_tpt_id = switch_xml_attr_soft(mg_interface, "id");
+
+		/* Now get required transport profile against mg_profile_tpt_id*/
+		if (!(tpt_interfaces = switch_xml_child(cfg, "sng_transport_interfaces"))) {
+			goto done;
+		}
+
+		for (tpt_interface = switch_xml_child(tpt_interfaces, "sng_transport_interface"); tpt_interface; tpt_interface = tpt_interface->next) {
+			const char *id = switch_xml_attr_soft(tpt_interface, "id");
+			if (strcmp(id, mg_profile_tpt_id)) {
+				continue;
+			}
+
+			/* parse MG transport profile */
+			if(SWITCH_STATUS_FALSE == sng_parse_mg_tpt_profile(tpt_interface)) {
+				goto done;
+			}
+		}
+
+		/* as of now supporting only one peer */
+		mg_profile_peer_id = switch_xml_attr_soft(mg_interface, "peerId");
+		/* Now get required peer profile against mg_profile_peer_id*/
+		if (!(peer_interfaces = switch_xml_child(cfg, "sng_mg_peer_interfaces"))) {
+			goto done;
+		}
+
+		for (peer_interface = switch_xml_child(peer_interfaces, "sng_mg_peer_interface"); peer_interface; peer_interface = peer_interface->next) {
+			const char *id = switch_xml_attr_soft(peer_interface, "id");
+			if (strcmp(id, mg_profile_peer_id)) {
+				continue;
+			}
+
+			/* parse MG Peer profile */
+			if(SWITCH_STATUS_FALSE == sng_parse_mg_peer_profile(peer_interface)) {
+				goto done;
+			}
+		}
+
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
@@ -87,7 +126,6 @@ switch_status_t megaco_profile_start(const char *profilename)
 	
 	switch_thread_rwlock_create(&profile->rwlock, pool);
 	
-	/* TODO: Kapil: Insert stack per-interface startup code here */
 	if (config_profile(profile, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error configuring profile %s\n", profile->name);
 		goto fail;
@@ -124,7 +162,6 @@ switch_status_t megaco_profile_destroy(megaco_profile_t **profile)
 	
 	return SWITCH_STATUS_SUCCESS;	
 }
-
 
 /* For Emacs:
  * Local Variables:

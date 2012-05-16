@@ -11,12 +11,13 @@
 #define MOD_MEGACO_H
 
 #include <switch.h>
+#include "megaco_cfg.h"
 
 struct megaco_globals {
-	switch_memory_pool_t *pool;
-	switch_hash_t *profile_hash;
-	switch_thread_rwlock_t *profile_rwlock;
-	/* TODO: Kapil: add global variables here */
+	switch_memory_pool_t 		*pool;
+	switch_hash_t 			*profile_hash;
+	switch_thread_rwlock_t 		*profile_rwlock;
+	sng_mg_gbl_cfg_t 		 g_mg_cfg;
 };
 extern struct megaco_globals megaco_globals; /* < defined in mod_megaco.c */
 
@@ -25,12 +26,10 @@ typedef enum {
 } megaco_profile_flags_t;
 
 typedef struct megaco_profile_s {
-	char *name;
-	switch_memory_pool_t *pool;
-	switch_thread_rwlock_t *rwlock; /* < Reference counting rwlock */
-	megaco_profile_flags_t flags;
-	
-	/* TODO: Kapil: Insert interface-specific stack elements here */
+	char 				*name;
+	switch_memory_pool_t 		*pool;
+	switch_thread_rwlock_t 		*rwlock; /* < Reference counting rwlock */
+	megaco_profile_flags_t 		flags;
 } megaco_profile_t;
 
 
