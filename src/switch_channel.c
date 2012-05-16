@@ -2982,7 +2982,7 @@ SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel)
 		if (doit) {
 			switch_channel_set_variable(channel, "zrtp_secure_media", "true");
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_INFO, 
-							  "%s ZRTP not negotiated on both sides, Activating ZRTP man-in-the-middle mode.\n", switch_channel_get_name(channel));
+							  "%s ZRTP not negotiated on both sides; disabling ZRTP passthru mode.\n", switch_channel_get_name(channel));
 
 			switch_channel_clear_flag(channel, CF_ZRTP_PASS);
 			switch_channel_clear_flag(channel, CF_ZRTP_HASH);
