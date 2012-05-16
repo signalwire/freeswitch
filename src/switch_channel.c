@@ -2952,6 +2952,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 	return SWITCH_STATUS_FALSE;
 }
 
+#ifdef ENABLE_ZRTP
 SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel)
 {
 
@@ -3000,7 +3001,7 @@ SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel)
 		}
 	}
 }
-
+#endif
 
 
 
@@ -3013,7 +3014,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		const char *uuid;
 		switch_core_session_t *other_session;
 
+#ifdef ENABLE_ZRTP
 		switch_channel_check_zrtp(channel);
+#endif
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
 		switch_channel_set_callstate(channel, CCS_EARLY);
@@ -3273,7 +3276,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		switch_mutex_unlock(channel->profile_mutex);
 	}
 
+#ifdef ENABLE_ZRTP
 	switch_channel_check_zrtp(channel);
+#endif
 	switch_channel_set_flag(channel, CF_ANSWERED);
 	switch_channel_set_callstate(channel, CCS_ACTIVE);
 
