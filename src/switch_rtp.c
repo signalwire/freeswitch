@@ -715,7 +715,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, zrtp_security_event_t eve
 					switch_channel_set_variable_name_printf(channel, stream->session->sas1.buffer, "zrtp_sas1_string_%s", type);
 					switch_channel_set_variable_name_printf(channel, stream->session->sas2.buffer, "zrtp_sas2_string", type);
 
-					zrtp_verified_set(zrtp_global, &stream->session->zid, &stream->session->peer_zid, zrtp_session_info.sas_is_verified ^ 1);
+					zrtp_verified_set(zrtp_global, &stream->session->zid, &stream->session->peer_zid, (uint8_t)(zrtp_session_info.sas_is_verified ^ 1));
 
 				}
 			}
@@ -777,7 +777,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, zrtp_security_event_t eve
 
 			if (zrtp_status_ok == zrtp_session_get(stream->session, &zrtp_session_info)) {
 				if (zrtp_session_info.sas_is_ready) {
-					zrtp_verified_set(zrtp_global, &stream->session->zid, &stream->session->peer_zid, zrtp_session_info.sas_is_verified ^ 1);
+					zrtp_verified_set(zrtp_global, &stream->session->zid, &stream->session->peer_zid, (uint8_t)(zrtp_session_info.sas_is_verified ^ 1));
 				}
 			}
 		}
@@ -790,7 +790,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, zrtp_security_event_t eve
 
 			if (zrtp_status_ok == zrtp_session_get(stream->session, &zrtp_session_info)) {
 				if (zrtp_session_info.sas_is_ready) {
-					zrtp_verified_set(zrtp_global, &stream->session->zid, &stream->session->peer_zid, zrtp_session_info.sas_is_verified ^ 1);
+					zrtp_verified_set(zrtp_global, &stream->session->zid, &stream->session->peer_zid, (uint8_t)(zrtp_session_info.sas_is_verified ^ 1));
 				}
 			}
 		}
@@ -803,7 +803,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, zrtp_security_event_t eve
 
 			if (zrtp_status_ok == zrtp_session_get(stream->session, &zrtp_session_info)) {
 				if (zrtp_session_info.sas_is_ready) {
-					zrtp_verified_set(zrtp_global, &stream->session->zid, &stream->session->peer_zid, zrtp_session_info.sas_is_verified ^ 1);
+					zrtp_verified_set(zrtp_global, &stream->session->zid, &stream->session->peer_zid, (uint8_t)(zrtp_session_info.sas_is_verified ^ 1));
 				}
 			}
 		}
@@ -3645,7 +3645,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 										switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
 										switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
 										zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid,
-														  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified ^ 1);
+														  &rtp_session->zrtp_session->peer_zid, (uint8_t)(zrtp_session_info.sas_is_verified ^ 1));
 										rtp_session->zrtp_mitm_tries++;
 									}
 								}
@@ -4275,7 +4275,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 									switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
 									switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
 									zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid,
-													  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified ^ 1);
+													  &rtp_session->zrtp_session->peer_zid, (uint8_t)(zrtp_session_info.sas_is_verified ^ 1));
 									rtp_session->zrtp_mitm_tries++;
 								}
 								rtp_session->zrtp_mitm_tries++;
