@@ -11,7 +11,7 @@
 #define MOD_MEGACO_H
 
 #include <switch.h>
-#include "megaco_cfg.h"
+#include "megaco_stack.h"
 
 struct megaco_globals {
 	switch_memory_pool_t 		*pool;

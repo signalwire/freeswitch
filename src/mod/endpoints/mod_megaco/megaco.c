@@ -96,7 +96,12 @@ static switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t r
 			}
 		}
 
-		status = SWITCH_STATUS_SUCCESS;
+
+		/* configure the MEGACO stack */
+		status = sng_mgco_cfg(profile->name);
+		
+		/* we should break from here , profile name should be unique */
+		break;
 	}
 
 done:
@@ -128,6 +133,12 @@ switch_status_t megaco_profile_start(const char *profilename)
 	
 	if (config_profile(profile, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error configuring profile %s\n", profile->name);
+		goto fail;
+	}
+	
+	/* start MEGACP stack */
+	if(SWITCH_STATUS_FALSE == sng_mgco_start(profilename)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error starting MEGACO Stack for profile  %s\n", profile->name);
 		goto fail;
 	}
 	

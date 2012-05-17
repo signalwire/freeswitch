@@ -123,25 +123,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load)
 	sng_event.mg.sng_mgco_cmd_ind  		= handle_mgco_cmd_ind;
 	sng_event.mg.sng_mgco_txn_sta_ind  	= handle_mgco_txn_sta_ind;
 	sng_event.mg.sng_mgco_sta_ind  		= handle_mgco_sta_ind;
-	sng_event.mg.sng_mgco_cntrl_cfm  		= handle_mgco_cntrl_cfm;
-	sng_event.mg.sng_mgco_audit_cfm  		= handle_mgco_audit_cfm;
-
+	sng_event.mg.sng_mgco_cntrl_cfm  	= handle_mgco_cntrl_cfm;
+	sng_event.mg.sng_mgco_audit_cfm  	= handle_mgco_audit_cfm;
 	/* Alarm CB */
 	sng_event.sm.sng_mg_alarm  		= handle_mg_alarm;
 	sng_event.sm.sng_tucl_alarm  		= handle_tucl_alarm;
-
 	/* Log */
 	sng_event.sm.sng_log  			= handle_sng_log;
 
-	/* initalize sng_mg library */
-	sng_isup_init_gen(&sng_event);
-	
-	return SWITCH_STATUS_SUCCESS;
+	/* initualize MEGACO stack */
+	return sng_mgco_init(&sng_event);
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_megaco_shutdown)
 {
-	/* TODO: Kapil: Insert stack global shutdown code here */	
+	sng_mgco_stack_shutdown();
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

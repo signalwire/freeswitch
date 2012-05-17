@@ -214,6 +214,7 @@ switch_status_t sng_parse_mg_peer_profile(switch_xml_t mg_peer_profile)
 		}
 	}
 
+	megaco_globals.g_mg_cfg.mgPeer.total_peer++;
 	return SWITCH_STATUS_SUCCESS;
 }
 /***********************************************************************************************************/
