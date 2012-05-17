@@ -864,9 +864,9 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 		zrtp_zstrcpyc((zrtp_stringn_t*)zrtp_config.def_cache_path.buffer, zrtp_cache_path);
 		zrtp_config.def_cache_path.length = (uint16_t)strlen(zrtp_cache_path);
 		zrtp_config.def_cache_path.max_length = 255;
-		zrtp_config.cb.event_cb.on_zrtp_protocol_event = zrtp_event_callback;
+		zrtp_config.cb.event_cb.on_zrtp_protocol_event = (void (*)(zrtp_stream_t*,zrtp_protocol_event_t))zrtp_event_callback;
 		zrtp_config.cb.misc_cb.on_send_packet = zrtp_send_rtp_callback;
-		zrtp_config.cb.event_cb.on_zrtp_security_event = zrtp_event_callback;
+		zrtp_config.cb.event_cb.on_zrtp_security_event = (void (*)(zrtp_stream_t*,zrtp_security_event_t))zrtp_event_callback;
 
 		zrtp_log_set_log_engine((zrtp_log_engine *) zrtp_logger);
 		zrtp_log_set_level(4);
