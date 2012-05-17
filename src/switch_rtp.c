@@ -76,7 +76,7 @@ static zrtp_global_t *zrtp_global;
 #ifndef WIN32
 static zrtp_zid_t zid = { "FreeSWITCH01" };
 #else
-static zrtp_zid_t zid = { "FreeSWITCH0\0" };
+static zrtp_zid_t zid = { "FreeSWITCH0" };
 #endif
 static int zrtp_on = 0;
 #define ZRTP_MITM_TRIES 100
