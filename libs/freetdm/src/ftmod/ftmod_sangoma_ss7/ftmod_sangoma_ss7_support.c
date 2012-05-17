@@ -637,6 +637,49 @@ ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *r
 	return FTDM_SUCCESS;
 }
 
+ftdm_status_t copy_access_transport_from_sngss7(ftdm_channel_t *ftdmchan, SiAccTrnspt *accTrnspt)
+{
+	char *val=NULL;
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	if (accTrnspt->eh.pres != PRSNT_NODEF || accTrnspt->infoElmts.pres !=PRSNT_NODEF) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No Access Transport IE available\n");
+		return FTDM_SUCCESS;
+	}
+
+	val = ftdm_malloc(3*accTrnspt->infoElmts.len);
+	ftdm_url_encode((const char*)accTrnspt->infoElmts.val, val, accTrnspt->infoElmts.len);
+	sngss7_add_var (sngss7_info, "ss7_access_transport_urlenc", val);
+	ftdm_safe_free(val);
+	
+	return FTDM_SUCCESS;
+}
+ftdm_status_t copy_access_transport_to_sngss7(ftdm_channel_t *ftdmchan, SiAccTrnspt *accTrnspt)
+{
+	const char *val = NULL;
+
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_access_transport_urlenc");
+	if (ftdm_strlen_zero(val)) {
+		accTrnspt->eh.pres = NOTPRSNT;
+		accTrnspt->infoElmts.pres = NOTPRSNT;
+	}
+	else {
+		char *val_dec = NULL;
+		int val_len = strlen (val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found Access Transport IE encoded : %s\n", val);
+
+		accTrnspt->eh.pres = PRSNT_NODEF;
+		accTrnspt->infoElmts.pres = PRSNT_NODEF;
+
+		val_dec = ftdm_strdup(val);
+		ftdm_url_decode(val_dec, (ftdm_size_t*)&val_len);
+		memcpy (accTrnspt->infoElmts.val, val_dec, val_len);
+		accTrnspt->infoElmts.len = val_len;
+		ftdm_safe_free(val_dec);
+	}
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t copy_ocn_from_sngss7(ftdm_channel_t *ftdmchan, SiOrigCdNum *origCdNum)
 {
 	char val[20];
