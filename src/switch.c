@@ -288,7 +288,7 @@ void daemonize(int do_wait)
 				while(--sanity && !system_ready) {
 				
 					if (sanity % 2 == 0) {
-						printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", getpid(), (int) pid);
+						printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", (int)getpid(), (int) pid);
 					}
 					sleep(1);
 				}
