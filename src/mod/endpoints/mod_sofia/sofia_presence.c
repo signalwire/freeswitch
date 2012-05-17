@@ -3419,9 +3419,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								  "sub del sql: %s\n", sql);		
 			}
 			
-			switch_mutex_lock(profile->ireg_mutex);
 			switch_assert(sql != NULL);
-			sofia_glue_actually_execute_sql(profile, sql, NULL);
+			sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
 			switch_safe_free(sql);
 			
 			sstr = switch_mprintf("terminated;reason=noresource");
@@ -3460,7 +3459,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			sstr = switch_mprintf("active;expires=%ld", exp_delta);
 		}
 		
-		switch_mutex_unlock(profile->ireg_mutex);
 	}
 
 	if (status < 200) {
