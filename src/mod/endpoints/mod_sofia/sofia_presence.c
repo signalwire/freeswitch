@@ -90,6 +90,9 @@ struct presence_helper {
 	switch_event_t *event;
 	switch_stream_handle_t stream;
 	char last_uuid[512];
+	int hup;
+	int calls_up;
+
 };
 
 switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
@@ -1170,11 +1173,6 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 #endif
 				
 
-				if (hup && dh.hits > 0) {
-					goto done;
-				}
-
-
 				if (zstr(call_id) && (dh.hits && presence_source && (!strcasecmp(presence_source, "register") || switch_stristr("register", status)))) {
 					goto done;
 				}
@@ -1259,7 +1257,8 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 
 				}
 			
-
+				helper.hup = hup;
+				helper.calls_up = dh.hits;
 				helper.profile = profile;
 				helper.event = event;
 				SWITCH_STANDARD_STREAM(helper.stream);
@@ -2437,6 +2436,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 	is_dialog = !strcmp(event, "dialog");
 
+	if (helper->hup && helper->calls_up > 0 && (!is_dialog || !user_agent || !switch_stristr("polycom", user_agent) || !switch_stristr("snom", user_agent))) {
+		goto end;
+	}
+
 	if (helper->event) {
 		switch_stream_handle_t stream = { 0 };
 		const char *direction = switch_str_nil(switch_event_get_header(helper->event, "presence-call-direction"));
@@ -2456,6 +2459,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		int force_status = 0;
 		const char *call_state = switch_event_get_header(helper->event, "channel-state");
 		char *call_info_state = switch_event_get_header(helper->event, "presence-call-info-state");
+		int term = 0;
 
 		if (user_agent && switch_stristr("snom", user_agent) && uuid) {
 			default_dialog = "full" ;
@@ -2463,18 +2467,21 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		
 		if (call_state && !strcasecmp(call_state, "cs_hangup")) {
 			astate = "hangup";
-		}
+			holding = 0;
+			term = 1;
+		} else {
 
-		if (event_status && !strncasecmp(event_status, "hold", 4)) {
-			holding = 1;
-		}
+			if (event_status && !strncasecmp(event_status, "hold", 4)) {
+				holding = 1;
+			}
 
-		if (force_event_status && !event_status) {
-			event_status = force_event_status;
-		}
+			if (force_event_status && !event_status) {
+				event_status = force_event_status;
+			}
 
-		if (event_status && !strncasecmp(event_status, "hold", 4)) {
-			holding = 1;
+			if (event_status && !strncasecmp(event_status, "hold", 4)) {
+				holding = 1;
+			}
 		}
 
 		if (!strcasecmp(direction, "inbound")) {
@@ -2701,8 +2708,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				open = "open";
 
 				if (switch_false(resub)) {
-					int term;
-
 					const char *direction = switch_event_get_header(helper->event, "Caller-Direction");
 					const char *op, *what = "Ring";
 				
