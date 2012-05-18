@@ -3640,6 +3640,17 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 			if (!strcasecmp(argv[1], "stop")) {
 				sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
+				if (argv[2] && !strcasecmp(argv[2], "wait")) {
+					int loops = 20 * 2;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for %s to finish SIP transactions.\n", profile->name);
+					while (!sofia_test_pflag(profile, PFLAG_SHUTDOWN)) {
+						switch_yield(500000);
+						if (!--loops) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timeout Waiting for %s to finish SIP transactions.\n", profile->name);
+							break;
+						}
+					}
+				}
 				stream->write_function(stream, "stopping: %s", profile->name);
 			} else {
 				sofia_set_pflag_locked(profile, PFLAG_RESPAWN);
@@ -4129,7 +4140,7 @@ SWITCH_STANDARD_API(sofia_function)
 		"sofia global siptrace <on|off>\n"
 		"sofia        capture  <on|off>\n"
 		"             watchdog <on|off>\n\n"
-		"sofia profile <name> [start | stop | restart | rescan]\n"
+		"sofia profile <name> [start | stop | restart | rescan] [wait]\n"
 		"                     flush_inbound_reg [<call_id> | <[user]@domain>] [reboot]\n"
 		"                     check_sync [<call_id> | <[user]@domain>]\n"
 		"                     [register | unregister] [<gateway name> | all]\n"
@@ -5555,9 +5566,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	switch_console_set_complete("add sofia profile");
 	switch_console_set_complete("add sofia profile restart all");
-
+	
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles start");
-	switch_console_set_complete("add sofia profile ::sofia::list_profiles stop");
+	switch_console_set_complete("add sofia profile ::sofia::list_profiles stop wait");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles rescan");
 	switch_console_set_complete("add sofia profile ::sofia::list_profiles restart");
 
