@@ -825,6 +825,36 @@ void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
 }
 
 /******************************************************************************/
+void handle_sng_m2ua_alarm(Pst *pst, MwMgmt *sta)
+{
+	ftdm_log(FTDM_LOG_ERROR," handle_sng_m2ua_alarm Not Yet Implement \n");
+
+}   /* handle_sng_m2ua_alarm */
+
+/******************************************************************************/
+void handle_sng_nif_alarm(Pst *pst, NwMgmt *sta)
+{
+	ftdm_log(FTDM_LOG_ERROR," handle_sng_nif_alarm Not Yet Implement \n");
+
+}   /* handle_sng_nif_alarm */
+
+/******************************************************************************/
+void handle_sng_tucl_alarm(Pst *pst, HiMngmt *sta)
+{
+	ftdm_log(FTDM_LOG_ERROR," handle_sng_tucl_alarm Not Yet Implement \n");
+
+}   /* handle_sng_tucl_alarm */
+
+/******************************************************************************/
+void handle_sng_sctp_alarm(Pst *pst, SbMgmt *sta)
+{
+	ftdm_log(FTDM_LOG_ERROR," handle_sng_sctp_alarm Not Yet Implement \n");
+
+}   /* handle_sng_sctp_alarm */
+/******************************************************************************/
+
+
+/******************************************************************************/
 /* For Emacs:
  * Local Variables:
  * mode:c

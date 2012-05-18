@@ -50,6 +50,7 @@
 static sng_isup_event_interface_t sng_event;
 static ftdm_io_interface_t g_ftdm_sngss7_interface;
 ftdm_sngss7_data_t g_ftdm_sngss7_data;
+ftdm_sngss7_opr_mode g_ftdm_operating_mode;
 
 /******************************************************************************/
 
@@ -355,6 +356,15 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 	/* set IN_THREAD flag so that we know this thread is running */
 	ftdm_set_flag (ftdmspan, FTDM_SPAN_IN_THREAD);
 
+	if(SNG_SS7_OPR_MODE_M2UA_SG == g_ftdm_operating_mode){
+		ftdm_log (FTDM_LOG_INFO, "FreeTDM running as M2UA_SG mode, freetdm dont have to do anything \n"); 
+
+		while (ftdm_running () && !(ftdm_test_flag (ftdmspan, FTDM_SPAN_STOP_THREAD))) {
+			continue;
+		}
+		goto ftdm_sangoma_ss7_stop;
+	}
+
 	/* get an interrupt queue for this span for channel state changes */
 	if (ftdm_queue_get_interrupt (ftdmspan->pendingchans, &ftdm_sangoma_ss7_int[0]) != FTDM_SUCCESS) {
 		SS7_CRITICAL ("Failed to get a ftdm_interrupt for span = %d for channel state changes!\n", ftdmspan->span_id);
@@ -497,9 +507,11 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 		/**********************************************************************/
 		}
 	}
+ftdm_sangoma_ss7_stop:
 
 	/* clear the IN_THREAD flag so that we know the thread is done */
 	ftdm_clear_flag (ftdmspan, FTDM_SPAN_IN_THREAD);
+
 
 	ftdm_log (FTDM_LOG_INFO,"ftmod_sangoma_ss7 monitor thread for span=%u stopping.\n",ftdmspan->span_id);
 
@@ -2496,6 +2508,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 	/* set the flag to indicate that this span uses sig event queues */
 	ftdm_set_flag (span, FTDM_SPAN_USE_SIGNALS_QUEUE);
 
+
+
 	/* parse the configuration and apply to the global config structure */
 	if (ftmod_ss7_parse_xml(ftdm_parameters, span)) {
 		ftdm_log (FTDM_LOG_CRIT, "Failed to parse configuration!\n");
@@ -2503,8 +2517,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 		return FTDM_FAIL;
 	}
 
-	/* configure libsngss7 */
-	if (ft_to_sngss7_cfg_all()) {
+	if (ft_to_sngss7_cfg_all()) {	/* configure libsngss7 */
 		ftdm_log (FTDM_LOG_CRIT, "Failed to configure LibSngSS7!\n");
 		ftdm_sleep (100);
 		return FTDM_FAIL;
@@ -2566,6 +2579,10 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_ss7_init)
 	sng_event.sm.sng_isup_alarm = handle_sng_isup_alarm;
 	sng_event.sm.sng_cc_alarm = handle_sng_cc_alarm;
 	sng_event.sm.sng_relay_alarm = handle_sng_relay_alarm;
+	sng_event.sm.sng_m2ua_alarm = handle_sng_m2ua_alarm;
+	sng_event.sm.sng_nif_alarm  = handle_sng_nif_alarm;
+	sng_event.sm.sng_tucl_alarm = handle_sng_tucl_alarm;
+	sng_event.sm.sng_sctp_alarm = handle_sng_sctp_alarm;
 
 	/* initalize sng_ss7 library */
 	sng_isup_init_gen(&sng_event);

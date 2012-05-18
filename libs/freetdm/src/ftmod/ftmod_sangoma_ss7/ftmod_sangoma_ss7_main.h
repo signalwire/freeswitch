@@ -52,6 +52,7 @@
 #include "private/ftdm_core.h"
 
 #include "sng_ss7/sng_ss7.h"
+#include "ftmod_sangoma_ss7_m2ua.h"
 
 /******************************************************************************/
 
@@ -60,6 +61,7 @@
 
 #define MAX_CIC_LENGTH			5
 #define MAX_CIC_MAP_LENGTH		1000 
+#define MAX_SCTP_LINK 			100
 
 #define SNGSS7_EVENT_QUEUE_SIZE	100
 #define SNGSS7_PEER_CHANS_QUEUE_SIZE 100
@@ -449,6 +451,29 @@ typedef struct sng_relay {
 	uint32_t		procId;
 } sng_relay_t;
 
+/**********************************************
+sctp structures and data definitions
+**********************************************/
+
+typedef struct sng_sctp_gen_cfg {
+} sng_sctp_gen_cfg_t;
+
+typedef struct sng_sctp_link {
+	char		name[MAX_NAME_LEN];
+	uint32_t	flags;
+	uint32_t	id;
+	uint32_t	tuclId;
+	uint32_t	numSrcAddr;
+	uint32_t	srcAddrList[SCT_MAX_NET_ADDRS+1];	
+} sng_sctp_link_t;
+
+typedef struct sng_sctp_cfg {
+	sng_sctp_gen_cfg_t	genCfg;
+	sng_sctp_link_t		linkCfg[MAX_SCTP_LINK+1];
+} sng_sctp_cfg_t;
+
+
+
 typedef struct sng_ss7_cfg {
 	uint32_t			spc;
 	uint32_t			procId;
@@ -468,6 +493,8 @@ typedef struct sng_ss7_cfg {
 	sng_isap_t			isap[MAX_ISAPS+1];	
 	sng_glare_resolution	glareResolution;
 	uint32_t				force_inr;
+	sng_m2ua_gbl_cfg_t 	g_m2ua_cfg;
+	sng_sctp_cfg_t		sctpCfg;
 } sng_ss7_cfg_t;
 
 typedef struct ftdm_sngss7_data {
@@ -479,6 +506,14 @@ typedef struct ftdm_sngss7_data {
 	int					message_trace_level;
 	fio_signal_cb_t		sig_cb;
 } ftdm_sngss7_data_t;
+
+typedef enum{
+	SNG_SS7_OPR_MODE_NONE,
+	SNG_SS7_OPR_MODE_M2UA_SG,
+	SNG_SS7_OPR_MODE_ISUP,
+}ftdm_sngss7_operating_modes_e;
+
+typedef ftdm_sngss7_operating_modes_e ftdm_sngss7_opr_mode;
 
 typedef struct sngss7_timer_data {
 	ftdm_timer_id_t			hb_timer_id;
@@ -728,6 +763,7 @@ typedef enum {
 
 /* GLOBALS ********************************************************************/
 extern ftdm_sngss7_data_t		g_ftdm_sngss7_data;
+extern ftdm_sngss7_opr_mode		g_ftdm_operating_mode;
 extern sng_ssf_type_t			sng_ssf_type_map[];
 extern sng_switch_type_t		sng_switch_type_map[];
 extern sng_link_type_t			sng_link_type_map[];
@@ -750,6 +786,10 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta);
 void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta);
 void handle_sng_cc_alarm(Pst *pst, CcMngmt *sta);
 void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta);
+void handle_sng_m2ua_alarm(Pst *pst, MwMgmt *sta);
+void handle_sng_nif_alarm(Pst *pst, NwMgmt *sta);
+void handle_sng_tucl_alarm(Pst *pst, HiMngmt *sta);
+void handle_sng_sctp_alarm(Pst *pst, SbMgmt *sta);
 
 /* in ftmod_sangoma_ss7_relay.c */
 ftdm_status_t handle_relay_connect(RyMngmt *sta);
@@ -973,6 +1013,7 @@ ftdm_status_t sngss7_add_raw_data(sngss7_chan_data_t *sngss7_info, uint8_t* data
 void handle_isup_t35(void *userdata);
 void handle_isup_t10(void *userdata);
 void handle_isup_t39(void *userdata);
+
 
 /******************************************************************************/
 
