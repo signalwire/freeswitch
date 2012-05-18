@@ -1420,7 +1420,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	gethostname(runtime.hostname, sizeof(runtime.hostname));
 
 	runtime.max_db_handles = 50;
-	runtime.db_handle_timeout = 5000000;;
+	runtime.db_handle_timeout = 5000000;
 	
 	runtime.runlevel++;
 	runtime.sql_buffer_len = 1024 * 32;

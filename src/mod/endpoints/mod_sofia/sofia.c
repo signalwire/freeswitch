@@ -1306,6 +1306,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
+	sofia_profile_t *profile = (*dep)->profile;
 
 	switch_core_new_memory_pool(&pool);
 
@@ -1313,6 +1314,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 	*dep = NULL;
 	de->pool = pool;
 
+	switch_mutex_lock(profile->ireg_mutex);
 	switch_threadattr_create(&thd_attr, de->pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, 
@@ -1320,7 +1322,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 						 sofia_msg_thread_run_once, 
 						 de,
 						 de->pool);
-	
+	switch_mutex_unlock(profile->ireg_mutex);
 
 }
 

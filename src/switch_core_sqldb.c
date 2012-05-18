@@ -218,7 +218,7 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 }
 
 
-#define SQL_CACHE_TIMEOUT 120
+#define SQL_CACHE_TIMEOUT 30
 #define SQL_REG_TIMEOUT 15
 
 
