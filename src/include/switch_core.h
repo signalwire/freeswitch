@@ -2329,6 +2329,8 @@ SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *f
 SWITCH_DECLARE(int) switch_max_file_desc(void);
 SWITCH_DECLARE(void) switch_close_extra_files(int *keep, int keep_ttl);
 SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu);
+SWITCH_DECLARE(void) switch_os_yield(void);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

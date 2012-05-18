@@ -5445,7 +5445,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_yield(1500000);
 
 	mod_sofia_globals.cpu_count = switch_core_cpu_count();
-	mod_sofia_globals.max_msg_queues = mod_sofia_globals.cpu_count + 1;
+	mod_sofia_globals.max_msg_queues = (mod_sofia_globals.cpu_count / 2) + 1;
+	if (mod_sofia_globals.max_msg_queues < 2) {
+		mod_sofia_globals.max_msg_queues = 2;
+	}
 
 	if (mod_sofia_globals.max_msg_queues > SOFIA_MAX_MSG_QUEUE) {
 		mod_sofia_globals.max_msg_queues = SOFIA_MAX_MSG_QUEUE;
@@ -5627,11 +5630,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	}
 
 
-	for (i = 0; i < mod_sofia_globals.msg_queue_len; i++) {	
-		switch_queue_push(mod_sofia_globals.msg_queue[i], NULL);
+	for (i = 0; mod_sofia_globals.msg_queue_thread[i]; i++) {
+		switch_queue_push(mod_sofia_globals.msg_queue, NULL);
 	}
 
-	for (i = 0; i < mod_sofia_globals.msg_queue_len; i++) {
+
+	for (i = 0; mod_sofia_globals.msg_queue_thread[i]; i++) {
 		switch_status_t st;
 		switch_thread_join(&st, mod_sofia_globals.msg_queue_thread[i]);
 	}

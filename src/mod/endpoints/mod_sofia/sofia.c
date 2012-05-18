@@ -1347,8 +1347,13 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 	
 	nua_handle_unref(nh);
 	nua_stack_unref(nua);
+	switch_os_yield();
 }
 
+
+
+static int msg_queue_threads = 0;
+//static int count = 0;
 
 void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj)
 {
@@ -1356,24 +1361,41 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 	switch_queue_t *q = (switch_queue_t *) obj;
 	int my_id;
 
+
 	for (my_id = 0; my_id < mod_sofia_globals.msg_queue_len; my_id++) {
-		if (mod_sofia_globals.msg_queue[my_id] == q) {
+		if (mod_sofia_globals.msg_queue_thread[my_id] == thread) {
+			break;
+		}
+	}
+	
+	switch_mutex_lock(mod_sofia_globals.mutex); 
+	msg_queue_threads++;
+	switch_mutex_unlock(mod_sofia_globals.mutex); 
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MSG Thread %d Started\n", my_id);
+
+
+	for(;;) {
+
+		if (switch_queue_pop(q, &pop) != SWITCH_STATUS_SUCCESS) {
+			switch_cond_next();
+			continue;
+		}
+
+		if (pop) {
+			sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
+			sofia_process_dispatch_event(&de);
+			switch_os_yield();
+		} else {
 			break;
 		}
 	}
 
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MSG Thread %d Started\n", my_id);
-
-	switch_core_thread_set_cpu_affinity(my_id);
-
-	while(switch_queue_pop(q, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-		sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
-		sofia_process_dispatch_event(&de);
-		switch_cond_next();
-	}
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MSG Thread Ended\n");
+
+	switch_mutex_lock(mod_sofia_globals.mutex); 
+	msg_queue_threads--;
+	switch_mutex_unlock(mod_sofia_globals.mutex); 
 
 	return NULL;	
 }
@@ -1392,11 +1414,14 @@ void sofia_msg_thread_start(int idx)
 		int i;
 		mod_sofia_globals.msg_queue_len = idx + 1;
 
-		for (i = 0; i < mod_sofia_globals.msg_queue_len; i++) {
-			if (!mod_sofia_globals.msg_queue[i]) {
-				switch_threadattr_t *thd_attr = NULL;
+		if (!mod_sofia_globals.msg_queue) {
+			switch_queue_create(&mod_sofia_globals.msg_queue, SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.cpu_count, mod_sofia_globals.pool);
+		}
 
-				switch_queue_create(&mod_sofia_globals.msg_queue[i], SOFIA_MSG_QUEUE_SIZE, mod_sofia_globals.pool);
+
+		for (i = 0; i < mod_sofia_globals.msg_queue_len; i++) {
+			if (!mod_sofia_globals.msg_queue_thread[i]) {
+				switch_threadattr_t *thd_attr = NULL;
 
 				switch_threadattr_create(&thd_attr, mod_sofia_globals.pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -1404,7 +1429,7 @@ void sofia_msg_thread_start(int idx)
 				switch_thread_create(&mod_sofia_globals.msg_queue_thread[i], 
 									 thd_attr, 
 									 sofia_msg_thread_run, 
-									 mod_sofia_globals.msg_queue[i], 
+									 mod_sofia_globals.msg_queue, 
 									 mod_sofia_globals.pool);
 			}
 		}
@@ -1413,12 +1438,12 @@ void sofia_msg_thread_start(int idx)
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 }
 
-
+//static int foo = 0;
 static void sofia_queue_message(sofia_dispatch_event_t *de)
 {
-	int idx = 0, queued = 0;
+	int launch = 0;
 
-	if (mod_sofia_globals.running == 0 || !mod_sofia_globals.msg_queue[0]) {
+	if (mod_sofia_globals.running == 0 || !mod_sofia_globals.msg_queue) {
 		sofia_process_dispatch_event(&de);
 		return;
 	}
@@ -1430,25 +1455,18 @@ static void sofia_queue_message(sofia_dispatch_event_t *de)
 	}
 
 
- again:
-
-	for (idx = 0; idx < mod_sofia_globals.msg_queue_len; idx++) {
-		if (switch_queue_trypush(mod_sofia_globals.msg_queue[idx], de) == SWITCH_STATUS_SUCCESS) {
-			queued++;
-			break;
-		}
+	if ((switch_queue_size(mod_sofia_globals.msg_queue) > (SOFIA_MSG_QUEUE_SIZE * msg_queue_threads))) {
+		launch++;
 	}
 
-	if (!queued) {
 
+	if (launch) {
 		if (mod_sofia_globals.msg_queue_len < mod_sofia_globals.max_msg_queues) {
 			sofia_msg_thread_start(mod_sofia_globals.msg_queue_len + 1);
-			goto again;
 		}
-		
-		switch_queue_push(mod_sofia_globals.msg_queue[0], de);
 	}
-	
+
+	switch_queue_push(mod_sofia_globals.msg_queue, de);
 }
 
 
@@ -1468,6 +1486,7 @@ void sofia_event_callback(nua_event_t event,
 		return;
 	}
 
+	
 
 	switch_mutex_lock(profile->flag_mutex);
 	profile->queued_events++;
@@ -1483,6 +1502,13 @@ void sofia_event_callback(nua_event_t event,
 	de->nua = nua_stack_ref(nua);
 
 	if (event == nua_i_invite && !sofia_private) {
+		int critical = (((SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.max_msg_queues) * 900) / 1000);
+		
+		if (switch_queue_size(mod_sofia_globals.msg_queue) > critical) {
+			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+			return;
+		}
+
 		if (!(sofia_private = su_alloc(nh->nh_home, sizeof(*sofia_private)))) {
 			abort();
 		}
@@ -1516,8 +1542,8 @@ void sofia_event_callback(nua_event_t event,
 		}
 	}
 
-	
 	sofia_queue_message(de);
+	switch_os_yield();
 }
 
 

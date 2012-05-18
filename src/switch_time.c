@@ -140,7 +140,7 @@ typedef struct timer_matrix timer_matrix_t;
 
 static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
 
-static void os_yield(void)
+SWITCH_DECLARE(void) switch_os_yield(void)
 {
 #if defined(WIN32)
 	SwitchToThread();
@@ -467,7 +467,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 SWITCH_DECLARE(void) switch_cond_next(void)
 {
 	if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
-		os_yield();
+		switch_os_yield();
 		return;
 	}
 #ifdef DISABLE_1MS_COND
@@ -633,7 +633,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 		check_roll();
 
 		if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
-			os_yield();
+			switch_os_yield();
 			globals.use_cond_yield = 0;
 		} else {
 			if (globals.use_cond_yield == 1) {
@@ -884,7 +884,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			}
 
 			if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
-				os_yield();
+				switch_os_yield();
 			} else {
 				if (tfd > -1 && globals.RUNNING == 1) {
 					uint64_t exp;

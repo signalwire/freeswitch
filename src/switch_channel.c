@@ -1415,7 +1415,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 			(other_channel && switch_channel_down_nosig(other_channel)) || switch_channel_down(channel)) {
 			break;
 		}
-		switch_yield(20000);
+		switch_cond_next();
 	}
 }
 
