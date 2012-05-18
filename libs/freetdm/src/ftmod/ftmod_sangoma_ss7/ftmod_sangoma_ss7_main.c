@@ -356,14 +356,7 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 	/* set IN_THREAD flag so that we know this thread is running */
 	ftdm_set_flag (ftdmspan, FTDM_SPAN_IN_THREAD);
 
-	if(SNG_SS7_OPR_MODE_M2UA_SG == g_ftdm_operating_mode){
-		ftdm_log (FTDM_LOG_INFO, "FreeTDM running as M2UA_SG mode, freetdm dont have to do anything \n"); 
 
-		while (ftdm_running () && !(ftdm_test_flag (ftdmspan, FTDM_SPAN_STOP_THREAD))) {
-			continue;
-		}
-		goto ftdm_sangoma_ss7_stop;
-	}
 
 	/* get an interrupt queue for this span for channel state changes */
 	if (ftdm_queue_get_interrupt (ftdmspan->pendingchans, &ftdm_sangoma_ss7_int[0]) != FTDM_SUCCESS) {
@@ -375,6 +368,40 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 	if (ftdm_queue_get_interrupt (sngss7_span->event_queue, &ftdm_sangoma_ss7_int[1]) != FTDM_SUCCESS) {
 		SS7_CRITICAL ("Failed to get a ftdm_interrupt for span = %d for Trillium event queue!\n", ftdmspan->span_id);
 		goto ftdm_sangoma_ss7_run_exit;
+	}
+
+	if(SNG_SS7_OPR_MODE_M2UA_SG == g_ftdm_operating_mode){
+		ftdm_log (FTDM_LOG_INFO, "FreeTDM running as M2UA_SG mode, freetdm dont have to do anything \n"); 
+
+		while (ftdm_running () && !(ftdm_test_flag (ftdmspan, FTDM_SPAN_STOP_THREAD))) {
+
+			switch ((ftdm_interrupt_multiple_wait(ftdm_sangoma_ss7_int, ftdm_array_len(ftdm_sangoma_ss7_int), 100))) {
+
+				case FTDM_SUCCESS:	/* process all pending state changes */
+
+					SS7_DEVEL_DEBUG ("ftdm_interrupt_wait FTDM_SUCCESS on span = %d\n",ftdmspan->span_id);
+
+					/**********************************************************************/
+				case FTDM_TIMEOUT:
+					SS7_DEVEL_DEBUG ("ftdm_interrupt_wait timed-out on span = %d\n",ftdmspan->span_id);
+
+					break;
+					/**********************************************************************/
+				case FTDM_FAIL:
+					SS7_ERROR ("ftdm_interrupt_wait returned error!\non span = %d\n", ftdmspan->span_id);
+
+					break;
+					/**********************************************************************/
+				default:
+					SS7_ERROR("ftdm_interrupt_wait returned with unknown code on span = %d\n",ftdmspan->span_id);
+
+					break;
+					/**********************************************************************/
+			}
+
+
+		}
+		goto ftdm_sangoma_ss7_stop;
 	}
 
 	while (ftdm_running () && !(ftdm_test_flag (ftdmspan, FTDM_SPAN_STOP_THREAD))) {
