@@ -1415,7 +1415,7 @@ void sofia_msg_thread_start(int idx)
 		mod_sofia_globals.msg_queue_len = idx + 1;
 
 		if (!mod_sofia_globals.msg_queue) {
-			switch_queue_create(&mod_sofia_globals.msg_queue, SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.cpu_count, mod_sofia_globals.pool);
+			switch_queue_create(&mod_sofia_globals.msg_queue, SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.max_msg_queues, mod_sofia_globals.pool);
 		}
 
 
@@ -3195,6 +3195,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
 						}
+					} else if (!strcasecmp(var, "mwi-use-reg-callid")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_MWI_USE_REG_CALLID);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_MWI_USE_REG_CALLID);
+						}
 					} else if (!strcasecmp(var, "presence-proto-lookup")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PRESENCE_MAP);
@@ -3993,6 +3999,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
+						}
+					} else if (!strcasecmp(var, "mwi-use-reg-callid")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_MWI_USE_REG_CALLID);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_MWI_USE_REG_CALLID);
 						}
 					} else if (!strcasecmp(var, "presence-proto-lookup")) {
 						if (switch_true(val)) {

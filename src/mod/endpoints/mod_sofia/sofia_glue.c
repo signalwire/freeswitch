@@ -6643,7 +6643,7 @@ void sofia_glue_free_destination(sofia_destination_t *dst)
 }
 
 switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *user, const char *host, const char *event, const char *contenttype,
-									   const char *body, const char *o_contact, const char *network_ip)
+									   const char *body, const char *o_contact, const char *network_ip, const char *call_id)
 {
 	char *id = NULL;
 	nua_handle_t *nh;
@@ -6706,6 +6706,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 			   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 			   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
 			   TAG_IF(event, SIPTAG_EVENT_STR(event)),
+			   TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
 			   TAG_IF(contenttype, SIPTAG_CONTENT_TYPE_STR(contenttype)), TAG_IF(body, SIPTAG_PAYLOAD_STR(body)), TAG_END());
 
 	switch_safe_free(contact);

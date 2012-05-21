@@ -267,6 +267,7 @@ typedef enum {
 	PFLAG_PRESENCE_DISABLE_EARLY,
 	PFLAG_CONFIRM_BLIND_TRANSFER,
 	PFLAG_THREAD_PER_REG,
+	PFLAG_MWI_USE_REG_CALLID,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -1139,7 +1140,7 @@ void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port);
 sofia_destination_t *sofia_glue_get_destination(char *data);
 void sofia_glue_free_destination(sofia_destination_t *dst);
 switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *user, const char *host, const char *event, const char *contenttype,
-									   const char *body, const char *o_contact, const char *network_ip);
+									   const char *body, const char *o_contact, const char *network_ip, const char *call_id);
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix);
 void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *sip, const char *prefix);
 char *sofia_glue_get_extra_headers_from_event(switch_event_t *event, const char *prefix);
