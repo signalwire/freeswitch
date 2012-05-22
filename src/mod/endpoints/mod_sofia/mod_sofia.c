@@ -5447,14 +5447,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_queue_create(&mod_sofia_globals.presence_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 	switch_queue_create(&mod_sofia_globals.mwi_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 
-	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
-		mod_sofia_globals.running = 0;
-		return SWITCH_STATUS_GENERR;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for profiles to start\n");
-	switch_yield(1500000);
-
 	mod_sofia_globals.cpu_count = switch_core_cpu_count();
 	mod_sofia_globals.max_msg_queues = (mod_sofia_globals.cpu_count / 2) + 1;
 	if (mod_sofia_globals.max_msg_queues < 2) {
@@ -5465,9 +5457,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 		mod_sofia_globals.max_msg_queues = SOFIA_MAX_MSG_QUEUE;
 	}
 
+	switch_queue_create(&mod_sofia_globals.msg_queue, SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.max_msg_queues, mod_sofia_globals.pool);
+
 	/* start one message thread */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Starting initial message thread.\n");
 	sofia_msg_thread_start(0);
+
+	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
+		mod_sofia_globals.running = 0;
+		return SWITCH_STATUS_GENERR;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for profiles to start\n");
+	switch_yield(1500000);
 
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL,
 									&mod_sofia_globals.custom_node) != SWITCH_STATUS_SUCCESS) {

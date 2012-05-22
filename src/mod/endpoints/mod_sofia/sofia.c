@@ -1307,6 +1307,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
 	sofia_profile_t *profile = (*dep)->profile;
+	switch_status_t status;
 
 	switch_core_new_memory_pool(&pool);
 
@@ -1316,14 +1317,19 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 
 	switch_mutex_lock(profile->ireg_mutex);
 	switch_threadattr_create(&thd_attr, de->pool);
+	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, 
-						 thd_attr, 
-						 sofia_msg_thread_run_once, 
-						 de,
-						 de->pool);
+	status = switch_thread_create(&thread, 
+								  thd_attr, 
+								  sofia_msg_thread_run_once, 
+								  de,
+								  de->pool);
 	switch_mutex_unlock(profile->ireg_mutex);
-
+	
+	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot create threads!\n");
+		sofia_process_dispatch_event(&de);
+	}
 }
 
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
@@ -1414,11 +1420,6 @@ void sofia_msg_thread_start(int idx)
 		int i;
 		mod_sofia_globals.msg_queue_len = idx + 1;
 
-		if (!mod_sofia_globals.msg_queue) {
-			switch_queue_create(&mod_sofia_globals.msg_queue, SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.max_msg_queues, mod_sofia_globals.pool);
-		}
-
-
 		for (i = 0; i < mod_sofia_globals.msg_queue_len; i++) {
 			if (!mod_sofia_globals.msg_queue_thread[i]) {
 				switch_threadattr_t *thd_attr = NULL;
@@ -1477,7 +1478,13 @@ void sofia_event_callback(nua_event_t event,
 						  tagi_t tags[])
 {
 	sofia_dispatch_event_t *de;
+	int critical = (((SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.max_msg_queues) * 900) / 1000);
 
+
+	if (switch_queue_size(mod_sofia_globals.msg_queue) > critical) {
+		nua_respond(nh, 503, "System Busy", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+		return;
+	}
 
 	if (sofia_test_pflag(profile, PFLAG_STANDBY)) {
 		if (event < nua_r_set_params || event > nua_r_authenticate) {
@@ -1502,13 +1509,6 @@ void sofia_event_callback(nua_event_t event,
 	de->nua = nua_stack_ref(nua);
 
 	if (event == nua_i_invite && !sofia_private) {
-		int critical = (((SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.max_msg_queues) * 900) / 1000);
-		
-		if (switch_queue_size(mod_sofia_globals.msg_queue) > critical) {
-			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
-			return;
-		}
-
 		if (!(sofia_private = su_alloc(nh->nh_home, sizeof(*sofia_private)))) {
 			abort();
 		}
@@ -2307,6 +2307,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_glue_del_profile(profile);
 	switch_core_hash_destroy(&profile->chat_hash);
+	switch_core_hash_destroy(&profile->mwi_debounce_hash);
 	
 	switch_thread_rwlock_unlock(profile->rwlock);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
@@ -3910,6 +3911,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				profile->dbname = switch_core_strdup(profile->pool, url);
 				switch_core_hash_init(&profile->chat_hash, profile->pool);
+				switch_core_hash_init(&profile->mwi_debounce_hash, profile->pool);
 				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;

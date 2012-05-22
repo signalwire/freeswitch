@@ -613,6 +613,7 @@ struct sofia_profile {
 	sofia_gateway_t *gateways;
 	//su_home_t *home;
 	switch_hash_t *chat_hash;
+	switch_hash_t *mwi_debounce_hash;
 	//switch_core_db_t *master_db;
 	switch_thread_rwlock_t *rwlock;
 	switch_mutex_t *flag_mutex;
