@@ -357,6 +357,25 @@ void rtmp_get_user_variables(switch_event_t **event, switch_core_session_t *sess
 	}
 }
 
+
+void rtmp_get_user_variables_event(switch_event_t **event, switch_event_t *var_event)
+{
+	switch_event_header_t *he;
+	
+	if (!*event && switch_event_create(event, SWITCH_EVENT_CLONE) != SWITCH_STATUS_SUCCESS) {
+		return;
+	}
+
+	if ((he = var_event->headers)) {
+		for (; he; he = he->next) {
+			if (!strncmp(he->name, RTMP_USER_VARIABLE_PREFIX, strlen(RTMP_USER_VARIABLE_PREFIX))) {
+				switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, he->name, he->value);
+			}
+		}
+	}
+}
+
+
 void rtmp_session_send_onattach(rtmp_session_t *rsession)
 {
 	const char *uuid = "";
@@ -386,7 +405,7 @@ void rtmp_send_display_update(switch_core_session_t *session)
 		amf0_str(switch_str_nil(tech_pvt->display_callee_id_number)), NULL);
 }
 
-void rtmp_send_incoming_call(switch_core_session_t *session)
+void rtmp_send_incoming_call(switch_core_session_t *session, switch_event_t *var_event)
 {
 	rtmp_private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -394,7 +413,11 @@ void rtmp_send_incoming_call(switch_core_session_t *session)
 	switch_event_t *event = NULL;
 	amf0_data *obj = NULL;
 	
-	rtmp_get_user_variables(&event, session);
+	if (var_event) {
+		rtmp_get_user_variables_event(&event, var_event);
+	} else {
+		rtmp_get_user_variables(&event, session);
+	}
 	
 	if (event) {
 		amf_event_to_object(&obj, event);
