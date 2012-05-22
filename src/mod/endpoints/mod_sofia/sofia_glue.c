@@ -5858,6 +5858,7 @@ int sofia_glue_recover(switch_bool_t flush)
 		for (m = matches->head; m; m = m->next) {
 			if ((profile = sofia_glue_find_profile(m->val))) {
 				r += sofia_glue_profile_recover(profile, flush);
+				sofia_glue_release_profile(profile);
 			}
 		}
 		switch_console_free_matches(&matches);
