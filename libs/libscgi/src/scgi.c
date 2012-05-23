@@ -548,7 +548,7 @@ static int scgi_socket_reuseaddr(scgi_socket_t socket)
 #endif
 }
 
-SCGI_DECLARE(scgi_status_t) scgi_listen(const char *host, scgi_port_t port, scgi_listen_callback_t callback)
+SCGI_DECLARE(scgi_status_t) scgi_bind(const char *host, scgi_port_t port, scgi_socket_t *socketp)
 {
 	scgi_socket_t server_sock = SCGI_SOCK_INVALID;
 	struct sockaddr_in addr;
@@ -573,32 +573,64 @@ SCGI_DECLARE(scgi_status_t) scgi_listen(const char *host, scgi_port_t port, scgi
     if (listen(server_sock, 10000) < 0) {
 		status = SCGI_FAIL;
 		goto end;
-	}
-
-	for (;;) {
-		int client_sock;                    
-		struct sockaddr_in echoClntAddr;
-#ifdef WIN32
-		int clntLen;
-#else
-		unsigned int clntLen;
-#endif
-
-		clntLen = sizeof(echoClntAddr);
-    
-		if ((client_sock = accept(server_sock, (struct sockaddr *) &echoClntAddr, &clntLen)) == SCGI_SOCK_INVALID) {
-			status = SCGI_FAIL;
-			goto end;
-		}
-		
-		callback(server_sock, client_sock, &echoClntAddr);
-	}
+	}	
 
  end:
 
 	if (server_sock != SCGI_SOCK_INVALID) {
 		closesocket(server_sock);
 		server_sock = SCGI_SOCK_INVALID;
+	} else {
+		*socketp = server_sock;
+	}
+
+	return status;
+}
+
+SCGI_DECLARE(scgi_status_t) scgi_accept(scgi_socket_t server_sock, scgi_socket_t *client_sock_p, struct sockaddr_in *echoClntAddr)
+{
+	scgi_status_t status = SCGI_SUCCESS;
+	int client_sock;                    
+	struct sockaddr_in local_echoClntAddr;
+#ifdef WIN32
+	int clntLen;
+#else
+	unsigned int clntLen;
+#endif
+	
+	if (!echoClntAddr) {
+		echoClntAddr = &local_echoClntAddr;
+	}
+
+
+	clntLen = sizeof(*echoClntAddr);
+    
+	if ((client_sock = accept(server_sock, (struct sockaddr *) echoClntAddr, &clntLen)) == SCGI_SOCK_INVALID) {
+		status = SCGI_FAIL;
+	} else {
+		*client_sock_p = client_sock;
+	}
+	
+	return status;
+}
+
+SCGI_DECLARE(scgi_status_t) scgi_listen(const char *host, scgi_port_t port, scgi_listen_callback_t callback)
+{
+
+	scgi_socket_t server_sock = SCGI_SOCK_INVALID, client_sock = SCGI_SOCK_INVALID;
+	scgi_status_t status = SCGI_FAIL;
+	struct sockaddr_in echoClntAddr;
+
+	if ((status = scgi_bind(host, port, &server_sock)) == SCGI_SUCCESS) {
+
+		while(scgi_accept(server_sock, &client_sock, &echoClntAddr) == SCGI_SUCCESS) {
+			callback(server_sock, &client_sock, &echoClntAddr);
+			
+			if (client_sock != SCGI_SOCK_INVALID) {
+				closesocket(client_sock);
+				client_sock = SCGI_SOCK_INVALID;
+			}
+		}
 	}
 
 	return status;
