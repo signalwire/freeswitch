@@ -79,8 +79,10 @@ sub DESTROY {
 *disconnect = *FSSCGIc::SCGIhandle_disconnect;
 *addParam = *FSSCGIc::SCGIhandle_addParam;
 *addBody = *FSSCGIc::SCGIhandle_addBody;
+*getBody = *FSSCGIc::SCGIhandle_getBody;
+*getParam = *FSSCGIc::SCGIhandle_getParam;
 *sendRequest = *FSSCGIc::SCGIhandle_sendRequest;
-*recv = *FSSCGIc::SCGIhandle_recv;
+*respond = *FSSCGIc::SCGIhandle_respond;
 *bind = *FSSCGIc::SCGIhandle_bind;
 *accept = *FSSCGIc::SCGIhandle_accept;
 sub DISOWN {

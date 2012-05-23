@@ -183,6 +183,7 @@ typedef void (*scgi_listen_callback_t)(scgi_socket_t server_sock, scgi_socket_t 
 
 SCGI_DECLARE(scgi_status_t) scgi_connect(scgi_handle_t *handle, const char *host, scgi_port_t port, uint32_t timeout);
 SCGI_DECLARE(scgi_status_t) scgi_disconnect(scgi_handle_t *handle);
+SCGI_DECLARE(scgi_status_t) scgi_parse(scgi_socket_t sock, scgi_handle_t *handle);
 SCGI_DECLARE(int) scgi_wait_sock(scgi_socket_t sock, uint32_t ms, scgi_poll_t flags);
 SCGI_DECLARE(ssize_t) scgi_recv(scgi_handle_t *handle, unsigned char *buf, size_t buflen);
 SCGI_DECLARE(scgi_status_t) scgi_send_request(scgi_handle_t *handle);
@@ -195,6 +196,10 @@ SCGI_DECLARE(const char *) scgi_get_body(scgi_handle_t *handle);
 SCGI_DECLARE(const char *) scgi_get_param(scgi_handle_t *handle, const char *name);
 SCGI_DECLARE(scgi_status_t) scgi_bind(const char *host, scgi_port_t port, scgi_socket_t *socketp);
 SCGI_DECLARE(scgi_status_t) scgi_accept(scgi_socket_t server_sock, scgi_socket_t *client_sock_p, struct sockaddr_in *echoClntAddr);
+
+#ifndef WIN32
+#define closesocket(x) shutdown(x, 2); close(x)
+#endif
 
 #ifdef __cplusplus
 }

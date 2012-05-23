@@ -34,7 +34,6 @@
 #include <scgi.h>
 
 #ifndef WIN32
-#define closesocket(x) shutdown(x, 2); close(x)
 #include <fcntl.h>
 #include <errno.h>
 #else
@@ -385,11 +384,9 @@ SCGI_DECLARE(scgi_status_t) scgi_disconnect(scgi_handle_t *handle)
 		return SCGI_FAIL;
 	}
 
-	handle->destroyed = 1;
-	handle->connected = 0;
-
-	scgi_destroy_params(handle);
-	scgi_safe_free(handle->body);
+	if (!handle->sock) {
+		abort();
+	}
 
 	if (handle->sock != SCGI_SOCK_INVALID) {
 		closesocket(handle->sock);
@@ -397,6 +394,12 @@ SCGI_DECLARE(scgi_status_t) scgi_disconnect(scgi_handle_t *handle)
 		status = SCGI_SUCCESS;
 	}
 	
+	handle->destroyed = 1;
+	handle->connected = 0;
+
+	scgi_destroy_params(handle);
+	scgi_safe_free(handle->body);
+
 	return status;
 }
 
@@ -577,9 +580,11 @@ SCGI_DECLARE(scgi_status_t) scgi_bind(const char *host, scgi_port_t port, scgi_s
 
  end:
 
-	if (server_sock != SCGI_SOCK_INVALID) {
-		closesocket(server_sock);
-		server_sock = SCGI_SOCK_INVALID;
+	if (status == SCGI_FAIL) {
+		if (server_sock != SCGI_SOCK_INVALID) {
+			closesocket(server_sock);
+			server_sock = SCGI_SOCK_INVALID;
+		} 
 	} else {
 		*socketp = server_sock;
 	}
@@ -601,11 +606,11 @@ SCGI_DECLARE(scgi_status_t) scgi_accept(scgi_socket_t server_sock, scgi_socket_t
 	if (!echoClntAddr) {
 		echoClntAddr = &local_echoClntAddr;
 	}
-
-
+	
 	clntLen = sizeof(*echoClntAddr);
     
 	if ((client_sock = accept(server_sock, (struct sockaddr *) echoClntAddr, &clntLen)) == SCGI_SOCK_INVALID) {
+		printf("FRICK %s\n", strerror(errno));
 		status = SCGI_FAIL;
 	} else {
 		*client_sock_p = client_sock;
@@ -652,10 +657,12 @@ SCGI_DECLARE(scgi_status_t) scgi_parse(scgi_socket_t sock, scgi_handle_t *handle
 	char *body = NULL;
 	char comma = 0;
 
+	memset(handle, 0, sizeof(*handle));
+
 	handle->sock = sock;
+	
 	handle->connected = 1;
 	sock_setup(handle);
-	
 
 	for(;;) {
 

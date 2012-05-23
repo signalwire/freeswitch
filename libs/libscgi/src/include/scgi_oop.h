@@ -45,8 +45,12 @@ extern "C" {
 
 class SCGIhandle {
  private:
+	scgi_socket_t server_sock;
 	scgi_handle_t handle;
 	unsigned char buf[65536];
+	char *data_buf;
+	int buflen;
+	int bufsize;
  public:
 	SCGIhandle();
 	virtual ~SCGIhandle();
@@ -55,8 +59,10 @@ class SCGIhandle {
 	int disconnect(void);
 	int addParam(const char *name, const char *value);
 	int addBody(const char *value);
-	int sendRequest(const char *host, int port, int timeout);
-	char *recv();
+	char *getBody();
+	char *getParam(const char *name);
+	char *sendRequest(const char *host, int port, int timeout);
+	int respond(char *msg);
 	int bind(const char *host, int port);
 	int accept(void);
 };

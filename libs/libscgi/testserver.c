@@ -4,7 +4,7 @@ static void callback(scgi_socket_t server_sock, scgi_socket_t *client_sock, stru
 {
 	scgi_handle_t handle = { 0 };
 
-	if (scgi_parse(client_sock, &handle) == SCGI_SUCCESS) {
+	if (scgi_parse(*client_sock, &handle) == SCGI_SUCCESS) {
 		scgi_param_t *pp;
 
 		*client_sock = SCGI_SOCK_INVALID;

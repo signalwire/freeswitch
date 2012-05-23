@@ -1556,6 +1556,26 @@ SWIG_AsCharPtrAndSize(SV *obj, char** cptr, size_t* psize, int *alloc)
 
 
 
+SWIGINTERNINLINE SV *
+SWIG_FromCharPtrAndSize(const char* carray, size_t size)
+{
+  SV *obj = sv_newmortal();
+  if (carray) {
+    sv_setpvn(obj, carray, size);
+  } else {
+    sv_setsv(obj, &PL_sv_undef);
+  }
+  return obj;
+}
+
+
+SWIGINTERNINLINE SV * 
+SWIG_FromCharPtr(const char *cptr)
+{ 
+  return SWIG_FromCharPtrAndSize(cptr, (cptr ? strlen(cptr) : 0));
+}
+
+
 #include <limits.h>
 #if !defined(SWIG_NO_LLONG_MAX)
 # if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
@@ -1681,26 +1701,6 @@ SWIG_AsVal_int SWIG_PERL_DECL_ARGS_2(SV * obj, int *val)
     }
   }  
   return res;
-}
-
-
-SWIGINTERNINLINE SV *
-SWIG_FromCharPtrAndSize(const char* carray, size_t size)
-{
-  SV *obj = sv_newmortal();
-  if (carray) {
-    sv_setpvn(obj, carray, size);
-  } else {
-    sv_setsv(obj, &PL_sv_undef);
-  }
-  return obj;
-}
-
-
-SWIGINTERNINLINE SV * 
-SWIG_FromCharPtr(const char *cptr)
-{ 
-  return SWIG_FromCharPtrAndSize(cptr, (cptr ? strlen(cptr) : 0));
 }
 
 #ifdef __cplusplus
@@ -1951,13 +1951,80 @@ XS(_wrap_SCGIhandle_addBody) {
 }
 
 
+XS(_wrap_SCGIhandle_getBody) {
+  {
+    SCGIhandle *arg1 = (SCGIhandle *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: SCGIhandle_getBody(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_SCGIhandle, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SCGIhandle_getBody" "', argument " "1"" of type '" "SCGIhandle *""'"); 
+    }
+    arg1 = reinterpret_cast< SCGIhandle * >(argp1);
+    result = (char *)(arg1)->getBody();
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_SCGIhandle_getParam) {
+  {
+    SCGIhandle *arg1 = (SCGIhandle *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: SCGIhandle_getParam(self,name);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_SCGIhandle, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SCGIhandle_getParam" "', argument " "1"" of type '" "SCGIhandle *""'"); 
+    }
+    arg1 = reinterpret_cast< SCGIhandle * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SCGIhandle_getParam" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    result = (char *)(arg1)->getParam((char const *)arg2);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_SCGIhandle_sendRequest) {
   {
     SCGIhandle *arg1 = (SCGIhandle *) 0 ;
     char *arg2 = (char *) 0 ;
     int arg3 ;
     int arg4 ;
-    int result;
+    char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int res2 ;
@@ -1993,8 +2060,8 @@ XS(_wrap_SCGIhandle_sendRequest) {
       SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "SCGIhandle_sendRequest" "', argument " "4"" of type '" "int""'");
     } 
     arg4 = static_cast< int >(val4);
-    result = (int)(arg1)->sendRequest((char const *)arg2,arg3,arg4);
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    result = (char *)(arg1)->sendRequest((char const *)arg2,arg3,arg4);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     
@@ -2010,29 +2077,40 @@ XS(_wrap_SCGIhandle_sendRequest) {
 }
 
 
-XS(_wrap_SCGIhandle_recv) {
+XS(_wrap_SCGIhandle_respond) {
   {
     SCGIhandle *arg1 = (SCGIhandle *) 0 ;
-    char *result = 0 ;
+    char *arg2 = (char *) 0 ;
+    int result;
     void *argp1 = 0 ;
     int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: SCGIhandle_recv(self);");
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: SCGIhandle_respond(self,msg);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_SCGIhandle, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SCGIhandle_recv" "', argument " "1"" of type '" "SCGIhandle *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SCGIhandle_respond" "', argument " "1"" of type '" "SCGIhandle *""'"); 
     }
     arg1 = reinterpret_cast< SCGIhandle * >(argp1);
-    result = (char *)(arg1)->recv();
-    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SCGIhandle_respond" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    result = (int)(arg1)->respond(arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
     
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     XSRETURN(argvi);
   fail:
     
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     SWIG_croak_null();
   }
 }
@@ -2154,8 +2232,10 @@ static swig_command_info swig_commands[] = {
 {"FSSCGIc::SCGIhandle_disconnect", _wrap_SCGIhandle_disconnect},
 {"FSSCGIc::SCGIhandle_addParam", _wrap_SCGIhandle_addParam},
 {"FSSCGIc::SCGIhandle_addBody", _wrap_SCGIhandle_addBody},
+{"FSSCGIc::SCGIhandle_getBody", _wrap_SCGIhandle_getBody},
+{"FSSCGIc::SCGIhandle_getParam", _wrap_SCGIhandle_getParam},
 {"FSSCGIc::SCGIhandle_sendRequest", _wrap_SCGIhandle_sendRequest},
-{"FSSCGIc::SCGIhandle_recv", _wrap_SCGIhandle_recv},
+{"FSSCGIc::SCGIhandle_respond", _wrap_SCGIhandle_respond},
 {"FSSCGIc::SCGIhandle_bind", _wrap_SCGIhandle_bind},
 {"FSSCGIc::SCGIhandle_accept", _wrap_SCGIhandle_accept},
 {0,0}
