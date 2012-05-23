@@ -145,7 +145,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 		scgi_disconnect(&handle);
 
-		if (len < 0) {
+		if (len < 0 && (!txt || !strlen(txt))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG:\nURL: %s Connection Read Failed: [%s]\n", binding->url, handle.err);
 			goto end;
 		}

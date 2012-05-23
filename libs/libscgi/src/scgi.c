@@ -384,10 +384,6 @@ SCGI_DECLARE(scgi_status_t) scgi_disconnect(scgi_handle_t *handle)
 		return SCGI_FAIL;
 	}
 
-	if (!handle->sock) {
-		abort();
-	}
-
 	if (handle->sock != SCGI_SOCK_INVALID) {
 		closesocket(handle->sock);
 		handle->sock = SCGI_SOCK_INVALID;

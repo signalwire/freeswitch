@@ -198,7 +198,7 @@ SCGI_DECLARE(scgi_status_t) scgi_bind(const char *host, scgi_port_t port, scgi_s
 SCGI_DECLARE(scgi_status_t) scgi_accept(scgi_socket_t server_sock, scgi_socket_t *client_sock_p, struct sockaddr_in *echoClntAddr);
 
 #ifndef WIN32
-#define closesocket(x) shutdown(x, 2); close(x)
+#define closesocket(x) close(x)
 #endif
 
 #ifdef __cplusplus
