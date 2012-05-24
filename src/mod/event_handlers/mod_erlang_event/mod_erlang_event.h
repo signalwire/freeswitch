@@ -39,7 +39,8 @@ typedef enum {
 } session_flag_t;
 
 typedef enum {
-	ERLANG_PID = 0,
+	NONE = 0,
+	ERLANG_PID,
 	ERLANG_REG_PROCESS
 } process_type;
 
@@ -113,6 +114,7 @@ struct listener {
 #else
 	int sockfd;
 #endif
+	uint8_t dead;
 	struct ei_cnode_s *ec;
 	struct erlang_process log_process;
 	struct erlang_process event_process;

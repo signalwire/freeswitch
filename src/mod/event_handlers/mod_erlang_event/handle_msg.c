@@ -286,6 +286,7 @@ static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_bu
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 		}
 
+		/* TODO - listener write lock */
 		for (i = 1; i < arity; i++) {
 			if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
 
@@ -335,6 +336,7 @@ static switch_status_t handle_msg_session_event(listener_t *listener, erlang_msg
 			for (i = 1; i < arity; i++) {
 				if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
 
+					/* TODO session write locking */
 					if (custom) {
 						switch_core_hash_insert(session->event_hash, atom, MARKER);
 					} else if (switch_name_event(atom, &type) == SWITCH_STATUS_SUCCESS) {
@@ -380,10 +382,12 @@ static switch_status_t handle_msg_nixevent(listener_t *listener, int arity, ei_x
 		int i = 0;
 		switch_event_types_t type;
 
+		/* TODO listener write lock */
 		for (i = 1; i < arity; i++) {
 			if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
 
 				if (custom) {
+
 					switch_core_hash_delete(listener->event_hash, atom);
 				} else if (switch_name_event(atom, &type) == SWITCH_STATUS_SUCCESS) {
 					uint32_t x = 0;
@@ -426,6 +430,7 @@ static switch_status_t handle_msg_session_nixevent(listener_t *listener, erlang_
 			int i = 0;
 			switch_event_types_t type;
 
+			/* TODO session write lock */
 			for (i = 1; i < arity; i++) {
 				if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
 
@@ -480,6 +485,8 @@ static switch_status_t handle_msg_setevent(listener_t *listener, erlang_msg *msg
 		switch_event_types_t type;
 		int i = 0;
 
+		/* TODO listener write lock */
+
 		/* clear any previous event registrations */
 		for( x = 0; x <= SWITCH_EVENT_ALL; x++){
 			event_list[x] = 0;
@@ -517,6 +524,7 @@ static switch_status_t handle_msg_setevent(listener_t *listener, erlang_msg *msg
 		/* update the event subscriptions with the new ones */
 		memcpy(listener->event_list, event_list, sizeof(uint8_t) * (SWITCH_EVENT_ALL + 1));
 		/* wipe the old hash, and point the pointer at the new one */
+		/* TODO make thread safe */
 		switch_core_hash_destroy(&listener->event_hash);
 		listener->event_hash = event_hash;
 
@@ -544,12 +552,14 @@ static switch_status_t handle_msg_session_setevent(listener_t *listener, erlang_
 			switch_event_types_t type;
 			uint32_t x = 0;
 
+			/* TODO session write lock */
 			/* clear any previous event registrations */
 			for (x = 0; x <= SWITCH_EVENT_ALL; x++){
 				event_list[x] = 0;
 			}
 
 			/* create new hash */
+			/* TODO make thread safe*/
 			switch_core_hash_init(&event_hash, session->pool);
 
 			for (i = 1; i < arity; i++){
@@ -576,6 +586,7 @@ static switch_status_t handle_msg_session_setevent(listener_t *listener, erlang_
 			/* update the event subscriptions with the new ones */
 			memcpy(session->event_list, event_list, sizeof(uint8_t) * (SWITCH_EVENT_ALL + 1));
 			/* wipe the old hash, and point the pointer at the new one */
+			/* TODO make thread safe*/
 			switch_core_hash_destroy(&session->event_hash);
 			session->event_hash = event_hash;
 			/* TODO - we should flush any non-matching events from the queue */
@@ -601,13 +612,13 @@ static switch_status_t handle_msg_api(listener_t *listener, erlang_msg * msg, in
 		fail = SWITCH_TRUE;
 	}
 
-        ei_get_type(buf->buff, &buf->index, &type, &size);
+	ei_get_type(buf->buff, &buf->index, &type, &size);
 
 	if ((size > (sizeof(api_cmd) - 1)) || ei_decode_atom(buf->buff, &buf->index, api_cmd)) {
 		fail = SWITCH_TRUE;
 	}
 
-        ei_get_type(buf->buff, &buf->index, &type, &size);
+	ei_get_type(buf->buff, &buf->index, &type, &size);
 	arg = malloc(size + 1);
 
 	if (ei_decode_string(buf->buff, &buf->index, arg)) {
@@ -706,29 +717,29 @@ static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_
 				while (!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
 					i++;
 
-                                        ei_get_type(buf->buff, &buf->index, &type, &size);
+					ei_get_type(buf->buff, &buf->index, &type, &size);
 
 					if ((size > (sizeof(key) - 1)) || ei_decode_string(buf->buff, &buf->index, key)) {
 						fail = SWITCH_TRUE;
 						break;
 					}
 
-                                        ei_get_type(buf->buff, &buf->index, &type, &size);
-                                        value = malloc(size + 1);
+					ei_get_type(buf->buff, &buf->index, &type, &size);
+					value = malloc(size + 1);
 
 					if (ei_decode_string(buf->buff, &buf->index, value)) {
        						fail = SWITCH_TRUE;
 						break;
 					}
 
-                                        if (!fail && !strcmp(key, "body")) {
-                                                switch_safe_free(event->body);
-                                                event->body = value;
-                                        } else if (!fail)  {
-                                                switch_event_add_header_string(event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, key, value);
-                                        }
-
-                                        /* Do not free malloc here! The above commands utilize the raw allocated memory and skip any copying/duplication. Faster. */
+					if (!fail && !strcmp(key, "body")) {
+						switch_safe_free(event->body);
+						event->body = value;
+					} else if (!fail)  {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, key, value);
+					}
+					
+					/* Do not free malloc here! The above commands utilize the raw allocated memory and skip any copying/duplication. Faster. */
 				}
 
 				if (headerlength != i || fail) {
@@ -763,22 +774,22 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 
 				char key[1024];
 				char *value;
-                                int type;
-                                int size;
+				int type;
+				int size;
 				int i = 0;
 				switch_bool_t fail = SWITCH_FALSE;
 
 				while (!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
 					i++;
-                                        ei_get_type(buf->buff, &buf->index, &type, &size);
+					ei_get_type(buf->buff, &buf->index, &type, &size);
 
 					if ((size > (sizeof(key) - 1)) || ei_decode_string(buf->buff, &buf->index, key)) {
 						fail = SWITCH_TRUE;
 						break;
 					}
-
-                                        ei_get_type(buf->buff, &buf->index, &type, &size);
-                                        value = malloc(size + 1);
+					
+					ei_get_type(buf->buff, &buf->index, &type, &size);
+					value = malloc(size + 1);
 
 					if (ei_decode_string(buf->buff, &buf->index, value)) {
        						fail = SWITCH_TRUE;
@@ -786,7 +797,7 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 					}
 
 					if (!fail) {
-	                                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, key, value);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, key, value);
 					}
 				}
 
@@ -1024,6 +1035,7 @@ static switch_status_t handle_msg_atom(listener_t *listener, erlang_msg * msg, e
 				listener->event_list[x] = 0;
 			}
 			/* wipe the hash */
+			/* TODO make thread safe*/
 			switch_core_hash_destroy(&listener->event_hash);
 			switch_core_hash_init(&listener->event_hash, listener->pool);
 			ei_x_encode_atom(rbuf, "ok");
@@ -1044,6 +1056,7 @@ static switch_status_t handle_msg_atom(listener_t *listener, erlang_msg * msg, e
 				session->event_list[x] = 0;
 			}
 			/* wipe the hash */
+			/* TODO make thread safe*/
 			switch_core_hash_destroy(&session->event_hash);
 			switch_core_hash_init(&session->event_hash, session->pool);
 			ei_x_encode_atom(rbuf, "ok");
@@ -1240,6 +1253,7 @@ int handle_msg(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buf
 		buf->index = 0;
 		ei_decode_version(buf->buff, &buf->index, &version);
 		ei_get_type(buf->buff, &buf->index, &type, &size);
+
 		switch (type) {
 		case ERL_SMALL_TUPLE_EXT:
 		case ERL_LARGE_TUPLE_EXT:
@@ -1288,11 +1302,8 @@ int handle_msg(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buf
 #ifdef EI_DEBUG
 		ei_x_print_msg(rbuf, &msg->from, 1);
 #endif
+		return SWITCH_STATUS_SUCCESS != ret;
 
-		if (SWITCH_STATUS_SUCCESS == ret)
-			return 0;
-		else					/* SWITCH_STATUS_TERM */
-			return 1;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Empty reply, supressing\n");
 		return 0;
