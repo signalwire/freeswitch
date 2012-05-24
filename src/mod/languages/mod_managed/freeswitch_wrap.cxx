@@ -1520,6 +1520,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_PROXY_MEDIA_VARIABLE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_ZRTP_PASSTHRU_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "zrtp_passthru";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_ENDPOINT_DISPOSITION_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;

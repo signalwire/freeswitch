@@ -6105,6 +6105,7 @@ public class freeswitch {
   public static readonly string SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME = freeswitchPINVOKE.SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME_get();
   public static readonly string SWITCH_BYPASS_MEDIA_VARIABLE = freeswitchPINVOKE.SWITCH_BYPASS_MEDIA_VARIABLE_get();
   public static readonly string SWITCH_PROXY_MEDIA_VARIABLE = freeswitchPINVOKE.SWITCH_PROXY_MEDIA_VARIABLE_get();
+  public static readonly string SWITCH_ZRTP_PASSTHRU_VARIABLE = freeswitchPINVOKE.SWITCH_ZRTP_PASSTHRU_VARIABLE_get();
   public static readonly string SWITCH_ENDPOINT_DISPOSITION_VARIABLE = freeswitchPINVOKE.SWITCH_ENDPOINT_DISPOSITION_VARIABLE_get();
   public static readonly string SWITCH_HOLD_MUSIC_VARIABLE = freeswitchPINVOKE.SWITCH_HOLD_MUSIC_VARIABLE_get();
   public static readonly string SWITCH_TEMP_HOLD_MUSIC_VARIABLE = freeswitchPINVOKE.SWITCH_TEMP_HOLD_MUSIC_VARIABLE_get();
@@ -6723,6 +6724,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_PROXY_MEDIA_VARIABLE_get")]
   public static extern string SWITCH_PROXY_MEDIA_VARIABLE_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_ZRTP_PASSTHRU_VARIABLE_get")]
+  public static extern string SWITCH_ZRTP_PASSTHRU_VARIABLE_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_ENDPOINT_DISPOSITION_VARIABLE_get")]
   public static extern string SWITCH_ENDPOINT_DISPOSITION_VARIABLE_get();
@@ -23188,8 +23192,9 @@ public enum switch_channel_flag_t {
   CF_VIDEO_REFRESH_REQ,
   CF_SERVICE_AUDIO,
   CF_SERVICE_VIDEO,
+  CF_ZRTP_PASSTHRU_REQ,
+  CF_ZRTP_PASSTHRU,
   CF_ZRTP_HASH,
-  CF_ZRTP_PASS,
   CF_CHANNEL_SWAP,
   CF_PICKUP,
   CF_CONFIRM_BLIND_TRANSFER,
