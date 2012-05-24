@@ -1,3 +1,10 @@
+freeswitch (1.2~rc2-1) unstable; urgency=low
+
+  * Bump version.
+  * Sounds and music have been moved to their own source packaging.
+
+ -- Travis Cross <tc@traviscross.com>  Thu, 24 May 2012 15:15:10 +0000
+
 freeswitch (1.2~alpha1-1) unstable; urgency=low
 
   * Initial release of FreeSWITCH in new debian packaging.
