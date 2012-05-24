@@ -592,7 +592,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 				continue;
 			}
-			switch_set_flag(sp, LFLAG_OUTBOUND_INIT);
+			switch_set_flag_locked(sp, LFLAG_OUTBOUND_INIT);
 		}
 
 		if (switch_test_flag(sp, LFLAG_SESSION_COMPLETE)) {
@@ -1278,8 +1278,7 @@ static switch_status_t state_handler(switch_core_session_t *session)
 		if (state == CS_DESTROY) {
 			/* indicate that once all the events in the event queue are done
 			 * we can throw this away */
-			/* TODO locked? */
-			switch_set_flag(session_element, LFLAG_SESSION_COMPLETE);
+			switch_set_flag_locked(session_element, LFLAG_SESSION_COMPLETE);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to update channel state for %s to %s\n", switch_core_session_get_uuid(session),
@@ -1366,7 +1365,7 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	spawn_reply_t *p;
 	erlang_ref ref;
 
-	switch_set_flag(session_element, LFLAG_WAITING_FOR_PID);
+	switch_set_flag_locked(session_element, LFLAG_WAITING_FOR_PID);
 
 	/* attach the session to the listener */
 	add_session_elem_to_listener(listener, session_element);
@@ -1430,8 +1429,8 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	memcpy(&session_element->process.pid, p->pid, sizeof(erlang_pid));
 	session_element->spawn_reply = NULL;
 
-	switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
-	switch_clear_flag(session_element, LFLAG_WAITING_FOR_PID);
+	switch_clear_flag_locked(session_element, LFLAG_OUTBOUND_INIT);
+	switch_clear_flag_locked(session_element, LFLAG_WAITING_FOR_PID);
 
 	ei_link(listener, ei_self(listener->ec), &session_element->process.pid);
 
