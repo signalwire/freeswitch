@@ -3411,12 +3411,16 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 		memset(data, 0, olen);
 		c = data;
 		for (p = indup; p && p < endof_indup && *p; p++) {
+			int global = 0;
 			vtype = 0;
 
 			if (*p == '\\') {
 				if (*(p + 1) == '$') {
 					nv = 1;
 					p++;
+					if (*(p + 1) == '$') {
+						p++;
+					}
 				} else if (*(p + 1) == '\'') {
 					p++;
 					continue;
@@ -3428,9 +3432,15 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 			}
 
 			if (*p == '$' && !nv) {
+
+				if (*(p + 1) == '$') {
+					p++;
+					global++;
+				}
+
 				if (*(p + 1)) {
 					if (*(p + 1) == '{') {
-						vtype = 1;
+						vtype = global ? 3 : 1;
 					} else {
 						nv = 1;
 					}
@@ -3452,7 +3462,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 
 				s++;
 
-				if (vtype == 1 && *s == '{') {
+				if ((vtype == 1 || vtype == 3) && *s == '{') {
 					br = 1;
 					s++;
 				}
@@ -3513,7 +3523,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 					vtype = 2;
 				}
 
-				if (vtype == 1) {
+				if (vtype == 1 || vtype == 3) {
 					char *expanded = NULL;
 					int offset = 0;
 					int ooffset = 0;
@@ -3540,7 +3550,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 						idx = atoi(ptr);
 					}
 					
-					if ((sub_val = (char *) switch_channel_get_variable_dup(channel, vname, SWITCH_TRUE, idx))) {
+					if (vtype == 3 || (sub_val = (char *) switch_channel_get_variable_dup(channel, vname, SWITCH_TRUE, idx))) {
 						if (var_list && !switch_event_check_permission_list(var_list, vname)) {
 							sub_val = "INVALID";
 						}

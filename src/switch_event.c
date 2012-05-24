@@ -1957,12 +1957,16 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 		memset(data, 0, olen);
 		c = data;
 		for (p = indup; p && p < endof_indup && *p; p++) {
+			int global = 0;
 			vtype = 0;
 
 			if (*p == '\\') {
 				if (*(p + 1) == '$') {
 					nv = 1;
 					p++;
+					if (*(p + 1) == '$') {
+						p++;
+					}
 				} else if (*(p + 1) == '\'') {
 					p++;
 					continue;
@@ -1974,9 +1978,14 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 			}
 
 			if (*p == '$' && !nv) {
+				if (*(p + 1) == '$') {
+					p++;
+					global++;
+				}
+
 				if (*(p + 1)) {
 					if (*(p + 1) == '{') {
-						vtype = 1;
+						vtype = global ? 3 : 1;
 					} else {
 						nv = 1;
 					}
@@ -1998,7 +2007,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 
 				s++;
 
-				if (vtype == 1 && *s == '{') {
+				if ((vtype == 1 || vtype == 3) && *s == '{') {
 					br = 1;
 					s++;
 				}
@@ -2060,7 +2069,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 					vtype = 2;
 				}
 
-				if (vtype == 1) {
+				if (vtype == 1 || vtype == 3) {
 					char *expanded = NULL;
 					int offset = 0;
 					int ooffset = 0;
@@ -2086,7 +2095,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 						idx = atoi(ptr);
 					}
 
-					if (!(sub_val = switch_event_get_header_idx(event, vname, idx))) {
+					if (vtype == 3 || !(sub_val = switch_event_get_header_idx(event, vname, idx))) {
 						switch_safe_free(gvar);
 						if ((gvar = switch_core_get_variable_dup(vname))) {
 							sub_val = gvar;
