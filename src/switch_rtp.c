@@ -2656,7 +2656,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					*bytes = sbytes;
 					break;
 				case zrtp_status_drop:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+					/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error: zRTP protection drop with code %d\n", stat); */
 					*bytes = 0;
 					return SWITCH_STATUS_SUCCESS;
 				case zrtp_status_fail:
