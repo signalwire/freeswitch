@@ -692,7 +692,7 @@ static int zrtp_send_rtp_callback(const zrtp_stream_t *stream, char *rtp_packet,
 	return status;
 }
 
-static void zrtp_event_callback(zrtp_stream_t *stream, zrtp_security_event_t event)
+static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 {
 	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
 	zrtp_session_info_t zrtp_session_info;
