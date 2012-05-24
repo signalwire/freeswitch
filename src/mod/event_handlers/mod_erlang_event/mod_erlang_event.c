@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Andrew Thompson <andrew@hijacked.us>
  * Rob Charlton <rob.charlton@savageminds.com>
+ * Tamas Cseke <tamas.cseke@virtual-call-center.eu>
  *
  *
  * mod_erlang_event.c -- Erlang Event Handler derived from mod_event_socket
@@ -200,6 +201,8 @@ static void event_handler(switch_event_t *event)
 			continue;
 		}
 
+		switch_thread_rwlock_rdlock(l->event_rwlock);
+
 		if (l->event_list[SWITCH_EVENT_ALL]) {
 			send = 1;
 		} else if ((l->event_list[event->event_id])) {
@@ -208,6 +211,7 @@ static void event_handler(switch_event_t *event)
 			}
 		}
 
+		switch_thread_rwlock_unlock(l->event_rwlock);
 
 		if (send) {
 			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
@@ -815,14 +819,12 @@ static void handle_exit(listener_t *listener, erlang_pid * pid)
 			uint8_t x = 0;
 			switch_clear_flag_locked(listener, LFLAG_EVENTS);
 
+			switch_thread_rwlock_wrlock(listener->event_rwlock);
 			for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
 				listener->event_list[x] = 0;
 			}
-			/* wipe the hash */
-			/* XXX this needs to be locked */
-			/* TODO switch_core_hash_delete_multi_locked  */
-			switch_core_hash_destroy(&listener->event_hash);
-			switch_core_hash_init(&listener->event_hash, listener->pool);
+			switch_core_hash_delete_multi(listener->event_hash, NULL, NULL);
+			switch_thread_rwlock_unlock(listener->event_rwlock);
 		}
 	}
 }
@@ -1177,7 +1179,6 @@ static listener_t *new_listener(struct ei_cnode_s *ec, int clientfd)
 	}
 	memset(listener, 0, sizeof(*listener));
 
-	switch_thread_rwlock_create(&listener->rwlock, pool);
 	switch_queue_create(&listener->event_queue, SWITCH_CORE_QUEUE_LEN, pool);
 	switch_queue_create(&listener->log_queue, SWITCH_CORE_QUEUE_LEN, pool);
 
@@ -1188,7 +1189,11 @@ static listener_t *new_listener(struct ei_cnode_s *ec, int clientfd)
 	listener->level = SWITCH_LOG_DEBUG;
 	switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 	switch_mutex_init(&listener->sock_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+
+	switch_thread_rwlock_create(&listener->rwlock, pool);
+	switch_thread_rwlock_create(&listener->event_rwlock, pool);
 	switch_thread_rwlock_create(&listener->session_rwlock, listener->pool);
+
 	switch_core_hash_init(&listener->event_hash, listener->pool);
 	switch_core_hash_init(&listener->sessions, listener->pool);
 

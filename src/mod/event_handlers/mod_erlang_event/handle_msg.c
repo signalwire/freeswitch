@@ -28,6 +28,7 @@
  * Rob Charlton <rob.charlton@savageminds.com>
  * Darren Schreiber <d@d-man.org>
  * Mike Jerris <mike@jerris.com>
+ * Tamas Cseke <tamas.cseke@virtual-call-center.eu>
  *
  *
  * handle_msg.c -- handle messages received from erlang nodes
@@ -286,7 +287,8 @@ static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_bu
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 		}
 
-		/* TODO - listener write lock */
+		switch_thread_rwlock_wrlock(listener->event_rwlock);
+
 		for (i = 1; i < arity; i++) {
 			if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
 
@@ -312,6 +314,8 @@ static switch_status_t handle_msg_event(listener_t *listener, int arity, ei_x_bu
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "enable event %s\n", atom);
 			}
 		}
+		switch_thread_rwlock_unlock(listener->event_rwlock);
+
 		ei_x_encode_atom(rbuf, "ok");
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -382,7 +386,8 @@ static switch_status_t handle_msg_nixevent(listener_t *listener, int arity, ei_x
 		int i = 0;
 		switch_event_types_t type;
 
-		/* TODO listener write lock */
+		switch_thread_rwlock_wrlock(listener->event_rwlock);
+
 		for (i = 1; i < arity; i++) {
 			if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
 
@@ -410,6 +415,8 @@ static switch_status_t handle_msg_nixevent(listener_t *listener, int arity, ei_x
 				}
 			}
 		}
+
+		switch_thread_rwlock_unlock(listener->event_rwlock);
 		ei_x_encode_atom(rbuf, "ok");
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -522,11 +529,11 @@ static switch_status_t handle_msg_setevent(listener_t *listener, erlang_msg *msg
 			}
 		}
 		/* update the event subscriptions with the new ones */
+		switch_thread_rwlock_wrlock(listener->event_rwlock);
 		memcpy(listener->event_list, event_list, sizeof(uint8_t) * (SWITCH_EVENT_ALL + 1));
-		/* wipe the old hash, and point the pointer at the new one */
-		/* TODO make thread safe */
 		switch_core_hash_destroy(&listener->event_hash);
 		listener->event_hash = event_hash;
+		switch_thread_rwlock_unlock(listener->event_rwlock);
 
 		/* TODO - we should flush any non-matching events from the queue */
 		ei_x_encode_atom(rbuf, "ok");
@@ -1031,13 +1038,16 @@ static switch_status_t handle_msg_atom(listener_t *listener, erlang_msg * msg, e
 		if (switch_test_flag(listener, LFLAG_EVENTS)) {
 			uint8_t x = 0;
 			switch_clear_flag_locked(listener, LFLAG_EVENTS);
+
+			switch_thread_rwlock_wrlock(listener->event_rwlock);
 			for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
 				listener->event_list[x] = 0;
 			}
-			/* wipe the hash */
-			/* TODO make thread safe*/
-			switch_core_hash_destroy(&listener->event_hash);
+
+			switch_core_hash_delete_multi(listener->event_hash, NULL, NULL);
 			switch_core_hash_init(&listener->event_hash, listener->pool);
+
+			switch_thread_rwlock_unlock(listener->event_rwlock);
 			ei_x_encode_atom(rbuf, "ok");
 		} else {
 			ei_x_encode_tuple_header(rbuf, 2);

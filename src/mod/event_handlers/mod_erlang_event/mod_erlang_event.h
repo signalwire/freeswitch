@@ -129,6 +129,7 @@ struct listener {
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
 	switch_hash_t *event_hash;
 	switch_thread_rwlock_t *rwlock;
+	switch_thread_rwlock_t *event_rwlock;
 	switch_thread_rwlock_t *session_rwlock;
 	//session_elem_t *session_list;
 	switch_hash_t *sessions;
