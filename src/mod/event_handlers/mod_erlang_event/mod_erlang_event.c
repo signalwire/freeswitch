@@ -320,7 +320,6 @@ static void add_session_elem_to_listener(listener_t *listener, session_elem_t *s
 }
 
 
-/* TODO lock */
 static void remove_session_elem_from_listener(listener_t *listener, session_elem_t *session_element)
 {
 	switch_core_hash_delete(listener->sessions, session_element->uuid_str);
@@ -789,9 +788,8 @@ static void handle_exit(listener_t *listener, erlang_pid * pid)
 	/* TODO - eliminate session destroy races and we shouldn't lock the session hash */
 	switch_thread_rwlock_wrlock(listener->session_rwlock);
 	if ((s = find_session_elem_by_pid(listener, pid))) {
-		if (remove_session_elem_from_listener(listener, s) == SWITCH_STATUS_SUCCESS) {
-			destroy_session_elem(s);
-		}
+		remove_session_elem_from_listener(listener, s);
+		destroy_session_elem(s);
 	}
 	switch_thread_rwlock_wrlock(listener->session_rwlock);
 
