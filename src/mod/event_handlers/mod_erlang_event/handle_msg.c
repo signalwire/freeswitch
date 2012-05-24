@@ -1149,9 +1149,6 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 		if (se->spawn_reply && !strncmp(se->spawn_reply->hash, hash, 100)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "found matching session for %s : %s\n", hash, se->uuid_str);
 			switch_mutex_lock(se->spawn_reply->mutex);
-			if (se->spawn_reply->state == reply_not_ready) {
-				switch_thread_cond_wait(se->spawn_reply->ready_or_found, se->spawn_reply->mutex);
-			}
 
 			if (se->spawn_reply->state == reply_waiting) {
 				se->spawn_reply->pid = pid;

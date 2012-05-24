@@ -1366,30 +1366,28 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	/* create a session list element */
 	session_elem_t *session_element = session_elem_create(listener, session);
 	char hash[100];
-	//void *p = NULL;
 	spawn_reply_t *p;
 	erlang_ref ref;
 
-	switch_set_flag_locked(session_element, LFLAG_WAITING_FOR_PID);
-
-	/* attach the session to the listener */
-	add_session_elem_to_listener(listener, session_element);
 
 	ei_init_ref(listener->ec, &ref);
 	ei_hash_ref(&ref, hash);
-	/* insert the waiting marker */
 
 	p = switch_core_alloc(session_element->pool, sizeof(*p));
 	switch_thread_cond_create(&p->ready_or_found, session_element->pool);
 	switch_mutex_init(&p->mutex, SWITCH_MUTEX_UNNESTED, session_element->pool);
-	p->state = reply_not_ready;
+	p->state = reply_waiting;
 	p->hash = hash;
 	p->pid = NULL;
 
 	session_element->spawn_reply = p;
 
-	switch_mutex_lock(p->mutex);
-	p->state = reply_waiting;
+	/* insert the waiting marker */
+	switch_set_flag(session_element, LFLAG_WAITING_FOR_PID);
+	
+	/* attach the session to the listener */
+	add_session_elem_to_listener(listener, session_element);
+
 
 	if (!strcmp(function, "!")) {
 		/* send a message to request a pid */
@@ -1434,7 +1432,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	memcpy(&session_element->process.pid, p->pid, sizeof(erlang_pid));
 	session_element->spawn_reply = NULL;
 
-	switch_clear_flag_locked(session_element, LFLAG_OUTBOUND_INIT);
 	switch_clear_flag_locked(session_element, LFLAG_WAITING_FOR_PID);
 
 	ei_link(listener, ei_self(listener->ec), &session_element->process.pid);
