@@ -3972,7 +3972,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			case zrtp_status_ok:
 				break;
 			case zrtp_status_drop:
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error: zRTP protection drop with code %d\n", stat);
+				/* switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Error: zRTP protection drop with code %d\n", stat); */
 				ret = (int) bytes;
 				goto end;
 				break;
