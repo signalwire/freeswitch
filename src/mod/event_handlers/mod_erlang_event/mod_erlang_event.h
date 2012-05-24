@@ -114,7 +114,6 @@ struct listener {
 #else
 	int sockfd;
 #endif
-	uint8_t dead;
 	struct ei_cnode_s *ec;
 	struct erlang_process log_process;
 	struct erlang_process event_process;
