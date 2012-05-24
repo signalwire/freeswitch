@@ -356,18 +356,16 @@ session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
 	void *val = NULL;
 	session_elem_t *session = NULL;
 
-	switch_thread_rwlock_rdlock(listener->session_rwlock);
 	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
 		switch_hash_this(iter, &key, NULL, &val);
-		session = (session_elem_t*)val;
-		if (session->process.type == ERLANG_PID && !ei_compare_pids(pid, &session->process.pid)) {
-			switch_thread_rwlock_unlock(listener->session_rwlock);
-			return session;
+		
+		if (((session_elem_t*)val)->process.type == ERLANG_PID && !ei_compare_pids(pid, &((session_elem_t*)val)->process.pid)) {
+			session = (session_elem_t*)val;
+			break;
 		}
 	}
-	switch_thread_rwlock_unlock(listener->session_rwlock);
 
-	return NULL;
+	return session;
 }
 
 
@@ -779,6 +777,9 @@ static void handle_exit(listener_t *listener, erlang_pid * pid)
 	session_elem_t *s;
 
 	remove_binding(NULL, pid);	/* TODO - why don't we pass the listener as the first argument? */
+
+	/* TODO - eliminate session destroy races and we shouldn't lock the session hash */
+	switch_thread_rwlock_wrlock(listener->session_rwlock);
 	if ((s = find_session_elem_by_pid(listener, pid))) {
 		if (s->channel_state < CS_HANGUP) {
 			switch_core_session_t *session;
@@ -794,9 +795,12 @@ static void handle_exit(listener_t *listener, erlang_pid * pid)
 			/* TODO - if a spawned process that was handling an outbound call fails.. what do we do with the call? */
 			/* TODO hangup and let the state handler set the complete flag and destroy as usual*/
 		}
-		remove_session_elem_from_listener_locked(listener, s);
-		destroy_session_elem(s);
+		if (remove_session_elem_from_listener(listener, s) == SWITCH_STATUS_SUCCESS) {
+			destroy_session_elem(s);
+		}
 	}
+	switch_thread_rwlock_wrlock(listener->session_rwlock);
+
 
 	if (listener->log_process.type == ERLANG_PID && !ei_compare_pids(&listener->log_process.pid, pid)) {
 		void *pop;
@@ -1255,7 +1259,6 @@ void destroy_listener(listener_t * listener)
 		switch_hash_this(iter, &key, NULL, &value);
 		s = (session_elem_t*)value;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Orphaning call %s\n", s->uuid_str);
-		remove_session_elem_from_listener(listener, s);
 		destroy_session_elem(s);
 	}
 	switch_thread_rwlock_unlock(listener->session_rwlock);
@@ -1275,6 +1278,7 @@ static switch_status_t state_handler(switch_core_session_t *session)
 	session_elem_t *session_element = switch_channel_get_private(channel, "_erlang_session_");
 	/*listener_t* listener = switch_channel_get_private(channel, "_erlang_listener_"); */
 
+	/* TODO make thread safe */
 	if (session_element) {
 		session_element->channel_state = state;
 		if (state == CS_DESTROY) {
