@@ -83,6 +83,7 @@ struct session_elem {
 	uint32_t flags;
 	struct erlang_process process;
 	switch_queue_t *event_queue;
+	switch_thread_rwlock_t *rwlock;
 	switch_channel_state_t channel_state;
 	switch_memory_pool_t *pool;
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];

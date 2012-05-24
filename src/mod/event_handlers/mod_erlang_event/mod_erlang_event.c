@@ -137,8 +137,10 @@ static void send_event_to_attached_sessions(listener_t *listener, switch_event_t
 
 
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
-	s = (session_elem_t*)switch_core_hash_find(listener->sessions, uuid);
-	/* TODO - we don't need to hold the lock, we need to lock the session */
+	if ((s = (session_elem_t*)switch_core_hash_find(listener->sessions, uuid))) {
+		switch_thread_rwlock_rdlock(s->rwlock);
+	}
+	switch_thread_rwlock_unlock(listener->session_rwlock);
 
 	if (s) {
 		int send = 0;
@@ -166,8 +168,9 @@ static void send_event_to_attached_sessions(listener_t *listener, switch_event_t
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_DEBUG, "Ignoring event %s for attached session %s\n",
 					switch_event_name(event->event_id), s->uuid_str);
 		}
+		switch_thread_rwlock_unlock(s->rwlock);
 	}
-	switch_thread_rwlock_unlock(listener->session_rwlock);
+
 }
 
 static void event_handler(switch_event_t *event)
@@ -329,13 +332,15 @@ static void destroy_session_elem(session_elem_t *session_element)
 {
 	switch_core_session_t *session;
 
+	/* wait for readers */
+	switch_thread_rwlock_wrlock(session_element->rwlock);
+	switch_thread_rwlock_unlock(session_element->rwlock);
+
 	if ((session = switch_core_session_locate(session_element->uuid_str))) {
 		switch_channel_clear_flag(switch_core_session_get_channel(session), CF_CONTROLLED);
 		switch_core_session_rwunlock(session);
 	}
 	switch_core_destroy_memory_pool(&session_element->pool);
-	session_element = NULL;
-	/*switch_safe_free(s); */
 }
 
 
@@ -890,15 +895,7 @@ static void listener_main_loop(listener_t *listener)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_exit from %s <%d.%d.%d>\n", msg.from.node, msg.from.creation, msg.from.num,
 								  msg.from.serial);
 
-				switch_thread_rwlock_rdlock(globals.listener_rwlock);
-				if (listener) {
-					/* get the listener lock */
-					switch_thread_rwlock_wrlock(listener->rwlock);
-					/* wipe event hash */
-					handle_exit(listener, &msg.from);
-					switch_thread_rwlock_unlock(listener->rwlock);
-				}
-				switch_thread_rwlock_unlock(globals.listener_rwlock);
+				handle_exit(listener, &msg.from);
 				break;
 			default:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unexpected msg type %d\n", (int) (msg.msgtype));
@@ -1317,6 +1314,8 @@ session_elem_t *session_elem_create(listener_t *listener, switch_core_session_t 
 	for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
 		session_element->event_list[x] = 0;
 	}
+
+	switch_thread_rwlock_create(&session_element->rwlock, session_element->pool);
 
 	session_element->event_list[SWITCH_EVENT_ALL] = 1; /* defaults to everything */
 
