@@ -342,7 +342,15 @@ static void destroy_session_elem(session_elem_t *session_element)
 	switch_thread_rwlock_unlock(session_element->rwlock);
 
 	if ((session = switch_core_session_locate(session_element->uuid_str))) {
-		switch_channel_clear_flag(switch_core_session_get_channel(session), CF_CONTROLLED);
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+
+		if (switch_channel_get_state(channel) < CS_HANGUP) {
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_element->uuid_str), SWITCH_LOG_WARNING, "Outbound session for %s exited unexpectedly!\n", session_element->uuid_str);
+		}
+
+		switch_channel_set_private(channel, "_erlang_session_", NULL);
+		switch_core_event_hook_remove_state_change(session, state_handler);
+		switch_channel_clear_flag(channel, CF_CONTROLLED);
 		switch_core_session_rwunlock(session);
 	}
 	switch_core_destroy_memory_pool(&session_element->pool);
@@ -781,20 +789,6 @@ static void handle_exit(listener_t *listener, erlang_pid * pid)
 	/* TODO - eliminate session destroy races and we shouldn't lock the session hash */
 	switch_thread_rwlock_wrlock(listener->session_rwlock);
 	if ((s = find_session_elem_by_pid(listener, pid))) {
-		if (s->channel_state < CS_HANGUP) {
-			switch_core_session_t *session;
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_WARNING, "Outbound session for %s exited unexpectedly!\n", s->uuid_str);
-
-			if ((session = switch_core_session_locate(s->uuid_str))) {
-				switch_channel_t *channel = switch_core_session_get_channel(session);
-				switch_channel_set_private(channel, "_erlang_session_", NULL);
-				switch_channel_set_private(channel, "_erlang_listener_", NULL);
-				switch_core_event_hook_remove_state_change(session, state_handler);
-				switch_core_session_rwunlock(session);
-			}
-			/* TODO - if a spawned process that was handling an outbound call fails.. what do we do with the call? */
-			/* TODO hangup and let the state handler set the complete flag and destroy as usual*/
-		}
 		if (remove_session_elem_from_listener(listener, s) == SWITCH_STATUS_SUCCESS) {
 			destroy_session_elem(s);
 		}
@@ -1276,9 +1270,7 @@ static switch_status_t state_handler(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t state = switch_channel_get_state(channel);
 	session_elem_t *session_element = switch_channel_get_private(channel, "_erlang_session_");
-	/*listener_t* listener = switch_channel_get_private(channel, "_erlang_listener_"); */
 
-	/* TODO make thread safe */
 	if (session_element) {
 		session_element->channel_state = state;
 		if (state == CS_DESTROY) {
@@ -1330,7 +1322,6 @@ session_elem_t *session_elem_create(listener_t *listener, switch_core_session_t 
 	session_element->event_list[SWITCH_EVENT_ALL] = 1; /* defaults to everything */
 
 	switch_channel_set_private(channel, "_erlang_session_", session_element);
-	switch_channel_set_private(channel, "_erlang_listener_", listener);
 
 	switch_core_event_hook_add_state_change(session, state_handler);
 
