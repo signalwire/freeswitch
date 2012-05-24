@@ -3321,6 +3321,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_flag(profile, TFLAG_PROXY_MEDIA);
 						}
+					} else if (!strcasecmp(var, "inbound-zrtp-passthru")) {
+						if (switch_true(val)) {
+							sofia_set_flag(profile, TFLAG_ZRTP_PASSTHRU);
+						} else {
+							sofia_clear_flag(profile, TFLAG_ZRTP_PASSTHRU);
+						}
 					} else if (!strcasecmp(var, "inbound-use-callid-as-uuid")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_CALLID_AS_UUID);
@@ -3693,6 +3699,10 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						}
 					}
 				}
+			}
+
+			if (sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU)) {
+				sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 			}
 
 			if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
@@ -4171,6 +4181,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "inbound-proxy-media") && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_PROXY_MEDIA);
+					} else if (!strcasecmp(var, "inbound-zrtp-passthru") && switch_true(val)) {
+						sofia_set_flag(profile, TFLAG_ZRTP_PASSTHRU);
 					} else if (!strcasecmp(var, "force-subscription-expires")) {
 						int tmp = atoi(val);
 						if (tmp > 0) {
@@ -4799,6 +4811,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->paid_type = PAID_DEFAULT;
 						}
 					}
+				}
+
+				if (sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU)) {
+					sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 				}
 
 				if ((!profile->cng_pt) && (!sofia_test_pflag(profile, PFLAG_SUPPRESS_CNG))) {
@@ -8262,6 +8278,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (sofia_test_flag(tech_pvt, TFLAG_PROXY_MEDIA)) {
 		switch_channel_set_flag(channel, CF_PROXY_MEDIA);
+	}
+
+	if (sofia_test_flag(tech_pvt, TFLAG_ZRTP_PASSTHRU)) {
+		switch_channel_set_flag(channel, CF_ZRTP_PASSTHRU_REQ);
 	}
 
 	if (!tech_pvt->call_id && sip->sip_call_id && sip->sip_call_id->i_id) {

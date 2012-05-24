@@ -317,6 +317,7 @@ typedef enum {
 	TFLAG_TPORT_LOG,
 	TFLAG_SENT_UPDATE,
 	TFLAG_PROXY_MEDIA,
+	TFLAG_ZRTP_PASSTHRU,
 	TFLAG_HOLD_LOCK,
 	TFLAG_3PCC_HAS_ACK,
 	TFLAG_PASS_RFC2833,
@@ -825,6 +826,11 @@ struct private_object {
 	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
 	uint32_t session_timeout;
 	enum nua_session_refresher session_refresher;
+	/** ZRTP **/
+	char *local_sdp_audio_zrtp_hash;
+	char *local_sdp_video_zrtp_hash;
+	char *remote_sdp_audio_zrtp_hash;
+	char *remote_sdp_video_zrtp_hash;
 };
 
 struct callback_t {
@@ -932,6 +938,8 @@ void launch_sofia_profile_thread(sofia_profile_t *profile);
 switch_status_t sofia_presence_chat_send(switch_event_t *message_event);
 										 
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
+void sofia_glue_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session);
+void sofia_glue_pass_zrtp_hash(switch_core_session_t *session);
 
 /*
  * \brief Sets the "ep_codec_string" channel variable, parsing r_sdp and taing codec_string in consideration 

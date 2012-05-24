@@ -2955,7 +2955,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel)
 {
 
-	if (switch_channel_test_flag(channel, CF_ZRTP_HASH) && !switch_channel_test_flag(channel, CF_ZRTP_PASS)) {
+	if (!switch_channel_test_flag(channel, CF_ZRTP_PASSTHRU)
+		&& switch_channel_test_flag(channel, CF_ZRTP_PASSTHRU_REQ)
+		&& switch_channel_test_flag(channel, CF_ZRTP_HASH)) {
 		switch_core_session_t *other_session;
 		switch_channel_t *other_channel;
 		int doit = 1;
@@ -2963,14 +2965,16 @@ SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel)
 		if (switch_core_session_get_partner(channel->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 			other_channel = switch_core_session_get_channel(other_session);
 
-			if (switch_channel_test_flag(other_channel, CF_ZRTP_HASH) && !switch_channel_test_flag(other_channel, CF_ZRTP_PASS)) {
+			if (switch_channel_test_flag(other_channel, CF_ZRTP_HASH) && !switch_channel_test_flag(other_channel, CF_ZRTP_PASSTHRU)) {
 				
-				switch_channel_set_flag(channel, CF_ZRTP_PASS);
-				switch_channel_set_flag(other_channel, CF_ZRTP_PASS);
+				switch_channel_set_flag(channel, CF_ZRTP_PASSTHRU);
+				switch_channel_set_flag(other_channel, CF_ZRTP_PASSTHRU);
 			
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_INFO, 
 								  "%s Activating ZRTP passthru mode.\n", switch_channel_get_name(channel));
 	
+				switch_channel_set_variable(channel, "zrtp_passthru_active", "true");
+				switch_channel_set_variable(other_channel, "zrtp_passthru_active", "true");
 				switch_channel_set_variable(channel, "zrtp_secure_media", "false");
 				switch_channel_set_variable(other_channel, "zrtp_secure_media", "false");
 				doit = 0;
@@ -2980,18 +2984,20 @@ SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel)
 		}
 
 		if (doit) {
+			switch_channel_set_variable(channel, "zrtp_passthru_active", "false");
 			switch_channel_set_variable(channel, "zrtp_secure_media", "true");
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_INFO, 
 							  "%s ZRTP not negotiated on both sides; disabling ZRTP passthru mode.\n", switch_channel_get_name(channel));
 
-			switch_channel_clear_flag(channel, CF_ZRTP_PASS);
+			switch_channel_clear_flag(channel, CF_ZRTP_PASSTHRU);
 			switch_channel_clear_flag(channel, CF_ZRTP_HASH);
 
 			if (switch_core_session_get_partner(channel->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				other_channel = switch_core_session_get_channel(other_session);  
 
+				switch_channel_set_variable(other_channel, "zrtp_passthru_active", "false");
 				switch_channel_set_variable(other_channel, "zrtp_secure_media", "true");
-				switch_channel_clear_flag(other_channel, CF_ZRTP_PASS);
+				switch_channel_clear_flag(other_channel, CF_ZRTP_PASSTHRU);
 				switch_channel_clear_flag(other_channel, CF_ZRTP_HASH);
 				
 				switch_core_session_rwunlock(other_session);

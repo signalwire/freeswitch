@@ -1820,7 +1820,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (session) {
-		const char *to_var, *bypass_media = NULL, *proxy_media = NULL;
+		const char *to_var, *bypass_media = NULL, *proxy_media = NULL, *zrtp_passthru = NULL;
 		caller_channel = switch_core_session_get_channel(session);
 		switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 		oglobals.session = session;
@@ -1833,12 +1833,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		proxy_media = switch_channel_get_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE);
 		bypass_media = switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE);
+		zrtp_passthru = switch_channel_get_variable(caller_channel, SWITCH_ZRTP_PASSTHRU_VARIABLE);
 
 		if (!zstr(proxy_media)) {
 			if (switch_true(proxy_media)) {
 				switch_channel_set_flag(caller_channel, CF_PROXY_MEDIA);
 			} else if (switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 				switch_channel_clear_flag(caller_channel, CF_PROXY_MEDIA);
+			}
+		}
+
+		if (!zstr(zrtp_passthru)) {
+			if (switch_true(zrtp_passthru)) {
+				switch_channel_set_flag(caller_channel, CF_ZRTP_PASSTHRU_REQ);
+			} else if (switch_channel_test_flag(caller_channel, CF_ZRTP_PASSTHRU_REQ)) {
+				switch_channel_clear_flag(caller_channel, CF_ZRTP_PASSTHRU_REQ);
 			}
 		}
 

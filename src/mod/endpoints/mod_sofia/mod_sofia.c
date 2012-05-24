@@ -2997,6 +2997,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "NOMEDIA          \t%s\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
 					stream->write_function(stream, "LATE-NEG         \t%s\n", sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
 					stream->write_function(stream, "PROXY-MEDIA      \t%s\n", sofia_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
+					stream->write_function(stream, "ZRTP-PASSTHRU    \t%s\n", sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU) ? "true" : "false");
 					stream->write_function(stream, "AGGRESSIVENAT    \t%s\n",
 										   sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
 					stream->write_function(stream, "STUN-ENABLED     \t%s\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
@@ -3275,6 +3276,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <nomedia>%s</nomedia>\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
 					stream->write_function(stream, "    <late-neg>%s</late-neg>\n", sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
 					stream->write_function(stream, "    <proxy-media>%s</proxy-media>\n", sofia_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
+					stream->write_function(stream, "    <zrtp-passthru>%s</zrtp-passthru>\n", sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU) ? "true" : "false");
 					stream->write_function(stream, "    <aggressive-nat>%s</aggressive-nat>\n",
 										   sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
 					stream->write_function(stream, "    <stun-enabled>%s</stun-enabled>\n",
@@ -4783,6 +4785,17 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				sofia_set_flag(ctech_pvt, TFLAG_ENABLE_SOA);
 			} else {
 				sofia_clear_flag(ctech_pvt, TFLAG_ENABLE_SOA);
+			}
+
+			if (switch_channel_test_flag(o_channel, CF_ZRTP_PASSTHRU_REQ)) {
+				const char *x = NULL;
+				sofia_glue_pass_zrtp_hash2(session, nsession);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[zrtp_passthru] Setting a-leg inherit_codec=true\n");
+				switch_channel_set_variable(o_channel, "inherit_codec", "true");
+				if ((x = switch_channel_get_variable(o_channel, "ep_codec_string"))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[zrtp_passthru] Setting b-leg absolute_codec_string='%s'\n", x);
+					switch_channel_set_variable(nchannel, "absolute_codec_string", x);
+				}
 			}
 
 			/* SNARK: lets copy this across so we can see if we're the other leg of 3PCC + bypass_media... */
