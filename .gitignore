@@ -43,6 +43,7 @@ configure.lineno
 config.log
 config.status
 core.*
+TAGS
 *.2010.log
 *.Build.CppClean.log
 *.tlog
