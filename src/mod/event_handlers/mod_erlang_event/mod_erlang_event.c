@@ -144,6 +144,9 @@ static void send_event_to_attached_sessions(listener_t *listener, switch_event_t
 
 	if (s) {
 		int send = 0;
+
+		switch_thread_rwlock_rdlock(s->event_rwlock);
+
 		if (s->event_list[SWITCH_EVENT_ALL]) {
 			send = 1;
 		} else if ((s->event_list[event->event_id])) {
@@ -151,6 +154,8 @@ static void send_event_to_attached_sessions(listener_t *listener, switch_event_t
 				send = 1;
 			}
 		}
+
+		switch_thread_rwlock_unlock(s->event_rwlock);
 
 		if (send) {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->uuid_str), SWITCH_LOG_DEBUG, "Sending event %s to attached session %s\n",
@@ -1316,6 +1321,7 @@ session_elem_t *session_elem_create(listener_t *listener, switch_core_session_t 
 	}
 
 	switch_thread_rwlock_create(&session_element->rwlock, session_element->pool);
+	switch_thread_rwlock_create(&session_element->event_rwlock, session_element->pool);
 
 	session_element->event_list[SWITCH_EVENT_ALL] = 1; /* defaults to everything */
 
