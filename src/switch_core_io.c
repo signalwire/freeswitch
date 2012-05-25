@@ -1469,6 +1469,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 
 	switch_assert(session != NULL);
 
+	if (zstr(dtmf_string)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (*dtmf_string == '~') {
 		dtmf_string++;
 		dtmf.flags = 0;
@@ -1478,9 +1482,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (zstr(dtmf_string)) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (strlen(dtmf_string) > 99) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Attempt to send very large dtmf string ignored!\n");
