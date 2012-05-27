@@ -9,7 +9,7 @@
   <!--/// domain to use in from: *optional* same as  realm, if blank ///-->
   <!--<param name="from-domain" value="asterlink.com"/>-->
   <!--/// account password *required* ///-->
-  <!--<param name="password" value="2007"/>--> 
+  <!--<param name="password" value="2007"/>-->
   <!--/// extension for inbound calls: *optional* same as username, if blank ///-->
   <!--<param name="extension" value="cluecon"/>-->
   <!--/// proxy host: *optional* same as realm, if blank ///-->
