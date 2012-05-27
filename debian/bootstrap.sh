@@ -322,13 +322,14 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
  freeswitch-mod-h26x (= \${binary:Version}),
- freeswitch-mod-ilbc (= \${binary:Version}),
  freeswitch-mod-mp4v (= \${binary:Version}),
  freeswitch-mod-opus (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
- freeswitch-mod-siren (= \${binary:Version}),
  freeswitch-mod-speex (= \${binary:Version}),
  freeswitch-mod-theora (= \${binary:Version})
+Suggests:
+ freeswitch-mod-ilbc (= \${binary:Version}),
+ freeswitch-mod-siren (= \${binary:Version})
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
