@@ -325,6 +325,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-mp4v (= \${binary:Version}),
  freeswitch-mod-opus (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
+ freeswitch-mod-spandsp (= \${binary:Version}),
  freeswitch-mod-speex (= \${binary:Version}),
  freeswitch-mod-theora (= \${binary:Version})
 Suggests:
