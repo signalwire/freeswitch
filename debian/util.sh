@@ -12,6 +12,16 @@ err () {
   exit 1
 }
 
+announce () {
+  cat >&2 <<EOF
+
+########################################################################
+## $1
+########################################################################
+
+EOF
+}
+
 xread () {
   local xIFS="$IFS"
   IFS=''
@@ -151,9 +161,61 @@ create_dsc () {
   )
 }
 
+build_nightly_for () {
+  set -e
+  local branch="$1"
+  local distro="$2" suite=""
+  case $distro in
+    experimental) distro="sid" suite="experimental";;
+    sid) suite="unstable";;
+    wheezy) suite="testing" ;;
+    squeeze) suite="stable" ;;
+  esac
+  [ -x "$(which cowbuilder)" ] \
+    || err "Error: package cowbuilder isn't installed"
+  [ -x "$(which dch)" ] \
+    || err "Error: package devscripts isn't installed"
+  [ -x "$(which git-buildpackage)" ] \
+    || err "Error: package git-buildpackage isn't installed"
+  ulimit -n 200000 || true
+  if ! [ -d /var/cache/pbuilder/base-$distro.cow ]; then
+    announce "Creating base $distro image..."
+    cowbuilder --create \
+      --distribution $distro \
+      --basepath /var/cache/pbuilder/base-$distro.cow
+  fi
+  announce "Updating base $distro image..."
+  cowbuilder --update \
+    --distribution $distro \
+    --basepath /var/cache/pbuilder/base-$distro.cow
+  local ver="$(cat build/next-release.txt | sed -e 's/-/~/g')~n$(date +%Y%m%dT%H%M%SZ)-1~${distro}+1"
+  echo "Building v$ver for $distro based on $branch"
+  cd $ddir/../
+  announce "Building v$ver..."
+  git clean -fdx
+  git reset --hard $branch
+  ./build/set-fs-version.sh "$ver"
+  git add configure.in && git commit --allow-empty -m "nightly v$ver"
+  (cd debian && ./bootstrap.sh -c $distro)
+  dch -b -m -v "$ver" --force-distribution -D "$suite" "Nightly build."
+  git-buildpackage -us -uc \
+    --git-verbose \
+    --git-pbuilder --git-dist=$distro \
+    --git-compression=xz --git-compression-level=9ev
+  git reset --hard HEAD^
+}
+
+build_nightly () {
+  local branch="$1"; shift
+  for distro in "$@"; do
+    build_nightly_for "$branch" "$distro"
+  done
+}
+
 cmd="$1"
 shift
 case "$cmd" in
+  build-nightly) build_nightly "$@" ;;
   create-dbg-pkgs) create_dbg_pkgs ;;
   create-dsc) create_dsc "$@" ;;
   create-orig) create_orig "$@" ;;
