@@ -57,6 +57,7 @@
     <param name="nonce-ttl" value="60"/>
     <param name="auth-calls" value="false"/>
     <param name="inbound-late-negotiation" value="true"/>
+    <param name="inbound-zrtp-passthru" value="true"/>
     <!--
         DO NOT USE HOSTNAMES, ONLY IP ADDRESSES IN THESE SETTINGS!
     -->
