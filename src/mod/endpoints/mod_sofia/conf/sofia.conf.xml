@@ -263,9 +263,8 @@
         <!-- Uncomment to set all inbound calls to proxy media mode -->
         <!-- <param name="inbound-proxy-media" value="true"/> -->
 
-        <!-- Uncomment to let calls hit the dialplan *before* you decide if the
-             codec is ok -->
-        <!-- <param name="inbound-late-negotiation" value="true"/> -->
+        <!-- Let calls hit the dialplan before selecting codec for the a-leg -->
+        <param name="inbound-late-negotiation" value="true"/>
 
         <!-- this lets anything register -->
         <!-- comment the next line and uncomment one or both of the other 2

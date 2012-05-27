@@ -47,6 +47,7 @@
     <param name="nonce-ttl" value="60"/>
     <param name="auth-calls" value="false"/>
     <param name="rtp-timeout-sec" value="1800"/>
+    <param name="inbound-late-negotiation" value="true"/>
     <!--
         DO NOT USE HOSTNAMES, ONLY IP ADDRESSES IN THESE SETTINGS!
     -->
