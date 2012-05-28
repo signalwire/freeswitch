@@ -282,13 +282,14 @@ build_debs () {
 build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts=""
-  local archs="" distros=""
-  while getopts 'a:bc:dnm:s:v:z:' o "$@"; do
+  local archs="" distros="" par=false
+  while getopts 'a:bc:djnm:s:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
       c) distros="$distros $OPTARG";;
       d) deb_opts="$deb_opts -d";;
+      j) par=true;;
       n) orig_opts="$orig_opts -n";;
       m) dsc_opts="$dsc_opts -m$OPTARG";;
       s) dsc_opts="$dsc_opts -s$OPTARG";;
@@ -299,22 +300,32 @@ build_all () {
   shift $(($OPTIND-1))
   [ -n "$archs" ] || archs="amd64 i386"
   [ -n "$distros" ] || distros="sid wheezy squeeze"
-  local acc_changes=""
   local orig="$(create_orig $orig_opts HEAD | tail -n1)"
+  mkdir -p ../log
+  > ../log/changes
+  echo; echo; echo; echo
   if [ "${orig:0:2}" = ".." ]; then
     for distro in $distros; do
-      local dsc="$(create_dsc $dsc_opts $distro $orig | tail -n1)"
+      echo "Creating $distro dsc..." >&2
+      local dsc="$(create_dsc $dsc_opts $distro $orig 2>../log/$distro | tail -n1)"
+      echo "Done creating $distro dsc." >&2
       if [ "${dsc:0:2}" = ".." ]; then
         for arch in $archs; do
-          local changes="$(build_debs $deb_opts $distro $dsc $arch | tail -n1)"
-          if [ "${changes:0:2}" = ".." ]; then
-            acc_changes="$acc_changes $changes"
-          fi
+          {
+            echo "Building $distro-$arch debs..." >&2
+            local changes="$(build_debs $deb_opts $distro $dsc $arch 2>../log/$distro-$arch | tail -n1)"
+            echo "Done building $distro-$arch debs." >&2
+            if [ "${changes:0:2}" = ".." ]; then
+              echo "$changes" >> ../log/changes
+            fi
+          } &
+          $par || wait
         done
       fi
     done
+    ! $par || wait
   fi
-  echo "${acc_changes:1}"
+  cat ../log/changes
 }
 
 while getopts 'd' o "$@"; do
