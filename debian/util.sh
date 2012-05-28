@@ -54,12 +54,6 @@ getlib () {
     && mkdir -p $f)
 }
 
-getsound () {
-  local sd="$1" url="$2" f="${2##*/}"
-  (cd $sd \
-    && cwget "$url")
-}
-
 getlibs () {
   local sd="$1"
   # get pinned libraries
@@ -80,11 +74,6 @@ getlibs () {
   getlib $sd http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
   getlib $sd http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
   getlib $sd http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
-  # get sounds and music
-  for x in 8000 16000 32000 48000; do
-    getsound $sd http://files.freeswitch.org/freeswitch-sounds-en-us-callie-$x-1.0.18.tar.gz
-    getsound $sd http://files.freeswitch.org/freeswitch-sounds-music-$x-1.0.8.tar.gz
-  done
   # cleanup mongo
   (
     cd $sd/libs/mongo-cxx-driver-v1.8
