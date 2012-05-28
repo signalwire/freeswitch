@@ -134,6 +134,7 @@ check_repo_clean () {
 
 create_orig () {
   {
+    set -e
     local OPTIND OPTARG
     local uver="" bundle_deps=false zl=9e
     while getopts 'bnv:z:' o "$@"; do
@@ -185,6 +186,7 @@ EOF
 
 create_dsc () {
   {
+    set -e
     local OPTIND OPTARG modules_list=""
     while getopts 'm:' o "$@"; do
       case "$o" in
@@ -223,6 +225,7 @@ EOF
 
 build_debs () {
   {
+    set -e
     local OPTIND OPTARG debug_hook=false hookdir=""
     while getopts 'd' o "$@"; do
       case "$o" in
