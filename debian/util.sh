@@ -187,10 +187,11 @@ EOF
 create_dsc () {
   {
     set -e
-    local OPTIND OPTARG modules_list=""
-    while getopts 'm:' o "$@"; do
+    local OPTIND OPTARG modules_list="" speed="normal"
+    while getopts 'm:s:' o "$@"; do
       case "$o" in
         m) modules_list="$OPTARG";;
+        s) speed="$OPTARG";;
       esac
     done
     shift $(($OPTIND-1))
@@ -204,6 +205,13 @@ create_dsc () {
       set_modules_${modules_list}
     fi
     (cd debian && ./bootstrap.sh -c $distro)
+    case "$speed" in
+      paranoid) sed -i ./debian/rules \
+        -e '/\.stamp-bootstrap:/{:l2 n; /\.\/bootstrap.sh -j/{s/ -j//; :l3 n; b l3}; b l2};' ;;
+      reckless) sed -i ./debian/rules \
+        -e '/\.stamp-build:/{:l2 n; /make/{s/$/ -j/; :l3 n; b l3}; b l2};' ;;
+    esac
+    git add debian/rules
     dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
     git add debian/changelog && git commit -m "nightly v$orig_ver"
     dpkg-source -i.* -Zxz -z9 -b .
@@ -275,7 +283,7 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts=""
   local archs="" distros=""
-  while getopts 'a:bc:dnm:v:z:' o "$@"; do
+  while getopts 'a:bc:dnm:s:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
@@ -283,6 +291,7 @@ build_all () {
       d) deb_opts="$deb_opts -d";;
       n) orig_opts="$orig_opts -n";;
       m) dsc_opts="$dsc_opts -m$OPTARG";;
+      s) dsc_opts="$dsc_opts -s$OPTARG";;
       v) orig_opts="$orig_opts -v$OPTARG";;
       z) orig_opts="$orig_opts -z$OPTARG";;
     esac
