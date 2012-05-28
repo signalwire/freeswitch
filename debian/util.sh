@@ -264,7 +264,9 @@ build_debs () {
       chmod +x .hooks/C10shell
       hookdir=$(pwd)/.hooks
     fi
-    cow --build $dsc --hookdir "$hookdir"
+    cow --build $dsc \
+      --hookdir "$hookdir" \
+      --buildresult ../
   } 1>&2
   echo ${dsc}_${arch}.changes
 }
