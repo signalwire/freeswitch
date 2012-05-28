@@ -244,6 +244,42 @@ build_debs () {
   echo ${dsc}_${arch}.changes
 }
 
+build_all () {
+  local OPTIND OPTARG
+  local orig_opts="" deb_opts=""
+  local archs="" distros=""
+  while getopts 'a:bc:dnv:z:' o "$@"; do
+    case "$o" in
+      a) archs="$archs $OPTARG";;
+      b) orig_opts="$orig_opts -b";;
+      c) distros="$distros $OPTARG";;
+      d) deb_opts="$deb_opts -d";;
+      n) orig_opts="$orig_opts -n";;
+      v) orig_opts="$orig_opts -v$OPTARG";;
+      z) orig_opts="$orig_opts -z$OPTARG";;
+    esac
+  done
+  shift $(($OPTIND-1))
+  [ -n "$archs" ] || archs="amd64 i386"
+  [ -n "$distros" ] || distros="sid wheezy squeeze"
+  local acc_changes=""
+  local orig="$(create_orig $orig_opts HEAD | tail -n1)"
+  if [ "${orig:0:2}" = ".." ]; then
+    for distro in $distros; do
+      local dsc="$(create_dsc $distro $orig | tail -n1)"
+      if [ "${dsc:0:2}" = ".." ]; then
+        for arch in $archs; do
+          local changes="$(build_debs $deb_opts $distro $dsc $arch | tail -n1)"
+          if [ "${changes:0:2}" = ".." ]; then
+            acc_changes="$acc_changes $changes"
+          fi
+        done
+      fi
+    done
+  fi
+  echo "${acc_changes:1}"
+}
+
 while getopts 'd' o "$@"; do
   case "$o" in
     d) set -vx;;
@@ -255,6 +291,7 @@ cmd="$1"
 shift
 case "$cmd" in
   archive-orig) archive_orig "$@" ;;
+  build-all) build_all "$@" ;;
   build-debs) build_debs "$@" ;;
   create-dbg-pkgs) create_dbg_pkgs ;;
   create-dsc) create_dsc "$@" ;;
