@@ -1593,6 +1593,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if ((var = channel_get_variable(session, var_event, "freetdm_calling_party_category"))) {
 		ftdm_set_calling_party_category(var, (uint8_t *)&caller_data.cpc);
 	}
+
+	if ((var = channel_get_variable(session, var_event, "iam_fwd_ind_HEX"))) {
+		ftdm_usrmsg_add_var(&usrmsg, "iam_fwd_ind_HEX", var);
+	}
+
 	
 	if (!zstr(dest)) {
 		ftdm_set_string(caller_data.dnis.digits, dest);
