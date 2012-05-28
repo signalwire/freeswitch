@@ -192,7 +192,23 @@ create_dsc () {
   echo $dsc
 }
 
+fmt_debug_hook () {
+    cat <<'EOF'
+#!/bin/bash
+export debian_chroot="cow"
+cd /tmp/buildd/*/debian/..
+/bin/bash < /dev/tty > /dev/tty 2> /dev/tty
+EOF
+}
+
 build_debs () {
+  local OPTIND OPTARG debug_hook=false hookdir=""
+  while getopts 'd' o "$@"; do
+    case "$o" in
+      d) debug_hook=true;;
+    esac
+  done
+  shift $(($OPTIND-1))
   local distro="$(find_distro $1)" dsc="$2" arch="$3"
   if [ -z "$distro" ] || [ "$distro" = "auto" ]; then
     if ! (echo "$dsc" | grep -e '-[0-9]*~[a-z]*+[0-9]*'); then
@@ -218,7 +234,13 @@ build_debs () {
   announce "Updating base $distro-$arch image..."
   cow --update
   announce "Building $distro-$arch DEBs from $dsc..."
-  cow --build $dsc
+  if $debug_hook; then
+    mkdir -p .hooks
+    fmt_debug_hook > .hooks/C10shell
+    chmod +x .hooks/C10shell
+    hookdir=$(pwd)/.hooks
+  fi
+  cow --build $dsc --hookdir "$hookdir"
   echo ${dsc}_${arch}.changes
 }
 
