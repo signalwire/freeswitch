@@ -15,7 +15,9 @@ avoid_mods=(
   applications/mod_osp
   applications/mod_rad_auth
   applications/mod_skel
+  applications/mod_soundtouch
   asr_tts/mod_cepstral
+  asr_tts/mod_flite
   codecs/mod_com_g729
   codecs/mod_ilbc
   codecs/mod_sangoma_codec
@@ -32,6 +34,14 @@ avoid_mods=(
   languages/mod_spidermonkey
   sdk/autotools
   xml_int/mod_xml_ldap
+)
+avoid_mods_sid=(
+  endpoints/mod_portaudio
+  formats/mod_portaudio_stream
+)
+avoid_mods_wheezy=(
+  endpoints/mod_portaudio
+  formats/mod_portaudio_stream
 )
 avoid_mods_squeeze=(
   formats/mod_vlc
