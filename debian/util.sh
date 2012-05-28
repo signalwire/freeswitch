@@ -133,62 +133,66 @@ check_repo_clean () {
 }
 
 create_orig () {
-  local OPTIND OPTARG
-  local uver="" bundle_deps=false zl=9e
-  while getopts 'bnv:z:' o "$@"; do
-    case "$o" in
-      b) bundle_deps=true;;
-      n) uver="nightly";;
-      v) uver="$OPTARG";;
-      z) zl="$OPTARG";;
-    esac
-  done
-  shift $(($OPTIND-1))
-  [ -z "$uver" ] || [ "$uver" = "nightly" ] \
-    && uver="$(cat build/next-release.txt)-n$(date +%Y%m%dT%H%M%SZ)"
-  local treeish="$1" dver="$(mk_dver "$uver")"
-  local orig="../freeswitch_$dver.orig.tar.xz"
-  [ -n "$treeish" ] || treeish="HEAD"
-  check_repo_clean
-  git reset --hard "$treeish"
-  mv .gitattributes .gitattributes.orig
-  grep .gitattributes.orig \
-    -e '\bdebian-ignore\b' \
-    -e '\bdfsg-nonfree\b' \
-    | while xread l; do
-    echo "$l export-ignore" >> .gitattributes
-  done
-  if $bundle_deps; then
-    (cd libs && getlibs)
-    git add -f libs
-  fi
-  ./build/set-fs-version.sh "$uver" && git add configure.in
-  git commit --allow-empty -m "nightly v$uver"
-  git archive -v \
-    --worktree-attributes \
-    --format=tar \
-    --prefix=freeswitch-$uver/ \
-    HEAD \
-    | xz -c -${zl}v > $orig
-  mv .gitattributes.orig .gitattributes
-  git reset --hard HEAD^ && git clean -fdx
+  {
+    local OPTIND OPTARG
+    local uver="" bundle_deps=false zl=9e
+    while getopts 'bnv:z:' o "$@"; do
+      case "$o" in
+        b) bundle_deps=true;;
+        n) uver="nightly";;
+        v) uver="$OPTARG";;
+        z) zl="$OPTARG";;
+      esac
+    done
+    shift $(($OPTIND-1))
+    [ -z "$uver" ] || [ "$uver" = "nightly" ] \
+      && uver="$(cat build/next-release.txt)-n$(date +%Y%m%dT%H%M%SZ)"
+    local treeish="$1" dver="$(mk_dver "$uver")"
+    local orig="../freeswitch_$dver.orig.tar.xz"
+    [ -n "$treeish" ] || treeish="HEAD"
+    check_repo_clean
+    git reset --hard "$treeish"
+    mv .gitattributes .gitattributes.orig
+    grep .gitattributes.orig \
+      -e '\bdebian-ignore\b' \
+      -e '\bdfsg-nonfree\b' \
+      | while xread l; do
+      echo "$l export-ignore" >> .gitattributes
+    done
+    if $bundle_deps; then
+      (cd libs && getlibs)
+      git add -f libs
+    fi
+    ./build/set-fs-version.sh "$uver" && git add configure.in
+    git commit --allow-empty -m "nightly v$uver"
+    git archive -v \
+      --worktree-attributes \
+      --format=tar \
+      --prefix=freeswitch-$uver/ \
+      HEAD \
+      | xz -c -${zl}v > $orig
+    mv .gitattributes.orig .gitattributes
+    git reset --hard HEAD^ && git clean -fdx
+  } 1>&2
   echo $orig
 }
 
 create_dsc () {
-  local distro="$(find_distro $1)" orig="$2"
-  local suite="$(find_suite $distro)"
-  local orig_ver="$(echo "$orig" | sed -e 's/^.*_//' -e 's/\.orig\.tar.*$//')"
-  local dver="${orig_ver}-1~${distro}+1"
-  [ -x "$(which dch)" ] \
-    || err "package devscripts isn't installed"
-  (cd debian && ./bootstrap.sh -c $distro)
-  dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
-  git add debian/changelog && git commit -m "nightly v$orig_ver"
-  dpkg-source -i.* -Zxz -z9 -b .
-  dpkg-genchanges -S > ../$(dsc_base)_source.changes
-  local dsc="../$(dsc_base).dsc"
-  git reset --hard HEAD^ && git clean -fdx
+  {
+    local distro="$(find_distro $1)" orig="$2"
+    local suite="$(find_suite $distro)"
+    local orig_ver="$(echo "$orig" | sed -e 's/^.*_//' -e 's/\.orig\.tar.*$//')"
+    local dver="${orig_ver}-1~${distro}+1"
+    [ -x "$(which dch)" ] \
+      || err "package devscripts isn't installed"
+    (cd debian && ./bootstrap.sh -c $distro)
+    dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
+    git add debian/changelog && git commit -m "nightly v$orig_ver"
+    dpkg-source -i.* -Zxz -z9 -b .
+    dpkg-genchanges -S > ../$(dsc_base)_source.changes
+    local dsc="../$(dsc_base).dsc"
+    git reset --hard HEAD^ && git clean -fdx
+  } 1>&2
   echo $dsc
 }
 
@@ -202,45 +206,47 @@ EOF
 }
 
 build_debs () {
-  local OPTIND OPTARG debug_hook=false hookdir=""
-  while getopts 'd' o "$@"; do
-    case "$o" in
-      d) debug_hook=true;;
-    esac
-  done
-  shift $(($OPTIND-1))
-  local distro="$(find_distro $1)" dsc="$2" arch="$3"
-  if [ -z "$distro" ] || [ "$distro" = "auto" ]; then
-    if ! (echo "$dsc" | grep -e '-[0-9]*~[a-z]*+[0-9]*'); then
-      err "no distro specified or found"
+  {
+    local OPTIND OPTARG debug_hook=false hookdir=""
+    while getopts 'd' o "$@"; do
+      case "$o" in
+        d) debug_hook=true;;
+      esac
+    done
+    shift $(($OPTIND-1))
+    local distro="$(find_distro $1)" dsc="$2" arch="$3"
+    if [ -z "$distro" ] || [ "$distro" = "auto" ]; then
+      if ! (echo "$dsc" | grep -e '-[0-9]*~[a-z]*+[0-9]*'); then
+        err "no distro specified or found"
+      fi
+      local x="$(echo $dsc | sed -e 's/^[^-]*-[0-9]*~//' -e 's/+[^+]*$//')"
+      distro="$(find_distro $x)"
     fi
-    local x="$(echo $dsc | sed -e 's/^[^-]*-[0-9]*~//' -e 's/+[^+]*$//')"
-    distro="$(find_distro $x)"
-  fi
-  [ -n "$arch" ] || arch="$(dpkg-architecture | grep '^DEB_BUILD_ARCH=' | cut -d'=' -f2)"
-  [ -x "$(which cowbuilder)" ] \
-    || err "package cowbuilder isn't installed"
-  local cow_img=/var/cache/pbuilder/base-$distro-$arch.cow
-  cow () {
-    cowbuilder "$@" \
-      --distribution $distro \
-      --architecture $arch \
-      --basepath $cow_img
-  }
-  if ! [ -d $cow_img ]; then
-    announce "Creating base $distro-$arch image..."
-    cow --create
-  fi
-  announce "Updating base $distro-$arch image..."
-  cow --update
-  announce "Building $distro-$arch DEBs from $dsc..."
-  if $debug_hook; then
-    mkdir -p .hooks
-    fmt_debug_hook > .hooks/C10shell
-    chmod +x .hooks/C10shell
-    hookdir=$(pwd)/.hooks
-  fi
-  cow --build $dsc --hookdir "$hookdir"
+    [ -n "$arch" ] || arch="$(dpkg-architecture | grep '^DEB_BUILD_ARCH=' | cut -d'=' -f2)"
+    [ -x "$(which cowbuilder)" ] \
+      || err "package cowbuilder isn't installed"
+    local cow_img=/var/cache/pbuilder/base-$distro-$arch.cow
+    cow () {
+      cowbuilder "$@" \
+        --distribution $distro \
+        --architecture $arch \
+        --basepath $cow_img
+    }
+    if ! [ -d $cow_img ]; then
+      announce "Creating base $distro-$arch image..."
+      cow --create
+    fi
+    announce "Updating base $distro-$arch image..."
+    cow --update
+    announce "Building $distro-$arch DEBs from $dsc..."
+    if $debug_hook; then
+      mkdir -p .hooks
+      fmt_debug_hook > .hooks/C10shell
+      chmod +x .hooks/C10shell
+      hookdir=$(pwd)/.hooks
+    fi
+    cow --build $dsc --hookdir "$hookdir"
+  } 1>&2
   echo ${dsc}_${arch}.changes
 }
 
