@@ -177,14 +177,30 @@ create_orig () {
   echo $orig
 }
 
+set_modules_quicktest () {
+  cat > debian/modules.conf <<EOF
+applications/mod_commands
+EOF
+}
+
 create_dsc () {
   {
+    local OPTIND OPTARG modules_list=""
+    while getopts 'm:' o "$@"; do
+      case "$o" in
+        m) modules_list="$OPTARG";;
+      esac
+    done
+    shift $(($OPTIND-1))
     local distro="$(find_distro $1)" orig="$2"
     local suite="$(find_suite $distro)"
     local orig_ver="$(echo "$orig" | sed -e 's/^.*_//' -e 's/\.orig\.tar.*$//')"
     local dver="${orig_ver}-1~${distro}+1"
     [ -x "$(which dch)" ] \
       || err "package devscripts isn't installed"
+    if [ -n "$modules_list" ]; then
+      set_modules_${modules_list}
+    fi
     (cd debian && ./bootstrap.sh -c $distro)
     dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
     git add debian/changelog && git commit -m "nightly v$orig_ver"
@@ -252,15 +268,16 @@ build_debs () {
 
 build_all () {
   local OPTIND OPTARG
-  local orig_opts="" deb_opts=""
+  local orig_opts="" dsc_opts="" deb_opts=""
   local archs="" distros=""
-  while getopts 'a:bc:dnv:z:' o "$@"; do
+  while getopts 'a:bc:dnm:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
       c) distros="$distros $OPTARG";;
       d) deb_opts="$deb_opts -d";;
       n) orig_opts="$orig_opts -n";;
+      m) dsc_opts="$dsc_opts -m$OPTARG";;
       v) orig_opts="$orig_opts -v$OPTARG";;
       z) orig_opts="$orig_opts -z$OPTARG";;
     esac
@@ -272,7 +289,7 @@ build_all () {
   local orig="$(create_orig $orig_opts HEAD | tail -n1)"
   if [ "${orig:0:2}" = ".." ]; then
     for distro in $distros; do
-      local dsc="$(create_dsc $distro $orig | tail -n1)"
+      local dsc="$(create_dsc $dsc_opts $distro $orig | tail -n1)"
       if [ "${dsc:0:2}" = ".." ]; then
         for arch in $archs; do
           local changes="$(build_debs $deb_opts $distro $dsc $arch | tail -n1)"
