@@ -47,7 +47,7 @@ override_dh_auto_clean:
 
 .stamp-bootstrap:
 	@$(call show_vars)
-	./bootstrap.sh
+	./bootstrap.sh -j
 	touch $@
 
 .stamp-configure: .stamp-bootstrap
