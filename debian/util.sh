@@ -32,46 +32,6 @@ create_dbg_pkgs () {
   done
 }
 
-list_build_depends () {
-  test -f $ddir/.stamp-bootstrap || (cd $ddir && ./bootstrap.sh)
-  local deps="" found=false
-  while xread l; do
-    if [ "${l%%:*}" = "Build-Depends" ]; then
-      deps="${l#*:}"
-      found=true
-      continue
-    elif $found; then
-      if [ -z "$l" ]; then
-        # is newline
-        break
-      elif [ -z "${l##\#*}" ]; then
-        # is comment
-        continue
-      elif [ -z "${l## *}" ]; then
-        # is continuation line
-        deps="$deps $(echo "$l" | sed -e 's/^ *//' -e 's/ *([^)]*)//g' -e 's/,//g')"
-      else
-        # is a new header
-        break
-      fi
-    fi
-  done < $ddir/control
-  echo "${deps# }"
-}
-
-install_build_depends () {
-  local apt=""
-  if [ -n "$(which aptitude)" ]; then
-    apt=$(which aptitude)
-  elif [ -n "$(which apt-get)" ]; then
-    apt=$(which apt-get)
-  else
-    err "Can't find apt-get or aptitude; are you running on debian?"
-  fi
-  $apt install -y $(list_build_depends)
-  touch $ddir/.stamp-build-depends
-}
-
 cwget () {
   local url="$1" f="${1##*/}"
   echo "fetching: $url to $f" >&2
@@ -208,7 +168,5 @@ case "$cmd" in
   create-dbg-pkgs) create_dbg_pkgs ;;
   create-dsc) create_dsc "$@" ;;
   create-orig) create_orig "$@" ;;
-  list-build-depends) list_build_depends ;;
-  install-build-depends) install_build_depends ;;
 esac
 
