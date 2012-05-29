@@ -831,7 +831,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_
 	switch_assert(channel != NULL);
 
 	if (!zstr(varname)) {
-		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) {
+		if ((uuid = switch_channel_get_partner_uuid(channel))) {
 			switch_core_session_t *session;
 			if ((session = switch_core_session_locate(uuid))) {
 				switch_channel_t *tchannel = switch_core_session_get_channel(session);
@@ -896,7 +896,7 @@ SWITCH_DECLARE(void *) switch_channel_get_private_partner(switch_channel_t *chan
 
 	switch_assert(channel != NULL);
 
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) {
+	if ((uuid = switch_channel_get_partner_uuid(channel))) {
 		switch_core_session_t *session;
 		if ((session = switch_core_session_locate(uuid))) {
 			val = switch_core_hash_find_locked(channel->private_hash, key, channel->profile_mutex);
@@ -1324,7 +1324,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner_var_check(sw
 	switch_assert(channel != NULL);
 
 	if (!zstr(varname)) {
-		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) {
+		if ((uuid = switch_channel_get_partner_uuid(channel))) {
 			switch_core_session_t *session;
 			if ((session = switch_core_session_locate(uuid))) {
 				switch_channel_t *tchannel = switch_core_session_get_channel(session);
@@ -1357,7 +1357,7 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *
 
 	switch_assert(channel != NULL);
 
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) {
+	if ((uuid = switch_channel_get_partner_uuid(channel))) {
 		switch_core_session_t *session;
 		if ((session = switch_core_session_locate(uuid))) {
 			switch_channel_set_flag(switch_core_session_get_channel(session), flag);
@@ -1376,7 +1376,7 @@ SWITCH_DECLARE(uint32_t) switch_channel_test_flag_partner(switch_channel_t *chan
 
 	switch_assert(channel != NULL);
 
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) {
+	if ((uuid = switch_channel_get_partner_uuid(channel))) {
 		switch_core_session_t *session;
 		if ((session = switch_core_session_locate(uuid))) {
 			r = switch_channel_test_flag(switch_core_session_get_channel(session), flag);
@@ -1393,7 +1393,7 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t
 
 	switch_assert(channel != NULL);
 
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) {
+	if ((uuid = switch_channel_get_partner_uuid(channel))) {
 		switch_core_session_t *session;
 		if ((session = switch_core_session_locate(uuid))) {
 			switch_channel_clear_flag(switch_core_session_get_channel(session), flag);
@@ -1513,7 +1513,7 @@ SWITCH_DECLARE(uint32_t) switch_channel_test_cap_partner(switch_channel_t *chann
 
 	switch_assert(channel != NULL);
 
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) {
+	if ((uuid = switch_channel_get_partner_uuid(channel))) {
 		switch_core_session_t *session;
 		if ((session = switch_core_session_locate(uuid))) {
 			r = switch_channel_test_cap(switch_core_session_get_channel(session), cap);
@@ -2730,7 +2730,7 @@ SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 
 
 	if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
-		const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *uuid = switch_channel_get_partner_uuid(channel);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
 
 		if (uuid) {
@@ -4148,6 +4148,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_mutex_unlock(channel->profile_mutex);
 
 	return status;
+}
+
+SWITCH_DECLARE(const char *) switch_channel_get_partner_uuid(switch_channel_t *channel)
+{
+	const char *uuid = NULL;
+
+	if (!(uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		uuid = switch_channel_get_variable(channel, SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE);
+	}
+
+	return uuid;
 }
 
 /* For Emacs:

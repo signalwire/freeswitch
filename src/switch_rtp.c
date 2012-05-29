@@ -3048,7 +3048,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 					switch_channel_t *channel = switch_core_session_get_channel(session);
 
-					const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+					const char *uuid = switch_channel_get_partner_uuid(channel);
 					if (uuid) {
 						switch_core_session_t *other_session;
 						switch_rtp_t *other_rtp_session = NULL;
@@ -3626,7 +3626,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 				switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 				switch_channel_t *channel = switch_core_session_get_channel(session);
 
-				const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+				const char *uuid = switch_channel_get_partner_uuid(channel);
 				if (uuid) {
 					switch_core_session_t *other_session;
 
@@ -4257,7 +4257,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 				switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 				switch_channel_t *channel = switch_core_session_get_channel(session);
 
-				const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+				const char *uuid = switch_channel_get_partner_uuid(channel);
 				if (uuid) {
 					switch_core_session_t *other_session;
 

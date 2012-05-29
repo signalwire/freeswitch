@@ -2570,7 +2570,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
-	if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+	if ((other_uuid = switch_channel_get_partner_uuid(channel))) {
 		if ((other_session = switch_core_session_locate(other_uuid))) {
 			other_channel = switch_core_session_get_channel(other_session);
 

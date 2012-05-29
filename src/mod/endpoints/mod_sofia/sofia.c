@@ -618,7 +618,7 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 
 	if (sofia_test_flag(tech_pvt, TFLAG_SLA_BARGE)) {
 		switch_core_session_t *new_session, *other_session;
-		const char *other_uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *other_uuid = switch_channel_get_partner_uuid(tech_pvt->channel);
 		char *cmd = NULL;
 
 		if (!zstr(other_uuid) && (other_session = switch_core_session_locate(other_uuid))) {
@@ -783,7 +783,7 @@ void sofia_send_callee_id(switch_core_session_t *session, const char *name, cons
 		number = caller_profile->destination_number;
 	}
 
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
+	if ((uuid = switch_channel_get_partner_uuid(channel)) && (session_b = switch_core_session_locate(uuid))) {
 		switch_core_session_message_t *msg;
 		//switch_channel_t *channel_b = switch_core_session_get_channel(session_b);
 
@@ -906,7 +906,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		caller_profile->callee_id_number = switch_sanitize_number(switch_core_strdup(caller_profile->pool, number));
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Update Callee ID to \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
 
-		if (lazy || (att && !switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		if (lazy || (att && !switch_channel_get_partner_uuid(channel))) {
 			switch_channel_flip_cid(channel);
 		}
 	}
@@ -914,7 +914,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	if (send) {
 
 		if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
-			const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+			const char *uuid = switch_channel_get_partner_uuid(channel);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
 			if (uuid) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
@@ -5211,7 +5211,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				goto end;
 			}
 
-			if ((br = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+			if ((br = switch_channel_get_partner_uuid(channel))) {
 				switch_xml_t root = NULL, domain = NULL;
 				switch_core_session_t *a_session;
 				switch_channel_t *a_channel;
@@ -5370,7 +5370,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			if (sofia_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
 				sofia_clear_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
 
-				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+				if ((uuid = switch_channel_get_partner_uuid(channel)) && (other_session = switch_core_session_locate(uuid))) {
 					const char *r_sdp = NULL;
 					switch_core_session_message_t *msg;
 					private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
@@ -5602,7 +5602,7 @@ void *SWITCH_THREAD_FUNC media_on_hold_thread_run(switch_thread_t *thread, void 
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		private_object_t *tech_pvt = switch_core_session_get_private(session);
 
-		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+		if ((uuid = switch_channel_get_partner_uuid(channel)) && (other_session = switch_core_session_locate(uuid))) {
 			if (switch_core_session_compare(session, other_session)) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 				switch_ivr_media(switch_core_session_get_uuid(other_session), SMF_REBRIDGE);
@@ -6057,7 +6057,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								}
 
 								if ((b_private = nua_handle_magic(bnh))) {
-									const char *br_b = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+									const char *br_b = switch_channel_get_partner_uuid(channel);
 									char *br_a = b_private->uuid;
 
 									
@@ -6859,8 +6859,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						b_tech_pvt = (private_object_t *) switch_core_session_get_private(b_session);
 						channel_b = switch_core_session_get_channel(b_session);
 
-						br_a = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE);
-						br_b = switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE);
+						br_a = switch_channel_get_partner_uuid(channel_a);
+						br_b = switch_channel_get_partner_uuid(channel_b);
 
 						if (!switch_ivr_uuid_exists(br_a)) {
 							br_a = NULL;
@@ -7109,7 +7109,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					}
 					nua_handle_unref(bnh);
 				} else {		/* the other channel is on a different box, we have to go find them */
-					if (exten && (br_a = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE))) {
+					if (exten && (br_a = switch_channel_get_partner_uuid(channel_a))) {
 						switch_core_session_t *a_session;
 						switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -7232,7 +7232,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		const char *br;
 		switch_core_session_t *b_session;
 
-		if ((br = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(br))) {
+		if ((br = switch_channel_get_partner_uuid(channel)) && (b_session = switch_core_session_locate(br))) {
 
 			const char *var;
 			switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
@@ -7554,7 +7554,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 						const char *uuid;
 						switch_core_session_t *session_b;
 
-						if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
+						if ((uuid = switch_channel_get_partner_uuid(channel)) && (session_b = switch_core_session_locate(uuid))) {
 							while (switch_channel_has_dtmf(channel)) {
 								switch_dtmf_t idtmf = { 0, 0 };
 								if (switch_channel_dequeue_dtmf(channel, &idtmf) == SWITCH_STATUS_SUCCESS) {
@@ -8575,7 +8575,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 				tech_pvt->caller_profile->dialplan = "inline";
 
-				bridge_uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+				bridge_uuid = switch_channel_get_partner_uuid(b_channel);
 
 				if (call_info) {
 					const char *olu;

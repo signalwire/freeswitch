@@ -287,7 +287,7 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 	switch_separate_string(mydup, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	/* Find the uuid of our B leg. If it exists, transfer it first */
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+	if ((uuid = switch_channel_get_partner_uuid(channel))) {
 		switch_core_session_t *b_session;
 
 		/* Get info on the B leg */

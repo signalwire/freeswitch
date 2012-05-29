@@ -1536,7 +1536,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 				/* Wait for the real channel to be fully bridged */
 				switch_channel_wait_for_flag(other_loopback_channel, CF_BRIDGED, SWITCH_TRUE, 5000, member_channel);
 
-				real_uuid = switch_channel_get_variable(other_loopback_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+				real_uuid = switch_channel_get_partner_uuid(other_loopback_channel);
 				switch_channel_set_variable(other_loopback_channel, "cc_member_pre_answer_uuid", NULL);
 
 				/* Switch the agent session */

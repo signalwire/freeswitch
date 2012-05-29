@@ -183,6 +183,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_LAST_BRIDGE_VARIABLE "last_bridge_to"
 #define SWITCH_SIGNAL_BRIDGE_VARIABLE "signal_bridge_to"
 #define SWITCH_SIGNAL_BOND_VARIABLE "signal_bond"
+#define SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE "originate_signal_bond"
 #define SWITCH_ORIGINATOR_VARIABLE "originator"
 #define SWITCH_ORIGINATOR_CODEC_VARIABLE "originator_codec"
 #define SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE "originator_video_codec"

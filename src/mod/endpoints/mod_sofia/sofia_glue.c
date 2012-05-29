@@ -688,7 +688,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 					pass_fmtp = NULL;
 
-					if (switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) {
+					if (switch_channel_get_partner_uuid(tech_pvt->channel)) {
 						if ((of = switch_channel_get_variable_partner(tech_pvt->channel, "sip_video_fmtp"))) {
 							pass_fmtp = of;
 						}
@@ -4189,9 +4189,9 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 				if (!strcasecmp(stream, "indicate_hold")) {
 					switch_channel_set_flag(tech_pvt->channel, CF_SUSPEND);
 					switch_channel_set_flag(tech_pvt->channel, CF_HOLD);
-					switch_ivr_hold_uuid(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), NULL, 0);
+					switch_ivr_hold_uuid(switch_channel_get_partner_uuid(tech_pvt->channel), NULL, 0);
 				} else {
-					switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream,
+					switch_ivr_broadcast(switch_channel_get_partner_uuid(tech_pvt->channel), stream,
 										 SMF_ECHO_ALEG | SMF_LOOP | SMF_PRIORITY);
 					switch_yield(250000);
 				}
@@ -4217,7 +4217,7 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 			}
 
-			if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(uuid))) {
+			if ((uuid = switch_channel_get_partner_uuid(tech_pvt->channel)) && (b_session = switch_core_session_locate(uuid))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 
 				if (switch_channel_test_flag(tech_pvt->channel, CF_HOLD)) {
@@ -5330,7 +5330,7 @@ void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 	switch_core_session_t *other_session;
 	switch_channel_t *other_channel;
 
-	if ((val = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE))
+	if ((val = switch_channel_get_partner_uuid(tech_pvt->channel))
 		&& (other_session = switch_core_session_locate(val))) {
 		other_channel = switch_core_session_get_channel(other_session);
 		switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
@@ -5904,7 +5904,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 		}
 
-		if (switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) {
+		if (switch_channel_get_partner_uuid(channel)) {
 			sofia_set_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE);
 		} else {
 			switch_xml_t callflow, param, x_extension;
@@ -6826,7 +6826,7 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 
 
 
-	if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE))
+	if ((uuid = switch_channel_get_partner_uuid(tech_pvt->channel))
 		&& (other_session = switch_core_session_locate(uuid))) {
 
 		other_channel = switch_core_session_get_channel(other_session);

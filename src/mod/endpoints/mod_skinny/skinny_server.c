@@ -784,12 +784,12 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 
 	tech_pvt = switch_core_session_get_private(session);
 	channel = switch_core_session_get_channel(session);
-	remote_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+	remote_uuid = switch_channel_get_partner_uuid(channel);
 
 	if (tech_pvt->transfer_from_call_id) {
 		if((session2 = skinny_profile_find_session(listener->profile, listener, &line_instance, tech_pvt->transfer_from_call_id))) {
 			switch_channel_t *channel2 = switch_core_session_get_channel(session2);
-			const char *remote_uuid2 = switch_channel_get_variable(channel2, SWITCH_SIGNAL_BOND_VARIABLE);
+			const char *remote_uuid2 = switch_channel_get_partner_uuid(channel2);
 			if (switch_ivr_uuid_bridge(remote_uuid, remote_uuid2) == SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				switch_channel_hangup(channel2, SWITCH_CAUSE_NORMAL_CLEARING);

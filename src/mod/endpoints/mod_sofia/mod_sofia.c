@@ -172,7 +172,7 @@ static switch_status_t sofia_on_reset(switch_core_session_t *session)
 		const char *uuid = switch_core_session_get_uuid(session);
 
 		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
-			const char *other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+			const char *other_uuid = switch_channel_get_partner_uuid(channel);
 			int x = 0;
 
 			if (other_uuid) {
@@ -1824,7 +1824,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
-			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
+			if ((uuid = switch_channel_get_partner_uuid(channel))
 				&& (other_session = switch_core_session_locate(uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
 				ip = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
@@ -2061,7 +2061,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			const char *uuid;
 			const char *call_id = NULL, *to_user = NULL, *to_host = NULL, *to_tag = NULL, *from_tag = NULL, *from_user = NULL, *from_host = NULL;
 
-			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) {
+			if ((uuid = switch_channel_get_partner_uuid(channel))) {
 				switch_core_session_t *rsession;
 				if ((rsession = switch_core_session_locate(uuid))) {
 					switch_channel_t *rchannel = switch_core_session_get_channel(rsession);
@@ -2191,7 +2191,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						
 
 						if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
-							const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+							const char *uuid = switch_channel_get_partner_uuid(channel);
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "SEND");
 
 
