@@ -1751,7 +1751,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 			}
 
-		} else if ((!strncmp("m=audio ", p, 8) && *(p + 9) != '0') || (!strncmp("m=image ", p, 8) && *(p + 9) != '0')) {
+		} else if ((!strncmp("m=audio ", p, 8) && *(p + 8) != '0') || (!strncmp("m=image ", p, 8) && *(p + 8) != '0')) {
 			strncpy(q, p, 8);
 			p += 8;
 
@@ -1787,7 +1787,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 			has_audio++;
 
-		} else if (!strncmp("m=video ", p, 8) && *(p + 9) != '0') {
+		} else if (!strncmp("m=video ", p, 8) && *(p + 8) != '0') {
 			if (!has_video) {
 				sofia_glue_tech_choose_video_port(tech_pvt, 1);
 				tech_pvt->video_rm_encoding = "PROXY-VID";
