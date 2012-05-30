@@ -2087,7 +2087,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 
-	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
+	if ((rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER))) {
+		switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, NULL);
+	}
 
 	switch_assert(tech_pvt != NULL);
 
