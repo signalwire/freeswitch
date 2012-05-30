@@ -1028,6 +1028,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	sip_contact_t const *contact = NULL;
 	char *sql;
 	switch_event_t *s_event;
+	const char *reg_meta = NULL;
 	const char *to_user = NULL;
 	const char *to_host = NULL;
 	char *mwi_account = NULL;
@@ -1485,6 +1486,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		to_user = var;
 	}
 
+	if (v_event && *v_event && (var = switch_event_get_header(*v_event, "registration_metadata"))) {
+		reg_meta = var;
+	}
+
 	if (v_event && *v_event && (mwi_account = switch_event_get_header(*v_event, "mwi-account"))) {
 		dup_mwi_account = strdup(mwi_account);
 		switch_assert(dup_mwi_account != NULL);
@@ -1559,7 +1564,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		url = switch_mprintf("sofia/%q/sip:%q", profile->name, sofia_glue_strip_proto(contact));
 		
 		switch_core_add_registration(to_user, reg_host, call_id, url, (long) switch_epoch_time_now(NULL) + (long) exptime + 60,
-									 network_ip, network_port_c, is_tls ? "tls" : is_tcp ? "tcp" : "udp");
+									 network_ip, network_port_c, is_tls ? "tls" : is_tcp ? "tcp" : "udp", reg_meta);
 
 		switch_safe_free(url);
 		switch_safe_free(contact);
