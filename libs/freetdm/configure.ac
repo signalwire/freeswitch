@@ -316,7 +316,7 @@ if test "${HAVE_SNG_SS7}" = "yes"; then
 		case "${host}" in
 		x86_64-*)
 			# X86_64 machines need additional flags when compiling against libsng_isdn
-			CFLAGS="$CFLAGS -DBIT_64 -DALIGN_64BIT"
+			CFLAGS="$CFLAGS -DBIT_64 -DALIGN_64BIT -DDEBUGP"
 			;;
 		esac
 	fi

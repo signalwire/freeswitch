@@ -43,42 +43,35 @@
 /* DEFINES ********************************************************************/
 /******************************************************************************/
 /* FUNCTION PROTOTYPES ********************************************************/
-static int ftmod_sigtran_tucl_gen_config(void);
-static int ftmod_sigtran_tucl_sap_config(void);
-
-static int ftmod_sigtran_sctp_gen_config(void);
-ftdm_status_t ftmod_sigtran_cfg_sctp(void);
-int ftmod_sigtran_sctp_config(int id);
-ftdm_status_t ftmod_sigtran_sctp_sap_config(int id);
-ftdm_status_t ftmod_sigtran_sctp_tsap_config(int id);
-static S16 ftmod_sigtran_m2ua_gen_config(void);
-static S16 ftmod_sigtran_m2ua_sctsap_config(void);
-static S16 ftmod_sigtran_m2ua_peer_config(void);
-static S16 ftmod_sigtran_m2ua_cluster_config(void);
-static S16 ftmod_sigtran_m2ua_dlsap_config(U32 idx);
-
-static S16 ftmod_sigtran_nif_gen_config(void);
-static S16 ftmod_sigtran_nif_dlsap_config(U32 idx);
-
-
-static U32 ftmod_parse_conv_ipaddr(S8 *ptr);
+static int ftmod_tucl_gen_config(void);
+static int ftmod_tucl_sap_config(int id);
+static int ftmod_sctp_gen_config(void);
+static int ftmod_cfg_sctp(void);
+static int ftmod_sctp_config(int id);
+static ftdm_status_t ftmod_sctp_sap_config(int id);
+static ftdm_status_t ftmod_sctp_tsap_config(int id);
+static int ftmod_m2ua_gen_config(void);
+static int ftmod_m2ua_sctsap_config(int id);
+static int ftmod_m2ua_peer_config(int id);
+static int ftmod_m2ua_cluster_config(int idx);
+static int ftmod_m2ua_dlsap_config(int idx);
+static int ftmod_nif_gen_config(void);
+static int ftmod_nif_dlsap_config(int idx);
+static int ftmod_sctp_tucl_tsap_bind(int idx);
+static int ftmod_m2ua_sctp_sctsap_bind(int idx);
+static int ftmod_open_endpoint(int idx);
+static int ftmod_nif_m2ua_dlsap_bind(int id);
+static int ftmod_nif_mtp2_dlsap_bind(int id);
+static int ftmod_m2ua_enable_debug(void);
+static int ftmod_tucl_enable_debug(void);
 
 ftdm_status_t sng_m2ua_init(void); 
 ftdm_status_t sng_m2ua_cfg(void);
 
-
-static S16 ftmod_sigtran_tsap_bnd(void);
-static S16 ftmod_sigtran_sctsap_bnd(void);
-static S16 ftmod_sigtran_open_endpoint(void);
-static S16 ftmod_sigtran_dlsap_bnd(U32 id);
-static S16 ftmod_ss7_dlsap_bnd(U32 id);
-
-/******************************************************************************/
 /******************************************************************************/
 
 ftdm_status_t ftmod_ss7_m2ua_cfg(void)
 {
-
 	if(FTDM_SUCCESS != sng_m2ua_init()){
 		ftdm_log (FTDM_LOG_ERROR, " sng_m2ua_init FAILED \n");
 		return FTDM_FAIL;
@@ -124,144 +117,122 @@ ftdm_status_t sng_m2ua_init(void)
 		ftdm_log (FTDM_LOG_INFO ,"Started TUCL!\n");
 	}
 
-
 	return FTDM_SUCCESS;
 }
 
-/******************************************************************************/
+/****************************************************************************************************/
 
 ftdm_status_t sng_m2ua_cfg(void)
 {
-	S16 ret = ROK;
+	int x=0;
 
+	/****************************************************************************************************/
 	/* TUCL */
-	if(ftmod_sigtran_tucl_gen_config()){
+	if(ftmod_tucl_gen_config()){
 		ftdm_log (FTDM_LOG_ERROR ,"TUCL GEN configuration: NOT OK\n");
 		return FTDM_FAIL;
 	} else {
 		ftdm_log (FTDM_LOG_INFO ,"TUCL GEN configuration: OK\n");
 	}
 
-	if(ftmod_sigtran_tucl_sap_config()){
-		ftdm_log (FTDM_LOG_ERROR ,"TUCL SAP configuration: NOT OK\n");
-		return FTDM_FAIL;
-	} else {
-		ftdm_log (FTDM_LOG_INFO ,"TUCL SAP configuration: OK\n");
-	}
-	/*********************************************************************************************/
-
+	/****************************************************************************************************/
 	/* SCTP */
-	if(ftmod_sigtran_sctp_gen_config()){
+	if(ftmod_sctp_gen_config()){
 		ftdm_log (FTDM_LOG_ERROR ,"SCTP GEN configuration: NOT OK\n");
 		return FTDM_FAIL;
 	} else {
 		ftdm_log (FTDM_LOG_INFO ,"SCTP GEN configuration: OK\n");
 	}
-
-	if(ftmod_sigtran_cfg_sctp()){
-		ftdm_log (FTDM_LOG_ERROR ,"ftmod_sigtran_cfg_sctp : NOT OK\n");
+	/****************************************************************************************************/
+	/* SCTP configuration */
+	if(ftmod_cfg_sctp()){
+		ftdm_log (FTDM_LOG_ERROR ,"SCTP Configuration : NOT OK\n");
 		return FTDM_FAIL;
 	} else {
-		ftdm_log (FTDM_LOG_INFO ,"ftmod_sigtran_cfg_sctp : OK\n");
+		ftdm_log (FTDM_LOG_INFO ,"SCTP Configuration : OK\n");
 	}
-	/*********************************************************************************************/
+	/****************************************************************************************************/
+	/* M2UA configurations */
 
-	/* M2UA and NIF configurations */
-
-	/* Send the general configuration request for M2UA layer */ 
-	if((ret = ftmod_sigtran_m2ua_gen_config()) != ROK)
-	{
+	if(ftmod_m2ua_gen_config()) {
 		ftdm_log (FTDM_LOG_ERROR ,"M2UA General configuration: NOT OK\n");
 		return FTDM_FAIL;
-	}   
-	else
-	{
+	}else {
 		ftdm_log (FTDM_LOG_INFO ,"M2UA General configuration: OK\n");
 	}
+	/****************************************************************************************************/
+	/* M2UA SCTP SAP configurations */
+	for (x=1; g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0; x++) {
+		if (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED)) {
 
-	/* Send the SCTSAP configuration request for M2UA layer */ 
-	if((ret = ftmod_sigtran_m2ua_sctsap_config()) != ROK)
-	{
-		ftdm_log (FTDM_LOG_ERROR ,"M2UA SCTSAP configuration: NOT OK\n");
-		return FTDM_FAIL;
-	}   
-	else
-	{
-		ftdm_log (FTDM_LOG_INFO ,"M2UA SCTSAP configuration: OK\n");
-	}
+			if(ftmod_m2ua_sctsap_config(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"M2UA SCTSAP[%d] configuration: NOT OK\n", x);
+				return FTDM_FAIL;
+			}else {
+				ftdm_log (FTDM_LOG_INFO ,"M2UA SCTSAP[%d] configuration: OK\n", x);
+			}
 
-	/* Send the peer configuration request for M2UA layer */ 
-	if((ret = ftmod_sigtran_m2ua_peer_config()) != ROK)
-	{
-		ftdm_log (FTDM_LOG_ERROR ,"M2UA PEER configuration: NOT OK\n");
-		return FTDM_FAIL;
-	}   
-	else
-	{
-		ftdm_log (FTDM_LOG_INFO ,"M2UA PEER configuration: OK\n");
-	}
+		/****************************************************************************************************/
+		/* M2UA PEER configurations */
 
-	/* Send the cluster configuration request for M2UA layer */ 
-	if((ret = ftmod_sigtran_m2ua_cluster_config()) != ROK)
-	{
-		ftdm_log (FTDM_LOG_ERROR ,"M2UA CLUSTER configuration: NOT OK\n");
-		return FTDM_FAIL;
-	}   
-	else
-	{
-		ftdm_log (FTDM_LOG_INFO ,"M2UA CLUSTER configuration: OK\n");
-	}
-
-
-	/* Send the USAP (DLSAP) configuration request for M2UA layer; fill the number
-	 * of saps required to be configured. Max is 3 */ 
-	/*for( idx = 0; idx < 3; idx++)*/
-	{   
-		if((ret = ftmod_sigtran_m2ua_dlsap_config(1)) != ROK)
-		{
-			ftdm_log (FTDM_LOG_ERROR ,"M2UA DLSAP configuration: NOT OK\n");
+		if(ftmod_m2ua_peer_config(x)) {
+			ftdm_log (FTDM_LOG_ERROR ,"M2UA PEER configuration for M2UA INTF[%d] : NOT OK\n", x);
 			return FTDM_FAIL;
-		}   
-		else
-		{
-			ftdm_log (FTDM_LOG_INFO ,"M2UA DLSAP configuration: OK\n");
+		}else {
+			ftdm_log (FTDM_LOG_INFO ,"M2UA PEER configuration for M2UA INTF[%d] : OK\n", x);
 		}
-	}
+		/****************************************************************************************************/
+		/* M2UA Cluster configurations */
 
-	/* Send the general configuration request for NIF */ 
-	if((ret = ftmod_sigtran_nif_gen_config()) != ROK)
-	{
+		if(ftmod_m2ua_cluster_config(x)) {
+			ftdm_log (FTDM_LOG_ERROR ,"M2UA CLUSTER configuration for M2UA INTF[%d] : NOT OK\n", x);
+			return FTDM_FAIL;
+		}else {
+			ftdm_log (FTDM_LOG_INFO ,"M2UA CLUSTER configuration for M2UA INTF[%d]: OK\n", x);
+		}
+
+		/****************************************************************************************************/
+
+		/* Send the USAP (DLSAP) configuration request for M2UA layer; fill the number
+		 * of saps required to be configured. Max is 3 */ 
+		if(ftmod_m2ua_dlsap_config(x)) {
+			ftdm_log (FTDM_LOG_ERROR ,"M2UA DLSAP[%d] configuration: NOT OK\n", x);
+			return FTDM_FAIL;
+		}else {
+			ftdm_log (FTDM_LOG_INFO ,"M2UA DLSAP[%d] configuration: OK\n", x);
+		}
+	  } /* END - SNGSS7_CONFIGURED */
+	}/* END - M2UA Interfaces for loop*/
+/****************************************************************************************************/
+	/* NIF */
+	if(ftmod_nif_gen_config()){
 		ftdm_log (FTDM_LOG_ERROR ,"NIF General configuration: NOT OK\n");
 		return FTDM_FAIL;
-	}   
-	else
-	{
+	}else {
 		ftdm_log (FTDM_LOG_INFO ,"NIF General configuration: OK\n");
 	}
 
-	/* Send the USAP (DLSAP) configuration request for NIF layer; fill the number
-	 * of saps required to be configured. Max is 3
-	for( idx = 0; idx < 3; idx++) */
-	{
-		if( (ret = ftmod_sigtran_nif_dlsap_config(1)) != ROK)
-		{
-			ftdm_log (FTDM_LOG_ERROR ,"NIF DLSAP configuration: NOT OK\n");
-			return FTDM_FAIL;
-		}   
-		else
-		{
-			ftdm_log (FTDM_LOG_INFO ,"NIF DLSAP configuration: OK\n");
+/****************************************************************************************************/
+	/* NIF DLSAP */
+
+	for (x=1; g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0; x++) {
+		if (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED)) {
+			if(ftmod_nif_dlsap_config(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"NIF DLSAP[%d] configuration: NOT OK\n", x);
+				return FTDM_FAIL;
+			}else{
+				ftdm_log (FTDM_LOG_INFO ,"NIF DLSAP[%d] configuration: OK\n", x);
+			}
 		}
 	}
 
-
-	/********************************************************************************************/
+/****************************************************************************************************/
 
 	return 0;
 }
 
-/******************************************************************************/
-static int ftmod_sigtran_tucl_gen_config(void)
+/****************************************************************************************************/
+static int ftmod_tucl_gen_config(void)
 {
 	HiMngmt cfg;
 	Pst             pst;
@@ -314,12 +285,15 @@ static int ftmod_sigtran_tucl_gen_config(void)
 
 	return(sng_cfg_tucl(&pst, &cfg));
 }
+/****************************************************************************************************/
 
-static int ftmod_sigtran_tucl_sap_config(void)
+static int ftmod_tucl_sap_config(int id)
 {
         HiMngmt cfg;
         Pst     pst;
         HiSapCfg  *pCfg;
+
+	sng_sctp_link_t *k = &g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[id];
 
         /* initalize the post structure */
         smPstInit(&pst);
@@ -353,8 +327,8 @@ static int ftmod_sigtran_tucl_sap_config(void)
 
         pCfg = &cfg.t.cfg.s.hiSap;
 
-        pCfg->spId = 0x01 ; /* KAPIL - TODO - should be from configured value.but hardcoding as of now */ 
-        pCfg->uiSel = 0x00;  /*loosley coupled */
+        pCfg->spId 	= k->id ; /* each SCTP link there will be one tucl sap */ 
+        pCfg->uiSel 	= 0x00;  /*loosley coupled */
         pCfg->flcEnb = TRUE;
         pCfg->txqCongStrtLim = HI_SAP_TXN_QUEUE_CONG_START_LIMIT;
         pCfg->txqCongDropLim = HI_SAP_TXN_QUEUE_CONG_DROP_LIMIT;
@@ -368,8 +342,10 @@ static int ftmod_sigtran_tucl_sap_config(void)
 
         return(sng_cfg_tucl(&pst, &cfg));
 }
+
+/****************************************************************************************************/
  
-static int ftmod_sigtran_sctp_gen_config(void)
+static int ftmod_sctp_gen_config(void)
 {
 	SbMgmt  cfg;
 	Pst             pst;
@@ -428,14 +404,14 @@ static int ftmod_sigtran_sctp_gen_config(void)
 	return(sng_cfg_sctp(&pst, &cfg));
 }
 
-ftdm_status_t ftmod_sigtran_cfg_sctp(void)
+/****************************************************************************************************/
+static int ftmod_cfg_sctp(void)
 {
 	int x=0;
-	for (x=1; g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0; x++)
-	{
+	for (x=1; g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0; x++) {
 		if (!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_CONFIGURED)) {
 			
-			if (  ftmod_sigtran_sctp_config(x) == FTDM_FAIL) {
+			if (  ftmod_sctp_config(x) == FTDM_FAIL) {
 				SS7_CRITICAL("SCTP %d configuration FAILED!\n", x);
 				return FTDM_FAIL;
 			} else {
@@ -446,19 +422,28 @@ ftdm_status_t ftmod_sigtran_cfg_sctp(void)
 	return FTDM_SUCCESS;
 }
 
-
-int ftmod_sigtran_sctp_config(int id)
+/****************************************************************************************************/
+int ftmod_sctp_config(int id)
 { 
-    if  (ftmod_sigtran_sctp_tsap_config(id) != FTDM_SUCCESS)
-        return FTDM_FAIL;
-    
-    if  (ftmod_sigtran_sctp_sap_config(id) != FTDM_SUCCESS)
-        return FTDM_FAIL;
-    
-    return FTDM_SUCCESS;
-}
+	if  (FTDM_SUCCESS != ftmod_sctp_tsap_config(id))
+		return FTDM_FAIL;
 
-ftdm_status_t ftmod_sigtran_sctp_tsap_config(int id)
+	if  (FTDM_SUCCESS != ftmod_sctp_sap_config(id))
+		return FTDM_FAIL;
+
+	/* each sctp link there will be one tucl sap */
+	if(ftmod_tucl_sap_config(id)){
+		ftdm_log (FTDM_LOG_ERROR ,"TUCL SAP[%d] configuration: NOT OK\n", id);
+		return FTDM_FAIL;
+	} else {
+		ftdm_log (FTDM_LOG_INFO ,"TUCL SAP[%d] configuration: OK\n", id);
+	}
+
+	return FTDM_SUCCESS;
+}
+/****************************************************************************************************/
+
+ftdm_status_t ftmod_sctp_tsap_config(int id)
 {
 	Pst			pst;
 	SbMgmt		cfg;
@@ -475,44 +460,46 @@ ftdm_status_t ftmod_sigtran_sctp_tsap_config(int id)
 	memset(&cfg, 0x0, sizeof(cfg));
 	smHdrInit(&cfg.hdr);
 
-	cfg.hdr.msgType		= TCFG;
+	cfg.hdr.msgType			= TCFG;
 	cfg.hdr.entId.ent		= ENTSB;
 	cfg.hdr.entId.inst		= S_INST;
-	cfg.hdr.elmId.elmnt	= STSBTSAP;
-	cfg.hdr.elmId.elmntInst1= k->id;
+	cfg.hdr.elmId.elmnt		= STSBTSAP;
+	cfg.hdr.elmId.elmntInst1 	= k->id;
 
 	c = &cfg.t.cfg.s.tSapCfg;
-	c->swtch		= LSB_SW_RFC_REL0;
-	c->suId		= 1;
-	c->sel		= 0;
-	c->ent		= ENTHI;
-	c->inst		= S_INST;
-	c->procId	= g_ftdm_sngss7_data.cfg.procId;
-	c->memId.region	= S_REG;
-	c->memId.pool	= S_POOL;
-	c->prior		= PRIOR1;
-	c->route		= RTESPEC;
-	c->srcNAddrLst.nmb = k->numSrcAddr;
+	c->swtch			= LSB_SW_RFC_REL0;
+	c->suId				= k->id;
+	c->sel				= 0;
+	c->ent				= ENTHI;
+	c->inst				= S_INST;
+	c->procId			= g_ftdm_sngss7_data.cfg.procId;
+	c->memId.region			= S_REG;
+	c->memId.pool			= S_POOL;
+	c->prior			= PRIOR1;
+	c->route			= RTESPEC;
+	c->srcNAddrLst.nmb 		= k->numSrcAddr;
 	for (i=0; i <= (k->numSrcAddr-1); i++) {
 		c->srcNAddrLst.nAddr[i].type = CM_NETADDR_IPV4;		
 		c->srcNAddrLst.nAddr[i].u.ipv4NetAddr = k->srcAddrList[i+1];
 	}
 
-	c->reConfig.spId	= 1;
-	c->reConfig.maxBndRetry = 3; 
-	c->reConfig.tIntTmr = 200;
+	c->reConfig.spId		= k->id;
+	c->reConfig.maxBndRetry 	= 3; 
+	c->reConfig.tIntTmr 		= 200;
 	
 	ret = sng_cfg_sctp(&pst, &cfg);
-	if (ret==0) {
-		SS7_INFO("SCTP TSAP %d configuration DONE!\n", id);
+	if (0 == ret) {
+		SS7_INFO("SCTP TSAP [%d] configuration DONE!\n", id);
 		return FTDM_SUCCESS;
 	} else {
-		SS7_CRITICAL("SCTP TSAP %d configuration FAILED!\n", id);
+		SS7_CRITICAL("SCTP TSAP [%d] configuration FAILED!\n", id);
 		return FTDM_FAIL;
 	}
 }
 
-ftdm_status_t ftmod_sigtran_sctp_sap_config(int id)
+/****************************************************************************************************/
+
+ftdm_status_t ftmod_sctp_sap_config(int id)
 {
 	Pst			pst;
 	SbMgmt		cfg;
@@ -527,73 +514,73 @@ ftdm_status_t ftmod_sigtran_sctp_sap_config(int id)
 	memset(&cfg, 0x0, sizeof(cfg));
 	smHdrInit(&cfg.hdr);
 
-	cfg.hdr.msgType		= TCFG;
+	cfg.hdr.msgType			= TCFG;
 	cfg.hdr.entId.ent		= ENTSB;
 	cfg.hdr.entId.inst		= S_INST;
-	cfg.hdr.elmId.elmnt	= STSBSCTSAP;
-	cfg.hdr.elmId.elmntInst1= k->id;
+	cfg.hdr.elmId.elmnt		= STSBSCTSAP;
+	cfg.hdr.elmId.elmntInst1 	= k->id;
 
 	c = &cfg.t.cfg.s.sctSapCfg;
-	c->swtch 	= LSB_SW_RFC_REL0;
-	c->spId		= 1;	/* Service Provider SAP Id */
-	c->sel		= 0;
-	c->memId.region	= S_REG;
-	c->memId.pool	= S_POOL;
-	c->prior		= PRIOR1;
-	c->route		= RTESPEC;
+	c->swtch 			= LSB_SW_RFC_REL0;
+	c->spId				= k->id;	/* Service Provider SAP Id */
+	c->sel				= 0;
+	c->memId.region			= S_REG;
+	c->memId.pool			= S_POOL;
+	c->prior			= PRIOR1;
+	c->route			= RTESPEC;
 
 	/* Maximum time to wait before the SCTP layer must send a Selective Acknowledgement (SACK) message. Valid range is 1 -165535. */
-	c->reConfig.maxAckDelayTm = 200; 
+	c->reConfig.maxAckDelayTm 	= 200; 
 	/* Maximum number of messages to receive before the SCTP layer must send a SACK message. Valid range is 1 - 165535. */
-	c->reConfig.maxAckDelayDg = 2;
+	c->reConfig.maxAckDelayDg 	= 2;
 	/* Initial value of the retransmission timer (RTO). The SCTP layer retransmits data after waiting for feedback during this time period. Valid range is 1 - 65535. */
-	c->reConfig.rtoInitial = 3000;
+	c->reConfig.rtoInitial 		= 3000;
 	/* Minimum value used for the RTO. If the computed value of RTO is less than rtoMin, the computed value is rounded up to this value. */
-	c->reConfig.rtoMin = 1000;
+	c->reConfig.rtoMin 		= 1000;
 	/* Maxiumum value used for RTO. If the computed value of RTO is greater than rtoMax, the computed value is rounded down to this value. */
-	c->reConfig.rtoMax = 10000;
+	c->reConfig.rtoMax 		= 10000;
 	/* Default Freeze timer value */
-	c->reConfig.freezeTm = 3000;
+	c->reConfig.freezeTm 		= 3000;
 	/* Base cookie lifetime for the cookie in the Initiation Acknowledgement (INIT ACK) message. */
-	c->reConfig.cookieLife = 60000;
+	c->reConfig.cookieLife 		= 60000;
 	/* Default heartbeat interval timer. Valid range is 1 - 65535. */
-	c->reConfig.intervalTm = 3000;
+	c->reConfig.intervalTm 		= 3000;
 	/* Maximum burst value. Valid range is 1 - 65535. */
-	c->reConfig.maxBurst = 4;
+	c->reConfig.maxBurst 		= 4;
 	/*Maximum number of heartbeats sent at each retransmission timeout (RTO). Valid range is 1 - 65535. */
-	c->reConfig.maxHbBurst = 1;
+	c->reConfig.maxHbBurst 		= 1;
 	/*Shutdown guard timer value for graceful shutdowns. */
-	c->reConfig.t5SdownGrdTm = 15000;
+	c->reConfig.t5SdownGrdTm 	= 15000;
 	/*	Action to take when the receiver's number of incoming streams is less than the sender's number of outgoing streams. Valid values are:
 		TRUE = Accept incoming stream and continue association.
 		FALSE = Abort the association.
 	*/
-	c->reConfig.negAbrtFlg = FALSE;
+	c->reConfig.negAbrtFlg 		= FALSE;
 	/* 	Whether to enable or disable heartbeat by default. Valid values are:
 		TRUE = Enable heartbeat.
 		FALSE = Disable heartbeat.
 	*/
-	c->reConfig.hBeatEnable = TRUE;
+	c->reConfig.hBeatEnable 	= TRUE;
 	/* Flow control start threshold. When the number of messages in SCTPs message queue reaches this value, flow control starts. */
-	c->reConfig.flcUpThr = 8;
+	c->reConfig.flcUpThr 		= 8;
 	/* Flow control stop threshold. When the number of messages in SCTPs message queue reaches this value, flow control stops. */
-	c->reConfig.flcLowThr = 6;
+	c->reConfig.flcLowThr 		= 6;
 
-	c->reConfig.handleInitFlg = FALSE;
+	c->reConfig.handleInitFlg 	= FALSE;
 
 	ret = sng_cfg_sctp(&pst, &cfg);
-	if (ret==0) {
-		SS7_INFO("SCTP SAP %d configuration DONE!\n", id);
+	if (0 == ret) {
+		SS7_INFO("SCTP SAP [%d] configuration DONE!\n", id);
 		return FTDM_SUCCESS;
 	} else {
-		SS7_CRITICAL("SCTP SAP %d configuration FAILED!\n", id);
+		SS7_CRITICAL("SCTP SAP [%d] configuration FAILED!\n", id);
 		return FTDM_FAIL;
 	}
 }
 
 /**********************************************************************************************/
 /* M2UA - General configuration */
-static S16 ftmod_sigtran_m2ua_gen_config(void)
+static int ftmod_m2ua_gen_config(void)
 {
 	Pst    pst; 
 	MwMgmt cfg;
@@ -641,11 +628,11 @@ static S16 ftmod_sigtran_m2ua_gen_config(void)
 	cfg.t.cfg.s.genCfg.reConfig.smPst.route     = RTESPEC;       /* route */
 
 	cfg.t.cfg.s.genCfg.reConfig.smPst.dstEnt    = ENTSM;         /* dst entity */
-	cfg.t.cfg.s.genCfg.reConfig.smPst.dstInst   = 0;             /* dst inst */
+	cfg.t.cfg.s.genCfg.reConfig.smPst.dstInst   = S_INST;             /* dst inst */
 	cfg.t.cfg.s.genCfg.reConfig.smPst.dstProcId = SFndProcId();  /* src proc id */
 
 	cfg.t.cfg.s.genCfg.reConfig.smPst.srcEnt    = ENTMW;         /* src entity */
-	cfg.t.cfg.s.genCfg.reConfig.smPst.srcInst   = 0;             /* src inst */
+	cfg.t.cfg.s.genCfg.reConfig.smPst.srcInst   = S_INST;             /* src inst */
 	cfg.t.cfg.s.genCfg.reConfig.smPst.srcProcId = SFndProcId();  /* src proc id */
 
 	cfg.t.cfg.s.genCfg.reConfig.tmrFlcPoll.enb = TRUE;            /* SCTP Flc Poll timer */
@@ -671,14 +658,13 @@ static S16 ftmod_sigtran_m2ua_gen_config(void)
 }   
 
 /**********************************************************************************************/
-
-
-/* M2UA - SCTSAP configuration */
-static S16 ftmod_sigtran_m2ua_sctsap_config(void)
+static int ftmod_m2ua_sctsap_config(int id)
 {
-
+   int    i;
    Pst    pst; 
    MwMgmt cfg;
+   sng_m2ua_cfg_t* m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
+   sng_sctp_link_t *sctp = &g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[m2ua->sctpId];
 
    memset((U8 *)&cfg, 0, sizeof(MwMgmt));
    memset((U8 *)&pst, 0, sizeof(Pst));
@@ -700,25 +686,26 @@ static S16 ftmod_sigtran_m2ua_sctsap_config(void)
    cfg.hdr.response.mem.region  = S_REG;
    cfg.hdr.response.mem.pool    = S_POOL;
 
-
-
    cfg.t.cfg.s.sctSapCfg.reConfig.selector     = 0;
 
    /* service user SAP ID */
-   cfg.t.cfg.s.sctSapCfg.suId                   = 0;
+   cfg.t.cfg.s.sctSapCfg.suId                   = m2ua->id;
    /* service provider ID   */
-   cfg.t.cfg.s.sctSapCfg.spId                   = 1; /* TUCL sct sap id is 1 */
+   cfg.t.cfg.s.sctSapCfg.spId                   = m2ua->sctpId;
    /* source port number */
    cfg.t.cfg.s.sctSapCfg.srcPort                = 2904;
    /* interface address */
    /*For multiple IP address support */
 #ifdef SCT_ENDP_MULTI_IPADDR
-   cfg.t.cfg.s.sctSapCfg.srcAddrLst.nmb = 1;
-   cfg.t.cfg.s.sctSapCfg.srcAddrLst.nAddr[0].type = CM_NETADDR_IPV4;
-   cfg.t.cfg.s.sctSapCfg.srcAddrLst.nAddr[0].u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.102");
+   cfg.t.cfg.s.sctSapCfg.srcAddrLst.nmb  	= sctp->numSrcAddr;
+   for (i=0; i <= (sctp->numSrcAddr-1); i++) {
+	   cfg.t.cfg.s.sctSapCfg.srcAddrLst.nAddr[i].type = CM_NETADDR_IPV4;
+	   cfg.t.cfg.s.sctSapCfg.srcAddrLst.nAddr[i].u.ipv4NetAddr = sctp->srcAddrList[i+1];
+   }
 #else
+   /* for single ip support ,src address will always be one */
    cfg.t.cfg.s.sctSapCfg.intfAddr.type          = CM_NETADDR_IPV4;
-   cfg.t.cfg.s.sctSapCfg.intfAddr.u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.102");
+   cfg.t.cfg.s.sctSapCfg.intfAddr.u.ipv4NetAddr = sctp->srcAddrList[1];
 #endif
 
    /* lower SAP primitive timer */
@@ -746,14 +733,17 @@ static S16 ftmod_sigtran_m2ua_sctsap_config(void)
 
 }
 
-/**********************************************************************************************/
-
+/****************************************************************************************************/
 
 /* M2UA - Peer configuration */
-static S16 ftmod_sigtran_m2ua_peer_config(void)
+static int ftmod_m2ua_peer_config(int id)
 {
+   int    i;
    Pst    pst;
    MwMgmt cfg;
+   sng_m2ua_cfg_t* 	m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
+   sng_m2ua_peer_cfg_t* peer  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[m2ua->peerId];
+   sng_sctp_link_t 	*sctp = &g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[peer->sctpId];
 
    memset((U8 *)&cfg, 0, sizeof(MwMgmt));
    memset((U8 *)&pst, 0, sizeof(Pst));
@@ -763,7 +753,7 @@ static S16 ftmod_sigtran_m2ua_peer_config(void)
    pst.dstEnt = ENTMW;
 
    /* prepare header */
-	cfg.hdr.msgType     = TCFG;           /* message type */
+   cfg.hdr.msgType     = TCFG;           /* message type */
    cfg.hdr.entId.ent   = ENTMW;          /* entity */
    cfg.hdr.entId.inst  = 0;              /* instance */
    cfg.hdr.elmId.elmnt = STMWPEER;       /* Peer */
@@ -777,30 +767,30 @@ static S16 ftmod_sigtran_m2ua_peer_config(void)
 
 
 
-   cfg.t.cfg.s.peerCfg.peerId = 1;               /* peer id */
-   cfg.t.cfg.s.peerCfg.aspIdFlag = FALSE;        /* aspId flag */
+   cfg.t.cfg.s.peerCfg.peerId 		= peer->id;               /* peer id */
+   cfg.t.cfg.s.peerCfg.aspIdFlag 	= peer->aspIdFlag;        /* aspId flag */
 #ifdef MWASP
-   cfg.t.cfg.s.peerCfg.selfAspId =  1;  /* aspId */
+   cfg.t.cfg.s.peerCfg.selfAspId 	= peer->selfAspId;  	  /* aspId */
 #endif
-   cfg.t.cfg.s.peerCfg.assocCfg.suId = 0; /* SCTSAP ID */
-   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nmb = 1; /* destination address list*/
-   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[0].type = CM_NETADDR_IPV4;
-   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[0].u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.101");/* TODO */;
-#if 0   
-   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[1].type = CM_NETADDR_IPV4;
-   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[1].u.ipv4NetAddr = ftmod_parse_conv_ipaddr("172.25.0.93"); /* TODO */;
-#endif   
+   cfg.t.cfg.s.peerCfg.assocCfg.suId    = peer->sctpId; 	  /* SCTSAP ID */
+   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nmb = peer->numDestAddr;
+   for (i=0; i <= (peer->numDestAddr); i++) {
+	   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[i].type = CM_NETADDR_IPV4;
+	   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[i].u.ipv4NetAddr = peer->destAddrList[i]; 
+   }
 #ifdef MW_CFG_DSTPORT
    cfg.t.cfg.s.peerCfg.assocCfg.dstPort = /* TODO */ 2904; /* Port on which M2UA runs */
 #endif
-   cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nmb = 1; /* source address list */
-   cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nAddr[0].type =  CM_NETADDR_IPV4;
-   cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nAddr[0].u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.102");/* TODO */;
+   cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nmb = sctp->numSrcAddr; /* source address list */
+   for (i=0; i <= (sctp->numSrcAddr-1); i++) {
+	   cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nAddr[i].type =  CM_NETADDR_IPV4;
+	   cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nAddr[i].u.ipv4NetAddr = sctp->srcAddrList[i+1]; 
+   }
 
    cfg.t.cfg.s.peerCfg.assocCfg.priDstAddr.type = CM_NETADDR_IPV4;
    cfg.t.cfg.s.peerCfg.assocCfg.priDstAddr.u.ipv4NetAddr = cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[0].u.ipv4NetAddr;
 
-   cfg.t.cfg.s.peerCfg.assocCfg.locOutStrms = 10;
+   cfg.t.cfg.s.peerCfg.assocCfg.locOutStrms = peer->locOutStrms;
 #ifdef SCT3
    cfg.t.cfg.s.peerCfg.assocCfg.tos = 0;
 #endif
@@ -808,13 +798,14 @@ static S16 ftmod_sigtran_m2ua_peer_config(void)
      return (sng_cfg_m2ua (&pst, &cfg));
 }
 /**********************************************************************************************/
-
-
 /* M2UA - Cluster configuration */
-static S16 ftmod_sigtran_m2ua_cluster_config(void)
+static int ftmod_m2ua_cluster_config(int id)
 {
+   int i;
    Pst    pst; 
    MwMgmt cfg;
+   sng_m2ua_cfg_t* 	    m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
+   sng_m2ua_cluster_cfg_t*  clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[m2ua->clusterId];
 
    memset((U8 *)&cfg, 0, sizeof(MwMgmt));
    memset((U8 *)&pst, 0, sizeof(Pst));
@@ -824,7 +815,7 @@ static S16 ftmod_sigtran_m2ua_cluster_config(void)
    pst.dstEnt = ENTMW;
 
    /* prepare header */
-	cfg.hdr.msgType     = TCFG;           /* message type */
+   cfg.hdr.msgType     = TCFG;           /* message type */
    cfg.hdr.entId.ent   = ENTMW;          /* entity */
    cfg.hdr.entId.inst  = 0;              /* instance */
    cfg.hdr.elmId.elmnt = STMWCLUSTER;    /* Cluster */
@@ -837,26 +828,25 @@ static S16 ftmod_sigtran_m2ua_cluster_config(void)
    cfg.hdr.response.mem.pool    = S_POOL;
 
 
-
-   cfg.t.cfg.s.clusterCfg.clusterId = 0;
-   cfg.t.cfg.s.clusterCfg.trfMode = LMW_TRF_MODE_LOADSHARE;
-   cfg.t.cfg.s.clusterCfg.loadshareMode = LMW_LOADSH_RR;
-   cfg.t.cfg.s.clusterCfg.reConfig.nmbPeer = 1;
-   cfg.t.cfg.s.clusterCfg.reConfig.peer[0] = 1;
-#if 0   
-   cfg.t.cfg.s.clusterCfg.reConfig.peer[1] = 2;
-#endif   
+   cfg.t.cfg.s.clusterCfg.clusterId 	= clust->id;
+   cfg.t.cfg.s.clusterCfg.trfMode   	= clust->trfMode;
+   cfg.t.cfg.s.clusterCfg.loadshareMode = clust->loadShareAlgo;
+   cfg.t.cfg.s.clusterCfg.reConfig.nmbPeer = clust->numOfPeers;
+   for(i=0; i<(clust->numOfPeers);i++) {
+	   cfg.t.cfg.s.clusterCfg.reConfig.peer[i] = clust->peerIdLst[i];
+   }
 
      return (sng_cfg_m2ua (&pst, &cfg));
-
 }
+
 /**********************************************************************************************/
 
 /* M2UA - DLSAP configuration */
-static S16 ftmod_sigtran_m2ua_dlsap_config(U32 id)
+static int ftmod_m2ua_dlsap_config(int id)
 {
    Pst    pst; 
    MwMgmt cfg;
+   sng_m2ua_cfg_t* 	    m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
 
    memset((U8 *)&cfg, 0, sizeof(MwMgmt));
    memset((U8 *)&pst, 0, sizeof(Pst));
@@ -866,7 +856,7 @@ static S16 ftmod_sigtran_m2ua_dlsap_config(U32 id)
    pst.dstEnt = ENTMW;
 
    /* prepare header */
-	cfg.hdr.msgType     = TCFG;           /* message type */
+   cfg.hdr.msgType     = TCFG;           /* message type */
    cfg.hdr.entId.ent   = ENTMW;          /* entity */
    cfg.hdr.entId.inst  = 0;              /* instance */
    cfg.hdr.elmId.elmnt = STMWDLSAP;      /* DLSAP */
@@ -879,39 +869,13 @@ static S16 ftmod_sigtran_m2ua_dlsap_config(U32 id)
    cfg.hdr.response.mem.pool    = S_POOL;
 
 
-   switch(id)
-   {
-      case 0:
-         {
-            cfg.t.cfg.s.dlSapCfg.lnkNmb = 0; /* SapId */
-            cfg.t.cfg.s.dlSapCfg.intfId.type = LMW_INTFID_INT;
-            cfg.t.cfg.s.dlSapCfg.intfId.id.intId = 0;
-            break;
-         }
-      case 1:
-         {
-            cfg.t.cfg.s.dlSapCfg.lnkNmb = 1; /* SapId */
-            cfg.t.cfg.s.dlSapCfg.intfId.type = LMW_INTFID_INT;
-            cfg.t.cfg.s.dlSapCfg.intfId.id.intId = 1;
-            break;
-         }   
-
-      case 2:
-         {
-            cfg.t.cfg.s.dlSapCfg.lnkNmb = 2; /* SapId */
-            cfg.t.cfg.s.dlSapCfg.intfId.type = LMW_INTFID_INT;
-            cfg.t.cfg.s.dlSapCfg.intfId.id.intId = 2;
-            break;
-         }
-      default:
-         break;
-   }   
+   cfg.t.cfg.s.dlSapCfg.lnkNmb 	= id; /* SapId */
+   cfg.t.cfg.s.dlSapCfg.intfId.type = LMW_INTFID_INT;
+   cfg.t.cfg.s.dlSapCfg.intfId.id.intId = id;
    
    cfg.t.cfg.s.dlSapCfg.swtch = LMW_SAP_ITU;
 
-   
-
-   cfg.t.cfg.s.dlSapCfg.reConfig.clusterId =  0;
+   cfg.t.cfg.s.dlSapCfg.reConfig.clusterId =  m2ua->clusterId;
    cfg.t.cfg.s.dlSapCfg.reConfig.selector  =  0; /* Loosely couple mode */
    /* memory region and pool id*/
    cfg.t.cfg.s.dlSapCfg.reConfig.mem.region  =  S_REG;
@@ -925,11 +889,8 @@ static S16 ftmod_sigtran_m2ua_dlsap_config(U32 id)
 
 }
 /*****************************************************************************/
-
-/* NIF configurations */
- 
 /* NIF - General configuration */
-static S16 ftmod_sigtran_nif_gen_config(void)
+static int ftmod_nif_gen_config(void)
 {
    Pst    pst; 
    NwMgmt cfg;
@@ -942,7 +903,7 @@ static S16 ftmod_sigtran_nif_gen_config(void)
    pst.dstEnt = ENTNW;
 
    /* prepare header */
-	cfg.hdr.msgType     = TCFG;           /* message type */
+   cfg.hdr.msgType     = TCFG;           /* message type */
    cfg.hdr.entId.ent   = ENTNW;          /* entity */
    cfg.hdr.entId.inst  = 0;              /* instance */
    cfg.hdr.elmId.elmnt = STNWGEN;      /* DLSAP */
@@ -984,11 +945,14 @@ static S16 ftmod_sigtran_nif_gen_config(void)
 
 }
 
+/*****************************************************************************/
+
 /* NIF - DLSAP configuration */
-static S16 ftmod_sigtran_nif_dlsap_config(U32 id)
+static int ftmod_nif_dlsap_config(int id)
 {
    Pst    pst; 
    NwMgmt cfg;
+   sng_nif_cfg_t* nif = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[id];
 
    memset((U8 *)&cfg, 0, sizeof(NwMgmt));
    memset((U8 *)&pst, 0, sizeof(Pst));
@@ -998,7 +962,7 @@ static S16 ftmod_sigtran_nif_dlsap_config(U32 id)
    pst.dstEnt = ENTNW;
 
    /* prepare header */
-	cfg.hdr.msgType     = TCFG;           /* message type */
+   cfg.hdr.msgType     = TCFG;           /* message type */
    cfg.hdr.entId.ent   = ENTNW;          /* entity */
    cfg.hdr.entId.inst  = 0;              /* instance */
    cfg.hdr.elmId.elmnt = STNWDLSAP;      /* DLSAP */
@@ -1009,42 +973,10 @@ static S16 ftmod_sigtran_nif_dlsap_config(U32 id)
    cfg.hdr.response.route       = RTESPEC;
    cfg.hdr.response.mem.region  = S_REG;
    cfg.hdr.response.mem.pool    = S_POOL;
-
-#if 0
-   switch(id)
-   {
-     case 0:   
-        {   
-           cfg.t.cfg.s.dlSapCfg.suId = 0;           /*ACC_DLSAP_0 */
-           cfg.t.cfg.s.dlSapCfg.m2uaLnkNmb  = 0;    /*ACC_DLSAP_0 */
-           cfg.t.cfg.s.dlSapCfg.mtp2LnkNmb  = 0;   /* ACC_DLSAP_0 */
-           break;
-        }
-     case 1:
-        {
-           cfg.t.cfg.s.dlSapCfg.suId = 1;           /*ACC_DLSAP_0 */
-           cfg.t.cfg.s.dlSapCfg.m2uaLnkNmb  = 1;    /*ACC_DLSAP_0 */
-           cfg.t.cfg.s.dlSapCfg.mtp2LnkNmb  = /* TODO */1;   /* ACC_DLSAP_0 */
-           break;
-        }
-     case 2:
-       {
-          cfg.t.cfg.s.dlSapCfg.suId = 2;           /*ACC_DLSAP_0 */
-          cfg.t.cfg.s.dlSapCfg.m2uaLnkNmb  = 2;    /*ACC_DLSAP_0 */
-          cfg.t.cfg.s.dlSapCfg.mtp2LnkNmb  = /* TODO */ 2;   /* ACC_DLSAP_0 */
-          break;
-       }   
-
-     default:
-      break;
-
-   }   
-#endif
-
-   cfg.t.cfg.s.dlSapCfg.suId = 1;           /*ACC_DLSAP_0 */
-   cfg.t.cfg.s.dlSapCfg.m2uaLnkNmb  = 1;    /*ACC_DLSAP_0 */
-   cfg.t.cfg.s.dlSapCfg.mtp2LnkNmb  = 1; /* TODO */  /* ACC_DLSAP_0 */
-      
+   cfg.t.cfg.s.dlSapCfg.suId 	    = nif->id;           
+   cfg.t.cfg.s.dlSapCfg.m2uaLnkNmb  = nif->m2uaLnkNmb; 
+   cfg.t.cfg.s.dlSapCfg.mtp2LnkNmb  = nif->mtp2LnkNmb;
+        
    cfg.t.cfg.s.dlSapCfg.reConfig.m2uaPst.selector   = 0;
    cfg.t.cfg.s.dlSapCfg.reConfig.m2uaPst.region     = S_REG;
    cfg.t.cfg.s.dlSapCfg.reConfig.m2uaPst.pool       = S_POOL;
@@ -1072,54 +1004,7 @@ static S16 ftmod_sigtran_nif_dlsap_config(U32 id)
      return (sng_cfg_nif (&pst, &cfg));
 }   
 
-static U32 ftmod_atoi(S8 *str)
-{
-   U32 idx = 0;
-   U32 value = 0;
-
-   while(str[idx] != '\0')
-   {
-      value = (10 * value)  + (str[idx] - '0');
-      idx++;
-   }   
-   return(value);
-}   
-
-static U32 ftmod_parse_conv_ipaddr(S8 *ptr)
-{
-
-  U32 ipAddr     = 0;
-  U32 idx        = 0; 
-  U32 tmpCnt     = 0; 
-  U32 len_ipAddr = 0;
-  S8  tmpStr[8] = { 0, 0, 0, 0, 0, 0, 0, 0};
-
-  len_ipAddr = strlen(ptr);
-
-  idx = 0;
-  tmpCnt = 0;
-  while(idx < len_ipAddr)
-  {
-     if( ptr[idx] != '.' )
-     {
-        tmpStr[tmpCnt++] = ptr[idx];
-     }
-     else
-     {
-       tmpStr[tmpCnt] = '\0';
-       ipAddr |= ftmod_atoi(tmpStr);
-       ipAddr <<= 8;   
-       tmpCnt = 0;
-     }   
-     idx++;
-  }
-  
-  tmpStr[tmpCnt] = '\0';  
-  ipAddr |= ftmod_atoi(tmpStr);
-
-  return(ipAddr); 
-}
-
+/*****************************************************************************/
 uint32_t iptoul(const char *ip)
 {
         char i,*tmp;
@@ -1144,78 +1029,85 @@ uint32_t iptoul(const char *ip)
         }
         return (uint32_t)val;
 }
-
 /***********************************************************************************************************************/
 
 int ftmod_ss7_m2ua_start(void){
+	int x=0;
 
+/***********************************************************************************************************************/
+	/* Enable DEBUGs*/
+	ftmod_m2ua_enable_debug();
+	ftmod_tucl_enable_debug();
 
-   S16 ret = 0x00;
-  
-   /* Send a control request to bind the TSAP between SCTP and TUCL */
-   if( (ret = ftmod_sigtran_tsap_bnd()) != ROK)
-   {
-      ftdm_log (FTDM_LOG_ERROR ,"\nControl request to bind TSAP of SCTP and TUCL : NOT OK\n");
-      return 1;
-   }   
-   else
-   {
-      ftdm_log (FTDM_LOG_INFO ,"\nControl request to bind TSAP of SCTP and TUCL: OK\n");
-   }
+/***********************************************************************************************************************/
+	for (x=1; g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0; x++) {
+		if (!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_CONFIGURED)) {
 
-   /* Send a control request to bind the SCTSAP between SCTP and M2UA */
-   if( (ret = ftmod_sigtran_sctsap_bnd()) != ROK)
-   {
-      ftdm_log (FTDM_LOG_ERROR ,"Control request to bind SCTSAP of M2UA and SCTP : NOT OK\n");
-      return 1;
-   }   
-   else
-   {
-      ftdm_log (FTDM_LOG_INFO ,"Control request to bind SCTSAP of M2UA and SCTP: OK\n");
-   }
+			/* Send a control request to bind the TSAP between SCTP and TUCL */
+			if(ftmod_sctp_tucl_tsap_bind(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"\nControl request to bind TSAP[%d] of SCTP and TUCL : NOT OK\n", x);
+				return 1;
+			} else {
+				ftdm_log (FTDM_LOG_INFO ,"\nControl request to bind TSAP[%d] of SCTP and TUCL: OK\n", x);
+			}
+		}
+	}
 
-   /* Send a control request to bind the DLSAP between NIF, M2UA and MTP-2
-   for(idx = 0; idx < 3; idx++) */
-   {
-      if( (ret = ftmod_sigtran_dlsap_bnd(1)) != ROK)
-      {
-         ftdm_log (FTDM_LOG_ERROR ,"Control request to bind DLSAP between NIF and M2UA: NOT OK\n");
-	 return 1;
-      }   
-      else
-      {
-         ftdm_log (FTDM_LOG_INFO ,"Control request to bind DLSAP between NIF and M2UA : OK\n");
-      }
+/***********************************************************************************************************************/
+	/* Send a control request to bind the SCTSAP between SCTP and M2UA */
+	for (x=1; g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0; x++) {
+		if (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED)) {
+			if(ftmod_m2ua_sctp_sctsap_bind(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"Control request to bind SCTSAP[%d] of M2UA and SCTP : NOT OK\n", x);
+				return 1;
+			} else {
+				ftdm_log (FTDM_LOG_INFO ,"Control request to bind SCTSAP[%d] of M2UA and SCTP: OK\n", x);
+			}
+		}
+	}/* END - M2UA Interfaces for loop*/
+/***********************************************************************************************************************/
 
-      if( (ret = ftmod_ss7_dlsap_bnd(0x01)) != ROK)
-      {
-         ftdm_log (FTDM_LOG_ERROR ,"Control request to bind DLSAP between NIF and MTP2  : NOT OK\n");
-	 return 1;
-      }   
-      else
-      {
-         ftdm_log (FTDM_LOG_INFO ,"Control request to bind DLSAP between NIF and MTP2 : OK\n");
-      }
-   }
+	for (x=1; g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0; x++) {
+		if (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED)) {
+			/* Send a control request to bind the DLSAP between NIF, M2UA and MTP-2 */
+			if(ftmod_nif_m2ua_dlsap_bind(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"Control request to bind DLSAP[%d] between NIF and M2UA: NOT OK\n", x);
+				return 1;
+			}else {
+				ftdm_log (FTDM_LOG_INFO ,"Control request to bind DLSAP[%d] between NIF and M2UA : OK\n", x);
+			}
+			if(ftmod_nif_mtp2_dlsap_bind(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"Control request to bind DLSAP[%d] between NIF and MTP2: NOT OK\n", x);
+				return 1;
+			}else {
+				ftdm_log (FTDM_LOG_INFO ,"Control request to bind DLSAP[%d] between NIF and MTP2 : OK\n", x);
+			}
+		}
+	}/* END - NIF Interfaces for loop*/
 
-   /* Send a control request to open endpoint */
-   if( (ret = ftmod_sigtran_open_endpoint()) != ROK)
-   {
-      ftdm_log (FTDM_LOG_ERROR ,"ftmod_sigtran_open_endpoint FAIL  \n");
-      return 1;
-   }   
-   else
-   {
-      ftdm_log (FTDM_LOG_ERROR ,"ftmod_sigtran_open_endpoint SUCCESS  \n");
-   }
+/***********************************************************************************************************************/
 
-   return 0;
+	for (x=1; g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0; x++) {
+		if (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED)) {
+			/* Send a control request to open endpoint */
+			if(ftmod_open_endpoint(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"ftmod_open_endpoint FAIL  \n");
+				return 1;
+			}else {
+				ftdm_log (FTDM_LOG_INFO ,"ftmod_open_endpoint SUCCESS  \n");
+			}
+		}
+	}
+
+	return 0;
 }
+/***********************************************************************************************************************/
 
-static S16 ftmod_sigtran_open_endpoint(void)
+static int ftmod_open_endpoint(int id)
 {
   Pst pst;
   MwMgmt cntrl;  
+  sng_m2ua_cfg_t* m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
 
   memset((U8 *)&pst, 0, sizeof(Pst));
   memset((U8 *)&cntrl, 0, sizeof(MwMgmt));
@@ -1239,17 +1131,18 @@ static S16 ftmod_sigtran_open_endpoint(void)
 
 
    cntrl.t.cntrl.action = AMWENDPOPEN;
-   cntrl.t.cntrl.s.suId = 0; /* M2UA sct sap Id */
+   cntrl.t.cntrl.s.suId = m2ua->id; /* M2UA sct sap Id */
 
      return (sng_cntrl_m2ua (&pst, &cntrl));
 
 }
 
-static S16 ftmod_sigtran_tsap_bnd(void)
+/***********************************************************************************************************************/
+static int ftmod_sctp_tucl_tsap_bind(int id)
 {
-
   Pst pst;
   SbMgmt cntrl;  
+  sng_sctp_link_t *k = &g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[id];
 
   memset((U8 *)&pst, 0, sizeof(Pst));
   memset((U8 *)&cntrl, 0, sizeof(SbMgmt));
@@ -1273,16 +1166,17 @@ static S16 ftmod_sigtran_tsap_bnd(void)
    cntrl.hdr.response.mem.pool    = S_POOL;
 
    cntrl.t.cntrl.action = ABND_ENA;
-   cntrl.t.cntrl.sapId  = 1;  /* SCT sap id configured at SCTP layer */
+   cntrl.t.cntrl.sapId  = k->id;  /* SCT sap id configured at SCTP layer */
 
      return (sng_cntrl_sctp (&pst, &cntrl));
-
 }  
+/***********************************************************************************************************************/
 
-static S16 ftmod_sigtran_sctsap_bnd(void)
+static int ftmod_m2ua_sctp_sctsap_bind(int id)
 {
   Pst pst;
   MwMgmt cntrl;  
+  sng_m2ua_cfg_t* m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
 
   memset((U8 *)&pst, 0, sizeof(Pst));
   memset((U8 *)&cntrl, 0, sizeof(MwMgmt));
@@ -1304,19 +1198,18 @@ static S16 ftmod_sigtran_sctsap_bnd(void)
    cntrl.hdr.response.mem.region  = S_REG;
    cntrl.hdr.response.mem.pool    = S_POOL;
 
-
    cntrl.t.cntrl.action = ABND;
-   cntrl.t.cntrl.s.suId = 0; /* M2UA sct sap Id */
+   cntrl.t.cntrl.s.suId = m2ua->id;
 
      return (sng_cntrl_m2ua (&pst, &cntrl));
 
 }   
-
-
-static S16 ftmod_sigtran_dlsap_bnd(U32 id)
+/***********************************************************************************************************************/
+static int ftmod_nif_m2ua_dlsap_bind(int id)
 {
   Pst pst;
   NwMgmt cntrl;  
+  sng_nif_cfg_t* nif = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[id];
 
   memset((U8 *)&pst, 0, sizeof(Pst));
   memset((U8 *)&cntrl, 0, sizeof(NwMgmt));
@@ -1326,7 +1219,7 @@ static S16 ftmod_sigtran_dlsap_bnd(U32 id)
   pst.dstEnt = ENTNW;
 
   /* prepare header */
-	cntrl.hdr.msgType     = TCNTRL;         /* message type */
+  cntrl.hdr.msgType     = TCNTRL;         /* message type */
    cntrl.hdr.entId.ent   = ENTNW;          /* entity */
    cntrl.hdr.entId.inst  = 0;              /* instance */
    cntrl.hdr.elmId.elmnt = STNWDLSAP;       /* General */
@@ -1339,27 +1232,29 @@ static S16 ftmod_sigtran_dlsap_bnd(U32 id)
    cntrl.hdr.response.mem.pool    = S_POOL;
 
    cntrl.t.cntrl.action = ABND;
-   cntrl.t.cntrl.suId = id;      /* NIF DL sap Id */
+   cntrl.t.cntrl.suId = nif->id;      /* NIF DL sap Id */
    cntrl.t.cntrl.entity = ENTMW; /* M2UA */
 
      return (sng_cntrl_nif (&pst, &cntrl));
 
 }   
 
-static S16 ftmod_ss7_dlsap_bnd(U32 id)
+/***********************************************************************************************************************/
+static int ftmod_nif_mtp2_dlsap_bind(int id)
 {
-   Pst pst;
-   NwMgmt cntrl;  
+  Pst pst;
+  NwMgmt cntrl;  
+  sng_nif_cfg_t* nif = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[id];
 
-   memset((U8 *)&pst, 0, sizeof(Pst));
-   memset((U8 *)&cntrl, 0, sizeof(NwMgmt));
+  memset((U8 *)&pst, 0, sizeof(Pst));
+  memset((U8 *)&cntrl, 0, sizeof(NwMgmt));
 
-   smPstInit(&pst);
+  smPstInit(&pst);
 
-   pst.dstEnt = ENTNW;
+  pst.dstEnt = ENTNW;
 
-   /* prepare header */
-   cntrl.hdr.msgType     = TCNTRL;         /* message type */
+  /* prepare header */
+  cntrl.hdr.msgType     = TCNTRL;         /* message type */
    cntrl.hdr.entId.ent   = ENTNW;          /* entity */
    cntrl.hdr.entId.inst  = 0;              /* instance */
    cntrl.hdr.elmId.elmnt = STNWDLSAP;       /* General */
@@ -1372,8 +1267,73 @@ static S16 ftmod_ss7_dlsap_bnd(U32 id)
    cntrl.hdr.response.mem.pool    = S_POOL;
 
    cntrl.t.cntrl.action = ABND;
-   cntrl.t.cntrl.suId = id;      /* NIF DL sap Id */
-   cntrl.t.cntrl.entity = ENTSD; /* MTP2 */
+   cntrl.t.cntrl.suId = nif->id;      /* NIF DL sap Id */
+   cntrl.t.cntrl.entity = ENTSD;      /* MTP2 */
 
      return (sng_cntrl_nif (&pst, &cntrl));
+
 }
+
+/***********************************************************************************************************************/
+static int ftmod_m2ua_enable_debug()
+{
+	Pst pst;
+	MwMgmt cntrl;  
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&cntrl, 0, sizeof(MwMgmt));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTMW;
+
+	/* prepare header */
+	cntrl.hdr.msgType     = TCNTRL;         /* message type */
+	cntrl.hdr.entId.ent   = ENTMW;          /* entity */
+	cntrl.hdr.entId.inst  = 0;              /* instance */
+	cntrl.hdr.elmId.elmnt = STMWGEN;       /* General */
+
+	cntrl.hdr.response.selector    = 0;
+	cntrl.hdr.response.prior       = PRIOR0;
+	cntrl.hdr.response.route       = RTESPEC;
+	cntrl.hdr.response.mem.region  = S_REG;
+	cntrl.hdr.response.mem.pool    = S_POOL;
+
+	cntrl.t.cntrl.action = AENA;
+	cntrl.t.cntrl.subAction = SADBG;
+	cntrl.t.cntrl.s.dbgMask   = 0xFFFF;
+
+	return (sng_cntrl_m2ua (&pst, &cntrl));
+}
+/***********************************************************************************************************************/
+static int ftmod_tucl_enable_debug()
+{
+	Pst pst;
+	HiMngmt cntrl;  
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&cntrl, 0, sizeof(HiMngmt));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTHI;
+
+	/* prepare header */
+	cntrl.hdr.msgType     = TCNTRL;         /* message type */
+	cntrl.hdr.entId.ent   = ENTHI;          /* entity */
+	cntrl.hdr.entId.inst  = 0;              /* instance */
+	cntrl.hdr.elmId.elmnt = STGEN;       /* General */
+
+	cntrl.hdr.response.selector    = 0;
+	cntrl.hdr.response.prior       = PRIOR0;
+	cntrl.hdr.response.route       = RTESPEC;
+	cntrl.hdr.response.mem.region  = S_REG;
+	cntrl.hdr.response.mem.pool    = S_POOL;
+
+	cntrl.t.cntrl.action    = AENA;
+	cntrl.t.cntrl.subAction = SADBG;
+	cntrl.t.cntrl.ctlType.hiDbg.dbgMask = 0xFFFF;
+
+	return (sng_cntrl_tucl (&pst, &cntrl));
+}
+/***********************************************************************************************************************/
