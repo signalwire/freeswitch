@@ -52,7 +52,7 @@ static int ftmod_ss7_fill_in_m2ua_interface(sng_m2ua_cfg_t *m2ua_iface);
 static int ftmod_ss7_fill_in_m2ua_peer_interface(sng_m2ua_peer_cfg_t *m2ua_peer_face);
 static int ftmod_ss7_fill_in_m2ua_clust_interface(sng_m2ua_cluster_cfg_t *m2ua_cluster_face);
 
-static ftdm_status_t ftmod_m3ua_parse_sctp_link(ftdm_conf_node_t *node);
+static int ftmod_ss7_parse_sctp_link(ftdm_conf_node_t *node);
 
 /******************************************************************************/
 int ftmod_ss7_parse_nif_interfaces(ftdm_conf_node_t *nif_interfaces)
@@ -95,6 +95,11 @@ static int ftmod_ss7_parse_nif_interface(ftdm_conf_node_t *nif_interface)
 	/* initalize the nif intf and isap structure */
 	memset(&sng_nif, 0x0, sizeof(sng_nif));
 
+	if(!nif_interface){
+		SS7_ERROR("ftmod_ss7_parse_nif_interface: Null XML Node pointer \n");
+		return FTDM_FAIL;
+	}
+
 	/* confirm that we are looking at an nif_interface */
 	if (strcasecmp(nif_interface->name, "sng_nif_interface")) {
 		SS7_ERROR("We're looking at \"%s\"...but we're supposed to be looking at \"nif_interface\"!\n",nif_interface->name);
@@ -118,16 +123,16 @@ static int ftmod_ss7_parse_nif_interface(ftdm_conf_node_t *nif_interface)
 			sng_nif.id = atoi(parm->val);
 			SS7_DEBUG("Found an nif id = %d\n", sng_nif.id);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "m2uaLnkNmb")) {
+		} else if (!strcasecmp(parm->var, "m2ua_link_nmb")) {
 		/**********************************************************************/
 			sng_nif.m2uaLnkNmb = atoi(parm->val);
-			SS7_DEBUG("Found an nif m2uaLnkNmb = %d\n", sng_nif.m2uaLnkNmb);
+			SS7_DEBUG("Found an nif m2ua_link_nmb = %d\n", sng_nif.m2uaLnkNmb);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "mtp2LnkNmb")) {
+		} else if (!strcasecmp(parm->var, "mtp2_link_nmb")) {
 		/**********************************************************************/
 			sng_nif.mtp2LnkNmb=atoi(parm->val);
 
-			SS7_DEBUG("Found an nif mtp2LnkNmb = %d\n", sng_nif.mtp2LnkNmb);
+			SS7_DEBUG("Found an nif mtp2_link_nmb = %d\n", sng_nif.mtp2LnkNmb);
 		/**********************************************************************/
 		} else {
 		/**********************************************************************/
@@ -204,6 +209,11 @@ static int ftmod_ss7_parse_m2ua_interface(ftdm_conf_node_t *m2ua_interface)
 	/* initalize the m2ua intf */
 	memset(&sng_m2ua, 0x0, sizeof(sng_m2ua));
 
+	if(!m2ua_interface){
+		SS7_ERROR("ftmod_ss7_parse_m2ua_interface: Null XML Node pointer \n");
+		return FTDM_FAIL;
+	}
+
 	/* confirm that we are looking at an nif_interface */
 	if (strcasecmp(m2ua_interface->name, "sng_m2ua_interface")) {
 		SS7_ERROR("We're looking at \"%s\"...but we're supposed to be looking at \"m2ua_interface\"!\n",m2ua_interface->name);
@@ -227,7 +237,7 @@ static int ftmod_ss7_parse_m2ua_interface(ftdm_conf_node_t *m2ua_interface)
 			sng_m2ua.id = atoi(parm->val);
 			SS7_DEBUG("Found an m2ua id = %d\n", sng_m2ua.id);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "nodeType")) {
+		} else if (!strcasecmp(parm->var, "node_type")) {
 			/**********************************************************************/
 			if(!strcasecmp(parm->val, "SGP")){
 				sng_m2ua.nodeType = SNG_M2UA_NODE_TYPE_SGP;
@@ -238,25 +248,25 @@ static int ftmod_ss7_parse_m2ua_interface(ftdm_conf_node_t *m2ua_interface)
 				SS7_ERROR("Found an invalid NodeType Parameter Value[%s]\n", parm->val);
 				return FTDM_FAIL;
 			}
-			SS7_DEBUG("Found an nif nodeType = %d\n", sng_m2ua.nodeType);
+			SS7_DEBUG("Found an nif node_type = %d\n", sng_m2ua.nodeType);
 			/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "sctpId")) {
+		} else if (!strcasecmp(parm->var, "sctp_id")) {
 		/**********************************************************************/
 			sng_m2ua.sctpId=atoi(parm->val);
 
-			SS7_DEBUG("Found an m2ua sctpId = %d\n", sng_m2ua.sctpId);
+			SS7_DEBUG("Found an m2ua sctp_id = %d\n", sng_m2ua.sctpId);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "peerdId")) {
+		} else if (!strcasecmp(parm->var, "peerd_id")) {
 		/**********************************************************************/
 			sng_m2ua.peerdId=atoi(parm->val);
 
-			SS7_DEBUG("Found an m2ua peerdId = %d\n", sng_m2ua.peerdId);
+			SS7_DEBUG("Found an m2ua peerd_id = %d\n", sng_m2ua.peerdId);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "clusterId")) {
+		} else if (!strcasecmp(parm->var, "cluster_id")) {
 		/**********************************************************************/
 			sng_m2ua.clusterId=atoi(parm->val);
 
-			SS7_DEBUG("Found an m2ua clusterId = %d\n", sng_m2ua.clusterId);
+			SS7_DEBUG("Found an m2ua cluster_id = %d\n", sng_m2ua.clusterId);
 		/**********************************************************************/
 		} else {
 		/**********************************************************************/
@@ -335,6 +345,11 @@ static int ftmod_ss7_parse_m2ua_peer_interface(ftdm_conf_node_t *m2ua_peer_inter
 	/* initalize the m2ua intf */
 	memset(&sng_m2ua_peer, 0x0, sizeof(sng_m2ua_peer));
 
+	if(!m2ua_peer_interface){
+		SS7_ERROR("ftmod_ss7_parse_m2ua_peer_interface: Null XML Node pointer \n");
+		return FTDM_FAIL;
+	}
+
 	/* confirm that we are looking at an m2ua_peer_interface */
 	if (strcasecmp(m2ua_peer_interface->name, "sng_m2ua_peer_interface")) {
 		SS7_ERROR("We're looking at \"%s\"...but we're supposed to be looking at \"m2ua_peer_interface\"!\n",m2ua_peer_interface->name);
@@ -358,7 +373,7 @@ static int ftmod_ss7_parse_m2ua_peer_interface(ftdm_conf_node_t *m2ua_peer_inter
 			sng_m2ua_peer.id = atoi(parm->val);
 			SS7_DEBUG("Found an sng_m2ua_peer id = %d\n", sng_m2ua_peer.id);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "aspIdFlag")) {
+		} else if (!strcasecmp(parm->var, "asp_id_flag")) {
 			/**********************************************************************/
 			if(!strcasecmp(parm->val, "TRUE")){
 				sng_m2ua_peer.aspIdFlag = 0x01;
@@ -370,13 +385,19 @@ static int ftmod_ss7_parse_m2ua_peer_interface(ftdm_conf_node_t *m2ua_peer_inter
 			}
 			SS7_DEBUG("Found an sng_m2ua_peer aspIdFlag = %d\n", sng_m2ua_peer.aspIdFlag);
 			/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "selfAspId")) {
+		} else if (!strcasecmp(parm->var, "self_asp_id")) {
 		/**********************************************************************/
 			sng_m2ua_peer.selfAspId=atoi(parm->val);
 
-			SS7_DEBUG("Found an sng_m2ua_peer selfAspId = %d\n", sng_m2ua_peer.selfAspId);
+			SS7_DEBUG("Found an sng_m2ua_peer self_asp_id = %d\n", sng_m2ua_peer.selfAspId);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "DestAddr")) {
+		} else if (!strcasecmp(parm->var, "sctp_id")) {
+		/**********************************************************************/
+			sng_m2ua_peer.sctpId = atoi(parm->val);
+
+			SS7_DEBUG("Found an sng_m2ua_peer sctp_id = %d\n", sng_m2ua_peer.sctpId);
+		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "dest_addr")) {
 		/**********************************************************************/
 			if (sng_m2ua_peer.numDestAddr < SCT_MAX_NET_ADDRS) {
                                 sng_m2ua_peer.destAddrList[sng_m2ua_peer.numDestAddr] = iptoul (parm->val);
@@ -386,17 +407,11 @@ static int ftmod_ss7_parse_m2ua_peer_interface(ftdm_conf_node_t *m2ua_peer_inter
                                 SS7_ERROR("sng_m2ua_peer - too many dest address configured. dropping %s \n", parm->val);
                         }
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "locOutStrms")) {
+		} else if (!strcasecmp(parm->var, "loc_out_strms")) {
 		/**********************************************************************/
 			sng_m2ua_peer.locOutStrms=atoi(parm->val);
 
-			SS7_DEBUG("Found an sng_m2ua_peer locOutStrms = %d\n", sng_m2ua_peer.locOutStrms);
-		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "sctpId")) {
-		/**********************************************************************/
-			sng_m2ua_peer.sctpId=atoi(parm->val);
-
-			SS7_DEBUG("Found an sng_m2ua_peer sctpId = %d\n", sng_m2ua_peer.sctpId);
+			SS7_DEBUG("Found an sng_m2ua_peer loc_out_strms = %d\n", sng_m2ua_peer.locOutStrms);
 		/**********************************************************************/
 		} else {
 		/**********************************************************************/
@@ -481,6 +496,11 @@ static int ftmod_ss7_parse_m2ua_clust_interface(ftdm_conf_node_t *m2ua_cluster_i
 	/* initalize the m2ua_cluster_interface */
 	memset(&sng_m2ua_cluster, 0x0, sizeof(sng_m2ua_cluster));
 
+	if (!m2ua_cluster_interface){
+		SS7_ERROR("ftmod_ss7_parse_m2ua_clust_interface - NULL XML Node pointer \n");
+		return FTDM_FAIL;
+	}
+
 	/* confirm that we are looking at an m2ua_cluster_interface */
 	if (strcasecmp(m2ua_cluster_interface->name, "sng_m2ua_cluster_interface")) {
 		SS7_ERROR("We're looking at \"%s\"...but we're supposed to be looking at \"m2ua_cluster_interface\"!\n",m2ua_cluster_interface->name);
@@ -504,13 +524,13 @@ static int ftmod_ss7_parse_m2ua_clust_interface(ftdm_conf_node_t *m2ua_cluster_i
 			sng_m2ua_cluster.id = atoi(parm->val);
 			SS7_DEBUG("Found an sng_m2ua_cluster id = %d\n", sng_m2ua_cluster.id);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "trfMode")) {
+		} else if (!strcasecmp(parm->var, "trf_mode")) {
 			/**********************************************************************/
-			if(!strcasecmp(parm->val, "LOADSHARE")){
+			if(!strcasecmp(parm->val, "loadshare")){
 				sng_m2ua_cluster.trfMode = SNG_M2UA_TRF_MODE_LOADSHARE;
-			} else if(!strcasecmp(parm->val, "OVERRIDE")){
+			} else if(!strcasecmp(parm->val, "override")){
 				sng_m2ua_cluster.trfMode = SNG_M2UA_TRF_MODE_OVERRIDE;
-			} else if(!strcasecmp(parm->val, "BROADCAST")){
+			} else if(!strcasecmp(parm->val, "broadcast")){
 				sng_m2ua_cluster.trfMode = SNG_M2UA_TRF_MODE_BROADCAST;
 			} else {
 				SS7_ERROR("Found an invalid trfMode Parameter Value[%s]..adding default one[ANY]\n", parm->val);
@@ -518,13 +538,13 @@ static int ftmod_ss7_parse_m2ua_clust_interface(ftdm_conf_node_t *m2ua_cluster_i
 			}
 			SS7_DEBUG("Found an sng_m2ua_cluster.trfMode  = %d\n", sng_m2ua_cluster.trfMode);
 			/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "loadShareAlgo")) {
+		} else if (!strcasecmp(parm->var, "load_share_algo")) {
 		/**********************************************************************/
-			if(!strcasecmp(parm->val, "Round_Robin")){
+			if(!strcasecmp(parm->val, "roundrobin")){
 				sng_m2ua_cluster.loadShareAlgo = SNG_M2UA_LOAD_SHARE_ALGO_RR;
-			} else if(!strcasecmp(parm->val, "Link_Specified")){
+			} else if(!strcasecmp(parm->val, "linkspecified")){
 				sng_m2ua_cluster.loadShareAlgo = SNG_M2UA_LOAD_SHARE_ALGO_LS;
-			} else if(!strcasecmp(parm->val, "Customer_Specified")){
+			} else if(!strcasecmp(parm->val, "customerspecified")){
 				sng_m2ua_cluster.loadShareAlgo = SNG_M2UA_LOAD_SHARE_ALGO_CS;
 			} else {
 				SS7_ERROR("Found an invalid loadShareAlgo Parameter Value[%s]\n", parm->val);
@@ -533,7 +553,7 @@ static int ftmod_ss7_parse_m2ua_clust_interface(ftdm_conf_node_t *m2ua_cluster_i
 
 			SS7_DEBUG("Found an sng_m2ua_cluster.loadShareAlgo = %d\n", sng_m2ua_cluster.loadShareAlgo);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "peerId")) {
+		} else if (!strcasecmp(parm->var, "peer_id")) {
 			/**********************************************************************/
 			if(sng_m2ua_cluster.numOfPeers < MW_MAX_NUM_OF_PEER) {
 				sng_m2ua_cluster.peerIdLst[sng_m2ua_cluster.numOfPeers] = atoi(parm->val);
@@ -586,7 +606,7 @@ static int ftmod_ss7_fill_in_m2ua_clust_interface(sng_m2ua_cluster_cfg_t *m2ua_c
 }
 
 /******************************************************************************/
-ftdm_status_t ftmod_m3ua_parse_sctp_links(ftdm_conf_node_t *node)
+int ftmod_ss7_parse_sctp_links(ftdm_conf_node_t *node)
 {
 	ftdm_conf_node_t	*node_sctp_link = NULL;
 
@@ -601,7 +621,7 @@ ftdm_status_t ftmod_m3ua_parse_sctp_links(ftdm_conf_node_t *node)
 	}
 
 	for (node_sctp_link = node->child; node_sctp_link != NULL; node_sctp_link = node_sctp_link->next) {
-		if (ftmod_m3ua_parse_sctp_link(node_sctp_link) != FTDM_SUCCESS) {
+		if (ftmod_ss7_parse_sctp_link(node_sctp_link) != FTDM_SUCCESS) {
 			SS7_ERROR("SCTP - Failed to parse <node_sctp_link>. \n");
 			return FTDM_FAIL;
 		}
@@ -611,14 +631,16 @@ ftdm_status_t ftmod_m3ua_parse_sctp_links(ftdm_conf_node_t *node)
 }
 
 /******************************************************************************/
-static ftdm_status_t ftmod_m3ua_parse_sctp_link(ftdm_conf_node_t *node)
+static int ftmod_ss7_parse_sctp_link(ftdm_conf_node_t *node)
 {
 	ftdm_conf_parameter_t	*param = NULL;
 	int					num_params = 0;
 	int 					i=0;
 
-	if (!node)
+	if (!node){
+		SS7_ERROR("SCTP - NULL XML Node pointer \n");
 		return FTDM_FAIL;
+	}
 
 	param = node->parameters;
 	num_params = node->n_parameters;
@@ -637,17 +659,17 @@ static ftdm_status_t ftmod_m3ua_parse_sctp_link(ftdm_conf_node_t *node)
 		if (!strcasecmp(param->var, "name")) {
 			int n_strlen = strlen(param->val);
 			strncpy((char*)t_link.name, param->val, (n_strlen>MAX_NAME_LEN)?MAX_NAME_LEN:n_strlen);
-			SS7_DEBUG("SCTP - Parsing <sctp_link> with name = %s\n", param->val);
+			SS7_DEBUG("SCTP - Parsing <sng_sctp_interface> with name = %s\n", param->val);
 		}
 		else if (!strcasecmp(param->var, "id")) {
 			t_link.id = atoi(param->val);
-			SS7_DEBUG("SCTP - Parsing <sctp_link> with id = %s\n", param->val);
+			SS7_DEBUG("SCTP - Parsing <sng_sctp_interface> with id = %s\n", param->val);
 		}
-		else if (!strcasecmp(param->var, "srcAddr")) {
+		else if (!strcasecmp(param->var, "src_addr")) {
 			if (t_link.numSrcAddr < SCT_MAX_NET_ADDRS) {
 				t_link.srcAddrList[t_link.numSrcAddr+1] = iptoul (param->val);
 				t_link.numSrcAddr++;
-				SS7_DEBUG("SCTP - Parsing <sctp_link> with source IP Address = %s\n", param->val);
+				SS7_DEBUG("SCTP - Parsing <sng_sctp_interface> with source IP Address = %s\n", param->val);
 			} else {
 				SS7_ERROR("SCTP - too many source address configured. dropping %s \n", param->val);
 			}

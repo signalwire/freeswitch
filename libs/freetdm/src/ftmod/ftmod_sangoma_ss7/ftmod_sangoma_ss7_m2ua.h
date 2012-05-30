@@ -114,7 +114,7 @@ int ftmod_ss7_parse_nif_interfaces(ftdm_conf_node_t *nif_interfaces);
 int ftmod_ss7_parse_m2ua_interfaces(ftdm_conf_node_t *m2ua_interfaces);
 int ftmod_ss7_parse_m2ua_peer_interfaces(ftdm_conf_node_t *m2ua_peer_interfaces);
 int ftmod_ss7_parse_m2ua_clust_interfaces(ftdm_conf_node_t *m2ua_clust_interfaces);
-ftdm_status_t ftmod_m3ua_parse_sctp_links(ftdm_conf_node_t *node);
+int ftmod_ss7_parse_sctp_links(ftdm_conf_node_t *node);
 uint32_t iptoul(const char *ip);
 
 int ftmod_ss7_m2ua_start(void);

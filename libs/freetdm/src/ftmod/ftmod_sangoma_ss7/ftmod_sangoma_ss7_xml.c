@@ -510,15 +510,6 @@ static int ftmod_ss7_parse_sng_isup(ftdm_conf_node_t *sng_isup)
 		return FTDM_FAIL;
 	}
 
-	if (ftmod_ss7_parse_mtp_linksets(mtp_linksets)) {
-		SS7_ERROR("Failed to parse \"mtp_linksets\"!\n");
-		return FTDM_FAIL;
-	}
-
-	if (ftmod_ss7_parse_mtp_routes(mtp_routes)) {	
-		SS7_ERROR("Failed to parse \"mtp_routes\"!\n");
-		return FTDM_FAIL;
-	}
 
 	switch(g_ftdm_operating_mode)
 	{
@@ -526,6 +517,16 @@ static int ftmod_ss7_parse_sng_isup(ftdm_conf_node_t *sng_isup)
 			{
 				if (mtp3_links && ftmod_ss7_parse_mtp3_links(mtp3_links)) {
 					SS7_ERROR("Failed to parse \"mtp3_links\"!\n");
+					return FTDM_FAIL;
+				}
+
+				if (ftmod_ss7_parse_mtp_linksets(mtp_linksets)) {
+					SS7_ERROR("Failed to parse \"mtp_linksets\"!\n");
+					return FTDM_FAIL;
+				}
+
+				if (ftmod_ss7_parse_mtp_routes(mtp_routes)) {	
+					SS7_ERROR("Failed to parse \"mtp_routes\"!\n");
 					return FTDM_FAIL;
 				}
 
@@ -542,11 +543,20 @@ static int ftmod_ss7_parse_sng_isup(ftdm_conf_node_t *sng_isup)
 			}
 		case SNG_SS7_OPR_MODE_M2UA_SG: 
 			{
-				if (ftmod_m3ua_parse_sctp_links(sctp_ifaces) != FTDM_SUCCESS) {
+				if (ftmod_ss7_parse_mtp_linksets(mtp_linksets)) {
+					SS7_ERROR("Failed to parse \"mtp_linksets\"!\n");
+					return FTDM_FAIL;
+				}
+
+				if (ftmod_ss7_parse_mtp_routes(mtp_routes)) {	
+					SS7_ERROR("Failed to parse \"mtp_routes\"!\n");
+					return FTDM_FAIL;
+				}
+
+				if (ftmod_ss7_parse_sctp_links(sctp_ifaces) != FTDM_SUCCESS) {
 					SS7_ERROR("Failed to parse <sctp_links>!\n");
 					return FTDM_FAIL;
 				}
-				SS7_INFO("Finished ftmod_m3ua_parse_sctp_links!\n");
 
 				if (nif_ifaces && ftmod_ss7_parse_nif_interfaces(nif_ifaces)) {
 					SS7_ERROR("Failed to parse \"nif_ifaces\"!\n");
