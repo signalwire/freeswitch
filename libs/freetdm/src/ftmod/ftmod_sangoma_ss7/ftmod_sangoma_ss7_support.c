@@ -993,7 +993,7 @@ ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *
 	fwdCallInd->sccpMethInd.pres 		= PRSNT_NODEF;
 	fwdCallInd->sccpMethInd.val 		= SCCPMTH_NOIND;
 	
-	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "iam_fwd_ind_HEX");
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_iam_fwd_ind_hex");
 	if (!ftdm_strlen_zero(val)) {
 		uint16_t val_hex = 0;
 		if (four_char_to_hex (val, &val_hex) == FTDM_FAIL) {
@@ -1028,7 +1028,12 @@ ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *
 	fwdCallInd->isdnUsrPrtInd.val 		= ISUP_USED;
 	fwdCallInd->isdnUsrPrtPrfInd.val 	= PREF_PREFAW;
 
-	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "iam_fwd_ind_isdn_access_ind");
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_iam_fwd_ind_isdn_access_ind");
+	if (ftdm_strlen_zero(val)) {
+		/* Kept for backward compatibility */
+		val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "iam_fwd_ind_isdn_access_ind");
+	}
+
 	if (!ftdm_strlen_zero(val)) {
 		acc_val = (int)atoi(val);
 	}

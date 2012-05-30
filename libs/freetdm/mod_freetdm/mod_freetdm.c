@@ -1554,6 +1554,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_ocn_pres", sipvar);
 		}
+		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-IAM-FWD-IND-HEX");
+		if (sipvar) {
+			ftdm_usrmsg_add_var(&usrmsg, "ss7_iam_fwd_ind_hex", sipvar);
+		}
 	}
 
 	if (switch_test_flag(outbound_profile, SWITCH_CPF_SCREEN)) {
@@ -1594,11 +1598,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		ftdm_set_calling_party_category(var, (uint8_t *)&caller_data.cpc);
 	}
 
-	if ((var = channel_get_variable(session, var_event, "iam_fwd_ind_HEX"))) {
-		ftdm_usrmsg_add_var(&usrmsg, "iam_fwd_ind_HEX", var);
-	}
-
-	
 	if (!zstr(dest)) {
 		ftdm_set_string(caller_data.dnis.digits, dest);
 	}
