@@ -64,9 +64,113 @@ static int ftmod_nif_m2ua_dlsap_bind(int id);
 static int ftmod_nif_mtp2_dlsap_bind(int id);
 static int ftmod_m2ua_enable_debug(void);
 static int ftmod_tucl_enable_debug(void);
+static int ftmod_sctp_enable_debug(void);
+
+static int ftmod_ss7_sctp_shutdown(void);
+static int ftmod_ss7_m2ua_shutdown(void);
+static int ftmod_ss7_tucl_shutdown(void);
 
 ftdm_status_t sng_m2ua_init(void); 
 ftdm_status_t sng_m2ua_cfg(void);
+
+/******************************************************************************/
+void ftmod_ss7_m2ua_free()
+{
+        ftmod_ss7_m2ua_shutdown();
+        ftmod_ss7_sctp_shutdown();
+        ftmod_ss7_tucl_shutdown();
+
+        sng_isup_free_m2ua();
+        sng_isup_free_sctp();
+        sng_isup_free_tucl();
+}
+/******************************************************************************/
+static int ftmod_ss7_tucl_shutdown()
+{
+	Pst pst;
+	HiMngmt cntrl;  
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&cntrl, 0, sizeof(HiMngmt));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTHI;
+
+	/* prepare header */
+	cntrl.hdr.msgType     = TCNTRL;         /* message type */
+	cntrl.hdr.entId.ent   = ENTHI;          /* entity */
+	cntrl.hdr.entId.inst  = 0;              /* instance */
+	cntrl.hdr.elmId.elmnt = STGEN;       /* General */
+
+	cntrl.hdr.response.selector    = 0;
+	cntrl.hdr.response.prior       = PRIOR0;
+	cntrl.hdr.response.route       = RTESPEC;
+	cntrl.hdr.response.mem.region  = S_REG;
+	cntrl.hdr.response.mem.pool    = S_POOL;
+
+	cntrl.t.cntrl.action    = ASHUTDOWN;
+
+	return (sng_cntrl_tucl (&pst, &cntrl));
+}
+/******************************************************************************/
+static int ftmod_ss7_m2ua_shutdown()
+{
+	Pst pst;
+	MwMgmt cntrl;  
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&cntrl, 0, sizeof(MwMgmt));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTMW;
+
+	/* prepare header */
+	cntrl.hdr.msgType     = TCNTRL;         /* message type */
+	cntrl.hdr.entId.ent   = ENTMW;          /* entity */
+	cntrl.hdr.entId.inst  = 0;              /* instance */
+	cntrl.hdr.elmId.elmnt = STMWGEN;       /* General */
+
+	cntrl.hdr.response.selector    = 0;
+	cntrl.hdr.response.prior       = PRIOR0;
+	cntrl.hdr.response.route       = RTESPEC;
+	cntrl.hdr.response.mem.region  = S_REG;
+	cntrl.hdr.response.mem.pool    = S_POOL;
+
+	cntrl.t.cntrl.action = ASHUTDOWN;
+
+	return (sng_cntrl_m2ua (&pst, &cntrl));
+}
+/***********************************************************************************************************************/
+static int ftmod_ss7_sctp_shutdown()
+{
+	Pst pst;
+	SbMgmt cntrl;  
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&cntrl, 0, sizeof(SbMgmt));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTSB;
+
+	/* prepare header */
+	cntrl.hdr.msgType     = TCNTRL;         /* message type */
+	cntrl.hdr.entId.ent   = ENTSB;          /* entity */
+	cntrl.hdr.entId.inst  = 0;              /* instance */
+	cntrl.hdr.elmId.elmnt = STSBGEN;       /* General */
+
+	cntrl.hdr.response.selector    = 0;
+	cntrl.hdr.response.prior       = PRIOR0;
+	cntrl.hdr.response.route       = RTESPEC;
+	cntrl.hdr.response.mem.region  = S_REG;
+	cntrl.hdr.response.mem.pool    = S_POOL;
+
+	cntrl.t.cntrl.action = ASHUTDOWN;
+
+	return (sng_cntrl_sctp (&pst, &cntrl));
+}
 
 /******************************************************************************/
 
@@ -1036,6 +1140,7 @@ int ftmod_ss7_m2ua_start(void){
 
 /***********************************************************************************************************************/
 	/* Enable DEBUGs*/
+	ftmod_sctp_enable_debug();
 	ftmod_m2ua_enable_debug();
 	ftmod_tucl_enable_debug();
 
@@ -1275,6 +1380,38 @@ static int ftmod_nif_mtp2_dlsap_bind(int id)
 }
 
 /***********************************************************************************************************************/
+static int ftmod_sctp_enable_debug()
+{
+	Pst pst;
+	SbMgmt cntrl;  
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&cntrl, 0, sizeof(SbMgmt));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTSB;
+
+	/* prepare header */
+	cntrl.hdr.msgType     = TCNTRL;         /* message type */
+	cntrl.hdr.entId.ent   = ENTSB;          /* entity */
+	cntrl.hdr.entId.inst  = 0;              /* instance */
+	cntrl.hdr.elmId.elmnt = STSBGEN;       /* General */
+
+	cntrl.hdr.response.selector    = 0;
+	cntrl.hdr.response.prior       = PRIOR0;
+	cntrl.hdr.response.route       = RTESPEC;
+	cntrl.hdr.response.mem.region  = S_REG;
+	cntrl.hdr.response.mem.pool    = S_POOL;
+
+	cntrl.t.cntrl.action = AENA;
+	cntrl.t.cntrl.subAction = SADBG;
+	cntrl.t.cntrl.dbgMask   = 0xFFFF;
+
+	return (sng_cntrl_sctp (&pst, &cntrl));
+}
+/***********************************************************************************************************************/
+
 static int ftmod_m2ua_enable_debug()
 {
 	Pst pst;

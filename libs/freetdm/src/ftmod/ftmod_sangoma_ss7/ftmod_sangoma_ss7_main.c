@@ -2687,6 +2687,10 @@ static FIO_SIG_UNLOAD_FUNCTION(ftdm_sangoma_ss7_unload)
 		sngss7_clear_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY_STARTED);
 	}
 
+	if(SNG_SS7_OPR_MODE_ISUP != g_ftdm_operating_mode){
+		ftmod_ss7_m2ua_free();
+	}
+
 
 	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SM_STARTED)) {
 		sng_isup_free_sm();

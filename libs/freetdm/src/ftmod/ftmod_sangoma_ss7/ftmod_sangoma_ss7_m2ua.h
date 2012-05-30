@@ -118,6 +118,7 @@ int ftmod_ss7_parse_sctp_links(ftdm_conf_node_t *node);
 uint32_t iptoul(const char *ip);
 
 int ftmod_ss7_m2ua_start(void);
+void ftmod_ss7_m2ua_free(void);
 
 ftdm_status_t ftmod_ss7_m2ua_cfg(void);
 
