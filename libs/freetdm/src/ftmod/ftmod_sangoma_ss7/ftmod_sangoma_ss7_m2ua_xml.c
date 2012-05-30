@@ -447,7 +447,7 @@ static int ftmod_ss7_fill_in_m2ua_peer_interface(sng_m2ua_peer_cfg_t *m2ua_peer_
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].locOutStrms 	= m2ua_peer_iface->locOutStrms;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].numDestAddr 	= m2ua_peer_iface->numDestAddr;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].sctpId 		= m2ua_peer_iface->sctpId;
-	for (k=1; k<=m2ua_peer_iface->numDestAddr; k++) {
+	for (k=0; k<m2ua_peer_iface->numDestAddr; k++) {
 		g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].destAddrList[k] = m2ua_peer_iface->destAddrList[k];	
 	}
 
