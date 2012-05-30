@@ -6,10 +6,10 @@
 			   <param name="id" value="1"/>                			<!-- /* equivalent to SSAP ID of MEGACO layer */-->
 			   <param name="protocol" value="MEGACO"/>         		<!-- /* Protocol Type , Supported values are MEGACO/MGCP */ -->
 			   <param name="transportProfileId" value="1"/>   		<!-- /* Link to transport layer configuration --> 
-			   <param name="localIp" value="xxx-xxx-xx-xx"/>  		<!-- /* Local node IP */ -->
+			   <param name="localIp" value="192.168.1.100"/>  		<!-- /* Local node IP */ -->
 			   <param name="port"     value="2944" />	    		<!-- /* Port */ -->
 			   <param name="myDomainName" value="mg.sangoma.com" />   	<!--/* Local domain name */ -->
-			   <param name="mid" value="<lab.sangoma.com>" />        		 <!-- /* Message Identifier (MID) of MEGACO message  */ -->
+			   <param name="mid" value="<lab.sangoma.com>"/>        		 <!-- /* Message Identifier (MID) of MEGACO message  */ -->
 		           <param name="peerId" value="1" />  	    		 	<!--/* MGC Peer Configuration profile ID */-->
 			   <!--/*We can define multiple peer_ids depends on number of MGC per MG.
 		  	   MGC Priority          - peer order can defines the priority or we can priority attribute in peer_id element..Not needed now..we can think later
@@ -35,10 +35,10 @@
 
    		   <sng_mg_peer_interface name="MG_PEER1">
 			   <param name="id" value="1"/>         		<!-- /* Peer profile ID */-->
-			   <param name="ip" value="xxx-xxx-xx-xx"/>  		<!-- /* Peer node IP */ -->
+			   <param name="ip" value="192.168.1.101"/>  		<!-- /* Peer node IP */ -->
 			   <param name="port" value="2944"/>   			<!--/* peer port */ -->
 			   <param name="encodingScheme" value="TEXT"/>  	<!--/* H.248 Encoding scheme TEXT/BINARY */ -->
-			    <param name="mid" value="remote.mgc.com" />    	<!-- /* Message Identifier (MID) of remote MGC MEGACO message  */-->
+			    <param name="mid" value="<remote.mgc.com>" />    	<!-- /* Message Identifier (MID) of remote MGC MEGACO message  */-->
 		   </sng_mg_peer_interface>
 
     </sng_mg_peer_interfaces>

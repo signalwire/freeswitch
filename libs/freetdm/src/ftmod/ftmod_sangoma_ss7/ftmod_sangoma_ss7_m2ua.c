@@ -69,6 +69,7 @@ ftdm_status_t sng_m2ua_cfg(void);
 
 static S16 ftmod_sigtran_tsap_bnd(void);
 static S16 ftmod_sigtran_sctsap_bnd(void);
+static S16 ftmod_sigtran_open_endpoint(void);
 static S16 ftmod_sigtran_dlsap_bnd(U32 id);
 static S16 ftmod_ss7_dlsap_bnd(U32 id);
 
@@ -708,16 +709,16 @@ static S16 ftmod_sigtran_m2ua_sctsap_config(void)
    /* service provider ID   */
    cfg.t.cfg.s.sctSapCfg.spId                   = 1; /* TUCL sct sap id is 1 */
    /* source port number */
-   cfg.t.cfg.s.sctSapCfg.srcPort                = 0;
+   cfg.t.cfg.s.sctSapCfg.srcPort                = 2904;
    /* interface address */
    /*For multiple IP address support */
 #ifdef SCT_ENDP_MULTI_IPADDR
    cfg.t.cfg.s.sctSapCfg.srcAddrLst.nmb = 1;
    cfg.t.cfg.s.sctSapCfg.srcAddrLst.nAddr[0].type = CM_NETADDR_IPV4;
-   cfg.t.cfg.s.sctSapCfg.srcAddrLst.nAddr[0].u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.100");
+   cfg.t.cfg.s.sctSapCfg.srcAddrLst.nAddr[0].u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.102");
 #else
    cfg.t.cfg.s.sctSapCfg.intfAddr.type          = CM_NETADDR_IPV4;
-   cfg.t.cfg.s.sctSapCfg.intfAddr.u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.100");
+   cfg.t.cfg.s.sctSapCfg.intfAddr.u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.102");
 #endif
 
    /* lower SAP primitive timer */
@@ -784,7 +785,7 @@ static S16 ftmod_sigtran_m2ua_peer_config(void)
    cfg.t.cfg.s.peerCfg.assocCfg.suId = 0; /* SCTSAP ID */
    cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nmb = 1; /* destination address list*/
    cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[0].type = CM_NETADDR_IPV4;
-   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[0].u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.100");/* TODO */;
+   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[0].u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.101");/* TODO */;
 #if 0   
    cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[1].type = CM_NETADDR_IPV4;
    cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[1].u.ipv4NetAddr = ftmod_parse_conv_ipaddr("172.25.0.93"); /* TODO */;
@@ -794,7 +795,7 @@ static S16 ftmod_sigtran_m2ua_peer_config(void)
 #endif
    cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nmb = 1; /* source address list */
    cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nAddr[0].type =  CM_NETADDR_IPV4;
-   cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nAddr[0].u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.100");/* TODO */;
+   cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nAddr[0].u.ipv4NetAddr = ftmod_parse_conv_ipaddr((S8*)"192.168.1.102");/* TODO */;
 
    cfg.t.cfg.s.peerCfg.assocCfg.priDstAddr.type = CM_NETADDR_IPV4;
    cfg.t.cfg.s.peerCfg.assocCfg.priDstAddr.u.ipv4NetAddr = cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[0].u.ipv4NetAddr;
@@ -1196,10 +1197,53 @@ int ftmod_ss7_m2ua_start(void){
          ftdm_log (FTDM_LOG_INFO ,"Control request to bind DLSAP between NIF and MTP2 : OK\n");
       }
    }
+
+   /* Send a control request to open endpoint */
+   if( (ret = ftmod_sigtran_open_endpoint()) != ROK)
+   {
+      ftdm_log (FTDM_LOG_ERROR ,"ftmod_sigtran_open_endpoint FAIL  \n");
+      return 1;
+   }   
+   else
+   {
+      ftdm_log (FTDM_LOG_ERROR ,"ftmod_sigtran_open_endpoint SUCCESS  \n");
+   }
+
    return 0;
 }
 
+static S16 ftmod_sigtran_open_endpoint(void)
+{
+  Pst pst;
+  MwMgmt cntrl;  
 
+  memset((U8 *)&pst, 0, sizeof(Pst));
+  memset((U8 *)&cntrl, 0, sizeof(MwMgmt));
+
+  smPstInit(&pst);
+
+  pst.dstEnt = ENTMW;
+
+  /* prepare header */
+  cntrl.hdr.msgType     = TCNTRL;         /* message type */
+   cntrl.hdr.entId.ent   = ENTMW;          /* entity */
+   cntrl.hdr.entId.inst  = 0;              /* instance */
+   cntrl.hdr.elmId.elmnt = STMWSCTSAP;       /* General */
+   cntrl.hdr.transId     = 1;     /* transaction identifier */
+
+   cntrl.hdr.response.selector    = 0;
+   cntrl.hdr.response.prior       = PRIOR0;
+   cntrl.hdr.response.route       = RTESPEC;
+   cntrl.hdr.response.mem.region  = S_REG;
+   cntrl.hdr.response.mem.pool    = S_POOL;
+
+
+   cntrl.t.cntrl.action = AMWENDPOPEN;
+   cntrl.t.cntrl.s.suId = 0; /* M2UA sct sap Id */
+
+     return (sng_cntrl_m2ua (&pst, &cntrl));
+
+}
 
 static S16 ftmod_sigtran_tsap_bnd(void)
 {
