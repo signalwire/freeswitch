@@ -46,6 +46,17 @@ switch_status_t sng_parse_mg_profile(switch_xml_t mg_interface)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " mg_interface protocol[%d] \n", 
 					megaco_globals.g_mg_cfg.mgCfg[i].protocol_type);
 			/********************************************************************************************/
+		}else if(!strcasecmp(var, "version")){
+			/********************************************************************************************/
+			megaco_globals.g_mg_cfg.mgCfg[i].protocol_version = atoi(val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " mg_interface protocol version[%s] \n",val); 
+			if((megaco_globals.g_mg_cfg.mgCfg[i].protocol_version < 1) 
+					|| (megaco_globals.g_mg_cfg.mgCfg[i].protocol_version > 3))
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Protocol version[%s] , Supported values are [1/2/3] \n",val);
+				return SWITCH_STATUS_FALSE;
+			}
+			/********************************************************************************************/
 		}else if(!strcasecmp(var, "transportProfileId")){
 			/********************************************************************************************/
 			megaco_globals.g_mg_cfg.mgCfg[i].transport_prof_id   = atoi(val);

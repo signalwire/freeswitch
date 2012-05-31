@@ -917,7 +917,21 @@ int mgco_mg_ssap_config(int idx)
 	pCfg->mwdTimer = (U16)10;
 
 	pCfg->minMgcoVersion = LMG_VER_PROF_MGCO_H248_1_0;
-	pCfg->maxMgcoVersion = LMG_VER_PROF_MGCO_H248_3_0;
+	switch(mgCfg->protocol_version)
+	{
+		case 1:
+			pCfg->maxMgcoVersion = LMG_VER_PROF_MGCO_H248_1_0;
+			break;
+		case 2:
+			pCfg->maxMgcoVersion = LMG_VER_PROF_MGCO_H248_2_0;
+			break;
+		case 3:
+			pCfg->maxMgcoVersion = LMG_VER_PROF_MGCO_H248_3_0;
+			break;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Protocol version[%d] \n",mgCfg->protocol_version);
+			return SWITCH_STATUS_FALSE;
+	}
 
 	pCfg->userInfo.pres.pres = PRSNT_NODEF;
 	pCfg->userInfo.id.pres 	 = NOTPRSNT;

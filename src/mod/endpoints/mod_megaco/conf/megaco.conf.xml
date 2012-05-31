@@ -5,8 +5,9 @@
 		   <sng_mg_interface name="default">
 			   <param name="id" value="1"/>                			<!-- /* equivalent to SSAP ID of MEGACO layer */-->
 			   <param name="protocol" value="MEGACO"/>         		<!-- /* Protocol Type , Supported values are MEGACO/MGCP */ -->
+			   <param name="version" value="3"/>         			<!-- /* Protocol Version , Supported values for MEGACO are 1/2/3 */ -->
 			   <param name="transportProfileId" value="1"/>   		<!-- /* Link to transport layer configuration --> 
-			   <param name="localIp" value="192.168.1.100"/>  		<!-- /* Local node IP */ -->
+			   <param name="localIp" value="192.168.1.101"/>  		<!-- /* Local node IP */ -->
 			   <param name="port"     value="2944" />	    		<!-- /* Port */ -->
 			   <param name="myDomainName" value="mg.sangoma.com" />   	<!--/* Local domain name */ -->
 			   <param name="mid" value="<lab.sangoma.com>"/>        		 <!-- /* Message Identifier (MID) of MEGACO message  */ -->
@@ -35,7 +36,7 @@
 
    		   <sng_mg_peer_interface name="MG_PEER1">
 			   <param name="id" value="1"/>         		<!-- /* Peer profile ID */-->
-			   <param name="ip" value="192.168.1.101"/>  		<!-- /* Peer node IP */ -->
+			   <param name="ip" value="192.168.1.100"/>  		<!-- /* Peer node IP */ -->
 			   <param name="port" value="2944"/>   			<!--/* peer port */ -->
 			   <param name="encodingScheme" value="TEXT"/>  	<!--/* H.248 Encoding scheme TEXT/BINARY */ -->
 			    <param name="mid" value="<remote.mgc.com>" />    	<!-- /* Message Identifier (MID) of remote MGC MEGACO message  */-->

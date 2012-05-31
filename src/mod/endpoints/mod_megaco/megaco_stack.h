@@ -76,6 +76,7 @@ typedef struct sng_mg_cfg{
         uint8_t                 my_domain[MAX_DOMAIN_LEN];   /* local domain name */
         uint8_t                 my_ipaddr[MAX_DOMAIN_LEN];   /* local domain name */
         uint32_t                port;              	     /* port */
+	uint16_t 		protocol_version;            /* Protocol supported version */
         uint16_t                peer_id;                     /* MGC Peer ID */
         uint16_t                transport_prof_id;           /* Transport profile id ..this also will be the spId for MG SAP*/
         uint16_t                protocol_type;    	     /* MEGACO/MGCP */
