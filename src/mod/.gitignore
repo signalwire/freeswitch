@@ -14,6 +14,7 @@
 /applications/mod_fax/mod_fax.log
 /applications/mod_fifo/Makefile
 /applications/mod_fsv/Makefile
+/applications/mod_httapi/Makefile
 /applications/mod_limit/Makefile
 /applications/mod_sms/Makefile
 /applications/mod_spandsp/Makefile
@@ -62,5 +63,7 @@
 /loggers/mod_logfile/Makefile
 /loggers/mod_syslog/Makefile
 /say/mod_say_en/Makefile
+/say/mod_say_ja/Makefile
 /say/mod_say_ru/Makefile
+/timers/mod_posix_timer/Makefile
 /timers/mod_timerfd/Makefile

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
- * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Ken Rice <krice@freeswitch.org>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
@@ -78,6 +78,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_REGISTER "sofia::register"
 #define MY_EVENT_PRE_REGISTER "sofia::pre_register"
 #define MY_EVENT_REGISTER_ATTEMPT "sofia::register_attempt"
+#define MY_EVENT_REGISTER_FAILURE "sofia::register_failure"
 #define MY_EVENT_UNREGISTER "sofia::unregister"
 #define MY_EVENT_EXPIRE "sofia::expire"
 #define MY_EVENT_GATEWAY_STATE "sofia::gateway_state"
@@ -150,6 +151,7 @@ typedef struct sofia_dispatch_event_s {
 	sofia_profile_t *profile;
 	int save;
 	switch_core_session_t *session;
+	switch_memory_pool_t *pool;
 } sofia_dispatch_event_t;
 
 struct sofia_private {
@@ -263,6 +265,9 @@ typedef enum {
 	PFLAG_PRESENCE_MAP,
 	PFLAG_OPTIONS_RESPOND_503_ON_BUSY,
 	PFLAG_PRESENCE_DISABLE_EARLY,
+	PFLAG_CONFIRM_BLIND_TRANSFER,
+	PFLAG_THREAD_PER_REG,
+	PFLAG_MWI_USE_REG_CALLID,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -312,6 +317,7 @@ typedef enum {
 	TFLAG_TPORT_LOG,
 	TFLAG_SENT_UPDATE,
 	TFLAG_PROXY_MEDIA,
+	TFLAG_ZRTP_PASSTHRU,
 	TFLAG_HOLD_LOCK,
 	TFLAG_3PCC_HAS_ACK,
 	TFLAG_PASS_RFC2833,
@@ -330,12 +336,15 @@ typedef enum {
 	TFLAG_LIBERAL_DTMF,
 	TFLAG_GOT_ACK,
 	TFLAG_CAPTURE,
+	TFLAG_REINVITED,
+	TFLAG_SLA_BARGE,
+	TFLAG_SLA_BARGING,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
 
-#define SOFIA_MAX_MSG_QUEUE 101
-#define SOFIA_MSG_QUEUE_SIZE 5000
+#define SOFIA_MAX_MSG_QUEUE 64
+#define SOFIA_MSG_QUEUE_SIZE 100
 
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
@@ -345,12 +354,14 @@ struct mod_sofia_globals {
 	uint32_t callid;
 	int32_t running;
 	int32_t threads;
+	int cpu_count;
+	int max_msg_queues;
 	switch_mutex_t *mutex;
 	char guess_ip[80];
 	char hostname[512];
 	switch_queue_t *presence_queue;
 	switch_queue_t *mwi_queue;
-	switch_queue_t *msg_queue[SOFIA_MAX_MSG_QUEUE];
+	switch_queue_t *msg_queue;
 	switch_thread_t *msg_queue_thread[SOFIA_MAX_MSG_QUEUE];
 	int msg_queue_len;
 	struct sofia_private destroy_private;
@@ -510,10 +521,23 @@ typedef enum {
 } sofia_presence_type_t;
 
 typedef enum {
+	PRES_HELD_EARLY = 0,
+	PRES_HELD_CONFIRMED = 1,
+	PRES_HELD_TERMINATED = 2
+} sofia_presence_held_calls_type_t;
+
+typedef enum {
 	MEDIA_OPT_NONE = 0,
 	MEDIA_OPT_MEDIA_ON_HOLD = (1 << 0),
 	MEDIA_OPT_BYPASS_AFTER_ATT_XFER = (1 << 1)
 } sofia_media_options_t;
+
+typedef enum {
+       PAID_DEFAULT = 0,
+       PAID_USER,
+       PAID_USER_DOMAIN,
+       PAID_VERBATIM
+} sofia_paid_type_t;
 
 #define MAX_RTPIP 50
 
@@ -590,6 +614,7 @@ struct sofia_profile {
 	sofia_gateway_t *gateways;
 	//su_home_t *home;
 	switch_hash_t *chat_hash;
+	switch_hash_t *mwi_debounce_hash;
 	//switch_core_db_t *master_db;
 	switch_thread_rwlock_t *rwlock;
 	switch_mutex_t *flag_mutex;
@@ -616,6 +641,7 @@ struct sofia_profile {
 	int server_rport_level;
 	int client_rport_level;
 	sofia_presence_type_t pres_type;
+	sofia_presence_held_calls_type_t pres_held_type;
 	sofia_media_options_t media_options;
 	uint32_t force_subscription_expires;
 	uint32_t force_publish_expires;
@@ -652,6 +678,8 @@ struct sofia_profile {
 	uint32_t sip_force_expires;
 	uint32_t sip_expires_max_deviation;
 	int ireg_seconds;
+	sofia_paid_type_t paid_type;
+	uint32_t rtp_digit_delay;
 };
 
 struct private_object {
@@ -798,6 +826,11 @@ struct private_object {
 	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
 	uint32_t session_timeout;
 	enum nua_session_refresher session_refresher;
+	/** ZRTP **/
+	char *local_sdp_audio_zrtp_hash;
+	char *local_sdp_video_zrtp_hash;
+	char *remote_sdp_audio_zrtp_hash;
+	char *remote_sdp_video_zrtp_hash;
 };
 
 struct callback_t {
@@ -905,6 +938,8 @@ void launch_sofia_profile_thread(sofia_profile_t *profile);
 switch_status_t sofia_presence_chat_send(switch_event_t *message_event);
 										 
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
+void sofia_glue_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session);
+void sofia_glue_pass_zrtp_hash(switch_core_session_t *session);
 
 /*
  * \brief Sets the "ep_codec_string" channel variable, parsing r_sdp and taing codec_string in consideration 
@@ -1114,7 +1149,7 @@ void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port);
 sofia_destination_t *sofia_glue_get_destination(char *data);
 void sofia_glue_free_destination(sofia_destination_t *dst);
 switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *user, const char *host, const char *event, const char *contenttype,
-									   const char *body, const char *o_contact, const char *network_ip);
+									   const char *body, const char *o_contact, const char *network_ip, const char *call_id);
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix);
 void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *sip, const char *prefix);
 char *sofia_glue_get_extra_headers_from_event(switch_event_t *event, const char *prefix);
@@ -1152,3 +1187,15 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
 char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool);
 void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now);
 void sofia_msg_thread_start(int idx);
+
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */

@@ -109,8 +109,8 @@ nua_handle_t *nh_create_handle(nua_t *nua,
 
   assert(nua->nua_home);
 
-  if ((nh = su_home_clone(nua->nua_home, sizeof(*nh)))) {
-  //if ((nh = su_home_new(sizeof(*nh)))) {
+  //if ((nh = su_home_clone(nua->nua_home, sizeof(*nh)))) {
+  if ((nh = su_home_new(sizeof(*nh)))) {
     nh->nh_valid = nua_valid_handle_cookie;
     nh->nh_nua = nua;
     nh->nh_magic = hmagic;

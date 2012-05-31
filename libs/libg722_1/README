@@ -18,7 +18,7 @@ a separate process, and your application communicates with it through pipes or
 sockets. 
 
 This implementation of G.722.1 is adapted from the reference source code
-provided by Polycom. Polycom has given its concent for this library to be
+provided by Polycom. Polycom has given its consent for this library to be
 distributed as source code, either on its own or as part of a larger package
 which they have licenced under their royalty free licencing scheme.
 

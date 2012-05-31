@@ -190,6 +190,14 @@ AC_MSG_RESULT([checking whether to build ftmod_r2... ${HAVE_OPENR2}])
 AM_CONDITIONAL([HAVE_OPENR2], [test "${HAVE_OPENR2}" = "yes"])
 
 ##
+# WAT GSM stack
+#
+HAVE_WAT="no"
+AC_CHECK_LIB([wat], [wat_version], [HAVE_WAT="yes"])
+AC_MSG_RESULT([checking whether to build ftmod_wat... ${HAVE_WAT}])
+AM_CONDITIONAL([HAVE_WAT], [test "${HAVE_WAT}" = "yes"])
+
+##
 # Digium libpri (TODO: add checks)
 #
 HAVE_LIBPRI="no"
@@ -234,6 +242,21 @@ then
 		 HAVE_LIBPRI="yes"],
 		[AC_MSG_RESULT([no])
 		 AC_MSG_ERROR([libpri not found or unusable (see config.log for details)])]
+	)
+
+	AC_MSG_CHECKING([whether libpri is too old])
+	AC_PREPROC_IFELSE(
+		[AC_LANG_PROGRAM(
+			[#include <libpri.h>],
+			[#if !defined(PRI_IO_FUNCS)
+			 #error "libpri is lacking PRI_IO_FUNCS"
+			 #elif !defined(PRI_NEW_SET_API)
+			 #error "libpri is lacking PRI_NEW_SET_API"
+			 #endif]
+		 )],
+		[AC_MSG_RESULT([no])],
+		[AC_MSG_RESULT([yes])
+		 AC_MSG_ERROR([Your version of libpri is too old (pre 1.2), please update!])]
 	)
 
 	AC_MSG_CHECKING([whether libpri has BRI support])
@@ -407,22 +430,13 @@ AC_ARG_WITH([misdn],
 )
 AS_IF([test "${with_misdn}" != "no"],
 	[AC_MSG_RESULT([${as_nl}<<>> ftmod_misdn (Linux mISDN I/O plugin)])
-	 AC_CHECK_FUNCS([timerfd_create],,
-		[AS_IF([test "${with_misdn}" = "yes"],
-			[AC_MSG_ERROR([no timerfd support in libc])],
-			[AC_MSG_NOTICE([no timerfd support in libc])]
-		 )]
-	 )
-	 AC_CHECK_HEADER([mISDN/mISDNif.h],,
+	 AC_CHECK_HEADER([mISDN/mISDNif.h],
+		[HAVE_MISDN="yes"],
 		[AS_IF([test "${with_misdn}" = "yes"],
 			[AC_MSG_ERROR([mISDN/mISDNif.h not found])],
 			[AC_MSG_NOTICE([mISDN/mISDNif.h not found])]
 		)],
 		[#include <sys/socket.h>]
-	 )
-	 AS_IF([test "${ac_cv_func_timerfd_create}" = "yes" -a "${ac_cv_header_mISDN_mISDNif_h}" = "yes"],
-		[HAVE_MISDN="yes"],
-		[AC_MSG_NOTICE([Some required dependencies are missing, module disabled])]
 	 )]
 )
 AM_CONDITIONAL([HAVE_MISDN], [test "${HAVE_MISDN}" = "yes"])
@@ -450,6 +464,7 @@ AC_MSG_RESULT([
 	ftmod_sangoma_isdn................. ${HAVE_SNG_ISDN}
 	ftmod_sangoma_ss7.................. ${HAVE_SNG_SS7}
 	ftmod_r2........................... ${HAVE_OPENR2}
+	ftmod_gsm.......................... ${HAVE_WAT}
 	ftmod_pritap....................... ${HAVE_PRITAP}
   I/O:
 	ftmod_wanpipe...................... ${HAVE_LIBSANGOMA}

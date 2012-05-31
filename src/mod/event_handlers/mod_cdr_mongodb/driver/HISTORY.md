@@ -1,5 +1,35 @@
 # MongoDB C Driver History
 
+## 0.5.2
+2012-5-4
+
+* Validate collection and database names on insert.
+* Validate insert limits using max BSON size.
+* Support getaddrinfo and SO_RCVTIMEO and SO_SNDTIMEO on Windows.
+* Store errno/WSAGetLastError() on errors.
+* Various bug fixes and refactorings.
+* Update error reporting docs.
+
+## 0.5.1
+
+* Env for POSIX, WIN32, and standard C.
+* Various bug fixes.
+
+## 0.5
+2012-3-31
+
+* Separate cursor-specific errors into their own enum: mongo_cursor_error_t.
+* Catch $err return on bad queries and store the result in conn->getlasterrorcode
+  and conn->getlasterrstr.
+* On queries that return $err, set cursor->err to MONGO_CURSOR_QUERY_FAIL.
+* When passing bad BSON to a cursor object, set cursor->err to MONGO_CURSOR_BSON_ERROR,
+  and store the specific BSON error on the conn->err field.
+* Remove bson_copy_basic().
+* bson_copy() will copy finished bson objects only.
+* bson_copy() returns BSON_OK on success and BSON_ERROR on failure.
+* Added a Makefile for easy compile and install on Linux and OS X.
+* Replica set connect fixes.
+
 ## 0.4
 
 THIS RELEASE INCLUDES NUMEROUS BACKWARD-BREAKING CHANGES.

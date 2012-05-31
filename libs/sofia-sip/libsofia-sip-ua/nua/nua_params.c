@@ -139,6 +139,7 @@ int nua_stack_set_defaults(nua_handle_t *nh,
   NHP_SET(nhp, only183_100rel, 0);
   NHP_SET(nhp, auto_answer, 0);
   NHP_SET(nhp, auto_ack, 1);
+  NHP_SET(nhp, timer_autorequire, 1);
   NHP_SET(nhp, invite_timeout, 120);
 
   nhp->nhp_session_timer = 1800;
@@ -740,6 +741,10 @@ static int nhp_set_tags(su_home_t *home,
     /* NUTAG_AUTOACK(auto_ack) */
     else if (tag == nutag_autoack) {
       NHP_SET(nhp, auto_ack, value != 0);
+    }
+    /* NUTAG_TIMER_AUTOREQUIRE(timer_autorequire) */
+    else if (tag == nutag_timer_autorequire) {
+      NHP_SET(nhp, timer_autorequire, value != 0);
     }
     /* NUTAG_INVITE_TIMER(invite_timeout) */
     else if (tag == nutag_invite_timer) {
@@ -1647,6 +1652,7 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
      TIF(NUTAG_ONLY183_100REL, only183_100rel),
      TIF(NUTAG_AUTOANSWER, auto_answer),
      TIF(NUTAG_AUTOACK, auto_ack),
+     TIF(NUTAG_TIMER_AUTOREQUIRE, timer_autorequire),
      TIF(NUTAG_INVITE_TIMER, invite_timeout),
 
      TIFD(NUTAG_SESSION_TIMER, session_timer),

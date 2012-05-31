@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -258,7 +258,11 @@ typedef intptr_t switch_ssize_t;
 #endif
 
 #ifndef TIME_T_FMT
+#if defined(__FreeBSD__) && SIZEOF_VOIDP == 4
+#define TIME_T_FMT "d"
+#else
 #define TIME_T_FMT "ld"
+#endif
 #endif
 
 #endif

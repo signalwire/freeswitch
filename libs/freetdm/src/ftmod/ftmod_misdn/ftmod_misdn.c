@@ -45,8 +45,6 @@
 #include <poll.h>
 #include <pthread.h>
 
-#include <sys/timerfd.h>
-
 /* this is how it should have been...
 #ifdef HAVE_FREETDM_FREETDM_H
 #include <freetdm/freetdm.h>
@@ -256,7 +254,6 @@ struct misdn_chan_private {
 	/* */
 	int state;
 	int debugfd;
-	int timerfd;
 	int active;
 
 	/* hw addr of channel */
@@ -941,36 +938,7 @@ static FIO_OPEN_FUNCTION(misdn_open)
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "mISDN channel activation request sent\n");
 
 	switch (ftdmchan->type) {
-	case FTDM_CHAN_TYPE_B: {
-#if 0
-			struct itimerspec its = {
-				.it_interval = { 0, 0 },
-				.it_value    = { 0, 0 },
-			};
-
-			its.it_interval.tv_nsec = (ftdmchan->effective_interval * 1000000);
-			its.it_value.tv_nsec    = (ftdmchan->effective_interval * 1000000);
-
-			/* create tx timerfd */
-			chan_priv->timerfd = timerfd_create(CLOCK_MONOTONIC, O_NONBLOCK);
-			if (chan_priv->timerfd < 0) {
-				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN failed to create b-channel tx interval timer: %s\n",
-					strerror(errno));
-				return FTDM_FAIL;
-			}
-
-			/* start tx timerfd */
-			ret = timerfd_settime(chan_priv->timerfd, 0, &its, NULL);
-			if (ret < 0) {
-				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN failed to start b-channel tx interval timer: %s\n",
-					strerror(errno));
-				return FTDM_FAIL;
-			}
-
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN created tx interval (%d ms) timer\n",
-				ftdmchan->effective_interval);
-#endif
-		}
+	case FTDM_CHAN_TYPE_B:
 	case FTDM_CHAN_TYPE_DQ921:
 		chan_priv->state = MISDN_CHAN_STATE_OPEN;
 		break;
@@ -998,15 +966,6 @@ static FIO_CLOSE_FUNCTION(misdn_close)
 
 	/* deactivate b-channels on close */
 	if (ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B) {
-#if 0
-		/*
-		 * Stop tx timerfd
-		 */
-		if (chan_priv->timerfd >= 0) {
-			close(chan_priv->timerfd);
-			chan_priv->timerfd = -1;
-		}
-#endif
 		/*
 		 * Send deactivation request (don't wait for answer)
 		 */
@@ -1570,7 +1529,6 @@ static ftdm_status_t misdn_open_range(ftdm_span_t *span, ftdm_chan_type_t type, 
 
 		priv->addr    = addr;
 		priv->debugfd = -1;
-		priv->timerfd = -1;
 
 		/*
 		 * Create event queue

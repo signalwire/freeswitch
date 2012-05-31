@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1142,7 +1142,8 @@ static switch_status_t parse_xml(client_t *client)
 								switch_channel_get_variables(client->channel, &templ_data);
 								switch_event_merge(templ_data, client->params);
 								expanded = switch_event_expand_headers_check(templ_data, tag->txt, 
-																			 client->profile->var_params.expand_var_list, client->profile->var_params.api_list);
+																			 client->profile->var_params.expand_var_list, 
+																			 client->profile->var_params.api_list, 0);
 								switch_event_destroy(&templ_data);
 							}
 
@@ -1324,7 +1325,7 @@ static void cleanup_attachments(client_t *client)
 
 	for (hp = client->params->headers; hp; hp = hp->next) {
 		if (!strncasecmp(hp->name, "attach_file:", 12)) {
-			if (switch_file_exists(hp->value, client->pool)) {
+			if (switch_file_exists(hp->value, client->pool) == SWITCH_STATUS_SUCCESS) {
 				printf("DELETE %s\n", hp->value);
 				unlink(hp->value);
 			}
@@ -1498,7 +1499,7 @@ static switch_status_t httapi_sync(client_t *client)
 
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 
-	if (method != NULL && strcasecmp(method, "get") && strcasecmp(method, "post")) {
+	if (!zstr(method)) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, method);
 	}
 
@@ -2160,6 +2161,7 @@ SWITCH_STANDARD_APP(httapi_function)
 		if (!zstr(url) && switch_stristr("://", url)) {
 			if (!params) {
 				switch_event_create(&params, SWITCH_EVENT_CLONE);
+				params->flags |= EF_UNIQ_HEADERS;
 			}
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "url", url);
 		}

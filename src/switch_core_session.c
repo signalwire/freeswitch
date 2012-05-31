@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -184,7 +184,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_partner(switch_core_sess
 {
 	const char *uuid;
 
-	if ((uuid = switch_channel_get_variable(session->channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(session->channel, "originate_signal_bond"))) {
+	if ((uuid = switch_channel_get_partner_uuid(session->channel))) {
 		if ((*partner = switch_core_session_locate(uuid))) {
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -531,7 +531,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				switch_codec2str(read_codec, rc, sizeof(rc));
 				if (vid_read_codec && vid_read_codec->implementation && switch_core_codec_ready(vid_read_codec)) {
 					vrc[0] = ',';
-					switch_codec2str(read_codec, vrc + 1, sizeof(vrc) - 1);
+					switch_codec2str(vid_read_codec, vrc + 1, sizeof(vrc) - 1);
 					switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE, vrc + 1);
 				}
 
@@ -544,7 +544,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 			// Needed by 3PCC proxy so that aleg can find bleg to pass SDP to, when final ACK arrives.
-			switch_channel_set_variable(channel, "originate_signal_bond", switch_core_session_get_uuid(*new_session));
+			switch_channel_set_variable(channel, SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(*new_session));
 
 			if ((val = switch_channel_get_variable(channel, SWITCH_PROCESS_CDR_VARIABLE))) {
 				switch_channel_set_variable(peer_channel, SWITCH_PROCESS_CDR_VARIABLE, val);
@@ -575,6 +575,10 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 									  "%s does not support the proxy feature, disabling.\n", switch_channel_get_name(peer_channel));
 					switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
 				}
+			}
+
+			if (switch_channel_test_flag(channel, CF_ZRTP_PASSTHRU_REQ)) {
+				switch_channel_set_flag(peer_channel, CF_ZRTP_PASSTHRU_REQ);
 			}
 
 			if (profile) {
@@ -640,6 +644,7 @@ static const char *message_names[] = {
 	"SIGNAL_DATA",
 	"INFO",
 	"AUDIO_DATA",
+	"BLIND_TRANSFER_RESPONSE",
 	"INVALID"
 };
 
@@ -681,12 +686,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		switch_channel_clear_flag(session->channel, CF_EARLY_MEDIA);
 	}
 
-	if (message->message_id == SWITCH_MESSAGE_INDICATE_DISPLAY &&
-		switch_true(switch_channel_get_variable(session->channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
-						  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG1, "Ignoring display update.\n");
-		status = SWITCH_STATUS_SUCCESS;
-		goto end;
+	if (message->message_id == SWITCH_MESSAGE_INDICATE_DISPLAY) {
+		char *arg = NULL;
+
+		if (zstr(message->string_array_arg[0]) && !zstr(message->string_arg)) {
+			arg = switch_core_session_strdup(session, message->string_arg);
+			switch_separate_string(arg, '|', (char **)message->string_array_arg, 2);			
+		}
+
+		if (!zstr(message->string_array_arg[0])) {
+			switch_channel_set_variable(session->channel, "last_sent_callee_id_name", message->string_array_arg[0]);
+		}
+
+		if (!zstr(message->string_array_arg[1])) {
+			switch_channel_set_variable(session->channel, "last_sent_callee_id_number", message->string_array_arg[1]);
+		}
+		
+
+		if (switch_true(switch_channel_get_variable(session->channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
+							  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG1, "Ignoring display update.\n");
+			status = SWITCH_STATUS_SUCCESS;
+			goto end;
+		}
+
 	}
 
 	if (switch_channel_down_nosig(session->channel) && message->message_id != SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
@@ -704,13 +727,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 				break;
 			}
 		}
+
+
+		if (message->message_id == SWITCH_MESSAGE_INDICATE_BRIDGE &&
+			switch_channel_test_flag(session->channel, CF_CONFIRM_BLIND_TRANSFER)) {
+			switch_core_session_t *other_session;
+			const char *uuid = switch_channel_get_variable(session->channel, "blind_transfer_uuid");
+
+			switch_channel_clear_flag(session->channel, CF_CONFIRM_BLIND_TRANSFER);
+
+			if (!zstr(uuid) && (other_session = switch_core_session_locate(uuid))) {
+				switch_core_session_message_t msg = { 0 };			
+				msg.message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
+				msg.from = __FILE__;
+				msg.numeric_arg = 1;
+				switch_core_session_receive_message(other_session, &msg);
+				switch_core_session_rwunlock(other_session);
+			}
+		}
 	}
+
 
 	message->_file = NULL;
 	message->_func = NULL;
 	message->_line = 0;
 
 	if (switch_channel_up_nosig(session->channel)) {
+		if (message->message_id == SWITCH_MESSAGE_INDICATE_BRIDGE || message->message_id == SWITCH_MESSAGE_INDICATE_UNBRIDGE) {
+			switch_core_media_bug_flush_all(session);
+		}
+
 		switch (message->message_id) {
 		case SWITCH_MESSAGE_REDIRECT_AUDIO:
 		case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -751,7 +797,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_pass_indication(switch_core_
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) && (other_session = switch_core_session_locate(uuid))) {
+	if (((uuid = switch_channel_get_partner_uuid(channel))) && (other_session = switch_core_session_locate(uuid))) {
 		msg.message_id = indication;
 		msg.from = __FILE__;
 		status = switch_core_session_receive_message(other_session, &msg);
@@ -1465,7 +1511,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	if (switch_core_hash_find(session_manager.session_table, use_uuid)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Duplicate UUID!\n");
 		switch_mutex_unlock(runtime.session_hash_mutex);
 		return SWITCH_STATUS_FALSE;
 	}

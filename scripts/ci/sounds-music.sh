@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
 src_repo="$(pwd)"

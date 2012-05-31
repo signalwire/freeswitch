@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <DirectoryRef Id="INSTALLLOCATION">
+      <Component Id="cmpBEF12B96A80D45AC32F3B692E94A57C9" Guid="*">
+        <File Id="fil7DBC560A735C4208B3E7DF75D1D1E513" Name="FreeSwitchConsole.exe" Source="$(var.FreeSwitchConsole.TargetDir)\FreeSwitchConsole.exe" KeyPath="yes"/>
+        <ServiceInstall
+        Type="ownProcess"
+        Account="localSystem"
+        Vital="no"
+        Name="FreeSWITCH"
+        DisplayName="FreeSWITCH Multi Protocol Switch"
+        Description="FreeSWITCH service control"
+        Start="demand"
+        ErrorControl="ignore"
+        Interactive="no"
+        Arguments=" -service "/>
+        <ServiceControl Id="StartService" Stop="both" Remove="uninstall" Name="FreeSWITCH" Wait="no" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+  <Fragment>
+    <ComponentGroup Id="FreeSwitchConsole.Binaries">
+      <ComponentRef Id="cmpBEF12B96A80D45AC32F3B692E94A57C9" />
+    </ComponentGroup>
+  </Fragment>
+  <Fragment>
+    <ComponentGroup Id="FreeSwitchConsole.Symbols" />
+  </Fragment>
+  <Fragment>
+    <DirectoryRef Id="INSTALLLOCATION">
+      <Component Id="cmp7AC01B2B6EDD58CE539876AB86975286" Guid="*">
+        <File Id="filA3A7609AFEB16B75D819A0208EFFF451" Source="$(var.FreeSwitchConsole.ProjectDir)\FreeSwitchConsole.2010.vcxproj" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+  <Fragment>
+    <ComponentGroup Id="FreeSwitchConsole.Sources">
+      <ComponentRef Id="cmp7AC01B2B6EDD58CE539876AB86975286" />
+    </ComponentGroup>
+  </Fragment>
+  <Fragment>
+    <ComponentGroup Id="FreeSwitchConsole.Content" />
+  </Fragment>
+  <Fragment>
+    <ComponentGroup Id="FreeSwitchConsole.Satellites" />
+  </Fragment>
+  <Fragment>
+    <ComponentGroup Id="FreeSwitchConsole.Documents" />
+  </Fragment>
+</Wix>

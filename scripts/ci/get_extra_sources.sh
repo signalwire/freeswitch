@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
 src_repo="$(pwd)"
@@ -8,7 +8,7 @@ if [ ! -d .git ]; then
   exit 1;
 fi
 
-mkdir -p $src_repo/rpmbuild/{SOURCES,BUILD,BUILDROOT,i386,x86_64,SOURCES,SPECS}
+(mkdir -p rpmbuild && cd rpmbuild && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SOURCES SPECS)
 
 cd $src_repo/rpmbuild/SOURCES
 

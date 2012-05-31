@@ -1,3 +1,4 @@
+%define fsname		freeswitch
 %define PREFIX          %{_prefix}
 %define EXECPREFIX      %{_exec_prefix}
 %define BINDIR          %{_bindir}

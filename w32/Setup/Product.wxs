@@ -66,12 +66,12 @@
 							 WorkingDirectory="INSTALLLOCATION"/>
 				<RegistryValue Root="HKCU" Key="Software\FreeSWITCH\FS_CLI" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
 			</Component>
-		</DirectoryRef>
-
+		</DirectoryRef>	
 		<Feature Id="ProductFeature" Title="FreeSWITCH Core" Level="1">
 			<!-- TODO: Remove the comments around this ComponentRef element and the Component above in order to add resources to this installer. -->
 			<!-- <ComponentRef Id="ProductComponent" /> -->
-			
+			<!-- The following Ref pulls in FreeSWITCHconsole.wxs items -->
+			<ComponentRef Id="cmpBEF12B96A80D45AC32F3B692E94A57C9"/>
 			<!-- Note: The following ComponentGroupRef is required to pull in generated authoring from project references. -->
 			<ComponentGroupRef Id="Product.Generated" />
 			<?if $(var.Platform) != x64 ?>
@@ -87,12 +87,12 @@
 		<Feature Id="ProductFeatureFSCli" Title="FreeSWITCH Command Line Interface" Level="1">
 			<ComponentRef Id="FSCliShortcut" />
 		</Feature>
-    <Feature Id="ProductFeatureConf" Title="FreeSWITCH Configuration Sample" Level="1">
-      <ComponentGroupRef Id="FreeSWITCHConfFiles" />
-    </Feature>
-    <Feature Id="ProductFeatureSounds" Title="FreeSWITCH Sounds 8Khz" Level="1">
-      <ComponentGroupRef Id="FreeSWITCHSoundFiles8" />
-    </Feature>
+		<Feature Id="ProductFeatureConf" Title="FreeSWITCH Configuration Sample" Level="1">
+			<ComponentGroupRef Id="FreeSWITCHConfFiles" />
+		</Feature>
+		<Feature Id="ProductFeatureSounds" Title="FreeSWITCH Sounds 8Khz" Level="1">
+			<ComponentGroupRef Id="FreeSWITCHSoundFiles8" />
+		</Feature>
     <UIRef Id="WixUI_Mondo" />
   </Product>
 </Wix>

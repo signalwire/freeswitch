@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Anthony Minessale II
+ * Copyright (c) 2008-2012, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without

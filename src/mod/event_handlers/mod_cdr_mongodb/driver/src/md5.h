@@ -47,8 +47,8 @@
   1999-05-03 lpd Original version.
  */
 
-#ifndef md5_INCLUDED
-#  define md5_INCLUDED
+#ifndef MONGO_MD5_H_
+#define MONGO_MD5_H_
 
 /*
  * This package supports both compile-time and run-time determination of CPU
@@ -59,6 +59,7 @@
  * run on either big- or little-endian CPUs, but will run slightly less
  * efficiently on either one than if ARCH_IS_BIG_ENDIAN is defined.
  */
+#include "bson.h"
 
 typedef unsigned char mongo_md5_byte_t; /* 8-bit byte */
 typedef unsigned int mongo_md5_word_t; /* 32-bit word */
@@ -75,17 +76,17 @@ extern "C"
 {
 #endif
 
-    /* Initialize the algorithm. */
-    void mongo_md5_init(mongo_md5_state_t *pms);
+/* Initialize the algorithm. */
+MONGO_EXPORT void mongo_md5_init(mongo_md5_state_t *pms);
 
-    /* Append a string to the message. */
-    void mongo_md5_append(mongo_md5_state_t *pms, const mongo_md5_byte_t *data, int nbytes);
+/* Append a string to the message. */
+MONGO_EXPORT void mongo_md5_append(mongo_md5_state_t *pms, const mongo_md5_byte_t *data, int nbytes);
 
-    /* Finish the message and return the digest. */
-    void mongo_md5_finish(mongo_md5_state_t *pms, mongo_md5_byte_t digest[16]);
+/* Finish the message and return the digest. */
+MONGO_EXPORT void mongo_md5_finish(mongo_md5_state_t *pms, mongo_md5_byte_t digest[16]);
 
 #ifdef __cplusplus
 }  /* end extern "C" */
 #endif
 
-#endif /* md5_INCLUDED */
+#endif /* MONGO_MD5_H_ */

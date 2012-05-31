@@ -272,7 +272,7 @@ static ftdm_status_t ftdm_core_set_state(const char *file, const char *func, int
 	}
 
 	if (!ftdmchan->state_completed_interrupt) {
-		status = ftdm_interrupt_create(&ftdmchan->state_completed_interrupt, FTDM_INVALID_SOCKET);
+		status = ftdm_interrupt_create(&ftdmchan->state_completed_interrupt, FTDM_INVALID_SOCKET, FTDM_NO_FLAGS);
 		if (status != FTDM_SUCCESS) {
 			ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_CRIT, 
 					"Failed to create state change interrupt when moving from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));

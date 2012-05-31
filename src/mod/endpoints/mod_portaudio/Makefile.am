@@ -1,3 +1,4 @@
+LIBS+=$(PA_LIBS)
 include $(top_srcdir)/build/modmake.rulesam
 
 MODNAME=mod_portaudio

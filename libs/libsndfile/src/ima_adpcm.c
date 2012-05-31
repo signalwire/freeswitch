@@ -724,7 +724,9 @@ ima_seek (SF_PRIVATE *psf, int mode, sf_count_t offset)
 	if (offset == 0)
 	{	psf_fseek (psf, psf->dataoffset, SEEK_SET) ;
 		pima->blockcount = 0 ;
-		pima->decode_block (psf, pima) ;
+		if (pima->decode_block) {
+			pima->decode_block (psf, pima) ;
+		}
 		pima->samplecount = 0 ;
 		return 0 ;
 		} ;

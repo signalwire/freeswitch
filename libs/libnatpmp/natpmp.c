@@ -165,15 +165,22 @@ int sendnewportmappingrequest(natpmp_t * p, int protocol,
                               uint16_t privateport, uint16_t publicport,
 							  uint32_t lifetime)
 {
+	uint16_t *n;
+	uint32_t *m;
+
 	if(!p || (protocol!=NATPMP_PROTOCOL_TCP && protocol!=NATPMP_PROTOCOL_UDP))
 		return NATPMP_ERR_INVALIDARGS;
 	p->pending_request[0] = 0;
 	p->pending_request[1] = (char)protocol;
 	p->pending_request[2] = 0;
 	p->pending_request[3] = 0;
-	*((uint16_t *)(intptr_t)(p->pending_request + 4)) = htons(privateport);
-	*((uint16_t *)(intptr_t)(p->pending_request + 6)) = htons(publicport);
-	*((uint32_t *)(intptr_t)(p->pending_request + 8)) = htonl(lifetime);
+	n = (uint16_t *)(p->pending_request + 4); *n = htons(privateport);
+	n = (uint16_t *)(p->pending_request + 6); *n = htons(publicport);
+	m = (uint32_t *)(p->pending_request + 8); *m = htonl(lifetime);
+
+	//*((uint16_t *)(p->pending_request + 4)) = htons(privateport);
+	//*((uint16_t *)(p->pending_request + 6)) = htons(publicport);
+	//*((uint32_t *)(p->pending_request + 8)) = htonl(lifetime);
 	p->pending_request_len = 12;
 	return sendnatpmprequest(p);
 }

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -122,6 +122,11 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 		} else {
 			context->m = libvlc_media_new_location(read_inst, context->path);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VLC Path is unknown type %s\n", context->path);
+		}
+
+		if ( context->m == NULL ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error opening %s for reading\n", path);
+			return SWITCH_STATUS_GENERR;
 		}
 		
 		context->playing = 0;

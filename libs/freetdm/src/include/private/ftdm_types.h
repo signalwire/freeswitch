@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2012, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -163,7 +163,8 @@ typedef enum {
 	FTDM_SIGTYPE_SANGOMABOOST,
 	FTDM_SIGTYPE_M3UA,
 	FTDM_SIGTYPE_R2,
-	FTDM_SIGTYPE_SS7
+	FTDM_SIGTYPE_SS7,
+	FTDM_SIGTYPE_GSM
 } ftdm_signal_type_t;
 
 typedef enum {

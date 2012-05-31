@@ -356,8 +356,8 @@ zrtp_status_t zrtp_register_with_trusted_mitm(zrtp_stream_t* stream)
 	
 	/* Passive Client endpoint should NOT generate PBX Secret. */
 	if ((stream->mitm_mode == ZRTP_MITM_MODE_REG_CLIENT) &&
-		(ZRTP_LICENSE_MODE_PASSIVE != stream->zrtp->lic_mode)) {
-		ZRTP_LOG(2,(_ZTU_,"WARNING: Passive Client endpoint should NOT generate PBX Secert.\n"));
+		(ZRTP_LICENSE_MODE_PASSIVE == stream->zrtp->lic_mode)) {
+		ZRTP_LOG(2,(_ZTU_,"WARNING: Passive Client endpoint should NOT generate PBX Secret.\n"));
 		return zrtp_status_bad_param;
 	}
 

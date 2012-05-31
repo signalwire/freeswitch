@@ -203,6 +203,14 @@ typedef enum {
 	FTDM_TRUE
 } ftdm_bool_t;
 
+/*! \brief I/O waiting flags */
+typedef enum {
+	FTDM_NO_FLAGS = 0,
+	FTDM_READ =  (1 << 0),
+	FTDM_WRITE = (1 << 1),
+	FTDM_EVENTS = (1 << 2)
+} ftdm_wait_flag_t;
+
 /*! 
  * \brief FreeTDM channel.
  *        This is the basic data structure used to place calls and I/O operations

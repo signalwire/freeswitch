@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -212,7 +212,7 @@ void WINAPI service_main(DWORD numArgs, char **args)
 	memset(&status, 0, sizeof(SERVICE_STATUS));
 	status.dwServiceType = SERVICE_WIN32;
 	status.dwCurrentState = SERVICE_START_PENDING;
-	status.dwControlsAccepted = SERVICE_ACCEPT_STOP;
+	status.dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
 
 	/* register our handler for service control messages */
 	hStatus = RegisterServiceCtrlHandler(service_name, &ServiceCtrlHandler);
@@ -288,7 +288,7 @@ void daemonize(int do_wait)
 				while(--sanity && !system_ready) {
 				
 					if (sanity % 2 == 0) {
-						printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", getpid(), (int) pid);
+						printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", (int)getpid(), (int) pid);
 					}
 					sleep(1);
 				}

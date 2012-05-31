@@ -1,0 +1,15 @@
+# gitattributes
+*.exe -diff binary executable windows dfsg-nonfree debian-ignore
+*.wav -diff binary sound
+*.gif -diff binary image
+*.jpg -diff binary image
+*.jpeg -diff binary image
+*.pbm -diff binary image
+/clients/flex* dfsg-nonfree
+/debian* debian-ignore
+/freeswitch.xcodeproj debian-ignore
+/libs/ilbc* dfsg-nonfree
+/libs/libg722_1* dfsg-nonfree
+/libs/win32* windows debian-ignore
+/htdocs* dfsg-nonfree debian-ignore
+/w32* windows debian-ignore
