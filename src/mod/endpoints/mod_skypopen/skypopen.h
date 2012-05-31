@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005/2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -21,17 +21,16 @@
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
- * This module (mod_skypopen) has been contributed by:
+ * This module (mod_gsmopen) has been contributed by:
  *
- * Giovanni Maruzzelli (gmaruzz@gmail.com)
+ * Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
- *
- * Further Contributors:
- *
+ * Maintainer: Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
  * mod_skypopen.c -- Skype compatible Endpoint Module
  *
  */
+
 
 #include <switch.h>
 #include <switch_version.h>
