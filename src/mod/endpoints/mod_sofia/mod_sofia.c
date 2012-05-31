@@ -1587,6 +1587,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 		{
+
+			switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, NULL);
 			sofia_glue_tech_track(tech_pvt->profile, session);
 
 			sofia_set_flag(tech_pvt, TFLAG_SIMPLIFY);
