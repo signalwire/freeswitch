@@ -22,8 +22,10 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * Chris Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.net>
  * Timo Teräs <timo.teras@iki.fi> (based on mod_timerfd.c)
+ *
+ * Maintainer: Christopher M. Rienzo <chris@rienzo.net>
  *
  * mod_posix_timer.c -- soft timer implemented with POSIX timers (timer_create/timer_settime/timer_getoverrun)
  *
