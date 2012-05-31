@@ -108,6 +108,7 @@ void handle_tucl_alarm(Pst *pst, HiMngmt *sta);
 switch_status_t sng_mgco_init(sng_isup_event_interface_t* event);
 switch_status_t sng_mgco_cfg(const char* profilename);
 switch_status_t sng_mgco_start(const char* profilename);
+switch_status_t sng_mgco_stop(const char* profilename);
 switch_status_t sng_mgco_stack_shutdown(void);
 
 /*****************************************************************************************************/

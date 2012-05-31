@@ -29,6 +29,11 @@ int mgco_mg_tsap_enable_cntrl(int idx);
 int mgco_mg_ssap_cntrl(int idx);
 int mgco_mu_ssap_cntrl(int idx);
 int mgco_mg_tpt_server(int idx);
+int sng_mgco_tucl_shutdown();
+int sng_mgco_mg_shutdown();
+int sng_mgco_mg_ssap_stop(int sapId);
+int sng_mgco_mg_tpt_server_stop(int idx);
+int sng_mgco_mg_app_ssap_stop(int idx);
 
 switch_status_t sng_mgco_stack_gen_cfg();
 
@@ -86,6 +91,12 @@ switch_status_t sng_mgco_init(sng_isup_event_interface_t* event)
 /*****************************************************************************************************************/
 switch_status_t sng_mgco_stack_shutdown()
 {
+	/* shutdown MG */
+	sng_mgco_mg_shutdown();
+
+	/* shutdown TUCL */
+	sng_mgco_tucl_shutdown();
+
 	/* free MEGACO Application */
 	sng_isup_free_mu();
 
@@ -258,6 +269,159 @@ switch_status_t sng_mgco_start(const char* profilename)
 }
 
 /*****************************************************************************************************************/
+
+switch_status_t sng_mgco_stop(const char* profilename)
+{
+	int idx   = 0x00;
+	sng_mg_cfg_t* mgCfg  = NULL; 
+
+	switch_assert(profilename);
+
+	GET_MG_CFG_IDX(profilename, idx);
+
+	if(!idx || (idx == MAX_MG_PROFILES)){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG configuration found against profilename[%s]\n",profilename);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Stopping MG stack for idx[%d] against profilename[%s]\n", idx, profilename);
+
+	mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
+
+	/* MG STOP is as good as deleting that perticular mg(virtual mg instance) data from megaco stack */
+	/* currently we are not supporting enable/disable MG stack */
+
+	if(sng_mgco_mg_ssap_stop(mgCfg->id)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " sng_mgco_mg_ssap_stop FAILED \n");
+		return SWITCH_STATUS_FALSE;
+	}
+	else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " sng_mgco_mg_ssap_stop SUCCESS \n");
+	}
+
+	if(sng_mgco_mg_tpt_server_stop(idx)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " sng_mgco_mg_tpt_server_stop FAILED \n");
+		return SWITCH_STATUS_FALSE;
+	}
+	else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " sng_mgco_mg_tpt_server_stop SUCCESS \n");
+	}
+
+	if(sng_mgco_mg_app_ssap_stop(idx)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " sng_mgco_mg_app_ssap_stop FAILED \n");
+		return SWITCH_STATUS_FALSE;
+	}
+	else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " sng_mgco_mg_app_ssap_stop SUCCESS \n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/*****************************************************************************************************************/
+int sng_mgco_mg_app_ssap_stop(int idx)
+{
+        MuMngmt         mgMngmt;
+        Pst             pst;              /* Post for layer manager */
+        MuCntrl         *cntrl;
+
+        memset(&mgMngmt, 0, sizeof(mgMngmt));
+
+        cntrl = &(mgMngmt.t.cntrl);
+
+        /* initalize the post structure */
+        smPstInit(&pst);
+
+        /* insert the destination Entity */
+        pst.dstEnt = ENTMU;
+
+        /*fill in the specific fields of the header */
+        mgMngmt.hdr.msgType         = TCNTRL;
+        mgMngmt.hdr.entId.ent       = ENTMG;
+        mgMngmt.hdr.entId.inst      = S_INST;
+        mgMngmt.hdr.elmId.elmnt     = STSSAP;
+        mgMngmt.hdr.elmId.elmntInst1     = GET_MU_SAP_ID(idx);
+
+        cntrl->action       = ADEL;
+        cntrl->subAction    = SAELMNT;
+
+        return(sng_cntrl_mu(&pst, &mgMngmt));
+}
+/*****************************************************************************************************************/
+
+int sng_mgco_mg_ssap_stop(int sapId)
+{
+	Pst pst;
+	MgMngmt cntrl;
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&cntrl, 0, sizeof(MgCntrl));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTMG;
+
+	/* prepare header */
+	cntrl.hdr.msgType     = TCNTRL;         /* message type */
+	cntrl.hdr.entId.ent   = ENTMG;          /* entity */
+	cntrl.hdr.entId.inst  = 0;              /* instance */
+	cntrl.hdr.elmId.elmnt = STSSAP;       /* SSAP */
+	cntrl.hdr.elmId.elmntInst1 = sapId;      /* sap id */
+
+	cntrl.hdr.response.selector    = 0;
+	cntrl.hdr.response.prior       = PRIOR0;
+	cntrl.hdr.response.route       = RTESPEC;
+	cntrl.hdr.response.mem.region  = S_REG;
+	cntrl.hdr.response.mem.pool    = S_POOL;
+
+	cntrl.t.cntrl.action    	= ADEL;
+	cntrl.t.cntrl.subAction    	= SAELMNT;
+	cntrl.t.cntrl.spId 		= sapId;
+	return (sng_cntrl_mg (&pst, &cntrl));
+}
+
+/*****************************************************************************************************************/
+int sng_mgco_mg_tpt_server_stop(int idx)
+{
+        MgMngmt         mgMngmt;
+        Pst             pst;              /* Post for layer manager */
+        MgCntrl         *cntrl;
+        MgTptCntrl *tptCntrl = &mgMngmt.t.cntrl.s.tptCntrl;
+        CmInetIpAddr   ipAddr = 0;
+	sng_mg_cfg_t* mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
+
+        cntrl = &(mgMngmt.t.cntrl);
+
+        memset(&mgMngmt, 0, sizeof(mgMngmt));
+
+        /* initalize the post structure */
+        smPstInit(&pst);
+
+        /* insert the destination Entity */
+        pst.dstEnt = ENTMG;
+
+	tptCntrl->transportType = GET_TPT_TYPE(idx);
+        
+	tptCntrl->serverAddr.type =  CM_INET_IPV4ADDR_TYPE;
+	tptCntrl->serverAddr.u.ipv4TptAddr.port = mgCfg->port;
+	if(ROK == cmInetAddr((S8*)mgCfg->my_ipaddr, &ipAddr))
+	{
+		tptCntrl->serverAddr.u.ipv4TptAddr.address = ntohl(ipAddr);
+	}
+
+        /*fill in the specific fields of the header */
+        mgMngmt.hdr.msgType         = TCNTRL;
+        mgMngmt.hdr.entId.ent       = ENTMG;
+        mgMngmt.hdr.entId.inst      = S_INST;
+        mgMngmt.hdr.elmId.elmnt     = STSERVER;
+
+        cntrl->action       = ADEL;
+        cntrl->subAction    = SAELMNT;
+
+        return(sng_cntrl_mg(&pst, &mgMngmt));
+}
+/*****************************************************************************************************************/
+
 int mgco_mg_tsap_bind_cntrl(int idx)
 {
         MgMngmt         mgMngmt;
@@ -962,3 +1126,64 @@ int mgco_mg_tpt_server_config(int idx)
 }
 
 /******************************************************************************/
+int sng_mgco_tucl_shutdown()
+{
+        Pst pst;
+        HiMngmt cntrl;
+
+        memset((U8 *)&pst, 0, sizeof(Pst));
+        memset((U8 *)&cntrl, 0, sizeof(HiMngmt));
+
+        smPstInit(&pst);
+
+        pst.dstEnt = ENTHI;
+
+        /* prepare header */
+        cntrl.hdr.msgType     = TCNTRL;         /* message type */
+        cntrl.hdr.entId.ent   = ENTHI;          /* entity */
+        cntrl.hdr.entId.inst  = 0;              /* instance */
+        cntrl.hdr.elmId.elmnt = STGEN;       /* General */
+
+        cntrl.hdr.response.selector    = 0;
+        cntrl.hdr.response.prior       = PRIOR0;
+        cntrl.hdr.response.route       = RTESPEC;
+        cntrl.hdr.response.mem.region  = S_REG;
+        cntrl.hdr.response.mem.pool    = S_POOL;
+
+        cntrl.t.cntrl.action    = ASHUTDOWN;
+
+        return (sng_cntrl_tucl (&pst, &cntrl));
+}
+/******************************************************************************/
+int sng_mgco_mg_shutdown()
+{
+        Pst pst;
+        MgMngmt cntrl;
+
+        memset((U8 *)&pst, 0, sizeof(Pst));
+        memset((U8 *)&cntrl, 0, sizeof(MgCntrl));
+
+        smPstInit(&pst);
+
+        pst.dstEnt = ENTMG;
+
+        /* prepare header */
+        cntrl.hdr.msgType     = TCNTRL;         /* message type */
+        cntrl.hdr.entId.ent   = ENTMG;          /* entity */
+        cntrl.hdr.entId.inst  = 0;              /* instance */
+        cntrl.hdr.elmId.elmnt = STGEN;       /* General */
+
+        cntrl.hdr.response.selector    = 0;
+        cntrl.hdr.response.prior       = PRIOR0;
+        cntrl.hdr.response.route       = RTESPEC;
+        cntrl.hdr.response.mem.region  = S_REG;
+        cntrl.hdr.response.mem.pool    = S_POOL;
+
+        cntrl.t.cntrl.action    = ASHUTDOWN;
+        cntrl.t.cntrl.subAction    = SAELMNT;
+
+        return (sng_cntrl_mg (&pst, &cntrl));
+}
+/******************************************************************************/
+
+
