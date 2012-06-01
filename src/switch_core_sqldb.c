@@ -1193,7 +1193,7 @@ static char *parse_presence_data_cols(switch_event_t *event)
 	for (i = 0; i < col_count; i++) {
 		const char *val = NULL;
 
-		switch_snprintfv(col_name, sizeof(col_name), "variable_%q", cols[i]);
+		switch_snprintfv(col_name, sizeof(col_name), "PD-%q", cols[i]);
 		val = switch_event_get_header_nil(event, col_name);
 		if (zstr(val)) {
 			stream.write_function(&stream, "%q=NULL,", cols[i]);
