@@ -384,8 +384,10 @@ static void inherit_codec(switch_channel_t *caller_channel, switch_core_session_
 {
 	const char *var = switch_channel_get_variable(caller_channel, "inherit_codec");
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	
-	if (switch_true(var)) {
+
+	if (!zstr(var) && !strcasecmp(var, "passthru")) {
+		switch_channel_set_variable(caller_channel, "absolute_codec_string", switch_channel_get_variable(channel, "ep_codec_string"));
+	} else if (switch_true(var)) {
 		switch_codec_implementation_t impl = { 0 };
 		switch_codec_implementation_t video_impl = { 0 };
 		char tmp[128] = "";

@@ -776,19 +776,23 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 const char *sofia_glue_get_codec_string(private_object_t *tech_pvt)
 {
-	const char *codec_string = NULL, *preferred = NULL, *fallback = NULL;
-
-	if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-		preferred = tech_pvt->profile->outbound_codec_string;
-		fallback = tech_pvt->profile->inbound_codec_string;
-	} else {
-		preferred = tech_pvt->profile->inbound_codec_string;
-		fallback = tech_pvt->profile->outbound_codec_string;
+	const char *preferred = NULL, *fallback = NULL;
+	
+	if (!(preferred = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {
+		preferred = switch_channel_get_variable(tech_pvt->channel, "codec_string");
+	}
+	
+	if (!preferred) {
+		if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			preferred = tech_pvt->profile->outbound_codec_string;
+			fallback = tech_pvt->profile->inbound_codec_string;
+		} else {
+			preferred = tech_pvt->profile->inbound_codec_string;
+			fallback = tech_pvt->profile->outbound_codec_string;
+		}
 	}
 
-	codec_string = !zstr(preferred) ? preferred : fallback;
-
-	return codec_string;
+	return !zstr(preferred) ? preferred : fallback;
 }
 
 void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
