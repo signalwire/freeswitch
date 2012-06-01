@@ -70,7 +70,7 @@
     <!-- Let calls hit the dialplan before selecting codec for the a-leg -->
     <param name="inbound-late-negotiation" value="true"/>
 
-    <!-- Allow ZRTP clients to negotiate end-to-end security associations -->
+    <!-- Allow ZRTP clients to negotiate end-to-end security associations (also enables late negotiation) -->
     <param name="inbound-zrtp-passthru" value="true"/>
 
     <!-- this lets anything register -->
