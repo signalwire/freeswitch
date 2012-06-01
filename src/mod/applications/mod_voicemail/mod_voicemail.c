@@ -3489,7 +3489,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 	switch_safe_free(file_path);
 
-	if (switch_channel_ready(channel)) {
+	if (switch_channel_ready(channel) && vm_enabled) {
 		status = switch_ivr_phrase_macro(session, VM_GOODBYE_MACRO, NULL, NULL, NULL);
 	}
 
