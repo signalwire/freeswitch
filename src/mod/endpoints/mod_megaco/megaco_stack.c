@@ -1675,3 +1675,141 @@ void handle_tucl_alarm(Pst *pst, HiMngmt *sta)
 }   /* handle_sng_tucl_alarm */
 /******************************************************************************/
 
+int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, int mg_cfg_idx)
+{
+	Pst pst;
+	MgMngmt cntrl;
+	sng_mg_cfg_t*  mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[mg_cfg_idx];
+	sng_mg_peer_t*  mgPeer = &megaco_globals.g_mg_cfg.mgPeer.peers[mgCfg->peer_id];
+	CmInetIpAddr   ipAddr = 0;
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&cntrl, 0, sizeof(MgCntrl));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTMG;
+
+	/* prepare header */
+	/*cntrl.hdr.msgType     = TCNTRL;  */       /* message type */
+	cntrl.hdr.entId.ent   = ENTMG;          /* entity */
+	cntrl.hdr.entId.inst  = 0;              /* instance */
+	cntrl.hdr.elmId.elmnt = elemId;       /* General */
+
+	cntrl.hdr.response.selector    = 0;
+	cntrl.hdr.response.prior       = PRIOR0;
+	cntrl.hdr.response.route       = RTESPEC;
+	cntrl.hdr.response.mem.region  = S_REG;
+	cntrl.hdr.response.mem.pool    = S_POOL;
+
+	switch(elemId)
+	{
+		case STGCPENT:
+			{
+				cntrl.t.ssta.s.mgPeerSta.peerId.pres = PRSNT_NODEF;
+				cntrl.t.ssta.s.mgPeerSta.peerId.val = mgCfg->peer_id;
+
+				cntrl.t.ssta.s.mgPeerSta.mid.pres = PRSNT_NODEF;
+				cntrl.t.ssta.s.mgPeerSta.mid.len  = strlen((char*)mgPeer->mid);
+				cmMemcpy((U8 *)cntrl.t.ssta.s.mgPeerSta.mid.val, 
+						(CONSTANT U8*)(char*)mgPeer->mid, 
+					 	cntrl.t.ssta.s.mgPeerSta.mid.len);	
+				break;
+			}
+		case STSSAP:
+			{
+				cntrl.t.ssta.s.mgSSAPSta.sapId = mgCfg->id; 
+				break;
+			}
+		case STTSAP:
+			{
+				cntrl.t.ssta.s.mgTSAPSta.tSapId = GET_TPT_ID(mg_cfg_idx);
+				break;
+			}
+		case STSERVER:
+			{
+				cntrl.t.ssta.s.mgTptSrvSta.tptAddr.type =  CM_INET_IPV4ADDR_TYPE;
+				cntrl.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.port = ntohl(ipAddr);
+				if(ROK == cmInetAddr((S8*)mgCfg->my_ipaddr, &ipAddr))
+				{
+					cntrl.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.address = ntohl(ipAddr);
+				}
+
+
+				break;
+			}
+		default:
+			break;
+	}
+
+	return (sng_sta_mg (&pst, &cntrl, cfm));
+}
+/******************************************************************************/
+switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char* profilename)
+{
+	int idx   = 0x00;
+	int len   = 0x00;
+	MgMngmt   cfm;
+	char 	  prntBuf[1024];
+
+	switch_assert(profilename);
+
+	memset((U8 *)&cfm, 0, sizeof(cfm));
+	memset((char *)&prntBuf, 0, sizeof(prntBuf));
+
+	GET_MG_CFG_IDX(profilename, idx);
+
+	if(!idx || (idx == MAX_MG_PROFILES)){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG configuration found against profilename[%s]\n",profilename);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/*stream->write_function(stream, "Collecting MG Profile[%s] status... \n",profilename);*/
+
+	/* Fetch data from Trillium MEGACO Stack 	*
+	 * SystemId - Software version information 	*
+	 * SSAP     - MG SAP Information 		*
+	 * TSAP     - MG Transport SAP Information 	*
+	 * Peer     - MG Peer Information 		*
+	 * TPT-Server - MG Transport Server information *
+	 */ 
+
+#if 0
+	/* get System ID */
+	sng_mgco_mg_get_status(STSID, &cfm, idx);
+	stream->write_function(stream, "***********************************************\n");
+	stream->write_function(stream, "**** TRILLIUM MEGACO Software Information *****\n");
+	stream->write_function(stream, "Version 	  = %d \n", cfm.t.ssta.s.systemId.mVer);
+	stream->write_function(stream, "Version Revision  = %d \n", cfm.t.ssta.s.systemId.mRev);
+	stream->write_function(stream, "Branch  Version   = %d \n", cfm.t.ssta.s.systemId.bVer);
+	stream->write_function(stream, "Branch  Revision  = %d \n", cfm.t.ssta.s.systemId.bRev);
+	stream->write_function(stream, "Part    Number    = %d \n", cfm.t.ssta.s.systemId.ptNmb);
+	stream->write_function(stream, "***********************************************\n");
+#endif
+
+	/* MG Peer Information */
+	sng_mgco_mg_get_status(STGCPENT, &cfm, idx);
+	smmgPrntPeerSta(&cfm.t.ssta.s.mgPeerSta);
+
+	/* MG Peer Information */
+	sng_mgco_mg_get_status(STSSAP, &cfm, idx);
+	smmgPrntSsapSta(&cfm.t.ssta.s.mgSSAPSta);
+
+	/* MG Transport SAP Information */
+	sng_mgco_mg_get_status(STTSAP, &cfm, idx);
+	len = len + sprintf(prntBuf+len,"***********************************************\n"); 
+	len = len + sprintf(prntBuf+len,"**********MG TRANSPORT SAP Information**********\n");
+	len = len + sprintf(prntBuf+len,"TSAP status:\n");
+	len = len + sprintf(prntBuf+len,"state = %d, number of listeners %u\n",
+			(int)(cfm.t.ssta.s.mgTSAPSta.state),
+			(unsigned int)(cfm.t.ssta.s.mgTSAPSta.numServers));
+	len = len + sprintf(prntBuf+len,"***********************************************\n"); 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"%s\n",prntBuf); 
+
+	/* MG Transport Server Information */
+	sng_mgco_mg_get_status(STSERVER, &cfm, idx);
+	smmgPrntSrvSta(&cfm.t.ssta.s.mgTptSrvSta);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+/******************************************************************************/

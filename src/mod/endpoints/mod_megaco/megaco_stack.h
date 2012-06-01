@@ -84,6 +84,7 @@ typedef struct sng_mg_cfg{
 
 
 typedef struct sng_mg_gbl_cfg{
+	int 				num_of_mg_profiles;
 	sng_mg_cfg_t                    mgCfg[MAX_MG_PROFILES + 1];
 	sng_mg_transport_profile_t 	mgTptProf[MG_MAX_PEERS+1];	/* transport profile */
 	sng_mg_peers_t 			mgPeer;
@@ -111,6 +112,8 @@ switch_status_t sng_mgco_cfg(const char* profilename);
 switch_status_t sng_mgco_start(const char* profilename);
 switch_status_t sng_mgco_stop(const char* profilename);
 switch_status_t sng_mgco_stack_shutdown(void);
+int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, int mg_cfg_idx);
+switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char* profilename);
 
 /*****************************************************************************************************/
 
