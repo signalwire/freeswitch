@@ -1407,6 +1407,20 @@ static void core_event_handler(switch_event_t *event)
 			case CS_DESTROY:
 			case CS_REPORTING:
 				break;
+			case CS_EXECUTE:
+				if ((extra_cols = parse_presence_data_cols(event))) {
+					new_sql() = switch_mprintf("update channels set state='%s',%s where uuid='%q'",
+											   switch_event_get_header_nil(event, "channel-state"),
+											   extra_cols,
+											   switch_event_get_header_nil(event, "unique-id"));
+					free(extra_cols);
+					
+				} else {
+					new_sql() = switch_mprintf("update channels set state='%s' where uuid='%s'",
+											   switch_event_get_header_nil(event, "channel-state"),
+											   switch_event_get_header_nil(event, "unique-id"));
+				}
+				break;
 			case CS_ROUTING:
 				if ((extra_cols = parse_presence_data_cols(event))) {
 					new_sql() = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',callee_name='%q',callee_num='%q',"

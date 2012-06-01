@@ -1928,6 +1928,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 			if (state == CS_ROUTING) {
 				switch_channel_event_set_data(channel, event);
 			} else {
+				const char *v;
+				
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State", switch_channel_state_name(state));
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State", switch_channel_callstate2str(channel->callstate));
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%d", state);
@@ -1951,6 +1953,21 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 				} else {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "ringing");
 				}
+
+
+				if ((v = switch_channel_get_variable(channel, "presence_id"))) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-ID", v);
+				}
+				
+				if ((v = switch_channel_get_variable(channel, "presence_data"))) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-Data", v);
+				}
+				
+				if ((v = switch_channel_get_variable(channel, "presence_data_cols"))) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Data-Cols", v);
+					switch_event_add_presence_data_cols(channel, event, "PD-");
+				}
+				
 			}
 			switch_event_fire(&event);
 		}
