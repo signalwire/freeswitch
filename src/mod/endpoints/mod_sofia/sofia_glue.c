@@ -4703,10 +4703,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				goto done;
 			}
 
-			if (switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38)) {
-				sofia_set_flag(tech_pvt, TFLAG_NOREPLY);
-			}
-			
 			if (switch_true(switch_channel_get_variable(channel, "refuse_t38"))) {
 				switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
 				match = 0;
@@ -4714,6 +4710,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 			} else {
 				const char *var = switch_channel_get_variable(channel, "t38_passthru");
 				int pass = sofia_test_pflag(tech_pvt->profile, PFLAG_T38_PASSTHRU);
+
+
+				if (switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38)) {
+					sofia_set_flag(tech_pvt, TFLAG_NOREPLY);
+				}
 
 				if (var) {
 					if (!(pass = switch_true(var))) {
