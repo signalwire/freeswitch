@@ -4814,6 +4814,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				}
 
 				if (sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ZRTP Passthru implictly sets inbound-late-negotiation to true.\n"); 
 					sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 				}
 
