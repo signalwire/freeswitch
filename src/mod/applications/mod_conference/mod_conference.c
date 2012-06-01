@@ -48,8 +48,22 @@ typedef struct conference_cdr_node_s {
 	char *record_path;
 	switch_time_t join_time;
 	switch_time_t leave_time;
+	uint32_t flags;
 	struct conference_cdr_node_s *next;
 } conference_cdr_node_t;
+
+typedef enum {
+	CDRR_LOCKED = 1,
+	CDRR_PIN,
+	CDRR_MAXMEMBERS
+} cdr_reject_reason_t;
+
+typedef struct conference_cdr_reject_s {
+	switch_caller_profile_t *cp;
+	switch_time_t reject_time;
+	cdr_reject_reason_t reason;
+	struct conference_cdr_reject_s *next;
+} conference_cdr_reject_t;
 
 
 
@@ -175,7 +189,8 @@ typedef enum {
 	CFLAG_EXIT_SOUND = (1 << 12),
 	CFLAG_ENTER_SOUND = (1 << 13),
 	CFLAG_VIDEO_BRIDGE = (1 << 14),
-	CFLAG_AUDIO_ALWAYS = (1 << 15)
+	CFLAG_AUDIO_ALWAYS = (1 << 15),
+	CFLAG_ENDCONF_FORCED = (1 << 16)
 } conf_flag_t;
 
 typedef enum {
@@ -332,6 +347,7 @@ typedef struct conference_obj {
 	uint32_t originating;
 	switch_call_cause_t cancel_cause;
 	conference_cdr_node_t *cdr_nodes;
+	conference_cdr_reject_t *cdr_rejected;
 	switch_time_t start_time;
 	switch_time_t end_time;
 	char *log_dir;
@@ -505,6 +521,7 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 static void conference_cdr_del(conference_member_t *member)
 {
 	member->cdr_node->leave_time = switch_epoch_time_now(NULL);
+	member->cdr_node->flags = member->flags;
 }
 
 static void conference_cdr_add(conference_member_t *member)
@@ -533,10 +550,30 @@ static void conference_cdr_add(conference_member_t *member)
 	member->cdr_node->cp = switch_caller_profile_dup(member->conference->pool, cp);
 }
 
+static void conference_cdr_rejected(conference_obj_t *conference, switch_channel_t *channel, cdr_reject_reason_t reason)
+{
+	conference_cdr_reject_t *rp;
+	switch_caller_profile_t *cp;
+
+	rp = switch_core_alloc(conference->pool, sizeof(*rp));
+
+	rp->next = conference->cdr_rejected;
+	conference->cdr_rejected = rp;
+	rp->reason = reason;
+	rp->reject_time = switch_epoch_time_now(NULL);
+
+	if (!(cp = switch_channel_get_caller_profile(channel))) {
+		return;
+	}
+
+	rp->cp = switch_caller_profile_dup(conference->pool, cp);
+}
+
 static void conference_cdr_render(conference_obj_t *conference)
 {
-	switch_xml_t cdr, x_ptr, x_member, x_members, x_conference, x_cp;
+	switch_xml_t cdr, x_ptr, x_member, x_members, x_conference, x_cp, x_flags, x_tag, x_rejected, x_attempt;
 	conference_cdr_node_t *np;
+	conference_cdr_reject_t *rp;
 	int cdr_off = 0, conf_off = 0;
 	char str[512];
 	char *path, *xml_text;
@@ -544,7 +581,7 @@ static void conference_cdr_render(conference_obj_t *conference)
 
 	if (zstr(conference->log_dir)) return;
 
-	if (!conference->cdr_nodes) return;
+	if (!conference->cdr_nodes && !conference->cdr_rejected) return;
 
 	if (!(cdr = switch_xml_new("cdr"))) {
 		abort();
@@ -583,18 +620,20 @@ static void conference_cdr_render(conference_obj_t *conference)
 	if (!(x_ptr = switch_xml_add_child_d(x_conference, "end_time", conf_off++))) {
 		abort();
 	}
+	switch_xml_set_attr_d(x_ptr, "endconf_forced", switch_test_flag(conference, CFLAG_ENDCONF_FORCED) ? "true" : "false");
 	switch_xml_set_attr_d(x_ptr, "type", "UNIX-epoch");
 	switch_snprintf(str, sizeof(str), "%ld", (long)conference->end_time);
 	switch_xml_set_txt_d(x_ptr, str);
+
 
 
 	if (!(x_members = switch_xml_add_child_d(x_conference, "members", conf_off++))) {
 		abort();
 	}
 
-	
 	for (np = conference->cdr_nodes; np; np = np->next) {
 		int member_off = 0;
+		int flag_off = 0;
 
 
 		if (!(x_member = switch_xml_add_child_d(x_members, "member", conf_off++))) {
@@ -619,6 +658,18 @@ static void conference_cdr_render(conference_obj_t *conference)
 		switch_xml_set_txt_d(x_ptr, str);
 
 		if (np->cp) {
+			x_flags = switch_xml_add_child_d(x_member, "flags", member_off++);
+			switch_assert(x_flags);
+
+			x_tag = switch_xml_add_child_d(x_flags, "is_moderator", flag_off++);
+			switch_xml_set_txt_d(x_tag, switch_test_flag(np, MFLAG_MOD) ? "true" : "false");
+
+			x_tag = switch_xml_add_child_d(x_flags, "end_conference", flag_off++);
+			switch_xml_set_txt_d(x_tag, switch_test_flag(np, MFLAG_ENDCONF) ? "true" : "false");
+
+			x_tag = switch_xml_add_child_d(x_flags, "was_kicked", flag_off++);
+			switch_xml_set_txt_d(x_tag, switch_test_flag(np, MFLAG_KICKED) ? "true" : "false");
+
 			if (!(x_cp = switch_xml_add_child_d(x_member, "caller_profile", member_off++))) {
 				abort();
 			}
@@ -631,8 +682,47 @@ static void conference_cdr_render(conference_obj_t *conference)
 			}
 			switch_xml_set_txt_d(x_ptr, np->record_path);
 		}
+
+
 	}
 
+	if (!(x_rejected = switch_xml_add_child_d(x_conference, "rejected", conf_off++))) {
+		abort();
+	}
+
+	for (rp = conference->cdr_rejected; rp; rp = rp->next) {
+		int attempt_off = 0;
+		int tag_off = 0;
+
+		if (!(x_attempt = switch_xml_add_child_d(x_rejected, "attempt", attempt_off++))) {
+			abort();
+		}
+
+		if (!(x_ptr = switch_xml_add_child_d(x_attempt, "reason", tag_off++))) {
+			abort();
+		}
+		if (rp->reason == CDRR_LOCKED) {
+			switch_xml_set_txt_d(x_ptr, "conference_locked");
+		} else if (rp->reason == CDRR_MAXMEMBERS) {
+			switch_xml_set_txt_d(x_ptr, "max_members_reached");
+		} else 	if (rp->reason == CDRR_PIN) {
+			switch_xml_set_txt_d(x_ptr, "invalid_pin");
+		}
+
+		if (!(x_ptr = switch_xml_add_child_d(x_attempt, "reject_time", tag_off++))) {
+			abort();
+		}
+		switch_xml_set_attr_d(x_ptr, "type", "UNIX-epoch");
+		switch_snprintf(str, sizeof(str), "%ld", (long) rp->reject_time);
+		switch_xml_set_txt_d(x_ptr, str);
+
+		if (rp->cp) {
+			if (!(x_cp = switch_xml_add_child_d(x_attempt, "caller_profile", attempt_off++))) {
+				abort();
+			}
+			switch_ivr_set_xml_profile_data(x_cp, rp->cp, 0);
+		}
+	}
 	
 	xml_text = switch_xml_toxml(cdr, SWITCH_TRUE);
 
@@ -1835,7 +1925,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				switch_epoch_time_now(NULL) - conference->endconf_time > conference->endconf_grace_time) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Conference %s: endconf grace time exceeded (%u)\n",
 					conference->name, conference->endconf_grace_time);
-			switch_set_flag(conference, CFLAG_DESTRUCT);
+			switch_set_flag(conference, CFLAG_DESTRUCT | CFLAG_ENDCONF_FORCED);
 		}
 
 		switch_mutex_unlock(conference->mutex);
@@ -4595,6 +4685,7 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 
 		x_member = switch_xml_add_child_d(x_members, "member", moff++);
 		switch_assert(x_member);
+		switch_xml_set_attr_d(x_member, "type", "caller");
 
 		switch_snprintf(i, sizeof(i), "%d", member->id);
 
@@ -6616,6 +6707,7 @@ SWITCH_STANDARD_APP(conference_function)
 			}
 
 			if (!pin_valid) {
+				conference_cdr_rejected(conference, channel, CDRR_PIN);
 				goto done;
 			}
 		}
@@ -6627,6 +6719,7 @@ SWITCH_STANDARD_APP(conference_function)
 		/* don't allow more callers if the conference is locked, unless we invited them */
 		if (switch_test_flag(conference, CFLAG_LOCKED) && enforce_security) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Conference %s is locked.\n", conf_name);
+			conference_cdr_rejected(conference, channel, CDRR_LOCKED);
 			if (conference->locked_sound) {
 				/* Answer the channel */
 				switch_channel_answer(channel);
@@ -6641,6 +6734,7 @@ SWITCH_STANDARD_APP(conference_function)
 		 */
 		if ((conference->max_members > 0) && (conference->count >= conference->max_members)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Conference %s is full.\n", conf_name);
+			conference_cdr_rejected(conference, channel, CDRR_MAXMEMBERS);
 			if (conference->maxmember_sound) {
 				/* Answer the channel */
 				switch_channel_answer(channel);
