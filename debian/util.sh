@@ -305,6 +305,7 @@ build_all () {
   mkdir -p ../log
   > ../log/changes
   echo; echo; echo; echo
+  trap 'echo "Killing children...">&2; for x in $(jobs -p); do kill $x; done' EXIT
   if [ "${orig:0:2}" = ".." ]; then
     for distro in $distros; do
       echo "Creating $distro dsc..." >&2
@@ -328,6 +329,7 @@ build_all () {
     done
     ! $par || wait
   fi
+  trap - EXIT
   cat ../log/changes
 }
 
