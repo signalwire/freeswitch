@@ -235,9 +235,10 @@ build_debs () {
   {
     set -e
     local OPTIND OPTARG debug_hook=false hookdir="" cow_build_opts=""
-    while getopts 'Bd' o "$@"; do
+    while getopts 'Bbd' o "$@"; do
       case "$o" in
         B) cow_build_opts="--debbuildopts '-B'";;
+        b) cow_build_opts="--debbuildopts '-b'";;
         d) debug_hook=true;;
       esac
     done
@@ -312,7 +313,7 @@ build_all () {
       local dsc="$(create_dsc $dsc_opts $distro $orig 2>../log/$distro | tail -n1)"
       echo "Done creating $distro dsc." >&2
       if [ "${dsc:0:2}" = ".." ]; then
-        local lopts=""
+        local lopts="-b"
         for arch in $archs; do
           {
             echo "Building $distro-$arch debs..." >&2
@@ -363,6 +364,7 @@ commands:
   build-debs <distro> <dsc-file> <architecture>
 
     -B Binary architecture-dependent build
+    -b Binary-only build
     -d Enable cowbuilder debug hook
 
   create-dbg-pkgs
