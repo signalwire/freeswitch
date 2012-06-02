@@ -263,7 +263,7 @@ build_debs () {
     }
     if ! [ -d $cow_img ]; then
       announce "Creating base $distro-$arch image..."
-      cow --create $cow_build_opts
+      cow --create
     fi
     announce "Updating base $distro-$arch image..."
     cow --update
@@ -276,7 +276,8 @@ build_debs () {
     fi
     cow --build $dsc \
       --hookdir "$hookdir" \
-      --buildresult ../
+      --buildresult ../ \
+      $cow_build_opts
   } 1>&2
   echo ${dsc%.dsc}_${arch}.changes
 }
