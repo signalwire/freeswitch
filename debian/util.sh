@@ -317,13 +317,13 @@ build_all () {
           {
             echo "Building $distro-$arch debs..." >&2
             local changes="$(build_debs $lopts $deb_opts $distro $dsc $arch 2>../log/$distro-$arch | tail -n1)"
-            lopts="-B"
             echo "Done building $distro-$arch debs." >&2
             if [ "${changes:0:2}" = ".." ]; then
               echo "$changes" >> ../log/changes
             fi
           } &
           $par || wait
+          lopts="-B"
         done
       fi
     done
