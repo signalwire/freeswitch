@@ -277,7 +277,7 @@ build_debs () {
       --hookdir "$hookdir" \
       --buildresult ../
   } 1>&2
-  echo ${dsc}_${arch}.changes
+  echo ${dsc%.dsc}_${arch}.changes
 }
 
 build_all () {
