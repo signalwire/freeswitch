@@ -3670,7 +3670,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "to-uri", uri);
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "from-uri", uri);
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "content-type", "application/url");
-			switch_event_add_body(params, profile->pnp_prov_url);
+			switch_event_add_body(params, "%s", profile->pnp_prov_url);
 			switch_event_fire(&params);
 
 			switch_safe_free(uri);
