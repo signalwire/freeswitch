@@ -1877,10 +1877,10 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 	len = len + sprintf(prntBuf+len, "<state> %s </state>\n", PRNT_SAP_STATE((int)(cfm.t.ssta.s.mgSSAPSta.state)));
 	len = len + sprintf(prntBuf+len, "<num_of_peer> %u </num_of_peer>\n", (unsigned int)(cfm.t.ssta.s.mgSSAPSta.numAssocPeer));
 	len = len + sprintf(prntBuf+len, "<num_of_listeners> %u </num_of_listeners>\n", (unsigned int)(cfm.t.ssta.s.mgSSAPSta.numServers));
-	len = len + sprintf(&prntBuf[0] + len,"<mg_peers>\n");
+	len = len + sprintf(&prntBuf[0] + len,"<mg_sap_peers>\n");
 	for (i = 0; i < cfm.t.ssta.s.mgSSAPSta.numAssocPeer; i++)
 	{
-		len = len + sprintf(&prntBuf[0] + len,"<mg_peer>\n");
+		len = len + sprintf(&prntBuf[0] + len,"<mg_sap_peer>\n");
 		if(cfm.t.ssta.s.mgSSAPSta.peerInfo[i].dname.namePres.pres == PRSNT_NODEF)
 		{
 			len = len + sprintf(prntBuf+len, "<domain_name> %s </domain_name>\n", (char *)(cfm.t.ssta.s.mgSSAPSta.peerInfo[i].dname.name));
@@ -1903,9 +1903,9 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 			len = len + sprintf(prntBuf+len, "<peer_mid> %s </peer_mid>\n", (char *)(cfm.t.ssta.s.mgSSAPSta.peerInfo[i].mid.val));
 		}
 #endif /* GCP_MGCO */
-		len = len + sprintf(&prntBuf[0] + len,"</mg_peer>\n");
+		len = len + sprintf(&prntBuf[0] + len,"</mg_sap_peer>\n");
 	}
-	len = len + sprintf(&prntBuf[0] + len,"</mg_peers>\n");
+	len = len + sprintf(&prntBuf[0] + len,"</mg_sap_peers>\n");
 
 	len = len + sprintf(&prntBuf[0] + len,"</mg_sap>\n");
 
