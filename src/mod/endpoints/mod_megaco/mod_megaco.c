@@ -16,7 +16,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_megaco_shutdown);
 SWITCH_MODULE_DEFINITION(mod_megaco, mod_megaco_load, mod_megaco_shutdown, NULL);
 
 
-#define MEGACO_FUNCTION_SYNTAX "profile [name] [start | stop]"
+#define MEGACO_FUNCTION_SYNTAX "profile [name] [start | stop] [status] [xmlstatus]"
 SWITCH_STANDARD_API(megaco_function)
 {
 	int argc;
@@ -56,7 +56,22 @@ SWITCH_STANDARD_API(megaco_function)
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 			}
+		}else if(!strcmp(argv[2], "status")) {
+			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
+			if (profile) {
+				megaco_profile_status(stream, profile->name);
+			} else {
+				stream->write_function(stream, "-ERR No such profile\n");
+			}
+		}else if(!strcmp(argv[2], "xmlstatus")) {
+			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
+			if (profile) {
+				megaco_profile_xmlstatus(stream, profile->name);
+			} else {
+				stream->write_function(stream, "-ERR No such profile\n");
+			}
 		}
+
 	}
 	
 	goto done;
@@ -115,6 +130,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load)
 	
 	switch_console_set_complete("add megaco profile ::megaco::list_profiles start");
 	switch_console_set_complete("add megaco profile ::megaco::list_profiles stop");
+	switch_console_set_complete("add megaco profile ::megaco::list_profiles status");
+	switch_console_set_complete("add megaco profile ::megaco::list_profiles xmlstatus");
 	switch_console_add_complete_func("::megaco::list_profiles", list_profiles);
 
 
@@ -209,16 +226,6 @@ void handle_mgco_audit_cfm(Pst *pst, SuId suId, MgMgtAudit* audit, Reason reason
 }
 
 /*****************************************************************************************************************************/
-void handle_mg_alarm(Pst *pst, MgMngmt *sta)
-{
-	/*TODO*/
-}
-
-/*****************************************************************************************************************************/
-void handle_tucl_alarm(Pst *pst, HiMngmt *sta)
-{
-	/*TODO*/
-}
 
 /*****************************************************************************************************************************/
 

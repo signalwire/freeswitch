@@ -45,7 +45,7 @@ static switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t r
 		goto done;
 	}
 
-	/* iterate through MG Interface list to build all MG profiles */
+	/* iterate through MG Interface list to build requested MG profile */
 	for (mg_interface = switch_xml_child(mg_interfaces, "sng_mg_interface"); mg_interface; mg_interface = mg_interface->next) {
 
 		const char *name = switch_xml_attr_soft(mg_interface, "name");
@@ -161,9 +161,11 @@ switch_status_t megaco_profile_destroy(megaco_profile_t **profile)
 	switch_thread_rwlock_wrlock((*profile)->rwlock);
 	
 	
-	/* TODO: Kapil: Insert stack per-interface shutdown code here */
+	/* stop MEGACP stack */
+	if(SWITCH_STATUS_FALSE == sng_mgco_stop((*profile)->name)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error stopping MEGACO Stack for profile  %s\n", (*profile)->name); 
+	}
 
-	
 	switch_thread_rwlock_unlock((*profile)->rwlock);
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stopped profile: %s\n", (*profile)->name);	
