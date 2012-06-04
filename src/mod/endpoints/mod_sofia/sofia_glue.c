@@ -4161,6 +4161,7 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 	int changed = 0;
 
 	if (sofia_test_flag(tech_pvt, TFLAG_SLA_BARGE) || sofia_test_flag(tech_pvt, TFLAG_SLA_BARGING)) {
+		switch_channel_mark_hold(tech_pvt->channel, sendonly);
 		return 0;
 	}
 
