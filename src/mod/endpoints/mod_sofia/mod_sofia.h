@@ -28,6 +28,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
+ * Raymond Chandler <intralanman@gmail.com>
  *
  *
  * mod_sofia.h -- SOFIA SIP Endpoint
@@ -517,7 +518,8 @@ struct sofia_gateway {
 typedef enum {
 	PRES_TYPE_NONE = 0,
 	PRES_TYPE_FULL = 1,
-	PRES_TYPE_PASSIVE = 2
+	PRES_TYPE_PASSIVE = 2,
+	PRES_TYPE_PNP = 3
 } sofia_presence_type_t;
 
 typedef enum {
@@ -586,6 +588,8 @@ struct sofia_profile {
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;
 	char *jb_msec;
+	char *pnp_prov_url;
+	char *pnp_notify_profile;
 	sofia_cid_type_t cid_type;
 	sofia_dtmf_t dtmf_type;
 	int auto_restart;

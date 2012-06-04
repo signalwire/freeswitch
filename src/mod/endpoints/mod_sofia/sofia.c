@@ -2138,6 +2138,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("include-session-description")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("message-summary")),
+				   TAG_IF(profile->pres_type == PRES_TYPE_PNP, NUTAG_ALLOW_EVENTS("ua-profile")),
 				   NUTAG_ALLOW_EVENTS("refer"), SIPTAG_SUPPORTED_STR(supported), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
@@ -4417,10 +4418,16 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else if (!strcasecmp(val, "bypass-media-after-att-xfer")) {
 							profile->media_options |= MEDIA_OPT_BYPASS_AFTER_ATT_XFER;
 						}
+					} else if (!strcasecmp(var, "pnp-provision-url")) {
+						profile->pnp_prov_url = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "pnp-notify-profile")) {
+						profile->pnp_notify_profile = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "manage-presence")) {
 						if (!strcasecmp(val, "passive")) {
 							profile->pres_type = PRES_TYPE_PASSIVE;
 
+						} else if (!strcasecmp(val, "pnp")) {
+							profile->pres_type = PRES_TYPE_PNP;
 						} else if (switch_true(val)) {
 							profile->pres_type = PRES_TYPE_FULL;
 						}
@@ -4873,6 +4880,23 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 				if (!profile->sipdomain) {
 					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
+				}
+
+				if (profile->pres_type == PRES_TYPE_PNP) {
+					if (!profile->pnp_prov_url) {
+						profile->pnp_prov_url = switch_core_sprintf(profile->pool, "http://%s/provision/", mod_sofia_globals.guess_ip);
+					}
+
+					if (!profile->pnp_notify_profile) {
+						profile->pnp_notify_profile = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
+					}
+
+					if (!profile->extsipip) {
+						profile->extsipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
+					}
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "we're configured to provision to [%s] on profile [%s]\n", 
+									  profile->pnp_prov_url, profile->pnp_notify_profile);
 				}
 
 				config_sofia_profile_urls(profile);
