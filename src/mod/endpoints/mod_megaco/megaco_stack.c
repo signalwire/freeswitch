@@ -1205,7 +1205,7 @@ void handle_mg_alarm(Pst *pst, MgMngmt *usta)
 {
 	U16 ret;
 	int len = 0x00;
-	char prBuf[10024];
+	char prBuf[3048];
 
 	memset(&prBuf[0], 0, sizeof(prBuf));
 
@@ -1826,6 +1826,8 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 	sng_mg_cfg_t*  mgCfg  = NULL; 
 	sng_mg_peer_t*  mgPeer = NULL; 
 	int i = 0x00;
+	char *asciiAddr;
+	CmInetIpAddr ip;
 
 	switch_assert(profilename);
 
@@ -1844,7 +1846,6 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 
 
 	len = len + sprintf(&prntBuf[0] + len,"%s\n",xmlhdr);
-
 
 	len = len + sprintf(&prntBuf[0] + len,"<mg_profile>\n");
 	len = len + sprintf(&prntBuf[0] + len,"<name>%s</name>\n",mgCfg->name);
@@ -1889,7 +1890,9 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 		{
 			case CM_NETADDR_IPV4:
 				{
-					len = len + sprintf(prntBuf+len, "<ipv4_address>%lu</ipv4_address>\n", (long unsigned int)(cfm.t.ssta.s.mgSSAPSta.peerInfo[i].dname.netAddr.u.ipv4NetAddr));
+					ip = ntohl(cfm.t.ssta.s.mgSSAPSta.peerInfo[i].dname.netAddr.u.ipv4NetAddr);
+					cmInetNtoa(ip, &asciiAddr);
+					len = len + sprintf(prntBuf+len, "<ipv4_address>%s</ipv4_address>\n",asciiAddr); 
 					break;
 				}
 			default:
@@ -1939,8 +1942,9 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 				}
 			case CM_TPTADDR_IPV4:
 				{
-					len = len + sprintf(prntBuf+len, "IPv4 IP address #%lu, port %u",
-							(unsigned long)(cfm.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.address),
+					ip = ntohl(cfm.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.address);
+					cmInetNtoa(ip, &asciiAddr);
+					len = len + sprintf(prntBuf+len, "IPv4 IP address #%s, port %u",asciiAddr,
 							(unsigned int)(cfm.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.port));
 
 					break;
@@ -1967,6 +1971,9 @@ void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm)
 {
 	int len = 0x00;
 	int i = 0x00;
+	char *asciiAddr;
+	CmInetIpAddr ip;
+
 	if(PRSNT_NODEF == cfm->namePres.pres)
 	{
 		len = len + sprintf(prntBuf+len, "<domain_name> %s </domain_name>\n", (char *)(cfm->name));
@@ -1985,8 +1992,9 @@ void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm)
 		{
 			case CM_NETADDR_IPV4:
 				{
-					len = len + sprintf(prntBuf+len, "<ipv4_address>%lu</ipv4_address>\n", (unsigned long)
-							(cfm->peerAddrTbl.netAddr[i].u.ipv4NetAddr));
+					ip = ntohl(cfm->peerAddrTbl.netAddr[i].u.ipv4NetAddr);
+					cmInetNtoa(ip, &asciiAddr);
+					len = len + sprintf(prntBuf+len, "<ipv4_address>%s</ipv4_address>\n",asciiAddr); 
 					break;
 				}
 			case CM_NETADDR_IPV6:
