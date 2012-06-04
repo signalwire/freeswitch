@@ -37,6 +37,8 @@ int sng_mgco_mg_app_ssap_stop(int idx);
 
 switch_status_t sng_mgco_stack_gen_cfg();
 
+void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm);
+
 /******************************************************************************/
 
 /* FUNCTIONS ******************************************************************/
@@ -1764,6 +1766,7 @@ switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char
 		return SWITCH_STATUS_FALSE;
 	}
 
+
 	/*stream->write_function(stream, "Collecting MG Profile[%s] status... \n",profilename);*/
 
 	/* Fetch data from Trillium MEGACO Stack 	*
@@ -1813,3 +1816,275 @@ switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char
 	return SWITCH_STATUS_SUCCESS;
 }
 /******************************************************************************/
+switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const char* profilename)
+{
+	int idx   = 0x00;
+	int len   = 0x00;
+	MgMngmt   cfm;
+	char*     xmlhdr = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	char 	  prntBuf[10024];
+	sng_mg_cfg_t*  mgCfg  = NULL; 
+	sng_mg_peer_t*  mgPeer = NULL; 
+	int i = 0x00;
+
+	switch_assert(profilename);
+
+	memset((U8 *)&cfm, 0, sizeof(cfm));
+	memset((char *)&prntBuf, 0, sizeof(prntBuf));
+
+	GET_MG_CFG_IDX(profilename, idx);
+
+	if(!idx || (idx == MAX_MG_PROFILES)){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG configuration found against profilename[%s]\n",profilename);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
+	mgPeer = &megaco_globals.g_mg_cfg.mgPeer.peers[mgCfg->peer_id];
+
+
+	len = len + sprintf(&prntBuf[0] + len,"%s\n",xmlhdr);
+
+
+	len = len + sprintf(&prntBuf[0] + len,"<mg_profile>\n");
+	len = len + sprintf(&prntBuf[0] + len,"<name>%s</name>\n",mgCfg->name);
+	len = len + sprintf(&prntBuf[0] + len,"<profile>%s</profile>\n",profilename);
+/****************************************************************************************************************/
+/* Print Peer Information ***************************************************************************************/
+
+	/* TODO - as of now supporting only one peer .. need to add logic to iterate through all the peers associated with this profile..*/
+
+	len = len + sprintf(&prntBuf[0] + len,"<mg_peers>\n");
+	len = len + sprintf(&prntBuf[0] + len,"<mg_peer name=%s>\n",mgPeer->name);
+
+	/* send request to MEGACO Trillium stack to get peer information*/
+	sng_mgco_mg_get_status(STGCPENT, &cfm, idx);
+
+	get_peer_xml_buffer(&prntBuf[0] + len, &cfm.t.ssta.s.mgPeerSta);
+
+	len = len + sprintf(&prntBuf[0] + len,"</mg_peer>\n");
+	len = len + sprintf(&prntBuf[0] + len,"</mg_peers>\n");
+
+	
+/****************************************************************************************************************/
+/* Print MG SAP Information ***************************************************************************************/
+
+	len = len + sprintf(&prntBuf[0] + len,"<mg_sap>\n");
+
+	/* MG SAP Information */
+	sng_mgco_mg_get_status(STSSAP, &cfm, idx);
+
+	len = len + sprintf(prntBuf+len, "<state> %s </state>\n", PRNT_SAP_STATE((int)(cfm.t.ssta.s.mgSSAPSta.state)));
+	len = len + sprintf(prntBuf+len, "<num_of_peer> %u </num_of_peer>\n", (unsigned int)(cfm.t.ssta.s.mgSSAPSta.numAssocPeer));
+	len = len + sprintf(prntBuf+len, "<num_of_listeners> %u </num_of_listeners>\n", (unsigned int)(cfm.t.ssta.s.mgSSAPSta.numServers));
+	len = len + sprintf(&prntBuf[0] + len,"<mg_peers>\n");
+	for (i = 0; i < cfm.t.ssta.s.mgSSAPSta.numAssocPeer; i++)
+	{
+		len = len + sprintf(&prntBuf[0] + len,"<mg_peer>\n");
+		if(cfm.t.ssta.s.mgSSAPSta.peerInfo[i].dname.namePres.pres == PRSNT_NODEF)
+		{
+			len = len + sprintf(prntBuf+len, "<domain_name> %s </domain_name>\n", (char *)(cfm.t.ssta.s.mgSSAPSta.peerInfo[i].dname.name));
+		}
+		switch(cfm.t.ssta.s.mgSSAPSta.peerInfo[i].dname.netAddr.type)
+		{
+			case CM_NETADDR_IPV4:
+				{
+					len = len + sprintf(prntBuf+len, "<ipv4_address>%lu</ipv4_address>\n", (long unsigned int)(cfm.t.ssta.s.mgSSAPSta.peerInfo[i].dname.netAddr.u.ipv4NetAddr));
+					break;
+				}
+			default:
+				len = len + sprintf(prntBuf+len, "<ip_address>invalid type </ip_address>\n");
+				break;
+		}
+
+#ifdef GCP_MGCO
+		if (PRSNT_NODEF == cfm.t.ssta.s.mgSSAPSta.peerInfo[i].mid.pres)
+		{
+			len = len + sprintf(prntBuf+len, "<peer_mid> %s </peer_mid>\n", (char *)(cfm.t.ssta.s.mgSSAPSta.peerInfo[i].mid.val));
+		}
+#endif /* GCP_MGCO */
+		len = len + sprintf(&prntBuf[0] + len,"</mg_peer>\n");
+	}
+	len = len + sprintf(&prntBuf[0] + len,"</mg_peers>\n");
+
+	len = len + sprintf(&prntBuf[0] + len,"</mg_sap>\n");
+
+/****************************************************************************************************************/
+/* Print MG Transport SAP Information ***************************************************************************************/
+
+	len = len + sprintf(&prntBuf[0] + len,"<mg_transport_sap>\n");
+	/* MG Transport SAP Information */
+	sng_mgco_mg_get_status(STTSAP, &cfm, idx);
+	len = len + sprintf(&prntBuf[0] + len,"<state> %s </state>\n", PRNT_SAP_STATE(cfm.t.ssta.s.mgTSAPSta.state));
+	len = len + sprintf(&prntBuf[0] + len,"<num_of_listeners> %u </num_of_listeners>\n", (unsigned int)(cfm.t.ssta.s.mgTSAPSta.numServers)); 
+	len = len + sprintf(&prntBuf[0] + len,"</mg_transport_sap>\n");
+
+/****************************************************************************************************************/
+/* Print MG Transport Server Information ***************************************************************************************/
+
+	if(sng_mgco_mg_get_status(STSERVER, &cfm, idx)){
+		len = len + sprintf(&prntBuf[0] + len,"<mg_transport_server> no established server found </mg_transport_server>\n");
+	}
+	else {
+		len = len + sprintf(&prntBuf[0] + len,"<mg_transport_server>\n");
+		len = len + sprintf(&prntBuf[0] + len,"<state> %s </state>\n", PRNT_SAP_STATE(cfm.t.ssta.s.mgTptSrvSta.state));
+		len = len + sprintf(prntBuf+len, "<transport_address>");
+
+		switch (cfm.t.ssta.s.mgTptSrvSta.tptAddr.type)
+		{
+			case CM_TPTADDR_NOTPRSNT:
+				{
+					len = len + sprintf(prntBuf+len, "none");
+					break;
+				}
+			case CM_TPTADDR_IPV4:
+				{
+					len = len + sprintf(prntBuf+len, "IPv4 IP address #%lu, port %u",
+							(unsigned long)(cfm.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.address),
+							(unsigned int)(cfm.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.port));
+
+					break;
+				}
+			default:
+				len = len + sprintf(prntBuf+len, "unknown");
+				break;
+		}
+		len = len + sprintf(prntBuf+len, "</transport_address>\n");
+		len = len + sprintf(&prntBuf[0] + len,"</mg_transport_server>\n");
+	}
+
+/****************************************************************************************************************/
+	len = len + sprintf(&prntBuf[0] + len,"</mg_profile>\n");
+
+	stream->write_function(stream, "\n%s\n",&prntBuf[0]);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/******************************************************************************/
+
+void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm)
+{
+	int len = 0x00;
+	int i = 0x00;
+	if(PRSNT_NODEF == cfm->namePres.pres)
+	{
+		len = len + sprintf(prntBuf+len, "<domain_name> %s </domain_name>\n", (char *)(cfm->name));
+	}
+	else
+	{
+		len = len + sprintf(prntBuf+len, "<domain_name> Not Present </domain_name>\n");
+	}
+
+	/* 
+	 * Print all IP addresses in the IP addr table
+	 */
+	for(i=0; i<cfm->peerAddrTbl.count; i++)
+	{
+		switch (cfm->peerAddrTbl.netAddr[i].type)
+		{
+			case CM_NETADDR_IPV4:
+				{
+					len = len + sprintf(prntBuf+len, "<ipv4_address>%lu</ipv4_address>\n", (unsigned long)
+							(cfm->peerAddrTbl.netAddr[i].u.ipv4NetAddr));
+					break;
+				}
+			case CM_NETADDR_IPV6:
+				{
+					char ipv6_buf[128];
+					int len1= 0;
+					int j = 0;
+					memset(&ipv6_buf[0], 0, sizeof(ipv6_buf));
+					len1 = len1 + sprintf(ipv6_buf+len1, "IP V6 address : %2x", (unsigned int)
+							(cfm->peerAddrTbl.netAddr[i].u.ipv6NetAddr[0]));
+
+					for (j = 1; j < CM_IPV6ADDR_SIZE; j++)
+					{
+						len1 = len1 + sprintf(ipv6_buf+len1, ":%2x", (unsigned int)
+								(cfm->peerAddrTbl.netAddr[i].u.ipv6NetAddr[j]));
+					}
+					len1 = len1 + sprintf(ipv6_buf+len1,  "\n");
+					len = len + sprintf(prntBuf+len, "<ipv6_address>%s</ipv6_address>\n", ipv6_buf); 
+					break;
+				}
+			default:
+				{
+					len = len + sprintf(prntBuf+len, "<ip_address> Invalid address type[%d]</ip_address>\n", cfm->peerAddrTbl.netAddr[i].type);
+					break;
+				}
+		}
+	} /* End of for */
+
+	len = len + sprintf(prntBuf+len,"<num_of_pending_out_txn> %lu </num_of_pending_out_txn>\n",(unsigned long)(cfm->numPendOgTxn));
+	len = len + sprintf(prntBuf+len,"<num_of_pending_in_txn> %lu </num_of_pending_in_txn>\n",(unsigned long)(cfm->numPendIcTxn));
+	len = len + sprintf(prntBuf+len,"<round_trip_estimate_time> %lu </round_trip_estimate_time>\n",(unsigned long)(cfm->rttEstimate));
+
+	switch(cfm->protocol)
+	{
+		case LMG_PROTOCOL_MGCP:
+			len = len + sprintf(prntBuf+len,"<protocol_type> MGCP </protocol_type>\n");
+			break;
+
+		case LMG_PROTOCOL_MGCO:
+			len = len + sprintf(prntBuf+len,"<protocol_type> MEGACO </protocol_type>\n");
+			break;
+
+		case LMG_PROTOCOL_NONE:
+			len = len + sprintf(prntBuf+len,"<protocol_type> MGCP/MEGACO </protocol_type>\n");
+			break;
+
+		default:
+			len = len + sprintf(prntBuf+len,"<protocol_type> invalid </protocol_type>\n");
+			break;
+	}
+
+	switch(cfm->transportType)
+	{
+		case LMG_TPT_UDP:
+			len = len + sprintf(prntBuf+len, "<transport_type>UDP</transport_type>\n");
+			break;
+
+		case LMG_TPT_TCP:
+			len = len + sprintf(prntBuf+len, "<transport_type>TCP</transport_type>\n");
+			break;
+
+		case LMG_TPT_NONE:
+			len = len + sprintf(prntBuf+len, "<transport_type>UDP/TCP</transport_type>\n");
+			break;
+
+		default:
+			len = len + sprintf(prntBuf+len, "<transport_type>invalid</transport_type>\n");
+			break;
+	}
+#ifdef GCP_MGCO
+	switch(cfm->encodingScheme)
+	{
+		case LMG_ENCODE_BIN:
+			len = len + sprintf(prntBuf+len, "<encoding_type>BINARY</encoding_type>\n");
+			break;
+
+		case LMG_ENCODE_TXT:
+			len = len + sprintf(prntBuf+len, "<encoding_type>TEXT</encoding_type>\n");
+			break;
+
+		case LMG_ENCODE_NONE:
+			len = len + sprintf(prntBuf+len, "<encoding_type>TEXT/BINARY</encoding_type>\n");
+			break;
+
+		default:
+			len = len + sprintf(prntBuf+len, "<encoding_type>invalid</encoding_type>\n");
+			break;
+	}
+
+	if(LMG_VER_PROF_MGCO_H248_1_0 == cfm->version){
+		len = len + sprintf(prntBuf+len,  "<version>1.0</version> \n");
+	} else if(LMG_VER_PROF_MGCO_H248_2_0 == cfm->version){
+		len = len + sprintf(prntBuf+len,  "<version>2.0</version> \n");
+	}else if(LMG_VER_PROF_MGCO_H248_3_0 == cfm->version){
+		len = len + sprintf(prntBuf+len,  "<version>3.0</version> \n");
+	} else{
+		len = len + sprintf(prntBuf+len,  "<version>invalid</version> \n");
+	}
+#endif
+
+} 

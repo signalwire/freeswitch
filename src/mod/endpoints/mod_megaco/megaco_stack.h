@@ -114,6 +114,7 @@ switch_status_t sng_mgco_stop(const char* profilename);
 switch_status_t sng_mgco_stack_shutdown(void);
 int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, int mg_cfg_idx);
 switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char* profilename);
+switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const char* profilename);
 
 /*****************************************************************************************************/
 
