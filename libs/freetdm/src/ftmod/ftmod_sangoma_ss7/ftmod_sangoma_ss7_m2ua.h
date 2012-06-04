@@ -75,6 +75,7 @@ typedef struct sng_m2ua_peer_cfg{
 	uint16_t    		 sctpId;	/* idx to sctp profile */
 	uint32_t    		 destAddrList[SCT_MAX_NET_ADDRS+1]; /* Destination adddress list */
 	uint16_t    		 locOutStrms;	/*Number of outgoing streams supported by this association*/ 
+	int 			 init_sctp_assoc; /* flag to tell if we need to initiate SCTP association */
 }sng_m2ua_peer_cfg_t;
 
 typedef enum{
@@ -103,10 +104,10 @@ typedef struct sng_m2ua_cluster_cfg{
 }sng_m2ua_cluster_cfg_t;
 
 typedef struct sng_m2ua_gbl_cfg{
-	sng_nif_cfg_t 		nif[MW_MAX_NUM_OF_INTF];
-	sng_m2ua_cfg_t 		m2ua[MW_MAX_NUM_OF_INTF];
-	sng_m2ua_peer_cfg_t 	m2ua_peer[MW_MAX_NUM_OF_PEER];
-	sng_m2ua_cluster_cfg_t 	m2ua_clus[MW_MAX_NUM_OF_CLUSTER];
+	sng_nif_cfg_t 		nif[MW_MAX_NUM_OF_INTF+1];
+	sng_m2ua_cfg_t 		m2ua[MW_MAX_NUM_OF_INTF+1];
+	sng_m2ua_peer_cfg_t 	m2ua_peer[MW_MAX_NUM_OF_PEER+1];
+	sng_m2ua_cluster_cfg_t 	m2ua_clus[MW_MAX_NUM_OF_CLUSTER+1];
 }sng_m2ua_gbl_cfg_t;
 
 /* m2ua xml parsing APIs */
@@ -121,6 +122,12 @@ int ftmod_ss7_m2ua_start(void);
 void ftmod_ss7_m2ua_free(void);
 
 ftdm_status_t ftmod_ss7_m2ua_cfg(void);
+
+int ftmod_sctp_ssta_req(int elemt, int id, SbMgmt* cfm);
+#if 0
+int ftmod_m2ua_ssta_req(int elemt);
+int ftmod_nif_ssta_req(int elemt);
+#endif
 
 
 #endif /*__FTMOD_SNG_SS7_M2UA_H__*/
