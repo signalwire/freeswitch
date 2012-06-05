@@ -63,9 +63,9 @@ static int ftmod_open_endpoint(int idx);
 static int ftmod_init_sctp_assoc(int peer_id);
 static int ftmod_nif_m2ua_dlsap_bind(int id);
 static int ftmod_nif_mtp2_dlsap_bind(int id);
-static int ftmod_m2ua_enable_debug(void);
-static int ftmod_tucl_enable_debug(void);
-static int ftmod_sctp_enable_debug(void);
+static int ftmod_m2ua_debug(int action);
+static int ftmod_tucl_debug(int action);
+static int ftmod_sctp_debug(int action);
 
 static int ftmod_ss7_sctp_shutdown(void);
 static int ftmod_ss7_m2ua_shutdown(void);
@@ -1152,15 +1152,26 @@ uint32_t iptoul(const char *ip)
         return (uint32_t)val;
 }
 /***********************************************************************************************************************/
+void ftmod_ss7_enable_m2ua_sg_logging(void){
 
-int ftmod_ss7_m2ua_start(void){
-	int x=0;
+	/* Enable DEBUGs*/
+	ftmod_sctp_debug(AENA);
+	ftmod_m2ua_debug(AENA);
+	ftmod_tucl_debug(AENA);
+}
 
 /***********************************************************************************************************************/
-	/* Enable DEBUGs*/
-	ftmod_sctp_enable_debug();
-	ftmod_m2ua_enable_debug();
-	ftmod_tucl_enable_debug();
+void ftmod_ss7_disable_m2ua_sg_logging(void){
+
+	/* DISABLE DEBUGs*/
+	ftmod_sctp_debug(ADISIMM);
+	ftmod_m2ua_debug(ADISIMM);
+	ftmod_tucl_debug(ADISIMM);
+}
+
+/***********************************************************************************************************************/
+int ftmod_ss7_m2ua_start(void){
+	int x=0;
 
 /***********************************************************************************************************************/
 	x = 1;
@@ -1466,7 +1477,7 @@ static int ftmod_nif_mtp2_dlsap_bind(int id)
 }
 
 /***********************************************************************************************************************/
-static int ftmod_sctp_enable_debug()
+static int ftmod_sctp_debug(int action)
 {
 	Pst pst;
 	SbMgmt cntrl;  
@@ -1490,7 +1501,7 @@ static int ftmod_sctp_enable_debug()
 	cntrl.hdr.response.mem.region  = S_REG;
 	cntrl.hdr.response.mem.pool    = S_POOL;
 
-	cntrl.t.cntrl.action = AENA;
+	cntrl.t.cntrl.action = action;
 	cntrl.t.cntrl.subAction = SADBG;
 	cntrl.t.cntrl.dbgMask   = 0xFFFF;
 
@@ -1498,7 +1509,7 @@ static int ftmod_sctp_enable_debug()
 }
 /***********************************************************************************************************************/
 
-static int ftmod_m2ua_enable_debug()
+static int ftmod_m2ua_debug(int action)
 {
 	Pst pst;
 	MwMgmt cntrl;  
@@ -1522,14 +1533,14 @@ static int ftmod_m2ua_enable_debug()
 	cntrl.hdr.response.mem.region  = S_REG;
 	cntrl.hdr.response.mem.pool    = S_POOL;
 
-	cntrl.t.cntrl.action = AENA;
+	cntrl.t.cntrl.action = action;
 	cntrl.t.cntrl.subAction = SADBG;
 	cntrl.t.cntrl.s.dbgMask   = 0xFFFF;
 
 	return (sng_cntrl_m2ua (&pst, &cntrl));
 }
 /***********************************************************************************************************************/
-static int ftmod_tucl_enable_debug()
+static int ftmod_tucl_debug(int action)
 {
 	Pst pst;
 	HiMngmt cntrl;  
@@ -1553,7 +1564,7 @@ static int ftmod_tucl_enable_debug()
 	cntrl.hdr.response.mem.region  = S_REG;
 	cntrl.hdr.response.mem.pool    = S_POOL;
 
-	cntrl.t.cntrl.action    = AENA;
+	cntrl.t.cntrl.action    = action;
 	cntrl.t.cntrl.subAction = SADBG;
 	cntrl.t.cntrl.ctlType.hiDbg.dbgMask = 0xFFFF;
 
@@ -1594,6 +1605,7 @@ int ftmod_sctp_ssta_req(int elemt, int id, SbMgmt* cfm)
 	}
         if(ssta.hdr.elmId.elmnt == STSBASSOC)
         {
+		/*TODO - how to get assoc Id*/
                 ssta.t.ssta.s.assocSta.assocId = 0; /* association id */
         }
 	return(sng_sta_sctp(&pst,&ssta,cfm));

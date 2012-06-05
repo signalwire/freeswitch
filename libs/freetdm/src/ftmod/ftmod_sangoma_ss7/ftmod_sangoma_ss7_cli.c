@@ -123,6 +123,7 @@ static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream);
 static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char* sctp_profile_name);
 static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream);
 static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char* m2ua_profile_name);
+static ftdm_status_t handle_show_m2ua_peer_status(ftdm_stream_handle_t *stream, char* m2ua_profile_name);
 static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream);
 static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char* profile_name);
 int get_assoc_resp_buf(char* buf,SbMgmt* cfm);
@@ -394,12 +395,36 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 		/**********************************************************************/
 		} else if (!strcasecmp(argv[c], "m2ua")) {
 		/**********************************************************************/
-			if (check_arg_count(argc, 3)){
-				handle_show_m2ua_profiles(stream);
-			}else{	
-				c++;
-				handle_show_m2ua_profile(stream, argv[c]);
+			switch(argc)
+			{
+				case 2: /* show m2ua */
+				{
+					handle_show_m2ua_profiles(stream);
+					break;
+				}
+				case 3: /* show m2ua <profile-name> */
+				{
+					c++;
+					handle_show_m2ua_profile(stream, argv[c]);
+					break;
+				}
+				case 4:
+				{
+					char* profile_name = argv[++c];
+					c++;
+					if(!strcasecmp(argv[c],"peerstatus")){
+						handle_show_m2ua_peer_status(stream, profile_name);
+					}
+					else{
+						stream->write_function(stream, "Unknown \"show m2ua \" command..\n");
+						goto handle_cli_error_argc;
+					}
+					break;
+				}
+				default:
+				goto handle_cli_error_argc;
 			}
+
 		/**********************************************************************/
 		} else if (!strcasecmp(argv[c], "nif")) {
 		/**********************************************************************/
@@ -786,6 +811,28 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 		/**********************************************************************/
 		}
 	/**************************************************************************/	
+	} else if (!strcasecmp(argv[c], "m2ua")) {
+	/**************************************************************************/	
+		if (check_arg_count(argc, 3)) {
+			stream->write_function(stream, "Invalid \"m2ua  option\", please use \"m2ua logging [enable|disable] \n");
+			goto handle_cli_error_argc;
+		}
+		c++;
+		if(!strcasecmp(argv[c],"logging")){
+			c++;
+			if(!strcasecmp(argv[c],"enable")){
+				ftmod_ss7_enable_m2ua_sg_logging();
+			}else if(!strcasecmp(argv[c],"disable")){
+				ftmod_ss7_disable_m2ua_sg_logging();
+			} else{
+				stream->write_function(stream, "Unknown \"m2ua logging %s option\", supported values enable/disable\n",argv[c]);
+				goto handle_cli_error_argc;
+			}
+		}else{
+			stream->write_function(stream, "Unknown \"m2ua  %s option\", supported values \"logging\"\n",argv[c]);
+			goto handle_cli_error_argc;
+		}
+	/**************************************************************************/	
 	} else {
 	/**************************************************************************/
 		goto handle_cli_error;
@@ -866,14 +913,19 @@ static ftdm_status_t handle_print_usage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, "ftdm ss7 show relay\n");
 	stream->write_function(stream, "\n");
 
-	stream->write_function(stream, "ftmod_sangoma_ss7 M2UA status:\n");
+	stream->write_function(stream, "ftmod_sangoma_ss7 M2UA :\n");
 	stream->write_function(stream, "ftdm ss7 show sctp \n");
 	stream->write_function(stream, "ftdm ss7 show sctp <sctp_interface_name>\n");
 	stream->write_function(stream, "ftdm ss7 show m2ua \n");
 	stream->write_function(stream, "ftdm ss7 show m2ua <m2ua_interface_name>\n");
+	stream->write_function(stream, "ftdm ss7 show m2ua <m2ua_interface_name> peerstatus\n");
 	stream->write_function(stream, "ftdm ss7 show nif \n");
 	stream->write_function(stream, "ftdm ss7 show nif <nif_interface_name>\n");
 	stream->write_function(stream, "\n");
+
+
+	stream->write_function(stream, "ftmod_sangoma_ss7 M2UA logging:\n");
+	stream->write_function(stream, "ftdm ss7 m2ua logging [enable|disable] \n");
 
 	stream->write_function(stream, "\n");
 
@@ -2993,7 +3045,15 @@ static ftdm_status_t cli_ss7_show_all_spans_general(ftdm_stream_handle_t *stream
 	return FTDM_FAIL;
 }
 
-/******************************************************************************/
+
+/******************************************************************************
+* Fun:  handle_show_m2ua_profiles()
+* Desc: display all m2ua profile information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: Kapil Gupta
+*******************************************************************************/
+
 static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
@@ -3103,6 +3163,14 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 
 }
 
+/******************************************************************************
+* Fun:  handle_show_m2ua_profile()
+* Desc: display requested m2ua profile information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: Kapil Gupta
+*******************************************************************************/
+
 static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char* m2ua_profile_name) 
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
@@ -3208,7 +3276,14 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 	return FTDM_FAIL;
 
 }
-/******************************************************************************/
+
+/******************************************************************************
+* Fun:  handle_show_sctp_profiles()
+* Desc: display all sctp profile information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: Kapil Gupta
+*******************************************************************************/
 static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
@@ -3414,7 +3489,13 @@ int get_assoc_resp_buf(char* buf,SbMgmt* cfm)
 	return len;
 }
 
-
+/******************************************************************************
+* Fun:  handle_show_sctp_profile()
+* Desc: display requested sctp profile information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: Kapil Gupta
+*******************************************************************************/
 static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char* sctp_profile_name)
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
@@ -3486,6 +3567,13 @@ static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char
 	return FTDM_SUCCESS;
 }
 
+/******************************************************************************
+* Fun:  handle_show_nif_profiles()
+* Desc: display all nif profile information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: Kapil Gupta
+*******************************************************************************/
 static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
@@ -3540,6 +3628,13 @@ static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
 	return FTDM_FAIL;
 }
 
+/******************************************************************************
+* Fun:  handle_show_nif_profile()
+* Desc: display requested nif profile information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: Kapil Gupta
+*******************************************************************************/
 static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char* nif_profile_name) 
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
@@ -3595,6 +3690,61 @@ static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char*
 }
 
 /******************************************************************************/
+/******************************************************************************
+* Fun:  handle_show_m2ua_peer_status()
+* Desc: display requested m2ua profile peer information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: Kapil Gupta
+*******************************************************************************/
+
+static ftdm_status_t handle_show_m2ua_peer_status(ftdm_stream_handle_t *stream, char* m2ua_profile_name) 
+{
+	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	char  buf[2048];
+	int x = 0x00;
+	int found = 0x00;
+	int len = 0x00;
+	MwMgmt cfm;
+
+	memset((U8 *)&cfm, 0, sizeof(MwMgmt));
+	memset(&buf[0], 0, sizeof(buf));
+
+	len = len + sprintf(buf + len, "%s\n", xmlhdr);
+
+	/*iterate through all the m2ua links and get required profile */
+	x = 1;
+	while(x<MW_MAX_NUM_OF_INTF){
+		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) &&
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
+
+			if(!strcasecmp(m2ua_profile_name, g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].name)){
+				found = 0x01;
+				break;
+			}
+		}
+		x++;
+	}
+
+	if(!found){
+		stream->write_function(stream,"Requested M2UA profile[%s] not configured\n", m2ua_profile_name);
+		return FTDM_FAIL;
+	}
+
+	if(ftmod_m2ua_ssta_req(STMWPEER,x,&cfm)) {
+		stream->write_function(stream," Request to Trillium M2UA layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<m2ua_peer>\n");
+		len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_PEER_STATE(cfm.t.ssta.s.peerSta.state));
+		len = len + sprintf(buf + len, " <connected_status> %s </connected_status>\n",(cfm.t.ssta.s.peerSta.assocSta.connected)?"CONNECTED":"NOT CONNECTED");
+		len = len + sprintf(buf + len, "</m2ua_peer>\n");
+	}
+
+	stream->write_function(stream,"\n%s\n",buf); 
+
+	return FTDM_FAIL;
+}
 
 /******************************************************************************/
 /* For Emacs:
