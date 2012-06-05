@@ -941,7 +941,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 		runtime.timestamp = ts;
 		current_ms += (runtime.microseconds_per_tick / 1000);
-		tick += (runtime.microseconds_per_tick / 1000);
+		tick++;
 
 		if (time_sync < runtime.time_sync) {
 			time_sync++; /* Only step once for each loop, we want to make sure to keep this thread safe */
